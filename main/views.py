@@ -22,6 +22,6 @@ def index(request):
         "sentry_dsn": settings.SENTRY_DSN,
     }
 
-    return render(request, "index.html", context={
-        "js_settings_json": json.dumps(js_settings),
-    })
+    return render(
+        request, "index.html", context={"js_settings_json": json.dumps(js_settings),}
+    )

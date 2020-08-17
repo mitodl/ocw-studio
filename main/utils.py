@@ -18,6 +18,7 @@ class FeatureFlag(Flag):
     Members should have values of increasing powers of 2 (1, 2, 4, 8, ...)
 
     """
+
     EXAMPLE_FEATURE = auto()
 
 
@@ -32,4 +33,6 @@ def webpack_dev_server_url(request):
     """
     Get the full URL where the webpack dev server should be running
     """
-    return 'http://{}:{}'.format(webpack_dev_server_host(request), settings.WEBPACK_DEV_SERVER_PORT)
+    return "http://{}:{}".format(
+        webpack_dev_server_host(request), settings.WEBPACK_DEV_SERVER_PORT
+    )

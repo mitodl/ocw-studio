@@ -22,16 +22,16 @@ from main.views import index
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('status/', include('server_status.urls')),
+    path("admin/", admin.site.urls),
+    path("status/", include("server_status.urls")),
     path("robots.txt", include("robots.urls")),
-
     # Example view
-    path('', index, name='main-index'),
+    path("", index, name="main-index"),
 ]
 
 if settings.DEBUG:
     import debug_toolbar  # pylint: disable=wrong-import-position, wrong-import-order
+
     urlpatterns += [
-        path('__debug__/', include(debug_toolbar.urls)),
+        path("__debug__/", include(debug_toolbar.urls)),
     ]

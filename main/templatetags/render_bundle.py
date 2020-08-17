@@ -42,11 +42,10 @@ def _get_bundle(request, bundle_name):
             CSS and JS chunks for one bundle for example
     """
     if not settings.DISABLE_WEBPACK_LOADER_STATS:
-        for chunk in get_loader('DEFAULT').get_bundle(bundle_name):
+        for chunk in get_loader("DEFAULT").get_bundle(bundle_name):
             chunk_copy = dict(chunk)
-            chunk_copy['url'] = "{host_url}/{bundle}".format(
-                host_url=public_path(request).rstrip("/"),
-                bundle=chunk['name']
+            chunk_copy["url"] = "{host_url}/{bundle}".format(
+                host_url=public_path(request).rstrip("/"), bundle=chunk["name"]
             )
             yield chunk_copy
 
@@ -68,11 +67,11 @@ def render_bundle(context, bundle_name):
         django.utils.safestring.SafeText:
     """
     try:
-        bundle = _get_bundle(context['request'], bundle_name)
+        bundle = _get_bundle(context["request"], bundle_name)
         return _render_tags(bundle)
     except OSError:
         # webpack-stats.json doesn't exist
-        return mark_safe('')
+        return mark_safe("")
 
 
 def _render_tags(bundle):
@@ -89,12 +88,16 @@ def _render_tags(bundle):
 
     tags = []
     for chunk in bundle:
-        if chunk['name'].endswith(('.js', '.js.gz')):
-            tags.append((
-                '<script type="text/javascript" src="{}" ></script>'
-            ).format(chunk['url']))
-        elif chunk['name'].endswith(('.css', '.css.gz')):
-            tags.append((
-                '<link type="text/css" href="{}" rel="stylesheet" />'
-            ).format(chunk['url']))
-    return mark_safe('\n'.join(tags))
+        if chunk["name"].endswith((".js", ".js.gz")):
+            tags.append(
+                ('<script type="text/javascript" src="{}" ></script>').format(
+                    chunk["url"]
+                )
+            )
+        elif chunk["name"].endswith((".css", ".css.gz")):
+            tags.append(
+                ('<link type="text/css" href="{}" rel="stylesheet" />').format(
+                    chunk["url"]
+                )
+            )
+    return mark_safe("\n".join(tags))
