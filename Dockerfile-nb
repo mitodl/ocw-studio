@@ -1,0 +1,10 @@
+FROM ocw_studio_web
+
+USER root
+
+WORKDIR /tmp
+
+RUN pip install --force-reinstall jupyter
+
+USER mitodl
+WORKDIR /src
