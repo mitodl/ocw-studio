@@ -22,8 +22,6 @@ if __name__ == "__main__":
     for app in settings.INSTALLED_APPS:
         try:
             # pylint: disable=exec-used
-            exec(
-                "from {app}.models import *".format(app=app)
-            )
+            exec("from {app}.models import *".format(app=app))
         except ModuleNotFoundError:
             pass

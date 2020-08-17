@@ -135,9 +135,7 @@ class TestSettings(TestCase):
         generate_app_json should return a dictionary of JSON config for app.json
         """
         # pylint: disable=import-outside-toplevel
-        from main.envs import (
-            generate_app_json,
-        )
+        from main.envs import generate_app_json
 
         with open("app.json") as app_json_file:
             app_json = json.load(app_json_file)
