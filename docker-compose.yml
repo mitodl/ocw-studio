@@ -1,0 +1,88 @@
+version: '3.7'
+
+x-environment:
+  &py-enviroment
+  DEBUG: 'False'
+  NODE_ENV: 'production'
+  DEV_ENV: 'True'  # necessary to have nginx connect to web container
+  SECRET_KEY: local_unsafe_key
+  COVERAGE_DIR: htmlcov
+  DATABASE_URL: postgres://postgres@db:5432/postgres
+  OCW_STUDIO_SECURE_SSL_REDIRECT: 'False'
+  OCW_STUDIO_DB_DISABLE_SSL: 'True'
+  CELERY_TASK_ALWAYS_EAGER: 'False'
+  CELERY_BROKER_URL: redis://redis:6379/4
+  CELERY_RESULT_BACKEND: redis://redis:6379/4
+  DOCKER_HOST: ${DOCKER_HOST:-missing}
+  WEBPACK_DEV_SERVER_HOST: ${WEBPACK_DEV_SERVER_HOST:-localhost}
+
+services:
+  db:
+    image: postgres:11.6
+    ports:
+      - "5432"
+
+  redis:
+    image: redis:3.0.3
+    ports:
+      - "6379"
+
+  nginx:
+    image: nginx:1.9.5
+    ports:
+      - "8043:8043"
+    links:
+      - web
+    networks:
+      default:
+        aliases:
+          # this ensures that containers route this hostname back to the web app
+          - "xpro.odl.local"
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      /bin/bash -c '
+      sleep 3 &&
+      python3 manage.py collectstatic --noinput &&
+      python3 manage.py migrate --noinput &&
+      uwsgi uwsgi.ini'
+    ports:
+      - "8041:8041"
+    environment:
+      << : *py-enviroment
+      PORT: 8041
+    env_file: .env
+    links:
+      - db
+      - redis
+
+  watch:
+    build:
+      context: .
+      dockerfile: Dockerfile-node
+    working_dir: /src
+    command: >
+      /bin/bash -c './webpack_dev_server.sh --install'
+    ports:
+      - "8042:8042"
+    environment:
+      NODE_ENV: 'production'
+      DOCKER_HOST: ${DOCKER_HOST:-missing}
+      CONTAINER_NAME: 'watch'
+    env_file: .env
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment: *py-enviroment
+    env_file: .env
+    command: >
+      /bin/bash -c '
+      sleep 3;
+      celery -A main.celery:app worker -B -l ${OCW_STUDIO_LOG_LEVEL:-INFO}'
+    links:
+      - db
+      - redis

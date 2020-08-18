@@ -1,0 +1,11 @@
+version: '3.7'
+# define environment variables to avoid ImproperlyConfigured
+services:
+  web:
+    environment:
+      MAILGUN_URL: 'http://fake.example.com'
+      MAILGUN_KEY: 'fake'
+  celery:
+    environment:
+      MAILGUN_URL: 'http://fake.example.com'
+      MAILGUN_KEY: 'fake'

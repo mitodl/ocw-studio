@@ -1,0 +1,17 @@
+black
+bpython
+codecov
+ddt
+django-debug-toolbar
+ipdb
+nplusone
+pdbpp
+pip-tools
+pylint
+pylint-django
+pytest
+pytest-cov
+pytest-django
+pytest-mock
+pytest-pylint
+semantic-version
