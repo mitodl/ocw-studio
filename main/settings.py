@@ -86,6 +86,7 @@ INSTALLED_APPS = (
     # Put our apps after this point
     "main",
     "users",
+    "websites",
 )
 
 DISABLE_WEBPACK_LOADER_STATS = get_bool("DISABLE_WEBPACK_LOADER_STATS", False)
@@ -240,7 +241,11 @@ NPLUSONE_LOG_LEVEL = logging.ERROR
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "filters": {"require_debug_false": {"()": "django.utils.log.RequireDebugFalse",}},
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
+        }
+    },
     "formatters": {
         "verbose": {
             "format": (
@@ -281,9 +286,15 @@ LOGGING = {
             "level": DJANGO_LOG_LEVEL,
             "propagate": True,
         },
-        "nplusone": {"handlers": ["console"], "level": "ERROR",},
+        "nplusone": {
+            "handlers": ["console"],
+            "level": "ERROR",
+        },
     },
-    "root": {"handlers": ["console", "syslog"], "level": LOG_LEVEL,},
+    "root": {
+        "handlers": ["console", "syslog"],
+        "level": LOG_LEVEL,
+    },
 }
 
 # server-status
@@ -373,7 +384,8 @@ MIDDLEWARE_FEATURE_FLAG_QS_PREFIX = get_string(
     "MIDDLEWARE_FEATURE_FLAG_QS_PREFIX", None
 )
 MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME = get_string(
-    "MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME", "OCW_STUDIO_FEATURE_FLAGS",
+    "MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME",
+    "OCW_STUDIO_FEATURE_FLAGS",
 )
 MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS = get_int(
     "MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS", 60 * 60

@@ -80,7 +80,11 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"abstract": False,},
-            managers=[("objects", users.models.UserManager()),],
+            options={
+                "abstract": False,
+            },
+            managers=[
+                ("objects", users.models.UserManager()),
+            ],
         ),
     ]

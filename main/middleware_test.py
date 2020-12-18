@@ -41,10 +41,21 @@ class QueryStringFeatureFlagMiddlewareTest(TestCase):
 
     def test_encode_feature_flags(self):
         assert self.middleware.encode_feature_flags(None) == "0"
-        assert self.middleware.encode_feature_flags({"ZZ_FEATURE_NOTHING": 1,}) == "0"
+        assert (
+            self.middleware.encode_feature_flags(
+                {
+                    "ZZ_FEATURE_NOTHING": 1,
+                }
+            )
+            == "0"
+        )
 
         assert (
-            self.middleware.encode_feature_flags({"ZZ_FEATURE_EXAMPLE_FEATURE": 1,})
+            self.middleware.encode_feature_flags(
+                {
+                    "ZZ_FEATURE_EXAMPLE_FEATURE": 1,
+                }
+            )
             == "1"
         )
 
