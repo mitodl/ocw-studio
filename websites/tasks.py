@@ -7,7 +7,7 @@ from django.conf import settings
 
 from main.celery import app
 from main.utils import chunks
-from websites.utils import import_ocw2hugo_course
+from websites.api import import_ocw2hugo_course
 
 log = logging.getLogger(__name__)
 

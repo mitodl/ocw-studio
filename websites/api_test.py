@@ -1,4 +1,4 @@
-""" Tests for websites.utils """
+""" Tests for websites.api """
 import json
 
 import pytest
@@ -13,7 +13,7 @@ from websites.conftest import (
 )
 from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE
 from websites.models import Website, WebsiteContent
-from websites.utils import import_ocw2hugo_course
+from websites.api import import_ocw2hugo_course
 
 
 @mock_s3

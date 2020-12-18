@@ -1,4 +1,4 @@
-""" Utility functions for websites"""
+""" api functions for websites"""
 import json
 import os
 import re
