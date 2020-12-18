@@ -35,3 +35,13 @@ def test_import_ocw2hugo_courses(
             bucket=MOCK_BUCKET_NAME, prefix=TEST_OCW2HUGO_PREFIX, chunk_size=chunk_size
         )
     assert mock_import_paths.call_count == call_count
+
+
+def test_import_ocw2hugo_courses_nobucket(mocker):
+    """ import_ocw2hugo_course_paths should be called correct # times for given chunk size and # of paths """
+    mock_import_paths = mocker.patch("websites.tasks.import_ocw2hugo_course_paths.si")
+    with pytest.raises(TypeError):
+        import_ocw2hugo_courses(  # pylint:disable=no-value-for-parameter
+            bucket=None, prefix=TEST_OCW2HUGO_PREFIX, chunk_size=100
+        )
+    assert mock_import_paths.call_count == 0

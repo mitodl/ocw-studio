@@ -43,8 +43,7 @@ def import_ocw2hugo_courses(self, bucket=None, prefix=None, chunk_size=100):
         chunk_size (int): Number of courses to process per task
     """
     if not bucket:
-        log.error("Bucket name must be specified")
-        return
+        raise TypeError("Bucket name must be specified")
     s3 = boto3.resource(
         "s3",
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
