@@ -4,6 +4,7 @@ codecov
 ddt
 django-debug-toolbar
 ipdb
+moto
 nplusone
 pdbpp
 pip-tools

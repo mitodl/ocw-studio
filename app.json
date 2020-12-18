@@ -95,6 +95,10 @@
       "description": null,
       "required": false
     },
+    "MAX_S3_GET_ITERATIONS": {
+      "description": null,
+      "required": false
+    },
     "MEDIA_ROOT": {
       "description": null,
       "required": false

@@ -38,6 +38,7 @@ class WebsiteContent(TimestampedModel):
     )
     markdown = models.TextField(null=True, blank=True)
     metadata = models.JSONField(null=True, blank=True)
+    hugo_filepath = models.CharField(max_length=2048, null=True, blank=True)
 
     class Meta:
         unique_together = [["website", "uuid"]]
