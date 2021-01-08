@@ -11,7 +11,11 @@ if __name__ == "__main__":
 
         sys.exit(
             check_call(
-                [os.path.join(base_dir, "manage.py"), "shell", *sys.argv[1:],],
+                [
+                    os.path.join(base_dir, "manage.py"),
+                    "shell",
+                    *sys.argv[1:],
+                ],
                 env={**os.environ, "PYTHONSTARTUP": os.path.join(base_dir, "repl.py")},
             )
         )

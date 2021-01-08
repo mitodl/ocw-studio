@@ -23,7 +23,8 @@ class QueryStringFeatureFlagMiddleware(MiddlewareMixin):
             str: the full key value
         """
         return "{prefix}_FEATURE_{suffix}".format(
-            prefix=settings.MIDDLEWARE_FEATURE_FLAG_QS_PREFIX, suffix=suffix,
+            prefix=settings.MIDDLEWARE_FEATURE_FLAG_QS_PREFIX,
+            suffix=suffix,
         )
 
     @classmethod

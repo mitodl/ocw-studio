@@ -23,5 +23,9 @@ def index(request):
     }
 
     return render(
-        request, "index.html", context={"js_settings_json": json.dumps(js_settings),}
+        request,
+        "index.html",
+        context={
+            "js_settings_json": json.dumps(js_settings),
+        },
     )
