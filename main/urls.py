@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.urls import path
 
 from main.views import index
+from news.views import news
 
 
 urlpatterns = [
@@ -27,6 +28,7 @@ urlpatterns = [
     path("robots.txt", include("robots.urls")),
     # Example view
     path("", index, name="main-index"),
+    path("api/news/", news, name="ocw-news"),
 ]
 
 if settings.DEBUG:

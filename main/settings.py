@@ -88,6 +88,7 @@ INSTALLED_APPS = (
     "main",
     "users",
     "websites",
+    "news",
 )
 
 DISABLE_WEBPACK_LOADER_STATS = get_bool("DISABLE_WEBPACK_LOADER_STATS", False)
