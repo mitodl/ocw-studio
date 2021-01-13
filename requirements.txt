@@ -27,7 +27,7 @@ factory-boy==3.0.1        # via -r requirements.in
 faker==4.1.2              # via -r requirements.in, factory-boy
 idna==2.10                # via requests
 ipython-genutils==0.2.0   # via traitlets
-ipython==7.17.0           # via -r requirements.in
+ipython==7.19.0           # via -r /home/george/Projects/ocw-studio/ocw_studio/ocw_studio/requirements.in
 jedi==0.17.2              # via ipython
 jmespath==0.10.0          # via boto3, botocore
 kombu==4.6.11             # via celery, django-server-status
