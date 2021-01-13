@@ -97,6 +97,7 @@ jobs:
           MAILGUN_URL: 'http://fake.example.com'
           MAILGUN_KEY: 'fake'
           NODE_ENV: 'production'
+          SECRET_KEY: "secret"
 
       - name: Upload coverage to CodeCov
         uses: codecov/codecov-action@v1
