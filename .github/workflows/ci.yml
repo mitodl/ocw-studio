@@ -62,6 +62,7 @@ jobs:
         run: pylint ./**/*.py
         env:
           DJANGO_SETTINGS_MODULE: "main.settings"
+          PYTHONPATH: "."
 
       # Configurations required for elasticsearch.
       - name: Configure sysctl limits
