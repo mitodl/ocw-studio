@@ -77,15 +77,6 @@ jobs:
         with:
           stack-version: 6.7.1
 
-      - name: Running Celery
-        run: |
-          celery -A main worker -B -l INFO &
-          sleep 10
-        env:
-          CELERY_TASK_ALWAYS_EAGER: 'True'
-          CELERY_BROKER_URL: redis://localhost:6379/4
-          CELERY_RESULT_BACKEND: redis://localhost:6379/4
-
       - name: Tests
         run: |
           export MEDIA_ROOT="$(mktemp -d)"
