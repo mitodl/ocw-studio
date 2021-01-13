@@ -60,6 +60,8 @@ jobs:
 
       - name: Lint
         run: pylint ./**/*.py
+        env:
+          DJANGO_SETTINGS_MODULE: "main.settings"
 
       # Configurations required for elasticsearch.
       - name: Configure sysctl limits
@@ -97,7 +99,6 @@ jobs:
           CELERY_RESULT_BACKEND: redis://localhost:6379/4
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
           DEBUG: 'False'
-          ELASTICSEARCH_URL: localhost:9200
           MAILGUN_URL: 'http://fake.example.com'
           MAILGUN_KEY: 'fake'
           NODE_ENV: 'production'
