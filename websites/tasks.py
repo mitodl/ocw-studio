@@ -1,21 +1,18 @@
 """ Tasks for websites """
 import logging
 
-import boto3
 import celery
-from django.conf import settings
 
 from main.celery import app
+from main.s3_utils import get_s3_resource
 from main.utils import chunks
 from websites.api import import_ocw2hugo_course
 
 log = logging.getLogger(__name__)
 
 
-@app.task(bind=True)
-def import_ocw2hugo_course_paths(
-    self, paths=None, bucket=None, prefix=None
-):  # pylint:disable=unused-argument
+@app.task()
+def import_ocw2hugo_course_paths(paths=None, bucket=None, prefix=None):
     """
     Import all ocw2hugo courses & content
 
@@ -44,11 +41,7 @@ def import_ocw2hugo_courses(self, bucket=None, prefix=None, chunk_size=100):
     """
     if not bucket:
         raise TypeError("Bucket name must be specified")
-    s3 = boto3.resource(
-        "s3",
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    )
+    s3 = get_s3_resource()
     bucket = s3.Bucket(bucket)
     course_paths = []
     paginator = bucket.meta.client.get_paginator("list_objects")

@@ -3,8 +3,9 @@ import glob
 from os.path import isfile
 from types import SimpleNamespace
 
-import boto3
 import pytest
+
+from main.s3_utils import get_s3_resource
 
 MOCK_BUCKET_NAME = "testbucket"
 TEST_OCW2HUGO_PREFIX = "output/"
@@ -40,11 +41,7 @@ def setup_s3(settings):
     settings.AWS_ACCESS_KEY_ID = "abc"
     settings.AWS_SECRET_ACCESS_KEY = "abc"
     # Create our fake bucket
-    conn = boto3.resource(
-        "s3",
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    )
+    conn = get_s3_resource()
     conn.create_bucket(Bucket=MOCK_BUCKET_NAME)
 
     # Add data to the fake bucket

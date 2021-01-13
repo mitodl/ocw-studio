@@ -5,18 +5,16 @@ import re
 import logging
 from uuid import uuid4
 
-import boto3
 import yaml
-from django.conf import settings
 
-from main.utils import get_s3_object_and_read
+from main.s3_utils import get_s3_object_and_read, get_s3_resource
 from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE, COURSE_HOME
 from websites.models import Website, WebsiteContent
 
 log = logging.getLogger(__name__)
 
 
-def import_ocw2hugo_content(bucket, prefix, website):
+def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many-locals
     """
     Import all content files for an ocw course from hugo2ocw output
 
@@ -56,40 +54,28 @@ def import_ocw2hugo_content(bucket, prefix, website):
                     parent, _ = WebsiteContent.objects.get_or_create(
                         website=website, uuid=parent_uuid
                     )
+                filepath = obj["Key"].replace(prefix, "")
+                base_defaults = {
+                    "metadata": content_json,
+                    "markdown": (
+                        s3_content_parts[1] if len(s3_content_parts) == 2 else None
+                    ),
+                    "parent": parent,
+                    "title": content_json.get("title"),
+                    "type": content_type,
+                }
                 if not uuid:
                     # This code block is a temporary hack until every hugo2ocw output file has a uuid
                     WebsiteContent.objects.update_or_create(
                         website=website,
-                        hugo_filepath=obj["Key"].replace(prefix, ""),
-                        defaults={
-                            "metadata": content_json,
-                            "markdown": (
-                                s3_content_parts[1]
-                                if len(s3_content_parts) == 2
-                                else None
-                            ),
-                            "uuid": uuid4(),
-                            "parent": parent,
-                            "title": content_json.get("title"),
-                            "type": content_type,
-                        },
+                        hugo_filepath=filepath,
+                        defaults={**base_defaults, "uuid": uuid4()},
                     )
                 else:
                     WebsiteContent.objects.update_or_create(
                         website=website,
                         uuid=uuid,
-                        defaults={
-                            "hugo_filepath": obj["Key"].replace(prefix, ""),
-                            "metadata": content_json,
-                            "markdown": (
-                                s3_content_parts[1]
-                                if len(s3_content_parts) == 2
-                                else None
-                            ),
-                            "parent": parent,
-                            "title": content_json.get("title"),
-                            "type": content_type,
-                        },
+                        defaults={**base_defaults, "hugo_filepath": filepath},
                     )
 
 
@@ -102,11 +88,7 @@ def import_ocw2hugo_course(bucket_name, prefix, key):
         prefix (str): S3 prefix before start of course_id path
         key (str): The S3 prefix for the course homepage.
     """
-    s3 = boto3.resource(
-        "s3",
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    )
+    s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
     url_path = os.path.splitext(os.path.basename(key))[0]
     s3_content = json.loads(get_s3_object_and_read(bucket.Object(key)).decode())

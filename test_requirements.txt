@@ -12,6 +12,7 @@ pylint
 pylint-django
 pytest
 pytest-cov
+pytest-env==0.6.2
 pytest-django
 pytest-mock
 pytest-pylint

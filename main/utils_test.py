@@ -1,9 +1,7 @@
 """ Tests for utils """
 from math import ceil
 
-import pytest
-
-from main.utils import chunks, get_s3_object_and_read
+from main.utils import chunks
 
 
 def test_chunks():
@@ -42,15 +40,3 @@ def test_chunks_iterable():
     for chunk in chunk_output:
         range_list += chunk
     assert range_list == list(range(count))
-
-
-@pytest.mark.parametrize("iterations", [1, 2, 5])
-def test_s3_object_and_read(settings, mocker, iterations):
-    """
-    Test that s3_object_and_read is retried on error up to max number of iterations
-    """
-    settings.MAX_S3_GET_ITERATIONS = iterations
-    mock_s3_object = mocker.Mock()
-    with pytest.raises(Exception):
-        get_s3_object_and_read(mock_s3_object)
-    assert mock_s3_object.get.call_count == iterations + 1
