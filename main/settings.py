@@ -307,6 +307,9 @@ REACT_GA_DEBUG = get_bool("REACT_GA_DEBUG", False)
 MEDIA_ROOT = get_string("MEDIA_ROOT", "/var/media/")
 MEDIA_URL = "/media/"
 OCW_STUDIO_USE_S3 = get_bool("OCW_STUDIO_USE_S3", False)
+MAX_S3_GET_ITERATIONS = get_int(
+    "MAX_S3_GET_ITERATIONS", 3, description="Max retry attempts to get an S3 object"
+)
 AWS_ACCESS_KEY_ID = get_string("AWS_ACCESS_KEY_ID", False)
 AWS_SECRET_ACCESS_KEY = get_string("AWS_SECRET_ACCESS_KEY", False)
 AWS_STORAGE_BUCKET_NAME = get_string("AWS_STORAGE_BUCKET_NAME", False)

@@ -95,6 +95,10 @@
       "description": null,
       "required": false
     },
+    "MAX_S3_GET_ITERATIONS": {
+      "description": "Max retry attempts to get an S3 object",
+      "required": false
+    },
     "MEDIA_ROOT": {
       "description": null,
       "required": false

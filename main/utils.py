@@ -1,10 +1,13 @@
 """ocw_studio utilities"""
+import datetime
 from enum import (
     auto,
     Flag,
 )
 import logging
+from itertools import islice
 
+import pytz
 from django.conf import settings
 
 
@@ -36,3 +39,32 @@ def webpack_dev_server_url(request):
     return "http://{}:{}".format(
         webpack_dev_server_host(request), settings.WEBPACK_DEV_SERVER_PORT
     )
+
+
+def now_in_utc():
+    """
+    Get the current time in UTC
+    Returns:
+        datetime.datetime: A datetime object for the current time
+    """
+    return datetime.datetime.now(tz=pytz.UTC)
+
+
+def chunks(iterable, *, chunk_size=20):
+    """
+    Yields chunks of an iterable as sub lists each of max size chunk_size.
+
+    Args:
+        iterable (iterable): iterable of elements to chunk
+        chunk_size (int): Max size of each sublist
+
+    Yields:
+        list: List containing a slice of list_to_chunk
+    """
+    chunk_size = max(1, chunk_size)
+    iterable = iter(iterable)
+    chunk = list(islice(iterable, chunk_size))
+
+    while len(chunk) > 0:
+        yield chunk
+        chunk = list(islice(iterable, chunk_size))
