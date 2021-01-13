@@ -145,9 +145,6 @@ jobs:
       - name: Scss lint
         run: npm run scss_lint
 
-      - name: Flow
-        run: npm run flow
-
       - name: Tests
         run: npm run test
         env:
