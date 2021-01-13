@@ -1,0 +1,3 @@
+
+CamelCase = True
+

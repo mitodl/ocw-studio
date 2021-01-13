@@ -59,9 +59,10 @@ jobs:
         run: pip install -r requirements.txt -r test_requirements.txt
 
       - name: Lint
-        run: bash -c "PYTHONPATH=$PYTHONPATH:. pylint ./**/*.py"
+        run: pylint ./**/*.py
         env:
           DJANGO_SETTINGS_MODULE: "main.settings"
+          PYTHONPATH: "."
 
       # Configurations required for elasticsearch.
       - name: Configure sysctl limits
