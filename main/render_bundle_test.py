@@ -1,5 +1,5 @@
 """
-Tests for render_bundle
+Tests for main.templatetags.render_bundle
 """
 from django.test.client import RequestFactory
 import pytest
