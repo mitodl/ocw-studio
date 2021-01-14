@@ -27,6 +27,7 @@ urlpatterns = [
     path("robots.txt", include("robots.urls")),
     # Example view
     path("", index, name="main-index"),
+    path("", include("news.urls")),
 ]
 
 if settings.DEBUG:
