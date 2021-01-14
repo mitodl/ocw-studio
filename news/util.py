@@ -20,6 +20,22 @@ def get_original_image_link(url):
     return url
 
 
+def strip_namespace(tag):
+    """
+    Remove the namespace from a tag if it's present
+
+    Args:
+        tag (str): An XML tag
+
+    Returns:
+        str: The XML tag without a namespace prefix, or the same tag if no namespace prefix exists
+    """
+    if tag.startswith("{"):
+        rindex = tag.find("}")
+        return tag[rindex + 1 :]
+    return tag
+
+
 def serialize_item(item):
     """
     Serialize an RSS feed item
@@ -30,7 +46,10 @@ def serialize_item(item):
     Returns:
         dict: A dictionary representation of the RSS item
     """
-    obj = {child.tag: {"text": child.text, **child.attrib} for child in item}
+    obj = {
+        strip_namespace(child.tag): {"text": child.text, **child.attrib}
+        for child in item
+    }
     description = obj["description"]
     soup = BeautifulSoup(description["text"], features="html.parser")
     images = soup.find_all("img")

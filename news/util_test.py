@@ -52,7 +52,7 @@ def test_serialize_item(has_image):
     else:
         assert "image" not in output
 
-    assert output["{http://wellformedweb.org/CommentAPI/}commentRss"] == {
+    assert output["commentRss"] == {
         "text": "\n        https://www.ocw-openmatters.org/2020/12/09/chalk-radio-podcast\n        "
     }
 
