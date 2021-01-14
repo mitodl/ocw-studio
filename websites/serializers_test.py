@@ -15,5 +15,7 @@ def test_serialize_website_course():
     serializer = WebsiteSerializer(course)
     assert serializer.data["type"] == WEBSITE_TYPE_COURSE
     assert serializer.data["url_path"] == course.url_path
-    # assert serializer.data["publish_date"] == course.publish_date
+    assert serializer.data["publish_date"] == course.publish_date.strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
     assert serializer.data["metadata"] == course.metadata
