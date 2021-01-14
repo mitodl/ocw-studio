@@ -13,7 +13,6 @@ class WebsiteFactory(DjangoModelFactory):
 
     title = FuzzyText()
     url_path = factory.Faker("uri_path")
-    uuid = factory.Faker("uuid4")
     type = FuzzyChoice((WEBSITE_TYPE_COURSE, "other"))
 
     metadata = factory.Faker("json")
@@ -21,10 +20,10 @@ class WebsiteFactory(DjangoModelFactory):
 
     class Meta:
         model = Website
-        django_get_or_create = ("type",)
 
     class Params:
         is_course = factory.Trait(type=WEBSITE_TYPE_COURSE)
+        not_course = factory.Trait(type="other")
         published = factory.Trait(
             publish_date=factory.Faker("past_datetime", tzinfo=pytz.utc)
         )

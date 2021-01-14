@@ -1,5 +1,5 @@
 """ Views for websites """
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 
@@ -19,7 +19,10 @@ class DefaultPagination(LimitOffsetPagination):
     max_limit = 100
 
 
-class WebsiteViewSet(viewsets.ReadOnlyModelViewSet):
+class WebsiteViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet,):
     """
     Viewset for Websites
     """

@@ -27,6 +27,7 @@ urlpatterns = [
     # Example view
     path("", index, name="main-index"),
     path("", include("news.urls")),
+    path("", include("websites.urls")),
 ]
 
 if settings.DEBUG:
@@ -34,5 +35,4 @@ if settings.DEBUG:
 
     urlpatterns += [
         path("__debug__/", include(debug_toolbar.urls)),
-        url(r"", include("websites.urls")),
     ]
