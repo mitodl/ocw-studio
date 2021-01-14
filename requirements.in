@@ -4,6 +4,7 @@ boto3
 celery
 dj-database-url
 django-redis
+djangorestframework==3.12.2
 django-robots
 django-server-status
 django-webpack-loader
