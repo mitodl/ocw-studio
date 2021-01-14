@@ -10,11 +10,8 @@ asgiref==3.2.10
     # via django
 backcall==0.2.0
     # via ipython
-<<<<<<< HEAD
-=======
 beautifulsoup4==4.9.3
     # via -r requirements.in
->>>>>>> 021332f... Implement OCW news view
 billiard==3.6.3.0
     # via celery
 boto3==1.16.36
@@ -68,11 +65,7 @@ idna==2.10
     # via requests
 ipython-genutils==0.2.0
     # via traitlets
-<<<<<<< HEAD
 ipython==7.19.0
-=======
-ipython==7.17.0
->>>>>>> 021332f... Implement OCW news view
     # via -r requirements.in
 jedi==0.17.2
     # via ipython
@@ -134,11 +127,8 @@ six==1.15.0
     #   pyopenssl
     #   python-dateutil
     #   traitlets
-<<<<<<< HEAD
-=======
 soupsieve==2.1
     # via beautifulsoup4
->>>>>>> 021332f... Implement OCW news view
 sqlparse==0.3.1
     # via django
 text-unidecode==1.3
