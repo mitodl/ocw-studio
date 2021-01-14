@@ -12,14 +12,12 @@ function run_test {
     if [ $test_status -ne 0 ]; then
         status=$test_status
     fi
-    echo ""
     return $status
 }
 
-run_test npm run codecov
-run_test npm run lint
-run_test npm run fmt:check
-run_test npm run scss_lint
-run_test node node_modules/webpack/bin/webpack.js --config webpack.config.prod.js --bail
+run_test black --check .
+run_test pytest
+run_test ./scripts/test/detect_missing_migrations.sh
+run_test ./scripts/test/no_auto_migrations.sh
 
 exit $status
