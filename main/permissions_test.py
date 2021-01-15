@@ -10,7 +10,7 @@ from main.permissions import ReadonlyPermission
     "method,result",
     [("GET", True), ("HEAD", True), ("OPTIONS", True), ("POST", False), ("PUT", False)],
 )
-def test_anonymous_readonly(method, result, mocker):
+def test_anonymous_readonly(mocker, method, result):
     """
     Test that anonymous users are allowed for readonly verbs
     """

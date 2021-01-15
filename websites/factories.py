@@ -2,7 +2,7 @@
 import pytz
 import factory
 from factory.django import DjangoModelFactory
-from factory.fuzzy import FuzzyChoice, FuzzyText
+from factory.fuzzy import FuzzyChoice
 
 from websites.constants import WEBSITE_TYPE_COURSE
 from websites.models import Website
@@ -11,8 +11,8 @@ from websites.models import Website
 class WebsiteFactory(DjangoModelFactory):
     """Factory for WebsiteFactory"""
 
-    title = FuzzyText()
-    url_path = factory.Faker("uri_path")
+    title = factory.Sequence(lambda n: "OCW Course %s" % n)
+    url_path = factory.Sequence(lambda n: "/ocw_site_x/%s" % n)
     type = FuzzyChoice((WEBSITE_TYPE_COURSE, "other"))
 
     metadata = factory.Faker("json")

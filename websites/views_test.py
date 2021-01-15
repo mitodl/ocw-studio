@@ -1,33 +1,57 @@
 """ Tests for websites views """
+from types import SimpleNamespace
+
 import pytest
 from django.urls import reverse
 
+from main.constants import ISO_8601_FORMAT
 from main.utils import now_in_utc
 from websites.constants import WEBSITE_TYPE_COURSE
 from websites.factories import WebsiteFactory
 from fixtures.common import drf_client  # pylint: disable=unused-import
 
 # pylint:disable=redefined-outer-name
+pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.django_db
-def test_new_courses_endpoint(drf_client):
-    """Test new course websites endpoint"""
-    new_courses = sorted(
-        WebsiteFactory.create_batch(3, published=True, is_course=True),
-        reverse=True,
-        key=lambda course: course.publish_date,
-    )
-    now = now_in_utc()
-
-    # These should not be returned
+@pytest.fixture
+def websites():
+    """ Create some websites for tests """
+    courses = WebsiteFactory.create_batch(3, published=True, is_course=True)
+    noncourses = WebsiteFactory.create_batch(2, published=True, not_course=True)
     WebsiteFactory.create(unpublished=True, is_course=True)
     WebsiteFactory.create(future_publish=True, is_course=True)
-    WebsiteFactory.create(published=True, not_course=True)
+    return SimpleNamespace(courses=courses, noncourses=noncourses)
 
-    resp = drf_client.get(reverse("websites_api-list") + "courses/new/")
-    assert resp.data.get("count") == 3
-    for idx, course in enumerate(new_courses):
+
+@pytest.mark.parametrize("website_type", [WEBSITE_TYPE_COURSE, None])
+def test_websites_endpoint(drf_client, website_type, websites):
+    """Test new websites endpoint"""
+    filter_by_type = website_type is not None
+    now = now_in_utc()
+
+    expected_websites = websites.courses
+    if filter_by_type:
+        resp = drf_client.get(reverse("websites_api-list"), {"type": website_type})
+        assert resp.data.get("count") == 3
+    else:
+        expected_websites.extend(websites.noncourses)
+        resp = drf_client.get(reverse("websites_api-list"))
+        assert resp.data.get("count") == 5
+    for idx, course in enumerate(
+        sorted(expected_websites, reverse=True, key=lambda site: site.publish_date)
+    ):
         assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
-        assert resp.data.get("results")[idx]["type"] == WEBSITE_TYPE_COURSE
-        assert resp.data.get("results")[idx]["publish_date"] <= now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        assert resp.data.get("results")[idx]["type"] == (
+            WEBSITE_TYPE_COURSE if filter_by_type else course.type
+        )
+        assert resp.data.get("results")[idx]["publish_date"] <= now.strftime(
+            ISO_8601_FORMAT
+        )
+
+
+def test_websites_endpoint_sorting(drf_client, websites):
+    """ Response should be sorted according to query parameter """
+    resp = drf_client.get(reverse("websites_api-list"), {"sort": "title", "type": WEBSITE_TYPE_COURSE})
+    for idx, course in enumerate(sorted(websites.courses, key=lambda site: site.title)):
+        assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
