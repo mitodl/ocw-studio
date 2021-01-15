@@ -83,6 +83,7 @@ INSTALLED_APPS = (
     "django.contrib.sites",
     "server_status",
     # django-robots
+    "rest_framework",
     "robots",
     # Put our apps after this point
     "main",
@@ -416,3 +417,11 @@ MANDATORY_SETTINGS = [
     "MAILGUN_KEY",
     "SECRET_KEY",
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework.authentication.SessionAuthentication",
+    ),
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
+}

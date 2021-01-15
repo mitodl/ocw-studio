@@ -17,7 +17,6 @@ from django.conf import settings
 from django.conf.urls import include
 from django.contrib import admin
 from django.urls import path
-
 from main.views import index
 
 
@@ -28,6 +27,7 @@ urlpatterns = [
     # Example view
     path("", index, name="main-index"),
     path("", include("news.urls")),
+    path("", include("websites.urls")),
 ]
 
 if settings.DEBUG:
