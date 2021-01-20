@@ -4,6 +4,7 @@ import os
 import re
 import logging
 from uuid import uuid4
+from dateutil import parser as dateparser
 
 import yaml
 
@@ -27,7 +28,8 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
         Bucket=bucket.name, Prefix=f"{prefix}content/courses/{website.url_path}"
     ):
         for obj in resp["Contents"]:
-            s3_content = get_s3_object_and_read(bucket.Object(obj["Key"])).decode()
+            s3_key = obj["Key"]
+            s3_content = get_s3_object_and_read(bucket.Object(s3_key)).decode()
             s3_content_parts = [
                 part
                 for part in re.split(re.compile(r"^---\n", re.MULTILINE), s3_content)
@@ -64,19 +66,22 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                     "title": content_json.get("title"),
                     "type": content_type,
                 }
-                if not uuid:
-                    # This code block is a temporary hack until every hugo2ocw output file has a uuid
-                    WebsiteContent.objects.update_or_create(
-                        website=website,
-                        hugo_filepath=filepath,
-                        defaults={**base_defaults, "uuid": uuid4()},
-                    )
-                else:
-                    WebsiteContent.objects.update_or_create(
-                        website=website,
-                        uuid=uuid,
-                        defaults={**base_defaults, "hugo_filepath": filepath},
-                    )
+                try:
+                    if not uuid:
+                        # create a new uuid if necessary
+                        WebsiteContent.objects.update_or_create(
+                            website=website,
+                            hugo_filepath=filepath,
+                            defaults={**base_defaults, "uuid": uuid4()},
+                        )
+                    else:
+                        WebsiteContent.objects.update_or_create(
+                            website=website,
+                            uuid=uuid,
+                            defaults={**base_defaults, "hugo_filepath": filepath},
+                        )
+                except:  # pylint:disable=bare-except
+                    log.exception("Error saving WebsiteContent for %s", s3_key)
 
 
 def import_ocw2hugo_course(bucket_name, prefix, key):
@@ -92,12 +97,20 @@ def import_ocw2hugo_course(bucket_name, prefix, key):
     bucket = s3.Bucket(bucket_name)
     url_path = os.path.splitext(os.path.basename(key))[0]
     s3_content = json.loads(get_s3_object_and_read(bucket.Object(key)).decode())
-    website, _ = Website.objects.update_or_create(
-        url_path=url_path,
-        defaults={
-            "title": s3_content.get("course_title", None),
-            "publish_date": s3_content.get("publishdate", None),
-            "metadata": s3_content,
-        },
-    )
-    import_ocw2hugo_content(bucket, prefix, website)
+    try:
+        publish_date = dateparser.parse(s3_content.get("publishdate", None))
+    except ValueError:
+        publish_date = None
+        s3_content["publishdate"] = None
+    try:
+        website, _ = Website.objects.update_or_create(
+            url_path=url_path,
+            defaults={
+                "title": s3_content.get("course_title", None),
+                "publish_date": publish_date,
+                "metadata": s3_content,
+            },
+        )
+        import_ocw2hugo_content(bucket, prefix, website)
+    except:  # pylint:disable=bare-except
+        log.exception("Error saving website %s", key)

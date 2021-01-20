@@ -5,7 +5,7 @@ type: course
 layout: course_section
 menu:
   1-201j-transportation-systems-analysis-demand-and-economics-fall-2008:
-    identifier: 4bb2e8f1277b108211e3471c42e948f3
+    identifier: ''
     name: Syllabus
     weight: 10
 ---
