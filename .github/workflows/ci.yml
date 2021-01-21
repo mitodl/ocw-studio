@@ -65,7 +65,7 @@ jobs:
           PYTHONPATH: "."
 
       - name: Black
-        run: black .
+        run: black --check .
 
       # Configurations required for elasticsearch.
       - name: Configure sysctl limits
