@@ -52,6 +52,8 @@ def test_websites_endpoint(drf_client, website_type, websites):
 
 def test_websites_endpoint_sorting(drf_client, websites):
     """ Response should be sorted according to query parameter """
-    resp = drf_client.get(reverse("websites_api-list"), {"sort": "title", "type": WEBSITE_TYPE_COURSE})
+    resp = drf_client.get(
+        reverse("websites_api-list"), {"sort": "title", "type": WEBSITE_TYPE_COURSE}
+    )
     for idx, course in enumerate(sorted(websites.courses, key=lambda site: site.title)):
         assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)

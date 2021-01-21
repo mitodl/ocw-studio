@@ -4,56 +4,52 @@ import logging
 import celery
 
 from main.celery import app
-from main.s3_utils import get_s3_resource
 from main.utils import chunks
-from websites.api import import_ocw2hugo_course
+from websites.api import import_ocw2hugo_course, fetch_ocw2hugo_course_paths
 
 log = logging.getLogger(__name__)
 
 
 @app.task()
-def import_ocw2hugo_course_paths(paths=None, bucket=None, prefix=None):
+def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
     """
     Import all ocw2hugo courses & content
 
     Args:
         paths (list): list of course url paths
-        bucket (str): S3 bucket name
+        bucket_name (str): S3 bucket name
         prefix (str): S3 prefix before start of course_id path
 
     """
     if not paths:
         return
     for path in paths:
-        log.debug("Importing %s", path)
-        import_ocw2hugo_course(bucket, prefix, path)
+        log.info("Importing course: '%s'", path)
+        import_ocw2hugo_course(bucket_name, prefix, path)
 
 
 @app.task(bind=True)
-def import_ocw2hugo_courses(self, bucket=None, prefix=None, chunk_size=100):
+def import_ocw2hugo_courses(
+    self, bucket_name=None, prefix=None, filter_str=None, chunk_size=100
+):
     """
     Import all ocw2hugo courses & content
 
     Args:
-        bucket (str): S3 bucket name
-        prefix (str): S3 prefix before start of course_id path
+        bucket_name (str): S3 bucket name
+        prefix (str): (Optional) S3 prefix before start of course_id path
+        filter_str (str): (Optional) If specified, only yield course paths containing this string
         chunk_size (int): Number of courses to process per task
     """
-    if not bucket:
+    if not bucket_name:
         raise TypeError("Bucket name must be specified")
-    s3 = get_s3_resource()
-    bucket = s3.Bucket(bucket)
-    course_paths = []
-    paginator = bucket.meta.client.get_paginator("list_objects")
-    for resp in paginator.paginate(Bucket=bucket.name, Prefix=f"{prefix}data/courses/"):
-        for obj in resp["Contents"]:
-            key = obj["Key"]
-            if key.endswith(".json"):
-                course_paths.append(key)
+    course_paths = list(
+        fetch_ocw2hugo_course_paths(bucket_name, prefix=prefix, filter_str=filter_str)
+    )
     course_tasks = celery.group(
         [
             import_ocw2hugo_course_paths.si(
-                paths=paths, bucket=bucket.name, prefix=prefix
+                paths=paths, bucket_name=bucket_name, prefix=prefix
             )
             for paths in chunks(course_paths, chunk_size=chunk_size)
         ]
