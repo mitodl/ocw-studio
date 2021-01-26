@@ -17,7 +17,7 @@ from main.envs import (
 from main.sentry import init_sentry
 
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 SITE_ID = get_int("OCW_STUDIO_SITE_ID", 1)
 
