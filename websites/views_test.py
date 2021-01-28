@@ -1,25 +1,25 @@
 """ Tests for websites views """
 from types import SimpleNamespace
 
+import factory
 import pytest
 from django.urls import reverse
-import factory
+from mitol.common.utils.datetime import now_in_utc
 
 from main import features
 from main.constants import ISO_8601_FORMAT
-from main.utils import now_in_utc
 from websites.constants import (
     COURSE_STARTER_SLUG,
-    STARTER_SOURCE_LOCAL,
     STARTER_SOURCE_GITHUB,
+    STARTER_SOURCE_LOCAL,
 )
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 from websites.serializers import (
     WebsiteDetailSerializer,
-    WebsiteStarterSerializer,
     WebsiteStarterDetailSerializer,
+    WebsiteStarterSerializer,
 )
-from fixtures.common import drf_client  # pylint: disable=unused-import
+
 
 # pylint:disable=redefined-outer-name
 

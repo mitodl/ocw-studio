@@ -1,17 +1,17 @@
 """ Views for websites """
-from rest_framework import viewsets, mixins
+from mitol.common.utils.datetime import now_in_utc
+from rest_framework import mixins, viewsets
 from rest_framework.pagination import LimitOffsetPagination
 
 from main import features
 from main.permissions import ReadonlyPermission
-from main.utils import now_in_utc
 from websites.constants import STARTER_SOURCE_GITHUB
 from websites.models import Website, WebsiteStarter
 from websites.serializers import (
-    WebsiteSerializer,
     WebsiteDetailSerializer,
-    WebsiteStarterSerializer,
+    WebsiteSerializer,
     WebsiteStarterDetailSerializer,
+    WebsiteStarterSerializer,
 )
 
 

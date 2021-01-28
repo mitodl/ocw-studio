@@ -6,7 +6,7 @@ from django.contrib.auth.models import Group
 
 from users.factories import UserFactory
 from websites import constants
-from websites.factories import WebsiteFactory, WebsiteContentFactory
+from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
 @pytest.fixture()

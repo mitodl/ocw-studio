@@ -4,8 +4,8 @@ if __name__ == "__main__":
     import os
 
     if not os.environ.get("PYTHONSTARTUP"):
-        from subprocess import check_call
         import sys
+        from subprocess import check_call
 
         base_dir = os.path.dirname(os.path.abspath(__file__))
 

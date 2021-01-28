@@ -1,8 +1,8 @@
 """Views related to OCW News"""
 import xml.etree.ElementTree as ET
 
-from django.http import JsonResponse
 import requests
+from django.http import JsonResponse
 
 from news.util import rss_to_json
 

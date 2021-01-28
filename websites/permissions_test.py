@@ -1,16 +1,17 @@
 """ Tests for websites permissions"""
 import pytest
-from django.contrib.auth.models import Permission, Group
+from django.contrib.auth.models import Group, Permission
 from guardian.shortcuts import remove_perm
 
 from users.factories import UserFactory
-from websites import permissions, constants
+from websites import constants, permissions
 from websites.factories import WebsiteFactory
 from websites.permissions import (
     assign_website_permissions,
     create_global_groups,
     setup_website_groups_permissions,
 )
+
 
 pytestmark = pytest.mark.django_db
 

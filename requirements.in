@@ -9,8 +9,7 @@ djangorestframework==3.12.2
 django-robots
 django-server-status
 django-webpack-loader
-factory_boy
-faker
+mitol-django-common==0.5.0
 ipython
 newrelic
 psycopg2

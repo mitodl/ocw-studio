@@ -2,11 +2,12 @@
 import logging
 
 import celery
+from mitol.common.utils.collections import chunks
 
 from main.celery import app
-from main.utils import chunks
-from ocw_import.api import import_ocw2hugo_course, fetch_ocw2hugo_course_paths
+from ocw_import.api import fetch_ocw2hugo_course_paths, import_ocw2hugo_course
 from websites.models import WebsiteStarter
+
 
 log = logging.getLogger(__name__)
 

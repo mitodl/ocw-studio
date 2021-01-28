@@ -1,6 +1,6 @@
 """Common ocw_studio middleware"""
-from django.conf import settings
 from django import shortcuts
+from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
 
 from main.utils import FeatureFlag

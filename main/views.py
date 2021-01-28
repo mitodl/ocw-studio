@@ -5,8 +5,7 @@ import json
 
 from django.conf import settings
 from django.shortcuts import render
-
-from main.templatetags.render_bundle import public_path
+from mitol.common.utils.webpack import webpack_public_path
 
 
 def index(request):
@@ -17,7 +16,7 @@ def index(request):
     js_settings = {
         "gaTrackingID": settings.GA_TRACKING_ID,
         "environment": settings.ENVIRONMENT,
-        "public_path": public_path(request),
+        "public_path": webpack_public_path(request),
         "release_version": settings.VERSION,
         "sentry_dsn": settings.SENTRY_DSN,
     }

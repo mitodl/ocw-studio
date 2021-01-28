@@ -3,7 +3,10 @@ bpython
 codecov
 ddt
 django-debug-toolbar
+factory_boy
+faker
 ipdb
+isort
 moto
 nplusone
 pdbpp

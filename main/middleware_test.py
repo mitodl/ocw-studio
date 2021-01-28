@@ -1,20 +1,15 @@
 """Unit tests for middleware"""
-from unittest.mock import (
-    Mock,
-    patch,
-)
+from unittest.mock import Mock, patch
 
 import ddt
-from django.test import (
-    override_settings,
-    TestCase,
-)
+from django.test import TestCase, override_settings
 
 from main.middleware import (
     CookieFeatureFlagMiddleware,
     QueryStringFeatureFlagMiddleware,
 )
 from main.utils import FeatureFlag
+
 
 FEATURE_FLAG_COOKIE_NAME = "TEST_COOKIE"
 FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS = 60

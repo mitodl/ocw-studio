@@ -67,6 +67,9 @@ jobs:
       - name: Black
         run: black --check .
 
+      - name: Import sorting (isort)
+        run: isort -c .
+
       # Configurations required for elasticsearch.
       - name: Configure sysctl limits
         run: |
@@ -94,7 +97,7 @@ jobs:
           CELERY_RESULT_BACKEND: redis://localhost:6379/4
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
           DEBUG: 'False'
-          MAILGUN_URL: 'http://fake.example.com'
+          MAILGUN_SENDER_DOMAIN: 'fake.example.com'
           MAILGUN_KEY: 'fake'
           NODE_ENV: 'production'
           SECRET_KEY: "secret"

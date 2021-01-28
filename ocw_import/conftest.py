@@ -4,6 +4,7 @@ from os.path import isfile
 
 from main.s3_utils import get_s3_resource
 
+
 TEST_OCW2HUGO_PREFIX = "output/"
 TEST_OCW2HUGO_PATH = f"./test_hugo2ocw/{TEST_OCW2HUGO_PREFIX}"
 TEST_OCW2HUGO_FILES = [

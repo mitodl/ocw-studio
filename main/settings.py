@@ -7,33 +7,38 @@ import platform
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
+from mitol.common.envs import get_bool, get_features, get_int, get_string
+from mitol.common.settings.webpack import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
-from main.envs import (
-    get_any,
-    get_bool,
-    get_int,
-    get_string,
-)
 from main.sentry import init_sentry
 
 
 VERSION = "0.3.0"
 
-SITE_ID = get_int("OCW_STUDIO_SITE_ID", 1)
+SITE_ID = get_int(
+    name="OCW_STUDIO_SITE_ID",
+    default=1,
+    description="The default site id for django sites framework",
+)
 
 # Sentry
-ENVIRONMENT = get_string("OCW_STUDIO_ENVIRONMENT", "dev")
+ENVIRONMENT = get_string(
+    name="OCW_STUDIO_ENVIRONMENT",
+    default="dev",
+    description="The execution environment that the app is in (e.g. dev, staging, prod)",
+    required=True,
+)
 # this is only available to heroku review apps
 HEROKU_APP_NAME = get_string(
-    "HEROKU_APP_NAME", None, description="The name of the review app"
+    name="HEROKU_APP_NAME", default=None, description="The name of the review app"
 )
 
 # initialize Sentry before doing anything else so we capture any config errors
 SENTRY_DSN = get_string(
-    "SENTRY_DSN", "", description="The connection settings for Sentry"
+    name="SENTRY_DSN", default="", description="The connection settings for Sentry"
 )
 SENTRY_LOG_LEVEL = get_string(
-    "SENTRY_LOG_LEVEL", "ERROR", description="The log level for Sentry"
+    name="SENTRY_LOG_LEVEL", default="ERROR", description="The log level for Sentry"
 )
 init_sentry(
     dsn=SENTRY_DSN,
@@ -47,15 +52,25 @@ init_sentry(
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_string("SECRET_KEY", None)
+SECRET_KEY = get_string(
+    name="SECRET_KEY", default=None, description="Django secret key.", required=True
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = get_bool("DEBUG", False)
+DEBUG = get_bool(
+    name="DEBUG",
+    default=False,
+    dev_only=True,
+    description="Set to True to enable DEBUG mode. Don't turn on in production.",
+)
 
 ALLOWED_HOSTS = ["*"]
 
-SECURE_SSL_REDIRECT = get_bool("OCW_STUDIO_SECURE_SSL_REDIRECT", True)
-
+SECURE_SSL_REDIRECT = get_bool(
+    name="OCW_STUDIO_SECURE_SSL_REDIRECT",
+    default=True,
+    description="Application-level SSL redirect setting.",
+)
 
 WEBPACK_LOADER = {
     "DEFAULT": {
@@ -92,12 +107,18 @@ INSTALLED_APPS = (
     "websites",
     "ocw_import",
     "news",
+    # common apps, need to be after ocw-studio apps for template overridding
+    "mitol.common.apps.CommonApp",
 )
 
 if ENVIRONMENT not in {"prod", "production"}:
     INSTALLED_APPS += ("localdev",)
 
-DISABLE_WEBPACK_LOADER_STATS = get_bool("DISABLE_WEBPACK_LOADER_STATS", False)
+DISABLE_WEBPACK_LOADER_STATS = get_bool(
+    name="DISABLE_WEBPACK_LOADER_STATS",
+    default=False,
+    description="Disabled webpack loader stats",
+)
 if not DISABLE_WEBPACK_LOADER_STATS:
     INSTALLED_APPS += ("webpack_loader",)
 
@@ -149,24 +170,30 @@ WSGI_APPLICATION = "main.wsgi.application"
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 DEFAULT_DATABASE_CONFIG = dj_database_url.parse(
     get_string(
-        "DATABASE_URL",
-        "sqlite:///{0}".format(os.path.join(BASE_DIR, "db.sqlite3")),
+        name="DATABASE_URL",
+        default="sqlite:///{0}".format(os.path.join(BASE_DIR, "db.sqlite3")),
         description="The connection url to the Postgres database",
         required=True,
         write_app_json=False,
     )
 )
 DEFAULT_DATABASE_CONFIG["CONN_MAX_AGE"] = get_int(
-    "OCW_STUDIO_DB_CONN_MAX_AGE",
-    0,
+    name="OCW_STUDIO_DB_CONN_MAX_AGE",
+    default=0,
     description="Maximum age of connection to Postgres in seconds",
 )
 # If True, disables server-side database cursors to prevent invalid cursor errors when using pgbouncer
 DEFAULT_DATABASE_CONFIG["DISABLE_SERVER_SIDE_CURSORS"] = get_bool(
-    "OCW_STUDIO_DB_DISABLE_SS_CURSORS", True
+    name="OCW_STUDIO_DB_DISABLE_SS_CURSORS",
+    default=True,
+    description="Disables Postgres server side cursors",
 )
 
-if get_bool("OCW_STUDIO_DB_DISABLE_SSL", False):
+if get_bool(
+    name="OCW_STUDIO_DB_DISABLE_SSL",
+    default=False,
+    description="Disables SSL to postgres if set to True",
+):
     DEFAULT_DATABASE_CONFIG["OPTIONS"] = {}
 else:
     DEFAULT_DATABASE_CONFIG["OPTIONS"] = {"sslmode": "require"}
@@ -188,7 +215,11 @@ USE_TZ = True
 
 # django-robots
 ROBOTS_USE_HOST = False
-ROBOTS_CACHE_TIMEOUT = get_int("ROBOTS_CACHE_TIMEOUT", 60 * 60 * 24)
+ROBOTS_CACHE_TIMEOUT = get_int(
+    name="ROBOTS_CACHE_TIMEOUT",
+    default=60 * 60 * 24,
+    description="How long the robots.txt file should be cached",
+)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
@@ -198,47 +229,112 @@ STATIC_URL = "/static/"
 STATIC_ROOT = "staticfiles"
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 
-# Request files from the webpack dev server
-USE_WEBPACK_DEV_SERVER = get_bool("OCW_STUDIO_USE_WEBPACK_DEV_SERVER", False)
-WEBPACK_DEV_SERVER_HOST = get_string("WEBPACK_DEV_SERVER_HOST", "")
-WEBPACK_DEV_SERVER_PORT = get_int("WEBPACK_DEV_SERVER_PORT", 8042)
-
 # Important to define this so DEBUG works properly
-INTERNAL_IPS = (get_string("HOST_IP", "127.0.0.1"),)
+INTERNAL_IPS = (
+    get_string(
+        name="HOST_IP", default="127.0.0.1", description="This server's host IP"
+    ),
+)
 
 # Configure e-mail settings
 EMAIL_BACKEND = get_string(
-    "OCW_STUDIO_EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"
+    name="OCW_STUDIO_EMAIL_BACKEND",
+    default="django.core.mail.backends.smtp.EmailBackend",
+    description="The default email backend to use for outgoing email. This is used in some places by django itself. See `NOTIFICATION_EMAIL_BACKEND` for the backend used for most application emails.",
 )
-EMAIL_HOST = get_string("OCW_STUDIO_EMAIL_HOST", "localhost")
-EMAIL_PORT = get_int("OCW_STUDIO_EMAIL_PORT", 25)
-EMAIL_HOST_USER = get_string("OCW_STUDIO_EMAIL_USER", "")
-EMAIL_HOST_PASSWORD = get_string("OCW_STUDIO_EMAIL_PASSWORD", "")
-EMAIL_USE_TLS = get_bool("OCW_STUDIO_EMAIL_TLS", False)
-EMAIL_SUPPORT = get_string("OCW_STUDIO_SUPPORT_EMAIL", "support@example.com")
-DEFAULT_FROM_EMAIL = get_string("OCW_STUDIO_FROM_EMAIL", "webmaster@localhost")
+EMAIL_HOST = get_string(
+    name="OCW_STUDIO_EMAIL_HOST",
+    default="localhost",
+    description="Outgoing e-mail hostname",
+)
+EMAIL_PORT = get_int(
+    name="OCW_STUDIO_EMAIL_PORT", default=25, description="Outgoing e-mail port"
+)
+EMAIL_HOST_USER = get_string(
+    name="OCW_STUDIO_EMAIL_USER",
+    default="",
+    description="Outgoing e-mail auth username",
+)
+EMAIL_HOST_PASSWORD = get_string(
+    name="OCW_STUDIO_EMAIL_PASSWORD",
+    default="",
+    description="Outgoing e-mail auth password",
+)
+EMAIL_USE_TLS = get_bool(
+    name="OCW_STUDIO_EMAIL_TLS",
+    default=False,
+    description="Outgoing e-mail TLS setting",
+)
+DEFAULT_FROM_EMAIL = get_string(
+    name="OCW_STUDIO_FROM_EMAIL",
+    default="webmaster@localhost",
+    description="E-mail to use for the from field",
+)
 
-MAILGUN_URL = get_string("MAILGUN_URL", None)
-MAILGUN_KEY = get_string("MAILGUN_KEY", None)
-MAILGUN_BATCH_CHUNK_SIZE = get_int("MAILGUN_BATCH_CHUNK_SIZE", 1000)
-MAILGUN_RECIPIENT_OVERRIDE = get_string("MAILGUN_RECIPIENT_OVERRIDE", None)
-MAILGUN_FROM_EMAIL = get_string("MAILGUN_FROM_EMAIL", "no-reply@example.com")
+MAILGUN_SENDER_DOMAIN = get_string(
+    name="MAILGUN_SENDER_DOMAIN",
+    default=None,
+    description="The domain to send mailgun email through",
+    required=True,
+)
+MAILGUN_KEY = get_string(
+    name="MAILGUN_KEY",
+    default=None,
+    description="The token for authenticating against the Mailgun API",
+    required=True,
+)
+MAILGUN_BATCH_CHUNK_SIZE = get_int(
+    name="MAILGUN_BATCH_CHUNK_SIZE",
+    default=1000,
+    description="Maximum number of emails to send in a batch",
+)
+MAILGUN_RECIPIENT_OVERRIDE = get_string(
+    name="MAILGUN_RECIPIENT_OVERRIDE",
+    default=None,
+    dev_only=True,
+    description="Override the recipient for outgoing email, development only",
+)
+MAILGUN_FROM_EMAIL = get_string(
+    name="MAILGUN_FROM_EMAIL",
+    default="no-reply@localhost",
+    description="Email which mail comes from",
+)
 
+EMAIL_SUPPORT = get_string(
+    name="OCW_STUDIO_SUPPORT_EMAIL",
+    default=MAILGUN_RECIPIENT_OVERRIDE or "support@localhost",
+    description="Email address listed for customer support",
+)
 
 # e-mail configurable admins
-ADMIN_EMAIL = get_string("OCW_STUDIO_ADMIN_EMAIL", "")
+ADMIN_EMAIL = get_string(
+    name="OCW_STUDIO_ADMIN_EMAIL",
+    default="",
+    description="E-mail to send 500 reports to.",
+)
 if ADMIN_EMAIL != "":
     ADMINS = (("Admins", ADMIN_EMAIL),)
 else:
     ADMINS = ()
 
 # Logging configuration
-LOG_LEVEL = get_string("OCW_STUDIO_LOG_LEVEL", "INFO")
-DJANGO_LOG_LEVEL = get_string("DJANGO_LOG_LEVEL", "INFO")
-
+LOG_LEVEL = get_string(
+    name="OCW_STUDIO_LOG_LEVEL", default="INFO", description="The log level default"
+)
+DJANGO_LOG_LEVEL = get_string(
+    name="DJANGO_LOG_LEVEL", default="INFO", description="The log level for django"
+)
 # For logging to a remote syslog host
-LOG_HOST = get_string("OCW_STUDIO_LOG_HOST", "localhost")
-LOG_HOST_PORT = get_int("OCW_STUDIO_LOG_HOST_PORT", 514)
+LOG_HOST = get_string(
+    name="OCW_STUDIO_LOG_HOST",
+    default="localhost",
+    description="Remote syslog server hostname",
+)
+LOG_HOST_PORT = get_int(
+    name="OCW_STUDIO_LOG_HOST_PORT",
+    default=514,
+    description="Remote syslog server port",
+)
 
 HOSTNAME = platform.node().split(".")[0]
 
@@ -306,22 +402,53 @@ LOGGING = {
 }
 
 # server-status
-STATUS_TOKEN = get_string("STATUS_TOKEN", "")
+STATUS_TOKEN = get_string(
+    name="STATUS_TOKEN", default="", description="Token to access the status API."
+)
 HEALTH_CHECK = ["CELERY", "REDIS", "POSTGRES"]
 
-GA_TRACKING_ID = get_string("GA_TRACKING_ID", "")
-REACT_GA_DEBUG = get_bool("REACT_GA_DEBUG", False)
-
-MEDIA_ROOT = get_string("MEDIA_ROOT", "/var/media/")
-MEDIA_URL = "/media/"
-OCW_STUDIO_USE_S3 = get_bool("OCW_STUDIO_USE_S3", False)
-MAX_S3_GET_ITERATIONS = get_int(
-    "MAX_S3_GET_ITERATIONS", 3, description="Max retry attempts to get an S3 object"
+GA_TRACKING_ID = get_string(
+    name="GA_TRACKING_ID", default="", description="Google analytics tracking ID"
 )
-AWS_ACCESS_KEY_ID = get_string("AWS_ACCESS_KEY_ID", False)
-AWS_SECRET_ACCESS_KEY = get_string("AWS_SECRET_ACCESS_KEY", False)
-AWS_STORAGE_BUCKET_NAME = get_string("AWS_STORAGE_BUCKET_NAME", False)
-AWS_QUERYSTRING_AUTH = get_string("AWS_QUERYSTRING_AUTH", False)
+REACT_GA_DEBUG = get_bool(
+    name="REACT_GA_DEBUG",
+    default=False,
+    dev_only=True,
+    description="Enable debug for react-ga, development only",
+)
+
+MEDIA_ROOT = get_string(
+    name="MEDIA_ROOT",
+    default="/var/media/",
+    description="The root directory for locally stored media. Typically not used.",
+)
+MEDIA_URL = "/media/"
+OCW_STUDIO_USE_S3 = get_bool(
+    name="OCW_STUDIO_USE_S3",
+    default=False,
+    description="Use S3 for storage backend (required on Heroku)",
+)
+MAX_S3_GET_ITERATIONS = get_int(
+    name="MAX_S3_GET_ITERATIONS",
+    default=3,
+    description="Max retry attempts to get an S3 object",
+)
+AWS_ACCESS_KEY_ID = get_string(
+    name="AWS_ACCESS_KEY_ID", default=None, description="AWS Access Key for S3 storage."
+)
+AWS_SECRET_ACCESS_KEY = get_string(
+    name="AWS_SECRET_ACCESS_KEY",
+    default=None,
+    description="AWS Secret Key for S3 storage.",
+)
+AWS_STORAGE_BUCKET_NAME = get_string(
+    name="AWS_STORAGE_BUCKET_NAME", default=None, description="S3 Bucket name."
+)
+AWS_QUERYSTRING_AUTH = get_bool(
+    name="AWS_QUERYSTRING_AUTH",
+    default=False,
+    description="Enables querystring auth for S3 urls",
+)
 # Provide nice validation of the configuration
 if OCW_STUDIO_USE_S3 and (
     not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY or not AWS_STORAGE_BUCKET_NAME
@@ -336,27 +463,36 @@ if OCW_STUDIO_USE_S3:
 
 # Celery
 REDISCLOUD_URL = get_string(
-    "REDISCLOUD_URL", None, description="RedisCloud connection url"
+    name="REDISCLOUD_URL", default=None, description="RedisCloud connection url"
 )
 if REDISCLOUD_URL is not None:
     _redis_url = REDISCLOUD_URL
 else:
     _redis_url = get_string(
-        "REDIS_URL", None, description="Redis URL for non-production use"
+        name="REDIS_URL", default=None, description="Redis URL for non-production use"
     )
 
 CELERY_BROKER_URL = get_string(
-    "CELERY_BROKER_URL",
-    _redis_url,
+    name="CELERY_BROKER_URL",
+    default=_redis_url,
     description="Where celery should get tasks, default is Redis URL",
 )
 CELERY_RESULT_BACKEND = get_string(
-    "CELERY_RESULT_BACKEND",
-    _redis_url,
+    name="CELERY_RESULT_BACKEND",
+    default=_redis_url,
     description="Where celery should put task results, default is Redis URL",
 )
-CELERY_TASK_ALWAYS_EAGER = get_bool("CELERY_TASK_ALWAYS_EAGER", False, dev_only=True)
-CELERY_TASK_EAGER_PROPAGATES = get_bool("CELERY_TASK_EAGER_PROPAGATES", True)
+CELERY_TASK_ALWAYS_EAGER = get_bool(
+    name="CELERY_TASK_ALWAYS_EAGER",
+    default=False,
+    dev_only=True,
+    description="Enables eager execution of celery tasks, development only",
+)
+CELERY_TASK_EAGER_PROPAGATES = get_bool(
+    name="CELERY_TASK_EAGER_PROPAGATES",
+    default=True,
+    description="Early executed tasks propagate exceptions",
+)
 
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -378,34 +514,28 @@ CACHES = {
 }
 
 
-# features flags
-def get_all_config_keys():
-    """Returns all the configuration keys from both environment and configuration files"""
-    return list(os.environ.keys())
-
-
-OCW_STUDIO_FEATURES_PREFIX = get_string("OCW_STUDIO_FEATURES_PREFIX", "FEATURE_")
-FEATURES = {
-    key[len(OCW_STUDIO_FEATURES_PREFIX) :]: get_any(key, None)
-    for key in get_all_config_keys()
-    if key.startswith(OCW_STUDIO_FEATURES_PREFIX)
-}
 FEATURES_DEFAULT = get_bool(
-    "FEATURES_DEFAULT",
-    False,
+    name="FEATURES_DEFAULT",
+    default=False,
     dev_only=True,
     description="The default value for all feature flags",
 )
+FEATURES = get_features()
 
 MIDDLEWARE_FEATURE_FLAG_QS_PREFIX = get_string(
-    "MIDDLEWARE_FEATURE_FLAG_QS_PREFIX", None
+    name="MIDDLEWARE_FEATURE_FLAG_QS_PREFIX",
+    default=None,
+    description="Feature flag middleware querystring prefix",
 )
 MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME = get_string(
-    "MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME",
-    "OCW_STUDIO_FEATURE_FLAGS",
+    name="MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME",
+    default="OCW_STUDIO_FEATURE_FLAGS",
+    description="Feature flag middleware cookie name",
 )
 MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS = get_int(
-    "MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS", 60 * 60
+    name="MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS",
+    default=60 * 60,
+    description="Feature flag middleware cookie max age",
 )
 
 if MIDDLEWARE_FEATURE_FLAG_QS_PREFIX:
@@ -421,13 +551,6 @@ if DEBUG:
     # it needs to be enabled before other middlewares
     MIDDLEWARE = ("debug_toolbar.middleware.DebugToolbarMiddleware",) + MIDDLEWARE
 
-# List of mandatory settings. If any of these is not set, the app will not start
-# and will raise an ImproperlyConfigured exception
-MANDATORY_SETTINGS = [
-    "MAILGUN_URL",
-    "MAILGUN_KEY",
-    "SECRET_KEY",
-]
 
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",  # this is default

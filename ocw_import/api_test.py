@@ -2,19 +2,18 @@
 import json
 
 import pytest
-
 from moto import mock_s3
 
-from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE
+from ocw_import.api import import_ocw2hugo_course
+from ocw_import.conftest import (
+    MOCK_BUCKET_NAME,
+    TEST_OCW2HUGO_PATH,
+    TEST_OCW2HUGO_PREFIX,
+    setup_s3,
+)
+from websites.constants import CONTENT_TYPE_FILE, CONTENT_TYPE_PAGE
 from websites.factories import WebsiteStarterFactory
 from websites.models import Website, WebsiteContent
-from ocw_import.conftest import (
-    setup_s3,
-    TEST_OCW2HUGO_PREFIX,
-    TEST_OCW2HUGO_PATH,
-    MOCK_BUCKET_NAME,
-)
-from ocw_import.api import import_ocw2hugo_course
 
 
 @mock_s3

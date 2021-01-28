@@ -1,26 +1,14 @@
 """
 Django app
 """
-from django.apps import AppConfig
-from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
+from mitol.common import envs
+from mitol.common.apps import BaseApp
 
 
-class RootConfig(AppConfig):
+class RootConfig(BaseApp):
     """AppConfig for this project"""
 
     name = "main"
 
     def ready(self):
-        missing_settings = [
-            setting_name
-            for setting_name in settings.MANDATORY_SETTINGS
-            if getattr(settings, setting_name, None) in (None, "")
-        ]
-
-        if missing_settings:
-            raise ImproperlyConfigured(
-                "The following settings are missing: {}".format(
-                    ", ".join(missing_settings)
-                )
-            )
+        envs.validate()

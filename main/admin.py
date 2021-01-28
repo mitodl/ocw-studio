@@ -1,8 +1,10 @@
 """Django admin functionality that is relevant to the entire app"""
 import json
 import logging
+
 from django.contrib import admin
 from django.forms import widgets
+
 
 log = logging.getLogger(__name__)
 
