@@ -1,11 +1,12 @@
 """ Factories for websites """
-import pytz
 import factory
+import pytz
 from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyChoice
 
-from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE, STARTER_SOURCES
-from websites.models import WebsiteStarter, WebsiteContent, Website
+from websites.constants import CONTENT_TYPE_FILE, CONTENT_TYPE_PAGE, STARTER_SOURCES
+from websites.models import Website, WebsiteContent, WebsiteStarter
+
 
 EXAMPLE_SITE_CONFIG = {
     "collections": [

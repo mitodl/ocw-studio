@@ -3,7 +3,7 @@ from django.contrib.auth.models import Group, Permission
 from django.db import transaction
 from guardian.shortcuts import assign_perm, get_perms
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 from users.models import User
 from websites import constants

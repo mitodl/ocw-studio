@@ -1,9 +1,8 @@
 """ Factory classes for users"""
 
-from factory import Sequence
+from factory import Faker, Sequence
 from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyText
-from factory import Faker
 
 from users.models import User
 

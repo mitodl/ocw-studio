@@ -1,16 +1,17 @@
 """ API functionality for OCW course site import """
 import json
+import logging
 import os
 import re
-import logging
 from uuid import uuid4
-from dateutil import parser as dateparser
 
 import yaml
+from dateutil import parser as dateparser
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
-from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE, COURSE_HOME
+from websites.constants import CONTENT_TYPE_FILE, CONTENT_TYPE_PAGE, COURSE_HOME
 from websites.models import Website, WebsiteContent
+
 
 log = logging.getLogger(__name__)
 

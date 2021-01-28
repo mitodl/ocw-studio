@@ -2,9 +2,9 @@
 from django.contrib import admin
 from django.db.models import JSONField
 from guardian.admin import GuardedModelAdmin
-from main.admin import TimestampedModelAdmin, PrettyJSONWidget
+from mitol.common.admin import TimestampedModelAdmin
 
-
+from main.admin import PrettyJSONWidget
 from websites.models import Website, WebsiteContent, WebsiteStarter
 
 

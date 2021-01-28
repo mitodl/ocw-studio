@@ -7,8 +7,9 @@ import yaml
 from django.conf import settings
 from django.core.management import BaseCommand
 
-from websites.constants import WEBSITE_CONFIG_FILENAME, STARTER_SOURCE_LOCAL
+from websites.constants import STARTER_SOURCE_LOCAL, WEBSITE_CONFIG_FILENAME
 from websites.models import WebsiteStarter
+
 
 LOCAL_STARTERS_DIR = "localdev/starters/"
 

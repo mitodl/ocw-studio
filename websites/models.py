@@ -1,14 +1,14 @@
 """ websites models """
 from uuid import uuid4
 
+import yaml
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import SET_NULL
 from django.utils.text import slugify
-import yaml
+from mitol.common.models import TimestampedModel
 
-from main.models import TimestampedModel
 from users.models import User
 from websites import constants
 

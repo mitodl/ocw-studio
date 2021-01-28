@@ -24,19 +24,19 @@
   "description": "OCW Studio manages deployments for OCW courses.",
   "env": {
     "AWS_ACCESS_KEY_ID": {
-      "description": null,
+      "description": "AWS Access Key for S3 storage.",
       "required": false
     },
     "AWS_QUERYSTRING_AUTH": {
-      "description": null,
+      "description": "Enables querystring auth for S3 urls",
       "required": false
     },
     "AWS_SECRET_ACCESS_KEY": {
-      "description": null,
+      "description": "AWS Secret Key for S3 storage.",
       "required": false
     },
     "AWS_STORAGE_BUCKET_NAME": {
-      "description": null,
+      "description": "S3 Bucket name.",
       "required": false
     },
     "CELERY_BROKER_URL": {
@@ -48,23 +48,19 @@
       "required": false
     },
     "CELERY_TASK_EAGER_PROPAGATES": {
-      "description": null,
-      "required": false
-    },
-    "DEBUG": {
-      "description": null,
+      "description": "Early executed tasks propagate exceptions",
       "required": false
     },
     "DISABLE_WEBPACK_LOADER_STATS": {
-      "description": null,
+      "description": "Disabled webpack loader stats",
       "required": false
     },
     "DJANGO_LOG_LEVEL": {
-      "description": null,
+      "description": "The log level for django",
       "required": false
     },
     "GA_TRACKING_ID": {
-      "description": null,
+      "description": "Google analytics tracking ID",
       "required": false
     },
     "HEROKU_APP_NAME": {
@@ -72,47 +68,43 @@
       "required": false
     },
     "HOST_IP": {
-      "description": null,
+      "description": "This server's host IP",
       "required": false
     },
     "MAILGUN_BATCH_CHUNK_SIZE": {
-      "description": null,
+      "description": "Maximum number of emails to send in a batch",
       "required": false
     },
     "MAILGUN_FROM_EMAIL": {
-      "description": null,
+      "description": "Email which mail comes from",
       "required": false
     },
     "MAILGUN_KEY": {
-      "description": null,
-      "required": false
+      "description": "The token for authenticating against the Mailgun API",
+      "required": true
     },
-    "MAILGUN_RECIPIENT_OVERRIDE": {
-      "description": null,
-      "required": false
-    },
-    "MAILGUN_URL": {
-      "description": null,
-      "required": false
+    "MAILGUN_SENDER_DOMAIN": {
+      "description": "The domain to send mailgun email through",
+      "required": true
     },
     "MAX_S3_GET_ITERATIONS": {
       "description": "Max retry attempts to get an S3 object",
       "required": false
     },
     "MEDIA_ROOT": {
-      "description": null,
+      "description": "The root directory for locally stored media. Typically not used.",
       "required": false
     },
     "MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS": {
-      "description": null,
+      "description": "Feature flag middleware cookie max age",
       "required": false
     },
     "MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME": {
-      "description": null,
+      "description": "Feature flag middleware cookie name",
       "required": false
     },
     "MIDDLEWARE_FEATURE_FLAG_QS_PREFIX": {
-      "description": null,
+      "description": "Feature flag middleware querystring prefix",
       "required": false
     },
     "NEW_RELIC_APP_NAME": {
@@ -123,94 +115,79 @@
       "value": "false"
     },
     "OCW_STUDIO_ADMIN_EMAIL": {
-      "description": null,
+      "description": "E-mail to send 500 reports to.",
       "required": false
     },
     "OCW_STUDIO_DB_CONN_MAX_AGE": {
       "description": "Maximum age of connection to Postgres in seconds",
-      "required": false,
-      "value": "0"
+      "required": false
     },
     "OCW_STUDIO_DB_DISABLE_SSL": {
-      "description": null,
-      "required": false,
-      "value": "true"
+      "description": "Disables SSL to postgres if set to True",
+      "required": false
     },
     "OCW_STUDIO_DB_DISABLE_SS_CURSORS": {
-      "description": null,
+      "description": "Disables Postgres server side cursors",
       "required": false
     },
     "OCW_STUDIO_EMAIL_BACKEND": {
-      "description": null,
+      "description": "The default email backend to use for outgoing email. This is used in some places by django itself. See `NOTIFICATION_EMAIL_BACKEND` for the backend used for most application emails.",
       "required": false
     },
     "OCW_STUDIO_EMAIL_HOST": {
-      "description": null,
+      "description": "Outgoing e-mail hostname",
       "required": false
     },
     "OCW_STUDIO_EMAIL_PASSWORD": {
-      "description": null,
+      "description": "Outgoing e-mail auth password",
       "required": false
     },
     "OCW_STUDIO_EMAIL_PORT": {
-      "description": null,
-      "required": false,
-      "value": "587"
+      "description": "Outgoing e-mail port",
+      "required": false
     },
     "OCW_STUDIO_EMAIL_TLS": {
-      "description": null,
-      "required": false,
-      "value": "True"
+      "description": "Outgoing e-mail TLS setting",
+      "required": false
     },
     "OCW_STUDIO_EMAIL_USER": {
-      "description": null,
+      "description": "Outgoing e-mail auth username",
       "required": false
     },
     "OCW_STUDIO_ENVIRONMENT": {
-      "description": null,
-      "required": false
-    },
-    "OCW_STUDIO_FEATURES_PREFIX": {
-      "description": null,
-      "required": false
+      "description": "The execution environment that the app is in (e.g. dev, staging, prod)",
+      "required": true
     },
     "OCW_STUDIO_FROM_EMAIL": {
-      "description": null,
+      "description": "E-mail to use for the from field",
       "required": false
     },
     "OCW_STUDIO_LOG_HOST": {
-      "description": null,
+      "description": "Remote syslog server hostname",
       "required": false
     },
     "OCW_STUDIO_LOG_HOST_PORT": {
-      "description": null,
+      "description": "Remote syslog server port",
       "required": false
     },
     "OCW_STUDIO_LOG_LEVEL": {
-      "description": null,
-      "required": false,
-      "value": "INFO"
+      "description": "The log level default",
+      "required": false
     },
     "OCW_STUDIO_SECURE_SSL_REDIRECT": {
-      "description": null,
-      "required": false,
-      "value": "True"
+      "description": "Application-level SSL redirect setting.",
+      "required": false
     },
     "OCW_STUDIO_SITE_ID": {
-      "description": null,
+      "description": "The default site id for django sites framework",
       "required": false
     },
     "OCW_STUDIO_SUPPORT_EMAIL": {
-      "description": null,
+      "description": "Email address listed for customer support",
       "required": false
     },
     "OCW_STUDIO_USE_S3": {
-      "description": null,
-      "required": false,
-      "value": "True"
-    },
-    "OCW_STUDIO_USE_WEBPACK_DEV_SERVER": {
-      "description": null,
+      "description": "Use S3 for storage backend (required on Heroku)",
       "required": false
     },
     "PGBOUNCER_DEFAULT_POOL_SIZE": {
@@ -218,10 +195,6 @@
     },
     "PGBOUNCER_MIN_POOL_SIZE": {
       "value": "5"
-    },
-    "REACT_GA_DEBUG": {
-      "description": null,
-      "required": false
     },
     "REDISCLOUD_URL": {
       "description": "RedisCloud connection url",
@@ -232,13 +205,13 @@
       "required": false
     },
     "ROBOTS_CACHE_TIMEOUT": {
-      "description": null,
+      "description": "How long the robots.txt file should be cached",
       "required": false
     },
     "SECRET_KEY": {
-      "description": null,
+      "description": "Django secret key.",
       "generator": "secret",
-      "required": false
+      "required": true
     },
     "SENTRY_DSN": {
       "description": "The connection settings for Sentry",
@@ -249,15 +222,7 @@
       "required": false
     },
     "STATUS_TOKEN": {
-      "description": null,
-      "required": false
-    },
-    "WEBPACK_DEV_SERVER_HOST": {
-      "description": null,
-      "required": false
-    },
-    "WEBPACK_DEV_SERVER_PORT": {
-      "description": null,
+      "description": "Token to access the status API.",
       "required": false
     }
   },

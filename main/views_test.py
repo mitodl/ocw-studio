@@ -3,8 +3,8 @@ Test end to end django views.
 """
 import json
 
-from django.urls import reverse
 import pytest
+from django.urls import reverse
 
 
 pytestmark = [
@@ -25,7 +25,7 @@ def test_webpack_url(mocker, settings, client):
     settings.ENVIRONMENT = "test"
     settings.VERSION = "4.5.6"
     settings.USE_WEBPACK_DEV_SERVER = False
-    get_bundle = mocker.patch("main.templatetags.render_bundle._get_bundle")
+    get_bundle = mocker.patch("mitol.common.templatetags.render_bundle._get_bundle")
 
     response = client.get(reverse("main-index"))
 

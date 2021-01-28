@@ -1,8 +1,9 @@
 """Project conftest"""
-import pytest
-
 from types import SimpleNamespace
 
+import pytest
+
+from fixtures.common import *
 from websites.constants import COURSE_STARTER_SLUG
 from websites.models import WebsiteStarter
 

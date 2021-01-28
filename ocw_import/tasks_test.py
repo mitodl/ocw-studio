@@ -2,7 +2,7 @@
 import pytest
 from moto import mock_s3
 
-from ocw_import.conftest import setup_s3, TEST_OCW2HUGO_PREFIX, MOCK_BUCKET_NAME
+from ocw_import.conftest import MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, setup_s3
 from ocw_import.tasks import import_ocw2hugo_course_paths, import_ocw2hugo_courses
 
 

@@ -3,11 +3,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from news.util import (
-    rss_to_json,
-    serialize_item,
-    get_original_image_link,
-)
+from news.util import get_original_image_link, rss_to_json, serialize_item
 
 
 def test_rss_to_json(mocker):

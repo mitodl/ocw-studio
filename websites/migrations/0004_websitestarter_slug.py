@@ -5,6 +5,7 @@ from django.utils.text import slugify
 
 import websites.models
 
+
 COURSE_STARTER_SLUG = "course"
 COURSE_STARTER_REPO_URL = "https://github.com/mitodl/ocw-course-hugo-starter"
 COURSE_STARTER_REPO_NAME = "OCW Course Hugo Starter"

@@ -1,6 +1,8 @@
 """OCW Studio feature flags"""
 from functools import wraps
+
 from django.conf import settings
+
 
 USE_LOCAL_STARTERS = "USE_LOCAL_STARTERS"
 
