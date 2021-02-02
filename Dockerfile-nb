@@ -1,4 +1,4 @@
-FROM ocw_studio_web
+FROM ocw-studio_web
 
 USER root
 

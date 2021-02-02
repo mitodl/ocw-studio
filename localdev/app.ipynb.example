@@ -16,6 +16,7 @@
     "if not ABS_PROJECT_ROOT_PATH in sys.path:\n",
     "    sys.path.insert(0, ABS_PROJECT_ROOT_PATH)\n",
     "os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main.settings')\n",
+    "os.environ['DJANGO_ALLOW_ASYNC_UNSAFE'] = 'True'\n",
     "django.setup()\n",
     "\n",
     "User = get_user_model()"

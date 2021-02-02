@@ -92,6 +92,9 @@ INSTALLED_APPS = (
     "news",
 )
 
+if ENVIRONMENT not in {"prod", "production"}:
+    INSTALLED_APPS += ("localdev",)
+
 DISABLE_WEBPACK_LOADER_STATS = get_bool("DISABLE_WEBPACK_LOADER_STATS", False)
 if not DISABLE_WEBPACK_LOADER_STATS:
     INSTALLED_APPS += ("webpack_loader",)

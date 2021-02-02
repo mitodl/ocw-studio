@@ -1,0 +1,5 @@
+collections:
+  - label: "Page"
+    name: "page"
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
