@@ -4,6 +4,7 @@ OCW Studio manages deployments for OCW courses.
 **SECTIONS**
 1. [Initial Setup](#initial-setup)
 1. [Optional Setup](#optional-setup)
+1. [Running Tests](#running-tests)
 
 # Initial Setup
 
@@ -16,44 +17,126 @@ Run through those steps **including the addition of `/etc/hosts` aliases and the
 Described below are some setup steps that are not strictly necessary
 for running the app
 
-### Running tests
+# Running tests
 
-#### NOTE: These commands can be run with ```docker-compose exec``` to execute them in an already-running container, or with ```docker-compose run --rm``` to execute them in a new container.
+*NOTE: These commands can be run with ```docker-compose exec``` to execute them
+in an already-running container, or with ```docker-compose run --rm``` to
+execute them in a new container.*
 
-    ### PYTHON TESTS/LINTING
-    # Run Python tests
-    docker-compose run --rm web pytest
-    # Run Python tests in a single file
-    docker-compose run --rm web pytest /path/to/test.py
-    # Run Python test cases in a single file that match some function/class name
-    docker-compose run --rm web pytest /path/to/test.py -k test_some_logic
-    # Run Python linter
-    docker-compose run --rm web pylint
-
-    ### PYTHON FORMATTING
-    # Format all python files
-    docker-compose run --rm web black .
-    # Format a specific file
-    docker-compose run --rm web black /path/to/file.py
-
-    ### JS/CSS TESTS/LINTING
-    # We also include a helper script to execute JS tests in most of our projects 
-    docker-compose run --rm watch ./scripts/test/js_test.sh
-    # Run JS tests in specific file
-    docker-compose run --rm watch ./scripts/test/js_test.sh path/to/file.js
-    # Run JS tests in specific file with a description that matches some text
-    docker-compose run --rm watch ./scripts/test/js_test.sh path/to/file.js "should test basic arithmetic"
-    # Run the JS linter
-    docker-compose run --rm watch npm run lint
-    # Run SCSS linter
-    docker-compose run --rm watch npm run scss_lint
-
-    ### JS FORMATTING
-    # Run prettier-eslint, fixes style issues that may be causing the build to fail
-    docker-compose run --rm watch npm run fmt
+## Python Tests/Linting
 
 
-### Running the app in a notebook
+To run Python tests:
+
+```sh
+docker-compose run --rm web pytest
+```
+
+To run Python tests in a single file:
+
+```sh
+docker-compose run --rm web pytest /path/to/test.py
+```
+
+To run Python test cases in a single file that match some function/class name:
+
+```sh
+docker-compose run --rm web pytest /path/to/test.py -k test_some_logic
+```
+
+To run the Python linter:
+
+```sh
+docker-compose run --rm web pylint
+```
+
+## Python Formatting
+
+We use [black](https://github.com/psf/black) to format our Python code.
+
+To format all python files:
+
+```sh
+docker-compose run --rm web black .
+```
+
+To format a specific file:
+
+```sh
+docker-compose run --rm web black /path/to/file.py
+```
+
+## JS/CSS Tests and Linting
+
+The JS linting, testing, and formatting tools can be used either in the `watch`
+(node.js) container or on the host computer from the command line.
+
+To run these things in the docker container, preface the commands below with
+`docker-compose run --rm watch`.
+
+### JS tests
+
+We use [Jest](https://jestjs.io/) for our JavaScript tests. It's a nice batteries-included
+testing framework built for testing React components from the ground up.
+
+To run the tests:
+
+```sh
+npm test
+```
+
+For watch mode (`jest --watch`):
+
+```sh
+npm run test:watch
+```
+
+To run a specific test by name:
+
+```sh
+npm test -- -t "my test name"
+```
+
+(note that this will find partial matches too).
+
+To generate a coverage report:
+
+```sh
+npm run test:coverage
+```
+
+### JS formatting, linting, and typechecking
+
+We're using TypeScript for typechecking, eslint for linting, and prettier for 
+opinionated code formatting. Just as with the tests above, these commands can
+all be run ether in the docker container or the host machine.
+
+To run the typechecker:
+
+```sh
+npm run typecheck
+```
+
+This runs `tsc --noEmit`, which basically typechecks the program and outputs
+any error but does not run a full compilation. We have incremental compilation
+turned on, so this should be relatively fast. It uses a file called
+`.tsbuildinfo` for incremental compilation.
+
+To run the linter:
+
+```sh
+npm run lint
+```
+
+And to format, try:
+
+```sh
+npm run fmt
+```
+
+You can also try `npm run fmt:check` to see if any files need to be reformatted.
+
+# Running the app in a notebook
 
 This repo includes a config for running a [Jupyter notebook](https://jupyter.org/) in a
 Docker container. This enables you to do in a Jupyter notebook anything you might
@@ -94,7 +177,7 @@ From there, you should be able to run code snippets with a live Django app just 
 would in a Django shell.
 
 
-## Commits
+# Commits
 
 To ensure commits to github are safe, you should install the following first:
 ```

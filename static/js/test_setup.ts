@@ -5,16 +5,17 @@ import Adapter from "enzyme-adapter-react-16"
 
 configure({ adapter: new Adapter() })
 
-const _createSettings = () => ({})
+const _createSettings = (): SETTINGS => ({
+  reactGaDebug:    "",
+  gaTrackingID:    "",
+  public_path:     "",
+  environment:     "",
+  release_version: "0.0.0",
+  sentry_dsn:      ""
+})
 
 global.SETTINGS = _createSettings()
-global.TESTING = true
-
-// polyfill for Object.entries
-import entries from "object.entries"
-if (!Object.entries) {
-  entries.shim()
-}
+global._testing = true
 
 // cleanup after each test run
 // eslint-disable-next-line mocha/no-top-level-hooks
@@ -25,5 +26,6 @@ afterEach(function() {
   }
   document.body.innerHTML = ""
   global.SETTINGS = _createSettings()
+  // @ts-ignore
   window.location = "http://fake/"
 })

@@ -142,10 +142,12 @@ jobs:
       - name: Scss lint
         run: npm run scss_lint
 
+      - name: Typechecking
+        run: npm run typecheck
+
       - name: Tests
-        run: npm run test
+        run: npm run test:coverage
         env:
-          CODECOV: true
           NODE_ENV: development
 
       - name: Webpack build
@@ -154,5 +156,4 @@ jobs:
       - name: Upload test coverage to CodeCov
         uses: codecov/codecov-action@v1
         with:
-          file: coverage/lcov.info
           fail_ci_if_error: true

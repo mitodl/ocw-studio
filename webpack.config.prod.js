@@ -2,20 +2,12 @@ const webpack = require("webpack")
 const path = require("path")
 const BundleTracker = require("webpack-bundle-tracker")
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")
-const { config, babelSharedLoader } = require(path.resolve(
+const { config } = require(path.resolve(
   "./webpack.config.shared.js"
 ))
 
-const prodBabelConfig = Object.assign({}, babelSharedLoader)
-
-prodBabelConfig.query.plugins.push(
-  "@babel/plugin-transform-react-constant-elements",
-  "@babel/plugin-transform-react-inline-elements"
-)
-
 const prodConfig = Object.assign({}, config)
 prodConfig.module.rules = [
-  prodBabelConfig,
   ...config.module.rules,
   {
     test: /\.css$|\.scss$/,

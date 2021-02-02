@@ -4,7 +4,7 @@ const webpack = require("webpack")
 module.exports = {
   config: {
     entry: {
-      root:         ["@babel/polyfill", "./static/js/entry/root"],
+      root:         "./static/js/index.tsx",
       style:        "./static/js/entry/style",
     },
     module: {
@@ -13,35 +13,19 @@ module.exports = {
           test: /\.(svg|ttf|woff|woff2|eot|gif)$/,
           use:  "url-loader"
         },
+        {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
       ]
     },
     resolve: {
       modules:    [path.join(__dirname, "static/js"), "node_modules"],
-      extensions: [".js", ".jsx"]
+      extensions: [".js", ".jsx", ".ts", ".tsx"]
     },
     performance: {
       hints: false
-    }
-  },
-  babelSharedLoader: {
-    test:    /\.jsx?$/,
-    include: [
-      path.resolve(__dirname, "static/js"),
-      path.resolve(__dirname, "node_modules/query-string"),
-      path.resolve(__dirname, "node_modules/strict-uri-encode"),
-    ],
-    loader:  "babel-loader",
-    query:   {
-      presets: [
-        ["@babel/preset-env", { modules: false }],
-        "@babel/preset-react",
-      ],
-      plugins: [
-        "react-hot-loader/babel",
-        "@babel/plugin-proposal-object-rest-spread",
-        "@babel/plugin-proposal-class-properties",
-        "@babel/plugin-syntax-dynamic-import"
-      ]
     }
   }
 }

@@ -1,14 +1,12 @@
-import React from "react"
+import React, { ComponentType } from "react"
 import ReactDOM from "react-dom"
 import { AppContainer } from "react-hot-loader"
 import { createBrowserHistory } from "history"
 
-import configureStore from "../store/configureStore"
-import Router, { routes } from "../Router"
+import configureStore from "./store/configureStore"
+import Router, { RootProps } from "./Router"
 
 import * as Sentry from "@sentry/browser"
-// Object.entries polyfill
-import entries from "object.entries"
 
 require("react-hot-loader/patch")
 /* global SETTINGS:false */
@@ -20,21 +18,15 @@ Sentry.init({
   environment: SETTINGS.environment
 })
 
-if (!Object.entries) {
-  entries.shim()
-}
-
 const store = configureStore()
 
 const rootEl = document.getElementById("container")
 
-const renderApp = Component => {
+const renderApp = (Component: ComponentType<RootProps>): void => {
   const history = createBrowserHistory()
   ReactDOM.render(
     <AppContainer>
-      <Component history={history} store={store}>
-        {routes}
-      </Component>
+      <Component history={history} store={store} />
     </AppContainer>,
     rootEl
   )
@@ -42,9 +34,10 @@ const renderApp = Component => {
 
 renderApp(Router)
 
-if (module.hot) {
-  module.hot.accept("../Router", () => {
-    const RouterNext = require("../Router").default
+if ((module as any).hot) {
+  (module as any).hot.accept("./Router", () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const RouterNext = require("./Router").default
     renderApp(RouterNext)
   })
 }

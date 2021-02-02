@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "target": "es5",
+    "module": "commonjs",
+    "lib": [
+      "es2020",
+      "dom"
+    ],
+    "allowJs": true,
+    "checkJs": true,
+    "jsx": "react",
+    "declaration": true,
+    "outDir": "./dist/",
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "strict": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "node",
+    "typeRoots": [
+      "static/js/types",
+      "node_modules/@types"
+    ],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "./static/**/*.ts",
+    "./static/**/*.tsx"
+  ],
+  "exclude": [
+    "./static/*.test.ts",
+    "./static/*.test.tsx"
+  ]
+}

@@ -1,4 +1,4 @@
-export function getCookie(name) {
+export function getCookie(name: string): string | null {
   let cookieValue = null
 
   if (document.cookie && document.cookie !== "") {
