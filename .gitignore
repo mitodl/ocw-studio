@@ -101,3 +101,7 @@ webpack-stats.json
 
 # Celery Beat
 celerybeat-schedule
+
+# Local dev
+/localdev/starters/**
+!/localdev/starters/example-starter

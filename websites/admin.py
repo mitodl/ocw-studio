@@ -1,7 +1,7 @@
 """ Websites Admin """
 from django.contrib import admin
 from main.admin import TimestampedModelAdmin
-from websites.models import Website, WebsiteContent
+from websites.models import Website, WebsiteContent, WebsiteStarter
 
 
 class WebsiteAdmin(TimestampedModelAdmin):
@@ -17,6 +17,7 @@ class WebsiteAdmin(TimestampedModelAdmin):
         "type",
     )
     list_filter = ("type",)
+    raw_id_fields = ("starter",)
 
 
 class WebsiteContentAdmin(TimestampedModelAdmin):
@@ -34,7 +35,20 @@ class WebsiteContentAdmin(TimestampedModelAdmin):
     list_display = ("uuid", "title", "type", "website", "parent")
     list_filter = ("type",)
     autocomplete_fields = ("website", "parent")
+    raw_id_fields = ("website",)
+
+
+class WebsiteStarterAdmin(TimestampedModelAdmin):
+    """WebsiteStarter Admin"""
+
+    model = WebsiteStarter
+
+    include_created_on_in_list = True
+    list_display = ("id", "name", "source", "commit")
+    list_filter = ("source",)
+    search_fields = ("name", "path")
 
 
 admin.site.register(Website, WebsiteAdmin)
 admin.site.register(WebsiteContent, WebsiteContentAdmin)
+admin.site.register(WebsiteStarter, WebsiteStarterAdmin)
