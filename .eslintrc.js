@@ -4,7 +4,7 @@ module.exports = {
   extends: ["eslint-config-mitodl", "plugin:@typescript-eslint/recommended"],
   settings: {
     react: {
-      version: "16.4.0"
+      version: "16.14.0"
     }
   },
   env: {

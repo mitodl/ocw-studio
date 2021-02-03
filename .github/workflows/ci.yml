@@ -151,7 +151,7 @@ jobs:
           NODE_ENV: development
 
       - name: Webpack build
-        run: node node_modules/webpack/bin/webpack.js --config webpack.config.prod.js --bail
+        run: npm run build
 
       - name: Upload test coverage to CodeCov
         uses: codecov/codecov-action@v1
