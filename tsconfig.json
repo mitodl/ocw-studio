@@ -2,13 +2,13 @@
   "compilerOptions": {
     "incremental": true,
     "target": "es6",
-    "module": "commonjs",
+    "module": "es6",
     "lib": [
       "es2020",
       "dom"
     ],
     "allowJs": true,
-    "checkJs": true,
+    "checkJs": false,
     "jsx": "react",
     "declaration": true,
     "outDir": "./dist/",

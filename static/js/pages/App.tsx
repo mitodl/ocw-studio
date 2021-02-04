@@ -3,6 +3,7 @@ import { Route, Switch } from "react-router"
 
 import SitePage from "./SitePage"
 import Header from "../components/Header"
+import MarkdownEditorTestPage from "./MarkdownEditorTestPage"
 import useTracker from "../hooks/tracker"
 
 export default function App(): JSX.Element {
@@ -13,6 +14,9 @@ export default function App(): JSX.Element {
       <Header />
       <Switch>
         <Route path="/sites/:name" component={SitePage} />
+        <Route path="/markdown-editor">
+          <MarkdownEditorTestPage />
+        </Route>
       </Switch>
     </div>
   )

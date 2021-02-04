@@ -2,38 +2,38 @@ const webpack = require("webpack")
 const path = require("path")
 const R = require("ramda")
 const BundleTracker = require("webpack-bundle-tracker")
-const { config } = require(path.resolve(
-  "./webpack.config.shared.js"
-))
+const { config } = require(path.resolve("./webpack.config.shared.js"))
+const CKEditorWebpackPlugin = require("@ckeditor/ckeditor5-dev-webpack-plugin")
 
 const hotEntry = (host, port) =>
   `webpack-hot-middleware/client?path=http://${host}:${port}/__webpack_hmr&timeout=20000&reload=true`
 
 const insertHotReload = (host, port, entries) =>
   R.map(
-    R.compose(
-      R.flatten,
-      v => [v].concat(hotEntry(host, port))
-    ),
+    R.compose(R.flatten, v => [v].concat(hotEntry(host, port))),
     entries
   )
 
 const devConfig = Object.assign({}, config, {
   context: __dirname,
-  mode:    "development",
-  devtool: 'inline-source-map',
-  output:  {
-    path:     path.resolve("./static/bundles/"),
+  mode: "development",
+  devtool: "inline-source-map",
+  output: {
+    path: path.resolve("./static/bundles/"),
     filename: "[name].js"
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
-    new BundleTracker({ filename: "./webpack-stats.json" })
+    new BundleTracker({ filename: "./webpack-stats.json" }),
+    new CKEditorWebpackPlugin({
+      language: "en",
+      addMainLanguageTranslationsToAllAssets: true
+    })
   ],
   optimization: {
     namedModules: true,
-    splitChunks:  {
-      name:      "common",
+    splitChunks: {
+      name: "common",
       minChunks: 2
     },
     noEmitOnErrors: true
@@ -43,8 +43,9 @@ const devConfig = Object.assign({}, config, {
 devConfig.module.rules = [
   ...config.module.rules,
   {
-    test: /\.css$|\.scss$/,
-    use:  [
+    // this regex is necessary to explicitly exclude ckeditor stuff
+    test: /static\/scss\/.+(\.css$|\.scss$)/,
+    use: [
       { loader: "style-loader" },
       { loader: "css-loader" },
       { loader: "postcss-loader" },

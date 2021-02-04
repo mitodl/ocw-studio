@@ -1,4 +1,4 @@
-import React, { ComponentType } from "react"
+import React, { ComponentType, FunctionComponent } from "react"
 import { mount, ReactWrapper } from "enzyme"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { createMemoryHistory, MemoryHistory, Update, State } from "history"
@@ -78,7 +78,7 @@ export default class IntegrationTestHelper {
   }
 
   configureRenderer(
-    Component: ComponentType,
+    Component: ComponentType | FunctionComponent,
     defaultProps = {},
     defaultState?: ReduxState
   ) {
