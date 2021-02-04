@@ -12,7 +12,7 @@ from websites.constants import WEBSITE_TYPE_COURSE, STARTER_SOURCES
 def validate_yaml(value):
     """Validator function to ensure that the value is YAML-formatted"""
     try:
-        yaml.load(value)
+        yaml.load(value, Loader=yaml.Loader)
     except yaml.YAMLError as exc:
         raise ValidationError("Value must be YAML-formatted.") from exc
 

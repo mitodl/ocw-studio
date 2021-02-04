@@ -388,6 +388,12 @@ FEATURES = {
     for key in get_all_config_keys()
     if key.startswith(OCW_STUDIO_FEATURES_PREFIX)
 }
+FEATURES_DEFAULT = get_bool(
+    "FEATURES_DEFAULT",
+    False,
+    dev_only=True,
+    description="The default value for all feature flags",
+)
 
 MIDDLEWARE_FEATURE_FLAG_QS_PREFIX = get_string(
     "MIDDLEWARE_FEATURE_FLAG_QS_PREFIX", None

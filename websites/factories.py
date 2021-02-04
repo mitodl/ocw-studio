@@ -4,12 +4,20 @@ import factory
 from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyChoice
 
-from websites.constants import WEBSITE_TYPE_COURSE
-from websites.models import Website
+from websites.constants import WEBSITE_TYPE_COURSE, STARTER_SOURCES
+from websites.models import Website, WebsiteStarter
+
+EXAMPLE_SITE_CONFIG = """
+collections:
+  - label: "Page"
+    name: "page"
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
+"""
 
 
 class WebsiteFactory(DjangoModelFactory):
-    """Factory for WebsiteFactory"""
+    """Factory for Website"""
 
     title = factory.Sequence(lambda n: "OCW Course %s" % n)
     url_path = factory.Sequence(lambda n: "/ocw_site_x/%s" % n)
@@ -31,3 +39,16 @@ class WebsiteFactory(DjangoModelFactory):
         future_publish = factory.Trait(
             publish_date=factory.Faker("future_datetime", tzinfo=pytz.utc)
         )
+
+
+class WebsiteStarterFactory(DjangoModelFactory):
+    """Factory for WebsiteStarter"""
+
+    path = factory.Faker("uri")
+    name = factory.Faker("domain_word")
+    source = factory.fuzzy.FuzzyChoice(STARTER_SOURCES)
+    commit = factory.Faker("md5")
+    config = EXAMPLE_SITE_CONFIG
+
+    class Meta:
+        model = WebsiteStarter
