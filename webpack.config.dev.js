@@ -5,6 +5,7 @@ const BundleTracker = require("webpack-bundle-tracker")
 const { config } = require(path.resolve(
   "./webpack.config.shared.js"
 ))
+const CKEditorWebpackPlugin = require( '@ckeditor/ckeditor5-dev-webpack-plugin' );
 
 const hotEntry = (host, port) =>
   `webpack-hot-middleware/client?path=http://${host}:${port}/__webpack_hmr&timeout=20000&reload=true`
@@ -28,7 +29,8 @@ const devConfig = Object.assign({}, config, {
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
-    new BundleTracker({ filename: "./webpack-stats.json" })
+    new BundleTracker({ filename: "./webpack-stats.json" }),
+    new CKEditorWebpackPlugin({ language: 'en' })
   ],
   optimization: {
     namedModules: true,

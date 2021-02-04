@@ -5,6 +5,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const { config } = require(path.resolve(
   "./webpack.config.shared.js"
 ))
+const CKEditorWebpackPlugin = require("@ckeditor/ckeditor5-dev-webpack-plugin")
 
 const prodConfig = Object.assign({}, config)
 prodConfig.module.rules = [
@@ -42,7 +43,8 @@ module.exports = Object.assign(prodConfig, {
     new webpack.optimize.AggressiveMergingPlugin(),
     new MiniCssExtractPlugin({
       filename: "[name]-[contenthash].css"
-    })
+    }),
+    new CKEditorWebpackPlugin({ language: 'en' })
   ],
   optimization: {
     minimize: true
