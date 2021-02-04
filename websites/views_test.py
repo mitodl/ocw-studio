@@ -3,14 +3,25 @@ from types import SimpleNamespace
 
 import pytest
 from django.urls import reverse
+import factory
 
+from main import features
 from main.constants import ISO_8601_FORMAT
 from main.utils import now_in_utc
-from websites.constants import WEBSITE_TYPE_COURSE
-from websites.factories import WebsiteFactory
+from websites.constants import (
+    WEBSITE_TYPE_COURSE,
+    STARTER_SOURCE_LOCAL,
+    STARTER_SOURCE_GITHUB,
+)
+from websites.factories import WebsiteFactory, WebsiteStarterFactory
+from websites.serializers import (
+    WebsiteStarterSerializer,
+    WebsiteStarterDetailSerializer,
+)
 from fixtures.common import drf_client  # pylint: disable=unused-import
 
 # pylint:disable=redefined-outer-name
+
 pytestmark = pytest.mark.django_db
 
 
@@ -57,3 +68,36 @@ def test_websites_endpoint_sorting(drf_client, websites):
     )
     for idx, course in enumerate(sorted(websites.courses, key=lambda site: site.title)):
         assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
+
+
+def test_website_starters_list(drf_client):
+    """ Website starters endpoint should return a serialized list """
+    new_starter = WebsiteStarterFactory.create(source=STARTER_SOURCE_GITHUB)
+    resp = drf_client.get(reverse("website_starters_api-list"))
+    resp_results = resp.data.get("results")
+    serialized_data = WebsiteStarterSerializer([new_starter], many=True).data
+    assert len(resp_results) == 1
+    assert resp_results == serialized_data
+
+
+def test_website_starters_retrieve(drf_client):
+    """ Website starters endpoint should return a single serialized starter """
+    starter = WebsiteStarterFactory.create(source=STARTER_SOURCE_GITHUB)
+    resp = drf_client.get(
+        reverse("website_starters_api-detail", kwargs={"pk": starter.id})
+    )
+    assert resp.json() == WebsiteStarterDetailSerializer(instance=starter).data
+
+
+@pytest.mark.parametrize("use_local_starters,exp_result_count", [[True, 2], [False, 1]])
+def test_website_starters_local(
+    settings, drf_client, use_local_starters, exp_result_count
+):
+    """ Website starters endpoint should only return local starters if a feature flag is set to True """
+    settings.FEATURES[features.USE_LOCAL_STARTERS] = use_local_starters
+    WebsiteStarterFactory.create_batch(
+        2, source=factory.Iterator([STARTER_SOURCE_LOCAL, STARTER_SOURCE_GITHUB])
+    )
+    resp = drf_client.get(reverse("website_starters_api-list"))
+    resp_results = resp.data.get("results")
+    assert len(resp_results) == exp_result_count
