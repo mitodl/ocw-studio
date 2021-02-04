@@ -57,3 +57,9 @@ declare module '@ckeditor/ckeditor5-markdown-gfm/src/html2markdown/html2markdown
 declare module '@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor';
 
 declare module '@ckeditor/ckeditor5-react';
+
+declare module "@ckeditor/ckeditor5-media-embed/src/ui/mediaformview";
+
+declare module "@ckeditor/ckeditor5-ui/src/dropdown/utils";
+
+declare module "@ckeditor/ckeditor5-ui/src/inputtext/inputtextview";

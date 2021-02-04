@@ -18,6 +18,7 @@ import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 import Markdown from "./plugins/Markdown"
+import YoutubeEmbed from "./plugins/YoutubeEmbed"
 
 class ClassicEditor extends ClassicEditorBase {}
 
@@ -39,7 +40,8 @@ ClassicEditor.builtinPlugins = [
   ImageUploadPlugin,
   LinkPlugin,
   ListPlugin,
-  ParagraphPlugin
+  ParagraphPlugin,
+  YoutubeEmbed
 ]
 
 ClassicEditor.defaultConfig = {
