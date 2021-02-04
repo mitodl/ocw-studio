@@ -11,7 +11,7 @@ const prodConfig = Object.assign({}, config)
 prodConfig.module.rules = [
   ...config.module.rules,
   {
-    test: /\.css$|\.scss$/,
+    test: /static\/scss\/.+(\.css$|\.scss$)/,
     use:  [
       {
         loader: MiniCssExtractPlugin.loader

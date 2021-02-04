@@ -45,7 +45,7 @@ const devConfig = Object.assign({}, config, {
 devConfig.module.rules = [
   ...config.module.rules,
   {
-    test: /\.css$|\.scss$/,
+    test: /static\/scss\/.+(\.css$|\.scss$)/,
     use:  [
       { loader: "style-loader" },
       { loader: "css-loader" },
