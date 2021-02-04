@@ -2,8 +2,10 @@ import React, { useState } from "react"
 
 import MarkdownEditor from "../components/MarkdownEditor"
 
+import { TEST_MARKDOWN } from "../test_util"
+
 export default function MarkdownEditorTestPage(): JSX.Element {
-  const [data, setData] = useState("")
+  const [data, setData] = useState(TEST_MARKDOWN)
 
   return (
     <div>
@@ -19,7 +21,7 @@ export default function MarkdownEditorTestPage(): JSX.Element {
               border:     "2px solid red",
               maxWidth:   "100%",
               wordBreak:  "break-word",
-              whiteSpace: "pre-line"
+              whiteSpace: "pre-wrap"
             }}
           >
             <code style={{ margin: "5px", display: "block" }}>{data}</code>
