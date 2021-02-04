@@ -89,6 +89,7 @@ INSTALLED_APPS = (
     "main",
     "users",
     "websites",
+    "ocw_import",
     "news",
 )
 

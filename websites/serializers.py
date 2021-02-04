@@ -5,20 +5,12 @@ from rest_framework import serializers
 from websites.models import Website, WebsiteStarter
 
 
-class WebsiteSerializer(serializers.ModelSerializer):
-    """ Serializer for websites """
-
-    class Meta:
-        model = Website
-        fields = "__all__"
-
-
 class WebsiteStarterSerializer(serializers.ModelSerializer):
     """ Serializer for website starters """
 
     class Meta:
         model = WebsiteStarter
-        fields = ["id", "name", "path", "source", "commit"]
+        fields = ["id", "name", "path", "source", "commit", "slug"]
 
 
 class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
@@ -33,3 +25,13 @@ class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebsiteStarter
         fields = WebsiteStarterSerializer.Meta.fields + ["config"]
+
+
+class WebsiteSerializer(serializers.ModelSerializer):
+    """ Serializer for websites """
+
+    starter = WebsiteStarterSerializer(read_only=True)
+
+    class Meta:
+        model = Website
+        fields = "__all__"

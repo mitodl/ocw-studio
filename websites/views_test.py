@@ -9,7 +9,7 @@ from main import features
 from main.constants import ISO_8601_FORMAT
 from main.utils import now_in_utc
 from websites.constants import (
-    WEBSITE_TYPE_COURSE,
+    COURSE_STARTER_SLUG,
     STARTER_SOURCE_LOCAL,
     STARTER_SOURCE_GITHUB,
 )
@@ -26,16 +26,16 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def websites():
+def websites(course_starter):
     """ Create some websites for tests """
-    courses = WebsiteFactory.create_batch(3, published=True, is_course=True)
-    noncourses = WebsiteFactory.create_batch(2, published=True, not_course=True)
-    WebsiteFactory.create(unpublished=True, is_course=True)
-    WebsiteFactory.create(future_publish=True, is_course=True)
+    courses = WebsiteFactory.create_batch(3, published=True, starter=course_starter)
+    noncourses = WebsiteFactory.create_batch(2, published=True)
+    WebsiteFactory.create(unpublished=True, starter=course_starter)
+    WebsiteFactory.create(future_publish=True)
     return SimpleNamespace(courses=courses, noncourses=noncourses)
 
 
-@pytest.mark.parametrize("website_type", [WEBSITE_TYPE_COURSE, None])
+@pytest.mark.parametrize("website_type", [COURSE_STARTER_SLUG, None])
 def test_websites_endpoint(drf_client, website_type, websites):
     """Test new websites endpoint"""
     filter_by_type = website_type is not None
@@ -49,12 +49,12 @@ def test_websites_endpoint(drf_client, website_type, websites):
         expected_websites.extend(websites.noncourses)
         resp = drf_client.get(reverse("websites_api-list"))
         assert resp.data.get("count") == 5
-    for idx, course in enumerate(
+    for idx, site in enumerate(
         sorted(expected_websites, reverse=True, key=lambda site: site.publish_date)
     ):
-        assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
-        assert resp.data.get("results")[idx]["type"] == (
-            WEBSITE_TYPE_COURSE if filter_by_type else course.type
+        assert resp.data.get("results")[idx]["uuid"] == str(site.uuid)
+        assert resp.data.get("results")[idx]["starter"]["slug"] == (
+            COURSE_STARTER_SLUG if filter_by_type else site.starter.slug
         )
         assert resp.data.get("results")[idx]["publish_date"] <= now.strftime(
             ISO_8601_FORMAT
@@ -64,19 +64,21 @@ def test_websites_endpoint(drf_client, website_type, websites):
 def test_websites_endpoint_sorting(drf_client, websites):
     """ Response should be sorted according to query parameter """
     resp = drf_client.get(
-        reverse("websites_api-list"), {"sort": "title", "type": WEBSITE_TYPE_COURSE}
+        reverse("websites_api-list"), {"sort": "title", "type": COURSE_STARTER_SLUG}
     )
     for idx, course in enumerate(sorted(websites.courses, key=lambda site: site.title)):
         assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
 
 
-def test_website_starters_list(drf_client):
+def test_website_starters_list(drf_client, course_starter):
     """ Website starters endpoint should return a serialized list """
     new_starter = WebsiteStarterFactory.create(source=STARTER_SOURCE_GITHUB)
     resp = drf_client.get(reverse("website_starters_api-list"))
     resp_results = resp.data.get("results")
-    serialized_data = WebsiteStarterSerializer([new_starter], many=True).data
-    assert len(resp_results) == 1
+    serialized_data = WebsiteStarterSerializer(
+        [course_starter, new_starter], many=True
+    ).data
+    assert len(resp_results) == 2
     assert resp_results == serialized_data
 
 
@@ -89,7 +91,7 @@ def test_website_starters_retrieve(drf_client):
     assert resp.json() == WebsiteStarterDetailSerializer(instance=starter).data
 
 
-@pytest.mark.parametrize("use_local_starters,exp_result_count", [[True, 2], [False, 1]])
+@pytest.mark.parametrize("use_local_starters,exp_result_count", [[True, 3], [False, 2]])
 def test_website_starters_local(
     settings, drf_client, use_local_starters, exp_result_count
 ):

@@ -1,9 +1,9 @@
-""" Tests for websites.tasks """
+""" Tests for ocw_import.tasks """
 import pytest
 from moto import mock_s3
 
 from websites.conftest import setup_s3, MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX
-from websites.tasks import import_ocw2hugo_course_paths, import_ocw2hugo_courses
+from ocw_import.tasks import import_ocw2hugo_course_paths, import_ocw2hugo_courses
 
 
 @pytest.mark.parametrize(
@@ -11,7 +11,7 @@ from websites.tasks import import_ocw2hugo_course_paths, import_ocw2hugo_courses
 )
 def test_import_ocw2hugo_course_paths(mocker, paths):
     """ mock_import_course should be called from task with correct kwargs """
-    mock_import_course = mocker.patch("websites.tasks.import_ocw2hugo_course")
+    mock_import_course = mocker.patch("ocw_import.tasks.import_ocw2hugo_course")
     import_ocw2hugo_course_paths.delay(paths, MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX)
     if not paths:
         mock_import_course.assert_not_called()
@@ -29,7 +29,7 @@ def test_import_ocw2hugo_courses(
 ):
     """ import_ocw2hugo_course_paths should be called correct # times for given chunk size and # of paths """
     setup_s3(settings)
-    mock_import_paths = mocker.patch("websites.tasks.import_ocw2hugo_course_paths.si")
+    mock_import_paths = mocker.patch("ocw_import.tasks.import_ocw2hugo_course_paths.si")
     with pytest.raises(mocked_celery.replace_exception_class):
         import_ocw2hugo_courses.delay(
             bucket_name=MOCK_BUCKET_NAME,
@@ -41,7 +41,7 @@ def test_import_ocw2hugo_courses(
 
 def test_import_ocw2hugo_courses_nobucket(mocker):
     """ import_ocw2hugo_course_paths should be called correct # times for given chunk size and # of paths """
-    mock_import_paths = mocker.patch("websites.tasks.import_ocw2hugo_course_paths.si")
+    mock_import_paths = mocker.patch("ocw_import.tasks.import_ocw2hugo_course_paths.si")
     with pytest.raises(TypeError):
         import_ocw2hugo_courses.delay(  # pylint:disable=no-value-for-parameter
             bucket_name=None, prefix=TEST_OCW2HUGO_PREFIX, chunk_size=100
