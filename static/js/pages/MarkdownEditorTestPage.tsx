@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 
-import MarkdownEditor from '../components/MarkdownEditor'
+import MarkdownEditor from "../components/MarkdownEditor"
 
-export default function MarkdownEditorTestPage () {
+export default function MarkdownEditorTestPage() {
   const [markdown, setMarkdown] = useState("")
 
-  return <MarkdownEditor />
+  return <div>
+    <MarkdownEditor initialData={markdown} onChange={setMarkdown} />
+  </div>
 }

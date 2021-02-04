@@ -13,6 +13,9 @@ export default function App(): JSX.Element {
       <Header />
       <Switch>
         <Route path="/sites/:name" component={SitePage} />
+        <Route path="/markdown-editor">
+          <MarkdownEditorTestPage />
+        </Route>
       </Switch>
     </div>
   )
