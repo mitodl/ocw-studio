@@ -1,11 +1,11 @@
-""" Tasks for websites """
+""" Tasks for OCW course site import """
 import logging
 
 import celery
 
 from main.celery import app
 from main.utils import chunks
-from websites.api import import_ocw2hugo_course, fetch_ocw2hugo_course_paths
+from ocw_import.api import import_ocw2hugo_course, fetch_ocw2hugo_course_paths
 
 log = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
     Import all ocw2hugo courses & content
 
     Args:
-        paths (list): list of course url paths
+        paths (list of str): list of course url paths
         bucket_name (str): S3 bucket name
         prefix (str): S3 prefix before start of course_id path
 

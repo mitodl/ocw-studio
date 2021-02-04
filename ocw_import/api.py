@@ -1,4 +1,4 @@
-""" api functions for websites"""
+""" API functionality for OCW course site import """
 import json
 import os
 import re
@@ -48,7 +48,7 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
         website (Website): Website to import content for
     """
     for resp in bucket.meta.client.get_paginator("list_objects").paginate(
-        Bucket=bucket.name, Prefix=f"{prefix}content/courses/{website.url_path}"
+        Bucket=bucket.name, Prefix=f"{prefix}content/courses/{website.name}"
     ):
         for obj in resp["Contents"]:
             s3_key = obj["Key"]
@@ -107,19 +107,19 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                     log.exception("Error saving WebsiteContent for %s", s3_key)
 
 
-def import_ocw2hugo_course(bucket_name, prefix, key):
+def import_ocw2hugo_course(bucket_name, prefix, path):
     """
     Extract OCW course content for a course
 
     Args:
         bucket_name (str): An s3 bucket name
         prefix (str): S3 prefix before start of course_id path
-        key (str): The S3 prefix for the course homepage.
+        path (str): The course URL path
     """
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
-    url_path = os.path.splitext(os.path.basename(key))[0]
-    s3_content = json.loads(get_s3_object_and_read(bucket.Object(key)).decode())
+    name = os.path.splitext(os.path.basename(path))[0]
+    s3_content = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
     try:
         publish_date = dateparser.parse(s3_content.get("publishdate", None))
     except ValueError:
@@ -127,7 +127,7 @@ def import_ocw2hugo_course(bucket_name, prefix, key):
         s3_content["publishdate"] = None
     try:
         website, _ = Website.objects.update_or_create(
-            url_path=url_path,
+            name=name,
             defaults={
                 "title": s3_content.get("course_title", None),
                 "publish_date": publish_date,
@@ -136,4 +136,4 @@ def import_ocw2hugo_course(bucket_name, prefix, key):
         )
         import_ocw2hugo_content(bucket, prefix, website)
     except:  # pylint:disable=bare-except
-        log.exception("Error saving website %s", key)
+        log.exception("Error saving website %s", path)

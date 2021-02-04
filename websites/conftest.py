@@ -1,11 +1,12 @@
 """ Test config for websites """
 import glob
 from os.path import isfile
-from types import SimpleNamespace
 
 import pytest
 
 from main.s3_utils import get_s3_resource
+from websites.constants import COURSE_STARTER_SLUG
+from websites.models import WebsiteStarter
 
 MOCK_BUCKET_NAME = "testbucket"
 TEST_OCW2HUGO_PREFIX = "output/"
@@ -16,21 +17,10 @@ TEST_OCW2HUGO_FILES = [
 
 
 @pytest.fixture()
-def mocked_celery(mocker):
-    """Mock object that patches certain celery functions"""
-    exception_class = TabError
-    replace_mock = mocker.patch(
-        "celery.app.task.Task.replace", autospec=True, side_effect=exception_class
-    )
-    group_mock = mocker.patch("celery.group", autospec=True)
-    chain_mock = mocker.patch("celery.chain", autospec=True)
-
-    yield SimpleNamespace(
-        replace=replace_mock,
-        group=group_mock,
-        chain=chain_mock,
-        replace_exception_class=exception_class,
-    )
+@pytest.mark.django_db
+def course_starter():
+    """Returns the 'course'-type WebsiteStarter that is seeded in a data migration"""
+    return WebsiteStarter.objects.get(slug=COURSE_STARTER_SLUG)
 
 
 def setup_s3(settings):

@@ -9,14 +9,13 @@ class WebsiteAdmin(TimestampedModelAdmin):
 
     model = Website
 
-    search_fields = ("title", "url_path", "uuid")
+    include_created_on_in_list = True
+    search_fields = ("title", "name", "uuid")
     list_display = (
-        "url_path",
+        "name",
         "title",
         "publish_date",
-        "type",
     )
-    list_filter = ("type",)
     raw_id_fields = ("starter",)
 
 
@@ -27,15 +26,14 @@ class WebsiteContentAdmin(TimestampedModelAdmin):
 
     search_fields = (
         "title",
-        "website__url_path",
+        "website__name",
         "website__uuid",
         "uuid",
         "parent__uuid",
     )
     list_display = ("uuid", "title", "type", "website", "parent")
     list_filter = ("type",)
-    autocomplete_fields = ("website", "parent")
-    raw_id_fields = ("website",)
+    raw_id_fields = ("website", "parent")
 
 
 class WebsiteStarterAdmin(TimestampedModelAdmin):

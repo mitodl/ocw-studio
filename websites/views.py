@@ -44,7 +44,7 @@ class WebsiteViewSet(
             publish_date__lte=now_in_utc(),
         ).order_by(ordering)
         if website_type is not None:
-            queryset = queryset.filter(type=website_type)
+            queryset = queryset.filter(starter__slug=website_type)
         return queryset
 
 

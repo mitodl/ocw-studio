@@ -1,4 +1,4 @@
-""" Tests for websites.api """
+""" Tests for ocw_import.api """
 import json
 
 import pytest
@@ -13,7 +13,7 @@ from websites.conftest import (
 )
 from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE
 from websites.models import Website, WebsiteContent
-from websites.api import import_ocw2hugo_course
+from ocw_import.api import import_ocw2hugo_course
 
 
 @mock_s3
@@ -21,11 +21,11 @@ from websites.api import import_ocw2hugo_course
 def test_import_ocw2hugo_course(settings):
     """ import_ocw2hugo_course should create a new website plus content"""
     setup_s3(settings)
-    url_path = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}data/courses/{url_path}.json"
+    name = "1-050-engineering-mechanics-i-fall-2007"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}data/courses/{name}.json"
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
-    website = Website.objects.get(url_path=url_path)
-    with open(f"{TEST_OCW2HUGO_PATH}data/courses/{url_path}.json", "r") as infile:
+    website = Website.objects.get(name=name)
+    with open(f"{TEST_OCW2HUGO_PATH}data/courses/{name}.json", "r") as infile:
         assert json.dumps(website.metadata, sort_keys=True) == json.dumps(
             json.load(infile), sort_keys=True
         )
@@ -60,13 +60,13 @@ def test_import_ocw2hugo_course(settings):
 def test_import_ocw2hugo_course_bad_date(mocker, settings):
     """ Website publish date should be null if the JSON date can't be parsed """
     setup_s3(settings)
-    url_path = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}data/courses/{url_path}.json"
+    name = "1-050-engineering-mechanics-i-fall-2007"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}data/courses/{name}.json"
     mocker.patch(
-        "websites.api.dateparser.parse", side_effect=["2021-01-01", ValueError()]
+        "ocw_import.api.dateparser.parse", side_effect=["2021-01-01", ValueError()]
     )
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
-    website = Website.objects.get(url_path=url_path)
+    website = Website.objects.get(name=name)
     assert website.publish_date is None
 
 
@@ -75,12 +75,12 @@ def test_import_ocw2hugo_course_bad_date(mocker, settings):
 def test_import_ocw2hugo_course_log_exception(mocker, settings):
     """ Log an exception if the website cannot be saved/updated """
     setup_s3(settings)
-    url_path = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}data/courses/{url_path}.json"
-    mocker.patch("websites.api.dateparser.parse", return_value="Invalid date")
-    mock_log = mocker.patch("websites.api.log.exception")
+    name = "1-050-engineering-mechanics-i-fall-2007"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}data/courses/{name}.json"
+    mocker.patch("ocw_import.api.dateparser.parse", return_value="Invalid date")
+    mock_log = mocker.patch("ocw_import.api.log.exception")
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
-    assert Website.objects.filter(url_path=url_path).first() is None
+    assert Website.objects.filter(name=name).first() is None
     mock_log.assert_called_once_with("Error saving website %s", s3_key)
 
 
@@ -89,10 +89,10 @@ def test_import_ocw2hugo_course_log_exception(mocker, settings):
 def test_import_ocw2hugo_content_log_exception(mocker, settings):
     """ Log an exception if the website content cannot be saved/updated """
     setup_s3(settings)
-    url_path = "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}data/courses/{url_path}.json"
-    mocker.patch("websites.api.uuid4", return_value="Invalid uuid")
-    mock_log = mocker.patch("websites.api.log.exception")
+    name = "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}data/courses/{name}.json"
+    mocker.patch("ocw_import.api.uuid4", return_value="Invalid uuid")
+    mock_log = mocker.patch("ocw_import.api.log.exception")
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     assert mock_log.call_count == 1
     mock_log.assert_called_once_with(

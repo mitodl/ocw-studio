@@ -3,10 +3,14 @@ from uuid import uuid4
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.text import slugify
 import yaml
 
 from main.models import TimestampedModel
-from websites.constants import WEBSITE_TYPE_COURSE, STARTER_SOURCES
+from websites.constants import (
+    STARTER_SOURCES,
+    WEBSITE_SOURCES,
+)
 
 
 def validate_yaml(value):
@@ -17,6 +21,15 @@ def validate_yaml(value):
         raise ValidationError("Value must be YAML-formatted.") from exc
 
 
+def validate_slug(value):
+    """Validator function to ensure that the value is a properly-formatted slug"""
+    slugified = slugify(value)
+    if slugified != value:
+        raise ValidationError(
+            f"Value '{value}' is not a proper slug (slugified version: {slugified})"
+        )
+
+
 class Website(TimestampedModel):
     """ Class for a generic website """
 
@@ -24,16 +37,19 @@ class Website(TimestampedModel):
     starter = models.ForeignKey(
         "WebsiteStarter", null=True, blank=True, on_delete=models.CASCADE
     )
-    url_path = models.CharField(unique=True, max_length=512, null=False, blank=False)
+    name = models.CharField(max_length=512, db_index=True, unique=True)
     title = models.CharField(max_length=512, null=True, blank=True)
-    publish_date = models.DateTimeField(null=True, blank=True)
-    type = models.CharField(
-        max_length=24, default=WEBSITE_TYPE_COURSE, blank=False, null=False
+    source = models.CharField(
+        max_length=20,
+        choices=zip(WEBSITE_SOURCES, WEBSITE_SOURCES),
+        null=True,
+        blank=True,
     )
+    publish_date = models.DateTimeField(null=True, blank=True)
     metadata = models.JSONField(null=True, blank=True)
 
     def __str__(self):
-        return f"'{self.title}' ({self.url_path})"
+        return f"'{self.title}' ({self.name})"
 
 
 class WebsiteContent(TimestampedModel):
@@ -66,6 +82,13 @@ class WebsiteStarter(TimestampedModel):
         max_length=256,
         null=False,
         help_text="Github repo path or local file path of the starter project.",
+    )
+    slug = models.CharField(
+        max_length=30,
+        null=False,
+        unique=True,
+        help_text="Short string that can be used to identify this starter.",
+        validators=[validate_slug],
     )
     name = models.CharField(
         max_length=100,

@@ -4,8 +4,8 @@ import pydoc
 from django.core.management import BaseCommand
 
 from main.utils import now_in_utc
-from websites.api import fetch_ocw2hugo_course_paths
-from websites.tasks import import_ocw2hugo_courses
+from ocw_import.api import fetch_ocw2hugo_course_paths
+from ocw_import.tasks import import_ocw2hugo_courses
 
 
 class Command(BaseCommand):

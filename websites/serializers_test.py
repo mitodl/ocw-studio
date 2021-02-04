@@ -3,7 +3,6 @@ import pytest
 import yaml
 
 from main.constants import ISO_8601_FORMAT
-from websites.constants import WEBSITE_TYPE_COURSE
 from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
@@ -21,14 +20,18 @@ def test_serialize_website_course():
     """
     Verify that a serialized website contains expected fields
     """
-    site = WebsiteFactory(is_course=True)
-    serializer = WebsiteSerializer(site)
-    assert serializer.data["type"] == WEBSITE_TYPE_COURSE
-    assert serializer.data["url_path"] == site.url_path
-    assert serializer.data["publish_date"] == site.publish_date.strftime(
+    site = WebsiteFactory.create()
+    serialized_data = WebsiteSerializer(instance=site).data
+    assert serialized_data["name"] == site.name
+    assert serialized_data["publish_date"] == site.publish_date.strftime(
         ISO_8601_FORMAT
     )
-    assert serializer.data["metadata"] == site.metadata
+    assert serialized_data["metadata"] == site.metadata
+    assert isinstance(serialized_data["starter"], dict)
+    assert (
+        serialized_data["starter"]
+        == WebsiteStarterSerializer(instance=site.starter).data
+    )
 
 
 def test_website_starter_serializer():

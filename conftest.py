@@ -1,11 +1,31 @@
 """Project conftest"""
 import pytest
 
+from types import SimpleNamespace
+
 
 @pytest.fixture(autouse=True)
 def default_settings(settings):
     """Set default settings for all tests"""
     settings.DISABLE_WEBPACK_LOADER_STATS = True
+
+
+@pytest.fixture()
+def mocked_celery(mocker):
+    """Mock object that patches certain celery functions"""
+    exception_class = TabError
+    replace_mock = mocker.patch(
+        "celery.app.task.Task.replace", autospec=True, side_effect=exception_class
+    )
+    group_mock = mocker.patch("celery.group", autospec=True)
+    chain_mock = mocker.patch("celery.chain", autospec=True)
+
+    yield SimpleNamespace(
+        replace=replace_mock,
+        group=group_mock,
+        chain=chain_mock,
+        replace_exception_class=exception_class,
+    )
 
 
 def pytest_addoption(parser):
