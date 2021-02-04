@@ -20,7 +20,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   useEffect(() => {
     const attachEditorToRef = async () => {
       if (editorEl.current) {
-        const editorInstance = await CKEditor.create(initialData)
+        const CKEditorInstance = new CKEditor
+        const editorInstance = await CKEditorInstance.create(initialData)
 
         editorInstance.model.document.on(
           "change:data",
