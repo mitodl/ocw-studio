@@ -3,7 +3,7 @@ import _ from "lodash"
 
 import CKEditor from "../lib/ckeditor"
 
-export interface Props  {
+export interface Props {
   initialData?: string
   onChange?: Function
 }
@@ -42,15 +42,13 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     }
 
     return () => {
-      (async function () {
+      (async function() {
         if (editor.current !== null) {
           await editor.current.destroy()
         }
       })()
     }
-  }, [ editorEl.current ])
+  }, [editorEl.current])
 
-  return (
-    <div className="markdown-editor ck-editor" ref={editorEl} />
-    )
+  return <div className="markdown-editor ck-editor" ref={editorEl} />
 }
