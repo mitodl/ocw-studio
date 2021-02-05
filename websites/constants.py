@@ -16,3 +16,19 @@ STARTER_SOURCES = [STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL]
 COURSE_STARTER_SLUG = "course"
 
 WEBSITE_CONFIG_FILENAME = "ocw-studio.yml"
+
+GLOBAL_ADMIN = "global_admin"
+GLOBAL_AUTHOR = "global_author"
+
+ADMIN_GROUP = "admins_website_"
+EDITOR_GROUP = "editors_website_"
+
+PERMISSION_ADD = "websites.add_website"
+PERMISSION_VIEW = "websites.view_website"
+PERMISSION_PREVIEW = "websites.preview_website"
+PERMISSION_EDIT = "websites.change_website"
+PERMISSION_PUBLISH = "websites.publish_website"
+PERMISSION_COLLABORATE = "websites.add_collaborators_website"
+
+PERMISSIONS_EDITOR = [PERMISSION_VIEW, PERMISSION_EDIT, PERMISSION_PREVIEW]
+PERMISSIONS_ADMIN = PERMISSIONS_EDITOR + [PERMISSION_PUBLISH, PERMISSION_COLLABORATE]

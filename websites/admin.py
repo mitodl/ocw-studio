@@ -1,12 +1,14 @@
 """ Websites Admin """
 from django.contrib import admin
 from django.db.models import JSONField
-
+from guardian.admin import GuardedModelAdmin
 from main.admin import TimestampedModelAdmin, PrettyJSONWidget
+
+
 from websites.models import Website, WebsiteContent, WebsiteStarter
 
 
-class WebsiteAdmin(TimestampedModelAdmin):
+class WebsiteAdmin(TimestampedModelAdmin, GuardedModelAdmin):
     """Website Admin"""
 
     model = Website

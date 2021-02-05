@@ -81,6 +81,7 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "guardian",
     "server_status",
     # django-robots
     "rest_framework",
@@ -427,6 +428,11 @@ MANDATORY_SETTINGS = [
     "MAILGUN_KEY",
     "SECRET_KEY",
 ]
+
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",  # this is default
+    "guardian.backends.ObjectPermissionBackend",
+)
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),

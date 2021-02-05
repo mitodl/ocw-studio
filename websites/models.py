@@ -1,16 +1,16 @@
 """ websites models """
 from uuid import uuid4
 
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import SET_NULL
 from django.utils.text import slugify
 import yaml
 
 from main.models import TimestampedModel
-from websites.constants import (
-    STARTER_SOURCES,
-    WEBSITE_SOURCES,
-)
+from users.models import User
+from websites import constants
 
 
 def validate_yaml(value):
@@ -33,6 +33,7 @@ def validate_slug(value):
 class Website(TimestampedModel):
     """ Class for a generic website """
 
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
     uuid = models.UUIDField(primary_key=True, default=uuid4)
     starter = models.ForeignKey(
         "WebsiteStarter", null=True, blank=True, on_delete=models.CASCADE
@@ -41,12 +42,36 @@ class Website(TimestampedModel):
     title = models.CharField(max_length=512, null=True, blank=True)
     source = models.CharField(
         max_length=20,
-        choices=zip(WEBSITE_SOURCES, WEBSITE_SOURCES),
+        choices=zip(constants.WEBSITE_SOURCES, constants.WEBSITE_SOURCES),
         null=True,
         blank=True,
     )
     publish_date = models.DateTimeField(null=True, blank=True)
     metadata = models.JSONField(null=True, blank=True)
+
+    @property
+    def admin_group(self):
+        """ Get the admin group """
+        return Group.objects.filter(
+            name=f"{constants.ADMIN_GROUP}{self.uuid.hex}"
+        ).first()
+
+    @property
+    def editor_group(self):
+        """ Get the editor group """
+        return Group.objects.filter(
+            name=f"{constants.EDITOR_GROUP}{self.uuid.hex}"
+        ).first()
+
+    class Meta:
+        permissions = (
+            ("publish_website", "Publish or unpublish a website"),
+            ("preview_website", "Create preview markdowm"),
+            (
+                "add_collaborators_website",
+                "Add or remove collaborators (admins, editors, etc)",
+            ),
+        )
 
     def __str__(self):
         return f"'{self.title}' ({self.name})"
@@ -55,6 +80,7 @@ class Website(TimestampedModel):
 class WebsiteContent(TimestampedModel):
     """ Class for a content component of a website"""
 
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
     website = models.ForeignKey(
         "Website", null=False, blank=False, on_delete=models.CASCADE
     )
@@ -98,7 +124,7 @@ class WebsiteStarter(TimestampedModel):
     source = models.CharField(
         max_length=15,
         null=False,
-        choices=zip(STARTER_SOURCES, STARTER_SOURCES),
+        choices=zip(constants.STARTER_SOURCES, constants.STARTER_SOURCES),
         db_index=True,
     )
     commit = models.CharField(
