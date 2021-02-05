@@ -27,12 +27,22 @@ def test_is_global_admin(permission_groups):
         assert permissions.is_global_admin(user) is False
 
 
-def test_is_global_author(permission_groups):
-    """ Global admin editors should be identified correctly """
-    for user in [permission_groups.global_admin, permission_groups.global_author]:
-        assert permissions.is_global_author(user) is True
-    for user in [permission_groups.site_admin, permission_groups.site_editor]:
-        assert permissions.is_global_admin(user) is False
+def test_is_site_admin(permission_groups):
+    """ Any website-specific or global admin users should be identified correctly """
+    website = permission_groups.websites[0]
+    superuser = UserFactory.create(is_superuser=True)
+    for user in [
+        permission_groups.global_admin,
+        permission_groups.site_admin,
+        website.owner,
+        superuser,
+    ]:
+        assert permissions.is_site_admin(user, website) is True
+    for user in [
+        permission_groups.global_author,
+        permission_groups.site_editor,
+    ]:
+        assert permissions.is_site_admin(user, website) is False
 
 
 @pytest.mark.parametrize("method", ["GET", "PATCH"])
@@ -100,7 +110,7 @@ def test_editor_can_preview_website(mocker, permission_groups):
 
 
 def test_can_create_website(mocker, permission_groups):
-    """ Only global admins and editors can create new websites """
+    """ Only global admins and global authors can create new websites """
     for user in [
         permission_groups.global_admin,
         permission_groups.global_author,
@@ -144,7 +154,7 @@ def test_cannot_delete_website(mocker, permission_groups):
 
 @pytest.mark.parametrize("method", ["GET", "PATCH"])
 def test_author_cannot_view_edit_other_website(mocker, permission_groups, method):
-    """A global author should not be able to view other authors websites"""
+    """A global author should not be able to view other authors' websites"""
     global_author = permission_groups.global_author
     website_other = permission_groups.websites[0]
     website_own = WebsiteFactory.create(owner=global_author)
@@ -161,29 +171,19 @@ def test_author_cannot_view_edit_other_website(mocker, permission_groups, method
 def test_can_publish_website(mocker, permission_groups):
     """ Test that only appropriate users can publish a website """
     website = permission_groups.websites[0]
-    for user in [
-        permission_groups.global_admin,
-        permission_groups.site_admin,
-        permission_groups.websites[0].owner,
+    for [user, has_perm] in [
+        [permission_groups.global_admin, True],
+        [permission_groups.site_admin, True],
+        [permission_groups.websites[0].owner, True],
+        [permission_groups.global_author, False],
+        [permission_groups.site_editor, False],
     ]:
         request = mocker.Mock(user=user)
         assert (
             permissions.HasWebsitePublishPermission().has_object_permission(
                 request, mocker.Mock(), website
             )
-            is True
-        )
-
-    for user in [
-        permission_groups.global_author,
-        permission_groups.site_editor,
-    ]:
-        request = mocker.Mock(user=user)
-        assert (
-            permissions.HasWebsitePublishPermission().has_object_permission(
-                request, mocker.Mock(), website
-            )
-            is False
+            is has_perm
         )
 
 
@@ -214,7 +214,7 @@ def test_can_create_website_content(mocker, permission_groups):
     # This assumes the WebsiteContent API view will be nested via DRF extensions
     view = mocker.Mock(kwargs={"parent_lookup_website": str(website.uuid)})
 
-    # All site editors and admins should be able to view or create content
+    # All site editors and admins should be able to view or create content for that site
     for user in [
         permission_groups.global_admin,
         permission_groups.site_admin,

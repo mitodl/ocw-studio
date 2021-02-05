@@ -68,24 +68,6 @@ def is_global_admin(user):
     return user.is_superuser or user.groups.filter(name=constants.GLOBAL_ADMIN).exists()
 
 
-def is_global_author(user):
-    """
-    Determine if the user is a global author or better
-
-    Args:
-        user (users.models.User): The user to check
-
-    Returns:
-        bool: True if a member of the global author or admin group
-
-
-    """
-    return (
-        is_global_admin(user)
-        or user.groups.filter(name=constants.GLOBAL_AUTHOR).exists()
-    )
-
-
 def is_site_admin(user, website):
     """
     Determine if the user is effectively an admin for a site
