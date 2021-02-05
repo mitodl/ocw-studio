@@ -12,7 +12,7 @@ module.exports = {
     module: {
       rules: [
         {
-          test: /\.(svg|ttf|woff|woff2|eot|gif)$/,
+          test: /static\/.+\.(svg|ttf|woff|woff2|eot|gif)$/,
           use: "url-loader"
         },
         {
