@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useRef, useCallback } from "react"
 import _ from "lodash"
 
 import CKEditor from "../lib/ckeditor"
 
 export interface Props {
   initialData?: string
-  onChange?: Function
+  onChange?: (s: string) => void
 }
 
 /**
@@ -15,32 +15,28 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const { initialData, onChange } = props
 
   const editor = useRef<typeof CKEditor | null>(null)
-  const editorEl = useRef<HTMLDivElement>(null)
+  const editorEl = useRef<HTMLDivElement | null>(null)
+
+  const editorSetupRef = useCallback(async (node: HTMLDivElement) => {
+    const editorInstance = await CKEditor.create(initialData)
+
+    editorInstance.model.document.on(
+      "change:data",
+      // editor.getData() is kind of expensive so we debounce
+      _.debounce(() => {
+        if (onChange) {
+          onChange(editorInstance.getData())
+        }
+      }, 250)
+    )
+
+    node.appendChild(editorInstance.ui.view.toolbar.element)
+    node.appendChild(editorInstance.ui.view.editable.element)
+    editor.current = editorInstance
+    editorEl.current = node
+  }, [])
 
   useEffect(() => {
-    const attachEditorToRef = async () => {
-      if (editorEl.current) {
-        const editorInstance = await CKEditor.create(initialData)
-
-        editorInstance.model.document.on(
-          "change:data",
-          // editor.getData() is kind of expensive so we debounce
-          _.debounce(() => {
-            if (onChange) {
-              onChange(editorInstance.getData())
-            }
-          }, 250)
-        )
-
-        editorEl.current.appendChild(editorInstance.ui.view.toolbar.element)
-        editorEl.current.appendChild(editorInstance.ui.view.editable.element)
-        editor.current = editorInstance
-      }
-    }
-    if (editorEl.current) {
-      attachEditorToRef()
-    }
-
     return () => {
       (async function() {
         if (editor.current !== null) {
@@ -48,7 +44,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         }
       })()
     }
-  }, [editorEl.current])
+  }, [])
 
-  return <div className="markdown-editor ck-editor" ref={editorEl} />
+  return <div className="markdown-editor ck-editor" ref={editorSetupRef} />
 }
