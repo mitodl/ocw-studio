@@ -12,6 +12,7 @@ module.exports = {
     module: {
       rules: [
         {
+          // this regex is necessary to explicitly exclude ckeditor stuff
           test: /static\/.+\.(svg|ttf|woff|woff2|eot|gif)$/,
           use: "url-loader"
         },

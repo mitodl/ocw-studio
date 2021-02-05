@@ -11,6 +11,7 @@ const prodConfig = Object.assign({}, config)
 prodConfig.module.rules = [
   ...config.module.rules,
   {
+    // this regex is necessary to explicitly exclude ckeditor stuff
     test: /static\/scss\/.+(\.css$|\.scss$)/,
     use:  [
       {

@@ -45,6 +45,7 @@ const devConfig = Object.assign({}, config, {
 devConfig.module.rules = [
   ...config.module.rules,
   {
+    // this regex is necessary to explicitly exclude ckeditor stuff
     test: /static\/scss\/.+(\.css$|\.scss$)/,
     use:  [
       { loader: "style-loader" },
