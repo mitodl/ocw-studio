@@ -43,6 +43,7 @@ class Migration(migrations.Migration):
                         "add_collaborators_website",
                         "Add or remove collaborators (admins, editors, etc)",
                     ),
+                    ("edit_content_website", "edit website content"),
                 )
             },
         ),

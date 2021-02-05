@@ -20,16 +20,16 @@ def test_is_global_admin(permission_groups):
     for user in [permission_groups.global_admin, superuser]:
         assert permissions.is_global_admin(user) is True
     for user in [
-        permission_groups.global_editor,
+        permission_groups.global_author,
         permission_groups.site_admin,
         permission_groups.site_editor,
     ]:
         assert permissions.is_global_admin(user) is False
 
 
-def test_is_global_editor(permission_groups):
+def test_is_global_author(permission_groups):
     """ Global admin editors should be identified correctly """
-    for user in [permission_groups.global_admin, permission_groups.global_editor]:
+    for user in [permission_groups.global_admin, permission_groups.global_author]:
         assert permissions.is_global_author(user) is True
     for user in [permission_groups.site_admin, permission_groups.site_editor]:
         assert permissions.is_global_admin(user) is False
@@ -38,12 +38,11 @@ def test_is_global_editor(permission_groups):
 @pytest.mark.parametrize("method", ["GET", "PATCH"])
 def test_can_view_edit_preview_website(mocker, permission_groups, method):
     """
-    Test that appropriate users are allowed to view/edit/preview websites
+    Test that admins/owners are allowed to view/edit/preview websites
     """
     website_0_allowed_users = [
         permission_groups.global_admin,
         permission_groups.site_admin,
-        permission_groups.site_editor,
         permission_groups.websites[0].owner,
     ]
     website_1_allowed_users = [
@@ -53,9 +52,8 @@ def test_can_view_edit_preview_website(mocker, permission_groups, method):
 
     for user in [
         permission_groups.global_admin,
-        permission_groups.global_editor,
+        permission_groups.global_author,
         permission_groups.site_admin,
-        permission_groups.site_editor,
         permission_groups.websites[0].owner,
     ]:
         request = mocker.Mock(user=user, method=method)
@@ -75,11 +73,37 @@ def test_can_view_edit_preview_website(mocker, permission_groups, method):
             ) is (user in website_1_allowed_users)
 
 
+@pytest.mark.parametrize("method,has_perm", [["PATCH", False], ["GET", True]])
+def test_editor_can_view_not_edit_website(mocker, permission_groups, method, has_perm):
+    """A site editor should be able to view but not edit the website"""
+    site_editor = permission_groups.site_editor
+    website = permission_groups.websites[0]
+
+    assert (
+        permissions.HasWebsitePermission().has_object_permission(
+            mocker.Mock(user=site_editor, method=method), mocker.Mock(), website
+        )
+        is has_perm
+    )
+
+
+def test_editor_can_preview_website(mocker, permission_groups):
+    """A site editor should be able to preview the website"""
+    site_editor = permission_groups.site_editor
+    website = permission_groups.websites[0]
+    assert (
+        permissions.HasWebsitePreviewPermission().has_object_permission(
+            mocker.Mock(user=site_editor, method="PATCH"), mocker.Mock(), website
+        )
+        is True
+    )
+
+
 def test_can_create_website(mocker, permission_groups):
     """ Only global admins and editors can create new websites """
     for user in [
         permission_groups.global_admin,
-        permission_groups.global_editor,
+        permission_groups.global_author,
     ]:
         request = mocker.Mock(user=user, method="POST")
         assert (
@@ -104,7 +128,7 @@ def test_cannot_delete_website(mocker, permission_groups):
     for website in permission_groups.websites:
         for user in [
             permission_groups.global_admin,
-            permission_groups.global_editor,
+            permission_groups.global_author,
             permission_groups.site_admin,
             permission_groups.site_editor,
             website.owner,
@@ -116,6 +140,22 @@ def test_cannot_delete_website(mocker, permission_groups):
                 )
                 is False
             )
+
+
+@pytest.mark.parametrize("method", ["GET", "PATCH"])
+def test_author_cannot_view_edit_other_website(mocker, permission_groups, method):
+    """A global author should not be able to view other authors websites"""
+    global_author = permission_groups.global_author
+    website_other = permission_groups.websites[0]
+    website_own = WebsiteFactory.create(owner=global_author)
+
+    for [website, has_perm] in ([website_other, False], [website_own, True]):
+        assert (
+            permissions.HasWebsitePermission().has_object_permission(
+                mocker.Mock(user=global_author, method=method), mocker.Mock(), website
+            )
+            is has_perm
+        )
 
 
 def test_can_publish_website(mocker, permission_groups):
@@ -135,7 +175,7 @@ def test_can_publish_website(mocker, permission_groups):
         )
 
     for user in [
-        permission_groups.global_editor,
+        permission_groups.global_author,
         permission_groups.site_editor,
     ]:
         request = mocker.Mock(user=user)
@@ -155,7 +195,7 @@ def test_can_change_collaborators_website(mocker, permission_groups, method):
         [permission_groups.global_admin, True],
         [permission_groups.site_admin, True],
         [permission_groups.websites[0].owner, True],
-        [permission_groups.global_editor, False],
+        [permission_groups.global_author, False],
         [permission_groups.site_editor, False],
     ]:
         request = mocker.Mock(user=user, method=method)
@@ -195,7 +235,7 @@ def test_can_create_website_content(mocker, permission_groups):
     for [user, has_perm] in [
         [permission_groups.site_admin, False],
         [permission_groups.global_admin, True],
-        [permission_groups.global_editor, False],
+        [permission_groups.global_author, False],
     ]:
         assert (
             permissions.HasWebsiteContentPermission().has_permission(
@@ -216,7 +256,7 @@ def test_can_view_edit_website_content(mocker, permission_groups):
 
     for [user, has_perm] in [
         [permission_groups.global_admin, True],
-        [permission_groups.global_editor, False],
+        [permission_groups.global_author, False],
         [permission_groups.site_admin, True],
         [permission_groups.site_editor, True],
         [website.owner, True],

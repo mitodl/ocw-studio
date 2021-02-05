@@ -49,7 +49,7 @@ def permission_groups():
 
     yield SimpleNamespace(
         global_admin=global_admin,
-        global_editor=global_author,
+        global_author=global_author,
         site_admin=site_admin,
         site_editor=site_editor,
         websites=websites,

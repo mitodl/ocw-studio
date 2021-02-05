@@ -76,7 +76,7 @@ def is_global_author(user):
         user (users.models.User): The user to check
 
     Returns:
-        bool: True if a member of the global editor or admin group
+        bool: True if a member of the global author or admin group
 
 
     """
@@ -106,7 +106,7 @@ def is_site_admin(user, website):
 
 def check_perm(user, permission, website):
     """
-    Determine if the user has the global or website-specific permission
+    Determine if the user has a global or website-specific permission
 
     Args:
         user (users.models.User): The user to check
@@ -128,8 +128,6 @@ class HasWebsitePermission(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         user = request.user
-        if request.method == "DELETE":
-            return False
         if request.method in SAFE_METHODS:
             return check_perm(user, constants.PERMISSION_VIEW, obj)
         elif request.method == "PATCH":
@@ -148,7 +146,7 @@ class HasWebsiteContentPermission(BasePermission):
         if request.method in SAFE_METHODS:
             return check_perm(request.user, constants.PERMISSION_VIEW, website)
         else:
-            return check_perm(request.user, constants.PERMISSION_EDIT, website)
+            return check_perm(request.user, constants.PERMISSION_EDIT_CONTENT, website)
 
     def has_object_permission(self, request, view, obj):
         user = request.user
@@ -156,7 +154,7 @@ class HasWebsiteContentPermission(BasePermission):
         if request.method in SAFE_METHODS:
             return check_perm(user, constants.PERMISSION_VIEW, website)
         if request.method == "PATCH":
-            return check_perm(user, constants.PERMISSION_EDIT, website)
+            return check_perm(user, constants.PERMISSION_EDIT_CONTENT, website)
         if request.method == "DELETE":
             return is_site_admin(user, website) or obj.owner == user
         return False
