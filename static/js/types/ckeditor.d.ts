@@ -33,3 +33,5 @@ declare module '@ckeditor/ckeditor5-essentials/src/essentials';
 declare module '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
 
 declare module '@ckeditor/ckeditor5-adapter-ckfinder/src/uploadadapter';
+
+declare module '@ckeditor/ckeditor5-markdown-gfm/src/markdown';

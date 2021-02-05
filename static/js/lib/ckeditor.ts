@@ -15,10 +15,12 @@ import ImageUploadPlugin from "@ckeditor/ckeditor5-image/src/imageupload"
 import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
 import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
+import Markdown from "@ckeditor/ckeditor5-markdown-gfm/src/markdown"
 
 export default class ClassicEditor extends ClassicEditorBase {}
 
 ClassicEditor.builtinPlugins = [
+  Markdown,
   EssentialsPlugin,
   UploadAdapterPlugin,
   AutoformatPlugin,
