@@ -9,6 +9,7 @@ from websites.constants import STARTER_SOURCE_GITHUB
 from websites.models import Website, WebsiteStarter
 from websites.serializers import (
     WebsiteSerializer,
+    WebsiteDetailSerializer,
     WebsiteStarterSerializer,
     WebsiteStarterDetailSerializer,
 )
@@ -25,6 +26,7 @@ class DefaultPagination(LimitOffsetPagination):
 
 class WebsiteViewSet(
     mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
     viewsets.GenericViewSet,
 ):
@@ -46,6 +48,12 @@ class WebsiteViewSet(
         if website_type is not None:
             queryset = queryset.filter(starter__slug=website_type)
         return queryset
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return WebsiteSerializer
+        else:
+            return WebsiteDetailSerializer
 
 
 class WebsiteStarterViewSet(

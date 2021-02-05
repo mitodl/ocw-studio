@@ -10,12 +10,15 @@ from websites.factories import (
 )
 from websites.serializers import (
     WebsiteSerializer,
+    WebsiteDetailSerializer,
     WebsiteStarterSerializer,
     WebsiteStarterDetailSerializer,
 )
 
 
-@pytest.mark.django_db
+pytestmark = pytest.mark.django_db
+
+
 def test_serialize_website_course():
     """
     Verify that a serialized website contains expected fields
@@ -55,4 +58,36 @@ def test_website_starter_detail_serializer():
     assert serialized_data["commit"] == starter.commit
     assert serialized_data["config"] == yaml.load(
         EXAMPLE_SITE_CONFIG, Loader=yaml.Loader
+    )
+
+
+@pytest.mark.parametrize("has_starter", [True, False])
+def test_website_serializer(has_starter):
+    """WebsiteSerializer should serialize a Website object with the correct fields"""
+    website = (
+        WebsiteFactory.build(starter__config=EXAMPLE_SITE_CONFIG)
+        if has_starter
+        else WebsiteFactory.build(starter=None)
+    )
+    serialized_data = WebsiteSerializer(instance=website).data
+    assert serialized_data["name"] == website.name
+    assert serialized_data["title"] == website.title
+    assert serialized_data["metadata"] == website.metadata
+    assert "config" not in serialized_data
+
+
+@pytest.mark.parametrize("has_starter", [True, False])
+def test_website_detail_serializer(has_starter):
+    """WebsiteDetailSerializer should serialize a Website object with the correct fields, including config"""
+    website = (
+        WebsiteFactory.build(starter__config=EXAMPLE_SITE_CONFIG)
+        if has_starter
+        else WebsiteFactory.build(starter=None)
+    )
+    serialized_data = WebsiteDetailSerializer(instance=website).data
+    assert serialized_data["name"] == website.name
+    assert serialized_data["title"] == website.title
+    assert serialized_data["metadata"] == website.metadata
+    assert serialized_data["config"] == (
+        yaml.load(EXAMPLE_SITE_CONFIG, Loader=yaml.Loader) if has_starter else None
     )
