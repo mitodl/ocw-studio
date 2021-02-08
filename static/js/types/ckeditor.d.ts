@@ -35,3 +35,9 @@ declare module '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
 declare module '@ckeditor/ckeditor5-adapter-ckfinder/src/uploadadapter';
 
 declare module '@ckeditor/ckeditor5-markdown-gfm/src/markdown';
+
+declare module '@ckeditor/ckeditor5-core/src/plugin';
+
+declare module '@ckeditor/ckeditor5-core/src/command';
+
+declare module '@ckeditor/ckeditor5-ui/src/button/buttonview';

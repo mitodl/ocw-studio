@@ -17,6 +17,8 @@ import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import Markdown from "@ckeditor/ckeditor5-markdown-gfm/src/markdown"
 
+import { SimpleBox, InsertSimpleBoxCommand } from "./SimpleBox"
+
 export default class ClassicEditor extends ClassicEditorBase {}
 
 ClassicEditor.builtinPlugins = [
@@ -36,7 +38,8 @@ ClassicEditor.builtinPlugins = [
   ImageUploadPlugin,
   LinkPlugin,
   ListPlugin,
-  ParagraphPlugin
+  ParagraphPlugin,
+  SimpleBox
 ]
 
 ClassicEditor.defaultConfig = {
@@ -52,7 +55,8 @@ ClassicEditor.defaultConfig = {
       "imageUpload",
       "blockQuote",
       "undo",
-      "redo"
+      "redo",
+      "simpleBox"
     ]
   },
   image: {

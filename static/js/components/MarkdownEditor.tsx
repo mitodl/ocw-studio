@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react"
 import _ from "lodash"
 
-import CKEditor from "../lib/ckeditor"
+import CKEditor from "../lib/ckeditor/CKEditor"
 
 export interface Props {
   initialData?: string

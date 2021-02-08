@@ -629,6 +629,26 @@
   dependencies:
     "@types/node" "*"
 
+"@types/ckeditor__ckeditor5-core@^11.0.3":
+  version "11.0.3"
+  resolved "https://registry.yarnpkg.com/@types/ckeditor__ckeditor5-core/-/ckeditor__ckeditor5-core-11.0.3.tgz#85e81eadef4948e1b27c178c3c2a6bcbfb2c4c34"
+  integrity sha512-8Vc5bSc7oOu3G491y4fREpF7Tda2KV7sLqPYeSjh4zww4s7FWYKo8twfWaFLbzTLe0SsjXHUUKqnfD6sTIR6Yg==
+  dependencies:
+    "@types/ckeditor__ckeditor5-engine" "*"
+    "@types/ckeditor__ckeditor5-utils" "*"
+
+"@types/ckeditor__ckeditor5-engine@*":
+  version "11.0.3"
+  resolved "https://registry.yarnpkg.com/@types/ckeditor__ckeditor5-engine/-/ckeditor__ckeditor5-engine-11.0.3.tgz#cc8024ad9e4c0e05e770eadce2301a19784d2071"
+  integrity sha512-lMnK/sgDEt5NDf9qf8/DvmAx4JXmKFjJficiBadrVHTVr1wNQkaRq5hp0RHkYrt2dYQZ+NCsXv7sC4ptP/6lCQ==
+  dependencies:
+    "@types/ckeditor__ckeditor5-utils" "*"
+
+"@types/ckeditor__ckeditor5-utils@*":
+  version "10.2.4"
+  resolved "https://registry.yarnpkg.com/@types/ckeditor__ckeditor5-utils/-/ckeditor__ckeditor5-utils-10.2.4.tgz#61898ff299877486a546ec155ee5d0f0c09ac18c"
+  integrity sha512-v+RzHObHwT4gwQbBOBCtUrhp5mmtBrGqK12WuXQo1akQAfgmp7fGhY571Sm6aK9Qzpsg2cvcC9hxv2zJSYjTgQ==
+
 "@types/enzyme-adapter-react-16@^1.0.6":
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/@types/enzyme-adapter-react-16/-/enzyme-adapter-react-16-1.0.6.tgz#8aca7ae2fd6c7137d869b6616e696d21bb8b0cec"
