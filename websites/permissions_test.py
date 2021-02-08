@@ -67,10 +67,9 @@ def test_can_view_edit_preview_website(mocker, permission_groups, method):
         permission_groups.websites[0].owner,
     ]:
         request = mocker.Mock(user=user, method=method)
-        assert (
-            permissions.HasWebsitePermission().has_permission(request, mocker.Mock())
-            is True
-        )
+        assert permissions.HasWebsitePermission().has_permission(
+            request, mocker.Mock()
+        ) is (method == "GET")
         for permission_class in (
             permissions.HasWebsitePermission(),
             permissions.HasWebsitePreviewPermission(),
@@ -338,7 +337,7 @@ def test_assign_group_permissions_error():
     bad_perm = "fake_perm_website"
     with pytest.raises(Permission.DoesNotExist) as exc:
         assign_object_permissions(website.editor_group, website, [bad_perm])
-    assert exc.value.args == (f"Perm {bad_perm} not found",)
+    assert exc.value.args == (f"Permission '{bad_perm}' not found",)
 
 
 def test_create_global_groups():

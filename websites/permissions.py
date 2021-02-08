@@ -22,7 +22,7 @@ def assign_object_permissions(group_or_user, website, perms):
         try:
             assign_perm(perm, group_or_user, website)
         except Permission.DoesNotExist as err:
-            raise Permission.DoesNotExist(f"Perm {perm} not found") from err
+            raise Permission.DoesNotExist(f"Permission '{perm}' not found") from err
 
 
 @transaction.atomic
@@ -103,10 +103,12 @@ class HasWebsitePermission(BasePermission):
     """Permission to view/modify/create Website objects"""
 
     def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
         if request.method == "POST":
             # Only global editors and admins can create new Websites
             return request.user.has_perm(constants.PERMISSION_ADD)
-        return True
+        return False
 
     def has_object_permission(self, request, view, obj):
         user = request.user
