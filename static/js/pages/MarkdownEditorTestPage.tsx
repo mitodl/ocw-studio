@@ -34,13 +34,11 @@ export default function MarkdownEditorTestPage() {
       </div>
       <div className="w-50">
         <h3>Output</h3>
-    { markdown !== "" ?
-        <pre style={{border: "2px solid red" }}>
-          <code style={{margin: "5px", display: "block"}}>
-            { markdown }
-          </code>
-        </pre>
-        : null }
+        {markdown !== "" ? (
+          <pre style={{ border: "2px solid red" }}>
+            <code style={{ margin: "5px", display: "block" }}>{markdown}</code>
+          </pre>
+        ) : null}
       </div>
     </div>
   )
