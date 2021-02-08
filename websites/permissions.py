@@ -1,28 +1,48 @@
 """ permissions for websites """
 from django.contrib.auth.models import Group, Permission
 from django.db import transaction
-from guardian.shortcuts import assign_perm
+from guardian.shortcuts import assign_perm, get_perms
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
+from users.models import User
 from websites import constants
 from websites.models import Website
 
 
-def assign_object_permissions(group_or_user, website, perms):
+def assign_website_permissions(group_or_user, perms, website=None):
     """
     Assign appropriate permissions to a website admin group
 
     Args:
         group_or_user (Group or User): the group/user to add permissions to
-        website (Website): The website that the permissions are for
+        website (Object): The object that the permissions are for (typically Website)
         perms (list of str): The permissions to be assigned
+
+    Returns:
+        bool: True if any permissions were added, False otherwise
     """
+    if website:
+        current_perms = set(get_perms(group_or_user, website))
+    elif isinstance(group_or_user, Group):
+        current_perms = {perm.codename for perm in group_or_user.permissions.all()}
+    elif isinstance(group_or_user, User):
+        current_perms = {
+            perm.codename for perm in Permission.objects.filter(user=group_or_user)
+        }
+    else:
+        raise TypeError("Permissions must be assigned to a user or group")
+    if not {perm.replace("websites.", "") for perm in perms}.difference(current_perms):
+        return False
     for perm in perms:
         try:
-            assign_perm(perm, group_or_user, website)
+            if website:
+                assign_perm(perm, group_or_user, website)
+            else:
+                assign_perm(perm, group_or_user)
         except Permission.DoesNotExist as err:
             raise Permission.DoesNotExist(f"Permission '{perm}' not found") from err
+    return True
 
 
 @transaction.atomic
@@ -32,26 +52,86 @@ def create_website_groups(website):
 
     Args:
         website (Website): The website that the permissions are for
+
+    Returns:
+        list (int, int, bool): # groups created, # groups updated, owner updated
     """
-    admin_group, _ = Group.objects.get_or_create(
+    groups_created = 0
+    groups_updated = 0
+    owner_updated = False
+
+    admin_group, admin_created = Group.objects.get_or_create(
         name=f"{constants.ADMIN_GROUP}{website.uuid.hex}"
     )
-    editor_group, _ = Group.objects.get_or_create(
+    if admin_created:
+        groups_created += 1
+    editor_group, editor_created = Group.objects.get_or_create(
         name=f"{constants.EDITOR_GROUP}{website.uuid.hex}"
     )
-    assign_object_permissions(admin_group, website, constants.PERMISSIONS_ADMIN)
-    assign_object_permissions(editor_group, website, constants.PERMISSIONS_EDITOR)
+    if editor_created:
+        groups_created += 1
+
+    if (
+        assign_website_permissions(
+            admin_group, constants.PERMISSIONS_ADMIN, website=website
+        )
+        and not admin_created
+    ):
+        groups_updated += 1
+
+    if (
+        assign_website_permissions(
+            editor_group, constants.PERMISSIONS_EDITOR, website=website
+        )
+        and not editor_created
+    ):
+        groups_updated += 1
+
+    if website.owner:
+        owner_updated = assign_website_permissions(
+            website.owner, constants.PERMISSIONS_ADMIN, website=website
+        )
+
+    return groups_created, groups_updated, owner_updated
 
 
 @transaction.atomic
 def create_global_groups():
-    """Create the global groups for website permissions"""
-    admin_group, _ = Group.objects.get_or_create(name=constants.GLOBAL_ADMIN)
-    author_group, _ = Group.objects.get_or_create(name=constants.GLOBAL_AUTHOR)
-    for perm in constants.PERMISSIONS_ADMIN:
-        assign_perm(perm, admin_group)
-    assign_perm(constants.PERMISSION_ADD, admin_group)
-    assign_perm(constants.PERMISSION_ADD, author_group)
+    """
+    Create the global groups for website permissions
+
+    Args:
+        website (Website): The website that the permissions are for
+
+    Returns:
+        list (int, int): # groups created, # groups updated
+    """
+    groups_created = 0
+    groups_updated = 0
+
+    admin_group, admin_created = Group.objects.get_or_create(
+        name=constants.GLOBAL_ADMIN
+    )
+    if admin_created:
+        groups_created += 1
+    author_group, author_created = Group.objects.get_or_create(
+        name=constants.GLOBAL_AUTHOR
+    )
+    if author_created:
+        groups_created += 1
+
+    global_perms = [constants.PERMISSION_ADD]
+    if (
+        assign_website_permissions(
+            admin_group, global_perms + constants.PERMISSIONS_ADMIN
+        )
+        and not admin_created
+    ):
+        groups_updated += 1
+    if assign_website_permissions(author_group, global_perms) and not author_created:
+        groups_updated += 1
+
+    return groups_created, groups_updated
 
 
 def is_global_admin(user):

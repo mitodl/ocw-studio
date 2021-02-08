@@ -3,8 +3,7 @@ from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from websites import constants
-from websites.permissions import create_website_groups, assign_object_permissions
+from websites.permissions import create_website_groups
 from websites.models import Website
 
 
@@ -22,7 +21,3 @@ def handle_website_save(
     """
     if created:
         create_website_groups(instance)
-        if instance.owner:
-            assign_object_permissions(
-                instance.owner, instance, constants.PERMISSIONS_ADMIN
-            )

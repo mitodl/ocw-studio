@@ -17,10 +17,16 @@ class Command(BaseCommand):
         start = now_in_utc()
 
         # Redo global grpups too in case permissions changed
-        create_global_groups()
+        created, updated = create_global_groups()
+        self.stdout.write(
+            f"Global groups: created {created} groups, updated {updated} groups"
+        )
 
         for website in Website.objects.iterator():
-            create_website_groups(website)
+            created, updated, owner_updated = create_website_groups(website)
+            self.stdout.write(
+                f"{website.name} groups: created {created}, updated {updated}, owner updated: {str(owner_updated)}"
+            )
 
         total_seconds = (now_in_utc() - start).total_seconds()
         self.stdout.write(

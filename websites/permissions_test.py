@@ -1,12 +1,13 @@
 """ Tests for websites permissions"""
 import pytest
 from django.contrib.auth.models import Permission, Group
+from guardian.shortcuts import remove_perm
 
 from users.factories import UserFactory
 from websites import permissions, constants
 from websites.factories import WebsiteFactory
 from websites.permissions import (
-    assign_object_permissions,
+    assign_website_permissions,
     create_global_groups,
     create_website_groups,
 )
@@ -318,7 +319,19 @@ def test_create_website_groups():
     """ Permissions should be assigned as expected """
     owner, admin, editor = UserFactory.create_batch(3)
     website = WebsiteFactory.create(owner=owner)
-    create_website_groups(website)
+
+    # permissions should have all been added via signal
+    assert create_website_groups(website) == (0, 0, False)
+
+    website.admin_group.delete()
+    assert create_website_groups(website) == (1, 0, False)
+
+    remove_perm(constants.PERMISSION_VIEW, website.editor_group, website)
+    assert create_website_groups(website) == (0, 1, False)
+
+    remove_perm(constants.PERMISSION_PUBLISH, website.owner, website)
+    assert create_website_groups(website) == (0, 0, True)
+
     admin.groups.add(website.admin_group)
     editor.groups.add(website.editor_group)
     for permission in constants.PERMISSIONS_EDITOR:
@@ -336,19 +349,25 @@ def test_assign_group_permissions_error():
     website = WebsiteFactory.create()
     bad_perm = "fake_perm_website"
     with pytest.raises(Permission.DoesNotExist) as exc:
-        assign_object_permissions(website.editor_group, website, [bad_perm])
+        assign_website_permissions(website.editor_group, [bad_perm], website=website)
     assert exc.value.args == (f"Permission '{bad_perm}' not found",)
 
 
 def test_create_global_groups():
     """Global permission groups should be created and have appropriate permissions"""
 
-    # Delete them so they can be recreated
+    # Groups already exist
+    assert create_global_groups() == (0, 0)
+
+    # Delete one so it can be recreated
     Group.objects.get(name=constants.GLOBAL_ADMIN).delete()
-    Group.objects.get(name=constants.GLOBAL_AUTHOR).delete()
+    # Clear permissions from another
+    Group.objects.get(name=constants.GLOBAL_AUTHOR).permissions.clear()
+
+    assert create_global_groups() == (1, 1)
 
     admin, author = UserFactory.create_batch(2)
-    create_global_groups()
+
     admin_group = Group.objects.get(name=constants.GLOBAL_ADMIN)
     admin.groups.add(admin_group)
     author_group = Group.objects.get(name=constants.GLOBAL_AUTHOR)
