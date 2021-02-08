@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React from "react"
 import { Route, Router as ReactRouter } from "react-router"
 import { Provider } from "react-redux"
 import { History } from "history"
@@ -11,7 +11,7 @@ export interface RootProps {
   store: Store
 }
 
-export default function Root(props: RootProps): ReactElement {
+export default function Root(props: RootProps): JSX.Element {
   const { history, store } = props
 
   return (
