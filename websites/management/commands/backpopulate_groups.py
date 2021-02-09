@@ -1,5 +1,6 @@
 """ Backpopulate website groups and permissions"""
 from django.core.management import BaseCommand
+from django.db.models import Q
 
 from main.utils import now_in_utc
 from websites.models import Website
@@ -40,24 +41,23 @@ class Command(BaseCommand):
                 f"Global groups: created {created} groups, updated {updated} groups"
             )
 
-        for website in Website.objects.iterator():
-            if (
-                not filter_str
-                or (website.name and filter_str in website.name)
-                or (website.title and filter_str in website.title)
-            ):
-                created, updated, owner_updated = setup_website_groups_permissions(
-                    website
-                )
-                total_websites += 1
-                total_created += created
-                total_updated += updated
-                total_owners += 1 if owner_updated else 0
+        if filter_str:
+            website_qset = Website.objects.filter(
+                Q(name__icontains=filter_str) | Q(title__icontains=filter_str)
+            )
+        else:
+            website_qset = Website.objects.all()
+        for website in website_qset.iterator():
+            created, updated, owner_updated = setup_website_groups_permissions(website)
+            total_websites += 1
+            total_created += created
+            total_updated += updated
+            total_owners += 1 if owner_updated else 0
 
-                if is_verbose:
-                    self.stdout.write(
-                        f"{website.name} groups: created {created}, updated {updated}, owner updated: {str(owner_updated)}"
-                    )
+            if is_verbose:
+                self.stdout.write(
+                    f"{website.name} groups: created {created}, updated {updated}, owner updated: {str(owner_updated)}"
+                )
 
         total_seconds = (now_in_utc() - start).total_seconds()
         self.stdout.write(
