@@ -1,5 +1,5 @@
 import { DocumentFragment } from "@ckeditor/ckeditor5-engine"
-import { dataprocessor } from "@ckeditor/ckeditor5-engine"
+import HtmlDataProcessor from "@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor"
 import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
 import { editor } from '@ckeditor/ckeditor5-core'
 
@@ -11,7 +11,7 @@ import { md2html, html2md } from '../../markdown'
  * based on https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-markdown-gfm/src/gfmdataprocessor.js
  */
 export class MarkdownDataProcessor {
-  htmlDataProcessor: typeof dataprocessor.HtmlDataProcessor
+  htmlDataProcessor: dataprocessor.HtmlDataProcessor
 
   constructor(document: DocumentFragment) {
       this.htmlDataProcessor = new dataprocessor.HtmlDataProcessor(document)
