@@ -50,16 +50,8 @@ class WebsiteSerializer(serializers.ModelSerializer):
 class WebsiteDetailSerializer(serializers.ModelSerializer):
     """ Serializer for websites with serialized config """
 
-    config = serializers.SerializerMethodField()
-    starter = WebsiteStarterSerializer(read_only=True)
-
-    def get_config(self, instance):
-        """Returns parsed YAML config"""
-        if instance.starter is not None:
-            return yaml.load(instance.starter.config, Loader=yaml.Loader)
-        else:
-            return None
+    starter = WebsiteStarterDetailSerializer(read_only=True)
 
     class Meta:
         model = Website
-        fields = WebsiteSerializer.Meta.fields + ["config"]
+        fields = WebsiteSerializer.Meta.fields
