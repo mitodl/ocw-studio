@@ -1,6 +1,8 @@
 """ Websites Admin """
 from django.contrib import admin
-from main.admin import TimestampedModelAdmin
+from django.db.models import JSONField
+
+from main.admin import TimestampedModelAdmin, PrettyJSONWidget
 from websites.models import Website, WebsiteContent, WebsiteStarter
 
 
@@ -41,6 +43,7 @@ class WebsiteStarterAdmin(TimestampedModelAdmin):
 
     model = WebsiteStarter
 
+    formfield_overrides = {JSONField: {"widget": PrettyJSONWidget}}
     include_created_on_in_list = True
     list_display = ("id", "name", "source", "commit")
     list_filter = ("source",)

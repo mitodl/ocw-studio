@@ -7,13 +7,18 @@ from factory.fuzzy import FuzzyChoice
 from websites.constants import STARTER_SOURCES
 from websites.models import Website, WebsiteStarter
 
-EXAMPLE_SITE_CONFIG = """
-collections:
-  - label: "Page"
-    name: "page"
-    fields:
-      - {label: "Title", name: "title", widget: "string"}
-"""
+EXAMPLE_SITE_CONFIG = {
+    "collections": [
+        {
+            "fields": [
+                {"label": "Title", "name": "title", "widget": "string"},
+                {"label": "Body", "name": "body", "widget": "markdown"},
+            ],
+            "label": "Page",
+            "name": "page",
+        }
+    ]
+}
 
 
 class WebsiteStarterFactory(DjangoModelFactory):

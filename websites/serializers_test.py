@@ -1,6 +1,5 @@
 """ Tests for websites.serializers """
 import pytest
-import yaml
 
 from main.constants import ISO_8601_FORMAT
 from websites.factories import (
@@ -56,9 +55,8 @@ def test_website_starter_detail_serializer():
     assert serialized_data["path"] == starter.path
     assert serialized_data["source"] == starter.source
     assert serialized_data["commit"] == starter.commit
-    assert serialized_data["config"] == yaml.load(
-        EXAMPLE_SITE_CONFIG, Loader=yaml.Loader
-    )
+    assert "config" in serialized_data
+    assert serialized_data["config"] == EXAMPLE_SITE_CONFIG
 
 
 @pytest.mark.parametrize("has_starter", [True, False])

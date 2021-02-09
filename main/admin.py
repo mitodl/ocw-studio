@@ -1,5 +1,10 @@
 """Django admin functionality that is relevant to the entire app"""
+import json
+import logging
 from django.contrib import admin
+from django.forms import widgets
+
+log = logging.getLogger(__name__)
 
 
 class AuditableModelAdmin(admin.ModelAdmin):
@@ -60,3 +65,21 @@ class TimestampedModelAdmin(admin.ModelAdmin):
     def get_exclude(self, request, obj=None):
         exclude = tuple(super().get_exclude(request, obj=obj) or ())
         return self._join_and_dedupe(exclude, ("created_on", "updated_on"))
+
+
+# Adapted from solution posted on StackOverflow: https://stackoverflow.com/a/52627264
+class PrettyJSONWidget(widgets.Textarea):
+    """Admin widget class to pretty-print JSONField contents"""
+
+    def format_value(self, value):
+        try:
+            value = json.dumps(json.loads(value), indent=2, sort_keys=True)
+            # these lines will try to adjust size of TextArea to fit to content
+            row_lengths = [len(r) for r in value.split("\n")]
+            self.attrs["rows"] = min(max(len(row_lengths) + 2, 10), 30)
+            self.attrs["cols"] = min(max(max(row_lengths) + 2, 40), 120)
+            self.attrs["style"] = "font-family: monospace"
+            return value
+        except Exception as e:  # pylint: disable=broad-except
+            log.warning("Error while formatting JSON: %s", e)
+            return super().format_value(value)
