@@ -15,6 +15,7 @@ from websites.constants import (
 )
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 from websites.serializers import (
+    WebsiteDetailSerializer,
     WebsiteStarterSerializer,
     WebsiteStarterDetailSerializer,
 )
@@ -36,8 +37,8 @@ def websites(course_starter):
 
 
 @pytest.mark.parametrize("website_type", [COURSE_STARTER_SLUG, None])
-def test_websites_endpoint(drf_client, website_type, websites):
-    """Test new websites endpoint"""
+def test_websites_endpoint_list(drf_client, website_type, websites):
+    """Test new websites endpoint for lists"""
     filter_by_type = website_type is not None
     now = now_in_utc()
 
@@ -59,6 +60,13 @@ def test_websites_endpoint(drf_client, website_type, websites):
         assert resp.data.get("results")[idx]["publish_date"] <= now.strftime(
             ISO_8601_FORMAT
         )
+
+
+def test_websites_endpoint_detail(drf_client):
+    """Test new websites endpoint for details"""
+    website = WebsiteFactory.create()
+    resp = drf_client.get(reverse("websites_api-detail", kwargs={"pk": website.uuid}))
+    assert resp.json() == WebsiteDetailSerializer(instance=website).data
 
 
 def test_websites_endpoint_sorting(drf_client, websites):
