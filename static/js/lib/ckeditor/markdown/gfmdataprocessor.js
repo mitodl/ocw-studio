@@ -7,10 +7,12 @@
  * @module markdown-gfm/gfmdataprocessor
  */
 
-import { HtmlDataProcessor } from "@ckeditor/ckeditor5-engine"
+import HtmlDataProcessor from "@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor"
 
-import markdown2html from "./markdown2html/markdown2html"
+// import markdown2html from "./markdown2html/markdown2html"
 import html2markdown, { turndownService } from "./html2markdown/html2markdown"
+
+import markdown2html from './markdown2html'
 
 /**
  * This data processor implementation uses GitHub Flavored Markdown as input/output data.

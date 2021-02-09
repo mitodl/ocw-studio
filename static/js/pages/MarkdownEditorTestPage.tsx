@@ -1,12 +1,17 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 
 import MarkdownEditor from "../components/MarkdownEditor"
+import { html2md, md2html } from '../lib/markdown'
 
 const TEST_DATA = `## A heading
 
 Amazing stuff! Paragraphs!
 
 And another paragraph!
+
+And here a youtube shortcode:
+
+{{ youtube "2XID_W4neJo" }}
 
 **bold** and even _italic_ text.
 
@@ -25,6 +30,12 @@ good stuff.`
 
 export default function MarkdownEditorTestPage() {
   const [markdown, setMarkdown] = useState(TEST_DATA)
+
+  useEffect(() => {
+    const html = md2html(TEST_DATA)
+    console.log(html)
+    console.log(html2md(html))
+  }, [])
 
   return (
     <div>

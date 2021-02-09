@@ -7,16 +7,16 @@
  * @module markdown-gfm/markdown2html
  */
 
-import marked from 'marked';
+import marked from "marked"
 
 // Overrides.
-marked.use( {
-	tokenizer: {
-		// Disable the autolink rule in the lexer.
-		autolink: () => null,
-		url: () => null
-	}
-} );
+marked.use({
+  tokenizer: {
+    // Disable the autolink rule in the lexer.
+    autolink: () => null,
+    url: () => null
+  }
+})
 
 /**
  * Parses markdown string to an HTML.
@@ -24,14 +24,14 @@ marked.use( {
  * @param {String} markdown
  * @returns {String}
  */
-export default function markdown2html( markdown ) {
-	return marked.parse( markdown, {
-		gfm: true,
-		breaks: true,
-		tables: true,
-		xhtml: true,
-		headerIds: false
-	} );
+export default function markdown2html(markdown) {
+  return marked.parse(markdown, {
+    gfm: true,
+    breaks: true,
+    tables: true,
+    xhtml: true,
+    headerIds: false
+  })
 }
 
-export { marked };
+export { marked }
