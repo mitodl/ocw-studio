@@ -3,7 +3,7 @@ from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from websites.permissions import create_website_groups
+from websites.permissions import setup_website_groups_permissions
 from websites.models import Website
 
 
@@ -20,4 +20,4 @@ def handle_website_save(
     Add website-specific groups with appropriate permissions when a website is created
     """
     if created:
-        create_website_groups(instance)
+        setup_website_groups_permissions(instance)

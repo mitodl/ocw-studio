@@ -9,7 +9,7 @@ from websites.factories import WebsiteFactory
 from websites.permissions import (
     assign_website_permissions,
     create_global_groups,
-    create_website_groups,
+    setup_website_groups_permissions,
 )
 
 pytestmark = pytest.mark.django_db
@@ -315,22 +315,22 @@ def test_admins_can_delete_any_website_content(mocker, permission_groups):
             )
 
 
-def test_create_website_groups():
+def test_setup_website_groups_permissions():
     """ Permissions should be assigned as expected """
     owner, admin, editor = UserFactory.create_batch(3)
     website = WebsiteFactory.create(owner=owner)
 
     # permissions should have all been added via signal
-    assert create_website_groups(website) == (0, 0, False)
+    assert setup_website_groups_permissions(website) == (0, 0, False)
 
     website.admin_group.delete()
-    assert create_website_groups(website) == (1, 0, False)
+    assert setup_website_groups_permissions(website) == (1, 0, False)
 
     remove_perm(constants.PERMISSION_VIEW, website.editor_group, website)
-    assert create_website_groups(website) == (0, 1, False)
+    assert setup_website_groups_permissions(website) == (0, 1, False)
 
     remove_perm(constants.PERMISSION_PUBLISH, website.owner, website)
-    assert create_website_groups(website) == (0, 0, True)
+    assert setup_website_groups_permissions(website) == (0, 0, True)
 
     admin.groups.add(website.admin_group)
     editor.groups.add(website.editor_group)

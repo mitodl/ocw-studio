@@ -23,16 +23,19 @@ def assign_website_permissions(group_or_user, perms, website=None):
         bool: True if any permissions were added, False otherwise
     """
     if website:
-        current_perms = set(get_perms(group_or_user, website))
+        current_perm_codenames = set(get_perms(group_or_user, website))
     elif isinstance(group_or_user, Group):
-        current_perms = {perm.codename for perm in group_or_user.permissions.all()}
+        current_perm_codenames = {
+            perm.codename for perm in group_or_user.permissions.all()
+        }
     elif isinstance(group_or_user, User):
-        current_perms = {
+        current_perm_codenames = {
             perm.codename for perm in Permission.objects.filter(user=group_or_user)
         }
     else:
         raise TypeError("Permissions must be assigned to a user or group")
-    if not {perm.replace("websites.", "") for perm in perms}.difference(current_perms):
+    added_perm_codenames = {perm.replace("websites.", "") for perm in perms}
+    if not added_perm_codenames.difference(current_perm_codenames):
         return False
     for perm in perms:
         try:
@@ -46,7 +49,7 @@ def assign_website_permissions(group_or_user, perms, website=None):
 
 
 @transaction.atomic
-def create_website_groups(website):
+def setup_website_groups_permissions(website):
     """
     Create groups and assign permissions for a website
 
@@ -120,7 +123,7 @@ def create_global_groups():
     if author_created:
         groups_created += 1
 
-    global_perms = [constants.PERMISSION_ADD]
+    global_perms = constants.PERMISSIONS_GLOBAL_AUTHOR
     if (
         assign_website_permissions(
             admin_group, global_perms + constants.PERMISSIONS_ADMIN

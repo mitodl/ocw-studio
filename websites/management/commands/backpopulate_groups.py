@@ -3,7 +3,7 @@ from django.core.management import BaseCommand
 
 from main.utils import now_in_utc
 from websites.models import Website
-from websites.permissions import create_global_groups, create_website_groups
+from websites.permissions import create_global_groups, setup_website_groups_permissions
 
 
 class Command(BaseCommand):
@@ -11,26 +11,60 @@ class Command(BaseCommand):
 
     help = "Backpopulate website groups and permissions"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "-f",
+            "--filter",
+            dest="filter",
+            default="",
+            help="If specified, only process websites that contain this filter text in their name",
+        )
+
     def handle(self, *args, **options):
 
         self.stdout.write(f"Creating website permission groups")
         start = now_in_utc()
 
-        # Redo global grpups too in case permissions changed
-        created, updated = create_global_groups()
-        self.stdout.write(
-            f"Global groups: created {created} groups, updated {updated} groups"
-        )
+        filter_str = options["filter"].lower()
+        is_verbose = options["verbosity"] > 1
+
+        total_websites = 0
+        total_created = 0
+        total_updated = 0
+        total_owners = 0
+
+        # Redo global groups too in case permissions changed
+        if not filter_str:
+            created, updated = create_global_groups()
+            self.stdout.write(
+                f"Global groups: created {created} groups, updated {updated} groups"
+            )
 
         for website in Website.objects.iterator():
-            created, updated, owner_updated = create_website_groups(website)
-            self.stdout.write(
-                f"{website.name} groups: created {created}, updated {updated}, owner updated: {str(owner_updated)}"
-            )
+            if (
+                not filter_str
+                or (website.name and filter_str in website.name)
+                or (website.title and filter_str in website.title)
+            ):
+                created, updated, owner_updated = setup_website_groups_permissions(
+                    website
+                )
+                total_websites += 1
+                total_created += created
+                total_updated += updated
+                total_owners += 1 if owner_updated else 0
+
+                if is_verbose:
+                    self.stdout.write(
+                        f"{website.name} groups: created {created}, updated {updated}, owner updated: {str(owner_updated)}"
+                    )
 
         total_seconds = (now_in_utc() - start).total_seconds()
         self.stdout.write(
             "Creation of website permission groups finished, took {} seconds".format(
                 total_seconds
             )
+        )
+        self.stdout.write(
+            f"{total_websites} websites processed, {total_created} groups created, {total_updated} groups updated, {total_owners} updated"
         )

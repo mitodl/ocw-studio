@@ -60,11 +60,11 @@ class WebsiteFactory(DjangoModelFactory):
 class WebsiteContentFactory(DjangoModelFactory):
     """Factory for WebsiteContent"""
 
-    title = factory.Sequence(lambda n: "OCW Course Content %s" % n)
+    title = factory.Sequence(lambda n: "OCW Site Content %s" % n)
     type = FuzzyChoice((CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE))
     markdown = factory.Faker("text")
     metadata = factory.Faker("json")
-    hugo_filepath = factory.Sequence(lambda n: "/courses/ocw_site_x/%s" % n)
+    hugo_filepath = factory.Sequence(lambda n: "/sites/ocw_site_x/%s" % n)
 
     website = factory.SubFactory(WebsiteFactory)
 
