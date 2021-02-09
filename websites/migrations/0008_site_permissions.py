@@ -29,7 +29,7 @@ def remove_global_groups(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("websites", "0006_website_owners"),
+        ("websites", "0007_website_owners"),
     ]
 
     operations = [

@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("websites", "0005_website_fields_update"),
+        ("websites", "0006_website_config_json"),
     ]
 
     operations = [
