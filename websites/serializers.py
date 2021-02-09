@@ -1,5 +1,4 @@
 """ Serializers for websites """
-import yaml
 from rest_framework import serializers
 
 from websites.models import Website, WebsiteStarter
@@ -15,12 +14,6 @@ class WebsiteStarterSerializer(serializers.ModelSerializer):
 
 class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
     """ Serializer for website starters with serialized config """
-
-    config = serializers.SerializerMethodField()
-
-    def get_config(self, instance):
-        """Returns parsed YAML config"""
-        return yaml.load(instance.config, Loader=yaml.Loader)
 
     class Meta:
         model = WebsiteStarter

@@ -1,7 +1,9 @@
 """ Scans the starter project directory in the local filesystem and creates/updates relevant db records """
+import json
 import os
 from collections import defaultdict
 
+import yaml
 from django.conf import settings
 from django.core.management import BaseCommand
 
@@ -38,22 +40,23 @@ class Command(BaseCommand):
                     local_starter_projects_path, dir_name, WEBSITE_CONFIG_FILENAME
                 )
             ) as f:
-                config_contents = f.read().strip()
-            if not config_contents:
+                raw_config = f.read().strip()
+            if not raw_config:
                 continue
+            parsed_config = yaml.load(raw_config, Loader=yaml.Loader)
             starter, created = WebsiteStarter.objects.get_or_create(
                 path=os.path.join(LOCAL_STARTERS_DIR, dir_name),
                 name=dir_name,
                 source=STARTER_SOURCE_LOCAL,
-                defaults=dict(config=config_contents),
+                defaults=dict(config=parsed_config),
             )
             updated = False
             if (
                 not created
                 and options["keep"] is False
-                and starter.config != config_contents
+                and starter.config != parsed_config
             ):
-                starter.config = config_contents
+                starter.config = parsed_config
                 starter.save()
                 updated = True
             if created:

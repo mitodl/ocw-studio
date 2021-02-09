@@ -107,8 +107,8 @@ class WebsiteStarter(TimestampedModel):
         null=True,
         help_text="Commit hash for the repo (if this commit came from a Github starter repo).",
     )
-    config = models.TextField(
-        null=False, help_text="YML-formatted site config.", validators=[validate_yaml]
+    config = models.JSONField(
+        null=False, help_text="Site config describing content types, widgets, etc."
     )
 
     def __str__(self):
