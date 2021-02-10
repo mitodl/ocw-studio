@@ -9,7 +9,7 @@ export interface Props {
 }
 
 /**
- * A component for editing Markdown.
+ * A component for editing Markdown using CKEditor.
  */
 export default function MarkdownEditor(props: Props): JSX.Element {
   const { initialData, onChange } = props

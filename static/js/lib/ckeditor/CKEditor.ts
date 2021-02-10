@@ -18,6 +18,7 @@ import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 import { SimpleBox, InsertSimpleBoxCommand } from "./SimpleBox"
 import Markdown from "./plugins/Markdown"
+import YoutubeEmbed from './plugins/YoutubeEmbed'
 
 export default class ClassicEditor extends ClassicEditorBase {}
 
@@ -39,7 +40,7 @@ ClassicEditor.builtinPlugins = [
   LinkPlugin,
   ListPlugin,
   ParagraphPlugin,
-  SimpleBox
+  YoutubeEmbed
 ]
 
 ClassicEditor.defaultConfig = {
@@ -56,7 +57,7 @@ ClassicEditor.defaultConfig = {
       "blockQuote",
       "undo",
       "redo",
-      "simpleBox"
+      "youtubeEmbed"
     ]
   },
   image: {
