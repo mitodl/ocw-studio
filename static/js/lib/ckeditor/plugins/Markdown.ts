@@ -1,7 +1,5 @@
-import { DocumentFragment } from "@ckeditor/ckeditor5-engine"
 import HtmlDataProcessor from "@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor"
 import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
-import { editor } from '@ckeditor/ckeditor5-core'
 
 import { md2html, html2md } from '../../markdown'
 
@@ -11,10 +9,10 @@ import { md2html, html2md } from '../../markdown'
  * based on https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-markdown-gfm/src/gfmdataprocessor.js
  */
 export class MarkdownDataProcessor {
-  htmlDataProcessor: dataprocessor.HtmlDataProcessor
+  htmlDataProcessor: typeof HtmlDataProcessor
 
   constructor(document: DocumentFragment) {
-      this.htmlDataProcessor = new dataprocessor.HtmlDataProcessor(document)
+      this.htmlDataProcessor = new HtmlDataProcessor(document)
   }
 
   /**
@@ -43,9 +41,9 @@ export class MarkdownDataProcessor {
  * based on https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-markdown-gfm/src/markdown.js
  */
 export default class Markdown extends Plugin {
-  constructor(editor: editor.Editor) {
+  constructor(editor: any) {
     super(editor)
-    editor.data.processor = new MarkdownDataProcessor(editor.data.viewDocument)
+    editor.data.processor = new MarkdownDataProcessor((editor.data).viewDocument)
   }
 
   static get pluginName() {

@@ -4,10 +4,10 @@ const YOUTUBE_SHORTCODE_REGEX = /{{ youtube "(\S+)" }}/
 
 function youtubeShortcodeExtension() {
   return [{
-  type: "lang",
-  regex:YOUTUBE_SHORTCODE_REGEX,
-  replace: (s: string, match: string) => (
-    `<iframe
+    type: "lang",
+    regex:YOUTUBE_SHORTCODE_REGEX,
+    replace: (s: string, match: string) => (
+      `<iframe
       width="560"
       height="315"
       src="https://www.youtube.com/embed/${match}"
@@ -15,8 +15,8 @@ function youtubeShortcodeExtension() {
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowfullscreen>
     </iframe>`
-  )
-}]
+    )
+  }]
 }
 
 const converter = new Converter({
