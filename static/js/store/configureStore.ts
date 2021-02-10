@@ -4,16 +4,13 @@ import { queryMiddleware } from "redux-query"
 
 import { makeRequest } from "./network_interface"
 import rootReducer, { ReduxState } from "../reducers"
+import { getQueries, getEntities } from "../lib/redux_query"
 
 // Setup middleware
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function configureStore(initialState?: ReduxState) {
   const COMMON_MIDDLEWARE = [
-    queryMiddleware(
-      makeRequest,
-      (state: ReduxState) => state.queries,
-      (state: ReduxState) => state.entities
-    )
+    queryMiddleware(makeRequest, getQueries, getEntities)
   ]
 
   // Store factory configuration

@@ -16,7 +16,7 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
 
 from main.views import index
 
@@ -28,6 +28,7 @@ urlpatterns = [
     url(r"^hijack/", include("hijack.urls", namespace="hijack")),
     # Example view
     path("", index, name="main-index"),
+    re_path(r"^sites/.*$", index),
     path("", include("news.urls")),
     path("", include("websites.urls")),
 ]
