@@ -17,7 +17,7 @@ import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 import { SimpleBox, InsertSimpleBoxCommand } from "./SimpleBox"
-import Markdown from './plugins/Markdown'
+import Markdown from "./plugins/Markdown"
 
 export default class ClassicEditor extends ClassicEditorBase {}
 

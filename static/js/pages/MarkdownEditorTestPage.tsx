@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 
 import MarkdownEditor from "../components/MarkdownEditor"
-import { html2md, md2html } from '../lib/markdown'
+import { html2md, md2html } from "../lib/markdown"
 
 const TEST_DATA = `## A heading
 
