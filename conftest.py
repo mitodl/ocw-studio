@@ -3,6 +3,9 @@ import pytest
 
 from types import SimpleNamespace
 
+from websites.constants import COURSE_STARTER_SLUG
+from websites.models import WebsiteStarter
+
 
 @pytest.fixture(autouse=True)
 def default_settings(settings):
@@ -26,6 +29,13 @@ def mocked_celery(mocker):
         chain=chain_mock,
         replace_exception_class=exception_class,
     )
+
+
+@pytest.fixture()
+@pytest.mark.django_db
+def course_starter():
+    """Returns the 'course'-type WebsiteStarter that is seeded in a data migration"""
+    return WebsiteStarter.objects.get(slug=COURSE_STARTER_SLUG)
 
 
 def pytest_addoption(parser):
