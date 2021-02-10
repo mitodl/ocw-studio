@@ -3,6 +3,7 @@ django
 boto3
 celery
 dj-database-url
+django-guardian
 django-redis
 djangorestframework==3.12.2
 django-robots

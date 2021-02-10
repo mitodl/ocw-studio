@@ -4,8 +4,8 @@ import factory
 from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyChoice
 
-from websites.constants import STARTER_SOURCES
-from websites.models import Website, WebsiteStarter
+from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE, STARTER_SOURCES
+from websites.models import WebsiteStarter, WebsiteContent, Website
 
 EXAMPLE_SITE_CONFIG = {
     "collections": [
@@ -55,3 +55,18 @@ class WebsiteFactory(DjangoModelFactory):
         future_publish = factory.Trait(
             publish_date=factory.Faker("future_datetime", tzinfo=pytz.utc)
         )
+
+
+class WebsiteContentFactory(DjangoModelFactory):
+    """Factory for WebsiteContent"""
+
+    title = factory.Sequence(lambda n: "OCW Site Content %s" % n)
+    type = FuzzyChoice((CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE))
+    markdown = factory.Faker("text")
+    metadata = factory.Faker("json")
+    hugo_filepath = factory.Sequence(lambda n: "/sites/ocw_site_x/%s" % n)
+
+    website = factory.SubFactory(WebsiteFactory)
+
+    class Meta:
+        model = WebsiteContent
