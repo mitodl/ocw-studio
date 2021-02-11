@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.3.0
+Version 0.3.0 (Released February 11, 2021)
 -------------
 
 - Decoupled 'websites' app from OCW course site import logic
