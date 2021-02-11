@@ -18,7 +18,7 @@ import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 import { SimpleBox, InsertSimpleBoxCommand } from "./SimpleBox"
 import Markdown from "./plugins/Markdown"
-import YoutubeEmbed from './plugins/YoutubeEmbed'
+import YoutubeEmbed from "./plugins/YoutubeEmbed"
 
 export default class ClassicEditor extends ClassicEditorBase {}
 

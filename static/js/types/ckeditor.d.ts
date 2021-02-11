@@ -43,3 +43,7 @@ declare module '@ckeditor/ckeditor5-core/src/command';
 declare module '@ckeditor/ckeditor5-ui/src/button/buttonview';
 
 declare module '@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor';
+
+declare module '@ckeditor/ckeditor5-widget/src/utils';
+
+declare module '@ckeditor/ckeditor5-widget/src/widget';

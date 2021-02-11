@@ -14,39 +14,42 @@ const YOUTUBE_SHORTCODE_REGEX = /{{< youtube "(\S+)" >}}/
 const YOUTUBE_SRC_REGEX = /https:\/\/www\.youtube\.com\/embed\/(\S+)\/?$/
 export const YOUTUBE_EMBED_CLASS = "youtube-embed"
 
+export const youtubeEmbedUrl = (videoId: string) =>
+  `https://www.youtube.com/embed/${videoId}`
+
+export const YOUTUBE_EMBED_PARAMS = {
+  width:       "560",
+  height:      "315",
+  frameborder: "0",
+  allow:
+    "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture",
+  allowfullscreen: true
+}
+
 function youtubeShortcodeExtension() {
   return [
     {
       type:    "lang",
       regex:   YOUTUBE_SHORTCODE_REGEX,
       replace: (s: string, match: string) =>
-        `<iframe
-      width="560"
-      class="${YOUTUBE_EMBED_CLASS}"
-      height="315"
-      src="https://www.youtube.com/embed/${match}"
-      frameborder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowfullscreen>
-    </iframe>`
-          .replace("\n", " ")
-          .replace(/\s+/g, " ")
+        `<section class="${YOUTUBE_EMBED_CLASS}">${match}</section>`
     }
   ]
 }
 
 turndownService.addRule("youtubeEmbed", {
-  filter: (node, options) =>
-    node.nodeName === "IFRAME" &&
-    node.getAttribute("class") === YOUTUBE_EMBED_CLASS,
+  filter: (node, options) => {
+    return (
+      node.nodeName === "SECTION" &&
+      node.getAttribute("class") === YOUTUBE_EMBED_CLASS
+    )
+  },
   replacement: (
     content: string,
     node: TurndownService.Node,
     options
   ): string => {
-    const src: string = (node as any).getAttribute("src")
-    const match = src.match(YOUTUBE_SRC_REGEX)
-    const videoId = match ? match[1] : ""
+    const videoId = content.replace(/\\/, "")
     return `{{< youtube "${videoId}" >}}`
   }
 })

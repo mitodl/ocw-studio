@@ -17,7 +17,6 @@ export class MarkdownDataProcessor {
 
   /**
    * Convert markdown string to ckeditor view state
-   * @returns {module:engine/view/documentfragment~DocumentFragment} The converted view element.
    */
   toView(md: string): DocumentFragment {
     const html = md2html(md)

@@ -11,7 +11,7 @@ And another paragraph!
 
 And here a youtube shortcode:
 
-{{ youtube "2XID_W4neJo" }}
+{{< youtube "2XID_W4neJo" >}}
 
 **bold** and even _italic_ text.
 
@@ -33,8 +33,6 @@ export default function MarkdownEditorTestPage() {
 
   useEffect(() => {
     const html = md2html(TEST_DATA)
-    console.log(html)
-    console.log(html2md(html))
   }, [])
 
   return (

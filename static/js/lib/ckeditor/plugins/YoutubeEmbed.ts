@@ -1,7 +1,16 @@
 import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
 import Command from "@ckeditor/ckeditor5-core/src/command"
 import ButtonView from "@ckeditor/ckeditor5-ui/src/button/buttonview"
-import { YOUTUBE_EMBED_CLASS } from '../../markdown'
+import {
+  YOUTUBE_EMBED_CLASS,
+  youtubeEmbedUrl,
+  YOUTUBE_EMBED_PARAMS
+} from "../../markdown"
+import {
+  toWidget,
+  toWidgetEditable
+} from "@ckeditor/ckeditor5-widget/src/utils"
+import Widget from "@ckeditor/ckeditor5-widget/src/widget"
 
 class YoutubeEmbedUI extends Plugin {
   init() {
@@ -54,40 +63,64 @@ class YoutubeEmbedEditing extends Plugin {
     const schema = this.editor.model.schema
 
     schema.register("youtubeEmbed", {
-      isObject:   true,
-      allowWhere: "$block"
-    })
-
-    schema.register("youtubeVideoId", {
-      isLimit:        true,
-      allowIn:        "simpleBox",
-      allowContentOf: "$text"
+      isObject:       true,
+      allowWhere:     "$block",
+      allowContentOf: "$block"
     })
   }
 
   _defineConverters() {
-    // ADDED
     const conversion = this.editor.conversion
 
-    conversion.elementToElement({
+    /**
+     * `upcast` converts the HTML string to a view element (i.e. ckeditor
+     * internal state, *not* to a DOM element)
+     *
+     * providing 'iframe' and YOUTUBE_EMBED_CLASS allows CKEditor to recognize
+     * the iframe in our converted HTML and convert it to a `youtubeEmbed` object
+     */
+    conversion.for("upcast").elementToElement({
       model: "youtubeEmbed",
       view:  {
         name:    "section",
-        classes: "simple-box"
+        classes: YOUTUBE_EMBED_CLASS
       }
     })
 
-    conversion.elementToElement({
+    /**
+     * dataDowncast converts a view element to an HTML element for data
+     * output (this output will then be the input into our html2md function)
+     */
+    conversion.for("dataDowncast").elementToElement({
       model: "youtubeEmbed",
       view:  {
-        name:    "iframe",
+        name:    "section",
         classes: YOUTUBE_EMBED_CLASS
+      }
+    })
+
+    /**
+     * editingDowncast converts a view element to HTML which is actually shown
+     * in the editor for WYSIWYG purposes
+     * (for the youtube embed this is an iframe)
+     */
+    conversion.for("editingDowncast").elementToElement({
+      model: "youtubeEmbed",
+      view:  (modelElement: any, { writer: viewWriter }: any) => {
+        // need to figure out what is on this modelElement here
+        const videoId = modelElement._children._nodes[0]._data
+        const iframe = viewWriter.createContainerElement("iframe", {
+          class: YOUTUBE_EMBED_CLASS,
+          src:   youtubeEmbedUrl(videoId),
+          ...YOUTUBE_EMBED_PARAMS
+        })
+        return toWidget(iframe, viewWriter, { label: "Youtube Embed" })
       }
     })
   }
 }
 
-export class YoutubeEmbed extends Plugin {
+export default class YoutubeEmbed extends Plugin {
   static get requires() {
     return [YoutubeEmbedEditing, YoutubeEmbedUI]
   }
@@ -118,7 +151,7 @@ export class InsertYoutubeEmbedCommand extends Command {
   }
 }
 
-function createSimpleBox(writer: any) {
+function createYoutubeEmbed(writer: any) {
   const embed = writer.createElement("youtubeEmbed")
   const videoId = writer.createElement("youtubeVideoId")
 
