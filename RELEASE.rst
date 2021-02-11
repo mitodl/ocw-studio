@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.3.0 (Released February 11, 2021)
+-------------
+
+- Decoupled 'websites' app from OCW course site import logic
+- few more frontend tweaks
+- Added website starter API endpoints and feature flag
+- a few JS dependency upgrades
+- update frontend setup
+- Added WebsiteStarter model with local development support
+
 Version 0.2.0 (Released January 26, 2021)
 -------------
 
