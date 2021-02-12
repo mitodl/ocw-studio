@@ -1,6 +1,8 @@
 """ Serializers for websites """
+from django.db import transaction
 from rest_framework import serializers
 
+from users.models import User
 from websites.models import Website, WebsiteStarter
 
 
@@ -37,13 +39,24 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "publish_date",
             "metadata",
             "starter",
+            "owner",
         ]
+        extra_kwargs = {"owner": {"write_only": True}}
 
 
 class WebsiteDetailSerializer(serializers.ModelSerializer):
     """ Serializer for websites with serialized config """
 
     starter = WebsiteStarterDetailSerializer(read_only=True)
+
+    def create(self, validated_data):
+        """Ensure that the website is created by the requesting user"""
+        request = self.context.get("request")
+        if request and hasattr(request, "user") and isinstance(request.user, User):
+            validated_data["owner"] = request.user
+            with transaction.atomic():
+                website = super().create(validated_data)
+            return website
 
     class Meta:
         model = Website

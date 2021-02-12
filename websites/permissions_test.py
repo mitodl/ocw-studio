@@ -1,6 +1,6 @@
 """ Tests for websites permissions"""
 import pytest
-from django.contrib.auth.models import Group, Permission
+from django.contrib.auth.models import AnonymousUser, Group, Permission
 from guardian.shortcuts import remove_perm
 
 from users.factories import UserFactory
@@ -67,11 +67,12 @@ def test_can_view_edit_preview_website(mocker, permission_groups, method):
         permission_groups.global_author,
         permission_groups.site_admin,
         permission_groups.websites[0].owner,
+        AnonymousUser(),
     ]:
         request = mocker.Mock(user=user, method=method)
         assert permissions.HasWebsitePermission().has_permission(
             request, mocker.Mock()
-        ) is (method == "GET")
+        ) is (method == "GET" or request.user.is_authenticated)
         for permission_class in (
             permissions.HasWebsitePermission(),
             permissions.HasWebsitePreviewPermission(),

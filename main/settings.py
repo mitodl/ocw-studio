@@ -96,7 +96,10 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "compat",
     "guardian",
+    "hijack",
+    "hijack_admin",
     "server_status",
     # django-robots
     "rest_framework",
@@ -564,3 +567,8 @@ REST_FRAMEWORK = {
     ),
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
+
+HIJACK_LOGIN_REDIRECT_URL = "/"
+HIJACK_LOGOUT_REDIRECT_URL = "/admin/users/user/"
+HIJACK_REGISTER_ADMIN = False
+HIJACK_ALLOW_GET_REQUESTS = True
