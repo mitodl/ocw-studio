@@ -10,8 +10,6 @@ class YoutubeEmbedUI extends Plugin {
     const editor = this.editor
     const t = editor.t
 
-    // The "simpleBox" button must be registered among the UI components of the editor
-    // to be displayed in the toolbar.
     editor.ui.componentFactory.add("youtubeEmbed", (locale: any) => {
       // The state of the button will be bound to the widget command.
       const command = editor.commands.get("insertYoutubeEmbed")
@@ -42,8 +40,6 @@ class YoutubeEmbedUI extends Plugin {
 
 class YoutubeEmbedEditing extends Plugin {
   init() {
-    console.log("SimpleBoxEditing#init() got called")
-
     this._defineSchema()
     this._defineConverters()
     this.editor.commands.add(
@@ -126,8 +122,6 @@ export class InsertYoutubeEmbedCommand extends Command {
 
   execute() {
     this.editor.model.change((writer: any) => {
-      // Insert <simpleBox>*</simpleBox> at the current selection position
-      // in a way that will result in creating a valid model structure.
       this.editor.model.insertContent(createYoutubeEmbed(writer))
     })
   }
