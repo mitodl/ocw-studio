@@ -6,7 +6,6 @@ from rest_framework.pagination import LimitOffsetPagination
 
 from main import features
 from main.permissions import ReadonlyPermission
-from users.models import User
 from websites.constants import PERMISSION_VIEW, STARTER_SOURCE_GITHUB
 from websites.models import Website, WebsiteStarter
 from websites.permissions import HasWebsitePermission, is_global_admin
@@ -71,17 +70,6 @@ class WebsiteViewSet(
             return WebsiteSerializer
         else:
             return WebsiteDetailSerializer
-
-    def create(self, request, *args, **kwargs):
-        """Ensure that the website is created by the requesting user"""
-        if hasattr(self.request, "user") and isinstance(self.request.user, User):
-            self.request.data.update({"owner": self.request.user.id})
-        return super().create(request, *args, **kwargs)
-
-    def update(self, request, *args, **kwargs):
-        """Ensure that the website owner is removed if present in the data"""
-        self.request.data.pop("owner", None)
-        return super().update(request, *args, **kwargs)
 
 
 class WebsiteStarterViewSet(
