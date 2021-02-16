@@ -1,3 +1,5 @@
+// import TurndownService from "turndown"
+
 declare module '@ckeditor/ckeditor5-paragraph/src/paragraph';
 
 declare module '@ckeditor/ckeditor5-list/src/list';
@@ -48,6 +50,8 @@ declare module '@ckeditor/ckeditor5-widget/src/utils';
 
 declare module '@ckeditor/ckeditor5-widget/src/widget';
 
-declare module '@ckeditor/ckeditor5-markdown-gfm/src/html2markdown/html2markdown';
+declare module '@ckeditor/ckeditor5-markdown-gfm/src/html2markdown/html2markdown' {
+  export const turndownService: import("turndown");
+}
 
 declare module '@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor';

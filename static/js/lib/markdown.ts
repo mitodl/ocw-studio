@@ -30,7 +30,7 @@ function youtubeShortcodeExtension() {
 }
 
 turndownService.addRule("youtubeEmbed", {
-  filter: (node: any, options: any) => {
+  filter: (node: HTMLElement, _: any) => {
     return (
       node.nodeName === "SECTION" &&
       node.getAttribute("class") === YOUTUBE_EMBED_CLASS
@@ -39,7 +39,7 @@ turndownService.addRule("youtubeEmbed", {
   replacement: (
     content: string,
     node: TurndownService.Node,
-    options: any
+    options: TurndownService.Options
   ): string => {
     const videoId = content.replace(/\\/, "")
     return `{{< youtube "${videoId}" >}}`
