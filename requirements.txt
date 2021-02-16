@@ -41,8 +41,18 @@ decorator==4.4.2
     #   traitlets
 dj-database-url==0.5.0
     # via -r requirements.in
+django-compat==1.0.15
+    # via
+    #   django-hijack
+    #   django-hijack-admin
 django-guardian==2.3.0
     # via -r requirements.in
+django-hijack-admin==2.1.10
+    # via -r requirements.in
+django-hijack==2.2.1
+    # via
+    #   -r requirements.in
+    #   django-hijack-admin
 django-redis==4.12.1
     # via -r requirements.in
 django-robots==4.0
@@ -57,6 +67,7 @@ django==3.1
     # via
     #   -r requirements.in
     #   django-guardian
+    #   django-hijack
     #   django-redis
     #   djangorestframework
     #   mitol-django-common
@@ -130,6 +141,7 @@ sentry-sdk==0.16.5
 six==1.15.0
     # via
     #   cryptography
+    #   django-compat
     #   django-server-status
     #   pyopenssl
     #   python-dateutil

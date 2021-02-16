@@ -37,7 +37,9 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "publish_date",
             "metadata",
             "starter",
+            "owner",
         ]
+        extra_kwargs = {"owner": {"write_only": True}}
 
 
 class WebsiteDetailSerializer(serializers.ModelSerializer):

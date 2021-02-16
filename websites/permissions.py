@@ -191,7 +191,7 @@ class HasWebsitePermission(BasePermission):
         if request.method == "POST":
             # Only global editors and admins can create new Websites
             return request.user.has_perm(constants.PERMISSION_ADD)
-        return False
+        return request.user.is_authenticated
 
     def has_object_permission(self, request, view, obj):
         user = request.user

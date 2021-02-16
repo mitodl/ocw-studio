@@ -4,6 +4,7 @@ import pytz
 from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyChoice
 
+from users.factories import UserFactory
 from websites.constants import CONTENT_TYPE_FILE, CONTENT_TYPE_PAGE, STARTER_SOURCES
 from websites.models import Website, WebsiteContent, WebsiteStarter
 
@@ -44,6 +45,7 @@ class WebsiteFactory(DjangoModelFactory):
     metadata = factory.Faker("json")
     publish_date = factory.Faker("date_time", tzinfo=pytz.utc)
     starter = factory.SubFactory(WebsiteStarterFactory)
+    owner = factory.SubFactory(UserFactory)
 
     class Meta:
         model = Website

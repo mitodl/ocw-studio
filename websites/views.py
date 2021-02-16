@@ -1,12 +1,15 @@
 """ Views for websites """
+from guardian.shortcuts import get_objects_for_user
 from mitol.common.utils.datetime import now_in_utc
 from rest_framework import mixins, viewsets
 from rest_framework.pagination import LimitOffsetPagination
 
 from main import features
 from main.permissions import ReadonlyPermission
-from websites.constants import STARTER_SOURCE_GITHUB
+from users.models import User
+from websites.constants import PERMISSION_VIEW, STARTER_SOURCE_GITHUB
 from websites.models import Website, WebsiteStarter
+from websites.permissions import HasWebsitePermission, is_global_admin
 from websites.serializers import (
     WebsiteDetailSerializer,
     WebsiteSerializer,
@@ -28,6 +31,7 @@ class WebsiteViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
     """
@@ -36,24 +40,48 @@ class WebsiteViewSet(
 
     serializer_class = WebsiteSerializer
     pagination_class = DefaultPagination
-    permission_classes = (ReadonlyPermission,)
+    permission_classes = (HasWebsitePermission,)
 
     def get_queryset(self):
-        """ Generate a QuerySet for fetching published websites """
-        ordering = self.request.query_params.get("sort", "-publish_date")
+        """
+        Generate a QuerySet for fetching websites.
+        """
+        ordering = self.request.query_params.get("sort", "-updated_on")
         website_type = self.request.query_params.get("type", None)
-        queryset = Website.objects.filter(
-            publish_date__lte=now_in_utc(),
-        ).order_by(ordering)
+
+        user = self.request.user
+        if self.request.user.is_anonymous:
+            # Anonymous users should get a list of all published websites (used for ocw-www carousel)
+            ordering = "-publish_date"
+            queryset = Website.objects.filter(
+                publish_date__lte=now_in_utc(),
+            )
+        elif is_global_admin(user):
+            # Global admins should get a list of all websites, published or not.
+            queryset = Website.objects.all()
+        else:
+            # Other authenticated users should get a list of websites they are editors/admins/owners for.
+            queryset = get_objects_for_user(user, PERMISSION_VIEW).order_by(ordering)
         if website_type is not None:
             queryset = queryset.filter(starter__slug=website_type)
-        return queryset
+        return queryset.order_by(ordering)
 
     def get_serializer_class(self):
         if self.action == "list":
             return WebsiteSerializer
         else:
             return WebsiteDetailSerializer
+
+    def create(self, request, *args, **kwargs):
+        """Ensure that the website is created by the requesting user"""
+        if hasattr(self.request, "user") and isinstance(self.request.user, User):
+            self.request.data.update({"owner": self.request.user.id})
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        """Ensure that the website owner is removed if present in the data"""
+        self.request.data.pop("owner", None)
+        return super().update(request, *args, **kwargs)
 
 
 class WebsiteStarterViewSet(

@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls import include
+from django.conf.urls import include, url
 from django.contrib import admin
 from django.urls import path
 
@@ -25,6 +25,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("status/", include("server_status.urls")),
     path("robots.txt", include("robots.urls")),
+    url(r"^hijack/", include("hijack.urls", namespace="hijack")),
     # Example view
     path("", index, name="main-index"),
     path("", include("news.urls")),

@@ -4,6 +4,8 @@ boto3
 celery
 dj-database-url
 django-guardian
+django-hijack
+django-hijack-admin
 django-redis
 djangorestframework==3.12.2
 django-robots
