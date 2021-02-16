@@ -1,14 +1,7 @@
 import { Converter } from "showdown"
 import TurndownService from "turndown"
 import { gfm } from "turndown-plugin-gfm"
-
-const turndownService = new TurndownService({
-  codeBlockStyle: "fenced",
-  hr:             "---",
-  headingStyle:   "atx"
-})
-
-turndownService.use(gfm)
+import  { turndownService } from "@ckeditor/ckeditor5-markdown-gfm/src/html2markdown/html2markdown"
 
 const YOUTUBE_SHORTCODE_REGEX = /{{< youtube "(\S+)" >}}/
 const YOUTUBE_SRC_REGEX = /https:\/\/www\.youtube\.com\/embed\/(\S+)\/?$/
@@ -38,7 +31,7 @@ function youtubeShortcodeExtension() {
 }
 
 turndownService.addRule("youtubeEmbed", {
-  filter: (node, options) => {
+  filter: (node: any, options: any) => {
     return (
       node.nodeName === "SECTION" &&
       node.getAttribute("class") === YOUTUBE_EMBED_CLASS
@@ -47,7 +40,7 @@ turndownService.addRule("youtubeEmbed", {
   replacement: (
     content: string,
     node: TurndownService.Node,
-    options
+    options: any
   ): string => {
     const videoId = content.replace(/\\/, "")
     return `{{< youtube "${videoId}" >}}`

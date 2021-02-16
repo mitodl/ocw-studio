@@ -47,3 +47,6 @@ declare module '@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor';
 declare module '@ckeditor/ckeditor5-widget/src/utils';
 
 declare module '@ckeditor/ckeditor5-widget/src/widget';
+
+declare module '@ckeditor/ckeditor5-markdown-gfm/src/html2markdown/html2markdown';
+
