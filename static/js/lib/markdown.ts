@@ -1,13 +1,12 @@
 import { Converter } from "showdown"
 import TurndownService from "turndown"
-import { gfm } from "turndown-plugin-gfm"
 import { turndownService } from "@ckeditor/ckeditor5-markdown-gfm/src/html2markdown/html2markdown"
 
-const YOUTUBE_SHORTCODE_REGEX = /{{< youtube "(\S+)" >}}/
-const YOUTUBE_SRC_REGEX = /https:\/\/www\.youtube\.com\/embed\/(\S+)\/?$/
+export const YOUTUBE_SHORTCODE_REGEX = /{{< youtube "(\S+)" >}}/
+export const YOUTUBE_SRC_REGEX = /https:\/\/www\.youtube\.com\/embed\/(\S+)\/?$/
 export const YOUTUBE_EMBED_CLASS = "youtube-embed"
 
-export const youtubeEmbedUrl = (videoId: string) =>
+export const youtubeEmbedUrl = (videoId: string): string =>
   `https://www.youtube.com/embed/${videoId}`
 
 export const YOUTUBE_EMBED_PARAMS = {

@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 
 import MarkdownEditor from "../components/MarkdownEditor"
-import { html2md, md2html } from "../lib/markdown"
 
 const TEST_DATA = `## A heading
 
@@ -28,12 +27,8 @@ also have some
 
 good stuff.`
 
-export default function MarkdownEditorTestPage() {
+export default function MarkdownEditorTestPage(): JSX.Element {
   const [markdown, setMarkdown] = useState(TEST_DATA)
-
-  useEffect(() => {
-    const html = md2html(TEST_DATA)
-  }, [])
 
   return (
     <div>
