@@ -107,7 +107,7 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                     log.exception("Error saving WebsiteContent for %s", s3_key)
 
 
-def import_ocw2hugo_course(bucket_name, prefix, path):
+def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     """
     Extract OCW course content for a course
 
@@ -115,6 +115,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path):
         bucket_name (str): An s3 bucket name
         prefix (str): S3 prefix before start of course_id path
         path (str): The course URL path
+        starter_id (int or None): The id of the WebsiteStarter to associated with the created Website
     """
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
@@ -132,6 +133,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path):
                 "title": s3_content.get("course_title", None),
                 "publish_date": publish_date,
                 "metadata": s3_content,
+                "starter_id": starter_id,
             },
         )
         import_ocw2hugo_content(bucket, prefix, website)

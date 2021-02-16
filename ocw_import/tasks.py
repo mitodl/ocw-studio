@@ -6,6 +6,7 @@ import celery
 from main.celery import app
 from main.utils import chunks
 from ocw_import.api import import_ocw2hugo_course, fetch_ocw2hugo_course_paths
+from websites.models import WebsiteStarter
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +26,14 @@ def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
         return
     for path in paths:
         log.info("Importing course: '%s'", path)
-        import_ocw2hugo_course(bucket_name, prefix, path)
+        course_site_starter_id = (
+            WebsiteStarter.objects.filter(slug="course")
+            .values_list("id", flat=True)
+            .first()
+        )
+        import_ocw2hugo_course(
+            bucket_name, prefix, path, starter_id=course_site_starter_id
+        )
 
 
 @app.task(bind=True)

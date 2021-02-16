@@ -5,14 +5,15 @@ import pytest
 
 from moto import mock_s3
 
-from websites.conftest import (
+from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE
+from websites.factories import WebsiteStarterFactory
+from websites.models import Website, WebsiteContent
+from ocw_import.conftest import (
     setup_s3,
     TEST_OCW2HUGO_PREFIX,
-    MOCK_BUCKET_NAME,
     TEST_OCW2HUGO_PATH,
+    MOCK_BUCKET_NAME,
 )
-from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_FILE
-from websites.models import Website, WebsiteContent
 from ocw_import.api import import_ocw2hugo_course
 
 
@@ -23,8 +24,12 @@ def test_import_ocw2hugo_course(settings):
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}data/courses/{name}.json"
-    import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
+    website_starter = WebsiteStarterFactory.create()
+    import_ocw2hugo_course(
+        MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key, starter_id=website_starter.id
+    )
     website = Website.objects.get(name=name)
+    assert website.starter == website_starter
     with open(f"{TEST_OCW2HUGO_PATH}data/courses/{name}.json", "r") as infile:
         assert json.dumps(website.metadata, sort_keys=True) == json.dumps(
             json.load(infile), sort_keys=True

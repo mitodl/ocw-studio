@@ -2,14 +2,15 @@
 import pytest
 from moto import mock_s3
 
-from websites.conftest import setup_s3, MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX
+from ocw_import.conftest import setup_s3, TEST_OCW2HUGO_PREFIX, MOCK_BUCKET_NAME
 from ocw_import.tasks import import_ocw2hugo_course_paths, import_ocw2hugo_courses
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "paths", [["1-050-mechanical-engineering", "3-34-transportation-systems"], [], None]
 )
-def test_import_ocw2hugo_course_paths(mocker, paths):
+def test_import_ocw2hugo_course_paths(mocker, paths, course_starter):
     """ mock_import_course should be called from task with correct kwargs """
     mock_import_course = mocker.patch("ocw_import.tasks.import_ocw2hugo_course")
     import_ocw2hugo_course_paths.delay(paths, MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX)
@@ -18,7 +19,10 @@ def test_import_ocw2hugo_course_paths(mocker, paths):
     else:
         for path in paths:
             mock_import_course.assert_any_call(
-                MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, path
+                MOCK_BUCKET_NAME,
+                TEST_OCW2HUGO_PREFIX,
+                path,
+                starter_id=course_starter.id,
             )
 
 
