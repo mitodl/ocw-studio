@@ -2,8 +2,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as ContribUserAdmin
 from django.utils.translation import gettext_lazy as _
-from mitol.common.admin import TimestampedModelAdmin
 from hijack_admin.admin import HijackUserAdminMixin
+from mitol.common.admin import TimestampedModelAdmin
 
 from users.models import User
 
