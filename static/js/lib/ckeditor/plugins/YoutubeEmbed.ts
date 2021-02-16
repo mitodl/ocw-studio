@@ -1,9 +1,16 @@
 import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
 import Command from "@ckeditor/ckeditor5-core/src/command"
 import ButtonView from "@ckeditor/ckeditor5-ui/src/button/buttonview"
-import { YOUTUBE_EMBED_CLASS, youtubeEmbedUrl, YOUTUBE_EMBED_PARAMS } from "../../markdown"
-import { toWidget, toWidgetEditable } from '@ckeditor/ckeditor5-widget/src/utils';
-import Widget from '@ckeditor/ckeditor5-widget/src/widget';
+import {
+  YOUTUBE_EMBED_CLASS,
+  youtubeEmbedUrl,
+  YOUTUBE_EMBED_PARAMS
+} from "../../markdown"
+import {
+  toWidget,
+  toWidgetEditable
+} from "@ckeditor/ckeditor5-widget/src/utils"
+import Widget from "@ckeditor/ckeditor5-widget/src/widget"
 
 class YoutubeEmbedUI extends Plugin {
   init() {
@@ -52,8 +59,8 @@ class YoutubeEmbedEditing extends Plugin {
     const schema = this.editor.model.schema
 
     schema.register("youtubeEmbed", {
-      isObject:   true,
-      allowWhere: "$block",
+      isObject:       true,
+      allowWhere:     "$block",
       allowContentOf: "$block"
     })
   }
@@ -100,7 +107,7 @@ class YoutubeEmbedEditing extends Plugin {
         const videoId = modelElement._children._nodes[0]._data
         const iframe = viewWriter.createContainerElement("iframe", {
           class: YOUTUBE_EMBED_CLASS,
-          src: youtubeEmbedUrl(videoId),
+          src:   youtubeEmbedUrl(videoId),
           ...YOUTUBE_EMBED_PARAMS
         })
         return toWidget(iframe, viewWriter, { label: "Youtube Embed" })

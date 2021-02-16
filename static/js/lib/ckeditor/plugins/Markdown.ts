@@ -1,5 +1,6 @@
 import HtmlDataProcessor from "@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor"
 import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
+import GFMDataProcessor from "@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor"
 
 import { md2html, html2md } from "../../markdown"
 
@@ -8,11 +9,11 @@ import { md2html, html2md } from "../../markdown"
  *
  * based on https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-markdown-gfm/src/gfmdataprocessor.js
  */
-export class MarkdownDataProcessor {
-  htmlDataProcessor: typeof HtmlDataProcessor
+export class MarkdownDataProcessor extends GFMDataProcessor {
+  _htmlDP: typeof HtmlDataProcessor
 
   constructor(document: DocumentFragment) {
-    this.htmlDataProcessor = new HtmlDataProcessor(document)
+    super(document)
   }
 
   /**
@@ -20,14 +21,14 @@ export class MarkdownDataProcessor {
    */
   toView(md: string): DocumentFragment {
     const html = md2html(md)
-    return this.htmlDataProcessor.toView(html)
+    return this._htmlDP.toView(html)
   }
 
   /**
    * Convert ckeditor view state to markdown string
    */
   toData(viewFragment: DocumentFragment): string {
-    const html = this.htmlDataProcessor.toData(viewFragment)
+    const html = this._htmlDP.toData(viewFragment)
     return html2md(html)
   }
 }
