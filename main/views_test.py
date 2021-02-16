@@ -24,7 +24,7 @@ def test_webpack_url(mocker, settings, client):
     settings.GA_TRACKING_ID = "fake"
     settings.ENVIRONMENT = "test"
     settings.VERSION = "4.5.6"
-    settings.USE_WEBPACK_DEV_SERVER = False
+    settings.WEBPACK_USE_DEV_SERVER = False
     get_bundle = mocker.patch("mitol.common.templatetags.render_bundle._get_bundle")
 
     response = client.get(reverse("main-index"))
