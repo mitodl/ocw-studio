@@ -137,16 +137,20 @@ def test_websites_endpoint_detail_methods_denied(drf_client, method, status):
 
 
 def test_websites_endpoint_detail_update(drf_client):
-    """A user with admin permissions should be able to edit a website"""
+    """A user with admin permissions should be able to edit a website but not change website owner"""
     website = WebsiteFactory.create()
     admin_user = UserFactory.create()
     admin_user.groups.add(website.admin_group)
     drf_client.force_login(admin_user)
+    new_title = "New Title"
     resp = drf_client.patch(
         reverse("websites_api-detail", kwargs={"pk": website.uuid}),
-        data={"title": "New"},
+        data={"title": new_title, "owner": admin_user.id},
     )
     assert resp.status_code == 200
+    updated_site = Website.objects.get(uuid=website.uuid)
+    assert updated_site.title == new_title
+    assert updated_site.owner == website.owner
 
 
 def test_websites_endpoint_detail_update_denied(drf_client):
