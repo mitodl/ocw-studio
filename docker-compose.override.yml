@@ -7,7 +7,8 @@ services:
     environment:
       DEBUG: 'True'
       NODE_ENV: 'development'
-      OCW_STUDIO_USE_WEBPACK_DEV_SERVER: 'True'
+      WEBPACK_USE_DEV_SERVER: 'True'
+      WEBPACK_DEV_SERVER_PORT: 8042
 
   celery:
     volumes:
@@ -16,7 +17,8 @@ services:
     environment:
       DEBUG: 'True'
       NODE_ENV: 'development'
-      OCW_STUDIO_USE_WEBPACK_DEV_SERVER: 'True'
+      WEBPACK_USE_DEV_SERVER: 'True'
+      WEBPACK_DEV_SERVER_PORT: 8042
 
   nginx:
     volumes:
