@@ -9,6 +9,8 @@ from mitol.common.utils.datetime import now_in_utc
 from main import features
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
+from users.models import User
+from websites import constants
 from websites.constants import (
     COURSE_STARTER_SLUG,
     STARTER_SOURCE_GITHUB,
@@ -224,3 +226,304 @@ def test_website_starters_local(
     resp = drf_client.get(reverse("website_starters_api-list"))
     resp_results = resp.data.get("results")
     assert len(resp_results) == exp_result_count
+
+
+def test_websites_collaborators_endpoint_list_permissions(
+    drf_client, permission_groups
+):
+    """Only admins should see collaborators list"""
+    website = permission_groups.websites[0]
+    expected_results = sorted(
+        [
+            {
+                "id": permission_groups.site_admin.id,
+                "email": permission_groups.site_admin.email,
+                "name": permission_groups.site_admin.name,
+                "group": website.admin_group.name,
+            },
+            {
+                "id": permission_groups.site_editor.id,
+                "email": permission_groups.site_editor.email,
+                "name": permission_groups.site_editor.name,
+                "group": website.editor_group.name,
+            },
+            {
+                "id": permission_groups.global_admin.id,
+                "email": permission_groups.global_admin.email,
+                "name": permission_groups.global_admin.name,
+                "group": constants.GLOBAL_ADMIN,
+            },
+            {
+                "id": website.owner.id,
+                "email": website.owner.email,
+                "name": website.owner.name,
+                "group": constants.ROLE_OWNER,
+            },
+        ],
+        key=lambda user: user["name"],
+    )
+    for user in [
+        permission_groups.global_admin,
+        permission_groups.site_admin,
+        permission_groups.websites[0].owner,
+    ]:
+        drf_client.force_login(user)
+        resp = drf_client.get(
+            reverse(
+                "websites_collaborators_api-list",
+                kwargs={"parent_lookup_website": website.uuid},
+            )
+        )
+        assert resp.data.get("results") == expected_results
+
+
+def test_websites_collaborators_endpoint_list_permission_denied(
+    drf_client, permission_groups
+):
+    """Website editors should not be able to see the collaborators list"""
+    drf_client.force_login(permission_groups.site_editor)
+    resp = drf_client.get(
+        reverse(
+            "websites_collaborators_api-list",
+            kwargs={"parent_lookup_website": permission_groups.websites[0].uuid},
+        )
+    )
+    assert resp.status_code == 403
+
+
+def test_websites_collaborators_endpoint_list_create(drf_client, permission_groups):
+    """ An admin should be able to add a new collaborator"""
+    website = permission_groups.websites[0]
+    collaborator = UserFactory.create()
+    drf_client.force_login(permission_groups.site_admin)
+    resp = drf_client.post(
+        reverse(
+            "websites_collaborators_api-list",
+            kwargs={"parent_lookup_website": permission_groups.websites[0].uuid},
+        ),
+        data={"email": collaborator.email, "group": website.editor_group.name},
+    )
+    assert resp.status_code == 201
+    assert website.editor_group.user_set.filter(id=collaborator.id) is not None
+
+
+def test_websites_collaborators_endpoint_list_create_only_once(
+    drf_client, permission_groups
+):
+    """ An admin should not be able to add a new collaborator if already present"""
+    website = permission_groups.websites[0]
+    drf_client.force_login(permission_groups.site_admin)
+    resp = drf_client.post(
+        reverse(
+            "websites_collaborators_api-list",
+            kwargs={"parent_lookup_website": permission_groups.websites[0].uuid},
+        ),
+        data={
+            "email": permission_groups.site_editor.email,
+            "group": website.admin_group.name,
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json() == ["User already has permission for this site"]
+
+
+@pytest.mark.parametrize(
+    "group_name, error",
+    [
+        [constants.GLOBAL_ADMIN, "Cannot assign users to this group"],
+        [constants.GLOBAL_AUTHOR, "Cannot assign users to this group"],
+        ["fake", "Group does not exist"],
+    ],
+)
+def test_websites_collaborators_endpoint_list_create_bad_group(
+    drf_client, permission_groups, group_name, error
+):
+    """ An admin should not be able to add a new collaborator to a global/nonexistent group"""
+    collaborator = UserFactory.create()
+    drf_client.force_login(permission_groups.site_admin)
+    resp = drf_client.post(
+        reverse(
+            "websites_collaborators_api-list",
+            kwargs={"parent_lookup_website": permission_groups.websites[0].uuid},
+        ),
+        data={"email": collaborator.email, "group": group_name},
+    )
+    assert resp.status_code == 400
+    assert resp.json() == {"group": [error]}
+
+
+def test_websites_collaborators_endpoint_list_create_wrong_website(
+    drf_client, permission_groups
+):
+    """ An admin should not be able to add a new collaborator to another website's group"""
+    collaborator = UserFactory.create()
+    drf_client.force_login(permission_groups.global_admin)
+    resp = drf_client.post(
+        reverse(
+            "websites_collaborators_api-list",
+            kwargs={"parent_lookup_website": permission_groups.websites[0].uuid},
+        ),
+        data={
+            "email": collaborator.email,
+            "group": permission_groups.websites[1].editor_group.name,
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.json() == {"non_field_errors": ["Not a valid group for this website"]}
+
+
+def test_websites_collaborators_endpoint_detail(drf_client, permission_groups):
+    """ An admin should be able to view a collaborator detail"""
+    drf_client.force_login(permission_groups.global_admin)
+    resp = drf_client.get(
+        reverse(
+            "websites_collaborators_api-detail",
+            kwargs={
+                "parent_lookup_website": permission_groups.websites[0].uuid,
+                "pk": permission_groups.site_admin.id,
+            },
+        )
+    )
+    assert resp.status_code == 200
+    assert resp.data == {
+        "id": permission_groups.site_admin.id,
+        "email": permission_groups.site_admin.email,
+        "name": permission_groups.site_admin.name,
+        "group": permission_groups.websites[0].admin_group.name,
+    }
+
+
+@pytest.mark.parametrize("method", ["get", "patch", "delete"])
+def test_websites_collaborators_endpoint_detail_denied(
+    drf_client, permission_groups, method
+):
+    """ An editor should not be able to view/edit/delete a collaborator detail"""
+    drf_client.force_login(permission_groups.site_editor)
+    request_func = getattr(drf_client, method)
+    resp = request_func(
+        reverse(
+            "websites_collaborators_api-detail",
+            kwargs={
+                "parent_lookup_website": permission_groups.websites[0].uuid,
+                "pk": permission_groups.site_admin.id,
+            },
+        )
+    )
+    assert resp.status_code == 403
+
+
+def test_websites_collaborators_endpoint_detail_modify(drf_client, permission_groups):
+    """ An admin should be able to switch a collaborator from editor to admin"""
+    drf_client.force_login(permission_groups.site_admin)
+    resp = drf_client.patch(
+        reverse(
+            "websites_collaborators_api-detail",
+            kwargs={
+                "parent_lookup_website": permission_groups.websites[0].uuid,
+                "pk": permission_groups.site_editor.id,
+            },
+        ),
+        data={
+            "group": permission_groups.websites[0].admin_group.name,
+        },
+    )
+    assert resp.status_code == 200
+    assert (
+        permission_groups.websites[0]
+        .admin_group.user_set.filter(id=permission_groups.site_admin.id)
+        .exists()
+    )
+    assert (
+        not permission_groups.websites[0]
+        .editor_group.user_set.filter(id=permission_groups.site_admin.id)
+        .exists()
+    )
+
+
+def test_websites_collaborators_endpoint_detail_modify_admin_denied(
+    drf_client, permission_groups
+):
+    """ An admin should not be able to modify a global admin or website owner"""
+    drf_client.force_login(permission_groups.site_admin)
+    for user in (permission_groups.global_admin, permission_groups.websites[0].owner):
+        resp = drf_client.patch(
+            reverse(
+                "websites_collaborators_api-detail",
+                kwargs={
+                    "parent_lookup_website": permission_groups.websites[0].uuid,
+                    "pk": user.id,
+                },
+            ),
+            data={
+                "group": permission_groups.websites[0].editor_group.name,
+            },
+        )
+    assert resp.status_code == 403
+
+
+def test_websites_collaborators_endpoint_detail_modify_nonadmin_denied(
+    drf_client, permission_groups
+):
+    """ An editor or unaffiliated user should not be able to modify any collaborator"""
+    for client_user in (permission_groups.site_editor, UserFactory.create()):
+        drf_client.force_login(client_user)
+        resp = drf_client.patch(
+            reverse(
+                "websites_collaborators_api-detail",
+                kwargs={
+                    "parent_lookup_website": permission_groups.websites[0].uuid,
+                    "pk": permission_groups.site_admin.id,
+                },
+            ),
+            data={
+                "group": permission_groups.websites[0].editor_group.name,
+            },
+        )
+    assert resp.status_code == 403
+
+
+def test_websites_collaborators_endpoint_detail_delete(drf_client, permission_groups):
+    """ An admin should be able to remove a collaborator """
+    drf_client.force_login(permission_groups.site_admin)
+    resp = drf_client.delete(
+        reverse(
+            "websites_collaborators_api-detail",
+            kwargs={
+                "parent_lookup_website": permission_groups.websites[0].uuid,
+                "pk": permission_groups.site_admin.id,
+            },
+        )
+    )
+    assert resp.status_code == 204
+    assert (
+        not permission_groups.websites[0]
+        .editor_group.user_set.filter(id=permission_groups.site_admin.id)
+        .exists()
+    )
+    assert (
+        not permission_groups.websites[0]
+        .admin_group.user_set.filter(id=permission_groups.site_admin.id)
+        .exists()
+    )
+
+    # verify user was not deleted!
+    assert User.objects.filter(id=permission_groups.site_admin.id).exists()
+
+
+def test_websites_collaborators_endpoint_detail_delete_denied(
+    drf_client, permission_groups
+):
+    """ An admin should not be able to remove a global admin or owner """
+    for user in (permission_groups.global_admin, permission_groups.websites[0].owner):
+        drf_client.force_login(permission_groups.site_admin)
+        resp = drf_client.delete(
+            reverse(
+                "websites_collaborators_api-detail",
+                kwargs={
+                    "parent_lookup_website": permission_groups.websites[0].uuid,
+                    "pk": user.id,
+                },
+            ),
+            data={},
+        )
+        assert resp.status_code == 403

@@ -2,6 +2,7 @@
 import pytest
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from guardian.shortcuts import remove_perm
+from rest_framework.permissions import SAFE_METHODS
 
 from users.factories import UserFactory
 from websites import constants, permissions
@@ -189,24 +190,46 @@ def test_can_publish_website(mocker, permission_groups):
         )
 
 
-@pytest.mark.parametrize("method", ["GET", "PATCH", "POST", "DELETE"])
+@pytest.mark.parametrize("method", ["GET", "POST", "PATCH", "DELETE"])
 def test_can_change_collaborators_website(mocker, permission_groups, method):
-    """ Test that only appropriate users can add/remove website collaborators"""
+    """ Test that only appropriate users can view/add website collaborators"""
     website = permission_groups.websites[0]
-    for [user, has_perm] in [
-        [permission_groups.global_admin, True],
+    collaborator = permission_groups.site_editor
+    # This assumes the WebsiteContent API view will be nested via DRF extensions
+
+    for [collaborator, has_obj_perm] in [
+        [permission_groups.site_editor, True],
         [permission_groups.site_admin, True],
-        [permission_groups.websites[0].owner, True],
-        [permission_groups.global_author, False],
-        [permission_groups.site_editor, False],
+        [permission_groups.global_admin, False],
+        [permission_groups.global_author, True],
+        [website.owner, False],
     ]:
-        request = mocker.Mock(user=user, method=method)
-        assert (
-            permissions.HasWebsiteCollaborationPermission().has_object_permission(
-                request, mocker.Mock(), website
-            )
-            is has_perm
+        view = mocker.Mock(
+            kwargs={"parent_lookup_website": str(website.uuid), "pk": collaborator.id}
         )
+
+        for [user, has_perm] in [
+            [permission_groups.global_admin, True],
+            [permission_groups.site_admin, True],
+            [permission_groups.websites[0].owner, True],
+            [permission_groups.global_author, False],
+            [permission_groups.site_editor, False],
+        ]:
+            request = mocker.Mock(user=user, method=method)
+            assert (
+                permissions.HasWebsiteCollaborationPermission().has_permission(
+                    request, view
+                )
+                is has_perm
+            )
+
+            assert (
+                permissions.HasWebsiteCollaborationPermission().has_object_permission(
+                    request, view, collaborator
+                )
+                is has_obj_perm
+                or method in SAFE_METHODS
+            )
 
 
 def test_can_create_website_content(mocker, permission_groups):

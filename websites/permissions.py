@@ -237,8 +237,22 @@ class HasWebsitePublishPermission(BasePermission):
 class HasWebsiteCollaborationPermission(BasePermission):
     """Permission to add or remove a website admin/editor"""
 
+    def has_permission(self, request, view):
+        website = get_object_or_404(
+            Website, uuid=view.kwargs.get("parent_lookup_website", None)
+        )
+        return check_perm(request.user, constants.PERMISSION_COLLABORATE, website)
+
     def has_object_permission(self, request, view, obj):
-        return check_perm(request.user, constants.PERMISSION_COLLABORATE, obj)
+        website = get_object_or_404(
+            Website, uuid=view.kwargs.get("parent_lookup_website", None)
+        )
+        if request.method not in SAFE_METHODS and (
+            website.owner == obj or is_global_admin(obj)
+        ):
+            return False
+        # Anyone not allowed to do this will already have been stopped by has_permission above
+        return True
 
 
 class HasWebsitePreviewPermission(BasePermission):

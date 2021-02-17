@@ -1,9 +1,20 @@
 """ Serializers for websites """
+from uuid import UUID
+
+from django.contrib.auth.models import Group
 from django.db import transaction
+from guardian.shortcuts import (
+    get_groups_with_perms,
+    get_objects_for_group,
+    get_users_with_perms,
+)
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from users.models import User
+from websites import constants
 from websites.models import Website, WebsiteStarter
+from websites.permissions import is_global_admin
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):
@@ -68,3 +79,71 @@ class WebsiteDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Website
         fields = WebsiteSerializer.Meta.fields
+
+
+class WebsiteCollaboratorSerializer(serializers.Serializer):
+    """A non-model serializer for updating the permissions (by group) that a user has for a Website."""
+
+    group = serializers.CharField(default=None)
+    email = serializers.EmailField(allow_null=True)
+    name = serializers.CharField(read_only=True)
+    id = serializers.IntegerField(read_only=True)
+
+    def validate_group(self, group):
+        """ The group should exist and not be a global group and be associated with the correct Website"""
+        if group in (constants.GLOBAL_ADMIN, constants.GLOBAL_AUTHOR):
+            raise ValidationError("Cannot assign users to this group")
+        if not Group.objects.filter(name=group).exists():
+            raise ValidationError("Group does not exist")
+        return group
+
+    def validate_email(self, email):
+        """ The user should exist and not be a global admin """
+        user = User.objects.filter(email=email).first()
+        if not user:
+            raise ValidationError("User does not exist")
+        if is_global_admin(user):
+            raise ValidationError("User is already a global admin")
+        return email
+
+    def validate(self, attrs):
+        """ Make sure the group is for the right website """
+        view = self.context.get("view")
+        if view and hasattr(view, "kwargs"):
+            if UUID(view.kwargs.get("parent_lookup_website")).hex not in attrs.get(
+                "group"
+            ):
+                raise ValidationError("Not a valid group for this website")
+        return attrs
+
+    def create(self, validated_data):
+        """ Add a new website collaborator """
+        group = Group.objects.get(name=validated_data["group"])
+        website = get_objects_for_group(
+            group, klass=Website, perms=constants.PERMISSION_VIEW
+        ).first()
+        user = User.objects.get(email=validated_data["email"])
+        if user in get_users_with_perms(website) or user == website.owner:
+            raise ValidationError("User already has permission for this site")
+        user.groups.add(group)
+        return validated_data
+
+    def update(self, instance, validated_data):
+        """ Update an existing website collaborator """
+        group_name = validated_data.get("group")
+        website = get_objects_for_group(
+            Group.objects.get(name=group_name),
+            klass=Website,
+            perms=constants.PERMISSION_VIEW,
+        ).first()
+        # User should only belong to one group per website
+        for group in get_groups_with_perms(website):
+            if group_name and group.name == group_name:
+                instance.groups.add(group)
+            else:
+                instance.groups.remove(group)
+        instance.group = group_name
+        return instance
+
+    class Meta:
+        fields = ["id", "email", "name", "group"]

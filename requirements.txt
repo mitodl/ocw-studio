@@ -72,6 +72,10 @@ django==3.1
     #   djangorestframework
     #   mitol-django-common
 djangorestframework==3.12.2
+    # via
+    #   -r requirements.in
+    #   drf-extensions
+drf-extensions==0.7.0
     # via -r requirements.in
 elasticsearch==7.8.1
     # via django-server-status
