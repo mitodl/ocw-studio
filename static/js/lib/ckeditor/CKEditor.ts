@@ -37,7 +37,7 @@ ClassicEditor.builtinPlugins = [
   ImageUploadPlugin,
   LinkPlugin,
   ListPlugin,
-  ParagraphPlugin,
+  ParagraphPlugin
 ]
 
 ClassicEditor.defaultConfig = {
@@ -53,7 +53,7 @@ ClassicEditor.defaultConfig = {
       "imageUpload",
       "blockQuote",
       "undo",
-      "redo",
+      "redo"
     ]
   },
   image: {

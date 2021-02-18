@@ -1,4 +1,4 @@
-import { html2md, md2html, } from "./markdown"
+import { html2md, md2html } from "./markdown"
 
 const TEST_DATA = `## A heading
 
@@ -26,8 +26,8 @@ also have some
 good stuff.`
 
 describe("markdown library", () => {
-  describe('general markdown support', () => {
-    it('should support lossless bi-directional conversion', () => {
+  describe("general markdown support", () => {
+    it("should support lossless bi-directional conversion", () => {
       expect(html2md(md2html(TEST_DATA))).toBe(TEST_DATA)
     })
   })

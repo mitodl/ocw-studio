@@ -3,7 +3,7 @@ import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
 import GFMDataProcessor from "@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor"
 
 import { md2html, html2md } from "../../markdown"
-import type { editor } from "@ckeditor/ckeditor5-core"
+import { editor } from "@ckeditor/ckeditor5-core"
 
 /**
  * Data processor for CKEditor which implements conversion to / from Markdown
@@ -65,7 +65,10 @@ export default class Markdown extends Plugin {
     // some typescript wrangling necessary here unfortunately b/c of some
     // shortcomings in the typings for @ckeditor/ckeditor5-engine
     // and @ckeditor/ckeditor5-core
-    ;(editor.data.processor as MarkdownDataProcessor) = new MarkdownDataProcessor((editor.data as any).viewDocument)
+    ;(editor.data
+      .processor as MarkdownDataProcessor) = new MarkdownDataProcessor(
+        (editor.data as any).viewDocument
+      )
   }
 
   static get pluginName(): string {
