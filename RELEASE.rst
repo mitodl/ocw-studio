@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.4.0
+Version 0.4.0 (Released February 18, 2021)
 -------------
 
 - Fix API (#69)
