@@ -110,18 +110,14 @@ class WebsiteStarterViewSet(
 
 class WebsiteCollaboratorViewSet(
     NestedViewSetMixin,
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
+    viewsets.ModelViewSet,
 ):
-    """ Get a list of website collaborators along with their group/role """
+    """ Viewset for Website collaborators along with their group/role """
 
     serializer_class = WebsiteCollaboratorSerializer
     permission_classes = (HasWebsiteCollaborationPermission,)
     pagination_class = DefaultPagination
+    http_method_names = ["get", "post", "head", "patch", "delete"]  # No put
 
     def get_queryset(self):
         """
@@ -131,10 +127,10 @@ class WebsiteCollaboratorViewSet(
         website = get_object_or_404(
             Website, uuid=self.kwargs.get("parent_lookup_website")
         )
-        owner_id = website.owner.id if website.owner else None
         website_groups = list(
             get_groups_with_perms(website).values_list("name", flat=True)
         ) + [constants.GLOBAL_ADMIN]
+        owner_id = website.owner.id if website.owner else None
 
         # Return the individual user and group if a primary key is provided
         if self.kwargs.get("pk"):
@@ -160,7 +156,6 @@ class WebsiteCollaboratorViewSet(
                 .user_set.exclude(id=owner_id)
                 .annotate(group=Value(group_name, CharField()))
             )
-
         return query.order_by("name")
 
     def perform_destroy(self, instance):

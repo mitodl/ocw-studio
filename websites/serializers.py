@@ -3,11 +3,7 @@ from uuid import UUID
 
 from django.contrib.auth.models import Group
 from django.db import transaction
-from guardian.shortcuts import (
-    get_groups_with_perms,
-    get_objects_for_group,
-    get_users_with_perms,
-)
+from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -103,12 +99,12 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         if not user:
             raise ValidationError("User does not exist")
         if is_global_admin(user):
-            raise ValidationError("User is already a global admin")
+            raise ValidationError("User is a global admin")
         return email
 
     def validate(self, attrs):
         """ Make sure the group is for the right website """
-        view = self.context.get("view")
+        view = self.context.get("view", None)
         if view and hasattr(view, "kwargs"):
             if UUID(view.kwargs.get("parent_lookup_website")).hex not in attrs.get(
                 "group"
@@ -119,29 +115,26 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
     def create(self, validated_data):
         """ Add a new website collaborator """
         group = Group.objects.get(name=validated_data["group"])
-        website = get_objects_for_group(
-            group, klass=Website, perms=constants.PERMISSION_VIEW
-        ).first()
+        website = Website.objects.get(uuid=group.name.split("_")[-1])
         user = User.objects.get(email=validated_data["email"])
         if user in get_users_with_perms(website) or user == website.owner:
             raise ValidationError("User already has permission for this site")
         user.groups.add(group)
-        return validated_data
+        # For informational purposes only
+        user.group = group.name
+        return user
 
     def update(self, instance, validated_data):
         """ Update an existing website collaborator """
         group_name = validated_data.get("group")
-        website = get_objects_for_group(
-            Group.objects.get(name=group_name),
-            klass=Website,
-            perms=constants.PERMISSION_VIEW,
-        ).first()
+        website = Website.objects.get(uuid=group_name.split("_")[-1])
         # User should only belong to one group per website
         for group in get_groups_with_perms(website):
             if group_name and group.name == group_name:
                 instance.groups.add(group)
             else:
                 instance.groups.remove(group)
+        # For informational purposes only
         instance.group = group_name
         return instance
 
