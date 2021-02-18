@@ -18,7 +18,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const editorEl = useRef<HTMLDivElement | null>(null)
 
   const editorSetupRef = useCallback(async (node: HTMLDivElement) => {
-    const editorInstance = await CKEditor.create(initialData)
+    const editorInstance = await CKEditor.create(initialData ?? "")
 
     editorInstance.model.document.on(
       "change:data",

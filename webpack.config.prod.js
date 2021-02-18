@@ -50,10 +50,11 @@ module.exports = Object.assign(prodConfig, {
       patterns: [
         {
           from: "node_modules/@ckeditor",
-          to: "static/js/ckeditor/"
+          to: path.resolve("./static/js/ckeditor/")
         }
       ]
     }),
+
     new CKEditorWebpackPlugin({ language: 'en' })
   ],
   optimization: {

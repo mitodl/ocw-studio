@@ -31,15 +31,14 @@ const devConfig = Object.assign({}, config, {
       patterns: [
         {
           from: "node_modules/@ckeditor",
-          to: path.resolve("static/js/ckeditor/")
+          to: path.resolve("./static/js/ckeditor/")
         }
       ]
     }),
     new CKEditorWebpackPlugin({ language: "en" }),
-    // new WriteFilePlugin({
-    // // Write only files that have ".css" extension.
-    // test: /\/static\/ckeditor/,
-// })
+    new WriteFilePlugin({
+      test: /ckeditor/,
+    })
   ],
   optimization: {
     namedModules: true,
