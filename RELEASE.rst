@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.4.1
+-------------
+
+- Fix typo in webpack-related environment variable (#67)
+
 Version 0.4.0 (Released February 18, 2021)
 -------------
 
