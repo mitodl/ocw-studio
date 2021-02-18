@@ -17,7 +17,6 @@ import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 import Markdown from "./plugins/Markdown"
-import YoutubeEmbed from "./plugins/YoutubeEmbed"
 
 export default class ClassicEditor extends ClassicEditorBase {}
 
@@ -39,7 +38,6 @@ ClassicEditor.builtinPlugins = [
   LinkPlugin,
   ListPlugin,
   ParagraphPlugin,
-  YoutubeEmbed
 ]
 
 ClassicEditor.defaultConfig = {
@@ -56,7 +54,6 @@ ClassicEditor.defaultConfig = {
       "blockQuote",
       "undo",
       "redo",
-      "youtubeEmbed"
     ]
   },
   image: {
