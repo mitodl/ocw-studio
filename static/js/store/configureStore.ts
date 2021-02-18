@@ -45,3 +45,5 @@ export default function configureStore(initialState?: ReduxState) {
 
   return store
 }
+
+export type Store = ReturnType<typeof configureStore>

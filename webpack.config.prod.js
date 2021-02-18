@@ -6,6 +6,7 @@ const { config } = require(path.resolve(
   "./webpack.config.shared.js"
 ))
 const CKEditorWebpackPlugin = require("@ckeditor/ckeditor5-dev-webpack-plugin")
+const CopyWebpackPlugin = require("copy-webpack-plugin")
 
 const prodConfig = Object.assign({}, config)
 prodConfig.module.rules = [
@@ -44,6 +45,14 @@ module.exports = Object.assign(prodConfig, {
     new webpack.optimize.AggressiveMergingPlugin(),
     new MiniCssExtractPlugin({
       filename: "[name]-[contenthash].css"
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: "node_modules/@ckeditor",
+          to: "static/js/ckeditor/"
+        }
+      ]
     }),
     new CKEditorWebpackPlugin({ language: 'en' })
   ],
