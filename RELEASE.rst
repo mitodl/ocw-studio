@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.4.0 (Released February 18, 2021)
+-------------
+
+- Fix API (#69)
+- Integrate permissions with WebsiteViewSet (#65)
+- Add common
+- Set correct starter on imported sites and moved more OCW code
+- Website CRUD permissions (#49)
+- a few little frontend tweaks
+- Changed WebsiteStarter.config to store JSON instead of YAML
+- Detail view for websites (#54)
+
 Version 0.3.0 (Released February 11, 2021)
 -------------
 
