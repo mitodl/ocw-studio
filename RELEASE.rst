@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.4.2 (Released February 19, 2021)
+-------------
+
+- Remove settings regarding reloading worker processes (#76)
+- Lookup websites by name instead of uuid (#73)
+
 Version 0.4.1 (Released February 18, 2021)
 -------------
 
