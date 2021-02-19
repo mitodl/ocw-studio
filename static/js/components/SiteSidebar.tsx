@@ -1,7 +1,7 @@
 import * as React from "react"
 import { NavLink } from "react-router-dom"
 
-import { siteComponentUrl, siteUrl } from "../lib/urls"
+import { siteContentListingUrl } from "../lib/urls"
 
 import { ConfigItem, Website } from "../types/websites"
 
@@ -18,7 +18,7 @@ export default function SiteSidebar(props: Props): JSX.Element {
       <ul>
         {configItems.map(item => (
           <li key={item.name}>
-            <NavLink exact to={siteComponentUrl(website.name, item.name)}>
+            <NavLink exact to={siteContentListingUrl(website.name, item.name)}>
               {item.label}
             </NavLink>
           </li>

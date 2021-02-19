@@ -2,13 +2,13 @@ const mockUseRouteMatch = jest.fn()
 
 import { fromPairs } from "lodash"
 
-import SiteComponent from "./SiteComponent"
+import SiteContentListing from "./SiteContentListing"
 
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
 import { makeWebsites } from "../util/factories/websites"
-import { siteComponentUrl } from "../lib/urls"
+import { siteContentListingUrl } from "../lib/urls"
 
 import { Website } from "../types/websites"
 
@@ -18,7 +18,7 @@ jest.mock("react-router-dom", () => ({
   useRouteMatch: mockUseRouteMatch
 }))
 
-describe("SiteComponent", () => {
+describe("SiteContentListing", () => {
   let helper: IntegrationTestHelper, render: TestRenderer, websites: Website[]
 
   beforeEach(() => {
@@ -28,7 +28,7 @@ describe("SiteComponent", () => {
       websites.map(website => [website.name, website])
     )
     render = helper.configureRenderer(
-      SiteComponent,
+      SiteContentListing,
       {},
       {
         entities: {
@@ -46,7 +46,7 @@ describe("SiteComponent", () => {
     }))
     const { wrapper } = await render()
     expect(wrapper.find("NavLink").prop("to")).toBe(
-      siteComponentUrl(params.name, params.configname)
+      siteContentListingUrl(params.name, params.configname)
     )
   })
 })

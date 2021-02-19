@@ -4,7 +4,7 @@ import { useRequest } from "redux-query-react"
 import { Route, Switch, useRouteMatch } from "react-router-dom"
 
 import SiteSidebar from "../components/SiteSidebar"
-import SiteComponent from "../components/SiteComponent"
+import SiteContentListing from "../components/SiteContentListing"
 
 import { websitesRequest } from "../query-configs/websites"
 import { getWebsiteCursor } from "../selectors/websites"
@@ -38,7 +38,7 @@ export default function SitePage(): JSX.Element | null {
           <Switch>
             <Route
               path={`${match.path}/:configname`}
-              component={SiteComponent}
+              component={SiteContentListing}
             />
           </Switch>
         </div>

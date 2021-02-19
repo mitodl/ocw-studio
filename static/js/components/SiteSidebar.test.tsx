@@ -4,7 +4,7 @@ import { shallow } from "enzyme"
 import SiteSidebar from "./SiteSidebar"
 
 import { makeWebsite } from "../util/factories/websites"
-import { siteUrl, siteComponentUrl } from "../lib/urls"
+import { siteUrl, siteContentListingUrl } from "../lib/urls"
 
 import { Website } from "../types/websites"
 
@@ -24,8 +24,8 @@ describe("SiteSidebar", () => {
 
     const expected = [
       ["Content", siteUrl(website.name)],
-      ["Page", siteComponentUrl(website.name, "page")],
-      ["Resource", siteComponentUrl(website.name, "resource")]
+      ["Page", siteContentListingUrl(website.name, "page")],
+      ["Resource", siteContentListingUrl(website.name, "resource")]
     ]
 
     expect(expected).toEqual(expect.arrayContaining(links))
