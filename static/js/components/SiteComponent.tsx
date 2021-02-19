@@ -9,7 +9,7 @@ import { ConfigItem } from "../types/websites"
 
 interface MatchParams {
   configname: string
-  name: string,
+  name: string
 }
 export default function SiteComponent(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
