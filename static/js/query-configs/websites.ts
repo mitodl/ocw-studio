@@ -1,7 +1,7 @@
 import { Website } from "../types/websites"
 
 interface Websites {
-  string: Website
+  [key: string]: Website
 }
 
 export const websitesRequest = (name: string): any => ({
