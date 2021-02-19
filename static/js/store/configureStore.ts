@@ -6,6 +6,8 @@ import { makeRequest } from "./network_interface"
 import rootReducer, { ReduxState } from "../reducers"
 import { getQueries, getEntities } from "../lib/redux_query"
 
+export type Store = ReturnType<typeof configureStore>
+
 // Setup middleware
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function configureStore(initialState?: ReduxState) {

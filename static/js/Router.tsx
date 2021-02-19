@@ -2,13 +2,13 @@ import React from "react"
 import { BrowserRouter } from "react-router-dom"
 import { Provider } from "react-redux"
 import { Provider as ReduxQueryProvider } from "redux-query-react"
-import configureStore from "./store/configureStore"
+import { Store } from "./store/configureStore"
 
 import App from "./pages/App"
 import { getQueries } from "./lib/redux_query"
 
 export interface RootProps {
-  store: ReturnType<typeof configureStore>
+  store: Store
 }
 export default function Root(props: RootProps): JSX.Element {
   const { store } = props
