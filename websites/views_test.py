@@ -369,7 +369,7 @@ def test_websites_collaborators_endpoint_list_create_bad_website(
         },
     )
     assert resp.status_code == 400
-    assert resp.json() == {"non_field_errors": ["Not a valid group for this website"]}
+    assert resp.json() == {"group": ["Not a valid group for this website"]}
 
 
 def test_websites_collaborators_endpoint_list_create_bad_user(

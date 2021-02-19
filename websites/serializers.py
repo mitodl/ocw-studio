@@ -84,11 +84,20 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
     username = serializers.CharField(read_only=True)
 
     def validate_group(self, group):
-        """ The group should exist and not be a global group and be associated with the correct Website"""
+        """ The group should exist and not be a global group and be for the correct website"""
         if group in (constants.GLOBAL_ADMIN, constants.GLOBAL_AUTHOR):
             raise ValidationError("Cannot assign users to this group")
         if not Group.objects.filter(name=group).exists():
             raise ValidationError("Group does not exist")
+        view = self.context.get("view", None)
+        if view and hasattr(view, "kwargs"):
+            if (
+                Website.objects.get(
+                    name=view.kwargs.get("parent_lookup_website")
+                ).uuid.hex
+                not in group
+            ):
+                raise ValidationError("Not a valid group for this website")
         return group
 
     def validate_email(self, email):
@@ -99,16 +108,6 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         if is_global_admin(user):
             raise ValidationError("User is a global admin")
         return email
-
-    def validate(self, attrs):
-        """ Make sure the group is for the right website """
-        view = self.context.get("view", None)
-        if view and hasattr(view, "kwargs"):
-            if Website.objects.get(
-                name=view.kwargs.get("parent_lookup_website")
-            ).uuid.hex not in attrs.get("group"):
-                raise ValidationError("Not a valid group for this website")
-        return attrs
 
     def create(self, validated_data):
         """ Add a new website collaborator """

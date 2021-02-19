@@ -190,9 +190,9 @@ def test_can_publish_website(mocker, permission_groups):
         )
 
 
-@pytest.mark.parametrize("method", ["GET", "POST", "PATCH", "DELETE"])
+@pytest.mark.parametrize("method", ["GET", "PATCH", "POST", "DELETE"])
 def test_can_change_collaborators_website(mocker, permission_groups, method):
-    """ Test that only appropriate users can view/add website collaborators"""
+    """ Test that only appropriate users can view/modify website collaborators"""
     website = permission_groups.websites[0]
     collaborator = permission_groups.site_editor
     # This assumes the WebsiteContent API view will be nested via DRF extensions
