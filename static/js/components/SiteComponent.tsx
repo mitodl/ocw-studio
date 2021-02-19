@@ -7,9 +7,12 @@ import { getWebsiteCursor } from "../selectors/websites"
 
 import { ConfigItem } from "../types/websites"
 
+interface MatchParams {
+  configname: string
+  name: string,
+}
 export default function SiteComponent(): JSX.Element | null {
-  const match = useRouteMatch()
-  // @ts-ignore
+  const match = useRouteMatch<MatchParams>()
   const { configname, name } = match.params
   const website = useSelector(getWebsiteCursor)(name)
 

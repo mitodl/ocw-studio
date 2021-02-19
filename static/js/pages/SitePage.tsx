@@ -9,9 +9,11 @@ import SiteComponent from "../components/SiteComponent"
 import { websitesRequest } from "../query-configs/websites"
 import { getWebsiteCursor } from "../selectors/websites"
 
+interface MatchParams {
+  name: string
+}
 export default function SitePage(): JSX.Element | null {
-  const match = useRouteMatch()
-  // @ts-ignore
+  const match = useRouteMatch<MatchParams>()
   const { name } = match.params
   const [{ isPending }] = useRequest(websitesRequest(name))
   const website = useSelector(getWebsiteCursor)(name)
