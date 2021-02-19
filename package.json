@@ -119,7 +119,7 @@
     "lint": "eslint static/js --ext .js,.jsx,.ts,.tsx",
     "lint:cache": "eslint static/js --ext .js,.jsx,.ts,.tsx --cache",
     "scss_lint": "node ./node_modules/sass-lint/bin/sass-lint.js --verbose --no-exit",
-    "test": "jest --no-cache",
+    "test": "jest --no-cache --run-in-band",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "repl": "node --require ./scripts/repl.js",
