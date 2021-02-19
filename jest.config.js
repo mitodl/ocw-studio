@@ -17,6 +17,7 @@ module.exports = {
       "|@ckeditor/ckeditor5-markdown-gfm" +
       "|@ckeditor/ckeditor5-utils" +
       "|@ckeditor/ckeditor5-ui" +
+      "|@ckeditor/ckeditor5-essentials" +
       "|lodash-es" +
       ")/)"
   ],
