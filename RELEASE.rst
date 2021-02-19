@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.4.2
+Version 0.4.2 (Released February 19, 2021)
 -------------
 
 - Remove settings regarding reloading worker processes (#76)
