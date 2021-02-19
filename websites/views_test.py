@@ -120,7 +120,7 @@ def test_websites_endpoint_detail(drf_client):
     """Test new websites endpoint for details"""
     website = WebsiteFactory.create()
     drf_client.force_login(website.owner)
-    resp = drf_client.get(reverse("websites_api-detail", kwargs={"pk": website.uuid}))
+    resp = drf_client.get(reverse("websites_api-detail", kwargs={"name": website.name}))
     assert resp.json() == WebsiteDetailSerializer(instance=website).data
 
 
@@ -132,7 +132,7 @@ def test_websites_endpoint_detail_methods_denied(drf_client, method, status):
     website = WebsiteFactory.create()
     drf_client.force_login(UserFactory.create(is_superuser=True))
     client_func = getattr(drf_client, method)
-    resp = client_func(reverse("websites_api-detail", kwargs={"pk": website.uuid}))
+    resp = client_func(reverse("websites_api-detail", kwargs={"name": website.name}))
     assert resp.status_code == status
 
 
@@ -144,7 +144,7 @@ def test_websites_endpoint_detail_update(drf_client):
     drf_client.force_login(admin_user)
     new_title = "New Title"
     resp = drf_client.patch(
-        reverse("websites_api-detail", kwargs={"pk": website.uuid}),
+        reverse("websites_api-detail", kwargs={"name": website.name}),
         data={"title": new_title, "owner": admin_user.id},
     )
     assert resp.status_code == 200
@@ -159,10 +159,10 @@ def test_websites_endpoint_detail_update_denied(drf_client):
     editor = UserFactory.create()
     editor.groups.add(website.editor_group)
     drf_client.force_login(editor)
-    resp = drf_client.get(reverse("websites_api-detail", kwargs={"pk": website.uuid}))
+    resp = drf_client.get(reverse("websites_api-detail", kwargs={"name": website.name}))
     assert resp.status_code == 200
     resp = drf_client.patch(
-        reverse("websites_api-detail", kwargs={"pk": website.uuid}),
+        reverse("websites_api-detail", kwargs={"name": website.name}),
         data={"title": "New"},
     )
     assert resp.status_code == 403
@@ -175,7 +175,7 @@ def test_websites_endpoint_detail_get_denied(drf_client):
             drf_client.force_login(user)
         website = WebsiteFactory.create()
         resp = drf_client.get(
-            reverse("websites_api-detail", kwargs={"pk": website.uuid})
+            reverse("websites_api-detail", kwargs={"name": website.name})
         )
         assert resp.status_code == 403 if not user else 404
 

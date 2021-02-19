@@ -40,6 +40,7 @@ class WebsiteViewSet(
     serializer_class = WebsiteSerializer
     pagination_class = DefaultPagination
     permission_classes = (HasWebsitePermission,)
+    lookup_field = "name"
 
     def get_queryset(self):
         """
