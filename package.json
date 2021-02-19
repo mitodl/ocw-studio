@@ -112,7 +112,7 @@
     "write-file-webpack-plugin": "^4.5.1"
   },
   "engines": {
-    "node": "12.16.1",
+    "node": "15.9.0",
     "yarn": "1.22.0"
   },
   "scripts": {
