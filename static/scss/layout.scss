@@ -1,9 +1,9 @@
 // Layout goes here
 @import "node_modules/bootstrap/scss/bootstrap";
 
-@import "site-page";
-
 $max-width: 1447px;  // arbitrary value, copied from ocw-next
+
+@import "site-page";
 
 .site-wide-header {
   margin: 0 auto;

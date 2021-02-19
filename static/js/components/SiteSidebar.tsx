@@ -16,20 +16,13 @@ export default function SiteSidebar(props: Props): JSX.Element {
   return (
     <div className="sidebar">
       <ul>
-        <li>
-          <NavLink exact to={siteUrl(website.name)} activeClassName={"active"}>
-            Content
-          </NavLink>
-          <ul>
-            {configItems.map(item => (
-              <li key={item.name}>
-                <NavLink exact to={siteComponentUrl(website.name, item.name)}>
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </li>
+        {configItems.map(item => (
+          <li key={item.name}>
+            <NavLink exact to={siteComponentUrl(website.name, item.name)}>
+              {item.label}
+            </NavLink>
+          </li>
+        ))}
         <li>
           Settings
           <ul>
