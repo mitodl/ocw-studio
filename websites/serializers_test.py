@@ -104,7 +104,7 @@ def test_website_collaborator_serializer():
         .first()
     )
     serialized_data = WebsiteCollaboratorSerializer(instance=collaborator).data
-    assert serialized_data["id"] == collaborator.id
+    assert serialized_data["username"] == collaborator.username
     assert serialized_data["name"] == collaborator.name
     assert serialized_data["email"] == collaborator.email
     assert serialized_data["group"] == website.editor_group.name

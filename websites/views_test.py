@@ -150,7 +150,7 @@ def test_websites_endpoint_detail_update(drf_client):
         data={"title": new_title, "owner": admin_user.id},
     )
     assert resp.status_code == 200
-    updated_site = Website.objects.get(uuid=website.uuid)
+    updated_site = Website.objects.get(name=website.name)
     assert updated_site.title == new_title
     assert updated_site.owner == website.owner
 
@@ -236,25 +236,25 @@ def test_websites_collaborators_endpoint_list_permissions(
     expected_results = sorted(
         [
             {
-                "id": permission_groups.site_admin.id,
+                "username": permission_groups.site_admin.username,
                 "email": permission_groups.site_admin.email,
                 "name": permission_groups.site_admin.name,
                 "group": website.admin_group.name,
             },
             {
-                "id": permission_groups.site_editor.id,
+                "username": permission_groups.site_editor.username,
                 "email": permission_groups.site_editor.email,
                 "name": permission_groups.site_editor.name,
                 "group": website.editor_group.name,
             },
             {
-                "id": permission_groups.global_admin.id,
+                "username": permission_groups.global_admin.username,
                 "email": permission_groups.global_admin.email,
                 "name": permission_groups.global_admin.name,
                 "group": constants.GLOBAL_ADMIN,
             },
             {
-                "id": website.owner.id,
+                "username": website.owner.username,
                 "email": website.owner.email,
                 "name": website.owner.name,
                 "group": constants.ROLE_OWNER,
@@ -271,7 +271,7 @@ def test_websites_collaborators_endpoint_list_permissions(
         resp = drf_client.get(
             reverse(
                 "websites_collaborators_api-list",
-                kwargs={"parent_lookup_website": website.uuid},
+                kwargs={"parent_lookup_website": website.name},
             )
         )
         assert resp.data.get("results") == expected_results
@@ -285,7 +285,7 @@ def test_websites_collaborators_endpoint_list_permission_denied(
     resp = drf_client.get(
         reverse(
             "websites_collaborators_api-list",
-            kwargs={"parent_lookup_website": permission_groups.websites[0].uuid},
+            kwargs={"parent_lookup_website": permission_groups.websites[0].name},
         )
     )
     assert resp.status_code == 403
@@ -299,7 +299,7 @@ def test_websites_collaborators_endpoint_list_create(drf_client, permission_grou
     resp = drf_client.post(
         reverse(
             "websites_collaborators_api-list",
-            kwargs={"parent_lookup_website": website.uuid},
+            kwargs={"parent_lookup_website": website.name},
         ),
         data={"email": collaborator.email, "group": website.editor_group.name},
     )
@@ -316,7 +316,7 @@ def test_websites_collaborators_endpoint_list_create_only_once(
     resp = drf_client.post(
         reverse(
             "websites_collaborators_api-list",
-            kwargs={"parent_lookup_website": website.uuid},
+            kwargs={"parent_lookup_website": website.name},
         ),
         data={
             "email": permission_groups.site_editor.email,
@@ -344,7 +344,7 @@ def test_websites_collaborators_endpoint_list_create_bad_group(
     resp = drf_client.post(
         reverse(
             "websites_collaborators_api-list",
-            kwargs={"parent_lookup_website": permission_groups.websites[0].uuid},
+            kwargs={"parent_lookup_website": permission_groups.websites[0].name},
         ),
         data={"email": collaborator.email, "group": group_name},
     )
@@ -361,7 +361,7 @@ def test_websites_collaborators_endpoint_list_create_bad_website(
     resp = drf_client.post(
         reverse(
             "websites_collaborators_api-list",
-            kwargs={"parent_lookup_website": permission_groups.websites[0].uuid},
+            kwargs={"parent_lookup_website": permission_groups.websites[0].name},
         ),
         data={
             "email": collaborator.email,
@@ -386,7 +386,7 @@ def test_websites_collaborators_endpoint_list_create_bad_user(
         resp = drf_client.post(
             reverse(
                 "websites_collaborators_api-list",
-                kwargs={"parent_lookup_website": website.uuid},
+                kwargs={"parent_lookup_website": website.name},
             ),
             data={
                 "email": email,
@@ -401,22 +401,27 @@ def test_websites_collaborators_endpoint_detail(drf_client, permission_groups):
     """ An admin should be able to view a collaborator detail"""
     website = permission_groups.websites[0]
     drf_client.force_login(permission_groups.global_admin)
-    resp = drf_client.get(
-        reverse(
-            "websites_collaborators_api-detail",
-            kwargs={
-                "parent_lookup_website": website.uuid,
-                "pk": permission_groups.site_admin.id,
-            },
+    for [user, group] in [
+        [permission_groups.site_admin, website.admin_group.name],
+        [permission_groups.global_admin, constants.GLOBAL_ADMIN],
+        [website.owner, constants.ROLE_OWNER],
+    ]:
+        resp = drf_client.get(
+            reverse(
+                "websites_collaborators_api-detail",
+                kwargs={
+                    "parent_lookup_website": website.name,
+                    "username": user.username,
+                },
+            )
         )
-    )
-    assert resp.status_code == 200
-    assert resp.data == {
-        "id": permission_groups.site_admin.id,
-        "email": permission_groups.site_admin.email,
-        "name": permission_groups.site_admin.name,
-        "group": website.admin_group.name,
-    }
+        assert resp.status_code == 200
+        assert resp.data == {
+            "username": user.username,
+            "email": user.email,
+            "name": user.name,
+            "group": group,
+        }
 
 
 @pytest.mark.parametrize("method", ["get", "patch", "delete"])
@@ -430,8 +435,8 @@ def test_websites_collaborators_endpoint_detail_denied(
         reverse(
             "websites_collaborators_api-detail",
             kwargs={
-                "parent_lookup_website": permission_groups.websites[0].uuid,
-                "pk": permission_groups.site_admin.id,
+                "parent_lookup_website": permission_groups.websites[0].name,
+                "username": permission_groups.site_admin.username,
             },
         )
     )
@@ -446,8 +451,8 @@ def test_websites_collaborators_endpoint_detail_modify(drf_client, permission_gr
         reverse(
             "websites_collaborators_api-detail",
             kwargs={
-                "parent_lookup_website": website.uuid,
-                "pk": permission_groups.site_editor.id,
+                "parent_lookup_website": website.name,
+                "username": permission_groups.site_editor.username,
             },
         ),
         data={
@@ -474,8 +479,8 @@ def test_websites_collaborators_endpoint_detail_modify_admin_denied(
             reverse(
                 "websites_collaborators_api-detail",
                 kwargs={
-                    "parent_lookup_website": website.uuid,
-                    "pk": user.id,
+                    "parent_lookup_website": website.name,
+                    "username": user.username,
                 },
             ),
             data={
@@ -496,8 +501,8 @@ def test_websites_collaborators_endpoint_detail_modify_nonadmin_denied(
             reverse(
                 "websites_collaborators_api-detail",
                 kwargs={
-                    "parent_lookup_website": website.uuid,
-                    "pk": permission_groups.site_admin.id,
+                    "parent_lookup_website": website.name,
+                    "username": permission_groups.site_admin.username,
                 },
             ),
             data={
@@ -515,8 +520,8 @@ def test_websites_collaborators_endpoint_detail_delete(drf_client, permission_gr
         reverse(
             "websites_collaborators_api-detail",
             kwargs={
-                "parent_lookup_website": website.uuid,
-                "pk": permission_groups.site_admin.id,
+                "parent_lookup_website": website.name,
+                "username": permission_groups.site_admin.username,
             },
         )
     )
@@ -543,8 +548,8 @@ def test_websites_collaborators_endpoint_detail_delete_denied(
             reverse(
                 "websites_collaborators_api-detail",
                 kwargs={
-                    "parent_lookup_website": website.uuid,
-                    "pk": user.id,
+                    "parent_lookup_website": website.name,
+                    "username": user.username,
                 },
             ),
             data={},

@@ -37,6 +37,7 @@ class DefaultPagination(LimitOffsetPagination):
 
 
 class WebsiteViewSet(
+    NestedViewSetMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
@@ -118,48 +119,49 @@ class WebsiteCollaboratorViewSet(
     permission_classes = (HasWebsiteCollaborationPermission,)
     pagination_class = DefaultPagination
     http_method_names = ["get", "post", "head", "patch", "delete"]  # No put
+    lookup_field = "username"
 
     def get_queryset(self):
         """
-        Get a list of all the users with permissions for this website, and annotate by group name/role
+        Get a list of all the users with permissions for this website, and annotate by group-name/role
         (owner, administrator, editor, or global administrator)
         """
         website = get_object_or_404(
-            Website, uuid=self.kwargs.get("parent_lookup_website")
+            Website, name=self.kwargs.get("parent_lookup_website")
         )
         website_groups = list(
             get_groups_with_perms(website).values_list("name", flat=True)
         ) + [constants.GLOBAL_ADMIN]
-        owner_id = website.owner.id if website.owner else None
+        owner_username = website.owner.username if website.owner else None
 
         # Return the individual user and group if a primary key is provided
-        if self.kwargs.get("pk"):
-            user_id = self.kwargs.get("pk")
-            if int(user_id) == owner_id:
-                return User.objects.filter(id=user_id).annotate(
+        if self.kwargs.get("username"):
+            user_name = self.kwargs.get("username")
+            if user_name == owner_username:
+                return User.objects.filter(username=user_name).annotate(
                     group=Value(constants.ROLE_OWNER, CharField())
                 )
             group_subquery = Group.objects.filter(
-                Q(user__id=OuterRef("pk")) & Q(name__in=website_groups)
+                Q(user__username=OuterRef("username")) & Q(name__in=website_groups)
             )
             return User.objects.filter(
-                Q(id=user_id) & Q(groups__name__in=website_groups)
+                Q(username=user_name) & Q(groups__name__in=website_groups)
             ).annotate(group=Subquery(group_subquery.values("name")[:1]))
 
         # Otherwise get all the collaborators and annotate with the relevant group they are in
-        query = User.objects.filter(id=owner_id).annotate(
+        query = User.objects.filter(username=owner_username).annotate(
             group=Value(constants.ROLE_OWNER, CharField())
         )
         for group_name in website_groups:
             query = query.union(
                 Group.objects.get(name=group_name)
-                .user_set.exclude(id=owner_id)
+                .user_set.exclude(username=owner_username)
                 .annotate(group=Value(group_name, CharField()))
             )
         return query.order_by("name")
 
     def perform_destroy(self, instance):
         """ Override this function, don't want to delete the user, just remove the user from groups"""
-        website = Website.objects.get(uuid=self.kwargs.get("parent_lookup_website"))
+        website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
         for group in get_groups_with_perms(website):
             instance.groups.remove(group)

@@ -1,6 +1,4 @@
 """ Serializers for websites """
-from uuid import UUID
-
 from django.contrib.auth.models import Group
 from django.db import transaction
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
@@ -83,7 +81,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
     group = serializers.CharField(default=None)
     email = serializers.EmailField(allow_null=True)
     name = serializers.CharField(read_only=True)
-    id = serializers.IntegerField(read_only=True)
+    username = serializers.CharField(read_only=True)
 
     def validate_group(self, group):
         """ The group should exist and not be a global group and be associated with the correct Website"""
@@ -106,9 +104,9 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         """ Make sure the group is for the right website """
         view = self.context.get("view", None)
         if view and hasattr(view, "kwargs"):
-            if UUID(view.kwargs.get("parent_lookup_website")).hex not in attrs.get(
-                "group"
-            ):
+            if Website.objects.get(
+                name=view.kwargs.get("parent_lookup_website")
+            ).uuid.hex not in attrs.get("group"):
                 raise ValidationError("Not a valid group for this website")
         return attrs
 
@@ -120,7 +118,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         if user in get_users_with_perms(website) or user == website.owner:
             raise ValidationError("User already has permission for this site")
         user.groups.add(group)
-        # For informational purposes only
+        # include group in response JSON
         user.group = group.name
         return user
 
@@ -134,9 +132,9 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
                 instance.groups.add(group)
             else:
                 instance.groups.remove(group)
-        # For informational purposes only
+        # include group in response JSON
         instance.group = group_name
         return instance
 
     class Meta:
-        fields = ["id", "email", "name", "group"]
+        fields = ["username", "email", "name", "group"]

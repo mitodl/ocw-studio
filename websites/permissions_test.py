@@ -205,7 +205,7 @@ def test_can_change_collaborators_website(mocker, permission_groups, method):
         [website.owner, False],
     ]:
         view = mocker.Mock(
-            kwargs={"parent_lookup_website": str(website.uuid), "pk": collaborator.id}
+            kwargs={"parent_lookup_website": str(website.name), "pk": collaborator.id}
         )
 
         for [user, has_perm] in [
@@ -237,7 +237,7 @@ def test_can_create_website_content(mocker, permission_groups):
     website = permission_groups.websites[0]
 
     # This assumes the WebsiteContent API view will be nested via DRF extensions
-    view = mocker.Mock(kwargs={"parent_lookup_website": str(website.uuid)})
+    view = mocker.Mock(kwargs={"parent_lookup_website": str(website.name)})
 
     # All site editors and admins should be able to view or create content for that site
     for user in [
@@ -255,7 +255,7 @@ def test_can_create_website_content(mocker, permission_groups):
 
     # A website admin cannot create content for another website, a global admin can
     view = mocker.Mock(
-        kwargs={"parent_lookup_website": str(permission_groups.websites[1].uuid)}
+        kwargs={"parent_lookup_website": str(permission_groups.websites[1].name)}
     )
     for [user, has_perm] in [
         [permission_groups.site_admin, False],
@@ -277,7 +277,7 @@ def test_can_view_edit_website_content(mocker, permission_groups):
     website = permission_groups.websites[0]
 
     # This assumes the WebsiteContent API view will be nested via DRF extensions
-    view = mocker.Mock(kwargs={"parent_lookup_website": str(website.uuid)})
+    view = mocker.Mock(kwargs={"parent_lookup_website": str(website.name)})
 
     for [user, has_perm] in [
         [permission_groups.global_admin, True],

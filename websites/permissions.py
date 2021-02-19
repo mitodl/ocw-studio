@@ -208,7 +208,7 @@ class HasWebsiteContentPermission(BasePermission):
     def has_permission(self, request, view):
         # The parent website should be included in the kwargs via DRF extensions nested view
         website = get_object_or_404(
-            Website, uuid=view.kwargs.get("parent_lookup_website", None)
+            Website, name=view.kwargs.get("parent_lookup_website", None)
         )
         if request.method in SAFE_METHODS:
             return check_perm(request.user, constants.PERMISSION_VIEW, website)
@@ -239,13 +239,13 @@ class HasWebsiteCollaborationPermission(BasePermission):
 
     def has_permission(self, request, view):
         website = get_object_or_404(
-            Website, uuid=view.kwargs.get("parent_lookup_website", None)
+            Website, name=view.kwargs.get("parent_lookup_website", None)
         )
         return check_perm(request.user, constants.PERMISSION_COLLABORATE, website)
 
     def has_object_permission(self, request, view, obj):
         website = get_object_or_404(
-            Website, uuid=view.kwargs.get("parent_lookup_website", None)
+            Website, name=view.kwargs.get("parent_lookup_website", None)
         )
         if request.method not in SAFE_METHODS and (
             website.owner == obj or is_global_admin(obj)
