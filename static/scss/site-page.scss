@@ -1,0 +1,17 @@
+.site-page {
+  max-width: $max-width;
+  margin: 0 auto;
+
+  .sidebar {
+    background-color: #eeeeee;
+    border: 1px solid black;
+
+    ul {
+      list-style: none;
+    }
+  }
+
+  .content {
+    border: 1px solid black;
+  }
+}
