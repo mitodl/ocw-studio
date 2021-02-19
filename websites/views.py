@@ -1,17 +1,24 @@
 """ Views for websites """
 from django.contrib.auth.models import Group
 from django.db.models import CharField, OuterRef, Q, Subquery, Value
-from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
+from guardian.shortcuts import (
+    get_groups_with_perms,
+    get_objects_for_user,
+    get_users_with_perms,
+)
 from mitol.common.utils.datetime import now_in_utc
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, status, viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
 from main import features
 from main.permissions import ReadonlyPermission
 from users.models import User
 from websites import constants
+from websites.constants import ROLE_GROUP_MAPPING
 from websites.models import Website, WebsiteStarter
 from websites.permissions import (
     HasWebsiteCollaborationPermission,
@@ -118,7 +125,6 @@ class WebsiteCollaboratorViewSet(
     serializer_class = WebsiteCollaboratorSerializer
     permission_classes = (HasWebsiteCollaborationPermission,)
     pagination_class = DefaultPagination
-    http_method_names = ["get", "post", "head", "patch", "delete"]  # No put
     lookup_field = "username"
 
     def get_queryset(self):
@@ -160,8 +166,42 @@ class WebsiteCollaboratorViewSet(
             )
         return query.order_by("name")
 
-    def perform_destroy(self, instance):
-        """ Override this function, don't want to delete the user, just remove the user from groups"""
+    def destroy(self, request, *args, **kwargs):
+        """Remove the user from all groups for this website"""
+        instance = self.get_object()
         website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
         for group in get_groups_with_perms(website):
             instance.groups.remove(group)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def create(self, request, *args, **kwargs):
+        """ Add a user to the website as a collaborator"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
+        group_name = f"{ROLE_GROUP_MAPPING[serializer.validated_data.get('role')]}{website.uuid.hex}"
+        user = User.objects.get(email=serializer.data.get("email"))
+        if user in get_users_with_perms(website) or user == website.owner:
+            raise ValidationError("User is already a collaborator for this site")
+        user.groups.add(Group.objects.get(name=group_name))
+        serializer.validated_data["group"] = group_name
+        return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        """ Change a collaborator's permission group for the website """
+        partial = kwargs.pop("partial", False)
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
+        group_name = f"{ROLE_GROUP_MAPPING[serializer.validated_data.get('role')]}{website.uuid.hex}"
+        website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
+        # User should only belong to one group per website
+        for group in get_groups_with_perms(website):
+            if group_name and group.name == group_name:
+                user.groups.add(group)
+            else:
+                user.groups.remove(group)
+        return Response(
+            {"role": serializer.validated_data["role"], "group": group_name}
+        )

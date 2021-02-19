@@ -1,10 +1,9 @@
 """ Serializers for websites """
-from django.contrib.auth.models import Group
 from django.db import transaction
-from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from main.serializers import WriteableSerializerMethodField
 from users.models import User
 from websites import constants
 from websites.models import Website, WebsiteStarter
@@ -78,27 +77,28 @@ class WebsiteDetailSerializer(serializers.ModelSerializer):
 class WebsiteCollaboratorSerializer(serializers.Serializer):
     """A non-model serializer for updating the permissions (by group) that a user has for a Website."""
 
-    group = serializers.CharField(default=None)
-    email = serializers.EmailField(allow_null=True)
+    role = WriteableSerializerMethodField()
+    email = serializers.EmailField(allow_null=True, required=False)
+    group = serializers.CharField(read_only=True)
     name = serializers.CharField(read_only=True)
     username = serializers.CharField(read_only=True)
 
-    def validate_group(self, group):
-        """ The group should exist and not be a global group and be for the correct website"""
-        if group in (constants.GLOBAL_ADMIN, constants.GLOBAL_AUTHOR):
-            raise ValidationError("Cannot assign users to this group")
-        if not Group.objects.filter(name=group).exists():
-            raise ValidationError("Group does not exist")
-        view = self.context.get("view", None)
-        if view and hasattr(view, "kwargs"):
-            if (
-                Website.objects.get(
-                    name=view.kwargs.get("parent_lookup_website")
-                ).uuid.hex
-                not in group
-            ):
-                raise ValidationError("Not a valid group for this website")
-        return group
+    def get_role(self, obj):
+        """ Get the role based on the group """
+        group = obj.group if isinstance(obj, User) else obj.get("group", None)
+        if group:
+            group_role_map = {v: k for k, v in constants.ROLE_GROUP_MAPPING.items()}
+            group_prefix = f"{group.rsplit('_', 1)[0]}_"
+            if group_prefix in group_role_map.keys():
+                return group_role_map[group_prefix]
+            return group
+        return obj.get("role", None)
+
+    def validate_role(self, role):
+        """ The role should be admin or editor"""
+        if role not in constants.ROLE_GROUP_MAPPING.keys():
+            raise ValidationError("Invalid role")
+        return {"role": role}
 
     def validate_email(self, email):
         """ The user should exist and not be a global admin """
@@ -109,31 +109,5 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
             raise ValidationError("User is a global admin")
         return email
 
-    def create(self, validated_data):
-        """ Add a new website collaborator """
-        group = Group.objects.get(name=validated_data["group"])
-        website = Website.objects.get(uuid=group.name.split("_")[-1])
-        user = User.objects.get(email=validated_data["email"])
-        if user in get_users_with_perms(website) or user == website.owner:
-            raise ValidationError("User already has permission for this site")
-        user.groups.add(group)
-        # include group in response JSON
-        user.group = group.name
-        return user
-
-    def update(self, instance, validated_data):
-        """ Update an existing website collaborator """
-        group_name = validated_data.get("group")
-        website = Website.objects.get(uuid=group_name.split("_")[-1])
-        # User should only belong to one group per website
-        for group in get_groups_with_perms(website):
-            if group_name and group.name == group_name:
-                instance.groups.add(group)
-            else:
-                instance.groups.remove(group)
-        # include group in response JSON
-        instance.group = group_name
-        return instance
-
     class Meta:
-        fields = ["username", "email", "name", "group"]
+        fields = ["username", "email", "name", "group", "role"]

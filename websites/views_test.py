@@ -11,11 +11,6 @@ from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
 from websites import constants
-from websites.constants import (
-    COURSE_STARTER_SLUG,
-    STARTER_SOURCE_GITHUB,
-    STARTER_SOURCE_LOCAL,
-)
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 from websites.models import Website
 from websites.serializers import (
@@ -40,7 +35,7 @@ def websites(course_starter):
     return SimpleNamespace(courses=courses, noncourses=noncourses)
 
 
-@pytest.mark.parametrize("website_type", [COURSE_STARTER_SLUG, None])
+@pytest.mark.parametrize("website_type", [constants.COURSE_STARTER_SLUG, None])
 def test_websites_endpoint_list(drf_client, website_type, websites):
     """Test new websites endpoint for lists"""
     filter_by_type = website_type is not None
@@ -59,7 +54,7 @@ def test_websites_endpoint_list(drf_client, website_type, websites):
     ):
         assert resp.data.get("results")[idx]["uuid"] == str(site.uuid)
         assert resp.data.get("results")[idx]["starter"]["slug"] == (
-            COURSE_STARTER_SLUG if filter_by_type else site.starter.slug
+            constants.COURSE_STARTER_SLUG if filter_by_type else site.starter.slug
         )
         assert resp.data.get("results")[idx]["publish_date"] <= now.strftime(
             ISO_8601_FORMAT
@@ -187,7 +182,8 @@ def test_websites_endpoint_sorting(drf_client, websites):
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
     resp = drf_client.get(
-        reverse("websites_api-list"), {"sort": "title", "type": COURSE_STARTER_SLUG}
+        reverse("websites_api-list"),
+        {"sort": "title", "type": constants.COURSE_STARTER_SLUG},
     )
     for idx, course in enumerate(sorted(websites.courses, key=lambda site: site.title)):
         assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
@@ -195,7 +191,7 @@ def test_websites_endpoint_sorting(drf_client, websites):
 
 def test_website_starters_list(drf_client, course_starter):
     """ Website starters endpoint should return a serialized list """
-    new_starter = WebsiteStarterFactory.create(source=STARTER_SOURCE_GITHUB)
+    new_starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
     resp = drf_client.get(reverse("website_starters_api-list"))
     resp_results = resp.data.get("results")
     serialized_data = WebsiteStarterSerializer(
@@ -207,7 +203,7 @@ def test_website_starters_list(drf_client, course_starter):
 
 def test_website_starters_retrieve(drf_client):
     """ Website starters endpoint should return a single serialized starter """
-    starter = WebsiteStarterFactory.create(source=STARTER_SOURCE_GITHUB)
+    starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
     resp = drf_client.get(
         reverse("website_starters_api-detail", kwargs={"pk": starter.id})
     )
@@ -221,7 +217,10 @@ def test_website_starters_local(
     """ Website starters endpoint should only return local starters if a feature flag is set to True """
     settings.FEATURES[features.USE_LOCAL_STARTERS] = use_local_starters
     WebsiteStarterFactory.create_batch(
-        2, source=factory.Iterator([STARTER_SOURCE_LOCAL, STARTER_SOURCE_GITHUB])
+        2,
+        source=factory.Iterator(
+            [constants.STARTER_SOURCE_LOCAL, constants.STARTER_SOURCE_GITHUB]
+        ),
     )
     resp = drf_client.get(reverse("website_starters_api-list"))
     resp_results = resp.data.get("results")
@@ -240,24 +239,28 @@ def test_websites_collaborators_endpoint_list_permissions(
                 "email": permission_groups.site_admin.email,
                 "name": permission_groups.site_admin.name,
                 "group": website.admin_group.name,
+                "role": constants.ROLE_ADMINISTRATOR,
             },
             {
                 "username": permission_groups.site_editor.username,
                 "email": permission_groups.site_editor.email,
                 "name": permission_groups.site_editor.name,
                 "group": website.editor_group.name,
+                "role": constants.ROLE_EDITOR,
             },
             {
                 "username": permission_groups.global_admin.username,
                 "email": permission_groups.global_admin.email,
                 "name": permission_groups.global_admin.name,
                 "group": constants.GLOBAL_ADMIN,
+                "role": constants.GLOBAL_ADMIN,
             },
             {
                 "username": website.owner.username,
                 "email": website.owner.email,
                 "name": website.owner.name,
                 "group": constants.ROLE_OWNER,
+                "role": constants.ROLE_OWNER,
             },
         ],
         key=lambda user: user["name"],
@@ -301,7 +304,7 @@ def test_websites_collaborators_endpoint_list_create(drf_client, permission_grou
             "websites_collaborators_api-list",
             kwargs={"parent_lookup_website": website.name},
         ),
-        data={"email": collaborator.email, "group": website.editor_group.name},
+        data={"email": collaborator.email, "role": constants.ROLE_EDITOR},
     )
     assert resp.status_code == 201
     assert website.editor_group.user_set.filter(id=collaborator.id) is not None
@@ -320,23 +323,18 @@ def test_websites_collaborators_endpoint_list_create_only_once(
         ),
         data={
             "email": permission_groups.site_editor.email,
-            "group": website.admin_group.name,
+            "role": constants.ROLE_ADMINISTRATOR,
         },
     )
     assert resp.status_code == 400
-    assert resp.json() == ["User already has permission for this site"]
+    assert resp.json() == ["User is already a collaborator for this site"]
 
 
 @pytest.mark.parametrize(
-    "group_name, error",
-    [
-        [constants.GLOBAL_ADMIN, "Cannot assign users to this group"],
-        [constants.GLOBAL_AUTHOR, "Cannot assign users to this group"],
-        ["fake", "Group does not exist"],
-    ],
+    "role", [constants.GLOBAL_ADMIN, constants.GLOBAL_AUTHOR, "fake"]
 )
 def test_websites_collaborators_endpoint_list_create_bad_group(
-    drf_client, permission_groups, group_name, error
+    drf_client, permission_groups, role
 ):
     """ An admin should not be able to add a new collaborator to a global/nonexistent group"""
     collaborator = UserFactory.create()
@@ -346,30 +344,10 @@ def test_websites_collaborators_endpoint_list_create_bad_group(
             "websites_collaborators_api-list",
             kwargs={"parent_lookup_website": permission_groups.websites[0].name},
         ),
-        data={"email": collaborator.email, "group": group_name},
+        data={"email": collaborator.email, "role": role},
     )
     assert resp.status_code == 400
-    assert resp.json() == {"group": [error]}
-
-
-def test_websites_collaborators_endpoint_list_create_bad_website(
-    drf_client, permission_groups
-):
-    """ An admin should not be able to add a new collaborator to another website's group"""
-    collaborator = UserFactory.create()
-    drf_client.force_login(permission_groups.global_admin)
-    resp = drf_client.post(
-        reverse(
-            "websites_collaborators_api-list",
-            kwargs={"parent_lookup_website": permission_groups.websites[0].name},
-        ),
-        data={
-            "email": collaborator.email,
-            "group": permission_groups.websites[1].editor_group.name,
-        },
-    )
-    assert resp.status_code == 400
-    assert resp.json() == {"group": ["Not a valid group for this website"]}
+    assert resp.json() == {"role": ["Invalid role"]}
 
 
 def test_websites_collaborators_endpoint_list_create_bad_user(
@@ -380,7 +358,7 @@ def test_websites_collaborators_endpoint_list_create_bad_user(
     website = permission_groups.websites[0]
     for [email, error] in [
         [permission_groups.global_admin.email, {"email": ["User is a global admin"]}],
-        [website.owner.email, ["User already has permission for this site"]],
+        [website.owner.email, ["User is already a collaborator for this site"]],
         ["fakeuser@test.edu", {"email": ["User does not exist"]}],
     ]:
         resp = drf_client.post(
@@ -390,7 +368,7 @@ def test_websites_collaborators_endpoint_list_create_bad_user(
             ),
             data={
                 "email": email,
-                "group": website.editor_group.name,
+                "role": constants.ROLE_EDITOR,
             },
         )
         assert resp.status_code == 400
@@ -401,10 +379,18 @@ def test_websites_collaborators_endpoint_detail(drf_client, permission_groups):
     """ An admin should be able to view a collaborator detail"""
     website = permission_groups.websites[0]
     drf_client.force_login(permission_groups.global_admin)
-    for [user, group] in [
-        [permission_groups.site_admin, website.admin_group.name],
-        [permission_groups.global_admin, constants.GLOBAL_ADMIN],
-        [website.owner, constants.ROLE_OWNER],
+    for [user, group, role] in [
+        [
+            permission_groups.site_admin,
+            website.admin_group.name,
+            constants.ROLE_ADMINISTRATOR,
+        ],
+        [
+            permission_groups.global_admin,
+            constants.GLOBAL_ADMIN,
+            constants.GLOBAL_ADMIN,
+        ],
+        [website.owner, constants.ROLE_OWNER, constants.ROLE_OWNER],
     ]:
         resp = drf_client.get(
             reverse(
@@ -421,6 +407,7 @@ def test_websites_collaborators_endpoint_detail(drf_client, permission_groups):
             "email": user.email,
             "name": user.name,
             "group": group,
+            "role": role,
         }
 
 
@@ -456,7 +443,7 @@ def test_websites_collaborators_endpoint_detail_modify(drf_client, permission_gr
             },
         ),
         data={
-            "group": website.admin_group.name,
+            "role": constants.ROLE_ADMINISTRATOR,
         },
     )
     assert resp.status_code == 200
@@ -484,7 +471,7 @@ def test_websites_collaborators_endpoint_detail_modify_admin_denied(
                 },
             ),
             data={
-                "group": website.editor_group.name,
+                "role": constants.ROLE_ADMINISTRATOR,
             },
         )
     assert resp.status_code == 403
@@ -506,7 +493,7 @@ def test_websites_collaborators_endpoint_detail_modify_nonadmin_denied(
                 },
             ),
             data={
-                "group": website.editor_group.name,
+                "role": constants.ROLE_EDITOR,
             },
         )
     assert resp.status_code == 403

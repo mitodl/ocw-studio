@@ -5,6 +5,7 @@ from django.db.models import CharField, Value
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
+from websites.constants import ROLE_EDITOR
 from websites.factories import (
     EXAMPLE_SITE_CONFIG,
     WebsiteFactory,
@@ -108,3 +109,4 @@ def test_website_collaborator_serializer():
     assert serialized_data["name"] == collaborator.name
     assert serialized_data["email"] == collaborator.email
     assert serialized_data["group"] == website.editor_group.name
+    assert serialized_data["role"] == ROLE_EDITOR
