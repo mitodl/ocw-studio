@@ -27,18 +27,18 @@ const devConfig = Object.assign({}, config, {
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new BundleTracker({ filename: "./webpack-stats.json" }),
-    new CopyWebpackPlugin({
-      patterns: [
-        {
-          from: "node_modules/@ckeditor",
-          to: path.resolve("./static/js/ckeditor/")
-        }
-      ]
-    }),
+    // new CopyWebpackPlugin({
+    //   patterns: [
+    //     {
+    //       from: "node_modules/@ckeditor",
+    //       to: path.resolve("./static/js/ckeditor/")
+    //     }
+    //   ]
+    // }),
     new CKEditorWebpackPlugin({ language: "en" }),
-    new WriteFilePlugin({
-      test: /ckeditor/,
-    })
+    // new WriteFilePlugin({
+    //   test: /ckeditor/,
+    // })
   ],
   optimization: {
     namedModules: true,
