@@ -61,10 +61,10 @@ class WebsiteViewSet(
             queryset = Website.objects.all()
         else:
             # Other authenticated users should get a list of websites they are editors/admins/owners for.
-            queryset = get_objects_for_user(user, PERMISSION_VIEW).order_by(ordering)
+            queryset = get_objects_for_user(user, PERMISSION_VIEW)
         if website_type is not None:
             queryset = queryset.filter(starter__slug=website_type)
-        return queryset.order_by(ordering)
+        return queryset.select_related("starter").order_by(ordering)
 
     def get_serializer_class(self):
         if self.action == "list":
