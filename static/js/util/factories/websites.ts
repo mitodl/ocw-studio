@@ -1,7 +1,8 @@
 import casual from "casual-browserify"
-import { times } from "lodash"
+import { times, cloneDeep } from "lodash"
 
 import incrementer from "../incrementer"
+import { exampleSiteConfig } from "../../constants"
 
 import {
   Website,
@@ -11,42 +12,8 @@ import {
 
 const incr = incrementer()
 
-export const makeWebsiteStarterConfig = (): WebsiteStarterConfig => ({
-  collections: [
-    {
-      name:   "page",
-      label:  "Page",
-      fields: [
-        {
-          name:   "title",
-          label:  "Title",
-          widget: "string"
-        },
-        {
-          name:   "content",
-          label:  "Content",
-          widget: "markdown"
-        }
-      ]
-    },
-    {
-      name:   "resource",
-      label:  "Resource",
-      fields: [
-        {
-          name:   "title",
-          label:  "Title",
-          widget: "string"
-        },
-        {
-          name:   "description",
-          label:  "Description",
-          widget: "markdown"
-        }
-      ]
-    }
-  ]
-})
+export const makeWebsiteStarterConfig = (): WebsiteStarterConfig =>
+  cloneDeep(exampleSiteConfig)
 
 export const makeWebsiteStarter = (type = "course"): WebsiteStarter => ({
   id:     incr.next().value,
