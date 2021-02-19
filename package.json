@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.12.17",
+    "@babel/preset-env": "^7.12.17",
     "@ckeditor/ckeditor5-adapter-ckfinder": "^25.0.0",
     "@ckeditor/ckeditor5-autoformat": "^25.0.0",
     "@ckeditor/ckeditor5-basic-styles": "^25.0.0",
@@ -52,6 +53,7 @@
     "bootstrap": "^4.6.0",
     "casual-browserify": "^1.5.19-2",
     "babel-jest": "^26.6.3",
+    "core-js": "^3.9.0",
     "css-loader": "^4.2.1",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.6",
@@ -113,13 +115,13 @@
   },
   "engines": {
     "node": "15.9.0",
-    "yarn": "1.22.0"
+    "yarn": "1.22.5"
   },
   "scripts": {
     "lint": "eslint static/js --ext .js,.jsx,.ts,.tsx",
     "lint:cache": "eslint static/js --ext .js,.jsx,.ts,.tsx --cache",
     "scss_lint": "node ./node_modules/sass-lint/bin/sass-lint.js --verbose --no-exit",
-    "test": "jest --no-cache --run-in-band",
+    "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "repl": "node --require ./scripts/repl.js",
