@@ -375,6 +375,36 @@ def test_websites_collaborators_endpoint_list_create_bad_user(
         assert resp.json() == error
 
 
+@pytest.mark.parametrize(
+    "missing, error",
+    [
+        ["role", "Role is required"],
+        ["email", "Email is required"],
+    ],
+)
+def test_websites_collaborators_endpoint_detail_create_missing_data(
+    drf_client, permission_groups, missing, error
+):
+    """ A validation error should be raised if role or email is missing """
+    website = permission_groups.websites[0]
+    data = {
+        "email": UserFactory.create().email,
+        "role": constants.ROLE_EDITOR,
+    }
+    data.pop(missing)
+
+    drf_client.force_login(permission_groups.site_admin)
+    resp = drf_client.post(
+        reverse(
+            "websites_collaborators_api-list",
+            kwargs={"parent_lookup_website": website.name},
+        ),
+        data=data,
+    )
+    assert resp.status_code == 400
+    assert resp.data == {"non_field_errors": [error]}
+
+
 def test_websites_collaborators_endpoint_detail(drf_client, permission_groups):
     """ An admin should be able to view a collaborator detail"""
     website = permission_groups.websites[0]
@@ -474,7 +504,28 @@ def test_websites_collaborators_endpoint_detail_modify_admin_denied(
                 "role": constants.ROLE_ADMINISTRATOR,
             },
         )
-    assert resp.status_code == 403
+        assert resp.status_code == 403
+
+
+def test_websites_collaborators_endpoint_detail_modify_missing_data(
+    drf_client, permission_groups
+):
+    """ A validation error should be raised if role is missing from a patch request"""
+    website = permission_groups.websites[0]
+    drf_client.force_login(permission_groups.site_admin)
+
+    resp = drf_client.patch(
+        reverse(
+            "websites_collaborators_api-detail",
+            kwargs={
+                "parent_lookup_website": website.name,
+                "username": permission_groups.site_editor.username,
+            },
+        ),
+        data={},
+    )
+    assert resp.status_code == 400
+    assert resp.data == {"non_field_errors": ["Role is required"]}
 
 
 def test_websites_collaborators_endpoint_detail_modify_nonadmin_denied(
@@ -496,7 +547,7 @@ def test_websites_collaborators_endpoint_detail_modify_nonadmin_denied(
                 "role": constants.ROLE_EDITOR,
             },
         )
-    assert resp.status_code == 403
+        assert resp.status_code == 403
 
 
 def test_websites_collaborators_endpoint_detail_delete(drf_client, permission_groups):

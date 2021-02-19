@@ -96,7 +96,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
 
     def validate_role(self, role):
         """ The role should be admin or editor"""
-        if role not in constants.ROLE_GROUP_MAPPING.keys():
+        if not role or role not in constants.ROLE_GROUP_MAPPING.keys():
             raise ValidationError("Invalid role")
         return {"role": role}
 
@@ -108,6 +108,14 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         if is_global_admin(user):
             raise ValidationError("User is a global admin")
         return email
+
+    def validate(self, attrs):
+        """Make sure all required attributes are present for post/patch"""
+        if not attrs.get("role"):
+            raise ValidationError("Role is required")
+        if not self.instance and not attrs.get("email"):
+            raise ValidationError("Email is required")
+        return attrs
 
     class Meta:
         fields = ["username", "email", "name", "group", "role"]
