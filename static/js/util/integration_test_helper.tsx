@@ -108,3 +108,7 @@ export default class IntegrationTestHelper {
     }
   }
 }
+
+export type TestRenderer = ReturnType<
+  IntegrationTestHelper["configureRenderer"]
+>

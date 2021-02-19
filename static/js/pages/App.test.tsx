@@ -1,9 +1,10 @@
 import App from "./App"
-import IntegrationTestHelper from "../util/integration_test_helper"
+import IntegrationTestHelper, {
+  TestRenderer
+} from "../util/integration_test_helper"
 
 describe("App", () => {
-  let helper: IntegrationTestHelper,
-    render: ReturnType<IntegrationTestHelper["configureRenderer"]>
+  let helper: IntegrationTestHelper, render: TestRenderer
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()

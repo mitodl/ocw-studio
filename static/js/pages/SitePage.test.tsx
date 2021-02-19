@@ -2,7 +2,9 @@ const mockUseRouteMatch = jest.fn()
 
 import SitePage from "./SitePage"
 
-import IntegrationTestHelper from "../util/integration_test_helper"
+import IntegrationTestHelper, {
+  TestRenderer
+} from "../util/integration_test_helper"
 import { makeWebsite } from "../util/factories/websites"
 
 import { Website } from "../types/websites"
@@ -14,9 +16,7 @@ jest.mock("react-router-dom", () => ({
 }))
 
 describe("SitePage", () => {
-  let helper: IntegrationTestHelper,
-    render: ReturnType<IntegrationTestHelper["configureRenderer"]>,
-    website: Website
+  let helper: IntegrationTestHelper, render: TestRenderer, website: Website
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
