@@ -2,7 +2,7 @@
 from django.core.management import BaseCommand
 from django.db.models import Q
 
-from main.utils import now_in_utc
+from mitol.common.utils.datetime import now_in_utc
 from websites.models import Website
 from websites.permissions import create_global_groups, setup_website_groups_permissions
 
