@@ -141,8 +141,8 @@ class WebsiteCollaboratorViewSet(
         owner_username = website.owner.username if website.owner else None
 
         # Return the individual user and group if a primary key is provided
-        if self.kwargs.get("username"):
-            user_name = self.kwargs.get("username")
+        user_name = self.kwargs.get("username", None)
+        if user_name:
             if user_name == owner_username:
                 return User.objects.filter(username=user_name).annotate(
                     group=Value(constants.ROLE_OWNER, CharField())
@@ -195,7 +195,7 @@ class WebsiteCollaboratorViewSet(
         serializer.is_valid(raise_exception=True)
         website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
         group_name = f"{ROLE_GROUP_MAPPING[serializer.validated_data.get('role')]}{website.uuid.hex}"
-        website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
+
         # User should only belong to one group per website
         for group in get_groups_with_perms(website):
             if group_name and group.name == group_name:
