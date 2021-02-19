@@ -11,13 +11,7 @@ module.exports = {
   },
   transformIgnorePatterns: [
     "/node_modules/(?!(" +
-      "@ckeditor/ckeditor5-editor-classic" +
-      "|@ckeditor/ckeditor5-engine" +
-      "|@ckeditor/ckeditor5-core" +
-      "|@ckeditor/ckeditor5-markdown-gfm" +
-      "|@ckeditor/ckeditor5-utils" +
-      "|@ckeditor/ckeditor5-ui" +
-      "|@ckeditor/ckeditor5-essentials" +
+      "@ckeditor/*" +
       "|lodash-es" +
       ")/)"
   ],
