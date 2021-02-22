@@ -1,7 +1,6 @@
 import React, { ComponentType } from "react"
 import ReactDOM from "react-dom"
 import { AppContainer } from "react-hot-loader"
-import { createBrowserHistory } from "history"
 
 import configureStore from "./store/configureStore"
 import Router, { RootProps } from "./Router"
@@ -23,10 +22,9 @@ const store = configureStore()
 const rootEl = document.getElementById("container")
 
 const renderApp = (Component: ComponentType<RootProps>): void => {
-  const history = createBrowserHistory()
   ReactDOM.render(
     <AppContainer>
-      <Component history={history} store={store} />
+      <Component store={store} />
     </AppContainer>,
     rootEl
   )

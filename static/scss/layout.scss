@@ -1,8 +1,18 @@
 // Layout goes here
+@import "node_modules/bootstrap/scss/bootstrap";
 
-// Fake style to confirm that webpack dev server works
-h1 {
-  border-radius: 25px;
-  border: 2px solid blue;
-  padding: 2px;
+$max-width: 1447px;  // arbitrary value, copied from ocw-next
+
+@import "site-page";
+
+.site-wide-header {
+  margin: 0 auto;
+  max-width: $max-width;
+  font-weight: bold;
+
+  border: 1px solid black;  // for visibility, remove when we migrate away from wireframe
+}
+
+.active {
+  font-weight: bold;
 }

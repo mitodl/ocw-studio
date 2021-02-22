@@ -1,25 +1,26 @@
 import React from "react"
-import { Route, Router as ReactRouter } from "react-router"
+import { BrowserRouter } from "react-router-dom"
 import { Provider } from "react-redux"
-import { History } from "history"
-import { Store } from "redux"
+import { Provider as ReduxQueryProvider } from "redux-query-react"
+import { Store } from "./store/configureStore"
 
 import App from "./pages/App"
+import { getQueries } from "./lib/redux_query"
 
 export interface RootProps {
-  history: History
   store: Store
 }
-
 export default function Root(props: RootProps): JSX.Element {
-  const { history, store } = props
+  const { store } = props
 
   return (
     <div>
       <Provider store={store}>
-        <ReactRouter history={history}>
-          <Route url="/" component={App} />
-        </ReactRouter>
+        <ReduxQueryProvider queriesSelector={getQueries}>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ReduxQueryProvider>
       </Provider>
     </div>
   )

@@ -1,6 +1,8 @@
 import React from "react"
-import { Route } from "react-router"
+import { Route, Switch } from "react-router"
 
+import SitePage from "./SitePage"
+import Header from "../components/Header"
 import useTracker from "../hooks/tracker"
 
 export default function App(): JSX.Element {
@@ -8,7 +10,10 @@ export default function App(): JSX.Element {
 
   return (
     <div className="app">
-      <Route exact path="/" render={() => <div>Hello cookiecutter!</div>} />
+      <Header />
+      <Switch>
+        <Route path="/sites/:name" component={SitePage} />
+      </Switch>
     </div>
   )
 }

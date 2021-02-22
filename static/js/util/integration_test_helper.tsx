@@ -8,7 +8,7 @@ import { Router } from "react-router"
 import { Action } from "redux"
 
 import { ReduxState } from "../reducers"
-import configureStore from "../store/configureStore"
+import configureStore, { Store } from "../store/configureStore"
 import { getQueries } from "../lib/redux_query"
 
 import * as networkInterfaceFuncs from "../store/network_interface"
@@ -88,7 +88,7 @@ export default class IntegrationTestHelper {
       perRenderDefaultState?: ReduxState
     ): Promise<{
       wrapper: ReactWrapper
-      store: ReturnType<typeof configureStore>
+      store: Store
     }> => {
       const store = configureStore(defaultState ?? perRenderDefaultState)
       beforeRenderActions.forEach(action => store.dispatch(action))
@@ -108,3 +108,7 @@ export default class IntegrationTestHelper {
     }
   }
 }
+
+export type TestRenderer = ReturnType<
+  IntegrationTestHelper["configureRenderer"]
+>

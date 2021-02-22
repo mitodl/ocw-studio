@@ -8,7 +8,7 @@ from django.shortcuts import render
 from mitol.common.utils.webpack import webpack_public_path
 
 
-def index(request):
+def index(request, *args, **kwargs):  # pylint: disable=unused-argument
     """
     The index view. Display available programs
     """
