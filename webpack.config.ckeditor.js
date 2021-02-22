@@ -11,8 +11,20 @@ module.exports = {
   output: {
     path: path.resolve("./static/js/lib/ckeditor/"),
     filename: "[name].js",
-    crossOriginLoading: "anonymous"
+    crossOriginLoading: "anonymous",
+    scriptType: "module"
   },
+
+  output: {
+    // The name under which the editor will be exported.
+    library: 'ClassicEditor',
+
+    path: path.resolve( __dirname, 'build' ),
+    filename: 'ckeditor.js',
+    libraryTarget: 'umd',
+    libraryExport: 'default'
+  },
+
 
   plugins: [new CKEditorWebpackPlugin({ language: "en" ,
     addMainLanguageTranslationsToAllAssets: true
