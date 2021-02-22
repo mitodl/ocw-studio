@@ -1,46 +1,21 @@
-import React, { useState } from "react"
+import React, { useState, } from "react"
 
 import MarkdownEditor from "../components/MarkdownEditor"
 
-const TEST_DATA = `## A heading
-
-Amazing stuff! Paragraphs!
-
-And another paragraph!
-
-And here a youtube shortcode:
-
-{{< youtube "2XID_W4neJo" >}}
-
-**bold** and even _italic_ text.
-
-*   a
-*   list
-*   of
-*   items
-*   including
-*   [links](https://reactjs.org/docs/hooks-faq.html#how-can-i-measure-a-dom-node)
-
-also have some
-
-> block quotes
-
-good stuff.`
-
 export default function MarkdownEditorTestPage(): JSX.Element {
-  const [markdown, setMarkdown] = useState(TEST_DATA)
+  const [data, setData] = useState("")
 
   return (
     <div>
       <div className="w-50">
         <h3>Editor</h3>
-        <MarkdownEditor initialData={markdown} onChange={setMarkdown} />
+        <MarkdownEditor initialData={data} onChange={setData} />
       </div>
       <div className="w-50">
         <h3>Output</h3>
-        {markdown !== "" ? (
+        {data !== "" ? (
           <pre style={{ border: "2px solid red" }}>
-            <code style={{ margin: "5px", display: "block" }}>{markdown}</code>
+            <code style={{ margin: "5px", display: "block" }}>{data}</code>
           </pre>
         ) : null}
       </div>
