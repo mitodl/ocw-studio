@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.5.0
+-------------
+
+- Site detail page (#71)
+- Fix import for backpopulate_groups (#79)
+- Add select_related to fix n+1 query (#77)
+
 Version 0.4.2 (Released February 19, 2021)
 -------------
 
