@@ -13,6 +13,7 @@ from users.models import User
 from websites import constants
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 from websites.models import Website
+from websites.permissions import permissions_group_for_role
 from websites.serializers import (
     WebsiteDetailSerializer,
     WebsiteStarterDetailSerializer,
@@ -593,3 +594,30 @@ def test_websites_collaborators_endpoint_detail_delete_denied(
             data={},
         )
         assert resp.status_code == 403
+
+
+@pytest.mark.parametrize(
+    "role, group_prefix",
+    [
+        [constants.ROLE_ADMINISTRATOR, constants.ADMIN_GROUP],
+        [constants.ROLE_EDITOR, constants.EDITOR_GROUP],
+    ],
+)
+def test_permissions_group_for_role(role, group_prefix):
+    """permissions_group_for_role should return the correct group name for a website and role"""
+    website = WebsiteFactory.create()
+    assert (
+        permissions_group_for_role(role, website) == f"{group_prefix}{website.uuid.hex}"
+    )
+
+
+@pytest.mark.parametrize(
+    "role",
+    [constants.GLOBAL_ADMIN, constants.GLOBAL_AUTHOR, constants.ROLE_OWNER, "fake"],
+)
+def test_permissions_group_for_role_invalid(role):
+    """permissions_group_for_role should raise a ValueError for an invalid role"""
+    website = WebsiteFactory.create()
+    with pytest.raises(ValueError) as exc:
+        permissions_group_for_role(role, website)
+    assert exc.value.args == (f"Invalid role for a website group: {role}",)

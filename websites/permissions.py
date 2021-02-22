@@ -64,12 +64,12 @@ def setup_website_groups_permissions(website):
     owner_updated = False
 
     admin_group, admin_created = Group.objects.get_or_create(
-        name=f"{constants.ADMIN_GROUP}{website.uuid.hex}"
+        name=permissions_group_for_role(constants.ROLE_ADMINISTRATOR, website)
     )
     if admin_created:
         groups_created += 1
     editor_group, editor_created = Group.objects.get_or_create(
-        name=f"{constants.EDITOR_GROUP}{website.uuid.hex}"
+        name=permissions_group_for_role(constants.ROLE_EDITOR, website)
     )
     if editor_created:
         groups_created += 1
@@ -180,6 +180,14 @@ def check_perm(user, permission, website):
 
     """
     return user.has_perm(permission, website) or user.has_perm(permission)
+
+
+def permissions_group_for_role(role, website):
+    """Get the website group name for a given role"""
+    if role in constants.ROLE_GROUP_MAPPING.keys():
+        return f"{constants.ROLE_GROUP_MAPPING[role]}{website.uuid.hex}"
+    else:
+        raise ValueError(f"Invalid role for a website group: {role}")
 
 
 class HasWebsitePermission(BasePermission):

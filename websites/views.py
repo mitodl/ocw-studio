@@ -18,12 +18,12 @@ from main import features
 from main.permissions import ReadonlyPermission
 from users.models import User
 from websites import constants
-from websites.constants import ROLE_GROUP_MAPPING
 from websites.models import Website, WebsiteStarter
 from websites.permissions import (
     HasWebsiteCollaborationPermission,
     HasWebsitePermission,
     is_global_admin,
+    permissions_group_for_role,
 )
 from websites.serializers import (
     WebsiteCollaboratorSerializer,
@@ -179,7 +179,9 @@ class WebsiteCollaboratorViewSet(
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
-        group_name = f"{ROLE_GROUP_MAPPING[serializer.validated_data.get('role')]}{website.uuid.hex}"
+        group_name = permissions_group_for_role(
+            serializer.validated_data.get("role"), website
+        )
         user = User.objects.get(email=serializer.data.get("email"))
         if user in get_users_with_perms(website) or user == website.owner:
             raise ValidationError("User is already a collaborator for this site")
@@ -194,7 +196,9 @@ class WebsiteCollaboratorViewSet(
         serializer = self.get_serializer(user, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
-        group_name = f"{ROLE_GROUP_MAPPING[serializer.validated_data.get('role')]}{website.uuid.hex}"
+        group_name = permissions_group_for_role(
+            serializer.validated_data.get("role"), website
+        )
 
         # User should only belong to one group per website
         for group in get_groups_with_perms(website):
