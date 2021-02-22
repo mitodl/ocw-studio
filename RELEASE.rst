@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.5.0
+Version 0.5.0 (Released February 22, 2021)
 -------------
 
 - Site detail page (#71)
