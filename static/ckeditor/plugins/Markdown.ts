@@ -2,7 +2,7 @@ import HtmlDataProcessor from "@ckeditor/ckeditor5-engine/src/dataprocessor/html
 import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
 import GFMDataProcessor from "@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor"
 
-import { md2html, html2md } from "../../markdown"
+import { md2html, html2md } from "../lib/markdown"
 import { editor } from "@ckeditor/ckeditor5-core"
 
 /**
