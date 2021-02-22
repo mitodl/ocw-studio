@@ -1,13 +1,18 @@
 """ Tests for websites.serializers """
 import pytest
+from django.db.models import CharField, Value
 
 from main.constants import ISO_8601_FORMAT
+from users.factories import UserFactory
+from users.models import User
+from websites.constants import ROLE_EDITOR
 from websites.factories import (
     EXAMPLE_SITE_CONFIG,
     WebsiteFactory,
     WebsiteStarterFactory,
 )
 from websites.serializers import (
+    WebsiteCollaboratorSerializer,
     WebsiteDetailSerializer,
     WebsiteSerializer,
     WebsiteStarterDetailSerializer,
@@ -89,3 +94,19 @@ def test_website_detail_serializer(has_starter):
         if has_starter
         else None
     )
+
+
+def test_website_collaborator_serializer():
+    """ WebsiteCollaboratorSerializer should serialize a User object with correct fields """
+    website = WebsiteFactory.create()
+    collaborator = (
+        User.objects.filter(id=UserFactory.create().id)
+        .annotate(group=Value(website.editor_group.name, CharField()))
+        .first()
+    )
+    serialized_data = WebsiteCollaboratorSerializer(instance=collaborator).data
+    assert serialized_data["username"] == collaborator.username
+    assert serialized_data["name"] == collaborator.name
+    assert serialized_data["email"] == collaborator.email
+    assert serialized_data["group"] == website.editor_group.name
+    assert serialized_data["role"] == ROLE_EDITOR

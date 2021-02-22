@@ -64,12 +64,12 @@ def setup_website_groups_permissions(website):
     owner_updated = False
 
     admin_group, admin_created = Group.objects.get_or_create(
-        name=f"{constants.ADMIN_GROUP}{website.uuid.hex}"
+        name=permissions_group_for_role(constants.ROLE_ADMINISTRATOR, website)
     )
     if admin_created:
         groups_created += 1
     editor_group, editor_created = Group.objects.get_or_create(
-        name=f"{constants.EDITOR_GROUP}{website.uuid.hex}"
+        name=permissions_group_for_role(constants.ROLE_EDITOR, website)
     )
     if editor_created:
         groups_created += 1
@@ -182,6 +182,14 @@ def check_perm(user, permission, website):
     return user.has_perm(permission, website) or user.has_perm(permission)
 
 
+def permissions_group_for_role(role, website):
+    """Get the website group name for a given role"""
+    if role in constants.ROLE_GROUP_MAPPING.keys():
+        return f"{constants.ROLE_GROUP_MAPPING[role]}{website.uuid.hex}"
+    else:
+        raise ValueError(f"Invalid role for a website group: {role}")
+
+
 class HasWebsitePermission(BasePermission):
     """Permission to view/modify/create Website objects"""
 
@@ -208,7 +216,7 @@ class HasWebsiteContentPermission(BasePermission):
     def has_permission(self, request, view):
         # The parent website should be included in the kwargs via DRF extensions nested view
         website = get_object_or_404(
-            Website, uuid=view.kwargs.get("parent_lookup_website", None)
+            Website, name=view.kwargs.get("parent_lookup_website", None)
         )
         if request.method in SAFE_METHODS:
             return check_perm(request.user, constants.PERMISSION_VIEW, website)
@@ -237,8 +245,22 @@ class HasWebsitePublishPermission(BasePermission):
 class HasWebsiteCollaborationPermission(BasePermission):
     """Permission to add or remove a website admin/editor"""
 
+    def has_permission(self, request, view):
+        website = get_object_or_404(
+            Website, name=view.kwargs.get("parent_lookup_website", None)
+        )
+        return check_perm(request.user, constants.PERMISSION_COLLABORATE, website)
+
     def has_object_permission(self, request, view, obj):
-        return check_perm(request.user, constants.PERMISSION_COLLABORATE, obj)
+        website = get_object_or_404(
+            Website, name=view.kwargs.get("parent_lookup_website", None)
+        )
+        if request.method not in SAFE_METHODS and (
+            website.owner == obj or is_global_admin(obj)
+        ):
+            return False
+        # Anyone not allowed to do this will already have been stopped by has_permission above
+        return True
 
 
 class HasWebsitePreviewPermission(BasePermission):
