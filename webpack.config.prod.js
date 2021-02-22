@@ -2,11 +2,8 @@ const webpack = require("webpack")
 const path = require("path")
 const BundleTracker = require("webpack-bundle-tracker")
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")
-const { config } = require(path.resolve(
-  "./webpack.config.shared.js"
-))
+const { config } = require(path.resolve("./webpack.config.shared.js"))
 const CKEditorWebpackPlugin = require("@ckeditor/ckeditor5-dev-webpack-plugin")
-const CopyWebpackPlugin = require("copy-webpack-plugin")
 
 const prodConfig = Object.assign({}, config)
 prodConfig.module.rules = [
@@ -14,7 +11,7 @@ prodConfig.module.rules = [
   {
     // this regex is necessary to explicitly exclude ckeditor stuff
     test: /static\/scss\/.+(\.css$|\.scss$)/,
-    use:  [
+    use: [
       {
         loader: MiniCssExtractPlugin.loader
       },
@@ -27,11 +24,11 @@ prodConfig.module.rules = [
 
 module.exports = Object.assign(prodConfig, {
   context: __dirname,
-  mode:    "production",
-  output:  {
-    path:               path.resolve("./static/bundles/"),
-    filename:           "[name]-[chunkhash].js",
-    chunkFilename:      "[id]-[chunkhash].js",
+  mode: "production",
+  output: {
+    path: path.resolve("./static/bundles/"),
+    filename: "[name]-[chunkhash].js",
+    chunkFilename: "[id]-[chunkhash].js",
     crossOriginLoading: "anonymous"
   },
 
@@ -46,16 +43,10 @@ module.exports = Object.assign(prodConfig, {
     new MiniCssExtractPlugin({
       filename: "[name]-[contenthash].css"
     }),
-    new CopyWebpackPlugin({
-      patterns: [
-        {
-          from: "node_modules/@ckeditor",
-          to: path.resolve("./static/js/ckeditor/")
-        }
-      ]
-    }),
-
-    new CKEditorWebpackPlugin({ language: 'en' })
+    new CKEditorWebpackPlugin({
+      language: "en",
+      addMainLanguageTranslationsToAllAssets: true
+    })
   ],
   optimization: {
     minimize: true

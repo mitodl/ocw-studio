@@ -4,7 +4,6 @@ const R = require("ramda")
 const BundleTracker = require("webpack-bundle-tracker")
 const { config } = require(path.resolve("./webpack.config.shared.js"))
 const CKEditorWebpackPlugin = require("@ckeditor/ckeditor5-dev-webpack-plugin")
-const CopyWebpackPlugin = require("copy-webpack-plugin")
 const WriteFilePlugin = require("write-file-webpack-plugin")
 
 const hotEntry = (host, port) =>
@@ -27,18 +26,10 @@ const devConfig = Object.assign({}, config, {
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new BundleTracker({ filename: "./webpack-stats.json" }),
-    // new CopyWebpackPlugin({
-    //   patterns: [
-    //     {
-    //       from: "node_modules/@ckeditor",
-    //       to: path.resolve("./static/js/ckeditor/")
-    //     }
-    //   ]
-    // }),
-    new CKEditorWebpackPlugin({ language: "en" }),
-    // new WriteFilePlugin({
-    //   test: /ckeditor/,
-    // })
+    new CKEditorWebpackPlugin({
+      language: "en",
+      addMainLanguageTranslationsToAllAssets: true
+    })
   ],
   optimization: {
     namedModules: true,
