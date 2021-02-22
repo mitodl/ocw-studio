@@ -1,4 +1,4 @@
-import { html2md, md2html } from "./markdown"
+import { html2md, md2html } from "../../../ckeditor/lib/markdown"
 
 const TEST_DATA = `## A heading
 

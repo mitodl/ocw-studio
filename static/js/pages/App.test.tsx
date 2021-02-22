@@ -11,6 +11,11 @@ describe("App", () => {
     render = helper.configureRenderer(App)
   })
 
+
+  afterEach(() => {
+    helper.cleanup()
+  })
+  
   it("should render", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("App").exists()).toBeTruthy()

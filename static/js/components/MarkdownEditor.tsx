@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react"
 import _ from "lodash"
 
-import CKEditor from "../lib/ckeditor/CKEditor"
+import CKEditor from "../../ckeditor/CKEditor"
 
 export interface Props {
   initialData?: string
@@ -14,11 +14,11 @@ export interface Props {
 export default function MarkdownEditor(props: Props): JSX.Element {
   const { initialData, onChange } = props
 
-  const editor = useRef<typeof CKEditor | null>(null)
+  const editor = useRef<any>(null)
   const editorEl = useRef<HTMLDivElement | null>(null)
 
-  const editorSetupRef = useCallback(async (node: HTMLDivElement) => {
-    const editorInstance = await CKEditor.create(initialData ?? "")
+  const editorSetupRef = useCallback(async (node: any) => {
+    const editorInstance = await (CKEditor as any).create(initialData ?? "")
 
     editorInstance.model.document.on(
       "change:data",

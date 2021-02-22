@@ -12,18 +12,20 @@ module.exports = {
     path: path.resolve("./static/js/lib/ckeditor/"),
     filename: "[name].js",
     crossOriginLoading: "anonymous",
-    scriptType: "module"
+    // library: "MyLibrary",
+    libraryTarget: "commonjs-module",
+    libraryExport: "default"
   },
 
-  output: {
-    // The name under which the editor will be exported.
-    library: 'ClassicEditor',
+  // output: {
+  //   // The name under which the editor will be exported.
+  //   library: 'ClassicEditor',
 
-    path: path.resolve( __dirname, 'build' ),
-    filename: 'ckeditor.js',
-    libraryTarget: 'umd',
-    libraryExport: 'default'
-  },
+  //   path: path.resolve( __dirname, 'build' ),
+  //   filename: 'ckeditor.js',
+  //   libraryTarget: 'umd',
+  //   libraryExport: 'default'
+  // },
 
 
   plugins: [new CKEditorWebpackPlugin({ language: "en" ,
@@ -44,7 +46,11 @@ module.exports = {
           {
             loader: "ts-loader",
             options: {
-              onlyCompileBundledFiles: true
+              onlyCompileBundledFiles: true,
+              compilerOptions: {
+              "module": "commonjs",
+              "target": "es5",
+              }
             }
           }
         ]
@@ -84,5 +90,8 @@ module.exports = {
   },
   performance: {
     hints: false
+  },
+  optimization: {
+    minimize: false
   }
 }
