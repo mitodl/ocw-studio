@@ -1,4 +1,4 @@
-import React, { useState, } from "react"
+import React, { useState } from "react"
 
 import MarkdownEditor from "../components/MarkdownEditor"
 
