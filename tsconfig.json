@@ -28,8 +28,7 @@
   },
   "include": [
     "./static/**/*.ts",
-    "./static/**/*.tsx",
-    "./node_modules/@ckeditor/*.js"
+    "./static/**/*.tsx"
   ],
   "exclude": [
     "./static/*.test.ts",

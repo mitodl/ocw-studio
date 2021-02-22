@@ -4,7 +4,6 @@ const R = require("ramda")
 const BundleTracker = require("webpack-bundle-tracker")
 const { config } = require(path.resolve("./webpack.config.shared.js"))
 const CKEditorWebpackPlugin = require("@ckeditor/ckeditor5-dev-webpack-plugin")
-const WriteFilePlugin = require("write-file-webpack-plugin")
 
 const hotEntry = (host, port) =>
   `webpack-hot-middleware/client?path=http://${host}:${port}/__webpack_hmr&timeout=20000&reload=true`
