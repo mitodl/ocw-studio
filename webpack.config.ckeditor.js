@@ -9,12 +9,14 @@ module.exports = {
     markdown: "./static/ckeditor/lib/markdown.ts"
   },
   output: {
-    path: path.resolve("./static/bundles/"),
+    path: path.resolve("./static/js/lib/ckeditor/"),
     filename: "[name].js",
     crossOriginLoading: "anonymous"
   },
 
-  plugins: [new CKEditorWebpackPlugin({ language: "en" })],
+  plugins: [new CKEditorWebpackPlugin({ language: "en" ,
+    addMainLanguageTranslationsToAllAssets: true
+  })],
 
   module: {
     rules: [

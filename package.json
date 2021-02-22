@@ -129,7 +129,8 @@
     "fmt:check": "LOG_LEVEL= prettier-eslint --list-different --no-semi --ignore $PWD/'static/js/types/*.d.ts' $PWD/'static/js/**/*.ts' $PWD/'static/js/**/*.tsx'",
     "typescript": "rm -rf dist && rm -f .tsbuildinfo && tsc",
     "typecheck": "tsc --noEmit",
-    "build": "webpack --config webpack.config.prod.js --bail"
+    "build": "webpack --config webpack.config.prod.js --bail",
+    "build:ckeditor": "tsc ./static/ckeditor/CKEditor.ts"
   },
   "browserslist": [
     "> 1%"
