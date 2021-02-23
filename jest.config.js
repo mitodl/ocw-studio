@@ -1,5 +1,6 @@
 module.exports = {
   setupFilesAfterEnv: ["<rootDir>static/js/test_setup.ts"],
+  cacheDirectory: ".jest-cache",
   transform: {
     "^.+\\.tsx?$": "ts-jest",
     "^.+\\.js$": "babel-jest",

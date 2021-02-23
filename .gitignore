@@ -47,6 +47,7 @@ coverage.xml
 .hypothesis/
 coverage/
 .nyc_output/
+.jest-cache
 
 # Translations
 *.mo
