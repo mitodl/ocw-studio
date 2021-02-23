@@ -31,5 +31,15 @@ $menu-spacing: 15px;
   .content {
     flex-grow: 1;
     border: 1px solid black;
+    padding: 15px;
+
+    ul {
+      padding: 0;
+      list-style: none;
+    }
+  }
+
+  .ck.ck-content.ck-editor__editable {
+    min-height: 300px;
   }
 }

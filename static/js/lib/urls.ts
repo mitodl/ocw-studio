@@ -22,3 +22,10 @@ export const siteApiCollaboratorsDetailUrl = (
   name: string,
   username: string
 ): string => `${siteApiCollaboratorsUrl(name)}${username}/`
+export const siteAddContentUrl = (name: string, configName: string): string =>
+  `/sites/${name}/${configName}/add/`
+
+export const siteApiContentUrl = (name: string): string =>
+  `${siteApiUrl(name)}content/`
+export const siteApiContentDetailUrl = (name: string, uuid: string): string =>
+  `${siteApiContentUrl(name)}${uuid}/`

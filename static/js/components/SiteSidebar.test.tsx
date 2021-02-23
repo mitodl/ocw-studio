@@ -7,6 +7,7 @@ import { makeWebsiteDetail } from "../util/factories/websites"
 import { siteContentListingUrl } from "../lib/urls"
 
 import { Website } from "../types/websites"
+import { CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE } from "../constants"
 
 describe("SiteSidebar", () => {
   let website: Website
@@ -23,8 +24,8 @@ describe("SiteSidebar", () => {
       .map(link => [link.text(), link.prop("to")])
 
     const expected = [
-      ["Page", siteContentListingUrl(website.name, "page")],
-      ["Resource", siteContentListingUrl(website.name, "resource")]
+      ["Page", siteContentListingUrl(website.name, CONTENT_TYPE_PAGE)],
+      ["Resource", siteContentListingUrl(website.name, CONTENT_TYPE_RESOURCE)]
     ]
 
     expect(links).toEqual(expect.arrayContaining(expected))
