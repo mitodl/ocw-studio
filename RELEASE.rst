@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.5.1
+-------------
+
+- Website collaboration API (#72)
+
 Version 0.5.0 (Released February 22, 2021)
 -------------
 
