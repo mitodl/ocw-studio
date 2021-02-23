@@ -8,11 +8,14 @@ from users.models import User
 from websites.constants import ROLE_EDITOR
 from websites.factories import (
     EXAMPLE_SITE_CONFIG,
+    WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
 )
 from websites.serializers import (
     WebsiteCollaboratorSerializer,
+    WebsiteContentDetailSerializer,
+    WebsiteContentSerializer,
     WebsiteDetailSerializer,
     WebsiteSerializer,
     WebsiteStarterDetailSerializer,
@@ -110,3 +113,63 @@ def test_website_collaborator_serializer():
     assert serialized_data["email"] == collaborator.email
     assert serialized_data["group"] == website.editor_group.name
     assert serialized_data["role"] == ROLE_EDITOR
+
+
+def test_website_content_serializer():
+    """WebsiteContentSerializer should serialize a few fields to identify the content"""
+    content = WebsiteContentFactory.create()
+    serialized_data = WebsiteContentSerializer(instance=content).data
+    assert serialized_data["uuid"] == str(content.uuid)
+    assert serialized_data["title"] == content.title
+    assert serialized_data["type"] == content.type
+    assert "markdown" not in serialized_data
+
+
+def test_website_content_serializer_save():
+    """WebsiteContentSerializer should modify only certain fields"""
+    content = WebsiteContentFactory.create()
+    new_title = f"{content.title} with some more text"
+    new_type = f"{content.type}_other"
+    # uuid value is invalid but it's ignored since it's marked readonly
+    serializer = WebsiteContentSerializer(
+        data={"title": new_title, "uuid": "----", "type": new_type}, instance=content
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    content.refresh_from_db()
+    assert content.title == new_title
+    assert content.type != new_type
+
+
+def test_website_content_detail_serializer():
+    """WebsiteContentDetailSerializer should serialize all relevant fields to the frontend"""
+    content = WebsiteContentFactory.create()
+    serialized_data = WebsiteContentDetailSerializer(instance=content).data
+    assert serialized_data["uuid"] == str(content.uuid)
+    assert serialized_data["title"] == content.title
+    assert serialized_data["type"] == content.type
+    assert serialized_data["markdown"] == content.markdown
+
+
+def test_website_content_detail_serializer_save():
+    """WebsiteContentDetailSerializer should modify only certain fields"""
+    content = WebsiteContentFactory.create()
+    new_title = f"{content.title} with some more text"
+    new_type = f"{content.type}_other"
+    new_markdown = "hopefully different from the previous markdown"
+    # uuid value is invalid but it's ignored since it's marked readonly
+    serializer = WebsiteContentDetailSerializer(
+        data={
+            "title": new_title,
+            "uuid": "----",
+            "type": new_type,
+            "markdown": new_markdown,
+        },
+        instance=content,
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    content.refresh_from_db()
+    assert content.title == new_title
+    assert content.type != new_type
+    assert content.markdown == new_markdown
