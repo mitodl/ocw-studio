@@ -137,3 +137,28 @@ class WebsiteContentDetailSerializer(serializers.ModelSerializer):
         model = WebsiteContent
         fields = WebsiteContentSerializer.Meta.fields + ["markdown"]
         read_only_fields = WebsiteContentSerializer.Meta.read_only_fields
+
+
+class WebsiteContentCreateSerializer(serializers.ModelSerializer):
+    """Serializer which creates a new WebsiteContent"""
+
+    def validate(self, attrs):
+        """Only allow limited options for types"""
+        content_type = attrs.get("type")
+        if content_type not in constants.CONTENT_TYPES:
+            raise ValidationError(
+                f"Content type must be one of ({', '.join(constants.CONTENT_TYPES)})"
+            )
+        return attrs
+
+    def create(self, validated_data):
+        """Add the website_id to the data"""
+        website_name = self.context["view"].kwargs["parent_lookup_website"]
+        website = Website.objects.get(name=website_name)
+        return super().create({"website_id": website.pk, **validated_data})
+
+    class Meta:
+        model = WebsiteContent
+        fields = ["type", "title", "markdown", "uuid"]
+        # we want uuid in the returned result but we also want to ignore any attempt to set it on create
+        read_only_fields = ["uuid"]

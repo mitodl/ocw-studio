@@ -28,6 +28,7 @@ from websites.permissions import (
 )
 from websites.serializers import (
     WebsiteCollaboratorSerializer,
+    WebsiteContentCreateSerializer,
     WebsiteContentDetailSerializer,
     WebsiteContentSerializer,
     WebsiteDetailSerializer,
@@ -216,6 +217,7 @@ class WebsiteCollaboratorViewSet(
 
 class WebsiteContentViewSet(
     NestedViewSetMixin,
+    mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     mixins.ListModelMixin,
@@ -239,5 +241,7 @@ class WebsiteContentViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return WebsiteContentSerializer
+        elif self.action == "create":
+            return WebsiteContentCreateSerializer
         else:
             return WebsiteContentDetailSerializer

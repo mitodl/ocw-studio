@@ -674,3 +674,49 @@ def test_websites_content_detail(drf_client, permission_groups):
         )
     )
     assert resp.data == WebsiteContentDetailSerializer(instance=content).data
+
+
+def test_websites_content_create(drf_client, permission_groups):
+    """POSTing to the WebsiteContent list view should create a new WebsiteContent"""
+    drf_client.force_login(permission_groups.global_admin)
+    website = WebsiteFactory.create()
+    payload = {
+        "title": "new title",
+        "markdown": "some markdown",
+        "type": constants.CONTENT_TYPE_PAGE,
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        data=payload,
+    )
+    assert resp.status_code == 201
+    content = website.websitecontent_set.get()
+    assert content.title == payload["title"]
+    assert content.markdown == payload["markdown"]
+    assert content.type == payload["type"]
+    assert resp.data["uuid"] == str(content.uuid)
+
+
+def test_websites_content_create_empty(drf_client, permission_groups):
+    """POSTing to the WebsiteContent list view should create a new WebsiteContent"""
+    drf_client.force_login(permission_groups.global_admin)
+    website = WebsiteFactory.create()
+    payload = {}
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        data=payload,
+    )
+    assert resp.status_code == 400
+    assert (
+        "Content type must be one of (page, file)" in resp.data["non_field_errors"][0]
+    )

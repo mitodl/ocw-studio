@@ -5,15 +5,17 @@ from django.db.models import CharField, Value
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
-from websites.constants import ROLE_EDITOR
+from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPES, ROLE_EDITOR
 from websites.factories import (
     EXAMPLE_SITE_CONFIG,
     WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
 )
+from websites.models import WebsiteContent
 from websites.serializers import (
     WebsiteCollaboratorSerializer,
+    WebsiteContentCreateSerializer,
     WebsiteContentDetailSerializer,
     WebsiteContentSerializer,
     WebsiteDetailSerializer,
@@ -173,3 +175,36 @@ def test_website_content_detail_serializer_save():
     assert content.title == new_title
     assert content.type != new_type
     assert content.markdown == new_markdown
+
+
+def test_website_content_create_serializer(mocker):
+    """WebsiteContentCreateSerializer should create a new WebsiteContent, with some validation"""
+    payload = {
+        "title": "a title",
+        "type": CONTENT_TYPE_PAGE,
+        "markdown": "some markdown",
+    }
+    website = WebsiteFactory.create()
+    context = {"view": mocker.Mock(kwargs={"parent_lookup_website": website.name})}
+    serializer = WebsiteContentCreateSerializer(data=payload, context=context)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    content = WebsiteContent.objects.get(title=payload["title"])
+    assert content.title == payload["title"]
+    assert content.markdown == payload["markdown"]
+    assert content.type == payload["type"]
+
+
+@pytest.mark.parametrize(
+    "content_type, is_valid",
+    [[content_type, True] for content_type in CONTENT_TYPES] + [["invalid", False]],
+)
+def test_website_content_create_serializer_invalid_type(mocker, content_type, is_valid):
+    """WebsiteContentCreateSerializer should reject types which are not validated"""
+    payload = {
+        "type": content_type,
+    }
+    website = WebsiteFactory.create()
+    context = {"view": mocker.Mock(kwargs={"parent_lookup_website": website.name})}
+    serializer = WebsiteContentCreateSerializer(data=payload, context=context)
+    assert serializer.is_valid() is is_valid
