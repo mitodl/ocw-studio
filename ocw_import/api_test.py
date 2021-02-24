@@ -11,7 +11,7 @@ from ocw_import.conftest import (
     TEST_OCW2HUGO_PREFIX,
     setup_s3,
 )
-from websites.constants import CONTENT_TYPE_FILE, CONTENT_TYPE_PAGE
+from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE
 from websites.factories import WebsiteStarterFactory
 from websites.models import Website, WebsiteContent
 
@@ -51,7 +51,7 @@ def test_import_ocw2hugo_course(settings):
     )
 
     lecture_pdf = WebsiteContent.objects.get(uuid="7f91d52457aaef8093c58a43f10a099b")
-    assert lecture_pdf.type == CONTENT_TYPE_FILE
+    assert lecture_pdf.type == CONTENT_TYPE_RESOURCE
     assert lecture_pdf.metadata.get("file_type") == "application/pdf"
     assert (
         lecture_pdf.hugo_filepath
