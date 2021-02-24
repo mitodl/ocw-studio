@@ -25,6 +25,7 @@
     "@ckeditor/ckeditor5-link": "^25.0.0",
     "@ckeditor/ckeditor5-list": "^25.0.0",
     "@ckeditor/ckeditor5-paragraph": "^25.0.0",
+    "@ckeditor/ckeditor5-react": "^3.0.1",
     "@ckeditor/ckeditor5-theme-lark": "^25.0.0",
     "@ckeditor/ckeditor5-upload": "^25.0.0",
     "@ckeditor/ckeditor5-widget": "^25.0.0",

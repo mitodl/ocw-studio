@@ -16,7 +16,7 @@ import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
 import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
-export default class ClassicEditor extends ClassicEditorBase {}
+class ClassicEditor extends ClassicEditorBase {}
 
 ClassicEditor.builtinPlugins = [
   EssentialsPlugin,
@@ -58,3 +58,5 @@ ClassicEditor.defaultConfig = {
   },
   language: "en"
 }
+
+export default ClassicEditor

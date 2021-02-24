@@ -1228,6 +1228,13 @@
     "@ckeditor/ckeditor5-ui" "^25.0.0"
     "@ckeditor/ckeditor5-utils" "^25.0.0"
 
+"@ckeditor/ckeditor5-react@^3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@ckeditor/ckeditor5-react/-/ckeditor5-react-3.0.1.tgz#50e3544abdc74c7f2e33873ba10e5f14a5933c8c"
+  integrity sha512-Lqh/rmXNJup/2xbIjOBIthV0hE3sQ4TUsAHpS8UKlfMH7yNyV4XaNhbGAHo4A5egmrGShRBxLZw/DYXjOHbyWg==
+  dependencies:
+    prop-types "^15.7.2"
+
 "@ckeditor/ckeditor5-remove-format@^25.0.0":
   version "25.0.0"
   resolved "https://registry.yarnpkg.com/@ckeditor/ckeditor5-remove-format/-/ckeditor5-remove-format-25.0.0.tgz#88a3f0ec86e4091eda672422d1ef9cb224491c0d"
