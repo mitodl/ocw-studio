@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("websites", "0008_site_permissions"),
+        ("websites", "0009_resource"),
     ]
 
     operations = [
