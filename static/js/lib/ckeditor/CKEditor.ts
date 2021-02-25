@@ -4,6 +4,7 @@ import UploadAdapterPlugin from "@ckeditor/ckeditor5-adapter-ckfinder/src/upload
 import AutoformatPlugin from "@ckeditor/ckeditor5-autoformat/src/autoformat"
 import BoldPlugin from "@ckeditor/ckeditor5-basic-styles/src/bold"
 import ItalicPlugin from "@ckeditor/ckeditor5-basic-styles/src/italic"
+import UnderlinePlugin from "@ckeditor/ckeditor5-basic-styles/src/underline"
 import BlockQuotePlugin from "@ckeditor/ckeditor5-block-quote/src/blockquote"
 import EasyImagePlugin from "@ckeditor/ckeditor5-easy-image/src/easyimage"
 import HeadingPlugin from "@ckeditor/ckeditor5-heading/src/heading"
@@ -24,6 +25,7 @@ ClassicEditor.builtinPlugins = [
   AutoformatPlugin,
   BoldPlugin,
   ItalicPlugin,
+  UnderlinePlugin,
   BlockQuotePlugin,
   EasyImagePlugin,
   HeadingPlugin,
@@ -44,6 +46,7 @@ ClassicEditor.defaultConfig = {
       "|",
       "bold",
       "italic",
+      "underline",
       "link",
       "bulletedList",
       "numberedList",
