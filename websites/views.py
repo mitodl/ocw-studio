@@ -18,15 +18,19 @@ from main import features
 from main.permissions import ReadonlyPermission
 from users.models import User
 from websites import constants
-from websites.models import Website, WebsiteStarter
+from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import (
     HasWebsiteCollaborationPermission,
+    HasWebsiteContentPermission,
     HasWebsitePermission,
     is_global_admin,
     permissions_group_for_role,
 )
 from websites.serializers import (
     WebsiteCollaboratorSerializer,
+    WebsiteContentCreateSerializer,
+    WebsiteContentDetailSerializer,
+    WebsiteContentSerializer,
     WebsiteDetailSerializer,
     WebsiteSerializer,
     WebsiteStarterDetailSerializer,
@@ -209,3 +213,35 @@ class WebsiteCollaboratorViewSet(
         return Response(
             {"role": serializer.validated_data["role"], "group": group_name}
         )
+
+
+class WebsiteContentViewSet(
+    NestedViewSetMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    """Viewset for WebsiteContent"""
+
+    permission_classes = (HasWebsiteContentPermission,)
+    pagination_class = DefaultPagination
+    lookup_field = "uuid"
+
+    def get_queryset(self):
+        parent_lookup_website = self.kwargs.get("parent_lookup_website")
+        filter_type = self.request.query_params.get("type")
+
+        queryset = WebsiteContent.objects.filter(website__name=parent_lookup_website)
+        if filter_type:
+            queryset = queryset.filter(type=filter_type)
+        return queryset.order_by("-updated_on")
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return WebsiteContentSerializer
+        elif self.action == "create":
+            return WebsiteContentCreateSerializer
+        else:
+            return WebsiteContentDetailSerializer

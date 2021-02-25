@@ -11,10 +11,15 @@ from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
 from websites import constants
-from websites.factories import WebsiteFactory, WebsiteStarterFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.models import Website
 from websites.permissions import permissions_group_for_role
 from websites.serializers import (
+    WebsiteContentDetailSerializer,
     WebsiteDetailSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
@@ -621,3 +626,95 @@ def test_permissions_group_for_role_invalid(role):
     with pytest.raises(ValueError) as exc:
         permissions_group_for_role(role, website)
     assert exc.value.args == (f"Invalid role for a website group: {role}",)
+
+
+@pytest.mark.parametrize("filter_type", ["page", ""])
+def test_websites_content_list(drf_client, filter_type, permission_groups):
+    """The list view of WebsiteContent should optionally filter by type"""
+    drf_client.force_login(permission_groups.global_admin)
+    content = WebsiteContentFactory.create(type="other")
+    website = content.website
+    num_pages = 5
+    contents = [
+        WebsiteContentFactory.create(type="page", website=website)
+        for _ in range(num_pages)
+    ]
+    if not filter_type:
+        contents += [content]
+    resp = drf_client.get(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        {"type": filter_type},
+    )
+    assert resp.data["count"] == (num_pages if filter_type else num_pages + 1)
+
+    for idx, content in enumerate(
+        reversed(sorted(contents, key=lambda _content: _content.updated_on))
+    ):
+        assert content.title == resp.data["results"][idx]["title"]
+        assert str(content.uuid) == resp.data["results"][idx]["uuid"]
+        assert content.type == resp.data["results"][idx]["type"]
+
+
+def test_websites_content_detail(drf_client, permission_groups):
+    """The detail view for WebsiteContent should return serialized data"""
+    drf_client.force_login(permission_groups.global_admin)
+    content = WebsiteContentFactory.create(type="other")
+    resp = drf_client.get(
+        reverse(
+            "websites_content_api-detail",
+            kwargs={
+                "parent_lookup_website": content.website.name,
+                "uuid": str(content.uuid),
+            },
+        )
+    )
+    assert resp.data == WebsiteContentDetailSerializer(instance=content).data
+
+
+def test_websites_content_create(drf_client, permission_groups):
+    """POSTing to the WebsiteContent list view should create a new WebsiteContent"""
+    drf_client.force_login(permission_groups.global_admin)
+    website = WebsiteFactory.create()
+    payload = {
+        "title": "new title",
+        "markdown": "some markdown",
+        "type": constants.CONTENT_TYPE_PAGE,
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        data=payload,
+    )
+    assert resp.status_code == 201
+    content = website.websitecontent_set.get()
+    assert content.title == payload["title"]
+    assert content.markdown == payload["markdown"]
+    assert content.type == payload["type"]
+    assert resp.data["uuid"] == str(content.uuid)
+
+
+def test_websites_content_create_empty(drf_client, permission_groups):
+    """POSTing to the WebsiteContent list view should create a new WebsiteContent"""
+    drf_client.force_login(permission_groups.global_admin)
+    website = WebsiteFactory.create()
+    payload = {}
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        data=payload,
+    )
+    assert resp.status_code == 400
+    assert "This field is required" in resp.data["type"][0]

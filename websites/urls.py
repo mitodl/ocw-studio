@@ -9,10 +9,19 @@ from websites import views
 
 router = SimpleRouter()
 
-router.register(r"websites", views.WebsiteViewSet, basename="websites_api").register(
+website_route = router.register(
+    r"websites", views.WebsiteViewSet, basename="websites_api"
+)
+website_route.register(
     r"collaborators",
     views.WebsiteCollaboratorViewSet,
     basename="websites_collaborators_api",
+    parents_query_lookups=["website"],
+)
+website_route.register(
+    "content",
+    views.WebsiteContentViewSet,
+    basename="websites_content_api",
     parents_query_lookups=["website"],
 )
 router.register(

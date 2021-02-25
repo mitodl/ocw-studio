@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from main.serializers import WriteableSerializerMethodField
 from users.models import User
 from websites import constants
-from websites.models import Website, WebsiteStarter
+from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin
 
 
@@ -119,3 +119,37 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
 
     class Meta:
         fields = ["username", "email", "name", "group", "role"]
+
+
+class WebsiteContentSerializer(serializers.ModelSerializer):
+    """Serializes parts of WebsiteContent"""
+
+    class Meta:
+        model = WebsiteContent
+        fields = ["uuid", "title", "type"]
+        read_only_fields = ["uuid", "type"]
+
+
+class WebsiteContentDetailSerializer(serializers.ModelSerializer):
+    """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""
+
+    class Meta:
+        model = WebsiteContent
+        fields = WebsiteContentSerializer.Meta.fields + ["markdown"]
+        read_only_fields = WebsiteContentSerializer.Meta.read_only_fields
+
+
+class WebsiteContentCreateSerializer(serializers.ModelSerializer):
+    """Serializer which creates a new WebsiteContent"""
+
+    def create(self, validated_data):
+        """Add the website_id to the data"""
+        website_name = self.context["view"].kwargs["parent_lookup_website"]
+        website = Website.objects.get(name=website_name)
+        return super().create({"website_id": website.pk, **validated_data})
+
+    class Meta:
+        model = WebsiteContent
+        fields = ["type", "title", "markdown", "uuid"]
+        # we want uuid in the returned result but we also want to ignore any attempt to set it on create
+        read_only_fields = ["uuid"]
