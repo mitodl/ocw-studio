@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             model_name="websitecontent",
             name="type",
             field=models.CharField(
-                choices=[("page", "page"), ("file", "file")],
+                choices=[("page", "page"), ("resource", "resource")],
                 default="page",
                 max_length=24,
             ),
