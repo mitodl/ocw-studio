@@ -2,7 +2,6 @@
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import CharField
 
 from main.serializers import WriteableSerializerMethodField
 from users.models import User
