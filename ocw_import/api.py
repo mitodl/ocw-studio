@@ -9,7 +9,7 @@ import yaml
 from dateutil import parser as dateparser
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
-from websites.constants import CONTENT_TYPE_FILE, CONTENT_TYPE_PAGE, COURSE_HOME
+from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE, COURSE_HOME
 from websites.models import Website, WebsiteContent
 
 
@@ -75,7 +75,7 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                     # This is a file
                     uuid = content_json.get("uid")
                     parent_uuid = content_json.get("parent", None)
-                    content_type = CONTENT_TYPE_FILE
+                    content_type = CONTENT_TYPE_RESOURCE
                 if parent_uuid:
                     parent, _ = WebsiteContent.objects.get_or_create(
                         website=website, uuid=parent_uuid

@@ -1,7 +1,7 @@
 """ Constants for websites """
 
 CONTENT_TYPE_PAGE = "page"
-CONTENT_TYPE_FILE = "file"
+CONTENT_TYPE_RESOURCE = "resource"
 
 COURSE_HOME = "course-home"
 
