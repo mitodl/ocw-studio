@@ -87,7 +87,12 @@ class WebsiteContent(TimestampedModel):
     )
     uuid = models.UUIDField(null=False, blank=False, default=uuid4)
     title = models.CharField(max_length=512, null=True, blank=True)
-    type = models.CharField(max_length=24, blank=True, null=True)
+    type = models.CharField(
+        max_length=24,
+        blank=False,
+        null=False,
+        choices=[(_type, _type) for _type in constants.CONTENT_TYPES],
+    )
     parent = models.ForeignKey(
         "self", null=True, blank=True, related_name="contents", on_delete=models.CASCADE
     )

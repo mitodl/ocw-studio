@@ -2,6 +2,7 @@
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import CharField
 
 from main.serializers import WriteableSerializerMethodField
 from users.models import User
@@ -141,15 +142,6 @@ class WebsiteContentDetailSerializer(serializers.ModelSerializer):
 
 class WebsiteContentCreateSerializer(serializers.ModelSerializer):
     """Serializer which creates a new WebsiteContent"""
-
-    def validate(self, attrs):
-        """Only allow limited options for types"""
-        content_type = attrs.get("type")
-        if content_type not in constants.CONTENT_TYPES:
-            raise ValidationError(
-                f"Content type must be one of ({', '.join(constants.CONTENT_TYPES)})"
-            )
-        return attrs
 
     def create(self, validated_data):
         """Add the website_id to the data"""

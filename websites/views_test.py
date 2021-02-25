@@ -717,6 +717,4 @@ def test_websites_content_create_empty(drf_client, permission_groups):
         data=payload,
     )
     assert resp.status_code == 400
-    assert (
-        "Content type must be one of (page, file)" in resp.data["non_field_errors"][0]
-    )
+    assert "This field is required" in resp.data["type"][0]

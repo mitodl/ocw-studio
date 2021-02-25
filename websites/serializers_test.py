@@ -197,7 +197,8 @@ def test_website_content_create_serializer(mocker):
 
 @pytest.mark.parametrize(
     "content_type, is_valid",
-    [[content_type, True] for content_type in CONTENT_TYPES] + [["invalid", False]],
+    [[content_type, True] for content_type in CONTENT_TYPES]
+    + [["invalid", False], ["", False]],
 )
 def test_website_content_create_serializer_invalid_type(mocker, content_type, is_valid):
     """WebsiteContentCreateSerializer should reject types which are not validated"""
