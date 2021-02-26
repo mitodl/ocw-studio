@@ -65,7 +65,7 @@ export default function SiteCollaboratorList({
   }
 
   return (
-    <div>
+    <div className="collaborator-list">
       <h3>Collaborators</h3>
       <div className="collaborator-add-btn">
         <button

@@ -1,15 +1,22 @@
-.collaborator-add-btn {
-  position: absolute;
-  top: 0px;
-  right: 0px;
-  padding: 5px;
-}
+.collaborator-list {
+  padding: 10px;
+  position: relative;
+  max-width: $narrow-max-width;
 
-.collaborator-table {
-  i {
-    vertical-align: middle;
-    padding-right: 10px;
-    cursor: pointer;
-    color: black;
+  .collaborator-add-btn {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    padding: 10px;
+  }
+
+  .collaborator-table {
+    i {
+      vertical-align: middle;
+      padding-right: 10px;
+      cursor: pointer;
+      color: black;
+    }
   }
 }
+

@@ -10,7 +10,6 @@ from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 
 
-
 class WebsiteStarterSerializer(serializers.ModelSerializer):
     """ Serializer for website starters """
 
