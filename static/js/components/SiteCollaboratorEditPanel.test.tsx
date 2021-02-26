@@ -145,7 +145,7 @@ describe("SiteCollaboratorEditPanel", () => {
     })
     sinon.assert.notCalled(historyPushStub)
   })
-  it("sets a status if the API request fails with a string error message", async () => {
+  it("sets form errors if the API request fails with a string error message", async () => {
     const errorResp = {
       errors: errorMsg
     }

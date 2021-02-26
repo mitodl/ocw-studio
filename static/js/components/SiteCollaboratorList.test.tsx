@@ -8,14 +8,14 @@ import {
   siteCollaboratorsAddUrl,
   siteCollaboratorsDetailUrl
 } from "../lib/urls"
-import IntegrationTestHelper, {
-  TestRenderer
-} from "../util/integration_test_helper"
 import {
   makePermanentWebsiteCollaborator,
   makeWebsiteDetail,
   makeWebsiteCollaborators
 } from "../util/factories/websites"
+import IntegrationTestHelper, {
+  TestRenderer
+} from "../util/integration_test_helper"
 
 import { Website, WebsiteCollaborator } from "../types/websites"
 
@@ -82,8 +82,6 @@ describe("SiteCollaboratorList", () => {
       wrapper
         .find("tr")
         .at(0)
-        .find("td")
-        .at(2)
         .find("i").length
     ).toBe(2)
     // Last collaborator in list should not be editable
@@ -91,8 +89,6 @@ describe("SiteCollaboratorList", () => {
       wrapper
         .find("tr")
         .at(numCollaborators - 1)
-        .find("td")
-        .at(2)
         .find("i").length
     ).toBe(0)
   })
@@ -102,8 +98,6 @@ describe("SiteCollaboratorList", () => {
     const editIcon = wrapper
       .find("tr")
       .at(0)
-      .find("td")
-      .at(2)
       .find("i")
       .at(0)
     editIcon.simulate("click")

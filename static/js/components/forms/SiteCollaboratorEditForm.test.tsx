@@ -2,12 +2,14 @@ import React from "react"
 import sinon, { SinonStub } from "sinon"
 import { shallow } from "enzyme"
 import { ValidationError } from "yup"
-import { makeWebsiteCollaborator } from "../../util/factories/websites"
+
 import SiteCollaboratorEditForm, {
   collaboratorValidation
 } from "./SiteCollaboratorEditForm"
-import { defaultFormikChildProps } from "../../test_util"
 import { EDITABLE_ROLES } from "../../constants"
+import { defaultFormikChildProps } from "../../test_util"
+import { makeWebsiteCollaborator } from "../../util/factories/websites"
+
 import { WebsiteCollaborator } from "../../types/websites"
 
 describe("SiteCollaboratorEditForm", () => {

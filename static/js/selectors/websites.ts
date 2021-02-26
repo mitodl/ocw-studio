@@ -1,8 +1,8 @@
 import { createSelector } from "reselect"
 import { memoize } from "lodash"
+import { find, propEq } from "ramda"
 
 import { ReduxState } from "../reducers"
-import { find, propEq } from "ramda"
 
 import { WebsiteStarter } from "../types/websites"
 

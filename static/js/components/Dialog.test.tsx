@@ -1,4 +1,4 @@
-import React, { Component } from "react"
+import React from "react"
 import { shallow, ShallowWrapper } from "enzyme"
 import sinon, { SinonStub } from "sinon"
 
@@ -16,8 +16,8 @@ describe("Dialog", () => {
   let toggleModalStub: SinonStub,
     onCancelStub: SinonStub,
     onAcceptStub: SinonStub,
-    headerContent: Component | JSX.Element | string,
-    bodyContent: Component | JSX.Element | string,
+    headerContent: JSX.Element | string,
+    bodyContent: JSX.Element | string,
     render: (props: ExtraProps) => ShallowWrapper
 
   beforeEach(() => {

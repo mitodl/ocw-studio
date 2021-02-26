@@ -1,14 +1,14 @@
 import { ActionPromiseValue, QueryConfig } from "redux-query"
 import { merge, reject, propEq, compose, evolve, when, assoc, map } from "ramda"
+
 import { nextState } from "./utils"
 import { getCookie } from "../lib/api/util"
-
+import { DEFAULT_POST_OPTIONS } from "../lib/redux_query"
 import {
   siteApiCollaboratorsDetailUrl,
   siteApiCollaboratorsUrl,
   siteApiUrl
 } from "../lib/urls"
-import { DEFAULT_POST_OPTIONS } from "../lib/redux_query"
 
 import {
   NewWebsitePayload,

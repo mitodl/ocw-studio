@@ -5,6 +5,7 @@ import { act } from "react-dom/test-utils"
 
 import SiteCollaboratorAddPanel from "./SiteCollaboratorAddPanel"
 import { ROLE_EDITOR } from "../constants"
+import { siteCollaboratorsUrl } from "../lib/urls"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
@@ -12,7 +13,6 @@ import {
   makeWebsiteDetail,
   makeWebsiteCollaborator
 } from "../util/factories/websites"
-import { siteCollaboratorsUrl } from "../lib/urls"
 
 import { Website } from "../types/websites"
 
@@ -73,7 +73,7 @@ describe("SiteCollaboratorAddPanel", () => {
     expect(form.prop("onSubmit")).toBeDefined()
   })
 
-  it("creates a new collaborator and redirect on success", async () => {
+  it("creates a new collaborator and redirects on success", async () => {
     createCollaboratorStub = helper.handleRequestStub
       .withArgs(`/api/websites/${website.name}/collaborators/`, "POST")
       .returns({
@@ -134,7 +134,7 @@ describe("SiteCollaboratorAddPanel", () => {
     })
     sinon.assert.notCalled(historyPushStub)
   })
-  it("sets a status if the API request fails with a string error message", async () => {
+  it("sets form error if the API request fails with a string error message", async () => {
     const errorResp = {
       errors: errorMsg
     }

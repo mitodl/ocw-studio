@@ -1,6 +1,7 @@
 import React from "react"
 import { Formik, Form, ErrorMessage, Field, FormikHelpers } from "formik"
 import * as yup from "yup"
+
 import { EDITABLE_ROLES, ROLE_LABELS } from "../../constants"
 
 import { WebsiteCollaboratorForm } from "../../types/websites"

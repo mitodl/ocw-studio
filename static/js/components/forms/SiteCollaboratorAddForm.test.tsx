@@ -6,8 +6,8 @@ import { ValidationError } from "yup"
 import SiteCollaboratorAddForm, {
   collaboratorValidation
 } from "./SiteCollaboratorAddForm"
-import { defaultFormikChildProps } from "../../test_util"
 import { EDITABLE_ROLES } from "../../constants"
+import { defaultFormikChildProps } from "../../test_util"
 
 describe("SiteCollaboratorAddForm", () => {
   let sandbox, onSubmitStub: SinonStub
