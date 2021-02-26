@@ -13,7 +13,7 @@ from mitol.common.settings.webpack import *  # pylint: disable=wildcard-import,u
 from main.sentry import init_sentry
 
 
-VERSION = "0.5.1"
+VERSION = "0.5.2"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",

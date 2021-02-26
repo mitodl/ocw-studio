@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.5.2
+-------------
+
+- Add underlining to CKEditor
+- Add API for WebsiteContent (#84)
+- Use resource for content type instead of file (#85)
+- Add basic CKEditor setup and test page
+
 Version 0.5.1 (Released February 23, 2021)
 -------------
 
