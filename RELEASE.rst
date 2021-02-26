@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.5.2
+Version 0.5.2 (Released February 26, 2021)
 -------------
 
 - Add underlining to CKEditor
