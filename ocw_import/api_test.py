@@ -11,7 +11,11 @@ from ocw_import.conftest import (
     TEST_OCW2HUGO_PREFIX,
     setup_s3,
 )
-from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE
+from websites.constants import (
+    CONTENT_TYPE_PAGE,
+    CONTENT_TYPE_RESOURCE,
+    WEBSITE_SOURCE_OCW_IMPORT,
+)
 from websites.factories import WebsiteStarterFactory
 from websites.models import Website, WebsiteContent
 
@@ -29,6 +33,7 @@ def test_import_ocw2hugo_course(settings):
     )
     website = Website.objects.get(name=name)
     assert website.starter == website_starter
+    assert website.source == WEBSITE_SOURCE_OCW_IMPORT
     with open(f"{TEST_OCW2HUGO_PATH}data/courses/{name}.json", "r") as infile:
         assert json.dumps(website.metadata, sort_keys=True) == json.dumps(
             json.load(infile), sort_keys=True

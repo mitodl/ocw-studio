@@ -125,3 +125,10 @@ manage.py import_ocw_course_sites -b <bucket_name> --filter frameworks-of-urban-
 # Import ALL course sites (this will take quite a while)
 manage.py import_ocw_course_sites -b <bucket_name>
 ```
+
+
+# Defining starter projects locally
+
+OCW Studio in production will make use of separate Github repos as starter projects, and those starter projects will
+define a site config. To simplify development, you can create some mock starter repos locally. 
+See [localdev/starters](localdev/starters/) for instructions.  

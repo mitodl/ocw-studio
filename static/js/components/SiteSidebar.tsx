@@ -14,22 +14,20 @@ export default function SiteSidebar(props: Props): JSX.Element {
   const configItems: ConfigItem[] = website.starter?.config?.collections ?? []
 
   return (
-    <div className="sidebar">
-      <ul>
-        {configItems.map(item => (
-          <li key={item.name}>
-            <NavLink exact to={siteContentListingUrl(website.name, item.name)}>
-              {item.label}
-            </NavLink>
-          </li>
-        ))}
-        <li>
-          Settings
-          <ul>
-            <li>Collaborators</li>
-          </ul>
+    <ul>
+      {configItems.map(item => (
+        <li key={item.name}>
+          <NavLink exact to={siteContentListingUrl(website.name, item.name)}>
+            {item.label}
+          </NavLink>
         </li>
-      </ul>
-    </div>
+      ))}
+      <li>
+        Settings
+        <ul>
+          <li>Collaborators</li>
+        </ul>
+      </li>
+    </ul>
   )
 }

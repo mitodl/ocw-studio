@@ -107,3 +107,4 @@ celerybeat-schedule
 # Local dev
 /localdev/starters/**
 !/localdev/starters/example-starter
+!/localdev/starters/README.md

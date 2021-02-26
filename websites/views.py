@@ -1,6 +1,7 @@
 """ Views for websites """
 from django.contrib.auth.models import Group
 from django.db.models import CharField, OuterRef, Q, Subquery, Value
+from django.utils.text import slugify
 from guardian.shortcuts import (
     get_groups_with_perms,
     get_objects_for_user,
@@ -35,6 +36,7 @@ from websites.serializers import (
     WebsiteSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
+    WebsiteWriteSerializer,
 )
 
 
@@ -91,8 +93,27 @@ class WebsiteViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return WebsiteSerializer
+        elif self.action == "create":
+            return WebsiteWriteSerializer
         else:
             return WebsiteDetailSerializer
+
+    def get_serializer(self, *args, **kwargs):
+        serializer_class = self.get_serializer_class()
+        kwargs["context"] = self.get_serializer_context()
+
+        # If a new website is being created, and the request includes a title but not a name, auto-generate the
+        # name by slugify-ing the title before passing the data off to the serializer.
+        if (
+            self.request.method == "POST"
+            and "name" not in self.request.data
+            and self.request.data.get("title")
+        ):
+            request_data = self.request.data.copy()
+            request_data["name"] = slugify(request_data["title"])
+            kwargs["data"] = request_data
+
+        return serializer_class(*args, **kwargs)
 
 
 class WebsiteStarterViewSet(
@@ -104,7 +125,6 @@ class WebsiteStarterViewSet(
     Viewset for WebsiteStarters
     """
 
-    pagination_class = DefaultPagination
     permission_classes = (ReadonlyPermission,)
 
     def get_queryset(self):

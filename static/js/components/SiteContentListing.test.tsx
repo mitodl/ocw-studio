@@ -7,7 +7,7 @@ import SiteContentListing from "./SiteContentListing"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
-import { makeWebsites } from "../util/factories/websites"
+import { makeWebsiteDetails } from "../util/factories/websites"
 import { siteContentListingUrl } from "../lib/urls"
 
 import { Website } from "../types/websites"
@@ -23,7 +23,7 @@ describe("SiteContentListing", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    websites = makeWebsites()
+    websites = makeWebsiteDetails()
     const websitesLookup = fromPairs(
       websites.map(website => [website.name, website])
     )
@@ -32,7 +32,7 @@ describe("SiteContentListing", () => {
       {},
       {
         entities: {
-          websites: websitesLookup
+          websiteDetails: websitesLookup
         },
         queries: {}
       }
