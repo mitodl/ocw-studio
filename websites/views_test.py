@@ -126,12 +126,18 @@ def test_websites_endpoint_list_forbidden_methods(drf_client, method):
     assert resp.status_code == 405
 
 
-def test_websites_endpoint_detail(drf_client):
+@pytest.mark.parametrize("is_admin", [True, False])
+def test_websites_endpoint_detail(drf_client, is_admin, permission_groups):
     """Test new websites endpoint for details"""
-    website = WebsiteFactory.create()
-    drf_client.force_login(website.owner)
+    website = permission_groups.websites[0]
+    drf_client.force_login(website.owner if is_admin else permission_groups.site_editor)
     resp = drf_client.get(reverse("websites_api-detail", kwargs={"name": website.name}))
-    assert resp.json() == WebsiteDetailSerializer(instance=website).data
+    response_data = resp.json()
+    serialized_data = WebsiteDetailSerializer(instance=website).data
+    assert response_data["is_admin"] == is_admin
+    response_data.pop("is_admin")
+    serialized_data.pop("is_admin")
+    assert response_data == serialized_data
 
 
 @pytest.mark.parametrize(
@@ -289,7 +295,7 @@ def test_websites_collaborators_endpoint_list_permissions(
                 "role": constants.ROLE_OWNER,
             },
         ],
-        key=lambda user: user["name"],
+        key=lambda user: (user["name"], user["username"]),
     )
     for user in [
         permission_groups.global_admin,
@@ -333,6 +339,10 @@ def test_websites_collaborators_endpoint_list_create(drf_client, permission_grou
         data={"email": collaborator.email, "role": constants.ROLE_EDITOR},
     )
     assert resp.status_code == 201
+    resp_json = resp.json()
+    assert resp_json["name"] == collaborator.name
+    assert resp_json["role"] == constants.ROLE_EDITOR
+    assert resp_json["group"] == website.editor_group.name
     assert website.editor_group.user_set.filter(id=collaborator.id) is not None
 
 
@@ -353,7 +363,7 @@ def test_websites_collaborators_endpoint_list_create_only_once(
         },
     )
     assert resp.status_code == 400
-    assert resp.json() == ["User is already a collaborator for this site"]
+    assert resp.json() == {"errors": ["User is already a collaborator for this site"]}
 
 
 @pytest.mark.parametrize(
@@ -384,7 +394,10 @@ def test_websites_collaborators_endpoint_list_create_bad_user(
     website = permission_groups.websites[0]
     for [email, error] in [
         [permission_groups.global_admin.email, {"email": ["User is a global admin"]}],
-        [website.owner.email, ["User is already a collaborator for this site"]],
+        [
+            website.owner.email,
+            {"errors": ["User is already a collaborator for this site"]},
+        ],
         ["fakeuser@test.edu", {"email": ["User does not exist"]}],
     ]:
         resp = drf_client.post(

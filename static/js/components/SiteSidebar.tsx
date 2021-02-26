@@ -1,7 +1,7 @@
 import * as React from "react"
 import { NavLink } from "react-router-dom"
 
-import { siteContentListingUrl } from "../lib/urls"
+import { siteCollaboratorsUrl, siteContentListingUrl } from "../lib/urls"
 
 import { ConfigItem, Website } from "../types/websites"
 
@@ -22,12 +22,16 @@ export default function SiteSidebar(props: Props): JSX.Element {
           </NavLink>
         </li>
       ))}
-      <li>
-        Settings
-        <ul>
-          <li>Collaborators</li>
-        </ul>
-      </li>
+      {website.is_admin ? (
+        <li>
+          Settings
+          <ul>
+            <NavLink exact to={siteCollaboratorsUrl(website.name)}>
+              Collaborators
+            </NavLink>
+          </ul>
+        </li>
+      ) : null}
     </ul>
   )
 }

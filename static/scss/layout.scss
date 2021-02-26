@@ -3,6 +3,7 @@
 @import "variables";
 @import "site-page";
 @import "sites-dashboard";
+@import "site-collaborators";
 
 $std-max-width: 1447px;  // arbitrary value, copied from ocw-next
 $narrow-max-width: 600px;
@@ -26,4 +27,16 @@ header {
 
 .active {
   font-weight: bold;
+}
+
+.narrow-page-body {
+  max-width: $narrow-max-width;
+}
+
+.form-container {
+  background-color: $light-gray-bg;
+}
+
+.form-error {
+  color: $error-red;
 }

@@ -38,4 +38,18 @@ export interface Website {
   source: string | null
   starter: WebsiteStarter | null
   metadata: any
+  is_admin?: boolean // eslint-disable-line
+}
+
+export interface WebsiteCollaborator {
+  role: string
+  group: string
+  username: string
+  email: string
+  name: string
+}
+
+export interface WebsiteCollaboratorForm {
+  email?: string
+  role: string
 }
