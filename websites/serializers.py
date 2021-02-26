@@ -74,6 +74,19 @@ class WebsiteDetailSerializer(serializers.ModelSerializer):
         fields = WebsiteSerializer.Meta.fields
 
 
+class WebsiteWriteSerializer(WebsiteDetailSerializer):
+    """
+    Deserializer for websites
+    NOTE: This is needed because DRF does not directly support saving a related field using just an id. We want to
+    deserialize and save Website objects and save the related WebsiteStarter as an id, but there is no clean way to
+    do that with DRF, hence this added serializer class.
+    """
+
+    starter = serializers.PrimaryKeyRelatedField(
+        queryset=WebsiteStarter.objects.all(), write_only=True
+    )
+
+
 class WebsiteCollaboratorSerializer(serializers.Serializer):
     """A non-model serializer for updating the permissions (by group) that a user has for a Website."""
 

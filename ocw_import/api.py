@@ -9,7 +9,12 @@ import yaml
 from dateutil import parser as dateparser
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
-from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE, COURSE_HOME
+from websites.constants import (
+    CONTENT_TYPE_PAGE,
+    CONTENT_TYPE_RESOURCE,
+    COURSE_HOME,
+    WEBSITE_SOURCE_OCW_IMPORT,
+)
 from websites.models import Website, WebsiteContent
 
 
@@ -131,10 +136,11 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         website, _ = Website.objects.update_or_create(
             name=name,
             defaults={
-                "title": s3_content.get("course_title", None),
+                "title": s3_content.get("course_title", f"Course Site ({name})"),
                 "publish_date": publish_date,
                 "metadata": s3_content,
                 "starter_id": starter_id,
+                "source": WEBSITE_SOURCE_OCW_IMPORT,
             },
         )
         import_ocw2hugo_content(bucket, prefix, website)

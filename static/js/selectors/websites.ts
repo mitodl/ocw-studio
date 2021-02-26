@@ -3,7 +3,12 @@ import { memoize } from "lodash"
 
 import { ReduxState } from "../reducers"
 
-export const getWebsiteCursor = createSelector(
-  (state: ReduxState) => state.entities?.websites ?? {},
-  websites => memoize((name: string) => websites[name])
+import { WebsiteStarter } from "../types/websites"
+
+export const getWebsiteDetailCursor = createSelector(
+  (state: ReduxState) => state.entities?.websiteDetails ?? {},
+  websiteDetails => memoize((name: string) => websiteDetails[name])
 )
+
+export const startersSelector = (state: ReduxState): Array<WebsiteStarter> =>
+  state.entities?.starters ?? []

@@ -39,10 +39,11 @@ class Website(TimestampedModel):
         "WebsiteStarter", null=True, blank=True, on_delete=models.CASCADE
     )
     name = models.CharField(max_length=512, db_index=True, unique=True)
-    title = models.CharField(max_length=512, null=True, blank=True)
+    title = models.CharField(max_length=512, null=False)
     source = models.CharField(
         max_length=20,
         choices=zip(constants.WEBSITE_SOURCES, constants.WEBSITE_SOURCES),
+        default=constants.WEBSITE_SOURCE_STUDIO,
         null=True,
         blank=True,
     )

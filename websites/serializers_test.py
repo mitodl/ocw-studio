@@ -5,7 +5,12 @@ from django.db.models import CharField, Value
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
-from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPES, ROLE_EDITOR
+from websites.constants import (
+    CONTENT_TYPE_PAGE,
+    CONTENT_TYPES,
+    ROLE_EDITOR,
+    WEBSITE_SOURCE_OCW_IMPORT,
+)
 from websites.factories import (
     EXAMPLE_SITE_CONFIG,
     WebsiteContentFactory,
@@ -67,6 +72,20 @@ def test_website_starter_detail_serializer():
     assert serialized_data["commit"] == starter.commit
     assert "config" in serialized_data
     assert serialized_data["config"] == EXAMPLE_SITE_CONFIG
+
+
+def test_website_detail_deserialize():
+    """WebsiteSerializer should deserialize website data"""
+    serializer = WebsiteDetailSerializer(
+        data={
+            "name": "my-site",
+            "title": "My Title",
+            "source": WEBSITE_SOURCE_OCW_IMPORT,
+            "metadata": None,
+            "starter": 1,
+        }
+    )
+    assert serializer.is_valid()
 
 
 @pytest.mark.parametrize("has_starter", [True, False])

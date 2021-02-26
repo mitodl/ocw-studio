@@ -6,8 +6,8 @@ import { Route, Switch, useRouteMatch } from "react-router-dom"
 import SiteSidebar from "../components/SiteSidebar"
 import SiteContentListing from "../components/SiteContentListing"
 
-import { websitesRequest } from "../query-configs/websites"
-import { getWebsiteCursor } from "../selectors/websites"
+import { websiteDetailRequest } from "../query-configs/websites"
+import { getWebsiteDetailCursor } from "../selectors/websites"
 
 interface MatchParams {
   name: string
@@ -15,26 +15,24 @@ interface MatchParams {
 export default function SitePage(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
   const { name } = match.params
-  const [{ isPending }] = useRequest(websitesRequest(name))
-  const website = useSelector(getWebsiteCursor)(name)
+  const [{ isPending }] = useRequest(websiteDetailRequest(name))
+  const website = useSelector(getWebsiteDetailCursor)(name)
   if (!website) {
     return null
   }
 
   if (isPending) {
-    return <div className="site-page container">Loading...</div>
+    return <div className="site-page std-page-body container">Loading...</div>
   }
 
   return (
-    <div className="site-page container">
-      <div className="site-page-header">
-        <h3>{website.title}</h3>
-      </div>
-      <div className="row">
-        <div className="col-3">
+    <div className="site-page std-page-body container">
+      <h3>{website.title}</h3>
+      <div className="content-container">
+        <div className="sidebar">
           <SiteSidebar website={website} />
         </div>
-        <div className="content col-9">
+        <div className="content">
           <Switch>
             <Route
               path={`${match.path}/:configname`}

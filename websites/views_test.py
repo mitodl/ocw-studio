@@ -4,7 +4,9 @@ from types import SimpleNamespace
 import factory
 import pytest
 from django.urls import reverse
+from django.utils.text import slugify
 from mitol.common.utils.datetime import now_in_utc
+from rest_framework import status
 
 from main import features
 from main.constants import ISO_8601_FORMAT
@@ -92,6 +94,7 @@ def test_websites_endpoint_list_permissions(drf_client, permission_groups):
 
 def test_websites_endpoint_list_create(drf_client, permission_groups):
     """Only global admins and authors should be able to send a POST request"""
+    starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
     for [user, has_perm] in [
         [permission_groups.global_admin, True],
         [permission_groups.global_author, True],
@@ -101,7 +104,11 @@ def test_websites_endpoint_list_create(drf_client, permission_groups):
         drf_client.force_login(user)
         resp = drf_client.post(
             reverse("websites_api-list"),
-            data={"name": f"{user.username}_site", "title": "Fake"},
+            data={
+                "name": f"{user.username}_site",
+                "title": "Fake",
+                "starter": starter.id,
+            },
         )
         assert resp.status_code == (201 if has_perm else 403)
         if has_perm:
@@ -195,16 +202,30 @@ def test_websites_endpoint_sorting(drf_client, websites):
         assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
 
 
+def test_websites_autogenerate_name(drf_client):
+    """ Website POST endpoint should auto-generate a name if one is not supplied """
+    superuser = UserFactory.create(is_superuser=True)
+    drf_client.force_login(superuser)
+    starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
+    website_title = "My Title"
+    slugified_title = slugify(website_title)
+    resp = drf_client.post(
+        reverse("websites_api-list"),
+        {"title": website_title, "starter": starter.id},
+    )
+    assert resp.status_code == status.HTTP_201_CREATED
+    assert resp.data["name"] == slugified_title
+
+
 def test_website_starters_list(drf_client, course_starter):
     """ Website starters endpoint should return a serialized list """
     new_starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
     resp = drf_client.get(reverse("website_starters_api-list"))
-    resp_results = resp.data.get("results")
     serialized_data = WebsiteStarterSerializer(
         [course_starter, new_starter], many=True
     ).data
-    assert len(resp_results) == 2
-    assert resp_results == serialized_data
+    assert len(resp.data) == 2
+    assert resp.data == serialized_data
 
 
 def test_website_starters_retrieve(drf_client):
@@ -229,8 +250,7 @@ def test_website_starters_local(
         ),
     )
     resp = drf_client.get(reverse("website_starters_api-list"))
-    resp_results = resp.data.get("results")
-    assert len(resp_results) == exp_result_count
+    assert len(resp.data) == exp_result_count
 
 
 def test_websites_collaborators_endpoint_list_permissions(

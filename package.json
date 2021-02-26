@@ -67,6 +67,7 @@
     "eslint-plugin-react": "^7.20.5",
     "express": "^4.17.1",
     "fetch-mock": "^9.10.6",
+    "formik": "^2.2.6",
     "history": "^5.0.0",
     "isomorphic-fetch": "^3.0.0",
     "jest": "^26.6.3",
@@ -107,7 +108,8 @@
     "webpack-bundle-tracker": "^0.4.3",
     "webpack-cli": "^3.3.12",
     "webpack-dev-middleware": "^3.7.2",
-    "webpack-hot-middleware": "^2.25.0"
+    "webpack-hot-middleware": "^2.25.0",
+    "yup": "^0.32.9"
   },
   "engines": {
     "node": "15.9.0",

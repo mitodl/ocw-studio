@@ -1,15 +1,26 @@
 // Layout goes here
 @import "node_modules/bootstrap/scss/bootstrap";
-
-$max-width: 1447px;  // arbitrary value, copied from ocw-next
-
+@import "variables";
 @import "site-page";
+@import "sites-dashboard";
 
-.site-wide-header {
+$std-max-width: 1447px;  // arbitrary value, copied from ocw-next
+$narrow-max-width: 600px;
+
+.app {
+  max-width: $std-max-width;
   margin: 0 auto;
-  max-width: $max-width;
-  font-weight: bold;
+}
 
+.std-page-body {
+  max-width: $std-max-width;
+}
+
+.narrow-page-body {
+  max-width: $narrow-max-width;
+}
+
+header {
   border: 1px solid black;  // for visibility, remove when we migrate away from wireframe
 }
 

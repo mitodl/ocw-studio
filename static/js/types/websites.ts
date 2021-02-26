@@ -24,6 +24,11 @@ export interface WebsiteStarter {
   config: WebsiteStarterConfig | null
 }
 
+export interface NewWebsitePayload {
+  title: string
+  starter: number
+}
+
 export interface Website {
   uuid: string
   created_on: string // eslint-disable-line

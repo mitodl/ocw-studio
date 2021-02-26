@@ -19,4 +19,12 @@ describe("App", () => {
     const { wrapper } = await render()
     expect(wrapper.find("App").exists()).toBeTruthy()
   })
+
+  it("should render the site header", async () => {
+    const { wrapper } = await render()
+    const app = wrapper.find("App")
+    const header = app.find("Header")
+    expect(header.exists()).toBeTruthy()
+    expect(header.text()).toStrictEqual("OCW Studio")
+  })
 })

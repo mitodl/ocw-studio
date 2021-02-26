@@ -5,7 +5,7 @@ import SitePage from "./SitePage"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
-import { makeWebsite } from "../util/factories/websites"
+import { makeWebsiteDetail } from "../util/factories/websites"
 
 import { Website } from "../types/websites"
 
@@ -20,13 +20,13 @@ describe("SitePage", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsite()
+    website = makeWebsiteDetail()
     render = helper.configureRenderer(
       SitePage,
       {},
       {
         entities: {
-          websites: {}
+          websiteDetails: {}
         },
         queries: {}
       }
@@ -51,10 +51,5 @@ describe("SitePage", () => {
   it("renders the sidebar", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("SiteSidebar").prop("website")).toBe(website)
-  })
-
-  it("renders the title", async () => {
-    const { wrapper } = await render()
-    expect(wrapper.find(".site-page-header").text()).toBe(website.title)
   })
 })

@@ -25,7 +25,7 @@ export const makeWebsiteStarter = (type = "course"): WebsiteStarter => ({
   config: makeWebsiteStarterConfig()
 })
 
-export const makeWebsite = (): Website => ({
+export const makeWebsiteDetail = (): Website => ({
   uuid:       casual.uuid,
   created_on: casual.moment.format(),
   updated_on: casual.moment.format(),
@@ -38,4 +38,5 @@ export const makeWebsite = (): Website => ({
   metadata: null
 })
 
-export const makeWebsites = (): Website[] => times(5).map(() => makeWebsite())
+export const makeWebsiteDetails = (): Website[] =>
+  times(5).map(() => makeWebsiteDetail())
