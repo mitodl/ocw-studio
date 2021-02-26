@@ -670,14 +670,14 @@ def test_websites_content_list(drf_client, filter_type, permission_groups):
         ),
         {"type": filter_type},
     )
-    assert resp.data["count"] == (num_pages if filter_type else num_pages + 1)
+    assert len(resp.data) == (num_pages if filter_type else num_pages + 1)
 
     for idx, content in enumerate(
         reversed(sorted(contents, key=lambda _content: _content.updated_on))
     ):
-        assert content.title == resp.data["results"][idx]["title"]
-        assert str(content.uuid) == resp.data["results"][idx]["uuid"]
-        assert content.type == resp.data["results"][idx]["type"]
+        assert content.title == resp.data[idx]["title"]
+        assert str(content.uuid) == resp.data[idx]["uuid"]
+        assert content.type == resp.data[idx]["type"]
 
 
 def test_websites_content_detail(drf_client, permission_groups):
