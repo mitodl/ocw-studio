@@ -139,8 +139,9 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WebsiteContent
-        fields = ["uuid", "title", "type"]
-        read_only_fields = ["uuid", "type"]
+        read_only_fields = ["uuid", "title", "type"]
+        # See WebsiteContentCreateSerializer below for creating new WebsiteContent objects
+        fields = read_only_fields
 
 
 class WebsiteContentDetailSerializer(serializers.ModelSerializer):
@@ -148,8 +149,8 @@ class WebsiteContentDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WebsiteContent
-        fields = WebsiteContentSerializer.Meta.fields + ["markdown"]
-        read_only_fields = WebsiteContentSerializer.Meta.read_only_fields
+        read_only_fields = ["uuid", "type"]
+        fields = read_only_fields + ["title", "markdown", "metadata"]
 
 
 class WebsiteContentCreateSerializer(serializers.ModelSerializer):
@@ -163,6 +164,6 @@ class WebsiteContentCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WebsiteContent
-        fields = ["type", "title", "markdown", "uuid"]
         # we want uuid in the returned result but we also want to ignore any attempt to set it on create
         read_only_fields = ["uuid"]
+        fields = read_only_fields + ["type", "title", "markdown", "metadata"]

@@ -144,22 +144,7 @@ def test_website_content_serializer():
     assert serialized_data["title"] == content.title
     assert serialized_data["type"] == content.type
     assert "markdown" not in serialized_data
-
-
-def test_website_content_serializer_save():
-    """WebsiteContentSerializer should modify only certain fields"""
-    content = WebsiteContentFactory.create()
-    new_title = f"{content.title} with some more text"
-    new_type = f"{content.type}_other"
-    # uuid value is invalid but it's ignored since it's marked readonly
-    serializer = WebsiteContentSerializer(
-        data={"title": new_title, "uuid": "----", "type": new_type}, instance=content
-    )
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    content.refresh_from_db()
-    assert content.title == new_title
-    assert content.type != new_type
+    assert "metadata" not in serialized_data
 
 
 def test_website_content_detail_serializer():
@@ -170,6 +155,7 @@ def test_website_content_detail_serializer():
     assert serialized_data["title"] == content.title
     assert serialized_data["type"] == content.type
     assert serialized_data["markdown"] == content.markdown
+    assert serialized_data["metadata"] == content.metadata
 
 
 def test_website_content_detail_serializer_save():
@@ -178,6 +164,7 @@ def test_website_content_detail_serializer_save():
     new_title = f"{content.title} with some more text"
     new_type = f"{content.type}_other"
     new_markdown = "hopefully different from the previous markdown"
+    metadata = {"meta": "data"}
     # uuid value is invalid but it's ignored since it's marked readonly
     serializer = WebsiteContentDetailSerializer(
         data={
@@ -185,6 +172,7 @@ def test_website_content_detail_serializer_save():
             "uuid": "----",
             "type": new_type,
             "markdown": new_markdown,
+            "metadata": metadata,
         },
         instance=content,
     )
@@ -194,14 +182,17 @@ def test_website_content_detail_serializer_save():
     assert content.title == new_title
     assert content.type != new_type
     assert content.markdown == new_markdown
+    assert content.metadata == metadata
 
 
 def test_website_content_create_serializer(mocker):
     """WebsiteContentCreateSerializer should create a new WebsiteContent, with some validation"""
+    metadata = {"arbitrary": ["json", "object"]}
     payload = {
         "title": "a title",
         "type": CONTENT_TYPE_PAGE,
         "markdown": "some markdown",
+        "metadata": metadata,
     }
     website = WebsiteFactory.create()
     context = {"view": mocker.Mock(kwargs={"parent_lookup_website": website.name})}
@@ -212,6 +203,7 @@ def test_website_content_create_serializer(mocker):
     assert content.title == payload["title"]
     assert content.markdown == payload["markdown"]
     assert content.type == payload["type"]
+    assert content.metadata == metadata
 
 
 @pytest.mark.parametrize(
