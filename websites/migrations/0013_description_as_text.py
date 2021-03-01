@@ -3,13 +3,16 @@
 from django.db import migrations, models
 
 
-def _update_widget(starter, old_widget, new_widget):
+def _update_description_widget(starter, new_widget):
     collections = starter.config["collections"]
+    changed = False
     for item in collections:
-        for field in item["fields"]:
-            if field["name"] == "description" and field["widget"] == old_widget:
-                field["widget"] = new_widget
-    if collections != starter.config["collections"]:
+        if item["name"] == "resource":
+            for field in item["fields"]:
+                if field["name"] == "description":
+                    field["widget"] = new_widget
+                    changed = True
+    if changed:
         starter.config = {"collections": collections}
         starter.save()
 
@@ -18,14 +21,14 @@ def update_description_widget(apps, schema_editor):
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
 
     for starter in WebsiteStarter.objects.all():
-        _update_widget(starter, "markdown", "string")
+        _update_description_widget(starter, "text")
 
 
 def revert_description_widget(apps, schema_editor):
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
 
     for starter in WebsiteStarter.objects.all():
-        _update_widget(starter, "string", "markdown")
+        _update_description_widget(starter, "markdown")
 
 
 class Migration(migrations.Migration):

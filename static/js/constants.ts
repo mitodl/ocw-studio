@@ -30,7 +30,7 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
         {
           name:   "description",
           label:  "Description",
-          widget: "string"
+          widget: "text"
         }
       ]
     }
