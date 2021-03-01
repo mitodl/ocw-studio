@@ -20,15 +20,19 @@ def _update_description_widget(starter, new_widget):
 def update_description_widget(apps, schema_editor):
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
 
-    for starter in WebsiteStarter.objects.all():
-        _update_description_widget(starter, "text")
+    starter = WebsiteStarter.objects.filter(slug="course").first()
+    if starter:
+        _update_description_widget(starter, "markdown")
+        starter.save()
 
 
 def revert_description_widget(apps, schema_editor):
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
 
-    for starter in WebsiteStarter.objects.all():
+    starter = WebsiteStarter.objects.filter(slug="course").first()
+    if starter:
         _update_description_widget(starter, "markdown")
+        starter.save()
 
 
 class Migration(migrations.Migration):
