@@ -22,7 +22,7 @@ def update_description_widget(apps, schema_editor):
 
     starter = WebsiteStarter.objects.filter(slug="course").first()
     if starter:
-        _update_description_widget(starter, "markdown")
+        _update_description_widget(starter, "text")
         starter.save()
 
 
