@@ -654,10 +654,10 @@ def test_websites_content_list(drf_client, filter_type, permission_groups):
     drf_client.force_login(permission_groups.global_admin)
     content = WebsiteContentFactory.create(type="other")
     website = content.website
-    num_pages = 5
+    num_results = 5
     contents = [
         WebsiteContentFactory.create(type="page", website=website)
-        for _ in range(num_pages)
+        for _ in range(num_results)
     ]
     if not filter_type:
         contents += [content]
@@ -670,7 +670,7 @@ def test_websites_content_list(drf_client, filter_type, permission_groups):
         ),
         {"type": filter_type},
     )
-    assert len(resp.data) == (num_pages if filter_type else num_pages + 1)
+    assert len(resp.data) == (num_results if filter_type else num_results + 1)
 
     for idx, content in enumerate(
         reversed(sorted(contents, key=lambda _content: _content.updated_on))
