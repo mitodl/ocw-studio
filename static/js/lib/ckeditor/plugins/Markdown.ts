@@ -1,9 +1,11 @@
 import HtmlDataProcessor from "@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor"
-import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
+import { Converter } from "showdown"
 import GFMDataProcessor from "@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor"
-
-import { md2html, html2md } from "../../markdown"
 import { editor } from "@ckeditor/ckeditor5-core"
+
+import MarkdownConfigPlugin from "./MarkdownConfigPlugin"
+
+import { turndownService } from "../turndown"
 
 /**
  * Data processor for CKEditor which implements conversion to / from Markdown
@@ -30,16 +32,25 @@ import { editor } from "@ckeditor/ckeditor5-core"
  */
 export class MarkdownDataProcessor extends GFMDataProcessor {
   _htmlDP: typeof HtmlDataProcessor
+  md2html: (s: string) => string
+  html2md: (s: string) => string
 
-  constructor(document: DocumentFragment) {
+  constructor(
+    document: DocumentFragment,
+    md2html: (s: string) => string,
+    html2md: (s: string) => string
+  ) {
     super(document)
+
+    this.md2html = md2html
+    this.html2md = html2md
   }
 
   /**
    * Convert markdown string to CKEditor View
    */
   toView(md: string): DocumentFragment {
-    const html = md2html(md)
+    const html = this.md2html(md)
     return this._htmlDP.toView(html)
   }
 
@@ -48,7 +59,7 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
    */
   toData(viewFragment: DocumentFragment): string {
     const html = this._htmlDP.toData(viewFragment)
-    return html2md(html)
+    return this.html2md(html)
   }
 }
 
@@ -59,15 +70,36 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
  *
  * based on https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-markdown-gfm/src/markdown.js
  */
-export default class Markdown extends Plugin {
+export default class Markdown extends MarkdownConfigPlugin {
   constructor(editor: editor.Editor) {
     super(editor)
+
+    const { showdownExtensions, turndownRules } = this.getMarkdownConfig()
+
+    const converter = new Converter({
+      extensions: showdownExtensions
+    })
+
+    turndownRules.forEach(({ name, rule }) =>
+      turndownService.addRule(name, rule)
+    )
+
+    function md2html(md: string): string {
+      return converter.makeHtml(md)
+    }
+
+    function html2md(html: string): string {
+      return turndownService.turndown(html)
+    }
+
     // some typescript wrangling necessary here unfortunately b/c of some
     // shortcomings in the typings for @ckeditor/ckeditor5-engine
     // and @ckeditor/ckeditor5-core
-    ;(editor.data
+    (editor.data
       .processor as MarkdownDataProcessor) = new MarkdownDataProcessor(
-        (editor.data as any).viewDocument
+        (editor.data as any).viewDocument,
+        md2html,
+        html2md
       )
   }
 

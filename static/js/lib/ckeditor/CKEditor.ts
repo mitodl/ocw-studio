@@ -18,11 +18,11 @@ import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 import Markdown from "./plugins/Markdown"
+import MarkdownMediaEmbed from "./plugins/MarkdownMediaEmbed"
 
 class ClassicEditor extends ClassicEditorBase {}
 
 ClassicEditor.builtinPlugins = [
-  Markdown,
   EssentialsPlugin,
   UploadAdapterPlugin,
   AutoformatPlugin,
@@ -39,7 +39,9 @@ ClassicEditor.builtinPlugins = [
   ImageUploadPlugin,
   LinkPlugin,
   ListPlugin,
-  ParagraphPlugin
+  ParagraphPlugin,
+  MarkdownMediaEmbed,
+  Markdown
 ]
 
 ClassicEditor.defaultConfig = {
@@ -54,6 +56,7 @@ ClassicEditor.defaultConfig = {
       "bulletedList",
       "numberedList",
       "imageUpload",
+      "mediaEmbed",
       "blockQuote",
       "undo",
       "redo"
@@ -62,7 +65,19 @@ ClassicEditor.defaultConfig = {
   image: {
     toolbar: ["imageStyle:full", "imageStyle:side", "|", "imageTextAlternative"]
   },
-  language: "en"
+  language:   "en",
+  mediaEmbed: {
+    removeProviders: [
+      "dailymotion",
+      "spotify",
+      "vimeo",
+      "instagram",
+      "twitter",
+      "googleMaps",
+      "flickr",
+      "facebook"
+    ]
+  }
 }
 
 export default ClassicEditor

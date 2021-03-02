@@ -2,7 +2,7 @@ import React, { useState } from "react"
 
 import MarkdownEditor from "../components/MarkdownEditor"
 
-import { TEST_MARKDOWN } from "../test_util"
+import { TEST_MARKDOWN } from "../test_constants"
 
 export default function MarkdownEditorTestPage(): JSX.Element {
   const [data, setData] = useState(TEST_MARKDOWN)

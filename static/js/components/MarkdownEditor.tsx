@@ -22,6 +22,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       data={value ?? ""}
       onChange={(event: any, editor: any) => {
         const data = editor.getData()
+
         if (onChange) {
           onChange({ target: { name: name ?? "", value: data } })
         }
