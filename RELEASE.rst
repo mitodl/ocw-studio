@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.6.0
+Version 0.6.0 (Released March 02, 2021)
 -------------
 
 - add markdown support to ckeditor
