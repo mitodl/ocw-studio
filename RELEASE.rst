@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.6.0
+-------------
+
+- add markdown support to ckeditor
+- Use 'string' for description instead of 'markdown' (#97)
+- Add metadata to list of editable fields (#95)
+- Turn off pagination for website content API (#91)
+- Added site creation page
+
 Version 0.5.2 (Released February 26, 2021)
 -------------
 
