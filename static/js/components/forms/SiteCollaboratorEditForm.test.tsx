@@ -81,7 +81,7 @@ describe("SiteCollaboratorEditForm", () => {
       }
     })
 
-    it("does not reject an valid role", async () => {
+    it("does not reject a valid role", async () => {
       try {
         await expect(
           await collaboratorValidation.validateAt("role", "admin")

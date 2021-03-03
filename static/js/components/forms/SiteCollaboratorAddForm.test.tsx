@@ -86,7 +86,7 @@ describe("SiteCollaboratorAddForm", () => {
       try {
         await expect(
           await collaboratorValidation.validateAt("email", {
-            email: "mrbertrand.gmail.com"
+            email: "fake.test.com"
           })
         ).rejects.toThrow()
       } catch (error) {
