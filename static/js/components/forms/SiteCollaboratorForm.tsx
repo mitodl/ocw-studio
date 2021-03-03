@@ -6,47 +6,79 @@ import { EDITABLE_ROLES, ROLE_LABELS } from "../../constants"
 
 import {
   WebsiteCollaborator,
-  WebsiteCollaboratorForm
+  WebsiteCollaboratorFormData
 } from "../../types/websites"
 
 interface Props {
+  collaborator?: WebsiteCollaborator
   onSubmit: (
-    values: WebsiteCollaboratorForm,
+    values: WebsiteCollaboratorFormData,
     formikHelpers: FormikHelpers<any>
   ) => void
-  collaborator: WebsiteCollaborator
 }
 
-export const collaboratorValidation = yup.object().shape({
+export const roleValidation = {
   role: yup
     .string()
     .label("Role")
     .required()
-})
+}
 
-const getInitialValues = (collaborator: WebsiteCollaborator) => ({
-  role: collaborator.role
-})
+export const emailValidation = {
+  email: yup
+    .string()
+    .email()
+    .label("Email")
+    .required()
+}
 
-export default function SiteCollaboratorEditForm({
+const getInitialValues = (collaborator: WebsiteCollaborator | null) =>
+  collaborator ? { role: collaborator.role } : { email: "", role: "" }
+
+export default function SiteCollaboratorForm({
   collaborator,
   onSubmit
 }: Props): JSX.Element | null {
+  const collaboratorValidation = yup
+    .object()
+    .shape(
+      collaborator ?
+        { ...roleValidation } :
+        { ...roleValidation, ...emailValidation }
+    )
+
   return (
     <Formik
       // @ts-ignore
       onSubmit={onSubmit}
-      initialValues={getInitialValues(collaborator)}
+      initialValues={getInitialValues(collaborator || null)}
       validationSchema={collaboratorValidation}
     >
-      {({ isSubmitting, status }) => (
+      {({ isSubmitting, values, status }) => (
         <Form>
+          {collaborator ? null : (
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <Field
+                name="email"
+                className="form-control"
+                type="email"
+                value={values.email}
+              />
+              <ErrorMessage name="email" />
+            </div>
+          )}
           <div className="form-group">
             <label htmlFor="role" className="font-weight-bold">
               Role*
             </label>
 
-            <Field component="select" name="role" className="form-control">
+            <Field
+              component="select"
+              name="role"
+              className="form-control"
+              value={values.role}
+            >
               <option value="">-----</option>
               {EDITABLE_ROLES.map((role: string, i: number) => (
                 <option key={i} value={role}>

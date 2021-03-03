@@ -14,7 +14,7 @@ import {
   NewWebsitePayload,
   Website,
   WebsiteCollaborator,
-  WebsiteCollaboratorForm,
+  WebsiteCollaboratorFormData,
   WebsiteStarter
 } from "../types/websites"
 
@@ -155,7 +155,7 @@ export const editWebsiteCollaboratorMutation = (
 
 export const createWebsiteCollaboratorMutation = (
   websiteName: string,
-  item: WebsiteCollaboratorForm
+  item: WebsiteCollaboratorFormData
 ): QueryConfig => {
   return {
     queryKey:  "editWebsiteCollaboratorMutation",

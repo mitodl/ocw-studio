@@ -76,7 +76,7 @@ describe("SiteCollaboratorEditPanel", () => {
 
   it("renders a form with the right props", async () => {
     const { wrapper } = await render()
-    const form = wrapper.find("SiteCollaboratorEditForm")
+    const form = wrapper.find("SiteCollaboratorForm")
     expect(form.exists()).toBe(true)
     expect(form.prop("onSubmit")).toBeDefined()
   })
@@ -92,7 +92,7 @@ describe("SiteCollaboratorEditPanel", () => {
         status: 201
       })
     const { wrapper } = await render()
-    const form = wrapper.find("SiteCollaboratorEditForm")
+    const form = wrapper.find("SiteCollaboratorForm")
     const onSubmit = form.prop("onSubmit")
     await act(async () => {
       // @ts-ignore
@@ -127,7 +127,7 @@ describe("SiteCollaboratorEditPanel", () => {
         status: 400
       })
     const { wrapper } = await render()
-    const form = wrapper.find("SiteCollaboratorEditForm")
+    const form = wrapper.find("SiteCollaboratorForm")
     const onSubmit = form.prop("onSubmit")
     await act(async () => {
       // @ts-ignore
@@ -159,7 +159,7 @@ describe("SiteCollaboratorEditPanel", () => {
         status: 400
       })
     const { wrapper } = await render()
-    const form = wrapper.find("SiteCollaboratorEditForm")
+    const form = wrapper.find("SiteCollaboratorForm")
     const onSubmit = form.prop("onSubmit")
     await act(async () => {
       // @ts-ignore

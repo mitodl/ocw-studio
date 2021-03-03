@@ -49,7 +49,7 @@ export interface WebsiteCollaborator {
   name: string
 }
 
-export interface WebsiteCollaboratorForm {
+export interface WebsiteCollaboratorFormData {
   email?: string
   role: string
 }

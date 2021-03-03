@@ -5,7 +5,7 @@ import { useSelector } from "react-redux"
 import { FormikHelpers } from "formik"
 import { is } from "ramda"
 
-import SiteCollaboratorEditForm from "./forms/SiteCollaboratorEditForm"
+import SiteCollaboratorForm from "./forms/SiteCollaboratorForm"
 import { siteCollaboratorsUrl } from "../lib/urls"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import {
@@ -14,7 +14,10 @@ import {
 } from "../query-configs/websites"
 import { getWebsiteCollaboratorsCursor } from "../selectors/websites"
 
-import { WebsiteCollaborator, WebsiteCollaboratorForm } from "../types/websites"
+import {
+  WebsiteCollaborator,
+  WebsiteCollaboratorFormData
+} from "../types/websites"
 
 interface MatchParams {
   username: string
@@ -46,12 +49,12 @@ export default function SiteCollaboratorEditPanel({
   }
 
   const onSubmit = async (
-    values: WebsiteCollaboratorForm,
+    values: WebsiteCollaboratorFormData,
     {
       setSubmitting,
       setErrors,
       setStatus
-    }: FormikHelpers<WebsiteCollaboratorForm>
+    }: FormikHelpers<WebsiteCollaboratorFormData>
   ) => {
     if (collaboratorQueryState.isPending) {
       return
@@ -87,10 +90,10 @@ export default function SiteCollaboratorEditPanel({
     <div className="narrow-page-body m-3">
       <h3>Edit role for {collaborator.name}</h3>
       <div className="form-container m-3 p-3">
-        <SiteCollaboratorEditForm
+        <SiteCollaboratorForm
           collaborator={collaborator}
           onSubmit={onSubmit}
-        ></SiteCollaboratorEditForm>
+        ></SiteCollaboratorForm>
       </div>
     </div>
   )
