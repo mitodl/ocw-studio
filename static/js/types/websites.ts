@@ -1,3 +1,5 @@
+import { ROLE_ADMIN, ROLE_EDITOR, ROLE_GLOBAL, ROLE_OWNER } from "../constants"
+
 export interface ConfigField {
   name: string
   label: string
@@ -41,8 +43,11 @@ export interface Website {
   is_admin?: boolean // eslint-disable-line
 }
 
+type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR
+type WebsiteRole = typeof ROLE_GLOBAL | typeof ROLE_OWNER | WebsiteRoleEditable
+
 export interface WebsiteCollaborator {
-  role: string
+  role: WebsiteRole
   group: string
   username: string
   email: string
@@ -51,5 +56,5 @@ export interface WebsiteCollaborator {
 
 export interface WebsiteCollaboratorFormData {
   email?: string
-  role: string
+  role: WebsiteRoleEditable
 }

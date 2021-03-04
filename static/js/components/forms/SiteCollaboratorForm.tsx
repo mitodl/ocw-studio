@@ -49,8 +49,8 @@ export default function SiteCollaboratorForm({
 
   return (
     <Formik
-      // @ts-ignore
       onSubmit={onSubmit}
+      // @ts-ignore
       initialValues={getInitialValues(collaborator || null)}
       validationSchema={collaboratorValidation}
     >
@@ -72,7 +72,6 @@ export default function SiteCollaboratorForm({
             <label htmlFor="role" className="font-weight-bold">
               Role*
             </label>
-
             <Field
               component="select"
               name="role"

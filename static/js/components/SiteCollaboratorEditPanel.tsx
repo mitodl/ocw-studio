@@ -76,8 +76,7 @@ export default function SiteCollaboratorEditPanel({
         setStatus(errors)
       } else {
         setErrors({
-          // @ts-ignore
-          role: errors.role
+          role: errors["role"]
         })
       }
       return

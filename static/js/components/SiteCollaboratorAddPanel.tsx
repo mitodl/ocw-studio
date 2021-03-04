@@ -59,10 +59,8 @@ export default function SiteCollaboratorAddPanel({
         setStatus(errors)
       } else {
         setErrors({
-          // @ts-ignore
-          email: errors.email,
-          // @ts-ignore
-          role:  errors.role
+          email: errors["email"],
+          role:  errors["role"]
         })
       }
       return

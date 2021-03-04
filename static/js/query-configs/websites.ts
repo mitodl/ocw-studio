@@ -141,7 +141,7 @@ export const editWebsiteCollaboratorMutation = (
       collaborators: evolve({
         [websiteName]: compose(
           alterRole,
-          (value: [WebsiteCollaborator]) => value || []
+          (value: WebsiteCollaborator[]) => value || []
         )
       })
     },
@@ -168,8 +168,8 @@ export const createWebsiteCollaboratorMutation = (
     }),
     update: {
       collaborators: (
-        prev: [WebsiteCollaborator],
-        next: [WebsiteCollaborator]
+        prev: Record<string, WebsiteCollaborator[]>,
+        next: Record<string, WebsiteCollaborator[]>
       ) => {
         next[websiteName] = next[websiteName].concat(prev[websiteName])
         return { ...prev, ...next }
