@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.6.1
+-------------
+
+- Collaboration UI (#83)
+- add documentation for CKEditor plugin architecture
+- Bump cryptography from 3.2 to 3.3.2
+
 Version 0.6.0 (Released March 02, 2021)
 -------------
 
