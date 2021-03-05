@@ -82,6 +82,9 @@ class Website(TimestampedModel):
 class WebsiteContent(TimestampedModel):
     """ Class for a content component of a website"""
 
+    def upload_file_to(self, filename):
+        return f"{self.website.uuid.hex}/{self.uuid.hex}_{filename}"
+
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
     website = models.ForeignKey(
         "Website", null=False, blank=False, on_delete=models.CASCADE
@@ -100,6 +103,9 @@ class WebsiteContent(TimestampedModel):
     markdown = models.TextField(null=True, blank=True)
     metadata = models.JSONField(null=True, blank=True)
     hugo_filepath = models.CharField(max_length=2048, null=True, blank=True)
+    file = models.FileField(
+        upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
+    )
 
     class Meta:
         unique_together = [["website", "uuid"]]
