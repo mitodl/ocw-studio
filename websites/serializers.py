@@ -7,7 +7,7 @@ from main.serializers import WriteableSerializerMethodField
 from users.models import User
 from websites import constants
 from websites.models import Website, WebsiteContent, WebsiteStarter
-from websites.permissions import is_global_admin
+from websites.permissions import is_global_admin, is_site_admin
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):
@@ -52,12 +52,25 @@ class WebsiteDetailSerializer(serializers.ModelSerializer):
     """ Serializer for websites with serialized config """
 
     starter = WebsiteStarterDetailSerializer(read_only=True)
+    is_admin = serializers.SerializerMethodField(read_only=True)
+
+    def user_from_request(self):
+        """ Get the user from the request context """
+        request = self.context.get("request")
+        if request and hasattr(request, "user") and isinstance(request.user, User):
+            return request.user
+        return None
+
+    def get_is_admin(self, obj):
+        """ Determine if the request user is an admin"""
+        user = self.user_from_request()
+        if user:
+            return is_site_admin(user, obj)
+        return False
 
     def create(self, validated_data):
         """Ensure that the website is created by the requesting user"""
-        request = self.context.get("request")
-        if request and hasattr(request, "user") and isinstance(request.user, User):
-            validated_data["owner"] = request.user
+        validated_data["owner"] = self.user_from_request()
         with transaction.atomic():
             website = super().create(validated_data)
         return website
@@ -71,7 +84,7 @@ class WebsiteDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Website
-        fields = WebsiteSerializer.Meta.fields
+        fields = WebsiteSerializer.Meta.fields + ["is_admin"]
 
 
 class WebsiteWriteSerializer(WebsiteDetailSerializer):

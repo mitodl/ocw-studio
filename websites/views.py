@@ -188,7 +188,7 @@ class WebsiteCollaboratorViewSet(
                 .user_set.exclude(username=owner_username)
                 .annotate(group=Value(group_name, CharField()))
             )
-        return query.order_by("name")
+        return query.order_by("name", "username")
 
     def destroy(self, request, *args, **kwargs):
         """Remove the user from all groups for this website"""
@@ -208,9 +208,13 @@ class WebsiteCollaboratorViewSet(
         )
         user = User.objects.get(email=serializer.data.get("email"))
         if user in get_users_with_perms(website) or user == website.owner:
-            raise ValidationError("User is already a collaborator for this site")
+            raise ValidationError(
+                {"errors": ["User is already a collaborator for this site"]}
+            )
         user.groups.add(Group.objects.get(name=group_name))
-        serializer.validated_data["group"] = group_name
+        serializer.validated_data.update(
+            {"username": user.username, "name": user.name, "group": group_name}
+        )
         return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):

@@ -5,6 +5,9 @@ import { Route, Switch, useRouteMatch } from "react-router-dom"
 
 import SiteSidebar from "../components/SiteSidebar"
 import SiteContentListing from "../components/SiteContentListing"
+import SiteCollaboratorList from "../components/SiteCollaboratorList"
+import SiteCollaboratorEditPanel from "../components/SiteCollaboratorEditPanel"
+import SiteCollaboratorAddPanel from "../components/SiteCollaboratorAddPanel"
 
 import { websiteDetailRequest } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
@@ -34,6 +37,18 @@ export default function SitePage(): JSX.Element | null {
         </div>
         <div className="content">
           <Switch>
+            <Route
+              path={`${match.path}/settings/collaborators/new/`}
+              component={SiteCollaboratorAddPanel}
+            />
+            <Route
+              path={`${match.path}/settings/collaborators/:username/`}
+              component={SiteCollaboratorEditPanel}
+            />
+            <Route
+              path={`${match.path}/settings/collaborators/`}
+              component={SiteCollaboratorList}
+            />
             <Route
               path={`${match.path}/:configname`}
               component={SiteContentListing}
