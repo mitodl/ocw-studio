@@ -728,7 +728,7 @@ def test_websites_content_create_with_upload(drf_client, permission_groups):
     drf_client.force_login(permission_groups.global_admin)
     website = WebsiteFactory.create()
     file_upload = SimpleUploadedFile(
-        "/tmp/documents/exam.pdf", b"Exam content", content_type="application/pdf"
+        "exam.pdf", b"Exam content", content_type="application/pdf"
     )
     payload = {
         "title": "new title",
@@ -748,9 +748,7 @@ def test_websites_content_create_with_upload(drf_client, permission_groups):
     assert resp.status_code == 201
     content = website.websitecontent_set.get()
     assert content.title == payload["title"]
-    assert (
-        content.file.name == f"{website.uuid.hex}/{content.uuid.hex}_{file_upload.name}"
-    )
+    assert content.file.name == f"{website.name}/{content.uuid.hex}_{file_upload.name}"
     assert content.type == payload["type"]
     assert resp.data["uuid"] == str(content.uuid)
 
