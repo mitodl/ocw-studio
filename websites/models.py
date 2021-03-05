@@ -83,6 +83,7 @@ class WebsiteContent(TimestampedModel):
     """ Class for a content component of a website"""
 
     def upload_file_to(self, filename):
+        """Return the appropriate filepath for an upload"""
         return f"{self.website.uuid.hex}/{self.uuid.hex}_{filename}"
 
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)

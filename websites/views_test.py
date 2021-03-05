@@ -1,8 +1,10 @@
 """ Tests for websites views """
+from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
 
 import factory
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils.text import slugify
 from mitol.common.utils.datetime import now_in_utc
@@ -718,6 +720,34 @@ def test_websites_content_create(drf_client, permission_groups):
     content = website.websitecontent_set.get()
     assert content.title == payload["title"]
     assert content.markdown == payload["markdown"]
+    assert content.type == payload["type"]
+    assert resp.data["uuid"] == str(content.uuid)
+
+
+def test_websites_content_create_with_upload(drf_client, permission_groups):
+    """Uploading a file when creating a new WebsiteContent object should work"""
+    drf_client.force_login(permission_groups.global_admin)
+    website = WebsiteFactory.create()
+    file_upload = NamedTemporaryFile(suffix='.jpg')
+    payload = {
+        "title": "new title",
+        "type": constants.CONTENT_TYPE_RESOURCE,
+        "file": file_upload
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        data=payload,
+        format="multipart"
+    )
+    assert resp.status_code == 201
+    content = website.websitecontent_set.get()
+    assert content.title == payload["title"]
+    assert content.file.name == f"{website.uuid.hex}/{content.uuid.hex}_{file_upload.name}"
     assert content.type == payload["type"]
     assert resp.data["uuid"] == str(content.uuid)
 
