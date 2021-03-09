@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.6.1
+Version 0.6.1 (Released March 09, 2021)
 -------------
 
 - Collaboration UI (#83)
