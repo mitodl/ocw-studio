@@ -1,5 +1,6 @@
 const mockUseRouteMatch = jest.fn()
 
+import { act } from "react-dom/test-utils"
 import { concat } from "ramda"
 import sinon, { SinonStub } from "sinon"
 
@@ -123,15 +124,21 @@ describe("SiteCollaboratorList", () => {
       .find("tr")
       .find("i")
       .at(1)
-    deleteIcon.simulate("click")
+    act(() => {
+      deleteIcon.simulate("click")
+    })
+    wrapper.update()
     const dialog = wrapper.find("Dialog")
     expect(dialog.prop("open")).toBe(true)
     expect(dialog.prop("bodyContent")).toContain(collaborators[0].name)
-    dialog
-      .find("ModalFooter")
-      .find("button")
-      .at(0)
-      .simulate("click")
+    act(() => {
+      dialog
+        .find("ModalFooter")
+        .find("button")
+        .at(0)
+        .simulate("click")
+    })
+    wrapper.update()
     sinon.assert.calledOnce(deleteCollaboratorStub)
     expect(wrapper.find("tr").length).toBe(numCollaborators - 1)
   })
