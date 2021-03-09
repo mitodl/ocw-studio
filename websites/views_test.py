@@ -19,7 +19,7 @@ from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
 )
-from websites.models import Website
+from websites.models import Website, WebsiteContent
 from websites.permissions import permissions_group_for_role
 from websites.serializers import (
     WebsiteContentDetailSerializer,
@@ -42,6 +42,12 @@ def websites(course_starter):
     WebsiteFactory.create(unpublished=True, starter=course_starter)
     WebsiteFactory.create(future_publish=True)
     return SimpleNamespace(courses=courses, noncourses=noncourses)
+
+
+@pytest.fixture
+def file_upload():
+    """File upload for tests"""
+    return SimpleUploadedFile("exam.pdf", b"sample pdf", content_type="application/pdf")
 
 
 @pytest.mark.parametrize("website_type", [constants.COURSE_STARTER_SLUG, None])
@@ -723,13 +729,12 @@ def test_websites_content_create(drf_client, permission_groups):
     assert resp.data["uuid"] == str(content.uuid)
 
 
-def test_websites_content_create_with_upload(drf_client, permission_groups):
+def test_websites_content_create_with_upload(
+    drf_client, permission_groups, file_upload
+):
     """Uploading a file when creating a new WebsiteContent object should work"""
     drf_client.force_login(permission_groups.global_admin)
     website = WebsiteFactory.create()
-    file_upload = SimpleUploadedFile(
-        "exam.pdf", b"Exam content", content_type="application/pdf"
-    )
     payload = {
         "title": "new title",
         "type": constants.CONTENT_TYPE_RESOURCE,
@@ -751,6 +756,85 @@ def test_websites_content_create_with_upload(drf_client, permission_groups):
     assert content.file.name == f"{website.name}/{content.uuid.hex}_{file_upload.name}"
     assert content.type == payload["type"]
     assert resp.data["uuid"] == str(content.uuid)
+
+
+def test_websites_content_edit_with_upload(drf_client, permission_groups, file_upload):
+    """Uploading a file when editing a new WebsiteContent object should work"""
+    drf_client.force_login(permission_groups.global_admin)
+    content = WebsiteContentFactory.create(type=constants.CONTENT_TYPE_RESOURCE)
+    payload = {"file": file_upload, "title": "New Title"}
+    resp = drf_client.patch(
+        reverse(
+            "websites_content_api-detail",
+            kwargs={
+                "parent_lookup_website": content.website.name,
+                "uuid": str(content.uuid),
+            },
+        ),
+        data=payload,
+        format="multipart",
+    )
+    assert resp.status_code == 200
+    content = WebsiteContent.objects.get(id=content.id)
+    assert content.title == payload["title"]
+    assert (
+        content.file.name
+        == f"{content.website.name}/{content.uuid.hex}_{file_upload.name}"
+    )
+    assert resp.data["uuid"] == str(content.uuid)
+
+
+def test_websites_content_create_upload_denied(
+    drf_client, permission_groups, file_upload
+):
+    """Uploading a file for a new page should not be allowed"""
+    drf_client.force_login(permission_groups.global_admin)
+    website = WebsiteFactory.create()
+    payload = {
+        "title": "new title",
+        "type": constants.CONTENT_TYPE_PAGE,
+        "file": file_upload,
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        data=payload,
+        format="multipart",
+    )
+    assert resp.status_code == 400
+    assert resp.data == {
+        "non_field_errors": ["Files can only be uploaded for resources"]
+    }
+
+
+def test_websites_content_edit_upload_denied(
+    drf_client, permission_groups, file_upload
+):
+    """Uploading a file for a exiting page should not be allowed"""
+    drf_client.force_login(permission_groups.global_admin)
+    content = WebsiteContentFactory.create(type=constants.CONTENT_TYPE_PAGE)
+    payload = {
+        "file": file_upload,
+    }
+    resp = drf_client.patch(
+        reverse(
+            "websites_content_api-detail",
+            kwargs={
+                "parent_lookup_website": content.website.name,
+                "uuid": str(content.uuid),
+            },
+        ),
+        data=payload,
+        format="multipart",
+    )
+    assert resp.status_code == 400
+    assert resp.data == {
+        "non_field_errors": ["Files can only be uploaded for resources"]
+    }
 
 
 def test_websites_content_create_empty(drf_client, permission_groups):
