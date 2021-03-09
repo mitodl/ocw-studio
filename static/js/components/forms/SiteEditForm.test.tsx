@@ -1,7 +1,6 @@
 import React from "react"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { shallow } from "enzyme"
-import { ErrorMessage } from "formik"
 
 import SiteEditForm from "./SiteEditForm"
 

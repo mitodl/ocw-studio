@@ -1,4 +1,3 @@
-import { ErrorMessage } from "formik"
 import React from "react"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { shallow } from "enzyme"
@@ -48,7 +47,7 @@ describe("SiteAddForm", () => {
     )
   }
 
-  it.only("renders a form", () => {
+  it("renders a form", () => {
     const widget = "fakeWidgetComponent"
     // @ts-ignore
     componentFromWidget.mockImplementation(() => widget)
