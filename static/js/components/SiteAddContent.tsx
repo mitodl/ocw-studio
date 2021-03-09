@@ -6,12 +6,9 @@ import { useMutation } from "redux-query-react"
 
 import SiteAddForm from "./forms/SiteAddForm"
 
+import { contentFormValuesToPayload } from "../lib/site_content"
 import { siteContentListingUrl } from "../lib/urls"
-import {
-  contentFormValuesToPayload,
-  getResponseBodyError,
-  isErrorResponse
-} from "../lib/util"
+import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import {
   createWebsiteContentMutation,
   NewWebsiteContentPayload

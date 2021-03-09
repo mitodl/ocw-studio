@@ -11,11 +11,8 @@ import {
 } from "../query-configs/websites"
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import SiteEditForm from "./forms/SiteEditForm"
-import {
-  contentFormValuesToPayload,
-  getResponseBodyError,
-  isErrorResponse
-} from "../lib/util"
+import { contentFormValuesToPayload } from "../lib/site_content"
+import { getResponseBodyError, isErrorResponse } from "../lib/util"
 
 import { ConfigItem, Website } from "../types/websites"
 

@@ -10,8 +10,8 @@ import { defaultFormikChildProps } from "../../test_util"
 import { makeWebsiteDetail } from "../../util/factories/websites"
 import { CONTENT_TYPE_PAGE } from "../../constants"
 
-jest.mock("../../lib/util")
-import { componentFromWidget } from "../../lib/util"
+jest.mock("../../lib/site_content")
+import { componentFromWidget } from "../../lib/site_content"
 
 describe("SiteAddForm", () => {
   let sandbox: SinonSandbox,

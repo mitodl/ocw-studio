@@ -2,8 +2,12 @@ import * as React from "react"
 import { Formik, Form, ErrorMessage, Field, FormikHelpers } from "formik"
 import * as yup from "yup"
 
+import {
+  componentFromWidget,
+  contentInitialValues
+} from "../../lib/site_content"
+
 import { ConfigItem, WebsiteContent } from "../../types/websites"
-import { componentFromWidget, contentInitialValues } from "../../lib/util"
 
 export type SiteFormValues = {
   [key: string]: string

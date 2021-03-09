@@ -2,8 +2,9 @@ import React from "react"
 import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik"
 import * as yup from "yup"
 
+import { componentFromWidget } from "../../lib/site_content"
+
 import { ConfigField, ConfigItem } from "../../types/websites"
-import { componentFromWidget } from "../../lib/util"
 
 export const websiteValidation = yup.object().shape({
   title: yup

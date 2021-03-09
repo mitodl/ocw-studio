@@ -12,8 +12,8 @@ import {
 } from "../../util/factories/websites"
 import { ConfigItem, Website, WebsiteContent } from "../../types/websites"
 
-jest.mock("../../lib/util")
-import { componentFromWidget } from "../../lib/util"
+jest.mock("../../lib/site_content")
+import { componentFromWidget } from "../../lib/site_content"
 
 describe("SiteEditForm", () => {
   let sandbox: SinonSandbox,
