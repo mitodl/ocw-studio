@@ -66,13 +66,8 @@ describe("SiteEditForm", () => {
     const form = renderInnerForm()
     let idx = 0
     for (const field of configItem.fields) {
-      const group = form.find(".form-group").at(idx)
-
-      const fieldWrapper = group.find("Field")
-      expect(group.find("label").text()).toBe(field.label)
-      expect(fieldWrapper.prop("as")).toBe(widget)
-      expect(fieldWrapper.prop("name")).toBe(field.name)
-      expect(group.find(ErrorMessage).prop("name")).toBe(field.name)
+      const fieldWrapper = form.find("SiteContentField").at(idx)
+      expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
       idx++
     }
   })

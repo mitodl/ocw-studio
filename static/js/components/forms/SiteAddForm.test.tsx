@@ -48,7 +48,7 @@ describe("SiteAddForm", () => {
     )
   }
 
-  it("renders a form", () => {
+  it.only("renders a form", () => {
     const widget = "fakeWidgetComponent"
     // @ts-ignore
     componentFromWidget.mockImplementation(() => widget)
@@ -62,13 +62,8 @@ describe("SiteAddForm", () => {
     let idx = 0
     for (const fieldGroup of fieldGroups) {
       for (const field of fieldGroup) {
-        const group = form.find(".form-group").at(idx)
-
-        const fieldWrapper = group.find("Field")
-        expect(group.find("label").text()).toBe(field.label)
-        expect(fieldWrapper.prop("as")).toBe(widget)
-        expect(fieldWrapper.prop("name")).toBe(field.name)
-        expect(group.find(ErrorMessage).prop("name")).toBe(field.name)
+        const fieldWrapper = form.find("SiteContentField").at(idx)
+        expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
         idx++
       }
     }

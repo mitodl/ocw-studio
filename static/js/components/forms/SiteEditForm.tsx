@@ -5,7 +5,7 @@ import * as yup from "yup"
 import { contentInitialValues } from "../../lib/site_content"
 
 import { ConfigItem, WebsiteContent } from "../../types/websites"
-import SiteContentField from "../SiteContentField"
+import SiteContentField from "./SiteContentField"
 
 export type SiteFormValues = {
   [key: string]: string

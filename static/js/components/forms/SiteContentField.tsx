@@ -1,9 +1,9 @@
 import { ErrorMessage, Field } from "formik"
 import React from "react"
 
-import { componentFromWidget } from "../lib/site_content"
+import { componentFromWidget } from "../../lib/site_content"
 
-import { ConfigField } from "../types/websites"
+import { ConfigField } from "../../types/websites"
 
 interface Props {
   field: ConfigField

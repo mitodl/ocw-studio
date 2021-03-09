@@ -2,7 +2,7 @@ import React from "react"
 import { Form, Formik, FormikHelpers } from "formik"
 import * as yup from "yup"
 
-import SiteContentField from "../SiteContentField"
+import SiteContentField from "./SiteContentField"
 
 import { ConfigItem } from "../../types/websites"
 
