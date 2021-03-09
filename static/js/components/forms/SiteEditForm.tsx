@@ -1,13 +1,11 @@
 import * as React from "react"
-import { Formik, Form, ErrorMessage, Field, FormikHelpers } from "formik"
+import { Formik, Form, FormikHelpers } from "formik"
 import * as yup from "yup"
 
-import {
-  componentFromWidget,
-  contentInitialValues
-} from "../../lib/site_content"
+import { contentInitialValues } from "../../lib/site_content"
 
 import { ConfigItem, WebsiteContent } from "../../types/websites"
+import SiteContentField from "../SiteContentField"
 
 export type SiteFormValues = {
   [key: string]: string
@@ -47,17 +45,7 @@ export default function SiteEditForm({
       {({ isSubmitting, status }) => (
         <Form>
           {fields.map(field => (
-            <div key={field.name} className="form-group">
-              <label htmlFor={field.name} className="font-weight-bold">
-                {field.label}
-              </label>
-              <Field
-                as={componentFromWidget(field)}
-                name={field.name}
-                className="form-control"
-              />
-              <ErrorMessage name={field.name} component="div" />
-            </div>
+            <SiteContentField field={field} key={field.name} />
           ))}
           <div className="form-group d-flex justify-content-end">
             <button type="submit" disabled={isSubmitting} className="px-5">

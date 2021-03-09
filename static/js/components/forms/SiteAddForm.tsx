@@ -1,10 +1,10 @@
 import React from "react"
-import { ErrorMessage, Field, Form, Formik, FormikHelpers } from "formik"
+import { Form, Formik, FormikHelpers } from "formik"
 import * as yup from "yup"
 
-import { componentFromWidget } from "../../lib/site_content"
+import SiteContentField from "../SiteContentField"
 
-import { ConfigField, ConfigItem } from "../../types/websites"
+import { ConfigItem } from "../../types/websites"
 
 export const websiteValidation = yup.object().shape({
   title: yup
@@ -13,20 +13,6 @@ export const websiteValidation = yup.object().shape({
     .trim()
     .required()
 })
-
-const renderField = (field: ConfigField) => (
-  <div key={field.name} className="form-group">
-    <label htmlFor={field.name} className="font-weight-bold">
-      {field.label}
-    </label>
-    <Field
-      as={componentFromWidget(field)}
-      name={field.name}
-      className="form-control"
-    />
-    <ErrorMessage name={field.name} component="div" />
-  </div>
-)
 
 interface Props {
   onSubmit: (
@@ -59,9 +45,15 @@ export default function SiteAddForm({
     >
       {({ isSubmitting, status }) => (
         <Form className="row">
-          <div className="col-6">{fieldsByColumn[0].map(renderField)}</div>
           <div className="col-6">
-            {fieldsByColumn[1].map(renderField)}
+            {fieldsByColumn[0].map(configField => (
+              <SiteContentField key={configField.name} field={configField} />
+            ))}
+          </div>
+          <div className="col-6">
+            {fieldsByColumn[1].map(configField => (
+              <SiteContentField key={configField.name} field={configField} />
+            ))}
             <div className="form-group">
               <button
                 type="submit"
