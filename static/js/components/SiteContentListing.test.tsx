@@ -73,7 +73,7 @@ describe("SiteContentListing", () => {
   })
 
   it("should render a link to itself and to the add content page", async () => {
-    const params = { name: website.name, configname: contentType }
+    const params = { name: website.name, contenttype: contentType }
     mockUseRouteMatch.mockImplementation(() => ({
       params
     }))
@@ -83,17 +83,17 @@ describe("SiteContentListing", () => {
         .find("NavLink")
         .at(0)
         .prop("to")
-    ).toBe(siteContentListingUrl(params.name, params.configname))
+    ).toBe(siteContentListingUrl(params.name, params.contenttype))
     expect(
       wrapper
         .find("NavLink")
         .at(1)
         .prop("to")
-    ).toBe(siteAddContentUrl(params.name, params.configname))
+    ).toBe(siteAddContentUrl(params.name, params.contenttype))
   })
 
   it("should show each content item with edit links", async () => {
-    const params = { name: website.name, configname: contentType }
+    const params = { name: website.name, contenttype: contentType }
     mockUseRouteMatch.mockImplementation(() => ({
       params
     }))

@@ -45,7 +45,7 @@ describe("SiteEditContent", () => {
     configItem = website.starter?.config?.collections.find(
       (item: ConfigItem) => item.name === "resource"
     )
-    const params = { name: website.name, configname: configItem.name }
+    const params = { name: website.name, contenttype: configItem.name }
     mockUseRouteMatch.mockImplementation(() => ({
       params
     }))

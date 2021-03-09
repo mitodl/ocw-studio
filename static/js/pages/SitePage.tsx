@@ -52,12 +52,12 @@ export default function SitePage(): JSX.Element | null {
             />
             <Route
               exact
-              path={`${match.path}/:configname`}
+              path={`${match.path}/:contenttype`}
               component={SiteContentListing}
             />
             <Route
               exact
-              path={`${match.path}/:configname/add/`}
+              path={`${match.path}/:contenttype/add/`}
               component={SiteAddContent}
             />
           </Switch>

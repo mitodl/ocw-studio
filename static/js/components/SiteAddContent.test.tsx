@@ -40,7 +40,7 @@ describe("SiteAddContent", () => {
     configItem = website.starter?.config?.collections.find(
       (item: ConfigItem) => item.name === "page"
     )
-    const params = { name: website.name, configname: configItem.name }
+    const params = { name: website.name, contenttype: configItem.name }
     mockUseRouteMatch.mockImplementation(() => ({
       params
     }))

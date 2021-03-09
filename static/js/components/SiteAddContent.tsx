@@ -18,13 +18,13 @@ import { getWebsiteDetailCursor } from "../selectors/websites"
 import { ConfigItem } from "../types/websites"
 
 interface MatchParams {
-  configname: string
+  contenttype: string
   name: string
 }
 type Props = RouteComponentProps<Record<string, never>>
 export default function SiteAddContent({ history }: Props): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
-  const { configname, name } = match.params
+  const { contenttype, name } = match.params
   const website = useSelector(getWebsiteDetailCursor)(name)
   const [
     { isPending },
@@ -34,7 +34,7 @@ export default function SiteAddContent({ history }: Props): JSX.Element | null {
   )
 
   const configItem: ConfigItem | null = website?.starter?.config?.collections.find(
-    (config: ConfigItem) => config.name === configname
+    (config: ConfigItem) => config.name === contenttype
   )
   if (!configItem) {
     return null
@@ -52,7 +52,7 @@ export default function SiteAddContent({ history }: Props): JSX.Element | null {
       return
     }
     const payload = {
-      type: configname,
+      type: contenttype,
       ...contentFormValuesToPayload(values, configItem.fields)
     }
 
@@ -77,7 +77,7 @@ export default function SiteAddContent({ history }: Props): JSX.Element | null {
     setSubmitting(false)
 
     // Redirect to the site listing if it was successfully created
-    history.push(siteContentListingUrl(name, configname))
+    history.push(siteContentListingUrl(name, contenttype))
   }
 
   return (

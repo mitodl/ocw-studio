@@ -15,17 +15,17 @@ import {
 import { ConfigItem, WebsiteContentListItem } from "../types/websites"
 
 interface MatchParams {
-  configname: string
+  contenttype: string
   name: string
 }
 export default function SiteContentListing(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
-  const { configname, name } = match.params
+  const { contenttype, name } = match.params
   const website = useSelector(getWebsiteDetailCursor)(name)
   const [{ isPending: contentListingPending }] = useRequest(
-    websiteContentListingRequest(name, configname)
+    websiteContentListingRequest(name, contenttype)
   )
-  const listing = useSelector(getWebsiteContentListingCursor)(name, configname)
+  const listing = useSelector(getWebsiteContentListingCursor)(name, contenttype)
   const [editUuid, setEditUuid] = useState<string | null>(null)
   const [editVisibility, setEditVisibility] = useState<boolean>(false)
 
@@ -38,7 +38,7 @@ export default function SiteContentListing(): JSX.Element | null {
   }
 
   const configItem = website?.starter?.config?.collections.find(
-    (config: ConfigItem) => config.name === configname
+    (config: ConfigItem) => config.name === contenttype
   )
   if (!configItem) {
     return null
@@ -68,11 +68,11 @@ export default function SiteContentListing(): JSX.Element | null {
       <div className="px-4">
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
           <h3>
-            <NavLink to={siteContentListingUrl(name, configname)}>
+            <NavLink to={siteContentListingUrl(name, contenttype)}>
               {configItem.label} /
             </NavLink>
           </h3>
-          <NavLink to={siteAddContentUrl(name, configname)}>
+          <NavLink to={siteAddContentUrl(name, contenttype)}>
             Add {configItem.label}
           </NavLink>
         </div>
