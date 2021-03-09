@@ -1,7 +1,6 @@
 """ API functionality for OCW course site import """
 import json
 import logging
-import os
 import re
 from uuid import uuid4
 
