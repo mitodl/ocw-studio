@@ -30,7 +30,7 @@ export default function SiteAddContent({ history }: Props): JSX.Element | null {
   const { configname, name } = match.params
   const website = useSelector(getWebsiteDetailCursor)(name)
   const [
-    addWebsiteContentQueryState,
+    { isPending },
     addWebsiteContent
   ] = useMutation((payload: NewWebsiteContentPayload) =>
     createWebsiteContentMutation(name, payload)
@@ -51,7 +51,7 @@ export default function SiteAddContent({ history }: Props): JSX.Element | null {
       setStatus
     }: FormikHelpers<NewWebsiteContentPayload>
   ) => {
-    if (addWebsiteContentQueryState.isPending) {
+    if (isPending) {
       return
     }
     const payload = {

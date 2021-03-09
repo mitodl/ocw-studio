@@ -33,7 +33,7 @@ interface Props {
 export default function SiteEditContent(props: Props): JSX.Element | null {
   const { visibility, configItem, uuid, toggleVisibility, site } = props
   const [
-    editWebsiteContentQueryState,
+    { isPending: editIsPending },
     editWebsiteContent
   ] = useMutation((payload: EditWebsiteContentPayload) =>
     editWebsiteContentMutation(site, uuid, configItem.name, payload)
@@ -51,7 +51,7 @@ export default function SiteEditContent(props: Props): JSX.Element | null {
     values: SiteFormValues,
     { setErrors, setSubmitting, setStatus }: FormikHelpers<SiteFormValues>
   ) => {
-    if (editWebsiteContentQueryState.isPending) {
+    if (editIsPending) {
       return
     }
     const payload = contentFormValuesToPayload(values, configItem.fields)
