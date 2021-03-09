@@ -13,6 +13,8 @@ from websites.constants import (
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     COURSE_HOME,
+    COURSE_PAGE_LAYOUTS,
+    COURSE_RESOURCE_LAYOUTS,
     WEBSITE_SOURCE_OCW_IMPORT,
 )
 from websites.models import Website, WebsiteContent
@@ -37,7 +39,7 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_str=""):
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
     paginator = bucket.meta.client.get_paginator("list_objects")
-    for resp in paginator.paginate(Bucket=bucket.name, Prefix=f"{prefix}data/courses/"):
+    for resp in paginator.paginate(Bucket=bucket.name, Prefix=f"{prefix}"):
         for obj in resp["Contents"]:
             key = obj["Key"]
             if key.endswith(".json") and (not filter_str or filter_str in key):
@@ -53,8 +55,21 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
         prefix (str): S3 prefix for filtering by course
         website (Website): Website to import content for
     """
+    course_home_s3_content = get_s3_object_and_read(
+        bucket.Object(f"{prefix}{website.name}/content/_index.md")
+    ).decode()
+    course_home_s3_content_parts = [
+        part
+        for part in re.split(
+            re.compile(r"^---\n", re.MULTILINE), course_home_s3_content
+        )
+        if part
+    ]
+    course_home_uuid = yaml.load(
+        course_home_s3_content_parts[0], Loader=yaml.Loader
+    ).get("uid", COURSE_HOME)
     for resp in bucket.meta.client.get_paginator("list_objects").paginate(
-        Bucket=bucket.name, Prefix=f"{prefix}content/courses/{website.name}"
+        Bucket=bucket.name, Prefix=f"{prefix}{website.name}/content"
     ):
         for obj in resp["Contents"]:
             s3_key = obj["Key"]
@@ -67,19 +82,19 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
             parent = None
             if len(s3_content_parts) >= 1:
                 content_json = yaml.load(s3_content_parts[0], Loader=yaml.Loader)
+                layout = content_json.get("layout", None)
                 menu = content_json.get("menu", None)
+                uuid = content_json.get("uid", None)
                 if menu:
-                    # This is a page
                     menu_values = list(menu.values())[0]
-                    uuid = menu_values.get("identifier")
-                    if uuid == COURSE_HOME:
-                        uuid = website.uuid
-                    parent_uuid = menu_values.get("parent", None)
-                    content_type = CONTENT_TYPE_PAGE
+                    parent_uuid = menu_values.get("parent", course_home_uuid)
                 else:
-                    # This is a file
-                    uuid = content_json.get("uid")
                     parent_uuid = content_json.get("parent", None)
+                if layout in COURSE_PAGE_LAYOUTS:
+                    # This is a page
+                    content_type = CONTENT_TYPE_PAGE
+                elif layout in COURSE_RESOURCE_LAYOUTS:
+                    # This is a file
                     content_type = CONTENT_TYPE_RESOURCE
                 if parent_uuid:
                     parent, _ = WebsiteContent.objects.get_or_create(
@@ -125,8 +140,10 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     """
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
-    name = os.path.splitext(os.path.basename(path))[0]
-    s3_content = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
+    s3_content = json.loads(
+        get_s3_object_and_read(bucket.Object(f"{path}/data/course.json")).decode()
+    )
+    name = s3_content.get("course_id")
     try:
         publish_date = dateparser.parse(s3_content.get("publishdate", None))
     except ValueError:
