@@ -1,16 +1,33 @@
 import {
+  newSiteUrl,
   siteAddContentUrl,
   siteApiContentDetailUrl,
   siteApiContentUrl,
-  siteApiUrl,
+  siteApiDetailUrl,
+  siteApiListingUrl,
   siteContentListingUrl,
-  siteUrl
+  siteDetailUrl,
+  siteListingUrl
 } from "./urls"
 import { CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE } from "../constants"
 
 describe("urls", () => {
+  [
+    [0, "/sites/"],
+    [20, "/sites/?offset=20"]
+  ].forEach(([offset, expectedLink]) => {
+    it(`renders a URL for the site dashboard with offset=${offset}`, () => {
+      // @ts-ignore
+      expect(siteListingUrl(offset)).toBe(expectedLink)
+    })
+  })
+
+  it("makes a URL for creating new sites", () => {
+    expect(newSiteUrl()).toBe("/new-site/")
+  })
+
   it("renders a site URL", () => {
-    expect(siteUrl("course-name")).toBe("/sites/course-name/")
+    expect(siteDetailUrl("course-name")).toBe("/sites/course-name/")
   })
 
   it("renders a site listing URL", () => {
@@ -27,7 +44,11 @@ describe("urls", () => {
 
   describe("apis", () => {
     it("renders a URL for site listing", () => {
-      expect(siteApiUrl("course-name")).toBe("/api/websites/course-name/")
+      expect(siteApiListingUrl(20)).toBe("/api/websites/?limit=10&offset=20")
+    })
+
+    it("renders a URL for site detail", () => {
+      expect(siteApiDetailUrl("course-name")).toBe("/api/websites/course-name/")
     })
 
     it("renders a URL for site content listing", () => {

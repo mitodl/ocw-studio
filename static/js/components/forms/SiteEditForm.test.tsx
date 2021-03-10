@@ -9,7 +9,7 @@ import {
   makeWebsiteContentDetail,
   makeWebsiteDetail
 } from "../../util/factories/websites"
-import { ConfigItem, Website, WebsiteContent } from "../../types/websites"
+import { ConfigItem, WebsiteDetail, WebsiteContent } from "../../types/websites"
 
 jest.mock("../../lib/site_content")
 import { componentFromWidget } from "../../lib/site_content"
@@ -19,7 +19,7 @@ describe("SiteEditForm", () => {
     onSubmitStub: SinonStub,
     configItem: ConfigItem,
     content: WebsiteContent,
-    website: Website
+    website: WebsiteDetail
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()

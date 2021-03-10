@@ -3,10 +3,10 @@ import { NavLink } from "react-router-dom"
 
 import { siteCollaboratorsUrl, siteContentListingUrl } from "../lib/urls"
 
-import { ConfigItem, Website } from "../types/websites"
+import { ConfigItem, WebsiteDetail } from "../types/websites"
 
 interface Props {
-  website: Website
+  website: WebsiteDetail
 }
 export default function SiteSidebar(props: Props): JSX.Element {
   const { website } = props

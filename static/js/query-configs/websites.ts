@@ -7,12 +7,14 @@ import { DEFAULT_POST_OPTIONS } from "../lib/redux_query"
 import {
   siteApiCollaboratorsDetailUrl,
   siteApiCollaboratorsUrl,
-  siteApiUrl
+  siteApiListingUrl,
+  siteApiDetailUrl
 } from "../lib/urls"
 
 import {
   NewWebsitePayload,
   Website,
+  WebsiteDetail,
   WebsiteCollaborator,
   WebsiteCollaboratorFormData,
   WebsiteContent,
@@ -21,7 +23,7 @@ import {
 } from "../types/websites"
 
 interface WebsiteDetails {
-  [key: string]: Website
+  [key: string]: WebsiteDetail
 }
 
 export const getTransformedWebsiteName = (
@@ -36,9 +38,32 @@ export const getTransformedWebsiteName = (
   return transformedWebsiteKeys[0]
 }
 
+export interface WebsiteListingResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  results: Website[]
+}
+type WebsitesListing = Record<string, WebsiteListingResponse>
+export const websiteListingRequest = (offset: number): QueryConfig => ({
+  url:       siteApiListingUrl(offset),
+  transform: (body: WebsiteListingResponse) => ({
+    websitesListing: {
+      [`${offset}`]: body
+    }
+  }),
+  update: {
+    websitesListing: (prev: WebsitesListing, next: WebsitesListing) => ({
+      ...prev,
+      ...next
+    })
+  },
+  force: true // try to prevent stale information
+})
+
 export const websiteDetailRequest = (name: string): QueryConfig => ({
-  url:       siteApiUrl(name),
-  transform: (body: Website) => ({
+  url:       siteApiDetailUrl(name),
+  transform: (body: WebsiteDetail) => ({
     websiteDetails: {
       [name]: body
     }
@@ -60,7 +85,7 @@ export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({
     }
   },
   body:      payload,
-  transform: (body: Website) => ({
+  transform: (body: WebsiteDetail) => ({
     websiteDetails: {
       [body.name]: body
     }
@@ -245,7 +270,7 @@ export type EditWebsiteContentPayload = {
   }
 }
 export const editWebsiteContentMutation = (
-  site: Website,
+  site: WebsiteDetail,
   uuid: string,
   contentType: string,
   payload: EditWebsiteContentPayload

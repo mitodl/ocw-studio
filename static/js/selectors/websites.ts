@@ -7,6 +7,11 @@ import { ReduxState } from "../reducers"
 
 import { WebsiteStarter } from "../types/websites"
 
+export const getWebsiteListingCursor = createSelector(
+  (state: ReduxState) => state.entities?.websitesListing ?? {},
+  websitesListing => memoize((offset: number) => websitesListing[offset])
+)
+
 export const getWebsiteDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteDetails ?? {},
   websiteDetails => memoize((name: string) => websiteDetails[name])

@@ -14,7 +14,7 @@ import {
   makeWebsiteDetail
 } from "../util/factories/websites"
 
-import { ConfigItem, Website } from "../types/websites"
+import { ConfigItem, WebsiteDetail } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -27,7 +27,7 @@ jest.mock("./MarkdownEditor", () => "div")
 describe("SiteAddContent", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    website: Website,
+    website: WebsiteDetail,
     configItem: ConfigItem,
     historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub }

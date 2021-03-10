@@ -1,3 +1,12 @@
 .sites-dashboard {
-  margin: 0 auto;
+  .content {
+    flex-grow: 1;
+    border: 1px solid black;
+    padding: 15px;
+
+    ul {
+      padding: 0;
+      list-style: none;
+    }
+  }
 }

@@ -14,7 +14,7 @@ import {
   makeWebsiteCollaborator
 } from "../util/factories/websites"
 
-import { Website } from "../types/websites"
+import { WebsiteDetail } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -25,7 +25,7 @@ jest.mock("react-router-dom", () => ({
 describe("SiteCollaboratorAddPanel", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    website: Website,
+    website: WebsiteDetail,
     historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub },
     createCollaboratorStub: SinonStub

@@ -40,7 +40,10 @@ export interface Website {
   source: string | null
   starter: WebsiteStarter | null
   metadata: any
-  is_admin?: boolean // eslint-disable-line
+}
+
+export interface WebsiteDetail extends Website {
+  is_admin: boolean // eslint-disable-line
 }
 
 type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR

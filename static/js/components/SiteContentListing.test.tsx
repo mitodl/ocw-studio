@@ -14,7 +14,7 @@ import {
   makeWebsiteDetail
 } from "../util/factories/websites"
 
-import { Website, WebsiteContentListItem } from "../types/websites"
+import { WebsiteDetail, WebsiteContentListItem } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -28,7 +28,7 @@ jest.mock("./MarkdownEditor", () => "div")
 describe("SiteContentListing", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    website: Website,
+    website: WebsiteDetail,
     contentType: string,
     contentListingItems: WebsiteContentListItem[]
 

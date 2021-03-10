@@ -6,11 +6,11 @@ import SiteSidebar from "./SiteSidebar"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { siteContentListingUrl } from "../lib/urls"
 
-import { Website } from "../types/websites"
+import { WebsiteDetail } from "../types/websites"
 import { CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE } from "../constants"
 
 describe("SiteSidebar", () => {
-  let website: Website
+  let website: WebsiteDetail
 
   beforeEach(() => {
     website = makeWebsiteDetail()

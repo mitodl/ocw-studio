@@ -18,7 +18,7 @@ import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
 
-import { Website, WebsiteCollaborator } from "../types/websites"
+import { WebsiteDetail, WebsiteCollaborator } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -29,7 +29,7 @@ jest.mock("react-router-dom", () => ({
 describe("SiteCollaboratorList", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    website: Website,
+    website: WebsiteDetail,
     collaborators: WebsiteCollaborator[],
     permanentAdmins: WebsiteCollaborator[],
     historyPushStub: SinonStub,

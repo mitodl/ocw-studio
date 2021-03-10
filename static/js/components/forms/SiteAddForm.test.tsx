@@ -4,7 +4,7 @@ import { shallow } from "enzyme"
 
 import SiteAddForm from "./SiteAddForm"
 
-import { ConfigItem, Website } from "../../types/websites"
+import { ConfigItem, WebsiteDetail } from "../../types/websites"
 import { defaultFormikChildProps } from "../../test_util"
 import { makeWebsiteDetail } from "../../util/factories/websites"
 import { CONTENT_TYPE_PAGE } from "../../constants"
@@ -16,7 +16,7 @@ describe("SiteAddForm", () => {
   let sandbox: SinonSandbox,
     onSubmitStub: SinonStub,
     configItem: ConfigItem,
-    website: Website
+    website: WebsiteDetail
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()

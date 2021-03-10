@@ -8,11 +8,13 @@ import {
   ROLE_ADMIN,
   ROLE_EDITOR,
   ROLE_GLOBAL,
-  ROLE_OWNER
+  ROLE_OWNER,
+  WEBSITES_PAGE_SIZE
 } from "../../constants"
 
 import {
   Website,
+  WebsiteDetail,
   WebsiteCollaborator,
   WebsiteContent,
   WebsiteContentListItem,
@@ -35,7 +37,7 @@ export const makeWebsiteStarter = (type = "course"): WebsiteStarter => ({
   config: makeWebsiteStarterConfig()
 })
 
-export const makeWebsiteDetail = (): Website => ({
+export const makeWebsiteListingItem = (): Website => ({
   uuid:       casual.uuid,
   created_on: casual.moment.format(),
   updated_on: casual.moment.format(),
@@ -45,11 +47,19 @@ export const makeWebsiteDetail = (): Website => ({
   title:    casual.title,
   source:   null,
   starter:  makeWebsiteStarter("course"),
-  metadata: null
+  metadata: {
+    course_numbers: [`${casual.integer(1, 20)}.${casual.integer(1, 999)}`],
+    term:           `${casual.month_name} ${casual.year}`
+  }
 })
 
-export const makeWebsiteDetails = (): Website[] =>
-  times(5).map(() => makeWebsiteDetail())
+export const makeWebsiteListing = (): Website[] =>
+  times(WEBSITES_PAGE_SIZE).map(() => makeWebsiteListingItem())
+
+export const makeWebsiteDetail = (): WebsiteDetail => ({
+  ...makeWebsiteListingItem(),
+  is_admin: false
+})
 
 export const makeWebsiteCollaborator = (): WebsiteCollaborator => ({
   name:     casual.name,

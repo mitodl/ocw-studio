@@ -7,7 +7,7 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 import { makeWebsiteDetail } from "../util/factories/websites"
 
-import { Website } from "../types/websites"
+import { WebsiteDetail } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -16,7 +16,9 @@ jest.mock("react-router-dom", () => ({
 }))
 
 describe("SitePage", () => {
-  let helper: IntegrationTestHelper, render: TestRenderer, website: Website
+  let helper: IntegrationTestHelper,
+    render: TestRenderer,
+    website: WebsiteDetail
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()

@@ -1,4 +1,9 @@
-export const siteUrl = (name: string): string => `/sites/${name}/`
+import { WEBSITES_PAGE_SIZE } from "../constants"
+
+export const newSiteUrl = (): string => "/new-site/"
+export const siteListingUrl = (offset: number): string =>
+  offset ? `/sites/?offset=${offset}` : "/sites/"
+export const siteDetailUrl = (name: string): string => `/sites/${name}/`
 export const siteContentListingUrl = (
   name: string,
   contentType: string
@@ -15,9 +20,12 @@ export const siteCollaboratorsDetailUrl = (
   username: string
 ): string => `${siteCollaboratorsUrl(name)}${username}/`
 
-export const siteApiUrl = (name: string): string => `/api/websites/${name}/`
+export const siteApiListingUrl = (offset: number): string =>
+  `/api/websites/?limit=${WEBSITES_PAGE_SIZE}&offset=${offset}`
+export const siteApiDetailUrl = (name: string): string =>
+  `/api/websites/${name}/`
 export const siteApiCollaboratorsUrl = (name: string): string =>
-  `${siteApiUrl(name)}collaborators/`
+  `${siteApiDetailUrl(name)}collaborators/`
 export const siteApiCollaboratorsDetailUrl = (
   name: string,
   username: string
@@ -26,6 +34,6 @@ export const siteAddContentUrl = (name: string, contentType: string): string =>
   `/sites/${name}/${contentType}/add/`
 
 export const siteApiContentUrl = (name: string): string =>
-  `${siteApiUrl(name)}content/`
+  `${siteApiDetailUrl(name)}content/`
 export const siteApiContentDetailUrl = (name: string, uuid: string): string =>
   `${siteApiContentUrl(name)}${uuid}/`
