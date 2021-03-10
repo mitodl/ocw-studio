@@ -4,8 +4,9 @@ import { CKEditor } from "@ckeditor/ckeditor5-react"
 import OurEditor from "../lib/ckeditor/CKEditor"
 
 export interface Props {
-  initialData?: string
-  onChange?: (s: string) => void
+  value?: string
+  name?: string
+  onChange?: (event: { target: { value: string; name: string } }) => void
   children?: React.ReactNode
 }
 
@@ -13,16 +14,16 @@ export interface Props {
  * A component for editing Markdown using CKEditor.
  */
 export default function MarkdownEditor(props: Props): JSX.Element {
-  const { initialData, onChange } = props
+  const { value, name, onChange } = props
 
   return (
     <CKEditor
       editor={OurEditor}
-      data={initialData ?? ""}
+      data={value ?? ""}
       onChange={(event: any, editor: any) => {
         const data = editor.getData()
         if (onChange) {
-          onChange(data)
+          onChange({ target: { name: name ?? "", value: data } })
         }
       }}
     />

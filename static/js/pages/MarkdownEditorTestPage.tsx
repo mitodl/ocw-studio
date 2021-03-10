@@ -11,7 +11,11 @@ export default function MarkdownEditorTestPage(): JSX.Element {
     <div>
       <div className="w-75 m-auto">
         <h3>Editor</h3>
-        <MarkdownEditor initialData={data} onChange={setData} />
+        <MarkdownEditor
+          value={data}
+          name="markdown"
+          onChange={(event: any) => setData(event.target.value)}
+        />
       </div>
       <div className="w-75 m-auto">
         <h3>Output</h3>

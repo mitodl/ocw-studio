@@ -1,8 +1,8 @@
 export const siteUrl = (name: string): string => `/sites/${name}/`
 export const siteContentListingUrl = (
   name: string,
-  configName: string
-): string => `/sites/${name}/${configName}/`
+  contentType: string
+): string => `/sites/${name}/${contentType}/`
 
 export const siteCollaboratorsUrl = (name: string): string =>
   `/sites/${name}/settings/collaborators/`
@@ -22,3 +22,10 @@ export const siteApiCollaboratorsDetailUrl = (
   name: string,
   username: string
 ): string => `${siteApiCollaboratorsUrl(name)}${username}/`
+export const siteAddContentUrl = (name: string, contentType: string): string =>
+  `/sites/${name}/${contentType}/add/`
+
+export const siteApiContentUrl = (name: string): string =>
+  `${siteApiUrl(name)}content/`
+export const siteApiContentDetailUrl = (name: string, uuid: string): string =>
+  `${siteApiContentUrl(name)}${uuid}/`

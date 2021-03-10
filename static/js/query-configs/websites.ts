@@ -15,6 +15,8 @@ import {
   Website,
   WebsiteCollaborator,
   WebsiteCollaboratorFormData,
+  WebsiteContent,
+  WebsiteContentListItem,
   WebsiteStarter
 } from "../types/websites"
 
@@ -182,3 +184,157 @@ export const createWebsiteCollaboratorMutation = (
     }
   }
 }
+
+interface WebsiteContentListing {
+  [key: string]: WebsiteContentListItem[]
+}
+interface WebsiteContentDetails {
+  [uuid: string]: WebsiteContent
+}
+
+export const contentListingKey = (name: string, type: string): string =>
+  `${name}_${type}`
+export const websiteContentListingRequest = (
+  name: string,
+  type: string
+): QueryConfig => ({
+  url:       `/api/websites/${name}/content/?type=${type}`,
+  transform: (body: WebsiteContentListItem[]) => ({
+    websiteContentListing: {
+      [contentListingKey(name, type)]: body
+    }
+  }),
+  update: {
+    websiteContentListing: (
+      prev: WebsiteContentListing,
+      next: WebsiteContentListing
+    ) => ({
+      ...prev,
+      ...next
+    })
+  }
+})
+
+export const websiteContentDetailRequest = (
+  name: string,
+  uuid: string
+): QueryConfig => ({
+  url:       `/api/websites/${name}/content/${uuid}/`,
+  transform: (body: WebsiteContent) => ({
+    websiteContentDetails: {
+      [uuid]: body
+    }
+  }),
+  update: {
+    websiteContentDetails: (
+      prev: WebsiteContentDetails,
+      next: WebsiteContentDetails
+    ) => ({
+      ...prev,
+      ...next
+    })
+  }
+})
+
+export type EditWebsiteContentPayload = {
+  title?: string
+  content?: string
+  body?: string
+  metadata?: {
+    [key: string]: string
+  }
+}
+export const editWebsiteContentMutation = (
+  site: Website,
+  uuid: string,
+  contentType: string,
+  payload: EditWebsiteContentPayload
+): QueryConfig => ({
+  url:     `/api/websites/${site.name}/content/${uuid}/`,
+  options: {
+    method:  "PATCH",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
+  },
+  body:      payload,
+  transform: (response: WebsiteContent) => ({
+    websiteContentDetails: {
+      [uuid]: response
+    },
+    websiteContentListing: response
+  }),
+  update: {
+    websiteContentDetails: (
+      prev: WebsiteContentDetails,
+      next: WebsiteContentDetails
+    ) => ({
+      ...prev,
+      ...next
+    }),
+    websiteContentListing: (
+      prev: WebsiteContentListing,
+      next: WebsiteContent
+    ) => {
+      const key = contentListingKey(site.name, contentType)
+      const oldList: WebsiteContentListItem[] = prev[key] ?? []
+      return {
+        ...prev,
+        // we'll need to sort this once we figure out a preferred order for the content listing
+        [key]: oldList.map(item => (item.uuid === next.uuid ? next : item))
+      }
+    }
+  }
+})
+
+export type NewWebsiteContentPayload = {
+  title: string
+  type: string
+  content?: string
+  body?: string
+  metadata: {
+    [key: string]: string
+  }
+}
+
+export const createWebsiteContentMutation = (
+  siteName: string,
+  payload: NewWebsiteContentPayload
+): QueryConfig => ({
+  url:     `/api/websites/${siteName}/content/`,
+  options: {
+    method:  "POST",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
+  },
+  body:      payload,
+  transform: (response: WebsiteContent) => ({
+    websiteContentDetails: {
+      [response.uuid]: response
+    },
+    websiteContentListing: response
+  }),
+  update: {
+    websiteContentDetails: (
+      prev: WebsiteContentDetails,
+      next: WebsiteContentDetails
+    ) => ({
+      ...prev,
+      ...next
+    }),
+    websiteContentListing: (
+      prev: WebsiteContentListing,
+      next: WebsiteContent
+    ) => {
+      prev = prev ?? {}
+      const key = contentListingKey(siteName, next.type)
+      const oldList: WebsiteContentListItem[] = prev[key] ?? []
+      return {
+        ...prev,
+        // we'll need to sort this once we figure out a preferred order for the content listing
+        [key]: [...oldList, next]
+      }
+    }
+  }
+})

@@ -3,6 +3,7 @@ import { times, cloneDeep } from "lodash"
 
 import incrementer from "../incrementer"
 import {
+  CONTENT_TYPES,
   exampleSiteConfig,
   ROLE_ADMIN,
   ROLE_EDITOR,
@@ -13,6 +14,8 @@ import {
 import {
   Website,
   WebsiteCollaborator,
+  WebsiteContent,
+  WebsiteContentListItem,
   WebsiteStarter,
   WebsiteStarterConfig
 } from "../../types/websites"
@@ -66,3 +69,17 @@ export const makePermanentWebsiteCollaborator = (): WebsiteCollaborator => ({
 
 export const makeWebsiteCollaborators = (): WebsiteCollaborator[] =>
   times(5).map(() => makeWebsiteCollaborator())
+
+export const makeWebsiteContentListItem = (): WebsiteContentListItem => ({
+  uuid:  casual.uuid,
+  title: casual.title,
+  type:  casual.random_element(CONTENT_TYPES)
+})
+
+export const makeWebsiteContentDetail = (): WebsiteContent => ({
+  ...makeWebsiteContentListItem(),
+  markdown: casual.text,
+  metadata: {
+    description: casual.short_description
+  }
+})

@@ -58,3 +58,14 @@ export interface WebsiteCollaboratorFormData {
   email?: string
   role: WebsiteRoleEditable
 }
+
+export interface WebsiteContentListItem {
+  uuid: string
+  title: string | null
+  type: string
+}
+
+export interface WebsiteContent extends WebsiteContentListItem {
+  markdown: string | null
+  metadata: null | { [key: string]: string }
+}

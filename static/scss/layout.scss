@@ -33,3 +33,36 @@ header {
 .form-error {
   color: $error-red;
 }
+
+a {
+  cursor: pointer;
+}
+
+// modal as sidebar CSS adapted from https://codepen.io/bootpen/pen/jbbaRa
+$modal-sidebar-width: 540px;
+
+.modal.right .modal-dialog {
+  position: fixed;
+  margin: auto;
+  min-width: $modal-sidebar-width;
+  height: 100%;
+  transform: translate3d(0%, 0, 0);
+}
+
+.modal.right .modal-content {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.modal.right .modal-body {
+  padding: 15px 15px 80px;
+}
+
+.modal.right.fade .modal-dialog {
+  right: -$modal-sidebar-width;
+  transition: opacity 0.3s linear, right 0.3s ease-out;
+}
+
+.modal.right.fade.show .modal-dialog {
+  right: 0;
+}

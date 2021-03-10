@@ -14,10 +14,14 @@ export const ROLE_LABELS = {
 
 export const EDITABLE_ROLES = [ROLE_ADMIN, ROLE_EDITOR]
 
+export const CONTENT_TYPE_PAGE = "page"
+export const CONTENT_TYPE_RESOURCE = "resource"
+export const CONTENT_TYPES = [CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE]
+
 export const exampleSiteConfig: WebsiteStarterConfig = {
   collections: [
     {
-      name:   "page",
+      name:   CONTENT_TYPE_PAGE,
       label:  "Page",
       fields: [
         {
@@ -33,7 +37,7 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
       ]
     },
     {
-      name:   "resource",
+      name:   CONTENT_TYPE_RESOURCE,
       label:  "Resource",
       fields: [
         {

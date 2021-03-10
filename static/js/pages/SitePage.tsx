@@ -8,6 +8,7 @@ import SiteContentListing from "../components/SiteContentListing"
 import SiteCollaboratorList from "../components/SiteCollaboratorList"
 import SiteCollaboratorEditPanel from "../components/SiteCollaboratorEditPanel"
 import SiteCollaboratorAddPanel from "../components/SiteCollaboratorAddPanel"
+import SiteAddContent from "../components/SiteAddContent"
 
 import { websiteDetailRequest } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
@@ -50,8 +51,14 @@ export default function SitePage(): JSX.Element | null {
               component={SiteCollaboratorList}
             />
             <Route
-              path={`${match.path}/:configname`}
+              exact
+              path={`${match.path}/:contenttype`}
               component={SiteContentListing}
+            />
+            <Route
+              exact
+              path={`${match.path}/:contenttype/add/`}
+              component={SiteAddContent}
             />
           </Switch>
         </div>
