@@ -59,6 +59,8 @@ django-robots==4.0
     # via -r requirements.in
 django-server-status==0.6.0
     # via -r requirements.in
+django-storages==1.11.1
+    # via -r requirements.in
 django-webpack-loader==0.7.0
     # via
     #   -r requirements.in
@@ -69,6 +71,7 @@ django==3.1
     #   django-guardian
     #   django-hijack
     #   django-redis
+    #   django-storages
     #   djangorestframework
     #   mitol-django-common
 djangorestframework==3.12.2
