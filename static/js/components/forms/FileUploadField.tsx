@@ -27,7 +27,7 @@ export default function FileUploadField(props: Props): JSX.Element {
         className="form-control"
       />
       {value && !(value instanceof File) ? (
-        <div>
+        <div className="current-file">
           Current file: <a href={value}>{filenameFromPath(value)}</a>
         </div>
       ) : null}

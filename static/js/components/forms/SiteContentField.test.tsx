@@ -34,7 +34,7 @@ describe("SiteContentField", () => {
       expect(wrapper.find("Field").prop("as")).toBe(componentFromWidget(field))
       expect(wrapper.find("Field").prop("name")).toBe(field.name)
       expect(wrapper.find("Field").prop("setFieldValue")).toBe(
-        setFieldValueStub
+        field.widget === "file" ? setFieldValueStub : undefined
       )
     }
   })
