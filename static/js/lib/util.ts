@@ -1,4 +1,4 @@
-import { isEmpty } from "ramda"
+import { isEmpty, isNil } from "ramda"
 import { ActionPromiseValue } from "redux-query"
 
 export const isErrorStatusCode = (statusCode: number): boolean =>
@@ -26,4 +26,29 @@ export const getResponseBodyError = (
     return errors.length === 0 ? null : errors[0]
   }
   return errors
+}
+
+export const objectToFormData = (object: Record<string, unknown>): FormData => {
+  const formData = new FormData()
+
+  Object.entries(object).forEach(([key, value]) => {
+    if (key === "metadata") {
+      formData.append(key, JSON.stringify(value))
+    } else if (!isNil(value)) {
+      // @ts-ignore
+      formData.append(key, value)
+    }
+  })
+  return formData
+}
+
+export const filenameFromPath = (filepath: string): string => {
+  const basename = filepath.split("/").pop() || ""
+  if (basename.includes("_")) {
+    return basename
+      .split("_")
+      .slice(1)
+      .join("_")
+  }
+  return basename
 }

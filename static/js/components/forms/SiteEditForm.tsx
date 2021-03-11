@@ -42,10 +42,14 @@ export default function SiteEditForm({
       validationSchema={websiteValidation}
       initialValues={initialValues}
     >
-      {({ isSubmitting, status }) => (
+      {({ isSubmitting, status, setFieldValue }) => (
         <Form>
           {fields.map(field => (
-            <SiteContentField field={field} key={field.name} />
+            <SiteContentField
+              field={field}
+              key={field.name}
+              setFieldValue={setFieldValue}
+            />
           ))}
           <div className="form-group d-flex justify-content-end">
             <button type="submit" disabled={isSubmitting} className="px-5">

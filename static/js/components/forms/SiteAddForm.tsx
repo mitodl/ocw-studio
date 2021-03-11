@@ -43,7 +43,7 @@ export default function SiteAddForm({
       validationSchema={websiteValidation}
       initialValues={initialValues}
     >
-      {({ isSubmitting, status }) => (
+      {({ isSubmitting, status, setFieldValue }) => (
         <Form className="row">
           <div className="col-6">
             {fieldsByColumn[0].map(configField => (
@@ -52,7 +52,11 @@ export default function SiteAddForm({
           </div>
           <div className="col-6">
             {fieldsByColumn[1].map(configField => (
-              <SiteContentField key={configField.name} field={configField} />
+              <SiteContentField
+                key={configField.name}
+                field={configField}
+                setFieldValue={setFieldValue}
+              />
             ))}
             <div className="form-group">
               <button
