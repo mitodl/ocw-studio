@@ -2,6 +2,7 @@
 
 from django.db import migrations
 
+
 def add_file_widget(apps, schema_editor):
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
     starter = WebsiteStarter.objects.filter(slug="course").first()
@@ -9,11 +10,9 @@ def add_file_widget(apps, schema_editor):
     if starter:
         for item in collections:
             if item["name"] == "resource":
-                item["fields"].append({
-                    "label": "File",
-                    "name": "file",
-                    "widget": "file"
-                })
+                item["fields"].append(
+                    {"label": "File", "name": "file", "widget": "file"}
+                )
         starter.config = {"collections": collections}
         starter.save()
 

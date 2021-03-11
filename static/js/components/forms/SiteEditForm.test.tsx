@@ -17,12 +17,14 @@ import { componentFromWidget } from "../../lib/site_content"
 describe("SiteEditForm", () => {
   let sandbox: SinonSandbox,
     onSubmitStub: SinonStub,
+    setFieldValueStub: SinonStub,
     configItem: ConfigItem,
     content: WebsiteContent,
     website: Website
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
+    setFieldValueStub = sinon.stub()
     website = makeWebsiteDetail()
     content = makeWebsiteContentDetail()
     // @ts-ignore
@@ -62,11 +64,21 @@ describe("SiteEditForm", () => {
     // @ts-ignore
     componentFromWidget.mockImplementation(() => widget)
 
-    const form = renderInnerForm()
+    const form = renderInnerForm({ setFieldValue: setFieldValueStub })
     let idx = 0
     for (const field of configItem.fields) {
       const fieldWrapper = form.find("SiteContentField").at(idx)
+      const setFieldValue =
+        fieldWrapper.find("SiteContentField").prop("name") === "markdown" ?
+          undefined :
+          setFieldValueStub
       expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
+      expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
+      if (fieldWrapper.find("SiteContentField").prop("name") !== "markdown") {
+        expect(
+          fieldWrapper.find("SiteContentField").prop("setFieldValue")
+        ).toBe(setFieldValue)
+      }
       idx++
     }
   })

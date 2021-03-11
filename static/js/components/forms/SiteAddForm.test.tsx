@@ -15,11 +15,13 @@ import { componentFromWidget } from "../../lib/site_content"
 describe("SiteAddForm", () => {
   let sandbox: SinonSandbox,
     onSubmitStub: SinonStub,
+    setFieldValueStub: SinonStub,
     configItem: ConfigItem,
     website: Website
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
+    setFieldValueStub = sinon.stub()
     website = makeWebsiteDetail()
     // @ts-ignore
     configItem = website.starter?.config?.collections.find(
@@ -57,12 +59,17 @@ describe("SiteAddForm", () => {
       configItem.fields.filter(field => field.widget !== "markdown")
     ]
 
-    const form = renderInnerForm()
+    const form = renderInnerForm({ setFieldValue: setFieldValueStub })
     let idx = 0
     for (const fieldGroup of fieldGroups) {
       for (const field of fieldGroup) {
         const fieldWrapper = form.find("SiteContentField").at(idx)
+        const setFieldValue =
+          field.widget === "markdown" ? undefined : setFieldValueStub
         expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
+        expect(
+          fieldWrapper.find("SiteContentField").prop("setFieldValue")
+        ).toBe(setFieldValue)
         idx++
       }
     }

@@ -55,6 +55,7 @@ describe("site_content", () => {
       // @ts-ignore
       const payload = contentInitialValues(content, fields)
       expect(payload).toStrictEqual({
+        file:        null,
         title:       content.title,
         description: content.metadata?.description,
         content:     content.markdown
