@@ -1,10 +1,10 @@
 import { ActionPromiseValue } from "redux-query"
 
 import {
+  filenameFromPath,
   isErrorStatusCode,
   isErrorResponse,
-  getResponseBodyError,
-  filenameFromPath
+  getResponseBodyError
 } from "./util"
 
 describe("util", () => {
