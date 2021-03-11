@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.6.2
+-------------
+
+- add CKEditor media embed plugin
+- File uploads API for WebsiteContent  (#100)
+- Page content UI (#94)
+
 Version 0.6.1 (Released March 09, 2021)
 -------------
 
