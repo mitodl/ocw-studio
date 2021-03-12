@@ -12,6 +12,10 @@
     1. [Element creator helper function](#element-creator-helper-function)
     1. [Element creator `Command`](#element-creator-command)
     1. [Putting the UI plugin together](#putting-the-ui-plugin-together)
+1. [Adding Markdown support](#adding-markdown-support)
+    1. [showdown for md->html](#showdown-for-md-html)
+    1. [turndown for html->md](#turndown-for-html-md)
+    1. [Writing a MarkdownSyntaxPlugin](#writing-a-markdownsyntaxplugin)
 1. [Pulling it all together](#pulling-it-all-together)
     1. [Adding a glue plugin](#Adding-a-glue-plugin)
     1. [Configuring CKEditor](#Configuring-CKEditor)
@@ -20,7 +24,7 @@
 
 ---
 
-This document describes how to add a custom plugin to CKEditor, using the example of embedding a Youtube video as a simple example.
+This document describes how to add a custom plugin to CKEditor, using the example of embedding a YouTube video as a simple example.
 
 A complete example showing the full implementation of this example can be found here: <https://github.com/mitodl/ocw-studio/commit/25f57c11540fd001a985b38fdd50a321fba67a4e>
 
@@ -134,7 +138,7 @@ class YoutubeEmbedEditing extends Plugin {
 }
 ```
 
-then we need to define three conversions by calling `conversion.for(TYPE).elementToElement`. First we'll do the `"upcast"`, which basically tells CKEditor how to recognize an HTML tag which we want to convert into a `"youtubeEmbed"`:
+Then we need to define three conversions by calling `conversion.for(TYPE).elementToElement`. First we'll do the `"upcast"`, which basically tells CKEditor how to recognize an HTML tag which we want to convert into a `"youtubeEmbed"`:
 
 ```ts
 const YOUTUBE_EMBED_CLASS = "youtube-embed"
@@ -312,7 +316,7 @@ Next up we need a `Command`, which runs this function and inserts the created el
 
 A `Command` is a class extending `@ckeditor/ckeditor5-core/src/command`. The main method to be concerned with is `execute`, which is where we actually call our `createYoutubeEmbed` function and insert the newly-created element into the document.
 
-This class is pretty straighforward overall. Note that the `.refresh` method here is boilerplate copied from the [block widget tutorial](https://ckeditor.com/docs/ckeditor5/latest/framework/guides/tutorials/implementing-a-block-widget.html).
+This class is pretty straightforward overall. Note that the `.refresh` method here is boilerplate copied from the [block widget tutorial](https://ckeditor.com/docs/ckeditor5/latest/framework/guides/tutorials/implementing-a-block-widget.html).
 
 ```ts
 export class InsertYoutubeEmbedCommand extends Command {
@@ -356,7 +360,7 @@ The dropdown menu looks like this:
 
 ![](assets/youtube-embed-ui.png)
 
-The user supplies a YouTube videoID and then clicking the 'save' button adds an embedded video to the editor view.
+The user supplies a YouTube video ID and then clicking the 'save' button adds an embedded video to the editor view.
 
 Here is an implementation of the UI plugin, with comments explaining what each part does:
 
@@ -430,22 +434,188 @@ class YoutubeEmbedUI extends Plugin {
 }
 ```
 
-Whew! We almost have everything we need now. We've got our schema changes registered, we've defined how to upcast and downcast our YouTube embed and how to represent it in the editor, and we've wired up everything we need to insert a fresh YouTube embed into the document. Great! Now we just need to do some final plumbing work to wrap it all up.
+Whew! We almost have everything we need now. We've got our schema changes
+registered, we've defined how to upcast and downcast our YouTube embed and how
+to represent it in the editor, and we've wired up everything we need to insert
+a fresh YouTube embed into the document. Great! Now we just need to do some
+final plumbing work to wrap it all up.
+
+## Adding Markdown support
+
+Since we're using our CKEditor setup to edit and save Markdown files we want to
+be able to support serializing and deserializing our YoutubeEmbed objects to
+and from Markdown. Our [Markdown
+plugin](https://github.com/mitodl/ocw-studio/blob/master/static/js/lib/ckeditor/plugins/Markdown.ts)
+is extensible, so we can easily write a plugin to extend the rules that it uses.
+
+We're using the libraries [showdown](https://github.com/showdownjs/) and
+[turndown](https://github.com/domchristie/turndown) for Markdown to HTML and
+HTML to Markdown, respectively. We'll define a rule for each that translates
+from Markdown syntax to the HTML that CKEditor uses to represent each node.
+
+We need to do this because we do not convert Markdown directly to CKEditor
+model objects. Instead, we convert Markdown to HTML, and then we use CKEditor's
+built-in facility to convert HTML to Model. This is based on how [CKEditor's
+first-party Markdown
+plugin](https://github.com/ckeditor/ckeditor5/tree/master/packages/ckeditor5-markdown-gfm)
+is implemented. You can see our implementation
+[here](https://github.com/mitodl/ocw-studio/blob/master/static/js/lib/ckeditor/plugins/Markdown.ts).
+
+For our example YoutubeEmbed type we'll represent it in Markdown with a Hugo-compatible shortcode, like this:
+
+```md
+{{< youtube LzC8c0Crpys >}}
+```
+
+We'll need to write rules to convert this to and from the HTML representation CKEditor expects, which looks like this:
+
+```html
+<section class="youtube-embed">LzC8c0Crpys</section>
+```
+
+### showdown for md->html
+
+[Showdown](https://github.com/showdownjs/showdown/) is an extensible library for converting
+Markdown to HTML. We selected it because it's extension library is particularly simple to work with.
+
+Here's how we can write a rule converting a Hugo-compatible YouTube shortcode
+to HTML which will be compatible with our CKEditor model:
+
+```ts
+export const YOUTUBE_SHORTCODE_REGEX = /{{< youtube (\S+) >}}/g
+
+function mediaEmbedExtension(): Showdown.ShowdownExtension[] {
+  return [
+    {
+      type:    "lang",
+      regex:   YOUTUBE_SHORTCODE_REGEX,
+      replace: (_: string, match: string) =>
+        `<section class="youtube-embed">
+          ${match}"
+        </section>`
+    }
+  ]
+}
+```
+
+You can find more documentation about Showdown extensions
+[here](https://github.com/showdownjs/showdown/wiki/extensions). Basically here
+we just define a regular expression to match our shortcode, then we write a
+`replace` function which takes the match to the capture group in our regular
+expression as an argument, and we return some HTML. Pretty simple!
+
+### turndown for html->md
+
+[Turndown](https://github.com/domchristie/turndown) is a pretty full-featured
+library for converting HTML into Markdown. We're using [CKEditor's custom
+turndown](https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-markdown-gfm/src/html2markdown/html2markdown.js)
+as a base, with some additional custom rules of our own.
+
+For our YoutubeEmbed plugin we'll need to write a Turndown rule to translate our
+`<section...` markup to to Markdown. Here's how we can do that:
+
+```ts
+{
+  name: "youtubeEmbed",
+  rule: {
+    filter:      "section",
+    replacement: (
+      content: string,
+      node: Turndown.Node,
+      _: Turndown.Options
+    ): string => {
+      const videoId = node.textContent
+
+      if (videoId) {
+        return `{{< youtube ${videoId} >}}\n`
+      } else {
+        return "\n\n"
+      }
+    }
+  }
+}
+```
+
+Basically we define a `filter` to match the right node type, and then we write
+a `replacement` function that takes the node as an argument and then returns a string
+which will be included in our Markdown.
+
+That's it! Once we have these two rules together we need to write a CKEditor plugin to get
+them into the configuration.
+
+### Writing a MarkdownSyntaxPlugin
+
+To get these rules added to the plugin we need to write a simple CKEditor plugin that extends
+a custom class we wrote called `MarkdownSyntaxPlugin`. You can check out it's implementation [here](https://github.com/mitodl/ocw-studio/blob/master/static/js/lib/ckeditor/plugins/MarkdownSyntaxPlugin.ts).
+
+Basically, it just provides a means for adding Showdown and Turndown rules in a predefined spot where our Markdown plugin
+can come along and grab them later. Using it is simple, here's how a plugin to add the rules we wrote above will look:
+
+```ts
+import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
+
+export const YOUTUBE_SHORTCODE_REGEX = /{{< youtube (\S+) >}}/g
+
+class YoutubeEmbedMarkdownSyntax extends MarkdownSyntaxPlugin {
+  get showdownExtension() {
+    return function mediaEmbedExtension(): Showdown.ShowdownExtension[] {
+      return [
+        {
+          type:    "lang",
+          regex:   YOUTUBE_SHORTCODE_REGEX,
+          replace: (_: string, match: string) =>
+            `<section class="youtube-embed">
+              ${match}"
+            </section>`
+        }
+      ]
+    }
+  }
+
+  get turndownRule(): TurndownRule {
+    return {
+      name: "youtubeEmbed",
+      rule: {
+        filter:      "section",
+        replacement: (
+          content: string,
+          node: Turndown.Node,
+          _: Turndown.Options
+        ): string => {
+          const videoId = node.textContent
+
+          if (videoId) {
+            return `{{< youtube ${videoId} >}}\n`
+          } else {
+            return "\n\n"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+And that's it! We'll add this in to our unified YoutubeEmbed plugin
+and our Markdown plugin will do the rest for us.
 
 ## Pulling it all together
 
-After everything above is in place there are only two things left: 1) writing a 'unified plugin' to pull in both the _editing plugin_ and the _ui plugin_ and 2) adding the plugin to our CKEditor configuration.
+After everything above is in place there are only two things left: 1) writing a
+'unified plugin' to pull in the _editing plugin_, the _ui plugin_, and the
+`Markdown syntax plugin` and 2) adding the plugin to our CKEditor configuration.
 
 ### Adding a glue plugin
 
-This is pretty straightforward. We just need another plugin which pulls in both of the plugins we wrote above. We'll use the `.requires`  property to do that.
+This is pretty straightforward. We just need another plugin which pulls in all
+of the plugins we wrote above. We'll use the `.requires`  property to do that.
 
 Here's how that looks:
 
 ```ts
 export default class YoutubeEmbed extends Plugin {
   static get requires() {
-    return [YoutubeEmbedEditing, YoutubeEmbedUI]
+    return [YoutubeEmbedEditing, YoutubeEmbedUI, YoutubeEmbedMarkdownSyntax]
   }
 }
 ```
