@@ -7,7 +7,7 @@ import SiteEditForm from "./SiteEditForm"
 import { defaultFormikChildProps } from "../../test_util"
 import {
   makeWebsiteContentDetail,
-  makeWebsite
+  makeWebsiteDetail
 } from "../../util/factories/websites"
 import { ConfigItem, Website, WebsiteContent } from "../../types/websites"
 
@@ -23,7 +23,7 @@ describe("SiteEditForm", () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-    website = makeWebsite()
+    website = makeWebsiteDetail()
     content = makeWebsiteContentDetail()
     // @ts-ignore
     configItem = website.starter?.config?.collections.find(

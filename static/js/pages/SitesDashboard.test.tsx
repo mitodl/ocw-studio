@@ -11,7 +11,10 @@ import {
 } from "../lib/urls"
 import { WebsiteListingResponse } from "../query-configs/websites"
 import { isIf } from "../test_util"
-import { makeWebsiteListing, makeWebsite } from "../util/factories/websites"
+import {
+  makeWebsiteListing,
+  makeWebsiteDetail
+} from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
@@ -123,14 +126,14 @@ describe("SitesDashboard", () => {
   describe("siteDescription", () => {
     it("makes description text for a site with metadata", () => {
       const site = {
-        ...makeWebsite(),
+        ...makeWebsiteDetail(),
         metadata: null
       }
       expect(siteDescription(site)).toBe(null)
     })
 
     it("makes description text for a site without metadata", () => {
-      const site = makeWebsite()
+      const site = makeWebsiteDetail()
       expect(siteDescription(site)).toBe(
         `${site.metadata.course_numbers[0]} - ${site.metadata.term}`
       )

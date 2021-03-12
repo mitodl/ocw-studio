@@ -11,7 +11,7 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 import {
   makeWebsiteContentListItem,
-  makeWebsite
+  makeWebsiteDetail
 } from "../util/factories/websites"
 
 import { Website, WebsiteContentListItem } from "../types/websites"
@@ -34,7 +34,7 @@ describe("SiteContentListing", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsite()
+    website = makeWebsiteDetail()
     const websitesLookup = { [website.name]: website }
     contentListingItems = [
       makeWebsiteContentListItem(),

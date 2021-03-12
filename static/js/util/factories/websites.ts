@@ -36,7 +36,7 @@ export const makeWebsiteStarter = (type = "course"): WebsiteStarter => ({
   config: makeWebsiteStarterConfig()
 })
 
-export const makeWebsite = (): Website => ({
+export const makeWebsiteDetail = (): Website => ({
   uuid:       casual.uuid,
   created_on: casual.moment.format(),
   updated_on: casual.moment.format(),
@@ -53,7 +53,7 @@ export const makeWebsite = (): Website => ({
 })
 
 export const makeWebsiteListing = (): Website[] =>
-  times(WEBSITES_PAGE_SIZE).map(() => makeWebsite())
+  times(WEBSITES_PAGE_SIZE).map(() => makeWebsiteDetail())
 
 export const makeWebsiteCollaborator = (): WebsiteCollaborator => ({
   name:     casual.name,

@@ -9,7 +9,7 @@ import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
 import {
-  makeWebsite,
+  makeWebsiteDetail,
   makeWebsiteCollaborator
 } from "../util/factories/websites"
 import { siteCollaboratorsUrl } from "../lib/urls"
@@ -35,7 +35,7 @@ describe("SiteCollaboratorEditPanel", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsite()
+    website = makeWebsiteDetail()
     collaborator = makeWebsiteCollaborator()
     historyPushStub = sinon.stub()
     const params = { username: collaborator.username, name: website.name }

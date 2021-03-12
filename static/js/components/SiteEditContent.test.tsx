@@ -12,7 +12,7 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 import {
   makeWebsiteContentDetail,
-  makeWebsite
+  makeWebsiteDetail
 } from "../util/factories/websites"
 
 import { ConfigItem, Website, WebsiteContent } from "../types/websites"
@@ -37,7 +37,7 @@ describe("SiteEditContent", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsite()
+    website = makeWebsiteDetail()
     content = makeWebsiteContentDetail()
     historyPushStub = helper.sandbox.stub()
     toggleVisibilityStub = helper.sandbox.stub()

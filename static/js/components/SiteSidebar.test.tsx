@@ -3,7 +3,7 @@ import { shallow } from "enzyme"
 
 import SiteSidebar from "./SiteSidebar"
 
-import { makeWebsite } from "../util/factories/websites"
+import { makeWebsiteDetail } from "../util/factories/websites"
 import { siteContentListingUrl } from "../lib/urls"
 
 import { Website } from "../types/websites"
@@ -13,7 +13,7 @@ describe("SiteSidebar", () => {
   let website: Website
 
   beforeEach(() => {
-    website = makeWebsite()
+    website = makeWebsiteDetail()
   })
 
   it("renders some links", () => {

@@ -7,7 +7,10 @@ import SiteCreationPage from "./SiteCreationPage"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
-import { makeWebsite, makeWebsiteStarter } from "../util/factories/websites"
+import {
+  makeWebsiteDetail,
+  makeWebsiteStarter
+} from "../util/factories/websites"
 import { siteDetailUrl } from "../lib/urls"
 
 import { Website, WebsiteStarter } from "../types/websites"
@@ -28,7 +31,7 @@ describe("SiteCreationPage", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     starters = [makeWebsiteStarter(), makeWebsiteStarter()]
-    website = makeWebsite()
+    website = makeWebsiteDetail()
     historyPushStub = sinon.stub()
     render = helper.configureRenderer(
       // @ts-ignore

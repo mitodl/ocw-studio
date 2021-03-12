@@ -10,7 +10,7 @@ import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
 import {
-  makeWebsite,
+  makeWebsiteDetail,
   makeWebsiteCollaborator
 } from "../util/factories/websites"
 
@@ -34,7 +34,7 @@ describe("SiteCollaboratorAddPanel", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsite()
+    website = makeWebsiteDetail()
     historyPushStub = sinon.stub()
     const params = { name: website.name }
     mockUseRouteMatch.mockImplementation(() => ({

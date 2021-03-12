@@ -11,7 +11,7 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 import {
   makeWebsiteContentDetail,
-  makeWebsite
+  makeWebsiteDetail
 } from "../util/factories/websites"
 
 import { ConfigItem, Website } from "../types/websites"
@@ -34,7 +34,7 @@ describe("SiteAddContent", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsite()
+    website = makeWebsiteDetail()
     historyPushStub = helper.sandbox.stub()
     // @ts-ignore
     configItem = website.starter?.config?.collections.find(

@@ -5,7 +5,7 @@ import SitePage from "./SitePage"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
-import { makeWebsite } from "../util/factories/websites"
+import { makeWebsiteDetail } from "../util/factories/websites"
 
 import { Website } from "../types/websites"
 
@@ -20,7 +20,7 @@ describe("SitePage", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsite()
+    website = makeWebsiteDetail()
     render = helper.configureRenderer(
       SitePage,
       {},

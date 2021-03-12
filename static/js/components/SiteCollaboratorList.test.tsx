@@ -11,7 +11,7 @@ import {
 } from "../lib/urls"
 import {
   makePermanentWebsiteCollaborator,
-  makeWebsite,
+  makeWebsiteDetail,
   makeWebsiteCollaborators
 } from "../util/factories/websites"
 import IntegrationTestHelper, {
@@ -38,7 +38,7 @@ describe("SiteCollaboratorList", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     historyPushStub = sinon.stub()
-    website = makeWebsite()
+    website = makeWebsiteDetail()
     collaborators = makeWebsiteCollaborators()
     permanentAdmins = [makePermanentWebsiteCollaborator()]
     render = helper.configureRenderer(
