@@ -41,7 +41,7 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_str=""):
     for resp in paginator.paginate(Bucket=bucket.name, Prefix=f"{prefix}"):
         for obj in resp["Contents"]:
             key = obj["Key"]
-            if key.endswith(".json") and (not filter_str or filter_str in key):
+            if key.endswith("course.json") and (not filter_str or filter_str in key):
                 yield key
 
 
@@ -139,9 +139,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     """
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
-    s3_content = json.loads(
-        get_s3_object_and_read(bucket.Object(f"{path}/data/course.json")).decode()
-    )
+    s3_content = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
     name = s3_content.get("course_id")
     try:
         publish_date = dateparser.parse(s3_content.get("publishdate", None))

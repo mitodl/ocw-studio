@@ -26,7 +26,7 @@ def test_import_ocw2hugo_course(settings):
     """ import_ocw2hugo_course should create a new website plus content"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
     website_starter = WebsiteStarterFactory.create()
     import_ocw2hugo_course(
         MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key, starter_id=website_starter.id
@@ -72,7 +72,7 @@ def test_import_ocw2hugo_course_bad_date(mocker, settings):
     """ Website publish date should be null if the JSON date can't be parsed """
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
     mocker.patch(
         "ocw_import.api.dateparser.parse", side_effect=["2021-01-01", ValueError()]
     )
@@ -87,7 +87,7 @@ def test_import_ocw2hugo_course_log_exception(mocker, settings):
     """ Log an exception if the website cannot be saved/updated """
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
     mocker.patch("ocw_import.api.dateparser.parse", return_value="Invalid date")
     mock_log = mocker.patch("ocw_import.api.log.exception")
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
@@ -101,7 +101,7 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     """ Log an exception if the website content cannot be saved/updated """
     setup_s3(settings)
     name = "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
     mocker.patch("ocw_import.api.uuid4", return_value="Invalid uuid")
     mock_log = mocker.patch("ocw_import.api.log.exception")
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
