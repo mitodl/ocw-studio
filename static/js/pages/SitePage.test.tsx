@@ -5,9 +5,9 @@ import SitePage from "./SitePage"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
-import { makeWebsiteDetail } from "../util/factories/websites"
+import { makeWebsite } from "../util/factories/websites"
 
-import { WebsiteDetail } from "../types/websites"
+import { Website } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -16,13 +16,11 @@ jest.mock("react-router-dom", () => ({
 }))
 
 describe("SitePage", () => {
-  let helper: IntegrationTestHelper,
-    render: TestRenderer,
-    website: WebsiteDetail
+  let helper: IntegrationTestHelper, render: TestRenderer, website: Website
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsiteDetail()
+    website = makeWebsite()
     render = helper.configureRenderer(
       SitePage,
       {},

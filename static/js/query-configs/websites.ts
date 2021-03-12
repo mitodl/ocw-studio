@@ -14,7 +14,6 @@ import {
 import {
   NewWebsitePayload,
   Website,
-  WebsiteDetail,
   WebsiteCollaborator,
   WebsiteCollaboratorFormData,
   WebsiteContent,
@@ -22,12 +21,9 @@ import {
   WebsiteStarter
 } from "../types/websites"
 
-interface WebsiteDetails {
-  [key: string]: WebsiteDetail
-}
-
+type WebsiteDetails = Record<string, Website>
 export const getTransformedWebsiteName = (
-  response: ActionPromiseValue<{ [key: string]: WebsiteDetails }>
+  response: ActionPromiseValue<Record<string, WebsiteDetails>>
 ): string | null => {
   const transformedWebsiteKeys = Object.keys(
     response.transformed?.websiteDetails || {}
@@ -63,7 +59,7 @@ export const websiteListingRequest = (offset: number): QueryConfig => ({
 
 export const websiteDetailRequest = (name: string): QueryConfig => ({
   url:       siteApiDetailUrl(name),
-  transform: (body: WebsiteDetail) => ({
+  transform: (body: Website) => ({
     websiteDetails: {
       [name]: body
     }
@@ -85,7 +81,7 @@ export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({
     }
   },
   body:      payload,
-  transform: (body: WebsiteDetail) => ({
+  transform: (body: Website) => ({
     websiteDetails: {
       [body.name]: body
     }
@@ -270,7 +266,7 @@ export type EditWebsiteContentPayload = {
   }
 }
 export const editWebsiteContentMutation = (
-  site: WebsiteDetail,
+  site: Website,
   uuid: string,
   contentType: string,
   payload: EditWebsiteContentPayload

@@ -14,7 +14,6 @@ import {
 
 import {
   Website,
-  WebsiteDetail,
   WebsiteCollaborator,
   WebsiteContent,
   WebsiteContentListItem,
@@ -37,7 +36,7 @@ export const makeWebsiteStarter = (type = "course"): WebsiteStarter => ({
   config: makeWebsiteStarterConfig()
 })
 
-export const makeWebsiteListingItem = (): Website => ({
+export const makeWebsite = (): Website => ({
   uuid:       casual.uuid,
   created_on: casual.moment.format(),
   updated_on: casual.moment.format(),
@@ -54,12 +53,7 @@ export const makeWebsiteListingItem = (): Website => ({
 })
 
 export const makeWebsiteListing = (): Website[] =>
-  times(WEBSITES_PAGE_SIZE).map(() => makeWebsiteListingItem())
-
-export const makeWebsiteDetail = (): WebsiteDetail => ({
-  ...makeWebsiteListingItem(),
-  is_admin: false
-})
+  times(WEBSITES_PAGE_SIZE).map(() => makeWebsite())
 
 export const makeWebsiteCollaborator = (): WebsiteCollaborator => ({
   name:     casual.name,

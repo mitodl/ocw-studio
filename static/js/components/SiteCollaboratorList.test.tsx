@@ -11,14 +11,14 @@ import {
 } from "../lib/urls"
 import {
   makePermanentWebsiteCollaborator,
-  makeWebsiteDetail,
+  makeWebsite,
   makeWebsiteCollaborators
 } from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
 
-import { WebsiteDetail, WebsiteCollaborator } from "../types/websites"
+import { Website, WebsiteCollaborator } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -29,7 +29,7 @@ jest.mock("react-router-dom", () => ({
 describe("SiteCollaboratorList", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    website: WebsiteDetail,
+    website: Website,
     collaborators: WebsiteCollaborator[],
     permanentAdmins: WebsiteCollaborator[],
     historyPushStub: SinonStub,
@@ -38,7 +38,7 @@ describe("SiteCollaboratorList", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     historyPushStub = sinon.stub()
-    website = makeWebsiteDetail()
+    website = makeWebsite()
     collaborators = makeWebsiteCollaborators()
     permanentAdmins = [makePermanentWebsiteCollaborator()]
     render = helper.configureRenderer(

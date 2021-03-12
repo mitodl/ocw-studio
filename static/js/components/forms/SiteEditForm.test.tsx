@@ -7,9 +7,9 @@ import SiteEditForm from "./SiteEditForm"
 import { defaultFormikChildProps } from "../../test_util"
 import {
   makeWebsiteContentDetail,
-  makeWebsiteDetail
+  makeWebsite
 } from "../../util/factories/websites"
-import { ConfigItem, WebsiteDetail, WebsiteContent } from "../../types/websites"
+import { ConfigItem, Website, WebsiteContent } from "../../types/websites"
 
 jest.mock("../../lib/site_content")
 import { componentFromWidget } from "../../lib/site_content"
@@ -19,11 +19,11 @@ describe("SiteEditForm", () => {
     onSubmitStub: SinonStub,
     configItem: ConfigItem,
     content: WebsiteContent,
-    website: WebsiteDetail
+    website: Website
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-    website = makeWebsiteDetail()
+    website = makeWebsite()
     content = makeWebsiteContentDetail()
     // @ts-ignore
     configItem = website.starter?.config?.collections.find(

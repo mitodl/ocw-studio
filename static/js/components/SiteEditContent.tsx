@@ -14,7 +14,7 @@ import SiteEditForm from "./forms/SiteEditForm"
 import { contentFormValuesToPayload } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 
-import { ConfigItem, WebsiteDetail } from "../types/websites"
+import { ConfigItem, Website } from "../types/websites"
 
 type SiteFormValues = {
   [key: string]: string
@@ -24,7 +24,7 @@ interface Props {
   uuid: string
   visibility: boolean
   toggleVisibility: () => void
-  site: WebsiteDetail
+  site: Website
   configItem: ConfigItem
 }
 export default function SiteEditContent(props: Props): JSX.Element | null {

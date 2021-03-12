@@ -4,9 +4,9 @@ import { shallow } from "enzyme"
 
 import SiteAddForm from "./SiteAddForm"
 
-import { ConfigItem, WebsiteDetail } from "../../types/websites"
+import { ConfigItem, Website } from "../../types/websites"
 import { defaultFormikChildProps } from "../../test_util"
-import { makeWebsiteDetail } from "../../util/factories/websites"
+import { makeWebsite } from "../../util/factories/websites"
 import { CONTENT_TYPE_PAGE } from "../../constants"
 
 jest.mock("../../lib/site_content")
@@ -16,11 +16,11 @@ describe("SiteAddForm", () => {
   let sandbox: SinonSandbox,
     onSubmitStub: SinonStub,
     configItem: ConfigItem,
-    website: WebsiteDetail
+    website: Website
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-    website = makeWebsiteDetail()
+    website = makeWebsite()
     // @ts-ignore
     configItem = website.starter?.config?.collections.find(
       item => item.name === CONTENT_TYPE_PAGE

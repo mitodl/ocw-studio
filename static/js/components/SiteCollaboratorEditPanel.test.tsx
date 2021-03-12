@@ -9,12 +9,12 @@ import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
 import {
-  makeWebsiteDetail,
+  makeWebsite,
   makeWebsiteCollaborator
 } from "../util/factories/websites"
 import { siteCollaboratorsUrl } from "../lib/urls"
 
-import { WebsiteDetail, WebsiteCollaborator } from "../types/websites"
+import { Website, WebsiteCollaborator } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -25,7 +25,7 @@ jest.mock("react-router-dom", () => ({
 describe("SiteCollaboratorEditPanel", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    website: WebsiteDetail,
+    website: Website,
     historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub },
     editCollaboratorStub: SinonStub,
@@ -35,7 +35,7 @@ describe("SiteCollaboratorEditPanel", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsiteDetail()
+    website = makeWebsite()
     collaborator = makeWebsiteCollaborator()
     historyPushStub = sinon.stub()
     const params = { username: collaborator.username, name: website.name }

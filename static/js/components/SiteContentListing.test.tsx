@@ -11,10 +11,10 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 import {
   makeWebsiteContentListItem,
-  makeWebsiteDetail
+  makeWebsite
 } from "../util/factories/websites"
 
-import { WebsiteDetail, WebsiteContentListItem } from "../types/websites"
+import { Website, WebsiteContentListItem } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -28,13 +28,13 @@ jest.mock("./MarkdownEditor", () => "div")
 describe("SiteContentListing", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    website: WebsiteDetail,
+    website: Website,
     contentType: string,
     contentListingItems: WebsiteContentListItem[]
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsiteDetail()
+    website = makeWebsite()
     const websitesLookup = { [website.name]: website }
     contentListingItems = [
       makeWebsiteContentListItem(),

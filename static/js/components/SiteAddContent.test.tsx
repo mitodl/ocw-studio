@@ -11,10 +11,10 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 import {
   makeWebsiteContentDetail,
-  makeWebsiteDetail
+  makeWebsite
 } from "../util/factories/websites"
 
-import { ConfigItem, WebsiteDetail } from "../types/websites"
+import { ConfigItem, Website } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -27,14 +27,14 @@ jest.mock("./MarkdownEditor", () => "div")
 describe("SiteAddContent", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    website: WebsiteDetail,
+    website: Website,
     configItem: ConfigItem,
     historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub }
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsiteDetail()
+    website = makeWebsite()
     historyPushStub = helper.sandbox.stub()
     // @ts-ignore
     configItem = website.starter?.config?.collections.find(

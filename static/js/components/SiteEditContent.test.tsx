@@ -12,10 +12,10 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 import {
   makeWebsiteContentDetail,
-  makeWebsiteDetail
+  makeWebsite
 } from "../util/factories/websites"
 
-import { ConfigItem, WebsiteDetail, WebsiteContent } from "../types/websites"
+import { ConfigItem, Website, WebsiteContent } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -28,7 +28,7 @@ jest.mock("./MarkdownEditor", () => "div")
 describe("SiteEditContent", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    website: WebsiteDetail,
+    website: Website,
     configItem: ConfigItem,
     historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub },
@@ -37,7 +37,7 @@ describe("SiteEditContent", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    website = makeWebsiteDetail()
+    website = makeWebsite()
     content = makeWebsiteContentDetail()
     historyPushStub = helper.sandbox.stub()
     toggleVisibilityStub = helper.sandbox.stub()

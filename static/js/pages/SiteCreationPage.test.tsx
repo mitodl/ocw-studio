@@ -7,13 +7,10 @@ import SiteCreationPage from "./SiteCreationPage"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
-import {
-  makeWebsiteDetail,
-  makeWebsiteStarter
-} from "../util/factories/websites"
+import { makeWebsite, makeWebsiteStarter } from "../util/factories/websites"
 import { siteDetailUrl } from "../lib/urls"
 
-import { WebsiteDetail, WebsiteStarter } from "../types/websites"
+import { Website, WebsiteStarter } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -25,13 +22,13 @@ describe("SiteCreationPage", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     starters: Array<WebsiteStarter>,
-    website: WebsiteDetail,
+    website: Website,
     historyPushStub: SinonStub
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     starters = [makeWebsiteStarter(), makeWebsiteStarter()]
-    website = makeWebsiteDetail()
+    website = makeWebsite()
     historyPushStub = sinon.stub()
     render = helper.configureRenderer(
       // @ts-ignore

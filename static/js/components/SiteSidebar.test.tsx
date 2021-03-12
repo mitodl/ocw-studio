@@ -3,17 +3,17 @@ import { shallow } from "enzyme"
 
 import SiteSidebar from "./SiteSidebar"
 
-import { makeWebsiteDetail } from "../util/factories/websites"
+import { makeWebsite } from "../util/factories/websites"
 import { siteContentListingUrl } from "../lib/urls"
 
-import { WebsiteDetail } from "../types/websites"
+import { Website } from "../types/websites"
 import { CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE } from "../constants"
 
 describe("SiteSidebar", () => {
-  let website: WebsiteDetail
+  let website: Website
 
   beforeEach(() => {
-    website = makeWebsiteDetail()
+    website = makeWebsite()
   })
 
   it("renders some links", () => {
