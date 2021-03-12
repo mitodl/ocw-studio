@@ -5,6 +5,8 @@ CONTENT_TYPE_RESOURCE = "resource"
 CONTENT_TYPES = [CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE]
 
 COURSE_HOME = "course-home"
+COURSE_PAGE_LAYOUTS = ["course_home", "course_section", "instructor_insights"]
+COURSE_RESOURCE_LAYOUTS = ["pdf", "video"]
 
 WEBSITE_SOURCE_STUDIO = "studio"
 WEBSITE_SOURCE_OCW_IMPORT = "ocw-import"
