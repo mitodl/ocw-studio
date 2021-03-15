@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.6.2
+Version 0.6.2 (Released March 15, 2021)
 -------------
 
 - add CKEditor media embed plugin
