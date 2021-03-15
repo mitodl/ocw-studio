@@ -48,28 +48,27 @@ turndownService.rules.blankRule.replacement = (
 // extra spaces to the beginning of a list item. So it maps
 // "<ul><li>item</li></ul>" -> "-   item" instead of "- item"
 // see https://github.com/domchristie/turndown/issues/291
-turndownService.addRule("listItem", {
-  filter:      "li",
-  replacement: (
-    content: string,
-    node: Turndown.Node,
-    options: Turndown.Options
-  ) => {
-    content = content
-      .replace(/^\n+/, "") // remove leading newlines
-      .replace(/\n+$/, "\n") // replace trailing newlines with just a single one
-      .replace(/\n/gm, "\n    ") // indent
+//
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+turndownService.rules.array.find(rule => rule.filter === "li")!.replacement = (
+  content: string,
+  node: Turndown.Node,
+  options: Turndown.Options
+) => {
+  content = content
+    .replace(/^\n+/, "") // remove leading newlines
+    .replace(/\n+$/, "\n") // replace trailing newlines with just a single one
+    .replace(/\n/gm, "\n    ") // indent
 
-    let prefix = `${options.bulletListMarker} `
-    const parent = node.parentNode
-    if (parent && parent.nodeName === "OL") {
-      // @ts-ignore
-      const start: string = parent.getAttribute("start")
-      const index = Array.prototype.indexOf.call(parent.children, node)
-      prefix = `${start ? Number(start) + index : index + 1}. `
-    }
-    return (
-      prefix + content + (node.nextSibling && !/\n$/.test(content) ? "\n" : "")
-    )
+  let prefix = `${options.bulletListMarker} `
+  const parent = node.parentNode
+  if (parent && parent.nodeName === "OL") {
+    // @ts-ignore
+    const start: string = parent.getAttribute("start")
+    const index = Array.prototype.indexOf.call(parent.children, node)
+    prefix = `${start ? Number(start) + index : index + 1}. `
   }
-})
+  return (
+    prefix + content + (node.nextSibling && !/\n$/.test(content) ? "\n" : "")
+  )
+}

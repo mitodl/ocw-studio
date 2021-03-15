@@ -25,4 +25,17 @@ describe("turndown service", () => {
     })
     turndownTest("<figure></figure>", "This rule is being used")
   })
+
+  it("supports a two-item list", () => {
+    turndownTest(
+      "<ul><li>first item</li><li>second item</li></ul>",
+      "- first item\n- second item"
+    )
+  })
+
+  // regression test for the bug documented in
+  // https://github.com/mitodl/ocw-studio/issues/113
+  it("shouldn't blow up if there's an empty list item", () => {
+    turndownTest("<ul><li>first item</li><li></li></ul>", "- first item\n-")
+  })
 })
