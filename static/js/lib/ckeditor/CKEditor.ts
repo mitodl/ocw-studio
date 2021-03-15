@@ -1,4 +1,3 @@
-import ClassicEditorBase from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
 import EssentialsPlugin from "@ckeditor/ckeditor5-essentials/src/essentials"
 import UploadAdapterPlugin from "@ckeditor/ckeditor5-adapter-ckfinder/src/uploadadapter"
 import AutoformatPlugin from "@ckeditor/ckeditor5-autoformat/src/autoformat"
@@ -20,31 +19,28 @@ import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import Markdown from "./plugins/Markdown"
 import MarkdownMediaEmbed from "./plugins/MarkdownMediaEmbed"
 
-class ClassicEditor extends ClassicEditorBase {}
-
-ClassicEditor.builtinPlugins = [
-  EssentialsPlugin,
-  UploadAdapterPlugin,
-  AutoformatPlugin,
-  BoldPlugin,
-  ItalicPlugin,
-  UnderlinePlugin,
-  BlockQuotePlugin,
-  EasyImagePlugin,
-  HeadingPlugin,
-  ImagePlugin,
-  ImageCaptionPlugin,
-  ImageStylePlugin,
-  ImageToolbarPlugin,
-  ImageUploadPlugin,
-  LinkPlugin,
-  ListPlugin,
-  ParagraphPlugin,
-  MarkdownMediaEmbed,
-  Markdown
-]
-
-ClassicEditor.defaultConfig = {
+export const FullEditorConfig = {
+  plugins: [
+    EssentialsPlugin,
+    UploadAdapterPlugin,
+    AutoformatPlugin,
+    BoldPlugin,
+    ItalicPlugin,
+    UnderlinePlugin,
+    BlockQuotePlugin,
+    EasyImagePlugin,
+    HeadingPlugin,
+    ImagePlugin,
+    ImageCaptionPlugin,
+    ImageStylePlugin,
+    ImageToolbarPlugin,
+    ImageUploadPlugin,
+    LinkPlugin,
+    ListPlugin,
+    ParagraphPlugin,
+    MarkdownMediaEmbed,
+    Markdown
+  ],
   toolbar: {
     items: [
       "heading",
@@ -80,4 +76,32 @@ ClassicEditor.defaultConfig = {
   }
 }
 
-export default ClassicEditor
+export const MinimalEditorConfig = {
+  plugins: [
+    EssentialsPlugin,
+    UploadAdapterPlugin,
+    AutoformatPlugin,
+    BoldPlugin,
+    ItalicPlugin,
+    UnderlinePlugin,
+    BlockQuotePlugin,
+    LinkPlugin,
+    ListPlugin,
+    ParagraphPlugin,
+    Markdown
+  ],
+  toolbar: {
+    items: [
+      "bold",
+      "italic",
+      "underline",
+      "link",
+      "bulletedList",
+      "numberedList",
+      "blockQuote",
+      "undo",
+      "redo"
+    ]
+  },
+  language: "en"
+}

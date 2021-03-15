@@ -8,6 +8,7 @@ import { ConfigField } from "../../types/websites"
 interface Props {
   field: ConfigField
 }
+
 export default function SiteContentField({ field }: Props): JSX.Element {
   return (
     <div className="form-group">
