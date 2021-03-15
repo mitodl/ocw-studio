@@ -7,27 +7,27 @@ import { ReduxState } from "../reducers"
 
 import { WebsiteStarter } from "../types/websites"
 
+export const getWebsiteDetailCursor = createSelector(
+  (state: ReduxState) => state.entities?.websiteDetails ?? {},
+  websiteDetails => memoize((name: string) => websiteDetails[name])
+)
+
 export const getWebsiteListingCursor = createSelector(
-  (state: ReduxState) => ({
-    listing: state.entities?.websitesListing ?? {},
-    details: state.entities?.websiteDetails ?? {}
-  }),
-  lookup =>
+  (state: ReduxState) => state ?? {},
+  state =>
     memoize((offset: number) => {
-      const response = lookup.listing[offset] ?? {}
+      const listing = state.entities?.websitesListing ?? {}
+      const response = listing[offset] ?? {}
       const names = response?.results ?? []
-      const sites = names.map((name: string) => lookup.details[name])
+      const sites = names.map((name: string) =>
+        getWebsiteDetailCursor(state)(name)
+      )
 
       return {
         ...response,
         results: sites
       }
     })
-)
-
-export const getWebsiteDetailCursor = createSelector(
-  (state: ReduxState) => state.entities?.websiteDetails ?? {},
-  websiteDetails => memoize((name: string) => websiteDetails[name])
 )
 
 export const startersSelector = (state: ReduxState): Array<WebsiteStarter> =>
