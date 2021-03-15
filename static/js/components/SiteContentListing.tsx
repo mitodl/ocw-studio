@@ -1,14 +1,11 @@
 import React, { MouseEvent as ReactMouseEvent, useState } from "react"
-import {
-  useRouteMatch,
-  NavLink,
-  RouteComponentProps,
-  Link
-} from "react-router-dom"
+import { useRouteMatch, NavLink, useLocation } from "react-router-dom"
 import { useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
 
 import SiteEditContent from "./SiteEditContent"
+import PaginationControls from "./PaginationControls"
+import Card from "./Card"
 
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 import { siteAddContentUrl, siteContentListingUrl } from "../lib/urls"
@@ -27,15 +24,12 @@ interface MatchParams {
   contenttype: string
   name: string
 }
-export default function SiteContentListing(
-  props: RouteComponentProps<Record<string, never>>
-): JSX.Element | null {
+export default function SiteContentListing(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
-  const {
-    location: { search }
-  } = props
+  const { search } = useLocation()
   const offset = Number(new URLSearchParams(search).get("offset") ?? 0)
   const { contenttype, name } = match.params
+
   const website = useSelector(getWebsiteDetailCursor)(name)
   const [{ isPending: contentListingPending }] = useRequest(
     websiteContentListingRequest(name, contenttype, offset)
@@ -82,69 +76,57 @@ export default function SiteContentListing(
           toggleVisibility={toggleEditVisibility}
         />
       ) : null}
-      <div className="px-4">
-        <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
-          <h3>
+      <div>
+        <Card>
+          <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
+            <h3>
+              <NavLink
+                to={siteContentListingUrl
+                  .param({ name, contentType: contenttype })
+                  .toString()}
+              >
+                {configItem.label}
+              </NavLink>
+            </h3>
             <NavLink
-              to={siteContentListingUrl
+              className="btn blue-button"
+              to={siteAddContentUrl
                 .param({ name, contentType: contenttype })
                 .toString()}
             >
-              {configItem.label}
+              Add {configItem.label}
             </NavLink>
-          </h3>
-          <NavLink
-            to={siteAddContentUrl
-              .param({ name, contentType: contenttype })
-              .toString()}
-          >
-            Add {configItem.label}
-          </NavLink>
-        </div>
-        <ul>
-          {listing.results.map((item: WebsiteContentListItem) => (
-            <li key={item.uuid}>
-              <div className="d-flex flex-direction-row align-items-center justify-content-between">
-                <span>{item.title}</span>
-                <a className="edit" onClick={startEdit(item.uuid)}>
-                  Edit
-                </a>
-              </div>
-              <hr />
-            </li>
-          ))}
-        </ul>
-        <div className="pagination justify-content-center">
-          {listing.previous ? (
-            <Link
-              to={siteContentListingUrl
-                .param({
-                  name,
-                  contentType: contenttype
-                })
-                .query({ offset: offset - WEBSITE_CONTENT_PAGE_SIZE })
-                .toString()}
-              className="previous"
-            >
-              <i className="material-icons">keyboard_arrow_left</i>
-            </Link>
-          ) : null}
-          &nbsp;
-          {listing.next ? (
-            <Link
-              to={siteContentListingUrl
-                .param({
-                  name,
-                  contentType: contenttype
-                })
-                .query({ offset: offset + WEBSITE_CONTENT_PAGE_SIZE })
-                .toString()}
-              className="next"
-            >
-              <i className="material-icons">keyboard_arrow_right</i>
-            </Link>
-          ) : null}
-        </div>
+          </div>
+          <ul className="ruled-list">
+            {listing.results.map((item: WebsiteContentListItem) => (
+              <li key={item.uuid} className="py-3">
+                <div className="d-flex flex-direction-row align-items-center justify-content-between">
+                  <span>{item.title}</span>
+                  <a className="edit" onClick={startEdit(item.uuid)}>
+                    Edit
+                  </a>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        <PaginationControls
+          listing={listing}
+          previous={siteContentListingUrl
+            .param({
+              name,
+              contentType: contenttype
+            })
+            .query({ offset: offset - WEBSITE_CONTENT_PAGE_SIZE })
+            .toString()}
+          next={siteContentListingUrl
+            .param({
+              name,
+              contentType: contenttype
+            })
+            .query({ offset: offset + WEBSITE_CONTENT_PAGE_SIZE })
+            .toString()}
+        />
       </div>
     </>
   )

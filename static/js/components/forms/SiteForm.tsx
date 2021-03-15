@@ -43,16 +43,12 @@ export const SiteForm = ({
       {({ isSubmitting, status }) => (
         <Form>
           <div className="form-group">
-            <label htmlFor="title" className="font-weight-bold">
-              Title*
-            </label>
+            <label htmlFor="title">Title*</label>
             <Field type="text" name="title" className="form-control" />
             <ErrorMessage name="title" component="div" />
           </div>
           <div className="form-group">
-            <label htmlFor="starter" className="font-weight-bold">
-              Starter*
-            </label>
+            <label htmlFor="starter">Starter*</label>
             <Field component="select" name="starter" className="form-control">
               {websiteStarters.length > 0 ? (
                 websiteStarters.map((starter, i) => (
@@ -67,8 +63,12 @@ export const SiteForm = ({
             </Field>
             <ErrorMessage name="starter" component="div" />
           </div>
-          <div className="form-group">
-            <button type="submit" disabled={isSubmitting}>
+          <div className="form-group d-flex justify-content-end">
+            <button
+              type="submit"
+              className="btn blue-button"
+              disabled={isSubmitting}
+            >
               Submit
             </button>
           </div>

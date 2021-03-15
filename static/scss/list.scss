@@ -1,0 +1,18 @@
+.ruled-list {
+  padding: 0;
+  list-style: none;
+
+  li {
+    &:first-child {
+      padding-top: 0 !important;
+    }
+
+    &:last-child {
+      padding-bottom: 0 !important;
+    }
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $studio-gray;
+    }
+  }
+}

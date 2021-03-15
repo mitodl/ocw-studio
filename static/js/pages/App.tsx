@@ -14,14 +14,16 @@ export default function App(): JSX.Element {
   return (
     <div className="app">
       <Header />
-      <Switch>
-        <Route exact path="/new-site" component={SiteCreationPage} />
-        <Route exact path="/sites" component={SitesDashboard} />
-        <Route path="/sites/:name" component={SitePage} />
-        <Route path="/markdown-editor">
-          <MarkdownEditorTestPage />
-        </Route>
-      </Switch>
+      <div className="page-content">
+        <Switch>
+          <Route exact path="/new-site" component={SiteCreationPage} />
+          <Route exact path="/sites" component={SitesDashboard} />
+          <Route path="/sites/:name" component={SitePage} />
+          <Route path="/markdown-editor">
+            <MarkdownEditorTestPage />
+          </Route>
+        </Switch>
+      </div>
     </div>
   )
 }

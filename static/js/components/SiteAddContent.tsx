@@ -1,10 +1,11 @@
 import React from "react"
-import { useRouteMatch, RouteComponentProps } from "react-router-dom"
+import { useRouteMatch, useHistory } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { FormikHelpers } from "formik"
 import { useMutation } from "redux-query-react"
 
 import SiteAddContentForm from "./forms/SiteAddContentForm"
+import Card from "./Card"
 
 import { contentFormValuesToPayload } from "../lib/site_content"
 import { siteContentListingUrl } from "../lib/urls"
@@ -21,10 +22,12 @@ interface MatchParams {
   contenttype: string
   name: string
 }
-type Props = RouteComponentProps<Record<string, never>>
-export default function SiteAddContent({ history }: Props): JSX.Element | null {
+
+export default function SiteAddContent(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
+  const history = useHistory()
   const { contenttype, name } = match.params
+
   const website = useSelector(getWebsiteDetailCursor)(name)
   const [
     { isPending },
@@ -81,11 +84,11 @@ export default function SiteAddContent({ history }: Props): JSX.Element | null {
   }
 
   return (
-    <div>
+    <Card>
       <h3>New {configItem.label}</h3>
       <div>
         <SiteAddContentForm onSubmit={onSubmitForm} configItem={configItem} />
       </div>
-    </div>
+    </Card>
   )
 }

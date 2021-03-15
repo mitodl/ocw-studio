@@ -34,21 +34,17 @@ describe("SiteCollaboratorList", () => {
     website: Website,
     collaborators: WebsiteCollaborator[],
     permanentAdmins: WebsiteCollaborator[],
-    historyPushStub: SinonStub,
     deleteCollaboratorStub: SinonStub
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    historyPushStub = sinon.stub()
     website = makeWebsiteDetail()
     collaborators = makeWebsiteCollaborators()
     permanentAdmins = [makePermanentWebsiteCollaborator()]
     render = helper.configureRenderer(
       // @ts-ignore
       SiteCollaboratorList,
-      {
-        history: { push: historyPushStub }
-      },
+      {},
       {
         entities: {
           websites:      { website },
@@ -101,14 +97,12 @@ describe("SiteCollaboratorList", () => {
 
   it("the edit collaborator icon sends the user to the correct url", async () => {
     const { wrapper } = await render()
-    const editIcon = wrapper
+    const editLink = wrapper
       .find("tr")
       .at(0)
-      .find("i")
+      .find(".edit-link")
       .at(0)
-    editIcon.simulate("click")
-    sinon.assert.calledOnceWithExactly(
-      historyPushStub,
+    expect(editLink.prop("to")).toBe(
       siteCollaboratorsDetailUrl
         .param({
           name:     website.name,
@@ -160,13 +154,11 @@ describe("SiteCollaboratorList", () => {
 
   it("the add collaborator button sends the user to the correct url", async () => {
     const { wrapper } = await render()
-    wrapper
-      .find(".collaborator-add-btn")
-      .find("button")
-      .simulate("click")
-    sinon.assert.calledOnceWithExactly(
-      historyPushStub,
-      siteCollaboratorsAddUrl.param({ name: website.name }).toString()
-    )
+    expect(
+      wrapper
+        .find(".collaborator-add-btn")
+        .at(0)
+        .prop("to")
+    ).toBe(siteCollaboratorsAddUrl.param({ name: website.name }).toString())
   })
 })

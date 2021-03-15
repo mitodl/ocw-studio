@@ -69,9 +69,7 @@ export default function SiteCollaboratorForm({
             </div>
           )}
           <div className="form-group">
-            <label htmlFor="role" className="font-weight-bold">
-              Role*
-            </label>
+            <label htmlFor="role">Role*</label>
             <Field
               component="select"
               name="role"
@@ -87,8 +85,12 @@ export default function SiteCollaboratorForm({
             </Field>
             <ErrorMessage name="role" />
           </div>
-          <div className="form-group">
-            <button type="submit" disabled={isSubmitting}>
+          <div className="form-group d-flex justify-content-end">
+            <button
+              type="submit"
+              className="btn blue-button"
+              disabled={isSubmitting}
+            >
               Save
             </button>
           </div>

@@ -9,6 +9,7 @@ import SiteCollaboratorList from "../components/SiteCollaboratorList"
 import SiteCollaboratorEditPanel from "../components/SiteCollaboratorEditPanel"
 import SiteCollaboratorAddPanel from "../components/SiteCollaboratorAddPanel"
 import SiteAddContent from "../components/SiteAddContent"
+import Card from "../components/Card"
 
 import { websiteDetailRequest } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
@@ -19,6 +20,7 @@ interface MatchParams {
 export default function SitePage(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
   const { name } = match.params
+
   const [{ isPending }] = useRequest(websiteDetailRequest(name))
   const website = useSelector(getWebsiteDetailCursor)(name)
   if (!website) {
@@ -33,33 +35,26 @@ export default function SitePage(): JSX.Element | null {
     <div className="site-page std-page-body container">
       <h3>{website.title}</h3>
       <div className="content-container">
-        <div className="sidebar">
+        <Card>
           <SiteSidebar website={website} />
-        </div>
-        <div className="content">
+        </Card>
+        <div className="content pl-3">
           <Switch>
-            <Route
-              path={`${match.path}/collaborators/add/`}
-              component={SiteCollaboratorAddPanel}
-            />
-            <Route
-              path={`${match.path}/collaborators/:username/`}
-              component={SiteCollaboratorEditPanel}
-            />
-            <Route
-              path={`${match.path}/collaborators/`}
-              component={SiteCollaboratorList}
-            />
-            <Route
-              exact
-              path={`${match.path}/:contenttype`}
-              component={SiteContentListing}
-            />
-            <Route
-              exact
-              path={`${match.path}/:contenttype/add/`}
-              component={SiteAddContent}
-            />
+            <Route path={`${match.path}/collaborators/new/`}>
+              <SiteCollaboratorAddPanel />
+            </Route>
+            <Route path={`${match.path}/collaborators/:username/`}>
+              <SiteCollaboratorEditPanel />
+            </Route>
+            <Route path={`${match.path}/collaborators/`}>
+              <SiteCollaboratorList />
+            </Route>
+            <Route exact path={`${match.path}/:contenttype`}>
+              <SiteContentListing />
+            </Route>
+            <Route exact path={`${match.path}/:contenttype/add/`}>
+              <SiteAddContent />
+            </Route>
           </Switch>
         </div>
       </div>

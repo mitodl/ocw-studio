@@ -114,15 +114,19 @@ This command will only work if you have the following:
 1. The name of the AWS bucket which contains the course data. Ask a fellow developer for this.
 1. Valid settings for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. As with other settings, these should be
    specified in your `.env` file. You can copy these from heroku, or ask a fellow developer for them.
-   
+
 Some example commands:
+
 ```bash
 # List the data file names of all available course sites
 manage.py import_ocw_course_sites -b <bucket_name> --list
+
 # List the data file names of all course sites that match a filter
 manage.py import_ocw_course_sites -b <bucket_name> --filter frameworks-of-urban-governance --list 
+
 # Import course sites with a data file name that matches a filter
 manage.py import_ocw_course_sites -b <bucket_name> --filter frameworks-of-urban-governance 
+
 # Import ALL course sites (this will take quite a while)
 manage.py import_ocw_course_sites -b <bucket_name>
 ```

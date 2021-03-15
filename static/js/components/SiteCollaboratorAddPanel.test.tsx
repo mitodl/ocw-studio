@@ -26,7 +26,6 @@ describe("SiteCollaboratorAddPanel", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     website: Website,
-    historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub },
     createCollaboratorStub: SinonStub
 
@@ -35,7 +34,6 @@ describe("SiteCollaboratorAddPanel", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
-    historyPushStub = sinon.stub()
     const params = { name: website.name }
     mockUseRouteMatch.mockImplementation(() => ({
       params
@@ -48,9 +46,7 @@ describe("SiteCollaboratorAddPanel", () => {
     render = helper.configureRenderer(
       // @ts-ignore
       SiteCollaboratorAddPanel,
-      {
-        history: { push: historyPushStub }
-      },
+      {},
       {
         entities: {
           collaborators: {
@@ -99,8 +95,7 @@ describe("SiteCollaboratorAddPanel", () => {
     })
     sinon.assert.calledOnce(createCollaboratorStub)
     sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
-    sinon.assert.calledOnceWithExactly(
-      historyPushStub,
+    expect(helper.browserHistory.location.pathname).toBe(
       siteCollaboratorsUrl.param({ name: website.name }).toString()
     )
   })
@@ -139,7 +134,7 @@ describe("SiteCollaboratorAddPanel", () => {
     sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
       ...errorResp.errors
     })
-    sinon.assert.notCalled(historyPushStub)
+    expect(helper.browserHistory.location.pathname).toBe("/")
   })
 
   it("sets form error if the API request fails with a string error message", async () => {
@@ -171,6 +166,6 @@ describe("SiteCollaboratorAddPanel", () => {
     })
     sinon.assert.calledOnce(createCollaboratorStub)
     sinon.assert.calledOnceWithExactly(formikStubs.setStatus, errorMsg)
-    sinon.assert.notCalled(historyPushStub)
+    expect(helper.browserHistory.location.pathname).toBe("/")
   })
 })

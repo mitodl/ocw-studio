@@ -1,12 +1,10 @@
 .sites-dashboard {
   .content {
     flex-grow: 1;
-    border: 1px solid black;
     padding: 15px;
+  }
 
-    ul {
-      padding: 0;
-      list-style: none;
-    }
+  .site-description {
+    color: $studio-text-gray;
   }
 }

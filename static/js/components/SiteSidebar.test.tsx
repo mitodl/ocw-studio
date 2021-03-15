@@ -1,22 +1,28 @@
-import React from "react"
-import { shallow } from "enzyme"
-
 import SiteSidebar from "./SiteSidebar"
 
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { siteCollaboratorsUrl, siteContentListingUrl } from "../lib/urls"
+import IntegrationTestHelper, {
+  TestRenderer
+} from "../util/integration_test_helper"
 
 import { Website } from "../types/websites"
 
 describe("SiteSidebar", () => {
-  let website: Website
+  let website: Website, helper: IntegrationTestHelper, render: TestRenderer
 
   beforeEach(() => {
     website = makeWebsiteDetail()
+    helper = new IntegrationTestHelper()
+    render = helper.configureRenderer(SiteSidebar, { website })
   })
 
-  it("renders some links", () => {
-    const wrapper = shallow(<SiteSidebar website={website} />)
+  afterEach(() => {
+    helper.cleanup()
+  })
+
+  it("renders some links", async () => {
+    const { wrapper } = await render()
 
     const links = wrapper
       .find("NavLink")
@@ -55,9 +61,9 @@ describe("SiteSidebar", () => {
     expect(links).toEqual(expect.arrayContaining(expected))
   })
 
-  it("renders a collaborators link if the user is an admin for the given website", () => {
+  it("renders a collaborators link if the user is an admin for the given website", async () => {
     website.is_admin = true
-    const wrapper = shallow(<SiteSidebar website={website} />)
+    const { wrapper } = await render()
 
     const collaboratorLinkUrl = siteCollaboratorsUrl
       .param({ name: website.name })

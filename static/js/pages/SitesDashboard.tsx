@@ -3,6 +3,9 @@ import { useSelector } from "react-redux"
 import { useRequest } from "redux-query-react"
 import { Link, RouteComponentProps } from "react-router-dom"
 
+import Card from "../components/Card"
+import PaginationControls from "../components/PaginationControls"
+
 import {
   websiteListingRequest,
   WebsiteListingResponse
@@ -43,44 +46,34 @@ export default function SitesDashboard(
       <div className="content">
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
           <h3>Sites</h3>
-          <Link className="add-new" to={newSiteUrl.toString()}>
+          <Link className="btn blue-button add-new" to={newSiteUrl.toString()}>
             Add New
           </Link>
         </div>
-        <ul className="listing">
-          {listing.results.map((site: Website) => (
-            <li key={site.name}>
-              <Link to={siteDetailUrl.param({ name: site.name }).toString()}>
-                {site.title}
-              </Link>
-              <div className="site-description">{siteDescription(site)}</div>
-              <hr />
-            </li>
-          ))}
-        </ul>
-        <div className="pagination justify-content-center">
-          {listing.previous ? (
-            <Link
-              to={sitesBaseUrl
-                .query({ offset: offset - WEBSITES_PAGE_SIZE })
-                .toString()}
-              className="previous"
-            >
-              <i className="material-icons">keyboard_arrow_left</i>
-            </Link>
-          ) : null}
-          &nbsp;
-          {listing.next ? (
-            <Link
-              to={sitesBaseUrl
-                .query({ offset: offset + WEBSITES_PAGE_SIZE })
-                .toString()}
-              className="next"
-            >
-              <i className="material-icons">keyboard_arrow_right</i>
-            </Link>
-          ) : null}
-        </div>
+        <Card>
+          <ul className="listing ruled-list">
+            {listing.results.map((site: Website) => (
+              <li className="py-3" key={site.name}>
+                <Link
+                  className="site-link"
+                  to={siteDetailUrl.param({ name: site.name }).toString()}
+                >
+                  {site.title}
+                </Link>
+                <div className="site-description">{siteDescription(site)}</div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+        <PaginationControls
+          listing={listing}
+          previous={sitesBaseUrl
+            .query({ offset: offset - WEBSITES_PAGE_SIZE })
+            .toString()}
+          next={sitesBaseUrl
+            .query({ offset: offset + WEBSITES_PAGE_SIZE })
+            .toString()}
+        />
       </div>
     </div>
   )

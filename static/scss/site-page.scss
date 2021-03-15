@@ -1,5 +1,5 @@
 $sidebar-width: 200px;
-$menu-spacing: 15px;
+$menu-spacing: 20px;
 
 .site-page {
   .content-container {
@@ -8,28 +8,27 @@ $menu-spacing: 15px;
   }
 
   .sidebar {
-    background-color: $light-gray-bg;
-    border: 1px solid black;
     border-right-style: none;
-    padding: $menu-spacing $menu-spacing 0 $menu-spacing;
     width: $sidebar-width;
 
-    ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
+    a {
+      color: $studio-black;
+      display: block;
+
+      &.active {
+        color: $studio-green;
+      }
     }
 
-    ul > li > ul {
-      margin: 0 0 10px 0;
-      padding-left: 10px;
+    h4 {
+      i {
+        color: $studio-green;
+      }
     }
   }
 
   .content {
     flex-grow: 1;
-    border: 1px solid black;
-    padding: 15px;
 
     ul {
       padding: 0;

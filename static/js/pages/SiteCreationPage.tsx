@@ -5,6 +5,7 @@ import { RouteComponentProps } from "react-router-dom"
 import { FormikHelpers } from "formik"
 
 import { SiteForm, SiteFormValues } from "../components/forms/SiteForm"
+import Card from "../components/Card"
 
 import {
   getTransformedWebsiteName,
@@ -71,18 +72,18 @@ export default function SiteCreationPage({
 
   if (starterQueryState.isPending) {
     return (
-      <div className="sites-dashboard narrow-page-body container mt-3">
-        Loading...
-      </div>
+      <div className="new-site narrow-page-body container mt-3">Loading...</div>
     )
   }
 
   return (
-    <div className="sites-dashboard narrow-page-body container mt-3">
-      <h4>Create a New Site</h4>
-      <div className="form-container mv-3 p-3">
-        <SiteForm onSubmit={onSubmitForm} websiteStarters={websiteStarters} />
-      </div>
+    <div className="new-site narrow-page-body container mt-5">
+      <h4 className="font-weight-light">Add Course</h4>
+      <Card>
+        <div className="p-5">
+          <SiteForm onSubmit={onSubmitForm} websiteStarters={websiteStarters} />
+        </div>
+      </Card>
     </div>
   )
 }

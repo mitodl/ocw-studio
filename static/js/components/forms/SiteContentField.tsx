@@ -17,9 +17,7 @@ export default function SiteContentField({
   const extraProps = field.widget === "file" ? { setFieldValue } : {}
   return (
     <div className="form-group">
-      <label htmlFor={field.name} className="font-weight-bold">
-        {field.label}
-      </label>
+      <label htmlFor={field.name}>{field.label}</label>
       <Field
         as={componentFromWidget(field)}
         name={field.name}

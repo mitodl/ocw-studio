@@ -1,11 +1,13 @@
 import React from "react"
 import { useMutation, useRequest } from "redux-query-react"
-import { RouteComponentProps, useRouteMatch } from "react-router-dom"
+import { useRouteMatch, useHistory } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { FormikHelpers } from "formik"
 import { is } from "ramda"
 
 import SiteCollaboratorForm from "./forms/SiteCollaboratorForm"
+import Card from "./Card"
+
 import { siteCollaboratorsUrl } from "../lib/urls"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import {
@@ -24,13 +26,11 @@ interface MatchParams {
   name: string
 }
 
-type Props = RouteComponentProps<Record<string, never>>
-
-export default function SiteCollaboratorEditPanel({
-  history
-}: Props): JSX.Element | null {
+export default function SiteCollaboratorEditPanel(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
   const { username, name } = match.params
+  const history = useHistory()
+
   const [{ isPending }] = useRequest(websiteCollaboratorsRequest(name))
   const [collaboratorQueryState, updateCollaboratorRole] = useMutation(
     editWebsiteCollaboratorMutation
@@ -87,13 +87,15 @@ export default function SiteCollaboratorEditPanel({
 
   return (
     <div className="narrow-page-body m-3">
-      <h3>Edit role for {collaborator.name}</h3>
-      <div className="form-container m-3 p-3">
-        <SiteCollaboratorForm
-          collaborator={collaborator}
-          onSubmit={onSubmit}
-        ></SiteCollaboratorForm>
-      </div>
+      <Card>
+        <h3>Edit role for {collaborator.name}</h3>
+        <div className="form-container m-3 p-3">
+          <SiteCollaboratorForm
+            collaborator={collaborator}
+            onSubmit={onSubmit}
+          ></SiteCollaboratorForm>
+        </div>
+      </Card>
     </div>
   )
 }

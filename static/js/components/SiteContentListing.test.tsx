@@ -213,11 +213,10 @@ describe("SiteContentListing", () => {
             body:   response,
             status: 200
           })
-        const { wrapper } = await render({
-          location: {
-            search: `offset=${startingOffset}`
-          }
-        })
+
+        helper.browserHistory.push({ search: `offset=${startingOffset}` })
+
+        const { wrapper } = await render()
 
         const prevWrapper = wrapper.find(".pagination Link.previous")
         expect(prevWrapper.exists()).toBe(hasPrevLink)

@@ -30,7 +30,6 @@ describe("SiteCollaboratorEditPanel", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     website: Website,
-    historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub },
     editCollaboratorStub: SinonStub,
     collaborator: WebsiteCollaborator
@@ -41,7 +40,6 @@ describe("SiteCollaboratorEditPanel", () => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
     collaborator = makeWebsiteCollaborator()
-    historyPushStub = sinon.stub()
     const params = { username: collaborator.username, name: website.name }
     mockUseRouteMatch.mockImplementation(() => ({
       params
@@ -54,9 +52,7 @@ describe("SiteCollaboratorEditPanel", () => {
     render = helper.configureRenderer(
       // @ts-ignore
       SiteCollaboratorEditPanel,
-      {
-        history: { push: historyPushStub }
-      },
+      {},
       {
         entities: {
           collaborators: {
@@ -118,11 +114,11 @@ describe("SiteCollaboratorEditPanel", () => {
     })
     sinon.assert.calledOnce(editCollaboratorStub)
     sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
-    sinon.assert.calledOnceWithExactly(
-      historyPushStub,
+    expect(helper.browserHistory.location.pathname).toBe(
       siteCollaboratorsUrl.param({ name: website.name }).toString()
     )
   })
+
   it("sets form errors if the API request fails", async () => {
     const errorResp = {
       errors: {
@@ -161,7 +157,7 @@ describe("SiteCollaboratorEditPanel", () => {
     sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
       ...errorResp.errors
     })
-    sinon.assert.notCalled(historyPushStub)
+    expect(helper.browserHistory.location.pathname).toBe("/")
   })
 
   it("sets form errors if the API request fails with a string error message", async () => {
@@ -197,6 +193,6 @@ describe("SiteCollaboratorEditPanel", () => {
     })
     sinon.assert.calledOnce(editCollaboratorStub)
     sinon.assert.calledOnceWithExactly(formikStubs.setStatus, errorMsg)
-    sinon.assert.notCalled(historyPushStub)
+    expect(helper.browserHistory.location.pathname).toBe("/")
   })
 })

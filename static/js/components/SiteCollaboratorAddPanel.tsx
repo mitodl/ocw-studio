@@ -1,9 +1,10 @@
 import React from "react"
 import { useMutation, useRequest } from "redux-query-react"
-import { RouteComponentProps, useRouteMatch } from "react-router-dom"
+import { useRouteMatch, useHistory } from "react-router-dom"
 import { FormikHelpers } from "formik"
 import { is } from "ramda"
 
+import Card from "./Card"
 import SiteCollaboratorForm from "./forms/SiteCollaboratorForm"
 import { siteCollaboratorsUrl } from "../lib/urls"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
@@ -19,13 +20,10 @@ interface MatchParams {
   name: string
 }
 
-type Props = RouteComponentProps<Record<string, never>>
-
-export default function SiteCollaboratorAddPanel({
-  history
-}: Props): JSX.Element | null {
+export default function SiteCollaboratorAddPanel(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
   const { name } = match.params
+  const history = useHistory()
 
   const [{ isPending }] = useRequest(websiteCollaboratorsRequest(name))
   const [collaboratorQueryState, addCollaborator] = useMutation(
@@ -71,10 +69,12 @@ export default function SiteCollaboratorAddPanel({
 
   return (
     <div className="narrow-page-body m-3">
-      <h3>Add Collaborator</h3>
-      <div className="form-container m-3 p-3">
-        <SiteCollaboratorForm onSubmit={onSubmit}></SiteCollaboratorForm>
-      </div>
+      <Card>
+        <h3>Add Collaborator</h3>
+        <div className="form-container m-3 p-3">
+          <SiteCollaboratorForm onSubmit={onSubmit}></SiteCollaboratorForm>
+        </div>
+      </Card>
     </div>
   )
 }

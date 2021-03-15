@@ -52,7 +52,11 @@ export default function SiteEditContentForm({
             />
           ))}
           <div className="form-group d-flex justify-content-end">
-            <button type="submit" disabled={isSubmitting} className="px-5">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-5 btn blue-button"
+            >
               Save
             </button>
           </div>

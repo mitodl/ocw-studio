@@ -4,10 +4,23 @@
 @import "site-page";
 @import "sites-dashboard";
 @import "site-collaborators";
+@import "card";
+@import "pagination";
+@import "button";
+@import "list";
+
+body {
+  font-family: "Roboto", sans-serif;
+  background-color: $studio-background;
+  // default font color
+  color: $studio-black;
+}
 
 .app {
-  max-width: $std-max-width;
-  margin: 0 auto;
+  .page-content {
+    max-width: $std-max-width;
+    margin: 0 auto;
+  }
 }
 
 .std-page-body {
@@ -19,11 +32,7 @@
 }
 
 header {
-  border: 1px solid black;  // for visibility, remove when we migrate away from wireframe
-}
-
-.form-container {
-  background-color: $light-gray-bg;
+  background-color: white;
 }
 
 .form-error {
@@ -32,6 +41,11 @@ header {
 
 a {
   cursor: pointer;
+  color: $studio-black;
+
+  &:hover {
+    color: $studio-black;
+  }
 }
 
 // modal as sidebar CSS adapted from https://codepen.io/bootpen/pen/jbbaRa

@@ -27,8 +27,10 @@ interface Props {
   site: Website
   configItem: ConfigItem
 }
+
 export default function SiteEditContent(props: Props): JSX.Element | null {
   const { visibility, configItem, uuid, toggleVisibility, site } = props
+
   const [
     { isPending: editIsPending },
     editWebsiteContent
@@ -86,11 +88,13 @@ export default function SiteEditContent(props: Props): JSX.Element | null {
           Edit {configItem.name}
         </ModalHeader>
         <ModalBody>
-          <SiteEditContentForm
-            onSubmit={onSubmitForm}
-            configItem={configItem}
-            content={content}
-          />
+          <div className="m-3">
+            <SiteEditContentForm
+              onSubmit={onSubmitForm}
+              configItem={configItem}
+              content={content}
+            />
+          </div>
         </ModalBody>
       </Modal>
     </div>

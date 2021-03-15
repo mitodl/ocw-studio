@@ -1,10 +1,12 @@
 import React, { useState } from "react"
-import { RouteComponentProps, useRouteMatch } from "react-router-dom"
+import { useRouteMatch, Link } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { QueryConfig } from "redux-query"
 import { useMutation, useRequest } from "redux-query-react"
 
 import Dialog from "./Dialog"
+import Card from "./Card"
+
 import { EDITABLE_ROLES, ROLE_LABELS } from "../constants"
 import {
   siteCollaboratorsAddUrl,
@@ -22,13 +24,10 @@ interface MatchParams {
   name: string
 }
 
-type Props = RouteComponentProps<Record<string, never>>
-
-export default function SiteCollaboratorList({
-  history
-}: Props): JSX.Element | null {
+export default function SiteCollaboratorList(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
   const { name } = match.params
+
   const [{ isPending }] = useRequest(websiteCollaboratorsRequest(name))
   const collaborators = useSelector(getWebsiteCollaboratorsCursor)(name)
 
@@ -66,65 +65,61 @@ export default function SiteCollaboratorList({
 
   return (
     <div className="collaborator-list">
-      <h3>Collaborators</h3>
-      <div className="collaborator-add-btn">
-        <button
-          type="submit"
-          onClick={() =>
-            history.push(siteCollaboratorsAddUrl.param({ name }).toString())
-          }
-        >
-          Add collaborator
-        </button>
-      </div>
-      <div className="narrow-page-body pb-5">
-        <table className="table table-striped collaborator-table">
-          <tbody>
-            {collaborators.map(
-              (collaborator: WebsiteCollaborator, i: number) => (
-                <tr key={i}>
-                  <td className="pr-5">
-                    {collaborator.name || collaborator.email}
-                  </td>
-                  <td className="pr-5">
-                    {ROLE_LABELS[collaborator.role]}&nbsp;
-                  </td>
-                  <td>
-                    {EDITABLE_ROLES.includes(collaborator.role) ? (
-                      <>
-                        <i
-                          className="material-icons"
-                          onClick={() =>
-                            history.push(
-                              siteCollaboratorsDetailUrl
-                                .param({
-                                  name,
-                                  username: collaborator.username
-                                })
-                                .toString()
-                            )
-                          }
-                        >
-                          edit
-                        </i>
-                        <i
-                          className="material-icons"
-                          onClick={() => {
-                            setSelectedCollaborator(collaborator)
-                            toggleDeleteModal()
-                          }}
-                        >
-                          delete_outline
-                        </i>
-                      </>
-                    ) : null}
-                  </td>
-                </tr>
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        <div className="d-flex justify-content-between align-items-center pb-3">
+          <h3>Collaborators</h3>
+          <Link
+            className="collaborator-add-btn btn blue-button"
+            to={siteCollaboratorsAddUrl.param({ name }).toString()}
+          >
+            Add collaborator
+          </Link>
+        </div>
+        <div className="narrow-page-body pb-5">
+          <table className="table collaborator-table">
+            <tbody>
+              {collaborators.map(
+                (collaborator: WebsiteCollaborator, i: number) => (
+                  <tr key={i}>
+                    <td className="pr-5">
+                      {collaborator.name || collaborator.email}
+                    </td>
+                    <td className="pr-5 gray">
+                      {ROLE_LABELS[collaborator.role]}&nbsp;
+                    </td>
+                    <td className="gray">
+                      {EDITABLE_ROLES.includes(collaborator.role) ? (
+                        <>
+                          <Link
+                            className="edit-link"
+                            to={siteCollaboratorsDetailUrl
+                              .param({
+                                name,
+                                username: collaborator.username
+                              })
+                              .toString()}
+                          >
+                            <i className="material-icons">edit</i>
+                          </Link>
+                          <i
+                            className="material-icons"
+                            onClick={() => {
+                              setSelectedCollaborator(collaborator)
+                              toggleDeleteModal()
+                            }}
+                          >
+                            delete_outline
+                          </i>
+                        </>
+                      ) : null}
+                    </td>
+                  </tr>
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
       <Dialog
         open={deleteModal}
         toggleModal={toggleDeleteModal}

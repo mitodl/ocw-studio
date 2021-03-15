@@ -58,11 +58,11 @@ export default function SiteAddContentForm({
                 setFieldValue={setFieldValue}
               />
             ))}
-            <div className="form-group">
+            <div className="form-group d-flex justify-content-end">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="mx-auto d-block px-5"
+                className="px-5 btn blue-button"
               >
                 Save
               </button>
