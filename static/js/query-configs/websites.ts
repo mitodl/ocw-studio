@@ -84,7 +84,8 @@ export const websiteDetailRequest = (name: string): QueryConfig => ({
       ...prev,
       ...next
     })
-  }
+  },
+  force: true // force a refresh to update incomplete information from listing API
 })
 
 export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({
