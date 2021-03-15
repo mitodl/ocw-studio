@@ -40,16 +40,31 @@ export interface WebsiteListingResponse {
   previous: string | null
   results: Website[]
 }
-type WebsitesListing = Record<string, WebsiteListingResponse>
+type WebsitesListing = Record<string, string[]> // offset to list of site names
 export const websiteListingRequest = (offset: number): QueryConfig => ({
   url:       siteApiListingUrl(offset),
-  transform: (body: WebsiteListingResponse) => ({
-    websitesListing: {
-      [`${offset}`]: body
+  transform: (body: WebsiteListingResponse) => {
+    const details = {}
+    for (const site of body.results) {
+      details[site.name] = site
     }
-  }),
+
+    return {
+      websitesListing: {
+        [`${offset}`]: {
+          ...body,
+          results: body.results.map(result => result.name)
+        }
+      },
+      websiteDetails: details
+    }
+  },
   update: {
     websitesListing: (prev: WebsitesListing, next: WebsitesListing) => ({
+      ...prev,
+      ...next
+    }),
+    websiteDetails: (prev: WebsiteDetails, next: WebsiteDetails) => ({
       ...prev,
       ...next
     })

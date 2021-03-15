@@ -31,11 +31,16 @@ describe("SitesDashboard", () => {
   let helper: IntegrationTestHelper,
     response: WebsiteListingResponse,
     render: TestRenderer,
-    websites: Website[]
+    websites: Website[],
+    websitesLookup: Record<string, Website>
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     websites = makeWebsiteListing()
+    websitesLookup = {}
+    for (const site of websites) {
+      websitesLookup[site.name] = site
+    }
     response = {
       results:  websites,
       next:     "https://example.com",
@@ -56,8 +61,12 @@ describe("SitesDashboard", () => {
       {
         entities: {
           websitesListing: {
-            ["0"]: response
-          }
+            ["0"]: {
+              ...response,
+              results: websites.map(site => site.name)
+            }
+          },
+          websiteDetails: websitesLookup
         },
         queries: {}
       }
@@ -87,6 +96,8 @@ describe("SitesDashboard", () => {
     const { wrapper } = await render()
     expect(wrapper.find(`Link.add-new`).prop("to")).toBe(newSiteUrl())
   })
+
+  //
   ;[true, false].forEach(hasPrevLink => {
     [true, false].forEach(hasNextLink => {
       it(`shows the right links when there ${isIf(
@@ -102,7 +113,6 @@ describe("SitesDashboard", () => {
             search: `offset=${startingOffset}`
           }
         })
-        console.log("wrapper", wrapper.debug())
 
         const prevWrapper = wrapper.find(".pagination Link.previous")
         expect(prevWrapper.exists()).toBe(hasPrevLink)

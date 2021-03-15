@@ -48,7 +48,7 @@ export default function SitesDashboard(
           </Link>
         </div>
         <ul className="listing">
-          {listing.results.map(site => (
+          {listing.results.map((site: Website) => (
             <li key={site.name}>
               <Link to={siteDetailUrl(site.name)}>{site.title}</Link>
               <div className="site-description">{siteDescription(site)}</div>
