@@ -76,7 +76,9 @@ export default function SiteAddContent({ history }: Props): JSX.Element | null {
     setSubmitting(false)
 
     // Redirect to the site listing if it was successfully created
-    history.push(siteContentListingUrl(name, contenttype, 0))
+    history.push(
+      siteContentListingUrl.param({ name, contentType: contenttype }).toString()
+    )
   }
 
   return (

@@ -5,13 +5,15 @@ import { nextState } from "./utils"
 import { getCookie } from "../lib/api/util"
 import { DEFAULT_POST_OPTIONS } from "../lib/redux_query"
 import {
+  siteApi,
+  startersApi,
   siteApiCollaboratorsDetailUrl,
   siteApiCollaboratorsUrl,
   siteApiListingUrl,
   siteApiDetailUrl,
   siteApiContentListingUrl,
   siteApiContentDetailUrl,
-  siteApiContentCreateUrl
+  siteApiContentUrl
 } from "../lib/urls"
 
 import {
@@ -31,6 +33,7 @@ interface CollectionResponse<Item> {
   results: Item[]
 }
 type WebsiteDetails = Record<string, Website>
+
 export const getTransformedWebsiteName = (
   response: ActionPromiseValue<Record<string, WebsiteDetails>>
 ): string | null => {
@@ -44,9 +47,11 @@ export const getTransformedWebsiteName = (
 }
 
 export type WebsiteListingResponse = CollectionResponse<Website>
+
 type WebsitesListing = Record<string, string[]> // offset to list of site names
+
 export const websiteListingRequest = (offset: number): QueryConfig => ({
-  url:       siteApiListingUrl(offset),
+  url:       siteApiListingUrl.query({ offset }).toString(),
   transform: (body: WebsiteListingResponse) => {
     const details = {}
     for (const site of body.results) {
@@ -77,7 +82,7 @@ export const websiteListingRequest = (offset: number): QueryConfig => ({
 })
 
 export const websiteDetailRequest = (name: string): QueryConfig => ({
-  url:       siteApiDetailUrl(name),
+  url:       siteApiDetailUrl.param({ name }).toString(),
   transform: (body: Website) => ({
     websiteDetails: {
       [name]: body
@@ -93,7 +98,7 @@ export const websiteDetailRequest = (name: string): QueryConfig => ({
 })
 
 export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({
-  url:     "/api/websites/",
+  url:     siteApi.toString(),
   options: {
     method:  "POST",
     headers: {
@@ -115,7 +120,7 @@ export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({
 })
 
 export const websiteStartersRequest = (): QueryConfig => ({
-  url:       `/api/starters/`,
+  url:       startersApi.toString(),
   transform: (results: Array<WebsiteStarter>) => ({
     starters: results
   }),
@@ -125,7 +130,7 @@ export const websiteStartersRequest = (): QueryConfig => ({
 })
 
 export const websiteCollaboratorsRequest = (name: string): QueryConfig => ({
-  url:       siteApiCollaboratorsUrl(name),
+  url:       siteApiCollaboratorsUrl.param({ name }).toString(),
   transform: (body: { results: WebsiteCollaborator[] }) => ({
     collaborators: {
       [name]: body.results || []
@@ -143,10 +148,12 @@ export const deleteWebsiteCollaboratorMutation = (
   const evictCollaborator = reject(propEq("username", collaborator.username))
   return {
     queryKey: "deleteWebsiteCollaboratorMutation",
-    url:      siteApiCollaboratorsDetailUrl(
-      websiteName,
-      collaborator.username
-    ).toString(),
+    url:      siteApiCollaboratorsDetailUrl
+      .param({
+        name:     websiteName,
+        username: collaborator.username
+      })
+      .toString(),
     optimisticUpdate: {
       // evict the item
       collaborators: evolve({
@@ -176,10 +183,12 @@ export const editWebsiteCollaboratorMutation = (
   return {
     queryKey: "editWebsiteCollaboratorMutation",
     body:     { role },
-    url:      siteApiCollaboratorsDetailUrl(
-      websiteName,
-      collaborator.username
-    ).toString(),
+    url:      siteApiCollaboratorsDetailUrl
+      .param({
+        name:     websiteName,
+        username: collaborator.username
+      })
+      .toString(),
     optimisticUpdate: {
       collaborators: evolve({
         [websiteName]: compose(
@@ -203,7 +212,7 @@ export const createWebsiteCollaboratorMutation = (
   return {
     queryKey:  "editWebsiteCollaboratorMutation",
     body:      { ...item },
-    url:       siteApiCollaboratorsUrl(websiteName).toString(),
+    url:       siteApiCollaboratorsUrl.param({ name: websiteName }).toString(),
     transform: (body: WebsiteCollaborator) => ({
       collaborators: {
         [websiteName]: [body]
@@ -240,7 +249,10 @@ export const websiteContentListingRequest = (
   type: string,
   offset: number
 ): QueryConfig => ({
-  url:       siteApiContentListingUrl(name, type, offset),
+  url: siteApiContentListingUrl
+    .param({ name })
+    .query({ type, offset })
+    .toString(),
   transform: (body: WebsiteContentListingResponse) => {
     const details = {}
     for (const item of body.results) {
@@ -280,7 +292,7 @@ export const websiteContentDetailRequest = (
   name: string,
   uuid: string
 ): QueryConfig => ({
-  url:       siteApiContentDetailUrl(name, uuid),
+  url:       siteApiContentDetailUrl.param({ name, uuid }).toString(),
   transform: (body: WebsiteContent) => ({
     websiteContentDetails: {
       [uuid]: body
@@ -318,7 +330,7 @@ export const editWebsiteContentMutation = (
   contentType: string,
   payload: EditWebsiteContentPayload | FormData
 ): QueryConfig => ({
-  url:     siteApiContentDetailUrl(site.name, uuid),
+  url:     siteApiContentDetailUrl.param({ name: site.name, uuid }).toString(),
   options: {
     method:  "PATCH",
     headers: {
@@ -353,7 +365,7 @@ export const createWebsiteContentMutation = (
   siteName: string,
   payload: NewWebsiteContentPayload
 ): QueryConfig => ({
-  url:     siteApiContentCreateUrl(siteName),
+  url:     siteApiContentUrl.param({ name: siteName }).toString(),
   options: {
     method:  "POST",
     headers: {

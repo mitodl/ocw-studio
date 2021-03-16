@@ -17,7 +17,12 @@ export default function SiteSidebar(props: Props): JSX.Element {
     <ul>
       {configItems.map(item => (
         <li key={item.name}>
-          <NavLink exact to={siteContentListingUrl(website.name, item.name, 0)}>
+          <NavLink
+            exact
+            to={siteContentListingUrl
+              .param({ name: website.name, contentType: item.name })
+              .toString()}
+          >
             {item.label}
           </NavLink>
         </li>
@@ -26,7 +31,10 @@ export default function SiteSidebar(props: Props): JSX.Element {
         <li>
           Settings
           <ul>
-            <NavLink exact to={siteCollaboratorsUrl(website.name)}>
+            <NavLink
+              exact
+              to={siteCollaboratorsUrl.param({ name: website.name }).toString()}
+            >
               Collaborators
             </NavLink>
           </ul>

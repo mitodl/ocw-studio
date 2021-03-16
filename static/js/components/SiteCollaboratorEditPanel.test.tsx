@@ -12,7 +12,11 @@ import {
   makeWebsiteDetail,
   makeWebsiteCollaborator
 } from "../util/factories/websites"
-import { siteCollaboratorsUrl } from "../lib/urls"
+import {
+  siteCollaboratorsUrl,
+  siteApiCollaboratorsUrl,
+  siteApiCollaboratorsDetailUrl
+} from "../lib/urls"
 
 import { Website, WebsiteCollaborator } from "../types/websites"
 
@@ -63,7 +67,10 @@ describe("SiteCollaboratorEditPanel", () => {
       }
     )
     helper.handleRequestStub
-      .withArgs(`/api/websites/${website.name}/collaborators/`, "GET")
+      .withArgs(
+        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+        "GET"
+      )
       .returns({
         body:   { results: [collaborator] },
         status: 200
@@ -84,7 +91,12 @@ describe("SiteCollaboratorEditPanel", () => {
   it("edits a collaborator role and redirects on success", async () => {
     editCollaboratorStub = helper.handleRequestStub
       .withArgs(
-        `/api/websites/${website.name}/collaborators/${collaborator.username}/`,
+        siteApiCollaboratorsDetailUrl
+          .param({
+            name:     website.name,
+            username: collaborator.username
+          })
+          .toString(),
         "PATCH"
       )
       .returns({
@@ -108,7 +120,7 @@ describe("SiteCollaboratorEditPanel", () => {
     sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
     sinon.assert.calledOnceWithExactly(
       historyPushStub,
-      siteCollaboratorsUrl(website.name)
+      siteCollaboratorsUrl.param({ name: website.name }).toString()
     )
   })
   it("sets form errors if the API request fails", async () => {
@@ -119,7 +131,13 @@ describe("SiteCollaboratorEditPanel", () => {
     }
     editCollaboratorStub = helper.handleRequestStub
       .withArgs(
-        `/api/websites/${website.name}/collaborators/${collaborator.username}/`,
+        siteApiCollaboratorsDetailUrl
+          .param({
+            name:     website.name,
+            username: collaborator.username
+          })
+          .toString(),
+
         "PATCH"
       )
       .returns({
@@ -145,13 +163,19 @@ describe("SiteCollaboratorEditPanel", () => {
     })
     sinon.assert.notCalled(historyPushStub)
   })
+
   it("sets form errors if the API request fails with a string error message", async () => {
     const errorResp = {
       errors: errorMsg
     }
     editCollaboratorStub = helper.handleRequestStub
       .withArgs(
-        `/api/websites/${website.name}/collaborators/${collaborator.username}/`,
+        siteApiCollaboratorsDetailUrl
+          .param({
+            name:     website.name,
+            username: collaborator.username
+          })
+          .toString(),
         "PATCH"
       )
       .returns({

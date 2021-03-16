@@ -5,7 +5,7 @@ import { act } from "react-dom/test-utils"
 
 import SiteCollaboratorAddPanel from "./SiteCollaboratorAddPanel"
 import { ROLE_EDITOR } from "../constants"
-import { siteCollaboratorsUrl } from "../lib/urls"
+import { siteCollaboratorsUrl, siteApiCollaboratorsUrl } from "../lib/urls"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
@@ -75,7 +75,10 @@ describe("SiteCollaboratorAddPanel", () => {
 
   it("creates a new collaborator and redirects on success", async () => {
     createCollaboratorStub = helper.handleRequestStub
-      .withArgs(`/api/websites/${website.name}/collaborators/`, "POST")
+      .withArgs(
+        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+        "POST"
+      )
       .returns({
         body:   makeWebsiteCollaborator(),
         status: 201
@@ -98,9 +101,10 @@ describe("SiteCollaboratorAddPanel", () => {
     sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
     sinon.assert.calledOnceWithExactly(
       historyPushStub,
-      siteCollaboratorsUrl(website.name)
+      siteCollaboratorsUrl.param({ name: website.name }).toString()
     )
   })
+
   it("sets form errors if the API request fails", async () => {
     const errorResp = {
       errors: {
@@ -109,7 +113,10 @@ describe("SiteCollaboratorAddPanel", () => {
       }
     }
     createCollaboratorStub = helper.handleRequestStub
-      .withArgs(`/api/websites/${website.name}/collaborators/`, "POST")
+      .withArgs(
+        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+        "POST"
+      )
       .returns({
         body:   errorResp,
         status: 400
@@ -134,12 +141,16 @@ describe("SiteCollaboratorAddPanel", () => {
     })
     sinon.assert.notCalled(historyPushStub)
   })
+
   it("sets form error if the API request fails with a string error message", async () => {
     const errorResp = {
       errors: errorMsg
     }
     createCollaboratorStub = helper.handleRequestStub
-      .withArgs(`/api/websites/${website.name}/collaborators/`, "POST")
+      .withArgs(
+        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+        "POST"
+      )
       .returns({
         body:   errorResp,
         status: 400

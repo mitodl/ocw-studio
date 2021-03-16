@@ -7,7 +7,7 @@ import {
   newSiteUrl,
   siteApiListingUrl,
   siteDetailUrl,
-  siteListingUrl
+  sitesBaseUrl
 } from "../lib/urls"
 import { WebsiteListingResponse } from "../query-configs/websites"
 import { isIf } from "../test_util"
@@ -47,10 +47,12 @@ describe("SitesDashboard", () => {
       previous: null,
       count:    10
     }
-    helper.handleRequestStub.withArgs(siteApiListingUrl(0), "GET").returns({
-      body:   response,
-      status: 200
-    })
+    helper.handleRequestStub
+      .withArgs(siteApiListingUrl.param({ offset: 0 }).toString(), "GET")
+      .returns({
+        body:   response,
+        status: 200
+      })
     render = helper.configureRenderer(
       SitesDashboard,
       {
@@ -85,7 +87,9 @@ describe("SitesDashboard", () => {
         .find("ul.listing")
         .find("li")
         .at(idx)
-      expect(li.find("Link").prop("to")).toBe(siteDetailUrl(website.name))
+      expect(li.find("Link").prop("to")).toBe(
+        siteDetailUrl.param({ name: website.name }).toString()
+      )
       expect(li.find("Link").text()).toBe(website.title)
       expect(li.find(".site-description").text()).toBe(siteDescription(website))
       idx++
@@ -94,7 +98,7 @@ describe("SitesDashboard", () => {
 
   it("has an add link to the new site page", async () => {
     const { wrapper } = await render()
-    expect(wrapper.find(`Link.add-new`).prop("to")).toBe(newSiteUrl())
+    expect(wrapper.find(`Link.add-new`).prop("to")).toBe(newSiteUrl.toString())
   })
 
   //
@@ -107,7 +111,10 @@ describe("SitesDashboard", () => {
         response.previous = hasPrevLink ? "prev" : null
         const startingOffset = 20
         helper.handleRequestStub
-          .withArgs(siteApiListingUrl(startingOffset), "GET")
+          .withArgs(
+            siteApiListingUrl.query({ offset: startingOffset }).toString(),
+            "GET"
+          )
           .returns({
             body:   response,
             status: 200
@@ -122,7 +129,9 @@ describe("SitesDashboard", () => {
         expect(prevWrapper.exists()).toBe(hasPrevLink)
         if (hasPrevLink) {
           expect(prevWrapper.prop("to")).toBe(
-            siteListingUrl(startingOffset - WEBSITES_PAGE_SIZE)
+            sitesBaseUrl
+              .query({ offset: startingOffset - WEBSITES_PAGE_SIZE })
+              .toString()
           )
         }
 
@@ -130,7 +139,9 @@ describe("SitesDashboard", () => {
         expect(nextWrapper.exists()).toBe(hasNextLink)
         if (hasNextLink) {
           expect(nextWrapper.prop("to")).toBe(
-            siteListingUrl(startingOffset + WEBSITES_PAGE_SIZE)
+            sitesBaseUrl
+              .query({ offset: startingOffset + WEBSITES_PAGE_SIZE })
+              .toString()
           )
         }
       })

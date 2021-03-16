@@ -24,10 +24,17 @@ describe("SiteSidebar", () => {
       .map(link => [link.text(), link.prop("to")])
 
     const expected = [
-      ["Page", siteContentListingUrl(website.name, CONTENT_TYPE_PAGE, 0)],
+      [
+        "Page",
+        siteContentListingUrl
+          .param({ name: website.name, contentType: CONTENT_TYPE_PAGE })
+          .toString()
+      ],
       [
         "Resource",
-        siteContentListingUrl(website.name, CONTENT_TYPE_RESOURCE, 0)
+        siteContentListingUrl
+          .param({ name: website.name, contentType: CONTENT_TYPE_RESOURCE })
+          .toString()
       ]
     ]
 

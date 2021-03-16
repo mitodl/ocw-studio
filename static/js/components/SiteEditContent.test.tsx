@@ -91,7 +91,12 @@ describe("SiteEditContent", () => {
 
   it("submits content via the form", async () => {
     helper.handleRequestStub
-      .withArgs(siteApiContentDetailUrl(website.name, content.uuid), "PATCH")
+      .withArgs(
+        siteApiContentDetailUrl
+          .param({ name: website.name, uuid: content.uuid })
+          .toString(),
+        "PATCH"
+      )
       .returns({
         body:   content,
         status: 200
@@ -109,7 +114,9 @@ describe("SiteEditContent", () => {
     })
     sinon.assert.calledWith(
       helper.handleRequestStub,
-      siteApiContentDetailUrl(website.name, content.uuid),
+      siteApiContentDetailUrl
+        .param({ name: website.name, uuid: content.uuid })
+        .toString(),
       "PATCH",
       {
         body: {
@@ -127,7 +134,12 @@ describe("SiteEditContent", () => {
   it("handles field errors", async () => {
     const errorObj = { title: "uh oh" }
     helper.handleRequestStub
-      .withArgs(siteApiContentDetailUrl(website.name, content.uuid), "PATCH")
+      .withArgs(
+        siteApiContentDetailUrl
+          .param({ name: website.name, uuid: content.uuid })
+          .toString(),
+        "PATCH"
+      )
       .returns({
         body:   errorObj,
         status: 500
@@ -145,7 +157,12 @@ describe("SiteEditContent", () => {
   it("handles non-field errors", async () => {
     const errorMessage = "uh oh"
     helper.handleRequestStub
-      .withArgs(siteApiContentDetailUrl(website.name, content.uuid), "PATCH")
+      .withArgs(
+        siteApiContentDetailUrl
+          .param({ name: website.name, uuid: content.uuid })
+          .toString(),
+        "PATCH"
+      )
       .returns({
         body:   errorMessage,
         status: 500

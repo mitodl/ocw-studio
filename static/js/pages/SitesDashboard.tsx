@@ -8,7 +8,7 @@ import {
   WebsiteListingResponse
 } from "../query-configs/websites"
 import { getWebsiteListingCursor } from "../selectors/websites"
-import { newSiteUrl, siteDetailUrl, siteListingUrl } from "../lib/urls"
+import { newSiteUrl, siteDetailUrl, sitesBaseUrl } from "../lib/urls"
 import { WEBSITES_PAGE_SIZE } from "../constants"
 import { Website } from "../types/websites"
 
@@ -43,14 +43,16 @@ export default function SitesDashboard(
       <div className="content">
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
           <h3>Courses /</h3>
-          <Link className="add-new" to={newSiteUrl()}>
+          <Link className="add-new" to={newSiteUrl.toString()}>
             Add New
           </Link>
         </div>
         <ul className="listing">
           {listing.results.map((site: Website) => (
             <li key={site.name}>
-              <Link to={siteDetailUrl(site.name)}>{site.title}</Link>
+              <Link to={siteDetailUrl.param({ name: site.name }).toString()}>
+                {site.title}
+              </Link>
               <div className="site-description">{siteDescription(site)}</div>
               <hr />
             </li>
@@ -59,7 +61,9 @@ export default function SitesDashboard(
         <div className="pagination justify-content-center">
           {listing.previous ? (
             <Link
-              to={siteListingUrl(offset - WEBSITES_PAGE_SIZE)}
+              to={sitesBaseUrl
+                .query({ offset: offset - WEBSITES_PAGE_SIZE })
+                .toString()}
               className="previous"
             >
               <i className="material-icons">keyboard_arrow_left</i>
@@ -68,7 +72,9 @@ export default function SitesDashboard(
           &nbsp;
           {listing.next ? (
             <Link
-              to={siteListingUrl(offset + WEBSITES_PAGE_SIZE)}
+              to={sitesBaseUrl
+                .query({ offset: offset + WEBSITES_PAGE_SIZE })
+                .toString()}
               className="next"
             >
               <i className="material-icons">keyboard_arrow_right</i>

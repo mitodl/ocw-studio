@@ -7,6 +7,8 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 import { makeWebsiteDetail } from "../util/factories/websites"
 
+import { siteApiDetailUrl } from "../lib/urls"
+
 import { Website } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
@@ -37,7 +39,10 @@ describe("SitePage", () => {
       }
     }))
     helper.handleRequestStub
-      .withArgs(`/api/websites/${website.name}/`, "GET")
+      .withArgs(
+        siteApiDetailUrl.param({ name: website.name }).toString(),
+        "GET"
+      )
       .returns({
         body:   website,
         status: 200

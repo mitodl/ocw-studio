@@ -1,51 +1,40 @@
-import { WEBSITE_CONTENT_PAGE_SIZE, WEBSITES_PAGE_SIZE } from "../constants"
+import UrlAssembler from "url-assembler"
 
-export const newSiteUrl = (): string => "/new-site/"
-export const siteListingUrl = (offset: number): string =>
-  offset ? `/sites/?offset=${offset}` : "/sites/"
-export const siteDetailUrl = (name: string): string => `/sites/${name}/`
-export const siteContentListingUrl = (
-  name: string,
-  contentType: string,
-  offset: number
-): string => {
-  const base = `/sites/${name}/${contentType}/`
-  return offset ? `${base}?offset=${offset}` : base
-}
+import { WEBSITES_PAGE_SIZE } from "../constants"
 
-export const siteCollaboratorsUrl = (name: string): string =>
-  `/sites/${name}/settings/collaborators/`
+// PAGE URLS
+export const sitesBaseUrl = UrlAssembler().prefix("/sites/")
+export const newSiteUrl = UrlAssembler().prefix("/new-site/")
 
-export const siteCollaboratorsAddUrl = (name: string): string =>
-  `${siteCollaboratorsUrl(name)}new/`
+export const siteDetailUrl = sitesBaseUrl.segment(":name/")
+export const siteContentListingUrl = siteDetailUrl.segment(":contentType/")
+export const siteAddContentUrl = siteContentListingUrl.segment("add/")
+export const siteSettingsUrl = siteDetailUrl.segment("settings/")
+export const siteCollaboratorsUrl = siteSettingsUrl.segment("collaborators/")
+export const siteCollaboratorsAddUrl = siteCollaboratorsUrl.segment("new/")
+export const siteCollaboratorsDetailUrl = siteCollaboratorsUrl.segment(
+  ":username/"
+)
 
-export const siteCollaboratorsDetailUrl = (
-  name: string,
-  username: string
-): string => `${siteCollaboratorsUrl(name)}${username}/`
+// API URLS
+const api = UrlAssembler().prefix("/api/")
 
-export const siteApiListingUrl = (offset: number): string =>
-  `/api/websites/?limit=${WEBSITES_PAGE_SIZE}&offset=${offset}`
-export const siteApiDetailUrl = (name: string): string =>
-  `/api/websites/${name}/`
-export const siteApiCollaboratorsUrl = (name: string): string =>
-  `${siteApiDetailUrl(name)}collaborators/`
-export const siteApiCollaboratorsDetailUrl = (
-  name: string,
-  username: string
-): string => `${siteApiCollaboratorsUrl(name)}${username}/`
-export const siteAddContentUrl = (name: string, contentType: string): string =>
-  `/sites/${name}/${contentType}/add/`
+export const startersApi = api.segment("starters/")
 
-export const siteApiContentListingUrl = (
-  name: string,
-  type: string,
-  offset: number
-): string =>
-  `${siteApiDetailUrl(
-    name
-  )}content/?type=${type}&limit=${WEBSITE_CONTENT_PAGE_SIZE}&offset=${offset}`
-export const siteApiContentDetailUrl = (name: string, uuid: string): string =>
-  `${siteApiDetailUrl(name)}content/${uuid}/`
-export const siteApiContentCreateUrl = (name: string): string =>
-  `${siteApiDetailUrl(name)}content/`
+// WEBSITES API
+export const siteApi = api.segment("websites/")
+export const siteApiDetailUrl = siteApi.segment(":name/")
+export const siteApiCollaboratorsUrl = siteApiDetailUrl.segment(
+  "collaborators/"
+)
+export const siteApiCollaboratorsDetailUrl = siteApiCollaboratorsUrl.segment(
+  ":username/"
+)
+export const siteApiContentUrl = siteApiDetailUrl.segment("content/")
+export const siteApiContentListingUrl = siteApiContentUrl.query({
+  limit: WEBSITES_PAGE_SIZE
+})
+export const siteApiContentDetailUrl = siteApiContentUrl.segment(":uuid/")
+export const siteApiListingUrl = siteApi.query({
+  limit: WEBSITES_PAGE_SIZE
+})

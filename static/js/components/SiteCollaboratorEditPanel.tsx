@@ -82,7 +82,7 @@ export default function SiteCollaboratorEditPanel({
       return
     }
     setSubmitting(false)
-    history.push(siteCollaboratorsUrl(name))
+    history.push(siteCollaboratorsUrl.param({ name }).toString())
   }
 
   return (

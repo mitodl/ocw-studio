@@ -1993,6 +1993,11 @@
   resolved "https://registry.yarnpkg.com/@types/turndown/-/turndown-5.0.0.tgz#2b763b36f783e4e237cea62cdc8f8592b72b9285"
   integrity sha512-Y7KZn6SfSv1vzjByJGijrM9w99HoUbLiAgYwe+sGH6RYi5diIGLYOcr4Z1YqR2biFs9K5PnxKv/Fbkmh57pvzg==
 
+"@types/url-assembler@^1.2.2":
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/@types/url-assembler/-/url-assembler-1.2.2.tgz#47692bd7eca47f5d936cbaae64695e5dc95b9f32"
+  integrity sha512-kl4aP9Zsf0fgF1DXIbZZzlqkJf9OchFCUD+SdHUi3GBrp60ztwA5MJsI/PHQ7ctTcOjsbFFbFxAw/hM2G0A+og==
+
 "@types/yargs-parser@*":
   version "20.2.0"
   resolved "https://registry.yarnpkg.com/@types/yargs-parser/-/yargs-parser-20.2.0.tgz#dd3e6699ba3237f0348cd085e4698780204842f9"
@@ -5017,6 +5022,11 @@ extend-shallow@^3.0.0, extend-shallow@^3.0.2:
   dependencies:
     assign-symbols "^1.0.0"
     is-extendable "^1.0.1"
+
+extend@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/extend/-/extend-2.0.2.tgz#1b74985400171b85554894459c978de6ef453ab7"
+  integrity sha512-AgFD4VU+lVLP6vjnlNfF7OeInLTyeyckCNPEsuxz1vi786UuK/nk6ynPuhn/h+Ju9++TQyr5EpLRI14fc1QtTQ==
 
 extend@~3.0.2:
   version "3.0.2"
@@ -9176,7 +9186,7 @@ qs@6.7.0:
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.7.0.tgz#41dc1a015e3d581f1621776be31afb2876a9b1bc"
   integrity sha512-VCdBRNFTX1fyE7Nb6FYoURo/SPe62QCaAyzJvUjwRaIsc+NePBEniHlvxFmmX56+HZphIGtV0XeCirBtpDrTyQ==
 
-qs@^6.9.4:
+qs@^6.5.1, qs@^6.9.4:
   version "6.9.6"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.9.6.tgz#26ed3c8243a431b2924aca84cc90471f35d5a0ee"
   integrity sha512-TIRk4aqYLNoJUbd+g2lEdz5kLWIuTMRagAXxl78Q0RiVjAOugHmeKNGdd3cwo/ktpf9aL9epCfFqWDEKysUlLQ==
@@ -11337,6 +11347,14 @@ urix@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/urix/-/urix-0.1.0.tgz#da937f7a62e21fec1fd18d49b35c2935067a6c72"
   integrity sha1-2pN/emLiH+wf0Y1Js1wpNQZ6bHI=
+
+url-assembler@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/url-assembler/-/url-assembler-2.1.1.tgz#d6c720b124b56c6eeb08dd75ca693f651ccf181d"
+  integrity sha512-ZSxMU+MdIE+tHYfXNTyvxfXp42zuhco2DEUpNt6nCO+rVNbsIuj0BsrX+Ji2Kmg946WzPPvWmqRH2OvbZozcFQ==
+  dependencies:
+    extend "^2.0.2"
+    qs "^6.5.1"
 
 url-loader@^4.1.0:
   version "4.1.1"

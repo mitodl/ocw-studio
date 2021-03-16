@@ -11,7 +11,7 @@ import {
   makeWebsiteDetail,
   makeWebsiteStarter
 } from "../util/factories/websites"
-import { siteDetailUrl } from "../lib/urls"
+import { siteDetailUrl, siteApi, startersApi } from "../lib/urls"
 
 import { Website, WebsiteStarter } from "../types/websites"
 
@@ -45,7 +45,7 @@ describe("SiteCreationPage", () => {
       }
     )
 
-    helper.handleRequestStub.withArgs(`/api/starters/`, "GET").returns({
+    helper.handleRequestStub.withArgs(startersApi.toString(), "GET").returns({
       body:   starters,
       status: 200
     })
@@ -76,7 +76,7 @@ describe("SiteCreationPage", () => {
 
     it("that creates a new site and redirect on success", async () => {
       createWebsiteStub = helper.handleRequestStub
-        .withArgs(`/api/websites/`, "POST")
+        .withArgs(siteApi.toString(), "POST")
         .returns({
           body:   website,
           status: 201
@@ -99,7 +99,7 @@ describe("SiteCreationPage", () => {
       sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
       sinon.assert.calledOnceWithExactly(
         historyPushStub,
-        siteDetailUrl(website.name)
+        siteDetailUrl.param({ name: website.name }).toString()
       )
     })
     it("that sets form errors if the API request fails", async () => {
@@ -109,7 +109,7 @@ describe("SiteCreationPage", () => {
         }
       }
       createWebsiteStub = helper.handleRequestStub
-        .withArgs(`/api/websites/`, "POST")
+        .withArgs(siteApi.toString(), "POST")
         .returns({
           body:   errorResp,
           status: 400
@@ -140,7 +140,7 @@ describe("SiteCreationPage", () => {
         errors: errorMsg
       }
       createWebsiteStub = helper.handleRequestStub
-        .withArgs(`/api/websites/`, "POST")
+        .withArgs(siteApi.toString(), "POST")
         .returns({
           body:   errorResp,
           status: 400

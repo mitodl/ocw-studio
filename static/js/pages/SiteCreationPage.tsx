@@ -64,7 +64,7 @@ export default function SiteCreationPage({
     if (!newWebsiteName) {
       return
     }
-    history.push(siteDetailUrl(newWebsiteName))
+    history.push(siteDetailUrl.param({ name: newWebsiteName }).toString())
   }
 
   const websiteStarters = useSelector(startersSelector)

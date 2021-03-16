@@ -66,7 +66,7 @@ export default function SiteCollaboratorAddPanel({
       return
     }
     setSubmitting(false)
-    history.push(siteCollaboratorsUrl(name))
+    history.push(siteCollaboratorsUrl.param({ name }).toString())
   }
 
   return (

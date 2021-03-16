@@ -8,8 +8,8 @@ import { isIf } from "../test_util"
 import {
   siteAddContentUrl,
   siteApiContentDetailUrl,
-  siteApiContentListingUrl,
-  siteContentListingUrl
+  siteContentListingUrl,
+  siteApiContentListingUrl
 } from "../lib/urls"
 import {
   contentListingKey,
@@ -70,7 +70,15 @@ describe("SiteContentListing", () => {
       details[item.uuid] = item
     }
     helper.handleRequestStub
-      .withArgs(siteApiContentListingUrl(website.name, contentType, 0), "GET")
+      .withArgs(
+        siteApiContentListingUrl
+          .param({
+            name: website.name
+          })
+          .query({ type: contentType, offset: 0 })
+          .toString(),
+        "GET"
+      )
       .returns({
         body:   response,
         status: 200
@@ -109,13 +117,27 @@ describe("SiteContentListing", () => {
         .find("NavLink")
         .at(0)
         .prop("to")
-    ).toBe(siteContentListingUrl(params.name, params.contenttype, 0))
+    ).toBe(
+      siteContentListingUrl
+        .param({
+          name: website.name,
+          contentType
+        })
+        .toString()
+    )
     expect(
       wrapper
         .find("NavLink")
         .at(1)
         .prop("to")
-    ).toBe(siteAddContentUrl(params.name, params.contenttype))
+    ).toBe(
+      siteAddContentUrl
+        .param({
+          name: website.name,
+          contentType
+        })
+        .toString()
+    )
   })
 
   it("should show each content item with edit links", async () => {
@@ -126,7 +148,12 @@ describe("SiteContentListing", () => {
     for (const item of contentListingItems) {
       // when the edit button is tapped the detail view is requested, so mock each one out
       helper.handleRequestStub
-        .withArgs(siteApiContentDetailUrl(website.name, item.uuid), "GET")
+        .withArgs(
+          siteApiContentDetailUrl
+            .param({ name: website.name, uuid: item.uuid })
+            .toString(),
+          "GET"
+        )
         .returns({
           body:   item,
           status: 200
@@ -162,8 +189,6 @@ describe("SiteContentListing", () => {
       idx++
     }
   })
-
-  //
   ;[true, false].forEach(hasPrevLink => {
     [true, false].forEach(hasNextLink => {
       it(`shows the right links when there ${isIf(
@@ -178,7 +203,10 @@ describe("SiteContentListing", () => {
         const startingOffset = 20
         helper.handleRequestStub
           .withArgs(
-            siteApiContentListingUrl(website.name, contentType, startingOffset),
+            siteApiContentListingUrl
+              .param({ name: website.name })
+              .query({ type: contentType, offset: startingOffset })
+              .toString(),
             "GET"
           )
           .returns({
@@ -195,11 +223,15 @@ describe("SiteContentListing", () => {
         expect(prevWrapper.exists()).toBe(hasPrevLink)
         if (hasPrevLink) {
           expect(prevWrapper.prop("to")).toBe(
-            siteContentListingUrl(
-              website.name,
-              contentType,
-              startingOffset - WEBSITE_CONTENT_PAGE_SIZE
-            )
+            siteContentListingUrl
+              .param({
+                name: website.name,
+                contentType
+              })
+              .query({
+                offset: startingOffset - WEBSITE_CONTENT_PAGE_SIZE
+              })
+              .toString()
           )
         }
 
@@ -207,11 +239,13 @@ describe("SiteContentListing", () => {
         expect(nextWrapper.exists()).toBe(hasNextLink)
         if (hasNextLink) {
           expect(nextWrapper.prop("to")).toBe(
-            siteContentListingUrl(
-              website.name,
-              contentType,
-              startingOffset + WEBSITE_CONTENT_PAGE_SIZE
-            )
+            siteContentListingUrl
+              .param({
+                name: website.name,
+                contentType
+              })
+              .query({ offset: startingOffset + WEBSITE_CONTENT_PAGE_SIZE })
+              .toString()
           )
         }
       })

@@ -7,7 +7,9 @@ import sinon, { SinonStub } from "sinon"
 import SiteCollaboratorList from "./SiteCollaboratorList"
 import {
   siteCollaboratorsAddUrl,
-  siteCollaboratorsDetailUrl
+  siteCollaboratorsDetailUrl,
+  siteApiCollaboratorsUrl,
+  siteApiCollaboratorsDetailUrl
 } from "../lib/urls"
 import {
   makePermanentWebsiteCollaborator,
@@ -63,7 +65,10 @@ describe("SiteCollaboratorList", () => {
       }
     }))
     helper.handleRequestStub
-      .withArgs(`/api/websites/${website.name}/collaborators/`, "GET")
+      .withArgs(
+        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+        "GET"
+      )
       .returns({
         body:   { results: concat(collaborators, permanentAdmins) },
         status: 200
@@ -104,7 +109,12 @@ describe("SiteCollaboratorList", () => {
     editIcon.simulate("click")
     sinon.assert.calledOnceWithExactly(
       historyPushStub,
-      siteCollaboratorsDetailUrl(website.name, collaborators[0].username)
+      siteCollaboratorsDetailUrl
+        .param({
+          name:     website.name,
+          username: collaborators[0].username
+        })
+        .toString()
     )
   })
 
@@ -113,7 +123,12 @@ describe("SiteCollaboratorList", () => {
     const numCollaborators = concat(collaborators, permanentAdmins).length
     deleteCollaboratorStub = helper.handleRequestStub
       .withArgs(
-        `/api/websites/${website.name}/collaborators/${collaborator.username}/`,
+        siteApiCollaboratorsDetailUrl
+          .param({
+            name:     website.name,
+            username: collaborator.username
+          })
+          .toString(),
         "DELETE"
       )
       .returns({
@@ -151,7 +166,7 @@ describe("SiteCollaboratorList", () => {
       .simulate("click")
     sinon.assert.calledOnceWithExactly(
       historyPushStub,
-      siteCollaboratorsAddUrl(website.name)
+      siteCollaboratorsAddUrl.param({ name: website.name }).toString()
     )
   })
 })

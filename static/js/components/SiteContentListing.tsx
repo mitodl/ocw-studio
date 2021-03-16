@@ -85,11 +85,19 @@ export default function SiteContentListing(
       <div className="px-4">
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
           <h3>
-            <NavLink to={siteContentListingUrl(name, contenttype, 0)}>
-              {configItem.label} /
+            <NavLink
+              to={siteContentListingUrl
+                .param({ name, contentType: contenttype })
+                .toString()}
+            >
+              {configItem.label}
             </NavLink>
           </h3>
-          <NavLink to={siteAddContentUrl(name, contenttype)}>
+          <NavLink
+            to={siteAddContentUrl
+              .param({ name, contentType: contenttype })
+              .toString()}
+          >
             Add {configItem.label}
           </NavLink>
         </div>
@@ -109,11 +117,13 @@ export default function SiteContentListing(
         <div className="pagination justify-content-center">
           {listing.previous ? (
             <Link
-              to={siteContentListingUrl(
-                name,
-                contenttype,
-                offset - WEBSITE_CONTENT_PAGE_SIZE
-              )}
+              to={siteContentListingUrl
+                .param({
+                  name,
+                  contentType: contenttype
+                })
+                .query({ offset: offset - WEBSITE_CONTENT_PAGE_SIZE })
+                .toString()}
               className="previous"
             >
               <i className="material-icons">keyboard_arrow_left</i>
@@ -122,11 +132,13 @@ export default function SiteContentListing(
           &nbsp;
           {listing.next ? (
             <Link
-              to={siteContentListingUrl(
-                name,
-                contenttype,
-                offset + WEBSITE_CONTENT_PAGE_SIZE
-              )}
+              to={siteContentListingUrl
+                .param({
+                  name,
+                  contentType: contenttype
+                })
+                .query({ offset: offset + WEBSITE_CONTENT_PAGE_SIZE })
+                .toString()}
               className="next"
             >
               <i className="material-icons">keyboard_arrow_right</i>

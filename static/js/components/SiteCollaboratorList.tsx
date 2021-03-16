@@ -70,7 +70,9 @@ export default function SiteCollaboratorList({
       <div className="collaborator-add-btn">
         <button
           type="submit"
-          onClick={() => history.push(siteCollaboratorsAddUrl(name))}
+          onClick={() =>
+            history.push(siteCollaboratorsAddUrl.param({ name }).toString())
+          }
         >
           Add collaborator
         </button>
@@ -94,10 +96,12 @@ export default function SiteCollaboratorList({
                           className="material-icons"
                           onClick={() =>
                             history.push(
-                              siteCollaboratorsDetailUrl(
-                                name,
-                                collaborator.username
-                              )
+                              siteCollaboratorsDetailUrl
+                                .param({
+                                  name,
+                                  username: collaborator.username
+                                })
+                                .toString()
                             )
                           }
                         >
