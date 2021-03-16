@@ -24,8 +24,11 @@ describe("SiteSidebar", () => {
       .map(link => [link.text(), link.prop("to")])
 
     const expected = [
-      ["Page", siteContentListingUrl(website.name, CONTENT_TYPE_PAGE)],
-      ["Resource", siteContentListingUrl(website.name, CONTENT_TYPE_RESOURCE)]
+      ["Page", siteContentListingUrl(website.name, CONTENT_TYPE_PAGE, 0)],
+      [
+        "Resource",
+        siteContentListingUrl(website.name, CONTENT_TYPE_RESOURCE, 0)
+      ]
     ]
 
     expect(links).toEqual(expect.arrayContaining(expected))

@@ -5,7 +5,6 @@ import sinon, { SinonStub } from "sinon"
 
 import SiteEditContent from "./SiteEditContent"
 
-import { contentListingKey } from "../query-configs/websites"
 import { siteApiContentDetailUrl } from "../lib/urls"
 import IntegrationTestHelper, {
   TestRenderer
@@ -69,9 +68,6 @@ describe("SiteEditContent", () => {
         entities: {
           websiteDetails: {
             [website.name]: website
-          },
-          websiteContentListing: {
-            [contentListingKey(website.name, configItem.name)]: [content]
           },
           websiteContentDetails: {
             [content.uuid]: content

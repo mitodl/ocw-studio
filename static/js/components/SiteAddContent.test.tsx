@@ -5,7 +5,7 @@ import sinon, { SinonStub } from "sinon"
 
 import SiteAddContent from "./SiteAddContent"
 
-import { siteApiContentUrl } from "../lib/urls"
+import { siteApiContentCreateUrl } from "../lib/urls"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
@@ -80,7 +80,7 @@ describe("SiteAddContent", () => {
   it("submits content via the form", async () => {
     const content = makeWebsiteContentDetail()
     helper.handleRequestStub
-      .withArgs(siteApiContentUrl(website.name), "POST")
+      .withArgs(siteApiContentCreateUrl(website.name), "POST")
       .returns({
         body:   content,
         status: 201
@@ -98,7 +98,7 @@ describe("SiteAddContent", () => {
     })
     sinon.assert.calledWith(
       helper.handleRequestStub,
-      siteApiContentUrl(website.name),
+      siteApiContentCreateUrl(website.name),
       "POST",
       {
         body: {
@@ -115,7 +115,7 @@ describe("SiteAddContent", () => {
   it("handles field errors", async () => {
     const errorObj = { title: "uh oh" }
     helper.handleRequestStub
-      .withArgs(siteApiContentUrl(website.name), "POST")
+      .withArgs(siteApiContentCreateUrl(website.name), "POST")
       .returns({
         body:   errorObj,
         status: 500
@@ -133,7 +133,7 @@ describe("SiteAddContent", () => {
   it("handles non-field errors", async () => {
     const errorMessage = "uh oh"
     helper.handleRequestStub
-      .withArgs(siteApiContentUrl(website.name), "POST")
+      .withArgs(siteApiContentCreateUrl(website.name), "POST")
       .returns({
         body:   errorMessage,
         status: 500

@@ -8,7 +8,10 @@ import {
   siteApiCollaboratorsDetailUrl,
   siteApiCollaboratorsUrl,
   siteApiListingUrl,
-  siteApiDetailUrl
+  siteApiDetailUrl,
+  siteApiContentListingUrl,
+  siteApiContentDetailUrl,
+  siteApiContentCreateUrl
 } from "../lib/urls"
 
 import {
@@ -21,6 +24,12 @@ import {
   WebsiteStarter
 } from "../types/websites"
 
+interface CollectionResponse<Item> {
+  count: number
+  next: string | null
+  previous: string | null
+  results: Item[]
+}
 type WebsiteDetails = Record<string, Website>
 export const getTransformedWebsiteName = (
   response: ActionPromiseValue<Record<string, WebsiteDetails>>
@@ -34,12 +43,7 @@ export const getTransformedWebsiteName = (
   return transformedWebsiteKeys[0]
 }
 
-export interface WebsiteListingResponse {
-  count: number
-  next: string | null
-  previous: string | null
-  results: Website[]
-}
+export type WebsiteListingResponse = CollectionResponse<Website>
 type WebsitesListing = Record<string, string[]> // offset to list of site names
 export const websiteListingRequest = (offset: number): QueryConfig => ({
   url:       siteApiListingUrl(offset),
@@ -222,23 +226,64 @@ export const createWebsiteCollaboratorMutation = (
   }
 }
 
-interface WebsiteContentListing {
-  [key: string]: WebsiteContentListItem[]
-}
-interface WebsiteContentDetails {
-  [uuid: string]: WebsiteContent
-}
-
-export const contentListingKey = (name: string, type: string): string =>
-  `${name}_${type}`
+export type WebsiteContentListingResponse = CollectionResponse<
+  WebsiteContentListItem
+>
+type WebsiteContentListing = Record<string, string[]> // website name to list of uuids
+export const contentListingKey = (
+  name: string,
+  type: string,
+  offset: number
+): string => JSON.stringify([name, type, offset])
 export const websiteContentListingRequest = (
   name: string,
-  type: string
+  type: string,
+  offset: number
 ): QueryConfig => ({
-  url:       `/api/websites/${name}/content/?type=${type}`,
-  transform: (body: WebsiteContentListItem[]) => ({
-    websiteContentListing: {
-      [contentListingKey(name, type)]: body
+  url:       siteApiContentListingUrl(name, type, offset),
+  transform: (body: WebsiteContentListingResponse) => {
+    const details = {}
+    for (const item of body.results) {
+      details[item.uuid] = item
+    }
+    return {
+      websiteContentListing: {
+        [contentListingKey(name, type, offset)]: {
+          ...body,
+          results: body.results.map(item => item.uuid)
+        }
+      },
+      websiteContentDetails: details
+    }
+  },
+  update: {
+    websiteContentListing: (
+      prev: WebsiteContentListing,
+      next: WebsiteContentListing
+    ) => ({
+      ...prev,
+      ...next
+    }),
+    websiteContentDetails: (
+      prev: WebsiteContentDetails,
+      next: WebsiteContentDetails
+    ) => ({
+      ...prev,
+      ...next
+    })
+  },
+  force: true // try to prevent stale information
+})
+
+type WebsiteContentDetails = Record<string, WebsiteContent>
+export const websiteContentDetailRequest = (
+  name: string,
+  uuid: string
+): QueryConfig => ({
+  url:       siteApiContentDetailUrl(name, uuid),
+  transform: (body: WebsiteContent) => ({
+    websiteContentDetails: {
+      [uuid]: body
     }
   }),
   update: {
@@ -248,21 +293,7 @@ export const websiteContentListingRequest = (
     ) => ({
       ...prev,
       ...next
-    })
-  }
-})
-
-export const websiteContentDetailRequest = (
-  name: string,
-  uuid: string
-): QueryConfig => ({
-  url:       `/api/websites/${name}/content/${uuid}/`,
-  transform: (body: WebsiteContent) => ({
-    websiteContentDetails: {
-      [uuid]: body
-    }
-  }),
-  update: {
+    }),
     websiteContentDetails: (
       prev: WebsiteContentDetails,
       next: WebsiteContentDetails
@@ -270,16 +301,15 @@ export const websiteContentDetailRequest = (
       ...prev,
       ...next
     })
-  }
+  },
+  force: true // some data may be fetched in the collection view which is incomplete
 })
 
 export type EditWebsiteContentPayload = {
   title?: string
   content?: string
   body?: string
-  metadata?: {
-    [key: string]: string
-  }
+  metadata?: any
   file?: File
 }
 export const editWebsiteContentMutation = (
@@ -288,7 +318,7 @@ export const editWebsiteContentMutation = (
   contentType: string,
   payload: EditWebsiteContentPayload | FormData
 ): QueryConfig => ({
-  url:     `/api/websites/${site.name}/content/${uuid}/`,
+  url:     siteApiContentDetailUrl(site.name, uuid),
   options: {
     method:  "PATCH",
     headers: {
@@ -299,8 +329,7 @@ export const editWebsiteContentMutation = (
   transform: (response: WebsiteContent) => ({
     websiteContentDetails: {
       [uuid]: response
-    },
-    websiteContentListing: response
+    }
   }),
   update: {
     websiteContentDetails: (
@@ -309,19 +338,7 @@ export const editWebsiteContentMutation = (
     ) => ({
       ...prev,
       ...next
-    }),
-    websiteContentListing: (
-      prev: WebsiteContentListing,
-      next: WebsiteContent
-    ) => {
-      const key = contentListingKey(site.name, contentType)
-      const oldList: WebsiteContentListItem[] = prev[key] ?? []
-      return {
-        ...prev,
-        // we'll need to sort this once we figure out a preferred order for the content listing
-        [key]: oldList.map(item => (item.uuid === next.uuid ? next : item))
-      }
-    }
+    })
   }
 })
 
@@ -330,16 +347,13 @@ export type NewWebsiteContentPayload = {
   type: string
   content?: string
   body?: string
-  metadata: {
-    [key: string]: string
-  }
+  metadata: any
 }
-
 export const createWebsiteContentMutation = (
   siteName: string,
   payload: NewWebsiteContentPayload
 ): QueryConfig => ({
-  url:     `/api/websites/${siteName}/content/`,
+  url:     siteApiContentCreateUrl(siteName),
   options: {
     method:  "POST",
     headers: {
@@ -350,8 +364,7 @@ export const createWebsiteContentMutation = (
   transform: (response: WebsiteContent) => ({
     websiteContentDetails: {
       [response.uuid]: response
-    },
-    websiteContentListing: response
+    }
   }),
   update: {
     websiteContentDetails: (
@@ -360,19 +373,6 @@ export const createWebsiteContentMutation = (
     ) => ({
       ...prev,
       ...next
-    }),
-    websiteContentListing: (
-      prev: WebsiteContentListing,
-      next: WebsiteContent
-    ) => {
-      prev = prev ?? {}
-      const key = contentListingKey(siteName, next.type)
-      const oldList: WebsiteContentListItem[] = prev[key] ?? []
-      return {
-        ...prev,
-        // we'll need to sort this once we figure out a preferred order for the content listing
-        [key]: [...oldList, next]
-      }
-    }
+    })
   }
 })

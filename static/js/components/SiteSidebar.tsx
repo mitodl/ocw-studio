@@ -17,7 +17,7 @@ export default function SiteSidebar(props: Props): JSX.Element {
     <ul>
       {configItems.map(item => (
         <li key={item.name}>
-          <NavLink exact to={siteContentListingUrl(website.name, item.name)}>
+          <NavLink exact to={siteContentListingUrl(website.name, item.name, 0)}>
             {item.label}
           </NavLink>
         </li>

@@ -250,6 +250,7 @@ class WebsiteContentViewSet(
     """Viewset for WebsiteContent"""
 
     permission_classes = (HasWebsiteContentPermission,)
+    pagination_class = DefaultPagination
     lookup_field = "uuid"
 
     def get_queryset(self):

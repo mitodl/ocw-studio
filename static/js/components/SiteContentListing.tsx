@@ -1,12 +1,21 @@
 import React, { MouseEvent as ReactMouseEvent, useState } from "react"
-import { useRouteMatch, NavLink } from "react-router-dom"
+import {
+  useRouteMatch,
+  NavLink,
+  RouteComponentProps,
+  Link
+} from "react-router-dom"
 import { useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
 
 import SiteEditContent from "./SiteEditContent"
 
+import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 import { siteAddContentUrl, siteContentListingUrl } from "../lib/urls"
-import { websiteContentListingRequest } from "../query-configs/websites"
+import {
+  websiteContentListingRequest,
+  WebsiteContentListingResponse
+} from "../query-configs/websites"
 import {
   getWebsiteDetailCursor,
   getWebsiteContentListingCursor
@@ -18,14 +27,22 @@ interface MatchParams {
   contenttype: string
   name: string
 }
-export default function SiteContentListing(): JSX.Element | null {
+export default function SiteContentListing(
+  props: RouteComponentProps<Record<string, never>>
+): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
+  const {
+    location: { search }
+  } = props
+  const offset = Number(new URLSearchParams(search).get("offset") ?? 0)
   const { contenttype, name } = match.params
   const website = useSelector(getWebsiteDetailCursor)(name)
   const [{ isPending: contentListingPending }] = useRequest(
-    websiteContentListingRequest(name, contenttype)
+    websiteContentListingRequest(name, contenttype, offset)
   )
-  const listing = useSelector(getWebsiteContentListingCursor)(name, contenttype)
+  const listing: WebsiteContentListingResponse = useSelector(
+    getWebsiteContentListingCursor
+  )(name, contenttype, offset)
   const [editUuid, setEditUuid] = useState<string | null>(null)
   const [editVisibility, setEditVisibility] = useState<boolean>(false)
 
@@ -68,7 +85,7 @@ export default function SiteContentListing(): JSX.Element | null {
       <div className="px-4">
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
           <h3>
-            <NavLink to={siteContentListingUrl(name, contenttype)}>
+            <NavLink to={siteContentListingUrl(name, contenttype, 0)}>
               {configItem.label} /
             </NavLink>
           </h3>
@@ -77,7 +94,7 @@ export default function SiteContentListing(): JSX.Element | null {
           </NavLink>
         </div>
         <ul>
-          {listing.map((item: WebsiteContentListItem) => (
+          {listing.results.map((item: WebsiteContentListItem) => (
             <li key={item.uuid}>
               <div className="d-flex flex-direction-row align-items-center justify-content-between">
                 <span>{item.title}</span>
@@ -89,6 +106,33 @@ export default function SiteContentListing(): JSX.Element | null {
             </li>
           ))}
         </ul>
+        <div className="pagination justify-content-center">
+          {listing.previous ? (
+            <Link
+              to={siteContentListingUrl(
+                name,
+                contenttype,
+                offset - WEBSITE_CONTENT_PAGE_SIZE
+              )}
+              className="previous"
+            >
+              <i className="material-icons">keyboard_arrow_left</i>
+            </Link>
+          ) : null}
+          &nbsp;
+          {listing.next ? (
+            <Link
+              to={siteContentListingUrl(
+                name,
+                contenttype,
+                offset + WEBSITE_CONTENT_PAGE_SIZE
+              )}
+              className="next"
+            >
+              <i className="material-icons">keyboard_arrow_right</i>
+            </Link>
+          ) : null}
+        </div>
       </div>
     </>
   )
