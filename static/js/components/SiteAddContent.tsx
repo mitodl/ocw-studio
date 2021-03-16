@@ -51,10 +51,9 @@ export default function SiteAddContent({ history }: Props): JSX.Element | null {
     if (isPending) {
       return
     }
-    const payload = {
-      type: contenttype,
-      ...contentFormValuesToPayload(values, configItem.fields)
-    }
+
+    values = { type: contenttype, ...values }
+    const payload = contentFormValuesToPayload(values, configItem.fields)
 
     const response = await addWebsiteContent(payload as any)
     if (!response) {

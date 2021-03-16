@@ -280,12 +280,13 @@ export type EditWebsiteContentPayload = {
   metadata?: {
     [key: string]: string
   }
+  file?: File
 }
 export const editWebsiteContentMutation = (
   site: Website,
   uuid: string,
   contentType: string,
-  payload: EditWebsiteContentPayload
+  payload: EditWebsiteContentPayload | FormData
 ): QueryConfig => ({
   url:     `/api/websites/${site.name}/content/${uuid}/`,
   options: {

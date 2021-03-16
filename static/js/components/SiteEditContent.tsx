@@ -32,7 +32,7 @@ export default function SiteEditContent(props: Props): JSX.Element | null {
   const [
     { isPending: editIsPending },
     editWebsiteContent
-  ] = useMutation((payload: EditWebsiteContentPayload) =>
+  ] = useMutation((payload: EditWebsiteContentPayload | FormData) =>
     editWebsiteContentMutation(site, uuid, configItem.name, payload)
   )
   const [{ isPending }] = useRequest(

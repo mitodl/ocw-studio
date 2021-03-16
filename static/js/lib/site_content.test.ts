@@ -43,6 +43,22 @@ describe("site_content", () => {
         }
       })
     })
+
+    it("converts a payload to a FormData object if a file is included", () => {
+      const mockFile = new File([new ArrayBuffer(1)], "file.jpg")
+      const values = {
+        title:       "a title",
+        type:        "resource",
+        description: "a description here",
+        file:        mockFile
+      }
+      const fields = makeWebsiteStarterConfig().collections.find(
+        item => item.name === "resource"
+      )?.fields
+      // @ts-ignore
+      const payload = contentFormValuesToPayload(values, fields)
+      expect(payload instanceof FormData).toBe(true)
+    })
   })
 
   describe("contentInitialValues", () => {
@@ -55,6 +71,7 @@ describe("site_content", () => {
       // @ts-ignore
       const payload = contentInitialValues(content, fields)
       expect(payload).toStrictEqual({
+        file:        null,
         title:       content.title,
         description: content.metadata?.description,
         content:     content.markdown

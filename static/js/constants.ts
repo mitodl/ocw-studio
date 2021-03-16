@@ -51,6 +51,11 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
           name:   "description",
           label:  "Description",
           widget: "text"
+        },
+        {
+          name:   "file",
+          label:  "File",
+          widget: "file"
         }
       ]
     }

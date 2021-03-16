@@ -1,24 +1,30 @@
-import { ComponentType } from "react"
+import { ComponentType, ElementType } from "react"
 
 import MarkdownEditor from "../components/MarkdownEditor"
 
 import { ConfigField, WebsiteContent } from "../types/websites"
+import FileUploadField from "../components/forms/FileUploadField"
+import { objectToFormData } from "./util"
 
 export const componentFromWidget = (
   field: ConfigField
-): string | ComponentType => {
+): string | ComponentType | ElementType => {
   switch (field.widget) {
   case "markdown":
     return MarkdownEditor
+  case "file":
+    return FileUploadField
   default:
     return "input"
   }
 }
 
 export const contentFormValuesToPayload = (
-  values: { [key: string]: string },
+  values: { [key: string]: string | File },
   fields: ConfigField[]
-): Record<string, string> & { metadata?: Record<string, string> } => {
+):
+  | (Record<string, string> & { metadata?: Record<string, string> })
+  | FormData => {
   const payload = {}
   const metadata: { [key: string]: string } = {}
 
@@ -33,8 +39,11 @@ export const contentFormValuesToPayload = (
         payload["markdown"] = value
       } else if (field.name === "title") {
         payload[field.name] = value
+        // @ts-ignore
+      } else if (field.name === "file" && value instanceof File) {
+        payload[field.name] = value
       } else {
-        metadata[field.name] = value
+        metadata[field.name] = value.toString()
       }
     }
   }
@@ -42,7 +51,8 @@ export const contentFormValuesToPayload = (
   if (Object.keys(metadata).length > 0) {
     payload["metadata"] = metadata
   }
-  return payload
+
+  return values["file"] ? objectToFormData(payload) : payload
 }
 
 export const contentInitialValues = (
@@ -57,6 +67,8 @@ export const contentInitialValues = (
       values[field.name] = content.markdown ?? ""
     } else if (field.name === "title") {
       values[field.name] = content[field.name] ?? ""
+    } else if (field.name === "file") {
+      values[field.name] = content[field.name] ?? null
     } else {
       values[field.name] = metadata[field.name] ?? ""
     }
