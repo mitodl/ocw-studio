@@ -551,6 +551,7 @@ a custom class we wrote called `MarkdownSyntaxPlugin`. You can check out it's im
 Basically, it just provides a means for adding Showdown and Turndown rules in a predefined spot where our Markdown plugin
 can come along and grab them later. Using it is simple, here's how a plugin to add the rules we wrote above will look:
 
+<!-- {% raw %} -->
 ```ts
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 
@@ -595,6 +596,7 @@ class YoutubeEmbedMarkdownSyntax extends MarkdownSyntaxPlugin {
   }
 }
 ```
+<!-- {% endraw %} -->
 
 And that's it! We'll add this in to our unified YoutubeEmbed plugin
 and our Markdown plugin will do the rest for us.
