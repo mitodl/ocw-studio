@@ -7,7 +7,8 @@ import { DEFAULT_POST_OPTIONS } from "../lib/redux_query"
 import {
   siteApiCollaboratorsDetailUrl,
   siteApiCollaboratorsUrl,
-  siteApiUrl
+  siteApiListingUrl,
+  siteApiDetailUrl
 } from "../lib/urls"
 
 import {
@@ -20,12 +21,9 @@ import {
   WebsiteStarter
 } from "../types/websites"
 
-interface WebsiteDetails {
-  [key: string]: Website
-}
-
+type WebsiteDetails = Record<string, Website>
 export const getTransformedWebsiteName = (
-  response: ActionPromiseValue<{ [key: string]: WebsiteDetails }>
+  response: ActionPromiseValue<Record<string, WebsiteDetails>>
 ): string | null => {
   const transformedWebsiteKeys = Object.keys(
     response.transformed?.websiteDetails || {}
@@ -36,8 +34,46 @@ export const getTransformedWebsiteName = (
   return transformedWebsiteKeys[0]
 }
 
+export interface WebsiteListingResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  results: Website[]
+}
+type WebsitesListing = Record<string, string[]> // offset to list of site names
+export const websiteListingRequest = (offset: number): QueryConfig => ({
+  url:       siteApiListingUrl(offset),
+  transform: (body: WebsiteListingResponse) => {
+    const details = {}
+    for (const site of body.results) {
+      details[site.name] = site
+    }
+
+    return {
+      websitesListing: {
+        [`${offset}`]: {
+          ...body,
+          results: body.results.map(result => result.name)
+        }
+      },
+      websiteDetails: details
+    }
+  },
+  update: {
+    websitesListing: (prev: WebsitesListing, next: WebsitesListing) => ({
+      ...prev,
+      ...next
+    }),
+    websiteDetails: (prev: WebsiteDetails, next: WebsiteDetails) => ({
+      ...prev,
+      ...next
+    })
+  },
+  force: true // try to prevent stale information
+})
+
 export const websiteDetailRequest = (name: string): QueryConfig => ({
-  url:       siteApiUrl(name),
+  url:       siteApiDetailUrl(name),
   transform: (body: Website) => ({
     websiteDetails: {
       [name]: body
@@ -48,7 +84,8 @@ export const websiteDetailRequest = (name: string): QueryConfig => ({
       ...prev,
       ...next
     })
-  }
+  },
+  force: true // force a refresh to update incomplete information from listing API
 })
 
 export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({

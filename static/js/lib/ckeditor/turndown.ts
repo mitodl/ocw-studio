@@ -30,7 +30,6 @@ turndownService.rules.blankRule.replacement = (
   )
 
   if (matchingRules.length > 1) {
-    console.log(matchingRules)
     throw new Error("should only be a single matching rule")
   }
 

@@ -1,19 +1,25 @@
 const mockUseRouteMatch = jest.fn()
 
-import sinon, { SinonStub } from "sinon"
-import { act } from "react-dom/test-utils"
+import SitesDashboard, { siteDescription } from "./SitesDashboard"
 
-import SitesDashboard from "./SitesDashboard"
+import { WEBSITES_PAGE_SIZE } from "../constants"
+import {
+  newSiteUrl,
+  siteApiListingUrl,
+  siteDetailUrl,
+  siteListingUrl
+} from "../lib/urls"
+import { WebsiteListingResponse } from "../query-configs/websites"
+import { isIf } from "../test_util"
+import {
+  makeWebsiteListing,
+  makeWebsiteDetail
+} from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
-import {
-  makeWebsiteDetail,
-  makeWebsiteStarter
-} from "../util/factories/websites"
-import { siteUrl } from "../lib/urls"
 
-import { Website, WebsiteStarter } from "../types/websites"
+import { Website } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -23,142 +29,124 @@ jest.mock("react-router-dom", () => ({
 
 describe("SitesDashboard", () => {
   let helper: IntegrationTestHelper,
+    response: WebsiteListingResponse,
     render: TestRenderer,
-    starters: Array<WebsiteStarter>,
-    website: Website,
-    historyPushStub: SinonStub
+    websites: Website[],
+    websitesLookup: Record<string, Website>
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    starters = [makeWebsiteStarter(), makeWebsiteStarter()]
-    website = makeWebsiteDetail()
-    historyPushStub = sinon.stub()
+    websites = makeWebsiteListing()
+    websitesLookup = {}
+    for (const site of websites) {
+      websitesLookup[site.name] = site
+    }
+    response = {
+      results:  websites,
+      next:     "https://example.com",
+      previous: null,
+      count:    10
+    }
+    helper.handleRequestStub.withArgs(siteApiListingUrl(0), "GET").returns({
+      body:   response,
+      status: 200
+    })
     render = helper.configureRenderer(
-      // @ts-ignore
       SitesDashboard,
       {
-        history:  { push: historyPushStub },
+        location: {
+          search: ""
+        }
+      },
+      {
         entities: {
-          starters: []
+          websitesListing: {
+            ["0"]: {
+              ...response,
+              results: websites.map(site => site.name)
+            }
+          },
+          websiteDetails: websitesLookup
         },
         queries: {}
       }
     )
-
-    helper.handleRequestStub.withArgs(`/api/starters/`, "GET").returns({
-      body:   starters,
-      status: 200
-    })
   })
 
   afterEach(() => {
     helper.cleanup()
   })
 
-  it("renders a form with the right props", async () => {
+  it("lists a page", async () => {
     const { wrapper } = await render()
-    const form = wrapper.find("SiteForm")
-    expect(form.exists()).toBe(true)
-    expect(form.prop("websiteStarters")).toBe(starters)
+    let idx = 0
+    for (const website of websites) {
+      const li = wrapper
+        .find("ul.listing")
+        .find("li")
+        .at(idx)
+      expect(li.find("Link").prop("to")).toBe(siteDetailUrl(website.name))
+      expect(li.find("Link").text()).toBe(website.title)
+      expect(li.find(".site-description").text()).toBe(siteDescription(website))
+      idx++
+    }
   })
 
-  describe("passes a form submit function", () => {
-    const errorMsg = "Error"
-    let formikStubs: { [key: string]: SinonStub }, createWebsiteStub: SinonStub
+  it("has an add link to the new site page", async () => {
+    const { wrapper } = await render()
+    expect(wrapper.find(`Link.add-new`).prop("to")).toBe(newSiteUrl())
+  })
 
-    beforeEach(() => {
-      formikStubs = {
-        setErrors:     sinon.stub(),
-        setSubmitting: sinon.stub(),
-        setStatus:     sinon.stub()
-      }
-    })
-
-    it("that creates a new site and redirect on success", async () => {
-      createWebsiteStub = helper.handleRequestStub
-        .withArgs(`/api/websites/`, "POST")
-        .returns({
-          body:   website,
-          status: 201
+  //
+  ;[true, false].forEach(hasPrevLink => {
+    [true, false].forEach(hasNextLink => {
+      it(`shows the right links when there ${isIf(
+        hasPrevLink
+      )} a previous link and ${isIf(
+        hasNextLink
+      )} has a next link`, async () => {
+        response.next = hasNextLink ? "next" : null
+        response.previous = hasPrevLink ? "prev" : null
+        const startingOffset = 0
+        const { wrapper } = await render({
+          location: {
+            search: `offset=${startingOffset}`
+          }
         })
-      const { wrapper } = await render()
-      const form = wrapper.find("SiteForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            title:   "My Title",
-            starter: 1
-          },
-          // @ts-ignore
-          formikStubs
-        )
-      })
-      sinon.assert.calledOnce(createWebsiteStub)
-      sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
-      sinon.assert.calledOnceWithExactly(historyPushStub, siteUrl(website.name))
-    })
-    it("that sets form errors if the API request fails", async () => {
-      const errorResp = {
-        errors: {
-          title: errorMsg
+
+        const prevWrapper = wrapper.find(".pagination Link.previous")
+        expect(prevWrapper.exists()).toBe(hasPrevLink)
+        if (hasPrevLink) {
+          expect(prevWrapper.prop("to")).toBe(
+            siteListingUrl(startingOffset - WEBSITES_PAGE_SIZE)
+          )
         }
-      }
-      createWebsiteStub = helper.handleRequestStub
-        .withArgs(`/api/websites/`, "POST")
-        .returns({
-          body:   errorResp,
-          status: 400
-        })
-      const { wrapper } = await render()
-      const form = wrapper.find("SiteForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            title:   errorMsg,
-            starter: 1
-          },
-          // @ts-ignore
-          formikStubs
-        )
+
+        const nextWrapper = wrapper.find(".pagination Link.next")
+        expect(nextWrapper.exists()).toBe(hasNextLink)
+        if (hasNextLink) {
+          expect(nextWrapper.prop("to")).toBe(
+            siteListingUrl(startingOffset + WEBSITES_PAGE_SIZE)
+          )
+        }
       })
-      sinon.assert.calledOnce(createWebsiteStub)
-      sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
-        ...errorResp.errors,
-        starter: undefined
-      })
-      sinon.assert.notCalled(historyPushStub)
     })
-    it("that sets a status if the API request fails with a string error message", async () => {
-      const errorResp = {
-        errors: errorMsg
+  })
+
+  describe("siteDescription", () => {
+    it("makes description text for a site with metadata", () => {
+      const site = {
+        ...makeWebsiteDetail(),
+        metadata: null
       }
-      createWebsiteStub = helper.handleRequestStub
-        .withArgs(`/api/websites/`, "POST")
-        .returns({
-          body:   errorResp,
-          status: 400
-        })
-      const { wrapper } = await render()
-      const form = wrapper.find("SiteForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            title:   "My Title",
-            starter: 1
-          },
-          // @ts-ignore
-          formikStubs
-        )
-      })
-      sinon.assert.calledOnce(createWebsiteStub)
-      sinon.assert.calledOnceWithExactly(formikStubs.setStatus, errorMsg)
-      sinon.assert.notCalled(historyPushStub)
+      expect(siteDescription(site)).toBe(null)
+    })
+
+    it("makes description text for a site without metadata", () => {
+      const site = makeWebsiteDetail()
+      expect(siteDescription(site)).toBe(
+        `${site.metadata.course_numbers[0]} - ${site.metadata.term}`
+      )
     })
   })
 })

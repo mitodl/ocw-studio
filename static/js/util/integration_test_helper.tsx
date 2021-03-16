@@ -78,7 +78,7 @@ export default class IntegrationTestHelper {
   }
 
   configureRenderer(
-    Component: ComponentType | FunctionComponent,
+    Component: ComponentType<any> | FunctionComponent<any>,
     defaultProps = {},
     defaultState?: ReduxState
   ) {

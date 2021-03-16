@@ -9,3 +9,5 @@ export const defaultFormikChildProps: FormikState<any> = {
   status:       null,
   submitCount:  0
 }
+
+export const isIf = (tf: boolean): string => (tf ? "is" : "is not")

@@ -12,6 +12,22 @@ export const getWebsiteDetailCursor = createSelector(
   websiteDetails => memoize((name: string) => websiteDetails[name])
 )
 
+export const getWebsiteListingCursor = createSelector(
+  (state: ReduxState) => state.entities?.websitesListing ?? {},
+  getWebsiteDetailCursor,
+  (listing, websiteDetailCursor) =>
+    memoize((offset: number) => {
+      const response = listing[offset] ?? {}
+      const names = response?.results ?? []
+      const sites = names.map(websiteDetailCursor)
+
+      return {
+        ...response,
+        results: sites
+      }
+    })
+)
+
 export const startersSelector = (state: ReduxState): Array<WebsiteStarter> =>
   state.entities?.starters ?? []
 

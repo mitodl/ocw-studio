@@ -18,6 +18,8 @@ export const CONTENT_TYPE_PAGE = "page"
 export const CONTENT_TYPE_RESOURCE = "resource"
 export const CONTENT_TYPES = [CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE]
 
+export const WEBSITES_PAGE_SIZE = 10
+
 export const exampleSiteConfig: WebsiteStarterConfig = {
   collections: [
     {

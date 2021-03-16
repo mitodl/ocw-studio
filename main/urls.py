@@ -30,6 +30,7 @@ urlpatterns = [
     # Example view
     path("", index, name="main-index"),
     re_path(r"^sites/.*$", index),
+    path("new-site/", index),
     path("markdown-editor", index, name="markdown-editor-test"),
     path("", include("news.urls")),
     path("", include("websites.urls")),
