@@ -1,8 +1,9 @@
 import {
   newSiteUrl,
   siteAddContentUrl,
+  siteApiContentCreateUrl,
   siteApiContentDetailUrl,
-  siteApiContentUrl,
+  siteApiContentListingUrl,
   siteApiDetailUrl,
   siteApiListingUrl,
   siteContentListingUrl,
@@ -30,10 +31,17 @@ describe("urls", () => {
     expect(siteDetailUrl("course-name")).toBe("/sites/course-name/")
   })
 
-  it("renders a site listing URL", () => {
-    expect(siteContentListingUrl("course-name", CONTENT_TYPE_RESOURCE)).toBe(
-      "/sites/course-name/resource/"
-    )
+  //
+  ;[
+    [0, "site-name", "page", "/sites/site-name/page/"],
+    [20, "course-name", "resource", "/sites/course-name/resource/?offset=20"]
+  ].forEach(([offset, siteName, contentType, expectedLink]) => {
+    it(`renders a site listing URL with offset=${offset}`, () => {
+      // @ts-ignore
+      expect(siteContentListingUrl(siteName, contentType, offset)).toBe(
+        expectedLink
+      )
+    })
   })
 
   it("renders a URL for adding new content", () => {
@@ -51,15 +59,23 @@ describe("urls", () => {
       expect(siteApiDetailUrl("course-name")).toBe("/api/websites/course-name/")
     })
 
-    it("renders a URL for site content listing", () => {
-      expect(siteApiContentUrl("course-name")).toBe(
-        "/api/websites/course-name/content/"
+    it(`renders a URL for site content listing`, () => {
+      expect(
+        siteApiContentListingUrl("course-name", CONTENT_TYPE_RESOURCE, 20)
+      ).toBe(
+        "/api/websites/course-name/content/?type=resource&limit=10&offset=20"
       )
     })
 
     it("renders a URL for site content detail", () => {
       expect(siteApiContentDetailUrl("course-name", "uuid")).toBe(
         "/api/websites/course-name/content/uuid/"
+      )
+    })
+
+    it("renders a URL for creating new sites", () => {
+      expect(siteApiContentCreateUrl("site-name")).toBe(
+        "/api/websites/site-name/content/"
       )
     })
   })

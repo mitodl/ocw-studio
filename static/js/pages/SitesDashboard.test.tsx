@@ -102,12 +102,16 @@ describe("SitesDashboard", () => {
     [true, false].forEach(hasNextLink => {
       it(`shows the right links when there ${isIf(
         hasPrevLink
-      )} a previous link and ${isIf(
-        hasNextLink
-      )} has a next link`, async () => {
+      )} a previous link and ${isIf(hasNextLink)} a next link`, async () => {
         response.next = hasNextLink ? "next" : null
         response.previous = hasPrevLink ? "prev" : null
-        const startingOffset = 0
+        const startingOffset = 20
+        helper.handleRequestStub
+          .withArgs(siteApiListingUrl(startingOffset), "GET")
+          .returns({
+            body:   response,
+            status: 200
+          })
         const { wrapper } = await render({
           location: {
             search: `offset=${startingOffset}`

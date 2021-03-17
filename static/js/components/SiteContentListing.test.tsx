@@ -4,8 +4,17 @@ import { act } from "react-dom/test-utils"
 
 import SiteContentListing from "./SiteContentListing"
 
-import { siteAddContentUrl, siteContentListingUrl } from "../lib/urls"
-import { contentListingKey } from "../query-configs/websites"
+import { isIf } from "../test_util"
+import {
+  siteAddContentUrl,
+  siteApiContentDetailUrl,
+  siteApiContentListingUrl,
+  siteContentListingUrl
+} from "../lib/urls"
+import {
+  contentListingKey,
+  WebsiteContentListingResponse
+} from "../query-configs/websites"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
@@ -15,6 +24,7 @@ import {
 } from "../util/factories/websites"
 
 import { Website, WebsiteContentListItem } from "../types/websites"
+import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -30,7 +40,8 @@ describe("SiteContentListing", () => {
     render: TestRenderer,
     website: Website,
     contentType: string,
-    contentListingItems: WebsiteContentListItem[]
+    contentListingItems: WebsiteContentListItem[],
+    response: WebsiteContentListingResponse
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -40,28 +51,43 @@ describe("SiteContentListing", () => {
       makeWebsiteContentListItem(),
       makeWebsiteContentListItem()
     ]
+    response = {
+      results:  contentListingItems,
+      count:    2,
+      next:     null,
+      previous: null
+    }
     // @ts-ignore
     contentType = website.starter?.config?.collections[0].name
     const contentListingLookup = {
-      [contentListingKey(website.name, contentType)]: contentListingItems
+      [contentListingKey(website.name, contentType, 0)]: {
+        ...response,
+        results: response.results.map(item => item.uuid)
+      }
+    }
+    const details = {}
+    for (const item of contentListingItems) {
+      details[item.uuid] = item
     }
     helper.handleRequestStub
-      .withArgs(
-        `/api/websites/${website.name}/content/?type=${contentType}`,
-        "GET"
-      )
+      .withArgs(siteApiContentListingUrl(website.name, contentType, 0), "GET")
       .returns({
-        body:   contentListingItems,
+        body:   response,
         status: 200
       })
 
     render = helper.configureRenderer(
       SiteContentListing,
-      {},
+      {
+        location: {
+          search: ""
+        }
+      },
       {
         entities: {
           websiteDetails:        websitesLookup,
-          websiteContentListing: contentListingLookup
+          websiteContentListing: contentListingLookup,
+          websiteContentDetails: details
         },
         queries: {}
       }
@@ -83,7 +109,7 @@ describe("SiteContentListing", () => {
         .find("NavLink")
         .at(0)
         .prop("to")
-    ).toBe(siteContentListingUrl(params.name, params.contenttype))
+    ).toBe(siteContentListingUrl(params.name, params.contenttype, 0))
     expect(
       wrapper
         .find("NavLink")
@@ -97,6 +123,16 @@ describe("SiteContentListing", () => {
     mockUseRouteMatch.mockImplementation(() => ({
       params
     }))
+    for (const item of contentListingItems) {
+      // when the edit button is tapped the detail view is requested, so mock each one out
+      helper.handleRequestStub
+        .withArgs(siteApiContentDetailUrl(website.name, item.uuid), "GET")
+        .returns({
+          body:   item,
+          status: 200
+        })
+    }
+
     const { wrapper } = await render()
     expect(wrapper.find("SiteEditContent").exists()).toBe(false)
 
@@ -115,6 +151,7 @@ describe("SiteContentListing", () => {
       const component = wrapper.find("SiteEditContent")
       expect(component.prop("uuid")).toBe(item.uuid)
       expect(component.prop("visibility")).toBe(true)
+
       act(() => {
         // @ts-ignore
         component.prop("toggleVisibility")()
@@ -124,5 +161,60 @@ describe("SiteContentListing", () => {
 
       idx++
     }
+  })
+
+  //
+  ;[true, false].forEach(hasPrevLink => {
+    [true, false].forEach(hasNextLink => {
+      it(`shows the right links when there ${isIf(
+        hasPrevLink
+      )} a previous link and ${isIf(hasNextLink)} a next link`, async () => {
+        const params = { name: website.name, contenttype: contentType }
+        mockUseRouteMatch.mockImplementation(() => ({
+          params
+        }))
+        response.next = hasNextLink ? "next" : null
+        response.previous = hasPrevLink ? "prev" : null
+        const startingOffset = 20
+        helper.handleRequestStub
+          .withArgs(
+            siteApiContentListingUrl(website.name, contentType, startingOffset),
+            "GET"
+          )
+          .returns({
+            body:   response,
+            status: 200
+          })
+        const { wrapper } = await render({
+          location: {
+            search: `offset=${startingOffset}`
+          }
+        })
+
+        const prevWrapper = wrapper.find(".pagination Link.previous")
+        expect(prevWrapper.exists()).toBe(hasPrevLink)
+        if (hasPrevLink) {
+          expect(prevWrapper.prop("to")).toBe(
+            siteContentListingUrl(
+              website.name,
+              contentType,
+              startingOffset - WEBSITE_CONTENT_PAGE_SIZE
+            )
+          )
+        }
+
+        const nextWrapper = wrapper.find(".pagination Link.next")
+        expect(nextWrapper.exists()).toBe(hasNextLink)
+        if (hasNextLink) {
+          expect(nextWrapper.prop("to")).toBe(
+            siteContentListingUrl(
+              website.name,
+              contentType,
+              startingOffset + WEBSITE_CONTENT_PAGE_SIZE
+            )
+          )
+        }
+      })
+    })
   })
 })

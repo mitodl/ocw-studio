@@ -44,16 +44,26 @@ export const getWebsiteCollaboratorDetailCursor = createSelector(
     )
 )
 
-export const getWebsiteContentListingCursor = createSelector(
-  (state: ReduxState) => state.entities?.websiteContentListing ?? {},
-  listing =>
-    memoize(
-      (name: string, type: string) => listing[contentListingKey(name, type)],
-      (name, type) => `${name}-${type}`
-    )
-)
-
 export const getWebsiteContentDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteContentDetails ?? {},
   content => memoize((uuid: string) => content[uuid])
+)
+
+export const getWebsiteContentListingCursor = createSelector(
+  (state: ReduxState) => state.entities?.websiteContentListing ?? {},
+  getWebsiteContentDetailCursor,
+  (listing, websiteContentDetailCursor) =>
+    memoize(
+      (name: string, type: string, offset: number) => {
+        const response = listing[contentListingKey(name, type, offset)] ?? {}
+        const uuids = response?.results ?? []
+        const items = uuids.map(websiteContentDetailCursor)
+
+        return {
+          ...response,
+          results: items
+        }
+      },
+      (name, type, offset: number) => contentListingKey(name, type, offset)
+    )
 )
