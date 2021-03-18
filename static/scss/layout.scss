@@ -62,3 +62,13 @@ $modal-sidebar-width: 540px;
 .modal.right.fade.show .modal-dialog {
   right: 0;
 }
+
+// from https://ckeditor.com/docs/ckeditor5/latest/builds/guides/integration/frameworks/css.html
+/*
+ * Configure the z-index of the ckeditor UI, so when inside a Bootstrap
+ * modal, it will be rendered over the modal.
+ */
+:root {
+  --ck-z-default: 10000 !important;
+  --ck-z-modal: calc(var(--ck-z-default) + 999);
+}
