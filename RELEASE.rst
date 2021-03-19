@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.7.0
+Version 0.7.0 (Released March 19, 2021)
 -------------
 
 - Increase z-index for ckeditor balloons (#123)
