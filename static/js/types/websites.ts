@@ -9,7 +9,11 @@ export interface ConfigField {
 export interface ConfigItem {
   name: string
   label: string
+  category: string
   fields: ConfigField[]
+  file?: string
+  files?: Array<any>
+  folder?: string
 }
 
 export interface WebsiteStarterConfig {

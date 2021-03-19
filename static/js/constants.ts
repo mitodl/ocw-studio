@@ -14,51 +14,77 @@ export const ROLE_LABELS = {
 
 export const EDITABLE_ROLES = [ROLE_ADMIN, ROLE_EDITOR]
 
-export const CONTENT_TYPE_PAGE = "page"
-export const CONTENT_TYPE_RESOURCE = "resource"
-export const CONTENT_TYPES = [CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE]
-
 export const WEBSITES_PAGE_SIZE = 10
 export const WEBSITE_CONTENT_PAGE_SIZE = 10
 
+/*
+ * This represents the "reserved" name for the field that captures the markdown content for the body of a page.
+ * In Hugo terms, this is everything below the front matter in a ".md" file.
+ */
+export const MAIN_PAGE_CONTENT_FIELD = "content"
+export const MAIN_PAGE_CONTENT_DB_FIELD = "markdown"
+
+/* eslint-disable quote-props, key-spacing */
 export const exampleSiteConfig: WebsiteStarterConfig = {
   collections: [
     {
-      name:   CONTENT_TYPE_PAGE,
-      label:  "Page",
       fields: [
         {
-          name:   "title",
-          label:  "Title",
+          label: "Title",
+          name: "title",
           widget: "string"
         },
         {
-          name:   "content",
-          label:  "Content",
+          label: "Content",
+          name: "content",
           widget: "markdown"
         }
-      ]
+      ],
+      folder: "content",
+      label: "Page",
+      name: "page",
+      category: "Content"
     },
     {
-      name:   CONTENT_TYPE_RESOURCE,
-      label:  "Resource",
       fields: [
         {
-          name:   "title",
-          label:  "Title",
+          label: "Title",
+          name: "title",
           widget: "string"
         },
         {
-          name:   "description",
-          label:  "Description",
+          label: "Description",
+          name: "description",
           widget: "text"
         },
         {
-          name:   "file",
-          label:  "File",
+          label: "File",
+          name: "file",
           widget: "file"
         }
-      ]
+      ],
+      folder: "content",
+      label: "Resource",
+      name: "resource",
+      category: "Content"
+    },
+    {
+      fields: [
+        {
+          label: "Course Title",
+          name: "title",
+          widget: "text"
+        },
+        {
+          label: "Course Description",
+          name: "description",
+          widget: "markdown"
+        }
+      ],
+      file: "data/metadata.json",
+      label: "Site Metadata",
+      name: "metadata",
+      category: "Settings"
     }
   ]
 }

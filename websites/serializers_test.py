@@ -5,12 +5,7 @@ from django.db.models import CharField, Value
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
-from websites.constants import (
-    CONTENT_TYPE_PAGE,
-    CONTENT_TYPES,
-    ROLE_EDITOR,
-    WEBSITE_SOURCE_OCW_IMPORT,
-)
+from websites.constants import CONTENT_TYPE_PAGE, ROLE_EDITOR, WEBSITE_SOURCE_OCW_IMPORT
 from websites.factories import (
     EXAMPLE_SITE_CONFIG,
     WebsiteContentFactory,
@@ -204,19 +199,3 @@ def test_website_content_create_serializer(mocker):
     assert content.markdown == payload["markdown"]
     assert content.type == payload["type"]
     assert content.metadata == metadata
-
-
-@pytest.mark.parametrize(
-    "content_type, is_valid",
-    [[content_type, True] for content_type in CONTENT_TYPES]
-    + [["invalid", False], ["", False]],
-)
-def test_website_content_create_serializer_invalid_type(mocker, content_type, is_valid):
-    """WebsiteContentCreateSerializer should reject types which are not validated"""
-    payload = {
-        "type": content_type,
-    }
-    website = WebsiteFactory.create()
-    context = {"view": mocker.Mock(kwargs={"parent_lookup_website": website.name})}
-    serializer = WebsiteContentCreateSerializer(data=payload, context=context)
-    assert serializer.is_valid() is is_valid

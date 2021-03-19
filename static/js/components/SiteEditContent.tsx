@@ -10,7 +10,7 @@ import {
   websiteContentDetailRequest
 } from "../query-configs/websites"
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
-import SiteEditForm from "./forms/SiteEditForm"
+import SiteEditContentForm from "./forms/SiteEditContentForm"
 import { contentFormValuesToPayload } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 
@@ -86,7 +86,7 @@ export default function SiteEditContent(props: Props): JSX.Element | null {
           Edit {configItem.name}
         </ModalHeader>
         <ModalBody>
-          <SiteEditForm
+          <SiteEditContentForm
             onSubmit={onSubmitForm}
             configItem={configItem}
             content={content}

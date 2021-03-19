@@ -52,3 +52,12 @@ export const filenameFromPath = (filepath: string): string => {
   }
   return basename
 }
+
+export const addToMapList = <TKey, TValue>(
+  map: Map<TKey, Array<TValue>>,
+  key: TKey,
+  value: TValue
+): void => {
+  const list = map.get(key) ?? []
+  map.set(key, [...list, value])
+}

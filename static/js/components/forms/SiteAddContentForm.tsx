@@ -21,7 +21,7 @@ interface Props {
   ) => void | Promise<any>
   configItem: ConfigItem
 }
-export default function SiteAddForm({
+export default function SiteAddContentForm({
   onSubmit,
   configItem
 }: Props): JSX.Element {

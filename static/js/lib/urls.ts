@@ -7,10 +7,9 @@ export const sitesBaseUrl = UrlAssembler().prefix("/sites/")
 export const newSiteUrl = UrlAssembler().prefix("/new-site/")
 
 export const siteDetailUrl = sitesBaseUrl.segment(":name/")
+export const siteCollaboratorsUrl = siteDetailUrl.segment("collaborators/")
 export const siteContentListingUrl = siteDetailUrl.segment(":contentType/")
 export const siteAddContentUrl = siteContentListingUrl.segment("add/")
-export const siteSettingsUrl = siteDetailUrl.segment("settings/")
-export const siteCollaboratorsUrl = siteSettingsUrl.segment("collaborators/")
 export const siteCollaboratorsAddUrl = siteCollaboratorsUrl.segment("new/")
 export const siteCollaboratorsDetailUrl = siteCollaboratorsUrl.segment(
   ":username/"

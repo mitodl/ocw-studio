@@ -4,10 +4,9 @@ import { shallow } from "enzyme"
 import SiteSidebar from "./SiteSidebar"
 
 import { makeWebsiteDetail } from "../util/factories/websites"
-import { siteContentListingUrl } from "../lib/urls"
+import { siteCollaboratorsUrl, siteContentListingUrl } from "../lib/urls"
 
 import { Website } from "../types/websites"
-import { CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE } from "../constants"
 
 describe("SiteSidebar", () => {
   let website: Website
@@ -27,17 +26,42 @@ describe("SiteSidebar", () => {
       [
         "Page",
         siteContentListingUrl
-          .param({ name: website.name, contentType: CONTENT_TYPE_PAGE })
+          .param({
+            name:        website.name,
+            contentType: "page"
+          })
           .toString()
       ],
       [
         "Resource",
         siteContentListingUrl
-          .param({ name: website.name, contentType: CONTENT_TYPE_RESOURCE })
+          .param({
+            name:        website.name,
+            contentType: "resource"
+          })
+          .toString()
+      ],
+      [
+        "Site Metadata",
+        siteContentListingUrl
+          .param({
+            name:        website.name,
+            contentType: "metadata"
+          })
           .toString()
       ]
     ]
 
     expect(links).toEqual(expect.arrayContaining(expected))
+  })
+
+  it("renders a collaborators link if the user is an admin for the given website", () => {
+    website.is_admin = true
+    const wrapper = shallow(<SiteSidebar website={website} />)
+
+    const collaboratorLinkUrl = siteCollaboratorsUrl
+      .param({ name: website.name })
+      .toString()
+    expect(wrapper.find("NavLink").some({ to: collaboratorLinkUrl })).toBe(true)
   })
 })

@@ -2,35 +2,41 @@ import React from "react"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { shallow } from "enzyme"
 
-import SiteEditForm from "./SiteEditForm"
+import SiteAddContentForm from "./SiteAddContentForm"
 
+import { ConfigItem } from "../../types/websites"
 import { defaultFormikChildProps } from "../../test_util"
-import {
-  makeWebsiteContentDetail,
-  makeWebsiteDetail
-} from "../../util/factories/websites"
-import { ConfigItem, Website, WebsiteContent } from "../../types/websites"
 
 jest.mock("../../lib/site_content")
 import { componentFromWidget } from "../../lib/site_content"
 
-describe("SiteEditForm", () => {
+describe("SiteAddContentForm", () => {
   let sandbox: SinonSandbox,
     onSubmitStub: SinonStub,
     setFieldValueStub: SinonStub,
-    configItem: ConfigItem,
-    content: WebsiteContent,
-    website: Website
+    configItem: ConfigItem
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     setFieldValueStub = sinon.stub()
-    website = makeWebsiteDetail()
-    content = makeWebsiteContentDetail()
-    // @ts-ignore
-    configItem = website.starter?.config?.collections.find(
-      item => item.name === content.type
-    )
+    configItem = {
+      fields: [
+        {
+          label:  "Title",
+          name:   "title",
+          widget: "string"
+        },
+        {
+          label:  "Content",
+          name:   "content",
+          widget: "markdown"
+        }
+      ],
+      folder:   "content",
+      label:    "Page",
+      name:     "page",
+      category: "Content"
+    }
   })
 
   afterEach(() => {
@@ -39,11 +45,7 @@ describe("SiteEditForm", () => {
 
   const renderForm = () =>
     shallow(
-      <SiteEditForm
-        configItem={configItem}
-        content={content}
-        onSubmit={onSubmitStub}
-      />
+      <SiteAddContentForm configItem={configItem} onSubmit={onSubmitStub} />
     )
 
   const renderInnerForm = (formikChildProps: { [key: string]: any } = {}) => {
@@ -64,22 +66,24 @@ describe("SiteEditForm", () => {
     // @ts-ignore
     componentFromWidget.mockImplementation(() => widget)
 
+    const fieldGroups = [
+      configItem.fields.filter(field => field.widget === "markdown"),
+      configItem.fields.filter(field => field.widget !== "markdown")
+    ]
+
     const form = renderInnerForm({ setFieldValue: setFieldValueStub })
     let idx = 0
-    for (const field of configItem.fields) {
-      const fieldWrapper = form.find("SiteContentField").at(idx)
-      const setFieldValue =
-        fieldWrapper.find("SiteContentField").prop("name") === "markdown" ?
-          undefined :
-          setFieldValueStub
-      expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
-      expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
-      if (fieldWrapper.find("SiteContentField").prop("name") !== "markdown") {
+    for (const fieldGroup of fieldGroups) {
+      for (const field of fieldGroup) {
+        const fieldWrapper = form.find("SiteContentField").at(idx)
+        const setFieldValue =
+          field.widget === "markdown" ? undefined : setFieldValueStub
+        expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
         expect(
           fieldWrapper.find("SiteContentField").prop("setFieldValue")
         ).toBe(setFieldValue)
+        idx++
       }
-      idx++
     }
   })
 

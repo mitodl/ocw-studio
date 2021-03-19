@@ -2,7 +2,6 @@ import {
   sitesBaseUrl,
   newSiteUrl,
   siteDetailUrl,
-  siteSettingsUrl,
   siteContentListingUrl,
   siteAddContentUrl,
   siteCollaboratorsUrl,
@@ -17,7 +16,6 @@ import {
   siteApiContentDetailUrl,
   siteApiContentListingUrl
 } from "./urls"
-import { CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE } from "../constants"
 
 describe("urls", () => {
   describe("Page URLs", () => {
@@ -39,55 +37,49 @@ describe("urls", () => {
         expect(newSiteUrl.toString()).toBe("/new-site/")
       })
 
-      it("renders a settings url", () => {
-        expect(
-          siteSettingsUrl.param({ name: "a-better-course" }).toString()
-        ).toBe("/sites/a-better-course/settings/")
-      })
-
       it("renders a site URL", () => {
-        expect(siteDetailUrl.param({ name: "course-name" }).toString()).toBe(
-          "/sites/course-name/"
+        expect(siteDetailUrl.param({ name: "site-name" }).toString()).toBe(
+          "/sites/site-name/"
         )
       })
 
       it("renders a site listing URL", () => {
         expect(
           siteContentListingUrl
-            .param({ name: "course-name", contentType: CONTENT_TYPE_RESOURCE })
+            .param({ name: "site-name", contentType: "resource" })
             .toString()
-        ).toBe("/sites/course-name/resource/")
+        ).toBe("/sites/site-name/resource/")
       })
 
       it("renders a URL for adding new content", () => {
         expect(
           siteAddContentUrl
             .param({
-              name:        "course-name",
-              contentType: CONTENT_TYPE_PAGE
+              name:        "site-name",
+              contentType: "page"
             })
             .toString()
-        ).toBe("/sites/course-name/page/add/")
+        ).toBe("/sites/site-name/page/add/")
       })
 
       it("renders a URL for collaborators", () => {
         expect(
-          siteCollaboratorsUrl.param({ name: "course-name" }).toString()
-        ).toBe("/sites/course-name/settings/collaborators/")
+          siteCollaboratorsUrl.param({ name: "site-name" }).toString()
+        ).toBe("/sites/site-name/collaborators/")
       })
 
       it("renders a URL for adding collaborators", () => {
         expect(
-          siteCollaboratorsAddUrl.param({ name: "course-name" }).toString()
-        ).toBe("/sites/course-name/settings/collaborators/new/")
+          siteCollaboratorsAddUrl.param({ name: "site-name" }).toString()
+        ).toBe("/sites/site-name/collaborators/new/")
       })
 
       it("renders a URL for collaborators detail", () => {
         expect(
           siteCollaboratorsDetailUrl
-            .param({ name: "course-name", username: "badoop" })
+            .param({ name: "site-name", username: "badoop" })
             .toString()
-        ).toBe("/sites/course-name/settings/collaborators/badoop/")
+        ).toBe("/sites/site-name/collaborators/badoop/")
       })
     })
   })
@@ -104,40 +96,40 @@ describe("urls", () => {
       })
 
       it("renders a URL for site detail", () => {
-        expect(siteApiDetailUrl.param({ name: "course-name" }).toString()).toBe(
-          "/api/websites/course-name/"
+        expect(siteApiDetailUrl.param({ name: "site-name" }).toString()).toBe(
+          "/api/websites/site-name/"
         )
       })
 
       it("renders a URL for site collaborators", () => {
         expect(
-          siteApiCollaboratorsUrl.param({ name: "course-name" }).toString()
-        ).toBe("/api/websites/course-name/collaborators/")
+          siteApiCollaboratorsUrl.param({ name: "site-name" }).toString()
+        ).toBe("/api/websites/site-name/collaborators/")
       })
 
       it("renders a collaborator detail URL", () => {
         expect(
           siteApiCollaboratorsDetailUrl
             .param({
-              name:     "course-name",
+              name:     "site-name",
               username: "greatusername"
             })
             .toString()
-        ).toBe("/api/websites/course-name/collaborators/greatusername/")
+        ).toBe("/api/websites/site-name/collaborators/greatusername/")
       })
 
       it("renders a URL for site content listing", () => {
-        expect(
-          siteApiContentUrl.param({ name: "course-name" }).toString()
-        ).toBe("/api/websites/course-name/content/")
+        expect(siteApiContentUrl.param({ name: "site-name" }).toString()).toBe(
+          "/api/websites/site-name/content/"
+        )
       })
 
       it("renders a URL for site content detail", () => {
         expect(
           siteApiContentDetailUrl
-            .param({ name: "course-name", uuid: "uuid" })
+            .param({ name: "site-name", uuid: "uuid" })
             .toString()
-        ).toBe("/api/websites/course-name/content/uuid/")
+        ).toBe("/api/websites/site-name/content/uuid/")
       })
 
       it("should render a content listing URL", () => {

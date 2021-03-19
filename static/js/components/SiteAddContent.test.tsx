@@ -72,7 +72,7 @@ describe("SiteAddContent", () => {
 
   it("renders a form", async () => {
     const { wrapper } = await render()
-    const form = wrapper.find("SiteAddForm")
+    const form = wrapper.find("SiteAddContentForm")
     expect(form.exists()).toBe(true)
     expect(form.prop("configItem")).toBe(configItem)
   })
@@ -90,7 +90,7 @@ describe("SiteAddContent", () => {
       })
     const { wrapper } = await render()
 
-    const onSubmit = wrapper.find("SiteAddForm").prop("onSubmit")
+    const onSubmit = wrapper.find("SiteAddContentForm").prop("onSubmit")
     const values = {
       title:   "A title",
       content: "some markdown here"
@@ -128,7 +128,7 @@ describe("SiteAddContent", () => {
       })
     const { wrapper } = await render()
 
-    const onSubmit = wrapper.find("SiteAddForm").prop("onSubmit")
+    const onSubmit = wrapper.find("SiteAddContentForm").prop("onSubmit")
     await act(async () => {
       // @ts-ignore
       await onSubmit({}, formikStubs)
@@ -149,7 +149,7 @@ describe("SiteAddContent", () => {
       })
     const { wrapper } = await render()
 
-    const onSubmit = wrapper.find("SiteAddForm").prop("onSubmit")
+    const onSubmit = wrapper.find("SiteAddContentForm").prop("onSubmit")
     await act(async () => {
       // @ts-ignore
       await onSubmit({}, formikStubs)

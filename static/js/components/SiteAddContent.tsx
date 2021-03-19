@@ -4,7 +4,7 @@ import { useSelector } from "react-redux"
 import { FormikHelpers } from "formik"
 import { useMutation } from "redux-query-react"
 
-import SiteAddForm from "./forms/SiteAddForm"
+import SiteAddContentForm from "./forms/SiteAddContentForm"
 
 import { contentFormValuesToPayload } from "../lib/site_content"
 import { siteContentListingUrl } from "../lib/urls"
@@ -54,7 +54,6 @@ export default function SiteAddContent({ history }: Props): JSX.Element | null {
 
     values = { type: contenttype, ...values }
     const payload = contentFormValuesToPayload(values, configItem.fields)
-
     const response = await addWebsiteContent(payload as any)
     if (!response) {
       return
@@ -85,7 +84,7 @@ export default function SiteAddContent({ history }: Props): JSX.Element | null {
     <div>
       <h3>New {configItem.label}</h3>
       <div>
-        <SiteAddForm onSubmit={onSubmitForm} configItem={configItem} />
+        <SiteAddContentForm onSubmit={onSubmitForm} configItem={configItem} />
       </div>
     </div>
   )

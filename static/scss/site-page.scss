@@ -17,14 +17,12 @@ $menu-spacing: 15px;
     ul {
       list-style: none;
       margin: 0;
+      padding: 0;
     }
 
-    > ul {
-      padding: 0;
-
-      > li {
-        padding-bottom: $menu-spacing;
-      }
+    ul > li > ul {
+      margin: 0 0 10px 0;
+      padding-left: 10px;
     }
   }
 
