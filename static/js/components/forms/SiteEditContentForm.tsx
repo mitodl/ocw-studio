@@ -28,7 +28,7 @@ export const websiteValidation = yup.object().shape({
     .required()
 })
 
-export default function SiteEditForm({
+export default function SiteEditContentForm({
   onSubmit,
   configItem,
   content

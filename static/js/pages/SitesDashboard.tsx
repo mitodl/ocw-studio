@@ -42,7 +42,7 @@ export default function SitesDashboard(
     <div className="px-4 sites-dashboard">
       <div className="content">
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
-          <h3>Courses /</h3>
+          <h3>Sites</h3>
           <Link className="add-new" to={newSiteUrl.toString()}>
             Add New
           </Link>

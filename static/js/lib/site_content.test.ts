@@ -8,15 +8,27 @@ import {
   contentFormValuesToPayload,
   contentInitialValues
 } from "./site_content"
+import { MAIN_PAGE_CONTENT_FIELD } from "../constants"
 
 describe("site_content", () => {
   describe("contentFormValuesToPayload", () => {
-    it("changes the name of markdown", () => {
+    it("changes the name of a 'content' field if it uses the markdown widget", () => {
       const values = {
-        content: "some content",
-        title:   "a title"
+        title:   "a title",
+        content: "some content"
       }
-      const fields = makeWebsiteStarterConfig().collections[0].fields
+      const fields = [
+        {
+          label:  "Title",
+          name:   "title",
+          widget: "string"
+        },
+        {
+          label:  "Content",
+          name:   MAIN_PAGE_CONTENT_FIELD,
+          widget: "markdown"
+        }
+      ]
       const payload = contentFormValuesToPayload(values, fields)
       expect(payload).toStrictEqual({
         markdown: "some content",
@@ -24,7 +36,7 @@ describe("site_content", () => {
       })
     })
 
-    it("passes through title and type but not other names", () => {
+    it("passes through title and type, and namespaces other fields under 'metadata'", () => {
       const values = {
         title:       "a title",
         type:        "resource",
@@ -71,10 +83,10 @@ describe("site_content", () => {
       // @ts-ignore
       const payload = contentInitialValues(content, fields)
       expect(payload).toStrictEqual({
-        file:        null,
-        title:       content.title,
-        description: content.metadata?.description,
-        content:     content.markdown
+        file:                      null,
+        title:                     content.title,
+        description:               content.metadata?.description,
+        [MAIN_PAGE_CONTENT_FIELD]: content.markdown
       })
     })
   })

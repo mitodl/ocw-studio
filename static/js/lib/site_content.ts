@@ -5,6 +5,10 @@ import MarkdownEditor from "../components/MarkdownEditor"
 import { ConfigField, WebsiteContent } from "../types/websites"
 import FileUploadField from "../components/forms/FileUploadField"
 import { objectToFormData } from "./util"
+import {
+  MAIN_PAGE_CONTENT_DB_FIELD,
+  MAIN_PAGE_CONTENT_FIELD
+} from "../constants"
 
 export const componentFromWidget = (
   field: ConfigField
@@ -19,6 +23,12 @@ export const componentFromWidget = (
   }
 }
 
+const isMainContentField = (field: ConfigField) =>
+  field.name === MAIN_PAGE_CONTENT_FIELD && field.widget === "markdown"
+
+/*
+ * Translates page content form values into a payload that our REST API understands.
+ */
 export const contentFormValuesToPayload = (
   values: { [key: string]: string | File },
   fields: ConfigField[]
@@ -35,8 +45,11 @@ export const contentFormValuesToPayload = (
   for (const field of fields) {
     const value = values[field.name]
     if (value !== null && value !== undefined) {
-      if (field.widget === "markdown") {
-        payload["markdown"] = value
+      // Our API expects these bits of data as top-level keys in the payload:
+      // (1) main page content in markdown, (2) title, (3) a file. None of those values are required.
+      // All other values are nested under the "metadata" key.
+      if (isMainContentField(field)) {
+        payload[MAIN_PAGE_CONTENT_DB_FIELD] = value
       } else if (field.name === "title") {
         payload[field.name] = value
         // @ts-ignore
@@ -55,6 +68,9 @@ export const contentFormValuesToPayload = (
   return values["file"] ? objectToFormData(payload) : payload
 }
 
+/*
+ * Translates site content REST API data into initial values that our forms understand.
+ */
 export const contentInitialValues = (
   content: WebsiteContent,
   fields: ConfigField[]
@@ -63,7 +79,7 @@ export const contentInitialValues = (
   const metadata = content.metadata ?? {}
 
   for (const field of fields) {
-    if (field.widget === "markdown") {
+    if (isMainContentField(field)) {
       values[field.name] = content.markdown ?? ""
     } else if (field.name === "title") {
       values[field.name] = content[field.name] ?? ""

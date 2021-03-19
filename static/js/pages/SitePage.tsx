@@ -39,15 +39,15 @@ export default function SitePage(): JSX.Element | null {
         <div className="content">
           <Switch>
             <Route
-              path={`${match.path}/settings/collaborators/new/`}
+              path={`${match.path}/collaborators/add/`}
               component={SiteCollaboratorAddPanel}
             />
             <Route
-              path={`${match.path}/settings/collaborators/:username/`}
+              path={`${match.path}/collaborators/:username/`}
               component={SiteCollaboratorEditPanel}
             />
             <Route
-              path={`${match.path}/settings/collaborators/`}
+              path={`${match.path}/collaborators/`}
               component={SiteCollaboratorList}
             />
             <Route

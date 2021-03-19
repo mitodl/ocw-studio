@@ -3,9 +3,12 @@
 from django.db import migrations
 
 
+COURSE_STARTER_SLUG = "course"
+
+
 def add_file_widget(apps, schema_editor):
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
-    starter = WebsiteStarter.objects.filter(slug="course").first()
+    starter = WebsiteStarter.objects.filter(slug=COURSE_STARTER_SLUG).first()
     collections = starter.config["collections"]
     if starter:
         for item in collections:
@@ -19,7 +22,7 @@ def add_file_widget(apps, schema_editor):
 
 def remove_file_widget(apps, schema_editor):
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
-    starter = WebsiteStarter.objects.filter(slug="course").first()
+    starter = WebsiteStarter.objects.filter(slug=COURSE_STARTER_SLUG).first()
     collections = starter.config["collections"]
     if starter:
         for item in collections:
