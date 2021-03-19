@@ -27,7 +27,7 @@ def test_import_ocw2hugo_course_paths(mocker, paths, course_starter):
 
 
 @mock_s3
-@pytest.mark.parametrize("chunk_size, call_count", [[1, 2], [2, 1]])
+@pytest.mark.parametrize("chunk_size, call_count", [[1, 3], [2, 2]])
 def test_import_ocw2hugo_courses(
     settings, mocked_celery, mocker, chunk_size, call_count
 ):
