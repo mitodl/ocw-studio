@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 0.7.0
+-------------
+
+- Increase z-index for ckeditor balloons (#123)
+- add url-assembler
+- Add pagination to content UI (#116)
+- Remove comment tags (#118)
+- Fix markdown error (#117)
+- File Upload UI (#105)
+- Add site listing at site dashboard (#108)
+- add a minimal configuration of CKEditor
+- update ckeditor docs to cover extending markdown syntax
+- fix turndown bug relating to <li> tags
+- update ocw import to match new ocw-to-hugo output structure (#104)
+
 Version 0.6.2 (Released March 15, 2021)
 -------------
 
