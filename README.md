@@ -5,6 +5,7 @@ OCW Studio manages deployments for OCW courses.
 1. [Initial Setup](#initial-setup)
 1. [Testing and Formatting](#testing-and-formatting)
 1. [Importing OCW course sites](#importing-ocw-course-sites)
+1. [Defining local starter projects and site configs](#defining-local-starter-projects-and-site-configs)
 
 
 # Initial Setup
@@ -127,8 +128,10 @@ manage.py import_ocw_course_sites -b <bucket_name>
 ```
 
 
-# Defining starter projects locally
+# Defining local starter projects and site configs
 
-OCW Studio in production will make use of separate Github repos as starter projects, and those starter projects will
-define a site config. To simplify development, you can create some mock starter repos locally. 
-See [localdev/starters](localdev/starters/) for instructions.  
+This project includes some tools that simplify development with starter projects and site configs. These tools allow you to do the following:
+- Define entire starter projects within this repo and load them into your database
+- Override the site config for starters with a particular `slug` value
+
+See the [README in localdev/starters](localdev/starters/) for instructions.
