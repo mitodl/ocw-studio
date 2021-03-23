@@ -2,8 +2,11 @@
 import json
 import logging
 
+import yaml
 from django.contrib import admin
-from django.forms import widgets
+from django.core.exceptions import ValidationError
+from django.forms import JSONField, widgets
+from django.forms.utils import ErrorList
 
 
 log = logging.getLogger(__name__)
@@ -74,14 +77,58 @@ class PrettyJSONWidget(widgets.Textarea):
     """Admin widget class to pretty-print JSONField contents"""
 
     def format_value(self, value):
+        self.attrs["style"] = "font-family: monospace"
         try:
             value = json.dumps(json.loads(value), indent=2, sort_keys=True)
             # these lines will try to adjust size of TextArea to fit to content
             row_lengths = [len(r) for r in value.split("\n")]
             self.attrs["rows"] = min(max(len(row_lengths) + 2, 10), 30)
             self.attrs["cols"] = min(max(max(row_lengths) + 2, 40), 120)
-            self.attrs["style"] = "font-family: monospace"
             return value
         except Exception as e:  # pylint: disable=broad-except
             log.warning("Error while formatting JSON: %s", e)
             return super().format_value(value)
+
+
+class JsonOrYamlField(JSONField):
+    """Custom form field that can accept JSON or YAML as an input value"""
+
+    default_error_messages = {"invalid": "Enter valid JSON or YAML."}
+    widget = PrettyJSONWidget
+
+    def to_python(self, value):
+        try:
+            return super().to_python(value)
+        except ValidationError as ex:
+            # Try parsing as YAML
+            try:
+                return yaml.load(value, Loader=yaml.Loader)
+            except yaml.YAMLError:
+                raise ex  # pylint: disable=raise-missing-from
+
+
+class WhitespaceErrorList(ErrorList):
+    """
+    HACK: Custom Django admin error class that maintains the formatting of an error message
+    if that message has line breaks/tabs/etc. Under normal circumstances, Django escapes HTML and ignores spacing
+    characters for field error messages.
+
+    If an error message has no line breaks, the message is returned in the normal format. If the error message does
+    have line breaks, the message is returned in a custom format which maintains the whitespace defined in the
+    error message string.
+    """
+
+    def as_ul(self):
+        """Overrides base method. This is the method that is called to output an error for a single form field."""
+        if self.data:
+            error_lines = self
+            # If the error message has any line breaks, return a custom <ul> which maintains the spacing
+            # in the message.
+            if any("\n" in line for line in error_lines):
+                error_lines = [
+                    line.replace("\n", "<br />").replace("\t", "&nbsp;" * 4)
+                    for line in error_lines
+                ]
+                error_list_items = "".join([f"<li>{line}</li>" for line in error_lines])
+                return f'<ul class="{self.error_class}">{error_list_items}</ul>'
+        return super().as_ul()

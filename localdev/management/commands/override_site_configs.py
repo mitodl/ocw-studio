@@ -5,6 +5,7 @@ import yaml
 from django.conf import settings
 from django.core.management import BaseCommand
 
+from websites.config_schema.api import validate_parsed_site_config
 from websites.models import WebsiteStarter
 
 
@@ -36,6 +37,7 @@ class Command(BaseCommand):
                 )
                 continue
             if starter.config != parsed_config:
+                validate_parsed_site_config(parsed_config)
                 starter.config = parsed_config
                 starter.save()
                 self.stdout.write(

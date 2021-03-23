@@ -1,0 +1,23 @@
+collections: list(include('content_item'))
+---
+content_item:
+    name: str()
+    label: str()
+    category: str()
+    fields: list(include('field'), required=False)
+    folder: str(required=False)
+    file: str(required=False)
+    files: list(include('inner_content_item'), required=False)
+---
+inner_content_item:
+    name: str()
+    label: str()
+    fields: list(include('field'), required=False)
+    file: str(required=False)
+---
+field:
+    label: str()
+    name: str()
+    widget: enum('string', 'text', 'markdown', 'file')
+    minimal: bool(required=False)
+    fields: list(include('field'), required=False)

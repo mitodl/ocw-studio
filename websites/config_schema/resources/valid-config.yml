@@ -1,0 +1,35 @@
+collections:
+  - name: page
+    label: Page
+    category: Content
+    folder: content
+    fields:
+      - {"label": "Title", "name": "title", "widget": "string"}
+      - {"label": "Content", "name": "content", "widget": "markdown"}
+
+  - name: resource
+    label: Resource
+    category: Content
+    folder: content
+    fields:
+      - {"label": "Title", "name": "title", "widget": "string"}
+      - {"label": "Description", "name": "description", "widget": "text"}
+      - {"label": "File", "name": "file", "widget": "file"}
+
+  - name: metadata
+    label: Site Metadata
+    category: Settings
+    file: data/metadata.json
+    fields:
+      - { label: "Course Title", name: "title", widget: "text" }
+      - { label: "Course Description", name: "description", widget: "markdown" }
+
+  - name: files_item
+    label: Files
+    category: New Category
+    files:
+      - name: file1
+        label: File 1
+        file: file1.txt
+        fields:
+          - { label: "Title", name: "title", widget: "text" }
