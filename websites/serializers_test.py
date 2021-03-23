@@ -5,9 +5,12 @@ from django.db.models import CharField, Value
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
-from websites.constants import CONTENT_TYPE_PAGE, ROLE_EDITOR, WEBSITE_SOURCE_OCW_IMPORT
+from websites.constants import (
+    CONTENT_TYPE_RESOURCE,
+    ROLE_EDITOR,
+    WEBSITE_SOURCE_OCW_IMPORT,
+)
 from websites.factories import (
-    EXAMPLE_SITE_CONFIG,
     WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
@@ -59,14 +62,14 @@ def test_website_starter_serializer():
 
 def test_website_starter_detail_serializer():
     """WebsiteStarterDetailSerializer should serialize a WebsiteStarter object with the correct fields"""
-    starter = WebsiteStarterFactory.build(config=EXAMPLE_SITE_CONFIG)
+    starter = WebsiteStarterFactory.build()
     serialized_data = WebsiteStarterDetailSerializer(instance=starter).data
     assert serialized_data["name"] == starter.name
     assert serialized_data["path"] == starter.path
     assert serialized_data["source"] == starter.source
     assert serialized_data["commit"] == starter.commit
     assert "config" in serialized_data
-    assert serialized_data["config"] == EXAMPLE_SITE_CONFIG
+    assert isinstance(serialized_data["config"], dict)
 
 
 def test_website_detail_deserialize():
@@ -87,9 +90,7 @@ def test_website_detail_deserialize():
 def test_website_serializer(has_starter):
     """WebsiteSerializer should serialize a Website object with the correct fields"""
     website = (
-        WebsiteFactory.build(starter__config=EXAMPLE_SITE_CONFIG)
-        if has_starter
-        else WebsiteFactory.build(starter=None)
+        WebsiteFactory.build() if has_starter else WebsiteFactory.build(starter=None)
     )
     serialized_data = WebsiteSerializer(instance=website).data
     assert serialized_data["name"] == website.name
@@ -153,13 +154,13 @@ def test_website_content_detail_serializer():
     assert serialized_data["metadata"] == content.metadata
 
 
-def test_website_content_detail_serializer_save():
+def test_website_content_detail_serializer_save(mocker):
     """WebsiteContentDetailSerializer should modify only certain fields"""
-    content = WebsiteContentFactory.create()
+    content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
     new_title = f"{content.title} with some more text"
     new_type = f"{content.type}_other"
     new_markdown = "hopefully different from the previous markdown"
-    metadata = {"meta": "data"}
+    metadata = {"description": "data"}
     # uuid value is invalid but it's ignored since it's marked readonly
     serializer = WebsiteContentDetailSerializer(
         data={
@@ -170,6 +171,9 @@ def test_website_content_detail_serializer_save():
             "metadata": metadata,
         },
         instance=content,
+        context={
+            "view": mocker.Mock(kwargs={"parent_lookup_website": content.website.name})
+        },
     )
     serializer.is_valid(raise_exception=True)
     serializer.save()
@@ -182,10 +186,10 @@ def test_website_content_detail_serializer_save():
 
 def test_website_content_create_serializer(mocker):
     """WebsiteContentCreateSerializer should create a new WebsiteContent, with some validation"""
-    metadata = {"arbitrary": ["json", "object"]}
+    metadata = {"description": "some text"}
     payload = {
         "title": "a title",
-        "type": CONTENT_TYPE_PAGE,
+        "type": CONTENT_TYPE_RESOURCE,
         "markdown": "some markdown",
         "metadata": metadata,
     }

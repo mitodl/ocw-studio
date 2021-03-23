@@ -1,26 +1,16 @@
 """ Factories for websites """
+from pathlib import Path
+
 import factory
 import pytz
+import yaml
+from django.conf import settings
 from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyChoice
 
 from users.factories import UserFactory
-from websites.constants import CONTENT_TYPES, STARTER_SOURCES
+from websites.constants import CONTENT_TYPES, COURSE_STARTER_SLUG, STARTER_SOURCES
 from websites.models import Website, WebsiteContent, WebsiteStarter
-
-
-EXAMPLE_SITE_CONFIG = {
-    "collections": [
-        {
-            "fields": [
-                {"label": "Title", "name": "title", "widget": "string"},
-                {"label": "Body", "name": "body", "widget": "markdown"},
-            ],
-            "label": "Page",
-            "name": "page",
-        }
-    ]
-}
 
 
 class WebsiteStarterFactory(DjangoModelFactory):
@@ -31,7 +21,14 @@ class WebsiteStarterFactory(DjangoModelFactory):
     slug = factory.Sequence(lambda n: "starter-%x" % n)
     source = FuzzyChoice(STARTER_SOURCES)
     commit = factory.Faker("md5")
-    config = EXAMPLE_SITE_CONFIG
+    config = factory.LazyAttribute(
+        lambda _: yaml.load(
+            (
+                Path(settings.BASE_DIR) / "localdev/starters/site-config-override.yml"
+            ).read_text(),
+            Loader=yaml.Loader,
+        )[COURSE_STARTER_SLUG]
+    )
 
     class Meta:
         model = WebsiteStarter

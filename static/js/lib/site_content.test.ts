@@ -6,9 +6,12 @@ import {
 } from "../util/factories/websites"
 import {
   contentFormValuesToPayload,
-  contentInitialValues
+  contentInitialValues,
+  newInitialValues
 } from "./site_content"
 import { MAIN_PAGE_CONTENT_FIELD } from "../constants"
+
+import { ConfigField } from "../types/websites"
 
 describe("site_content", () => {
   describe("contentFormValuesToPayload", () => {
@@ -71,6 +74,20 @@ describe("site_content", () => {
       const payload = contentFormValuesToPayload(values, fields)
       expect(payload instanceof FormData).toBe(true)
     })
+
+    it("stores a value in metadata as is if it's not a special field", () => {
+      const descriptionField = makeWebsiteStarterConfig()
+        .collections.find(item => item.name === "metadata")
+        ?.fields.find(field => field.name === "tags")
+      const payload = contentFormValuesToPayload(
+        {
+          tags: []
+        },
+        // @ts-ignore
+        [descriptionField]
+      )
+      expect(payload).toStrictEqual({ metadata: { tags: [] } })
+    })
   })
 
   describe("contentInitialValues", () => {
@@ -83,11 +100,39 @@ describe("site_content", () => {
       // @ts-ignore
       const payload = contentInitialValues(content, fields)
       expect(payload).toStrictEqual({
+        tags:                      "",
+        align:                     "",
         file:                      null,
         title:                     content.title,
         description:               content.metadata?.description,
         [MAIN_PAGE_CONTENT_FIELD]: content.markdown
       })
     })
+  })
+
+  describe("newInitialValues", () => {
+    it("creates initial values for each field, optionally with a default value", () => {
+      const allFields = flatten(
+        makeWebsiteStarterConfig().collections.map(item => item.fields)
+      )
+      // find a field with a default value and one without
+      const fieldWithDefault = allFields.find(
+        (field: ConfigField) => field.default
+      )
+      const fieldWithoutDefault = allFields.find(
+        (field: ConfigField) => !field.default
+      )
+      const fields = [fieldWithDefault, fieldWithoutDefault]
+      // @ts-ignore
+      const values = newInitialValues(fields)
+      // @ts-ignore
+      expect(values[fieldWithDefault.name]).toBe(fieldWithDefault.default)
+      // @ts-ignore
+      expect(values[fieldWithoutDefault.name]).toBe("")
+    })
+  })
+
+  describe("componentFromWidget", () => {
+    []
   })
 })
