@@ -89,6 +89,7 @@ describe("SiteCreationPage", () => {
         onSubmit(
           {
             title:   "My Title",
+            name:    "my-title",
             starter: 1
           },
           // @ts-ignore
@@ -122,6 +123,7 @@ describe("SiteCreationPage", () => {
         onSubmit(
           {
             title:   errorMsg,
+            name:    "error-msg",
             starter: 1
           },
           // @ts-ignore
@@ -131,6 +133,7 @@ describe("SiteCreationPage", () => {
       sinon.assert.calledOnce(createWebsiteStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
         ...errorResp.errors,
+        name:    undefined,
         starter: undefined
       })
       sinon.assert.notCalled(historyPushStub)

@@ -32,6 +32,7 @@ export interface WebsiteStarter {
 
 export interface NewWebsitePayload {
   title: string
+  name: string
   starter: number
 }
 

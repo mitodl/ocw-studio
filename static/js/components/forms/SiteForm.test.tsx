@@ -69,5 +69,31 @@ describe("SiteForm", () => {
         expect(error.errors).toStrictEqual(["Title is a required field"])
       }
     })
+    it("rejects an empty name", async () => {
+      try {
+        await expect(
+          await websiteValidation.validateAt("name", { name: "" })
+        ).rejects.toThrow()
+      } catch (error) {
+        expect(error).toBeInstanceOf(ValidationError)
+        expect(error.errors).toStrictEqual(["URL is a required field"])
+      }
+    })
+    ;["这是我的", "Test", "test!", "test_test", "test()", "test_test"].forEach(
+      name => {
+        it("rejects an invalid name", async () => {
+          try {
+            await expect(
+              await websiteValidation.validateAt("name", { name })
+            ).rejects.toThrow()
+          } catch (error) {
+            expect(error).toBeInstanceOf(ValidationError)
+            expect(error.errors).toStrictEqual([
+              "Must be lowercase & only include letters (a-z), numbers, dashes"
+            ])
+          }
+        })
+      }
+    )
   })
 })
