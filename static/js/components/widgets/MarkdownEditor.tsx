@@ -3,7 +3,10 @@ import { CKEditor } from "@ckeditor/ckeditor5-react"
 
 import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
 
-import { FullEditorConfig, MinimalEditorConfig } from "../lib/ckeditor/CKEditor"
+import {
+  FullEditorConfig,
+  MinimalEditorConfig
+} from "../../lib/ckeditor/CKEditor"
 
 export interface Props {
   value?: string

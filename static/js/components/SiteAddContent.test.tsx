@@ -22,7 +22,7 @@ jest.mock("react-router-dom", () => ({
   useRouteMatch: mockUseRouteMatch
 }))
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
-jest.mock("./MarkdownEditor", () => "div")
+jest.mock("./widgets/MarkdownEditor", () => "div")
 
 describe("SiteAddContent", () => {
   let helper: IntegrationTestHelper,

@@ -1,14 +1,15 @@
 import { ComponentType, ElementType } from "react"
 
-import MarkdownEditor from "../components/MarkdownEditor"
+import MarkdownEditor from "../components/widgets/MarkdownEditor"
+import FileUploadField from "../components/widgets/FileUploadField"
 
-import { ConfigField, WebsiteContent } from "../types/websites"
-import FileUploadField from "../components/forms/FileUploadField"
 import { objectToFormData } from "./util"
 import {
   MAIN_PAGE_CONTENT_DB_FIELD,
   MAIN_PAGE_CONTENT_FIELD
 } from "../constants"
+
+import { ConfigField, WebsiteContent } from "../types/websites"
 
 export const componentFromWidget = (
   field: ConfigField
