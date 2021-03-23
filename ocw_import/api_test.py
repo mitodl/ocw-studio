@@ -83,6 +83,17 @@ def test_import_ocw2hugo_course_bad_date(mocker, settings):
 
 @mock_s3
 @pytest.mark.django_db
+def test_import_ocw2hugo_course_noncourse(settings):
+    """ Website should not be created for a non-course """
+    setup_s3(settings)
+    name = "biology"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
+    assert Website.objects.filter(name=name).count() == 0
+
+
+@mock_s3
+@pytest.mark.django_db
 def test_import_ocw2hugo_course_log_exception(mocker, settings):
     """ Log an exception if the website cannot be saved/updated """
     setup_s3(settings)
@@ -102,11 +113,10 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     setup_s3(settings)
     name = "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
-    mocker.patch("ocw_import.api.uuid4", return_value="Invalid uuid")
-    mock_log = mocker.patch("ocw_import.api.log.exception")
+    mock_log = mocker.patch("ocw_import.api.log.error")
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     assert mock_log.call_count == 1
     mock_log.assert_called_once_with(
-        "Error saving WebsiteContent for %s",
+        "No UUID: %s",
         f"{TEST_OCW2HUGO_PREFIX}1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/content/sections/test_no_uid.md",
     )

@@ -2,7 +2,6 @@
 import json
 import logging
 import re
-from uuid import uuid4
 
 import yaml
 from dateutil import parser as dateparser
@@ -20,6 +19,17 @@ from websites.models import Website, WebsiteContent
 
 
 log = logging.getLogger(__name__)
+
+NON_ID_COURSE_NAMES = [
+    "biology",
+    "chemistry",
+    "engineering",
+    "humanities-and-social-sciences",
+    "iit-jee",
+    "mathematics",
+    "more",
+    "physics",
+]
 
 
 def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_str=""):
@@ -111,12 +121,7 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                 }
                 try:
                     if not uuid:
-                        # create a new uuid if necessary
-                        WebsiteContent.objects.update_or_create(
-                            website=website,
-                            hugo_filepath=filepath,
-                            defaults={**base_defaults, "uuid": uuid4()},
-                        )
+                        log.error("No UUID: %s", obj["Key"])
                     else:
                         WebsiteContent.objects.update_or_create(
                             website=website,
@@ -141,6 +146,8 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     bucket = s3.Bucket(bucket_name)
     s3_content = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
     name = s3_content.get("course_id")
+    if name in NON_ID_COURSE_NAMES:
+        return
     try:
         publish_date = dateparser.parse(s3_content.get("publishdate", None))
     except ValueError:
