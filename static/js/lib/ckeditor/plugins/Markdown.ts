@@ -80,9 +80,14 @@ export default class Markdown extends MarkdownConfigPlugin {
       extensions: showdownExtensions
     })
 
-    turndownRules.forEach(({ name, rule }) =>
-      turndownService.addRule(name, rule)
-    )
+    // @ts-ignore
+    if (!turndownService._customRulesSet) {
+      turndownRules.forEach(({ name, rule }) =>
+        turndownService.addRule(name, rule)
+      )
+      // @ts-ignore
+      turndownService._customRulesSet = true
+    }
 
     function md2html(md: string): string {
       return converter.makeHtml(md)

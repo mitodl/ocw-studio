@@ -11,6 +11,8 @@ describe("MarkdownMediaEmbed plugin", () => {
     turndownService.rules.array = turndownService.rules.array.filter(
       (rule: any) => rule.filter !== "figure"
     )
+    // @ts-ignore
+    turndownService._customRulesSet = undefined
   })
 
   it("should output youtube shortcode when given youtube shortcode", async () => {
