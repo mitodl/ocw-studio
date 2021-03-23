@@ -19,7 +19,7 @@ export interface Props {
 /**
  * A component for editing Markdown using CKEditor.
  */
-export default function MarkdownEditor(props: Props): JSX.Element {
+export function MarkdownEditor(props: Props): JSX.Element {
   const { value, name, onChange, minimal } = props
 
   return (
@@ -35,4 +35,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       }}
     />
   )
+}
+
+export function MinimalMarkdownEditor(props: Props): JSX.Element {
+  return <MarkdownEditor {...props} minimal={true} />
 }

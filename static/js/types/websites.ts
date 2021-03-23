@@ -4,6 +4,7 @@ export interface ConfigField {
   name: string
   label: string
   widget: string
+  minimal?: boolean
 }
 
 export interface ConfigItem {
