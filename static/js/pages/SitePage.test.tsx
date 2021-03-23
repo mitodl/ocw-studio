@@ -56,5 +56,6 @@ describe("SitePage", () => {
   it("renders the sidebar", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("SiteSidebar").prop("website")).toBe(website)
+    expect(wrapper.find("h3").text()).toBe(website.title)
   })
 })

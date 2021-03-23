@@ -13,7 +13,9 @@ export default function App(): JSX.Element {
 
   return (
     <div className="app">
-      <Header />
+      <Route path={["/", "/new-site", "/sites", "/markdown-editor"]} exact>
+        <Header />
+      </Route>
       <div className="page-content">
         <Switch>
           <Route exact path="/new-site" component={SiteCreationPage} />

@@ -73,6 +73,7 @@ export default function SiteSidebar(props: Props): JSX.Element {
 
   return (
     <div className="sidebar">
+      <h2 className="pb-5 border-bottom-gray mb-3">OCW Studio</h2>
       {configSections.map(([category, configItems]) => (
         <SidebarSection
           category={category}

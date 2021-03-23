@@ -48,6 +48,10 @@ a {
   }
 }
 
+.border-bottom-gray {
+  border-bottom: 1px solid $studio-gray;
+}
+
 // modal as sidebar CSS adapted from https://codepen.io/bootpen/pen/jbbaRa
 $modal-sidebar-width: 540px;
 
