@@ -20,7 +20,7 @@ from websites.models import Website, WebsiteContent
 
 log = logging.getLogger(__name__)
 
-NON_COURSE_IDS = [
+NON_ID_COURSE_NAMES = [
     "biology",
     "chemistry",
     "engineering",
@@ -146,7 +146,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     bucket = s3.Bucket(bucket_name)
     s3_content = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
     name = s3_content.get("course_id")
-    if name in NON_COURSE_IDS:
+    if name in NON_ID_COURSE_NAMES:
         return
     try:
         publish_date = dateparser.parse(s3_content.get("publishdate", None))
