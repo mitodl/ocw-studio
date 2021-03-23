@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { TabContent, TabPane, Nav, NavItem, NavLink } from "reactstrap"
 
-import MarkdownEditor from "../components/widgets/MarkdownEditor"
+import { MarkdownEditor } from "../components/widgets/MarkdownEditor"
 
 import { TEST_MARKDOWN } from "../test_constants"
 

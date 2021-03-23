@@ -23,4 +23,4 @@ course:
       file: data/metadata.json
       fields:
         - { label: "Course Title", name: "title", widget: "text" }
-        - { label: "Course Description", name: "description", widget: "markdown" }
+        - { label: "Course Description", name: "description", widget: "markdown", minimal: true }

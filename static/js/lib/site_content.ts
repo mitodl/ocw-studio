@@ -1,6 +1,9 @@
 import { ComponentType, ElementType } from "react"
 
-import MarkdownEditor from "../components/widgets/MarkdownEditor"
+import {
+  MarkdownEditor,
+  MinimalMarkdownEditor
+} from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
 
 import { objectToFormData } from "./util"
@@ -16,7 +19,11 @@ export const componentFromWidget = (
 ): string | ComponentType | ElementType => {
   switch (field.widget) {
   case "markdown":
-    return MarkdownEditor
+    if (field.minimal) {
+      return MinimalMarkdownEditor
+    } else {
+      return MarkdownEditor
+    }
   case "file":
     return FileUploadField
   default:

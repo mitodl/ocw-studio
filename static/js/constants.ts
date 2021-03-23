@@ -55,7 +55,8 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
         {
           label: "Description",
           name: "description",
-          widget: "text"
+          widget: "markdown",
+          minimal: true
         },
         {
           label: "File",
