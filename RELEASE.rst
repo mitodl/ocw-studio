@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.7.1 (Released March 24, 2021)
+-------------
+
+- fix double-instantiation issue w/ ckeditor
+- Skip noncourse files, log error on missing uuid (#127)
+- Added first version of site config schema + validation
+- Bump django from 3.1 to 3.1.6
+- Added minimal markdown as site content widget option
+- Moved site content widget components to 'widgets' folder
+- first round of styling updates
+- Update README with clearer local dev starter/config instructuons
+- Updated app to use new site config structure
+
 Version 0.7.0 (Released March 19, 2021)
 -------------
 
