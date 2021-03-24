@@ -1,6 +1,10 @@
 import SiteSidebar from "./SiteSidebar"
 
-import { makeWebsiteDetail } from "../util/factories/websites"
+import {
+  makeWebsiteDetail,
+  makeWebsiteConfigItem
+} from "../util/factories/websites"
+import { times } from "lodash"
 import { siteCollaboratorsUrl, siteContentListingUrl } from "../lib/urls"
 import IntegrationTestHelper, {
   TestRenderer
@@ -59,6 +63,24 @@ describe("SiteSidebar", () => {
     ]
 
     expect(links).toEqual(expect.arrayContaining(expected))
+  })
+
+  it("should pad all .config-sections excepting the last one", async () => {
+    website.starter!.config!.collections = times(5).map(() =>
+      makeWebsiteConfigItem("foobar")
+    )
+    const { wrapper } = await render()
+    expect(
+      wrapper
+        .find("SidebarSection")
+        .map(wrapper => wrapper.find("div").prop("className"))
+    ).toEqual([
+      "sidebar-section pb-4",
+      "sidebar-section pb-4",
+      "sidebar-section pb-4",
+      "sidebar-section pb-4",
+      "sidebar-section"
+    ])
   })
 
   it("renders a collaborators link if the user is an admin for the given website", async () => {

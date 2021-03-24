@@ -35,8 +35,6 @@ turndownService.rules.blankRule.replacement = (
 
   if (matchingRules.length === 1) {
     const [rule] = matchingRules
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return rule.replacement!(content, node, options)
   } else {
     return "\n\n"
@@ -47,8 +45,6 @@ turndownService.rules.blankRule.replacement = (
 // extra spaces to the beginning of a list item. So it maps
 // "<ul><li>item</li></ul>" -> "-   item" instead of "- item"
 // see https://github.com/domchristie/turndown/issues/291
-//
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 turndownService.rules.array.find(rule => rule.filter === "li")!.replacement = (
   content: string,
   node: Turndown.Node,
