@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.7.1
+Version 0.7.1 (Released March 24, 2021)
 -------------
 
 - fix double-instantiation issue w/ ckeditor
