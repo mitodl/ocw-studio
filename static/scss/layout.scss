@@ -4,6 +4,7 @@
 @import "site-page";
 @import "sites-dashboard";
 @import "site-collaborators";
+@import "forms";
 @import "card";
 @import "pagination";
 @import "button";
@@ -14,6 +15,7 @@ body {
   background-color: $studio-background;
   // default font color
   color: $studio-black;
+  font-size: $std-font-size;
 }
 
 .app {
@@ -33,10 +35,6 @@ body {
 
 header {
   background-color: white;
-}
-
-.form-error {
-  color: $error-red;
 }
 
 a {

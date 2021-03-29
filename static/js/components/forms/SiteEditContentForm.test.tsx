@@ -1,18 +1,21 @@
 import React from "react"
+import * as yup from "yup"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { shallow } from "enzyme"
 
 import SiteEditContentForm from "./SiteEditContentForm"
 
 import { defaultFormikChildProps } from "../../test_util"
-import { componentFromWidget } from "../../lib/site_content"
 import {
   makeWebsiteContentDetail,
   makeWebsiteConfigItem
 } from "../../util/factories/websites"
-import { ConfigItem, WebsiteContent } from "../../types/websites"
-
 jest.mock("../../lib/site_content")
+import { componentFromWidget } from "../../lib/site_content"
+jest.mock("./validation")
+import { getContentSchema } from "./validation"
+
+import { ConfigItem, WebsiteContent } from "../../types/websites"
 
 describe("SiteEditContentForm", () => {
   let sandbox: SinonSandbox,
@@ -92,5 +95,14 @@ describe("SiteEditContentForm", () => {
         isSubmitting
       )
     })
+  })
+
+  it("has the correct validation schema", () => {
+    const mockValidationSchema = yup.object().shape({})
+    // @ts-ignore
+    getContentSchema.mockReturnValueOnce(mockValidationSchema)
+    const formik = renderForm().find("Formik")
+    const validationSchema = formik.prop("validationSchema")
+    expect(validationSchema).toStrictEqual(mockValidationSchema)
   })
 })

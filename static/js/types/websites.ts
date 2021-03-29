@@ -5,6 +5,8 @@ export interface ConfigField {
   label: string
   widget: string
   minimal?: boolean
+  help?: string
+  required?: boolean
 }
 
 export interface ConfigItem {

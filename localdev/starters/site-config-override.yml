@@ -5,22 +5,28 @@ course:
       category: Content
       folder: content
       fields:
-        - {"label": "Title", "name": "title", "widget": "string"}
-        - {"label": "Content", "name": "content", "widget": "markdown"}
+        - {"label": "Title", "name": "title", "widget": "string", "required": true}
+        - {"label": "Content", "name": "content", "widget": "markdown", "required": true}
 
     - name: resource
       label: Resource
       category: Content
       folder: content
       fields:
-        - {"label": "Title", "name": "title", "widget": "string"}
-        - {"label": "Description", "name": "description", "widget": "text"}
-        - {"label": "File", "name": "file", "widget": "file"}
+        - {"label": "Title", "name": "title", "widget": "string", "required": true}
+        - {"label": "Description", "name": "description", "widget": "text", "required": true}
+        - {"label": "File", "name": "file", "widget": "file", "required": true}
 
     - name: metadata
       label: Site Metadata
       category: Settings
       file: data/metadata.json
       fields:
-        - { label: "Course Title", name: "title", widget: "text" }
-        - { label: "Course Description", name: "description", widget: "markdown", minimal: true }
+        - { "label": "Course Title", "name": "title", "widget": "text", "required": true }
+        - {
+          "label": "Course Description",
+          "name": "description",
+          "widget": "markdown",
+          "minimal": true,
+          "help": "A description of the course that will be shown on the course site home page."
+        }

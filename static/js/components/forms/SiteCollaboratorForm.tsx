@@ -2,6 +2,7 @@ import React from "react"
 import { Formik, Form, ErrorMessage, Field, FormikHelpers } from "formik"
 import * as yup from "yup"
 
+import { FormError } from "./FormError"
 import { EDITABLE_ROLES, ROLE_LABELS } from "../../constants"
 
 import {
@@ -65,7 +66,7 @@ export default function SiteCollaboratorForm({
                 type="email"
                 value={values.email}
               />
-              <ErrorMessage name="email" />
+              <ErrorMessage name="email" component={FormError} />
             </div>
           )}
           <div className="form-group">
@@ -83,7 +84,7 @@ export default function SiteCollaboratorForm({
                 </option>
               ))}
             </Field>
-            <ErrorMessage name="role" />
+            <ErrorMessage name="role" component={FormError} />
           </div>
           <div className="form-group d-flex justify-content-end">
             <button
