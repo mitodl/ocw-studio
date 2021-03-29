@@ -2,7 +2,7 @@ import * as React from "react"
 import { Formik, Form, FormikHelpers } from "formik"
 
 import SiteContentField from "./SiteContentField"
-import { contentInitialValues } from "../../lib/site_content"
+import { contentInitialValues, fieldIsVisible } from "../../lib/site_content"
 import { getContentSchema } from "./validation"
 
 import { ConfigItem, WebsiteContent } from "../../types/websites"
@@ -35,15 +35,17 @@ export default function SiteEditContentForm({
       validationSchema={schema}
       initialValues={initialValues}
     >
-      {({ isSubmitting, status, setFieldValue }) => (
+      {({ isSubmitting, status, setFieldValue, values }) => (
         <Form>
-          {fields.map(field => (
-            <SiteContentField
-              field={field}
-              key={field.name}
-              setFieldValue={setFieldValue}
-            />
-          ))}
+          {fields.map(field =>
+            fieldIsVisible(field, values) ? (
+              <SiteContentField
+                field={field}
+                key={field.name}
+                setFieldValue={setFieldValue}
+              />
+            ) : null
+          )}
           <div className="form-group d-flex justify-content-end">
             <button
               type="submit"

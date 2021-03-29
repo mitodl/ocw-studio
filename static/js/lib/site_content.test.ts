@@ -6,19 +6,23 @@ import SelectField from "../components/widgets/SelectField"
 import BooleanField from "../components/widgets/BooleanField"
 
 import {
+  makeConfigField,
+  makeWebsiteConfigField,
   makeWebsiteContentDetail,
-  makeWebsiteStarterConfig,
-  makeWebsiteConfigField
+  makeWebsiteStarterConfig
 } from "../util/factories/websites"
 import {
+  componentFromWidget,
   contentFormValuesToPayload,
   contentInitialValues,
+  fieldIsVisible,
   newInitialValues,
-  componentFromWidget,
   widgetExtraProps
 } from "./site_content"
 import { MAIN_PAGE_CONTENT_FIELD } from "../constants"
-import { ConfigField, WidgetVariant } from "../types/websites"
+import { isIf, shouldIf } from "../test_util"
+
+import { ConfigField, FieldCondition, WidgetVariant } from "../types/websites"
 
 describe("site_content", () => {
   describe("contentFormValuesToPayload", () => {
@@ -94,6 +98,33 @@ describe("site_content", () => {
         [descriptionField]
       )
       expect(payload).toStrictEqual({ metadata: { tags: [] } })
+    })
+
+    //
+    ;[
+      [null, true],
+      ["", true],
+      [undefined, false]
+    ].forEach(([value, isPartOfPayload]) => {
+      it(`${shouldIf(
+        Boolean(isPartOfPayload)
+      )} add the value to payload if the field value is ${String(
+        value
+      )}`, () => {
+        const field: ConfigField = {
+          name:   "description",
+          label:  "Description",
+          widget: WidgetVariant.String
+        }
+        const payload = contentFormValuesToPayload(
+          {
+            // @ts-ignore
+            description: value
+          },
+          [field]
+        )
+        expect(Object.values(payload).length).toBe(isPartOfPayload ? 1 : 0)
+      })
     })
   })
 
@@ -213,6 +244,33 @@ describe("site_content", () => {
         expect(
           widgetExtraProps(makeWebsiteConfigField({ widget }))
         ).toStrictEqual({})
+      })
+    })
+  })
+
+  describe("fieldIsVisible", () => {
+    [
+      [true, { conditionField: "matching value" }, true],
+      [true, { conditionField: "non-matching value" }, false],
+      [false, { conditionField: "matching value" }, true],
+      [false, { conditionField: "non-matching value" }, true]
+    ].forEach(([hasCondition, values, expected]) => {
+      // @ts-ignore
+      it(`${isIf(expected)} visible if the condition ${isIf(
+        // @ts-ignore
+        hasCondition
+        // @ts-ignore
+      )} existing and value is a ${values.conditionField}`, () => {
+        const condition: FieldCondition = {
+          field:  "conditionField",
+          equals: "matching value"
+        }
+        const field = makeConfigField()
+        if (hasCondition) {
+          field.condition = condition
+        }
+        // @ts-ignore
+        expect(fieldIsVisible(field, values)).toBe(expected)
       })
     })
   })

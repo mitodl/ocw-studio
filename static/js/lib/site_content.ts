@@ -1,5 +1,6 @@
 import { ComponentType, ElementType } from "react"
 import { pick } from "ramda"
+import { FormikValues } from "formik"
 
 import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
@@ -51,6 +52,20 @@ const isMainContentField = (field: ConfigField) =>
   field.widget === WidgetVariant.Markdown
 
 type ValueType = string | File | string[] | null
+const emptyValue = (field: ConfigField): ValueType => {
+  switch (field.widget) {
+  case "select":
+    if (field.multiple) {
+      return []
+    } else {
+      return null
+    }
+  case "file":
+    return null
+  default:
+    return ""
+  }
+}
 
 /*
  * Translates page content form values into a payload that our REST API understands.
@@ -69,8 +84,12 @@ export const contentFormValuesToPayload = (
   }
 
   for (const field of fields) {
-    const value = values[field.name]
-    if (value !== null && value !== undefined) {
+    let value = values[field.name]
+    if (!fieldIsVisible(field, values)) {
+      value = emptyValue(field)
+    }
+
+    if (value !== undefined) {
       // Our API expects these bits of data as top-level keys in the payload:
       // (1) main page content in markdown, (2) title, (3) a file. None of those values are required.
       // All other values are nested under the "metadata" key.
@@ -128,3 +147,15 @@ export const newInitialValues = (fields: ConfigField[]): Record<string, any> =>
 
 const defaultFor = (widget: WidgetVariant): string | boolean =>
   widget === WidgetVariant.Boolean ? false : ""
+
+export function fieldIsVisible(
+  field: ConfigField,
+  values: FormikValues
+): boolean {
+  if (!field.condition) {
+    return true
+  }
+
+  const condition = field.condition
+  return values[condition.field] === condition.equals
+}

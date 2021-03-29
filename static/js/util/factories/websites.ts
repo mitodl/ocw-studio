@@ -1,5 +1,5 @@
 import casual from "casual-browserify"
-import { times, cloneDeep } from "lodash"
+import { cloneDeep, times } from "lodash"
 
 import incrementer from "../incrementer"
 import {
@@ -12,15 +12,15 @@ import {
 } from "../../constants"
 
 import {
-  ConfigItem,
   ConfigField,
-  WidgetVariant,
+  ConfigItem,
   Website,
   WebsiteCollaborator,
   WebsiteContent,
   WebsiteContentListItem,
   WebsiteStarter,
-  WebsiteStarterConfig
+  WebsiteStarterConfig,
+  WidgetVariant
 } from "../../types/websites"
 
 const incr = incrementer()
@@ -37,6 +37,12 @@ export const makeWebsiteConfigField = (
     ...props
   }
 }
+
+export const makeConfigField = (): ConfigField => ({
+  name:   casual.word,
+  label:  casual.text,
+  widget: WidgetVariant.String
+})
 
 export const makeWebsiteConfigItem = (name: string): ConfigItem => ({
   fields: [

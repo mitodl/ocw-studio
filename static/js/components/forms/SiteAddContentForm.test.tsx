@@ -7,7 +7,7 @@ import SiteAddContentForm from "./SiteAddContentForm"
 import { defaultFormikChildProps } from "../../test_util"
 
 jest.mock("../../lib/site_content")
-import { componentFromWidget } from "../../lib/site_content"
+import { componentFromWidget, fieldIsVisible } from "../../lib/site_content"
 jest.mock("./validation")
 import { getContentSchema } from "./validation"
 
@@ -68,6 +68,8 @@ describe("SiteAddContentForm", () => {
     const widget = "fakeWidgetComponent"
     // @ts-ignore
     componentFromWidget.mockImplementation(() => widget)
+    // @ts-ignore
+    fieldIsVisible.mockImplementation(() => true)
 
     const fieldGroups = [
       configItem.fields.filter(
@@ -81,14 +83,8 @@ describe("SiteAddContentForm", () => {
     for (const fieldGroup of fieldGroups) {
       for (const field of fieldGroup) {
         const fieldWrapper = form.find("SiteContentField").at(idx)
-        const setFieldValue =
-          field.widget === WidgetVariant.Markdown ?
-            undefined :
-            setFieldValueStub
-        expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
-        expect(
-          fieldWrapper.find("SiteContentField").prop("setFieldValue")
-        ).toBe(setFieldValue)
+        expect(fieldWrapper.prop("field")).toBe(field)
+        expect(fieldWrapper.prop("setFieldValue")).toBe(setFieldValueStub)
         idx++
       }
     }

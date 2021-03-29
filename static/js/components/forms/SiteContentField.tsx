@@ -8,7 +8,7 @@ import { ConfigField, WidgetVariant } from "../../types/websites"
 
 interface Props {
   field: ConfigField
-  setFieldValue?: (key: string, value: File | null) => void
+  setFieldValue: (key: string, value: File | null) => void
 }
 
 /**
