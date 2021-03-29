@@ -2,6 +2,8 @@ import * as React from "react"
 import { Formik, Form, ErrorMessage, Field, FormikHelpers } from "formik"
 import * as yup from "yup"
 
+import { FormError } from "./FormError"
+
 import { WebsiteStarter } from "../../types/websites"
 
 export interface SiteFormValues {
@@ -45,7 +47,7 @@ export const SiteForm = ({
           <div className="form-group">
             <label htmlFor="title">Title*</label>
             <Field type="text" name="title" className="form-control" />
-            <ErrorMessage name="title" component="div" />
+            <ErrorMessage name="title" component={FormError} />
           </div>
           <div className="form-group">
             <label htmlFor="starter">Starter*</label>
@@ -61,7 +63,7 @@ export const SiteForm = ({
                 <option key={0} value={0} />
               )}
             </Field>
-            <ErrorMessage name="starter" component="div" />
+            <ErrorMessage name="starter" component={FormError} />
           </div>
           <div className="form-group d-flex justify-content-end">
             <button

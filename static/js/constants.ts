@@ -32,12 +32,14 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
         {
           label: "Title",
           name: "title",
-          widget: "string"
+          widget: "string",
+          required: true
         },
         {
           label: "Content",
           name: "content",
-          widget: "markdown"
+          widget: "markdown",
+          required: true
         }
       ],
       folder: "content",
@@ -50,18 +52,21 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
         {
           label: "Title",
           name: "title",
-          widget: "string"
+          widget: "string",
+          required: true
         },
         {
           label: "Description",
           name: "description",
           widget: "markdown",
-          minimal: true
+          minimal: true,
+          required: true
         },
         {
           label: "File",
           name: "file",
-          widget: "file"
+          widget: "file",
+          required: true
         }
       ],
       folder: "content",
@@ -74,12 +79,15 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
         {
           label: "Course Title",
           name: "title",
-          widget: "text"
+          widget: "text",
+          required: true
         },
         {
           label: "Course Description",
           name: "description",
-          widget: "markdown"
+          widget: "markdown",
+          help:
+            "A description of the course that will be shown on the course site home page."
         }
       ],
       file: "data/metadata.json",

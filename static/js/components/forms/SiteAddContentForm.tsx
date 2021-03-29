@@ -1,18 +1,10 @@
 import React from "react"
 import { Form, Formik, FormikHelpers } from "formik"
-import * as yup from "yup"
 
 import SiteContentField from "./SiteContentField"
+import { getContentSchema } from "./validation"
 
 import { ConfigItem } from "../../types/websites"
-
-export const websiteValidation = yup.object().shape({
-  title: yup
-    .string()
-    .label("Title")
-    .trim()
-    .required()
-})
 
 interface Props {
   onSubmit: (
@@ -31,6 +23,7 @@ export default function SiteAddContentForm({
     // set to empty string to treat as a controlled component
     initialValues[field.name] = ""
   }
+  const schema = getContentSchema(configItem)
 
   const fieldsByColumn = [
     fields.filter(field => field.widget === "markdown"),
@@ -40,7 +33,7 @@ export default function SiteAddContentForm({
   return (
     <Formik
       onSubmit={onSubmit}
-      validationSchema={websiteValidation}
+      validationSchema={schema}
       initialValues={initialValues}
     >
       {({ isSubmitting, status, setFieldValue }) => (

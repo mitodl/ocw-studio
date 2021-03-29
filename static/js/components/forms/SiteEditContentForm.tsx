@@ -1,11 +1,11 @@
 import * as React from "react"
 import { Formik, Form, FormikHelpers } from "formik"
-import * as yup from "yup"
 
+import SiteContentField from "./SiteContentField"
 import { contentInitialValues } from "../../lib/site_content"
+import { getContentSchema } from "./validation"
 
 import { ConfigItem, WebsiteContent } from "../../types/websites"
-import SiteContentField from "./SiteContentField"
 
 export type SiteFormValues = {
   [key: string]: string
@@ -20,14 +20,6 @@ type Props = {
   content: WebsiteContent
 }
 
-export const websiteValidation = yup.object().shape({
-  title: yup
-    .string()
-    .label("Title")
-    .trim()
-    .required()
-})
-
 export default function SiteEditContentForm({
   onSubmit,
   configItem,
@@ -35,11 +27,12 @@ export default function SiteEditContentForm({
 }: Props): JSX.Element {
   const fields = configItem.fields
   const initialValues: SiteFormValues = contentInitialValues(content, fields)
+  const schema = getContentSchema(configItem)
 
   return (
     <Formik
       onSubmit={onSubmit}
-      validationSchema={websiteValidation}
+      validationSchema={schema}
       initialValues={initialValues}
     >
       {({ isSubmitting, status, setFieldValue }) => (

@@ -1,6 +1,7 @@
 import { ErrorMessage, Field } from "formik"
 import React from "react"
 
+import { FormError } from "./FormError"
 import { componentFromWidget } from "../../lib/site_content"
 
 import { ConfigField } from "../../types/websites"
@@ -24,7 +25,8 @@ export default function SiteContentField({
         className="form-control"
         {...extraProps}
       />
-      <ErrorMessage name={field.name} component="div" />
+      {field.help && <span className="help-text">{field.help}</span>}
+      <ErrorMessage name={field.name} component={FormError} />
     </div>
   )
 }

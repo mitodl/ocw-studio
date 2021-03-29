@@ -16,8 +16,10 @@ inner_content_item:
     file: str(required=False)
 ---
 field:
+    widget: enum('string', 'text', 'markdown', 'file')
     label: str()
     name: str()
-    widget: enum('string', 'text', 'markdown', 'file')
     minimal: bool(required=False)
+    required: bool(required=False)
+    help: str(required=False)
     fields: list(include('field'), required=False)
