@@ -1,7 +1,7 @@
 import * as yup from "yup"
 import { SchemaOf, setLocale } from "yup"
 
-import { ConfigItem } from "../../types/websites"
+import { ConfigField, ConfigItem } from "../../types/websites"
 
 // This is added to properly handle file fields, which can have a "null" value
 setLocale({
@@ -10,20 +10,30 @@ setLocale({
   }
 })
 
-const defaultYupField = yup.string()
-const widgetToYupMap = {
-  string:   yup.string(),
-  text:     yup.string(),
-  markdown: yup.string(),
-  file:     yup.object().shape({
-    name: yup.string()
-  })
+export const getFieldSchema = (field: ConfigField): SchemaOf<any> => {
+  switch (field.widget) {
+  case "select":
+    if (field.multiple) {
+      return yup.array()
+    } else {
+      return yup.string()
+    }
+  case "file":
+    return yup.object().shape({
+      name: yup.string()
+    })
+  case "string":
+  case "text":
+  case "markdown":
+  default:
+    return yup.string()
+  }
 }
 
 export const getContentSchema = (configItem: ConfigItem): SchemaOf<any> => {
   const yupObjectShape = {}
   configItem.fields.forEach(field => {
-    const yupField = widgetToYupMap[field.widget] || defaultYupField
+    const yupField = getFieldSchema(field)
     yupObjectShape[field.name] = yupField.label(field.label)
     if (field.required) {
       switch (field.widget) {
