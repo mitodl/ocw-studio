@@ -95,7 +95,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
                             to={siteCollaboratorsDetailUrl
                               .param({
                                 name,
-                                username: collaborator.username
+                                userId: collaborator.user_id
                               })
                               .toString()}
                           >

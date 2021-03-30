@@ -29,8 +29,11 @@ test_app_json_modified = pytest_utils.test_app_json_modified
 def cleanup_settings():
     """Cleanup settings after a test"""
     envs.env.reload()
-    importlib.reload(sys.modules["mitol.common.settings.webpack"])
     importlib.reload(sys.modules["main.settings"])
+    importlib.reload(sys.modules["mitol.common.settings.base"])
+    importlib.reload(sys.modules["mitol.common.settings.webpack"])
+    importlib.reload(sys.modules["mitol.mail.settings.email"])
+    importlib.reload(sys.modules["mitol.authentication.settings.touchstone"])
 
 
 class TestSettings(TestCase):

@@ -12,7 +12,7 @@ export const siteContentListingUrl = siteDetailUrl.segment(":contentType/")
 export const siteAddContentUrl = siteContentListingUrl.segment("add/")
 export const siteCollaboratorsAddUrl = siteCollaboratorsUrl.segment("new/")
 export const siteCollaboratorsDetailUrl = siteCollaboratorsUrl.segment(
-  ":username/"
+  ":userId/"
 )
 
 // API URLS
@@ -27,7 +27,7 @@ export const siteApiCollaboratorsUrl = siteApiDetailUrl.segment(
   "collaborators/"
 )
 export const siteApiCollaboratorsDetailUrl = siteApiCollaboratorsUrl.segment(
-  ":username/"
+  ":userId/"
 )
 export const siteApiContentUrl = siteApiDetailUrl.segment("content/")
 export const siteApiContentListingUrl = siteApiContentUrl.query({

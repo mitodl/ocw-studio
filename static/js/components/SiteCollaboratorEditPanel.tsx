@@ -22,14 +22,15 @@ import {
 } from "../types/websites"
 
 interface MatchParams {
-  username: string
+  userId: string
   name: string
 }
 
 export default function SiteCollaboratorEditPanel(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
-  const { username, name } = match.params
+  const { name } = match.params
   const history = useHistory()
+  const userId = parseInt(match.params.userId)
 
   const [{ isPending }] = useRequest(websiteCollaboratorsRequest(name))
   const [collaboratorQueryState, updateCollaboratorRole] = useMutation(
@@ -37,7 +38,7 @@ export default function SiteCollaboratorEditPanel(): JSX.Element | null {
   )
   const collaborators = useSelector(getWebsiteCollaboratorsCursor)(name)
   const collaborator = collaborators?.find(
-    (user: WebsiteCollaborator) => user.username === username
+    (user: WebsiteCollaborator) => user.user_id === userId
   )
 
   if (!collaborator) {

@@ -105,8 +105,8 @@ describe("SiteCollaboratorList", () => {
     expect(editLink.prop("to")).toBe(
       siteCollaboratorsDetailUrl
         .param({
-          name:     website.name,
-          username: collaborators[0].username
+          name:   website.name,
+          userId: collaborators[0].user_id
         })
         .toString()
     )
@@ -119,8 +119,8 @@ describe("SiteCollaboratorList", () => {
       .withArgs(
         siteApiCollaboratorsDetailUrl
           .param({
-            name:     website.name,
-            username: collaborator.username
+            name:   website.name,
+            userId: collaborator.user_id
           })
           .toString(),
         "DELETE"

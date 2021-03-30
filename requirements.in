@@ -12,7 +12,8 @@ django-robots
 django-server-status
 django-storages
 django-webpack-loader
-mitol-django-common==0.5.0
+mitol-django-authentication==1.0.0
+mitol-django-common==0.7.0
 drf-extensions
 ipython
 newrelic
@@ -20,6 +21,8 @@ psycopg2
 redis
 requests
 sentry-sdk
+social-auth-core
+social-auth-app-django
 uwsgi
 pyyaml
 yamale

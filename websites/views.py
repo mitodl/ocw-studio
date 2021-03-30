@@ -149,7 +149,8 @@ class WebsiteCollaboratorViewSet(
     serializer_class = WebsiteCollaboratorSerializer
     permission_classes = (HasWebsiteCollaborationPermission,)
     pagination_class = DefaultPagination
-    lookup_field = "username"
+    lookup_field = "id"
+    lookup_url_kwarg = "user_id"
 
     def get_queryset(self):
         """
@@ -162,33 +163,40 @@ class WebsiteCollaboratorViewSet(
         website_groups = list(
             get_groups_with_perms(website).values_list("name", flat=True)
         ) + [constants.GLOBAL_ADMIN]
-        owner_username = website.owner.username if website.owner else None
+        owner_user_id = website.owner.id if website.owner else None
 
         # Return the individual user and group if a primary key is provided
-        user_name = self.kwargs.get("username", None)
-        if user_name:
-            if user_name == owner_username:
-                return User.objects.filter(username=user_name).annotate(
+        user_id = self.kwargs.get("user_id", None)
+        if user_id:
+            try:
+                user_id = int(user_id)
+            except ValueError:
+                raise ValidationError(  # pylint: disable=raise-missing-from
+                    {"errors": ["Invalid user"]}
+                )
+
+            if user_id == owner_user_id:
+                return User.objects.filter(id=user_id).annotate(
                     group=Value(constants.ROLE_OWNER, CharField())
                 )
             group_subquery = Group.objects.filter(
-                Q(user__username=OuterRef("username")) & Q(name__in=website_groups)
+                Q(user__id=OuterRef("id")) & Q(name__in=website_groups)
             )
             return User.objects.filter(
-                Q(username=user_name) & Q(groups__name__in=website_groups)
+                Q(id=user_id) & Q(groups__name__in=website_groups)
             ).annotate(group=Subquery(group_subquery.values("name")[:1]))
 
         # Otherwise get all the collaborators and annotate with the relevant group they are in
-        query = User.objects.filter(username=owner_username).annotate(
+        query = User.objects.filter(id=owner_user_id).annotate(
             group=Value(constants.ROLE_OWNER, CharField())
         )
         for group_name in website_groups:
             query = query.union(
                 Group.objects.get(name=group_name)
-                .user_set.exclude(username=owner_username)
+                .user_set.exclude(id=owner_user_id)
                 .annotate(group=Value(group_name, CharField()))
             )
-        return query.order_by("name", "username")
+        return query.order_by("name", "id")
 
     def destroy(self, request, *args, **kwargs):
         """Remove the user from all groups for this website"""
@@ -213,7 +221,7 @@ class WebsiteCollaboratorViewSet(
             )
         user.groups.add(Group.objects.get(name=group_name))
         serializer.validated_data.update(
-            {"username": user.username, "name": user.name, "group": group_name}
+            {"user_id": user.id, "name": user.name, "group": group_name}
         )
         return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
 

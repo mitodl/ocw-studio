@@ -21,6 +21,18 @@ def index(request, *args, **kwargs):  # pylint: disable=unused-argument
         "sentry_dsn": settings.SENTRY_DSN,
     }
 
+    user = request.user
+
+    js_settings["user"] = (
+        {
+            "username": user.username,
+            "email": user.email,
+            "name": user.name,
+        }
+        if user.is_authenticated
+        else None
+    )
+
     return render(
         request,
         "index.html",

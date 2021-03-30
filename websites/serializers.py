@@ -107,7 +107,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
     email = serializers.EmailField(allow_null=True, required=False)
     group = serializers.CharField(read_only=True)
     name = serializers.CharField(read_only=True)
-    username = serializers.CharField(read_only=True)
+    user_id = serializers.IntegerField(read_only=True, source="id")
 
     def get_role(self, obj):
         """ Get the role based on the group """
@@ -144,7 +144,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         return attrs
 
     class Meta:
-        fields = ["username", "email", "name", "group", "role"]
+        fields = ["user_id", "email", "name", "group", "role"]
 
 
 class WebsiteContentSerializer(serializers.ModelSerializer):

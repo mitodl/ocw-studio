@@ -4,11 +4,18 @@ Django settings for ocw_studio.
 import logging
 import os
 import platform
+from urllib.parse import urlparse
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
-from mitol.common.envs import get_bool, get_features, get_int, get_string
-from mitol.common.settings.webpack import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from mitol.common.envs import (
+    get_bool,
+    get_features,
+    get_int,
+    get_string,
+    import_settings_modules,
+    init_app_settings,
+)
 
 from main.sentry import init_sentry
 
@@ -46,6 +53,15 @@ init_sentry(
     version=VERSION,
     log_level=SENTRY_LOG_LEVEL,
     heroku_app_name=HEROKU_APP_NAME,
+)
+
+init_app_settings(namespace="OCW_STUDIO", site_name="OCW Studio")
+import_settings_modules(
+    globals(),
+    "mitol.common.settings.base",
+    "mitol.common.settings.webpack",
+    "mitol.mail.settings.email",
+    "mitol.authentication.settings.touchstone",
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -103,6 +119,7 @@ INSTALLED_APPS = (
     "server_status",
     # django-robots
     "rest_framework",
+    "social_django",
     "robots",
     # Put our apps after this point
     "main",
@@ -112,6 +129,7 @@ INSTALLED_APPS = (
     "news",
     # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
+    "mitol.authentication.apps.AuthenticationApp",
 )
 
 if ENVIRONMENT not in {"prod", "production"}:
@@ -237,76 +255,6 @@ INTERNAL_IPS = (
     get_string(
         name="HOST_IP", default="127.0.0.1", description="This server's host IP"
     ),
-)
-
-# Configure e-mail settings
-EMAIL_BACKEND = get_string(
-    name="OCW_STUDIO_EMAIL_BACKEND",
-    default="django.core.mail.backends.smtp.EmailBackend",
-    description="The default email backend to use for outgoing email. This is used in some places by django itself. See `NOTIFICATION_EMAIL_BACKEND` for the backend used for most application emails.",
-)
-EMAIL_HOST = get_string(
-    name="OCW_STUDIO_EMAIL_HOST",
-    default="localhost",
-    description="Outgoing e-mail hostname",
-)
-EMAIL_PORT = get_int(
-    name="OCW_STUDIO_EMAIL_PORT", default=25, description="Outgoing e-mail port"
-)
-EMAIL_HOST_USER = get_string(
-    name="OCW_STUDIO_EMAIL_USER",
-    default="",
-    description="Outgoing e-mail auth username",
-)
-EMAIL_HOST_PASSWORD = get_string(
-    name="OCW_STUDIO_EMAIL_PASSWORD",
-    default="",
-    description="Outgoing e-mail auth password",
-)
-EMAIL_USE_TLS = get_bool(
-    name="OCW_STUDIO_EMAIL_TLS",
-    default=False,
-    description="Outgoing e-mail TLS setting",
-)
-DEFAULT_FROM_EMAIL = get_string(
-    name="OCW_STUDIO_FROM_EMAIL",
-    default="webmaster@localhost",
-    description="E-mail to use for the from field",
-)
-
-MAILGUN_SENDER_DOMAIN = get_string(
-    name="MAILGUN_SENDER_DOMAIN",
-    default=None,
-    description="The domain to send mailgun email through",
-    required=True,
-)
-MAILGUN_KEY = get_string(
-    name="MAILGUN_KEY",
-    default=None,
-    description="The token for authenticating against the Mailgun API",
-    required=True,
-)
-MAILGUN_BATCH_CHUNK_SIZE = get_int(
-    name="MAILGUN_BATCH_CHUNK_SIZE",
-    default=1000,
-    description="Maximum number of emails to send in a batch",
-)
-MAILGUN_RECIPIENT_OVERRIDE = get_string(
-    name="MAILGUN_RECIPIENT_OVERRIDE",
-    default=None,
-    dev_only=True,
-    description="Override the recipient for outgoing email, development only",
-)
-MAILGUN_FROM_EMAIL = get_string(
-    name="MAILGUN_FROM_EMAIL",
-    default="no-reply@localhost",
-    description="Email which mail comes from",
-)
-
-EMAIL_SUPPORT = get_string(
-    name="OCW_STUDIO_SUPPORT_EMAIL",
-    default=MAILGUN_RECIPIENT_OVERRIDE or "support@localhost",
-    description="Email address listed for customer support",
 )
 
 # e-mail configurable admins
@@ -556,6 +504,7 @@ if DEBUG:
 
 
 AUTHENTICATION_BACKENDS = (
+    "social_core.backends.saml.SAMLAuth",
     "django.contrib.auth.backends.ModelBackend",  # this is default
     "guardian.backends.ObjectPermissionBackend",
 )
@@ -568,7 +517,37 @@ REST_FRAMEWORK = {
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
 
-HIJACK_LOGIN_REDIRECT_URL = "/"
+HIJACK_LOGIN_REDIRECT_URL = "sites"
 HIJACK_LOGOUT_REDIRECT_URL = "/admin/users/user/"
 HIJACK_REGISTER_ADMIN = False
 HIJACK_ALLOW_GET_REQUESTS = True
+
+LOGOUT_URL = "/logout"
+LOGOUT_REDIRECT_URL = "/"
+
+SOCIAL_AUTH_PIPELINE = (
+    "social_core.pipeline.social_auth.social_details",
+    "social_core.pipeline.social_auth.social_uid",
+    "social_core.pipeline.social_auth.auth_allowed",
+    "social_core.pipeline.social_auth.social_user",
+    "social_core.pipeline.user.get_username",
+    "social_core.pipeline.social_auth.associate_by_email",
+    "social_core.pipeline.user.create_user",
+    "social_core.pipeline.social_auth.associate_user",
+    "social_core.pipeline.social_auth.load_extra_data",
+    "social_core.pipeline.user.user_details",
+)
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = "sites"
+SOCIAL_AUTH_LOGIN_ERROR_URL = "main-index"
+SOCIAL_AUTH_ALLOWED_REDIRECT_HOSTS = [
+    urlparse(SITE_BASE_URL).netloc  # pylint: disable=undefined-variable
+]
+
+
+# SAML backend settings
+SOCIAL_AUTH_SAML_LOGIN_URL = get_string(
+    name="SOCIAL_AUTH_SAML_LOGIN_URL",
+    default=None,
+    description="The URL to redirect the user to for SAML login",
+    required=True,
+)
