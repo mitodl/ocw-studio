@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.8.0
+Version 0.8.0 (Released March 30, 2021)
 -------------
 
 - Added common widget options (required flag and help text)
