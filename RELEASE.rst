@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.8.0 (Released March 30, 2021)
+-------------
+
+- Added common widget options (required flag and help text)
+- Bump pyyaml from 5.3.1 to 5.4 (#156)
+- fix issue with list styling on site pages
+- update site sidebar to match design
+
 Version 0.7.1 (Released March 24, 2021)
 -------------
 
