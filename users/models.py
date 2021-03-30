@@ -63,7 +63,7 @@ class User(AbstractBaseUser, TimestampedModel, PermissionsMixin):
         default=False, help_text="The user can access the admin site"
     )
     is_active = models.BooleanField(
-        default=False, help_text="The user account is active"
+        default=True, help_text="The user account is active"
     )
 
     objects = UserManager()

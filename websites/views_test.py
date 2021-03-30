@@ -276,35 +276,35 @@ def test_websites_collaborators_endpoint_list_permissions(
     expected_results = sorted(
         [
             {
-                "username": permission_groups.site_admin.username,
+                "user_id": permission_groups.site_admin.id,
                 "email": permission_groups.site_admin.email,
                 "name": permission_groups.site_admin.name,
                 "group": website.admin_group.name,
                 "role": constants.ROLE_ADMINISTRATOR,
             },
             {
-                "username": permission_groups.site_editor.username,
+                "user_id": permission_groups.site_editor.id,
                 "email": permission_groups.site_editor.email,
                 "name": permission_groups.site_editor.name,
                 "group": website.editor_group.name,
                 "role": constants.ROLE_EDITOR,
             },
             {
-                "username": permission_groups.global_admin.username,
+                "user_id": permission_groups.global_admin.id,
                 "email": permission_groups.global_admin.email,
                 "name": permission_groups.global_admin.name,
                 "group": constants.GLOBAL_ADMIN,
                 "role": constants.GLOBAL_ADMIN,
             },
             {
-                "username": website.owner.username,
+                "user_id": website.owner.id,
                 "email": website.owner.email,
                 "name": website.owner.name,
                 "group": constants.ROLE_OWNER,
                 "role": constants.ROLE_OWNER,
             },
         ],
-        key=lambda user: (user["name"], user["username"]),
+        key=lambda user: (user["name"], user["user_id"]),
     )
     for user in [
         permission_groups.global_admin,
@@ -475,13 +475,13 @@ def test_websites_collaborators_endpoint_detail(drf_client, permission_groups):
                 "websites_collaborators_api-detail",
                 kwargs={
                     "parent_lookup_website": website.name,
-                    "username": user.username,
+                    "user_id": user.id,
                 },
             )
         )
         assert resp.status_code == 200
         assert resp.data == {
-            "username": user.username,
+            "user_id": user.id,
             "email": user.email,
             "name": user.name,
             "group": group,
@@ -501,7 +501,7 @@ def test_websites_collaborators_endpoint_detail_denied(
             "websites_collaborators_api-detail",
             kwargs={
                 "parent_lookup_website": permission_groups.websites[0].name,
-                "username": permission_groups.site_admin.username,
+                "user_id": permission_groups.site_admin.id,
             },
         )
     )
@@ -517,7 +517,7 @@ def test_websites_collaborators_endpoint_detail_modify(drf_client, permission_gr
             "websites_collaborators_api-detail",
             kwargs={
                 "parent_lookup_website": website.name,
-                "username": permission_groups.site_editor.username,
+                "user_id": permission_groups.site_editor.id,
             },
         ),
         data={
@@ -545,7 +545,7 @@ def test_websites_collaborators_endpoint_detail_modify_admin_denied(
                 "websites_collaborators_api-detail",
                 kwargs={
                     "parent_lookup_website": website.name,
-                    "username": user.username,
+                    "user_id": user.id,
                 },
             ),
             data={
@@ -567,7 +567,7 @@ def test_websites_collaborators_endpoint_detail_modify_missing_data(
             "websites_collaborators_api-detail",
             kwargs={
                 "parent_lookup_website": website.name,
-                "username": permission_groups.site_editor.username,
+                "user_id": permission_groups.site_editor.id,
             },
         ),
         data={},
@@ -588,7 +588,7 @@ def test_websites_collaborators_endpoint_detail_modify_nonadmin_denied(
                 "websites_collaborators_api-detail",
                 kwargs={
                     "parent_lookup_website": website.name,
-                    "username": permission_groups.site_admin.username,
+                    "user_id": permission_groups.site_admin.id,
                 },
             ),
             data={
@@ -607,7 +607,7 @@ def test_websites_collaborators_endpoint_detail_delete(drf_client, permission_gr
             "websites_collaborators_api-detail",
             kwargs={
                 "parent_lookup_website": website.name,
-                "username": permission_groups.site_admin.username,
+                "user_id": permission_groups.site_admin.id,
             },
         )
     )
@@ -635,7 +635,7 @@ def test_websites_collaborators_endpoint_detail_delete_denied(
                 "websites_collaborators_api-detail",
                 kwargs={
                     "parent_lookup_website": website.name,
-                    "username": user.username,
+                    "user_id": user.id,
                 },
             ),
             data={},

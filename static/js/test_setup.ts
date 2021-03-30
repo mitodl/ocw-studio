@@ -11,7 +11,12 @@ const _createSettings = (): SETTINGS => ({
   public_path:     "",
   environment:     "",
   release_version: "0.0.0",
-  sentry_dsn:      ""
+  sentry_dsn:      "",
+  user:            {
+    username: "example",
+    name:     "Jane Doe",
+    email:    "jane@example.com"
+  }
 })
 
 global.SETTINGS = _createSettings()

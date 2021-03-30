@@ -40,7 +40,7 @@ describe("SiteCollaboratorEditPanel", () => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
     collaborator = makeWebsiteCollaborator()
-    const params = { username: collaborator.username, name: website.name }
+    const params = { userId: collaborator.user_id, name: website.name }
     mockUseRouteMatch.mockImplementation(() => ({
       params
     }))
@@ -89,8 +89,8 @@ describe("SiteCollaboratorEditPanel", () => {
       .withArgs(
         siteApiCollaboratorsDetailUrl
           .param({
-            name:     website.name,
-            username: collaborator.username
+            name:   website.name,
+            userId: collaborator.user_id
           })
           .toString(),
         "PATCH"
@@ -129,8 +129,8 @@ describe("SiteCollaboratorEditPanel", () => {
       .withArgs(
         siteApiCollaboratorsDetailUrl
           .param({
-            name:     website.name,
-            username: collaborator.username
+            name:   website.name,
+            userId: collaborator.user_id
           })
           .toString(),
 
@@ -168,8 +168,8 @@ describe("SiteCollaboratorEditPanel", () => {
       .withArgs(
         siteApiCollaboratorsDetailUrl
           .param({
-            name:     website.name,
-            username: collaborator.username
+            name:   website.name,
+            userId: collaborator.user_id
           })
           .toString(),
         "PATCH"

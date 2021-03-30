@@ -77,9 +77,9 @@ describe("urls", () => {
       it("renders a URL for collaborators detail", () => {
         expect(
           siteCollaboratorsDetailUrl
-            .param({ name: "site-name", username: "badoop" })
+            .param({ name: "site-name", userId: 1 })
             .toString()
-        ).toBe("/sites/site-name/collaborators/badoop/")
+        ).toBe("/sites/site-name/collaborators/1/")
       })
     })
   })
@@ -111,11 +111,11 @@ describe("urls", () => {
         expect(
           siteApiCollaboratorsDetailUrl
             .param({
-              name:     "site-name",
-              username: "greatusername"
+              name:   "site-name",
+              userId: 1
             })
             .toString()
-        ).toBe("/api/websites/site-name/collaborators/greatusername/")
+        ).toBe("/api/websites/site-name/collaborators/1/")
       })
 
       it("renders a URL for site content listing", () => {

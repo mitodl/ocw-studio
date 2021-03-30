@@ -25,6 +25,5 @@ describe("App", () => {
     const app = wrapper.find("App")
     const header = app.find("Header")
     expect(header.exists()).toBeTruthy()
-    expect(header.text()).toStrictEqual("OCW Studio")
   })
 })

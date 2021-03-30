@@ -145,13 +145,13 @@ export const deleteWebsiteCollaboratorMutation = (
   websiteName: string,
   collaborator: WebsiteCollaborator
 ): QueryConfig => {
-  const evictCollaborator = reject(propEq("username", collaborator.username))
+  const evictCollaborator = reject(propEq("user_id", collaborator.user_id))
   return {
     queryKey: "deleteWebsiteCollaboratorMutation",
     url:      siteApiCollaboratorsDetailUrl
       .param({
-        name:     websiteName,
-        username: collaborator.username
+        name:   websiteName,
+        userId: collaborator.user_id
       })
       .toString(),
     optimisticUpdate: {
@@ -178,15 +178,15 @@ export const editWebsiteCollaboratorMutation = (
   role: string
 ): QueryConfig => {
   const alterRole = map(
-    when(propEq("username", collaborator.username), assoc("role", role))
+    when(propEq("user_id", collaborator.user_id), assoc("role", role))
   )
   return {
     queryKey: "editWebsiteCollaboratorMutation",
     body:     { role },
     url:      siteApiCollaboratorsDetailUrl
       .param({
-        name:     websiteName,
-        username: collaborator.username
+        name:   websiteName,
+        userId: collaborator.user_id
       })
       .toString(),
     optimisticUpdate: {

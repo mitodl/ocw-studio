@@ -37,10 +37,20 @@ class UserAdmin(ContribUserAdmin, TimestampedModelAdmin, HijackUserAdminMixin):
         "last_login",
         "hijack_field",
     )
+
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("username", "email", "password1", "password2"),
+            },
+        ),
+    )
     list_filter = ("is_staff", "is_superuser", "is_active", "groups")
     search_fields = ("username", "name", "email")
     ordering = ("email",)
-    readonly_fields = ("username", "last_login")
+    readonly_fields = ("last_login",)
 
 
 admin.site.register(User, UserAdmin)

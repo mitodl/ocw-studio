@@ -45,7 +45,7 @@ export default function SitePage(): JSX.Element | null {
             <Route path={`${match.path}/collaborators/new/`}>
               <SiteCollaboratorAddPanel />
             </Route>
-            <Route path={`${match.path}/collaborators/:username/`}>
+            <Route path={`${match.path}/collaborators/:userId/`}>
               <SiteCollaboratorEditPanel />
             </Route>
             <Route path={`${match.path}/collaborators/`}>

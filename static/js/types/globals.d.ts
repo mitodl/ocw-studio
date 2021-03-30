@@ -7,6 +7,11 @@ interface SETTINGS {
   environment: string;
   release_version: string;
   sentry_dsn: string;
+  user: {
+    username: string;
+    email: string;
+    name: string;
+  } | null;
 }
 
 declare var SETTINGS: SETTINGS;

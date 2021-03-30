@@ -90,19 +90,19 @@ export const makeWebsiteListing = (): Website[] =>
   times(WEBSITES_PAGE_SIZE).map(() => makeWebsiteDetail())
 
 export const makeWebsiteCollaborator = (): WebsiteCollaborator => ({
-  name:     casual.name,
-  username: casual.word,
-  email:    casual.email,
-  role:     casual.random_element([ROLE_ADMIN, ROLE_EDITOR]),
-  group:    casual.word
+  user_id: incr.next().value,
+  name:    casual.name,
+  email:   casual.email,
+  role:    casual.random_element([ROLE_ADMIN, ROLE_EDITOR]),
+  group:   casual.word
 })
 
 export const makePermanentWebsiteCollaborator = (): WebsiteCollaborator => ({
-  name:     casual.name,
-  username: casual.word,
-  email:    casual.email,
-  role:     casual.random_element([ROLE_GLOBAL, ROLE_OWNER]),
-  group:    casual.word
+  user_id: incr.next().value,
+  name:    casual.name,
+  email:   casual.email,
+  role:    casual.random_element([ROLE_GLOBAL, ROLE_OWNER]),
+  group:   casual.word
 })
 
 export const makeWebsiteCollaborators = (): WebsiteCollaborator[] =>
