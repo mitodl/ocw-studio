@@ -1,45 +1,57 @@
 import React from "react"
-import sinon, { SinonSandbox } from "sinon"
+import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { shallow } from "enzyme"
 import Select from "react-select"
 
-import SelectField from "./SelectField"
+import SelectField, { Option } from "./SelectField"
 
 describe("SelectField", () => {
-  let sandbox: SinonSandbox
+  let sandbox: SinonSandbox,
+    onChangeStub: SinonStub,
+    name: string,
+    options: string[],
+    expectedOptions: Option[],
+    min: number,
+    max: number
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
+    onChangeStub = sandbox.stub()
+    options = ["one", "two"]
+    expectedOptions = [
+      { label: "one", value: "one" },
+      { label: "two", value: "two" }
+    ]
+    min = 1
+    max = 3
   })
 
   afterEach(() => {
     sandbox.restore()
   })
 
+  const render = (props: any) =>
+    shallow(
+      <SelectField
+        onChange={onChangeStub}
+        name={name}
+        min={min}
+        max={max}
+        options={options}
+        {...props}
+      />
+    )
+
   describe("not multiple choice", () => {
     it("renders a select widget", () => {
-      const initialValue = "initial"
-      const name = "name"
-      const options = ["one", "two"]
-      const expectedOptions = [
-        { label: "one", value: "one" },
-        { label: "two", value: "two" }
-      ]
-
-      const onChangeStub = sandbox.stub()
-
-      const wrapper = shallow(
-        <SelectField
-          value={initialValue}
-          name={name}
-          onChange={onChangeStub}
-          options={options}
-        />
-      )
+      const value = "initial"
+      const wrapper = render({
+        value
+      })
       const props = wrapper.find(Select).props()
       expect(props.value).toStrictEqual({
-        label: initialValue,
-        value: initialValue
+        label: value,
+        value: value
       })
       expect(props.isMulti).toBeFalsy()
       expect(props.options).toStrictEqual(expectedOptions)
@@ -52,17 +64,9 @@ describe("SelectField", () => {
     })
 
     it("handles an empty value gracefully", () => {
-      const name = "name"
-      const options = ["one", "two"]
-
-      const wrapper = shallow(
-        <SelectField
-          value={null}
-          name={name}
-          onChange={sandbox.stub()}
-          options={options}
-        />
-      )
+      const wrapper = render({
+        value: null
+      })
       const props = wrapper.find(Select).props()
       expect(props.value).toBeNull()
     })
@@ -70,32 +74,14 @@ describe("SelectField", () => {
 
   describe("multiple choice", () => {
     it("renders a select widget", () => {
-      const initialValue = ["initial", "values"]
-      const name = "name"
-      const options = ["one", "two"]
-      const expectedOptions = [
-        { label: "one", value: "one" },
-        { label: "two", value: "two" }
-      ]
-      const min = 1
-      const max = 3
-
-      const onChangeStub = sandbox.stub()
-
-      const wrapper = shallow(
-        <SelectField
-          value={initialValue}
-          name={name}
-          onChange={onChangeStub}
-          options={options}
-          multiple={true}
-          min={min}
-          max={max}
-        />
-      )
+      const value = ["initial", "values"]
+      const wrapper = render({
+        value,
+        multiple: true
+      })
       const props = wrapper.find(Select).props()
       expect(props.value).toStrictEqual(
-        initialValue.map(_value => ({ label: _value, value: _value }))
+        value.map(_value => ({ label: _value, value: _value }))
       )
       expect(props.isMulti).toBeTruthy()
       expect(props.options).toStrictEqual(expectedOptions)
@@ -108,18 +94,10 @@ describe("SelectField", () => {
     })
 
     it("handles an empty value gracefully", () => {
-      const name = "name"
-      const options = ["one", "two"]
-
-      const wrapper = shallow(
-        <SelectField
-          value={null}
-          name={name}
-          onChange={sandbox.stub()}
-          options={options}
-          multiple={true}
-        />
-      )
+      const wrapper = render({
+        value:    null,
+        multiple: true
+      })
       const props = wrapper.find(Select).props()
       expect(props.value).toStrictEqual([])
     })

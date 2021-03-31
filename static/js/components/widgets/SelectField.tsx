@@ -2,7 +2,7 @@ import React from "react"
 import Select from "react-select"
 import { isNil } from "ramda"
 
-interface Option {
+export interface Option {
   label: string
   value: string
 }
