@@ -13,6 +13,8 @@ import {
 
 import {
   ConfigItem,
+  ConfigField,
+  WidgetVariant,
   Website,
   WebsiteCollaborator,
   WebsiteContent,
@@ -23,17 +25,30 @@ import {
 
 const incr = incrementer()
 
+export const makeWebsiteConfigField = (
+  props: Record<string, any> = {}
+): ConfigField => {
+  const label = props.label ?? casual.word
+
+  return {
+    label,
+    name:   label.toLowerCase(),
+    widget: props.widget,
+    ...props
+  }
+}
+
 export const makeWebsiteConfigItem = (name: string): ConfigItem => ({
   fields: [
     {
       label:  "Title",
       name:   "title",
-      widget: "string"
+      widget: WidgetVariant.String
     },
     {
       label:  "Content",
       name:   "content",
-      widget: "markdown"
+      widget: WidgetVariant.Markdown
     }
   ],
   folder:   casual.word,

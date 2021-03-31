@@ -14,6 +14,7 @@ interface Props {
   ) => void | Promise<any>
   configItem: ConfigItem
 }
+
 export default function SiteAddContentForm({
   onSubmit,
   configItem

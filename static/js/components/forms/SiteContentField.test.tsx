@@ -7,6 +7,7 @@ import SiteContentField from "./SiteContentField"
 
 import { componentFromWidget } from "../../lib/site_content"
 import { makeWebsiteStarterConfig } from "../../util/factories/websites"
+import { WidgetVariant } from "../../types/websites"
 
 describe("SiteContentField", () => {
   let sandbox: SinonSandbox, setFieldValueStub: SinonStub
@@ -34,9 +35,12 @@ describe("SiteContentField", () => {
       const props = wrapper.find("Field").props()
       expect(props["as"]).toBe(componentFromWidget(field))
       expect(props["name"]).toBe(field.name)
-      expect(props["setFieldValue"]).toBe(
-        field.widget === "file" ? setFieldValueStub : undefined
-      )
+      if (
+        field.widget === WidgetVariant.File ||
+        field.widget === WidgetVariant.Boolean
+      ) {
+        expect(props["setFieldValue"]).toBe(setFieldValueStub)
+      }
       if (field.widget === "select") {
         expect(props["min"]).toBe(field.min)
         expect(props["max"]).toBe(field.max)

@@ -1,5 +1,6 @@
 const mockUseRouteMatch = jest.fn()
 
+import React from "react"
 import { act } from "react-dom/test-utils"
 
 import SiteContentListing from "./SiteContentListing"
@@ -33,7 +34,14 @@ jest.mock("react-router-dom", () => ({
 }))
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
-jest.mock("./widgets/MarkdownEditor", () => "div")
+function mocko() {
+  return <div>mock</div>
+}
+
+jest.mock("./widgets/MarkdownEditor", () => ({
+  __esModule: true,
+  default:    mocko
+}))
 
 describe("SiteContentListing", () => {
   let helper: IntegrationTestHelper,

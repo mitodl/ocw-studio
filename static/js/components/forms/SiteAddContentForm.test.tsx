@@ -11,7 +11,7 @@ import { componentFromWidget } from "../../lib/site_content"
 jest.mock("./validation")
 import { getContentSchema } from "./validation"
 
-import { ConfigItem } from "../../types/websites"
+import { ConfigItem, WidgetVariant } from "../../types/websites"
 
 describe("SiteAddContentForm", () => {
   let sandbox: SinonSandbox,
@@ -27,12 +27,12 @@ describe("SiteAddContentForm", () => {
         {
           label:  "Title",
           name:   "title",
-          widget: "string"
+          widget: WidgetVariant.String
         },
         {
           label:  "Content",
           name:   "content",
-          widget: "markdown"
+          widget: WidgetVariant.Markdown
         }
       ],
       folder:   "content",

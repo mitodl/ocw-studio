@@ -1,4 +1,5 @@
 import { WebsiteStarterConfig } from "./types/websites"
+import { WidgetVariant } from "./types/websites"
 
 export const ROLE_ADMIN = "admin"
 export const ROLE_EDITOR = "editor"
@@ -32,13 +33,13 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
         {
           label: "Title",
           name: "title",
-          widget: "string",
+          widget: WidgetVariant.String,
           required: true
         },
         {
           label: "Content",
           name: "content",
-          widget: "markdown",
+          widget: WidgetVariant.Markdown,
           required: true
         }
       ],
@@ -52,20 +53,20 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
         {
           label: "Title",
           name: "title",
-          widget: "string",
+          widget: WidgetVariant.String,
           required: true
         },
         {
           label: "Description",
           name: "description",
-          widget: "markdown",
+          widget: WidgetVariant.Markdown,
           minimal: true,
           required: true
         },
         {
           label: "File",
           name: "file",
-          widget: "file",
+          widget: WidgetVariant.File,
           required: true
         }
       ],
@@ -79,13 +80,13 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
         {
           label: "Course Title",
           name: "title",
-          widget: "text",
+          widget: WidgetVariant.Text,
           required: true
         },
         {
           label: "Course Description",
           name: "description",
-          widget: "markdown",
+          widget: WidgetVariant.Markdown,
           help:
             "A description of the course that will be shown on the course site home page."
         },
@@ -97,13 +98,19 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
           multiple: true,
           name: "tags",
           options: ["Design", "UX", "Dev"],
-          widget: "select"
+          widget: WidgetVariant.Select
         },
         {
           label: "Align Content",
           name: "align",
-          widget: "select",
+          widget: WidgetVariant.Select,
           options: ["left", "center", "right"]
+        },
+        {
+          label: "Featured course",
+          name: "featured",
+          widget: WidgetVariant.Boolean,
+          default: false
         }
       ],
       file: "data/metadata.json",

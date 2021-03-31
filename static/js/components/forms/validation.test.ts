@@ -1,7 +1,7 @@
 import * as yup from "yup"
 import { getContentSchema } from "./validation"
 
-import { ConfigItem } from "../../types/websites"
+import { ConfigItem, WidgetVariant } from "../../types/websites"
 
 describe("form validation util", () => {
   const yupFileFieldSchema = yup.object().shape({
@@ -25,7 +25,7 @@ describe("form validation util", () => {
       fields: [
         {
           ...partialField,
-          widget: "string"
+          widget: WidgetVariant.String
         }
       ]
     }
@@ -56,7 +56,7 @@ describe("form validation util", () => {
         fields: [
           {
             ...partialField,
-            widget:   widget.toString(),
+            widget:   widget as WidgetVariant,
             required: true
           }
         ]
@@ -83,13 +83,13 @@ describe("form validation util", () => {
         {
           name:     "myfield",
           label:    "My Field",
-          widget:   "string",
+          widget:   WidgetVariant.String,
           required: true
         },
         {
           name:     "myfield2",
           label:    "My Second Field",
-          widget:   "string",
+          widget:   WidgetVariant.String,
           required: true
         }
       ]

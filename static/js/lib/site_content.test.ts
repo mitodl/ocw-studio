@@ -1,17 +1,24 @@
 import { flatten } from "ramda"
 
+import MarkdownEditor from "../components/widgets/MarkdownEditor"
+import FileUploadField from "../components/widgets/FileUploadField"
+import SelectField from "../components/widgets/SelectField"
+import BooleanField from "../components/widgets/BooleanField"
+
 import {
   makeWebsiteContentDetail,
-  makeWebsiteStarterConfig
+  makeWebsiteStarterConfig,
+  makeWebsiteConfigField
 } from "../util/factories/websites"
 import {
   contentFormValuesToPayload,
   contentInitialValues,
-  newInitialValues
+  newInitialValues,
+  componentFromWidget,
+  widgetExtraProps
 } from "./site_content"
 import { MAIN_PAGE_CONTENT_FIELD } from "../constants"
-
-import { ConfigField } from "../types/websites"
+import { ConfigField, WidgetVariant } from "../types/websites"
 
 describe("site_content", () => {
   describe("contentFormValuesToPayload", () => {
@@ -20,16 +27,16 @@ describe("site_content", () => {
         title:   "a title",
         content: "some content"
       }
-      const fields = [
+      const fields: ConfigField[] = [
         {
           label:  "Title",
           name:   "title",
-          widget: "string"
+          widget: WidgetVariant.String
         },
         {
           label:  "Content",
           name:   MAIN_PAGE_CONTENT_FIELD,
-          widget: "markdown"
+          widget: WidgetVariant.Markdown
         }
       ]
       const payload = contentFormValuesToPayload(values, fields)
@@ -102,6 +109,7 @@ describe("site_content", () => {
       expect(payload).toStrictEqual({
         tags:                      "",
         align:                     "",
+        featured:                  false,
         file:                      null,
         title:                     content.title,
         description:               content.metadata?.description,
@@ -130,9 +138,82 @@ describe("site_content", () => {
       // @ts-ignore
       expect(values[fieldWithoutDefault.name]).toBe("")
     })
+
+    it("should use appropriate defaults for different widgets", () => {
+      [
+        ["markdown", ""],
+        ["file", ""],
+        ["boolean", false],
+        ["text", ""],
+        ["string", ""],
+        ["select", ""]
+      ].forEach(([widget, expectation]) => {
+        const field = makeWebsiteConfigField({
+          widget: widget as WidgetVariant,
+          label:  "Widget"
+        })
+        const initialValues = newInitialValues([field])
+        expect(initialValues).toStrictEqual({ widget: expectation })
+      })
+    })
   })
 
   describe("componentFromWidget", () => {
-    []
+    it("returns the right thing", () => {
+      [
+        [WidgetVariant.Select, SelectField],
+        [WidgetVariant.File, FileUploadField],
+        [WidgetVariant.String, "input"],
+        [WidgetVariant.Boolean, BooleanField],
+        [WidgetVariant.Markdown, MarkdownEditor],
+        [WidgetVariant.Text, "input"]
+      ].forEach(([widget, expected]) => {
+        const field = makeWebsiteConfigField({
+          widget: widget as WidgetVariant
+        })
+        expect(componentFromWidget(field)).toBe(expected)
+      })
+    })
+  })
+
+  describe("widgetExtraProps", () => {
+    it("should grab the minimal prop for a markdown widget", () => {
+      const field = makeWebsiteConfigField({
+        widget:  WidgetVariant.Markdown,
+        minimal: true
+      })
+      expect(widgetExtraProps(field)).toStrictEqual({
+        minimal: true
+      })
+    })
+
+    it("should grab select props for a select widget", () => {
+      const field = makeWebsiteConfigField({
+        widget:   WidgetVariant.Select,
+        options:  [],
+        multiple: true,
+        max:      30,
+        min:      22
+      })
+      expect(widgetExtraProps(field)).toStrictEqual({
+        options:  [],
+        multiple: true,
+        max:      30,
+        min:      22
+      })
+    })
+
+    it("should return no props for other WidgetVariants", () => {
+      [
+        WidgetVariant.File,
+        WidgetVariant.String,
+        WidgetVariant.Boolean,
+        WidgetVariant.Text
+      ].forEach((widget: WidgetVariant) => {
+        expect(
+          widgetExtraProps(makeWebsiteConfigField({ widget }))
+        ).toStrictEqual({})
+      })
+    })
   })
 })

@@ -1,11 +1,10 @@
 import { ComponentType, ElementType } from "react"
+import { pick } from "ramda"
 
-import {
-  MarkdownEditor,
-  MinimalMarkdownEditor
-} from "../components/widgets/MarkdownEditor"
+import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
 import SelectField from "../components/widgets/SelectField"
+import BooleanField from "../components/widgets/BooleanField"
 
 import { objectToFormData } from "./util"
 import {
@@ -13,24 +12,35 @@ import {
   MAIN_PAGE_CONTENT_FIELD
 } from "../constants"
 
-import { ConfigField, WebsiteContent } from "../types/websites"
+import { ConfigField, WebsiteContent, WidgetVariant } from "../types/websites"
 
 export const componentFromWidget = (
   field: ConfigField
 ): string | ComponentType | ElementType => {
   switch (field.widget) {
   case "markdown":
-    if (field.minimal) {
-      return MinimalMarkdownEditor
-    } else {
-      return MarkdownEditor
-    }
+    return MarkdownEditor
   case "select":
     return SelectField
   case "file":
     return FileUploadField
+  case "boolean":
+    return BooleanField
   default:
     return "input"
+  }
+}
+
+const SELECT_EXTRA_PROPS = ["options", "multiple", "max", "min"]
+
+export function widgetExtraProps(field: ConfigField): Record<string, any> {
+  switch (field.widget) {
+  case "select":
+    return pick(SELECT_EXTRA_PROPS, field)
+  case "markdown":
+    return { minimal: field.minimal ?? false }
+  default:
+    return {}
   }
 }
 
@@ -38,6 +48,7 @@ const isMainContentField = (field: ConfigField) =>
   field.name === MAIN_PAGE_CONTENT_FIELD && field.widget === "markdown"
 
 type ValueType = string | File | string[] | null
+
 /*
  * Translates page content form values into a payload that our REST API understands.
  */
@@ -98,17 +109,19 @@ export const contentInitialValues = (
     } else if (field.name === "file") {
       values[field.name] = content[field.name] ?? null
     } else {
-      values[field.name] = metadata[field.name] ?? ""
+      values[field.name] = metadata[field.name] ?? defaultFor(field.widget)
     }
   }
   return values
 }
 
-export function newInitialValues(fields: ConfigField[]): Record<string, any> {
-  const initialValues = {}
-  for (const field of fields) {
-    // set to empty string to treat as a controlled component
-    initialValues[field.name] = field.default ?? ""
-  }
-  return initialValues
-}
+export const newInitialValues = (fields: ConfigField[]): Record<string, any> =>
+  Object.fromEntries(
+    fields.map((field: ConfigField) => [
+      field.name,
+      field.default ?? defaultFor(field.widget)
+    ])
+  )
+
+const defaultFor = (widget: WidgetVariant): string | boolean =>
+  widget === "boolean" ? false : ""

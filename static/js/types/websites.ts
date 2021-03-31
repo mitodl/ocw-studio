@@ -1,9 +1,18 @@
 import { ROLE_ADMIN, ROLE_EDITOR, ROLE_GLOBAL, ROLE_OWNER } from "../constants"
 
+export enum WidgetVariant {
+  Markdown = "markdown",
+  File = "file",
+  Boolean = "boolean",
+  Text = "text",
+  String = "string",
+  Select = "select"
+}
+
 export interface ConfigField {
   name: string
   label: string
-  widget: string
+  widget: WidgetVariant
   minimal?: boolean
   help?: string
   required?: boolean

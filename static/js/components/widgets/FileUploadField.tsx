@@ -1,18 +1,18 @@
 import React from "react"
 import { filenameFromPath } from "../../lib/util"
 
-/**
- * A component for uploading files
- */
-
 export interface Props {
   name?: string
   value?: string | File | null
   setFieldValue: (key: string, value: File | null) => void
 }
 
+/**
+ * A component for uploading files
+ */
 export default function FileUploadField(props: Props): JSX.Element {
   const { name, value, setFieldValue } = props
+
   return (
     <div>
       <input

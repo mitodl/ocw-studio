@@ -29,6 +29,12 @@ course:
           "widget": "markdown",
           "minimal": true,
           "help": "A description of the course that will be shown on the course site home page."
-        }
+          }
         - { "label": "Tags", "default": ["Design"], "max": 3, "min": 1, "multiple": true, "name": "tags", "options": ["Design", "UX", "Dev"], "widget": "select" }
         - { label: "Align Content", name: "align", widget: "select", options: ["left", "center", "right"]}
+        - {
+          "label": "Comes with fries",
+          "name": "fries",
+          "widget": "boolean",
+          "help": "Whether the course includes fries or not."
+          }

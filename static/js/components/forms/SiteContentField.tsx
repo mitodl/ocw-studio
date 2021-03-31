@@ -2,33 +2,29 @@ import { ErrorMessage, Field } from "formik"
 import React from "react"
 
 import { FormError } from "./FormError"
-import { componentFromWidget } from "../../lib/site_content"
+import { componentFromWidget, widgetExtraProps } from "../../lib/site_content"
 
-import { ConfigField } from "../../types/websites"
+import { ConfigField, WidgetVariant } from "../../types/websites"
 
 interface Props {
   field: ConfigField
   setFieldValue?: (key: string, value: File | null) => void
 }
 
+/**
+ * Field for editing any type of site content
+ */
 export default function SiteContentField({
   field,
   setFieldValue
 }: Props): JSX.Element {
-  let extraProps
-  switch (field.widget) {
-  case "file":
-    extraProps = { setFieldValue }
-    break
-  case "select":
-    extraProps = {}
-    for (const fieldName of ["options", "multiple", "max", "min"]) {
-      extraProps[fieldName] = field[fieldName]
-    }
-    break
-  default:
-    extraProps = {}
-    break
+  const extraProps = widgetExtraProps(field)
+
+  if (
+    field.widget === WidgetVariant.File ||
+    field.widget === WidgetVariant.Boolean
+  ) {
+    extraProps.setFieldValue = setFieldValue
   }
 
   return (
