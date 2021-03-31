@@ -5,6 +5,7 @@ import {
   MinimalMarkdownEditor
 } from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
+import SelectField from "../components/widgets/SelectField"
 
 import { objectToFormData } from "./util"
 import {
@@ -24,6 +25,8 @@ export const componentFromWidget = (
     } else {
       return MarkdownEditor
     }
+  case "select":
+    return SelectField
   case "file":
     return FileUploadField
   default:
@@ -34,17 +37,18 @@ export const componentFromWidget = (
 const isMainContentField = (field: ConfigField) =>
   field.name === MAIN_PAGE_CONTENT_FIELD && field.widget === "markdown"
 
+type ValueType = string | File | string[] | null
 /*
  * Translates page content form values into a payload that our REST API understands.
  */
 export const contentFormValuesToPayload = (
-  values: { [key: string]: string | File },
+  values: Record<string, ValueType>,
   fields: ConfigField[]
 ):
   | (Record<string, string> & { metadata?: Record<string, string> })
   | FormData => {
   const payload = {}
-  const metadata: { [key: string]: string } = {}
+  const metadata = {}
 
   if (values["type"]) {
     payload["type"] = values["type"]
@@ -64,7 +68,7 @@ export const contentFormValuesToPayload = (
       } else if (field.name === "file" && value instanceof File) {
         payload[field.name] = value
       } else {
-        metadata[field.name] = value.toString()
+        metadata[field.name] = value
       }
     }
   }
@@ -98,4 +102,13 @@ export const contentInitialValues = (
     }
   }
   return values
+}
+
+export function newInitialValues(fields: ConfigField[]): Record<string, any> {
+  const initialValues = {}
+  for (const field of fields) {
+    // set to empty string to treat as a controlled component
+    initialValues[field.name] = field.default ?? ""
+  }
+  return initialValues
 }

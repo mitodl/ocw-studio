@@ -7,6 +7,11 @@ export interface ConfigField {
   minimal?: boolean
   help?: string
   required?: boolean
+  default?: any
+  min?: number
+  max?: number
+  options?: string[]
+  multiple?: boolean
 }
 
 export interface ConfigItem {

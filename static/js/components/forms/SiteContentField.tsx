@@ -15,7 +15,22 @@ export default function SiteContentField({
   field,
   setFieldValue
 }: Props): JSX.Element {
-  const extraProps = field.widget === "file" ? { setFieldValue } : {}
+  let extraProps
+  switch (field.widget) {
+  case "file":
+    extraProps = { setFieldValue }
+    break
+  case "select":
+    extraProps = {}
+    for (const fieldName of ["options", "multiple", "max", "min"]) {
+      extraProps[fieldName] = field[fieldName]
+    }
+    break
+  default:
+    extraProps = {}
+    break
+  }
+
   return (
     <div className="form-group">
       <label htmlFor={field.name}>{field.label}</label>

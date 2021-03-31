@@ -3,6 +3,7 @@ import { Form, Formik, FormikHelpers } from "formik"
 
 import SiteContentField from "./SiteContentField"
 import { getContentSchema } from "./validation"
+import { newInitialValues } from "../../lib/site_content"
 
 import { ConfigItem } from "../../types/websites"
 
@@ -18,11 +19,7 @@ export default function SiteAddContentForm({
   configItem
 }: Props): JSX.Element {
   const fields = configItem.fields
-  const initialValues = {}
-  for (const field of fields) {
-    // set to empty string to treat as a controlled component
-    initialValues[field.name] = ""
-  }
+  const initialValues = newInitialValues(fields)
   const schema = getContentSchema(configItem)
 
   const fieldsByColumn = [

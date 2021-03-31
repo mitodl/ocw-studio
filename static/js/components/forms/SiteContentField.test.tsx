@@ -31,11 +31,18 @@ describe("SiteContentField", () => {
       )
 
       expect(wrapper.find("label").text()).toBe(field.label)
-      expect(wrapper.find("Field").prop("as")).toBe(componentFromWidget(field))
-      expect(wrapper.find("Field").prop("name")).toBe(field.name)
-      expect(wrapper.find("Field").prop("setFieldValue")).toBe(
+      const props = wrapper.find("Field").props()
+      expect(props["as"]).toBe(componentFromWidget(field))
+      expect(props["name"]).toBe(field.name)
+      expect(props["setFieldValue"]).toBe(
         field.widget === "file" ? setFieldValueStub : undefined
       )
+      if (field.widget === "select") {
+        expect(props["min"]).toBe(field.min)
+        expect(props["max"]).toBe(field.max)
+        expect(props["multiple"]).toBe(field.multiple)
+        expect(props["options"]).toBe(field.options)
+      }
     }
   })
 })

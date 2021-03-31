@@ -148,7 +148,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
 
 
 class WebsiteContentSerializer(serializers.ModelSerializer):
-    """Serializes parts of WebsiteContent"""
+    """Serializes WebsiteContent for the list view"""
 
     class Meta:
         model = WebsiteContent
@@ -167,6 +167,7 @@ class WebsiteContentDetailSerializer(serializers.ModelSerializer):
             and self.instance.type != constants.CONTENT_TYPE_RESOURCE
         ):
             raise ValidationError("Files can only be uploaded for resources")
+
         return attrs
 
     class Meta:
@@ -180,11 +181,9 @@ class WebsiteContentCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """ Don't allow file uploads for non-resources """
-        if (
-            attrs.get("file", None)
-            and attrs.get("type", None) != constants.CONTENT_TYPE_RESOURCE
-        ):
+        if attrs.get("file") and attrs.get("type") != constants.CONTENT_TYPE_RESOURCE:
             raise ValidationError("Files can only be uploaded for resources")
+
         return attrs
 
     def create(self, validated_data):

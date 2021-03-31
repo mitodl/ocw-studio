@@ -238,7 +238,9 @@ def test_website_starters_list(drf_client, course_starter):
         [course_starter, new_starter], many=True
     ).data
     assert len(resp.data) == 2
-    assert resp.data == serialized_data
+    assert sorted(resp.data, key=lambda _starter: _starter["id"]) == sorted(
+        serialized_data, key=lambda _starter: _starter["id"]
+    )
 
 
 def test_website_starters_retrieve(drf_client):

@@ -88,6 +88,22 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
           widget: "markdown",
           help:
             "A description of the course that will be shown on the course site home page."
+        },
+        {
+          label: "Tags",
+          default: ["Design"],
+          max: 3,
+          min: 1,
+          multiple: true,
+          name: "tags",
+          options: ["Design", "UX", "Dev"],
+          widget: "select"
+        },
+        {
+          label: "Align Content",
+          name: "align",
+          widget: "select",
+          options: ["left", "center", "right"]
         }
       ],
       file: "data/metadata.json",
