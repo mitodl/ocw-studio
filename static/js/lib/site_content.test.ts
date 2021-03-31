@@ -15,6 +15,7 @@ import {
   componentFromWidget,
   contentFormValuesToPayload,
   contentInitialValues,
+  fieldHasData,
   fieldIsVisible,
   newInitialValues,
   widgetExtraProps
@@ -201,7 +202,8 @@ describe("site_content", () => {
         [WidgetVariant.String, "input"],
         [WidgetVariant.Boolean, BooleanField],
         [WidgetVariant.Markdown, MarkdownEditor],
-        [WidgetVariant.Text, "textarea"]
+        [WidgetVariant.Text, "textarea"],
+        [WidgetVariant.Hidden, null]
       ].forEach(([widget, expected]) => {
         const field = makeWebsiteConfigField({
           widget: widget as WidgetVariant
@@ -252,30 +254,40 @@ describe("site_content", () => {
     })
   })
 
-  describe("fieldIsVisible", () => {
+  describe("fieldIsVisible and fieldHasData", () => {
     [
-      [true, { conditionField: "matching value" }, true],
-      [true, { conditionField: "non-matching value" }, false],
-      [false, { conditionField: "matching value" }, true],
-      [false, { conditionField: "non-matching value" }, true]
-    ].forEach(([hasCondition, values, expected]) => {
-      // @ts-ignore
-      it(`${isIf(expected)} visible if the condition ${isIf(
+      [true, "input", { conditionField: "matching value" }, true, true],
+      [true, "input", { conditionField: "non-matching value" }, false, false],
+      [false, "input", { conditionField: "matching value" }, true, true],
+      [false, "input", { conditionField: "non-matching value" }, true, true],
+      [true, "hidden", { conditionField: "matching value" }, false, true],
+      [true, "hidden", { conditionField: "non-matching value" }, false, false],
+      [false, "hidden", { conditionField: "matching value" }, false, true],
+      [false, "hidden", { conditionField: "non-matching value" }, false, true]
+    ].forEach(
+      ([hasCondition, widget, values, expectedVisible, expectedHasData]) => {
         // @ts-ignore
-        hasCondition
-        // @ts-ignore
-      )} existing and value is a ${values.conditionField}`, () => {
-        const condition: FieldValueCondition = {
-          field:  "conditionField",
-          equals: "matching value"
-        }
-        const field = makeConfigField()
-        if (hasCondition) {
-          field.condition = condition
-        }
-        // @ts-ignore
-        expect(fieldIsVisible(field, values)).toBe(expected)
-      })
-    })
+        it(`${isIf(expectedVisible)} visible if the condition ${isIf(
+          // @ts-ignore
+          hasCondition
+          // @ts-ignore
+        )} existing and value is a ${values.conditionField}`, () => {
+          const condition: FieldValueCondition = {
+            field:  "conditionField",
+            equals: "matching value"
+          }
+          const field = makeConfigField()
+          // @ts-ignore
+          field.widget = widget
+          if (hasCondition) {
+            field.condition = condition
+          }
+          // @ts-ignore
+          expect(fieldIsVisible(field, values)).toBe(expectedVisible)
+          // @ts-ignore
+          expect(fieldHasData(field, values)).toBe(expectedHasData)
+        })
+      }
+    )
   })
 })

@@ -1,6 +1,5 @@
 import { ComponentType, ElementType } from "react"
 import { pick } from "ramda"
-import { FormikValues } from "formik"
 
 import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
@@ -17,7 +16,7 @@ import { ConfigField, WebsiteContent, WidgetVariant } from "../types/websites"
 
 export const componentFromWidget = (
   field: ConfigField
-): string | ComponentType | ElementType => {
+): string | ComponentType | ElementType | null => {
   switch (field.widget) {
   case WidgetVariant.Markdown:
     return MarkdownEditor
@@ -29,6 +28,8 @@ export const componentFromWidget = (
     return BooleanField
   case WidgetVariant.Text:
     return "textarea"
+  case WidgetVariant.Hidden:
+    return null
   default:
     return "input"
   }
@@ -85,7 +86,7 @@ export const contentFormValuesToPayload = (
 
   for (const field of fields) {
     let value = values[field.name]
-    if (!fieldIsVisible(field, values)) {
+    if (!fieldHasData(field, values)) {
       value = emptyValue(field)
     }
 
@@ -148,9 +149,12 @@ export const newInitialValues = (fields: ConfigField[]): Record<string, any> =>
 const defaultFor = (widget: WidgetVariant): string | boolean =>
   widget === WidgetVariant.Boolean ? false : ""
 
-export function fieldIsVisible(
+/**
+ * Should field data be sent to the server?
+ */
+export function fieldHasData(
   field: ConfigField,
-  values: FormikValues
+  values: Record<string, ValueType>
 ): boolean {
   if (!field.condition) {
     return true
@@ -159,3 +163,11 @@ export function fieldIsVisible(
   const condition = field.condition
   return values[condition.field] === condition.equals
 }
+
+/**
+ * Should field, label, and validation be displayed in the UI?
+ */
+export const fieldIsVisible = (
+  field: ConfigField,
+  values: Record<string, ValueType>
+): boolean => field.widget !== "hidden" && fieldHasData(field, values)

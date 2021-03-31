@@ -6,7 +6,8 @@ export enum WidgetVariant {
   Boolean = "boolean",
   Text = "text",
   String = "string",
-  Select = "select"
+  Select = "select",
+  Hidden = "hidden"
 }
 export interface FieldValueCondition {
   field: string
