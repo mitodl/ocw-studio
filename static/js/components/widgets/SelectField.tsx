@@ -44,7 +44,6 @@ export default function SelectField(props: Props): JSX.Element {
       value={selected}
       isMulti={Boolean(multiple)}
       onChange={changeHandler}
-      // @ts-ignore
       options={options.map(option => ({ label: option, value: option }))}
     />
   )
