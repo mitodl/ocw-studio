@@ -37,11 +37,12 @@ export const componentFromWidget = (
 const isMainContentField = (field: ConfigField) =>
   field.name === MAIN_PAGE_CONTENT_FIELD && field.widget === "markdown"
 
+type ValueType = string | File | string[] | null
 /*
  * Translates page content form values into a payload that our REST API understands.
  */
 export const contentFormValuesToPayload = (
-  values: Record<string, any>,
+  values: Record<string, ValueType>,
   fields: ConfigField[]
 ):
   | (Record<string, string> & { metadata?: Record<string, string> })
