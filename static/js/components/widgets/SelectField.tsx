@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useCallback } from "react"
 import Select from "react-select"
 import { isNil } from "ramda"
 
@@ -20,13 +20,16 @@ export default function SelectField(props: Props): JSX.Element {
   const { value, onChange, name, options } = props
   const multiple = Boolean(props.multiple)
 
-  const changeHandler = (newValue: any) => {
-    const eventValue = multiple ?
-      newValue.map((option: Option) => option.value) :
-      newValue.value
-    // @ts-ignore
-    onChange({ target: { value: eventValue, name } })
-  }
+  const changeHandler = useCallback(
+    (newValue: any) => {
+      const eventValue = multiple ?
+        newValue.map((option: Option) => option.value) :
+        newValue.value
+      // @ts-ignore
+      onChange({ target: { value: eventValue, name } })
+    },
+    [name, multiple]
+  )
 
   let selected
   if (multiple) {
