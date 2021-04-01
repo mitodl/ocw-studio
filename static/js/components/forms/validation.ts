@@ -19,9 +19,7 @@ export const getFieldSchema = (field: ConfigField): SchemaOf<any> => {
       return yup.string()
     }
   case "file":
-    return yup.object().shape({
-      name: yup.string()
-    })
+    return yup.mixed()
   case "string":
   case "text":
   case "markdown":
@@ -38,7 +36,7 @@ export const getContentSchema = (configItem: ConfigItem): SchemaOf<any> => {
     if (field.required) {
       switch (field.widget) {
       case "file":
-        yupObjectShape[field.name] = yupObjectShape[field.name].fields.name
+        yupObjectShape[field.name] = yupObjectShape[field.name]
           .label(field.label)
           .required()
         break
