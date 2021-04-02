@@ -4,9 +4,7 @@ import { getContentSchema } from "./validation"
 import { ConfigItem, WidgetVariant } from "../../types/websites"
 
 describe("form validation util", () => {
-  const yupFileFieldSchema = yup.object().shape({
-    name: yup.string().required()
-  })
+  const yupFileFieldSchema = yup.mixed()
   const partialConfigItem = {
     folder:   "content",
     label:    "Page",
