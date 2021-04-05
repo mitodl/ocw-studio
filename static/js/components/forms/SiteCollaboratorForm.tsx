@@ -12,6 +12,7 @@ import {
 
 interface Props {
   collaborator: WebsiteCollaborator | null
+  onCancel: () => void
   onSubmit: (
     values: WebsiteCollaboratorFormData,
     formikHelpers: FormikHelpers<any>
@@ -38,7 +39,8 @@ const getInitialValues = (collaborator: WebsiteCollaborator | null) =>
 
 export default function SiteCollaboratorForm({
   collaborator,
-  onSubmit
+  onSubmit,
+  onCancel
 }: Props): JSX.Element | null {
   const collaboratorValidation = yup
     .object()
@@ -86,13 +88,21 @@ export default function SiteCollaboratorForm({
             </Field>
             <ErrorMessage name="role" component={FormError} />
           </div>
-          <div className="form-group d-flex justify-content-end">
+          <div className="form-group d-flex">
             <button
               type="submit"
-              className="btn blue-button"
+              className="btn blue-button mr-5 w-25"
               disabled={isSubmitting}
             >
               Save
+            </button>
+            <button
+              className="btn blue-button-outline w-25"
+              type="button"
+              disabled={isSubmitting}
+              onClick={onCancel}
+            >
+              Cancel
             </button>
           </div>
           {status && <div className="form-error">{status}</div>}

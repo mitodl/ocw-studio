@@ -80,6 +80,10 @@ export default function SiteCollaboratorDrawer(
     toggleVisibility()
   }
 
+  const onCancel = async () => {
+    toggleVisibility()
+  }
+
   return (
     <div>
       <Modal
@@ -96,6 +100,7 @@ export default function SiteCollaboratorDrawer(
               <SiteCollaboratorForm
                 collaborator={collaborator}
                 onSubmit={onSubmit}
+                onCancel={onCancel}
               ></SiteCollaboratorForm>
             </div>
           </Card>

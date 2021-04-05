@@ -14,13 +14,17 @@ import { makeWebsiteCollaborator } from "../../util/factories/websites"
 import { WebsiteCollaborator } from "../../types/websites"
 
 describe("SiteCollaboratorForm", () => {
-  let sandbox, onSubmitStub: SinonStub, collaborator: WebsiteCollaborator
+  let sandbox,
+    onSubmitStub: SinonStub,
+    onCancelStub: SinonStub,
+    collaborator: WebsiteCollaborator
 
   const renderForm = (collaborator: WebsiteCollaborator | null) =>
     shallow(
       <SiteCollaboratorForm
         collaborator={collaborator}
         onSubmit={onSubmitStub}
+        onCancel={onCancelStub}
       />
     )
 
@@ -43,11 +47,13 @@ describe("SiteCollaboratorForm", () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     onSubmitStub = sandbox.stub()
+    onCancelStub = sandbox.stub()
   })
 
   describe("add a new collaborator", () => {
     it("passes onSubmit to Formik", () => {
       const wrapper = renderForm(null)
+      expect(wrapper.props().onSubmit).toBe(onSubmitStub)
       const props = wrapper.find("Formik").props()
       expect(props.onSubmit).toBe(onSubmitStub)
       // @ts-ignore
@@ -86,6 +92,19 @@ describe("SiteCollaboratorForm", () => {
   describe("edit an existing collaborator", () => {
     beforeEach(() => {
       collaborator = makeWebsiteCollaborator()
+    })
+
+    it("cancel button onClick function is onCancel prop", () => {
+      const form = renderInnerForm(
+        { isSubmitting: false, status: "whatever" },
+        null
+      )
+      expect(
+        form
+          .find("button")
+          .at(1)
+          .prop("onClick")
+      ).toBe(onCancelStub)
     })
 
     it("passes onSubmit to Formik", () => {
