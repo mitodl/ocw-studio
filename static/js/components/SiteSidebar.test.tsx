@@ -66,8 +66,8 @@ describe("SiteSidebar", () => {
   })
 
   it("should pad all .config-sections excepting the last one", async () => {
-    website.starter!.config!.collections = times(5).map(() =>
-      makeWebsiteConfigItem("foobar")
+    website.starter!.config!.collections = times(5).map(idx =>
+      makeWebsiteConfigItem(`foobar${idx}`)
     )
     const { wrapper } = await render()
     expect(
