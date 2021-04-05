@@ -6,8 +6,6 @@ import { Route, Switch, useRouteMatch } from "react-router-dom"
 import SiteSidebar from "../components/SiteSidebar"
 import SiteContentListing from "../components/SiteContentListing"
 import SiteCollaboratorList from "../components/SiteCollaboratorList"
-import SiteCollaboratorEditPanel from "../components/SiteCollaboratorEditPanel"
-import SiteCollaboratorAddPanel from "../components/SiteCollaboratorAddPanel"
 import SiteAddContent from "../components/SiteAddContent"
 import Card from "../components/Card"
 
@@ -42,12 +40,6 @@ export default function SitePage(): JSX.Element | null {
         <div className="content pl-3">
           <h3 className="py-5">{website.title}</h3>
           <Switch>
-            <Route path={`${match.path}/collaborators/new/`}>
-              <SiteCollaboratorAddPanel />
-            </Route>
-            <Route path={`${match.path}/collaborators/:userId/`}>
-              <SiteCollaboratorEditPanel />
-            </Route>
             <Route path={`${match.path}/collaborators/`}>
               <SiteCollaboratorList />
             </Route>

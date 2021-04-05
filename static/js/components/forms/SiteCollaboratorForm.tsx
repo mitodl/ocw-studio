@@ -11,7 +11,7 @@ import {
 } from "../../types/websites"
 
 interface Props {
-  collaborator?: WebsiteCollaborator
+  collaborator: WebsiteCollaborator | null
   onSubmit: (
     values: WebsiteCollaboratorFormData,
     formikHelpers: FormikHelpers<any>

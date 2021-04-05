@@ -16,7 +16,7 @@ import { WebsiteCollaborator } from "../../types/websites"
 describe("SiteCollaboratorForm", () => {
   let sandbox, onSubmitStub: SinonStub, collaborator: WebsiteCollaborator
 
-  const renderForm = (collaborator?: WebsiteCollaborator) =>
+  const renderForm = (collaborator: WebsiteCollaborator | null) =>
     shallow(
       <SiteCollaboratorForm
         collaborator={collaborator}
@@ -26,9 +26,9 @@ describe("SiteCollaboratorForm", () => {
 
   const renderInnerForm = (
     formikChildProps: { [key: string]: any },
-    collaborator?: WebsiteCollaborator
+    collaborator: WebsiteCollaborator | null
   ) => {
-    const wrapper = collaborator ? renderForm(collaborator) : renderForm()
+    const wrapper = renderForm(collaborator)
     return (
       wrapper
         .find("Formik")
@@ -47,7 +47,7 @@ describe("SiteCollaboratorForm", () => {
 
   describe("add a new collaborator", () => {
     it("passes onSubmit to Formik", () => {
-      const wrapper = renderForm()
+      const wrapper = renderForm(null)
       const props = wrapper.find("Formik").props()
       expect(props.onSubmit).toBe(onSubmitStub)
       // @ts-ignore
@@ -57,7 +57,10 @@ describe("SiteCollaboratorForm", () => {
     })
 
     it("shows an option for each role, plus an empty option", () => {
-      const form = renderInnerForm({ isSubmitting: false, status: "whatever" })
+      const form = renderInnerForm(
+        { isSubmitting: false, status: "whatever" },
+        null
+      )
       const field = form
         .find("Field")
         .filterWhere(node => node.prop("name") === "role")
@@ -70,7 +73,10 @@ describe("SiteCollaboratorForm", () => {
     })
 
     it("shows an email field", () => {
-      const form = renderInnerForm({ isSubmitting: false, status: "whatever" })
+      const form = renderInnerForm(
+        { isSubmitting: false, status: "whatever" },
+        null
+      )
       expect(
         form.find("Field").filterWhere(node => node.prop("name") === "email")
       ).toHaveLength(1)

@@ -6,8 +6,6 @@ import sinon, { SinonStub } from "sinon"
 
 import SiteCollaboratorList from "./SiteCollaboratorList"
 import {
-  siteCollaboratorsAddUrl,
-  siteCollaboratorsDetailUrl,
   siteApiCollaboratorsUrl,
   siteApiCollaboratorsDetailUrl
 } from "../lib/urls"
@@ -95,20 +93,30 @@ describe("SiteCollaboratorList", () => {
     ).toBe(0)
   })
 
-  it("the edit collaborator icon sends the user to the correct url", async () => {
+  it("the edit collaborator icon sets correct state and opens the modal", async () => {
     const { wrapper } = await render()
     const editLink = wrapper
       .find("tr")
       .at(0)
       .find(".edit-link")
       .at(0)
-    expect(editLink.prop("to")).toBe(
-      siteCollaboratorsDetailUrl
-        .param({
-          name:   website.name,
-          userId: collaborators[0].user_id
-        })
-        .toString()
+
+    act(() => {
+      // @ts-ignore
+      editLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+    })
+    wrapper.update()
+    const component = wrapper.find("SiteCollaboratorDrawer")
+    expect(component.prop("collaborator")).toBe(collaborators[0])
+    expect(component.prop("visibility")).toBe(true)
+
+    act(() => {
+      // @ts-ignore
+      component.prop("toggleVisibility")()
+    })
+    wrapper.update()
+    expect(wrapper.find("SiteCollaboratorDrawer").prop("visibility")).toBe(
+      false
     )
   })
 
@@ -152,13 +160,25 @@ describe("SiteCollaboratorList", () => {
     expect(wrapper.find("tr").length).toBe(numCollaborators - 1)
   })
 
-  it("the add collaborator button sends the user to the correct url", async () => {
+  it("the add collaborator button  sets correct state and opens the modal", async () => {
     const { wrapper } = await render()
-    expect(
-      wrapper
-        .find(".collaborator-add-btn")
-        .at(0)
-        .prop("to")
-    ).toBe(siteCollaboratorsAddUrl.param({ name: website.name }).toString())
+    const addLink = wrapper.find(".collaborator-add-btn").at(0)
+    act(() => {
+      // @ts-ignore
+      addLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+    })
+    wrapper.update()
+    const component = wrapper.find("SiteCollaboratorDrawer")
+    expect(component.prop("collaborator")).toBe(null)
+    expect(component.prop("visibility")).toBe(true)
+
+    act(() => {
+      // @ts-ignore
+      component.prop("toggleVisibility")()
+    })
+    wrapper.update()
+    expect(wrapper.find("SiteCollaboratorDrawer").prop("visibility")).toBe(
+      false
+    )
   })
 })
