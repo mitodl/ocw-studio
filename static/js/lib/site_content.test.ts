@@ -24,8 +24,8 @@ describe("site_content", () => {
   describe("contentFormValuesToPayload", () => {
     it("changes the name of a 'content' field if it uses the markdown widget", () => {
       const values = {
-        title:   "a title",
-        content: "some content"
+        title: "a title",
+        body:  "some content"
       }
       const fields: ConfigField[] = [
         {
@@ -34,7 +34,7 @@ describe("site_content", () => {
           widget: WidgetVariant.String
         },
         {
-          label:  "Content",
+          label:  "Body",
           name:   MAIN_PAGE_CONTENT_FIELD,
           widget: WidgetVariant.Markdown
         }

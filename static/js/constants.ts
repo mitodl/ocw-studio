@@ -22,7 +22,7 @@ export const WEBSITE_CONTENT_PAGE_SIZE = 10
  * This represents the "reserved" name for the field that captures the markdown content for the body of a page.
  * In Hugo terms, this is everything below the front matter in a ".md" file.
  */
-export const MAIN_PAGE_CONTENT_FIELD = "content"
+export const MAIN_PAGE_CONTENT_FIELD = "body"
 export const MAIN_PAGE_CONTENT_DB_FIELD = "markdown"
 
 /* eslint-disable quote-props, key-spacing */
@@ -37,8 +37,8 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
           required: true
         },
         {
-          label: "Content",
-          name: "content",
+          label: "Body",
+          name: "body",
           widget: WidgetVariant.Markdown,
           required: true
         }
