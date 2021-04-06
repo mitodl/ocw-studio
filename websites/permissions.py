@@ -8,6 +8,7 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 from users.models import User
 from websites import constants
 from websites.models import Website
+from websites.utils import permissions_group_name_for_role
 
 
 def assign_website_permissions(group_or_user, perms, website=None):
@@ -64,12 +65,12 @@ def setup_website_groups_permissions(website):
     owner_updated = False
 
     admin_group, admin_created = Group.objects.get_or_create(
-        name=permissions_group_for_role(constants.ROLE_ADMINISTRATOR, website)
+        name=permissions_group_name_for_role(constants.ROLE_ADMINISTRATOR, website)
     )
     if admin_created:
         groups_created += 1
     editor_group, editor_created = Group.objects.get_or_create(
-        name=permissions_group_for_role(constants.ROLE_EDITOR, website)
+        name=permissions_group_name_for_role(constants.ROLE_EDITOR, website)
     )
     if editor_created:
         groups_created += 1
@@ -137,18 +138,22 @@ def create_global_groups():
     return groups_created, groups_updated
 
 
-def is_global_admin(user):
+def is_global_admin(user, group_names=None):
     """
     Determine if the user is a global administrator or superuser
 
     Args:
         user (users.models.User): The user to check
+        group_names (set of str): an optional set of group names to check against
 
     Returns:
         bool: True if a superuser or member of the global admin group
 
     """
-    return user.is_superuser or user.groups.filter(name=constants.GLOBAL_ADMIN).exists()
+    if user.is_superuser:
+        return True
+    group_names = group_names or set(user.groups.values_list("name", flat=True))
+    return constants.GLOBAL_ADMIN in group_names
 
 
 def is_site_admin(user, website):
@@ -162,10 +167,12 @@ def is_site_admin(user, website):
     Returns:
         bool: True if user is an admin for the site
     """
+    group_names = set(user.groups.values_list("name", flat=True))
     return (
-        is_global_admin(user)
+        is_global_admin(user, group_names=group_names)
         or website.owner == user
-        or user.groups.filter(name=website.admin_group).exists()
+        or permissions_group_name_for_role(constants.ROLE_ADMINISTRATOR, website)
+        in group_names
     )
 
 
@@ -180,14 +187,6 @@ def check_perm(user, permission, website):
 
     """
     return user.has_perm(permission, website) or user.has_perm(permission)
-
-
-def permissions_group_for_role(role, website):
-    """Get the website group name for a given role"""
-    if role in constants.ROLE_GROUP_MAPPING.keys():
-        return f"{constants.ROLE_GROUP_MAPPING[role]}{website.uuid.hex}"
-    else:
-        raise ValueError(f"Invalid role for a website group: {role}")
 
 
 class HasWebsitePermission(BasePermission):

@@ -1,15 +1,11 @@
 """ Views for websites """
 from django.contrib.auth.models import Group
-from django.db.models import CharField, OuterRef, Q, Subquery, Value
+from django.db.models import Case, CharField, OuterRef, Q, Value, When
+from django.utils.functional import cached_property
 from django.utils.text import slugify
-from guardian.shortcuts import (
-    get_groups_with_perms,
-    get_objects_for_user,
-    get_users_with_perms,
-)
+from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
 from mitol.common.utils.datetime import now_in_utc
 from rest_framework import mixins, status, viewsets
-from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
@@ -25,7 +21,6 @@ from websites.permissions import (
     HasWebsiteContentPermission,
     HasWebsitePermission,
     is_global_admin,
-    permissions_group_for_role,
 )
 from websites.serializers import (
     WebsiteCollaboratorSerializer,
@@ -38,6 +33,7 @@ from websites.serializers import (
     WebsiteStarterSerializer,
     WebsiteWriteSerializer,
 )
+from websites.utils import permissions_group_name_for_role
 
 
 class WebsiteViewSet(
@@ -140,102 +136,69 @@ class WebsiteCollaboratorViewSet(
     serializer_class = WebsiteCollaboratorSerializer
     permission_classes = (HasWebsiteCollaborationPermission,)
     pagination_class = DefaultPagination
-    lookup_field = "id"
     lookup_url_kwarg = "user_id"
+
+    @cached_property
+    def website(self):
+        """Fetches the Website for this request"""
+        return get_object_or_404(Website, name=self.kwargs.get("parent_lookup_website"))
 
     def get_queryset(self):
         """
-        Get a list of all the users with permissions for this website, and annotate by group-name/role
+        Builds a queryset of relevant users with permissions for this website, and annotates them by group name/role
         (owner, administrator, editor, or global administrator)
         """
-        website = get_object_or_404(
-            Website, name=self.kwargs.get("parent_lookup_website")
-        )
-        website_groups = list(
+        website = self.website
+        website_group_names = list(
             get_groups_with_perms(website).values_list("name", flat=True)
         ) + [constants.GLOBAL_ADMIN]
         owner_user_id = website.owner.id if website.owner else None
 
-        # Return the individual user and group if a primary key is provided
-        user_id = self.kwargs.get("user_id", None)
-        if user_id:
-            try:
-                user_id = int(user_id)
-            except ValueError:
-                raise ValidationError(  # pylint: disable=raise-missing-from
-                    {"errors": ["Invalid user"]}
-                )
-
-            if user_id == owner_user_id:
-                return User.objects.filter(id=user_id).annotate(
-                    group=Value(constants.ROLE_OWNER, CharField())
-                )
-            group_subquery = Group.objects.filter(
-                Q(user__id=OuterRef("id")) & Q(name__in=website_groups)
+        return (
+            User.objects.filter(
+                Q(id=owner_user_id) | Q(groups__name__in=website_group_names)
             )
-            return User.objects.filter(
-                Q(id=user_id) & Q(groups__name__in=website_groups)
-            ).annotate(group=Subquery(group_subquery.values("name")[:1]))
-
-        # Otherwise get all the collaborators and annotate with the relevant group they are in
-        query = User.objects.filter(id=owner_user_id).annotate(
-            group=Value(constants.ROLE_OWNER, CharField())
+            .annotate(
+                role=Case(
+                    When(id=owner_user_id, then=Value(constants.ROLE_OWNER)),
+                    default=Group.objects.filter(
+                        user__id=OuterRef("id"), name__in=website_group_names
+                    )
+                    .annotate(
+                        role_name=Case(
+                            *(
+                                [
+                                    When(
+                                        name=permissions_group_name_for_role(
+                                            role, website
+                                        ),
+                                        then=Value(role),
+                                    )
+                                    for role in constants.ROLE_GROUP_MAPPING
+                                ]
+                            ),
+                            output_field=CharField(),
+                        )
+                    )
+                    .values("role_name")[:1],
+                    output_field=CharField(),
+                )
+            )
+            .order_by("name", "id")
+            .distinct()
         )
-        for group_name in website_groups:
-            query = query.union(
-                Group.objects.get(name=group_name)
-                .user_set.exclude(id=owner_user_id)
-                .annotate(group=Value(group_name, CharField()))
-            )
-        return query.order_by("name", "id")
+
+    def get_serializer_context(self):
+        """ Get the serializer context """
+        return {
+            "website": self.website,
+        }
 
     def destroy(self, request, *args, **kwargs):
-        """Remove the user from all groups for this website"""
-        instance = self.get_object()
-        website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
-        for group in get_groups_with_perms(website):
-            instance.groups.remove(group)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def create(self, request, *args, **kwargs):
-        """ Add a user to the website as a collaborator"""
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
-        group_name = permissions_group_for_role(
-            serializer.validated_data.get("role"), website
-        )
-        user = User.objects.get(email=serializer.data.get("email"))
-        if user in get_users_with_perms(website) or user == website.owner:
-            raise ValidationError(
-                {"errors": ["User is already a collaborator for this site"]}
-            )
-        user.groups.add(Group.objects.get(name=group_name))
-        serializer.validated_data.update(
-            {"user_id": user.id, "name": user.name, "group": group_name}
-        )
-        return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
-
-    def update(self, request, *args, **kwargs):
-        """ Change a collaborator's permission group for the website """
-        partial = kwargs.pop("partial", False)
+        """ Remove the user from all groups for this website """
         user = self.get_object()
-        serializer = self.get_serializer(user, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
-        group_name = permissions_group_for_role(
-            serializer.validated_data.get("role"), website
-        )
-
-        # User should only belong to one group per website
-        for group in get_groups_with_perms(website):
-            if group_name and group.name == group_name:
-                user.groups.add(group)
-            else:
-                user.groups.remove(group)
-        return Response(
-            {"role": serializer.validated_data["role"], "group": group_name}
-        )
+        user.groups.remove(*get_groups_with_perms(self.website))
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class WebsiteContentViewSet(

@@ -118,17 +118,15 @@ def test_website_detail_serializer(has_starter):
 
 def test_website_collaborator_serializer():
     """ WebsiteCollaboratorSerializer should serialize a User object with correct fields """
-    website = WebsiteFactory.create()
     collaborator = (
         User.objects.filter(id=UserFactory.create().id)
-        .annotate(group=Value(website.editor_group.name, CharField()))
+        .annotate(role=Value(ROLE_EDITOR, CharField()))
         .first()
     )
     serialized_data = WebsiteCollaboratorSerializer(instance=collaborator).data
     assert serialized_data["user_id"] == collaborator.id
     assert serialized_data["name"] == collaborator.name
     assert serialized_data["email"] == collaborator.email
-    assert serialized_data["group"] == website.editor_group.name
     assert serialized_data["role"] == ROLE_EDITOR
 
 

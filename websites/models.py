@@ -11,6 +11,7 @@ from mitol.common.models import TimestampedModel
 
 from users.models import User
 from websites import constants
+from websites.utils import permissions_group_name_for_role
 
 
 def validate_yaml(value):
@@ -54,14 +55,14 @@ class Website(TimestampedModel):
     def admin_group(self):
         """ Get the admin group """
         return Group.objects.filter(
-            name=f"{constants.ADMIN_GROUP}{self.uuid.hex}"
+            name=permissions_group_name_for_role(constants.ROLE_ADMINISTRATOR, self)
         ).first()
 
     @property
     def editor_group(self):
         """ Get the editor group """
         return Group.objects.filter(
-            name=f"{constants.EDITOR_GROUP}{self.uuid.hex}"
+            name=permissions_group_name_for_role(constants.ROLE_EDITOR, self)
         ).first()
 
     class Meta:

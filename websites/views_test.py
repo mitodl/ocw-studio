@@ -20,7 +20,6 @@ from websites.factories import (
     WebsiteStarterFactory,
 )
 from websites.models import Website, WebsiteContent
-from websites.permissions import permissions_group_for_role
 from websites.serializers import (
     WebsiteContentDetailSerializer,
     WebsiteDetailSerializer,
@@ -279,28 +278,24 @@ def test_websites_collaborators_endpoint_list_permissions(
                 "user_id": permission_groups.site_admin.id,
                 "email": permission_groups.site_admin.email,
                 "name": permission_groups.site_admin.name,
-                "group": website.admin_group.name,
                 "role": constants.ROLE_ADMINISTRATOR,
             },
             {
                 "user_id": permission_groups.site_editor.id,
                 "email": permission_groups.site_editor.email,
                 "name": permission_groups.site_editor.name,
-                "group": website.editor_group.name,
                 "role": constants.ROLE_EDITOR,
             },
             {
                 "user_id": permission_groups.global_admin.id,
                 "email": permission_groups.global_admin.email,
                 "name": permission_groups.global_admin.name,
-                "group": constants.GLOBAL_ADMIN,
                 "role": constants.GLOBAL_ADMIN,
             },
             {
                 "user_id": website.owner.id,
                 "email": website.owner.email,
                 "name": website.owner.name,
-                "group": constants.ROLE_OWNER,
                 "role": constants.ROLE_OWNER,
             },
         ],
@@ -349,9 +344,12 @@ def test_websites_collaborators_endpoint_list_create(drf_client, permission_grou
     )
     assert resp.status_code == 201
     resp_json = resp.json()
-    assert resp_json["name"] == collaborator.name
-    assert resp_json["role"] == constants.ROLE_EDITOR
-    assert resp_json["group"] == website.editor_group.name
+    assert resp_json == {
+        "user_id": collaborator.id,
+        "name": collaborator.name,
+        "email": collaborator.email,
+        "role": constants.ROLE_EDITOR,
+    }
     assert website.editor_group.user_set.filter(id=collaborator.id) is not None
 
 
@@ -372,7 +370,7 @@ def test_websites_collaborators_endpoint_list_create_only_once(
         },
     )
     assert resp.status_code == 400
-    assert resp.json() == {"errors": ["User is already a collaborator for this site"]}
+    assert resp.json() == {"email": ["User is already a collaborator for this site"]}
 
 
 @pytest.mark.parametrize(
@@ -405,7 +403,7 @@ def test_websites_collaborators_endpoint_list_create_bad_user(
         [permission_groups.global_admin.email, {"email": ["User is a global admin"]}],
         [
             website.owner.email,
-            {"errors": ["User is already a collaborator for this site"]},
+            {"email": ["User is already a collaborator for this site"]},
         ],
         ["fakeuser@test.edu", {"email": ["User does not exist"]}],
     ]:
@@ -450,25 +448,23 @@ def test_websites_collaborators_endpoint_detail_create_missing_data(
         data=data,
     )
     assert resp.status_code == 400
-    assert resp.data == {"non_field_errors": [error]}
+    assert resp.data == {missing: [error]}
 
 
 def test_websites_collaborators_endpoint_detail(drf_client, permission_groups):
     """ An admin should be able to view a collaborator detail"""
     website = permission_groups.websites[0]
     drf_client.force_login(permission_groups.global_admin)
-    for [user, group, role] in [
+    for [user, role] in [
         [
             permission_groups.site_admin,
-            website.admin_group.name,
             constants.ROLE_ADMINISTRATOR,
         ],
         [
             permission_groups.global_admin,
             constants.GLOBAL_ADMIN,
-            constants.GLOBAL_ADMIN,
         ],
-        [website.owner, constants.ROLE_OWNER, constants.ROLE_OWNER],
+        [website.owner, constants.ROLE_OWNER],
     ]:
         resp = drf_client.get(
             reverse(
@@ -484,7 +480,6 @@ def test_websites_collaborators_endpoint_detail(drf_client, permission_groups):
             "user_id": user.id,
             "email": user.email,
             "name": user.name,
-            "group": group,
             "role": role,
         }
 
@@ -573,7 +568,7 @@ def test_websites_collaborators_endpoint_detail_modify_missing_data(
         data={},
     )
     assert resp.status_code == 400
-    assert resp.data == {"non_field_errors": ["Role is required"]}
+    assert resp.data == {"role": ["Role is required"]}
 
 
 def test_websites_collaborators_endpoint_detail_modify_nonadmin_denied(
@@ -641,33 +636,6 @@ def test_websites_collaborators_endpoint_detail_delete_denied(
             data={},
         )
         assert resp.status_code == 403
-
-
-@pytest.mark.parametrize(
-    "role, group_prefix",
-    [
-        [constants.ROLE_ADMINISTRATOR, constants.ADMIN_GROUP],
-        [constants.ROLE_EDITOR, constants.EDITOR_GROUP],
-    ],
-)
-def test_permissions_group_for_role(role, group_prefix):
-    """permissions_group_for_role should return the correct group name for a website and role"""
-    website = WebsiteFactory.create()
-    assert (
-        permissions_group_for_role(role, website) == f"{group_prefix}{website.uuid.hex}"
-    )
-
-
-@pytest.mark.parametrize(
-    "role",
-    [constants.GLOBAL_ADMIN, constants.GLOBAL_AUTHOR, constants.ROLE_OWNER, "fake"],
-)
-def test_permissions_group_for_role_invalid(role):
-    """permissions_group_for_role should raise a ValueError for an invalid role"""
-    website = WebsiteFactory.create()
-    with pytest.raises(ValueError) as exc:
-        permissions_group_for_role(role, website)
-    assert exc.value.args == (f"Invalid role for a website group: {role}",)
 
 
 @pytest.mark.parametrize("filter_type", ["page", ""])
