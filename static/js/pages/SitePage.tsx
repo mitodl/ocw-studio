@@ -38,7 +38,7 @@ export default function SitePage(): JSX.Element | null {
           <SiteSidebar website={website} />
         </Card>
         <div className="content pl-3">
-          <h3 className="py-5">{website.title}</h3>
+          <h1 className="py-5 title">{website.title}</h1>
           <Switch>
             <Route path={`${match.path}/collaborators/`}>
               <SiteCollaboratorList />

@@ -43,7 +43,7 @@ function SidebarSection(props: SectionProps): JSX.Element {
 
   return (
     <div className={className}>
-      <h4 className="d-flex align-items-center">
+      <h4 className="d-flex font-weight-bold align-items-center">
         <i className="material-icons pr-2">{iconName}</i>
         {category}
       </h4>
