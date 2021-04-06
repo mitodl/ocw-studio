@@ -6,7 +6,7 @@ course:
       folder: content
       fields:
         - {"label": "Title", "name": "title", "widget": "string", "required": true}
-        - {"label": "Content", "name": "content", "widget": "markdown", "required": true}
+        - {"label": "Body", "name": "body", "widget": "markdown", "required": true}
 
     - name: resource
       label: Resource

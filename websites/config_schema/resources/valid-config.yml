@@ -5,7 +5,7 @@ collections:
     folder: content
     fields:
       - {"label": "Title", "name": "title", "widget": "string"}
-      - {"label": "Content", "name": "content", "widget": "markdown"}
+      - {"label": "Body", "name": "body", "widget": "markdown"}
 
   - name: resource
     label: Resource

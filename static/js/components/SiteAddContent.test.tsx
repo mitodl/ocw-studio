@@ -101,8 +101,8 @@ describe("SiteAddContent", () => {
 
     const onSubmit = wrapper.find("SiteAddContentForm").prop("onSubmit")
     const values = {
-      title:   "A title",
-      content: "some markdown here"
+      title: "A title",
+      body:  "some markdown here"
     }
     await act(async () => {
       // @ts-ignore
@@ -116,7 +116,7 @@ describe("SiteAddContent", () => {
         body: {
           type:     configItem.name,
           title:    values.title,
-          markdown: values.content
+          markdown: values.body
         },
         headers:     { "X-CSRFTOKEN": "" },
         credentials: undefined

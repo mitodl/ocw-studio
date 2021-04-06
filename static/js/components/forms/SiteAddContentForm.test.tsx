@@ -30,8 +30,8 @@ describe("SiteAddContentForm", () => {
           widget: WidgetVariant.String
         },
         {
-          label:  "Content",
-          name:   "content",
+          label:  "Body",
+          name:   "body",
           widget: WidgetVariant.Markdown
         }
       ],
