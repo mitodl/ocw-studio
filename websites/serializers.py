@@ -1,13 +1,18 @@
 """ Serializers for websites """
+from django.contrib.auth.models import Group
 from django.db import transaction
+from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from main.serializers import WriteableSerializerMethodField
 from users.models import User
 from websites import constants
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
+from websites.utils import permissions_group_name_for_role
+
+
+ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is required"}
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):
@@ -103,28 +108,18 @@ class WebsiteWriteSerializer(WebsiteDetailSerializer):
 class WebsiteCollaboratorSerializer(serializers.Serializer):
     """A non-model serializer for updating the permissions (by group) that a user has for a Website."""
 
-    role = WriteableSerializerMethodField()
+    role = serializers.ChoiceField(
+        choices=constants.GROUP_ROLES, error_messages=ROLE_ERROR_MESSAGES
+    )
     email = serializers.EmailField(allow_null=True, required=False)
     group = serializers.CharField(read_only=True)
     name = serializers.CharField(read_only=True)
     user_id = serializers.IntegerField(read_only=True, source="id")
 
-    def get_role(self, obj):
-        """ Get the role based on the group """
-        group = obj.group if isinstance(obj, User) else obj.get("group", None)
-        if group:
-            group_role_map = {v: k for k, v in constants.ROLE_GROUP_MAPPING.items()}
-            group_prefix = f"{group.rsplit('_', 1)[0]}_"
-            if group_prefix in group_role_map.keys():
-                return group_role_map[group_prefix]
-            return group
-        return obj.get("role", None)
-
-    def validate_role(self, role):
-        """ The role should be admin or editor"""
-        if not role or role not in constants.ROLE_GROUP_MAPPING.keys():
-            raise ValidationError("Invalid role")
-        return {"role": role}
+    @property
+    def website(self):
+        """Get the website"""
+        return self.context["website"]
 
     def validate_email(self, email):
         """ The user should exist and not be a global admin """
@@ -138,10 +133,45 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
     def validate(self, attrs):
         """Make sure all required attributes are present for post/patch"""
         if not attrs.get("role"):
-            raise ValidationError("Role is required")
+            raise ValidationError({"role": "Role is required"})
         if not self.instance and not attrs.get("email"):
-            raise ValidationError("Email is required")
+            raise ValidationError({"email": "Email is required"})
         return attrs
+
+    def create(self, validated_data):
+        """Creating a contributor adds the user to the group corresponding to the specified role"""
+        website = self.website
+        role = validated_data.get("role")
+        user = User.objects.get(email=validated_data.get("email"))
+        group_name = permissions_group_name_for_role(role, website)
+        if user in get_users_with_perms(website) or user == website.owner:
+            raise ValidationError(
+                {"email": ["User is already a collaborator for this site"]}
+            )
+
+        user.groups.add(Group.objects.get(name=group_name))
+
+        # user.role normally gets set by the query in the view, but we need to manually set/update it here
+        user.role = role
+        return user
+
+    def update(self, instance, validated_data):
+        """ Change a collaborator's permission group for the website """
+        website = self.website
+        user = instance
+        role = validated_data.get("role")
+        group_name = permissions_group_name_for_role(role, website)
+
+        # User should only belong to one group per website
+        for group in get_groups_with_perms(website):
+            if group_name and group.name == group_name:
+                user.groups.add(group)
+            else:
+                user.groups.remove(group)
+
+        # user.role normally gets set by the query in the view, but we need to manually set/update it here
+        user.role = role
+        return user
 
     class Meta:
         fields = ["user_id", "email", "name", "group", "role"]

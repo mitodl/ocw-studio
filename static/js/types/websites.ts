@@ -101,7 +101,6 @@ type WebsiteRole = typeof ROLE_GLOBAL | typeof ROLE_OWNER | WebsiteRoleEditable
 export interface WebsiteCollaborator {
   user_id: number // eslint-disable-line
   role: WebsiteRole
-  group: string
   email: string
   name: string
 }

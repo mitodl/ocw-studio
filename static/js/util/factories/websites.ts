@@ -179,16 +179,14 @@ export const makeWebsiteCollaborator = (): WebsiteCollaborator => ({
   user_id: incr.next().value,
   name:    casual.name,
   email:   casual.email,
-  role:    casual.random_element([ROLE_ADMIN, ROLE_EDITOR]),
-  group:   casual.word
+  role:    casual.random_element([ROLE_ADMIN, ROLE_EDITOR])
 })
 
 export const makePermanentWebsiteCollaborator = (): WebsiteCollaborator => ({
   user_id: incr.next().value,
   name:    casual.name,
   email:   casual.email,
-  role:    casual.random_element([ROLE_GLOBAL, ROLE_OWNER]),
-  group:   casual.word
+  role:    casual.random_element([ROLE_GLOBAL, ROLE_OWNER])
 })
 
 export const makeWebsiteCollaborators = (): WebsiteCollaborator[] =>
