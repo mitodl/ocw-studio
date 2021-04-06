@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.8.1
+Version 0.8.1 (Released April 06, 2021)
 -------------
 
 - Implement select widget (#151)
