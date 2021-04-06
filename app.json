@@ -268,6 +268,14 @@
     "STATUS_TOKEN": {
       "description": "Token to access the status API.",
       "required": false
+    },
+    "USE_X_FORWARDED_HOST": {
+      "description": "Set HOST header to original domain accessed by user",
+      "required": false
+    },
+    "USE_X_FORWARDED_PORT": {
+      "description": "Use the PORT from original url accessed by user",
+      "required": false
     }
   },
   "keywords": [

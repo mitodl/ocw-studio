@@ -88,6 +88,18 @@ SECURE_SSL_REDIRECT = get_bool(
     description="Application-level SSL redirect setting.",
 )
 
+
+USE_X_FORWARDED_HOST = get_bool(
+    name="USE_X_FORWARDED_HOST",
+    default=False,
+    description="Set HOST header to original domain accessed by user",
+)
+USE_X_FORWARDED_PORT = get_bool(
+    name="USE_X_FORWARDED_PORT",
+    default=False,
+    description="Use the PORT from original url accessed by user",
+)
+
 WEBPACK_LOADER = {
     "DEFAULT": {
         "CACHE": not DEBUG,
