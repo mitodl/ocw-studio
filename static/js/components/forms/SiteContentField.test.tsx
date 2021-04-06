@@ -41,7 +41,7 @@ describe("SiteContentField", () => {
       ) {
         expect(props["setFieldValue"]).toBe(setFieldValueStub)
       }
-      if (field.widget === "select") {
+      if (field.widget === WidgetVariant.Select) {
         expect(props["min"]).toBe(field.min)
         expect(props["max"]).toBe(field.max)
         expect(props["multiple"]).toBe(field.multiple)

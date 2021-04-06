@@ -18,13 +18,13 @@ export const componentFromWidget = (
   field: ConfigField
 ): string | ComponentType | ElementType => {
   switch (field.widget) {
-  case "markdown":
+  case WidgetVariant.Markdown:
     return MarkdownEditor
-  case "select":
+  case WidgetVariant.Select:
     return SelectField
-  case "file":
+  case WidgetVariant.File:
     return FileUploadField
-  case "boolean":
+  case WidgetVariant.Boolean:
     return BooleanField
   default:
     return "input"
@@ -35,9 +35,9 @@ const SELECT_EXTRA_PROPS = ["options", "multiple", "max", "min"]
 
 export function widgetExtraProps(field: ConfigField): Record<string, any> {
   switch (field.widget) {
-  case "select":
+  case WidgetVariant.Select:
     return pick(SELECT_EXTRA_PROPS, field)
-  case "markdown":
+  case WidgetVariant.Markdown:
     return { minimal: field.minimal ?? false }
   default:
     return {}
@@ -45,7 +45,8 @@ export function widgetExtraProps(field: ConfigField): Record<string, any> {
 }
 
 const isMainContentField = (field: ConfigField) =>
-  field.name === MAIN_PAGE_CONTENT_FIELD && field.widget === "markdown"
+  field.name === MAIN_PAGE_CONTENT_FIELD &&
+  field.widget === WidgetVariant.Markdown
 
 type ValueType = string | File | string[] | null
 
@@ -124,4 +125,4 @@ export const newInitialValues = (fields: ConfigField[]): Record<string, any> =>
   )
 
 const defaultFor = (widget: WidgetVariant): string | boolean =>
-  widget === "boolean" ? false : ""
+  widget === WidgetVariant.Boolean ? false : ""

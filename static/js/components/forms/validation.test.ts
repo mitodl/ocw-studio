@@ -43,10 +43,10 @@ describe("form validation util", () => {
 
   //
   ;[
-    ["string", yup.string()],
-    ["text", yup.string()],
-    ["markdown", yup.string()],
-    ["file", yupFileFieldSchema]
+    [WidgetVariant.String, yup.string()],
+    [WidgetVariant.Text, yup.string()],
+    [WidgetVariant.Markdown, yup.string()],
+    [WidgetVariant.File, yupFileFieldSchema]
   ].forEach(([widget, expectedYupField]) => {
     it(`produces the correct validation schema for a required '${widget}' field`, () => {
       configItem = {

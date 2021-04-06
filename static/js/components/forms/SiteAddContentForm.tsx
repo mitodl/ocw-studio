@@ -5,7 +5,7 @@ import SiteContentField from "./SiteContentField"
 import { getContentSchema } from "./validation"
 import { newInitialValues } from "../../lib/site_content"
 
-import { ConfigItem } from "../../types/websites"
+import { ConfigItem, WidgetVariant } from "../../types/websites"
 
 interface Props {
   onSubmit: (
@@ -24,8 +24,8 @@ export default function SiteAddContentForm({
   const schema = getContentSchema(configItem)
 
   const fieldsByColumn = [
-    fields.filter(field => field.widget === "markdown"),
-    fields.filter(field => field.widget !== "markdown")
+    fields.filter(field => field.widget === WidgetVariant.Markdown),
+    fields.filter(field => field.widget !== WidgetVariant.Markdown)
   ]
 
   return (

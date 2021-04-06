@@ -70,8 +70,10 @@ describe("SiteAddContentForm", () => {
     componentFromWidget.mockImplementation(() => widget)
 
     const fieldGroups = [
-      configItem.fields.filter(field => field.widget === "markdown"),
-      configItem.fields.filter(field => field.widget !== "markdown")
+      configItem.fields.filter(
+        field => field.widget === WidgetVariant.Markdown
+      ),
+      configItem.fields.filter(field => field.widget !== WidgetVariant.Markdown)
     ]
 
     const form = renderInnerForm({ setFieldValue: setFieldValueStub })
@@ -80,7 +82,9 @@ describe("SiteAddContentForm", () => {
       for (const field of fieldGroup) {
         const fieldWrapper = form.find("SiteContentField").at(idx)
         const setFieldValue =
-          field.widget === "markdown" ? undefined : setFieldValueStub
+          field.widget === WidgetVariant.Markdown ?
+            undefined :
+            setFieldValueStub
         expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
         expect(
           fieldWrapper.find("SiteContentField").prop("setFieldValue")

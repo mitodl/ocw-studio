@@ -15,7 +15,7 @@ import { componentFromWidget } from "../../lib/site_content"
 jest.mock("./validation")
 import { getContentSchema } from "./validation"
 
-import { ConfigItem, WebsiteContent } from "../../types/websites"
+import { ConfigItem, WebsiteContent, WidgetVariant } from "../../types/websites"
 
 describe("SiteEditContentForm", () => {
   let sandbox: SinonSandbox,
@@ -67,12 +67,16 @@ describe("SiteEditContentForm", () => {
     for (const field of configItem.fields) {
       const fieldWrapper = form.find("SiteContentField").at(idx)
       const setFieldValue =
-        fieldWrapper.find("SiteContentField").prop("name") === "markdown" ?
+        fieldWrapper.find("SiteContentField").prop("name") ===
+        WidgetVariant.Markdown ?
           undefined :
           setFieldValueStub
       expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
       expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
-      if (fieldWrapper.find("SiteContentField").prop("name") !== "markdown") {
+      if (
+        fieldWrapper.find("SiteContentField").prop("name") !==
+        WidgetVariant.Markdown
+      ) {
         expect(
           fieldWrapper.find("SiteContentField").prop("setFieldValue")
         ).toBe(setFieldValue)

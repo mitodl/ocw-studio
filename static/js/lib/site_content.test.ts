@@ -141,16 +141,16 @@ describe("site_content", () => {
 
     it("should use appropriate defaults for different widgets", () => {
       [
-        ["markdown", ""],
-        ["file", ""],
-        ["boolean", false],
-        ["text", ""],
-        ["string", ""],
-        ["select", ""]
+        [WidgetVariant.Markdown, ""],
+        [WidgetVariant.File, ""],
+        [WidgetVariant.Boolean, false],
+        [WidgetVariant.Text, ""],
+        [WidgetVariant.String, ""],
+        [WidgetVariant.Select, ""]
       ].forEach(([widget, expectation]) => {
         const field = makeWebsiteConfigField({
-          widget: widget as WidgetVariant,
-          label:  "Widget"
+          widget,
+          label: "Widget"
         })
         const initialValues = newInitialValues([field])
         expect(initialValues).toStrictEqual({ widget: expectation })
