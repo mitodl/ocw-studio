@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.8.1 (Released April 06, 2021)
+-------------
+
+- Implement select widget (#151)
+- Bump pygments from 2.6.1 to 2.7.4 (#162)
+- fix a padding issue in the site sidebar
+
 Version 0.8.0 (Released March 30, 2021)
 -------------
 
