@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.9.0
+-------------
+
+- Integrate Touchstone login
+- Fix file upload (#169)
+- implement boolean site content widget
+
 Version 0.8.1 (Released April 06, 2021)
 -------------
 
