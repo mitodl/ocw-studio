@@ -22,7 +22,11 @@ import {
 import { MAIN_PAGE_CONTENT_FIELD } from "../constants"
 import { isIf, shouldIf } from "../test_util"
 
-import { ConfigField, FieldCondition, WidgetVariant } from "../types/websites"
+import {
+  ConfigField,
+  FieldValueCondition,
+  WidgetVariant
+} from "../types/websites"
 
 describe("site_content", () => {
   describe("contentFormValuesToPayload", () => {
@@ -261,7 +265,7 @@ describe("site_content", () => {
         hasCondition
         // @ts-ignore
       )} existing and value is a ${values.conditionField}`, () => {
-        const condition: FieldCondition = {
+        const condition: FieldValueCondition = {
           field:  "conditionField",
           equals: "matching value"
         }
