@@ -30,7 +30,7 @@
     "@ckeditor/ckeditor5-react": "^3.0.1",
     "@ckeditor/ckeditor5-theme-lark": "^25.0.0",
     "@ckeditor/ckeditor5-upload": "^25.0.0",
-    "@ckeditor/ckeditor5-widget": "^25.0.0",
+    "@ckeditor/ckeditor5-widget": "^27.0.0",
     "@sentry/browser": "^5.20.1",
     "@types/ckeditor__ckeditor5-core": "^11.0.3",
     "@types/enzyme": "^3.10.8",
