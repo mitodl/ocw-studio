@@ -26,6 +26,8 @@ export const componentFromWidget = (
     return FileUploadField
   case WidgetVariant.Boolean:
     return BooleanField
+  case WidgetVariant.Text:
+    return "textarea"
   default:
     return "input"
   }

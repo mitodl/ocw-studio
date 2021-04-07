@@ -166,7 +166,7 @@ describe("site_content", () => {
         [WidgetVariant.String, "input"],
         [WidgetVariant.Boolean, BooleanField],
         [WidgetVariant.Markdown, MarkdownEditor],
-        [WidgetVariant.Text, "input"]
+        [WidgetVariant.Text, "textarea"]
       ].forEach(([widget, expected]) => {
         const field = makeWebsiteConfigField({
           widget: widget as WidgetVariant
