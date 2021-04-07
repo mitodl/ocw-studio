@@ -5,7 +5,7 @@ import SiteContentField from "./SiteContentField"
 import { contentInitialValues, fieldIsVisible } from "../../lib/site_content"
 import { getContentSchema } from "./validation"
 
-import { ConfigItem, WebsiteContent } from "../../types/websites"
+import { EditableConfigItem, WebsiteContent } from "../../types/websites"
 
 export type SiteFormValues = {
   [key: string]: string
@@ -16,7 +16,7 @@ type Props = {
     values: any,
     formikHelpers: FormikHelpers<any>
   ) => void | Promise<any>
-  configItem: ConfigItem
+  configItem: EditableConfigItem
   content: WebsiteContent
 }
 

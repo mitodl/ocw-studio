@@ -6,7 +6,6 @@ content_item:
     category: str()
     fields: list(include('field'), required=False)
     folder: str(required=False)
-    file: str(required=False)
     files: list(include('inner_content_item'), required=False)
 ---
 inner_content_item:

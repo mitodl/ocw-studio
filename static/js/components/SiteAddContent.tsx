@@ -7,7 +7,10 @@ import { useMutation } from "redux-query-react"
 import SiteAddContentForm from "./forms/SiteAddContentForm"
 import Card from "./Card"
 
-import { contentFormValuesToPayload } from "../lib/site_content"
+import {
+  contentFormValuesToPayload,
+  isRepeatableCollectionItem
+} from "../lib/site_content"
 import { siteContentListingUrl } from "../lib/urls"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import {
@@ -16,7 +19,7 @@ import {
 } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
 
-import { ConfigItem } from "../types/websites"
+import { RepeatableConfigItem, TopLevelConfigItem } from "../types/websites"
 
 interface MatchParams {
   contenttype: string
@@ -36,8 +39,10 @@ export default function SiteAddContent(): JSX.Element | null {
     createWebsiteContentMutation(name, payload)
   )
 
-  const configItem: ConfigItem | null = website?.starter?.config?.collections.find(
-    (config: ConfigItem) => config.name === contenttype
+  // NOTE: 'file'-type items are not able to be added while we sort out the UI
+  const configItem: RepeatableConfigItem | null = website?.starter?.config?.collections.find(
+    (config: TopLevelConfigItem) =>
+      config.name === contenttype && isRepeatableCollectionItem(config)
   )
   if (!configItem) {
     return null

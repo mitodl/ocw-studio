@@ -800,59 +800,6 @@ def test_websites_content_edit_with_upload(drf_client, permission_groups, file_u
     assert resp.data["uuid"] == str(content.uuid)
 
 
-def test_websites_content_create_upload_denied(
-    drf_client, permission_groups, file_upload
-):
-    """Uploading a file for a new page should not be allowed"""
-    drf_client.force_login(permission_groups.global_admin)
-    website = WebsiteFactory.create()
-    payload = {
-        "title": "new title",
-        "type": constants.CONTENT_TYPE_PAGE,
-        "file": file_upload,
-    }
-    resp = drf_client.post(
-        reverse(
-            "websites_content_api-list",
-            kwargs={
-                "parent_lookup_website": website.name,
-            },
-        ),
-        data=payload,
-        format="multipart",
-    )
-    assert resp.status_code == 400
-    assert resp.data == {
-        "non_field_errors": ["Files can only be uploaded for resources"]
-    }
-
-
-def test_websites_content_edit_upload_denied(
-    drf_client, permission_groups, file_upload
-):
-    """Uploading a file for a exiting page should not be allowed"""
-    drf_client.force_login(permission_groups.global_admin)
-    content = WebsiteContentFactory.create(type=constants.CONTENT_TYPE_PAGE)
-    payload = {
-        "file": file_upload,
-    }
-    resp = drf_client.patch(
-        reverse(
-            "websites_content_api-detail",
-            kwargs={
-                "parent_lookup_website": content.website.name,
-                "uuid": str(content.uuid),
-            },
-        ),
-        data=payload,
-        format="multipart",
-    )
-    assert resp.status_code == 400
-    assert resp.data == {
-        "non_field_errors": ["Files can only be uploaded for resources"]
-    }
-
-
 def test_websites_content_create_empty(drf_client, permission_groups):
     """POSTing to the WebsiteContent list view should create a new WebsiteContent"""
     drf_client.force_login(permission_groups.global_admin)

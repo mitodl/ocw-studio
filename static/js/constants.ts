@@ -1,4 +1,11 @@
-import { WebsiteStarterConfig } from "./types/websites"
+import { flatten, uniq } from "ramda"
+
+import {
+  ConfigField,
+  TopLevelConfigItem,
+  WebsiteStarterConfig
+} from "./types/websites"
+
 import { WidgetVariant } from "./types/websites"
 
 export const ROLE_ADMIN = "admin"
@@ -76,47 +83,70 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
       category: "Content"
     },
     {
-      fields: [
+      files: [
         {
-          label: "Course Title",
-          name: "title",
-          widget: WidgetVariant.Text,
-          required: true
-        },
-        {
-          label: "Course Description",
-          name: "description",
-          widget: WidgetVariant.Markdown,
-          help:
-            "A description of the course that will be shown on the course site home page."
-        },
-        {
-          label: "Tags",
-          default: ["Design"],
-          max: 3,
-          min: 1,
-          multiple: true,
-          name: "tags",
-          options: ["Design", "UX", "Dev"],
-          widget: WidgetVariant.Select
-        },
-        {
-          label: "Align Content",
-          name: "align",
-          widget: WidgetVariant.Select,
-          options: ["left", "center", "right"]
-        },
-        {
-          label: "Featured course",
-          name: "featured",
-          widget: WidgetVariant.Boolean,
-          default: false
+          file: "data/metadata.json",
+          label: "Site Metadata",
+          name: "sitemetadata",
+          fields: [
+            {
+              label: "Course Title",
+              name: "title",
+              widget: WidgetVariant.Text,
+              required: true
+            },
+            {
+              label: "Course Description",
+              name: "description",
+              widget: WidgetVariant.Markdown,
+              help:
+                "A description of the course that will be shown on the course site home page."
+            },
+            {
+              label: "Tags",
+              default: ["Design"],
+              max: 3,
+              min: 1,
+              multiple: true,
+              name: "tags",
+              options: ["Design", "UX", "Dev"],
+              widget: WidgetVariant.Select
+            },
+            {
+              label: "Align Content",
+              name: "align",
+              widget: WidgetVariant.Select,
+              options: ["left", "center", "right"]
+            },
+            {
+              label: "Featured course",
+              name: "featured",
+              widget: WidgetVariant.Boolean,
+              default: false
+            }
+          ]
         }
       ],
-      file: "data/metadata.json",
-      label: "Site Metadata",
+      label: "Metadata",
       name: "metadata",
       category: "Settings"
     }
   ]
 }
+
+/**
+ * All unique field definitions in the example site config
+ */
+export const exampleSiteConfigFields: ConfigField[] = uniq(
+  flatten([
+    ...exampleSiteConfig.collections.map((item: TopLevelConfigItem) => {
+      if ("fields" in item) {
+        return item.fields
+      }
+      if ("files" in item) {
+        return item.files.map(fileConfigItem => fileConfigItem.fields)
+      }
+      return []
+    })
+  ])
+)

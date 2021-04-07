@@ -2,7 +2,7 @@ import SiteSidebar from "./SiteSidebar"
 
 import {
   makeWebsiteDetail,
-  makeWebsiteConfigItem
+  makeTopLevelConfigItem
 } from "../util/factories/websites"
 import { times } from "lodash"
 import { siteCollaboratorsUrl, siteContentListingUrl } from "../lib/urls"
@@ -52,7 +52,7 @@ describe("SiteSidebar", () => {
           .toString()
       ],
       [
-        "Site Metadata",
+        "Metadata",
         siteContentListingUrl
           .param({
             name:        website.name,
@@ -67,10 +67,9 @@ describe("SiteSidebar", () => {
 
   it("should pad all .config-sections excepting the last one", async () => {
     website.starter!.config!.collections = times(5).map(idx =>
-      makeWebsiteConfigItem(`foobar${idx}`, `category${idx}`)
+      makeTopLevelConfigItem(`foobar${idx}`, null, `category${idx}`)
     )
     const { wrapper } = await render()
-    console.log("wrapper", wrapper.debug())
     expect(
       wrapper
         .find("SidebarSection")

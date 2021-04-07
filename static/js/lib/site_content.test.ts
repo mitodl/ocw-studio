@@ -1,4 +1,4 @@
-import { flatten } from "ramda"
+import { cloneDeep } from "lodash"
 
 import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
@@ -9,7 +9,7 @@ import {
   makeConfigField,
   makeWebsiteConfigField,
   makeWebsiteContentDetail,
-  makeWebsiteStarterConfig
+  makeFileConfigItem
 } from "../util/factories/websites"
 import {
   componentFromWidget,
@@ -20,7 +20,7 @@ import {
   newInitialValues,
   widgetExtraProps
 } from "./site_content"
-import { MAIN_PAGE_CONTENT_FIELD } from "../constants"
+import { exampleSiteConfigFields, MAIN_PAGE_CONTENT_FIELD } from "../constants"
 import { isIf, shouldIf } from "../test_util"
 
 import {
@@ -55,20 +55,29 @@ describe("site_content", () => {
       })
     })
 
-    it("passes through title and type, and namespaces other fields under 'metadata'", () => {
+    it("passes through 'title' and 'type'; namespaces other fields under 'metadata'", () => {
       const values = {
         title:       "a title",
-        type:        "resource",
+        type:        "metadata",
         description: "a description here"
       }
-      const fields = makeWebsiteStarterConfig().collections.find(
-        item => item.name === "resource"
-      )?.fields
+      const fields = [
+        {
+          label:  "Title",
+          name:   "title",
+          widget: "string"
+        },
+        {
+          label:  "Description",
+          name:   "description",
+          widget: "text"
+        }
+      ]
       // @ts-ignore
       const payload = contentFormValuesToPayload(values, fields)
       expect(payload).toStrictEqual({
         title:    "a title",
-        type:     "resource",
+        type:     "metadata",
         metadata: {
           description: "a description here"
         }
@@ -83,18 +92,23 @@ describe("site_content", () => {
         description: "a description here",
         file:        mockFile
       }
-      const fields = makeWebsiteStarterConfig().collections.find(
-        item => item.name === "resource"
-      )?.fields
+      const fields = makeFileConfigItem().fields
       // @ts-ignore
       const payload = contentFormValuesToPayload(values, fields)
       expect(payload instanceof FormData).toBe(true)
     })
 
     it("stores a value in metadata as is if it's not a special field", () => {
-      const descriptionField = makeWebsiteStarterConfig()
-        .collections.find(item => item.name === "metadata")
-        ?.fields.find(field => field.name === "tags")
+      const descriptionField: ConfigField = {
+        label:    "Tags",
+        default:  ["Design"],
+        max:      3,
+        min:      1,
+        multiple: true,
+        name:     "tags",
+        options:  ["Design", "UX", "Dev"],
+        widget:   WidgetVariant.Select
+      }
       const payload = contentFormValuesToPayload(
         {
           tags: []
@@ -137,9 +151,7 @@ describe("site_content", () => {
     it("from a content object", () => {
       const content = makeWebsiteContentDetail()
       // combine all possible fields so we can test all code paths
-      const fields = flatten(
-        makeWebsiteStarterConfig().collections.map(item => item.fields)
-      )
+      const fields = cloneDeep(exampleSiteConfigFields)
       // @ts-ignore
       const payload = contentInitialValues(content, fields)
       expect(payload).toStrictEqual({
@@ -156,14 +168,11 @@ describe("site_content", () => {
 
   describe("newInitialValues", () => {
     it("creates initial values for each field, optionally with a default value", () => {
-      const allFields = flatten(
-        makeWebsiteStarterConfig().collections.map(item => item.fields)
-      )
       // find a field with a default value and one without
-      const fieldWithDefault = allFields.find(
+      const fieldWithDefault = exampleSiteConfigFields.find(
         (field: ConfigField) => field.default
       )
-      const fieldWithoutDefault = allFields.find(
+      const fieldWithoutDefault = exampleSiteConfigFields.find(
         (field: ConfigField) => !field.default
       )
       const fields = [fieldWithDefault, fieldWithoutDefault]

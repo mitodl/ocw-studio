@@ -107,7 +107,7 @@ class WebsiteContent(TimestampedModel):
         unique_together = [["website", "uuid"]]
 
     def __str__(self):
-        return f"'{self.title}' ({self.uuid})'"
+        return f"{self.title} ({self.uuid})" if self.title else str(self.uuid)
 
 
 class WebsiteStarter(TimestampedModel):

@@ -160,16 +160,6 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
 class WebsiteContentDetailSerializer(serializers.ModelSerializer):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""
 
-    def validate(self, attrs):
-        """ Don't allow file uploads for non-resources """
-        if (
-            attrs.get("file", None)
-            and self.instance.type != constants.CONTENT_TYPE_RESOURCE
-        ):
-            raise ValidationError("Files can only be uploaded for resources")
-
-        return attrs
-
     class Meta:
         model = WebsiteContent
         read_only_fields = ["uuid", "type"]
@@ -178,13 +168,6 @@ class WebsiteContentDetailSerializer(serializers.ModelSerializer):
 
 class WebsiteContentCreateSerializer(serializers.ModelSerializer):
     """Serializer which creates a new WebsiteContent"""
-
-    def validate(self, attrs):
-        """ Don't allow file uploads for non-resources """
-        if attrs.get("file") and attrs.get("type") != constants.CONTENT_TYPE_RESOURCE:
-            raise ValidationError("Files can only be uploaded for resources")
-
-        return attrs
 
     def create(self, validated_data):
         """Add the website_id to the data"""
@@ -196,4 +179,10 @@ class WebsiteContentCreateSerializer(serializers.ModelSerializer):
         model = WebsiteContent
         # we want uuid in the returned result but we also want to ignore any attempt to set it on create
         read_only_fields = ["uuid"]
-        fields = read_only_fields + ["type", "title", "markdown", "metadata", "file"]
+        fields = read_only_fields + [
+            "type",
+            "title",
+            "markdown",
+            "metadata",
+            "file",
+        ]

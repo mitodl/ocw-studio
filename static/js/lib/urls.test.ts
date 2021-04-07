@@ -48,7 +48,7 @@ describe("urls", () => {
           siteContentListingUrl
             .param({ name: "site-name", contentType: "resource" })
             .toString()
-        ).toBe("/sites/site-name/resource/")
+        ).toBe("/sites/site-name/type/resource/")
       })
 
       it("renders a URL for adding new content", () => {
@@ -59,7 +59,7 @@ describe("urls", () => {
               contentType: "page"
             })
             .toString()
-        ).toBe("/sites/site-name/page/add/")
+        ).toBe("/sites/site-name/type/page/add/")
       })
 
       it("renders a URL for collaborators", () => {

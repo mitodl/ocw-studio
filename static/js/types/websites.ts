@@ -29,6 +29,31 @@ export interface ConfigField {
   condition?: FieldValueCondition
 }
 
+export interface BaseConfigItem {
+  name: string
+  label: string
+}
+
+export type SingletonConfigItem = BaseConfigItem & {
+  file: string
+  fields: ConfigField[]
+}
+
+export type SingletonsConfigItem = BaseConfigItem & {
+  category: string
+  files: Array<SingletonConfigItem>
+}
+
+export type RepeatableConfigItem = BaseConfigItem & {
+  category: string
+  folder: string
+  fields: ConfigField[]
+}
+
+export type TopLevelConfigItem = RepeatableConfigItem | SingletonsConfigItem
+
+export type EditableConfigItem = RepeatableConfigItem | SingletonConfigItem
+
 export interface ConfigItem {
   name: string
   label: string
@@ -40,7 +65,7 @@ export interface ConfigItem {
 }
 
 export interface WebsiteStarterConfig {
-  collections: ConfigItem[]
+  collections: TopLevelConfigItem[]
 }
 
 export interface WebsiteStarter {
@@ -66,7 +91,7 @@ export interface Website {
   title: string
   source: string | null
   starter: WebsiteStarter | null
-  metadata: any
+  metadata?: any
   is_admin?: boolean // eslint-disable-line
 }
 
@@ -95,4 +120,10 @@ export interface WebsiteContentListItem {
 export interface WebsiteContent extends WebsiteContentListItem {
   markdown: string | null
   metadata: null | { [key: string]: string }
+}
+
+export interface ContentListingParams {
+  name: string
+  type: string
+  offset: number
 }

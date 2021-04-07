@@ -17,19 +17,26 @@ collections:
       - {"label": "File", "name": "file", "widget": "file"}
 
   - name: metadata
-    label: Site Metadata
+    label: Metadata
     category: Settings
-    file: data/metadata.json
-    fields:
-      - { label: "Course Title", name: "title", widget: "text" }
-      - { label: "Course Description", name: "description", widget: "markdown" }
-
-  - name: files_item
-    label: Files
-    category: New Category
     files:
-      - name: file1
-        label: File 1
-        file: file1.txt
+      - file: data/metadata.json
+        name: sitemetadata
+        label: Site Metadata
         fields:
-          - { label: "Title", name: "title", widget: "text" }
+          - { "label": "Course Title", "name": "title", "widget": "text", "required": true }
+          - {
+            "label": "Course Description",
+            "name": "description",
+            "widget": "markdown",
+            "minimal": true,
+            "help": "A description of the course that will be shown on the course site home page."
+          }
+          - { "label": "Tags", "default": [ "Design" ], "max": 3, "min": 1, "multiple": true, "name": "tags", "options": [ "Design", "UX", "Dev" ], "widget": "select" }
+          - { label: "Align Content", name: "align", widget: "select", options: [ "left", "center", "right" ] }
+          - {
+            "label": "Comes with fries",
+            "name": "fries",
+            "widget": "boolean",
+            "help": "Whether the course includes fries or not."
+          }

@@ -11,11 +11,16 @@ import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
 import {
+  makeRepeatableConfigItem,
   makeWebsiteContentDetail,
   makeWebsiteDetail
 } from "../util/factories/websites"
 
-import { ConfigItem, Website } from "../types/websites"
+import {
+  RepeatableConfigItem,
+  Website,
+  WebsiteStarterConfig
+} from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -37,7 +42,8 @@ describe("SiteAddContent", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     website: Website,
-    configItem: ConfigItem,
+    fullConfig: WebsiteStarterConfig,
+    configItem: RepeatableConfigItem,
     historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub }
 
@@ -45,10 +51,12 @@ describe("SiteAddContent", () => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
     historyPushStub = helper.sandbox.stub()
+    configItem = makeRepeatableConfigItem()
+    fullConfig = {
+      collections: [configItem]
+    }
     // @ts-ignore
-    configItem = website.starter?.config?.collections.find(
-      (item: ConfigItem) => item.name === "page"
-    )
+    website.starter.config = fullConfig
     const params = { name: website.name, contenttype: configItem.name }
     mockUseRouteMatch.mockImplementation(() => ({
       params

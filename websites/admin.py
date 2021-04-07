@@ -33,16 +33,29 @@ class WebsiteContentAdmin(TimestampedModelAdmin):
 
     model = WebsiteContent
 
+    include_created_on_in_list = True
     search_fields = (
         "title",
+        "website__title",
         "website__name",
         "website__uuid",
         "uuid",
         "parent__uuid",
     )
-    list_display = ("uuid", "title", "type", "website", "parent")
+    list_display = ("uuid", "title", "type", "get_website_title", "parent")
     list_filter = ("type",)
     raw_id_fields = ("website", "parent")
+    ordering = ("-created_on",)
+
+    def get_queryset(self, request):
+        return self.model.objects.get_queryset().select_related("website")
+
+    def get_website_title(self, obj):
+        """Returns the related Website title"""
+        return obj.website.title
+
+    get_website_title.short_description = "Website"
+    get_website_title.admin_order_field = "website__title"
 
 
 class WebsiteStarterForm(forms.ModelForm):

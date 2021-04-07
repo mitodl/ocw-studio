@@ -11,12 +11,12 @@ from mitol.common.utils.datetime import now_in_utc
 from rest_framework import mixins, status, viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
 from main import features
 from main.permissions import ReadonlyPermission
+from main.views import DefaultPagination
 from users.models import User
 from websites import constants
 from websites.models import Website, WebsiteContent, WebsiteStarter
@@ -38,15 +38,6 @@ from websites.serializers import (
     WebsiteStarterSerializer,
     WebsiteWriteSerializer,
 )
-
-
-class DefaultPagination(LimitOffsetPagination):
-    """
-    Pagination class for websites viewsets
-    """
-
-    default_limit = 10
-    max_limit = 100
 
 
 class WebsiteViewSet(

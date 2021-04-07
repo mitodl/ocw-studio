@@ -43,10 +43,10 @@ export default function SitePage(): JSX.Element | null {
             <Route path={`${match.path}/collaborators/`}>
               <SiteCollaboratorList />
             </Route>
-            <Route exact path={`${match.path}/:contenttype`}>
+            <Route exact path={`${match.path}/type/:contenttype`}>
               <SiteContentListing />
             </Route>
-            <Route exact path={`${match.path}/:contenttype/add/`}>
+            <Route exact path={`${match.path}/type/:contenttype/add/`}>
               <SiteAddContent />
             </Route>
           </Switch>

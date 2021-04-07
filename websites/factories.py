@@ -9,7 +9,12 @@ from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyChoice
 
 from users.factories import UserFactory
-from websites.constants import CONTENT_TYPES, COURSE_STARTER_SLUG, STARTER_SOURCES
+from websites.constants import (
+    CONTENT_TYPE_PAGE,
+    CONTENT_TYPE_RESOURCE,
+    COURSE_STARTER_SLUG,
+    STARTER_SOURCES,
+)
 from websites.models import Website, WebsiteContent, WebsiteStarter
 
 
@@ -61,7 +66,7 @@ class WebsiteContentFactory(DjangoModelFactory):
     """Factory for WebsiteContent"""
 
     title = factory.Sequence(lambda n: "OCW Site Content %s" % n)
-    type = FuzzyChoice(CONTENT_TYPES)
+    type = FuzzyChoice([CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE])
     markdown = factory.Faker("text")
     metadata = factory.Faker("json")
     hugo_filepath = factory.Sequence(lambda n: "/sites/ocw_site_x/%s" % n)

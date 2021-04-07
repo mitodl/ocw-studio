@@ -53,17 +53,13 @@ def test_invalid_key(parsed_site_config):
         validate_parsed_site_config(config)
 
 
-@pytest.mark.parametrize(
-    "collection_dict",
-    [
-        {"folder": "folder1", "file": "file1.txt"},
-        {"folder": "folder1", "files": []},
-        {"file": "file1.txt", "files": []},
-    ],
-)
-def test_exclusive_collection_keys(parsed_site_config, collection_dict):
+def test_exclusive_collection_keys(parsed_site_config):
     """A collection item defining more than one of a set of mutually-exclusive keys should cause a validation error"""
     config = parsed_site_config.copy()
-    config["collections"][0] = {**config["collections"][0], **collection_dict}
+    config["collections"][0] = {
+        **config["collections"][0],
+        "folder": "folder1",
+        "files": [],
+    }
     with pytest.raises(ValueError):
         validate_parsed_site_config(config)
