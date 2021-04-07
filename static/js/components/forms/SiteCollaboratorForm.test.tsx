@@ -14,21 +14,25 @@ import { makeWebsiteCollaborator } from "../../util/factories/websites"
 import { WebsiteCollaborator } from "../../types/websites"
 
 describe("SiteCollaboratorForm", () => {
-  let sandbox, onSubmitStub: SinonStub, collaborator: WebsiteCollaborator
+  let sandbox,
+    onSubmitStub: SinonStub,
+    onCancelStub: SinonStub,
+    collaborator: WebsiteCollaborator
 
-  const renderForm = (collaborator?: WebsiteCollaborator) =>
+  const renderForm = (collaborator: WebsiteCollaborator | null) =>
     shallow(
       <SiteCollaboratorForm
         collaborator={collaborator}
         onSubmit={onSubmitStub}
+        onCancel={onCancelStub}
       />
     )
 
   const renderInnerForm = (
     formikChildProps: { [key: string]: any },
-    collaborator?: WebsiteCollaborator
+    collaborator: WebsiteCollaborator | null
   ) => {
-    const wrapper = collaborator ? renderForm(collaborator) : renderForm()
+    const wrapper = renderForm(collaborator)
     return (
       wrapper
         .find("Formik")
@@ -43,11 +47,13 @@ describe("SiteCollaboratorForm", () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     onSubmitStub = sandbox.stub()
+    onCancelStub = sandbox.stub()
   })
 
   describe("add a new collaborator", () => {
     it("passes onSubmit to Formik", () => {
-      const wrapper = renderForm()
+      const wrapper = renderForm(null)
+      expect(wrapper.props().onSubmit).toBe(onSubmitStub)
       const props = wrapper.find("Formik").props()
       expect(props.onSubmit).toBe(onSubmitStub)
       // @ts-ignore
@@ -57,7 +63,10 @@ describe("SiteCollaboratorForm", () => {
     })
 
     it("shows an option for each role, plus an empty option", () => {
-      const form = renderInnerForm({ isSubmitting: false, status: "whatever" })
+      const form = renderInnerForm(
+        { isSubmitting: false, status: "whatever" },
+        null
+      )
       const field = form
         .find("Field")
         .filterWhere(node => node.prop("name") === "role")
@@ -70,7 +79,10 @@ describe("SiteCollaboratorForm", () => {
     })
 
     it("shows an email field", () => {
-      const form = renderInnerForm({ isSubmitting: false, status: "whatever" })
+      const form = renderInnerForm(
+        { isSubmitting: false, status: "whatever" },
+        null
+      )
       expect(
         form.find("Field").filterWhere(node => node.prop("name") === "email")
       ).toHaveLength(1)
@@ -80,6 +92,19 @@ describe("SiteCollaboratorForm", () => {
   describe("edit an existing collaborator", () => {
     beforeEach(() => {
       collaborator = makeWebsiteCollaborator()
+    })
+
+    it("cancel button onClick function is onCancel prop", () => {
+      const form = renderInnerForm(
+        { isSubmitting: false, status: "whatever" },
+        null
+      )
+      expect(
+        form
+          .find("button")
+          .at(1)
+          .prop("onClick")
+      ).toBe(onCancelStub)
     })
 
     it("passes onSubmit to Formik", () => {
