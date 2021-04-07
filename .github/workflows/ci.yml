@@ -110,7 +110,7 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: true
 
-  javascript-tests:
+  frontend-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
