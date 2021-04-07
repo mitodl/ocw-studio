@@ -8,6 +8,7 @@ import { makeWebsiteStarter } from "../../util/factories/websites"
 import { defaultFormikChildProps } from "../../test_util"
 
 import { WebsiteStarter } from "../../types/websites"
+import { Option } from "../widgets/SelectField"
 
 describe("SiteForm", () => {
   let sandbox, onSubmitStub: SinonStub, websiteStarters: Array<WebsiteStarter>
@@ -50,11 +51,10 @@ describe("SiteForm", () => {
     const field = form
       .find("Field")
       .filterWhere(node => node.prop("name") === "starter")
-
-    const options = field.find("option")
+    const options: Array<Option | string> = field.prop("options")
     expect(options).toHaveLength(websiteStarters.length)
     for (let i = 0; i < options.length; i++) {
-      expect(options.at(i).prop("value")).toBe(websiteStarters[i].id)
+      expect(options[i]["value"]).toBe(websiteStarters[i].id)
     }
   })
 

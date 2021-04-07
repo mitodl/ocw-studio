@@ -5,6 +5,7 @@ import * as yup from "yup"
 import { FormError } from "./FormError"
 
 import { WebsiteStarter } from "../../types/websites"
+import SelectField from "../widgets/SelectField"
 
 export interface SiteFormValues {
   title: string
@@ -36,6 +37,7 @@ export const SiteForm = ({
     title:   "",
     starter: websiteStarters.length > 0 ? websiteStarters[0].id : 0
   }
+
   return (
     <Formik
       onSubmit={onSubmit}
@@ -51,18 +53,19 @@ export const SiteForm = ({
           </div>
           <div className="form-group">
             <label htmlFor="starter">Starter*</label>
-            <Field component="select" name="starter" className="form-control">
-              {websiteStarters.length > 0 ? (
-                websiteStarters.map((starter, i) => (
-                  <option key={i} value={starter.id}>
-                    {starter.name}
-                  </option>
-                ))
-              ) : (
-                // Empty option to prevent build warning/errors
-                <option key={0} value={0} />
-              )}
-            </Field>
+            <Field
+              as={SelectField}
+              name="starter"
+              className="form-control"
+              options={
+                websiteStarters.length > 0 ?
+                  websiteStarters.map(starter => ({
+                    label: starter.name,
+                    value: starter.id
+                  })) :
+                  ["0"]
+              }
+            />
             <ErrorMessage name="starter" component={FormError} />
           </div>
           <div className="form-group d-flex justify-content-end">
