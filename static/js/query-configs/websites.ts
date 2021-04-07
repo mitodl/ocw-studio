@@ -17,6 +17,7 @@ import {
 } from "../lib/urls"
 
 import {
+  ContentListingParams,
   NewWebsitePayload,
   Website,
   WebsiteCollaborator,
@@ -26,8 +27,8 @@ import {
   WebsiteStarter
 } from "../types/websites"
 
-interface CollectionResponse<Item> {
-  count: number
+interface PaginatedResponse<Item> {
+  count: number | null
   next: string | null
   previous: string | null
   results: Item[]
@@ -46,7 +47,7 @@ export const getTransformedWebsiteName = (
   return transformedWebsiteKeys[0]
 }
 
-export type WebsiteListingResponse = CollectionResponse<Website>
+export type WebsiteListingResponse = PaginatedResponse<Website>
 
 type WebsitesListing = Record<string, string[]> // offset to list of site names
 
@@ -235,57 +236,58 @@ export const createWebsiteCollaboratorMutation = (
   }
 }
 
-export type WebsiteContentListingResponse = CollectionResponse<
+export type WebsiteContentListingResponse = PaginatedResponse<
   WebsiteContentListItem
 >
 type WebsiteContentListing = Record<string, string[]> // website name to list of uuids
 export const contentListingKey = (
-  name: string,
-  type: string,
-  offset: number
-): string => JSON.stringify([name, type, offset])
+  listingParams: ContentListingParams
+): string =>
+  JSON.stringify([listingParams.name, listingParams.type, listingParams.offset])
+
 export const websiteContentListingRequest = (
-  name: string,
-  type: string,
-  offset: number
-): QueryConfig => ({
-  url: siteApiContentListingUrl
-    .param({ name })
-    .query({ type, offset })
-    .toString(),
-  transform: (body: WebsiteContentListingResponse) => {
-    const details = {}
-    for (const item of body.results) {
-      details[item.uuid] = item
-    }
-    return {
-      websiteContentListing: {
-        [contentListingKey(name, type, offset)]: {
-          ...body,
-          results: body.results.map(item => item.uuid)
-        }
-      },
-      websiteContentDetails: details
-    }
-  },
-  update: {
-    websiteContentListing: (
-      prev: WebsiteContentListing,
-      next: WebsiteContentListing
-    ) => ({
-      ...prev,
-      ...next
-    }),
-    websiteContentDetails: (
-      prev: WebsiteContentDetails,
-      next: WebsiteContentDetails
-    ) => ({
-      ...prev,
-      ...next
-    })
-  },
-  force: true // try to prevent stale information
-})
+  listingParams: ContentListingParams
+): QueryConfig => {
+  const { name, type, offset } = listingParams
+  return {
+    url: siteApiContentListingUrl
+      .param({ name })
+      .query({ type, offset })
+      .toString(),
+    transform: (body: WebsiteContentListingResponse) => {
+      const details = {}
+      for (const item of body.results) {
+        details[item.uuid] = item
+      }
+      return {
+        websiteContentListing: {
+          [contentListingKey(listingParams)]: {
+            ...body,
+            results: body.results.map(item => item.uuid)
+          }
+        },
+        websiteContentDetails: details
+      }
+    },
+    update: {
+      websiteContentListing: (
+        prev: WebsiteContentListing,
+        next: WebsiteContentListing
+      ) => ({
+        ...prev,
+        ...next
+      }),
+      websiteContentDetails: (
+        prev: WebsiteContentDetails,
+        next: WebsiteContentDetails
+      ) => ({
+        ...prev,
+        ...next
+      })
+    },
+    force: true // try to prevent stale information
+  }
+}
 
 type WebsiteContentDetails = Record<string, WebsiteContent>
 export const websiteContentDetailRequest = (

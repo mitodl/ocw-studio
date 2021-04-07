@@ -14,7 +14,7 @@ import SiteEditContentForm from "./forms/SiteEditContentForm"
 import { contentFormValuesToPayload } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 
-import { ConfigItem, Website } from "../types/websites"
+import { EditableConfigItem, Website } from "../types/websites"
 
 type SiteFormValues = {
   [key: string]: string
@@ -25,7 +25,7 @@ interface Props {
   visibility: boolean
   toggleVisibility: () => void
   site: Website
-  configItem: ConfigItem
+  configItem: EditableConfigItem
 }
 
 export default function SiteEditContent(props: Props): JSX.Element | null {
@@ -85,7 +85,7 @@ export default function SiteEditContent(props: Props): JSX.Element | null {
         modalClassName="right"
       >
         <ModalHeader toggle={toggleVisibility}>
-          Edit {configItem.name}
+          Edit {configItem.label}
         </ModalHeader>
         <ModalBody>
           <div className="m-3">

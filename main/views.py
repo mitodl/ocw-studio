@@ -6,6 +6,7 @@ import json
 from django.conf import settings
 from django.shortcuts import render
 from mitol.common.utils.webpack import webpack_public_path
+from rest_framework.pagination import LimitOffsetPagination
 
 
 def index(request, *args, **kwargs):  # pylint: disable=unused-argument
@@ -40,3 +41,12 @@ def index(request, *args, **kwargs):  # pylint: disable=unused-argument
             "js_settings_json": json.dumps(js_settings),
         },
     )
+
+
+class DefaultPagination(LimitOffsetPagination):
+    """
+    Default pagination class for viewsets
+    """
+
+    default_limit = 10
+    max_limit = 100

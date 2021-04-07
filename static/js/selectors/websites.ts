@@ -5,7 +5,7 @@ import { find, propEq } from "ramda"
 import { contentListingKey } from "../query-configs/websites"
 import { ReduxState } from "../reducers"
 
-import { WebsiteStarter } from "../types/websites"
+import { ContentListingParams, WebsiteStarter } from "../types/websites"
 
 export const getWebsiteDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteDetails ?? {},
@@ -54,8 +54,8 @@ export const getWebsiteContentListingCursor = createSelector(
   getWebsiteContentDetailCursor,
   (listing, websiteContentDetailCursor) =>
     memoize(
-      (name: string, type: string, offset: number) => {
-        const response = listing[contentListingKey(name, type, offset)] ?? {}
+      (listingParams: ContentListingParams) => {
+        const response = listing[contentListingKey(listingParams)] ?? {}
         const uuids = response?.results ?? []
         const items = uuids.map(websiteContentDetailCursor)
 
@@ -64,6 +64,6 @@ export const getWebsiteContentListingCursor = createSelector(
           results: items
         }
       },
-      (name, type, offset: number) => contentListingKey(name, type, offset)
+      (listingParams: ContentListingParams) => contentListingKey(listingParams)
     )
 )

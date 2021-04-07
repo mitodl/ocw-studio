@@ -4,6 +4,7 @@ import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { shallow } from "enzyme"
 
 import SiteAddContentForm from "./SiteAddContentForm"
+import { makeEditableConfigItem } from "../../util/factories/websites"
 import { defaultFormikChildProps } from "../../test_util"
 
 jest.mock("../../lib/site_content")
@@ -11,35 +12,18 @@ import { componentFromWidget, fieldIsVisible } from "../../lib/site_content"
 jest.mock("./validation")
 import { getContentSchema } from "./validation"
 
-import { ConfigItem, WidgetVariant } from "../../types/websites"
+import { EditableConfigItem, WidgetVariant } from "../../types/websites"
 
 describe("SiteAddContentForm", () => {
   let sandbox: SinonSandbox,
     onSubmitStub: SinonStub,
     setFieldValueStub: SinonStub,
-    configItem: ConfigItem
+    configItem: EditableConfigItem
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     setFieldValueStub = sinon.stub()
-    configItem = {
-      fields: [
-        {
-          label:  "Title",
-          name:   "title",
-          widget: WidgetVariant.String
-        },
-        {
-          label:  "Body",
-          name:   "body",
-          widget: WidgetVariant.Markdown
-        }
-      ],
-      folder:   "content",
-      label:    "Page",
-      name:     "page",
-      category: "Content"
-    }
+    configItem = makeEditableConfigItem()
   })
 
   afterEach(() => {

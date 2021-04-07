@@ -8,27 +8,27 @@ import SiteEditContentForm from "./SiteEditContentForm"
 import { defaultFormikChildProps } from "../../test_util"
 import {
   makeWebsiteContentDetail,
-  makeWebsiteConfigItem
+  makeEditableConfigItem
 } from "../../util/factories/websites"
 jest.mock("../../lib/site_content")
 import { componentFromWidget, fieldIsVisible } from "../../lib/site_content"
 jest.mock("./validation")
 import { getContentSchema } from "./validation"
 
-import { ConfigItem, WebsiteContent } from "../../types/websites"
+import { EditableConfigItem, WebsiteContent } from "../../types/websites"
 
 describe("SiteEditContentForm", () => {
   let sandbox: SinonSandbox,
     onSubmitStub: SinonStub,
     setFieldValueStub: SinonStub,
-    configItem: ConfigItem,
+    configItem: EditableConfigItem,
     content: WebsiteContent
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     setFieldValueStub = sinon.stub()
     content = makeWebsiteContentDetail()
-    configItem = makeWebsiteConfigItem(content.type)
+    configItem = makeEditableConfigItem(content.type)
   })
 
   afterEach(() => {

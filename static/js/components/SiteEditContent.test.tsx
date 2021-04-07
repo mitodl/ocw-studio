@@ -12,10 +12,11 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 import {
   makeWebsiteContentDetail,
+  makeEditableConfigItem,
   makeWebsiteDetail
 } from "../util/factories/websites"
 
-import { ConfigItem, Website, WebsiteContent } from "../types/websites"
+import { EditableConfigItem, Website, WebsiteContent } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -37,7 +38,7 @@ describe("SiteEditContent", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     website: Website,
-    configItem: ConfigItem,
+    configItem: EditableConfigItem,
     historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub },
     content: WebsiteContent,
@@ -49,10 +50,7 @@ describe("SiteEditContent", () => {
     content = makeWebsiteContentDetail()
     historyPushStub = helper.sandbox.stub()
     toggleVisibilityStub = helper.sandbox.stub()
-    // @ts-ignore
-    configItem = website.starter?.config?.collections.find(
-      (item: ConfigItem) => item.name === "resource"
-    )
+    configItem = makeEditableConfigItem()
     const params = { name: website.name, contenttype: configItem.name }
     mockUseRouteMatch.mockImplementation(() => ({
       params

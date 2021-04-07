@@ -5,14 +5,14 @@ import SiteContentField from "./SiteContentField"
 import { getContentSchema } from "./validation"
 import { fieldIsVisible, newInitialValues } from "../../lib/site_content"
 
-import { ConfigItem, WidgetVariant } from "../../types/websites"
+import { EditableConfigItem, WidgetVariant } from "../../types/websites"
 
 interface Props {
   onSubmit: (
     values: any,
     formikHelpers: FormikHelpers<any>
   ) => void | Promise<any>
-  configItem: ConfigItem
+  configItem: EditableConfigItem
 }
 
 export default function SiteAddContentForm({

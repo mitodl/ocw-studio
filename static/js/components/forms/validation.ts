@@ -1,7 +1,12 @@
 import * as yup from "yup"
 import { SchemaOf, setLocale } from "yup"
 
-import { ConfigField, ConfigItem, WidgetVariant } from "../../types/websites"
+import {
+  ConfigField,
+  ConfigItem,
+  WidgetVariant,
+  EditableConfigItem
+} from "../../types/websites"
 
 // This is added to properly handle file fields, which can have a "null" value
 setLocale({
@@ -28,7 +33,9 @@ export const getFieldSchema = (field: ConfigField): SchemaOf<any> => {
   }
 }
 
-export const getContentSchema = (configItem: ConfigItem): SchemaOf<any> => {
+export const getContentSchema = (
+  configItem: ConfigItem | EditableConfigItem
+): SchemaOf<any> => {
   const yupObjectShape = {}
   configItem.fields.forEach(field => {
     const yupField = getFieldSchema(field)

@@ -13,14 +13,18 @@ import {
 
 import {
   ConfigField,
-  ConfigItem,
+  WidgetVariant,
+  EditableConfigItem,
+  SingletonConfigItem,
+  SingletonsConfigItem,
+  RepeatableConfigItem,
+  TopLevelConfigItem,
   Website,
   WebsiteCollaborator,
   WebsiteContent,
   WebsiteContentListItem,
   WebsiteStarter,
-  WebsiteStarterConfig,
-  WidgetVariant
+  WebsiteStarterConfig
 } from "../../types/websites"
 
 const incr = incrementer()
@@ -44,27 +48,100 @@ export const makeConfigField = (): ConfigField => ({
   widget: WidgetVariant.String
 })
 
-export const makeWebsiteConfigItem = (
-  name: string,
-  category?: string
-): ConfigItem => ({
-  fields: [
-    {
-      label:  "Title",
-      name:   "title",
-      widget: WidgetVariant.String
-    },
-    {
-      label:  "Body",
-      name:   "body",
-      widget: WidgetVariant.Markdown
-    }
-  ],
-  folder:   casual.word,
-  label:    casual.word,
-  name:     name || casual.word,
-  category: category || casual.word
+const exampleFields = [
+  {
+    label:  "Title",
+    name:   "title",
+    widget: WidgetVariant.String
+  },
+  {
+    label:  "Description",
+    name:   "description",
+    widget: WidgetVariant.Text
+  },
+  {
+    label:  "Body",
+    name:   "body",
+    widget: WidgetVariant.Markdown
+  }
+]
+
+export const makeFileConfigItem = (name?: string): SingletonConfigItem => ({
+  fields: cloneDeep(exampleFields),
+  file:   casual.word,
+  label:  casual.word,
+  name:   name || casual.word
 })
+
+export const makeTopLevelConfigItem = (
+  name?: string,
+  type?: "folder" | "files" | null,
+  category?: string
+): TopLevelConfigItem => {
+  const randBool = Math.random() >= 0.5
+  const configType =
+    (!type && randBool) || type === "folder" ?
+      { folder: casual.word } :
+      {
+        files: times(2).map(() => makeFileConfigItem())
+      }
+  return {
+    fields:   cloneDeep(exampleFields),
+    name:     name || casual.word,
+    label:    casual.word,
+    category: category || casual.word,
+    ...configType
+  }
+}
+
+export const makeEditableConfigItem = (
+  name?: string,
+  type?: "folder" | "file"
+): EditableConfigItem => {
+  const randBool = Math.random() >= 0.5
+  const configType =
+    (!type && randBool) || type === "folder" ?
+      { folder: casual.word, category: casual.word } :
+      {
+        file: casual.word
+      }
+  return {
+    fields: cloneDeep(exampleFields),
+    name:   name || casual.word,
+    label:  casual.word,
+    ...configType
+  }
+}
+
+export const makeRepeatableConfigItem = (
+  name?: string
+): RepeatableConfigItem => ({
+  fields:   cloneDeep(exampleFields),
+  name:     name || casual.word,
+  label:    casual.word,
+  category: casual.word,
+  folder:   casual.word
+})
+
+export const makeSingletonConfigItem = (
+  name?: string
+): SingletonConfigItem => ({
+  fields: cloneDeep(exampleFields),
+  name:   name || casual.word,
+  label:  casual.word,
+  file:   casual.word
+})
+
+export const makeSingletonsConfigItem = (
+  name?: string
+): SingletonsConfigItem => {
+  return {
+    name:     name || casual.word,
+    label:    casual.word,
+    category: casual.word,
+    files:    [makeSingletonConfigItem()]
+  }
+}
 
 export const makeWebsiteStarterConfig = (): WebsiteStarterConfig =>
   cloneDeep(exampleSiteConfig)

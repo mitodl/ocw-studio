@@ -12,7 +12,14 @@ import {
   MAIN_PAGE_CONTENT_FIELD
 } from "../constants"
 
-import { ConfigField, WebsiteContent, WidgetVariant } from "../types/websites"
+import {
+  ConfigField,
+  TopLevelConfigItem,
+  WebsiteContent,
+  WidgetVariant
+} from "../types/websites"
+
+type ValueType = string | File | string[] | null
 
 export const componentFromWidget = (
   field: ConfigField
@@ -52,7 +59,6 @@ const isMainContentField = (field: ConfigField) =>
   field.name === MAIN_PAGE_CONTENT_FIELD &&
   field.widget === WidgetVariant.Markdown
 
-type ValueType = string | File | string[] | null
 const emptyValue = (field: ConfigField): ValueType => {
   switch (field.widget) {
   case "select":
@@ -67,6 +73,10 @@ const emptyValue = (field: ConfigField): ValueType => {
     return ""
   }
 }
+
+export const isRepeatableCollectionItem = (
+  configItem: TopLevelConfigItem
+): boolean => "folder" in configItem
 
 /*
  * Translates page content form values into a payload that our REST API understands.
