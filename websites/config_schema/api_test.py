@@ -10,8 +10,8 @@ from websites.config_schema.api import (
 )
 
 
-SCHEMA_RESOURCES_DIR = "websites/config_schema/resources"
-SCHEMA_CONFIG_FILE = "valid-config.yml"
+SCHEMA_RESOURCES_DIR = "localdev/configs/"
+SCHEMA_CONFIG_FILE = "ocw-course-site-config.yml"
 
 
 @pytest.fixture()

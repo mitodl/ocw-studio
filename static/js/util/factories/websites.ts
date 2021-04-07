@@ -3,13 +3,13 @@ import { cloneDeep, times } from "lodash"
 
 import incrementer from "../incrementer"
 import {
-  exampleSiteConfig,
   ROLE_ADMIN,
   ROLE_EDITOR,
   ROLE_GLOBAL,
   ROLE_OWNER,
   WEBSITES_PAGE_SIZE
 } from "../../constants"
+import exampleSiteConfig from "../../resources/ocw-course-site-config.json"
 
 import {
   ConfigField,
@@ -144,7 +144,7 @@ export const makeSingletonsConfigItem = (
 }
 
 export const makeWebsiteStarterConfig = (): WebsiteStarterConfig =>
-  cloneDeep(exampleSiteConfig)
+  cloneDeep(exampleSiteConfig as WebsiteStarterConfig)
 
 export const makeWebsiteStarter = (type = "course"): WebsiteStarter => ({
   id:     incr.next().value,

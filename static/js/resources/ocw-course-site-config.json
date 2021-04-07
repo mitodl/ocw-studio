@@ -1,0 +1,104 @@
+{
+  "collections": [
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "widget": "string"
+        },
+        {
+          "label": "Body",
+          "name": "body",
+          "widget": "markdown"
+        }
+      ],
+      "folder": "content",
+      "label": "Page",
+      "name": "page"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "widget": "string"
+        },
+        {
+          "label": "Description",
+          "name": "description",
+          "widget": "text"
+        },
+        {
+          "label": "File",
+          "name": "file",
+          "widget": "file"
+        }
+      ],
+      "folder": "content",
+      "label": "Resource",
+      "name": "resource"
+    },
+    {
+      "category": "Settings",
+      "files": [
+        {
+          "fields": [
+            {
+              "label": "Course Title",
+              "name": "title",
+              "required": true,
+              "widget": "text"
+            },
+            {
+              "help": "A description of the course that will be shown on the course site home page.",
+              "label": "Course Description",
+              "minimal": true,
+              "name": "description",
+              "widget": "markdown"
+            },
+            {
+              "default": [
+                "Design"
+              ],
+              "label": "Tags",
+              "max": 3,
+              "min": 1,
+              "multiple": true,
+              "name": "tags",
+              "options": [
+                "Design",
+                "UX",
+                "Dev"
+              ],
+              "widget": "select"
+            },
+            {
+              "label": "Align Content",
+              "name": "align",
+              "options": [
+                "left",
+                "center",
+                "right"
+              ],
+              "widget": "select"
+            },
+            {
+              "help": "Whether the course includes fries or not.",
+              "label": "Comes with fries",
+              "name": "fries",
+              "widget": "boolean"
+            }
+          ],
+          "file": "data/metadata.json",
+          "label": "Site Metadata",
+          "name": "sitemetadata"
+        }
+      ],
+      "label": "Metadata",
+      "name": "metadata"
+    }
+  ]
+}
