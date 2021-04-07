@@ -44,7 +44,10 @@ export const makeConfigField = (): ConfigField => ({
   widget: WidgetVariant.String
 })
 
-export const makeWebsiteConfigItem = (name: string): ConfigItem => ({
+export const makeWebsiteConfigItem = (
+  name: string,
+  category?: string
+): ConfigItem => ({
   fields: [
     {
       label:  "Title",
@@ -60,7 +63,7 @@ export const makeWebsiteConfigItem = (name: string): ConfigItem => ({
   folder:   casual.word,
   label:    casual.word,
   name:     name || casual.word,
-  category: casual.word
+  category: category || casual.word
 })
 
 export const makeWebsiteStarterConfig = (): WebsiteStarterConfig =>
