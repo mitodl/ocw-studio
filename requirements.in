@@ -12,7 +12,7 @@ django-robots
 django-server-status
 django-storages
 django-webpack-loader
-mitol-django-authentication==1.0.0
+mitol-django-authentication==1.1.0
 mitol-django-common==0.7.0
 drf-extensions
 ipython

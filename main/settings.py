@@ -555,6 +555,7 @@ SOCIAL_AUTH_ALLOWED_REDIRECT_HOSTS = [
     urlparse(SITE_BASE_URL).netloc  # pylint: disable=undefined-variable
 ]
 
+SOCIAL_AUTH_USER_FIELD_MAPPING = {"fullname": "name"}
 
 # SAML backend settings
 SOCIAL_AUTH_SAML_LOGIN_URL = get_string(

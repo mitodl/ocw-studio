@@ -132,7 +132,7 @@ lxml==4.6.3
     #   premailer
     #   python3-saml
     #   xmlsec
-mitol-django-authentication==1.0.0
+mitol-django-authentication==1.1.0
     # via -r requirements.in
 mitol-django-common==0.7.0
     # via
