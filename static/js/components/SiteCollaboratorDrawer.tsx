@@ -101,7 +101,7 @@ export default function SiteCollaboratorDrawer(
                 collaborator={collaborator}
                 onSubmit={onSubmit}
                 onCancel={onCancel}
-              ></SiteCollaboratorForm>
+              />
             </div>
           </Card>
         </ModalBody>

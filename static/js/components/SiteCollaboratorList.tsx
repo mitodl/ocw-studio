@@ -46,6 +46,14 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     setEditVisibility(true)
   }
 
+  const startDelete = (collaborator: WebsiteCollaborator) => (
+    event: ReactMouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    event.preventDefault()
+    setSelectedCollaborator(collaborator)
+    toggleDeleteModal()
+  }
+
   const [deleteQueryState, deleteCollaborator] = useMutation(
     (): QueryConfig => {
       // @ts-ignore
@@ -113,10 +121,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
                             </a>
                             <i
                               className="material-icons"
-                              onClick={() => {
-                                setSelectedCollaborator(collaborator)
-                                toggleDeleteModal()
-                              }}
+                              onClick={startDelete(collaborator)}
                             >
                               delete_outline
                             </i>
