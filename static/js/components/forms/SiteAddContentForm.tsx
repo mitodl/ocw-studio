@@ -23,8 +23,12 @@ export default function SiteAddContentForm({
   const initialValues = newInitialValues(fields)
   const schema = getContentSchema(configItem)
 
-  const leftColumn = fields.filter(field => field.widget === WidgetVariant.Markdown)
-  const rightColumn = fields.filter(field => field.widget !== WidgetVariant.Markdown)
+  const leftColumn = fields.filter(
+    field => field.widget === WidgetVariant.Markdown
+  )
+  const rightColumn = fields.filter(
+    field => field.widget !== WidgetVariant.Markdown
+  )
 
   return (
     <Formik
