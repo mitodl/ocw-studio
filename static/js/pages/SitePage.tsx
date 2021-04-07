@@ -46,9 +46,6 @@ export default function SitePage(): JSX.Element | null {
             <Route exact path={`${match.path}/:contenttype`}>
               <SiteContentListing />
             </Route>
-            <Route exact path={`${match.path}/:contenttype/add/`}>
-              <SiteAddContent />
-            </Route>
           </Switch>
         </div>
       </div>

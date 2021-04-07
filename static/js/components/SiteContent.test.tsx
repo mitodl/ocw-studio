@@ -4,7 +4,7 @@ import React from "react"
 import { act } from "react-dom/test-utils"
 import sinon, { SinonStub } from "sinon"
 
-import SiteEditContent from "./SiteEditContent"
+import SiteEditContent from "./SiteContent"
 
 import { siteApiContentDetailUrl } from "../lib/urls"
 import IntegrationTestHelper, {
@@ -93,7 +93,7 @@ describe("SiteEditContent", () => {
 
   it("renders a form", async () => {
     const { wrapper } = await render()
-    const form = wrapper.find("SiteEditContentForm")
+    const form = wrapper.find("SiteContentForm")
     expect(form.exists()).toBe(true)
     expect(form.prop("configItem")).toBe(configItem)
   })
@@ -112,7 +112,7 @@ describe("SiteEditContent", () => {
       })
     const { wrapper } = await render()
 
-    const onSubmit = wrapper.find("SiteEditContentForm").prop("onSubmit")
+    const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
     const values = {
       title:       "A title",
       description: "Some description"
@@ -155,7 +155,7 @@ describe("SiteEditContent", () => {
       })
     const { wrapper } = await render()
 
-    const onSubmit = wrapper.find("SiteEditContentForm").prop("onSubmit")
+    const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
     await act(async () => {
       // @ts-ignore
       await onSubmit({}, formikStubs)
@@ -178,7 +178,7 @@ describe("SiteEditContent", () => {
       })
     const { wrapper } = await render()
 
-    const onSubmit = wrapper.find("SiteEditContentForm").prop("onSubmit")
+    const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
     await act(async () => {
       // @ts-ignore
       await onSubmit({}, formikStubs)

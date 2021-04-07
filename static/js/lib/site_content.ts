@@ -46,7 +46,7 @@ export function widgetExtraProps(field: ConfigField): Record<string, any> {
   }
 }
 
-const isMainContentField = (field: ConfigField) =>
+export const isMainContentField = (field: ConfigField) : boolean =>
   field.name === MAIN_PAGE_CONTENT_FIELD &&
   field.widget === WidgetVariant.Markdown
 

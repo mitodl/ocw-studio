@@ -1,48 +1,57 @@
 import React from "react"
-import { Modal, ModalBody, ModalHeader } from "reactstrap"
-import { useMutation, useRequest } from "redux-query-react"
-import { useSelector } from "react-redux"
-import { FormikHelpers } from "formik"
+import {Modal, ModalBody, ModalHeader} from "reactstrap"
+import {useMutation, useRequest} from "redux-query-react"
+import {useSelector} from "react-redux"
+import {FormikHelpers} from "formik"
 
 import {
+  createWebsiteContentMutation,
   editWebsiteContentMutation,
   EditWebsiteContentPayload,
+  NewWebsiteContentPayload,
   websiteContentDetailRequest
 } from "../query-configs/websites"
-import { getWebsiteContentDetailCursor } from "../selectors/websites"
-import SiteEditContentForm from "./forms/SiteEditContentForm"
-import { contentFormValuesToPayload } from "../lib/site_content"
-import { getResponseBodyError, isErrorResponse } from "../lib/util"
+import {getWebsiteContentDetailCursor} from "../selectors/websites"
+import SiteContentForm from "./forms/SiteContentForm"
+import {contentFormValuesToPayload} from "../lib/site_content"
+import {getResponseBodyError, isErrorResponse} from "../lib/util"
 
-import { ConfigItem, Website } from "../types/websites"
+import {ConfigItem, Website} from "../types/websites"
+import {ContentFormType} from "../types/forms";
 
-type SiteFormValues = {
-  [key: string]: string
-}
+type SiteFormValues = Record<string, string>
 
 interface Props {
-  uuid: string
+  uuid: string | null
   visibility: boolean
   toggleVisibility: () => void
   site: Website
-  configItem: ConfigItem
+  configItem: ConfigItem,
+  formType: ContentFormType
 }
 
-export default function SiteEditContent(props: Props): JSX.Element | null {
-  const { visibility, configItem, uuid, toggleVisibility, site } = props
+export default function SiteContent(props: Props): JSX.Element | null {
+  const { visibility, configItem, uuid, toggleVisibility, site, formType } = props
 
   const [
     { isPending: editIsPending },
     editWebsiteContent
   ] = useMutation((payload: EditWebsiteContentPayload | FormData) =>
+    // @ts-ignore
     editWebsiteContentMutation(site, uuid, configItem.name, payload)
   )
-  const [{ isPending }] = useRequest(
-    websiteContentDetailRequest(site.name, uuid)
+  const [
+    { isPending: addIsPending },
+    addWebsiteContent
+  ] = useMutation((payload: NewWebsiteContentPayload) =>
+    createWebsiteContentMutation(site.name, payload)
   )
+
+  // @ts-ignore
+  const [{ isPending }] = useRequest(formType === ContentFormType.Edit ? websiteContentDetailRequest(site.name, uuid) : null)
   const content = useSelector(getWebsiteContentDetailCursor)(uuid)
 
-  if (isPending || !content) {
+  if (isPending || (formType === ContentFormType.Edit && !content)) {
     return null
   }
 
@@ -50,11 +59,13 @@ export default function SiteEditContent(props: Props): JSX.Element | null {
     values: SiteFormValues,
     { setErrors, setSubmitting, setStatus }: FormikHelpers<SiteFormValues>
   ) => {
-    if (editIsPending) {
+    if (addIsPending || editIsPending) {
       return
     }
     const payload = contentFormValuesToPayload(values, configItem.fields)
-    const response = await editWebsiteContent(payload)
+    const updateFunc = formType === ContentFormType.Edit ? editWebsiteContent : addWebsiteContent
+    // @ts-ignore
+    const response = await updateFunc(payload)
     if (!response) {
       return
     }
@@ -89,10 +100,11 @@ export default function SiteEditContent(props: Props): JSX.Element | null {
         </ModalHeader>
         <ModalBody>
           <div className="m-3">
-            <SiteEditContentForm
+            <SiteContentForm
               onSubmit={onSubmitForm}
               configItem={configItem}
               content={content}
+              formType={formType}
             />
           </div>
         </ModalBody>

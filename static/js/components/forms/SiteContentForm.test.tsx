@@ -3,7 +3,7 @@ import * as yup from "yup"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { shallow } from "enzyme"
 
-import SiteEditContentForm from "./SiteEditContentForm"
+import SiteContentForm from "./SiteContentForm"
 
 import { defaultFormikChildProps } from "../../test_util"
 import {
@@ -17,7 +17,7 @@ import { getContentSchema } from "./validation"
 
 import { ConfigItem, WebsiteContent, WidgetVariant } from "../../types/websites"
 
-describe("SiteEditContentForm", () => {
+describe("SiteContentForm", () => {
   let sandbox: SinonSandbox,
     onSubmitStub: SinonStub,
     setFieldValueStub: SinonStub,
@@ -37,7 +37,7 @@ describe("SiteEditContentForm", () => {
 
   const renderForm = () =>
     shallow(
-      <SiteEditContentForm
+      <SiteContentForm
         configItem={configItem}
         content={content}
         onSubmit={onSubmitStub}

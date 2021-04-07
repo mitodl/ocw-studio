@@ -1,24 +1,19 @@
-import React, { MouseEvent as ReactMouseEvent, useState } from "react"
-import { useRouteMatch, NavLink, useLocation } from "react-router-dom"
-import { useRequest } from "redux-query-react"
-import { useSelector } from "react-redux"
+import React, {MouseEvent as ReactMouseEvent, useState} from "react"
+import {NavLink, useLocation, useRouteMatch} from "react-router-dom"
+import {useRequest} from "redux-query-react"
+import {useSelector} from "react-redux"
 
-import SiteEditContent from "./SiteEditContent"
+import SiteContent from "./SiteContent"
 import PaginationControls from "./PaginationControls"
 import Card from "./Card"
 
-import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
-import { siteAddContentUrl, siteContentListingUrl } from "../lib/urls"
-import {
-  websiteContentListingRequest,
-  WebsiteContentListingResponse
-} from "../query-configs/websites"
-import {
-  getWebsiteDetailCursor,
-  getWebsiteContentListingCursor
-} from "../selectors/websites"
+import {WEBSITE_CONTENT_PAGE_SIZE} from "../constants"
+import {siteContentListingUrl} from "../lib/urls"
+import {websiteContentListingRequest, WebsiteContentListingResponse} from "../query-configs/websites"
+import {getWebsiteContentListingCursor, getWebsiteDetailCursor} from "../selectors/websites"
 
-import { ConfigItem, WebsiteContentListItem } from "../types/websites"
+import {ConfigItem, WebsiteContentListItem} from "../types/websites"
+import {ContentFormType} from "../types/forms"
 
 interface MatchParams {
   contenttype: string
@@ -39,6 +34,7 @@ export default function SiteContentListing(): JSX.Element | null {
   )(name, contenttype, offset)
   const [editUuid, setEditUuid] = useState<string | null>(null)
   const [editVisibility, setEditVisibility] = useState<boolean>(false)
+  const [addVisibility, setAddVisibility] = useState<boolean>(false)
 
   if (contentListingPending) {
     return <div className="site-page container">Loading...</div>
@@ -63,19 +59,38 @@ export default function SiteContentListing(): JSX.Element | null {
     setEditVisibility(true)
   }
 
+  const startAdd = (event: ReactMouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    event.preventDefault()
+    setAddVisibility(true)
+  }
+
   const toggleEditVisibility = () => setEditVisibility(!editVisibility)
+  const toggleAddVisibility = () => setAddVisibility(!addVisibility)
 
   return (
     <>
       {editUuid ? (
-        <SiteEditContent
+        <SiteContent
           site={website}
           configItem={configItem}
           uuid={editUuid}
           visibility={editVisibility}
           toggleVisibility={toggleEditVisibility}
+          formType={ContentFormType.Edit}
         />
       ) : null}
+      {
+        addVisibility ? (
+          <SiteContent
+            site={website}
+            configItem={configItem}
+            uuid={null}
+            visibility={addVisibility}
+            toggleVisibility={toggleAddVisibility}
+            formType={ContentFormType.Add}
+          />
+        ) : null
+      }
       <div>
         <Card>
           <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
@@ -88,14 +103,12 @@ export default function SiteContentListing(): JSX.Element | null {
                 {configItem.label}
               </NavLink>
             </h3>
-            <NavLink
-              className="btn blue-button"
-              to={siteAddContentUrl
-                .param({ name, contentType: contenttype })
-                .toString()}
+            <a
+              className="btn blue-button add"
+              onClick={startAdd}
             >
               Add {configItem.label}
-            </NavLink>
+            </a>
           </div>
           <ul className="ruled-list">
             {listing.results.map((item: WebsiteContentListItem) => (
