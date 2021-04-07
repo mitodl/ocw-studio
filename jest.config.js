@@ -21,6 +21,7 @@ module.exports = {
   transformIgnorePatterns: [
     "/node_modules/(?!(" +
       "@ckeditor/*" +
+      "|ckeditor5/*" +
       "|lodash-es" +
       ")/)"
   ],
