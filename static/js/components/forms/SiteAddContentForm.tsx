@@ -3,7 +3,7 @@ import { Form, Formik, FormikHelpers } from "formik"
 
 import SiteContentField from "./SiteContentField"
 import { getContentSchema } from "./validation"
-import { newInitialValues } from "../../lib/site_content"
+import { fieldIsVisible, newInitialValues } from "../../lib/site_content"
 
 import { ConfigItem, WidgetVariant } from "../../types/websites"
 
@@ -23,10 +23,12 @@ export default function SiteAddContentForm({
   const initialValues = newInitialValues(fields)
   const schema = getContentSchema(configItem)
 
-  const fieldsByColumn = [
-    fields.filter(field => field.widget === WidgetVariant.Markdown),
-    fields.filter(field => field.widget !== WidgetVariant.Markdown)
-  ]
+  const leftColumn = fields.filter(
+    field => field.widget === WidgetVariant.Markdown
+  )
+  const rightColumn = fields.filter(
+    field => field.widget !== WidgetVariant.Markdown
+  )
 
   return (
     <Formik
@@ -34,21 +36,29 @@ export default function SiteAddContentForm({
       validationSchema={schema}
       initialValues={initialValues}
     >
-      {({ isSubmitting, status, setFieldValue }) => (
+      {({ isSubmitting, status, setFieldValue, values }) => (
         <Form className="row">
           <div className="col-6">
-            {fieldsByColumn[0].map(configField => (
-              <SiteContentField key={configField.name} field={configField} />
-            ))}
+            {leftColumn.map(field =>
+              fieldIsVisible(field, values) ? (
+                <SiteContentField
+                  key={field.name}
+                  field={field}
+                  setFieldValue={setFieldValue}
+                />
+              ) : null
+            )}
           </div>
           <div className="col-6">
-            {fieldsByColumn[1].map(configField => (
-              <SiteContentField
-                key={configField.name}
-                field={configField}
-                setFieldValue={setFieldValue}
-              />
-            ))}
+            {rightColumn.map(field =>
+              fieldIsVisible(field, values) ? (
+                <SiteContentField
+                  key={field.name}
+                  field={field}
+                  setFieldValue={setFieldValue}
+                />
+              ) : null
+            )}
             <div className="form-group d-flex justify-content-end">
               <button
                 type="submit"

@@ -11,11 +11,11 @@ import {
   makeWebsiteConfigItem
 } from "../../util/factories/websites"
 jest.mock("../../lib/site_content")
-import { componentFromWidget } from "../../lib/site_content"
+import { componentFromWidget, fieldIsVisible } from "../../lib/site_content"
 jest.mock("./validation")
 import { getContentSchema } from "./validation"
 
-import { ConfigItem, WebsiteContent, WidgetVariant } from "../../types/websites"
+import { ConfigItem, WebsiteContent } from "../../types/websites"
 
 describe("SiteEditContentForm", () => {
   let sandbox: SinonSandbox,
@@ -61,26 +61,15 @@ describe("SiteEditContentForm", () => {
     const widget = "fakeWidgetComponent"
     // @ts-ignore
     componentFromWidget.mockImplementation(() => widget)
+    // @ts-ignore
+    fieldIsVisible.mockImplementation(() => true)
 
     const form = renderInnerForm({ setFieldValue: setFieldValueStub })
     let idx = 0
     for (const field of configItem.fields) {
       const fieldWrapper = form.find("SiteContentField").at(idx)
-      const setFieldValue =
-        fieldWrapper.find("SiteContentField").prop("name") ===
-        WidgetVariant.Markdown ?
-          undefined :
-          setFieldValueStub
-      expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
-      expect(fieldWrapper.find("SiteContentField").prop("field")).toBe(field)
-      if (
-        fieldWrapper.find("SiteContentField").prop("name") !==
-        WidgetVariant.Markdown
-      ) {
-        expect(
-          fieldWrapper.find("SiteContentField").prop("setFieldValue")
-        ).toBe(setFieldValue)
-      }
+      expect(fieldWrapper.prop("field")).toBe(field)
+      expect(fieldWrapper.prop("setFieldValue")).toBe(setFieldValueStub)
       idx++
     }
   })

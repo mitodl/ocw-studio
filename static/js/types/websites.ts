@@ -8,6 +8,10 @@ export enum WidgetVariant {
   String = "string",
   Select = "select"
 }
+export interface FieldValueCondition {
+  field: string
+  equals: string
+}
 
 export interface ConfigField {
   name: string
@@ -21,6 +25,7 @@ export interface ConfigField {
   max?: number
   options?: string[]
   multiple?: boolean
+  condition?: FieldValueCondition
 }
 
 export interface ConfigItem {

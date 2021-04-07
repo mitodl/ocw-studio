@@ -38,3 +38,6 @@ course:
           "widget": "boolean",
           "help": "Whether the course includes fries or not."
           }
+        - {
+          label: "Extra information",
+          name: "extra", widget: "markdown", default: "Extra details go here", "condition": { field: title, equals: extra } }

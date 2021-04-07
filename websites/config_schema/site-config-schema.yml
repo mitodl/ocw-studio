@@ -28,3 +28,8 @@ field:
     max: int(required=False)
     options: list(str(), required=False)
     default: any(required=False)
+    condition: include('field_condition', required=False)
+---
+field_condition:
+    field: str()
+    equals: str()
