@@ -15,7 +15,7 @@ import { componentFromWidget, fieldIsVisible } from "../../lib/site_content"
 jest.mock("./validation")
 import { getContentSchema } from "./validation"
 
-import { ConfigItem, WebsiteContent, WidgetVariant } from "../../types/websites"
+import { ConfigItem, WebsiteContent } from "../../types/websites"
 
 describe("SiteEditContentForm", () => {
   let sandbox: SinonSandbox,
