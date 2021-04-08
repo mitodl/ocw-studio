@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.9.1
+-------------
+
+- Changed config to user 'folder'/'files' collections types
+- Implement hidden widget (#164)
+- Implement conditional fields (#161)
+
 Version 0.9.0 (Released April 08, 2021)
 -------------
 
