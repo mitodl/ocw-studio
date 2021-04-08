@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 0.9.0 (Released April 08, 2021)
+-------------
+
+- Map fullname to name in social auth
+- use textarea for 'Text' type fields, rather than a normal input tag
+- rename javascript-tests to frontend-tests
+- use WidgetVariant constants more widely
+- fix a few font-size issues
+- Collaborator add/edit modal drawer (#173)
+- Add settings for using X-Forwarded-* headers
+- Content -> Body (#174)
+- Integrate Touchstone login
+- Fix file upload (#169)
+- implement boolean site content widget
+
 Version 0.8.1 (Released April 06, 2021)
 -------------
 
