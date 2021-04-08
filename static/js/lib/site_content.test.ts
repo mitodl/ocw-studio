@@ -18,7 +18,9 @@ import {
   fieldHasData,
   fieldIsVisible,
   newInitialValues,
-  widgetExtraProps
+  widgetExtraProps,
+  isMainContentField,
+  splitFieldsIntoColumns
 } from "./site_content"
 import { exampleSiteConfigFields, MAIN_PAGE_CONTENT_FIELD } from "../constants"
 import { isIf, shouldIf } from "../test_util"
@@ -260,6 +262,37 @@ describe("site_content", () => {
           widgetExtraProps(makeWebsiteConfigField({ widget }))
         ).toStrictEqual({})
       })
+    })
+  })
+
+  describe("main content and column UI", () => {
+    it("isMainContentField should return true when appropriate", () => {
+      Object.values(WidgetVariant).forEach(widget => {
+        const configField = makeWebsiteConfigField({ widget })
+        if (widget === WidgetVariant.Markdown) {
+          configField.name = MAIN_PAGE_CONTENT_FIELD
+          expect(isMainContentField(configField)).toBeTruthy()
+        } else {
+          expect(isMainContentField(configField)).toBeFalsy()
+        }
+      })
+    })
+
+    it("splitFieldsIntoColumns should split the main content field out from others", () => {
+      const fields: ConfigField[] = [
+        makeWebsiteConfigField({ widget: WidgetVariant.Text }),
+        makeWebsiteConfigField({ widget: WidgetVariant.Select }),
+        {
+          label:  "Body",
+          name:   MAIN_PAGE_CONTENT_FIELD,
+          widget: WidgetVariant.Markdown
+        },
+        makeWebsiteConfigField({ widget: WidgetVariant.Boolean })
+      ]
+      expect(splitFieldsIntoColumns(fields)).toEqual([
+        [fields[2]],
+        [fields[0], fields[1], fields[3]]
+      ])
     })
   })
 

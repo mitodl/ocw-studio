@@ -1,5 +1,5 @@
 import { ComponentType, ElementType } from "react"
-import { pick } from "ramda"
+import { pick, partition } from "ramda"
 
 import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
@@ -18,8 +18,7 @@ import {
   WebsiteContent,
   WidgetVariant
 } from "../types/websites"
-
-type ValueType = string | File | string[] | null
+import { SiteFormValues, ValueType } from "../types/forms"
 
 export const componentFromWidget = (
   field: ConfigField
@@ -55,10 +54,29 @@ export function widgetExtraProps(field: ConfigField): Record<string, any> {
   }
 }
 
-const isMainContentField = (field: ConfigField) =>
+/**
+ * determine whether a ConfigField is a main content field or not.
+ * this means, basically, whether it's the main Markdown field for
+ * a piece of site content.
+ **/
+export const isMainContentField = (field: ConfigField): boolean =>
   field.name === MAIN_PAGE_CONTENT_FIELD &&
   field.widget === WidgetVariant.Markdown
 
+/**
+ * split an array of ConfigField into two arrays, with the first containing
+ * 'main content' fields and the second containing all the other fields.
+ * these two arrays can then be used to render our fields into two columns.
+ **/
+export const splitFieldsIntoColumns = (
+  fields: ConfigField[]
+): ConfigField[][] =>
+  partition(isMainContentField, fields).filter(column => column.length > 0)
+
+/**
+ * takes a ConfigField and returns an appropriate empty value
+ * for that field.
+ **/
 const emptyValue = (field: ConfigField): ValueType => {
   switch (field.widget) {
   case "select":
@@ -82,7 +100,7 @@ export const isRepeatableCollectionItem = (
  * Translates page content form values into a payload that our REST API understands.
  */
 export const contentFormValuesToPayload = (
-  values: Record<string, ValueType>,
+  values: SiteFormValues,
   fields: ConfigField[]
 ):
   | (Record<string, string> & { metadata?: Record<string, string> })
@@ -124,13 +142,13 @@ export const contentFormValuesToPayload = (
   return values["file"] ? objectToFormData(payload) : payload
 }
 
-/*
+/**
  * Translates site content REST API data into initial values that our forms understand.
- */
+ **/
 export const contentInitialValues = (
   content: WebsiteContent,
   fields: ConfigField[]
-): { [key: string]: string } => {
+): SiteFormValues => {
   const values = {}
   const metadata = content.metadata ?? {}
 
@@ -148,7 +166,10 @@ export const contentInitialValues = (
   return values
 }
 
-export const newInitialValues = (fields: ConfigField[]): Record<string, any> =>
+/**
+ * returns values for the ContentForm when we're instantiating it anew.
+ **/
+export const newInitialValues = (fields: ConfigField[]): SiteFormValues =>
   Object.fromEntries(
     fields.map((field: ConfigField) => [
       field.name,
@@ -159,12 +180,12 @@ export const newInitialValues = (fields: ConfigField[]): Record<string, any> =>
 const defaultFor = (widget: WidgetVariant): string | boolean =>
   widget === WidgetVariant.Boolean ? false : ""
 
-/**
+/*
  * Should field data be sent to the server?
  */
 export function fieldHasData(
   field: ConfigField,
-  values: Record<string, ValueType>
+  values: SiteFormValues
 ): boolean {
   if (!field.condition) {
     return true
@@ -176,8 +197,8 @@ export function fieldHasData(
 
 /**
  * Should field, label, and validation be displayed in the UI?
- */
+ **/
 export const fieldIsVisible = (
   field: ConfigField,
-  values: Record<string, ValueType>
+  values: SiteFormValues
 ): boolean => field.widget !== "hidden" && fieldHasData(field, values)

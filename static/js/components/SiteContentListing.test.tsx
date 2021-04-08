@@ -7,7 +7,6 @@ import SiteContentListing from "./SiteContentListing"
 
 import { isIf } from "../test_util"
 import {
-  siteAddContentUrl,
   siteApiContentDetailUrl,
   siteContentListingUrl,
   siteApiContentListingUrl
@@ -142,20 +141,36 @@ describe("SiteContentListing", () => {
       mockUseRouteMatch.mockImplementation(() => ({
         params
       }))
+
       const { wrapper } = await render()
       expect(
         wrapper
-          .find("NavLink")
-          .at(0)
-          .prop("to")
-      ).toBe(
-        siteAddContentUrl
-          .param({
-            name: website.name,
-            contentType
-          })
-          .toString()
-      )
+          .find("SiteContentEditor")
+          .at(1)
+          .prop("visibility")
+      ).toBe(false)
+      const link = wrapper.find("a.add")
+      expect(link.text()).toBe(`Add ${configItem.label}`)
+      act(() => {
+        // @ts-ignore
+        link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+      })
+      wrapper.update()
+      const component = wrapper.find("SiteContentEditor").at(1)
+      expect(component.prop("uuid")).toBeNull()
+      expect(component.prop("visibility")).toBe(true)
+
+      act(() => {
+        // @ts-ignore
+        component.prop("toggleVisibility")()
+      })
+      wrapper.update()
+      expect(
+        wrapper
+          .find("SiteContentEditor")
+          .at(1)
+          .prop("visibility")
+      ).toBe(false)
     })
 
     it("should show each content item with edit links", async () => {
@@ -179,7 +194,12 @@ describe("SiteContentListing", () => {
       }
 
       const { wrapper } = await render()
-      expect(wrapper.find("SiteEditContent").exists()).toBe(false)
+      expect(
+        wrapper
+          .find("SiteContentEditor")
+          .at(0)
+          .prop("visibility")
+      ).toBe(false)
 
       let idx = 0
       for (const item of contentListingItems) {
@@ -190,7 +210,7 @@ describe("SiteContentListing", () => {
           li.prop("onClick")({ preventDefault: helper.sandbox.stub() })
         })
         wrapper.update()
-        const component = wrapper.find("SiteEditContent")
+        const component = wrapper.find("SiteContentEditor").at(0)
         expect(component.prop("uuid")).toBe(item.uuid)
         expect(component.prop("visibility")).toBe(true)
 
@@ -199,7 +219,12 @@ describe("SiteContentListing", () => {
           component.prop("toggleVisibility")()
         })
         wrapper.update()
-        expect(wrapper.find("SiteEditContent").prop("visibility")).toBe(false)
+        expect(
+          wrapper
+            .find("SiteContentEditor")
+            .at(0)
+            .prop("visibility")
+        ).toBe(false)
 
         idx++
       }

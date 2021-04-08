@@ -1,33 +1,37 @@
-import React, { MouseEvent as ReactMouseEvent, useState } from "react"
-import { useRouteMatch, NavLink, useLocation } from "react-router-dom"
+import React, {
+  MouseEvent as ReactMouseEvent,
+  useState,
+  useCallback
+} from "react"
+import { useLocation, useRouteMatch } from "react-router-dom"
 import { useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
 import { curry } from "ramda"
 
-import SiteEditContent from "./SiteEditContent"
+import SiteContentEditor from "./SiteContentEditor"
 import PaginationControls from "./PaginationControls"
 import Card from "./Card"
 
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
-import { siteAddContentUrl, siteContentListingUrl } from "../lib/urls"
+import { siteContentListingUrl } from "../lib/urls"
 import { isRepeatableCollectionItem } from "../lib/site_content"
 import {
   websiteContentListingRequest,
   WebsiteContentListingResponse
 } from "../query-configs/websites"
 import {
-  getWebsiteDetailCursor,
-  getWebsiteContentListingCursor
+  getWebsiteContentListingCursor,
+  getWebsiteDetailCursor
 } from "../selectors/websites"
 
 import {
+  ContentListingParams,
   RepeatableConfigItem,
   SingletonsConfigItem,
   TopLevelConfigItem,
-  EditableConfigItem,
-  WebsiteContentListItem,
-  ContentListingParams
+  WebsiteContentListItem
 } from "../types/websites"
+import { ContentFormType } from "../types/forms"
 
 interface MatchParams {
   contenttype: string
@@ -36,12 +40,16 @@ interface MatchParams {
 
 interface ListingComponentParams {
   listing: WebsiteContentListingResponse
-  contenttype: string
-  name: string
+  startAdd: (event: ReactMouseEvent<HTMLAnchorElement, MouseEvent>) => void
   startEdit: (
-    uuid: string,
-    configItem: EditableConfigItem
+    uuid: string
   ) => (event: ReactMouseEvent<HTMLLIElement, MouseEvent>) => void
+}
+
+enum PanelVisibilityState {
+  Add = "add",
+  Edit = "edit",
+  None = "none"
 }
 
 export function SingletonContentListing(
@@ -78,28 +86,23 @@ export function SingletonContentListing(
 export function RepeatableContentListing(
   props: ListingComponentParams & { configItem: RepeatableConfigItem }
 ): JSX.Element | null {
-  const { configItem, listing, contenttype, name, startEdit } = props
+  const { configItem, listing, startEdit, startAdd } = props
 
   return (
     <div>
       <Card>
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
           <h3>{configItem.label}</h3>
-          <NavLink
-            className="btn blue-button"
-            to={siteAddContentUrl
-              .param({ name, contentType: contenttype })
-              .toString()}
-          >
+          <a className="btn blue-button add" onClick={startAdd}>
             Add {configItem.label}
-          </NavLink>
+          </a>
         </div>
         <ul className="ruled-list">
           {listing.results.map((item: WebsiteContentListItem) => (
             <li
               key={item.uuid}
               className="py-3 listing-result"
-              onClick={startEdit(item.uuid, configItem)}
+              onClick={startEdit(item.uuid)}
             >
               <div className="d-flex flex-direction-row align-items-center justify-content-between">
                 <span>{item.title}</span>
@@ -124,17 +127,40 @@ export default function SiteContentListing(): JSX.Element | null {
     type: contenttype,
     offset
   }
-  const [{ isPending: contentListingPending }] = useRequest(
-    websiteContentListingRequest(listingParams)
-  )
+
+  const [
+    { isPending: contentListingPending },
+    runWebsiteContentListingRequest
+  ] = useRequest(websiteContentListingRequest(listingParams))
   const listing: WebsiteContentListingResponse = useSelector(
     getWebsiteContentListingCursor
   )(listingParams)
-  const [editedItem, setEditedItem] = useState<{
-    uuid: string
-    configItem: EditableConfigItem
-  } | null>(null)
-  const [isEditPanelVisible, setEditPanelVisibility] = useState<boolean>(false)
+
+  const [editItemUUID, setEditItemUUID] = useState<string | null>(null)
+
+  const [panelState, setPanelState] = useState<PanelVisibilityState>(
+    PanelVisibilityState.None
+  )
+
+  const closeContentPanel = useCallback(() => {
+    setPanelState(PanelVisibilityState.None)
+  }, [setPanelState])
+
+  const startAdd = useCallback(
+    (event: ReactMouseEvent<HTMLAnchorElement, MouseEvent>) => {
+      event.preventDefault()
+      setPanelState(PanelVisibilityState.Add)
+    },
+    [setPanelState]
+  )
+
+  const startEdit = curry(
+    (uuid: string, event: ReactMouseEvent<HTMLLIElement, MouseEvent>) => {
+      event.preventDefault()
+      setEditItemUUID(uuid)
+      setPanelState(PanelVisibilityState.Edit)
+    }
+  )
 
   if (contentListingPending) {
     return <div className="site-page container">Loading...</div>
@@ -151,50 +177,44 @@ export default function SiteContentListing(): JSX.Element | null {
     return null
   }
 
-  const startEdit = curry(
-    (
-      uuid: string,
-      configItem: EditableConfigItem,
-      event: ReactMouseEvent<HTMLLIElement, MouseEvent>
-    ) => {
-      event.preventDefault()
-      setEditedItem({ uuid, configItem })
-      setEditPanelVisibility(true)
-    }
-  )
-  const toggleEditPanelVisibility = () =>
-    setEditPanelVisibility(!isEditPanelVisible)
-
-  const resultsBody = isRepeatableCollectionItem(configItem) ? (
-    <RepeatableContentListing
-      configItem={configItem}
-      listing={listing}
-      contenttype={contenttype}
-      name={name}
-      startEdit={startEdit}
-    />
-  ) : (
-    <SingletonContentListing
-      configItem={configItem}
-      listing={listing}
-      contenttype={contenttype}
-      name={name}
-      startEdit={startEdit}
-    />
-  )
-
   return (
     <>
-      {editedItem ? (
-        <SiteEditContent
-          site={website}
-          configItem={editedItem.configItem}
-          uuid={editedItem.uuid}
-          visibility={isEditPanelVisible}
-          toggleVisibility={toggleEditPanelVisibility}
+      <SiteContentEditor
+        site={website}
+        configItem={configItem}
+        contentType={match.params.contenttype}
+        uuid={editItemUUID}
+        visibility={panelState === PanelVisibilityState.Edit}
+        toggleVisibility={closeContentPanel}
+        formType={ContentFormType.Edit}
+        websiteContentListingRequest={runWebsiteContentListingRequest}
+      />
+      <SiteContentEditor
+        site={website}
+        // @ts-ignore
+        configItem={configItem}
+        contentType={match.params.contenttype}
+        uuid={null}
+        visibility={panelState === PanelVisibilityState.Add}
+        toggleVisibility={closeContentPanel}
+        formType={ContentFormType.Add}
+        websiteContentListingRequest={runWebsiteContentListingRequest}
+      />
+      {isRepeatableCollectionItem(configItem) ? (
+        <RepeatableContentListing
+          configItem={configItem}
+          listing={listing}
+          startAdd={startAdd}
+          startEdit={startEdit}
         />
-      ) : null}
-      {resultsBody}
+      ) : (
+        <SingletonContentListing
+          configItem={configItem}
+          listing={listing}
+          startAdd={startAdd}
+          startEdit={startEdit}
+        />
+      )}
       <PaginationControls
         listing={listing}
         previous={siteContentListingUrl

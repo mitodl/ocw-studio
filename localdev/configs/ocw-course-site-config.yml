@@ -4,7 +4,7 @@ collections:
     category: Content
     folder: content
     fields:
-      - {"label": "Title", "name": "title", "widget": "string"}
+      - {"label": "Title", "name": "title", "widget": "string", "required": true}
       - {"label": "Body", "name": "body", "widget": "markdown"}
 
   - name: resource
@@ -12,7 +12,7 @@ collections:
     category: Content
     folder: content
     fields:
-      - {"label": "Title", "name": "title", "widget": "string"}
+      - {"label": "Title", "name": "title", "widget": "string", "required": true}
       - {"label": "Description", "name": "description", "widget": "text"}
       - {"label": "File", "name": "file", "widget": "file"}
 

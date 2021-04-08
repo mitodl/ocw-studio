@@ -6,7 +6,6 @@ import { Route, Switch, useRouteMatch } from "react-router-dom"
 import SiteSidebar from "../components/SiteSidebar"
 import SiteContentListing from "../components/SiteContentListing"
 import SiteCollaboratorList from "../components/SiteCollaboratorList"
-import SiteAddContent from "../components/SiteAddContent"
 import Card from "../components/Card"
 
 import { websiteDetailRequest } from "../query-configs/websites"
@@ -45,9 +44,6 @@ export default function SitePage(): JSX.Element | null {
             </Route>
             <Route exact path={`${match.path}/type/:contenttype`}>
               <SiteContentListing />
-            </Route>
-            <Route exact path={`${match.path}/type/:contenttype/add/`}>
-              <SiteAddContent />
             </Route>
           </Switch>
         </div>

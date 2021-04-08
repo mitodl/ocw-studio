@@ -9,6 +9,7 @@ export enum WidgetVariant {
   Select = "select",
   Hidden = "hidden"
 }
+
 export interface FieldValueCondition {
   field: string
   equals: string

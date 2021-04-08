@@ -3,7 +3,6 @@ import {
   newSiteUrl,
   siteDetailUrl,
   siteContentListingUrl,
-  siteAddContentUrl,
   siteCollaboratorsUrl,
   siteCollaboratorsAddUrl,
   siteCollaboratorsDetailUrl,
@@ -49,17 +48,6 @@ describe("urls", () => {
             .param({ name: "site-name", contentType: "resource" })
             .toString()
         ).toBe("/sites/site-name/type/resource/")
-      })
-
-      it("renders a URL for adding new content", () => {
-        expect(
-          siteAddContentUrl
-            .param({
-              name:        "site-name",
-              contentType: "page"
-            })
-            .toString()
-        ).toBe("/sites/site-name/type/page/add/")
       })
 
       it("renders a URL for collaborators", () => {

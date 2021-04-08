@@ -6,6 +6,7 @@
         {
           "label": "Title",
           "name": "title",
+          "required": true,
           "widget": "string"
         },
         {
@@ -24,6 +25,7 @@
         {
           "label": "Title",
           "name": "title",
+          "required": true,
           "widget": "string"
         },
         {
