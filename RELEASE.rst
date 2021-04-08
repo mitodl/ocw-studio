@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.9.0
+Version 0.9.0 (Released April 08, 2021)
 -------------
 
 - Map fullname to name in social auth
