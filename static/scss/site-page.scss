@@ -29,6 +29,10 @@ $menu-spacing: 20px;
 
   .content {
     flex-grow: 1;
+
+    .listing-result {
+      cursor: pointer;
+    }
   }
 
   .ck.ck-content.ck-editor__editable {

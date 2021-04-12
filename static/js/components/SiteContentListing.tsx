@@ -33,6 +33,7 @@ interface MatchParams {
   contenttype: string
   name: string
 }
+
 interface ListingComponentParams {
   listing: WebsiteContentListingResponse
   contenttype: string
@@ -40,7 +41,7 @@ interface ListingComponentParams {
   startEdit: (
     uuid: string,
     configItem: EditableConfigItem
-  ) => (event: ReactMouseEvent<HTMLAnchorElement, MouseEvent>) => void
+  ) => (event: ReactMouseEvent<HTMLLIElement, MouseEvent>) => void
 }
 
 export function SingletonContentListing(
@@ -95,12 +96,13 @@ export function RepeatableContentListing(
         </div>
         <ul className="ruled-list">
           {listing.results.map((item: WebsiteContentListItem) => (
-            <li key={item.uuid} className="py-3">
+            <li
+              key={item.uuid}
+              className="py-3 listing-result"
+              onClick={startEdit(item.uuid, configItem)}
+            >
               <div className="d-flex flex-direction-row align-items-center justify-content-between">
                 <span>{item.title}</span>
-                <a className="edit" onClick={startEdit(item.uuid, configItem)}>
-                  Edit
-                </a>
               </div>
             </li>
           ))}
@@ -153,7 +155,7 @@ export default function SiteContentListing(): JSX.Element | null {
     (
       uuid: string,
       configItem: EditableConfigItem,
-      event: ReactMouseEvent<HTMLAnchorElement, MouseEvent>
+      event: ReactMouseEvent<HTMLLIElement, MouseEvent>
     ) => {
       event.preventDefault()
       setEditedItem({ uuid, configItem })

@@ -185,12 +185,9 @@ describe("SiteContentListing", () => {
       for (const item of contentListingItems) {
         const li = wrapper.find("li").at(idx)
         expect(li.text()).toContain(item.title)
-
-        const link = li.find("a")
-        expect(link.text()).toBe("Edit")
         act(() => {
           // @ts-ignore
-          link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+          li.prop("onClick")({ preventDefault: helper.sandbox.stub() })
         })
         wrapper.update()
         const component = wrapper.find("SiteEditContent")
