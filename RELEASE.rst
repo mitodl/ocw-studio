@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.9.1
+Version 0.9.1 (Released April 12, 2021)
 -------------
 
 - Changed config to user 'folder'/'files' collections types
