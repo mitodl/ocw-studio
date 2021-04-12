@@ -34,11 +34,16 @@ export default function SelectField(props: Props): JSX.Element {
     [name, multiple]
   )
 
+  /**
+   * Get or create a select-field Option with the specified value,
+   * so it will appear as a selected value even if there is no available
+   * select option for it.
+   **/
   const getSelectOption = (value: string) => {
     const selectOption = selectOptions.filter(
       option => option.value === value
     )[0]
-    return { label: selectOption ? selectOption.label : value, value: value }
+    return selectOption || { label: value, value: value }
   }
 
   let selected
