@@ -108,4 +108,3 @@ celerybeat-schedule
 /localdev/starters/**
 !/localdev/starters/example-starter
 !/localdev/starters/README.md
-!/localdev/starters/site-config-override.yml
