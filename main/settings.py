@@ -139,6 +139,7 @@ INSTALLED_APPS = (
     "websites",
     "ocw_import",
     "news",
+    "content_sync",
     # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
