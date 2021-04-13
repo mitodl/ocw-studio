@@ -9,6 +9,7 @@ import {
   WebsiteCollaborator,
   WebsiteCollaboratorFormData
 } from "../../types/websites"
+import SelectField from "../widgets/SelectField"
 
 interface Props {
   collaborator: WebsiteCollaborator | null
@@ -74,18 +75,17 @@ export default function SiteCollaboratorForm({
           <div className="form-group">
             <label htmlFor="role">Role*</label>
             <Field
-              component="select"
+              as={SelectField}
               name="role"
               className="form-control"
-              value={values.role}
-            >
-              <option value="">-----</option>
-              {EDITABLE_ROLES.map((role: string, i: number) => (
-                <option key={i} value={role}>
-                  {ROLE_LABELS[role]}
-                </option>
-              ))}
-            </Field>
+              options={[
+                { label: "-----", value: "" },
+                ...EDITABLE_ROLES.map((role: string) => ({
+                  label: ROLE_LABELS[role],
+                  value: role
+                }))
+              ]}
+            />
             <ErrorMessage name="role" component={FormError} />
           </div>
           <div className="form-group d-flex">

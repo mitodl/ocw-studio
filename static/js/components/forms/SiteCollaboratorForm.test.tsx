@@ -12,6 +12,7 @@ import { defaultFormikChildProps } from "../../test_util"
 import { makeWebsiteCollaborator } from "../../util/factories/websites"
 
 import { WebsiteCollaborator } from "../../types/websites"
+import { Option } from "../widgets/SelectField"
 
 describe("SiteCollaboratorForm", () => {
   let sandbox,
@@ -70,11 +71,10 @@ describe("SiteCollaboratorForm", () => {
       const field = form
         .find("Field")
         .filterWhere(node => node.prop("name") === "role")
-      const options = field.find("option")
+      const options: Array<Option> = field.prop("options")
       expect(options).toHaveLength(EDITABLE_ROLES.length + 1)
-      expect(options.at(0).prop("value")).toBe("")
       for (let i = 1; i < options.length; i++) {
-        expect(options.at(i).prop("value")).toBe(EDITABLE_ROLES[i - 1])
+        expect(options[i]["value"]).toBe(EDITABLE_ROLES[i - 1])
       }
     })
 
@@ -132,10 +132,10 @@ describe("SiteCollaboratorForm", () => {
       const field = form
         .find("Field")
         .filterWhere(node => node.prop("name") === "role")
-      const options = field.find("option")
+      const options: Array<Option> = field.prop("options")
       expect(options).toHaveLength(EDITABLE_ROLES.length + 1)
       for (let i = 1; i < options.length; i++) {
-        expect(options.at(i).prop("value")).toBe(EDITABLE_ROLES[i - 1])
+        expect(options[i]["value"]).toBe(EDITABLE_ROLES[i - 1])
       }
     })
   })
