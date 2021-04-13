@@ -9,7 +9,7 @@ from websites.models import WebsiteContent
 @receiver(
     post_save,
     sender=WebsiteContent,
-    dispatch_uid="website_content_create_sync_state",
+    dispatch_uid="sync_state_website_content_upsert",
 )
 def upsert_content_sync_state(
     sender, instance, created, **kwargs
