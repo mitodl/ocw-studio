@@ -10,8 +10,9 @@ class ContentSyncState(TimestampedModel):
 
     content = models.OneToOneField(
         WebsiteContent,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         related_name="content_sync_state",
+        null=True,
     )
     current_checksum = models.CharField(max_length=64)  # sized for a sha256
     synced_checksum = models.CharField(max_length=64, null=True)  # sized for a sha256
@@ -30,6 +31,6 @@ class ContentSyncState(TimestampedModel):
         self.synced_checksum = self.current_checksum
         self.save()
 
-    def __str__(self):
+    def __str__(self):  # pragma: no cover
         """ Returns a string representation of the state """
-        return f"Sync State for content: {self.content.title}"
+        return f"Sync State for content: {self.content.title if self.content else None}"

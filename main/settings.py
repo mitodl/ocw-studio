@@ -565,3 +565,5 @@ SOCIAL_AUTH_SAML_LOGIN_URL = get_string(
     description="The URL to redirect the user to for SAML login",
     required=True,
 )
+
+CONTENT_SYNC_BACKEND = None
