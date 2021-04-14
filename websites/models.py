@@ -1,4 +1,6 @@
 """ websites models """
+import json
+from hashlib import sha256
 from uuid import uuid4
 
 import yaml
@@ -99,10 +101,16 @@ class WebsiteContent(TimestampedModel):
     )
     markdown = models.TextField(null=True, blank=True)
     metadata = models.JSONField(null=True, blank=True)
-    hugo_filepath = models.CharField(max_length=2048, null=True, blank=True)
+    content_filepath = models.CharField(max_length=2048, null=True, blank=True)
     file = models.FileField(
         upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
     )
+
+    def calculate_checksum(self) -> str:
+        """ Returns a calculated checksum of the content """
+        return sha256(
+            "\n".join([json.dumps(self.metadata), str(self.markdown)]).encode("utf-8")
+        ).hexdigest()
 
     class Meta:
         unique_together = [["website", "uuid"]]

@@ -118,15 +118,14 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                     "parent": parent,
                     "title": content_json.get("title"),
                     "type": content_type,
+                    "content_filepath": filepath,
                 }
                 try:
                     if not uuid:
                         log.error("No UUID: %s", obj["Key"])
                     else:
                         WebsiteContent.objects.update_or_create(
-                            website=website,
-                            uuid=uuid,
-                            defaults={**base_defaults, "hugo_filepath": filepath},
+                            website=website, uuid=uuid, defaults=base_defaults
                         )
                 except:  # pylint:disable=bare-except
                     log.exception("Error saving WebsiteContent for %s", s3_key)
