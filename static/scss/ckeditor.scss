@@ -1,0 +1,10 @@
+.ck-editor {
+  a {
+    color: $studio-blue;
+    text-decoration: underline;
+
+    &:hover {
+      color: $studio-blue;
+    }
+  }
+}
