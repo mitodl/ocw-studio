@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.10.0
+Version 0.10.0 (Released April 14, 2021)
 --------------
 
 - Cleaning up collaborator api
