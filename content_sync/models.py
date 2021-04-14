@@ -1,4 +1,35 @@
-"""Content sync models"""
-# from django.db import models
+""" Content sync models """
+from django.db import models
+from mitol.common.models import TimestampedModel
 
-# Create your models here.
+from websites.models import WebsiteContent
+
+
+class ContentSyncState(TimestampedModel):
+    """ Data model for tracking the sync state of website content """
+
+    content = models.OneToOneField(
+        WebsiteContent,
+        on_delete=models.PROTECT,
+        related_name="content_sync_state",
+    )
+    current_checksum = models.CharField(max_length=64)  # sized for a sha256
+    synced_checksum = models.CharField(max_length=64, null=True)  # sized for a sha256
+
+    data = models.JSONField(
+        null=True
+    )  # used to store arbitrary state data between syncs (e.g. current blob sha for git)
+
+    @property
+    def is_synced(self) -> bool:
+        """ Returns True if the content is up-to-date """
+        return self.current_checksum == self.synced_checksum
+
+    def mark_synced(self):
+        """ Marks the state as synced """
+        self.synced_checksum = self.current_checksum
+        self.save()
+
+    def __str__(self):
+        """ Returns a string representation of the state """
+        return f"Sync State for content: {self.content.title}"

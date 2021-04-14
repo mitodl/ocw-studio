@@ -69,7 +69,7 @@ class WebsiteContentFactory(DjangoModelFactory):
     type = FuzzyChoice([CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE])
     markdown = factory.Faker("text")
     metadata = factory.Faker("json")
-    hugo_filepath = factory.Sequence(lambda n: "/sites/ocw_site_x/%s" % n)
+    content_filepath = factory.Sequence(lambda n: "/sites/ocw_site_x/%s" % n)
 
     website = factory.SubFactory(WebsiteFactory)
 

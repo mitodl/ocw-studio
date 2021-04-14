@@ -14,6 +14,8 @@ x-environment:
   CELERY_RESULT_BACKEND: redis://redis:6379/4
   DOCKER_HOST: ${DOCKER_HOST:-missing}
   WEBPACK_DEV_SERVER_HOST: ${WEBPACK_DEV_SERVER_HOST:-localhost}
+  DJANGO_SETTINGS_MODULE: "main.settings"
+  PYTHONPATH: "."
 
 services:
   db:
