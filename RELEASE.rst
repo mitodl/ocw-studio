@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.10.0
+--------------
+
+- Cleaning up collaborator api
+- Create content_sync app
+- Use SelectField widget for all select fields site-wide (#201)
+- upgrade CKEditor packages to 27.0.0
+- remove edit button from 'folder' type
+- Added management command to ensure single source of truth for example config files
+
 Version 0.9.1 (Released April 12, 2021)
 -------------
 
