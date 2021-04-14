@@ -13,6 +13,22 @@
           "label": "Body",
           "name": "body",
           "widget": "markdown"
+        },
+        {
+          "default": [
+            "Design"
+          ],
+          "label": "Tags",
+          "max": 2,
+          "min": 1,
+          "multiple": true,
+          "name": "tags",
+          "options": [
+            "Design",
+            "UX",
+            "Dev"
+          ],
+          "widget": "select"
         }
       ],
       "folder": "content",

@@ -6,7 +6,6 @@ import SelectField from "../components/widgets/SelectField"
 import BooleanField from "../components/widgets/BooleanField"
 
 import {
-  makeConfigField,
   makeWebsiteConfigField,
   makeWebsiteContentDetail,
   makeFileConfigItem
@@ -157,7 +156,7 @@ describe("site_content", () => {
       // @ts-ignore
       const payload = contentInitialValues(content, fields)
       expect(payload).toStrictEqual({
-        tags:                      "",
+        tags:                      [],
         align:                     "",
         featured:                  false,
         file:                      null,
@@ -189,7 +188,7 @@ describe("site_content", () => {
     it("should use appropriate defaults for different widgets", () => {
       [
         [WidgetVariant.Markdown, ""],
-        [WidgetVariant.File, ""],
+        [WidgetVariant.File, null],
         [WidgetVariant.Boolean, false],
         [WidgetVariant.Text, ""],
         [WidgetVariant.String, ""],
@@ -202,6 +201,15 @@ describe("site_content", () => {
         const initialValues = newInitialValues([field])
         expect(initialValues).toStrictEqual({ widget: expectation })
       })
+    })
+
+    it("should use appropriate default for multiple select widget", () => {
+      const field = makeWebsiteConfigField({
+        widget:   WidgetVariant.Select,
+        multiple: true,
+        label:    "Widget"
+      })
+      expect(newInitialValues([field])).toStrictEqual({ widget: [] })
     })
   })
 
@@ -318,7 +326,7 @@ describe("site_content", () => {
             field:  "conditionField",
             equals: "matching value"
           }
-          const field = makeConfigField()
+          const field = makeWebsiteConfigField()
           // @ts-ignore
           field.widget = widget
           if (hasCondition) {

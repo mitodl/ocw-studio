@@ -15,43 +15,68 @@ setLocale({
   }
 })
 
-export const getFieldSchema = (field: ConfigField): SchemaOf<any> => {
+type Schema = SchemaOf<any>
+
+/**
+ * Obtain the schema for a given field. This mainly switches on the
+ * WidgetVariant, but also looks at some other props like `min`, `max`,
+ * `required`, and `label`.
+ **/
+export const getFieldSchema = (field: ConfigField): Schema => {
+  let schema
+
   switch (field.widget) {
-  case WidgetVariant.Select:
+  case WidgetVariant.Select: {
     if (field.multiple) {
-      return yup.array()
+      schema = yup.array()
+
+      if (field.min) {
+        schema = schema.min(
+          field.min,
+          `${field.name} must have at least ${field.min} ${
+            field.min === 1 ? "entry" : "entries"
+          }.`
+        )
+      }
+      if (field.max) {
+        schema = schema.max(
+          field.max,
+          `${field.name} may have at most ${field.max} entries.`
+        )
+      }
     } else {
-      return yup.string()
+      schema = yup.string()
     }
-  case WidgetVariant.File:
-    return yup.mixed()
+
+    break
+  }
+  case WidgetVariant.File: {
+    schema = yup.mixed()
+    break
+  }
   case WidgetVariant.String:
   case WidgetVariant.Text:
   case WidgetVariant.Markdown:
   default:
-    return yup.string()
+    schema = yup.string()
   }
+
+  if (field.required) {
+    schema = schema.required()
+  }
+  schema = schema.label(field.label)
+  return schema
 }
 
+/**
+ * Given a ConfigItem (with ConfigFields defined on it) return
+ * a Yup validation schema which will validate a form for those fields.
+ **/
 export const getContentSchema = (
   configItem: ConfigItem | EditableConfigItem
-): SchemaOf<any> => {
-  const yupObjectShape = {}
-  configItem.fields.forEach(field => {
-    const yupField = getFieldSchema(field)
-    yupObjectShape[field.name] = yupField.label(field.label)
-    if (field.required) {
-      switch (field.widget) {
-      case WidgetVariant.File:
-        yupObjectShape[field.name] = yupObjectShape[field.name]
-          .label(field.label)
-          .required()
-        break
-      default:
-        yupObjectShape[field.name] = yupObjectShape[field.name].required()
-        break
-      }
-    }
-  })
+): Schema => {
+  const yupObjectShape = Object.fromEntries(
+    configItem.fields.map(field => [field.name, getFieldSchema(field)])
+  )
   return yup.object().shape(yupObjectShape)
 }

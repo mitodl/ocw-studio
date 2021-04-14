@@ -29,6 +29,17 @@ import {
 
 const incr = incrementer()
 
+/**
+ * Factory for ConfigField, useful for testing various functions that switch
+ * on field.widget
+ *
+ * A ConfigField for a specific widget can be created by passing a prop object
+ * with the `widget` key set:
+ *
+ * ```ts
+ * const myConfigField = makeWebsiteConfigField({ widget: WidgetVariant.Select })
+ * ```
+ **/
 export const makeWebsiteConfigField = (
   props: Record<string, any> = {}
 ): ConfigField => {
@@ -37,16 +48,10 @@ export const makeWebsiteConfigField = (
   return {
     label,
     name:   label.toLowerCase(),
-    widget: props.widget,
+    widget: props.widget ?? WidgetVariant.String,
     ...props
   }
 }
-
-export const makeConfigField = (): ConfigField => ({
-  name:   casual.word,
-  label:  casual.text,
-  widget: WidgetVariant.String
-})
 
 const exampleFields = [
   {

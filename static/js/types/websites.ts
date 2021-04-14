@@ -1,5 +1,8 @@
 import { ROLE_ADMIN, ROLE_EDITOR, ROLE_GLOBAL, ROLE_OWNER } from "../constants"
 
+/**
+ * The different widget variants supported in Site configurations
+ **/
 export enum WidgetVariant {
   Markdown = "markdown",
   File = "file",
@@ -15,6 +18,11 @@ export interface FieldValueCondition {
   equals: string
 }
 
+/**
+ * A configuration for a field for site content. This type basically
+ * contains the information needed to render the field in the UI, to edit it,
+ * validate it, etc.
+ **/
 export interface ConfigField {
   name: string
   label: string

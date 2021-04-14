@@ -160,7 +160,7 @@ export const contentInitialValues = (
     } else if (field.name === "file") {
       values[field.name] = content[field.name] ?? null
     } else {
-      values[field.name] = metadata[field.name] ?? defaultFor(field.widget)
+      values[field.name] = metadata[field.name] ?? defaultFor(field)
     }
   }
   return values
@@ -173,12 +173,22 @@ export const newInitialValues = (fields: ConfigField[]): SiteFormValues =>
   Object.fromEntries(
     fields.map((field: ConfigField) => [
       field.name,
-      field.default ?? defaultFor(field.widget)
+      field.default ?? defaultFor(field)
     ])
   )
 
-const defaultFor = (widget: WidgetVariant): string | boolean =>
-  widget === WidgetVariant.Boolean ? false : ""
+const defaultFor = (field: ConfigField): boolean | string | string[] | null => {
+  switch (field.widget) {
+  case WidgetVariant.Boolean:
+    return false
+  case WidgetVariant.Select:
+    return field.multiple ? [] : ""
+  case WidgetVariant.File:
+    return null
+  default:
+    return ""
+  }
+}
 
 /*
  * Should field data be sent to the server?

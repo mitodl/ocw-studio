@@ -6,6 +6,16 @@ collections:
     fields:
       - {"label": "Title", "name": "title", "widget": "string", "required": true}
       - {"label": "Body", "name": "body", "widget": "markdown"}
+      - {
+        "label": "Tags",
+        "default": [ "Design" ],
+        "max": 2,
+        "min": 1,
+        "multiple": true,
+        "name": "tags",
+        "options": [ "Design", "UX", "Dev" ],
+        "widget": "select"
+        }
 
   - name: resource
     label: Resource
