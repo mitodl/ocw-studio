@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.10.1
+--------------
+
+- Added data model for ContentSyncState
+- Merge add and edit content forms
+
 Version 0.10.0 (Released April 14, 2021)
 --------------
 
