@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.10.1
+Version 0.10.1 (Released April 20, 2021)
 --------------
 
 - Added data model for ContentSyncState
