@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.11.0
+--------------
+
+- Implement BaseSyncBackend
+
 Version 0.10.1 (Released April 20, 2021)
 --------------
 
