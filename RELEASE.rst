@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.11.1
+--------------
+
+- make links in the editor more obvious
+
 Version 0.11.0 (Released April 21, 2021)
 --------------
 
