@@ -5,7 +5,7 @@ import yamale
 import yaml
 from django.conf import settings
 
-from websites.config_schema.validators import CollectionsKeysRule
+from websites.config_schema.validators import CollectionsKeysRule, UniqueNamesRule
 
 
 SITE_CONFIG_SCHEMA_PATH = os.path.join(
@@ -16,6 +16,7 @@ SITE_CONFIG_SCHEMA_PATH = os.path.join(
 # should be added here.
 ADDED_SCHEMA_RULES = [
     CollectionsKeysRule,
+    UniqueNamesRule,
 ]
 
 

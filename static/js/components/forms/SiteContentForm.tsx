@@ -45,6 +45,7 @@ export default function SiteContentForm({
       onSubmit={onSubmit}
       validationSchema={schema}
       initialValues={initialValues}
+      enableReinitialize={true}
     >
       {({ isSubmitting, status, setFieldValue, values }) => (
         <Form className="row">

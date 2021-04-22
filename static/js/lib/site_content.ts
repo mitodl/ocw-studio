@@ -14,6 +14,7 @@ import {
 
 import {
   ConfigField,
+  EditableConfigItem,
   TopLevelConfigItem,
   WebsiteContent,
   WidgetVariant
@@ -95,6 +96,10 @@ const emptyValue = (field: ConfigField): ValueType => {
 export const isRepeatableCollectionItem = (
   configItem: TopLevelConfigItem
 ): boolean => "folder" in configItem
+
+export const isSingletonCollectionItem = (
+  configItem: EditableConfigItem
+): boolean => "file" in configItem
 
 /*
  * Translates page content form values into a payload that our REST API understands.

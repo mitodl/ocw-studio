@@ -93,21 +93,22 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                 content_json = yaml.load(s3_content_parts[0], Loader=yaml.Loader)
                 layout = content_json.get("layout", None)
                 menu = content_json.get("menu", None)
-                uuid = content_json.get("uid", None)
+                text_id = content_json.get("uid", None)
                 if menu:
                     menu_values = list(menu.values())[0]
-                    parent_uuid = menu_values.get("parent", course_home_uuid)
+                    parent_text_id = menu_values.get("parent", course_home_uuid)
                 else:
-                    parent_uuid = content_json.get("parent", None)
+                    parent_text_id = content_json.get("parent", None)
+                content_type = None
                 if layout in COURSE_PAGE_LAYOUTS:
                     # This is a page
                     content_type = CONTENT_TYPE_PAGE
                 elif layout in COURSE_RESOURCE_LAYOUTS:
                     # This is a file
                     content_type = CONTENT_TYPE_RESOURCE
-                if parent_uuid:
+                if parent_text_id:
                     parent, _ = WebsiteContent.objects.get_or_create(
-                        website=website, uuid=parent_uuid
+                        website=website, text_id=parent_text_id
                     )
                 filepath = obj["Key"].replace(prefix, "")
                 base_defaults = {
@@ -121,11 +122,11 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                     "content_filepath": filepath,
                 }
                 try:
-                    if not uuid:
-                        log.error("No UUID: %s", obj["Key"])
+                    if not text_id:
+                        log.error("No UUID (text ID): %s", obj["Key"])
                     else:
                         WebsiteContent.objects.update_or_create(
-                            website=website, uuid=uuid, defaults=base_defaults
+                            website=website, text_id=text_id, defaults=base_defaults
                         )
                 except:  # pylint:disable=bare-except
                     log.exception("Error saving WebsiteContent for %s", s3_key)

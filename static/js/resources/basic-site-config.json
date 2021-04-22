@@ -1,0 +1,52 @@
+{
+  "collections": [
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        }
+      ],
+      "folder": "content",
+      "label": "Blog",
+      "name": "blog"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        }
+      ],
+      "folder": "content",
+      "label": "Bio",
+      "name": "bio"
+    },
+    {
+      "category": "Settings",
+      "files": [
+        {
+          "fields": [
+            {
+              "label": "Title",
+              "name": "title",
+              "required": true,
+              "widget": "string"
+            }
+          ],
+          "file": "data/metadata.json",
+          "label": "Site Metadata",
+          "name": "sitemetadata"
+        }
+      ],
+      "label": "Metadata",
+      "name": "metadata"
+    }
+  ]
+}

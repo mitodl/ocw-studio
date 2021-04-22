@@ -198,9 +198,9 @@ export const makeWebsiteCollaborators = (): WebsiteCollaborator[] =>
   times(5).map(() => makeWebsiteCollaborator())
 
 export const makeWebsiteContentListItem = (): WebsiteContentListItem => ({
-  uuid:  casual.uuid,
-  title: casual.title,
-  type:  casual.word
+  text_id: casual.uuid,
+  title:   casual.title,
+  type:    casual.word
 })
 
 export const makeWebsiteContentDetail = (): WebsiteContent => ({

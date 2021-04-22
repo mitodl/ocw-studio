@@ -1,0 +1,22 @@
+collections:
+  - name: blog
+    label: Blog
+    category: Content
+    folder: content
+    fields:
+      - {"label": "Title", "name": "title", "widget": "string", "required": true}
+  - name: bio
+    label: Bio
+    category: Content
+    folder: content
+    fields:
+      - {"label": "Title", "name": "title", "widget": "string", "required": true}
+  - name: metadata
+    label: Metadata
+    category: Settings
+    files:
+      - file: data/metadata.json
+        name: sitemetadata
+        label: Site Metadata
+        fields:
+          - {"label": "Title", "name": "title", "widget": "string", "required": true}

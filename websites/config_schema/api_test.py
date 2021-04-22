@@ -63,3 +63,28 @@ def test_exclusive_collection_keys(parsed_site_config):
     }
     with pytest.raises(ValueError):
         validate_parsed_site_config(config)
+
+
+def test_unique_names(parsed_site_config):
+    """Every config item in a site config should have a unique name"""
+    config = parsed_site_config.copy()
+    config["collections"][1] = {
+        **config["collections"][1],
+        "name": config["collections"][0]["name"],
+    }
+    with pytest.raises(ValueError):
+        validate_parsed_site_config(config)
+    config = parsed_site_config.copy()
+    # Find then index of a config item that defines a "files" list
+    file_config_idx = next(
+        i
+        for i, config_item in enumerate(config["collections"])
+        if "files" in config_item
+    )
+    # Set a "file" config item to have the same name as a top-level config item
+    config["collections"][file_config_idx]["files"][0] = {
+        **config["collections"][file_config_idx]["files"][0],
+        "name": config["collections"][0]["name"],
+    }
+    with pytest.raises(ValueError):
+        validate_parsed_site_config(config)

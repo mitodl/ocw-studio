@@ -109,7 +109,7 @@ describe("SiteContentForm", () => {
         })
       })
 
-      it("has the correct validation schema", () => {
+      it("has the correct Formik props", () => {
         const mockValidationSchema = yup.object().shape({})
         // @ts-ignore
         getContentSchema.mockReturnValueOnce(mockValidationSchema)
@@ -118,6 +118,7 @@ describe("SiteContentForm", () => {
         const formik = renderForm(formType).find("Formik")
         const validationSchema = formik.prop("validationSchema")
         expect(validationSchema).toStrictEqual(mockValidationSchema)
+        expect(formik.prop("enableReinitialize")).toBe(true)
       })
     })
   })

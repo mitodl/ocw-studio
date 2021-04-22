@@ -11,6 +11,7 @@ from django.db.models import SET_NULL
 from django.utils.text import slugify
 from mitol.common.models import TimestampedModel
 
+from main.utils import uuid_string
 from users.models import User
 from websites import constants
 from websites.utils import permissions_group_name_for_role
@@ -87,13 +88,15 @@ class WebsiteContent(TimestampedModel):
 
     def upload_file_to(self, filename):
         """Return the appropriate filepath for an upload"""
-        return f"{self.website.name}/{self.uuid.hex}_{filename}"
+        return f"{self.website.name}/{self.text_id.replace('-', '')}_{filename}"
 
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
     website = models.ForeignKey(
         "Website", null=False, blank=False, on_delete=models.CASCADE
     )
-    uuid = models.UUIDField(null=False, blank=False, default=uuid4)
+    text_id = models.CharField(
+        max_length=36, null=False, blank=False, default=uuid_string, db_index=True
+    )
     title = models.CharField(max_length=512, null=True, blank=True)
     type = models.CharField(max_length=24, blank=False, null=False)
     parent = models.ForeignKey(
@@ -113,10 +116,10 @@ class WebsiteContent(TimestampedModel):
         ).hexdigest()
 
     class Meta:
-        unique_together = [["website", "uuid"]]
+        unique_together = [["website", "text_id"]]
 
     def __str__(self):
-        return f"{self.title} ({self.uuid})" if self.title else str(self.uuid)
+        return f"{self.title} ({self.text_id})" if self.title else str(self.text_id)
 
 
 class WebsiteStarter(TimestampedModel):

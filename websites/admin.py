@@ -39,16 +39,16 @@ class WebsiteContentAdmin(TimestampedModelAdmin):
         "website__title",
         "website__name",
         "website__uuid",
-        "uuid",
-        "parent__uuid",
+        "text_id",
+        "parent__text_id",
     )
-    list_display = ("uuid", "title", "type", "get_website_title", "parent")
+    list_display = ("text_id", "title", "type", "get_website_title", "parent")
     list_filter = ("type",)
     raw_id_fields = ("website", "parent")
     ordering = ("-created_on",)
 
     def get_queryset(self, request):
-        return self.model.objects.get_queryset().select_related("website")
+        return self.model.objects.get_queryset().select_related("website", "parent")
 
     def get_website_title(self, obj):
         """Returns the related Website title"""

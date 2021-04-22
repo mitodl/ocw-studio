@@ -1,5 +1,6 @@
 """ocw_studio utilities"""
 from enum import Flag, auto
+from uuid import uuid4
 
 
 class FeatureFlag(Flag):
@@ -11,3 +12,13 @@ class FeatureFlag(Flag):
     """
 
     EXAMPLE_FEATURE = auto()
+
+
+def uuid_string():
+    """
+    Generates a v4 UUID and casts it as a string
+
+    Returns:
+        str: UUID cast as a string
+    """
+    return str(uuid4())

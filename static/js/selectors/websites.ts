@@ -46,7 +46,7 @@ export const getWebsiteCollaboratorDetailCursor = createSelector(
 
 export const getWebsiteContentDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteContentDetails ?? {},
-  content => memoize((uuid: string) => content[uuid])
+  content => memoize((textId: string) => content[textId])
 )
 
 export const getWebsiteContentListingCursor = createSelector(

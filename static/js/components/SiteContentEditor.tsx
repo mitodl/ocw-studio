@@ -1,5 +1,4 @@
 import React from "react"
-import { Modal, ModalBody, ModalHeader } from "reactstrap"
 import { useMutation, useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
 import { FormikHelpers } from "formik"
@@ -16,34 +15,33 @@ import {
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import {
   contentFormValuesToPayload,
-  splitFieldsIntoColumns
+  isSingletonCollectionItem
 } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 
-import { EditableConfigItem, Website } from "../types/websites"
+import { EditableConfigItem, Website, WebsiteContent } from "../types/websites"
 import { ContentFormType, SiteFormValues } from "../types/forms"
 
 interface Props {
-  uuid: string | null
-  visibility: boolean
-  toggleVisibility: () => void
   site: Website
+  content?: WebsiteContent
+  loadContent: boolean
+  textId: string | null
   configItem: EditableConfigItem
   formType: ContentFormType
-  contentType: string
-  websiteContentListingRequest: () => void
+  hideModal?: () => void
+  fetchWebsiteContentListing?: () => void
 }
 
 export default function SiteContentEditor(props: Props): JSX.Element | null {
   const {
-    visibility,
+    hideModal,
     configItem,
-    uuid,
-    toggleVisibility,
+    textId,
     site,
+    loadContent,
     formType,
-    contentType,
-    websiteContentListingRequest
+    fetchWebsiteContentListing
   } = props
 
   const [
@@ -56,14 +54,20 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     { isPending: editIsPending },
     editWebsiteContent
   ] = useMutation((payload: EditWebsiteContentPayload | FormData) =>
-    editWebsiteContentMutation(site, uuid!, configItem.name, payload)
+    editWebsiteContentMutation(site, textId!, configItem.name, payload)
   )
 
-  const [{ isPending }] = useRequest(
-    uuid ? websiteContentDetailRequest(site.name, uuid) : null
-  )
-  const websiteContentDetailCursor = useSelector(getWebsiteContentDetailCursor)
-  const content = uuid ? websiteContentDetailCursor(uuid) : null
+  let isPending = false,
+    content = null
+  if (props.content) {
+    content = props.content
+  } else if (loadContent && textId) {
+    const queryTuple = useRequest(
+      websiteContentDetailRequest(site.name, textId)
+    )
+    isPending = queryTuple[0].isPending
+    content = useSelector(getWebsiteContentDetailCursor)(textId)
+  }
 
   if (isPending || (formType === ContentFormType.Edit && !content)) {
     return null
@@ -77,9 +81,18 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
       return
     }
     if (formType === ContentFormType.Add) {
-      values = { type: contentType, ...values }
+      values = { type: configItem.name, ...values }
     }
     const payload = contentFormValuesToPayload(values, configItem.fields)
+    // If the content being created is for a singleton config item, use the config item "name" value as the text_id.
+    if (
+      formType === ContentFormType.Add &&
+      isSingletonCollectionItem(configItem)
+    ) {
+      // @ts-ignore
+      payload.text_id = configItem.name
+    }
+
     const response =
       formType === ContentFormType.Edit ?
         await editWebsiteContent(payload) :
@@ -104,39 +117,23 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     }
     setSubmitting(false)
 
-    // refresh to have the new item show up in the listing
-    websiteContentListingRequest()
+    if (fetchWebsiteContentListing) {
+      // refresh to have the new item show up in the listing
+      fetchWebsiteContentListing()
+    }
 
-    // turn off modal on success
-    toggleVisibility()
+    if (hideModal) {
+      // turn off modal on success
+      hideModal()
+    }
   }
 
-  const title = `${formType === ContentFormType.Edit ? "Edit" : "Add"} ${
-    configItem.label
-  }`
-  const modalClassName = `right ${
-    splitFieldsIntoColumns(configItem.fields ?? []).length > 1 ? "wide" : ""
-  }`
-
   return (
-    <div>
-      <Modal
-        isOpen={visibility}
-        toggle={toggleVisibility}
-        modalClassName={modalClassName}
-      >
-        <ModalHeader toggle={toggleVisibility}>{title}</ModalHeader>
-        <ModalBody>
-          <div className="m-3">
-            <SiteContentForm
-              onSubmit={onSubmitForm}
-              configItem={configItem}
-              content={content}
-              formType={formType}
-            />
-          </div>
-        </ModalBody>
-      </Modal>
-    </div>
+    <SiteContentForm
+      onSubmit={onSubmitForm}
+      configItem={configItem}
+      content={content}
+      formType={formType}
+    />
   )
 }
