@@ -120,7 +120,7 @@ export interface WebsiteCollaboratorFormData {
 }
 
 export interface WebsiteContentListItem {
-  uuid: string
+  text_id: string // eslint-disable-line
   title: string | null
   type: string
 }

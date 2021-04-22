@@ -10,6 +10,7 @@ export const defaultFormikChildProps: FormikState<any> = {
   submitCount:  0
 }
 
-export const isIf = (tf: boolean): string => (tf ? "is" : "is not")
+export const isIf = (tf: boolean | string): string => (tf ? "is" : "is not")
 
-export const shouldIf = (tf: boolean): string => (tf ? "should" : "should not")
+export const shouldIf = (tf: boolean | string): string =>
+  tf ? "should" : "should not"

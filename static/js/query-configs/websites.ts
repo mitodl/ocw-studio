@@ -239,7 +239,7 @@ export const createWebsiteCollaboratorMutation = (
 export type WebsiteContentListingResponse = PaginatedResponse<
   WebsiteContentListItem
 >
-type WebsiteContentListing = Record<string, string[]> // website name to list of uuids
+type WebsiteContentListing = Record<string, string[]> // website name mapped to list of text IDs
 export const contentListingKey = (
   listingParams: ContentListingParams
 ): string =>
@@ -249,21 +249,19 @@ export const websiteContentListingRequest = (
   listingParams: ContentListingParams
 ): QueryConfig => {
   const { name, type, offset } = listingParams
+  const url = siteApiContentListingUrl.param({ name }).query({ type, offset })
   return {
-    url: siteApiContentListingUrl
-      .param({ name })
-      .query({ type, offset })
-      .toString(),
+    url:       url.toString(),
     transform: (body: WebsiteContentListingResponse) => {
       const details = {}
       for (const item of body.results) {
-        details[item.uuid] = item
+        details[item.text_id] = item
       }
       return {
         websiteContentListing: {
           [contentListingKey(listingParams)]: {
             ...body,
-            results: body.results.map(item => item.uuid)
+            results: body.results.map(item => item.text_id)
           }
         },
         websiteContentDetails: details
@@ -292,12 +290,12 @@ export const websiteContentListingRequest = (
 type WebsiteContentDetails = Record<string, WebsiteContent>
 export const websiteContentDetailRequest = (
   name: string,
-  uuid: string
+  textId: string
 ): QueryConfig => ({
-  url:       siteApiContentDetailUrl.param({ name, uuid }).toString(),
+  url:       siteApiContentDetailUrl.param({ name, textId }).toString(),
   transform: (body: WebsiteContent) => ({
     websiteContentDetails: {
-      [uuid]: body
+      [textId]: body
     }
   }),
   update: {
@@ -328,11 +326,13 @@ export type EditWebsiteContentPayload = {
 }
 export const editWebsiteContentMutation = (
   site: Website,
-  uuid: string,
+  textId: string,
   contentType: string,
   payload: EditWebsiteContentPayload | FormData
 ): QueryConfig => ({
-  url:     siteApiContentDetailUrl.param({ name: site.name, uuid }).toString(),
+  url: siteApiContentDetailUrl
+    .param({ name: site.name, textId: textId })
+    .toString(),
   options: {
     method:  "PATCH",
     headers: {
@@ -342,7 +342,7 @@ export const editWebsiteContentMutation = (
   body:      payload,
   transform: (response: WebsiteContent) => ({
     websiteContentDetails: {
-      [uuid]: response
+      [textId]: response
     }
   }),
   update: {
@@ -362,6 +362,8 @@ export type NewWebsiteContentPayload = {
   content?: string
   body?: string
   metadata: any
+  // eslint-disable-next-line camelcase
+  text_id?: string
 }
 export const createWebsiteContentMutation = (
   siteName: string,
@@ -377,7 +379,7 @@ export const createWebsiteContentMutation = (
   body:      payload,
   transform: (response: WebsiteContent) => ({
     websiteContentDetails: {
-      [response.uuid]: response
+      [response.text_id]: response
     }
   }),
   update: {

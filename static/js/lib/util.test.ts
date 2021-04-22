@@ -66,8 +66,8 @@ describe("util", () => {
       "http://aws.amazon.com/bucket/uuid/uuid_longer_filename.jpg",
       "longer_filename.jpg"
     ],
-    ["/media/uuid/uuid_filename.jpg", "filename.jpg"],
-    ["/media/uuid/filename.jpg", "filename.jpg"]
+    ["/media/text_id/uuid_filename.jpg", "filename.jpg"],
+    ["/media/text_id/filename.jpg", "filename.jpg"]
   ].forEach(([filepath, expected]) => {
     it("filenameFromPath should return expected values", () => {
       expect(filenameFromPath(filepath)).toBe(expected)

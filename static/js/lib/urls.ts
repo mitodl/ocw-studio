@@ -32,7 +32,7 @@ export const siteApiContentUrl = siteApiDetailUrl.segment("content/")
 export const siteApiContentListingUrl = siteApiContentUrl.query({
   limit: WEBSITES_PAGE_SIZE
 })
-export const siteApiContentDetailUrl = siteApiContentUrl.segment(":uuid/")
+export const siteApiContentDetailUrl = siteApiContentUrl.segment(":textId/")
 export const siteApiListingUrl = siteApi.query({
   limit: WEBSITES_PAGE_SIZE
 })

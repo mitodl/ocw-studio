@@ -1,6 +1,10 @@
 """Site config validation functionality to supplement the features that the schema gives us"""
+from collections import defaultdict
+
 from yamale import YamaleError
 from yamale.schema.validationresults import ValidationResult
+
+from websites.site_config_api import config_item_iter
 
 
 class AddedSchemaRule:
@@ -42,7 +46,7 @@ class CollectionsKeysRule(AddedSchemaRule):
         collections = data.get("collections")
         if not collections:
             return []
-        exclusive_keys = {"folder", "files", "file"}
+        exclusive_keys = {"folder", "files"}
         for i, collection_item in enumerate(collections):
             matching_keys = set(collection_item.keys()).intersection(exclusive_keys)
             if len(matching_keys) > 1:
@@ -52,3 +56,28 @@ class CollectionsKeysRule(AddedSchemaRule):
                         path, ", ".join(exclusive_keys)
                     )
                 ]
+
+
+class UniqueNamesRule(AddedSchemaRule):
+    """Ensures that all config items have unique name values"""
+
+    @staticmethod
+    def apply_rule(data):
+        name_paths = defaultdict(list)
+        for i, config_item in enumerate(config_item_iter(data)):
+            name_paths[config_item.item["name"]].append(config_item.path)
+        faulty_name_paths = {
+            name: paths for name, paths in name_paths.items() if len(paths) > 1
+        }
+        if faulty_name_paths:
+            return [
+                "Found duplicate 'name' values. 'name' values must all be unique.\n{}".format(
+                    "\n".join(
+                        [
+                            f"{' ' * 8}'{name}' ({', '.join(paths)})"
+                            for name, paths in faulty_name_paths.items()
+                        ]
+                    )
+                )
+            ]
+        return []

@@ -115,9 +115,9 @@ describe("urls", () => {
       it("renders a URL for site content detail", () => {
         expect(
           siteApiContentDetailUrl
-            .param({ name: "site-name", uuid: "uuid" })
+            .param({ name: "site-name", textId: "my-text-id" })
             .toString()
-        ).toBe("/api/websites/site-name/content/uuid/")
+        ).toBe("/api/websites/site-name/content/my-text-id/")
       })
 
       it("should render a content listing URL", () => {

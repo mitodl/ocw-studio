@@ -667,7 +667,7 @@ def test_websites_content_list(drf_client, filter_type, permission_groups):
         reversed(sorted(contents, key=lambda _content: _content.updated_on))
     ):
         assert content.title == results[idx]["title"]
-        assert str(content.uuid) == results[idx]["uuid"]
+        assert str(content.text_id) == results[idx]["text_id"]
         assert content.type == results[idx]["type"]
 
 
@@ -680,7 +680,7 @@ def test_websites_content_detail(drf_client, permission_groups):
             "websites_content_api-detail",
             kwargs={
                 "parent_lookup_website": content.website.name,
-                "uuid": str(content.uuid),
+                "text_id": str(content.text_id),
             },
         )
     )
@@ -710,7 +710,7 @@ def test_websites_content_create(drf_client, permission_groups):
     assert content.title == payload["title"]
     assert content.markdown == payload["markdown"]
     assert content.type == payload["type"]
-    assert resp.data["uuid"] == str(content.uuid)
+    assert resp.data["text_id"] == str(content.text_id)
 
 
 def test_websites_content_create_with_upload(
@@ -737,9 +737,12 @@ def test_websites_content_create_with_upload(
     assert resp.status_code == 201
     content = website.websitecontent_set.get()
     assert content.title == payload["title"]
-    assert content.file.name == f"{website.name}/{content.uuid.hex}_{file_upload.name}"
+    assert (
+        content.file.name
+        == f"{website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
+    )
     assert content.type == payload["type"]
-    assert resp.data["uuid"] == str(content.uuid)
+    assert resp.data["text_id"] == str(content.text_id)
 
 
 def test_websites_content_edit_with_upload(drf_client, permission_groups, file_upload):
@@ -752,7 +755,7 @@ def test_websites_content_edit_with_upload(drf_client, permission_groups, file_u
             "websites_content_api-detail",
             kwargs={
                 "parent_lookup_website": content.website.name,
-                "uuid": str(content.uuid),
+                "text_id": str(content.text_id),
             },
         ),
         data=payload,
@@ -763,9 +766,9 @@ def test_websites_content_edit_with_upload(drf_client, permission_groups, file_u
     assert content.title == payload["title"]
     assert (
         content.file.name
-        == f"{content.website.name}/{content.uuid.hex}_{file_upload.name}"
+        == f"{content.website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
     )
-    assert resp.data["uuid"] == str(content.uuid)
+    assert resp.data["text_id"] == str(content.text_id)
 
 
 def test_websites_content_create_empty(drf_client, permission_groups):

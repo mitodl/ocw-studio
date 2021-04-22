@@ -50,14 +50,16 @@ def test_import_ocw2hugo_course(settings):
         "This subject provides an introduction to the mechanics of materials"
     )
 
-    related_page = WebsiteContent.objects.get(uuid="4f5c3926e4d569747f16131a6f692568")
+    related_page = WebsiteContent.objects.get(
+        text_id="4f5c3926e4d569747f16131a6f692568"
+    )
     assert related_page.type == CONTENT_TYPE_PAGE
     assert related_page.metadata.get("title") == "Related Resources"
     assert related_page.parent == WebsiteContent.objects.get(
-        uuid="ba83162e713cc9315ff9bfe952c79b82"
+        text_id="ba83162e713cc9315ff9bfe952c79b82"
     )
 
-    lecture_pdf = WebsiteContent.objects.get(uuid="7f91d52457aaef8093c58a43f10a099b")
+    lecture_pdf = WebsiteContent.objects.get(text_id="7f91d52457aaef8093c58a43f10a099b")
     assert lecture_pdf.type == CONTENT_TYPE_RESOURCE
     assert lecture_pdf.metadata.get("file_type") == "application/pdf"
     assert (
@@ -117,6 +119,6 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     assert mock_log.call_count == 1
     mock_log.assert_called_once_with(
-        "No UUID: %s",
+        "No UUID (text ID): %s",
         f"{TEST_OCW2HUGO_PREFIX}1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/content/sections/test_no_uid.md",
     )

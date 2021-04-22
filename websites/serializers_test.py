@@ -134,7 +134,7 @@ def test_website_content_serializer():
     """WebsiteContentSerializer should serialize a few fields to identify the content"""
     content = WebsiteContentFactory.create()
     serialized_data = WebsiteContentSerializer(instance=content).data
-    assert serialized_data["uuid"] == str(content.uuid)
+    assert serialized_data["text_id"] == str(content.text_id)
     assert serialized_data["title"] == content.title
     assert serialized_data["type"] == content.type
     assert "markdown" not in serialized_data
@@ -145,7 +145,7 @@ def test_website_content_detail_serializer():
     """WebsiteContentDetailSerializer should serialize all relevant fields to the frontend"""
     content = WebsiteContentFactory.create()
     serialized_data = WebsiteContentDetailSerializer(instance=content).data
-    assert serialized_data["uuid"] == str(content.uuid)
+    assert serialized_data["text_id"] == str(content.text_id)
     assert serialized_data["title"] == content.title
     assert serialized_data["type"] == content.type
     assert serialized_data["markdown"] == content.markdown
@@ -155,15 +155,15 @@ def test_website_content_detail_serializer():
 def test_website_content_detail_serializer_save(mocker):
     """WebsiteContentDetailSerializer should modify only certain fields"""
     content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
+    existing_text_id = content.text_id
     new_title = f"{content.title} with some more text"
     new_type = f"{content.type}_other"
     new_markdown = "hopefully different from the previous markdown"
     metadata = {"description": "data"}
-    # uuid value is invalid but it's ignored since it's marked readonly
     serializer = WebsiteContentDetailSerializer(
         data={
             "title": new_title,
-            "uuid": "----",
+            "text_id": "----",
             "type": new_type,
             "markdown": new_markdown,
             "metadata": metadata,
@@ -177,6 +177,7 @@ def test_website_content_detail_serializer_save(mocker):
     serializer.save()
     content.refresh_from_db()
     assert content.title == new_title
+    assert content.text_id == existing_text_id
     assert content.type != new_type
     assert content.markdown == new_markdown
     assert content.metadata == metadata
@@ -186,18 +187,23 @@ def test_website_content_create_serializer(mocker):
     """WebsiteContentCreateSerializer should create a new WebsiteContent, with some validation"""
     metadata = {"description": "some text"}
     payload = {
+        "text_id": "my-text-id",
         "title": "a title",
         "type": CONTENT_TYPE_RESOURCE,
         "markdown": "some markdown",
         "metadata": metadata,
     }
     website = WebsiteFactory.create()
-    context = {"view": mocker.Mock(kwargs={"parent_lookup_website": website.name})}
+    context = {
+        "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
+        "website_pk": website.pk,
+    }
     serializer = WebsiteContentCreateSerializer(data=payload, context=context)
     serializer.is_valid(raise_exception=True)
     serializer.save()
     content = WebsiteContent.objects.get(title=payload["title"])
     assert content.title == payload["title"]
+    assert content.text_id == payload["text_id"]
     assert content.markdown == payload["markdown"]
     assert content.type == payload["type"]
     assert content.metadata == metadata
