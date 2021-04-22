@@ -1,5 +1,5 @@
 import { ComponentType, ElementType } from "react"
-import { pick, partition } from "ramda"
+import { pick, partition, map, evolve } from "ramda"
 
 import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
@@ -19,7 +19,11 @@ import {
   WebsiteContent,
   WidgetVariant
 } from "../types/websites"
-import { SiteFormValues, ValueType } from "../types/forms"
+import {
+  SiteFormValues,
+  SiteFormValue,
+  SiteFormPrimitive
+} from "../types/forms"
 
 export const componentFromWidget = (
   field: ConfigField
@@ -44,6 +48,10 @@ export const componentFromWidget = (
 
 const SELECT_EXTRA_PROPS = ["options", "multiple", "max", "min"]
 
+/**
+ * Returns extra props that should be provided to the `Field`
+ * component, based on what type of widget we're dealing with.
+ **/
 export function widgetExtraProps(field: ConfigField): Record<string, any> {
   switch (field.widget) {
   case WidgetVariant.Select:
@@ -78,7 +86,7 @@ export const splitFieldsIntoColumns = (
  * takes a ConfigField and returns an appropriate empty value
  * for that field.
  **/
-const emptyValue = (field: ConfigField): ValueType => {
+const emptyValue = (field: ConfigField): SiteFormValue => {
   switch (field.widget) {
   case "select":
     if (field.multiple) {
@@ -101,9 +109,9 @@ export const isSingletonCollectionItem = (
   configItem: EditableConfigItem
 ): boolean => "file" in configItem
 
-/*
+/**
  * Translates page content form values into a payload that our REST API understands.
- */
+ **/
 export const contentFormValuesToPayload = (
   values: SiteFormValues,
   fields: ConfigField[]
@@ -165,24 +173,32 @@ export const contentInitialValues = (
     } else if (field.name === "file") {
       values[field.name] = content[field.name] ?? null
     } else {
-      values[field.name] = metadata[field.name] ?? defaultFor(field)
+      values[field.name] = metadata[field.name] ?? defaultForField(field)
     }
   }
   return values
 }
 
 /**
- * returns values for the ContentForm when we're instantiating it anew.
+ * Returns appropriate values for the ContentForm when we're instantiating it
+ * anew.
  **/
 export const newInitialValues = (fields: ConfigField[]): SiteFormValues =>
   Object.fromEntries(
     fields.map((field: ConfigField) => [
       field.name,
-      field.default ?? defaultFor(field)
+      field.widget === WidgetVariant.Object ?
+        newInitialValues(field.fields!) :
+        field.default ?? defaultForField(field)
     ])
   )
 
-const defaultFor = (field: ConfigField): boolean | string | string[] | null => {
+/**
+ * Returns a default value appropriate for a given `ConfigField`. This mainly
+ * switches of off `field.widget: WidgetVariant` but also looks at other props
+ * like `.multiple: boolean` on `WidgetVariant.Select` fields, for instance.
+ **/
+const defaultForField = (field: ConfigField): SiteFormValue => {
   switch (field.widget) {
   case WidgetVariant.Boolean:
     return false
@@ -190,6 +206,18 @@ const defaultFor = (field: ConfigField): boolean | string | string[] | null => {
     return field.multiple ? [] : ""
   case WidgetVariant.File:
     return null
+  case WidgetVariant.Object:
+    return Object.fromEntries(
+        field.fields!.map(field => [
+          field.name,
+          // the `as` is fully justified here: we don't want to allow
+          // doubly-nested fields (for now!) so calling `defaultFor` on a
+          // nested field *should* only return SiteFormPrimitive (i.e. boolean,
+          // string, etc) and *not* another nested
+          // Record<string, SiteFormPrimitive>
+          defaultForField(field) as SiteFormPrimitive
+        ])
+    )
   default:
     return ""
   }
@@ -217,3 +245,33 @@ export const fieldIsVisible = (
   field: ConfigField,
   values: SiteFormValues
 ): boolean => field.widget !== "hidden" && fieldHasData(field, values)
+
+/**
+ * For editing nested fields in Formik we need them to be named like
+ * `foo.bar`, where `foo` is the name of the object they should be nested under
+ * and `bar` is the name of the field.
+ *
+ * For our Object widget, `foo` will be the name of the Object field and `bar`
+ * will be the name of the field nested within it, so to support for instance
+ * an Object field called `address` with a `zip_code` field within in we need
+ * to rename the `name` property on the `zip_code` field from `"zip_code"` to
+ * `"address.zip_code"`.
+ *
+ * This function takes an `Array<ConfigField[]>` and returns a new
+ * `Array<ConfigField>` where all such nested fields have been appropriately
+ * renamed so they can be passed down to Formik.
+ **/
+export const renameNestedFields = (fields: ConfigField[]): ConfigField[] =>
+  fields.map((field: ConfigField) =>
+    field.widget === WidgetVariant.Object ?
+      evolve(
+        {
+          fields: map((nestedField: ConfigField) => ({
+            ...nestedField,
+            name: `${field.name}.${nestedField.name}`
+          }))
+        },
+        field
+      ) :
+      field
+  )

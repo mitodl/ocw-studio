@@ -8,7 +8,8 @@ import SiteContentForm from "./SiteContentForm"
 import { defaultFormikChildProps } from "../../test_util"
 import {
   makeEditableConfigItem,
-  makeWebsiteContentDetail
+  makeWebsiteContentDetail,
+  makeWebsiteConfigField
 } from "../../util/factories/websites"
 import {
   componentFromWidget,
@@ -17,7 +18,11 @@ import {
 } from "../../lib/site_content"
 import { getContentSchema } from "./validation"
 
-import { EditableConfigItem, WebsiteContent } from "../../types/websites"
+import {
+  EditableConfigItem,
+  WebsiteContent,
+  WidgetVariant
+} from "../../types/websites"
 import { ContentFormType } from "../../types/forms"
 
 jest.mock("../../lib/site_content")
@@ -119,6 +124,18 @@ describe("SiteContentForm", () => {
         const validationSchema = formik.prop("validationSchema")
         expect(validationSchema).toStrictEqual(mockValidationSchema)
         expect(formik.prop("enableReinitialize")).toBe(true)
+      })
+
+      it("should pass an 'object' field to the ObjectWidget component", () => {
+        const field = makeWebsiteConfigField({ widget: WidgetVariant.Object })
+        configItem.fields = [field]
+        // @ts-ignore
+        fieldIsVisible.mockImplementation(() => true)
+        // @ts-ignore
+        splitFieldsIntoColumns.mockImplementation(() => [configItem.fields])
+        const wrapper = renderInnerForm(formType)
+        expect(wrapper.find("ObjectField").exists()).toBeTruthy()
+        expect(wrapper.find("ObjectField").prop("field")).toEqual(field)
       })
     })
   })

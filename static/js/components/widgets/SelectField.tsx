@@ -16,6 +16,7 @@ interface Props {
   max?: number
   options: Array<string | Option>
 }
+
 export default function SelectField(props: Props): JSX.Element {
   const { value, onChange, name, options } = props
   const multiple = Boolean(props.multiple)

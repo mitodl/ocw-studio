@@ -19,7 +19,8 @@ import {
   newInitialValues,
   widgetExtraProps,
   isMainContentField,
-  splitFieldsIntoColumns
+  splitFieldsIntoColumns,
+  renameNestedFields
 } from "./site_content"
 import { exampleSiteConfigFields, MAIN_PAGE_CONTENT_FIELD } from "../constants"
 import { isIf, shouldIf } from "../test_util"
@@ -211,6 +212,30 @@ describe("site_content", () => {
       })
       expect(newInitialValues([field])).toStrictEqual({ widget: [] })
     })
+
+    it("should use appropriate default for Object widget", () => {
+      const field = makeWebsiteConfigField({
+        widget: WidgetVariant.Object,
+        label:  "myobject",
+        fields: [
+          makeWebsiteConfigField({
+            widget: WidgetVariant.String,
+            label:  "mystring"
+          }),
+          makeWebsiteConfigField({
+            widget:   WidgetVariant.Select,
+            multiple: true,
+            label:    "myselect"
+          })
+        ]
+      })
+      expect(newInitialValues([field])).toStrictEqual({
+        myobject: {
+          myselect: [],
+          mystring: ""
+        }
+      })
+    })
   })
 
   describe("componentFromWidget", () => {
@@ -339,5 +364,37 @@ describe("site_content", () => {
         })
       }
     )
+  })
+
+  describe("renameNestedFields", () => {
+    it("should rename fields nested within an Object field", () => {
+      const field = makeWebsiteConfigField({
+        widget: WidgetVariant.Object,
+        label:  "myobject",
+        fields: [
+          makeWebsiteConfigField({
+            widget: WidgetVariant.String,
+            label:  "mystring"
+          }),
+          makeWebsiteConfigField({
+            widget:   WidgetVariant.Select,
+            multiple: true,
+            label:    "myselect"
+          })
+        ]
+      })
+      expect(
+        renameNestedFields([field])[0].fields!.map(
+          (field: ConfigField) => field.name
+        )
+      ).toEqual(["myobject.mystring", "myobject.myselect"])
+    })
+
+    it("should leave others alone", () => {
+      const fields = Object.values(WidgetVariant)
+        .filter(widget => widget !== WidgetVariant.Object)
+        .map(widget => makeWebsiteConfigField({ widget }))
+      expect(renameNestedFields(fields)).toEqual(fields)
+    })
   })
 })

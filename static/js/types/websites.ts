@@ -10,7 +10,8 @@ export enum WidgetVariant {
   Text = "text",
   String = "string",
   Select = "select",
-  Hidden = "hidden"
+  Hidden = "hidden",
+  Object = "object"
 }
 
 export interface FieldValueCondition {
@@ -36,6 +37,8 @@ export interface ConfigField {
   options?: string[]
   multiple?: boolean
   condition?: FieldValueCondition
+  fields?: ConfigField[]
+  collapsed?: boolean
 }
 
 export interface BaseConfigItem {

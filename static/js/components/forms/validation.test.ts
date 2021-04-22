@@ -204,4 +204,54 @@ describe("form validation util", () => {
       ).resolves.toBeTruthy()
     })
   })
+
+  describe("Object validation", () => {
+    const makeObjectConfigItem = (props = {}): [ConfigItem, string] => {
+      const configItem = {
+        ...partialConfigItem,
+        fields: [
+          makeWebsiteConfigField({
+            widget: WidgetVariant.Object,
+            ...props,
+            fields: [
+              makeWebsiteConfigField({
+                widget:   WidgetVariant.String,
+                label:    "mystring",
+                required: true
+              }),
+              makeWebsiteConfigField({
+                widget:   WidgetVariant.Boolean,
+                label:    "myboolean",
+                required: true
+              })
+            ]
+          })
+        ]
+      }
+
+      return [configItem, configItem.fields[0].name]
+    }
+
+    it("should validate the sub-fields", async () => {
+      const [configItem, name] = makeObjectConfigItem({ required: true })
+      const schema = getContentSchema(configItem)
+
+      await schema
+        .validate({ [name]: {} }, { abortEarly: false })
+        .catch(err => {
+          expect(err.errors).toEqual([
+            "mystring is a required field",
+            "myboolean is a required field"
+          ])
+        })
+      await expect(
+        schema.isValid({
+          [name]: {
+            mystring:  "hey!",
+            myboolean: false
+          }
+        })
+      ).resolves.toBeTruthy()
+    })
+  })
 })

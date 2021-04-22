@@ -29,6 +29,37 @@
             "Dev"
           ],
           "widget": "select"
+        },
+        {
+          "fields": [
+            {
+              "label": "Street Address",
+              "name": "street_address",
+              "required": true,
+              "widget": "string"
+            },
+            {
+              "label": "City",
+              "name": "city",
+              "required": true,
+              "widget": "string"
+            },
+            {
+              "label": "State",
+              "name": "state",
+              "required": true,
+              "widget": "string"
+            },
+            {
+              "label": "Zip Code",
+              "name": "zip",
+              "required": true,
+              "widget": "string"
+            }
+          ],
+          "label": "Address",
+          "name": "address",
+          "widget": "object"
         }
       ],
       "folder": "content",

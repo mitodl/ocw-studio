@@ -54,6 +54,16 @@ export const getFieldSchema = (field: ConfigField): Schema => {
     schema = yup.mixed()
     break
   }
+  case WidgetVariant.Object: {
+    schema = yup
+      .object()
+      .shape(
+        Object.fromEntries(
+            field.fields!.map(field => [field.name, getFieldSchema(field)])
+        )
+      )
+    break
+  }
   case WidgetVariant.String:
   case WidgetVariant.Text:
   case WidgetVariant.Markdown:

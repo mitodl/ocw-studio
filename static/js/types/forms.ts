@@ -3,6 +3,10 @@ export enum ContentFormType {
   Edit = "edit"
 }
 
-export type ValueType = string | File | string[] | null
+export type SiteFormPrimitive = string | File | string[] | null | boolean
 
-export type SiteFormValues = Record<string, ValueType>
+export type SiteFormValue =
+  | SiteFormPrimitive
+  | Record<string, SiteFormPrimitive>
+
+export type SiteFormValues = Record<string, SiteFormValue>

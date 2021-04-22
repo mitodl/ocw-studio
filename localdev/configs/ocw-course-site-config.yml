@@ -17,6 +17,14 @@ collections:
         "options": [ "Design", "UX", "Dev" ],
         "widget": "select"
         }
+      - name: address
+        label: Address
+        widget: object
+        fields:
+          - { label: "Street Address", name: "street_address", widget: "string", required: true }
+          - { label: "City", name: "city", widget: "string", required: true }
+          - { label: "State", name: "state", widget: "string", required: true }
+          - { label: "Zip Code", name: "zip", widget: "string", required: true }
 
   - name: resource
     label: Resource

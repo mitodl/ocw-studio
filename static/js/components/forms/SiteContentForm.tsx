@@ -1,17 +1,24 @@
-import * as React from "react"
+import React, { useMemo } from "react"
 import { Form, Formik, FormikHelpers } from "formik"
 
 import SiteContentField from "./SiteContentField"
+import ObjectField from "../widgets/ObjectField"
 
 import {
   contentInitialValues,
   fieldIsVisible,
   newInitialValues,
-  splitFieldsIntoColumns
+  splitFieldsIntoColumns,
+  renameNestedFields
 } from "../../lib/site_content"
 import { getContentSchema } from "./validation"
 
-import { EditableConfigItem, WebsiteContent } from "../../types/websites"
+import {
+  EditableConfigItem,
+  WebsiteContent,
+  WidgetVariant,
+  ConfigField
+} from "../../types/websites"
 import { ContentFormType, SiteFormValues } from "../../types/forms"
 
 interface Props {
@@ -30,11 +37,19 @@ export default function SiteContentForm({
   content,
   formType
 }: Props): JSX.Element {
-  const { fields } = configItem
-  const initialValues: SiteFormValues =
-    formType === ContentFormType.Add ?
-      newInitialValues(fields) :
-      contentInitialValues(content, fields)
+  const fields: ConfigField[] = useMemo(
+    () => renameNestedFields(configItem.fields),
+    [configItem]
+  )
+
+  const initialValues: SiteFormValues = useMemo(
+    () =>
+      formType === ContentFormType.Add ?
+        newInitialValues(configItem.fields) :
+        contentInitialValues(content, configItem.fields),
+    [configItem, formType, content]
+  )
+
   const schema = getContentSchema(configItem)
 
   const fieldsByColumn = splitFieldsIntoColumns(fields)
@@ -53,13 +68,21 @@ export default function SiteContentForm({
             <div className={columnClass} key={idx}>
               {columnFields
                 .filter(field => fieldIsVisible(field, values))
-                .map(field => (
-                  <SiteContentField
-                    field={field}
-                    key={field.name}
-                    setFieldValue={setFieldValue}
-                  />
-                ))}
+                .map(field =>
+                  field.widget === WidgetVariant.Object ? (
+                    <ObjectField
+                      field={field}
+                      key={field.name}
+                      setFieldValue={setFieldValue}
+                    />
+                  ) : (
+                    <SiteContentField
+                      field={field}
+                      key={field.name}
+                      setFieldValue={setFieldValue}
+                    />
+                  )
+                )}
             </div>
           ))}
           <div className="form-group d-flex w-100 justify-content-end">

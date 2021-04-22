@@ -6,3 +6,19 @@
   font-size: $caption-font-size;
   color: $slate-gray;
 }
+
+.object-widget {
+  .object-field-label {
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  .object-sub-fields {
+    padding-left: 15px;
+    border-left: 5px solid $studio-gray;
+  }
+
+  i {
+    font-size: 30px;
+  }
+}
