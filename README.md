@@ -165,6 +165,9 @@ manage.py import_ocw_course_sites -b <bucket_name> --filter frameworks-of-urban-
 # Import course sites with a data file name that matches a filter
 manage.py import_ocw_course_sites -b <bucket_name> --filter frameworks-of-urban-governance
 
+# Import 30 total course sites
+manage.py import_ocw_course_sites -b <bucket_name> --limit 30
+
 # Import ALL course sites (this will take quite a while)
 manage.py import_ocw_course_sites -b <bucket_name>
 ```

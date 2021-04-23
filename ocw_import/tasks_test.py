@@ -6,6 +6,9 @@ from ocw_import.conftest import MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, setup_s3
 from ocw_import.tasks import import_ocw2hugo_course_paths, import_ocw2hugo_courses
 
 
+# pylint:disable=too-many-arguments
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "paths", [["1-050-mechanical-engineering", "3-34-transportation-systems"], [], None]
@@ -27,11 +30,16 @@ def test_import_ocw2hugo_course_paths(mocker, paths, course_starter):
 
 
 @mock_s3
-@pytest.mark.parametrize("chunk_size, call_count", [[1, 3], [2, 2]])
+@pytest.mark.parametrize(
+    "chunk_size, filter_str, limit, call_count",
+    [[1, None, None, 3], [1, "1-050", None, 1], [2, None, None, 2], [1, None, 1, 1]],
+)
 def test_import_ocw2hugo_courses(
-    settings, mocked_celery, mocker, chunk_size, call_count
+    settings, mocked_celery, mocker, filter_str, chunk_size, limit, call_count
 ):
-    """ import_ocw2hugo_course_paths should be called correct # times for given chunk size and # of paths """
+    """
+    import_ocw2hugo_course_paths should be called correct # times for given chunk size, limit, filter, and # of paths
+    """
     setup_s3(settings)
     mock_import_paths = mocker.patch("ocw_import.tasks.import_ocw2hugo_course_paths.si")
     with pytest.raises(mocked_celery.replace_exception_class):
@@ -39,6 +47,8 @@ def test_import_ocw2hugo_courses(
             bucket_name=MOCK_BUCKET_NAME,
             prefix=TEST_OCW2HUGO_PREFIX,
             chunk_size=chunk_size,
+            filter_str=filter_str,
+            limit=limit,
         )
     assert mock_import_paths.call_count == call_count
 
