@@ -6,6 +6,7 @@ from github.Commit import Commit
 from github.ContentFile import ContentFile
 from github.PullRequest import PullRequest
 from github.Repository import Repository
+from safedelete.models import HARD_DELETE
 
 from content_sync.apis.github import GithubApiWrapper
 from content_sync.backends.base import BaseSyncBackend
@@ -84,8 +85,7 @@ class GithubBackend(BaseSyncBackend):
         """
         content = sync_state.content
         commit = self.api.delete_content_file(content)
-        sync_state.delete()
-        content.delete()
+        content.delete(force_policy=HARD_DELETE)
         return commit
 
     def create_content_in_db(self, data: ContentFile) -> WebsiteContent:
@@ -105,8 +105,7 @@ class GithubBackend(BaseSyncBackend):
         Delete a WebsiteContent object
         """
         content = data.content
-        data.delete()
-        content.delete()
+        content.delete(force_policy=HARD_DELETE)
         return True
 
     def sync_all_content_to_db(self):
@@ -137,9 +136,8 @@ class GithubBackend(BaseSyncBackend):
                     website_content_ids.remove(content.id)
 
         # Delete any WebsiteContent ids still remaining
-        for content in self.website.websitecontent_set.filter(
-            id__in=website_content_ids
-        ):
-            if hasattr(content, "content_sync_state"):
-                content.content_sync_state.delete()
-            content.delete()
+        # we use a hard delete because there's no need to sync a deletion to
+        # the repo when it already doesn't exist
+        self.website.websitecontent_set.filter(id__in=website_content_ids).delete(
+            force_policy=HARD_DELETE
+        )

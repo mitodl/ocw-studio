@@ -9,6 +9,7 @@ django-hijack-admin
 django-redis
 djangorestframework==3.12.2
 django-robots
+django-safedelete==1.0.0
 django-server-status
 django-storages
 django-webpack-loader

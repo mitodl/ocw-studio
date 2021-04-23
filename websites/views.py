@@ -10,6 +10,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
+from content_sync.api import update_website_backend
 from main import features
 from main.permissions import ReadonlyPermission
 from main.views import DefaultPagination
@@ -204,11 +205,7 @@ class WebsiteCollaboratorViewSet(
 
 class WebsiteContentViewSet(
     NestedViewSetMixin,
-    mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet,
+    viewsets.ModelViewSet,
 ):
     """Viewset for WebsiteContent"""
 
@@ -252,3 +249,12 @@ class WebsiteContentViewSet(
         if site_config and config_item is not None:
             added_context["is_page_content"] = is_page_content(site_config, config_item)
         return {**super().get_serializer_context(), **added_context}
+
+    def perform_destroy(self, instance: WebsiteContent):
+        """ (soft) deletes a WebsiteContent record """
+        instance.updated_by = self.request.user
+        super().perform_destroy(
+            instance
+        )  # this actually performs a save() because it's a soft delete
+        update_website_backend(instance.website)
+        return instance

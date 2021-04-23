@@ -82,7 +82,7 @@ class BaseSyncBackend(abc.ABC):
         """ Sync a given piece of content given its ContentSyncState """
         if not sync_state.synced_checksum:
             self.create_content_in_backend(sync_state)
-        elif sync_state.content is None:
+        elif sync_state.content.deleted:
             self.delete_content_in_backend(sync_state)
         else:
             self.update_content_in_backend(sync_state)
