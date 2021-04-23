@@ -33,6 +33,7 @@ from websites.serializers import (
     WebsiteStarterSerializer,
     WebsiteWriteSerializer,
 )
+from websites.site_config_api import find_config_item, is_page_content
 from websites.utils import permissions_group_name_for_role
 
 
@@ -217,8 +218,9 @@ class WebsiteContentViewSet(
 
     def get_queryset(self):
         parent_lookup_website = self.kwargs.get("parent_lookup_website")
-        queryset = WebsiteContent.objects.filter(website__name=parent_lookup_website)
         filter_type = self.request.query_params.get("type")
+
+        queryset = WebsiteContent.objects.filter(website__name=parent_lookup_website)
         if filter_type:
             queryset = queryset.filter(type=filter_type)
         return queryset.order_by("-updated_on")
@@ -234,11 +236,19 @@ class WebsiteContentViewSet(
     def get_serializer_context(self):
         if self.action != "create":
             return super().get_serializer_context()
+
         parent_lookup_website = self.kwargs.get("parent_lookup_website")
-        website_pk = Website.objects.values_list("pk", flat=True).get(
+        website_qset = Website.objects.values("pk", "starter__config").get(
             name=parent_lookup_website
         )
-        return {
-            **super().get_serializer_context(),
-            "website_pk": website_pk,
-        }
+        added_context = {"website_pk": website_qset["pk"]}
+        site_config = website_qset["starter__config"] or {}
+        content_type = self.request.data.get("type")
+        config_item = (
+            find_config_item(site_config, content_type)
+            if content_type is not None
+            else None
+        )
+        if site_config and config_item is not None:
+            added_context["is_page_content"] = is_page_content(site_config, config_item)
+        return {**super().get_serializer_context(), **added_context}

@@ -1,3 +1,4 @@
+content-dir: content
 collections:
   - name: page
     label: Page

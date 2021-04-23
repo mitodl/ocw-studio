@@ -10,7 +10,7 @@
           "widget": "string"
         }
       ],
-      "folder": "content",
+      "folder": "content/blog",
       "label": "Blog",
       "name": "blog"
     },
@@ -24,7 +24,7 @@
           "widget": "string"
         }
       ],
-      "folder": "content",
+      "folder": "content/bio",
       "label": "Bio",
       "name": "bio"
     },
@@ -48,5 +48,6 @@
       "label": "Metadata",
       "name": "metadata"
     }
-  ]
+  ],
+  "content-dir": "content"
 }

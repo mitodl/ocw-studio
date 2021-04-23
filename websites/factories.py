@@ -9,13 +9,11 @@ from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyChoice
 
 from users.factories import UserFactory
-from websites.constants import (
-    CONTENT_TYPE_PAGE,
-    CONTENT_TYPE_RESOURCE,
-    COURSE_STARTER_SLUG,
-    STARTER_SOURCES,
-)
+from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE, STARTER_SOURCES
 from websites.models import Website, WebsiteContent, WebsiteStarter
+
+
+FACTORY_SITE_CONFIG_PATH = "localdev/configs/basic-site-config.yml"
 
 
 class WebsiteStarterFactory(DjangoModelFactory):
@@ -28,11 +26,9 @@ class WebsiteStarterFactory(DjangoModelFactory):
     commit = factory.Faker("md5")
     config = factory.LazyAttribute(
         lambda _: yaml.load(
-            (
-                Path(settings.BASE_DIR) / "localdev/starters/site-config-override.yml"
-            ).read_text(),
+            (Path(settings.BASE_DIR) / FACTORY_SITE_CONFIG_PATH).read_text(),
             Loader=yaml.Loader,
-        )[COURSE_STARTER_SLUG]
+        )
     )
 
     class Meta:

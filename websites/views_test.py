@@ -28,7 +28,7 @@ from websites.serializers import (
 )
 
 
-# pylint:disable=redefined-outer-name
+# pylint:disable=redefined-outer-name,too-many-arguments
 
 pytestmark = pytest.mark.django_db
 
@@ -781,6 +781,59 @@ def test_websites_content_edit_with_upload(drf_client, permission_groups, file_u
         == f"{content.website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
     )
     assert resp.data["text_id"] == str(content.text_id)
+
+
+@pytest.mark.parametrize(
+    "has_matching_config_item, is_page_content, exp_page_content_field",
+    [
+        [True, True, True],
+        [False, True, False],
+        [True, False, False],
+    ],
+)
+def test_content_create_page_content(
+    mocker,
+    drf_client,
+    permission_groups,
+    has_matching_config_item,
+    is_page_content,
+    exp_page_content_field,
+):
+    """
+    POSTing to the WebsiteContent list view with a page content object should create a WebsiteContent record with
+    a field that indicates that it's page content
+    """
+    drf_client.force_login(permission_groups.global_admin)
+    found_config_item = mocker.Mock() if has_matching_config_item else None
+    patched_find_config_item = mocker.patch(
+        "websites.views.find_config_item", return_value=found_config_item
+    )
+    patched_is_page_content = mocker.patch(
+        "websites.views.is_page_content", return_value=is_page_content
+    )
+    website = WebsiteFactory.create()
+    payload = {
+        "title": "new title",
+        "markdown": "some markdown",
+        "type": constants.CONTENT_TYPE_PAGE,
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        data=payload,
+    )
+    assert resp.status_code == 201
+    content = website.websitecontent_set.get()
+    assert content.is_page_content == exp_page_content_field
+    patched_find_config_item.assert_called_once()
+    # Only check if the config item is for page content if that config item was actually found
+    assert patched_is_page_content.call_count == (
+        1 if found_config_item is not None else 0
+    )
 
 
 def test_websites_content_create_empty(drf_client, permission_groups):

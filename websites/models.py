@@ -107,6 +107,13 @@ class WebsiteContent(TimestampedModel):
     )
     markdown = models.TextField(null=True, blank=True)
     metadata = models.JSONField(null=True, blank=True)
+    is_page_content = models.BooleanField(
+        default=False,
+        help_text=(
+            "If True, indicates that this content represents a navigable page, as opposed to some "
+            "metadata, configuration, etc."
+        ),
+    )
     content_filepath = models.CharField(max_length=2048, null=True, blank=True)
     file = models.FileField(
         upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
