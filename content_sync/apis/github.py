@@ -1,6 +1,7 @@
 """ Github API wrapper"""
 import logging
 from base64 import b64decode
+from dataclasses import dataclass
 from typing import Iterator, List
 
 import yaml
@@ -11,6 +12,7 @@ from github.Branch import Branch
 from github.Commit import Commit
 from github.InputGitAuthor import InputGitAuthor
 from github.Repository import Repository
+from safedelete.models import HARD_DELETE
 
 from content_sync.decorators import retry_on_failure
 from content_sync.models import ContentSyncState
@@ -23,6 +25,16 @@ from websites.models import WebsiteContent
 log = logging.getLogger(__name__)
 
 GIT_DATA_FILEPATH = "filepath"
+
+
+@dataclass
+class SyncResult:
+    """ The result of syncing a file to github """
+
+    sync_id: int
+    filepath: str
+    checksum: str
+    deleted: bool = False
 
 
 class GithubApiWrapper:
@@ -146,9 +158,12 @@ class GithubApiWrapper:
 
     def upsert_content_files(self):
         """ Commit all website content, with 1 commit per user """
-        for user_id in self.website.websitecontent_set.values_list(
-            "updated_by", flat=True
-        ).distinct():
+        for user_id in (
+            WebsiteContent.objects.all_with_deleted()
+            .filter(website=self.website)
+            .values_list("updated_by", flat=True)
+            .distinct()
+        ):
             self.upsert_content_files_for_user(user_id)
 
     @retry_on_failure
@@ -159,23 +174,24 @@ class GithubApiWrapper:
         unsynced_states = ContentSyncState.objects.filter(
             Q(content__website=self.website) & Q(content__updated_by=user_id)
         ).exclude(
-            Q(current_checksum=F("synced_checksum")) & Q(synced_checksum__isnull=False)
+            Q(current_checksum=F("synced_checksum"), content__deleted__isnull=True)
+            & Q(synced_checksum__isnull=False)
         )
         modified_element_list = []
-        synced_filepaths = {}
+        synced_results = []
 
         for sync_state in unsynced_states.iterator():
             content = sync_state.content
             filepath = content.content_filepath  # TO DO: Use dynamic filepath
             # Add any modified files
             if filepath:
-                synced_filepaths.update(
-                    {
-                        sync_state.id: {
-                            "filepath": filepath,
-                            "checksum": content.calculate_checksum(),
-                        }
-                    }
+                synced_results.append(
+                    SyncResult(
+                        sync_id=sync_state.id,
+                        filepath=filepath,
+                        checksum=content.calculate_checksum(),
+                        deleted=content.deleted is not None,
+                    )
                 )
                 data = self.format_content_to_file(content)
                 modified_element_list.extend(
@@ -188,11 +204,14 @@ class GithubApiWrapper:
             )
 
             # Save last git filepath and checksum to sync state
-            for synced_state_id, sync_info in synced_filepaths.items():
-                sync_state = ContentSyncState.objects.get(id=synced_state_id)
-                sync_state.data = {GIT_DATA_FILEPATH: sync_info["filepath"]}
-                sync_state.synced_checksum = sync_info["checksum"]
-                sync_state.save()
+            for sync_result in synced_results:
+                sync_state = ContentSyncState.objects.get(id=sync_result.sync_id)
+                if sync_result.deleted:
+                    sync_state.content.delete(force_policy=HARD_DELETE)
+                else:
+                    sync_state.data = {GIT_DATA_FILEPATH: sync_result.filepath}
+                    sync_state.synced_checksum = sync_result.checksum
+                    sync_state.save()
 
             return commit
 
@@ -261,12 +280,20 @@ class GithubApiWrapper:
         """
         Return the required InputGitTreeElements for a modified ContentSyncState
         """
-        tree_elements = [InputGitTreeElement(filepath, "100644", "blob", data)]
-        # Remove the old filepath stored in the sync state data if it doesn't match current path
+        tree_elements = []
+        # Update with the new file data only if the content isn't deleted
+        if sync_state.content.deleted is None:
+            tree_elements.append(InputGitTreeElement(filepath, "100644", "blob", data))
+        # Remove the old filepath stored in the sync state data
         if (
-            sync_state.data
-            and sync_state.data.get(GIT_DATA_FILEPATH, None)
-            and sync_state.data[GIT_DATA_FILEPATH] != filepath
+            # If it has been deleted
+            sync_state.content.deleted is not None
+            or (
+                # If it doesn't match current path
+                sync_state.data
+                and sync_state.data.get(GIT_DATA_FILEPATH, None)
+                and sync_state.data[GIT_DATA_FILEPATH] != filepath
+            )
         ):
             tree_elements.append(
                 InputGitTreeElement(

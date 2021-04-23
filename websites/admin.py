@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.forms.fields import JSONField
 from guardian.admin import GuardedModelAdmin
 from mitol.common.admin import TimestampedModelAdmin
+from safedelete.admin import SafeDeleteAdmin, highlight_deleted
 
 from main.admin import JsonOrYamlField, PrettyJSONWidget, WhitespaceErrorList
 from websites.config_schema.api import validate_parsed_site_config
@@ -28,7 +29,7 @@ class WebsiteAdmin(TimestampedModelAdmin, GuardedModelAdmin):
     ordering = ("-created_on",)
 
 
-class WebsiteContentAdmin(TimestampedModelAdmin):
+class WebsiteContentAdmin(TimestampedModelAdmin, SafeDeleteAdmin):
     """WebsiteContent Admin"""
 
     model = WebsiteContent
@@ -42,8 +43,15 @@ class WebsiteContentAdmin(TimestampedModelAdmin):
         "text_id",
         "parent__text_id",
     )
-    list_display = ("text_id", "title", "type", "get_website_title", "parent")
-    list_filter = ("type",)
+    list_display = (
+        highlight_deleted,
+        "text_id",
+        "title",
+        "type",
+        "get_website_title",
+        "parent",
+    ) + SafeDeleteAdmin.list_display
+    list_filter = ("type",) + SafeDeleteAdmin.list_filter
     raw_id_fields = ("website", "parent")
     ordering = ("-created_on",)
 

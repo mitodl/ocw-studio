@@ -9,7 +9,14 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import SET_NULL
 from django.utils.text import slugify
-from mitol.common.models import TimestampedModel
+from mitol.common.models import TimestampedModel, TimestampedModelQuerySet
+from safedelete.managers import (
+    SafeDeleteAllManager,
+    SafeDeleteDeletedManager,
+    SafeDeleteManager,
+)
+from safedelete.models import SafeDeleteModel
+from safedelete.queryset import SafeDeleteQueryset
 
 from main.utils import uuid_string
 from users.models import User
@@ -83,8 +90,16 @@ class Website(TimestampedModel):
         return f"'{self.title}' ({self.name})"
 
 
-class WebsiteContent(TimestampedModel):
+class WebsiteContentQuerySet(TimestampedModelQuerySet, SafeDeleteQueryset):
+    """ Queryset for WebsiteContent """
+
+
+class WebsiteContent(TimestampedModel, SafeDeleteModel):
     """ Class for a content component of a website"""
+
+    objects = SafeDeleteManager(WebsiteContentQuerySet)
+    all_objects = SafeDeleteAllManager(WebsiteContentQuerySet)
+    deleted_objects = SafeDeleteDeletedManager(WebsiteContentQuerySet)
 
     def upload_file_to(self, filename):
         """Return the appropriate filepath for an upload"""

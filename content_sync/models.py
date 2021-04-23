@@ -10,9 +10,8 @@ class ContentSyncState(TimestampedModel):
 
     content = models.OneToOneField(
         WebsiteContent,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         related_name="content_sync_state",
-        null=True,
     )
     current_checksum = models.CharField(max_length=64)  # sized for a sha256
     synced_checksum = models.CharField(max_length=64, null=True)  # sized for a sha256

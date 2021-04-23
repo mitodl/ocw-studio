@@ -80,6 +80,8 @@ django-redis==4.12.1
     # via -r requirements.in
 django-robots==4.0
     # via -r requirements.in
+django-safedelete==1.0.0
+    # via -r requirements.in
 django-server-status==0.6.0
     # via -r requirements.in
 django-storages==1.11.1
@@ -95,6 +97,7 @@ django==3.1.6
     #   django-guardian
     #   django-hijack
     #   django-redis
+    #   django-safedelete
     #   django-storages
     #   djangorestframework
     #   mitol-django-authentication

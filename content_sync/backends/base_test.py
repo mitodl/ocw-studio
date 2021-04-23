@@ -64,7 +64,8 @@ def test_sync_content_to_backend_create(mocker):
     mock_create_content_in_backend = mocker.patch.object(
         _ImplementedBackend, "create_content_in_backend", return_value=None
     )
-    state = mocker.Mock(content=1, synced_checksum=None)
+    state = mocker.Mock(synced_checksum=None)
+    state.content.deleted = None
 
     backend = _ImplementedBackend(None)
     backend.sync_content_to_backend(state)
@@ -76,7 +77,8 @@ def test_sync_content_to_backend_update(mocker):
     mock_update_content_in_backend = mocker.patch.object(
         _ImplementedBackend, "update_content_in_backend", return_value=None
     )
-    state = mocker.Mock(content=1, synced_checksum="abc")
+    state = mocker.Mock(synced_checksum="abc")
+    state.content.deleted = None
 
     backend = _ImplementedBackend(None)
     backend.sync_content_to_backend(state)
@@ -88,7 +90,8 @@ def test_sync_content_to_backend_delete(mocker):
     mock_delete_content_in_backend = mocker.patch.object(
         _ImplementedBackend, "delete_content_in_backend", return_value=None
     )
-    state = mocker.Mock(content=None, synced_checksum="abc")
+    state = mocker.Mock(synced_checksum="abc")
+    state.content.deleted = True
 
     backend = _ImplementedBackend(None)
     backend.sync_content_to_backend(state)

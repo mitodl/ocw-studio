@@ -129,6 +129,7 @@ INSTALLED_APPS = (
     "hijack",
     "hijack_admin",
     "server_status",
+    "safedelete",
     # django-robots
     "rest_framework",
     "social_django",

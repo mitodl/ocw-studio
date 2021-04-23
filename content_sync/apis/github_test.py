@@ -167,26 +167,51 @@ def test_upsert_content_file_no_path(mock_api_wrapper, filepath):
 def test_upsert_content_files(mocker, mock_api_wrapper):
     """upsert_content_files should process all files in 1 commit per user"""
     mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
-    for content in mock_api_wrapper.website.websitecontent_set.all()[:2]:
-        content.updated_by = UserFactory.create()
+    user_ids = [None]
+    contents = list(mock_api_wrapper.website.websitecontent_set.all())
+    for content in contents[:2]:
+        user = UserFactory.create()
+        user_ids.append(user.id)
+        content.updated_by = user
         content.save()
-    mock_repo = mock_api_wrapper.org.get_repo.return_value
+    contents[2].delete()  # ensure we record a delete for the user
+    mock_api_wrapper.upsert_content_files_for_user = mocker.Mock()
     mock_api_wrapper.upsert_content_files()
-    for content in mock_api_wrapper.website.websitecontent_set.all():
-        mock_git_tree_element.assert_any_call(
-            content.content_filepath, "100644", "blob", mocker.ANY
-        )
+    assert mock_api_wrapper.upsert_content_files_for_user.call_count == len(user_ids)
+    for user_id in user_ids:
+        mock_api_wrapper.upsert_content_files_for_user.assert_any_call(user_id)
 
-    assert (
-        mock_repo.create_git_commit.call_count == 3
-    )  # 3 users, 2 created above, plus None
-    mock_repo.create_git_commit.assert_any_call(
+
+def test_upsert_content_files_for_user(mocker, mock_api_wrapper):
+    """upsert_content_files should process all files in 1 commit per user"""
+    mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
+    contents = list(mock_api_wrapper.website.websitecontent_set.all())
+    user = UserFactory.create()
+    for content in contents:
+        content.content_sync_state.data = {GIT_DATA_FILEPATH: content.content_filepath}
+        content.content_sync_state.save()
+        content.updated_by = user
+        content.save()
+    contents[2].delete()  # ensure we record a delete for the user
+    mock_repo = mock_api_wrapper.org.get_repo.return_value
+    mock_api_wrapper.upsert_content_files_for_user(user.id)
+    assert mock_git_tree_element.call_count == len(contents)
+    for content in contents:
+        if content.deleted:
+            mock_git_tree_element.assert_any_call(
+                content.content_filepath, "100644", "blob", sha=None
+            )
+        else:
+            mock_git_tree_element.assert_any_call(
+                content.content_filepath, "100644", "blob", mocker.ANY
+            )
+
+    mock_repo.create_git_commit.assert_called_once_with(
         "Sync all content",
         mock_repo.create_git_tree.return_value,
         [mock_repo.get_git_commit.return_value],
         committer=mocker.ANY,
         author=mocker.ANY,
-        **{},
     )
 
     for content in WebsiteContent.objects.filter(
@@ -249,6 +274,29 @@ def test_upsert_content_files_modified_filepath(mocker, mock_api_wrapper):
     mock_git_tree_element.assert_any_call(old_filepath, "100644", "blob", sha=None)
     sync_state.refresh_from_db()
     assert sync_state.data[GIT_DATA_FILEPATH] == content.content_filepath
+
+
+def test_upsert_content_files_deleted(mocker, mock_api_wrapper):
+    """upsert_content_files should process deleted files"""
+    mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
+
+    # Make all content appear to be synced
+    for content in mock_api_wrapper.website.websitecontent_set.all():
+        content_sync = content.content_sync_state
+        content_sync.synced_checksum = content_sync.content.calculate_checksum()
+        content_sync.data = {"filepath": content_sync.content.content_filepath}
+        content_sync.save()
+
+    # Mark the content as soft-deleted
+    content = mock_api_wrapper.website.websitecontent_set.first()
+    content.delete()
+
+    mock_api_wrapper.upsert_content_files()
+    mock_git_tree_element.called_once_with(
+        content.content_filepath, "100644", "blob", sha=None
+    )
+
+    assert WebsiteContent.all_objects.filter(id=content.id).exists() is False
 
 
 def test_delete_content_file(mocker, mock_api_wrapper):

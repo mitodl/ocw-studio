@@ -282,6 +282,7 @@ def test_website_starters_local(
 def test_websites_content_list(drf_client, filter_type, permission_groups):
     """The list view of WebsiteContent should optionally filter by type"""
     drf_client.force_login(permission_groups.global_admin)
+    WebsiteContentFactory.create()  # a different website, shouldn't show up here
     content = WebsiteContentFactory.create(type="other")
     website = content.website
     num_results = 5
@@ -289,6 +290,9 @@ def test_websites_content_list(drf_client, filter_type, permission_groups):
         WebsiteContentFactory.create(type="page", website=website)
         for _ in range(num_results)
     ]
+    WebsiteContentFactory.create(
+        type="page", website=website
+    ).delete()  # soft-deleted content shouldn't show up
     if not filter_type:
         contents += [content]
     resp = drf_client.get(
@@ -301,6 +305,7 @@ def test_websites_content_list(drf_client, filter_type, permission_groups):
         {"type": filter_type},
     )
     results = resp.data["results"]
+    assert resp.data["count"] == (num_results if filter_type else num_results + 1)
     assert len(results) == (num_results if filter_type else num_results + 1)
 
     for idx, content in enumerate(
@@ -325,6 +330,27 @@ def test_websites_content_detail(drf_client, permission_groups):
         )
     )
     assert resp.data == WebsiteContentDetailSerializer(instance=content).data
+
+
+def test_websites_content_delete(drf_client, permission_groups, mocker):
+    """DELETEing a WebsiteContent should soft-delete the object"""
+    update_website_backend_mock = mocker.patch("websites.views.update_website_backend")
+    drf_client.force_login(permission_groups.global_admin)
+    content = WebsiteContentFactory.create(updated_by=permission_groups.site_editor)
+    resp = drf_client.delete(
+        reverse(
+            "websites_content_api-detail",
+            kwargs={
+                "parent_lookup_website": content.website.name,
+                "text_id": str(content.text_id),
+            },
+        )
+    )
+    assert resp.data is None
+    content.refresh_from_db()
+    assert content.updated_by == permission_groups.global_admin
+    assert content.deleted is not None
+    update_website_backend_mock.assert_called_once_with(content.website)
 
 
 def test_websites_content_create(drf_client, permission_groups):
