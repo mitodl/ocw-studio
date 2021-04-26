@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.11.2
+Version 0.11.2 (Released April 26, 2021)
 --------------
 
 - Implemented correct UI for 'files' config items
