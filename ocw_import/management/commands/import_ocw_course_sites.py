@@ -49,6 +49,14 @@ class Command(BaseCommand):
             default="",
             help="If specified, only import courses that contain this filter text",
         )
+
+        parser.add_argument(
+            "--limit",
+            dest="limit",
+            default=None,
+            type=int,
+            help="If specified, limits the overall number of course sites imported",
+        )
         super().add_arguments(parser)
 
     def handle(self, *args, **options):
@@ -58,6 +66,7 @@ class Command(BaseCommand):
             prefix = prefix.rstrip("/") + "/"
         bucket_name = options["bucket"]
         filter_str = options["filter"]
+        limit = options["limit"]
 
         if options["list"] is True:
             course_paths = list(
@@ -74,6 +83,7 @@ class Command(BaseCommand):
             bucket_name=bucket_name,
             prefix=prefix,
             filter_str=filter_str,
+            limit=limit,
             chunk_size=options["chunks"],
         )
         task.get()
