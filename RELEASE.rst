@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.11.2 (Released April 26, 2021)
+--------------
+
+- Implemented correct UI for 'files' config items
+- Add validation for multiple select, min / max
+
 Version 0.11.1 (Released April 22, 2021)
 --------------
 
