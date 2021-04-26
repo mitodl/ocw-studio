@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.12.0
+Version 0.12.0 (Released April 26, 2021)
 --------------
 
 - Added optional 'limit' param to OCW course site import
