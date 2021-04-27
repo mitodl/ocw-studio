@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.13.0
+--------------
+
+- Github backend and API wrapper (#216)
+
 Version 0.12.0 (Released April 26, 2021)
 --------------
 
