@@ -98,8 +98,14 @@ def test_websites_endpoint_list_permissions(drf_client, permission_groups):
             )
 
 
-def test_websites_endpoint_list_create(drf_client, permission_groups):
-    """Only global admins and authors should be able to send a POST request"""
+def test_websites_endpoint_list_create(mocker, drf_client, permission_groups):
+    """
+    Only global admins and authors should be able to send a POST request
+    WebsiteContentCreateSerializer should create a new WebsiteContent, with some validation
+    """
+    mock_create_website_backend = mocker.patch(
+        "websites.serializers.create_website_backend"
+    )
     starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
     for [user, has_perm] in [
         [permission_groups.global_admin, True],
@@ -118,7 +124,9 @@ def test_websites_endpoint_list_create(drf_client, permission_groups):
         )
         assert resp.status_code == (201 if has_perm else 403)
         if has_perm:
-            assert Website.objects.get(name=f"{user.username}_site").owner == user
+            website = Website.objects.get(name=f"{user.username}_site")
+            assert website.owner == user
+            mock_create_website_backend.assert_any_call(website)
 
 
 @pytest.mark.parametrize("method", ["put", "patch", "delete"])
@@ -158,8 +166,11 @@ def test_websites_endpoint_detail_methods_denied(drf_client, method, status):
     assert resp.status_code == status
 
 
-def test_websites_endpoint_detail_update(drf_client):
+def test_websites_endpoint_detail_update(mocker, drf_client):
     """A user with admin permissions should be able to edit a website but not change website owner"""
+    mock_update_website_backend = mocker.patch(
+        "websites.serializers.update_website_backend"
+    )
     website = WebsiteFactory.create()
     admin_user = UserFactory.create()
     admin_user.groups.add(website.admin_group)
@@ -173,6 +184,7 @@ def test_websites_endpoint_detail_update(drf_client):
     updated_site = Website.objects.get(name=website.name)
     assert updated_site.title == new_title
     assert updated_site.owner == website.owner
+    mock_update_website_backend.assert_called_once_with(website)
 
 
 def test_websites_endpoint_detail_update_denied(drf_client):

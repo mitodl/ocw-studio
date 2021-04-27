@@ -15,7 +15,7 @@ jobs:
           --health-retries 5
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: postgres  # pragma: allowlist secret
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
@@ -94,7 +94,7 @@ jobs:
           CELERY_TASK_ALWAYS_EAGER: 'True'
           CELERY_BROKER_URL: redis://localhost:6379/4
           CELERY_RESULT_BACKEND: redis://localhost:6379/4
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres  # pragma: allowlist secret
           DEBUG: 'False'
           MAILGUN_SENDER_DOMAIN: 'fake.example.com'
           MAILGUN_KEY: 'fake'
@@ -102,6 +102,7 @@ jobs:
           OCW_STUDIO_BASE_URL: 'http://localhost:8043/'
           SOCIAL_AUTH_SAML_LOGIN_URL: 'fake.example.com/login/saml/'
           SECRET_KEY: "secret"
+          CONTENT_SYNC_BACKEND:
 
       - name: Upload coverage to CodeCov
         uses: codecov/codecov-action@v1

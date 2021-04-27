@@ -91,6 +91,9 @@ class WebsiteContent(TimestampedModel):
         return f"{self.website.name}/{self.text_id.replace('-', '')}_{filename}"
 
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
+    updated_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=SET_NULL, related_name="content_updated"
+    )
     website = models.ForeignKey(
         "Website", null=False, blank=False, on_delete=models.CASCADE
     )

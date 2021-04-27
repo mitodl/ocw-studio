@@ -51,6 +51,14 @@
       "description": "Early executed tasks propagate exceptions",
       "required": false
     },
+    "CONTENT_SYNC_BACKEND": {
+      "description": "The backend to sync websites/content with",
+      "required": false
+    },
+    "CONTENT_SYNC_RETRIES": {
+      "description": "Number of times to retry backend sync attempts",
+      "required": false
+    },
     "DISABLE_WEBPACK_LOADER_STATS": {
       "description": "Disabled webpack loader stats",
       "required": false
@@ -61,6 +69,34 @@
     },
     "GA_TRACKING_ID": {
       "description": "Google analytics tracking ID",
+      "required": false
+    },
+    "GIT_BRANCH_MAIN": {
+      "description": "The default branch for a git repo",
+      "required": false
+    },
+    "GIT_BRANCH_PREVIEW": {
+      "description": "The preview branch for a git repo",
+      "required": false
+    },
+    "GIT_BRANCH_RELEASE": {
+      "description": "The release branch for a git repo",
+      "required": false
+    },
+    "GIT_DEFAULT_USER_EMAIL": {
+      "description": "The email for the default git committer",
+      "required": false
+    },
+    "GIT_DEFAULT_USER_NAME": {
+      "description": "The name for the default git committer",
+      "required": false
+    },
+    "GIT_ORGANIZATION": {
+      "description": "The organization under which repos should be created",
+      "required": false
+    },
+    "GIT_TOKEN": {
+      "description": "The authentication token for git commands",
       "required": false
     },
     "HEROKU_APP_NAME": {

@@ -5,6 +5,8 @@ from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from content_sync.api import create_website_backend, update_website_backend
+from main.serializers import RequestUserSerializerMixin
 from users.models import User
 from websites import constants
 from websites.models import Website, WebsiteContent, WebsiteStarter
@@ -53,18 +55,11 @@ class WebsiteSerializer(serializers.ModelSerializer):
         extra_kwargs = {"owner": {"write_only": True}}
 
 
-class WebsiteDetailSerializer(serializers.ModelSerializer):
+class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializerMixin):
     """ Serializer for websites with serialized config """
 
     starter = WebsiteStarterDetailSerializer(read_only=True)
     is_admin = serializers.SerializerMethodField(read_only=True)
-
-    def user_from_request(self):
-        """ Get the user from the request context """
-        request = self.context.get("request")
-        if request and hasattr(request, "user") and isinstance(request.user, User):
-            return request.user
-        return None
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
@@ -78,6 +73,7 @@ class WebsiteDetailSerializer(serializers.ModelSerializer):
         validated_data["owner"] = self.user_from_request()
         with transaction.atomic():
             website = super().create(validated_data)
+        create_website_backend(website)
         return website
 
     def update(self, instance, validated_data):
@@ -85,6 +81,7 @@ class WebsiteDetailSerializer(serializers.ModelSerializer):
         validated_data.pop("owner", None)
         with transaction.atomic():
             website = super().update(instance, validated_data)
+        update_website_backend(website)
         return website
 
     class Meta:
@@ -187,8 +184,18 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
         fields = read_only_fields
 
 
-class WebsiteContentDetailSerializer(serializers.ModelSerializer):
+class WebsiteContentDetailSerializer(
+    serializers.ModelSerializer, RequestUserSerializerMixin
+):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""
+
+    def update(self, instance, validated_data):
+        """Add updated_by to the data"""
+        instance = super().update(
+            instance, {"updated_by": self.user_from_request(), **validated_data}
+        )
+        update_website_backend(instance.website)
+        return instance
 
     class Meta:
         model = WebsiteContent
@@ -196,13 +203,23 @@ class WebsiteContentDetailSerializer(serializers.ModelSerializer):
         fields = read_only_fields + ["title", "markdown", "metadata", "file"]
 
 
-class WebsiteContentCreateSerializer(serializers.ModelSerializer):
+class WebsiteContentCreateSerializer(
+    serializers.ModelSerializer, RequestUserSerializerMixin
+):
     """Serializer which creates a new WebsiteContent"""
 
     def create(self, validated_data):
-        return super().create(
-            {"website_id": self.context["website_pk"], **validated_data}
+        user = self.user_from_request()
+        instance = super().create(
+            {
+                "website_id": self.context["website_pk"],
+                "owner": user,
+                "updated_by": user,
+                **validated_data,
+            }
         )
+        update_website_backend(instance.website)
+        return instance
 
     class Meta:
         model = WebsiteContent
