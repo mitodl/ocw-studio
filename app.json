@@ -71,6 +71,10 @@
       "description": "Google analytics tracking ID",
       "required": false
     },
+    "GIT_API_URL": {
+      "description": "Base URL of git API",
+      "required": false
+    },
     "GIT_BRANCH_MAIN": {
       "description": "The default branch for a git repo",
       "required": false
