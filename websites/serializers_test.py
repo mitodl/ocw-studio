@@ -191,7 +191,8 @@ def test_website_content_detail_serializer_save(mocker):
     mock_update_website_backend.assert_called_once_with(content.website)
 
 
-def test_website_content_create_serializer(mocker):
+@pytest.mark.parametrize("includes_page_content_param", [True, False])
+def test_website_content_create_serializer(mocker, includes_page_content_param):
     """WebsiteContentCreateSerializer should create a new WebsiteContent, with some validation"""
     mock_update_website_backend = mocker.patch(
         "websites.serializers.update_website_backend"
@@ -208,13 +209,15 @@ def test_website_content_create_serializer(mocker):
     user = UserFactory.create()
     context = {
         "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
-        "website_pk": website.pk,
         "request": mocker.Mock(user=user),
+        "website_pk": website.pk,
+        **({"is_page_content": True} if includes_page_content_param else {}),
     }
     serializer = WebsiteContentCreateSerializer(data=payload, context=context)
     serializer.is_valid(raise_exception=True)
     serializer.save()
     content = WebsiteContent.objects.get(title=payload["title"])
+    mock_update_website_backend.assert_called_once_with(content.website)
     assert content.owner == user
     assert content.updated_by == user
     assert content.title == payload["title"]
@@ -222,4 +225,5 @@ def test_website_content_create_serializer(mocker):
     assert content.markdown == payload["markdown"]
     assert content.type == payload["type"]
     assert content.metadata == metadata
-    mock_update_website_backend.assert_called_once_with(content.website)
+    if includes_page_content_param:
+        assert content.is_page_content is True

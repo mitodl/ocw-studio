@@ -118,5 +118,6 @@
       "label": "Metadata",
       "name": "metadata"
     }
-  ]
+  ],
+  "content-dir": "content"
 }

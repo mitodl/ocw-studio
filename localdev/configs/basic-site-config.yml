@@ -1,14 +1,15 @@
+content-dir: content
 collections:
   - name: blog
     label: Blog
     category: Content
-    folder: content
+    folder: content/blog
     fields:
       - {"label": "Title", "name": "title", "widget": "string", "required": true}
   - name: bio
     label: Bio
     category: Content
-    folder: content
+    folder: content/bio
     fields:
       - {"label": "Title", "name": "title", "widget": "string", "required": true}
   - name: metadata
