@@ -29,7 +29,7 @@ class GithubApiWrapper:
     def __init__(self, website: WebsiteContent):
         """ Initialize the Github API backend for a specific website"""
         self.git = Github(
-            base_url=f"{settings.GIT_API_URL}", login_or_token=settings.GIT_TOKEN
+            base_url=settings.GIT_API_URL, login_or_token=settings.GIT_TOKEN
         )
         self.org = self.git.get_organization(settings.GIT_ORGANIZATION)
         self.website = website

@@ -263,3 +263,14 @@ def test_format_file_to_content(mocker, mock_api_wrapper):
         mock_api_wrapper.website,
         mock_api_wrapper.website.uuid,
     )
+
+
+def test_custom_github_url(mocker, settings):
+    """The github api wrapper should use the GIT_API_URL specified in settings"""
+    settings.GIT_API_URL = "http://github.exampled.edu/api/v3"
+    settings.GIT_TOKEN = "abcdef"
+    mock_github = mocker.patch("content_sync.apis.github.Github", autospec=True)
+    GithubApiWrapper(WebsiteFactory.create())
+    mock_github.assert_called_once_with(
+        base_url=settings.GIT_API_URL, login_or_token=settings.GIT_TOKEN
+    )
