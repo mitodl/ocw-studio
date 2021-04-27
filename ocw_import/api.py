@@ -83,53 +83,64 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
         for obj in resp["Contents"]:
             s3_key = obj["Key"]
             s3_content = get_s3_object_and_read(bucket.Object(s3_key)).decode()
-            s3_content_parts = [
-                part
-                for part in re.split(re.compile(r"^---\n", re.MULTILINE), s3_content)
-                if part
-            ]
-            parent = None
-            if len(s3_content_parts) >= 1:
-                content_json = yaml.load(s3_content_parts[0], Loader=yaml.Loader)
-                layout = content_json.get("layout", None)
-                menu = content_json.get("menu", None)
-                text_id = content_json.get("uid", None)
-                if menu:
-                    menu_values = list(menu.values())[0]
-                    parent_text_id = menu_values.get("parent", course_home_uuid)
-                else:
-                    parent_text_id = content_json.get("parent", None)
-                content_type = None
-                if layout in COURSE_PAGE_LAYOUTS:
-                    # This is a page
-                    content_type = CONTENT_TYPE_PAGE
-                elif layout in COURSE_RESOURCE_LAYOUTS:
-                    # This is a file
-                    content_type = CONTENT_TYPE_RESOURCE
-                if parent_text_id:
-                    parent, _ = WebsiteContent.objects.get_or_create(
-                        website=website, text_id=parent_text_id
-                    )
-                filepath = obj["Key"].replace(prefix, "")
-                base_defaults = {
-                    "metadata": content_json,
-                    "markdown": (
-                        s3_content_parts[1] if len(s3_content_parts) == 2 else None
-                    ),
-                    "parent": parent,
-                    "title": content_json.get("title"),
-                    "type": content_type,
-                    "content_filepath": filepath,
-                }
-                try:
-                    if not text_id:
-                        log.error("No UUID (text ID): %s", obj["Key"])
-                    else:
-                        WebsiteContent.objects.update_or_create(
-                            website=website, text_id=text_id, defaults=base_defaults
-                        )
-                except:  # pylint:disable=bare-except
-                    log.exception("Error saving WebsiteContent for %s", s3_key)
+            filepath = obj["Key"].replace(prefix, "")
+            try:
+                convert_data_to_content(filepath, s3_content, website, course_home_uuid)
+            except:  # pylint:disable=bare-except
+                log.exception("Error saving WebsiteContent for %s", s3_key)
+
+
+def convert_data_to_content(
+    filepath, data, website, course_home_uuid
+):  # pylint:disable=too-many-locals
+    """
+    Convert file data into a WebsiteContentObject
+
+    Args:
+        filepath(str): The path of the file (from S3 or git)
+        data(str): The file data to be converted
+        website: The website to which the content belongs
+        course_home_uuid: The UUID of the course page
+    """
+    s3_content_parts = [
+        part for part in re.split(re.compile(r"^---\n", re.MULTILINE), data) if part
+    ]
+    parent = None
+    if len(s3_content_parts) >= 1:
+        content_json = yaml.load(s3_content_parts[0], Loader=yaml.Loader)
+        layout = content_json.get("layout", None)
+        menu = content_json.get("menu", None)
+        text_id = content_json.get("uid", None)
+        if menu:
+            menu_values = list(menu.values())[0]
+            parent_text_id = menu_values.get("parent", course_home_uuid)
+        else:
+            parent_text_id = content_json.get("parent", None)
+        if layout in COURSE_PAGE_LAYOUTS:
+            # This is a page
+            content_type = CONTENT_TYPE_PAGE
+        elif layout in COURSE_RESOURCE_LAYOUTS:
+            # This is a file
+            content_type = CONTENT_TYPE_RESOURCE
+        if parent_text_id:
+            parent, _ = WebsiteContent.objects.get_or_create(
+                website=website, text_id=parent_text_id
+            )
+        base_defaults = {
+            "metadata": content_json,
+            "markdown": (s3_content_parts[1] if len(s3_content_parts) == 2 else None),
+            "parent": parent,
+            "title": content_json.get("title"),
+            "type": content_type,
+            "content_filepath": filepath,
+        }
+        if not text_id:
+            log.error("No UUID (text ID): %s", filepath)
+        else:
+            content, _ = WebsiteContent.objects.update_or_create(
+                website=website, text_id=text_id, defaults=base_defaults
+            )
+            return content
 
 
 def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):

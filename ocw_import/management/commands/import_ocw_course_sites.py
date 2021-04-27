@@ -1,9 +1,11 @@
 """ Import OCW course sites and content via ocw2hugo output """
 import pydoc
 
+from django.conf import settings
 from django.core.management import BaseCommand
 from mitol.common.utils.datetime import now_in_utc
 
+from content_sync.tasks import sync_all_websites
 from ocw_import.api import fetch_ocw2hugo_course_paths
 from ocw_import.tasks import import_ocw2hugo_courses
 
@@ -49,13 +51,19 @@ class Command(BaseCommand):
             default="",
             help="If specified, only import courses that contain this filter text",
         )
-
         parser.add_argument(
             "--limit",
             dest="limit",
             default=None,
             type=int,
             help="If specified, limits the overall number of course sites imported",
+        )
+        parser.add_argument(
+            "-s",
+            "--sync_backend",
+            dest="sync",
+            action="store_true",
+            help="Sync all unsynced courses to the backend",
         )
         super().add_arguments(parser)
 
@@ -91,3 +99,13 @@ class Command(BaseCommand):
         self.stdout.write(
             "OCW course import finished, took {} seconds".format(total_seconds)
         )
+
+        if options["sync"] is True and settings.CONTENT_SYNC_BACKEND:
+            self.stdout.write("Syncing all unsynced courses to the designated backend")
+            start = now_in_utc()
+            task = sync_all_websites.delay()
+            task.get()
+            total_seconds = (now_in_utc() - start).total_seconds()
+            self.stdout.write(
+                "Backend sync finished, took {} seconds".format(total_seconds)
+            )

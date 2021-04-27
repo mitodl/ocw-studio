@@ -18,6 +18,7 @@ drf-extensions
 ipython
 newrelic
 psycopg2
+pygithub==1.54.1
 redis
 requests
 sentry-sdk

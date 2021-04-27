@@ -1,6 +1,8 @@
 """Common DRF serializers"""
 from rest_framework import serializers
 
+from users.models import User
+
 
 class WriteableSerializerMethodField(serializers.SerializerMethodField):
     """
@@ -13,3 +15,16 @@ class WriteableSerializerMethodField(serializers.SerializerMethodField):
 
     def to_internal_value(self, data):
         return data
+
+
+class RequestUserSerializerMixin:
+    """
+    A mixin for serializers that need to determine which user made a request
+    """
+
+    def user_from_request(self):
+        """ Get the user from the request context """
+        request = self.context.get("request")
+        if request and hasattr(request, "user") and isinstance(request.user, User):
+            return request.user
+        return None

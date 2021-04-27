@@ -566,4 +566,59 @@ SOCIAL_AUTH_SAML_LOGIN_URL = get_string(
     required=True,
 )
 
-CONTENT_SYNC_BACKEND = None
+CONTENT_SYNC_BACKEND = get_string(
+    name="CONTENT_SYNC_BACKEND",
+    default=None,
+    description="The backend to sync websites/content with",
+    required=False,
+)
+CONTENT_SYNC_RETRIES = get_int(
+    name="CONTENT_SYNC_RETRIES",
+    default=5,
+    description="Number of times to retry backend sync attempts",
+    required=False,
+)
+
+# Git backend settings
+GIT_TOKEN = get_string(
+    name="GIT_TOKEN",
+    default=None,
+    description="The authentication token for git commands",
+    required=False,
+)
+GIT_ORGANIZATION = get_string(
+    name="GIT_ORGANIZATION",
+    default=None,
+    description="The organization under which repos should be created",
+    required=False,
+)
+GIT_BRANCH_MAIN = get_string(
+    name="GIT_BRANCH_MAIN",
+    default="main",
+    description="The default branch for a git repo",
+    required=False,
+)
+GIT_BRANCH_PREVIEW = get_string(
+    name="GIT_BRANCH_PREVIEW",
+    default="preview",
+    description="The preview branch for a git repo",
+    required=False,
+)
+GIT_BRANCH_RELEASE = get_string(
+    name="GIT_BRANCH_RELEASE",
+    default="release",
+    description="The release branch for a git repo",
+    required=False,
+)
+GIT_DEFAULT_USER_NAME = get_string(
+    name="GIT_DEFAULT_USER_NAME",
+    default="Anonymous",
+    description="The name for the default git committer",
+    required=False,
+)
+GIT_DEFAULT_USER_EMAIL = get_string(
+    name="GIT_DEFAULT_USER_EMAIL",
+    default="anonymous@example.edu",
+    description="The email for the default git committer",
+    required=False,
+)

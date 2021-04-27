@@ -154,12 +154,17 @@ def test_website_content_detail_serializer():
 
 def test_website_content_detail_serializer_save(mocker):
     """WebsiteContentDetailSerializer should modify only certain fields"""
+    mock_update_website_backend = mocker.patch(
+        "websites.serializers.update_website_backend"
+    )
     content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
     existing_text_id = content.text_id
     new_title = f"{content.title} with some more text"
     new_type = f"{content.type}_other"
     new_markdown = "hopefully different from the previous markdown"
     metadata = {"description": "data"}
+    user = UserFactory.create()
+    # uuid value is invalid but it's ignored since it's marked readonly
     serializer = WebsiteContentDetailSerializer(
         data={
             "title": new_title,
@@ -170,7 +175,8 @@ def test_website_content_detail_serializer_save(mocker):
         },
         instance=content,
         context={
-            "view": mocker.Mock(kwargs={"parent_lookup_website": content.website.name})
+            "view": mocker.Mock(kwargs={"parent_lookup_website": content.website.name}),
+            "request": mocker.Mock(user=user),
         },
     )
     serializer.is_valid(raise_exception=True)
@@ -181,10 +187,15 @@ def test_website_content_detail_serializer_save(mocker):
     assert content.type != new_type
     assert content.markdown == new_markdown
     assert content.metadata == metadata
+    assert content.updated_by == user
+    mock_update_website_backend.assert_called_once_with(content.website)
 
 
 def test_website_content_create_serializer(mocker):
     """WebsiteContentCreateSerializer should create a new WebsiteContent, with some validation"""
+    mock_update_website_backend = mocker.patch(
+        "websites.serializers.update_website_backend"
+    )
     metadata = {"description": "some text"}
     payload = {
         "text_id": "my-text-id",
@@ -194,16 +205,21 @@ def test_website_content_create_serializer(mocker):
         "metadata": metadata,
     }
     website = WebsiteFactory.create()
+    user = UserFactory.create()
     context = {
         "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
         "website_pk": website.pk,
+        "request": mocker.Mock(user=user),
     }
     serializer = WebsiteContentCreateSerializer(data=payload, context=context)
     serializer.is_valid(raise_exception=True)
     serializer.save()
     content = WebsiteContent.objects.get(title=payload["title"])
+    assert content.owner == user
+    assert content.updated_by == user
     assert content.title == payload["title"]
     assert content.text_id == payload["text_id"]
     assert content.markdown == payload["markdown"]
     assert content.type == payload["type"]
     assert content.metadata == metadata
+    mock_update_website_backend.assert_called_once_with(content.website)

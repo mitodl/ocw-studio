@@ -120,5 +120,5 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     assert mock_log.call_count == 1
     mock_log.assert_called_once_with(
         "No UUID (text ID): %s",
-        f"{TEST_OCW2HUGO_PREFIX}1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/content/sections/test_no_uid.md",
+        "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/content/sections/test_no_uid.md",
     )

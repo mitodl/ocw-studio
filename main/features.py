@@ -5,6 +5,7 @@ from django.conf import settings
 
 
 USE_LOCAL_STARTERS = "USE_LOCAL_STARTERS"
+GIT_ANONYMOUS_COMMITS = "GIT_ANONYMOUS_COMMITS"
 
 
 def is_enabled(name, default=None):
