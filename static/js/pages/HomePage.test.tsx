@@ -4,10 +4,17 @@ import { shallow } from "enzyme"
 import HomePage from "./HomePage"
 
 describe("HomePage", () => {
-  it("shows a Touchstone login button", () => {
+  it("shows the Touchstone login button if the user is logged out", () => {
+    SETTINGS.user = null
     const wrapper = shallow(<HomePage />)
-    const link = wrapper.find("a")
+    const link = wrapper.find("a[href='/login/saml/?idp=default']")
+    expect(link.exists()).toBeTruthy()
     expect(link.text()).toBe("Login with MIT Touchstone")
-    expect(link.prop("href")).toBe("/login/saml/?idp=default")
+  })
+
+  it("hides the Touchstone login button if the user is logged in", () => {
+    const wrapper = shallow(<HomePage />)
+    const link = wrapper.find("a[href='/login/saml/?idp=default']")
+    expect(link.exists()).toBeFalsy()
   })
 })
