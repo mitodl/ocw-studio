@@ -27,6 +27,8 @@ export default function SiteContentListing(): JSX.Element | null {
     return null
   }
 
+  console.log(website);
+
   if (isRepeatableCollectionItem(configItem)) {
     return (
       <RepeatableContentListing website={website} configItem={configItem} />

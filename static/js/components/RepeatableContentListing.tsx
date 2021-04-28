@@ -51,6 +51,8 @@ export default function RepeatableContentListing(props: {
     getWebsiteContentListingCursor
   )(listingParams)
 
+  console.log(listing);
+
   const [panelState, setPanelState] = useState<{
     textId: string | null
     formType: ContentFormType | null
