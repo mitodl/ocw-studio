@@ -11,7 +11,8 @@ export enum WidgetVariant {
   String = "string",
   Select = "select",
   Hidden = "hidden",
-  Object = "object"
+  Object = "object",
+  Relation = "relation"
 }
 
 export interface FieldValueCondition {
