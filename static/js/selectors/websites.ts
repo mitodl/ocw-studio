@@ -2,14 +2,21 @@ import { createSelector } from "reselect"
 import { memoize } from "lodash"
 import { find, propEq } from "ramda"
 
-import { contentListingKey } from "../query-configs/websites"
+import { contentListingKey, WebsiteDetails } from "../query-configs/websites"
 import { ReduxState } from "../reducers"
 
-import { ContentListingParams, WebsiteStarter } from "../types/websites"
+import {
+  ContentListingParams,
+  WebsiteStarter,
+  WebsiteContentListItem,
+  Website,
+  WebsiteContent
+} from "../types/websites"
 
 export const getWebsiteDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteDetails ?? {},
-  websiteDetails => memoize((name: string) => websiteDetails[name])
+  (websiteDetails: WebsiteDetails) =>
+    memoize((name: string): Website => websiteDetails[name])
 )
 
 export const getWebsiteListingCursor = createSelector(
@@ -46,17 +53,25 @@ export const getWebsiteCollaboratorDetailCursor = createSelector(
 
 export const getWebsiteContentDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteContentDetails ?? {},
-  content => memoize((textId: string) => content[textId])
+  (content: Record<string, WebsiteContent>) =>
+    memoize((textId: string) => content[textId])
 )
+
+interface WebsiteContentItem {
+  count: number | null
+  next: string | null
+  previous: string | null
+  results: WebsiteContentListItem[]
+}
 
 export const getWebsiteContentListingCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteContentListing ?? {},
   getWebsiteContentDetailCursor,
   (listing, websiteContentDetailCursor) =>
     memoize(
-      (listingParams: ContentListingParams) => {
+      (listingParams: ContentListingParams): WebsiteContentItem => {
         const response = listing[contentListingKey(listingParams)] ?? {}
-        const uuids = response?.results ?? []
+        const uuids: string[] = response?.results ?? []
         const items = uuids.map(websiteContentDetailCursor)
 
         return {
@@ -64,6 +79,7 @@ export const getWebsiteContentListingCursor = createSelector(
           results: items
         }
       },
-      (listingParams: ContentListingParams) => contentListingKey(listingParams)
+      (listingParams: ContentListingParams): string =>
+        contentListingKey(listingParams)
     )
 )

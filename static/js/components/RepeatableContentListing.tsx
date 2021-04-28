@@ -11,6 +11,7 @@ import SiteContentEditor from "./SiteContentEditor"
 import PaginationControls from "./PaginationControls"
 import Card from "./Card"
 import BasicModal from "./BasicModal"
+import { useWebsite } from "../context/Website"
 
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 import { siteContentListingUrl } from "../lib/urls"
@@ -24,16 +25,16 @@ import { getWebsiteContentListingCursor } from "../selectors/websites"
 import {
   ContentListingParams,
   RepeatableConfigItem,
-  Website,
   WebsiteContentListItem
 } from "../types/websites"
 import { ContentFormType } from "../types/forms"
 
 export default function RepeatableContentListing(props: {
-  website: Website
   configItem: RepeatableConfigItem
 }): JSX.Element | null {
-  const { website, configItem } = props
+  const { configItem } = props
+
+  const website = useWebsite()
 
   const { search } = useLocation()
   const offset = Number(new URLSearchParams(search).get("offset") ?? 0)
@@ -43,6 +44,7 @@ export default function RepeatableContentListing(props: {
     type: configItem.name,
     offset
   }
+
   const [
     { isPending: contentListingPending },
     fetchWebsiteContentListing
@@ -97,7 +99,6 @@ export default function RepeatableContentListing(props: {
           panelState.formType && (
             <div className="m-3">
               <SiteContentEditor
-                site={website}
                 loadContent={true}
                 configItem={configItem}
                 textId={panelState.textId}

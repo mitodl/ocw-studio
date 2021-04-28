@@ -4,6 +4,7 @@ import React from "react"
 import { act } from "react-dom/test-utils"
 
 import SingletonsContentListing from "./SingletonsContentListing"
+import WebsiteContext from "../context/Website"
 
 import { siteApiContentDetailUrl } from "../lib/urls"
 import IntegrationTestHelper, {
@@ -72,7 +73,11 @@ describe("SingletonsContentListing", () => {
       [singletonConfigItems[0].name]: content
     }
     render = helper.configureRenderer(
-      SingletonsContentListing,
+      props => (
+        <WebsiteContext.Provider value={website}>
+          <SingletonsContentListing {...props} />
+        </WebsiteContext.Provider>
+      ),
       {
         website:    website,
         configItem: configItem
@@ -174,7 +179,6 @@ describe("SingletonsContentListing", () => {
     const siteContentEditor = tabPane.find("SiteContentEditor")
     expect(siteContentEditor.exists()).toBe(true)
     expect(siteContentEditor.props()).toEqual({
-      site:        website,
       content:     content,
       loadContent: false,
       configItem:  singletonConfigItems[0],

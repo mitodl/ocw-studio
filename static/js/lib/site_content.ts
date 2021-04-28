@@ -5,6 +5,7 @@ import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
 import SelectField from "../components/widgets/SelectField"
 import BooleanField from "../components/widgets/BooleanField"
+import RelationField from "../components/widgets/RelationField"
 
 import { objectToFormData } from "./util"
 import {
@@ -16,6 +17,8 @@ import {
   ConfigField,
   EditableConfigItem,
   TopLevelConfigItem,
+  RepeatableConfigItem,
+  SingletonConfigItem,
   WebsiteContent,
   WidgetVariant
 } from "../types/websites"
@@ -41,12 +44,22 @@ export const componentFromWidget = (
     return "textarea"
   case WidgetVariant.Hidden:
     return null
+  case WidgetVariant.Relation:
+    return RelationField
   default:
     return "input"
   }
 }
 
 const SELECT_EXTRA_PROPS = ["options", "multiple", "max", "min"]
+
+const RELATION_EXTRA_PROPS = [
+  "collection",
+  "display_field",
+  "max",
+  "min",
+  "multiple"
+]
 
 /**
  * Returns extra props that should be provided to the `Field`
@@ -58,6 +71,8 @@ export function widgetExtraProps(field: ConfigField): Record<string, any> {
     return pick(SELECT_EXTRA_PROPS, field)
   case WidgetVariant.Markdown:
     return { minimal: field.minimal ?? false }
+  case WidgetVariant.Relation:
+    return pick(RELATION_EXTRA_PROPS, field)
   default:
     return {}
   }
@@ -103,11 +118,11 @@ const emptyValue = (field: ConfigField): SiteFormValue => {
 
 export const isRepeatableCollectionItem = (
   configItem: TopLevelConfigItem
-): boolean => "folder" in configItem
+): configItem is RepeatableConfigItem => "folder" in configItem
 
 export const isSingletonCollectionItem = (
   configItem: EditableConfigItem
-): boolean => "file" in configItem
+): configItem is SingletonConfigItem => "file" in configItem
 
 /**
  * Translates page content form values into a payload that our REST API understands.
@@ -202,6 +217,7 @@ const defaultForField = (field: ConfigField): SiteFormValue => {
   switch (field.widget) {
   case WidgetVariant.Boolean:
     return false
+  case WidgetVariant.Relation:
   case WidgetVariant.Select:
     return field.multiple ? [] : ""
   case WidgetVariant.File:

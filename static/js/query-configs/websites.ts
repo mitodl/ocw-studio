@@ -34,7 +34,8 @@ interface PaginatedResponse<Item> {
   previous: string | null
   results: Item[]
 }
-type WebsiteDetails = Record<string, Website>
+
+export type WebsiteDetails = Record<string, Website>
 
 export const getTransformedWebsiteName = (
   response: ActionPromiseValue<Record<string, WebsiteDetails>>
@@ -251,7 +252,16 @@ export const createWebsiteCollaboratorMutation = (
 export type WebsiteContentListingResponse = PaginatedResponse<
   WebsiteContentListItem
 >
-type WebsiteContentListing = Record<string, string[]> // website name mapped to list of text IDs
+export type WebsiteContentListing = Record<
+  string,
+  {
+    results: string[]
+    count: number | null
+    next: string | null
+    previous: string | null
+  }
+>
+
 export const contentListingKey = (
   listingParams: ContentListingParams
 ): string =>

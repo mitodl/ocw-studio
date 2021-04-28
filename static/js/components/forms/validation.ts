@@ -26,6 +26,7 @@ export const getFieldSchema = (field: ConfigField): Schema => {
   let schema
 
   switch (field.widget) {
+  case WidgetVariant.Relation:
   case WidgetVariant.Select: {
     if (field.multiple) {
       schema = yup.array()

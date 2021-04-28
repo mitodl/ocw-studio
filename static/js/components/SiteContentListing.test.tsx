@@ -86,8 +86,7 @@ describe("SiteContentListing", () => {
       const listing = wrapper.find(expChildComponent)
       expect(listing.exists()).toBe(true)
       expect(listing.props()).toEqual({
-        website:    website,
-        configItem: configItem
+        configItem
       })
     })
   })

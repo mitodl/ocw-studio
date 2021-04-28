@@ -4,6 +4,7 @@ import React from "react"
 import { act } from "react-dom/test-utils"
 
 import RepeatableContentListing from "./RepeatableContentListing"
+import WebsiteContext from "../context/Website"
 
 import { isIf } from "../test_util"
 import {
@@ -102,9 +103,12 @@ describe("RepeatableContentListing", () => {
       })
 
     render = helper.configureRenderer(
-      RepeatableContentListing,
+      props => (
+        <WebsiteContext.Provider value={website}>
+          <RepeatableContentListing {...props} />
+        </WebsiteContext.Provider>
+      ),
       {
-        website:    website,
         configItem: configItem,
         location:   {
           search: ""

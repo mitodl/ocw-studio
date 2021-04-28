@@ -4,6 +4,7 @@ import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
 import SelectField from "../components/widgets/SelectField"
 import BooleanField from "../components/widgets/BooleanField"
+import RelationField from "../components/widgets/RelationField"
 
 import {
   makeWebsiteConfigField,
@@ -193,7 +194,8 @@ describe("site_content", () => {
         [WidgetVariant.Boolean, false],
         [WidgetVariant.Text, ""],
         [WidgetVariant.String, ""],
-        [WidgetVariant.Select, ""]
+        [WidgetVariant.Select, ""],
+        [WidgetVariant.Relation, ""]
       ].forEach(([widget, expectation]) => {
         const field = makeWebsiteConfigField({
           widget,
@@ -207,6 +209,15 @@ describe("site_content", () => {
     it("should use appropriate default for multiple select widget", () => {
       const field = makeWebsiteConfigField({
         widget:   WidgetVariant.Select,
+        multiple: true,
+        label:    "Widget"
+      })
+      expect(newInitialValues([field])).toStrictEqual({ widget: [] })
+    })
+
+    it("should use appropriate default for multiple relation", () => {
+      const field = makeWebsiteConfigField({
+        widget:   WidgetVariant.Relation,
         multiple: true,
         label:    "Widget"
       })
@@ -247,7 +258,8 @@ describe("site_content", () => {
         [WidgetVariant.Boolean, BooleanField],
         [WidgetVariant.Markdown, MarkdownEditor],
         [WidgetVariant.Text, "textarea"],
-        [WidgetVariant.Hidden, null]
+        [WidgetVariant.Hidden, null],
+        [WidgetVariant.Relation, RelationField]
       ].forEach(([widget, expected]) => {
         const field = makeWebsiteConfigField({
           widget: widget as WidgetVariant
@@ -281,6 +293,24 @@ describe("site_content", () => {
         multiple: true,
         max:      30,
         min:      22
+      })
+    })
+
+    it("should grab relation props for the relation widget", () => {
+      const field = makeWebsiteConfigField({
+        widget:        WidgetVariant.Relation,
+        collection:    "greatcollection",
+        display_field: "the field to display!",
+        max:           30,
+        min:           22,
+        multiple:      true
+      })
+      expect(widgetExtraProps(field)).toStrictEqual({
+        collection:    "greatcollection",
+        display_field: "the field to display!",
+        max:           30,
+        min:           22,
+        multiple:      true
       })
     })
 

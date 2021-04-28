@@ -4,6 +4,7 @@ import { act } from "react-dom/test-utils"
 import sinon, { SinonStub } from "sinon"
 
 import SiteContentEditor from "./SiteContentEditor"
+import WebsiteContext from "../context/Website"
 
 import { siteApiContentDetailUrl, siteApiContentUrl } from "../lib/urls"
 import IntegrationTestHelper, {
@@ -72,11 +73,15 @@ describe("SiteContent", () => {
       setStatus:     helper.sandbox.stub()
     }
     render = helper.configureRenderer(
-      // @ts-ignore
-      SiteContentEditor,
+      function(props) {
+        return (
+          <WebsiteContext.Provider value={website as Website}>
+            <SiteContentEditor {...props} />
+          </WebsiteContext.Provider>
+        )
+      },
       {
         history:     { push: historyPushStub },
-        site:        website,
         textId:      content.text_id,
         configItem:  configItem,
         loadContent: true

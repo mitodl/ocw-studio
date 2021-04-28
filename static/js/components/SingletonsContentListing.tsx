@@ -4,20 +4,21 @@ import { Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { useRequest } from "redux-query-react"
 
 import Card from "./Card"
+import { useWebsite } from "../context/Website"
 
 import { websiteContentDetailRequest } from "../query-configs/websites"
 
-import { SingletonsConfigItem, Website } from "../types/websites"
+import { SingletonsConfigItem } from "../types/websites"
 import { ContentFormType } from "../types/forms"
 
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import SiteContentEditor from "./SiteContentEditor"
 
 export default function SingletonsContentListing(props: {
-  website: Website
   configItem: SingletonsConfigItem
 }): JSX.Element | null {
-  const { website, configItem } = props
+  const { configItem } = props
+  const website = useWebsite()
 
   const [activeTab, setActiveTab] = useState(0)
   const toggle = (tab: number) => {
@@ -60,7 +61,6 @@ export default function SingletonsContentListing(props: {
                 "Loading..."
               ) : (
                 <SiteContentEditor
-                  site={website}
                   content={content}
                   loadContent={false}
                   configItem={fileConfigItem}

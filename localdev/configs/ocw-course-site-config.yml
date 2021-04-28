@@ -20,11 +20,31 @@ collections:
       - name: address
         label: Address
         widget: object
+        required: false
         fields:
           - { label: "Street Address", name: "street_address", widget: "string", required: true }
           - { label: "City", name: "city", widget: "string", required: true }
           - { label: "State", name: "state", widget: "string", required: true }
           - { label: "Zip Code", name: "zip", widget: "string", required: true }
+      - {
+        "label": "Authors",
+        "name": "authors",
+        "widget": "relation",
+        "collection": "author",
+        "display_field": "title",
+        "multiple": true,
+        "max": 10,
+        "min": 1,
+        "required": false,
+        }
+
+  - name: author
+    label: Author
+    category: Content
+    folder: content
+    fields:
+      - {"label": "Name", "name": "title", "widget": "string", "required": true}
+      - {"label": "Profession", "name": "profession", "widget": "string", "required": false}
 
   - name: resource
     label: Resource

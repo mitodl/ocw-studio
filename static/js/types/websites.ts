@@ -11,7 +11,8 @@ export enum WidgetVariant {
   String = "string",
   Select = "select",
   Hidden = "hidden",
-  Object = "object"
+  Object = "object",
+  Relation = "relation"
 }
 
 export interface FieldValueCondition {
@@ -23,6 +24,11 @@ export interface FieldValueCondition {
  * A configuration for a field for site content. This type basically
  * contains the information needed to render the field in the UI, to edit it,
  * validate it, etc.
+ *
+ * TODO: this is getting a bit much, can we declare a ConfigFieldBaseProps interface
+ * and then declare variants, with their WidgetVariant set properly, that set exactly
+ * which props they have? Then ConfigField could be a union of these types - might get
+ * better typechecking that having all these optional properties.
  **/
 export interface ConfigField {
   name: string
@@ -39,6 +45,8 @@ export interface ConfigField {
   condition?: FieldValueCondition
   fields?: ConfigField[]
   collapsed?: boolean
+  collection?: string
+  display_field?: string // eslint-disable-line camelcase
 }
 
 export interface BaseConfigItem {

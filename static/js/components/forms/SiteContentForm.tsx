@@ -27,7 +27,7 @@ interface Props {
     formikHelpers: FormikHelpers<any>
   ) => void | Promise<any>
   configItem: EditableConfigItem
-  content: WebsiteContent
+  content: WebsiteContent | null
   formType: ContentFormType
 }
 
@@ -46,7 +46,7 @@ export default function SiteContentForm({
     () =>
       formType === ContentFormType.Add ?
         newInitialValues(configItem.fields) :
-        contentInitialValues(content, configItem.fields),
+        contentInitialValues(content as WebsiteContent, configItem.fields),
     [configItem, formType, content]
   )
 

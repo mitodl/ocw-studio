@@ -4,6 +4,7 @@ import { useSelector } from "react-redux"
 import { FormikHelpers } from "formik"
 
 import SiteContentForm from "./forms/SiteContentForm"
+import { useWebsite } from "../context/Website"
 
 import {
   createWebsiteContentMutation,
@@ -19,11 +20,10 @@ import {
 } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 
-import { EditableConfigItem, Website, WebsiteContent } from "../types/websites"
+import { EditableConfigItem, WebsiteContent } from "../types/websites"
 import { ContentFormType, SiteFormValues } from "../types/forms"
 
 interface Props {
-  site: Website
   content?: WebsiteContent
   loadContent: boolean
   textId: string | null
@@ -38,11 +38,12 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     hideModal,
     configItem,
     textId,
-    site,
     loadContent,
     formType,
     fetchWebsiteContentListing
   } = props
+
+  const site = useWebsite()
 
   const [
     { isPending: addIsPending },
