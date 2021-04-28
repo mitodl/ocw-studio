@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.13.1
+--------------
+
+- Moved collaborator view tests
+- add support for the 'Object' field type
+- Hide the login button if the user is logged in
+- Differentiate between types of user-entered data
+
 Version 0.13.0 (Released April 28, 2021)
 --------------
 
