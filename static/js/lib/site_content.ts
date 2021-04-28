@@ -5,6 +5,7 @@ import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
 import SelectField from "../components/widgets/SelectField"
 import BooleanField from "../components/widgets/BooleanField"
+import RelationField from "../components/widgets/RelationField"
 
 import { objectToFormData } from "./util"
 import {
@@ -41,6 +42,8 @@ export const componentFromWidget = (
     return "textarea"
   case WidgetVariant.Hidden:
     return null
+  case WidgetVariant.Relation:
+    return RelationField
   default:
     return "input"
   }

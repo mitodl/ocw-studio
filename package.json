@@ -73,6 +73,7 @@
     "express": "^4.17.1",
     "fetch-mock": "^9.10.6",
     "formik": "^2.2.6",
+    "fuse.js": "^6.4.6",
     "history": "^5.0.0",
     "isomorphic-fetch": "^3.0.0",
     "jest": "^26.6.3",
