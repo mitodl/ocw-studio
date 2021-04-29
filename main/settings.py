@@ -624,7 +624,7 @@ GIT_DEFAULT_USER_EMAIL = get_string(
 )
 GIT_API_URL = get_string(
     name="GIT_API_URL",
-    default="https://api.github.com",
+    default=None,
     description="Base URL of git API",
     required=False,
 )
