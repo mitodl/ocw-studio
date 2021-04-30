@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.13.1
+Version 0.13.1 (Released April 30, 2021)
 --------------
 
 - Moved collaborator view tests
