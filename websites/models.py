@@ -122,7 +122,13 @@ class WebsiteContent(TimestampedModel):
     def calculate_checksum(self) -> str:
         """ Returns a calculated checksum of the content """
         return sha256(
-            "\n".join([json.dumps(self.metadata), str(self.markdown)]).encode("utf-8")
+            "\n".join(
+                [
+                    json.dumps(self.metadata),
+                    str(self.markdown),
+                    str(self.content_filepath),  # TO DO: Replace with dynamic filepath
+                ]
+            ).encode("utf-8")
         ).hexdigest()
 
     class Meta:
