@@ -193,6 +193,9 @@ def test_upsert_content_files(mocker, mock_api_wrapper):
         id__in=mock_api_wrapper.website.websitecontent_set.values_list("id", flat=True)
     ):
         assert content.content_sync_state.is_synced is True
+        assert (
+            content.content_sync_state.current_checksum == content.calculate_checksum()
+        )
 
 
 @pytest.mark.parametrize(

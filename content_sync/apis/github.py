@@ -1,7 +1,7 @@
 """ Github API wrapper"""
 import logging
 from base64 import b64decode
-from typing import Iterator
+from typing import Iterator, List
 
 import yaml
 from django.conf import settings
@@ -163,10 +163,6 @@ class GithubApiWrapper:
         ).exclude(
             Q(current_checksum=F("synced_checksum")) & Q(synced_checksum__isnull=False)
         )
-        repo = self.get_repo()
-        main_ref = repo.get_git_ref(f"heads/{settings.GIT_BRANCH_MAIN}")
-        main_sha = main_ref.object.sha
-        base_tree = repo.get_git_tree(main_sha)
         modified_element_list = []
         synced_filepaths = {}
 
@@ -177,42 +173,19 @@ class GithubApiWrapper:
             if filepath:
                 synced_filepaths.update({sync_state.id: filepath})
                 data = self.format_content_to_file(content)
-                modified_element_list.append(
-                    InputGitTreeElement(filepath, "100644", "blob", data)
+                modified_element_list.extend(
+                    self.get_tree_elements(sync_state, data, filepath)
                 )
-                # Remove the old filepath stored in the sync state data if it doesn't match current path
-                if (
-                    sync_state.data
-                    and sync_state.data.get(GIT_DATA_FILEPATH, None)
-                    and sync_state.data[GIT_DATA_FILEPATH] != filepath
-                ):
-                    modified_element_list.append(
-                        InputGitTreeElement(
-                            sync_state.data[GIT_DATA_FILEPATH],
-                            "100644",
-                            "blob",
-                            sha=None,
-                        )
-                    )
 
         if len(modified_element_list) > 0:
-            tree = repo.create_git_tree(modified_element_list, base_tree)
-            parent = repo.get_git_commit(main_sha)
-            git_user = self.git_user(User.objects.filter(id=user_id).first())
-            commit = repo.create_git_commit(
-                "Sync all content",
-                tree,
-                [parent],
-                committer=git_user,
-                author=git_user,
-                **kwargs,
+            commit = self.commit_tree(
+                modified_element_list, User.objects.filter(id=user_id).first()
             )
-            main_ref.edit(commit.sha)
 
             # Mark all as synced
             for synced_state_id, filepath in synced_filepaths.items():
                 sync_state = ContentSyncState.objects.get(id=synced_state_id)
-                sync_state.current_checksum = content.calculate_checksum()
+                sync_state.current_checksum = sync_state.content.calculate_checksum()
                 sync_state.data = {GIT_DATA_FILEPATH: filepath}
                 sync_state.mark_synced()
             return commit
@@ -275,3 +248,43 @@ class GithubApiWrapper:
             self.website,
             self.website.uuid,
         )
+
+    def get_tree_elements(
+        self, sync_state: ContentSyncState, data: str, filepath: str
+    ) -> List[InputGitTreeElement]:
+        """
+        Return the required InputGitTreeElements for a modified ContentSyncState
+        """
+        tree_elements = [InputGitTreeElement(filepath, "100644", "blob", data)]
+        # Remove the old filepath stored in the sync state data if it doesn't match current path
+        if (
+            sync_state.data
+            and sync_state.data.get(GIT_DATA_FILEPATH, None)
+            and sync_state.data[GIT_DATA_FILEPATH] != filepath
+        ):
+            tree_elements.append(
+                InputGitTreeElement(
+                    sync_state.data[GIT_DATA_FILEPATH],
+                    "100644",
+                    "blob",
+                    sha=None,
+                )
+            )
+        return tree_elements
+
+    def commit_tree(self, element_list: [InputGitTreeElement], user: User) -> Commit:
+        """
+        Create a commit containing all the changes specified in a list of InputGitTreeElements
+        """
+        repo = self.get_repo()
+        main_ref = repo.get_git_ref(f"heads/{settings.GIT_BRANCH_MAIN}")
+        main_sha = main_ref.object.sha
+        base_tree = repo.get_git_tree(main_sha)
+        tree = repo.create_git_tree(element_list, base_tree)
+        parent = repo.get_git_commit(main_sha)
+        git_user = self.git_user(user)
+        commit = repo.create_git_commit(
+            "Sync all content", tree, [parent], committer=git_user, author=git_user
+        )
+        main_ref.edit(commit.sha)
+        return commit
