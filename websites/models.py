@@ -124,7 +124,7 @@ class WebsiteContent(TimestampedModel):
         return sha256(
             "\n".join(
                 [
-                    json.dumps(self.metadata),
+                    json.dumps(self.metadata, sort_keys=True),
                     str(self.markdown),
                     str(self.content_filepath),  # TO DO: Replace with dynamic filepath
                 ]

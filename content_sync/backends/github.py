@@ -131,7 +131,8 @@ class GithubBackend(BaseSyncBackend):
                 content = self.api.format_file_to_content(file_content)
                 sync_state = content.content_sync_state
                 sync_state.current_checksum = content.calculate_checksum()
-                sync_state.mark_synced()
+                sync_state.synced_checksum = sync_state.current_checksum
+                sync_state.save()
                 if content.id in website_content_ids:
                     website_content_ids.remove(content.id)
 

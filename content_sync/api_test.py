@@ -38,10 +38,13 @@ def test_upsert_content_sync_state_update(settings):
     """ Verify that upsert_content_sync_state updates a ContentSyncState record for the content """
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
     content = WebsiteContentFactory.create(markdown="abc")
-
     abc_checksum = content.calculate_checksum()
 
-    content.content_sync_state.mark_synced()
+    sync_state = content.content_sync_state
+    sync_state.current_checksum = abc_checksum
+    sync_state.synced_checksum = abc_checksum
+    sync_state.save()
+
     content.markdown = "def"
 
     def_checksum = content.calculate_checksum()

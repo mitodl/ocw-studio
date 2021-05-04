@@ -26,11 +26,6 @@ class ContentSyncState(TimestampedModel):
         """ Returns True if the content is up-to-date """
         return self.current_checksum == self.synced_checksum
 
-    def mark_synced(self):
-        """ Marks the state as synced """
-        self.synced_checksum = self.current_checksum
-        self.save()
-
     def __str__(self):  # pragma: no cover
         """ Returns a string representation of the state """
         return f"Sync State for content: {self.content.title if self.content else None}"

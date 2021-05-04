@@ -152,9 +152,7 @@ class GithubApiWrapper:
             self.upsert_content_files_for_user(user_id)
 
     @retry_on_failure
-    def upsert_content_files_for_user(  # pylint:disable=too-many-locals
-        self, user_id=None, **kwargs
-    ) -> Commit:
+    def upsert_content_files_for_user(self, user_id=None) -> Commit:
         """
         Upsert multiple WebsiteContent objects to github in one commit
         """
@@ -171,7 +169,14 @@ class GithubApiWrapper:
             filepath = content.content_filepath  # TO DO: Use dynamic filepath
             # Add any modified files
             if filepath:
-                synced_filepaths.update({sync_state.id: filepath})
+                synced_filepaths.update(
+                    {
+                        sync_state.id: {
+                            "filepath": filepath,
+                            "checksum": content.calculate_checksum(),
+                        }
+                    }
+                )
                 data = self.format_content_to_file(content)
                 modified_element_list.extend(
                     self.get_tree_elements(sync_state, data, filepath)
@@ -182,12 +187,13 @@ class GithubApiWrapper:
                 modified_element_list, User.objects.filter(id=user_id).first()
             )
 
-            # Mark all as synced
-            for synced_state_id, filepath in synced_filepaths.items():
+            # Save last git filepath and checksum to sync state
+            for synced_state_id, sync_info in synced_filepaths.items():
                 sync_state = ContentSyncState.objects.get(id=synced_state_id)
-                sync_state.current_checksum = sync_state.content.calculate_checksum()
-                sync_state.data = {GIT_DATA_FILEPATH: filepath}
-                sync_state.mark_synced()
+                sync_state.data = {GIT_DATA_FILEPATH: sync_info["filepath"]}
+                sync_state.synced_checksum = sync_info["checksum"]
+                sync_state.save()
+
             return commit
 
     @retry_on_failure
