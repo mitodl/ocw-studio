@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.14.0
+Version 0.14.0 (Released May 04, 2021)
 --------------
 
 - Customize github api url (#239)
