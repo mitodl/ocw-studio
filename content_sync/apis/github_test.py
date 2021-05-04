@@ -4,9 +4,10 @@ from base64 import b64decode, b64encode
 
 import pytest
 import yaml
+from django.conf import settings
 from github import GithubException
 
-from content_sync.apis.github import GithubApiWrapper
+from content_sync.apis.github import GIT_DATA_FILEPATH, GithubApiWrapper
 from main import features
 from users.factories import UserFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
@@ -61,12 +62,12 @@ def test_create_repo(mock_api_wrapper, kwargs):
     )
 
 
-def test_create_repo_slow_api(mocker, mock_api_wrapper):
+def test_create_repo_slow_api(mocker, mock_api_wrapper, mock_branches):
     """ Test that the create_repo function will be retried if it fails initially"""
     mock_api_wrapper.org.create_repo.side_effect = [
         GithubException(status=404, data={}),
         GithubException(status=429, data={}),
-        mocker.Mock(),
+        mocker.Mock(get_branches=mocker.Mock(return_value=mock_branches[0:1])),
     ]
     new_repo = mock_api_wrapper.create_repo()
     assert mock_api_wrapper.org.create_repo.call_count == 3
@@ -165,11 +166,16 @@ def test_upsert_content_file_no_path(mock_api_wrapper, filepath):
 
 def test_upsert_content_files(mocker, mock_api_wrapper):
     """upsert_content_files should process all files in 1 commit per user"""
+    mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
     for content in mock_api_wrapper.website.websitecontent_set.all()[:2]:
         content.updated_by = UserFactory.create()
         content.save()
     mock_repo = mock_api_wrapper.org.get_repo.return_value
     mock_api_wrapper.upsert_content_files()
+    for content in mock_api_wrapper.website.websitecontent_set.all():
+        mock_git_tree_element.assert_any_call(
+            content.content_filepath, "100644", "blob", mocker.ANY
+        )
 
     assert (
         mock_repo.create_git_commit.call_count == 3
@@ -187,6 +193,62 @@ def test_upsert_content_files(mocker, mock_api_wrapper):
         id__in=mock_api_wrapper.website.websitecontent_set.values_list("id", flat=True)
     ):
         assert content.content_sync_state.is_synced is True
+        assert (
+            content.content_sync_state.current_checksum == content.calculate_checksum()
+        )
+
+
+@pytest.mark.parametrize(
+    "field, value",
+    [
+        ["markdown", "NEW"],
+        ["metadata", '{"foo": 2}'],
+        ["content_filepath", "content/newpath.md"],
+    ],
+)
+def test_upsert_content_files_modified_only(mocker, mock_api_wrapper, field, value):
+    """upsert_content_files should process only the file with a modified field"""
+    mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
+
+    # Make all content appear to be synced
+    for content in mock_api_wrapper.website.websitecontent_set.all():
+        content_sync = content.content_sync_state
+        content_sync.synced_checksum = content_sync.content.calculate_checksum()
+        content_sync.save()
+
+    # Update the field for one WebsiteContent object
+    content = mock_api_wrapper.website.websitecontent_set.first()
+    setattr(content, field, value)
+    content.save()
+
+    mock_api_wrapper.upsert_content_files()
+    mock_git_tree_element.called_once_with(
+        content.content_filepath, "100644", "blob", mocker.ANY
+    )
+
+    content.refresh_from_db()
+    assert content.content_sync_state.is_synced is True
+
+
+def test_upsert_content_files_modified_filepath(mocker, mock_api_wrapper):
+    """upsert_content_files should save git filepath in sync state and remove old paths from git"""
+    mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
+    content = mock_api_wrapper.website.websitecontent_set.first()
+    sync_state = content.content_sync_state
+    old_filepath = content.content_filepath
+    mock_api_wrapper.upsert_content_files()
+    sync_state.refresh_from_db()
+    assert sync_state.data[GIT_DATA_FILEPATH] == old_filepath
+
+    content.content_filepath = "my_new_path.md"
+    content.save()
+    mock_api_wrapper.upsert_content_files()
+    mock_git_tree_element.assert_any_call(
+        content.content_filepath, "100644", "blob", mocker.ANY
+    )
+    mock_git_tree_element.assert_any_call(old_filepath, "100644", "blob", sha=None)
+    sync_state.refresh_from_db()
+    assert sync_state.data[GIT_DATA_FILEPATH] == content.content_filepath
 
 
 def test_delete_content_file(mocker, mock_api_wrapper):
@@ -243,7 +305,9 @@ def test_git_user(settings, mock_api_wrapper, is_anonymous):
 )
 def test_format_content_to_file(mock_api_wrapper, markdown, metadata):
     """A WebsiteContent object should be transformed into the expected string"""
-    content = WebsiteContentFactory.create(markdown=markdown, metadata=metadata)
+    content = WebsiteContentFactory.create(
+        markdown=markdown, metadata=metadata, website=mock_api_wrapper.website
+    )
     assert (
         mock_api_wrapper.format_content_to_file(content)
         == f"---\n{yaml.dump(metadata)}\n---\n{markdown}"
@@ -283,3 +347,66 @@ def test_custom_default_url(mocker, settings):
     mock_github = mocker.patch("content_sync.apis.github.Github", autospec=True)
     GithubApiWrapper(WebsiteFactory.create())
     mock_github.assert_called_once_with(login_or_token=settings.GIT_TOKEN)
+
+
+def test_create_repo_new(mocker, mock_api_wrapper, mock_branches):
+    """ Test that the create_repo function completes without errors and calls expected api functions"""
+    mock_api_wrapper.org.create_repo.return_value = mocker.Mock(
+        default_branch=settings.GIT_BRANCH_MAIN,
+        get_branches=mocker.Mock(return_value=mock_branches[0:1]),
+    )
+    new_repo = mock_api_wrapper.create_repo()
+    mock_api_wrapper.org.create_repo.assert_called_once_with(
+        mock_api_wrapper.get_repo_name(), auto_init=True
+    )
+    for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
+        new_repo.create_git_ref.assert_any_call(f"refs/heads/{branch}", sha=mocker.ANY)
+    with pytest.raises(AssertionError):
+        new_repo.create_git_ref.assert_any_call(
+            f"refs/heads/{settings.GIT_BRANCH_MAIN}", sha=mocker.ANY
+        )
+    assert new_repo == mock_api_wrapper.get_repo()
+
+
+def test_create_repo_again(mocker, mock_api_wrapper):
+    """ Test that the create_repo function will try retrieving a repo if api.create_repo fails"""
+    mock_log = mocker.patch("content_sync.apis.github.log.debug")
+    mock_api_wrapper.org.create_repo.side_effect = GithubException(status=422, data={})
+    new_repo = mock_api_wrapper.create_repo()
+    assert new_repo is not None
+    assert mock_api_wrapper.org.get_repo.call_count == 1
+    mock_log.assert_called_once_with(
+        "Repo already exists: %s", mock_api_wrapper.website.name
+    )
+
+
+def test_create_backend_custom_default_branch(
+    settings, mocker, mock_api_wrapper, mock_branches
+):
+    """ Test that the create_backend function creates a custom default branch name """
+    settings.GIT_BRANCH_MAIN = "testing"
+    mock_api_wrapper.org.create_repo.return_value = mocker.Mock(
+        default_branch="main", get_branches=mocker.Mock(return_value=mock_branches[0:1])
+    )
+    new_repo = mock_api_wrapper.create_repo()
+    for branch in ["testing", settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
+        new_repo.create_git_ref.assert_any_call(f"refs/heads/{branch}", sha=mocker.ANY)
+
+
+def test_create_backend_two_branches_already_exist(
+    mocker, mock_api_wrapper, mock_branches
+):
+    """ Test that the create_backend function only creates branches that don't exist """
+    mock_api_wrapper.org.create_repo.return_value = mocker.Mock(
+        default_branch=settings.GIT_BRANCH_MAIN,
+        get_branches=mocker.Mock(return_value=mock_branches[0:2]),
+    )
+    new_repo = mock_api_wrapper.create_repo()
+    with pytest.raises(AssertionError):
+        new_repo.create_git_ref.assert_any_call(
+            f"refs/heads/{settings.GIT_BRANCH_PREVIEW}", sha=mocker.ANY
+        )
+    new_repo.create_git_ref.assert_any_call(
+        f"refs/heads/{settings.GIT_BRANCH_RELEASE}", sha=mocker.ANY
+    )
+    assert new_repo == mock_api_wrapper.get_repo()

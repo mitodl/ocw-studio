@@ -2,7 +2,6 @@
 import logging
 
 from django.conf import settings
-from github import GithubException
 from github.Commit import Commit
 from github.ContentFile import ContentFile
 from github.PullRequest import PullRequest
@@ -32,20 +31,7 @@ class GithubBackend(BaseSyncBackend):
         """
         Create a Website git repo with 3 branches.  Requires ~6 API calls.
         """
-        try:
-            repo = self.api.create_repo()
-        except GithubException as ge:
-            if ge.status == 422:
-                # It may already exist, try to retrieve it
-                repo = self.api.get_repo()
-                log.debug("Repo already exists: %s", self.website.name)
-        if repo.default_branch != settings.GIT_BRANCH_MAIN:
-            self.api.rename_branch(repo.default_branch, settings.GIT_BRANCH_MAIN)
-        existing_branches = [branch.name for branch in repo.get_branches()]
-        for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
-            if branch not in existing_branches:
-                self.api.create_branch(branch, settings.GIT_BRANCH_MAIN)
-        return self.api.get_repo()
+        return self.api.create_repo()
 
     def create_backend_preview(self) -> PullRequest:
         """
@@ -145,7 +131,8 @@ class GithubBackend(BaseSyncBackend):
                 content = self.api.format_file_to_content(file_content)
                 sync_state = content.content_sync_state
                 sync_state.current_checksum = content.calculate_checksum()
-                sync_state.mark_synced()
+                sync_state.synced_checksum = sync_state.current_checksum
+                sync_state.save()
                 if content.id in website_content_ids:
                     website_content_ids.remove(content.id)
 

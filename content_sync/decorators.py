@@ -55,10 +55,11 @@ def check_sync_state(func: Callable) -> Callable:
 
     def wrapper(self, sync_state: ContentSyncState):
         if not sync_state.is_synced:
+            content = sync_state.content
             result = func(self, sync_state)
             if result:
-                sync_state.current_commit = sync_state.content.calculate_checksum()
-                sync_state.mark_synced()
+                sync_state.synced_checksum = content.calculate_checksum()
+                sync_state.save()
                 return result
         return None
 

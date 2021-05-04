@@ -1,10 +1,11 @@
 """ Github API wrapper"""
 import logging
 from base64 import b64decode
-from typing import Iterator
+from typing import Iterator, List
 
 import yaml
 from django.conf import settings
+from django.db.models import F, Q
 from github import ContentFile, Github, GithubException, InputGitTreeElement
 from github.Branch import Branch
 from github.Commit import Commit
@@ -12,6 +13,7 @@ from github.InputGitAuthor import InputGitAuthor
 from github.Repository import Repository
 
 from content_sync.decorators import retry_on_failure
+from content_sync.models import ContentSyncState
 from main import features
 from ocw_import.api import convert_data_to_content
 from users.models import User
@@ -19,6 +21,8 @@ from websites.models import WebsiteContent
 
 
 log = logging.getLogger(__name__)
+
+GIT_DATA_FILEPATH = "filepath"
 
 
 class GithubApiWrapper:
@@ -64,8 +68,21 @@ class GithubApiWrapper:
         """
         Create a website repo
         """
-        # TODO: Remove auto_init (which creates a README) and initialize with a metadata json file instead
-        self.repo = self.org.create_repo(self.get_repo_name(), auto_init=True, **kwargs)
+        try:
+            self.repo = self.org.create_repo(
+                self.get_repo_name(), auto_init=True, **kwargs
+            )
+        except GithubException as ge:
+            if ge.status == 422:
+                # It may already exist, try to retrieve it
+                self.repo = self.org.get_repo(self.get_repo_name())
+                log.debug("Repo already exists: %s", self.website.name)
+        if self.repo.default_branch != settings.GIT_BRANCH_MAIN:
+            self.rename_branch(self.repo.default_branch, settings.GIT_BRANCH_MAIN)
+        existing_branches = [branch.name for branch in self.repo.get_branches()]
+        for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
+            if branch not in existing_branches:
+                self.create_branch(branch, settings.GIT_BRANCH_MAIN)
         return self.repo
 
     @retry_on_failure
@@ -135,45 +152,48 @@ class GithubApiWrapper:
             self.upsert_content_files_for_user(user_id)
 
     @retry_on_failure
-    def upsert_content_files_for_user(  # pylint:disable=too-many-locals
-        self, user_id=None, **kwargs
-    ) -> Commit:
+    def upsert_content_files_for_user(self, user_id=None) -> Commit:
         """
         Upsert multiple WebsiteContent objects to github in one commit
         """
-        repo = self.get_repo()
-        content_set = self.website.websitecontent_set.filter(updated_by__id=user_id)
-        main_ref = repo.get_git_ref(f"heads/{settings.GIT_BRANCH_MAIN}")
-        main_sha = main_ref.object.sha
-        base_tree = repo.get_git_tree(main_sha)
-        element_list = list()
-        for content in content_set.iterator():
-            sync_state = content.content_sync_state
-            if content.content_filepath and not sync_state.is_synced:
-                data = self.format_content_to_file(content)
-                element = InputGitTreeElement(
-                    content.content_filepath, "100644", "blob", data
-                )
-                element_list.append(element)
-        if len(element_list) > 0:
-            tree = repo.create_git_tree(element_list, base_tree)
-            parent = repo.get_git_commit(main_sha)
-            git_user = self.git_user(User.objects.filter(id=user_id).first())
-            commit = repo.create_git_commit(
-                "Sync all content",
-                tree,
-                [parent],
-                committer=git_user,
-                author=git_user,
-                **kwargs,
-            )
-            main_ref.edit(commit.sha)
+        unsynced_states = ContentSyncState.objects.filter(
+            Q(content__website=self.website) & Q(content__updated_by=user_id)
+        ).exclude(
+            Q(current_checksum=F("synced_checksum")) & Q(synced_checksum__isnull=False)
+        )
+        modified_element_list = []
+        synced_filepaths = {}
 
-            # Mark all as synced
-            for content in content_set:
-                syncstate = content.content_sync_state
-                syncstate.current_checksum = content.calculate_checksum()
-                syncstate.mark_synced()
+        for sync_state in unsynced_states.iterator():
+            content = sync_state.content
+            filepath = content.content_filepath  # TO DO: Use dynamic filepath
+            # Add any modified files
+            if filepath:
+                synced_filepaths.update(
+                    {
+                        sync_state.id: {
+                            "filepath": filepath,
+                            "checksum": content.calculate_checksum(),
+                        }
+                    }
+                )
+                data = self.format_content_to_file(content)
+                modified_element_list.extend(
+                    self.get_tree_elements(sync_state, data, filepath)
+                )
+
+        if len(modified_element_list) > 0:
+            commit = self.commit_tree(
+                modified_element_list, User.objects.filter(id=user_id).first()
+            )
+
+            # Save last git filepath and checksum to sync state
+            for synced_state_id, sync_info in synced_filepaths.items():
+                sync_state = ContentSyncState.objects.get(id=synced_state_id)
+                sync_state.data = {GIT_DATA_FILEPATH: sync_info["filepath"]}
+                sync_state.synced_checksum = sync_info["checksum"]
+                sync_state.save()
+
             return commit
 
     @retry_on_failure
@@ -234,3 +254,43 @@ class GithubApiWrapper:
             self.website,
             self.website.uuid,
         )
+
+    def get_tree_elements(
+        self, sync_state: ContentSyncState, data: str, filepath: str
+    ) -> List[InputGitTreeElement]:
+        """
+        Return the required InputGitTreeElements for a modified ContentSyncState
+        """
+        tree_elements = [InputGitTreeElement(filepath, "100644", "blob", data)]
+        # Remove the old filepath stored in the sync state data if it doesn't match current path
+        if (
+            sync_state.data
+            and sync_state.data.get(GIT_DATA_FILEPATH, None)
+            and sync_state.data[GIT_DATA_FILEPATH] != filepath
+        ):
+            tree_elements.append(
+                InputGitTreeElement(
+                    sync_state.data[GIT_DATA_FILEPATH],
+                    "100644",
+                    "blob",
+                    sha=None,
+                )
+            )
+        return tree_elements
+
+    def commit_tree(self, element_list: [InputGitTreeElement], user: User) -> Commit:
+        """
+        Create a commit containing all the changes specified in a list of InputGitTreeElements
+        """
+        repo = self.get_repo()
+        main_ref = repo.get_git_ref(f"heads/{settings.GIT_BRANCH_MAIN}")
+        main_sha = main_ref.object.sha
+        base_tree = repo.get_git_tree(main_sha)
+        tree = repo.create_git_tree(element_list, base_tree)
+        parent = repo.get_git_commit(main_sha)
+        git_user = self.git_user(user)
+        commit = repo.create_git_commit(
+            "Sync all content", tree, [parent], committer=git_user, author=git_user
+        )
+        main_ref.edit(commit.sha)
+        return commit

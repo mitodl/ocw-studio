@@ -1,10 +1,8 @@
 """ github backend tests """
 from base64 import b64decode, b64encode
 from types import SimpleNamespace
-from unittest.mock import ANY
 
 import pytest
-from github import GithubException
 
 from content_sync.backends.github import GithubBackend
 from content_sync.models import ContentSyncState
@@ -39,55 +37,10 @@ def github(settings, mocker, mock_branches):
     )
 
 
-def test_create_backend_new(settings, github):
-    """ Test that the create_backend function completes without errors and calls expected api functions"""
-    new_repo = github.backend.create_website_in_backend()
-    github.repo.rename_branch.assert_not_called()
-    github.api.create_branch.assert_any_call(
-        settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_MAIN
-    )
-    github.api.create_branch.assert_any_call(
-        settings.GIT_BRANCH_RELEASE, settings.GIT_BRANCH_MAIN
-    )
-    assert new_repo == github.api.get_repo()
-
-
-def test_create_backend_again(mocker, github):
-    """ Test that the create_backend function will try retrieving a repo if api.create_repo fails"""
-    mock_log = mocker.patch("content_sync.backends.github.log.debug")
-    github.api.create_repo.side_effect = GithubException(status=422, data={})
-    new_repo = github.backend.create_website_in_backend()
-    assert new_repo is not None
-    assert github.api.get_repo.call_count == 2
-    mock_log.assert_called_once_with(
-        "Repo already exists: %s", github.backend.website.name
-    )
-
-
-def test_create_backend_custom_default_branch(settings, github):
-    """ Test that the create_backend function creates a custom default branch name """
-    settings.GIT_BRANCH_MAIN = "testing"
-    github.repo.default_branch = "main"
-    new_repo = github.backend.create_website_in_backend()
-    github.api.rename_branch.assert_called_once_with(ANY, "testing")
-    github.api.create_branch.assert_any_call(settings.GIT_BRANCH_PREVIEW, "testing")
-    github.api.create_branch.assert_any_call(settings.GIT_BRANCH_RELEASE, "testing")
-    assert new_repo == github.api.get_repo()
-
-
-def test_create_backend_two_branches_already_exist(settings, github):
-    """ Test that the create_backend function only creates branches that don't exist """
-    github.api.create_repo.return_value.get_branches.return_value = github.branches[0:2]
-    new_repo = github.backend.create_website_in_backend()
-    github.repo.rename_branch.assert_not_called()
-    with pytest.raises(AssertionError):
-        github.api.create_branch.assert_any_call(
-            settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_MAIN
-        )
-    github.api.create_branch.assert_any_call(
-        settings.GIT_BRANCH_RELEASE, settings.GIT_BRANCH_MAIN
-    )
-    assert new_repo == github.api.get_repo()
+def test_create_website_in_backend(github):
+    """ Test that the create_website_in_backend function completes without errors and calls expected api functions"""
+    github.backend.create_website_in_backend()
+    github.api.create_repo.assert_called_once()
 
 
 def test_create_content_in_backend(github):
