@@ -51,6 +51,15 @@ export const componentFromWidget = (
 
 const SELECT_EXTRA_PROPS = ["options", "multiple", "max", "min"]
 
+const RELATION_EXTRA_PROPS = [
+  "collection",
+  "display_field",
+  "max",
+  "min",
+  "multiple",
+  "search_fields"
+]
+
 /**
  * Returns extra props that should be provided to the `Field`
  * component, based on what type of widget we're dealing with.
@@ -61,6 +70,8 @@ export function widgetExtraProps(field: ConfigField): Record<string, any> {
     return pick(SELECT_EXTRA_PROPS, field)
   case WidgetVariant.Markdown:
     return { minimal: field.minimal ?? false }
+  case WidgetVariant.Relation:
+    return pick(RELATION_EXTRA_PROPS, field)
   default:
     return {}
   }

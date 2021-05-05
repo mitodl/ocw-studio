@@ -1,10 +1,16 @@
-import React from 'react';
+import React from "react"
 
+interface Props {
+  collection: string
+  display_field: string
+  max: number
+  min: number
+  multiple: boolean
+  search_fields: string[]
+}
 
-interface Props {}
+export default function RelationField(props: Props): JSX.Element {
+  const { collection, display_field, max, min, multiple, search_fields } = props
 
-export default function RelationField (props: Props): JSX.Element {
-  return <div>
-    hey!
-  </div>
+  return <div>hey!</div>
 }

@@ -38,8 +38,7 @@ export default function SingletonsContentListing(props: {
     return null
   }
 
-  console.log(content);
-
+  console.log(content)
 
   return (
     <div>

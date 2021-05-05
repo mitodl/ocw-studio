@@ -27,7 +27,7 @@ export default function SiteContentListing(): JSX.Element | null {
     return null
   }
 
-  console.log(website);
+  console.log(website)
 
   if (isRepeatableCollectionItem(configItem)) {
     return (
