@@ -61,12 +61,18 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     content = null
   if (props.content) {
     content = props.content
-  } else if (loadContent && textId) {
-    const queryTuple = useRequest(
+  }
+
+  const queryTuple = useRequest(
+    loadContent && textId ?
       websiteContentDetailRequest(site.name, textId)
-    )
+        : null
+  )
+  const websiteContentDetailSelector = useSelector(getWebsiteContentDetailCursor)
+
+  if (loadContent && textId) {
     isPending = queryTuple[0].isPending
-    content = useSelector(getWebsiteContentDetailCursor)(textId)
+    content = websiteContentDetailSelector(textId)
   }
 
   if (isPending || (formType === ContentFormType.Edit && !content)) {
