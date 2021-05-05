@@ -240,12 +240,15 @@ export const createWebsiteCollaboratorMutation = (
 export type WebsiteContentListingResponse = PaginatedResponse<
   WebsiteContentListItem
 >
-export type WebsiteContentListing = Record<string, {
-  results: string[]
-  count: number | null
-  next: string | null
-  previous: string | null
-}>
+export type WebsiteContentListing = Record<
+  string,
+  {
+    results: string[]
+    count: number | null
+    next: string | null
+    previous: string | null
+  }
+>
 
 export const contentListingKey = (
   listingParams: ContentListingParams

@@ -4,12 +4,20 @@ import { find, propEq } from "ramda"
 
 import { contentListingKey, WebsiteDetails } from "../query-configs/websites"
 import { ReduxState } from "../reducers"
+import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 
-import { ContentListingParams, WebsiteStarter, WebsiteContentListItem, Website, WebsiteContent } from "../types/websites"
+import {
+  ContentListingParams,
+  WebsiteStarter,
+  WebsiteContentListItem,
+  Website,
+  WebsiteContent
+} from "../types/websites"
 
 export const getWebsiteDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteDetails ?? {},
-  (websiteDetails: WebsiteDetails) => memoize((name: string): Website => websiteDetails[name])
+  (websiteDetails: WebsiteDetails) =>
+    memoize((name: string): Website => websiteDetails[name])
 )
 
 export const getWebsiteListingCursor = createSelector(
@@ -46,7 +54,8 @@ export const getWebsiteCollaboratorDetailCursor = createSelector(
 
 export const getWebsiteContentDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteContentDetails ?? {},
-  (content: Record<string, WebsiteContent>) => memoize((textId: string) => content[textId])
+  (content: Record<string, WebsiteContent>) =>
+    memoize((textId: string) => content[textId])
 )
 
 interface WebsiteContentItem {
@@ -71,6 +80,7 @@ export const getWebsiteContentListingCursor = createSelector(
           results: items
         }
       },
-      (listingParams: ContentListingParams): string => contentListingKey(listingParams)
+      (listingParams: ContentListingParams): string =>
+        contentListingKey(listingParams)
     )
 )

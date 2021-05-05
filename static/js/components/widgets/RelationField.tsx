@@ -3,14 +3,14 @@ import Select from "react-select"
 import { useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
 
-import SelectField from './SelectField'
+import SelectField from "./SelectField"
 import WebsiteContext from "../../context/Website"
 
 import { websiteContentListingRequest } from "../../query-configs/websites"
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../../constants"
 import { getWebsiteContentListingCursor } from "../../selectors/websites"
 
-import { Option } from './SelectField'
+import { Option } from "./SelectField"
 
 interface Props {
   name: string
@@ -24,17 +24,20 @@ interface Props {
 }
 
 export default function RelationField(props: Props): JSX.Element {
-  const { collection, display_field, name,  multiple, onChange, value } = props
+  const { collection, display_field, name, multiple, onChange, value } = props
 
-  console.log(props);
+  console.log(props)
 
   const [offset, setOffset] = useState(0)
+  const [options, setOptions] = useState<Option[]>([])
 
   // technically the Website in WebsiteContext can be null, but in the
   // content where this component is mounted it never should be in practice.
   const website = useContext(WebsiteContext)
 
-  const listingParams = website ? { name: website.name, type: collection, offset } : null
+  const listingParams = website ?
+    { name: website.name, type: collection, offset } :
+    null
 
   useRequest(listingParams ? websiteContentListingRequest(listingParams) : null)
 
@@ -62,24 +65,26 @@ export default function RelationField(props: Props): JSX.Element {
     }
   }, [offset, setOffset, count])
 
-  console.log(listing);
+  console.log(listing)
 
-  const options: Option[] = useMemo(() => {
+  useEffect(() => {
     const options = (listing?.results ?? []).map((entry: any) => ({
       label: entry[display_field],
       value: entry.text_id
     }))
 
-    return options
+    setOptions(oldOptions => [...oldOptions, ...options])
   }, [listing])
 
+  console.log(options)
 
-  return <SelectField
-    name={name}
-    value={value}
-    onChange={onChange}
-    options={options}
-    multiple={multiple}
-  />
+  return (
+    <SelectField
+      name={name}
+      value={value}
+      onChange={onChange}
+      options={options}
+      multiple={multiple}
+    />
+  )
 }
-
