@@ -218,6 +218,7 @@ const defaultForField = (field: ConfigField): SiteFormValue => {
   switch (field.widget) {
   case WidgetVariant.Boolean:
     return false
+  case WidgetVariant.Relation:
   case WidgetVariant.Select:
     return field.multiple ? [] : ""
   case WidgetVariant.File:
