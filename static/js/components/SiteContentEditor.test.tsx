@@ -260,8 +260,8 @@ describe("SiteContent", () => {
 
   //
   ;[
-    [true, true, false, "content is passed in via props"],
-    [true, false, false, "content is passed in and the loading flag=true"],
+    [true, false, false, "content is passed in via props"],
+    [true, true, false, "content is passed in and the loading flag=true"],
     [false, true, true, "content is not passed in and the loading flag=true"]
   ].forEach(([hasContentProp, loadingFlag, shouldLoad, desc]) => {
     it(`${shouldIf(shouldLoad)} load a content object if ${desc}`, async () => {
