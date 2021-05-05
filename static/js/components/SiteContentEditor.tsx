@@ -67,10 +67,12 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
 
   const queryTuple = useRequest(
     shouldLoadContent ?
-      websiteContentDetailRequest(site.name, textId as string)
-        : null
+      websiteContentDetailRequest(site.name, textId as string) :
+      null
   )
-  const websiteContentDetailSelector = useSelector(getWebsiteContentDetailCursor)
+  const websiteContentDetailSelector = useSelector(
+    getWebsiteContentDetailCursor
+  )
 
   if (shouldLoadContent) {
     isPending = queryTuple[0].isPending
