@@ -17,6 +17,8 @@ import {
   ConfigField,
   EditableConfigItem,
   TopLevelConfigItem,
+  RepeatableConfigItem,
+  SingletonConfigItem,
   WebsiteContent,
   WidgetVariant
 } from "../types/websites"
@@ -117,11 +119,11 @@ const emptyValue = (field: ConfigField): SiteFormValue => {
 
 export const isRepeatableCollectionItem = (
   configItem: TopLevelConfigItem
-): boolean => "folder" in configItem
+): configItem is RepeatableConfigItem => "folder" in configItem
 
 export const isSingletonCollectionItem = (
   configItem: EditableConfigItem
-): boolean => "file" in configItem
+): configItem is SingletonConfigItem => "file" in configItem
 
 /**
  * Translates page content form values into a payload that our REST API understands.

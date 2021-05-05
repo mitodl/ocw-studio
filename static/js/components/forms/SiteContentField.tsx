@@ -4,7 +4,7 @@ import React from "react"
 import { FormError } from "./FormError"
 import { componentFromWidget, widgetExtraProps } from "../../lib/site_content"
 
-import { ConfigField, WidgetVariant } from "../../types/websites"
+import { ConfigField, WidgetVariant, Website } from "../../types/websites"
 
 interface Props {
   field: ConfigField

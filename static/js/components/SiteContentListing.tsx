@@ -7,8 +7,9 @@ import SingletonsContentListing from "./SingletonsContentListing"
 
 import { isRepeatableCollectionItem } from "../lib/site_content"
 import { getWebsiteDetailCursor } from "../selectors/websites"
+import WebsiteContext from "../context/Website"
 
-import { TopLevelConfigItem } from "../types/websites"
+import { TopLevelConfigItem, Website } from "../types/websites"
 
 interface MatchParams {
   contenttype: string
@@ -19,7 +20,7 @@ export default function SiteContentListing(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
   const { contenttype, name } = match.params
 
-  const website = useSelector(getWebsiteDetailCursor)(name)
+  const website: Website = useSelector(getWebsiteDetailCursor)(name)
   const configItem = website?.starter?.config?.collections.find(
     (config: TopLevelConfigItem) => config.name === contenttype
   )
@@ -27,12 +28,13 @@ export default function SiteContentListing(): JSX.Element | null {
     return null
   }
 
-  console.log(website)
-
-  if (isRepeatableCollectionItem(configItem)) {
-    return (
-      <RepeatableContentListing website={website} configItem={configItem} />
-    )
-  }
-  return <SingletonsContentListing website={website} configItem={configItem} />
+  return (
+    <WebsiteContext.Provider value={website}>
+      {isRepeatableCollectionItem(configItem) ? (
+        <RepeatableContentListing website={website} configItem={configItem} />
+      ) : (
+        <SingletonsContentListing website={website} configItem={configItem} />
+      )}
+    </WebsiteContext.Provider>
+  )
 }

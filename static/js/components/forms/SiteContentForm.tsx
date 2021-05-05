@@ -17,7 +17,8 @@ import {
   EditableConfigItem,
   WebsiteContent,
   WidgetVariant,
-  ConfigField
+  ConfigField,
+  Website
 } from "../../types/websites"
 import { ContentFormType, SiteFormValues } from "../../types/forms"
 
