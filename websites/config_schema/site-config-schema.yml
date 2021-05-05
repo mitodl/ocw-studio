@@ -29,6 +29,9 @@ field:
     options: list(str(), required=False)
     default: any(required=False)
     condition: include('field_condition', required=False)
+    display_field: str(required=False)
+    search_fields: list(str(), required=False)
+    collection: str(required=False)
 ---
 field_condition:
     field: str()
