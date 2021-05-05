@@ -6,10 +6,13 @@ from django.db.models.signals import post_save
 from factory.django import mute_signals
 from github.GithubException import RateLimitExceededException
 from mitol.common.utils import now_in_utc
+from pytest import fixture
 
 from content_sync.factories import ContentSyncStateFactory
 from content_sync.tasks import (
     create_website_backend,
+    preview_website_backend,
+    publish_website_backend,
     sync_all_websites,
     sync_content,
     sync_website_content,
@@ -19,12 +22,24 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 pytestmark = pytest.mark.django_db
 
+# pylint:disable=redefined-outer-name
 
-def test_sync_content(mocker):
+
+@fixture
+def api_mock(mocker, settings):
+    """Return a mocked content_sync.tasks.api, and set the backend"""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
+    return mocker.patch("content_sync.tasks.api")
+
+
+@fixture
+def log_mock(mocker):
+    """ Return a mocked log object"""
+    return mocker.patch("content_sync.tasks.log")
+
+
+def test_sync_content(api_mock, log_mock):
     """ Verify the sync_content task calls the corresponding API method """
-    api_mock = mocker.patch("content_sync.tasks.api")
-    log_mock = mocker.patch("content_sync.tasks.log")
-
     sync_state = ContentSyncStateFactory.create()
     sync_content.delay(sync_state.id)
 
@@ -32,11 +47,8 @@ def test_sync_content(mocker):
     api_mock.sync_content.assert_called_once_with(sync_state)
 
 
-def test_sync_content_not_exists(mocker):
+def test_sync_content_not_exists(api_mock, log_mock):
     """ Verify the sync_content task does not call the corresponding API method """
-    api_mock = mocker.patch("content_sync.tasks.api")
-    log_mock = mocker.patch("content_sync.tasks.log")
-
     sync_content.delay(12354)
     log_mock.debug.assert_called_once_with(
         "Attempted to sync ContentSyncState that doesn't exist: id=%s",
@@ -45,11 +57,8 @@ def test_sync_content_not_exists(mocker):
     api_mock.sync_content.assert_not_called()
 
 
-def test_create_website_backend(mocker):
+def test_create_website_backend(api_mock, log_mock):
     """Verify the create_website_backend task calls the appropriate API and backend methods"""
-    api_mock = mocker.patch("content_sync.tasks.api")
-    log_mock = mocker.patch("content_sync.tasks.log")
-
     website = WebsiteFactory.create()
     create_website_backend.delay(website.name)
 
@@ -58,11 +67,8 @@ def test_create_website_backend(mocker):
     api_mock.get_sync_backend.return_value.create_website_in_backend.assert_called_once()
 
 
-def test_create_website_backend_not_exists(mocker):
+def test_create_website_backend_not_exists(api_mock, log_mock):
     """ Verify the create_website_backend task does not call API and backend methods """
-    api_mock = mocker.patch("content_sync.tasks.api")
-    log_mock = mocker.patch("content_sync.tasks.log")
-
     create_website_backend.delay("fakesite")
 
     log_mock.debug.assert_called_once_with(
@@ -72,11 +78,8 @@ def test_create_website_backend_not_exists(mocker):
     api_mock.get_sync_backend.assert_not_called()
 
 
-def test_sync_website_content(mocker):
+def test_sync_website_content(api_mock, log_mock):
     """Verify the sync_website_content task calls the appropriate API and backend methods"""
-    api_mock = mocker.patch("content_sync.tasks.api")
-    log_mock = mocker.patch("content_sync.tasks.log")
-
     website = WebsiteFactory.create()
     sync_website_content.delay(website.name)
 
@@ -85,11 +88,8 @@ def test_sync_website_content(mocker):
     api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_called_once()
 
 
-def test_sync_website_content_not_exists(mocker):
+def test_sync_website_content_not_exists(api_mock, log_mock):
     """Verify the sync_website_content task does not call API and backend methods for nonexistent site"""
-    api_mock = mocker.patch("content_sync.tasks.api")
-    log_mock = mocker.patch("content_sync.tasks.log")
-
     sync_website_content.delay("fakesite")
 
     log_mock.debug.assert_called_once_with(
@@ -99,12 +99,10 @@ def test_sync_website_content_not_exists(mocker):
     api_mock.get_sync_backend.assert_not_called()
 
 
-def test_sync_all_websites(mocker, settings):
+def test_sync_all_websites(api_mock):
     """
     Test that sync_all_content_to_backend is run on all websites needing a sync
     """
-    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
-    api_mock = mocker.patch("content_sync.tasks.api")
     website_synced = WebsiteFactory.create()
     websites_unsynced = WebsiteFactory.create_batch(2)
     with mute_signals(post_save):
@@ -148,10 +146,8 @@ def test_sync_all_websites_rate_limit_low(mocker, settings):
     assert sleep_mock.call_count == 2
 
 
-def test_sync_all_websites_rate_limit_exceeded(mocker, settings):
+def test_sync_all_websites_rate_limit_exceeded(api_mock):
     """Test that sync_all_websites halts if instantiating a GithubBackend exceeds the rate limit"""
-    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
-    api_mock = mocker.patch("content_sync.tasks.api")
     api_mock.get_sync_backend.side_effect = RateLimitExceededException(
         status=403, data={}
     )
@@ -159,3 +155,19 @@ def test_sync_all_websites_rate_limit_exceeded(mocker, settings):
     with pytest.raises(RateLimitExceededException):
         sync_all_websites.delay()
     api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_not_called()
+
+
+def test_create_backend_preview(api_mock):
+    """Verify that the appropriate backend calls are made by the create_backend_preview task """
+    website = WebsiteFactory.create()
+    preview_website_backend(website.name)
+    api_mock.get_sync_backend.assert_called_once_with(website)
+    api_mock.get_sync_backend.return_value.create_backend_preview.assert_called_once()
+
+
+def test_create_backend_publish(api_mock):
+    """Verify that the appropriate backend calls are made by the create_backend_publish task"""
+    website = WebsiteFactory.create()
+    publish_website_backend(website.name)
+    api_mock.get_sync_backend.assert_called_once_with(website)
+    api_mock.get_sync_backend.return_value.create_backend_release.assert_called_once()
