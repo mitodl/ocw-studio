@@ -31,7 +31,7 @@ collections:
         "widget": "relation",
         "collection": "author",
         "search_fields": ["title"],
-        "display_field": "name",
+        "display_field": "title",
         "multiple": true,
         "max": 10,
         "min": 1,

@@ -32,7 +32,7 @@ export default function RelationField(props: Props): JSX.Element {
   const [options, setOptions] = useState<Option[]>([])
 
   // technically the Website in WebsiteContext can be null, but in the
-  // content where this component is mounted it never should be in practice.
+  // context where this component is mounted it never should be in practice.
   const website = useContext(WebsiteContext)
 
   const listingParams = website ?
@@ -64,8 +64,6 @@ export default function RelationField(props: Props): JSX.Element {
       setOffset(offset => (offset += WEBSITE_CONTENT_PAGE_SIZE))
     }
   }, [offset, setOffset, count])
-
-  console.log(listing)
 
   useEffect(() => {
     const options = (listing?.results ?? []).map((entry: any) => ({
