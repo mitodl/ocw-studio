@@ -32,7 +32,7 @@ export default function SelectField(props: Props): JSX.Element {
       // @ts-ignore
       onChange({ target: { value: eventValue, name } })
     },
-    [name, multiple]
+    [name, multiple, onChange]
   )
 
   /**
