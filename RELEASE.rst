@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.14.2
+Version 0.14.2 (Released May 06, 2021)
 --------------
 
 - Handle filepath changes when syncing with github (#242)
