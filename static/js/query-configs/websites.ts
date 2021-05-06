@@ -11,6 +11,7 @@ import {
   siteApiCollaboratorsUrl,
   siteApiListingUrl,
   siteApiDetailUrl,
+  siteApiActionUrl,
   siteApiContentListingUrl,
   siteApiContentDetailUrl,
   siteApiContentUrl
@@ -118,6 +119,17 @@ export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({
       ...next
     })
   }
+})
+
+export const websiteAction = (name: string, action: string): QueryConfig => ({
+  url:     siteApiActionUrl.param({ name, action }).toString(),
+  options: {
+    method:  "POST",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
+  },
+  body: {}
 })
 
 export const websiteStartersRequest = (): QueryConfig => ({
