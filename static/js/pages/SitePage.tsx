@@ -59,7 +59,7 @@ export default function SitePage(): JSX.Element | null {
               <button
                 type="button"
                 onClick={onPreview}
-                className="btn btn-preview btn-outline-success float-right"
+                className="btn btn-preview green-button-outline"
               >
                 Preview
               </button>
