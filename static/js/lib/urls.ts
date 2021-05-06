@@ -22,6 +22,8 @@ export const startersApi = api.segment("starters/")
 // WEBSITES API
 export const siteApi = api.segment("websites/")
 export const siteApiDetailUrl = siteApi.segment(":name/")
+export const siteApiActionUrl = siteApiDetailUrl.segment(":action/")
+
 export const siteApiCollaboratorsUrl = siteApiDetailUrl.segment(
   "collaborators/"
 )
