@@ -10,10 +10,7 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 import { makeWebsiteDetail } from "../util/factories/websites"
 
-import {
-  siteApiActionUrl,
-  siteApiDetailUrl
-} from "../lib/urls"
+import { siteApiActionUrl, siteApiDetailUrl } from "../lib/urls"
 
 import { Website } from "../types/websites"
 
