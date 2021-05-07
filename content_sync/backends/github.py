@@ -8,11 +8,12 @@ from github.PullRequest import PullRequest
 from github.Repository import Repository
 from safedelete.models import HARD_DELETE
 
-from content_sync.apis.github import GithubApiWrapper
+from content_sync.apis.github import GithubApiWrapper, decode_file_contents
 from content_sync.backends.base import BaseSyncBackend
 from content_sync.decorators import check_sync_state
 from content_sync.models import ContentSyncState
-from websites.models import WebsiteContent
+from content_sync.serializers import deserialize_file_to_website_content
+from websites.models import Website, WebsiteContent
 
 
 log = logging.getLogger(__name__)
@@ -23,10 +24,12 @@ class GithubBackend(BaseSyncBackend):
     Github backend
     """
 
-    def __init__(self, website: WebsiteContent):
+    IGNORED_PATHS = {"README.md"}
+
+    def __init__(self, website: Website):
         """ Initialize the Github API backend for a specific website"""
-        self.api = GithubApiWrapper(website)
         super().__init__(website)
+        self.api = GithubApiWrapper(self.website, self.site_config)
 
     def create_website_in_backend(self) -> Repository:
         """
@@ -92,13 +95,23 @@ class GithubBackend(BaseSyncBackend):
         """
         Create a WebsiteContent object from a github file
         """
-        return self.api.format_file_to_content(data)
+        return deserialize_file_to_website_content(
+            site_config=self.site_config,
+            website=self.website,
+            filepath=data.path,
+            file_contents=decode_file_contents(data),
+        )
 
     def update_content_in_db(self, data: ContentFile) -> WebsiteContent:
         """
         Update a WebsiteContent object from a github file
         """
-        return self.api.format_file_to_content(data)
+        return deserialize_file_to_website_content(
+            site_config=self.site_config,
+            website=self.website,
+            filepath=data.path,
+            file_contents=decode_file_contents(data),
+        )
 
     def delete_content_in_db(self, data: ContentSyncState) -> bool:
         """
@@ -126,8 +139,16 @@ class GithubBackend(BaseSyncBackend):
             file_content = contents.pop(0)
             if file_content.type == "dir":
                 contents.extend(repo.get_contents(file_content.path))
-            elif file_content.type == "file":
-                content = self.api.format_file_to_content(file_content)
+            elif (
+                file_content.type == "file"
+                and file_content.path not in self.IGNORED_PATHS
+            ):
+                content = deserialize_file_to_website_content(
+                    site_config=self.site_config,
+                    website=self.website,
+                    filepath=file_content.path,
+                    file_contents=decode_file_contents(file_content),
+                )
                 sync_state = content.content_sync_state
                 sync_state.current_checksum = content.calculate_checksum()
                 sync_state.synced_checksum = sync_state.current_checksum

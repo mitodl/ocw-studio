@@ -2,30 +2,15 @@
 import json
 import os
 import re
-from pathlib import Path
 
 import yaml
 from django.conf import settings
 
+from main.utils import get_file_extension
+
 
 SOURCE_CONFIG_DIRECTORY = "localdev/configs"
 JS_CONFIG_DIRECTORY = "static/js/resources"
-
-
-def _get_file_extension(filename):
-    """
-    Returns the extension for a given filename
-
-    Args:
-        filename (str): A filename
-
-    Returns:
-        str: The file extension
-    """
-    extension_with_dot = "".join(Path(filename).suffixes).lower()
-    if extension_with_dot:
-        return extension_with_dot[1:]
-    return ""
 
 
 def example_config_file_iter():
@@ -39,7 +24,7 @@ def example_config_file_iter():
     base_dir_path = os.path.join(settings.BASE_DIR, SOURCE_CONFIG_DIRECTORY)
     for dirpath, _, filenames in os.walk(base_dir_path):
         for filename in filenames:
-            extension = _get_file_extension(filename)
+            extension = get_file_extension(filename)
             if extension != "yml":
                 continue
             base_filename = re.sub(r"\.{}$".format(extension), "", filename)

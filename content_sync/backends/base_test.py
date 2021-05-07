@@ -47,16 +47,18 @@ class _NotImplementedBackend(BaseSyncBackend):
     """ Not implemented """
 
 
-def test_base_sync_backend_subclass_implemented():
+def test_base_sync_backend_subclass_implemented(mocker):
     """ Verify BaseSyncBackend doesn't unimplemented subclasses """
     # no errors
-    _ImplementedBackend(None)
+    _ImplementedBackend(mocker.Mock())
 
 
-def test_base_sync_backend_subclass_not_implemented():
+def test_base_sync_backend_subclass_not_implemented(mocker):
     """ Verify BaseSyncBackend doesn't unimplemented subclasses """
     with pytest.raises(TypeError):
-        _NotImplementedBackend(None)  # pylint: disable=abstract-class-instantiated
+        _NotImplementedBackend(
+            mocker.Mock()
+        )  # pylint: disable=abstract-class-instantiated
 
 
 def test_sync_content_to_backend_create(mocker):
@@ -67,7 +69,7 @@ def test_sync_content_to_backend_create(mocker):
     state = mocker.Mock(synced_checksum=None)
     state.content.deleted = None
 
-    backend = _ImplementedBackend(None)
+    backend = _ImplementedBackend(mocker.Mock())
     backend.sync_content_to_backend(state)
     mock_create_content_in_backend.assert_called_once_with(state)
 
@@ -80,7 +82,7 @@ def test_sync_content_to_backend_update(mocker):
     state = mocker.Mock(synced_checksum="abc")
     state.content.deleted = None
 
-    backend = _ImplementedBackend(None)
+    backend = _ImplementedBackend(mocker.Mock())
     backend.sync_content_to_backend(state)
     mock_update_content_in_backend.assert_called_once_with(state)
 
@@ -93,7 +95,7 @@ def test_sync_content_to_backend_delete(mocker):
     state = mocker.Mock(synced_checksum="abc")
     state.content.deleted = True
 
-    backend = _ImplementedBackend(None)
+    backend = _ImplementedBackend(mocker.Mock())
     backend.sync_content_to_backend(state)
     mock_delete_content_in_backend.assert_called_once_with(state)
 
