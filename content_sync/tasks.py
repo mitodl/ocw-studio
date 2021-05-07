@@ -8,7 +8,6 @@ from github.GithubException import RateLimitExceededException
 from mitol.common.utils import now_in_utc, pytz
 
 from content_sync import api
-from content_sync.backends.github import GithubBackend
 from content_sync.decorators import single_website_task
 from content_sync.models import ContentSyncState
 from main.celery import app
@@ -38,6 +37,10 @@ def sync_all_websites():
     Sync all websites with unsynced content.  This should be rarely called, and only
     in a management command.
     """
+    from content_sync.backends.github import (  # pylint:disable=import-outside-toplevel
+        GithubBackend,
+    )
+
     if not settings.CONTENT_SYNC_BACKEND:
         return
     for website_name in (

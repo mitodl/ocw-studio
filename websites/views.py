@@ -34,7 +34,7 @@ from websites.serializers import (
     WebsiteStarterSerializer,
     WebsiteWriteSerializer,
 )
-from websites.site_config_api import find_config_item, is_page_content
+from websites.site_config_api import SiteConfig
 from websites.utils import permissions_group_name_for_role
 
 
@@ -239,15 +239,16 @@ class WebsiteContentViewSet(
             name=parent_lookup_website
         )
         added_context = {"website_pk": website_qset["pk"]}
-        site_config = website_qset["starter__config"] or {}
+        raw_site_config = website_qset["starter__config"] or {}
+        site_config = SiteConfig(raw_site_config)
         content_type = self.request.data.get("type")
         config_item = (
-            find_config_item(site_config, content_type)
+            site_config.find_item_by_name(name=content_type)
             if content_type is not None
             else None
         )
         if site_config and config_item is not None:
-            added_context["is_page_content"] = is_page_content(site_config, config_item)
+            added_context["is_page_content"] = site_config.is_page_content(config_item)
         return {**super().get_serializer_context(), **added_context}
 
     def perform_destroy(self, instance: WebsiteContent):

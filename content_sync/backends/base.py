@@ -4,6 +4,7 @@ from typing import Any
 
 from content_sync.models import ContentSyncState
 from websites.models import Website
+from websites.site_config_api import SiteConfig
 
 
 class BaseSyncBackend(abc.ABC):
@@ -12,7 +13,9 @@ class BaseSyncBackend(abc.ABC):
     # NOTE: concrete implementations of this will probably want to
     #       initialize a client object for the backing service (e.g. ghapi)
     def __init__(self, website: Website):
+        # TODO: prefetch starter
         self.website = website
+        self.site_config = SiteConfig(website.starter.config)
 
     @abc.abstractmethod
     def create_website_in_backend(self):  # pragma: no cover
