@@ -4,7 +4,7 @@ from collections import defaultdict
 from yamale import YamaleError
 from yamale.schema.validationresults import ValidationResult
 
-from websites.site_config_api import config_item_iter
+from websites.site_config_api import SiteConfig
 
 
 class AddedSchemaRule:
@@ -64,7 +64,7 @@ class UniqueNamesRule(AddedSchemaRule):
     @staticmethod
     def apply_rule(data):
         name_paths = defaultdict(list)
-        for i, config_item in enumerate(config_item_iter(data)):
+        for i, config_item in enumerate(SiteConfig(data).iter_items()):
             name_paths[config_item.item["name"]].append(config_item.path)
         faulty_name_paths = {
             name: paths for name, paths in name_paths.items() if len(paths) > 1

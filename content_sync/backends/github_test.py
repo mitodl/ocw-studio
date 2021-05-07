@@ -1,12 +1,11 @@
 """ github backend tests """
-from base64 import b64decode, b64encode
+from base64 import b64encode
 from types import SimpleNamespace
 
 import pytest
 
 from content_sync.backends.github import GithubBackend
 from content_sync.models import ContentSyncState
-from ocw_import.api import convert_data_to_content
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 
@@ -34,6 +33,14 @@ def github(settings, mocker, mock_branches):
     backend.api = mock_github_api
     yield SimpleNamespace(
         backend=backend, api=mock_github_api, repo=mock_repo, branches=mock_branches
+    )
+
+
+@pytest.fixture
+def patched_file_serialize(mocker):
+    """Patches function that deserializes file contents to website content"""
+    return mocker.patch(
+        "content_sync.backends.github.deserialize_file_to_website_content"
     )
 
 
@@ -110,18 +117,26 @@ def test_create_backend_release(settings, github):
     )
 
 
-def test_create_content_in_db(mocker, github):
+def test_create_content_in_db(github, github_content_file, patched_file_serialize):
     """Test that create_content_in_db makes the appropriate api call"""
-    mock_content_file = mocker.Mock()
-    github.backend.create_content_in_db(mock_content_file)
-    github.api.format_file_to_content.assert_called_once_with(mock_content_file)
+    github.backend.create_content_in_db(github_content_file.obj)
+    patched_file_serialize.assert_called_once_with(
+        site_config=github.backend.site_config,
+        website=github.backend.website,
+        filepath=github_content_file.path,
+        file_contents=github_content_file.content_str,
+    )
 
 
-def test_update_content_in_db(mocker, github):
+def test_update_content_in_db(github, github_content_file, patched_file_serialize):
     """Test that update_content_in_db makes the appropriate api call"""
-    mock_content_file = mocker.Mock()
-    github.backend.update_content_in_db(mock_content_file)
-    github.api.format_file_to_content.assert_called_once_with(mock_content_file)
+    github.backend.update_content_in_db(github_content_file.obj)
+    patched_file_serialize.assert_called_once_with(
+        site_config=github.backend.site_config,
+        website=github.backend.website,
+        filepath=github_content_file.path,
+        file_contents=github_content_file.content_str,
+    )
 
 
 def test_delete_content_in_db(github):
@@ -132,60 +147,42 @@ def test_delete_content_in_db(github):
     assert WebsiteContent.objects.filter(id=sync_state.content.id).first() is None
 
 
-def test_sync_all_content_to_db(mocker, github):
+def test_sync_all_content_to_db(mocker, github, patched_file_serialize):
     """Test that sync_all_content_to_db iterates over all repo content"""
-
-    def mock_format_file_to_content(content_file):
-        """
-        Used to replace the mock function of github.api.format_file_to_content
-        """
-        return convert_data_to_content(
-            content_file.path,
-            str(b64decode(content_file.content), encoding="utf-8"),
-            github.backend.website,
-            github.backend.website.uuid,
-        )
-
-    existing_content = github.backend.website.websitecontent_set.last()
-    repo_content = [
-        mocker.Mock(type=ftype, path=path, content=b64encode(content.encode("utf-8")))
-        for (ftype, path, content) in [
-            ["dir", "src", ""],
+    fake_dir = mocker.Mock(type="dir", path="src", content="")
+    fake_files = [
+        mocker.Mock(type="file", path=path, content=b64encode(content.encode("utf-8")))
+        for (path, content) in [
             [
-                "file",
                 "src/__index_test_sync.md",
                 "---\nuid: 1\nlayout: course_section\n---\nfile 1 content",
             ],
             [
-                "file",
                 "src/syllabus_test_sync.md",
                 "---\nuid: 2\nlayout: course_section\n---\nfile 2 content",
             ],
             [
-                "file",
-                "src/readme_test_sync.md",
-                "---\nuid: 3\nlayout: course_home\n---\nfile 3 content",
-            ],
-            [
-                "file",
-                existing_content.content_filepath,
-                "---\nuid: 4\nlayout: course_section\n---\nfile 4 content",
+                "README.md",
+                "# Read Me",
             ],
         ]
     ]
+    # Two actual content files to sync. README.md should be ignored.
+    expected_sync_count = 2
     github.api.get_repo.return_value.get_contents.side_effect = [
-        repo_content[0:1],
-        repo_content[1:],
+        [fake_dir],
+        fake_files,
     ]
-
-    github.api.format_file_to_content = mock_format_file_to_content
+    website_contents = github.backend.website.websitecontent_set.all()
+    patched_file_serialize.side_effect = website_contents
 
     github.backend.sync_all_content_to_db()
-    assert github.backend.website.websitecontent_set.count() == 4
-
-    for content in repo_content:
-        if content.type == "file":
-            new_content = WebsiteContent.objects.get(
-                website=github.backend.website, content_filepath=content.path
+    assert patched_file_serialize.call_count == expected_sync_count
+    assert all(
+        [
+            sync_state.is_synced
+            for sync_state in ContentSyncState.objects.filter(
+                content__in=website_contents[0:expected_sync_count]
             )
-            assert new_content.content_sync_state.is_synced
+        ]
+    )

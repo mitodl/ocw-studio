@@ -1,60 +1,12 @@
 """API functionality for working with site configs"""
 
-from typing import NamedTuple, Optional
+from typing import Iterator, NamedTuple, Optional
 
+from main.utils import remove_trailing_slashes
 from websites.constants import (
     WEBSITE_CONFIG_CONTENT_DIR_KEY,
     WEBSITE_CONFIG_DEFAULT_CONTENT_DIR,
 )
-
-
-class ConfigItem(NamedTuple):
-    """Utility class for describing a site config item"""
-
-    item: dict
-    parent_item: Optional[dict]
-    path: str
-
-
-def config_item_iter(site_config_data):
-    """
-    Yields information about every individual config item in a site config
-
-    Args:
-        site_config_data (dict): A parsed site config
-
-    Yields:
-        ConfigItem: An object containing an individual config item, its parent config item (if one exists), and a
-            string describing the item's path
-    """
-    collections = site_config_data.get("collections")
-    for i, collection_item in enumerate(collections):
-        path = f"collections.{i}"
-        yield ConfigItem(item=collection_item, parent_item=None, path=path)
-        if "files" in collection_item:
-            for j, inner_collection_item in enumerate(collection_item["files"]):
-                yield ConfigItem(
-                    item=inner_collection_item,
-                    parent_item=collection_item,
-                    path=f"{path}.files.{j}",
-                )
-
-
-def find_config_item(site_config_data, name):
-    """
-    Finds a config item in a site config by the given name
-
-    Args:
-        site_config_data (dict): The site config to search
-        name (str): The name of the config item to find
-
-    Returns:
-        dict or None: The config item with the given name
-    """
-    for config_item in config_item_iter(site_config_data):
-        if config_item.item.get("name") == name:
-            return config_item.item
-    return None
 
 
 def get_file_target(raw_config_item):
@@ -82,19 +34,58 @@ def has_file_target(raw_config_item):
     return get_file_target(raw_config_item) is not None
 
 
-def is_page_content(site_config_data, raw_config_item):
-    """
-    Returns True if the given config item describes page content, as opposed to data/configuration
+class ConfigItem(NamedTuple):
+    """Utility class for describing a site config item"""
 
-    Args:
-        site_config_data (dict): A full site config
-        raw_config_item (dict):
+    item: dict
+    parent_item: Optional[dict]
+    path: str
 
-    Returns:
-        bool: True if the given config item describes page content
-    """
-    file_target = get_file_target(raw_config_item)
-    content_dir = site_config_data.get(
-        WEBSITE_CONFIG_CONTENT_DIR_KEY, WEBSITE_CONFIG_DEFAULT_CONTENT_DIR
-    )
-    return file_target == content_dir or file_target.startswith(f"{content_dir}/")
+
+class SiteConfig:
+    """Utility class for parsing and introspecting site configs"""
+
+    def __init__(self, raw_data):
+        self.raw_data = raw_data
+
+    def iter_items(self) -> Iterator[ConfigItem]:
+        """Yields all config items for which users can enter data"""
+        collections = self.raw_data.get("collections")
+        for i, collection_item in enumerate(collections):
+            path = f"collections.{i}"
+            yield ConfigItem(item=collection_item, parent_item=None, path=path)
+            if "files" in collection_item:
+                for j, inner_collection_item in enumerate(collection_item["files"]):
+                    yield ConfigItem(
+                        item=inner_collection_item,
+                        parent_item=collection_item,
+                        path=f"{path}.files.{j}",
+                    )
+
+    def find_item_by_name(self, name: str) -> Optional[dict]:
+        """Finds a config item in the site config with a matching 'name' value"""
+        for config_item in self.iter_items():
+            if config_item.item.get("name") == name:
+                return config_item.item
+        return None
+
+    def find_item_by_filepath(self, filepath: str) -> Optional[dict]:
+        """Finds a config item in the site config with a matching 'file' value"""
+        filepath = remove_trailing_slashes(filepath)
+        for config_item in self.iter_items():
+            if (
+                "file" in config_item.item
+                and remove_trailing_slashes(config_item.item.get("file")) == filepath
+            ):
+                return config_item.item
+        return None
+
+    def is_page_content(self, raw_config_item: dict) -> bool:
+        """
+        Returns True if the given config item describes page content, as opposed to data/configuration
+        """
+        file_target = get_file_target(raw_config_item)
+        content_dir = self.raw_data.get(
+            WEBSITE_CONFIG_CONTENT_DIR_KEY, WEBSITE_CONFIG_DEFAULT_CONTENT_DIR
+        )
+        return file_target == content_dir or file_target.startswith(f"{content_dir}/")
