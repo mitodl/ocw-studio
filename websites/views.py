@@ -1,4 +1,6 @@
 """ Views for websites """
+import logging
+
 from django.contrib.auth.models import Group
 from django.db.models import Case, CharField, OuterRef, Q, Value, When
 from django.utils.functional import cached_property
@@ -6,11 +8,12 @@ from django.utils.text import slugify
 from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
 from mitol.common.utils.datetime import now_in_utc
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
-from content_sync.api import update_website_backend
+from content_sync.api import preview_website, publish_website, update_website_backend
 from main import features
 from main.permissions import ReadonlyPermission
 from main.views import DefaultPagination
@@ -21,6 +24,8 @@ from websites.permissions import (
     HasWebsiteCollaborationPermission,
     HasWebsiteContentPermission,
     HasWebsitePermission,
+    HasWebsitePreviewPermission,
+    HasWebsitePublishPermission,
     is_global_admin,
 )
 from websites.serializers import (
@@ -36,6 +41,9 @@ from websites.serializers import (
 )
 from websites.site_config_api import find_config_item, is_page_content
 from websites.utils import permissions_group_name_for_role
+
+
+log = logging.getLogger(__name__)
 
 
 class WebsiteViewSet(
@@ -103,6 +111,36 @@ class WebsiteViewSet(
             kwargs["data"] = request_data
 
         return serializer_class(*args, **kwargs)
+
+    @action(
+        detail=True, methods=["post"], permission_classes=[HasWebsitePreviewPermission]
+    )
+    def preview(self, request, name=None):
+        """Trigger a preview task for the website"""
+        try:
+            preview_website(self.get_object())
+            return Response(
+                status=200,
+                data={"details": f"Success adding a preview task for {name}"},
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+            log.exception("Error previewing %s", name)
+            return Response(status=500, data={"details": str(exc)})
+
+    @action(
+        detail=True, methods=["post"], permission_classes=[HasWebsitePublishPermission]
+    )
+    def publish(self, request, name=None):
+        """Trigger a publish task for the website"""
+        try:
+            publish_website(self.get_object())
+            return Response(
+                status=200,
+                data={"details": f"Success adding a publish task for {name}"},
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+            log.exception("Error publishing %s", name)
+            return Response(status=500, data={"details": str(exc)})
 
 
 class WebsiteStarterViewSet(

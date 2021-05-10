@@ -102,3 +102,23 @@ def sync_website_content(website_name: str):
     else:
         backend = api.get_sync_backend(website)
         backend.sync_all_content_to_backend()
+
+
+@app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
+@single_website_task(10)
+def preview_website_backend(website_name: str):
+    """
+    Create a new backend preview for the website.
+    """
+    backend = api.get_sync_backend(Website.objects.get(name=website_name))
+    backend.create_backend_preview()
+
+
+@app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
+@single_website_task(10)
+def publish_website_backend(website_name: str):
+    """
+    Create a new backend release for the website.
+    """
+    backend = api.get_sync_backend(Website.objects.get(name=website_name))
+    backend.create_backend_release()

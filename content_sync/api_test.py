@@ -3,13 +3,7 @@ import pytest
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 
-from content_sync.api import (
-    create_website_backend,
-    get_sync_backend,
-    sync_content,
-    update_website_backend,
-    upsert_content_sync_state,
-)
+from content_sync import api
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
@@ -23,7 +17,7 @@ def test_upsert_content_sync_state_create():
 
     assert getattr(content, "content_sync_state", None) is None
 
-    upsert_content_sync_state(content)
+    api.upsert_content_sync_state(content)
 
     content.refresh_from_db()
 
@@ -52,7 +46,7 @@ def test_upsert_content_sync_state_update(settings):
     with mute_signals(post_save):
         content.save()
 
-    upsert_content_sync_state(content)
+    api.upsert_content_sync_state(content)
 
     content.content_sync_state.refresh_from_db()
     assert content.content_sync_state.synced_checksum == abc_checksum
@@ -64,7 +58,7 @@ def test_get_sync_backend(settings, mocker):
     settings.CONTENT_SYNC_BACKEND = "custom.backend.Backend"
     import_string_mock = mocker.patch("content_sync.api.import_string")
     website = WebsiteFactory.create()
-    get_sync_backend(website)
+    api.get_sync_backend(website)
     import_string_mock.assert_any_call("custom.backend.Backend")
     import_string_mock.return_value.assert_any_call(website)
 
@@ -77,7 +71,7 @@ def test_sync_content_enabled(settings, mocker):
     get_sync_backend_mock = mocker.patch("content_sync.api.get_sync_backend")
     sync_state = mocker.Mock()
 
-    sync_content(sync_state)
+    api.sync_content(sync_state)
 
     log_mock.debug.assert_not_called()
     get_sync_backend_mock.assert_called_once_with(sync_state.content.website)
@@ -91,7 +85,7 @@ def test_sync_content_disabled(settings, mocker):
     settings.CONTENT_SYNC_BACKEND = None
     mocker.patch("content_sync.api.is_sync_enabled", return_value=False)
     get_sync_backend_mock = mocker.patch("content_sync.api.get_sync_backend")
-    sync_content(None)
+    api.sync_content(None)
     get_sync_backend_mock.assert_not_called()
 
 
@@ -102,7 +96,7 @@ def test_create_website_backend(settings, mocker):
     mock_task = mocker.patch("content_sync.tasks.create_website_backend")
     with mute_signals(post_save):
         website = WebsiteFactory.create()
-    create_website_backend(website)
+    api.create_website_backend(website)
     mock_task.delay.assert_called_once_with(website.name)
 
 
@@ -113,7 +107,7 @@ def test_create_website_backend_disabled(settings, mocker):
     mock_task = mocker.patch("content_sync.tasks.create_website_backend")
     with mute_signals(post_save):
         website = WebsiteFactory.create()
-    create_website_backend(website)
+    api.create_website_backend(website)
     mock_task.delay.assert_not_called()
 
 
@@ -123,7 +117,7 @@ def test_update_website_backend(settings, mocker):
     mocker.patch("content_sync.api.is_sync_enabled", return_value=True)
     mock_task = mocker.patch("content_sync.tasks.sync_website_content")
     website = WebsiteFactory.create()
-    update_website_backend(website)
+    api.update_website_backend(website)
     mock_task.delay.assert_called_once_with(website.name)
 
 
@@ -133,5 +127,23 @@ def test_update_website_backend_disabled(settings, mocker):
     mocker.patch("content_sync.api.is_sync_enabled", return_value=False)
     mock_task = mocker.patch("content_sync.tasks.sync_website_content")
     website = WebsiteFactory.create()
-    update_website_backend(website)
+    api.update_website_backend(website)
     mock_task.delay.assert_not_called()
+
+
+def test_preview_website(settings, mocker):
+    """Verify preview_website calls the appropriate task"""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
+    mock_task = mocker.patch("content_sync.tasks.preview_website_backend")
+    website = WebsiteFactory.create()
+    api.preview_website(website)
+    mock_task.delay.assert_called_once_with(website.name)
+
+
+def test_publish_website(settings, mocker):
+    """Verify publish_website calls the appropriate task"""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
+    mock_task = mocker.patch("content_sync.tasks.publish_website_backend")
+    website = WebsiteFactory.create()
+    api.publish_website(website)
+    mock_task.delay.assert_called_once_with(website.name)

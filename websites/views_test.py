@@ -6,6 +6,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils.text import slugify
+from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
 from rest_framework import status
 
@@ -184,6 +185,84 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
     assert updated_site.title == new_title
     assert updated_site.owner == website.owner
     mock_update_website_backend.assert_called_once_with(website)
+
+
+def test_websites_endpoint_preview(mocker, drf_client):
+    """A user with admin/edit permissions should be able to request a website preview"""
+    mock_preview_website = mocker.patch("websites.views.preview_website")
+    website = WebsiteFactory.create()
+    editor = UserFactory.create()
+    editor.groups.add(website.editor_group)
+    drf_client.force_login(editor)
+    resp = drf_client.post(
+        reverse("websites_api-preview", kwargs={"name": website.name})
+    )
+    assert resp.status_code == 200
+    mock_preview_website.assert_called_once_with(website)
+
+
+def test_websites_endpoint_preview_error(mocker, drf_client):
+    """ An exception raised by the api preview call should be handled gracefully """
+    mocker.patch(
+        "websites.views.preview_website",
+        side_effect=[GithubException(status=422, data={})],
+    )
+    website = WebsiteFactory.create()
+    editor = UserFactory.create()
+    editor.groups.add(website.editor_group)
+    drf_client.force_login(editor)
+    resp = drf_client.post(
+        reverse("websites_api-preview", kwargs={"name": website.name})
+    )
+    assert resp.status_code == 500
+    assert resp.data == {"details": "422 {}"}
+
+
+def test_websites_endpoint_publish(mocker, drf_client):
+    """A user with admin permissions should be able to request a website publish"""
+    mock_publish_website = mocker.patch("websites.views.publish_website")
+    website = WebsiteFactory.create()
+    admin = UserFactory.create()
+    admin.groups.add(website.admin_group)
+    drf_client.force_login(admin)
+    resp = drf_client.post(
+        reverse("websites_api-publish", kwargs={"name": website.name})
+    )
+    assert resp.status_code == 200
+    mock_publish_website.assert_called_once_with(website)
+
+
+def test_websites_endpoint_publish_denied(mocker, drf_client):
+    """A user with edit permissions should not be able to request a website publish"""
+    mocker.patch("websites.views.publish_website")
+    website = WebsiteFactory.create()
+    editor = UserFactory.create()
+    editor.groups.add(website.editor_group)
+    drf_client.force_login(editor)
+    resp = drf_client.post(
+        reverse("websites_api-publish", kwargs={"name": website.name})
+    )
+    assert resp.status_code == 500
+    assert resp.data == {
+        "details": "You do not have permission to perform this action."
+    }
+
+
+def test_websites_endpoint_publish_error(mocker, drf_client):
+    """ An exception raised by the api publish call should be handled gracefully """
+    mocker.patch(
+        "websites.views.publish_website",
+        side_effect=[GithubException(status=422, data={})],
+    )
+    website = WebsiteFactory.create()
+    admin = UserFactory.create()
+    admin.groups.add(website.admin_group)
+    drf_client.force_login(admin)
+    resp = drf_client.post(
+        reverse("websites_api-publish", kwargs={"name": website.name})
+    )
+    assert resp.status_code == 500
+    assert resp.data == {"details": "422 {}"}
 
 
 def test_websites_endpoint_detail_update_denied(drf_client):
