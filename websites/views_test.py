@@ -538,12 +538,9 @@ def test_content_create_page_content(
     """
     drf_client.force_login(permission_groups.global_admin)
     found_config_item = mocker.Mock() if has_matching_config_item else None
-    patched_find_config_item = mocker.patch(
-        "websites.views.find_config_item", return_value=found_config_item
-    )
-    patched_is_page_content = mocker.patch(
-        "websites.views.is_page_content", return_value=is_page_content
-    )
+    patched_site_config = mocker.patch("websites.views.SiteConfig", autospec=True)
+    patched_site_config.return_value.find_item_by_name.return_value = found_config_item
+    patched_site_config.return_value.is_page_content.return_value = is_page_content
     website = WebsiteFactory.create()
     payload = {
         "title": "new title",
@@ -562,9 +559,9 @@ def test_content_create_page_content(
     assert resp.status_code == 201
     content = website.websitecontent_set.get()
     assert content.is_page_content == exp_page_content_field
-    patched_find_config_item.assert_called_once()
+    patched_site_config.return_value.find_item_by_name.assert_called_once()
     # Only check if the config item is for page content if that config item was actually found
-    assert patched_is_page_content.call_count == (
+    assert patched_site_config.return_value.is_page_content.call_count == (
         1 if found_config_item is not None else 0
     )
 

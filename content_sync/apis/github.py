@@ -2,9 +2,8 @@
 import logging
 from base64 import b64decode
 from dataclasses import dataclass
-from typing import Iterator, List
+from typing import Iterator, List, Optional
 
-import yaml
 from django.conf import settings
 from django.db.models import F, Q
 from github import ContentFile, Github, GithubException, InputGitTreeElement
@@ -16,10 +15,11 @@ from safedelete.models import HARD_DELETE
 
 from content_sync.decorators import retry_on_failure
 from content_sync.models import ContentSyncState
+from content_sync.serializers import serialize_content_to_file
 from main import features
-from ocw_import.api import convert_data_to_content
 from users.models import User
-from websites.models import WebsiteContent
+from websites.models import Website, WebsiteContent
+from websites.site_config_api import SiteConfig
 
 
 log = logging.getLogger(__name__)
@@ -37,12 +37,16 @@ class SyncResult:
     deleted: bool = False
 
 
+def decode_file_contents(content_file: ContentFile) -> str:
+    return str(b64decode(content_file.content), encoding="utf-8")
+
+
 class GithubApiWrapper:
     """
     Github API wrapper class
     """
 
-    def __init__(self, website: WebsiteContent):
+    def __init__(self, website: Website, site_config: Optional[SiteConfig]):
         """ Initialize the Github API backend for a specific website"""
         self.git = Github(
             login_or_token=settings.GIT_TOKEN,
@@ -54,6 +58,7 @@ class GithubApiWrapper:
         )
         self.org = self.git.get_organization(settings.GIT_ORGANIZATION)
         self.website = website
+        self.site_config = site_config or SiteConfig(self.website.starter.config)
         self.repo = None
 
     def get_repo_name(self):
@@ -144,7 +149,9 @@ class GithubApiWrapper:
             return
         repo = self.get_repo()
         path = website_content.content_filepath
-        data = self.format_content_to_file(website_content)
+        data = serialize_content_to_file(
+            site_config=self.site_config, website_content=website_content
+        )
         git_user = self.git_user(website_content.updated_by)
         try:
             sha = repo.get_contents(path).sha
@@ -193,7 +200,9 @@ class GithubApiWrapper:
                         deleted=content.deleted is not None,
                     )
                 )
-                data = self.format_content_to_file(content)
+                data = serialize_content_to_file(
+                    site_config=self.site_config, website_content=content
+                )
                 modified_element_list.extend(
                     self.get_tree_elements(sync_state, data, filepath)
                 )
@@ -252,27 +261,6 @@ class GithubApiWrapper:
                 name = user.name or user.username
                 email = user.email
         return InputGitAuthor(name, email)
-
-    def format_content_to_file(self, website_content: WebsiteContent) -> str:
-        """
-        This is a temporary function to convert WebsiteContent metadata + markdown into a format
-        suitable for Hugo.  It should be modified or removed once a more permanent solution for that
-        functionality is implemented.
-        """
-        return f"---\n{yaml.dump(website_content.metadata)}\n---\n{website_content.markdown}"
-
-    def format_file_to_content(self, content_file: ContentFile) -> WebsiteContent:
-        """
-        This is a temporary function to convert a git file to a WebsiteContent object.  It should be
-        modified or removed once a more permanent solution for that functionality is implemented.
-        For now it is using the same code as the import_ocw_course_files command.
-        """
-        return convert_data_to_content(
-            content_file.path,
-            str(b64decode(content_file.content), encoding="utf-8"),
-            self.website,
-            self.website.uuid,
-        )
 
     def get_tree_elements(
         self, sync_state: ContentSyncState, data: str, filepath: str
