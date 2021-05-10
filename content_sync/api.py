@@ -43,3 +43,15 @@ def create_website_backend(website: Website):
 def update_website_backend(website: Website):
     """ Update the backend content for a website"""
     tasks.sync_website_content.delay(website.name)
+
+
+@is_sync_enabled
+def preview_website(website: Website):
+    """ Create a preview for the website on the backend"""
+    tasks.preview_website_backend.delay(website.name)
+
+
+@is_sync_enabled
+def publish_website(website: Website):
+    """ Publish the website on the backend"""
+    tasks.publish_website_backend.delay(website.name)
