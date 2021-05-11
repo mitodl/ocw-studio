@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.15.0
+--------------
+
+- remove tag for review
+- Preview and publish api functions, tasks, endpoints (#253)
+- Fixed content/file serialization and deserialization
+- remove 'rules of hooks' violation
+- Try to fix ubuntu (#257)
+- Added support for soft/hard deletes of content
+
 Version 0.14.2 (Released May 06, 2021)
 --------------
 
