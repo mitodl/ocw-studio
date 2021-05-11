@@ -215,12 +215,12 @@ class WebsiteContentCreateSerializer(
                 "website_id": self.context["website_pk"],
                 "owner": user,
                 "updated_by": user,
+                **validated_data,
                 **(
                     {"is_page_content": self.context["is_page_content"]}
                     if "is_page_content" in self.context
                     else {}
                 ),
-                **validated_data,
             }
         )
         update_website_backend(instance.website)
