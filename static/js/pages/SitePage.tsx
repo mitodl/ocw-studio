@@ -19,7 +19,7 @@ export default function SitePage(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
   const { name } = match.params
 
-  const [websitePreviewQueryState, previewWebsite] = useMutation(() =>
+  const [{ isPending: previewIsPending }, previewWebsite] = useMutation(() =>
     websiteAction(name, "preview")
   )
 
@@ -35,7 +35,7 @@ export default function SitePage(): JSX.Element | null {
   }
 
   const onPreview = async () => {
-    if (websitePreviewQueryState.isPending) {
+    if (previewIsPending) {
       return
     }
     const response = await previewWebsite()
@@ -59,6 +59,7 @@ export default function SitePage(): JSX.Element | null {
               <button
                 type="button"
                 onClick={onPreview}
+                disabled={previewIsPending}
                 className="btn btn-preview green-button-outline"
               >
                 Preview
