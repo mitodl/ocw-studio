@@ -49,6 +49,8 @@ def test_import_ocw2hugo_course(settings):
     assert home_page.markdown.startswith(
         "This subject provides an introduction to the mechanics of materials"
     )
+    assert home_page.filename == "_index"
+    assert home_page.dirpath == "1-050-engineering-mechanics-i-fall-2007/content"
 
     related_page = WebsiteContent.objects.get(
         text_id="4f5c3926e4d569747f16131a6f692568"
@@ -58,6 +60,11 @@ def test_import_ocw2hugo_course(settings):
     assert related_page.parent == WebsiteContent.objects.get(
         text_id="ba83162e713cc9315ff9bfe952c79b82"
     )
+    assert related_page.filename == "_index"
+    assert (
+        related_page.dirpath
+        == "1-050-engineering-mechanics-i-fall-2007/content/sections/related-resources"
+    )
 
     lecture_pdf = WebsiteContent.objects.get(text_id="7f91d52457aaef8093c58a43f10a099b")
     assert lecture_pdf.type == CONTENT_TYPE_RESOURCE
@@ -65,6 +72,11 @@ def test_import_ocw2hugo_course(settings):
     assert (
         lecture_pdf.content_filepath
         == "1-050-engineering-mechanics-i-fall-2007/content/sections/lecture-notes/lec1.md"
+    )
+    assert lecture_pdf.filename == "lec1"
+    assert (
+        lecture_pdf.dirpath
+        == "1-050-engineering-mechanics-i-fall-2007/content/sections/lecture-notes"
     )
 
 

@@ -221,6 +221,11 @@ class WebsiteContentCreateSerializer(
                     if "is_page_content" in self.context
                     else {}
                 ),
+                **(
+                    {"filename": self.context["filename"]}
+                    if "filename" in self.context
+                    else {}
+                ),
             }
         )
         update_website_backend(instance.website)

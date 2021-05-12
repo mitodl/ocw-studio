@@ -7,7 +7,9 @@ import yaml
 from dateutil import parser as dateparser
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
+from main.utils import get_dirpath_and_filename
 from websites.constants import (
+    CONTENT_FILENAME_MAX_LEN,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     COURSE_HOME,
@@ -111,6 +113,9 @@ def convert_data_to_content(
         layout = content_json.get("layout", None)
         menu = content_json.get("menu", None)
         text_id = content_json.get("uid", None)
+        dirpath, filename = get_dirpath_and_filename(
+            filepath, expect_file_extension=True
+        )
         if menu:
             menu_values = list(menu.values())[0]
             parent_text_id = menu_values.get("parent", course_home_uuid)
@@ -132,6 +137,9 @@ def convert_data_to_content(
             "parent": parent,
             "title": content_json.get("title"),
             "type": content_type,
+            "dirpath": dirpath,
+            # Replace dots with dashes to simplify file name/extension parsing, and limit length
+            "filename": filename.replace(".", "-")[0:CONTENT_FILENAME_MAX_LEN],
             "content_filepath": filepath,
         }
         if not text_id:

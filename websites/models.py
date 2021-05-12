@@ -7,7 +7,7 @@ import yaml
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import SET_NULL
+from django.db.models import SET_NULL, Q, UniqueConstraint
 from django.utils.text import slugify
 from mitol.common.models import TimestampedModel, TimestampedModelQuerySet
 from safedelete.managers import (
@@ -21,6 +21,11 @@ from safedelete.queryset import SafeDeleteQueryset
 from main.utils import uuid_string
 from users.models import User
 from websites import constants
+from websites.constants import (
+    CONTENT_DIRPATH_MAX_LEN,
+    CONTENT_FILENAME_MAX_LEN,
+    CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
+)
 from websites.utils import permissions_group_name_for_role
 
 
@@ -130,9 +135,20 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         ),
     )
     content_filepath = models.CharField(max_length=2048, null=True, blank=True)
+    filename = models.CharField(
+        max_length=CONTENT_FILENAME_MAX_LEN, null=False, default=""
+    )
+    dirpath = models.CharField(
+        max_length=CONTENT_DIRPATH_MAX_LEN, null=True, blank=True
+    )
     file = models.FileField(
         upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
     )
+
+    @staticmethod
+    def generate_filename(title: str) -> str:
+        """Generates a filename from a title value"""
+        return slugify(title)[0:CONTENT_FILENAME_MAX_LEN]
 
     def calculate_checksum(self) -> str:
         """ Returns a calculated checksum of the content """
@@ -147,7 +163,19 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         ).hexdigest()
 
     class Meta:
-        unique_together = [["website", "text_id"]]
+        constraints = [
+            UniqueConstraint(name="unique_text_id", fields=["website", "text_id"]),
+            UniqueConstraint(
+                name=CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
+                fields=("website", "type", "dirpath", "filename"),
+                condition=~Q(dirpath=None),
+            ),
+            UniqueConstraint(
+                name=f"{CONTENT_FILEPATH_UNIQUE_CONSTRAINT}_null_dir",
+                fields=("website", "type", "filename"),
+                condition=Q(dirpath=None),
+            ),
+        ]
 
     def __str__(self):
         return f"{self.title} ({self.text_id})" if self.title else str(self.text_id)

@@ -2,6 +2,7 @@
 import re
 from enum import Flag, auto
 from pathlib import Path
+from typing import Tuple
 from uuid import uuid4
 
 
@@ -51,3 +52,31 @@ def remove_trailing_slashes(filepath: str) -> str:
         remove_trailing_slashes("/path/to/myfile.pdf") == "path/to/myfile.pdf"
     """
     return re.sub(r"^\/|\/$", "", filepath)
+
+
+def get_dirpath_and_filename(
+    filepath: str, expect_file_extension=True
+) -> Tuple[str, str]:
+    """
+    Given a full filepath, returns the directory path and filename (without extension)
+
+    Args:
+        filepath (str): A full filepath
+        expect_file_extension (bool): If True, the filepath is expected to have an extension. This
+            flag is here to account for filenames that do not have extensions.
+
+    Returns:
+        (str, str): The dirpath and filename (without extension) of the filepath
+    """
+    path_obj = Path(filepath)
+    path_parts = [part for part in path_obj.parts if part != "/"]
+    if not path_obj.suffix and expect_file_extension:
+        filename = ""
+    else:
+        filename = (
+            path_obj.name
+            if not path_obj.suffix
+            else path_obj.name[: -len(path_obj.suffix)]
+        )
+        path_parts = path_parts[0 : (len(path_parts) - 1)]
+    return ("/".join(path_parts), filename or None)

@@ -48,6 +48,14 @@ def permission_groups():
 
 
 @pytest.fixture()
+def global_admin_user():
+    """Returns a user with global admin permissions"""
+    global_admin_user = UserFactory.create()
+    global_admin_user.groups.add(Group.objects.get(name=constants.GLOBAL_ADMIN))
+    return global_admin_user
+
+
+@pytest.fixture()
 def basic_site_config(settings):
     """Returns an example site config"""
     return yaml.load(
