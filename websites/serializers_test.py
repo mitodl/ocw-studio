@@ -204,6 +204,7 @@ def test_website_content_create_serializer(mocker, includes_page_content_param):
         "type": CONTENT_TYPE_RESOURCE,
         "markdown": "some markdown",
         "metadata": metadata,
+        "is_page_content": False,
     }
     website = WebsiteFactory.create()
     user = UserFactory.create()
