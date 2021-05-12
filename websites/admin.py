@@ -49,7 +49,6 @@ class WebsiteContentAdmin(TimestampedModelAdmin, SafeDeleteAdmin):
         "title",
         "type",
         "get_website_title",
-        "parent",
     ) + SafeDeleteAdmin.list_display
     list_filter = ("type",) + SafeDeleteAdmin.list_filter
     raw_id_fields = ("website", "parent")

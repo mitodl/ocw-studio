@@ -358,9 +358,9 @@ def test_website_starters_local(
 
 
 @pytest.mark.parametrize("filter_type", ["page", ""])
-def test_websites_content_list(drf_client, filter_type, permission_groups):
+def test_websites_content_list(drf_client, filter_type, global_admin_user):
     """The list view of WebsiteContent should optionally filter by type"""
-    drf_client.force_login(permission_groups.global_admin)
+    drf_client.force_login(global_admin_user)
     WebsiteContentFactory.create()  # a different website, shouldn't show up here
     content = WebsiteContentFactory.create(type="other")
     website = content.website
@@ -395,9 +395,9 @@ def test_websites_content_list(drf_client, filter_type, permission_groups):
         assert content.type == results[idx]["type"]
 
 
-def test_websites_content_detail(drf_client, permission_groups):
+def test_websites_content_detail(drf_client, global_admin_user):
     """The detail view for WebsiteContent should return serialized data"""
-    drf_client.force_login(permission_groups.global_admin)
+    drf_client.force_login(global_admin_user)
     content = WebsiteContentFactory.create(type="other")
     resp = drf_client.get(
         reverse(
@@ -432,9 +432,9 @@ def test_websites_content_delete(drf_client, permission_groups, mocker):
     update_website_backend_mock.assert_called_once_with(content.website)
 
 
-def test_websites_content_create(drf_client, permission_groups):
+def test_websites_content_create(drf_client, global_admin_user):
     """POSTing to the WebsiteContent list view should create a new WebsiteContent"""
-    drf_client.force_login(permission_groups.global_admin)
+    drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create()
     payload = {
         "title": "new title",
@@ -459,10 +459,10 @@ def test_websites_content_create(drf_client, permission_groups):
 
 
 def test_websites_content_create_with_upload(
-    drf_client, permission_groups, file_upload
+    drf_client, global_admin_user, file_upload
 ):
     """Uploading a file when creating a new WebsiteContent object should work"""
-    drf_client.force_login(permission_groups.global_admin)
+    drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create()
     payload = {
         "title": "new title",
@@ -490,9 +490,9 @@ def test_websites_content_create_with_upload(
     assert resp.data["text_id"] == str(content.text_id)
 
 
-def test_websites_content_edit_with_upload(drf_client, permission_groups, file_upload):
+def test_websites_content_edit_with_upload(drf_client, global_admin_user, file_upload):
     """Uploading a file when editing a new WebsiteContent object should work"""
-    drf_client.force_login(permission_groups.global_admin)
+    drf_client.force_login(global_admin_user)
     content = WebsiteContentFactory.create(type=constants.CONTENT_TYPE_RESOURCE)
     payload = {"file": file_upload, "title": "New Title"}
     resp = drf_client.patch(
@@ -527,7 +527,7 @@ def test_websites_content_edit_with_upload(drf_client, permission_groups, file_u
 def test_content_create_page_content(
     mocker,
     drf_client,
-    permission_groups,
+    global_admin_user,
     has_matching_config_item,
     is_page_content,
     exp_page_content_field,
@@ -536,7 +536,7 @@ def test_content_create_page_content(
     POSTing to the WebsiteContent list view with a page content object should create a WebsiteContent record with
     a field that indicates that it's page content
     """
-    drf_client.force_login(permission_groups.global_admin)
+    drf_client.force_login(global_admin_user)
     found_config_item = mocker.Mock() if has_matching_config_item else None
     patched_site_config = mocker.patch("websites.views.SiteConfig", autospec=True)
     patched_site_config.return_value.find_item_by_name.return_value = found_config_item
@@ -566,9 +566,60 @@ def test_content_create_page_content(
     )
 
 
-def test_websites_content_create_empty(drf_client, permission_groups):
+@pytest.mark.parametrize("dirpath", ["path/to", None])
+@pytest.mark.parametrize(
+    "existing_filenames, exp_result_filename",
+    [
+        [[], "my-title"],
+        [["my-title"], "my-title-2"],
+        [["my-title", "my-title-9"], "my-title-10"],
+    ],
+)
+def test_content_create_page_generate_filename(
+    drf_client,
+    global_admin_user,
+    dirpath,
+    existing_filenames,
+    exp_result_filename,
+):
+    """
+    POSTing to the WebsiteContent list view without a filename should add a generated filename if a filename was not
+    included in the request data
+    """
+    drf_client.force_login(global_admin_user)
+    title = "My Title"
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create_batch(
+        len(existing_filenames),
+        website=website,
+        type=constants.CONTENT_TYPE_PAGE,
+        dirpath=dirpath,
+        filename=factory.Iterator(existing_filenames),
+    )
+    payload = {
+        "title": title,
+        "markdown": "some markdown",
+        "type": constants.CONTENT_TYPE_PAGE,
+        **({"dirpath": dirpath} if dirpath else {}),
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        data=payload,
+    )
+    assert resp.status_code == 201
+    content = website.websitecontent_set.order_by("-created_on").first()
+    assert content.website == website
+    assert content.filename == exp_result_filename
+
+
+def test_websites_content_create_empty(drf_client, global_admin_user):
     """POSTing to the WebsiteContent list view should create a new WebsiteContent"""
-    drf_client.force_login(permission_groups.global_admin)
+    drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create()
     payload = {}
     resp = drf_client.post(
