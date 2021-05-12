@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.15.0
+Version 0.15.0 (Released May 12, 2021)
 --------------
 
 - remove tag for review
