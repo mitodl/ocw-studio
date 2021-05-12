@@ -6,7 +6,7 @@ OCW Studio manages deployments for OCW courses.
 1. [Testing and Formatting](#testing-and-formatting)
 1. [Importing OCW course sites](#importing-ocw-course-sites)
 1. [Defining local starter projects and site configs](#defining-local-starter-projects-and-site-configs)
-
+1. [Enabling GitHub integration](#enabling-github-integration)
 
 # Initial Setup
 
@@ -180,3 +180,19 @@ This project includes some tools that simplify development with starter projects
 - Override the site config for starters with a particular `slug` value
 
 See the [README in localdev/starters](localdev/starters/) for instructions.
+
+
+# Enabling GitHub integration
+
+You can enable git integration so that website content will be synced with GitHub:
+
+- Create an organization within Github
+- Create a Github personal access token, with all `repo` permissions
+- Add the following to your .env file:
+    ```
+    CONTENT_SYNC_BACKEND=content_sync.backends.github.GithubBackend
+    GIT_ORGANIZATION=<your_organization>
+    GIT_TOKEN=<your_token>
+    ```
+- If you need to use a custom git domain, add `GIT_API_URL=<your_domain>/api/v3`
+- If you would like git commits to be anonymized, add `FEATURE_GIT_ANONYMOUS_COMMITS=True`
