@@ -14,10 +14,21 @@
   padding: 6px 16px;
 }
 
-.green-button {
-  background-color: $studio-green;
-  color: white;
+.green-button,
+.green-button-outline {
   font-size: 14px;
   border-radius: 8px;
   padding: 6px 16px;
+}
+
+.green-button,
+.green-button-outline:hover {
+  background-color: $studio-green;
+  color: white;
+}
+
+.green-button-outline {
+  border-color: $studio-green;
+  background-color: white;
+  color: $studio-green;
 }
