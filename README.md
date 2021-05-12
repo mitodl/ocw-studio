@@ -6,7 +6,7 @@ OCW Studio manages deployments for OCW courses.
 1. [Testing and Formatting](#testing-and-formatting)
 1. [Importing OCW course sites](#importing-ocw-course-sites)
 1. [Defining local starter projects and site configs](#defining-local-starter-projects-and-site-configs)
-
+1. [Enabling GitHub integration](#enabling-github-integration)
 
 # Initial Setup
 
