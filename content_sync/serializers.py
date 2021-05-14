@@ -46,7 +46,6 @@ class BaseContentFileSerializer(abc.ABC):
             "text_id": text_id,
             # "file"-type items are singletons, and we use the same value for text_id and type
             "type": text_id,
-            "content_filepath": filepath,
             "is_page_content": False,
             **({"title": title} if title is not None else {}),
         }
@@ -103,7 +102,6 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
             "type": content_type,
             "dirpath": remove_trailing_slashes(dirpath),
             "filename": filename,
-            "content_filepath": filepath,
             "is_page_content": True,
         }
         content, _ = WebsiteContent.objects.update_or_create(

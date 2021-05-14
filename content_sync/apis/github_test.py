@@ -214,7 +214,7 @@ def test_upsert_content_file(
 
 @pytest.mark.parametrize("filepath", [None, ""])
 def test_upsert_content_file_no_path(mocker, mock_api_wrapper, db_data, filepath):
-    """upsert_content_file should not call repo.create_file if there is no content_filepath"""
+    """upsert_content_file should not call repo.create_file if there is no destination filepath"""
     mocker.patch(
         "content_sync.apis.github.get_destination_filepath", return_value=filepath
     )

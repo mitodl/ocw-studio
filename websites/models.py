@@ -134,7 +134,6 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
             "metadata, configuration, etc."
         ),
     )
-    content_filepath = models.CharField(max_length=2048, null=True, blank=True)
     filename = models.CharField(
         max_length=CONTENT_FILENAME_MAX_LEN,
         null=False,

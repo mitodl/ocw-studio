@@ -71,10 +71,6 @@ def test_import_ocw2hugo_course(settings):
     )
     assert lecture_pdf.type == CONTENT_TYPE_RESOURCE
     assert lecture_pdf.metadata.get("file_type") == "application/pdf"
-    assert (
-        lecture_pdf.content_filepath
-        == "1-050-engineering-mechanics-i-fall-2007/content/sections/lecture-notes/lec1.md"
-    )
     assert lecture_pdf.filename == "lec1"
     assert (
         lecture_pdf.dirpath

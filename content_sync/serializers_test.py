@@ -106,7 +106,6 @@ def test_hugo_file_deserialize(mocker):
     assert website_content.is_page_content is True
     assert website_content.dirpath == dest_directory
     assert website_content.filename == dest_filename
-    assert website_content.content_filepath == filepath
     patched_find_item.assert_called_once_with("page")
 
     markdown_pos = EXAMPLE_HUGO_MARKDOWN.find(website_content.markdown)
@@ -204,7 +203,6 @@ def test_data_file_deserialize(serializer_cls, file_content):
     assert website_content.title == "Content Title"
     assert website_content.type == file_config_item.item["name"]
     assert website_content.text_id == file_config_item.item["name"]
-    assert website_content.content_filepath == filepath
     assert website_content.is_page_content is False
     assert website_content.metadata == {
         "tags": ["Design"],
