@@ -53,12 +53,12 @@ def test_import_ocw2hugo_course(settings):
     assert home_page.dirpath == "1-050-engineering-mechanics-i-fall-2007/content"
 
     related_page = WebsiteContent.objects.get(
-        text_id="4f5c3926e4d569747f16131a6f692568"
+        text_id="4f5c3926-e4d5-6974-7f16-131a6f692568"
     )
     assert related_page.type == CONTENT_TYPE_PAGE
     assert related_page.metadata.get("title") == "Related Resources"
     assert related_page.parent == WebsiteContent.objects.get(
-        text_id="ba83162e713cc9315ff9bfe952c79b82"
+        text_id="ba83162e-713c-c931-5ff9-bfe952c79b82"
     )
     assert related_page.filename == "_index"
     assert (
@@ -66,7 +66,9 @@ def test_import_ocw2hugo_course(settings):
         == "1-050-engineering-mechanics-i-fall-2007/content/sections/related-resources"
     )
 
-    lecture_pdf = WebsiteContent.objects.get(text_id="7f91d52457aaef8093c58a43f10a099b")
+    lecture_pdf = WebsiteContent.objects.get(
+        text_id="7f91d524-57aa-ef80-93c5-8a43f10a099b"
+    )
     assert lecture_pdf.type == CONTENT_TYPE_RESOURCE
     assert lecture_pdf.metadata.get("file_type") == "application/pdf"
     assert (

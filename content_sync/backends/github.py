@@ -61,10 +61,7 @@ class GithubBackend(BaseSyncBackend):
         Create new content in Github.
         """
         content = sync_state.content
-        return self.api.upsert_content_file(
-            content,
-            f"Create {content.content_filepath}",
-        )
+        return self.api.upsert_content_file(content)
 
     @check_sync_state
     def update_content_in_backend(self, sync_state: ContentSyncState) -> Commit:
@@ -72,9 +69,7 @@ class GithubBackend(BaseSyncBackend):
         Update content in Github.
         """
         content = sync_state.content
-        return self.api.upsert_content_file(
-            content, f"Modify {content.content_filepath}"
-        )
+        return self.api.upsert_content_file(content)
 
     def sync_all_content_to_backend(self) -> Commit:
         """

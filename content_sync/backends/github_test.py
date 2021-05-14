@@ -57,9 +57,7 @@ def test_create_content_in_backend(github):
     initial_sha = content_sync_state.current_checksum
     assert initial_sha != content_sync_state.synced_checksum
     github.backend.create_content_in_backend(content.content_sync_state)
-    github.api.upsert_content_file.assert_called_once_with(
-        content, f"Create {content.content_filepath}"
-    )
+    github.api.upsert_content_file.assert_called_once_with(content)
     updated_sync = ContentSyncState.objects.get(id=content_sync_state.id)
     assert updated_sync.current_checksum == updated_sync.synced_checksum
 
@@ -68,9 +66,7 @@ def test_update_content_in_backend(github):
     """Test that update_content_in_backend calls the appropriate api wrapper function and args"""
     content = github.backend.website.websitecontent_set.all().last()
     github.backend.update_content_in_backend(content.content_sync_state)
-    github.api.upsert_content_file.assert_called_once_with(
-        content, f"Modify {content.content_filepath}"
-    )
+    github.api.upsert_content_file.assert_called_once_with(content)
 
 
 def test_abort_on_synced_checksum(github):

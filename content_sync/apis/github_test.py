@@ -7,12 +7,20 @@ import pytest
 from django.conf import settings
 from github import GithubException
 
-from content_sync.apis.github import GIT_DATA_FILEPATH, GithubApiWrapper
+from content_sync.apis.github import (
+    GIT_DATA_FILEPATH,
+    GithubApiWrapper,
+    get_destination_filepath,
+)
 from main import features
 from users.factories import UserFactory
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.models import WebsiteContent
-from websites.site_config_api import SiteConfig
+from websites.site_config_api import ConfigItem, SiteConfig
 
 
 pytestmark = pytest.mark.django_db
@@ -53,6 +61,19 @@ def patched_file_serialize(mocker):
     """Patches function that serializes website content to file contents"""
     return mocker.patch(
         "content_sync.apis.github.serialize_content_to_file",
+    )
+
+
+def fake_destination_filepath(website_content: WebsiteContent, *args) -> str:
+    """Returns a fake destination filepath for some WebsiteContent record"""
+    return f"path/to/{website_content.filename}.md"
+
+
+@pytest.fixture
+def patched_destination_filepath(mocker):
+    """Patches the get_destination_filepath API function"""
+    return mocker.patch(
+        "content_sync.apis.github.get_destination_filepath", fake_destination_filepath
     )
 
 
@@ -143,18 +164,17 @@ def test_rename_branch(mocker, mock_api_wrapper):
     mock_repo.get_git_ref.return_value.delete.assert_called_once()
 
 
-@pytest.mark.parametrize(
-    "is_existing_file, message",
-    [
-        [True, "upsert file"],
-        [False, "create file"],
-    ],
-)
+@pytest.mark.parametrize("is_existing_file", [True, False])
 def test_upsert_content_file(
-    mocker, mock_api_wrapper, patched_file_serialize, is_existing_file, message
+    mocker,
+    db_data,
+    mock_api_wrapper,
+    patched_file_serialize,
+    patched_destination_filepath,
+    is_existing_file,
 ):
     """upsert_content_file should call the correct Github API method depending on whether or not the file exists"""
-    content = mock_api_wrapper.website.websitecontent_set.first()
+    content = db_data.website_contents[0]
     mock_repo = mock_api_wrapper.org.get_repo.return_value
     if is_existing_file:
         mock_repo.get_contents.return_value.sha.return_value = hashlib.sha1(b"fake_sha")
@@ -164,16 +184,17 @@ def test_upsert_content_file(
         github_api_method = mock_repo.create_file
     serialized_contents = "my contents"
     patched_file_serialize.return_value = serialized_contents
-    mock_api_wrapper.upsert_content_file(content, message)
+    mock_api_wrapper.upsert_content_file(content)
 
     patched_file_serialize.assert_called_once_with(
         site_config=mock_api_wrapper.site_config, website_content=content
     )
     github_api_method.assert_called_once()
+    expected_filepath = fake_destination_filepath(content)
     if is_existing_file:
         github_api_method.assert_called_once_with(
-            content.content_filepath,
-            message,
+            expected_filepath,
+            f"Update {expected_filepath}",
             serialized_contents,
             mock_repo.get_contents.return_value.sha,
             committer=mocker.ANY,
@@ -182,8 +203,8 @@ def test_upsert_content_file(
         )
     else:
         github_api_method.assert_called_once_with(
-            content.content_filepath,
-            message,
+            expected_filepath,
+            f"Create {expected_filepath}",
             serialized_contents,
             committer=mocker.ANY,
             author=mocker.ANY,
@@ -192,11 +213,13 @@ def test_upsert_content_file(
 
 
 @pytest.mark.parametrize("filepath", [None, ""])
-def test_upsert_content_file_no_path(mock_api_wrapper, filepath):
+def test_upsert_content_file_no_path(mocker, mock_api_wrapper, db_data, filepath):
     """upsert_content_file should not call repo.create_file if there is no content_filepath"""
-    content = mock_api_wrapper.website.websitecontent_set.first()
-    content.content_filepath = filepath
-    mock_api_wrapper.upsert_content_file(content, "Create a file")
+    mocker.patch(
+        "content_sync.apis.github.get_destination_filepath", return_value=filepath
+    )
+    content = db_data.website_contents[0]
+    mock_api_wrapper.upsert_content_file(content)
     mock_api_wrapper.org.get_repo.return_value.create_file.assert_not_called()
 
 
@@ -217,12 +240,21 @@ def test_upsert_content_files(mocker, mock_api_wrapper, db_data):
 
 
 def test_upsert_content_files_for_user(
-    mocker, mock_api_wrapper, db_data, patched_file_serialize
+    mocker,
+    mock_api_wrapper,
+    db_data,
+    patched_file_serialize,
+    patched_destination_filepath,
 ):
-    """upsert_content_files_for_user should upsert all content files for a user in 1 commit"""
+    """
+    upsert_content_files_for_user should upsert all content files for a user in 1 commit and modify ContentSyncState
+    records to reflect the results.
+    """
     mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
     for content in db_data.website_contents:
-        content.content_sync_state.data = {GIT_DATA_FILEPATH: content.content_filepath}
+        content.content_sync_state.data = {
+            GIT_DATA_FILEPATH: fake_destination_filepath(content)
+        }
         content.content_sync_state.save()
     db_data.website_contents[2].delete()  # ensure we record a delete for the user
     mock_repo = mock_api_wrapper.org.get_repo.return_value
@@ -237,11 +269,11 @@ def test_upsert_content_files_for_user(
     for content in expected_contents:
         if content.deleted:
             mock_git_tree_element.assert_any_call(
-                content.content_filepath, "100644", "blob", sha=None
+                fake_destination_filepath(content), "100644", "blob", sha=None
             )
         else:
             mock_git_tree_element.assert_any_call(
-                content.content_filepath, "100644", "blob", mocker.ANY
+                fake_destination_filepath(content), "100644", "blob", mocker.ANY
             )
 
     mock_repo.create_git_commit.assert_called_once_with(
@@ -267,11 +299,18 @@ def test_upsert_content_files_for_user(
     [
         ["markdown", "NEW"],
         ["metadata", '{"foo": 2}'],
-        ["content_filepath", "content/newpath.md"],
+        ["dirpath", "brand/new/dirpath"],
+        ["filename", "brand-new-test-case-filename"],
     ],
 )
 def test_upsert_content_files_modified_only(
-    mocker, mock_api_wrapper, db_data, patched_file_serialize, field, value
+    mocker,
+    mock_api_wrapper,
+    db_data,
+    patched_file_serialize,
+    patched_destination_filepath,
+    field,
+    value,
 ):
     """upsert_content_files_for_user should process only the file with a modified field"""
     mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
@@ -295,7 +334,7 @@ def test_upsert_content_files_modified_only(
 
     mock_api_wrapper.upsert_content_files_for_user(user.id)
     mock_git_tree_element.called_once_with(
-        content.content_filepath, "100644", "blob", mocker.ANY
+        fake_destination_filepath(content), "100644", "blob", mocker.ANY
     )
 
     content.refresh_from_db()
@@ -303,32 +342,40 @@ def test_upsert_content_files_modified_only(
 
 
 def test_upsert_content_files_modified_filepath(
-    mocker, mock_api_wrapper, db_data, patched_file_serialize
+    mocker,
+    mock_api_wrapper,
+    db_data,
+    patched_file_serialize,
+    patched_destination_filepath,
 ):
     """upsert_content_files_for_user should save git filepath in sync state and remove old paths from git"""
     mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
     user = db_data.users[0]
     content = db_data.website_contents[0]
+    old_filepath = fake_destination_filepath(content)
     sync_state = content.content_sync_state
-    old_filepath = content.content_filepath
     mock_api_wrapper.upsert_content_files_for_user(user.id)
 
     sync_state.refresh_from_db()
     assert sync_state.data[GIT_DATA_FILEPATH] == old_filepath
-    content.content_filepath = "my_new_path.md"
+    content.filename = "new-test-case-filename.xyz"
+    # NOTE: This test case relies on the fact that this change triggers the creation of a new ContentSyncState
     content.save()
+    new_filepath = fake_destination_filepath(content)
     mock_api_wrapper.upsert_content_files_for_user(user.id)
 
-    mock_git_tree_element.assert_any_call(
-        content.content_filepath, "100644", "blob", mocker.ANY
-    )
+    mock_git_tree_element.assert_any_call(new_filepath, "100644", "blob", mocker.ANY)
     mock_git_tree_element.assert_any_call(old_filepath, "100644", "blob", sha=None)
     sync_state.refresh_from_db()
-    assert sync_state.data[GIT_DATA_FILEPATH] == content.content_filepath
+    assert sync_state.data[GIT_DATA_FILEPATH] == new_filepath
 
 
 def test_upsert_content_files_deleted(
-    mocker, mock_api_wrapper, db_data, patched_file_serialize
+    mocker,
+    mock_api_wrapper,
+    db_data,
+    patched_file_serialize,
+    patched_destination_filepath,
 ):
     """upsert_content_files should process deleted files"""
     mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
@@ -337,7 +384,9 @@ def test_upsert_content_files_deleted(
     for content in db_data.website_contents:
         content_sync = content.content_sync_state
         content_sync.synced_checksum = content_sync.content.calculate_checksum()
-        content_sync.data = {"filepath": content_sync.content.content_filepath}
+        content_sync.data = {
+            "filepath": fake_destination_filepath(content_sync.content)
+        }
         content_sync.save()
 
     # Mark the content as soft-deleted
@@ -346,21 +395,22 @@ def test_upsert_content_files_deleted(
 
     mock_api_wrapper.upsert_content_files()
     mock_git_tree_element.called_once_with(
-        content.content_filepath, "100644", "blob", sha=None
+        fake_destination_filepath(content), "100644", "blob", sha=None
     )
 
     assert WebsiteContent.all_objects.filter(id=content.id).exists() is False
 
 
-def test_delete_content_file(mocker, mock_api_wrapper):
+def test_delete_content_file(mocker, mock_api_wrapper, patched_destination_filepath):
     """delete_content_file should call repo.delete_file"""
     content = mock_api_wrapper.website.websitecontent_set.first()
     mock_repo = mock_api_wrapper.org.get_repo.return_value
     mock_repo.get_contents.return_value.sha.return_value = hashlib.sha1(b"fake_sha")
     mock_api_wrapper.delete_content_file(content)
+    expected_filepath = fake_destination_filepath(content)
     mock_repo.delete_file.assert_called_once_with(
-        content.content_filepath,
-        f"Delete {content.content_filepath}",
+        expected_filepath,
+        f"Delete {expected_filepath}",
         mock_repo.get_contents.return_value.sha,
         committer=mocker.ANY,
         **{},
@@ -482,3 +532,38 @@ def test_create_backend_two_branches_already_exist(
         f"refs/heads/{settings.GIT_BRANCH_RELEASE}", sha=mocker.ANY
     )
     assert new_repo == mock_api_wrapper.get_repo()
+
+
+@pytest.mark.parametrize(
+    "has_missing_name, is_bad_config_item",
+    [
+        [True, False],
+        [False, True],
+    ],
+)
+def test_get_destination_filepath_errors(mocker, has_missing_name, is_bad_config_item):
+    """
+    get_destination_filepath should log an error and return None if the site config is missing the given name, or if
+    the config item does not have a properly configured destination.
+    """
+    patched_log = mocker.patch("content_sync.apis.github.log")
+    # From basic-site-config.yml
+    config_item_name = "blog"
+    if is_bad_config_item:
+        mocker.patch.object(
+            SiteConfig,
+            "find_item_by_name",
+            return_value=ConfigItem(
+                item={"name": config_item_name, "poorly": "configured"}
+            ),
+        )
+    starter = WebsiteStarterFactory.build()
+    content = WebsiteContentFactory.build(
+        is_page_content=False,
+        type="non-existent-config-name" if has_missing_name else config_item_name,
+    )
+    return_value = get_destination_filepath(
+        content=content, site_config=SiteConfig(starter.config)
+    )
+    patched_log.error.assert_called_once()
+    assert return_value is None

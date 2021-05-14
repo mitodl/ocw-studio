@@ -7,24 +7,29 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize("dirpath", ["path/to", None])
 @pytest.mark.parametrize(
     "existing_filenames,exp_result_filename",
     [
         [[], "my-title"],
-        [["my-title"], "my-title-2"],
-        [["my-title", "my-title-9"], "my-title-10"],
+        [["my-title"], "my-title2"],
+        [["my-title", "my-title9"], "my-title10"],
+        [["my-long-title", "my-long-title9"], "my-long-titl10"],
     ],
 )
 def test_websitecontent_autogen_filename_unique(
-    dirpath, existing_filenames, exp_result_filename
+    mocker, existing_filenames, exp_result_filename
 ):
     """
-    New WebsiteContent objects should have a unique filename generated if the initial auto-generated filename conflicts
-    with an existing one.
+    get_valid_new_filename should return a filename that obeys uniqueness constraints, adding a suffix and
+    removing characters from the end of the string as necessary.
     """
-    filename_base = "my-title"
+    # Set a lower limit for max filename length to test that filenames are truncated appropriately
+    mocker.patch("websites.api.CONTENT_FILENAME_MAX_LEN", 14)
+    filename_base = (
+        exp_result_filename if not existing_filenames else existing_filenames[0]
+    )
     content_type = "page"
+    dirpath = "path/to"
     website = WebsiteFactory.create()
     WebsiteContentFactory.create_batch(
         len(existing_filenames),
@@ -36,7 +41,6 @@ def test_websitecontent_autogen_filename_unique(
     assert (
         get_valid_new_filename(
             website_pk=website.pk,
-            content_type=content_type,
             dirpath=dirpath,
             filename_base=filename_base,
         )

@@ -15,7 +15,7 @@ from content_sync.serializers import (
     serialize_content_to_file,
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
-from websites.site_config_api import SiteConfig
+from websites.site_config_api import ConfigItem, SiteConfig
 
 
 EXAMPLE_HUGO_MARKDOWN = """---
@@ -81,11 +81,18 @@ def test_hugo_file_serialize(markdown, exp_sections):
 
 
 @pytest.mark.django_db
-def test_hugo_file_deserialize():
+def test_hugo_file_deserialize(mocker):
     """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
-    filepath = "/path/to/file.md"
+    dest_directory, dest_filename = "path/to", "myfile"
+    filepath = f"/{dest_directory}/{dest_filename}.md"
+    patched_find_item = mocker.patch.object(
+        SiteConfig,
+        "find_item_by_name",
+        return_value=ConfigItem(item={"folder": "different/path/to"}),
+    )
     website = WebsiteFactory.create()
     site_config = SiteConfig(website.starter.config)
+
     website_content = HugoMarkdownFileSerializer.deserialize(
         website=website,
         site_config=site_config,
@@ -97,7 +104,11 @@ def test_hugo_file_deserialize():
     assert website_content.text_id == "abcdefg"
     assert website_content.markdown == "# My markdown\n- abc\n- def\n"
     assert website_content.is_page_content is True
+    assert website_content.dirpath == dest_directory
+    assert website_content.filename == dest_filename
     assert website_content.content_filepath == filepath
+    patched_find_item.assert_called_once_with("page")
+
     markdown_pos = EXAMPLE_HUGO_MARKDOWN.find(website_content.markdown)
     content_without_markdown = EXAMPLE_HUGO_MARKDOWN[0:markdown_pos]
     # deserialize() should update existing WebsiteContent records, and should be able to handle empty markdown.
@@ -109,6 +120,39 @@ def test_hugo_file_deserialize():
     )
     website_content.refresh_from_db()
     assert website_content.markdown is None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "config_dirpath, file_dirpath, exp_content_dirpath",
+    [
+        ["/config/path/to/", "config/path/to", "config/path/to"],
+        ["/config/path/to", "file/path/to", "file/path/to"],
+    ],
+)
+def test_hugo_file_deserialize_dirpath(
+    mocker, config_dirpath, file_dirpath, exp_content_dirpath
+):
+    """
+    HugoMarkdownFileSerializer.deserialize should create/update the WebsiteContent.dirpath value with a null value
+    if the file exists at the path described in the site config
+    """
+    filepath = f"/{file_dirpath}/myfile.md"
+    patched_find_item = mocker.patch.object(
+        SiteConfig,
+        "find_item_by_name",
+        return_value=ConfigItem(item={"folder": config_dirpath}),
+    )
+    website = WebsiteFactory.create()
+    site_config = SiteConfig(website.starter.config)
+    website_content = HugoMarkdownFileSerializer.deserialize(
+        website=website,
+        site_config=site_config,
+        filepath=filepath,
+        file_contents=EXAMPLE_HUGO_MARKDOWN,
+    )
+    assert website_content.dirpath == exp_content_dirpath
+    patched_find_item.assert_called_once_with("page")
 
 
 @pytest.mark.parametrize("serializer_cls", [JsonFileSerializer, YamlFileSerializer])

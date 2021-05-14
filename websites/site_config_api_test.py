@@ -1,45 +1,59 @@
 """Site config API tests"""
-import os
-
 import pytest
-import yaml
 
-from websites.constants import WEBSITE_CONFIG_CONTENT_DIR_KEY
-from websites.site_config_api import (
-    ConfigItem,
-    SiteConfig,
-    get_file_target,
-    has_file_target,
+from websites.constants import (
+    WEBSITE_CONFIG_CONTENT_DIR_KEY,
+    WEBSITE_CONFIG_DEFAULT_CONTENT_DIR,
 )
+from websites.site_config_api import ConfigItem, SiteConfig
 
-
-SCHEMA_RESOURCES_DIR = "localdev/configs/"
-SCHEMA_CONFIG_FILE = "basic-site-config.yml"
 
 # pylint:disable=redefined-outer-name
 
 
-@pytest.fixture()
-def site_config_yml(settings):
-    """Fixture that returns the contents of the example site config YAML file in the resource directory"""
-    with open(
-        os.path.join(settings.BASE_DIR, SCHEMA_RESOURCES_DIR, SCHEMA_CONFIG_FILE)
-    ) as f:
-        return f.read().strip()
+@pytest.mark.parametrize(
+    "raw_config_item, exp_file_target, exp_has_file_target",
+    [
+        [{"folder": "abc/"}, "abc/", True],
+        [{"file": "abc.txt"}, "abc.txt", True],
+        [{"key": "value"}, None, False],
+    ],
+)
+def test_config_item_file_target(raw_config_item, exp_file_target, exp_has_file_target):
+    """Util functions for dealing with folder/file target should return expected values"""
+    config_item = ConfigItem(item=raw_config_item)
+    assert config_item.file_target == exp_file_target
+    assert config_item.has_file_target() == exp_has_file_target
 
 
-@pytest.fixture()
-def parsed_site_config(site_config_yml):
-    """Fixture that returns the parsed contents of the example site config YAML file in the resource directory"""
-    return yaml.load(site_config_yml, Loader=yaml.Loader)
+def test_config_item_name():
+    """ConfigItem.name should return the 'name' value"""
+    name = "config-item-name"
+    config_item = ConfigItem(item={"name": name})
+    assert config_item.name == name
 
 
-def test_config_iter_items(parsed_site_config):
+@pytest.mark.parametrize(
+    "raw_config_item, exp_is_folder, exp_is_file",
+    [
+        [{"folder": "abc/"}, True, False],
+        [{"file": "abc.txt"}, False, True],
+        [{"key": "value"}, False, False],
+    ],
+)
+def test_config_item_is_folder_file(raw_config_item, exp_is_folder, exp_is_file):
+    """ConfigItem.is_folder_item/is_file_item should return expected values"""
+    config_item = ConfigItem(item=raw_config_item)
+    assert config_item.is_folder_item() == exp_is_folder
+    assert config_item.is_file_item() == exp_is_file
+
+
+def test_site_config_iter_items(basic_site_config):
     """SiteConfig.iter_items should yield each individual config item"""
-    site_config = SiteConfig(parsed_site_config)
+    site_config = SiteConfig(basic_site_config)
     config_items = list(site_config.iter_items())
     assert len(config_items) == 4
-    collections = parsed_site_config["collections"]
+    collections = basic_site_config["collections"]
     assert config_items[0] == ConfigItem(
         item=collections[0], parent_item=None, path="collections.0"
     )
@@ -56,45 +70,52 @@ def test_config_iter_items(parsed_site_config):
     )
 
 
-def test_find_config_item_name_repeatable(site_config_repeatable_only):
-    """SiteConfig.find_item_by_name should return a repeatable config item if one is found with the given name"""
-    site_config = SiteConfig(site_config_repeatable_only)
-    config_item = site_config_repeatable_only["collections"][0]
-    assert site_config.find_item_by_name(config_item["name"]) == config_item
-    assert site_config.find_item_by_name("other-name-123") is None
-
-
-def test_find_config_item_name_singleton(site_config_singleton_only):
-    """SiteConfig.find_item_by_name should return a singleton config item if one is found with the given name"""
-    site_config = SiteConfig(site_config_singleton_only)
-    config_item = site_config_singleton_only["collections"][0]["files"][0]
-    assert site_config.find_item_by_name(config_item["name"]) == config_item
-    assert site_config.find_item_by_name("other-name-123") is None
-
-
-def test_find_config_item_by_filepath(parsed_site_config):
-    """SiteConfig.find_item_by_filepath should return a config item if one is found with the given filepath"""
-    site_config = SiteConfig(parsed_site_config)
-    all_config_items = list(site_config.iter_items())
-    assert (
-        site_config.find_item_by_filepath("data/metadata.json")
-        == all_config_items[3].item
-    )
-    assert site_config.find_item_by_filepath("bad/path") is None
-
-
 @pytest.mark.parametrize(
-    "obj, exp_get_file_target, exp_has_file_target",
+    "content_dir_value, exp_result",
     [
-        [{"folder": "abc/"}, "abc/", True],
-        [{"file": "abc.txt"}, "abc.txt", True],
-        [{"key": "value"}, None, False],
+        ["mycontentdir", "mycontentdir"],
+        [None, WEBSITE_CONFIG_DEFAULT_CONTENT_DIR],
     ],
 )
-def test_file_target_utils(obj, exp_get_file_target, exp_has_file_target):
-    """Util functions for dealing with folder/file target should return expected values"""
-    assert get_file_target(obj) == exp_get_file_target
-    assert has_file_target(obj) is exp_has_file_target
+def test_content_dir(basic_site_config, content_dir_value, exp_result):
+    """SiteConfig.content_dir should return the content dir value or a default if it doesn't exist"""
+    updated_site_config = basic_site_config.copy()
+    if content_dir_value is None:
+        del updated_site_config[WEBSITE_CONFIG_CONTENT_DIR_KEY]
+    else:
+        updated_site_config[WEBSITE_CONFIG_CONTENT_DIR_KEY] = content_dir_value
+    site_config = SiteConfig(updated_site_config)
+    assert site_config.content_dir == exp_result
+
+
+def test_find_config_item_name_repeatable(basic_site_config):
+    """SiteConfig.find_item_by_name should return a repeatable config item if one is found with the given name"""
+    site_config = SiteConfig(basic_site_config)
+    config_item = next(
+        item for item in site_config.iter_items() if item.is_folder_item()
+    )
+    assert config_item is not None
+    assert site_config.find_item_by_name(config_item.name) == config_item
+    assert site_config.find_item_by_name("other-name-123") is None
+
+
+def test_find_config_item_name_singleton(basic_site_config):
+    """SiteConfig.find_item_by_name should return a singleton config item if one is found with the given name"""
+    site_config = SiteConfig(basic_site_config)
+    config_item = next(item for item in site_config.iter_items() if item.is_file_item())
+    assert config_item is not None
+    assert site_config.find_item_by_name(config_item.name) == config_item
+    assert site_config.find_item_by_name("other-name-123") is None
+
+
+def test_find_config_item_by_filepath(basic_site_config):
+    """SiteConfig.find_item_by_filepath should return a config item if one is found with the given filepath"""
+    site_config = SiteConfig(basic_site_config)
+    all_config_items = list(site_config.iter_items())
+    assert (
+        site_config.find_item_by_filepath("data/metadata.json") == all_config_items[3]
+    )
+    assert site_config.find_item_by_filepath("bad/path") is None
 
 
 @pytest.mark.parametrize(
@@ -110,23 +131,16 @@ def test_file_target_utils(obj, exp_get_file_target, exp_has_file_target):
     ],
 )
 def test_is_page_content(
-    mocker, basic_site_config, content_dir, folder_file_target, exp_result
+    basic_site_config, content_dir, folder_file_target, exp_result
 ):
     """
     SiteConfig.is_page_content should return True if the folder target of the repeatable config item starts with the
     content directory in the site config (or a default value)
     """
-    config_item = basic_site_config["collections"][0].copy()
-    patched_get_file_target = mocker.patch(
-        "websites.site_config_api.get_file_target", return_value=folder_file_target
+    site_config = SiteConfig(basic_site_config)
+    site_config.raw_data[WEBSITE_CONFIG_CONTENT_DIR_KEY] = content_dir
+    config_item = next(
+        item for item in site_config.iter_items() if item.is_folder_item()
     )
-    raw_site_config = basic_site_config.copy()
-    content_dir_config = (
-        {} if content_dir is None else {WEBSITE_CONFIG_CONTENT_DIR_KEY: content_dir}
-    )
-    if WEBSITE_CONFIG_CONTENT_DIR_KEY in raw_site_config:
-        del raw_site_config[WEBSITE_CONFIG_CONTENT_DIR_KEY]
-    raw_site_config = {**raw_site_config, **content_dir_config}
-    site_config = SiteConfig(raw_site_config)
+    config_item.item["folder"] = folder_file_target
     assert site_config.is_page_content(config_item) is exp_result
-    patched_get_file_target.assert_called_once_with(config_item)

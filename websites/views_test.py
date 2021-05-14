@@ -546,6 +546,8 @@ def test_content_create_page_content(
         "title": "new title",
         "markdown": "some markdown",
         "type": constants.CONTENT_TYPE_PAGE,
+        "dirpath": "path/to",
+        "filename": "myfile",
     }
     resp = drf_client.post(
         reverse(
@@ -566,42 +568,25 @@ def test_content_create_page_content(
     )
 
 
-@pytest.mark.parametrize("dirpath", ["path/to", None])
-@pytest.mark.parametrize(
-    "existing_filenames, exp_result_filename",
-    [
-        [[], "my-title"],
-        [["my-title"], "my-title-2"],
-        [["my-title", "my-title-9"], "my-title-10"],
-    ],
-)
-def test_content_create_page_generate_filename(
-    drf_client,
-    global_admin_user,
-    dirpath,
-    existing_filenames,
-    exp_result_filename,
-):
+def test_content_create_page_added_context(mocker, drf_client, global_admin_user):
     """
     POSTing to the WebsiteContent list view without a filename should add a generated filename if a filename was not
     included in the request data
     """
+    patched_get_filename = mocker.patch(
+        "websites.views.get_valid_new_filename", return_value="my-title-100"
+    )
     drf_client.force_login(global_admin_user)
     title = "My Title"
     website = WebsiteFactory.create()
-    WebsiteContentFactory.create_batch(
-        len(existing_filenames),
-        website=website,
-        type=constants.CONTENT_TYPE_PAGE,
-        dirpath=dirpath,
-        filename=factory.Iterator(existing_filenames),
-    )
     payload = {
         "title": title,
         "markdown": "some markdown",
-        "type": constants.CONTENT_TYPE_PAGE,
-        **({"dirpath": dirpath} if dirpath else {}),
+        "type": "blog",
     }
+    # "folder" path for the config item with type="blog" in basic-site-config.yml
+    expected_dirpath = "content/blog"
+    expected_filename = "my-title-100"
     resp = drf_client.post(
         reverse(
             "websites_content_api-list",
@@ -612,9 +597,15 @@ def test_content_create_page_generate_filename(
         data=payload,
     )
     assert resp.status_code == 201
+    patched_get_filename.assert_called_once_with(
+        website_pk=website.pk, dirpath=expected_dirpath, filename_base="my-title"
+    )
     content = website.websitecontent_set.order_by("-created_on").first()
     assert content.website == website
-    assert content.filename == exp_result_filename
+    assert content.filename == expected_filename
+    # "folder" path for the config item with type="blog" in basic-site-config.yml
+    assert content.dirpath == expected_dirpath
+    assert content.is_page_content is True
 
 
 def test_websites_content_create_empty(drf_client, global_admin_user):

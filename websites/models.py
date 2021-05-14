@@ -136,10 +136,18 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     )
     content_filepath = models.CharField(max_length=2048, null=True, blank=True)
     filename = models.CharField(
-        max_length=CONTENT_FILENAME_MAX_LEN, null=False, default=""
+        max_length=CONTENT_FILENAME_MAX_LEN,
+        null=False,
+        default="",
+        help_text="The filename of the file that will be created from this object WITHOUT the file extension.",
     )
     dirpath = models.CharField(
-        max_length=CONTENT_DIRPATH_MAX_LEN, null=True, blank=True
+        max_length=CONTENT_DIRPATH_MAX_LEN,
+        null=False,
+        default="",
+        help_text=(
+            "The directory path for the file that will be created from this object."
+        ),
     )
     file = models.FileField(
         upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
@@ -156,8 +164,11 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
             "\n".join(
                 [
                     json.dumps(self.metadata, sort_keys=True),
+                    str(self.title),
                     str(self.markdown),
-                    str(self.content_filepath),  # TO DO: Replace with dynamic filepath
+                    self.type,
+                    str(self.dirpath),
+                    str(self.filename),
                 ]
             ).encode("utf-8")
         ).hexdigest()
@@ -167,18 +178,13 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
             UniqueConstraint(name="unique_text_id", fields=["website", "text_id"]),
             UniqueConstraint(
                 name=CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
-                fields=("website", "type", "dirpath", "filename"),
-                condition=~Q(dirpath=None),
-            ),
-            UniqueConstraint(
-                name=f"{CONTENT_FILEPATH_UNIQUE_CONSTRAINT}_null_dir",
-                fields=("website", "type", "filename"),
-                condition=Q(dirpath=None),
+                fields=("website", "dirpath", "filename"),
+                condition=Q(is_page_content=True),
             ),
         ]
 
     def __str__(self):
-        return f"{self.title} ({self.text_id})" if self.title else str(self.text_id)
+        return f"{self.title} [{self.text_id}]" if self.title else str(self.text_id)
 
 
 class WebsiteStarter(TimestampedModel):

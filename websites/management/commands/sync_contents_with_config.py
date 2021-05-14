@@ -3,7 +3,7 @@
 from django.core.management import BaseCommand
 
 from websites.models import Website, WebsiteContent, WebsiteStarter
-from websites.site_config_api import SiteConfig, has_file_target
+from websites.site_config_api import SiteConfig
 
 
 class Command(BaseCommand):
@@ -41,12 +41,12 @@ class Command(BaseCommand):
             other_config_item_names = []
             site_config = SiteConfig(starter.config)
             for config_item in site_config.iter_items():
-                if not has_file_target(config_item.item):
+                if not config_item.has_file_target():
                     continue
-                if site_config.is_page_content(config_item.item):
-                    page_content_config_item_names.append(config_item.item["name"])
+                if site_config.is_page_content(config_item):
+                    page_content_config_item_names.append(config_item.name)
                 else:
-                    other_config_item_names.append(config_item.item["name"])
+                    other_config_item_names.append(config_item.name)
             websites = Website.objects.filter(starter=starter)
             for website in websites:
                 _contents_updated = WebsiteContent.objects.filter(
