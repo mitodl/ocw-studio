@@ -13,7 +13,6 @@ class BaseSyncBackend(abc.ABC):
     # NOTE: concrete implementations of this will probably want to
     #       initialize a client object for the backing service (e.g. ghapi)
     def __init__(self, website: Website):
-        # TODO: prefetch starter
         self.website = website
         self.site_config = SiteConfig(website.starter.config)
 

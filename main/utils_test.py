@@ -2,6 +2,7 @@
 import pytest
 
 from main.utils import (
+    are_equivalent_paths,
     get_dirpath_and_filename,
     get_file_extension,
     remove_trailing_slashes,
@@ -54,3 +55,16 @@ def test_get_dirpath_and_filename(filepath, expect_extension, exp_result):
         get_dirpath_and_filename(filepath, expect_file_extension=expect_extension)
         == exp_result
     )
+
+
+@pytest.mark.parametrize(
+    "filepath1,filepath2,exp_result",
+    [
+        ["/my/path/", "/my/path/", True],
+        ["/my/path/", "my/path", True],
+        ["my/path/1", "my/path/2", False],
+    ],
+)
+def test_are_equivalent_paths(filepath1, filepath2, exp_result):
+    """are_equivalent_paths should return True if the given paths are equivalent"""
+    assert are_equivalent_paths(filepath1, filepath2) is exp_result

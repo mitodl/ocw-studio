@@ -54,6 +54,11 @@ def remove_trailing_slashes(filepath: str) -> str:
     return re.sub(r"^\/|\/$", "", filepath)
 
 
+def are_equivalent_paths(filepath1: str, filepath2: str) -> bool:
+    """Returns True if the two filepaths are equivalent"""
+    return remove_trailing_slashes(filepath1) == remove_trailing_slashes(filepath2)
+
+
 def get_dirpath_and_filename(
     filepath: str, expect_file_extension=True
 ) -> Tuple[str, str]:

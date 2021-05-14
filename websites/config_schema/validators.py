@@ -81,3 +81,33 @@ class UniqueNamesRule(AddedSchemaRule):
                 )
             ]
         return []
+
+
+class ContentFolderRule(AddedSchemaRule):
+    """
+    Ensures that the 'folder' value for every config item points to the content directory described in the site
+    config (or the default).
+    """
+
+    @staticmethod
+    def apply_rule(data):
+        faulty_paths = {}
+        site_config = SiteConfig(data)
+        for i, config_item in enumerate(site_config.iter_items()):
+            if config_item.is_folder_item() and not site_config.is_page_content(
+                config_item
+            ):
+                faulty_paths[config_item.name] = config_item.path
+        if faulty_paths:
+            return [
+                "Found 'folder' item(s) that do not point to the content directory ({}).\n{}".format(
+                    site_config.content_dir,
+                    "\n".join(
+                        [
+                            f"{' ' * 8}'{name}' ({path})"
+                            for name, path in faulty_paths.items()
+                        ]
+                    ),
+                )
+            ]
+        return []

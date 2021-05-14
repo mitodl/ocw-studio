@@ -5,17 +5,41 @@ from websites.factories import WebsiteContentFactory
 from websites.models import WebsiteContent
 
 
-def test_websitecontent_calculate_checksum():
-    """ Verify calculate_checksum() returns a sha256 checksum """
+@pytest.mark.parametrize(
+    "metadata, markdown, dirpath, exp_checksum",
+    [
+        [
+            {"my": "metadata"},
+            "# Markdown",
+            None,
+            "8ba489693daddd16de0e9f9b2a6a243ed764d79341cf353bbad0b2b399140ba4",
+        ],
+        [
+            {"my": "metadata"},
+            None,
+            "path/to",
+            "dad8e87334675a60de694397bd6ab592ed83ea3fda3fe7e74446c636479fed4d",
+        ],
+        [
+            None,
+            "# Markdown",
+            "path/to",
+            "9bba658e2a2bf057f8ce9132eb6454fe64430614f1431ea84e6ffc3a02613601",
+        ],
+    ],
+)
+def test_websitecontent_calculate_checksum(metadata, markdown, dirpath, exp_checksum):
+    """ Verify calculate_checksum() returns the expected sha256 checksum """
     content = WebsiteContentFactory.build(
-        markdown="content", metadata={"data": "value"}, content_filepath="_index.md"
+        markdown=markdown,
+        metadata=metadata,
+        dirpath=dirpath,
+        filename="myfile",
+        type="mytype",
+        title="My Title",
     )
-
     # manually computed checksum in a python shell
-    assert (
-        content.calculate_checksum()
-        == "cfcbebb93fdf56848f32afc3d1bda55868a465547de0e6fb4b8dab05b69ec352"
-    )
+    assert content.calculate_checksum() == exp_checksum
 
 
 @pytest.mark.django_db

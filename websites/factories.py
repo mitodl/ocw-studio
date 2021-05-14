@@ -66,8 +66,8 @@ class WebsiteContentFactory(DjangoModelFactory):
     markdown = factory.Faker("text")
     metadata = factory.Faker("json")
     content_filepath = factory.Sequence(lambda n: "/sites/ocw_site_x/%s" % n)
-    filename = factory.Sequence(lambda n: "path/to/my-file-%s.md" % n)
-    dirpath = None
+    filename = factory.Sequence(lambda n: "my-file-%s" % n)
+    dirpath = factory.Faker("uri_path", deep=2)
     website = factory.SubFactory(WebsiteFactory)
 
     class Meta:

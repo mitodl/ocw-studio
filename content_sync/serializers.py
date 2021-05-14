@@ -7,7 +7,11 @@ from typing import Type
 import yaml
 from mitol.common.utils import dict_without_keys
 
-from main.utils import get_file_extension
+from main.utils import (
+    get_dirpath_and_filename,
+    get_file_extension,
+    remove_trailing_slashes,
+)
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 
@@ -36,7 +40,7 @@ class BaseContentFileSerializer(abc.ABC):
         """Helper method to deserialize simple data file contents"""
         title = parsed_file_data.get("title")
         config_item = site_config.find_item_by_filepath(filepath)
-        text_id = config_item.get("name")
+        text_id = config_item.name
         base_defaults = {
             "metadata": dict_without_keys(parsed_file_data, "title"),
             "text_id": text_id,
@@ -82,12 +86,23 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
         front_matter_data = yaml.load(md_file_sections[0], Loader=yaml.Loader)
         markdown = md_file_sections[1] if len(md_file_sections) == 2 else None
         text_id = front_matter_data.get("uid", None)
+        content_type = front_matter_data.get("type")
+        dirpath, filename = get_dirpath_and_filename(
+            filepath, expect_file_extension=True
+        )
+        config_item = site_config.find_item_by_name(content_type)
+        if config_item is None:
+            raise ValueError(
+                f"Could not find matching config item for this file ({filepath}, type: {content_type})"
+            )
         base_defaults = {
             "metadata": dict_without_keys(front_matter_data, "uid", "title", "type"),
             "markdown": markdown,
             "text_id": text_id,
             "title": front_matter_data.get("title"),
-            "type": front_matter_data.get("type"),
+            "type": content_type,
+            "dirpath": remove_trailing_slashes(dirpath),
+            "filename": filename,
             "content_filepath": filepath,
             "is_page_content": True,
         }
@@ -186,7 +201,7 @@ class ContentFileSerializerFactory:
         if website_content.is_page_content:
             return HugoMarkdownFileSerializer
         config_item = site_config.find_item_by_name(website_content.type)
-        destination_filepath = config_item.get("file")
+        destination_filepath = config_item.file_target
         if not destination_filepath:
             raise ValueError(
                 f"WebsiteContent object is not page content, but has no 'file' destination in config ({website_content.text_id})."

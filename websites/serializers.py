@@ -210,22 +210,18 @@ class WebsiteContentCreateSerializer(
 
     def create(self, validated_data):
         user = self.user_from_request()
+        added_context_data = {
+            field: self.context[field]
+            for field in {"is_page_content", "filename", "dirpath"}
+            if field in self.context
+        }
         instance = super().create(
             {
-                "website_id": self.context["website_pk"],
+                "website_id": self.context["website_id"],
                 "owner": user,
                 "updated_by": user,
                 **validated_data,
-                **(
-                    {"is_page_content": self.context["is_page_content"]}
-                    if "is_page_content" in self.context
-                    else {}
-                ),
-                **(
-                    {"filename": self.context["filename"]}
-                    if "filename" in self.context
-                    else {}
-                ),
+                **added_context_data,
             }
         )
         update_website_backend(instance.website)
@@ -239,6 +235,8 @@ class WebsiteContentCreateSerializer(
             "title",
             "markdown",
             "metadata",
+            "filename",
+            "dirpath",
             "file",
             "is_page_content",
         ]

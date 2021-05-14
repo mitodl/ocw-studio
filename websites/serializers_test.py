@@ -191,34 +191,50 @@ def test_website_content_detail_serializer_save(mocker):
     mock_update_website_backend.assert_called_once_with(content.website)
 
 
-@pytest.mark.parametrize("includes_page_content_param", [True, False])
-def test_website_content_create_serializer(mocker, includes_page_content_param):
-    """WebsiteContentCreateSerializer should create a new WebsiteContent, with some validation"""
+@pytest.mark.parametrize("add_context_data", [True, False])
+def test_website_content_create_serializer(mocker, add_context_data):
+    """
+    WebsiteContentCreateSerializer should create a new WebsiteContent object, using context data as an override
+    if extra context data is passed in.
+    """
     mock_update_website_backend = mocker.patch(
         "websites.serializers.update_website_backend"
     )
+    website = WebsiteFactory.create()
+    user = UserFactory.create()
     metadata = {"description": "some text"}
     payload = {
+        "website_id": website.pk,
         "text_id": "my-text-id",
         "title": "a title",
         "type": CONTENT_TYPE_RESOURCE,
         "markdown": "some markdown",
         "metadata": metadata,
         "is_page_content": False,
+        "dirpath": "path/to",
+        "filename": "myfile",
     }
-    website = WebsiteFactory.create()
-    user = UserFactory.create()
+    override_context_data = (
+        {}
+        if not add_context_data
+        else {
+            "is_page_content": True,
+            "dirpath": "override/path",
+            "filename": "overridden-filename",
+        }
+    )
     context = {
         "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
         "request": mocker.Mock(user=user),
-        "website_pk": website.pk,
-        **({"is_page_content": True} if includes_page_content_param else {}),
+        "website_id": website.pk,
+        **override_context_data,
     }
     serializer = WebsiteContentCreateSerializer(data=payload, context=context)
     serializer.is_valid(raise_exception=True)
     serializer.save()
     content = WebsiteContent.objects.get(title=payload["title"])
     mock_update_website_backend.assert_called_once_with(content.website)
+    assert content.website_id == website.pk
     assert content.owner == user
     assert content.updated_by == user
     assert content.title == payload["title"]
@@ -226,5 +242,12 @@ def test_website_content_create_serializer(mocker, includes_page_content_param):
     assert content.markdown == payload["markdown"]
     assert content.type == payload["type"]
     assert content.metadata == metadata
-    if includes_page_content_param:
-        assert content.is_page_content is True
+    assert content.is_page_content is (
+        False if not add_context_data else override_context_data["is_page_content"]
+    )
+    assert content.dirpath == (
+        "path/to" if not add_context_data else override_context_data["dirpath"]
+    )
+    assert content.filename == (
+        "myfile" if not add_context_data else override_context_data["filename"]
+    )

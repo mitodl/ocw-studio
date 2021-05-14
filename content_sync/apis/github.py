@@ -1,5 +1,6 @@
 """ Github API wrapper"""
 import logging
+import os
 from base64 import b64decode
 from dataclasses import dataclass
 from typing import Iterator, List, Optional
@@ -18,6 +19,7 @@ from content_sync.models import ContentSyncState
 from content_sync.serializers import serialize_content_to_file
 from main import features
 from users.models import User
+from websites.constants import WEBSITE_CONTENT_FILETYPE
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 
@@ -39,6 +41,33 @@ class SyncResult:
 
 def decode_file_contents(content_file: ContentFile) -> str:
     return str(b64decode(content_file.content), encoding="utf-8")
+
+
+def get_destination_filepath(
+    content: WebsiteContent, site_config: SiteConfig
+) -> Optional[str]:
+    """
+    Returns the full filepath where the equivalent file for the WebsiteContent record should be placed
+    """
+    if content.is_page_content:
+        return os.path.join(
+            content.dirpath, f"{content.filename}.{WEBSITE_CONTENT_FILETYPE}"
+        )
+    config_item = site_config.find_item_by_name(name=content.type)
+    if config_item is None:
+        log.error(
+            "Config item not found (content: %s, name value missing from config: %s)",
+            (content.id, content.text_id),
+            content.type,
+        )
+        return None
+    if config_item.is_file_item():
+        return config_item.file_target
+    log.error(
+        "Invalid config item: is_page_content flag is False, and config item is not 'file'-type (content: %s)",
+        (content.id, content.text_id),
+    )
+    return None
 
 
 class GithubApiWrapper:
@@ -139,28 +168,41 @@ class GithubApiWrapper:
 
     @retry_on_failure
     def upsert_content_file(
-        self, website_content: WebsiteContent, message: str, **kwargs
-    ) -> Commit:
+        self, website_content: WebsiteContent, **kwargs
+    ) -> Optional[Commit]:
         """
         Create or update a file in git.
         """
-        if not website_content.content_filepath:
-            # No filepath, nothing to do"
+        destination_filepath = get_destination_filepath(
+            website_content, self.site_config
+        )
+        if not destination_filepath:
+            # No filepath, nothing to do
             return
         repo = self.get_repo()
-        path = website_content.content_filepath
         data = serialize_content_to_file(
             site_config=self.site_config, website_content=website_content
         )
         git_user = self.git_user(website_content.updated_by)
         try:
-            sha = repo.get_contents(path).sha
+            sha = repo.get_contents(destination_filepath).sha
         except:  # pylint:disable=bare-except
             return repo.create_file(
-                path, message, data, committer=git_user, author=git_user, **kwargs
+                destination_filepath,
+                f"Create {destination_filepath}",
+                data,
+                committer=git_user,
+                author=git_user,
+                **kwargs,
             )
         return repo.update_file(
-            path, message, data, sha, committer=git_user, author=git_user, **kwargs
+            destination_filepath,
+            f"Update {destination_filepath}",
+            data,
+            sha,
+            committer=git_user,
+            author=git_user,
+            **kwargs,
         )
 
     def upsert_content_files(self):
@@ -174,7 +216,7 @@ class GithubApiWrapper:
             self.upsert_content_files_for_user(user_id)
 
     @retry_on_failure
-    def upsert_content_files_for_user(self, user_id=None) -> Commit:
+    def upsert_content_files_for_user(self, user_id=None) -> Optional[Commit]:
         """
         Upsert multiple WebsiteContent objects to github in one commit
         """
@@ -189,40 +231,43 @@ class GithubApiWrapper:
 
         for sync_state in unsynced_states.iterator():
             content = sync_state.content
-            filepath = content.content_filepath  # TO DO: Use dynamic filepath
+            filepath = get_destination_filepath(content, self.site_config)
+            if not filepath:
+                continue
+            synced_results.append(
+                SyncResult(
+                    sync_id=sync_state.id,
+                    filepath=filepath,
+                    checksum=content.calculate_checksum(),
+                    deleted=content.deleted is not None,
+                )
+            )
+            data = serialize_content_to_file(
+                site_config=self.site_config, website_content=content
+            )
             # Add any modified files
-            if filepath:
-                synced_results.append(
-                    SyncResult(
-                        sync_id=sync_state.id,
-                        filepath=filepath,
-                        checksum=content.calculate_checksum(),
-                        deleted=content.deleted is not None,
-                    )
-                )
-                data = serialize_content_to_file(
-                    site_config=self.site_config, website_content=content
-                )
-                modified_element_list.extend(
-                    self.get_tree_elements(sync_state, data, filepath)
-                )
-
-        if len(modified_element_list) > 0:
-            commit = self.commit_tree(
-                modified_element_list, User.objects.filter(id=user_id).first()
+            modified_element_list.extend(
+                self.get_tree_elements(sync_state, data, filepath)
             )
 
-            # Save last git filepath and checksum to sync state
-            for sync_result in synced_results:
-                sync_state = ContentSyncState.objects.get(id=sync_result.sync_id)
-                if sync_result.deleted:
-                    sync_state.content.delete(force_policy=HARD_DELETE)
-                else:
-                    sync_state.data = {GIT_DATA_FILEPATH: sync_result.filepath}
-                    sync_state.synced_checksum = sync_result.checksum
-                    sync_state.save()
+        if len(modified_element_list) == 0:
+            return
 
-            return commit
+        commit = self.commit_tree(
+            modified_element_list, User.objects.filter(id=user_id).first()
+        )
+
+        # Save last git filepath and checksum to sync state
+        for sync_result in synced_results:
+            sync_state = ContentSyncState.objects.get(id=sync_result.sync_id)
+            if sync_result.deleted:
+                sync_state.content.delete(force_policy=HARD_DELETE)
+            else:
+                sync_state.data = {GIT_DATA_FILEPATH: sync_result.filepath}
+                sync_state.synced_checksum = sync_result.checksum
+                sync_state.save()
+
+        return commit
 
     @retry_on_failure
     def delete_content_file(self, content: WebsiteContent) -> Commit:
@@ -230,10 +275,11 @@ class GithubApiWrapper:
         Delete a file from git
         """
         repo = self.get_repo()
-        sha = repo.get_contents(content.content_filepath).sha
+        filepath = get_destination_filepath(content, self.site_config)
+        sha = repo.get_contents(filepath).sha
         return repo.delete_file(
-            content.content_filepath,
-            f"Delete {content.content_filepath}",
+            filepath,
+            f"Delete {filepath}",
             sha,
             committer=self.git_user(content.updated_by),
         )

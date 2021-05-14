@@ -2,6 +2,7 @@
 import json
 import logging
 import re
+import uuid
 
 import yaml
 from dateutil import parser as dateparser
@@ -112,24 +113,24 @@ def convert_data_to_content(
         content_json = yaml.load(s3_content_parts[0], Loader=yaml.Loader)
         layout = content_json.get("layout", None)
         menu = content_json.get("menu", None)
-        text_id = content_json.get("uid", None)
+        uid = content_json.get("uid", None)
         dirpath, filename = get_dirpath_and_filename(
             filepath, expect_file_extension=True
         )
         if menu:
             menu_values = list(menu.values())[0]
-            parent_text_id = menu_values.get("parent", course_home_uuid)
+            parent_uid = menu_values.get("parent", course_home_uuid)
         else:
-            parent_text_id = content_json.get("parent", None)
+            parent_uid = content_json.get("parent", None)
         if layout in COURSE_PAGE_LAYOUTS:
             # This is a page
             content_type = CONTENT_TYPE_PAGE
         elif layout in COURSE_RESOURCE_LAYOUTS:
             # This is a file
             content_type = CONTENT_TYPE_RESOURCE
-        if parent_text_id:
+        if parent_uid:
             parent, _ = WebsiteContent.objects.get_or_create(
-                website=website, text_id=parent_text_id
+                website=website, text_id=str(uuid.UUID(parent_uid))
             )
         base_defaults = {
             "metadata": content_json,
@@ -142,11 +143,12 @@ def convert_data_to_content(
             "filename": filename.replace(".", "-")[0:CONTENT_FILENAME_MAX_LEN],
             "content_filepath": filepath,
         }
-        if not text_id:
+        if not uid:
             log.error("No UUID (text ID): %s", filepath)
         else:
+
             content, _ = WebsiteContent.objects.update_or_create(
-                website=website, text_id=text_id, defaults=base_defaults
+                website=website, text_id=str(uuid.UUID(uid)), defaults=base_defaults
             )
             return content
 

@@ -88,3 +88,14 @@ def test_unique_names(parsed_site_config):
     }
     with pytest.raises(ValueError):
         validate_parsed_site_config(config)
+
+
+def test_folders_content_only(parsed_site_config):
+    """'folder'-type config items must point to the content directory"""
+    config = parsed_site_config.copy()
+    config["collections"][0] = {
+        **config["collections"][0],
+        "folder": "not-the-content-folder",
+    }
+    with pytest.raises(ValueError):
+        validate_parsed_site_config(config)
