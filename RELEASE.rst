@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.15.1 (Released May 14, 2021)
+--------------
+
+- Added WebsiteContent filename and dirpath fields
+- Website preview button (#256)
+- Github integration section in the README (#248)
+- Fixed is_page_content flag bug
+
 Version 0.15.0 (Released May 12, 2021)
 --------------
 
