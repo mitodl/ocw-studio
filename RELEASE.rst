@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.15.1
+Version 0.15.1 (Released May 14, 2021)
 --------------
 
 - Added WebsiteContent filename and dirpath fields
