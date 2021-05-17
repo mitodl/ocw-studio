@@ -141,7 +141,6 @@ def convert_data_to_content(
             "dirpath": dirpath,
             # Replace dots with dashes to simplify file name/extension parsing, and limit length
             "filename": filename.replace(".", "-")[0:CONTENT_FILENAME_MAX_LEN],
-            "content_filepath": filepath,
         }
         if not uid:
             log.error("No UUID (text ID): %s", filepath)
