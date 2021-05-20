@@ -4,10 +4,10 @@ import { shallow } from "enzyme"
 import ObjectField from "./ObjectField"
 import { makeWebsiteConfigField } from "../../util/factories/websites"
 
-import { ConfigField, WidgetVariant } from "../../types/websites"
+import { ObjectConfigField, WidgetVariant } from "../../types/websites"
 
 describe("ObjectField", () => {
-  let setFieldValueStub: any, render: any, field: ConfigField
+  let setFieldValueStub: any, render: any, field: ObjectConfigField
 
   beforeEach(() => {
     setFieldValueStub = jest.fn()
@@ -26,7 +26,7 @@ describe("ObjectField", () => {
           label:    "myselect"
         })
       ]
-    })
+    }) as ObjectConfigField
 
     render = (props = {}) =>
       shallow(

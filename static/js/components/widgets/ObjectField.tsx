@@ -2,10 +2,10 @@ import React, { useState, useCallback } from "react"
 
 import SiteContentField from "../forms/SiteContentField"
 
-import { ConfigField } from "../../types/websites"
+import { ConfigField, ObjectConfigField } from "../../types/websites"
 
 interface Props {
-  field: ConfigField
+  field: ObjectConfigField
   setFieldValue: (key: string, value: File | null) => void
 }
 

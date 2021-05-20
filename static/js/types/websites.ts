@@ -21,33 +21,82 @@ export interface FieldValueCondition {
 }
 
 /**
+ * A configuration for a field for site content.This is a 'base' interface
+ * which the actual interfaces for each type of field extend.
+ **/
+interface ConfigFieldBaseProps {
+  name: string
+  label: string
+  required?: boolean
+  help?: string
+  default?: any
+  widget: WidgetVariant
+  condition?: FieldValueCondition
+}
+
+export interface MarkdownConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.Markdown
+  minimal?: boolean
+}
+
+export interface FileConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.File
+}
+
+export interface BooleanConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.Boolean
+}
+
+export interface TextConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.Text
+}
+
+export interface StringConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.String
+}
+
+export interface HiddenConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.Hidden
+}
+
+export interface SelectConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.Select
+  options: string[]
+  multiple?: boolean
+  min?: number
+  max?: number
+}
+
+export interface ObjectConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.Object
+  fields: ConfigField[]
+  collapsed?: boolean
+}
+
+export interface RelationConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.Relation
+  collection: string
+  display_field: string // eslint-disable-line camelcase
+  multiple?: boolean
+  min?: number
+  max?: number
+}
+
+/**
  * A configuration for a field for site content. This type basically
  * contains the information needed to render the field in the UI, to edit it,
  * validate it, etc.
- *
- * TODO: this is getting a bit much, can we declare a ConfigFieldBaseProps interface
- * and then declare variants, with their WidgetVariant set properly, that set exactly
- * which props they have? Then ConfigField could be a union of these types - might get
- * better typechecking that having all these optional properties.
  **/
-export interface ConfigField {
-  name: string
-  label: string
-  widget: WidgetVariant
-  minimal?: boolean
-  help?: string
-  required?: boolean
-  default?: any
-  min?: number
-  max?: number
-  options?: string[]
-  multiple?: boolean
-  condition?: FieldValueCondition
-  fields?: ConfigField[]
-  collapsed?: boolean
-  collection?: string
-  display_field?: string // eslint-disable-line camelcase
-}
+export type ConfigField =
+  | MarkdownConfigField
+  | FileConfigField
+  | BooleanConfigField
+  | TextConfigField
+  | StringConfigField
+  | HiddenConfigField
+  | SelectConfigField
+  | ObjectConfigField
+  | RelationConfigField
 
 export interface BaseConfigItem {
   name: string

@@ -53,7 +53,7 @@ export const makeWebsiteConfigField = (
   }
 }
 
-const exampleFields = [
+const exampleFields: ConfigField[] = [
   {
     label:  "Title",
     name:   "title",

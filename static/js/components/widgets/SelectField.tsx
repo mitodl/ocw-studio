@@ -12,14 +12,12 @@ interface Props {
   value: any
   onChange: (event: Event) => void
   multiple?: boolean
-  min?: number
-  max?: number
   options: Array<string | Option>
 }
 
 export default function SelectField(props: Props): JSX.Element {
   const { value, onChange, name, options } = props
-  const multiple = Boolean(props.multiple)
+  const multiple = props.multiple ?? false
   const selectOptions = options.map((option: any) =>
     is(String, option) ? { label: option, value: option } : option
   )
@@ -61,7 +59,7 @@ export default function SelectField(props: Props): JSX.Element {
   return (
     <Select
       value={selected}
-      isMulti={Boolean(multiple)}
+      isMulti={multiple}
       onChange={changeHandler}
       options={selectOptions}
     />

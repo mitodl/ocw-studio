@@ -15,8 +15,6 @@ interface Props {
   name: string
   collection: string
   display_field: string // eslint-disable-line camelcase
-  max: number
-  min: number
   multiple: boolean
   onChange: (event: Event) => void
   value: any
@@ -29,9 +27,7 @@ export default function RelationField(props: Props): JSX.Element {
     name,
     multiple,
     onChange,
-    value,
-    max,
-    min
+    value
   } = props
 
   const [offset, setOffset] = useState(0)
@@ -85,8 +81,6 @@ export default function RelationField(props: Props): JSX.Element {
       onChange={onChange}
       options={options}
       multiple={multiple}
-      max={max}
-      min={min}
     />
   )
 }

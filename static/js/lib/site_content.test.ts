@@ -29,6 +29,7 @@ import { isIf, shouldIf } from "../test_util"
 import {
   ConfigField,
   FieldValueCondition,
+  ObjectConfigField,
   WidgetVariant
 } from "../types/websites"
 
@@ -413,9 +414,10 @@ describe("site_content", () => {
           })
         ]
       })
+
       expect(
-        renameNestedFields([field])[0].fields!.map(
-          (field: ConfigField) => field.name
+        (renameNestedFields([field])[0] as ObjectConfigField).fields.map(
+          field => field.name
         )
       ).toEqual(["myobject.mystring", "myobject.myselect"])
     })

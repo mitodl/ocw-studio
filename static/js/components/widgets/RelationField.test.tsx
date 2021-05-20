@@ -40,8 +40,6 @@ describe("RelationField", () => {
         display_field: "title",
         name:          "relation_field",
         multiple:      true,
-        max:           10,
-        min:           1,
         onChange
       }
     )
@@ -115,14 +113,5 @@ describe("RelationField", () => {
   it("should pass the onChange handler down to the SelectField", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("SelectField").prop("onChange")).toBe(onChange)
-  })
-
-  it("should pass max and min to SelectField", async () => {
-    const { wrapper } = await render({
-      max: 10,
-      min: 5
-    })
-    expect(wrapper.find("SelectField").prop("max")).toBe(10)
-    expect(wrapper.find("SelectField").prop("min")).toBe(5)
   })
 })

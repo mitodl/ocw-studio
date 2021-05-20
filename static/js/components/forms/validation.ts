@@ -60,7 +60,7 @@ export const getFieldSchema = (field: ConfigField): Schema => {
       .object()
       .shape(
         Object.fromEntries(
-            field.fields!.map(field => [field.name, getFieldSchema(field)])
+          field.fields.map(field => [field.name, getFieldSchema(field)])
         )
       )
     break

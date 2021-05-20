@@ -203,7 +203,7 @@ export const newInitialValues = (fields: ConfigField[]): SiteFormValues =>
     fields.map((field: ConfigField) => [
       field.name,
       field.widget === WidgetVariant.Object ?
-        newInitialValues(field.fields!) :
+        newInitialValues(field.fields) :
         field.default ?? defaultForField(field)
     ])
   )
@@ -224,15 +224,15 @@ const defaultForField = (field: ConfigField): SiteFormValue => {
     return null
   case WidgetVariant.Object:
     return Object.fromEntries(
-        field.fields!.map(field => [
-          field.name,
+      field.fields.map(field => [
+        field.name,
           // the `as` is fully justified here: we don't want to allow
           // doubly-nested fields (for now!) so calling `defaultFor` on a
           // nested field *should* only return SiteFormPrimitive (i.e. boolean,
           // string, etc) and *not* another nested
           // Record<string, SiteFormPrimitive>
           defaultForField(field) as SiteFormPrimitive
-        ])
+      ])
     )
   default:
     return ""
@@ -273,7 +273,7 @@ export const fieldIsVisible = (
  * to rename the `name` property on the `zip_code` field from `"zip_code"` to
  * `"address.zip_code"`.
  *
- * This function takes an `Array<ConfigField[]>` and returns a new
+ * This function takes an `Array<ConfigField>` and returns a new
  * `Array<ConfigField>` where all such nested fields have been appropriately
  * renamed so they can be passed down to Formik.
  **/

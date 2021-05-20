@@ -3,7 +3,14 @@ import { getContentSchema } from "./validation"
 
 import { makeWebsiteConfigField } from "../../util/factories/websites"
 
-import { ConfigItem, WidgetVariant } from "../../types/websites"
+import {
+  ConfigItem,
+  FileConfigField,
+  MarkdownConfigField,
+  StringConfigField,
+  TextConfigField,
+  WidgetVariant
+} from "../../types/websites"
 
 describe("form validation util", () => {
   const yupFileFieldSchema = yup.mixed()
@@ -58,7 +65,11 @@ describe("form validation util", () => {
             ...partialField,
             widget:   widget as WidgetVariant,
             required: true
-          }
+          } as
+            | StringConfigField
+            | TextConfigField
+            | MarkdownConfigField
+            | FileConfigField
         ]
       }
       const schema = getContentSchema(configItem)
