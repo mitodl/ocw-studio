@@ -18,9 +18,6 @@ from websites.constants import (
 )
 from websites.factories import WebsiteStarterFactory
 from websites.models import Website, WebsiteContent
-import logging
-
-log = logging.getLogger(__name__)
 
 
 @mock_s3
