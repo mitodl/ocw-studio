@@ -3,9 +3,8 @@ import json
 import logging
 import pathlib
 import re
-import toml
 import uuid
-
+import toml
 import yaml
 from dateutil import parser as dateparser
 
@@ -96,6 +95,15 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
 
 
 def convert_data_to_content(filepath, data, website, course_home_uuid):
+    """
+    Convert file data into a WebsiteContent object
+
+    Args:
+        filepath(str): The path of the file (from S3 or git)
+        data(str): The file data to be converted
+        website: The website to which the content belongs
+        course_home_uuid: The UUID of the course page
+    """
     file_extension = pathlib.Path(filepath).suffix
     if file_extension in CONVERSION_FUNCTIONS.keys():
         return CONVERSION_FUNCTIONS[file_extension](
@@ -109,11 +117,12 @@ def convert_data_to_content(filepath, data, website, course_home_uuid):
     return None
 
 
+# pylint:disable=unused-argument
 def convert_md_to_content(
     filepath="", data="", website=None, course_home_uuid=None, **kwargs
 ):  # pylint:disable=too-many-locals
     """
-    Convert file data into a WebsiteContentObject
+    Convert markdown data into a WebsiteContent object
 
     Args:
         filepath(str): The path of the file (from S3 or git)
@@ -167,13 +176,31 @@ def convert_md_to_content(
             return content
 
 
+# pylint:disable=unused-argument
 def convert_json_to_resource(filepath="", data="", website=None, **kwargs):
+    """
+    Convert json data into a WebsiteContent object
+
+    Args:
+        filepath(str): The path of the file (from S3 or git)
+        data(str): The file data to be converted
+        website: The website to which the content belongs
+    """
     return save_resource(
         filepath=filepath, extension="json", data=data, website=website
     )
 
 
+# pylint:disable=unused-argument
 def convert_toml_to_resource(filepath="", data="", website=None, **kwargs):
+    """
+    Convert toml data into a WebsiteContent object
+
+    Args:
+        filepath(str): The path of the file (from S3 or git)
+        data(str): The file data to be converted
+        website: The website to which the content belongs
+    """
     return save_resource(
         filepath=filepath,
         extension="toml",
@@ -182,7 +209,16 @@ def convert_toml_to_resource(filepath="", data="", website=None, **kwargs):
     )
 
 
-def save_resource(filepath, extension="", data="", website=None, **kwargs):
+def save_resource(filepath, extension="", data="", website=None):
+    """
+    Save a WebsiteContent object of type CONTENT_TYPE_RESOURCE
+
+    Args:
+        filepath(str): The path of the file (from S3 or git)
+        extension(str): The file extension of the file to be saved
+        data(str): The file data to be converted
+        website: The website to which the content belongs
+    """
     uid = uuid.uuid4()
     dirpath, filename = get_dirpath_and_filename(filepath, expect_file_extension=True)
     base_defaults = {
