@@ -242,6 +242,8 @@ soupsieve==2.1
     # via beautifulsoup4
 sqlparse==0.3.1
     # via django
+toml==0.10.2
+    # via -r requirements.in
 toolz==0.9.0
     # via mitol-django-mail
 traitlets==4.3.3

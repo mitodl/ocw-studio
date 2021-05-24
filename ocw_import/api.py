@@ -1,7 +1,9 @@
 """ API functionality for OCW course site import """
 import json
 import logging
+import pathlib
 import re
+import toml
 import uuid
 
 import yaml
@@ -81,7 +83,7 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
         course_home_s3_content_parts[0], Loader=yaml.Loader
     ).get("uid", COURSE_HOME)
     for resp in bucket.meta.client.get_paginator("list_objects").paginate(
-        Bucket=bucket.name, Prefix=f"{prefix}{website.name}/content"
+        Bucket=bucket.name, Prefix=f"{prefix}{website.name}"
     ):
         for obj in resp["Contents"]:
             s3_key = obj["Key"]
@@ -93,8 +95,22 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                 log.exception("Error saving WebsiteContent for %s", s3_key)
 
 
-def convert_data_to_content(
-    filepath, data, website, course_home_uuid
+def convert_data_to_content(filepath, data, website, course_home_uuid):
+    file_extension = pathlib.Path(filepath).suffix
+    if file_extension in CONVERSION_FUNCTIONS.keys():
+        return CONVERSION_FUNCTIONS[file_extension](
+            filepath=filepath,
+            data=data,
+            website=website,
+            course_home_uuid=course_home_uuid,
+        )
+    else:
+        log.exception("Unsupported extension: %s", filepath)
+    return None
+
+
+def convert_md_to_content(
+    filepath="", data="", website=None, course_home_uuid=None, **kwargs
 ):  # pylint:disable=too-many-locals
     """
     Convert file data into a WebsiteContentObject
@@ -145,11 +161,41 @@ def convert_data_to_content(
         if not uid:
             log.error("No UUID (text ID): %s", filepath)
         else:
-
             content, _ = WebsiteContent.objects.update_or_create(
                 website=website, text_id=str(uuid.UUID(uid)), defaults=base_defaults
             )
             return content
+
+
+def convert_json_to_resource(filepath="", data="", website=None, **kwargs):
+    return save_resource(
+        filepath=filepath, extension="json", data=data, website=website
+    )
+
+
+def convert_toml_to_resource(filepath="", data="", website=None, **kwargs):
+    return save_resource(
+        filepath=filepath, extension="toml", data=str(toml.loads(data)), website=website
+    )
+
+
+def save_resource(filepath, extension="", data="", website=None, **kwargs):
+    uid = uuid.uuid4()
+    dirpath, filename = get_dirpath_and_filename(filepath, expect_file_extension=True)
+    base_defaults = {
+        "metadata": data,
+        "markdown": "",
+        "parent": None,
+        "title": f"{filename}.{extension}",
+        "type": CONTENT_TYPE_RESOURCE,
+    }
+    content, _ = WebsiteContent.objects.update_or_create(
+        website=website,
+        dirpath=dirpath,
+        filename=filename,
+        defaults={**base_defaults, "text_id": str(uid)},
+    )
+    return content
 
 
 def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
@@ -187,3 +233,10 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         import_ocw2hugo_content(bucket, prefix, website)
     except:  # pylint:disable=bare-except
         log.exception("Error saving website %s", path)
+
+
+CONVERSION_FUNCTIONS = {
+    ".md": convert_md_to_content,
+    ".json": convert_json_to_resource,
+    ".toml": convert_toml_to_resource,
+}

@@ -39,7 +39,7 @@ def test_import_ocw2hugo_course(settings):
             json.load(infile), sort_keys=True
         )
     assert WebsiteContent.objects.filter(type=CONTENT_TYPE_PAGE).count() == 6
-    assert WebsiteContent.objects.filter(type=CONTENT_TYPE_RESOURCE).count() == 3
+    assert WebsiteContent.objects.filter(type=CONTENT_TYPE_RESOURCE).count() == 4
 
     home_page = WebsiteContent.objects.get(
         website=website, metadata__layout="course_home"
