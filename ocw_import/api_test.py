@@ -18,6 +18,9 @@ from websites.constants import (
 )
 from websites.factories import WebsiteStarterFactory
 from websites.models import Website, WebsiteContent
+import logging
+
+log = logging.getLogger(__name__)
 
 
 @mock_s3
@@ -76,6 +79,38 @@ def test_import_ocw2hugo_course(settings):
         lecture_pdf.dirpath
         == "1-050-engineering-mechanics-i-fall-2007/content/sections/lecture-notes"
     )
+
+    data_template = WebsiteContent.objects.get(
+        website=website,
+        dirpath="1-050-engineering-mechanics-i-fall-2007/data",
+        filename="course",
+    )
+    assert data_template.title == "course.json"
+    assert json.loads(data_template.metadata) == website.metadata
+
+
+@mock_s3
+@pytest.mark.django_db
+def test_import_ocw2hugo_course_external_nav_link(settings):
+    """ Website publish date should be null if the JSON date can't be parsed """
+    setup_s3(settings)
+    name = "7-00-covid-19-sars-cov-2-and-the-pandemic-fall-2020"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
+    website = Website.objects.get(name=name)
+    menus = WebsiteContent.objects.get(
+        website=website, dirpath=f"{name}/config/_default", filename="menus"
+    )
+    expected = {
+        "leftnav": [
+            {
+                "name": "Online Publication",
+                "url": "https://biology.mit.edu/undergraduate/current-students/subject-offerings/covid-19-sars-cov-2-and-the-pandemic/",
+                "weight": 1000,
+            }
+        ]
+    }
+    assert json.loads(menus.metadata) == expected
 
 
 @mock_s3

@@ -175,7 +175,10 @@ def convert_json_to_resource(filepath="", data="", website=None, **kwargs):
 
 def convert_toml_to_resource(filepath="", data="", website=None, **kwargs):
     return save_resource(
-        filepath=filepath, extension="toml", data=str(toml.loads(data)), website=website
+        filepath=filepath,
+        extension="toml",
+        data=json.dumps(toml.loads(data)),
+        website=website,
     )
 
 
