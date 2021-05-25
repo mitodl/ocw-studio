@@ -25,6 +25,7 @@ requests
 sentry-sdk
 social-auth-core
 social-auth-app-django
+toml
 uwsgi
 pyyaml
 yamale

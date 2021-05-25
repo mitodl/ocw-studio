@@ -1,0 +1,60 @@
+{
+  "course_id": "7-00-covid-19-sars-cov-2-and-the-pandemic-fall-2020",
+  "course_title": "COVID-19, SARS-CoV-2 and the Pandemic",
+  "course_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/7-00-covid-19-sars-cov-2-and-the-pandemic-fall-2020/17497d485988c885f44fbbdfce060462_7-00F20.gif",
+  "course_thumbnail_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/7-00-covid-19-sars-cov-2-and-the-pandemic-fall-2020/d85ffdac5f559f92bed8a039d66ea340_7-00F20-th.gif",
+  "course_image_alternate_text": "Graphic of world map with COVID image overlay",
+  "course_image_caption_text": "<p>COVID-19 is a worldwide pandemic. (Image courtesy MIT Department of Biology.)</p>",
+  "publishdate": "2020-09-10T15:53:03-04:00",
+  "instructors": [
+    {
+      "instructor": "MIT Department of Biology ",
+      "url": "/search/?q=%22MIT%20Department%20of%20Biology%20%22"
+    }
+  ],
+  "departments": [
+    {
+      "department": "Biology",
+      "url": "/search/?d=Biology"
+    }
+  ],
+  "course_features": [],
+  "topics": [
+    {
+      "topic": "Science",
+      "subtopics": [
+        {
+          "subtopic": "Biology",
+          "specialities": [
+            {
+              "speciality": "Cell Biology",
+              "url": "/search/?t=Cell%20Biology"
+            },
+            {
+              "speciality": "Microbiology",
+              "url": "/search/?t=Microbiology"
+            },
+            {
+              "speciality": "Molecular Biology",
+              "url": "/search/?t=Molecular%20Biology"
+            },
+            {
+              "speciality": "Virology",
+              "url": "/search/?t=Virology"
+            }
+          ],
+          "url": "/search/?t=Biology"
+        }
+      ],
+      "url": "/search/?t=Science"
+    }
+  ],
+  "course_numbers": [
+    "7.00"
+  ],
+  "term": "Fall 2020",
+  "level": {
+    "level": "Undergraduate",
+    "url": "/search/?l=Undergraduate"
+  }
+}

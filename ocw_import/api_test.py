@@ -39,7 +39,7 @@ def test_import_ocw2hugo_course(settings):
             json.load(infile), sort_keys=True
         )
     assert WebsiteContent.objects.filter(type=CONTENT_TYPE_PAGE).count() == 6
-    assert WebsiteContent.objects.filter(type=CONTENT_TYPE_RESOURCE).count() == 3
+    assert WebsiteContent.objects.filter(type=CONTENT_TYPE_RESOURCE).count() == 4
 
     home_page = WebsiteContent.objects.get(
         website=website, metadata__layout="course_home"
@@ -76,6 +76,38 @@ def test_import_ocw2hugo_course(settings):
         lecture_pdf.dirpath
         == "1-050-engineering-mechanics-i-fall-2007/content/sections/lecture-notes"
     )
+
+    data_template = WebsiteContent.objects.get(
+        website=website,
+        dirpath="1-050-engineering-mechanics-i-fall-2007/data",
+        filename="course",
+    )
+    assert data_template.title == "course.json"
+    assert data_template.metadata == website.metadata
+
+
+@mock_s3
+@pytest.mark.django_db
+def test_import_ocw2hugo_course_external_nav_link(settings):
+    """ Ensure that the menus.toml file is imported properly and contains the expected nav link """
+    setup_s3(settings)
+    name = "7-00-covid-19-sars-cov-2-and-the-pandemic-fall-2020"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
+    website = Website.objects.get(name=name)
+    menus = WebsiteContent.objects.get(
+        website=website, dirpath=f"{name}/config/_default", filename="menus"
+    )
+    expected = {
+        "leftnav": [
+            {
+                "name": "Online Publication",
+                "url": "https://biology.mit.edu/undergraduate/current-students/subject-offerings/covid-19-sars-cov-2-and-the-pandemic/",
+                "weight": 1000,
+            }
+        ]
+    }
+    assert menus.metadata == expected
 
 
 @mock_s3
