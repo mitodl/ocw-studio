@@ -89,7 +89,7 @@ def test_import_ocw2hugo_course(settings):
 @mock_s3
 @pytest.mark.django_db
 def test_import_ocw2hugo_course_external_nav_link(settings):
-    """ Website publish date should be null if the JSON date can't be parsed """
+    """ Ensure that the menus.toml file is imported properly and contains the expected nav link """
     setup_s3(settings)
     name = "7-00-covid-19-sars-cov-2-and-the-pandemic-fall-2020"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
