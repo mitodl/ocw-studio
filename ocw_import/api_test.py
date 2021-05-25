@@ -83,7 +83,7 @@ def test_import_ocw2hugo_course(settings):
         filename="course",
     )
     assert data_template.title == "course.json"
-    assert json.loads(data_template.metadata) == website.metadata
+    assert data_template.metadata == website.metadata
 
 
 @mock_s3
@@ -107,7 +107,7 @@ def test_import_ocw2hugo_course_external_nav_link(settings):
             }
         ]
     }
-    assert json.loads(menus.metadata) == expected
+    assert menus.metadata == expected
 
 
 @mock_s3

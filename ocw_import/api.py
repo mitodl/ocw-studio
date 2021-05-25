@@ -188,7 +188,7 @@ def convert_json_to_resource(filepath="", data="", website=None, **kwargs):
         website: The website to which the content belongs
     """
     return save_resource(
-        filepath=filepath, extension="json", data=data, website=website
+        filepath=filepath, extension="json", data=json.loads(data), website=website
     )
 
 
@@ -205,7 +205,7 @@ def convert_toml_to_resource(filepath="", data="", website=None, **kwargs):
     return save_resource(
         filepath=filepath,
         extension="toml",
-        data=json.dumps(toml.loads(data)),
+        data=toml.loads(data),
         website=website,
     )
 
