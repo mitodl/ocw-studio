@@ -11,16 +11,7 @@ from ocw_import.tasks import import_ocw2hugo_course_paths, import_ocw2hugo_cours
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "paths",
-    [
-        [
-            "1-050-mechanical-engineering",
-            "3-34-transportation-systems",
-            "7-00-covid-19-sars-cov-2-and-the-pandemic",
-        ],
-        [],
-        None,
-    ],
+    "paths", [["1-050-mechanical-engineering", "3-34-transportation-systems"], [], None]
 )
 def test_import_ocw2hugo_course_paths(mocker, paths, course_starter):
     """ mock_import_course should be called from task with correct kwargs """
@@ -41,7 +32,7 @@ def test_import_ocw2hugo_course_paths(mocker, paths, course_starter):
 @mock_s3
 @pytest.mark.parametrize(
     "chunk_size, filter_str, limit, call_count",
-    [[1, None, None, 4], [1, "1-050", None, 1], [2, None, None, 2], [1, None, 1, 1]],
+    [[1, None, None, 3], [1, "1-050", None, 1], [2, None, None, 2], [1, None, 1, 1]],
 )
 def test_import_ocw2hugo_courses(
     settings, mocked_celery, mocker, filter_str, chunk_size, limit, call_count
