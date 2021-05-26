@@ -1,4 +1,5 @@
 import { ROLE_ADMIN, ROLE_EDITOR, ROLE_GLOBAL, ROLE_OWNER } from "../constants"
+import { SiteFormValue } from "./forms"
 
 /**
  * The different widget variants supported in Site configurations
@@ -73,6 +74,16 @@ export interface ObjectConfigField extends ConfigFieldBaseProps {
   collapsed?: boolean
 }
 
+export enum RelationFilterVariant {
+  Equals = "equals"
+}
+
+export interface RelationFilter {
+  field: string
+  filter_type: RelationFilterVariant // eslint-disable-line camelcase
+  value: SiteFormValue
+}
+
 export interface RelationConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.Relation
   collection: string
@@ -80,6 +91,7 @@ export interface RelationConfigField extends ConfigFieldBaseProps {
   multiple?: boolean
   min?: number
   max?: number
+  filter?: RelationFilter
 }
 
 /**

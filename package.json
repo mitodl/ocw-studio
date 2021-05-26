@@ -139,6 +139,7 @@
     "fmt:check": "LOG_LEVEL= prettier-eslint --list-different --no-semi --ignore $PWD/'static/js/types/*.d.ts' $PWD/'static/js/**/*.ts' $PWD/'static/js/**/*.tsx' $PWD/'static/scss/**/*.scss'",
     "typescript": "rm -rf dist && rm -f .tsbuildinfo && tsc",
     "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
     "build": "webpack --config webpack.config.prod.js --bail"
   },
   "browserslist": [

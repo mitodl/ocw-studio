@@ -31,7 +31,14 @@ field:
     condition: include('field_condition', required=False)
     display_field: str(required=False)
     collection: str(required=False)
+    filter: include('relation_filter', required=False)
 ---
 field_condition:
     field: str()
     equals: str()
+---
+relation_filter:
+    field: str()
+    filter_type: enum('equals')
+    value: any()
+

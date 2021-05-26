@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
+import { equals, curry } from "ramda"
 
 import SelectField from "./SelectField"
 import { useWebsite } from "../../context/Website"
@@ -10,6 +11,11 @@ import { WEBSITE_CONTENT_PAGE_SIZE } from "../../constants"
 import { getWebsiteContentListingCursor } from "../../selectors/websites"
 
 import { Option } from "./SelectField"
+import {
+  RelationFilter,
+  RelationFilterVariant,
+  WebsiteContent
+} from "../../types/websites"
 
 interface Props {
   name: string
@@ -18,7 +24,20 @@ interface Props {
   multiple: boolean
   onChange: (event: Event) => void
   value: any
+  filter: RelationFilter
 }
+
+const filterContent = curry((filter: RelationFilter, entry: WebsiteContent) => {
+  if (!filter) {
+    return entry
+  }
+
+  if (filter.filter_type === RelationFilterVariant.Equals) {
+    return equals(entry[filter.field], filter.value)
+  }
+
+  return entry
+})
 
 export default function RelationField(props: Props): JSX.Element {
   const {
@@ -27,7 +46,8 @@ export default function RelationField(props: Props): JSX.Element {
     name,
     multiple,
     onChange,
-    value
+    value,
+    filter
   } = props
 
   const [offset, setOffset] = useState(0)
@@ -35,19 +55,16 @@ export default function RelationField(props: Props): JSX.Element {
 
   const website = useWebsite()
 
-  const listingParams = website ?
-    { name: website.name, type: collection, offset } :
-    null
+  const listingParams = { name: website.name, type: collection, offset }
 
-  useRequest(listingParams ? websiteContentListingRequest(listingParams) : null)
+  useRequest(websiteContentListingRequest(listingParams, true))
 
   const websiteContentListingCursor = useSelector(
     getWebsiteContentListingCursor
   )
 
-  const listing = listingParams ?
-    websiteContentListingCursor(listingParams) :
-    null
+  const listing = websiteContentListingCursor(listingParams)
+
   const count = listing?.count ?? 0
 
   useEffect(() => {
@@ -66,13 +83,19 @@ export default function RelationField(props: Props): JSX.Element {
   }, [offset, setOffset, count])
 
   useEffect(() => {
-    const options = (listing?.results ?? []).map((entry: any) => ({
-      label: entry[display_field],
-      value: entry.text_id
-    }))
+    const options: any = (listing?.results ?? [])
+      .map((entry: any) => ({
+        ...entry,
+        ...entry.metadata
+      }))
+      .filter(filterContent(filter))
+      .map((entry: any) => ({
+        label: entry[display_field],
+        value: entry.text_id
+      }))
 
     setOptions(oldOptions => [...oldOptions, ...options])
-  }, [listing, setOptions, display_field]) // eslint-disable-line camelcase
+  }, [listing, setOptions, display_field, filter]) // eslint-disable-line camelcase
 
   return (
     <SelectField

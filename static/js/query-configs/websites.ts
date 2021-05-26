@@ -250,7 +250,7 @@ export const createWebsiteCollaboratorMutation = (
 }
 
 export type WebsiteContentListingResponse = PaginatedResponse<
-  WebsiteContentListItem
+  WebsiteContentListItem | WebsiteContent
 >
 export type WebsiteContentListing = Record<
   string,
@@ -267,11 +267,27 @@ export const contentListingKey = (
 ): string =>
   JSON.stringify([listingParams.name, listingParams.type, listingParams.offset])
 
+/**
+ * Query config for fetching the content items for a website.
+ *
+ * Pass the `requestDetailedList` param if you need to get the detailed view of
+ * all the content items, as opposed to a minimal, summary view of the items
+ * (requestDetailedList == true tells the serializer to use the
+ * WebsiteContentDetailSerializer as opposed to the WebsiteContentSerializer,
+ * the default for this view).
+ **/
 export const websiteContentListingRequest = (
-  listingParams: ContentListingParams
+  listingParams: ContentListingParams,
+  requestDetailedList = false
 ): QueryConfig => {
   const { name, type, offset } = listingParams
-  const url = siteApiContentListingUrl.param({ name }).query({ type, offset })
+  const url = siteApiContentListingUrl
+    .param({ name })
+    .query(
+      requestDetailedList ?
+        { type, offset, detailed_list: true } :
+        { type, offset }
+    )
   return {
     url:       url.toString(),
     transform: (body: WebsiteContentListingResponse) => {
@@ -387,6 +403,7 @@ export type NewWebsiteContentPayload = {
   // eslint-disable-next-line camelcase
   text_id?: string
 }
+
 export const createWebsiteContentMutation = (
   siteName: string,
   payload: NewWebsiteContentPayload

@@ -9,13 +9,13 @@ import IntegrationTestHelper, {
 } from "../../util/integration_test_helper"
 
 import {
-  makeWebsiteContentListItem,
+  makeWebsiteContentDetail,
   makeWebsiteDetail
 } from "../../util/factories/websites"
 import { siteApiContentListingUrl } from "../../lib/urls"
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../../constants"
 
-import { Website, WebsiteContentListItem } from "../../types/websites"
+import { Website, WebsiteContent } from "../../types/websites"
 import R from "ramda"
 
 describe("RelationField", () => {
@@ -23,7 +23,7 @@ describe("RelationField", () => {
     render: TestRenderer,
     helper: IntegrationTestHelper,
     onChange: SinonStub,
-    contentListingItemsPages: WebsiteContentListItem[][]
+    contentListingItemsPages: WebsiteContent[][]
 
   beforeEach(() => {
     website = makeWebsiteDetail()
@@ -44,14 +44,14 @@ describe("RelationField", () => {
       }
     )
     contentListingItemsPages = [
-      R.times(makeWebsiteContentListItem, WEBSITE_CONTENT_PAGE_SIZE),
-      R.times(makeWebsiteContentListItem, WEBSITE_CONTENT_PAGE_SIZE)
+      R.times(makeWebsiteContentDetail, WEBSITE_CONTENT_PAGE_SIZE),
+      R.times(makeWebsiteContentDetail, WEBSITE_CONTENT_PAGE_SIZE)
     ]
     helper.handleRequestStub
       .withArgs(
         siteApiContentListingUrl
           .param({ name: website.name })
-          .query({ type: "page", offset: 0 })
+          .query({ type: "page", offset: 0, detailed_list: true })
           .toString(),
         "GET"
       )
@@ -68,7 +68,11 @@ describe("RelationField", () => {
       .withArgs(
         siteApiContentListingUrl
           .param({ name: website.name })
-          .query({ type: "page", offset: WEBSITE_CONTENT_PAGE_SIZE })
+          .query({
+            type:          "page",
+            offset:        WEBSITE_CONTENT_PAGE_SIZE,
+            detailed_list: true
+          })
           .toString(),
         "GET"
       )
@@ -113,5 +117,22 @@ describe("RelationField", () => {
   it("should pass the onChange handler down to the SelectField", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("SelectField").prop("onChange")).toBe(onChange)
+  })
+
+  it("should filter results", async () => {
+    contentListingItemsPages[0][0].metadata!.testfield = "testvalue"
+    const { wrapper } = await render({
+      filter: {
+        field:       "testfield",
+        filter_type: "equals",
+        value:       "testvalue"
+      }
+    })
+    expect(wrapper.find("SelectField").prop("options")).toEqual([
+      {
+        label: contentListingItemsPages[0][0].title,
+        value: contentListingItemsPages[0][0].text_id
+      }
+    ])
   })
 })

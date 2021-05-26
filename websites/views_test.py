@@ -358,7 +358,10 @@ def test_website_starters_local(
 
 
 @pytest.mark.parametrize("filter_type", ["page", ""])
-def test_websites_content_list(drf_client, filter_type, global_admin_user):
+@pytest.mark.parametrize("detailed_list", [True, False])
+def test_websites_content_list(
+    drf_client, filter_type, detailed_list, global_admin_user
+):
     """The list view of WebsiteContent should optionally filter by type"""
     drf_client.force_login(global_admin_user)
     WebsiteContentFactory.create()  # a different website, shouldn't show up here
@@ -381,7 +384,9 @@ def test_websites_content_list(drf_client, filter_type, global_admin_user):
                 "parent_lookup_website": website.name,
             },
         ),
-        {"type": filter_type},
+        {"type": filter_type, "detailed_list": detailed_list}
+        if detailed_list
+        else {"type": filter_type},
     )
     results = resp.data["results"]
     assert resp.data["count"] == (num_results if filter_type else num_results + 1)
@@ -393,6 +398,11 @@ def test_websites_content_list(drf_client, filter_type, global_admin_user):
         assert content.title == results[idx]["title"]
         assert str(content.text_id) == results[idx]["text_id"]
         assert content.type == results[idx]["type"]
+        if detailed_list:
+            # metadata appears because the detail serializer was used
+            assert content.metadata == results[idx]["metadata"]
+        else:
+            assert "metadata" not in results[idx]
 
 
 def test_websites_content_detail(drf_client, global_admin_user):

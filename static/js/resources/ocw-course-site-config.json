@@ -31,6 +31,21 @@
           "widget": "select"
         },
         {
+          "collection": "resource",
+          "display_field": "title",
+          "filter": {
+            "field": "filetype",
+            "filter_type": "equals",
+            "value": "PDF"
+          },
+          "label": "PDFs",
+          "max": 10,
+          "min": 1,
+          "multiple": true,
+          "name": "pdfs",
+          "widget": "relation"
+        },
+        {
           "fields": [
             {
               "label": "Street Address",
@@ -61,42 +76,11 @@
           "name": "address",
           "required": false,
           "widget": "object"
-        },
-        {
-          "collection": "author",
-          "display_field": "title",
-          "label": "Authors",
-          "max": 10,
-          "min": 1,
-          "multiple": true,
-          "name": "authors",
-          "required": false,
-          "widget": "relation"
         }
       ],
       "folder": "content",
       "label": "Page",
       "name": "page"
-    },
-    {
-      "category": "Content",
-      "fields": [
-        {
-          "label": "Name",
-          "name": "title",
-          "required": true,
-          "widget": "string"
-        },
-        {
-          "label": "Profession",
-          "name": "profession",
-          "required": false,
-          "widget": "string"
-        }
-      ],
-      "folder": "content",
-      "label": "Author",
-      "name": "author"
     },
     {
       "category": "Content",
@@ -116,6 +100,17 @@
           "label": "File",
           "name": "file",
           "widget": "file"
+        },
+        {
+          "label": "File Type",
+          "name": "filetype",
+          "options": [
+            "PDF",
+            "Word Doc",
+            "PPT"
+          ],
+          "required": true,
+          "widget": "select"
         }
       ],
       "folder": "content",

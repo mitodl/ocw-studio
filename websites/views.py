@@ -292,7 +292,10 @@ class WebsiteContentViewSet(
         return queryset.order_by("-updated_on")
 
     def get_serializer_class(self):
-        if self.action == "list":
+        detailed_list = self.request.query_params.get("detailed_list", False)
+        if self.action == "list" and detailed_list:
+            return WebsiteContentDetailSerializer
+        elif self.action == "list":
             return WebsiteContentSerializer
         elif self.action == "create":
             return WebsiteContentCreateSerializer

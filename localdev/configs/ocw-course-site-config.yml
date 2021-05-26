@@ -17,6 +17,17 @@ collections:
         "options": [ "Design", "UX", "Dev" ],
         "widget": "select"
         }
+      - {
+        "label": "PDFs",
+        "name": "pdfs",
+        "widget": "relation",
+        "collection": "resource",
+        "display_field": "title",
+        "multiple": true,
+        "max": 10,
+        "min": 1,
+        "filter": { field: "filetype", filter_type: "equals", value: "PDF"}
+        }
       - name: address
         label: Address
         widget: object
@@ -26,25 +37,6 @@ collections:
           - { label: "City", name: "city", widget: "string", required: true }
           - { label: "State", name: "state", widget: "string", required: true }
           - { label: "Zip Code", name: "zip", widget: "string", required: true }
-      - {
-        "label": "Authors",
-        "name": "authors",
-        "widget": "relation",
-        "collection": "author",
-        "display_field": "title",
-        "multiple": true,
-        "max": 10,
-        "min": 1,
-        "required": false,
-        }
-
-  - name: author
-    label: Author
-    category: Content
-    folder: content
-    fields:
-      - {"label": "Name", "name": "title", "widget": "string", "required": true}
-      - {"label": "Profession", "name": "profession", "widget": "string", "required": false}
 
   - name: resource
     label: Resource
@@ -54,6 +46,13 @@ collections:
       - {"label": "Title", "name": "title", "widget": "string", "required": true}
       - {"label": "Description", "name": "description", "widget": "text"}
       - {"label": "File", "name": "file", "widget": "file"}
+      - {
+        "label": "File Type",
+        "required": true,
+        "name": "filetype",
+        "options": [ "PDF", "Word Doc", "PPT" ],
+        "widget": "select"
+        }
 
   - name: metadata
     label: Metadata

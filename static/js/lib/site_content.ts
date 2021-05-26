@@ -58,7 +58,8 @@ const RELATION_EXTRA_PROPS = [
   "display_field",
   "max",
   "min",
-  "multiple"
+  "multiple",
+  "filter"
 ]
 
 /**
