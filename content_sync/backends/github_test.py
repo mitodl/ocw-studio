@@ -106,10 +106,13 @@ def test_create_backend_preview(settings, github):
 
 
 def test_create_backend_release(settings, github):
-    """Test that create_backend_release makes the appropriate api merge call"""
+    """Test that create_backend_release makes the appropriate api merge calls"""
     github.backend.create_backend_release()
-    github.api.merge_branches.assert_called_once_with(
-        settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE
+    github.api.merge_branches.assert_any_call(
+        settings.GIT_BRANCH_MAIN, settings.GIT_BRANCH_PREVIEW
+    )
+    github.api.merge_branches.assert_any_call(
+        settings.GIT_BRANCH_MAIN, settings.GIT_BRANCH_RELEASE
     )
 
 

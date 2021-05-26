@@ -48,10 +48,11 @@ class GithubBackend(BaseSyncBackend):
 
     def create_backend_release(self) -> PullRequest:
         """
-        Merge preview branch to release branch
+        Merge main branch to preview and release branches
         """
+        self.create_backend_preview()
         return self.api.merge_branches(
-            settings.GIT_BRANCH_PREVIEW,
+            settings.GIT_BRANCH_MAIN,
             settings.GIT_BRANCH_RELEASE,
         )
 
