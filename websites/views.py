@@ -134,7 +134,10 @@ class WebsiteViewSet(
     def publish(self, request, name=None):
         """Trigger a publish task for the website"""
         try:
-            publish_website(self.get_object())
+            website = self.get_object()
+            publish_website(website)
+            website.publish_date = now_in_utc()
+            website.save()
             return Response(
                 status=200,
                 data={"details": f"Success adding a publish task for {name}"},
