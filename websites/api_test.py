@@ -6,7 +6,7 @@ from websites.api import get_valid_new_filename
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "existing_filenames,exp_result_filename",
     [
