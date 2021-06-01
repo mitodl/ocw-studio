@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Version 0.16.0
+--------------
+
+- Remove (transaction=true) from @pytest.mark.django_db in a test (#285)
+- Bump django from 3.1.6 to 3.1.8 (#204)
+- Merge main branch to release branch for publish (#282)
+- Revert "import metadata and config (#283)" (#286)
+- import metadata and config (#283)
+- split out types for ConfigField
+- add relation field widget
+- small package version bump
+- upgrade our eslint configuration to the latest version
+- Removed WebsiteContent.content_filepath field
+
 Version 0.15.2 (Released June 01, 2021)
 --------------
 
