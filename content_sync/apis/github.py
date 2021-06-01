@@ -4,7 +4,9 @@ import os
 from base64 import b64decode
 from dataclasses import dataclass
 from typing import Iterator, List, Optional
+from urllib.parse import urlparse
 
+import yaml
 from django.conf import settings
 from django.db.models import F, Q
 from github import ContentFile, Github, GithubException, InputGitTreeElement
@@ -19,8 +21,8 @@ from content_sync.models import ContentSyncState
 from content_sync.serializers import serialize_content_to_file
 from main import features
 from users.models import User
-from websites.constants import WEBSITE_CONTENT_FILETYPE
-from websites.models import Website, WebsiteContent
+from websites.constants import WEBSITE_CONTENT_FILETYPE, STARTER_SOURCE_GITHUB
+from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
 
 
@@ -68,6 +70,36 @@ def get_destination_filepath(
         (content.id, content.text_id),
     )
     return None
+
+
+def sync_starter_configs(repo_url: str, config_files: List[str]):
+    """
+    Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
+    """
+    repo_path = urlparse(repo_url).path.lstrip("/")
+    org_name, repo_name = repo_path.split("/", 1)
+    log.error(f"{repo_path}, {org_name}, {repo_name}")
+    git_api = Github(login_or_token=settings.GIT_TOKEN)
+    org = git_api.get_organization(org_name)
+    repo = org.get_repo(repo_name)
+
+    for config_file in config_files:
+        git_file = repo.get_contents(config_file)
+        slug = (
+            git_file.path.split("/")[0]
+            if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE
+            else repo_name
+        )
+        config = yaml.load(git_file.decoded_content, Loader=yaml.Loader)
+        starter, created = WebsiteStarter.objects.update_or_create(
+            source=STARTER_SOURCE_GITHUB,
+            path="/".join([repo_url, slug]),
+            defaults={"slug": slug, "config": config},
+        )
+        # Give the WebsiteStarter a name equal to the slug if created, otherwise keep the current value.
+        if created:
+            starter.name = starter.slug
+            starter.save()
 
 
 class GithubApiWrapper:
