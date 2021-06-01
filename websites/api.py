@@ -1,11 +1,12 @@
 """API functionality for websites"""
 from typing import Optional
+from uuid import UUID
 
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from mitol.common.utils import max_or_none
 
 from websites.constants import CONTENT_FILENAME_MAX_LEN
-from websites.models import WebsiteContent
+from websites.models import Website, WebsiteContent
 
 
 def get_valid_new_filename(
@@ -89,3 +90,31 @@ def find_available_filename(
         )
         # If there is space for 4 digits for the suffix, the minimum value it could be is 1000, or 10^3
         current_min_suffix = 10 ** (available_suffix_digits - 1)
+
+
+def fetch_website(filter_value: str) -> Website:
+    """
+    Attempts to fetch a Website based on several properties
+    """
+    if len(filter_value) in {32, 36}:
+        try:
+            parsed_uuid = UUID(filter_value, version=4)
+            website = Website.objects.filter(uuid=parsed_uuid).first()
+            if website is not None:
+                return website
+        except ValueError:
+            pass
+    website_results = Website.objects.filter(
+        Q(name__iexact=filter_value) | Q(title__iexact=filter_value)
+    ).all()
+    if len(website_results) == 0:
+        raise Website.DoesNotExist(
+            f"Could not find a Website with a matching uuid, name, or title ('{filter_value}')"
+        )
+    if len(website_results) == 1:
+        return website_results[0]
+
+    sorted_results = sorted(
+        website_results, key=lambda _website: 1 if _website.name == filter_value else 2
+    )
+    return next(sorted_results)

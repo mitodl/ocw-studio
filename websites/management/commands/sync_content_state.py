@@ -2,6 +2,7 @@
 from django.core.management import BaseCommand
 
 from content_sync.api import upsert_content_sync_state
+from websites.api import fetch_website
 from websites.models import WebsiteContent
 
 
@@ -12,32 +13,26 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--website-name",
-            dest="website_name",
-            help="If provided, only update sync state for website contents for the website with that name.",
-        )
-        parser.add_argument(
-            "--website-title",
-            dest="website_title",
-            help="If provided, only update sync state for website contents for the website with that title.",
+            "--website",
+            dest="website",
+            help="If provided, only update sync states for website with a matching uuid, name, or title.",
         )
         parser.add_argument(
             "--content-title",
             dest="content_title",
-            help="If provided, only update sync state for website contents that match the given title.",
+            help="If provided, only update sync states for website contents that match the given title.",
         )
         parser.add_argument(
             "--text-id",
             dest="text_id",
-            help="If provided, only update sync state for website contents with the given text id.",
+            help="If provided, only update sync states for website contents with the given text id.",
         )
 
     def handle(self, *args, **options):
         filter_qset = {}
-        if options["website_name"]:
-            filter_qset["website__name"] = options["website_name"]
-        if options["website_title"]:
-            filter_qset["website__title"] = options["website_title"]
+        if options["website"]:
+            website = fetch_website(options["website"])
+            filter_qset["website"] = website
         if options["content_title"]:
             filter_qset["title__icontains"] = options["content_title"]
         if options["text_id"]:

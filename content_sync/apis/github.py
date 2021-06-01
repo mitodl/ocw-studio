@@ -318,14 +318,15 @@ class GithubApiWrapper:
         # Update with the new file data only if the content isn't deleted
         if sync_state.content.deleted is None:
             tree_elements.append(InputGitTreeElement(filepath, "100644", "blob", data))
+        if sync_state.data is None:
+            return tree_elements
         # Remove the old filepath stored in the sync state data
         if (
             # If it has been deleted
             sync_state.content.deleted is not None
             or (
                 # If it doesn't match current path
-                sync_state.data
-                and sync_state.data.get(GIT_DATA_FILEPATH, None)
+                sync_state.data.get(GIT_DATA_FILEPATH, None)
                 and sync_state.data[GIT_DATA_FILEPATH] != filepath
             )
         ):
