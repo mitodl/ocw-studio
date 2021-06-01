@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.15.2
+Version 0.15.2 (Released June 01, 2021)
 --------------
 
 - Finalized logic for determining target file path for WebsiteContent objects
