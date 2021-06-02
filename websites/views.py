@@ -19,7 +19,6 @@ from content_sync.api import (
     preview_website,
     publish_website,
     update_website_backend,
-    get_sync_backend,
 )
 from content_sync.apis.github import sync_starter_configs
 from main import features
@@ -180,7 +179,7 @@ class WebsiteStarterViewSet(
             return WebsiteStarterDetailSerializer
 
     @action(detail=False, methods=["post"], permission_classes=[])
-    def site_configs(self, request, *args, **kwargs):
+    def site_configs(self, request):
         """Process webhook requests for WebsiteStarter site configs"""
         data = json.loads(request.body)
         if data.get("repository"):
@@ -195,8 +194,15 @@ class WebsiteStarterViewSet(
                 if file.endswith(settings.OCW_STUDIO_SITE_CONFIG_FILE)
             ]
             try:
-                sync_starter_configs(data["repository"]["html_url"], files)
-                return Response(status=status.HTTP_200_OK)
+                succeeded, failed = sync_starter_configs(
+                    data["repository"]["html_url"], files
+                )
+                return Response(
+                    status=status.HTTP_400_BAD_REQUEST
+                    if failed
+                    else status.HTTP_200_OK,
+                    data={"success": succeeded, "errors": failed},
+                )
             except Exception as exc:  # pylint: disable=broad-except
                 log.exception("Error syncing config files")
                 return Response(status=500, data={"details": str(exc)})

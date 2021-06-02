@@ -4,7 +4,7 @@ import os
 from base64 import b64decode
 from dataclasses import dataclass
 from typing import Iterator, List, Optional
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import yaml
 from django.conf import settings
@@ -15,13 +15,15 @@ from github.Commit import Commit
 from github.InputGitAuthor import InputGitAuthor
 from github.Repository import Repository
 from safedelete.models import HARD_DELETE
+from yamale import YamaleError
 
 from content_sync.decorators import retry_on_failure
 from content_sync.models import ContentSyncState
 from content_sync.serializers import serialize_content_to_file
 from main import features
 from users.models import User
-from websites.constants import WEBSITE_CONTENT_FILETYPE, STARTER_SOURCE_GITHUB
+from websites.config_schema.api import validate_raw_site_config
+from websites.constants import STARTER_SOURCE_GITHUB, WEBSITE_CONTENT_FILETYPE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
 
@@ -72,17 +74,19 @@ def get_destination_filepath(
     return None
 
 
-def sync_starter_configs(repo_url: str, config_files: List[str]):
+def sync_starter_configs(repo_url: str, config_files: List[str]) -> List[List]:
     """
     Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
+    Return lists of files that succeeded and failed.
     """
     repo_path = urlparse(repo_url).path.lstrip("/")
     org_name, repo_name = repo_path.split("/", 1)
-    log.error(f"{repo_path}, {org_name}, {repo_name}")
-    git_api = Github(login_or_token=settings.GIT_TOKEN)
-    org = git_api.get_organization(org_name)
+    git = Github(login_or_token=settings.GIT_TOKEN)
+    org = git.get_organization(org_name)
     repo = org.get_repo(repo_name)
 
+    errors = []
+    processed = []
     for config_file in config_files:
         git_file = repo.get_contents(config_file)
         slug = (
@@ -90,16 +94,27 @@ def sync_starter_configs(repo_url: str, config_files: List[str]):
             if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE
             else repo_name
         )
-        config = yaml.load(git_file.decoded_content, Loader=yaml.Loader)
+        raw_yaml = git_file.decoded_content
+        try:
+            validate_raw_site_config(raw_yaml.decode("utf-8"))
+        except YamaleError as ye:
+            log.exception("Invalid site config YAML found in %s", config_file)
+            errors.append({config_file: str(ye)})
+            continue
+        config = yaml.load(raw_yaml, Loader=yaml.Loader)
         starter, created = WebsiteStarter.objects.update_or_create(
             source=STARTER_SOURCE_GITHUB,
             path="/".join([repo_url, slug]),
-            defaults={"slug": slug, "config": config},
+            slug=slug,
+            defaults={"config": config},
         )
         # Give the WebsiteStarter a name equal to the slug if created, otherwise keep the current value.
         if created:
             starter.name = starter.slug
             starter.save()
+        processed.append(config_file)
+
+    return processed, errors
 
 
 class GithubApiWrapper:
