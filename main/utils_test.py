@@ -6,6 +6,7 @@ from main.utils import (
     get_dirpath_and_filename,
     get_file_extension,
     remove_trailing_slashes,
+    valid_key,
 )
 
 
@@ -68,3 +69,15 @@ def test_get_dirpath_and_filename(filepath, expect_extension, exp_result):
 def test_are_equivalent_paths(filepath1, filepath2, exp_result):
     """are_equivalent_paths should return True if the given paths are equivalent"""
     assert are_equivalent_paths(filepath1, filepath2) is exp_result
+
+
+@pytest.mark.parametrize(
+    "key, is_valid", [["unit-test-me", True], ["wrong-key", False]]
+)
+def test_valid_key(mocker, key, is_valid):
+    """ valid_key should return True for a valid key, false otherwise """
+    mock_request = mocker.Mock(
+        body=b'{"foo":"bar"}',
+        headers={"X-Hub-Signature": "sha1=6a4e7673fa9c3afbb2860ae03ac2082958313a9c"},
+    )
+    assert valid_key(key, mock_request) is is_valid

@@ -581,17 +581,22 @@ def test_get_destination_filepath_errors(mocker, has_missing_name, is_bad_config
 
 def test_sync_starter_configs_success_create(mocker, mock_github):
     """sync_starter_configs should successfully create new WebsiteStarter objects"""
-    config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
+    config_filenames = [
+        "site-1/ocw-studio.yaml",
+        "site-2/ocw-studio.yaml",
+        "ocw-studio.yaml",
+    ]
     git_url = "https://github.com/testorg/ocws-configs"
     config_content = b"---\ncollections: []"
     mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
         mocker.Mock(path=config_filenames[0], decoded_content=config_content),
         mocker.Mock(path=config_filenames[1], decoded_content=config_content),
+        mocker.Mock(path=config_filenames[2], decoded_content=config_content),
     ]
     result = sync_starter_configs(git_url, config_filenames)
     assert result == (config_filenames, [])
     for filename in config_filenames:
-        expected_slug = filename.split("/")[0]
+        expected_slug = filename.split("/")[0] if "/" in filename else "ocws-configs"
         assert WebsiteStarter.objects.filter(
             source=STARTER_SOURCE_GITHUB,
             path="/".join([git_url, expected_slug]),
@@ -633,7 +638,7 @@ def test_sync_starter_configs_success_partial_failure(mocker, mock_github):
     """sync_starter_configs should detect & gracefully handle an invalid config"""
     config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
     git_url = "https://github.com/testorg/ocws-configs"
-
+    mock_log = mocker.patch("content_sync.apis.github.log.exception")
     mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
         mocker.Mock(path=config_filenames[0], decoded_content=b"---\ncollections: []"),
         mocker.Mock(
@@ -642,6 +647,9 @@ def test_sync_starter_configs_success_partial_failure(mocker, mock_github):
     ]
     result = sync_starter_configs(git_url, config_filenames)
     assert result == ([config_filenames[0]], [{config_filenames[1]: ANY}])
+    mock_log.assert_called_once_with(
+        "Invalid site config YAML found in %s", config_filenames[1]
+    )
     assert WebsiteStarter.objects.filter(
         source=STARTER_SOURCE_GITHUB,
         path=f"{git_url}/site-1",

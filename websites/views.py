@@ -15,11 +15,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
-from content_sync.api import (
-    preview_website,
-    publish_website,
-    update_website_backend,
-)
+from content_sync.api import preview_website, publish_website, update_website_backend
 from content_sync.apis.github import sync_starter_configs
 from main import features
 from main.permissions import ReadonlyPermission
