@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.16.0
+Version 0.16.0 (Released June 02, 2021)
 --------------
 
 - Remove (transaction=true) from @pytest.mark.django_db in a test (#285)
