@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.16.1
+--------------
+
+- Add support for filtering in the relation widget
+
 Version 0.16.0 (Released June 02, 2021)
 --------------
 
