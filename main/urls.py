@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.contrib.auth.views import LogoutView
 from django.urls import path, re_path
 
-from main.views import index
+from main.views import public_index, restricted_index
 
 
 urlpatterns = [
@@ -30,10 +30,11 @@ urlpatterns = [
     path("", include("social_django.urls", namespace="social")),
     url(r"^hijack/", include("hijack.urls", namespace="hijack")),
     # Example view
-    path("", index, name="main-index"),
-    re_path(r"^sites/.*$", index, name="sites"),
-    path("new-site/", index),
-    path("markdown-editor", index, name="markdown-editor-test"),
+    re_path("^$", public_index, name="main-index"),
+    path("login/", public_index, name="login"),
+    re_path(r"^sites/.*$", restricted_index, name="sites"),
+    path("new-site/", restricted_index, name="new-site"),
+    path("markdown-editor", restricted_index, name="markdown-editor-test"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("", include("news.urls")),
     path("", include("websites.urls")),
