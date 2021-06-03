@@ -1,8 +1,6 @@
 """ Github API tests """
 import hashlib
-import json
 from types import SimpleNamespace
-from unittest.mock import ANY
 
 import factory
 import pytest

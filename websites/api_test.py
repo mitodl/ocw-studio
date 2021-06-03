@@ -4,15 +4,19 @@ from uuid import UUID
 import factory
 import pytest
 
-from websites.api import fetch_website, get_valid_new_filename
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.api import fetch_website, get_valid_new_filename, get_valid_new_slug
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.models import Website
 
+pytestmark = pytest.mark.django_db
 
 EXAMPLE_UUID_STR = "ae6cfe0b-37a7-4fe6-b194-5b7f1e3c349e"
 
 
-@pytest.mark.django_db
 @pytest.mark.parametrize(
     "existing_filenames,exp_result_filename",
     [
@@ -54,7 +58,6 @@ def test_websitecontent_autogen_filename_unique(
     )
 
 
-@pytest.mark.django_db
 @pytest.mark.parametrize(
     "uuid_str,filter_value",
     [
@@ -72,7 +75,6 @@ def test_fetch_website_by_uuid(uuid_str, filter_value):
     assert website == result_website
 
 
-@pytest.mark.django_db
 @pytest.mark.parametrize(
     "website_attrs,filter_value",
     [
@@ -97,7 +99,6 @@ def test_fetch_website_by_name_title(website_attrs, filter_value):
     assert website == result_website
 
 
-@pytest.mark.django_db
 def test_fetch_website_not_found():
     """fetch_website should raise if a matching website was not found"""
     WebsiteFactory.create(
@@ -107,3 +108,37 @@ def test_fetch_website_not_found():
     )
     with pytest.raises(Website.DoesNotExist):
         fetch_website("bad values")
+
+
+@pytest.mark.parametrize(
+    "existing_slugs,exp_result_slug",
+    [
+        [[], "my-slug"],
+        [["my-slug"], "my-slug2"],
+        [["my-slug", "my-slug9"], "my-slug10"],
+        [
+            ["very-very-very-very-long-slug", "very-very-very-very-long-slug9"],
+            "very-very-very-very-long-slu10",
+        ],
+    ],
+)
+def test_websitestarter_autogen_slug_unique(existing_slugs, exp_result_slug):
+    """
+    get_valid_new_slug should return a slug that obeys uniqueness constraints, adding a suffix and
+    removing characters from the end of the string as necessary.
+    """
+    slug_base = exp_result_slug if not existing_slugs else existing_slugs[0]
+    for slug in existing_slugs:
+        WebsiteStarterFactory.create(
+            path=f"http://github.com/configs1/{slug}",
+            slug=slug,
+            source="github",
+            name=slug,
+            config={"collections": []},
+        )
+    assert (
+        get_valid_new_slug(
+            slug_base=slug_base, path=f"http://github.com/configs2/{slug_base}"
+        )
+        == exp_result_slug
+    )

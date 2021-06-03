@@ -22,6 +22,7 @@ from content_sync.models import ContentSyncState
 from content_sync.serializers import serialize_content_to_file
 from main import features
 from users.models import User
+from websites.api import get_valid_new_slug
 from websites.config_schema.api import validate_raw_site_config
 from websites.constants import STARTER_SOURCE_GITHUB, WEBSITE_CONTENT_FILETYPE
 from websites.models import Website, WebsiteContent, WebsiteStarter
@@ -94,23 +95,27 @@ def sync_starter_configs(
             if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE
             else repo_name
         )
+        path = "/".join([repo_url, slug])
+        unique_slug = get_valid_new_slug(slug, path)
         raw_yaml = git_file.decoded_content
         try:
             validate_raw_site_config(raw_yaml.decode("utf-8"))
+            config = yaml.load(raw_yaml, Loader=yaml.Loader)
+            starter, created = WebsiteStarter.objects.update_or_create(
+                source=STARTER_SOURCE_GITHUB,
+                path=path,
+                defaults={"config": config, "commit": commit, "slug": unique_slug},
+            )
+            # Give the WebsiteStarter a name equal to the slug if created, otherwise keep the current value.
+            if created:
+                starter.name = starter.slug
+                starter.save()
         except YamaleError as ye:
             log.exception("Invalid site config YAML found in %s", config_file)
             continue
-        config = yaml.load(raw_yaml, Loader=yaml.Loader)
-        starter, created = WebsiteStarter.objects.update_or_create(
-            source=STARTER_SOURCE_GITHUB,
-            path="/".join([repo_url, slug]),
-            slug=slug,
-            defaults={"config": config, "commit": commit},
-        )
-        # Give the WebsiteStarter a name equal to the slug if created, otherwise keep the current value.
-        if created:
-            starter.name = starter.slug
-            starter.save()
+        except:  # pylint: disable=bare-except
+            log.exception("Error processing config file %s", config_file)
+            continue
 
 
 class GithubApiWrapper:
