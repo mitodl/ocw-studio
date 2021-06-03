@@ -33,6 +33,8 @@ from websites.serializers import (
 pytestmark = pytest.mark.django_db
 
 MOCK_GITHUB_DATA = {
+    "before": "abc123",
+    "after": "def456",
     "repository": {
         "html_url": "https:github.com/ocw-org/ocw-configs",
     },
@@ -380,59 +382,31 @@ def test_website_starters_site_configs_invalid_key(drf_client):
     """A 403 response should be returned if the request signature is invalid"""
     drf_client.credentials(HTTP_X_HUB_SIGNATURE="dfdfdf=dkfldkfl")
     resp = drf_client.post(
-        reverse("website_starters_api-site-configs"),
-        data={"repository": {"foo": "bar"}},
+        reverse("website_starters_api-site-configs"), data=MOCK_GITHUB_DATA
     )
     assert resp.status_code == 403
 
 
-def test_website_starters_site_configs_valid(mocker, drf_client):
-    """A 200 response should be returned for valid data"""
+def test_website_starters_site_configs(settings, mocker, drf_client):
+    """A 202 response should be returned for valid data"""
+    settings.GIT_TOKEN = "git-token"
     mocker.patch("websites.views.valid_key", return_value=True)
     valid_config_files = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
-    mock_sync = mocker.patch(
-        "websites.views.sync_starter_configs", return_value=(valid_config_files, [])
-    )
-    resp = drf_client.post(
-        reverse("website_starters_api-site-configs"), data=MOCK_GITHUB_DATA
-    )
-    mock_sync.assert_called_once_with(
-        MOCK_GITHUB_DATA["repository"]["html_url"], valid_config_files
-    )
-    assert resp.status_code == 200
-    assert resp.data == {"success": valid_config_files, "errors": []}
-
-
-def test_website_starters_site_configs_invalid_config(mocker, drf_client):
-    """A 400 response should be returned if any configs were invalid"""
-    mocker.patch("websites.views.valid_key", return_value=True)
-    valid_config_file = "site-1/ocw-studio.yaml"
-    invalid_config_file = "site-2/ocw-studio.yaml"
-    error = "Unexpected element"
-    mock_sync = mocker.patch(
-        "websites.views.sync_starter_configs",
-        return_value=([valid_config_file], [{invalid_config_file: error}]),
-    )
+    mock_sync = mocker.patch("content_sync.api.tasks.sync_github_site_configs.delay")
     resp = drf_client.post(
         reverse("website_starters_api-site-configs"), data=MOCK_GITHUB_DATA
     )
     mock_sync.assert_called_once_with(
         MOCK_GITHUB_DATA["repository"]["html_url"],
-        [valid_config_file, invalid_config_file],
+        valid_config_files,
+        commit=MOCK_GITHUB_DATA["after"],
     )
-    assert resp.status_code == 400
-    assert resp.data == {
-        "success": [valid_config_file],
-        "errors": [{invalid_config_file: error}],
-    }
+    assert resp.status_code == 202
 
 
 def test_website_starters_site_configs_exception(mocker, drf_client):
     """A 500 response should be returned if an unhandled exception is raised"""
-    mocker.patch("websites.views.valid_key", return_value=True)
-    mocker.patch(
-        "websites.views.sync_starter_configs", side_effect=[KeyError("Key not found")]
-    )
+    mocker.patch("websites.views.valid_key", side_effect=[KeyError("Key not found")])
     resp = drf_client.post(
         reverse("website_starters_api-site-configs"), data=MOCK_GITHUB_DATA
     )

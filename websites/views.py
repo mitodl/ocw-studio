@@ -1,6 +1,7 @@
 """ Views for websites """
 import json
 import logging
+import os
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -15,8 +16,12 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
-from content_sync.api import preview_website, publish_website, update_website_backend
-from content_sync.apis.github import sync_starter_configs
+from content_sync.api import (
+    preview_website,
+    publish_website,
+    sync_github_website_starters,
+    update_website_backend,
+)
 from main import features
 from main.permissions import ReadonlyPermission
 from main.utils import valid_key
@@ -179,29 +184,25 @@ class WebsiteStarterViewSet(
         """Process webhook requests for WebsiteStarter site configs"""
         data = json.loads(request.body)
         if data.get("repository"):
-            if not valid_key(settings.GITHUB_WEBHOOK_KEY, request):
-                return Response(status=status.HTTP_403_FORBIDDEN)
-            files = [
-                file
-                for sublist in [
-                    commit["modified"] + commit["added"] for commit in data["commits"]
-                ]
-                for file in sublist
-                if file.endswith(settings.OCW_STUDIO_SITE_CONFIG_FILE)
-            ]
             try:
-                succeeded, failed = sync_starter_configs(
-                    data["repository"]["html_url"], files
-                )
-                return Response(
-                    status=status.HTTP_400_BAD_REQUEST
-                    if failed
-                    else status.HTTP_200_OK,
-                    data={"success": succeeded, "errors": failed},
+                if not valid_key(settings.GITHUB_WEBHOOK_KEY, request):
+                    return Response(status=status.HTTP_403_FORBIDDEN)
+                files = [
+                    file
+                    for sublist in [
+                        commit["modified"] + commit["added"]
+                        for commit in data["commits"]
+                    ]
+                    for file in sublist
+                    if os.path.basename(file) == settings.OCW_STUDIO_SITE_CONFIG_FILE
+                ]
+                sync_github_website_starters(
+                    data["repository"]["html_url"], files, commit=data.get("after")
                 )
             except Exception as exc:  # pylint: disable=broad-except
                 log.exception("Error syncing config files")
                 return Response(status=500, data={"details": str(exc)})
+            return Response(status=status.HTTP_202_ACCEPTED)
         else:
             # Only github webhooks are currently supported
             return Response(status=status.HTTP_400_BAD_REQUEST)

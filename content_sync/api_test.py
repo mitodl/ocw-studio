@@ -147,3 +147,17 @@ def test_publish_website(settings, mocker):
     website = WebsiteFactory.create()
     api.publish_website(website)
     mock_task.delay.assert_called_once_with(website.name)
+
+
+@pytest.mark.parametrize("token", ["abc123", None])
+def test_sync_github_website_starters(settings, mocker, token):
+    """ Sync website starters from github """
+    settings.GIT_TOKEN = token
+    mock_task = mocker.patch("content_sync.api.tasks.sync_github_site_configs.delay")
+    args = "https://github.com/testorg/testconfigs", ["site1/studio.yaml"]
+    kwargs = {"commit": "abc123"}
+    api.sync_github_website_starters(*args, **kwargs)
+    if token:
+        mock_task.assert_called_once_with(*args, **kwargs)
+    else:
+        mock_task.assert_not_called()

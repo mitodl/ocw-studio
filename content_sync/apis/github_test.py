@@ -593,8 +593,7 @@ def test_sync_starter_configs_success_create(mocker, mock_github):
         mocker.Mock(path=config_filenames[1], decoded_content=config_content),
         mocker.Mock(path=config_filenames[2], decoded_content=config_content),
     ]
-    result = sync_starter_configs(git_url, config_filenames)
-    assert result == (config_filenames, [])
+    sync_starter_configs(git_url, config_filenames)
     for filename in config_filenames:
         expected_slug = filename.split("/")[0] if "/" in filename else "ocws-configs"
         assert WebsiteStarter.objects.filter(
@@ -626,8 +625,7 @@ def test_sync_starter_configs_success_update(mocker, mock_github):
         path=file_list[0], decoded_content=config_content
     )
 
-    result = sync_starter_configs(git_url, file_list)
-    assert result == (file_list, [])
+    sync_starter_configs(git_url, file_list)
     assert WebsiteStarter.objects.count() == starter_count
     starter.refresh_from_db()
     assert starter.name == "Site 1"
@@ -645,8 +643,7 @@ def test_sync_starter_configs_success_partial_failure(mocker, mock_github):
             path=config_filenames[1], decoded_content=b"---\nfcollections: []\nfoo: bar"
         ),
     ]
-    result = sync_starter_configs(git_url, config_filenames)
-    assert result == ([config_filenames[0]], [{config_filenames[1]: ANY}])
+    sync_starter_configs(git_url, config_filenames)
     mock_log.assert_called_once_with(
         "Invalid site config YAML found in %s", config_filenames[1]
     )

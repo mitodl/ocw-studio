@@ -4,7 +4,7 @@ import os
 from base64 import b64decode
 from dataclasses import dataclass
 from typing import Iterator, List, Optional
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 import yaml
 from django.conf import settings
@@ -74,7 +74,9 @@ def get_destination_filepath(
     return None
 
 
-def sync_starter_configs(repo_url: str, config_files: List[str]) -> List[List]:
+def sync_starter_configs(
+    repo_url: str, config_files: List[str], commit: Optional[str] = None
+):
     """
     Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
     Return lists of files that succeeded and failed.
@@ -85,8 +87,6 @@ def sync_starter_configs(repo_url: str, config_files: List[str]) -> List[List]:
     org = git.get_organization(org_name)
     repo = org.get_repo(repo_name)
 
-    errors = []
-    processed = []
     for config_file in config_files:
         git_file = repo.get_contents(config_file)
         slug = (
@@ -99,22 +99,18 @@ def sync_starter_configs(repo_url: str, config_files: List[str]) -> List[List]:
             validate_raw_site_config(raw_yaml.decode("utf-8"))
         except YamaleError as ye:
             log.exception("Invalid site config YAML found in %s", config_file)
-            errors.append({config_file: str(ye)})
             continue
         config = yaml.load(raw_yaml, Loader=yaml.Loader)
         starter, created = WebsiteStarter.objects.update_or_create(
             source=STARTER_SOURCE_GITHUB,
             path="/".join([repo_url, slug]),
             slug=slug,
-            defaults={"config": config},
+            defaults={"config": config, "commit": commit},
         )
         # Give the WebsiteStarter a name equal to the slug if created, otherwise keep the current value.
         if created:
             starter.name = starter.slug
             starter.save()
-        processed.append(config_file)
-
-    return processed, errors
 
 
 class GithubApiWrapper:
