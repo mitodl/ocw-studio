@@ -222,12 +222,15 @@ def test_websites_endpoint_publish(mocker, drf_client):
     """A user with admin permissions should be able to request a website publish"""
     mock_publish_website = mocker.patch("websites.views.publish_website")
     website = WebsiteFactory.create()
+    last_published = website.publish_date
     admin = UserFactory.create()
     admin.groups.add(website.admin_group)
     drf_client.force_login(admin)
     resp = drf_client.post(
         reverse("websites_api-publish", kwargs={"name": website.name})
     )
+    website.refresh_from_db()
+    assert website.publish_date > last_published
     assert resp.status_code == 200
     mock_publish_website.assert_called_once_with(website)
 
