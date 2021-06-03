@@ -25,5 +25,6 @@ module.exports = {
       "|lodash-es" +
       ")/)"
   ],
-  testPathIgnorePatterns: ["<rootDir>/staticfiles/", "<rootDir>/node_modules/"]
+  testPathIgnorePatterns: ["<rootDir>/staticfiles/", "<rootDir>/node_modules/"],
+  testEnvironment: "jsdom"
 }
