@@ -89,16 +89,16 @@ def sync_starter_configs(
     repo = org.get_repo(repo_name)
 
     for config_file in config_files:
-        git_file = repo.get_contents(config_file)
-        slug = (
-            git_file.path.split("/")[0]
-            if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE
-            else repo_name
-        )
-        path = "/".join([repo_url, slug])
-        unique_slug = get_valid_new_slug(slug, path)
-        raw_yaml = git_file.decoded_content
         try:
+            git_file = repo.get_contents(config_file)
+            slug = (
+                git_file.path.split("/")[0]
+                if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE
+                else repo_name
+            )
+            path = "/".join([repo_url, slug])
+            unique_slug = get_valid_new_slug(slug, path)
+            raw_yaml = git_file.decoded_content
             validate_raw_site_config(raw_yaml.decode("utf-8"))
             config = yaml.load(raw_yaml, Loader=yaml.Loader)
             starter, created = WebsiteStarter.objects.update_or_create(

@@ -12,6 +12,7 @@ from websites.factories import (
 )
 from websites.models import Website
 
+
 pytestmark = pytest.mark.django_db
 
 EXAMPLE_UUID_STR = "ae6cfe0b-37a7-4fe6-b194-5b7f1e3c349e"

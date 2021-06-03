@@ -655,3 +655,16 @@ def test_sync_starter_configs_success_partial_failure(mocker, mock_github):
     assert not WebsiteStarter.objects.filter(
         path=f"{git_url}/site-2",
     ).exists()
+
+
+def test_sync_starter_configs_exception(mocker, mock_github):
+    """sync_starter_configs should detect & gracefully handle any exception"""
+    config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
+    git_url = "https://github.com/testorg/ocws-configs"
+    mock_log = mocker.patch("content_sync.apis.github.log.exception")
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
+        KeyError("invalid key")
+    ]
+    sync_starter_configs(git_url, config_filenames)
+    for filename in config_filenames:
+        mock_log.assert_any_call("Error processing config file %s", filename)
