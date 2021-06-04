@@ -22,7 +22,8 @@ export default function SiteContentField({
 
   if (
     field.widget === WidgetVariant.File ||
-    field.widget === WidgetVariant.Boolean
+    field.widget === WidgetVariant.Boolean ||
+    field.widget === WidgetVariant.Relation
   ) {
     extraProps.setFieldValue = setFieldValue
   }

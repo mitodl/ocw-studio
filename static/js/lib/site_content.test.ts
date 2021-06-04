@@ -208,7 +208,7 @@ describe("site_content", () => {
         [WidgetVariant.Text, ""],
         [WidgetVariant.String, ""],
         [WidgetVariant.Select, ""],
-        [WidgetVariant.Relation, ""]
+        [WidgetVariant.Relation, { website: null, content: "" }]
       ].forEach(([widget, expectation]) => {
         const field = makeWebsiteConfigField({
           widget,
@@ -234,7 +234,13 @@ describe("site_content", () => {
         multiple: true,
         label:    "Widget"
       })
-      expect(newInitialValues([field])).toStrictEqual({ widget: [] })
+
+      expect(newInitialValues([field])).toStrictEqual({
+        widget: {
+          website: null,
+          content: []
+        }
+      })
     })
 
     it("should use appropriate default for Object widget", () => {
@@ -434,9 +440,21 @@ describe("site_content", () => {
       ).toEqual(["myobject.mystring", "myobject.myselect"])
     })
 
+    it("should rename fields for a Relation field", () => {
+      const field = makeWebsiteConfigField({
+        widget: WidgetVariant.Relation,
+        label:  "myobject"
+      })
+
+      expect(renameNestedFields([field])[0].name).toEqual("myobject.content")
+    })
+
     it("should leave others alone", () => {
       const fields = Object.values(WidgetVariant)
-        .filter(widget => widget !== WidgetVariant.Object)
+        .filter(
+          widget =>
+            widget !== WidgetVariant.Object && widget !== WidgetVariant.Relation
+        )
         .map(widget => makeWebsiteConfigField({ widget }))
       expect(renameNestedFields(fields)).toEqual(fields)
     })

@@ -32,6 +32,7 @@ field:
     display_field: str(required=False)
     collection: str(required=False)
     filter: include('relation_filter', required=False)
+    website: str(required=False)
 ---
 field_condition:
     field: str()

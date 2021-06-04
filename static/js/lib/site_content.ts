@@ -60,7 +60,8 @@ const RELATION_EXTRA_PROPS = [
   "max",
   "min",
   "multiple",
-  "filter"
+  "filter",
+  "website"
 ]
 
 export const DEFAULT_TITLE_FIELD: StringConfigField = {
@@ -229,6 +230,10 @@ const defaultForField = (field: ConfigField): SiteFormValue => {
   case WidgetVariant.Boolean:
     return false
   case WidgetVariant.Relation:
+    return {
+      website: null,
+      content: field.multiple ? [] : ""
+    }
   case WidgetVariant.Select:
     return field.multiple ? [] : ""
   case WidgetVariant.File:
@@ -289,9 +294,10 @@ export const fieldIsVisible = (
  * renamed so they can be passed down to Formik.
  **/
 export const renameNestedFields = (fields: ConfigField[]): ConfigField[] =>
-  fields.map((field: ConfigField) =>
-    field.widget === WidgetVariant.Object ?
-      evolve(
+  fields.map((field: ConfigField) => {
+    switch (field.widget) {
+    case WidgetVariant.Object:
+      return evolve(
         {
           fields: map((nestedField: ConfigField) => ({
             ...nestedField,
@@ -299,9 +305,16 @@ export const renameNestedFields = (fields: ConfigField[]): ConfigField[] =>
           }))
         },
         field
-      ) :
-      field
-  )
+      )
+    case WidgetVariant.Relation:
+      return {
+        ...field,
+        name: `${field.name}.content`
+      }
+    default:
+      return field
+    }
+  })
 
 export const addDefaultFields = (
   configItem: EditableConfigItem

@@ -1,30 +1,36 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
 import { equals, curry } from "ramda"
+import { uniqBy } from "lodash"
 
 import SelectField from "./SelectField"
 import { useWebsite } from "../../context/Website"
 
 import { websiteContentListingRequest } from "../../query-configs/websites"
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../../constants"
-import { getWebsiteContentListingCursor } from "../../selectors/websites"
+import {
+  getWebsiteContentListingCursor,
+  getWebsiteDetailCursor
+} from "../../selectors/websites"
+import { websiteDetailRequest } from "../../query-configs/websites"
 
-import { Option } from "./SelectField"
 import {
   RelationFilter,
   RelationFilterVariant,
   WebsiteContent
 } from "../../types/websites"
+import { SiteFormValue } from "../../types/forms"
 
 interface Props {
   name: string
   collection: string
   display_field: string // eslint-disable-line camelcase
   multiple: boolean
-  onChange: (event: Event) => void
   value: any
   filter: RelationFilter
+  website: string
+  setFieldValue: (key: string, value: SiteFormValue) => void
 }
 
 const filterContent = curry((filter: RelationFilter, entry: WebsiteContent) => {
@@ -45,25 +51,40 @@ export default function RelationField(props: Props): JSX.Element {
     display_field, // eslint-disable-line camelcase
     name,
     multiple,
-    onChange,
+    setFieldValue,
     value,
-    filter
+    filter,
+    website: websitename
   } = props
 
   const [offset, setOffset] = useState(0)
-  const [options, setOptions] = useState<Option[]>([])
+  const [contentListing, setContentListing] = useState<WebsiteContent[]>([])
 
-  const website = useWebsite()
-
-  const listingParams = { name: website.name, type: collection, offset }
-
-  useRequest(websiteContentListingRequest(listingParams, true))
-
+  const websiteDetailCursor = useSelector(getWebsiteDetailCursor)
   const websiteContentListingCursor = useSelector(
     getWebsiteContentListingCursor
   )
 
-  const listing = websiteContentListingCursor(listingParams)
+  useRequest(websitename ? websiteDetailRequest(websitename) : null)
+  const contextWebsite = useWebsite()
+
+  // if website: websitename param is set, then we want to use the context
+  // website, else we want to use the cursor to fetch the specified website
+  const website = websitename ?
+    websiteDetailCursor(websitename) :
+    contextWebsite
+
+  const listingParams = website ?
+    { name: website.name, type: collection, offset } :
+    null
+
+  useRequest(
+    listingParams ? websiteContentListingRequest(listingParams, true) : null
+  )
+
+  const listing = listingParams ?
+    websiteContentListingCursor(listingParams) :
+    null
 
   const count = listing?.count ?? 0
 
@@ -83,19 +104,42 @@ export default function RelationField(props: Props): JSX.Element {
   }, [offset, setOffset, count])
 
   useEffect(() => {
-    const options: any = (listing?.results ?? [])
+    const newContentListing = (listing?.results ?? [])
       .map((entry: any) => ({
         ...entry,
         ...entry.metadata
       }))
       .filter(filterContent(filter))
-      .map((entry: any) => ({
+
+    // here we use uniqBy to remove any possible duplicates
+    // e.g. from the request having been run once before
+    setContentListing(oldContentListing =>
+      uniqBy([...oldContentListing, ...newContentListing], "text_id")
+    )
+  }, [listing, setContentListing, filter])
+
+  const options = useMemo(
+    () =>
+      contentListing.map((entry: any) => ({
         label: entry[display_field],
         value: entry.text_id
-      }))
+      })),
+    [contentListing, display_field] // eslint-disable-line camelcase
+  )
 
-    setOptions(oldOptions => [...oldOptions, ...options])
-  }, [listing, setOptions, display_field, filter]) // eslint-disable-line camelcase
+  const onChange = useCallback(
+    (event: any) => {
+      const content = event.target.value
+
+      // need to do this because we've renamed the
+      // nested field to get validation working
+      setFieldValue(name.split(".")[0], {
+        website: website.name,
+        content
+      })
+    },
+    [setFieldValue, name, website]
+  )
 
   return (
     <SelectField

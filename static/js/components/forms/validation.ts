@@ -1,11 +1,13 @@
 import * as yup from "yup"
-import { setLocale } from "yup"
+import { ArraySchema, setLocale } from "yup"
 
 import { isRepeatableCollectionItem } from "../../lib/site_content"
 
 import {
   ConfigField,
   ConfigItem,
+  RelationConfigField,
+  SelectConfigField,
   WidgetVariant,
   EditableConfigItem
 } from "../../types/websites"
@@ -23,6 +25,27 @@ const defaultTitleFieldSchema = yup
   .required()
   .label("Title")
 
+const minMax = (
+  schema: ArraySchema<any>,
+  field: RelationConfigField | SelectConfigField
+) => {
+  if (field.min) {
+    schema = schema.min(
+      field.min,
+      `${field.name} must have at least ${field.min} ${
+        field.min === 1 ? "entry" : "entries"
+      }.`
+    )
+  }
+  if (field.max) {
+    schema = schema.max(
+      field.max,
+      `${field.name} may have at most ${field.max} entries.`
+    )
+  }
+  return schema
+}
+
 /**
  * Obtain the schema for a given field. This mainly switches on the
  * WidgetVariant, but also looks at some other props like `min`, `max`,
@@ -32,25 +55,22 @@ export const getFieldSchema = (field: ConfigField): FormSchema => {
   let schema
 
   switch (field.widget) {
-  case WidgetVariant.Relation:
+  case WidgetVariant.Relation: {
+    if (field.multiple) {
+      schema = yup.object().shape({
+        // @ts-ignore
+        content: minMax(yup.array(), field)
+      })
+    } else {
+      schema = yup.object().shape({
+        content: yup.string()
+      })
+    }
+    break
+  }
   case WidgetVariant.Select: {
     if (field.multiple) {
-      schema = yup.array()
-
-      if (field.min) {
-        schema = schema.min(
-          field.min,
-          `${field.name} must have at least ${field.min} ${
-            field.min === 1 ? "entry" : "entries"
-          }.`
-        )
-      }
-      if (field.max) {
-        schema = schema.max(
-          field.max,
-          `${field.name} may have at most ${field.max} entries.`
-        )
-      }
+      schema = minMax(yup.array(), field)
     } else {
       schema = yup.string()
     }

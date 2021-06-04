@@ -92,6 +92,7 @@ export interface RelationConfigField extends ConfigFieldBaseProps {
   min?: number
   max?: number
   filter?: RelationFilter
+  website?: string
 }
 
 /**
