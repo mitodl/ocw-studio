@@ -1,6 +1,9 @@
 """ Views for websites """
+import json
 import logging
+import os
 
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db.models import Case, CharField, OuterRef, Q, Value, When
 from django.utils.functional import cached_property
@@ -13,9 +16,15 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
-from content_sync.api import preview_website, publish_website, update_website_backend
+from content_sync.api import (
+    preview_website,
+    publish_website,
+    sync_github_website_starters,
+    update_website_backend,
+)
 from main import features
 from main.permissions import ReadonlyPermission
+from main.utils import valid_key
 from main.views import DefaultPagination
 from users.models import User
 from websites import constants
@@ -169,6 +178,34 @@ class WebsiteStarterViewSet(
             return WebsiteStarterSerializer
         else:
             return WebsiteStarterDetailSerializer
+
+    @action(detail=False, methods=["post"], permission_classes=[])
+    def site_configs(self, request):
+        """Process webhook requests for WebsiteStarter site configs"""
+        data = json.loads(request.body)
+        if data.get("repository"):
+            try:
+                if not valid_key(settings.GITHUB_WEBHOOK_KEY, request):
+                    return Response(status=status.HTTP_403_FORBIDDEN)
+                files = [
+                    file
+                    for sublist in [
+                        commit["modified"] + commit["added"]
+                        for commit in data["commits"]
+                    ]
+                    for file in sublist
+                    if os.path.basename(file) == settings.OCW_STUDIO_SITE_CONFIG_FILE
+                ]
+                sync_github_website_starters(
+                    data["repository"]["html_url"], files, commit=data.get("after")
+                )
+            except Exception as exc:  # pylint: disable=broad-except
+                log.exception("Error syncing config files")
+                return Response(status=500, data={"details": str(exc)})
+            return Response(status=status.HTTP_202_ACCEPTED)
+        else:
+            # Only github webhooks are currently supported
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class WebsiteCollaboratorViewSet(

@@ -11,15 +11,17 @@ from content_sync.apis.github import (
     GIT_DATA_FILEPATH,
     GithubApiWrapper,
     get_destination_filepath,
+    sync_starter_configs,
 )
 from main import features
 from users.factories import UserFactory
+from websites.constants import STARTER_SOURCE_GITHUB
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
 )
-from websites.models import WebsiteContent
+from websites.models import WebsiteContent, WebsiteStarter
 from websites.site_config_api import ConfigItem, SiteConfig
 
 
@@ -54,6 +56,12 @@ def mock_api_wrapper(settings, mocker, db_data):
     return GithubApiWrapper(
         website=db_data.website, site_config=SiteConfig(db_data.website.starter.config)
     )
+
+
+@pytest.fixture
+def mock_github(mocker):
+    """ Return a mock Github class"""
+    return mocker.patch("content_sync.apis.github.Github")
 
 
 @pytest.fixture
@@ -567,3 +575,96 @@ def test_get_destination_filepath_errors(mocker, has_missing_name, is_bad_config
     )
     patched_log.error.assert_called_once()
     assert return_value is None
+
+
+def test_sync_starter_configs_success_create(mocker, mock_github):
+    """sync_starter_configs should successfully create new WebsiteStarter objects"""
+    config_filenames = [
+        "site-1/ocw-studio.yaml",
+        "site-2/ocw-studio.yaml",
+        "ocw-studio.yaml",
+    ]
+    git_url = "https://github.com/testorg/ocws-configs"
+    config_content = b"---\ncollections: []"
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
+        mocker.Mock(path=config_filenames[0], decoded_content=config_content),
+        mocker.Mock(path=config_filenames[1], decoded_content=config_content),
+        mocker.Mock(path=config_filenames[2], decoded_content=config_content),
+    ]
+    sync_starter_configs(git_url, config_filenames)
+    for filename in config_filenames:
+        expected_slug = filename.split("/")[0] if "/" in filename else "ocws-configs"
+        assert WebsiteStarter.objects.filter(
+            source=STARTER_SOURCE_GITHUB,
+            path="/".join([git_url, expected_slug]),
+            slug=expected_slug,
+            name=expected_slug,
+            config={"collections": []},
+        ).exists()
+
+
+def test_sync_starter_configs_success_update(mocker, mock_github):
+    """sync_starter_configs should successfully update a WebsiteStarter object"""
+    git_url = "https://github.com/testorg/ocws-configs"
+    slug = "site-1"
+    config_content = b"---\ncollections: []"
+    file_list = [f"{slug}/ocw-studio.yaml"]
+
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{git_url}/{slug}",
+        slug=slug,
+        name="Site 1",
+        config={"foo": "bar"},
+    )
+    starter_count = WebsiteStarter.objects.count()
+
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.return_value = mocker.Mock(
+        path=file_list[0], decoded_content=config_content
+    )
+
+    sync_starter_configs(git_url, file_list)
+    assert WebsiteStarter.objects.count() == starter_count
+    starter.refresh_from_db()
+    assert starter.name == "Site 1"
+    assert starter.config == {"collections": []}
+
+
+def test_sync_starter_configs_success_partial_failure(mocker, mock_github):
+    """sync_starter_configs should detect & gracefully handle an invalid config"""
+    config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
+    git_url = "https://github.com/testorg/ocws-configs"
+    mock_log = mocker.patch("content_sync.apis.github.log.exception")
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
+        mocker.Mock(path=config_filenames[0], decoded_content=b"---\ncollections: []"),
+        mocker.Mock(
+            path=config_filenames[1], decoded_content=b"---\nfcollections: []\nfoo: bar"
+        ),
+    ]
+    sync_starter_configs(git_url, config_filenames)
+    mock_log.assert_called_once_with(
+        "Invalid site config YAML found in %s", config_filenames[1]
+    )
+    assert WebsiteStarter.objects.filter(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{git_url}/site-1",
+        slug="site-1",
+        name="site-1",
+        config={"collections": []},
+    ).exists()
+    assert not WebsiteStarter.objects.filter(
+        path=f"{git_url}/site-2",
+    ).exists()
+
+
+def test_sync_starter_configs_exception(mocker, mock_github):
+    """sync_starter_configs should detect & gracefully handle any exception"""
+    config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
+    git_url = "https://github.com/testorg/ocws-configs"
+    mock_log = mocker.patch("content_sync.apis.github.log.exception")
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
+        KeyError("invalid key")
+    ]
+    sync_starter_configs(git_url, config_filenames)
+    for filename in config_filenames:
+        mock_log.assert_any_call("Error processing config file %s", filename)

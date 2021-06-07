@@ -1,6 +1,7 @@
 """ Content sync tasks """
 import logging
 from time import sleep
+from typing import List, Optional
 
 from django.conf import settings
 from django.db.models import F, Q
@@ -8,6 +9,7 @@ from github.GithubException import RateLimitExceededException
 from mitol.common.utils import now_in_utc, pytz
 
 from content_sync import api
+from content_sync.apis import github
 from content_sync.decorators import single_website_task
 from content_sync.models import ContentSyncState
 from main.celery import app
@@ -125,3 +127,11 @@ def publish_website_backend(website_name: str):
     """
     backend = api.get_sync_backend(Website.objects.get(name=website_name))
     backend.create_backend_release()
+
+
+@app.task(acks_late=True)
+def sync_github_site_configs(url: str, files: List[str], commit: Optional[str] = None):
+    """
+    Sync WebsiteStarter objects from github
+    """
+    github.sync_starter_configs(url, files, commit=commit)

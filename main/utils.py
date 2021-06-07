@@ -1,9 +1,13 @@
 """ocw_studio utilities"""
+import hashlib
+import hmac
 import re
 from enum import Flag, auto
 from pathlib import Path
 from typing import Tuple
 from uuid import uuid4
+
+from django.http import HttpRequest
 
 
 class FeatureFlag(Flag):
@@ -85,3 +89,12 @@ def get_dirpath_and_filename(
         )
         path_parts = path_parts[0 : (len(path_parts) - 1)]
     return ("/".join(path_parts), filename or None)
+
+
+def valid_key(key: str, request: HttpRequest) -> bool:
+    """
+    Determine if the signature sent in a request is valid
+    """
+    digest = hmac.new(key.encode("utf-8"), request.body, hashlib.sha1).hexdigest()
+    sig_parts = request.headers["X-Hub-Signature"].split("=", 1)
+    return hmac.compare_digest(sig_parts[1], digest)

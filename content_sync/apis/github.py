@@ -4,7 +4,9 @@ import os
 from base64 import b64decode
 from dataclasses import dataclass
 from typing import Iterator, List, Optional
+from urllib.parse import urlparse
 
+import yaml
 from django.conf import settings
 from django.db.models import F, Q
 from github import ContentFile, Github, GithubException, InputGitTreeElement
@@ -13,14 +15,17 @@ from github.Commit import Commit
 from github.InputGitAuthor import InputGitAuthor
 from github.Repository import Repository
 from safedelete.models import HARD_DELETE
+from yamale import YamaleError
 
 from content_sync.decorators import retry_on_failure
 from content_sync.models import ContentSyncState
 from content_sync.serializers import serialize_content_to_file
 from main import features
 from users.models import User
-from websites.constants import WEBSITE_CONTENT_FILETYPE
-from websites.models import Website, WebsiteContent
+from websites.api import get_valid_new_slug
+from websites.config_schema.api import validate_raw_site_config
+from websites.constants import STARTER_SOURCE_GITHUB, WEBSITE_CONTENT_FILETYPE
+from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
 
 
@@ -68,6 +73,49 @@ def get_destination_filepath(
         (content.id, content.text_id),
     )
     return None
+
+
+def sync_starter_configs(
+    repo_url: str, config_files: List[str], commit: Optional[str] = None
+):
+    """
+    Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
+    Return lists of files that succeeded and failed.
+    """
+    repo_path = urlparse(repo_url).path.lstrip("/")
+    org_name, repo_name = repo_path.split("/", 1)
+    git = Github(login_or_token=settings.GIT_TOKEN)
+    org = git.get_organization(org_name)
+    repo = org.get_repo(repo_name)
+
+    for config_file in config_files:
+        try:
+            git_file = repo.get_contents(config_file)
+            slug = (
+                git_file.path.split("/")[0]
+                if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE
+                else repo_name
+            )
+            path = "/".join([repo_url, slug])
+            unique_slug = get_valid_new_slug(slug, path)
+            raw_yaml = git_file.decoded_content
+            validate_raw_site_config(raw_yaml.decode("utf-8"))
+            config = yaml.load(raw_yaml, Loader=yaml.Loader)
+            starter, created = WebsiteStarter.objects.update_or_create(
+                source=STARTER_SOURCE_GITHUB,
+                path=path,
+                defaults={"config": config, "commit": commit, "slug": unique_slug},
+            )
+            # Give the WebsiteStarter a name equal to the slug if created, otherwise keep the current value.
+            if created:
+                starter.name = starter.slug
+                starter.save()
+        except YamaleError as ye:
+            log.exception("Invalid site config YAML found in %s", config_file)
+            continue
+        except:  # pylint: disable=bare-except
+            log.exception("Error processing config file %s", config_file)
+            continue
 
 
 class GithubApiWrapper:

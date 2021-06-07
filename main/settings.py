@@ -629,3 +629,15 @@ GIT_API_URL = get_string(
     description="Base URL of git API",
     required=False,
 )
+GITHUB_WEBHOOK_KEY = get_string(
+    name="GITHUB_WEBHOOK_KEY",
+    default="",
+    description="Github secret key sent by webhook requests",
+    required=False,
+)
+OCW_STUDIO_SITE_CONFIG_FILE = get_string(
+    name="OCW_STUDIO_SITE_CONFIG_FILE",
+    default="ocw-studio.yaml",
+    description="Standard file name for site config files",
+    required=False,
+)

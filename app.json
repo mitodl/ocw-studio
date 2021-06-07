@@ -71,6 +71,10 @@
       "description": "Google analytics tracking ID",
       "required": false
     },
+    "GITHUB_WEBHOOK_KEY": {
+      "description": "Github secret key sent by webhook requests",
+      "required": false
+    },
     "GIT_API_URL": {
       "description": "Base URL of git API",
       "required": false
@@ -204,6 +208,10 @@
     },
     "OCW_STUDIO_SECURE_SSL_REDIRECT": {
       "description": "Application-level SSL redirect setting.",
+      "required": false
+    },
+    "OCW_STUDIO_SITE_CONFIG_FILE": {
+      "description": "Standard file name for site config files",
       "required": false
     },
     "OCW_STUDIO_SITE_ID": {

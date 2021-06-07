@@ -15,6 +15,7 @@ from content_sync.tasks import (
     publish_website_backend,
     sync_all_websites,
     sync_content,
+    sync_github_site_configs,
     sync_website_content,
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
@@ -171,3 +172,12 @@ def test_create_backend_publish(api_mock):
     publish_website_backend(website.name)
     api_mock.get_sync_backend.assert_called_once_with(website)
     api_mock.get_sync_backend.return_value.create_backend_release.assert_called_once()
+
+
+def test_sync_github_site_configs(mocker):
+    """ sync_github_site_configs should call apis.github.sync_starter_configs with same args, kwargs"""
+    mock_git = mocker.patch("content_sync.tasks.github")
+    args = "https://github.com/testorg/testconfigs", ["site1/studio.yaml"]
+    kwargs = {"commit": "abc123"}
+    sync_github_site_configs.delay(*args, **kwargs)
+    mock_git.sync_starter_configs.assert_called_once_with(*args, **kwargs)

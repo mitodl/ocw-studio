@@ -6,7 +6,7 @@ from django.db.models import Q, QuerySet
 from mitol.common.utils import max_or_none
 
 from websites.constants import CONTENT_FILENAME_MAX_LEN
-from websites.models import Website, WebsiteContent
+from websites.models import Website, WebsiteContent, WebsiteStarter
 
 
 def get_valid_new_filename(
@@ -28,11 +28,31 @@ def get_valid_new_filename(
     filename_exists = website_content_qset.filter(filename=filename_base).exists()
     if not filename_exists:
         return filename_base
-    return find_available_filename(website_content_qset, filename_base)
+    return find_available_name(
+        website_content_qset,
+        filename_base,
+        "filename",
+        max_length=CONTENT_FILENAME_MAX_LEN,
+    )
 
 
-def find_available_filename(
-    website_content_qset: QuerySet, initial_filename_base: str
+def get_valid_new_slug(slug_base: str, path: str) -> str:
+    """
+    Given a slug to act as a base/prefix, returns a slug that will satisfy unique constraints,
+    adding/incrementing a numerical suffix as necessary.
+    """
+    starter_qset = WebsiteStarter.objects.exclude(path=path)
+    slug_exists = starter_qset.filter(slug=slug_base).exists()
+    if not slug_exists:
+        return slug_base
+    return find_available_name(starter_qset, slug_base, "slug", max_length=30)
+
+
+def find_available_name(
+    website_content_qset: QuerySet,
+    initial_filename_base: str,
+    fieldname: str,
+    max_length: Optional[int] = CONTENT_FILENAME_MAX_LEN,
 ) -> str:
     """
     Returns a filename with the lowest possible suffix given some base filename. If the applied suffix
@@ -55,37 +75,38 @@ def find_available_filename(
     """
     # Keeps track of the number of characters that must be cut from the filename to be less than
     # the filename max length when the suffix is applied.
-    chars_to_truncate = (
-        0 if len(initial_filename_base) < CONTENT_FILENAME_MAX_LEN else 1
-    )
+    chars_to_truncate = 0 if len(initial_filename_base) < max_length else 1
     # Any query for suffixed filenames could come up empty. The minimum suffix will be added to
     # the filename in that case.
     current_min_suffix = 2
     while chars_to_truncate < len(initial_filename_base):
-        filename_base = initial_filename_base[
+        name_base = initial_filename_base[
             0 : len(initial_filename_base) - chars_to_truncate
         ]
-        # Find filenames that match the filename base and have a numerical suffix, then find the max suffix
-        existing_filenames = website_content_qset.filter(
-            filename__regex=r"{filename_base}[0-9]+".format(filename_base=filename_base)
-        ).values_list("filename", flat=True)
+        kwargs = {
+            f"{fieldname}__regex": r"{name_base}[0-9]+".format(name_base=name_base)
+        }
+        # Find names that match the namebase and have a numerical suffix, then find the max suffix
+        existing_names = website_content_qset.filter(**kwargs).values_list(
+            fieldname, flat=True
+        )
         max_suffix = max_or_none(
-            int(filename[len(filename_base) :]) for filename in existing_filenames
+            int(filename[len(name_base) :]) for filename in existing_names
         )
         if max_suffix is None:
-            return "".join([filename_base, str(current_min_suffix)])
+            return "".join([name_base, str(current_min_suffix)])
         else:
             next_suffix = max_suffix + 1
-            candidate_filename = "".join([filename_base, str(next_suffix)])
+            candidate_name = "".join([name_base, str(next_suffix)])
             # If the next suffix adds a digit and causes the filename to exceed the character limit,
             # keep searching.
-            if len(candidate_filename) <= CONTENT_FILENAME_MAX_LEN:
-                return candidate_filename
+            if len(candidate_name) <= max_length:
+                return candidate_name
         # At this point, we know there are no suffixes left to add to this filename base that was tried,
         # so we will need to remove characters from the end of that filename base to make room for a longer
         # suffix.
         chars_to_truncate = chars_to_truncate + 1
-        available_suffix_digits = CONTENT_FILENAME_MAX_LEN - (
+        available_suffix_digits = max_length - (
             len(initial_filename_base) - chars_to_truncate
         )
         # If there is space for 4 digits for the suffix, the minimum value it could be is 1000, or 10^3

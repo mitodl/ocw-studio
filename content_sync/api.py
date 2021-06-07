@@ -1,5 +1,6 @@
 """ Syncing API """
 import logging
+from typing import List, Optional
 
 from django.conf import settings
 from django.utils.module_loading import import_string
@@ -55,3 +56,11 @@ def preview_website(website: Website):
 def publish_website(website: Website):
     """ Publish the website on the backend"""
     tasks.publish_website_backend.delay(website.name)
+
+
+def sync_github_website_starters(
+    url: str, files: List[str], commit: Optional[str] = None
+):
+    """ Sync website starters from github """
+    if settings.GIT_TOKEN:
+        tasks.sync_github_site_configs.delay(url, files, commit=commit)
