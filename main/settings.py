@@ -20,7 +20,7 @@ from mitol.common.envs import (
 from main.sentry import init_sentry
 
 
-VERSION = "0.16.2"
+VERSION = "0.16.3"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",

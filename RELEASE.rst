@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.16.3
+--------------
+
+- Do not use git token in sync_starter_configs function (read-only from public repo) (#313)
+- don't fail build if coverage upload doesn't work
+- API endpoint for creating/updating starters from github webhooks (#297)
+- Restrict routes not used to login or view home page (#299)
+
 Version 0.16.2 (Released June 09, 2021)
 --------------
 
