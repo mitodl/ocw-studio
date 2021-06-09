@@ -84,7 +84,7 @@ def sync_starter_configs(
     """
     repo_path = urlparse(repo_url).path.lstrip("/")
     org_name, repo_name = repo_path.split("/", 1)
-    git = Github(login_or_token=settings.GIT_TOKEN)
+    git = Github()
     org = git.get_organization(org_name)
     repo = org.get_repo(repo_name)
 
