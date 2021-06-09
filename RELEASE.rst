@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.16.3
+--------------
+
+- don't fail build if coverage upload doesn't work
+- API endpoint for creating/updating starters from github webhooks (#297)
+- Restrict routes not used to login or view home page (#299)
+
 Version 0.16.2 (Released June 09, 2021)
 --------------
 
