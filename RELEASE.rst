@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.16.2
+Version 0.16.2 (Released June 09, 2021)
 --------------
 
 - upgrade jest and a few other things
