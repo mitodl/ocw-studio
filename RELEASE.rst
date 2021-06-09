@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.16.3
+Version 0.16.3 (Released June 09, 2021)
 --------------
 
 - Do not use git token in sync_starter_configs function (read-only from public repo) (#313)
