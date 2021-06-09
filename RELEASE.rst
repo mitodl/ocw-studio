@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.16.2 (Released June 09, 2021)
+--------------
+
+- upgrade jest and a few other things
+- Bump nokogiri from 1.11.1 to 1.11.4 in /docs (#277)
+- Update publish_date when published (#290)
+- Added management commands for syncing sites to and from backend
+
 Version 0.16.1 (Released June 02, 2021)
 --------------
 
