@@ -263,12 +263,30 @@ class WebsiteContentCreateSerializer(
         ]
 
 
-class WebsiteCollectionSerializer(serializers.ModelSerializer):
+class WebsiteCollectionSerializer(
+    serializers.ModelSerializer, RequestUserSerializerMixin
+):
     """Serializer for WebsiteCollections"""
+
+    def create(self, validated_data):
+        """need to override to set owner"""
+        validated_data["owner"] = self.user_from_request()
+        with transaction.atomic():
+            collection = super().create(validated_data)
+        return collection
+
+    def update(self, instance, validated_data):
+        """gotta pop out owner if it's there"""
+        validated_data.pop("owner", None)
+        with transaction.atomic():
+            collection = super().update(instance, validated_data)
+        return collection
 
     class Meta:
         model = WebsiteCollection
-        fields = ["title", "description"]
+        read_only_fields = ["id"]
+        fields = read_only_fields + ["title", "description"]
+        extra_kwargs = {"owner": {"write_only": True}}
 
 
 class WebsiteCollectionItemSerializer(serializers.ModelSerializer):
@@ -276,11 +294,14 @@ class WebsiteCollectionItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WebsiteCollectionItem
-        fields = ["position", "website_collection", "website"]
+        read_only_fields = ["website_collection", "id"]
+        fields = read_only_fields + ["position", "website"]
         extra_kwargs = {"position": {"required": False}}
 
     def create(self, validated_data):
-        website_collection = validated_data["website_collection"]
+        website_collection = WebsiteCollection.objects.get(
+            id=self.website_collection_id
+        )
         items = WebsiteCollectionItem.objects.filter(
             website_collection=website_collection
         )
@@ -288,11 +309,16 @@ class WebsiteCollectionItemSerializer(serializers.ModelSerializer):
             items.aggregate(Max("position"))["position__max"] or items.count()
         ) + 1
         item, _ = WebsiteCollectionItem.objects.get_or_create(
-            website_collection=validated_data["website_collection"],
+            website_collection=website_collection,
             website=validated_data["website"],
             defaults={"position": position},
         )
         return item
+
+    @property
+    def website_collection_id(self):
+        """get the collection id"""
+        return self.context["website_collection_id"]
 
     def update(self, instance, validated_data):
         """this position update algorithm is copied over from user lists in
@@ -312,12 +338,16 @@ class WebsiteCollectionItemSerializer(serializers.ModelSerializer):
             if new_position > instance.position:
                 # move items between the old and new positions up, inclusive of the new position
                 WebsiteCollectionItem.objects.filter(
-                    position__lte=new_position, position__gt=instance.position
+                    website_collection=self.website_collection_id,
+                    position__lte=new_position,
+                    position__gt=instance.position,
                 ).update(position=F("position") - 1)
             else:
                 # move items between the old and new positions down, inclusive of the new position
                 WebsiteCollectionItem.objects.filter(
-                    position__lt=instance.position, position__gte=new_position
+                    website_collection=self.website_collection_id,
+                    position__lt=instance.position,
+                    position__gte=new_position,
                 ).update(position=F("position") + 1)
             # now move the item into place
             instance.position = new_position

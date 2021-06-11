@@ -28,6 +28,16 @@ router.register(
     r"starters", views.WebsiteStarterViewSet, basename="website_starters_api"
 )
 
+collections_route = router.register(
+    r"collections", views.WebsiteCollectionViewSet, basename="website_collection_api"
+)
+collections_route.register(
+    "items",
+    views.WebsiteCollectionItemViewSet,
+    basename="website_collection_item_api",
+    parents_query_lookups=["collection"],
+)
+
 urlpatterns = [
     url(r"^api/", include(router.urls)),
 ]

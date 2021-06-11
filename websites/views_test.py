@@ -15,12 +15,20 @@ from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from websites import constants
 from websites.factories import (
+    WebsiteCollectionFactory,
+    WebsiteCollectionItemFactory,
     WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
 )
-from websites.models import Website, WebsiteContent
+from websites.models import (
+    Website,
+    WebsiteCollection,
+    WebsiteCollectionItem,
+    WebsiteContent,
+)
 from websites.serializers import (
+    WebsiteCollectionItemSerializer,
     WebsiteContentDetailSerializer,
     WebsiteDetailSerializer,
     WebsiteStarterDetailSerializer,
@@ -712,3 +720,241 @@ def test_websites_content_create_empty(drf_client, global_admin_user):
     )
     assert resp.status_code == 400
     assert "This field is required" in resp.data["type"][0]
+
+
+def test_website_collection_create(drf_client, global_admin_user):
+    """Test that we can create a new collection"""
+    drf_client.force_login(global_admin_user)
+    payload = {
+        "title": "My Amazing Collection of Websites",
+        "description": "A mediocre website collection :/",
+    }
+    resp = drf_client.post(
+        reverse(
+            "website_collection_api-list",
+        ),
+        data=payload,
+    )
+    assert resp.status_code == status.HTTP_201_CREATED
+    collection = WebsiteCollection.objects.last()
+    assert collection.title == payload["title"]
+    assert collection.description == payload["description"]
+    assert collection.owner == global_admin_user
+
+
+def test_website_collection_update(drf_client, global_admin_user):
+    """Test that we can update a collection"""
+    collection = WebsiteCollectionFactory.create()
+    drf_client.force_login(global_admin_user)
+    payload = {
+        "title": "My Amazing Edited Collection",
+        "description": "A mediocre website collection :/",
+    }
+    resp = drf_client.patch(
+        reverse("website_collection_api-detail", kwargs={"id": collection.id}),
+        data=payload,
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    collection.refresh_from_db()
+    assert collection.title == payload["title"]
+    assert collection.description == payload["description"]
+
+
+def test_website_collection_create_anon(drf_client):
+    """test that anon is blocked"""
+    payload = {
+        "title": "My Amazing Collection of Websites",
+        "description": "A mediocre website collection :/",
+    }
+    resp = drf_client.post(
+        reverse(
+            "website_collection_api-list",
+        ),
+        data=payload,
+    )
+    assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_website_collection_anonymous_get(drf_client):
+    """that an anonymous user can GET info about a collection"""
+    collection = WebsiteCollectionFactory.create()
+    resp = drf_client.get(
+        reverse("website_collection_api-detail", kwargs={"id": collection.id})
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == {
+        "title": collection.title,
+        "description": collection.description,
+        "id": collection.id,
+    }
+
+
+def test_website_collection_anon_non_owner_delete(drf_client):
+    """anons and non-admins can't delete!"""
+    collection = WebsiteCollectionFactory.create()
+    for user in (None, UserFactory.create()):
+        if user:
+            drf_client.force_login(user)
+        resp = drf_client.delete(
+            reverse("website_collection_api-detail", kwargs={"id": collection.id})
+        )
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_website_collection_delete(drf_client, global_admin_user):
+    """admin should be able to delete"""
+    collection = WebsiteCollectionFactory.create(owner=global_admin_user)
+    drf_client.force_login(global_admin_user)
+    resp = drf_client.delete(
+        reverse("website_collection_api-detail", kwargs={"id": collection.id})
+    )
+    assert resp.status_code == status.HTTP_204_NO_CONTENT
+
+
+def test_website_collection_item_add(drf_client, global_admin_user):
+    """test that we can add an item to a website collection"""
+    collection = WebsiteCollectionFactory.create()
+    website = WebsiteFactory.create()
+    drf_client.force_login(global_admin_user)
+
+    payload = {"website": website.uuid}
+    resp = drf_client.post(
+        reverse(
+            "website_collection_item_api-list",
+            kwargs={
+                "parent_lookup_collection": collection.id,
+            },
+        ),
+        data=payload,
+    )
+    assert resp.status_code == status.HTTP_201_CREATED
+    assert (
+        WebsiteCollectionItem.objects.filter(website_collection=collection).count() == 1
+    )
+
+
+def test_website_collection_item_delete_anon(drf_client):
+    """anons and non-admins shouldn't be able to delete"""
+    item = WebsiteCollectionItemFactory.create()
+    for user in (None, UserFactory.create()):
+        if user:
+            drf_client.force_login(user)
+        resp = drf_client.delete(
+            reverse(
+                "website_collection_item_api-detail",
+                kwargs={
+                    "parent_lookup_collection": item.website_collection.id,
+                    "pk": item.id,
+                },
+            )
+        )
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_website_collection_item_delete_admin(drf_client, global_admin_user):
+    """admin should be able to delete"""
+    item = WebsiteCollectionItemFactory.create()
+    drf_client.force_login(global_admin_user)
+    resp = drf_client.delete(
+        reverse(
+            "website_collection_item_api-detail",
+            kwargs={
+                "parent_lookup_collection": item.website_collection.id,
+                "pk": item.id,
+            },
+        )
+    )
+    assert resp.status_code == status.HTTP_204_NO_CONTENT
+
+
+def test_website_collection_item_add_anon(drf_client):
+    """test that anon is blocked"""
+    collection = WebsiteCollectionFactory.create()
+    website = WebsiteFactory.create()
+    payload = {"website": website.uuid, "website_collection": collection.id}
+    resp = drf_client.post(
+        reverse(
+            "website_collection_item_api-list",
+            kwargs={
+                "parent_lookup_collection": collection.id,
+            },
+        ),
+        data=payload,
+    )
+    assert resp.status_code == status.HTTP_403_FORBIDDEN
+    assert (
+        WebsiteCollectionItem.objects.filter(website_collection=collection).count() == 0
+    )
+
+
+def test_website_collection_item_reorder(drf_client, global_admin_user):
+    """test that the logic for reordering items works correctly"""
+    drf_client.force_login(global_admin_user)
+    collection = WebsiteCollectionFactory.create()
+    one = WebsiteCollectionItemFactory.create(website_collection=collection, position=0)
+    two = WebsiteCollectionItemFactory.create(website_collection=collection, position=1)
+    three = WebsiteCollectionItemFactory.create(
+        website_collection=collection, position=2
+    )
+    four = WebsiteCollectionItemFactory.create(
+        website_collection=collection, position=3
+    )
+
+    # move 'four' to the first position (index 0)
+    resp = drf_client.patch(
+        reverse(
+            "website_collection_item_api-detail",
+            kwargs={"parent_lookup_collection": collection.id, "pk": four.id},
+        ),
+        data={"position": 0},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert list(
+        WebsiteCollectionItem.objects.filter(website_collection=collection).order_by(
+            "position"
+        )
+    ) == [four, one, two, three]
+
+    # move 'four' up to the third position (index 2)
+    resp = drf_client.patch(
+        reverse(
+            "website_collection_item_api-detail",
+            kwargs={"parent_lookup_collection": collection.id, "pk": four.id},
+        ),
+        data={"position": 2},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert list(
+        WebsiteCollectionItem.objects.filter(website_collection=collection).order_by(
+            "position"
+        )
+    ) == [one, two, four, three]
+
+
+def test_website_collection_items_get(drf_client):
+    """test that we can get items in a collection"""
+    collection = WebsiteCollectionFactory.create()
+    one = WebsiteCollectionItemFactory.create(website_collection=collection, position=0)
+    two = WebsiteCollectionItemFactory.create(website_collection=collection, position=1)
+    three = WebsiteCollectionItemFactory.create(
+        website_collection=collection, position=2
+    )
+    four = WebsiteCollectionItemFactory.create(
+        website_collection=collection, position=3
+    )
+    # creating this item to ensure that other items aren't
+    # included in the response
+    WebsiteCollectionItemFactory.create()
+
+    # move 'four' to the first position (index 0)
+    resp = drf_client.get(
+        reverse(
+            "website_collection_item_api-list",
+            kwargs={"parent_lookup_collection": collection.id},
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert (
+        resp.data["results"]
+        == WebsiteCollectionItemSerializer([one, two, three, four], many=True).data
+    )

@@ -9,6 +9,7 @@ from django.contrib.auth.models import Group
 from users.factories import UserFactory
 from websites import constants
 from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.permissions import create_global_groups
 
 
 # pylint:disable=redefined-outer-name
@@ -50,6 +51,7 @@ def permission_groups():
 @pytest.fixture()
 def global_admin_user():
     """Returns a user with global admin permissions"""
+    create_global_groups()
     global_admin_user = UserFactory.create()
     global_admin_user.groups.add(Group.objects.get(name=constants.GLOBAL_ADMIN))
     return global_admin_user

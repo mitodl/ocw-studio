@@ -21,6 +21,13 @@ class Command(BaseCommand):
             help="If specified, only process websites that contain this filter text in their name",
         )
 
+        parser.add_argument(
+            "--only-global",
+            dest="only-global",
+            action="store_true",
+            help=("If true, only update global groups"),
+        )
+
     def handle(self, *args, **options):
 
         self.stdout.write(f"Creating website permission groups")
@@ -41,30 +48,33 @@ class Command(BaseCommand):
                 f"Global groups: created {created} groups, updated {updated} groups"
             )
 
-        if filter_str:
-            website_qset = Website.objects.filter(
-                Q(name__icontains=filter_str) | Q(title__icontains=filter_str)
-            )
-        else:
-            website_qset = Website.objects.all()
-        for website in website_qset.iterator():
-            created, updated, owner_updated = setup_website_groups_permissions(website)
-            total_websites += 1
-            total_created += created
-            total_updated += updated
-            total_owners += 1 if owner_updated else 0
-
-            if is_verbose:
-                self.stdout.write(
-                    f"{website.name} groups: created {created}, updated {updated}, owner updated: {str(owner_updated)}"
+        if not options["only-global"]:
+            if filter_str:
+                website_qset = Website.objects.filter(
+                    Q(name__icontains=filter_str) | Q(title__icontains=filter_str)
                 )
+            else:
+                website_qset = Website.objects.all()
+            for website in website_qset.iterator():
+                created, updated, owner_updated = setup_website_groups_permissions(
+                    website
+                )
+                total_websites += 1
+                total_created += created
+                total_updated += updated
+                total_owners += 1 if owner_updated else 0
 
-        total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(
-            "Creation of website permission groups finished, took {} seconds".format(
-                total_seconds
+                if is_verbose:
+                    self.stdout.write(
+                        f"{website.name} groups: created {created}, updated {updated}, owner updated: {str(owner_updated)}"
+                    )
+
+            total_seconds = (now_in_utc() - start).total_seconds()
+            self.stdout.write(
+                "Creation of website permission groups finished, took {} seconds".format(
+                    total_seconds
+                )
             )
-        )
-        self.stdout.write(
-            f"{total_websites} websites processed, {total_created} groups created, {total_updated} groups updated, {total_owners} updated"
-        )
+            self.stdout.write(
+                f"{total_websites} websites processed, {total_created} groups created, {total_updated} groups updated, {total_owners} updated"
+            )

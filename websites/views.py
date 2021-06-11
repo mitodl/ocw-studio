@@ -29,9 +29,17 @@ from main.views import DefaultPagination
 from users.models import User
 from websites import constants
 from websites.api import get_valid_new_filename
-from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.models import (
+    Website,
+    WebsiteCollection,
+    WebsiteCollectionItem,
+    WebsiteContent,
+    WebsiteStarter,
+)
 from websites.permissions import (
     HasWebsiteCollaborationPermission,
+    HasWebsiteCollectionItemPermission,
+    HasWebsiteCollectionPermission,
     HasWebsiteContentPermission,
     HasWebsitePermission,
     HasWebsitePreviewPermission,
@@ -40,6 +48,8 @@ from websites.permissions import (
 )
 from websites.serializers import (
     WebsiteCollaboratorSerializer,
+    WebsiteCollectionItemSerializer,
+    WebsiteCollectionSerializer,
     WebsiteContentCreateSerializer,
     WebsiteContentDetailSerializer,
     WebsiteContentSerializer,
@@ -373,3 +383,38 @@ class WebsiteContentViewSet(
         )  # this actually performs a save() because it's a soft delete
         update_website_backend(instance.website)
         return instance
+
+
+class WebsiteCollectionViewSet(
+    viewsets.ModelViewSet,
+):
+    """Viewset for WebsiteCollections"""
+
+    permission_classes = (HasWebsiteCollectionPermission,)
+    pagination_class = DefaultPagination
+    serializer_class = WebsiteCollectionSerializer
+    lookup_field = "id"
+
+    def get_queryset(self):
+        return WebsiteCollection.objects.all()
+
+
+class WebsiteCollectionItemViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
+    """Viewset for WebsiteCollectionItems"""
+
+    permission_classes = (HasWebsiteCollectionItemPermission,)
+    pagination_class = DefaultPagination
+    serializer_class = WebsiteCollectionItemSerializer
+
+    def get_serializer_context(self):
+        added_context = {
+            "website_collection_id": self.kwargs.get("parent_lookup_collection")
+        }
+        return {**super().get_serializer_context(), **added_context}
+
+    def get_queryset(self):
+        parent_lookup_collection = self.kwargs.get("parent_lookup_collection")
+        queryset = WebsiteCollectionItem.objects.filter(
+            website_collection__id=parent_lookup_collection
+        )
+        return queryset.order_by("position")

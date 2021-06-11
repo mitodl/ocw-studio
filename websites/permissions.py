@@ -124,7 +124,9 @@ def create_global_groups():
     if author_created:
         groups_created += 1
 
-    global_perms = constants.PERMISSIONS_GLOBAL_AUTHOR
+    global_perms = (
+        constants.PERMISSIONS_GLOBAL_AUTHOR + constants.COLLECTION_PERMISSIONS
+    )
     if (
         assign_website_permissions(
             admin_group, global_perms + constants.PERMISSIONS_ADMIN
@@ -207,6 +209,46 @@ class HasWebsitePermission(BasePermission):
         elif request.method == "PATCH":
             return check_perm(user, constants.PERMISSION_EDIT, obj)
         return False
+
+
+class HasWebsiteCollectionPermission(BasePermission):
+    """Permission for WebsiteCollections
+    These should be readable from a public API (we may need to fetch
+    them during the hugo build) but should only be editable by
+    those granted permissions for them.
+    """
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            # these should be publically viewable
+            return True
+        if request.method == "POST":
+            return request.user.has_perm(constants.PERMISSION_CREATE_COLLECTION)
+        if request.method == "PATCH" or request.method == "PUT":
+            return request.user.has_perm(constants.PERMISSION_EDIT_COLLECTION)
+        if request.method == "DELETE":
+            return request.user.has_perm(constants.PERMISSION_DELETE_COLLECTION)
+        return request.user.is_authenticated
+
+
+class HasWebsiteCollectionItemPermission(BasePermission):
+    """Permission for WebsiteCollectionItems
+    These should be readable from a public API (we may need to fetch
+    them during the hugo build) but should only be editable by
+    those granted permissions for them.
+    """
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            # these should be publically viewable
+            return True
+        if request.method == "POST":
+            return request.user.has_perm(constants.PERMISSION_CREATE_COLLECTION_ITEM)
+        if request.method == "PATCH" or request.method == "PUT":
+            return request.user.has_perm(constants.PERMISSION_EDIT_COLLECTION_ITEM)
+        if request.method == "DELETE":
+            return request.user.has_perm(constants.PERMISSION_DELETE_COLLECTION_ITEM)
+        return request.user.is_authenticated
 
 
 class HasWebsiteContentPermission(BasePermission):

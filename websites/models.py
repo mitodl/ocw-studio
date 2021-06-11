@@ -268,6 +268,7 @@ class WebsiteCollection(TimestampedModel):
     description = models.TextField(
         null=True, blank=True, help_text="A description for the WebsiteCollection"
     )
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
 
     def __str__(self):
         return f"WebsiteCollection '{self.title}'"

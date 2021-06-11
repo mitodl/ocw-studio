@@ -279,6 +279,7 @@ def test_website_collection_serializer():
     serialized_data = WebsiteCollectionSerializer(instance=website_collection).data
     assert serialized_data["title"] == website_collection.title
     assert serialized_data["description"] == website_collection.description
+    assert serialized_data["id"] == website_collection.id
 
 
 def test_website_collection_item_serializer():
@@ -290,6 +291,7 @@ def test_website_collection_item_serializer():
     assert serialized_data["position"] == item.position
     assert serialized_data["website_collection"] == item.website_collection.id
     assert serialized_data["website"] == item.website.uuid
+    assert serialized_data["id"] == item.id
 
 
 def test_website_collection_item_create():
@@ -308,8 +310,13 @@ def test_website_collection_item_create():
     )
     website = WebsiteFactory.create()
 
-    payload = {"website": website.uuid, "website_collection": website_collection.id}
-    serializer = WebsiteCollectionItemSerializer(data=payload)
+    payload = {"website": website.uuid}
+    serializer = WebsiteCollectionItemSerializer(
+        data=payload,
+        context={
+            "website_collection_id": website_collection.id,
+        },
+    )
     serializer.is_valid(raise_exception=True)
     serializer.save()
     item = WebsiteCollectionItem.objects.get(
@@ -346,10 +353,10 @@ def test_website_collection_item_update():
     serializer = WebsiteCollectionItemSerializer(
         data={
             "position": 1,
-            "website_collection": website_collection.id,
             "website": five.website.uuid,
         },
         instance=five,
+        context={"website_collection_id": website_collection.id},
     )
     serializer.is_valid(raise_exception=True)
     serializer.save()
@@ -364,10 +371,10 @@ def test_website_collection_item_update():
     serializer = WebsiteCollectionItemSerializer(
         data={
             "position": 4,
-            "website_collection": website_collection.id,
             "website": five.website.uuid,
         },
         instance=five,
+        context={"website_collection_id": website_collection.id},
     )
     serializer.is_valid(raise_exception=True)
     serializer.save()
