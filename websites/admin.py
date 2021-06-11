@@ -9,7 +9,13 @@ from safedelete.admin import SafeDeleteAdmin, highlight_deleted
 
 from main.admin import JsonOrYamlField, PrettyJSONWidget, WhitespaceErrorList
 from websites.config_schema.api import validate_parsed_site_config
-from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.models import (
+    Website,
+    WebsiteCollection,
+    WebsiteCollectionItem,
+    WebsiteContent,
+    WebsiteStarter,
+)
 
 
 class WebsiteAdmin(TimestampedModelAdmin, GuardedModelAdmin):
@@ -101,6 +107,20 @@ class WebsiteStarterAdmin(TimestampedModelAdmin):
     search_fields = ("name", "path")
 
 
+class WebsiteCollectionAdmin(TimestampedModelAdmin):
+    """WebsiteCollectionAdmin"""
+
+    model = WebsiteCollection
+
+
+class WebsiteCollectionItemAdmin(TimestampedModelAdmin):
+    """WebsiteCollectionItemAdmin"""
+
+    model = WebsiteCollectionItem
+
+
 admin.site.register(Website, WebsiteAdmin)
 admin.site.register(WebsiteContent, WebsiteContentAdmin)
 admin.site.register(WebsiteStarter, WebsiteStarterAdmin)
+admin.site.register(WebsiteCollection, WebsiteCollectionAdmin)
+admin.site.register(WebsiteCollectionItem, WebsiteCollectionItemAdmin)
