@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Formik, Form, ErrorMessage, Field, FormikHelpers } from "formik"
 import * as yup from "yup"
+import slugify from "slugify"
 
 import { FormError } from "./FormError"
 
@@ -9,6 +10,7 @@ import SelectField from "../widgets/SelectField"
 
 export interface SiteFormValues {
   title: string
+  name: string
   starter: number | null
 }
 
@@ -26,8 +28,24 @@ export const websiteValidation = yup.object().shape({
     .label("Title")
     .trim()
     .required(),
+  name: yup
+    .string()
+    .label("URL")
+    .trim()
+    .matches(/^[a-z0-9-]*$/, {
+      message: "Must be lowercase & only include letters (a-z), numbers, dashes"
+    })
+    .required(),
   starter: yup.number().required()
 })
+
+const handleTitleChange = (handler: any) => (e: any) => {
+  const { target } = e
+  const { value } = target
+  const computedValue = slugify(value, { strict: true }).toLowerCase()
+  handler({ target })
+  handler({ target: { name: "name", value: computedValue } })
+}
 
 export const SiteForm = ({
   onSubmit,
@@ -35,6 +53,7 @@ export const SiteForm = ({
 }: Props): JSX.Element | null => {
   const initialValues: SiteFormValues = {
     title:   "",
+    name:    "",
     starter: websiteStarters.length > 0 ? websiteStarters[0].id : 0
   }
 
@@ -44,12 +63,22 @@ export const SiteForm = ({
       validationSchema={websiteValidation}
       initialValues={initialValues}
     >
-      {({ isSubmitting, status }) => (
+      {({ isSubmitting, handleChange, status }) => (
         <Form>
           <div className="form-group">
             <label htmlFor="title">Title*</label>
-            <Field type="text" name="title" className="form-control" />
+            <Field
+              type="text"
+              name="title"
+              className="form-control"
+              onChange={handleTitleChange(handleChange)}
+            />
             <ErrorMessage name="title" component={FormError} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="name">URL*</label>
+            <Field type="text" name="name" className="form-control" />
+            <ErrorMessage name="name" component="div" />
           </div>
           <div className="form-group">
             <label htmlFor="starter">Starter*</label>
