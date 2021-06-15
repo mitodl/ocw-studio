@@ -224,7 +224,6 @@ class WebsiteStarter(TimestampedModel):
     slug = models.CharField(
         max_length=30,
         null=False,
-        unique=True,
         help_text="Short string that can be used to identify this starter.",
         validators=[validate_slug],
     )
@@ -248,6 +247,11 @@ class WebsiteStarter(TimestampedModel):
     config = models.JSONField(
         null=False, help_text="Site config describing content types, widgets, etc."
     )
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(name="unique_repo_slug", fields=["path", "slug"]),
+        ]
 
     def __str__(self):
         return f"name='{self.name}', source={self.source}, commit={self.commit}"

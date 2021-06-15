@@ -17,16 +17,17 @@ from github.Repository import Repository
 from safedelete.models import HARD_DELETE
 from yamale import YamaleError
 
+from content_sync.backends.base import SITE_CONFIG_FILENAME
 from content_sync.decorators import retry_on_failure
 from content_sync.models import ContentSyncState
 from content_sync.serializers import serialize_content_to_file
 from main import features
 from users.models import User
-from websites.api import get_valid_new_slug
 from websites.config_schema.api import validate_raw_site_config
 from websites.constants import STARTER_SOURCE_GITHUB, WEBSITE_CONTENT_FILETYPE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
+from websites.utils import format_site_config_env
 
 
 log = logging.getLogger(__name__)
@@ -110,14 +111,13 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
                 else repo_name
             )
             path = "/".join([repo_url, slug])
-            unique_slug = get_valid_new_slug(slug, path)
             raw_yaml = git_file.decoded_content
             validate_raw_site_config(raw_yaml.decode("utf-8"))
             config = yaml.load(raw_yaml, Loader=yaml.Loader)
             starter, created = WebsiteStarter.objects.update_or_create(
                 source=STARTER_SOURCE_GITHUB,
                 path=path,
-                defaults={"config": config, "commit": commit, "slug": unique_slug},
+                defaults={"config": config, "commit": commit, "slug": slug},
             )
             # Give the WebsiteStarter a name equal to the slug if created, otherwise keep the current value.
             if created:
@@ -177,7 +177,7 @@ class GithubApiWrapper:
         """
         try:
             self.repo = self.org.create_repo(
-                self.get_repo_name(), auto_init=True, **kwargs
+                self.get_repo_name(), auto_init=False, **kwargs
             )
         except GithubException as ge:
             if ge.status == 422:
@@ -186,6 +186,7 @@ class GithubApiWrapper:
                 log.debug("Repo already exists: %s", self.website.name)
         if self.repo.default_branch != settings.GIT_BRANCH_MAIN:
             self.rename_branch(self.repo.default_branch, settings.GIT_BRANCH_MAIN)
+        self.upsert_site_config_file()
         existing_branches = [branch.name for branch in self.repo.get_branches()]
         for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
             if branch not in existing_branches:
@@ -417,3 +418,27 @@ class GithubApiWrapper:
         )
         main_ref.edit(commit.sha)
         return commit
+
+    def upsert_site_config_file(self, commit_msg="Initial commit"):
+        """ Create the initial commit for a new website """
+        git_user = self.git_user(self.website.owner)
+        try:
+            sha = self.repo.get_contents(SITE_CONFIG_FILENAME).sha
+        except:  # pylint:disable=bare-except
+            # Create the file
+            return self.repo.create_file(
+                SITE_CONFIG_FILENAME,
+                commit_msg,
+                format_site_config_env(self.website),
+                committer=git_user,
+                author=git_user,
+            )
+        # Update the file
+        return self.repo.update_file(
+            SITE_CONFIG_FILENAME,
+            commit_msg,
+            format_site_config_env(self.website),
+            sha,
+            committer=git_user,
+            author=git_user,
+        )

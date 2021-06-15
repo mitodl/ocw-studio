@@ -13,6 +13,7 @@ from content_sync.apis.github import (
     get_destination_filepath,
     sync_starter_configs,
 )
+from content_sync.backends.base import SITE_CONFIG_FILENAME
 from main import features
 from users.factories import UserFactory
 from websites.constants import STARTER_SOURCE_GITHUB
@@ -23,6 +24,7 @@ from websites.factories import (
 )
 from websites.models import WebsiteContent, WebsiteStarter
 from websites.site_config_api import ConfigItem, SiteConfig
+from websites.utils import format_site_config_env
 
 
 pytestmark = pytest.mark.django_db
@@ -487,7 +489,7 @@ def test_create_repo_new(mocker, mock_api_wrapper, mock_branches):
     )
     new_repo = mock_api_wrapper.create_repo()
     mock_api_wrapper.org.create_repo.assert_called_once_with(
-        mock_api_wrapper.get_repo_name(), auto_init=True
+        mock_api_wrapper.get_repo_name(), auto_init=False
     )
     for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
         new_repo.create_git_ref.assert_any_call(f"refs/heads/{branch}", sha=mocker.ANY)
@@ -710,4 +712,36 @@ def test_sync_starter_configs_webhook_branch_hash_match(mocker, mock_github):
     for config_file in config_filenames:
         mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.assert_any_call(
             config_file, fake_commit
+        )
+
+
+@pytest.mark.parametrize("file_exists", [True, False])
+def test_upsert_site_config_file(mocker, settings, mock_api_wrapper, file_exists):
+    """upsert_site_config_file should make a git api call to create or update a new file"""
+    settings.CONTENT_SYNC_RETRIES = 0
+    mock_api_wrapper.repo = mocker.Mock()
+    if file_exists:
+        mock_api_wrapper.repo.get_contents.return_value.sha.return_value = hashlib.sha1(
+            b"fake_sha"
+        )
+        mock_api_wrapper.upsert_site_config_file(commit_msg="Second commit")
+        mock_api_wrapper.repo.update_file.assert_called_once_with(
+            SITE_CONFIG_FILENAME,
+            "Second commit",
+            format_site_config_env(mock_api_wrapper.website),
+            mock_api_wrapper.repo.get_contents.return_value.sha,
+            committer=mocker.ANY,
+            author=mocker.ANY,
+        )
+    else:
+        mock_api_wrapper.repo.get_contents.side_effect = GithubException(
+            status=400, data={}
+        )
+        mock_api_wrapper.upsert_site_config_file()
+        mock_api_wrapper.repo.create_file.assert_called_once_with(
+            SITE_CONFIG_FILENAME,
+            "Initial commit",
+            format_site_config_env(mock_api_wrapper.website),
+            committer=mocker.ANY,
+            author=mocker.ANY,
         )

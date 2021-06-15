@@ -9,7 +9,7 @@ from github.Repository import Repository
 from safedelete.models import HARD_DELETE
 
 from content_sync.apis.github import GithubApiWrapper, decode_file_contents
-from content_sync.backends.base import BaseSyncBackend
+from content_sync.backends.base import SITE_CONFIG_FILENAME, BaseSyncBackend
 from content_sync.decorators import check_sync_state
 from content_sync.models import ContentSyncState
 from content_sync.serializers import deserialize_file_to_website_content
@@ -24,7 +24,7 @@ class GithubBackend(BaseSyncBackend):
     Github backend
     """
 
-    IGNORED_PATHS = {"README.md"}
+    IGNORED_PATHS = {"README.md", SITE_CONFIG_FILENAME}
 
     def __init__(self, website: Website):
         """ Initialize the Github API backend for a specific website"""

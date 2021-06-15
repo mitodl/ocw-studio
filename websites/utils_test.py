@@ -2,8 +2,8 @@
 import pytest
 
 from websites import constants
-from websites.factories import WebsiteFactory
-from websites.utils import permissions_group_name_for_role
+from websites.factories import WebsiteFactory, WebsiteStarterFactory
+from websites.utils import format_site_config_env, permissions_group_name_for_role
 
 
 @pytest.mark.parametrize(
@@ -41,3 +41,14 @@ def test_permissions_group_for_role_invalid(role):
     with pytest.raises(ValueError) as exc:
         permissions_group_name_for_role(role, website)
     assert exc.value.args == (f"Invalid role for a website group: {role}",)
+
+
+def test_format_site_config_env():
+    """format_site_config_json should create a string with expected values"""
+    starter = WebsiteStarterFactory.build(
+        path="https://github.com/my/config", slug="config1", source="github"
+    )
+    website = WebsiteFactory.build(starter=starter, name="my-website")
+    assert format_site_config_env(website) == (
+        "CONFIG_PATH=https://github.com/my/config\nCONFIG_SLUG=config1\nSITE_SLUG=my-website"
+    )

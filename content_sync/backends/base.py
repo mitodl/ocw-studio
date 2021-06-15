@@ -7,6 +7,9 @@ from websites.models import Website
 from websites.site_config_api import SiteConfig
 
 
+SITE_CONFIG_FILENAME = "site_config.env"
+
+
 class BaseSyncBackend(abc.ABC):
     """ Base class for syncing backends """
 
