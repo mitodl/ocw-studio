@@ -50,6 +50,7 @@ def websites(course_starter):
     """ Create some websites for tests """
     courses = WebsiteFactory.create_batch(3, published=True, starter=course_starter)
     noncourses = WebsiteFactory.create_batch(2, published=True)
+    WebsiteFactory.create(published=True, starter=course_starter, metadata=None)
     WebsiteFactory.create(unpublished=True, starter=course_starter)
     WebsiteFactory.create(future_publish=True)
     return SimpleNamespace(courses=courses, noncourses=noncourses)

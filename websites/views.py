@@ -86,6 +86,8 @@ class WebsiteViewSet(
             ordering = "-publish_date"
             queryset = Website.objects.filter(
                 publish_date__lte=now_in_utc(),
+                # Replace this after imported ocw sites have metadata stored in WebsiteContent objects
+                metadata__isnull=False,
             )
         elif is_global_admin(user):
             # Global admins should get a list of all websites, published or not.
