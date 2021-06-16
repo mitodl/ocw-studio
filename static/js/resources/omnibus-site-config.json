@@ -1,0 +1,189 @@
+{
+  "collections": [
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Body",
+          "name": "body",
+          "widget": "markdown"
+        },
+        {
+          "default": [
+            "Design"
+          ],
+          "label": "Tags",
+          "max": 2,
+          "min": 1,
+          "multiple": true,
+          "name": "tags",
+          "options": [
+            "Design",
+            "UX",
+            "Dev"
+          ],
+          "widget": "select"
+        },
+        {
+          "collection": "resource",
+          "display_field": "title",
+          "filter": {
+            "field": "filetype",
+            "filter_type": "equals",
+            "value": "PDF"
+          },
+          "label": "PDFs",
+          "max": 10,
+          "min": 1,
+          "multiple": true,
+          "name": "pdfs",
+          "widget": "relation"
+        },
+        {
+          "fields": [
+            {
+              "label": "Street Address",
+              "name": "street_address",
+              "required": false,
+              "widget": "string"
+            },
+            {
+              "label": "City",
+              "name": "city",
+              "required": false,
+              "widget": "string"
+            },
+            {
+              "label": "State",
+              "name": "state",
+              "required": false,
+              "widget": "string"
+            },
+            {
+              "label": "Zip Code",
+              "name": "zip",
+              "required": false,
+              "widget": "string"
+            }
+          ],
+          "label": "Address",
+          "name": "address",
+          "required": false,
+          "widget": "object"
+        }
+      ],
+      "folder": "content",
+      "label": "Page",
+      "name": "page"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Description",
+          "name": "description",
+          "widget": "text"
+        },
+        {
+          "label": "File",
+          "name": "file",
+          "widget": "file"
+        },
+        {
+          "label": "File Type",
+          "name": "filetype",
+          "options": [
+            "PDF",
+            "Word Doc",
+            "PPT"
+          ],
+          "required": true,
+          "widget": "select"
+        }
+      ],
+      "folder": "content",
+      "label": "Resource",
+      "name": "resource"
+    },
+    {
+      "category": "Settings",
+      "files": [
+        {
+          "fields": [
+            {
+              "help": "A description of the item.",
+              "label": "Item Description",
+              "minimal": true,
+              "name": "description",
+              "widget": "markdown"
+            },
+            {
+              "default": [
+                "Design"
+              ],
+              "label": "Tags",
+              "max": 3,
+              "min": 1,
+              "multiple": true,
+              "name": "tags",
+              "options": [
+                "Design",
+                "UX",
+                "Dev"
+              ],
+              "widget": "select"
+            },
+            {
+              "label": "Align Content",
+              "name": "align",
+              "options": [
+                "left",
+                "center",
+                "right"
+              ],
+              "widget": "select"
+            },
+            {
+              "help": "Whether the course includes fries or not.",
+              "label": "Comes with fries",
+              "name": "fries",
+              "widget": "boolean"
+            }
+          ],
+          "file": "data/metadata.json",
+          "label": "Site Metadata",
+          "name": "sitemetadata"
+        },
+        {
+          "fields": [
+            {
+              "help": "A description of the item.",
+              "label": "Item Description",
+              "minimal": true,
+              "name": "description",
+              "widget": "markdown"
+            }
+          ],
+          "file": "data/metadata.json",
+          "label": "Other Metadata",
+          "name": "othermetadata"
+        }
+      ],
+      "label": "Metadata",
+      "name": "metadata"
+    }
+  ],
+  "content-dir": "content"
+}

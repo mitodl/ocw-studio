@@ -356,7 +356,7 @@ def test_website_starters_retrieve(drf_client):
     assert resp.json() == WebsiteStarterDetailSerializer(instance=starter).data
 
 
-@pytest.mark.parametrize("use_local_starters,exp_result_count", [[True, 3], [False, 2]])
+@pytest.mark.parametrize("use_local_starters,exp_result_count", [[True, 4], [False, 2]])
 def test_website_starters_local(
     settings, drf_client, use_local_starters, exp_result_count
 ):

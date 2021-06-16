@@ -25,7 +25,7 @@ WEBSITE_CONFIG_DEFAULT_CONTENT_DIR = "content"
 WEBSITE_CONTENT_FILETYPE = "md"
 
 COURSE_STARTER_SLUG = "course"
-
+OMNIBUS_STARTER_SLUG = "omnibus-starter"
 
 GLOBAL_ADMIN = "global_admin"
 GLOBAL_AUTHOR = "global_author"
