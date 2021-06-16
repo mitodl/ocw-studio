@@ -1,5 +1,4 @@
 """ Scans the starter project directory in the local filesystem and creates/updates relevant db records """
-import json
 import os
 from collections import defaultdict
 
@@ -46,10 +45,13 @@ class Command(BaseCommand):
                 continue
             parsed_config = yaml.load(raw_config, Loader=yaml.Loader)
             starter, created = WebsiteStarter.objects.get_or_create(
-                path=os.path.join(LOCAL_STARTERS_DIR, dir_name),
-                name=dir_name,
+                slug=dir_name,
                 source=STARTER_SOURCE_LOCAL,
-                defaults=dict(config=parsed_config, slug=dir_name),
+                defaults=dict(
+                    config=parsed_config,
+                    path=os.path.join(LOCAL_STARTERS_DIR, dir_name),
+                    name=dir_name,
+                ),
             )
             updated = False
             if (
