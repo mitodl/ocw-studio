@@ -1,6 +1,7 @@
 """Site config validation functionality to supplement the features that the schema gives us"""
 from collections import defaultdict
 
+from mitol.common.utils import first_or_none
 from yamale import YamaleError
 from yamale.schema.validationresults import ValidationResult
 
@@ -59,7 +60,7 @@ class CollectionsKeysRule(AddedSchemaRule):
 
 
 class UniqueNamesRule(AddedSchemaRule):
-    """Ensures that all config items have unique name values"""
+    """Ensures that all config items have unique 'name' values"""
 
     @staticmethod
     def apply_rule(data):
@@ -102,6 +103,38 @@ class ContentFolderRule(AddedSchemaRule):
             return [
                 "Found 'folder' item(s) that do not point to the content directory ({}).\n{}".format(
                     site_config.content_dir,
+                    "\n".join(
+                        [
+                            f"{' ' * 8}'{name}' ({path})"
+                            for name, path in faulty_paths.items()
+                        ]
+                    ),
+                )
+            ]
+        return []
+
+
+class RequiredTitleRule(AddedSchemaRule):
+    """
+    Ensures that if a config item includes a "title" field, it is set to required and has the correct type.
+    """
+
+    @staticmethod
+    def apply_rule(data):
+        faulty_paths = {}
+        site_config = SiteConfig(data)
+        for i, config_item in enumerate(site_config.iter_items()):
+            title_field = first_or_none(
+                [field for field in config_item.fields if field["name"] == "title"]
+            )
+            if title_field is not None and (
+                title_field.get("required", False) is False
+                or title_field.get("widget", "string") != "string"
+            ):
+                faulty_paths[config_item.name] = config_item.path
+        if faulty_paths:
+            return [
+                "'title' fields must use the 'string' widget, and must be set to be required.\n{}".format(
                     "\n".join(
                         [
                             f"{' ' * 8}'{name}' ({path})"

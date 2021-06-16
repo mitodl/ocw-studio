@@ -5,7 +5,6 @@ collections:
     category: Content
     folder: content
     fields:
-      - {"label": "Title", "name": "title", "widget": "string", "required": true}
       - {"label": "Body", "name": "body", "widget": "markdown"}
       - {
         "label": "Tags",
@@ -43,7 +42,6 @@ collections:
     category: Content
     folder: content
     fields:
-      - {"label": "Title", "name": "title", "widget": "string", "required": true}
       - {"label": "Description", "name": "description", "widget": "text"}
       - {"label": "File", "name": "file", "widget": "file"}
       - {
@@ -62,7 +60,7 @@ collections:
         name: sitemetadata
         label: Site Metadata
         fields:
-          - { "label": "Course Title", "name": "title", "widget": "text", "required": true }
+          - { "label": "Course Title", "name": "title", "widget": "string", "required": true }
           - {
             "label": "Course Description",
             "name": "description",

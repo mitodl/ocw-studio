@@ -1,5 +1,5 @@
 import { ComponentType, ElementType } from "react"
-import { pick, partition, map, evolve } from "ramda"
+import { evolve, map, partition, pick } from "ramda"
 
 import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
@@ -14,18 +14,19 @@ import {
 } from "../constants"
 
 import {
+  BaseConfigItem,
   ConfigField,
   EditableConfigItem,
-  TopLevelConfigItem,
   RepeatableConfigItem,
   SingletonConfigItem,
+  StringConfigField,
   WebsiteContent,
   WidgetVariant
 } from "../types/websites"
 import {
-  SiteFormValues,
+  SiteFormPrimitive,
   SiteFormValue,
-  SiteFormPrimitive
+  SiteFormValues
 } from "../types/forms"
 
 export const componentFromWidget = (
@@ -61,6 +62,13 @@ const RELATION_EXTRA_PROPS = [
   "multiple",
   "filter"
 ]
+
+export const DEFAULT_TITLE_FIELD: StringConfigField = {
+  name:     "title",
+  label:    "Title",
+  widget:   WidgetVariant.String,
+  required: true
+}
 
 /**
  * Returns extra props that should be provided to the `Field`
@@ -118,11 +126,11 @@ const emptyValue = (field: ConfigField): SiteFormValue => {
 }
 
 export const isRepeatableCollectionItem = (
-  configItem: TopLevelConfigItem
+  configItem: BaseConfigItem
 ): configItem is RepeatableConfigItem => "folder" in configItem
 
 export const isSingletonCollectionItem = (
-  configItem: EditableConfigItem
+  configItem: BaseConfigItem
 ): configItem is SingletonConfigItem => "file" in configItem
 
 /**
@@ -292,3 +300,17 @@ export const renameNestedFields = (fields: ConfigField[]): ConfigField[] =>
       ) :
       field
   )
+
+export const addDefaultFields = (
+  configItem: EditableConfigItem
+): ConfigField[] => {
+  const fields = configItem.fields
+  if (!isRepeatableCollectionItem(configItem)) {
+    return fields
+  }
+  const titleField = fields.find(field => field.name === "title")
+  if (titleField) {
+    return fields
+  }
+  return [DEFAULT_TITLE_FIELD, ...fields]
+}

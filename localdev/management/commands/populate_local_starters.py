@@ -49,7 +49,7 @@ class Command(BaseCommand):
                 path=os.path.join(LOCAL_STARTERS_DIR, dir_name),
                 name=dir_name,
                 source=STARTER_SOURCE_LOCAL,
-                defaults=dict(config=parsed_config),
+                defaults=dict(config=parsed_config, slug=dir_name),
             )
             updated = False
             if (

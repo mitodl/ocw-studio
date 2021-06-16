@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useMemo } from "react"
 import { useMutation, useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
 import { FormikHelpers } from "formik"
@@ -15,12 +15,19 @@ import {
 } from "../query-configs/websites"
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import {
+  addDefaultFields,
   contentFormValuesToPayload,
-  isSingletonCollectionItem
+  isSingletonCollectionItem,
+  renameNestedFields
 } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
+import { getContentSchema } from "./forms/validation"
 
-import { EditableConfigItem, WebsiteContent } from "../types/websites"
+import {
+  ConfigField,
+  EditableConfigItem,
+  WebsiteContent
+} from "../types/websites"
 import { ContentFormType, SiteFormValues } from "../types/forms"
 
 interface Props {
@@ -43,8 +50,13 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     fetchWebsiteContentListing
   } = props
 
-  const site = useWebsite()
+  const fields: ConfigField[] = useMemo(() => {
+    const fields = addDefaultFields(configItem)
+    return renameNestedFields(fields)
+  }, [configItem])
+  const schema = getContentSchema(configItem)
 
+  const site = useWebsite()
   const [
     { isPending: addIsPending },
     addWebsiteContent
@@ -94,7 +106,7 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     if (formType === ContentFormType.Add) {
       values = { type: configItem.name, ...values }
     }
-    const payload = contentFormValuesToPayload(values, configItem.fields)
+    const payload = contentFormValuesToPayload(values, fields)
     // If the content being created is for a singleton config item, use the config item "name" value as the text_id.
     if (
       formType === ContentFormType.Add &&
@@ -142,7 +154,8 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
   return (
     <SiteContentForm
       onSubmit={onSubmitForm}
-      configItem={configItem}
+      fields={fields}
+      schema={schema}
       content={content}
       formType={formType}
     />

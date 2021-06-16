@@ -8,49 +8,41 @@ import {
   contentInitialValues,
   fieldIsVisible,
   newInitialValues,
-  splitFieldsIntoColumns,
-  renameNestedFields
+  splitFieldsIntoColumns
 } from "../../lib/site_content"
-import { getContentSchema } from "./validation"
 
 import {
-  EditableConfigItem,
   WebsiteContent,
   WidgetVariant,
   ConfigField
 } from "../../types/websites"
-import { ContentFormType, SiteFormValues } from "../../types/forms"
+import { ContentFormType, FormSchema, SiteFormValues } from "../../types/forms"
 
 interface Props {
   onSubmit: (
     values: any,
     formikHelpers: FormikHelpers<any>
   ) => void | Promise<any>
-  configItem: EditableConfigItem
+  fields: ConfigField[]
+  schema: FormSchema
   content: WebsiteContent | null
   formType: ContentFormType
 }
 
 export default function SiteContentForm({
   onSubmit,
-  configItem,
+  fields,
+  schema,
   content,
   formType
 }: Props): JSX.Element {
-  const fields: ConfigField[] = useMemo(
-    () => renameNestedFields(configItem.fields),
-    [configItem]
-  )
-
   const initialValues: SiteFormValues = useMemo(
     () =>
       formType === ContentFormType.Add ?
-        newInitialValues(configItem.fields) :
-        contentInitialValues(content as WebsiteContent, configItem.fields),
-    [configItem, formType, content]
+        newInitialValues(fields) :
+        contentInitialValues(content as WebsiteContent, fields),
+    [fields, formType, content]
   )
-
-  const schema = getContentSchema(configItem)
 
   const fieldsByColumn = splitFieldsIntoColumns(fields)
   const columnClass = fieldsByColumn.length === 2 ? "col-6" : "col-12"

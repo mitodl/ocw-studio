@@ -1,7 +1,11 @@
+import { SchemaOf } from "yup"
+
 export enum ContentFormType {
   Add = "add",
   Edit = "edit"
 }
+
+export type FormSchema = SchemaOf<any>
 
 export type SiteFormPrimitive = string | File | string[] | null | boolean
 

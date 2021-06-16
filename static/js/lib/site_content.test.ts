@@ -9,7 +9,9 @@ import RelationField from "../components/widgets/RelationField"
 import {
   makeWebsiteConfigField,
   makeWebsiteContentDetail,
-  makeFileConfigItem
+  makeFileConfigItem,
+  makeRepeatableConfigItem,
+  makeSingletonConfigItem
 } from "../util/factories/websites"
 import {
   componentFromWidget,
@@ -21,7 +23,9 @@ import {
   widgetExtraProps,
   isMainContentField,
   splitFieldsIntoColumns,
-  renameNestedFields
+  renameNestedFields,
+  addDefaultFields,
+  DEFAULT_TITLE_FIELD
 } from "./site_content"
 import { exampleSiteConfigFields, MAIN_PAGE_CONTENT_FIELD } from "../constants"
 import { isIf, shouldIf } from "../test_util"
@@ -30,6 +34,7 @@ import {
   ConfigField,
   FieldValueCondition,
   ObjectConfigField,
+  StringConfigField,
   WidgetVariant
 } from "../types/websites"
 
@@ -427,6 +432,45 @@ describe("site_content", () => {
         .filter(widget => widget !== WidgetVariant.Object)
         .map(widget => makeWebsiteConfigField({ widget }))
       expect(renameNestedFields(fields)).toEqual(fields)
+    })
+  })
+
+  describe("addDefaultFields", () => {
+    const exampleTitleField: StringConfigField = {
+      name:     "title",
+      label:    "Title!!!",
+      widget:   WidgetVariant.String,
+      required: true
+    }
+    const randomField = makeWebsiteConfigField({
+      widget: WidgetVariant.String,
+      label:  "My Label",
+      name:   "myfield"
+    })
+
+    //
+    ;[
+      [true, false, true, "repeatable config item without 'title' field"],
+      [true, true, false, "repeatable config item with 'title' field"],
+      [false, false, false, "singleton config item without 'title' field"]
+    ].forEach(([isRepeatable, inclTitleField, expAddField, desc]) => {
+      it(`${shouldIf(
+        expAddField
+      )} add a 'title' field for ${desc.toString()}`, () => {
+        const fields = inclTitleField ?
+          [exampleTitleField, randomField] :
+          [randomField]
+        const configItem = {
+          ...(isRepeatable ?
+            makeRepeatableConfigItem() :
+            makeSingletonConfigItem()),
+          fields: fields
+        }
+        const expectedResult = expAddField ?
+          [DEFAULT_TITLE_FIELD, randomField] :
+          fields
+        expect(addDefaultFields(configItem)).toEqual(expectedResult)
+      })
     })
   })
 })

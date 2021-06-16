@@ -12,6 +12,12 @@ from websites.config_schema.api import (
 
 SCHEMA_RESOURCES_DIR = "localdev/configs/"
 SCHEMA_CONFIG_FILE = "ocw-course-site-config.yml"
+VALID_TITLE_FIELD = {
+    "name": "title",
+    "label": "Title",
+    "required": True,
+    "widget": "string",
+}
 
 
 @pytest.fixture()
@@ -96,6 +102,24 @@ def test_folders_content_only(parsed_site_config):
     config["collections"][0] = {
         **config["collections"][0],
         "folder": "not-the-content-folder",
+    }
+    with pytest.raises(ValueError):
+        validate_parsed_site_config(config)
+
+
+@pytest.mark.parametrize(
+    "attr,value",
+    [
+        ["required", False],
+        ["widget", "text"],
+    ],
+)
+def test_required_title_rule(parsed_site_config, attr, value):
+    """If a config item includes a "title" field, it should be set to required and have the correct type"""
+    config = parsed_site_config.copy()
+    config["collections"][0] = {
+        **config["collections"][0],
+        "fields": [{**VALID_TITLE_FIELD, attr: value}],
     }
     with pytest.raises(ValueError):
         validate_parsed_site_config(config)

@@ -4,12 +4,6 @@
       "category": "Content",
       "fields": [
         {
-          "label": "Title",
-          "name": "title",
-          "required": true,
-          "widget": "string"
-        },
-        {
           "label": "Body",
           "name": "body",
           "widget": "markdown"
@@ -86,12 +80,6 @@
       "category": "Content",
       "fields": [
         {
-          "label": "Title",
-          "name": "title",
-          "required": true,
-          "widget": "string"
-        },
-        {
           "label": "Description",
           "name": "description",
           "widget": "text"
@@ -126,7 +114,7 @@
               "label": "Course Title",
               "name": "title",
               "required": true,
-              "widget": "text"
+              "widget": "string"
             },
             {
               "help": "A description of the course that will be shown on the course site home page.",

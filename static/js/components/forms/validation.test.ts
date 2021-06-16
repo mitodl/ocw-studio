@@ -1,7 +1,12 @@
 import * as yup from "yup"
 import { getContentSchema } from "./validation"
 
-import { makeWebsiteConfigField } from "../../util/factories/websites"
+import {
+  makeRepeatableConfigItem,
+  makeSingletonConfigItem,
+  makeWebsiteConfigField
+} from "../../util/factories/websites"
+import { isIf } from "../../test_util"
 
 import {
   ConfigItem,
@@ -14,21 +19,59 @@ import {
 
 describe("form validation util", () => {
   const yupFileFieldSchema = yup.mixed()
-  const partialConfigItem = {
-    folder:   "content",
-    label:    "Page",
-    name:     "page",
-    category: "Content"
-  }
+  const repeatableConfigItem = makeRepeatableConfigItem()
+  const singletonConfigItem = makeSingletonConfigItem()
   const partialField = {
     name:  "myfield",
     label: "My Field"
   }
+  const defaultFormValues = {
+    title: "My Title"
+  }
   let configItem: ConfigItem
+
+  describe("for 'title' field", () => {
+    const titleField: StringConfigField = {
+      name:     "title",
+      label:    "Title",
+      required: true,
+      widget:   WidgetVariant.String
+    }
+
+    //
+    ;[
+      [null, true, false, true],
+      [titleField, true, true, true],
+      [null, false, false, false]
+    ].forEach(([field, isRepeatable, fieldIncluded, expAddedTitleField]) => {
+      it(`validates correctly if 'title' field ${isIf(
+        fieldIncluded
+      )} included, config item ${isIf(isRepeatable)} repeatable`, async () => {
+        configItem = {
+          ...(isRepeatable ? repeatableConfigItem : singletonConfigItem),
+          // @ts-ignore
+          fields: field ? [field] : []
+        }
+        const schema = getContentSchema(configItem)
+        if (expAddedTitleField) {
+          expect(() => schema.validateSync({})).toThrow(
+            new yup.ValidationError("Title is a required field")
+          )
+          await expect(
+            schema.isValid({ title: "My Title" })
+          ).resolves.toBeTruthy()
+        } else {
+          expect(() => schema.validateSync({})).not.toThrow(
+            new yup.ValidationError("Title is a required field")
+          )
+        }
+      })
+    })
+  })
 
   it("produces a validation schema for fields regardless of whether they're required or not", () => {
     configItem = {
-      ...partialConfigItem,
+      ...repeatableConfigItem,
       fields: [
         {
           ...partialField,
@@ -59,7 +102,7 @@ describe("form validation util", () => {
   ].forEach(([widget, expectedYupField]) => {
     it(`produces the correct validation schema for a required '${widget}' field`, () => {
       configItem = {
-        ...partialConfigItem,
+        ...repeatableConfigItem,
         fields: [
           {
             ...partialField,
@@ -89,7 +132,7 @@ describe("form validation util", () => {
 
   it("produces the correct validation schema for multiple fields", () => {
     configItem = {
-      ...partialConfigItem,
+      ...repeatableConfigItem,
       fields: [
         {
           name:     "myfield",
@@ -129,7 +172,7 @@ describe("form validation util", () => {
     describe(`${selectLikeVariant} validation`, () => {
       const makeSelectLikeConfigItem = (props = {}): [ConfigItem, string] => {
         const configItem = {
-          ...partialConfigItem,
+          ...repeatableConfigItem,
           fields: [
             makeWebsiteConfigField({ widget: selectLikeVariant, ...props })
           ]
@@ -146,6 +189,7 @@ describe("form validation util", () => {
         const schema = getContentSchema(configItem)
         expect(() =>
           schema.validateSync({
+            ...defaultFormValues,
             [name]: null
           })
         ).toThrow(new yup.ValidationError(`${name} is a required field.`))
@@ -159,6 +203,7 @@ describe("form validation util", () => {
             async value => {
               await expect(
                 schema.isValid({
+                  ...defaultFormValues,
                   [name]: value
                 })
               ).resolves.toBeTruthy()
@@ -189,12 +234,14 @@ describe("form validation util", () => {
             if (shouldValidate) {
               await expect(
                 schema.isValid({
+                  ...defaultFormValues,
                   [name]: value
                 })
               ).resolves.toBeTruthy()
             } else {
               await expect(
                 schema.validate({
+                  ...defaultFormValues,
                   [name]: value
                 })
               ).rejects.toThrow(new yup.ValidationError(message as string))
@@ -209,11 +256,12 @@ describe("form validation util", () => {
 
         expect(() =>
           schema.validateSync({
+            ...defaultFormValues,
             [name]: ""
           })
         ).toThrow(new yup.ValidationError(`${name} is a required field`))
         await expect(
-          schema.isValid({ [name]: "selected value" })
+          schema.isValid({ ...defaultFormValues, [name]: "selected value" })
         ).resolves.toBeTruthy()
       })
     })
@@ -222,7 +270,7 @@ describe("form validation util", () => {
   describe("Object validation", () => {
     const makeObjectConfigItem = (props = {}): [ConfigItem, string] => {
       const configItem = {
-        ...partialConfigItem,
+        ...repeatableConfigItem,
         fields: [
           makeWebsiteConfigField({
             widget: WidgetVariant.Object,
@@ -251,7 +299,7 @@ describe("form validation util", () => {
       const schema = getContentSchema(configItem)
 
       await schema
-        .validate({ [name]: {} }, { abortEarly: false })
+        .validate({ ...defaultFormValues, [name]: {} }, { abortEarly: false })
         .catch(err => {
           expect(err.errors).toEqual([
             "mystring is a required field",
@@ -260,6 +308,7 @@ describe("form validation util", () => {
         })
       await expect(
         schema.isValid({
+          ...defaultFormValues,
           [name]: {
             mystring:  "hey!",
             myboolean: false
