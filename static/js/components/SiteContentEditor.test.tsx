@@ -1,7 +1,8 @@
-import { ContentFormType } from "../types/forms"
+import { ContentFormType, FormSchema } from "../types/forms"
 import React from "react"
 import { act } from "react-dom/test-utils"
 import sinon, { SinonStub } from "sinon"
+import * as yup from "yup"
 
 import SiteContentEditor from "./SiteContentEditor"
 import WebsiteContext from "../context/Website"
@@ -13,12 +14,22 @@ import IntegrationTestHelper, {
 import {
   makeRepeatableConfigItem,
   makeSingletonConfigItem,
+  makeWebsiteConfigField,
   makeWebsiteContentDetail,
   makeWebsiteDetail
 } from "../util/factories/websites"
-
-import { EditableConfigItem, Website, WebsiteContent } from "../types/websites"
+import { getContentSchema } from "./forms/validation"
 import { shouldIf } from "../test_util"
+
+import {
+  EditableConfigItem,
+  Website,
+  WebsiteContent,
+  WidgetVariant
+} from "../types/websites"
+import { DEFAULT_TITLE_FIELD } from "../lib/site_content"
+
+jest.mock("./forms/validation")
 
 const mockUseRouteMatch = jest.fn()
 
@@ -49,7 +60,8 @@ describe("SiteContent", () => {
     hideModalStub: SinonStub,
     routeParams: any,
     refreshStub: SinonStub,
-    successStubs: Record<string, SinonStub>
+    successStubs: Record<string, SinonStub>,
+    mockContentSchema: FormSchema
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -60,6 +72,9 @@ describe("SiteContent", () => {
     mockUseRouteMatch.mockImplementation(() => ({
       params: routeParams
     }))
+    mockContentSchema = yup.object().shape({})
+    // @ts-ignore
+    getContentSchema.mockImplementation(() => mockContentSchema)
     historyPushStub = helper.sandbox.stub()
     hideModalStub = helper.sandbox.stub()
     refreshStub = helper.sandbox.stub()
@@ -108,7 +123,43 @@ describe("SiteContent", () => {
     const { wrapper } = await render()
     const form = wrapper.find("SiteContentForm")
     expect(form.exists()).toBe(true)
-    expect(form.prop("configItem")).toBe(configItem)
+    expect(form.prop("fields")).toStrictEqual(configItem.fields)
+    expect(form.prop("schema")).toStrictEqual(mockContentSchema)
+  })
+
+  it("modifies config item fields before passing them on to form component", async () => {
+    const objectField = makeWebsiteConfigField({
+      widget: WidgetVariant.Object,
+      label:  "myobject",
+      fields: [
+        makeWebsiteConfigField({
+          widget: WidgetVariant.String,
+          label:  "mystring"
+        })
+      ]
+    })
+    const { wrapper } = await render({
+      configItem: {
+        ...makeRepeatableConfigItem(),
+        fields: [objectField]
+      }
+    })
+    const form = wrapper.find("SiteContentForm")
+    expect(form.prop("fields")).toStrictEqual([
+      // Title field should be added by default
+      DEFAULT_TITLE_FIELD,
+      // Nested object field should be renamed
+      {
+        ...objectField,
+        fields: [
+          {
+            // @ts-ignore
+            ...objectField.fields[0],
+            name: "myobject.mystring"
+          }
+        ]
+      }
+    ])
   })
 
   //

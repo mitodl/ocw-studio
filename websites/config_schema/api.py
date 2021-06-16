@@ -8,6 +8,7 @@ from django.conf import settings
 from websites.config_schema.validators import (
     CollectionsKeysRule,
     ContentFolderRule,
+    RequiredTitleRule,
     UniqueNamesRule,
 )
 
@@ -22,6 +23,7 @@ ADDED_SCHEMA_RULES = [
     CollectionsKeysRule,
     UniqueNamesRule,
     ContentFolderRule,
+    RequiredTitleRule,
 ]
 
 

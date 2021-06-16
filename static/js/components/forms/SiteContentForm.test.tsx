@@ -16,14 +16,13 @@ import {
   fieldIsVisible,
   splitFieldsIntoColumns
 } from "../../lib/site_content"
-import { getContentSchema } from "./validation"
 
 import {
   EditableConfigItem,
   WebsiteContent,
   WidgetVariant
 } from "../../types/websites"
-import { ContentFormType } from "../../types/forms"
+import { ContentFormType, FormSchema } from "../../types/forms"
 
 jest.mock("../../lib/site_content")
 jest.mock("./validation")
@@ -33,13 +32,15 @@ describe("SiteContentForm", () => {
     onSubmitStub: SinonStub,
     setFieldValueStub: SinonStub,
     configItem: EditableConfigItem,
-    content: WebsiteContent
+    content: WebsiteContent,
+    mockValidationSchema: FormSchema
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     setFieldValueStub = sinon.stub()
     content = makeWebsiteContentDetail()
     configItem = makeEditableConfigItem(content.type)
+    mockValidationSchema = yup.object().shape({})
     // @ts-ignore
     splitFieldsIntoColumns.mockImplementation(() => [])
   })
@@ -48,13 +49,15 @@ describe("SiteContentForm", () => {
     sandbox.restore()
   })
 
-  const renderForm = (formType: ContentFormType) =>
+  const renderForm = (props = {}) =>
     shallow(
       <SiteContentForm
-        configItem={configItem}
+        fields={configItem.fields}
+        schema={mockValidationSchema}
         content={content}
         onSubmit={onSubmitStub}
-        formType={formType}
+        formType={ContentFormType.Add}
+        {...props}
       />
     )
 
@@ -62,7 +65,7 @@ describe("SiteContentForm", () => {
     formType: ContentFormType,
     formikChildProps: { [key: string]: any } = {}
   ) => {
-    const wrapper = renderForm(formType)
+    const wrapper = renderForm({ formType })
     return (
       wrapper
         .find("Formik")
@@ -115,12 +118,9 @@ describe("SiteContentForm", () => {
       })
 
       it("has the correct Formik props", () => {
-        const mockValidationSchema = yup.object().shape({})
-        // @ts-ignore
-        getContentSchema.mockReturnValueOnce(mockValidationSchema)
         // @ts-ignore
         splitFieldsIntoColumns.mockImplementation(() => [])
-        const formik = renderForm(formType).find("Formik")
+        const formik = renderForm({ formType }).find("Formik")
         const validationSchema = formik.prop("validationSchema")
         expect(validationSchema).toStrictEqual(mockValidationSchema)
         expect(formik.prop("enableReinitialize")).toBe(true)

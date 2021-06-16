@@ -1,5 +1,7 @@
 import * as yup from "yup"
-import { SchemaOf, setLocale } from "yup"
+import { setLocale } from "yup"
+
+import { isRepeatableCollectionItem } from "../../lib/site_content"
 
 import {
   ConfigField,
@@ -7,6 +9,7 @@ import {
   WidgetVariant,
   EditableConfigItem
 } from "../../types/websites"
+import { FormSchema } from "../../types/forms"
 
 // This is added to properly handle file fields, which can have a "null" value
 setLocale({
@@ -15,14 +18,17 @@ setLocale({
   }
 })
 
-type Schema = SchemaOf<any>
+const defaultTitleFieldSchema = yup
+  .string()
+  .required()
+  .label("Title")
 
 /**
  * Obtain the schema for a given field. This mainly switches on the
  * WidgetVariant, but also looks at some other props like `min`, `max`,
  * `required`, and `label`.
  **/
-export const getFieldSchema = (field: ConfigField): Schema => {
+export const getFieldSchema = (field: ConfigField): FormSchema => {
   let schema
 
   switch (field.widget) {
@@ -85,9 +91,12 @@ export const getFieldSchema = (field: ConfigField): Schema => {
  **/
 export const getContentSchema = (
   configItem: ConfigItem | EditableConfigItem
-): Schema => {
+): FormSchema => {
   const yupObjectShape = Object.fromEntries(
     configItem.fields.map(field => [field.name, getFieldSchema(field)])
   )
+  if (isRepeatableCollectionItem(configItem) && !("title" in yupObjectShape)) {
+    yupObjectShape["title"] = defaultTitleFieldSchema
+  }
   return yup.object().shape(yupObjectShape)
 }

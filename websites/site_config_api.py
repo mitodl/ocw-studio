@@ -36,6 +36,11 @@ class ConfigItem:
         """Helper property to return the 'name' value"""
         return self.item["name"]
 
+    @property
+    def fields(self) -> list:
+        """Helper property to return the 'fields' value"""
+        return self.item.get("fields", [])
+
     def is_folder_item(self) -> bool:
         """Returns True if this config item has a folder target"""
         return "folder" in self.item
