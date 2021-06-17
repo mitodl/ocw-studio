@@ -535,6 +535,7 @@ def test_websites_content_create_with_upload(
         "title": "new title",
         "type": constants.CONTENT_TYPE_RESOURCE,
         "file": file_upload,
+        "file_fieldname": "name",
     }
     resp = drf_client.post(
         reverse(
@@ -549,6 +550,7 @@ def test_websites_content_create_with_upload(
     assert resp.status_code == 201
     content = website.websitecontent_set.get()
     assert content.title == payload["title"]
+    assert content.file_fieldname == "name"
     assert (
         content.file.name
         == f"{website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
@@ -560,8 +562,10 @@ def test_websites_content_create_with_upload(
 def test_websites_content_edit_with_upload(drf_client, global_admin_user, file_upload):
     """Uploading a file when editing a new WebsiteContent object should work"""
     drf_client.force_login(global_admin_user)
-    content = WebsiteContentFactory.create(type=constants.CONTENT_TYPE_RESOURCE)
-    payload = {"file": file_upload, "title": "New Title"}
+    content = WebsiteContentFactory.create(
+        type=constants.CONTENT_TYPE_RESOURCE, metadata={"title": "test"}
+    )
+    payload = {"file": file_upload, "title": "New Title", "file_fieldname": "filename"}
     resp = drf_client.patch(
         reverse(
             "websites_content_api-detail",
@@ -576,6 +580,7 @@ def test_websites_content_edit_with_upload(drf_client, global_admin_user, file_u
     assert resp.status_code == 200
     content = WebsiteContent.objects.get(id=content.id)
     assert content.title == payload["title"]
+    assert content.file_fieldname == "filename"
     assert (
         content.file.name
         == f"{content.website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"

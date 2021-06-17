@@ -197,10 +197,23 @@ class WebsiteContentDetailSerializer(
         update_website_backend(instance.website)
         return instance
 
+    def to_representation(self, instance):
+        """Add the file field name and url to metadata if a file exists"""
+        result = super().to_representation(instance)
+        if instance.file:
+            result["metadata"][instance.file_fieldname] = instance.file.url
+        return result
+
     class Meta:
         model = WebsiteContent
         read_only_fields = ["text_id", "type"]
-        fields = read_only_fields + ["title", "markdown", "metadata", "file"]
+        fields = read_only_fields + [
+            "title",
+            "markdown",
+            "metadata",
+            "file",
+            "file_fieldname",
+        ]
 
 
 class WebsiteContentCreateSerializer(
@@ -212,7 +225,7 @@ class WebsiteContentCreateSerializer(
         user = self.user_from_request()
         added_context_data = {
             field: self.context[field]
-            for field in {"is_page_content", "filename", "dirpath"}
+            for field in {"is_page_content", "filename", "dirpath", "file_fieldname"}
             if field in self.context
         }
         instance = super().create(
@@ -238,5 +251,6 @@ class WebsiteContentCreateSerializer(
             "filename",
             "dirpath",
             "file",
+            "file_fieldname",
             "is_page_content",
         ]

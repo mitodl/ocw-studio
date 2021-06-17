@@ -16,32 +16,56 @@ describe("FileUploadField", () => {
   afterEach(() => {
     sandbox.restore()
   })
-
-  it("renders a file upload field, no pre-existing file, with working button", () => {
-    const wrapper = shallow(
-      <FileUploadField name="file" setFieldValue={setFieldValueStub} />
-    )
-    expect(wrapper.find("input").prop("type")).toBe("file")
-    expect(wrapper.find("input").prop("name")).toBe("file")
-    expect(wrapper.find(".current-file")).toHaveLength(0)
-    wrapper.find("input").simulate("change", { target: { files: [mockFile] } })
-    expect(setFieldValueStub.calledWith("file", mockFile)).toBeTruthy()
-  })
-
-  it("renders a file upload field, with pre-existing file", () => {
-    const currentFile = "oldfile.txt"
-    const wrapper = shallow(
-      <FileUploadField
-        name="file"
-        setFieldValue={setFieldValueStub}
-        value={`https://aws.com/uuid_${currentFile}`}
-      />
-    )
-    expect(
+  ;["file", "name"].forEach(fileFieldName => {
+    it(`renders a file upload field w/name=${fileFieldName}, no pre-existing file, with working button`, () => {
+      const wrapper = shallow(
+        <FileUploadField
+          name={fileFieldName}
+          setFieldValue={setFieldValueStub}
+        />
+      )
+      expect(
+        wrapper
+          .find("input")
+          .at(0)
+          .prop("type")
+      ).toBe("file")
+      expect(
+        wrapper
+          .find("input")
+          .at(0)
+          .prop("name")
+      ).toBe(fileFieldName)
+      expect(
+        wrapper
+          .find("input")
+          .at(1)
+          .prop("value")
+      ).toBe(fileFieldName)
+      expect(wrapper.find(".current-file")).toHaveLength(0)
       wrapper
-        .find(".current-file")
-        .find("a")
-        .text()
-    ).toBe(currentFile)
+        .find("input")
+        .at(0)
+        .simulate("change", { target: { files: [mockFile] } })
+      expect(setFieldValueStub.calledWith(fileFieldName, mockFile)).toBeTruthy()
+    })
+  })
+  ;["file", "name"].forEach(fileFieldName => {
+    it(`renders a file upload field w/name=${fileFieldName}, with pre-existing file`, () => {
+      const currentFile = "oldfile.txt"
+      const wrapper = shallow(
+        <FileUploadField
+          name={fileFieldName}
+          setFieldValue={setFieldValueStub}
+          value={`https://aws.com/uuid_${currentFile}`}
+        />
+      )
+      expect(
+        wrapper
+          .find(".current-file")
+          .find("a")
+          .text()
+      ).toBe(currentFile)
+    })
   })
 })

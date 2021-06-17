@@ -151,6 +151,9 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     file = models.FileField(
         upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
     )
+    file_fieldname = models.CharField(
+        default="file", null=False, blank=False, max_length=256
+    )
 
     @staticmethod
     def generate_filename(title: str) -> str:
