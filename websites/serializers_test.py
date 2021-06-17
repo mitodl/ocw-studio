@@ -155,14 +155,12 @@ def test_website_content_detail_serializer():
 
 def test_website_content_detail_with_file_serializer():
     """WebsiteContentDetailSerializer should include its file url in metadata"""
-    content = WebsiteContentFactory.create(metadata={"title": "Test"})
+    content = WebsiteContentFactory.create(type="resource", metadata={"title": "Test"})
     content.file = SimpleUploadedFile("test.txt", b"content")
 
-    expected_metadata = content.metadata
-    expected_metadata["filename"] = content.file.url
-
     serialized_data = WebsiteContentDetailSerializer(instance=content).data
-    assert serialized_data["metadata"] == expected_metadata
+    assert serialized_data["metadata"]["image"] == content.file.url
+    assert serialized_data["metadata"]["title"] == content.metadata["title"]
 
 
 def test_website_content_detail_serializer_save(mocker):

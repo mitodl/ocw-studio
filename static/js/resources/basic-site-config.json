@@ -47,6 +47,26 @@
       ],
       "label": "Metadata",
       "name": "metadata"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Image",
+          "name": "image",
+          "required": false,
+          "widget": "file"
+        }
+      ],
+      "folder": "content/resource",
+      "label": "Resource",
+      "name": "resource"
     }
   ],
   "content-dir": "content"

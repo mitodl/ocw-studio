@@ -21,3 +21,10 @@ collections:
         label: Site Metadata
         fields:
           - {"label": "Title", "name": "title", "widget": "string", "required": true}
+  - name: resource
+    label: Resource
+    category: Content
+    folder: content/resource
+    fields:
+      - {"label": "Title", "name": "title", "widget": "string", "required": true}
+      - {"label": "Image", "name": "image", "widget": "file", "required": false}

@@ -52,7 +52,7 @@ def test_site_config_iter_items(basic_site_config):
     """SiteConfig.iter_items should yield each individual config item"""
     site_config = SiteConfig(basic_site_config)
     config_items = list(site_config.iter_items())
-    assert len(config_items) == 4
+    assert len(config_items) == 5
     collections = basic_site_config["collections"]
     assert config_items[0] == ConfigItem(
         item=collections[0], parent_item=None, path="collections.0"
