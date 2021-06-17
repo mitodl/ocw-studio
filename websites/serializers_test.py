@@ -157,7 +157,6 @@ def test_website_content_detail_with_file_serializer():
     """WebsiteContentDetailSerializer should include its file url in metadata"""
     content = WebsiteContentFactory.create(metadata={"title": "Test"})
     content.file = SimpleUploadedFile("test.txt", b"content")
-    content.file_fieldname = "filename"
 
     expected_metadata = content.metadata
     expected_metadata["filename"] = content.file.url

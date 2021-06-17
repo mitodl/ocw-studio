@@ -11,6 +11,7 @@ from users.models import User
 from websites import constants
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
+from websites.site_config_api import SiteConfig
 from websites.utils import permissions_group_name_for_role
 
 
@@ -201,7 +202,14 @@ class WebsiteContentDetailSerializer(
         """Add the file field name and url to metadata if a file exists"""
         result = super().to_representation(instance)
         if instance.file:
-            result["metadata"][instance.file_fieldname] = instance.file.url
+            site_config = SiteConfig(instance.website.starter.config)
+            content_config = site_config.find_item_by_name(instance.type)
+            if content_config:
+                file_field = next(
+                    filter(lambda y: y.get("widget") == "file", content_config.fields)
+                )
+                if file_field:
+                    result["metadata"][file_field["name"]] = instance.file.url
         return result
 
     class Meta:
@@ -212,7 +220,6 @@ class WebsiteContentDetailSerializer(
             "markdown",
             "metadata",
             "file",
-            "file_fieldname",
         ]
 
 
@@ -225,7 +232,7 @@ class WebsiteContentCreateSerializer(
         user = self.user_from_request()
         added_context_data = {
             field: self.context[field]
-            for field in {"is_page_content", "filename", "dirpath", "file_fieldname"}
+            for field in {"is_page_content", "filename", "dirpath"}
             if field in self.context
         }
         instance = super().create(
@@ -251,6 +258,5 @@ class WebsiteContentCreateSerializer(
             "filename",
             "dirpath",
             "file",
-            "file_fieldname",
             "is_page_content",
         ]

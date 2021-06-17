@@ -167,7 +167,6 @@ export const contentFormValuesToPayload = (
         // @ts-ignore
       } else if (value instanceof File) {
         payload["file"] = value
-        payload["file_fieldname"] = field.name
         hasFileUpload = true
       } else {
         metadata[field.name] = value
