@@ -30,7 +30,7 @@ describe("MarkdownEditor", () => {
   ;[
     [true, MinimalEditorConfig],
     [false, FullEditorConfig]
-  ].forEach(([minimal, expectedMinimalComponent]) => {
+  ].forEach(([minimal, expectedComponent]) => {
     [
       ["value", "value"],
       [null, ""]
@@ -44,7 +44,7 @@ describe("MarkdownEditor", () => {
         })
         const ckWrapper = wrapper.find("CKEditor")
         expect(ckWrapper.prop("editor")).toBe(ClassicEditor)
-        expect(ckWrapper.prop("config")).toBe(expectedMinimalComponent)
+        expect(ckWrapper.prop("config")).toBe(expectedComponent)
         expect(ckWrapper.prop("data")).toBe(expectedPropValue)
       })
     })
