@@ -12,13 +12,17 @@ from websites.constants import (
     WEBSITE_SOURCE_OCW_IMPORT,
 )
 from websites.factories import (
+    WebsiteCollectionFactory,
+    WebsiteCollectionItemFactory,
     WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
 )
-from websites.models import WebsiteContent
+from websites.models import WebsiteCollectionItem, WebsiteContent
 from websites.serializers import (
     WebsiteCollaboratorSerializer,
+    WebsiteCollectionItemSerializer,
+    WebsiteCollectionSerializer,
     WebsiteContentCreateSerializer,
     WebsiteContentDetailSerializer,
     WebsiteContentSerializer,
@@ -262,3 +266,114 @@ def test_website_content_create_serializer(mocker, add_context_data):
     assert content.filename == (
         "myfile" if not add_context_data else override_context_data["filename"]
     )
+
+
+def test_website_collection_serializer():
+    """
+    test that the fields we want come through
+    """
+    website_collection = WebsiteCollectionFactory.create()
+    WebsiteCollectionItemFactory.create(website_collection=website_collection)
+    WebsiteCollectionItemFactory.create(website_collection=website_collection)
+    WebsiteCollectionItemFactory.create(website_collection=website_collection)
+    serialized_data = WebsiteCollectionSerializer(instance=website_collection).data
+    assert serialized_data["title"] == website_collection.title
+    assert serialized_data["description"] == website_collection.description
+
+
+def test_website_collection_item_serializer():
+    """
+    simple test to check that fields come through
+    """
+    item = WebsiteCollectionItemFactory.create()
+    serialized_data = WebsiteCollectionItemSerializer(instance=item).data
+    assert serialized_data["position"] == item.position
+    assert serialized_data["website_collection"] == item.website_collection.id
+    assert serialized_data["website"] == item.website.uuid
+
+
+def test_website_collection_item_create():
+    """
+    test that the position value is incremented correctly when creating a new item
+    """
+    website_collection = WebsiteCollectionFactory.create()
+    WebsiteCollectionItemFactory.create(
+        website_collection=website_collection, position=0
+    )
+    WebsiteCollectionItemFactory.create(
+        website_collection=website_collection, position=1
+    )
+    WebsiteCollectionItemFactory.create(
+        website_collection=website_collection, position=2
+    )
+    website = WebsiteFactory.create()
+
+    payload = {"website": website.uuid, "website_collection": website_collection.id}
+    serializer = WebsiteCollectionItemSerializer(data=payload)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    item = WebsiteCollectionItem.objects.get(
+        website_collection=website_collection, website=website
+    )
+    assert item.position == 3
+
+
+def test_website_collection_item_update():
+    """
+    test moving items up and down the list
+    """
+    website_collection = WebsiteCollectionFactory.create()
+    one = WebsiteCollectionItemFactory.create(
+        website_collection=website_collection, position=0
+    )
+    two = WebsiteCollectionItemFactory.create(
+        website_collection=website_collection, position=1
+    )
+    three = WebsiteCollectionItemFactory.create(
+        website_collection=website_collection, position=2
+    )
+    four = WebsiteCollectionItemFactory.create(
+        website_collection=website_collection, position=3
+    )
+    five = WebsiteCollectionItemFactory.create(
+        website_collection=website_collection, position=4
+    )
+    six = WebsiteCollectionItemFactory.create(
+        website_collection=website_collection, position=5
+    )
+
+    # test moving item up the list
+    serializer = WebsiteCollectionItemSerializer(
+        data={
+            "position": 1,
+            "website_collection": website_collection.id,
+            "website": five.website.uuid,
+        },
+        instance=five,
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+
+    assert list(
+        WebsiteCollectionItem.objects.filter(
+            website_collection=website_collection
+        ).order_by("position")
+    ) == [one, five, two, three, four, six]
+
+    # move item back down the list
+    serializer = WebsiteCollectionItemSerializer(
+        data={
+            "position": 4,
+            "website_collection": website_collection.id,
+            "website": five.website.uuid,
+        },
+        instance=five,
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+
+    assert list(
+        WebsiteCollectionItem.objects.filter(
+            website_collection=website_collection
+        ).order_by("position")
+    ) == [one, two, three, four, five, six]

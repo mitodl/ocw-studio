@@ -10,7 +10,13 @@ from factory.fuzzy import FuzzyChoice
 
 from users.factories import UserFactory
 from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE, STARTER_SOURCES
-from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.models import (
+    Website,
+    WebsiteCollection,
+    WebsiteCollectionItem,
+    WebsiteContent,
+    WebsiteStarter,
+)
 
 
 FACTORY_SITE_CONFIG_PATH = "localdev/configs/basic-site-config.yml"
@@ -71,3 +77,24 @@ class WebsiteContentFactory(DjangoModelFactory):
 
     class Meta:
         model = WebsiteContent
+
+
+class WebsiteCollectionFactory(DjangoModelFactory):
+    """Factory for WebsiteCollection"""
+
+    title = factory.Sequence(lambda n: "WebsiteCollection %s" % n)
+    description = factory.Faker("text")
+
+    class Meta:
+        model = WebsiteCollection
+
+
+class WebsiteCollectionItemFactory(DjangoModelFactory):
+    """Factory for WebsiteCollectionItem"""
+
+    website_collection = factory.SubFactory(WebsiteCollectionFactory)
+    website = factory.SubFactory(WebsiteFactory)
+    position = factory.Sequence(lambda n: n)
+
+    class Meta:
+        model = WebsiteCollectionItem

@@ -1,6 +1,7 @@
 """ Serializers for websites """
 from django.contrib.auth.models import Group
 from django.db import transaction
+from django.db.models import F, Max
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -9,7 +10,13 @@ from content_sync.api import create_website_backend, update_website_backend
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
 from websites import constants
-from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.models import (
+    Website,
+    WebsiteCollection,
+    WebsiteCollectionItem,
+    WebsiteContent,
+    WebsiteStarter,
+)
 from websites.permissions import is_global_admin, is_site_admin
 from websites.utils import permissions_group_name_for_role
 
@@ -254,3 +261,66 @@ class WebsiteContentCreateSerializer(
             "file",
             "is_page_content",
         ]
+
+
+class WebsiteCollectionSerializer(serializers.ModelSerializer):
+    """Serializer for WebsiteCollections"""
+
+    class Meta:
+        model = WebsiteCollection
+        fields = ["title", "description"]
+
+
+class WebsiteCollectionItemSerializer(serializers.ModelSerializer):
+    """Serializer for WebsiteCollectionItems"""
+
+    class Meta:
+        model = WebsiteCollectionItem
+        fields = ["position", "website_collection", "website"]
+        extra_kwargs = {"position": {"required": False}}
+
+    def create(self, validated_data):
+        website_collection = validated_data["website_collection"]
+        items = WebsiteCollectionItem.objects.filter(
+            website_collection=website_collection
+        )
+        position = (
+            items.aggregate(Max("position"))["position__max"] or items.count()
+        ) + 1
+        item, _ = WebsiteCollectionItem.objects.get_or_create(
+            website_collection=validated_data["website_collection"],
+            website=validated_data["website"],
+            defaults={"position": position},
+        )
+        return item
+
+    def update(self, instance, validated_data):
+        """this position update algorithm is copied over from user lists in
+        open-discussions. see here:
+        https://github.com/mitodl/open-discussions/blob/master/course_catalog/serializers.py#L504
+
+        if we're moving our item towards the head of the list (i.e. decreasing
+        its index) we need to increment by one the position of every item
+        between its current position and its new position.
+
+        likewise, if we're moving it down toward the tail of the list (i.e.
+        increasing its index) then we need to decrement by one the position of
+        every item between it's current position and its new position.
+        """
+        new_position = validated_data["position"]
+        with transaction.atomic():
+            if new_position > instance.position:
+                # move items between the old and new positions up, inclusive of the new position
+                WebsiteCollectionItem.objects.filter(
+                    position__lte=new_position, position__gt=instance.position
+                ).update(position=F("position") - 1)
+            else:
+                # move items between the old and new positions down, inclusive of the new position
+                WebsiteCollectionItem.objects.filter(
+                    position__lt=instance.position, position__gte=new_position
+                ).update(position=F("position") + 1)
+            # now move the item into place
+            instance.position = new_position
+            instance.save()
+
+        return instance
