@@ -56,7 +56,9 @@ describe("MarkdownEditor", () => {
     [null, ""]
   ].forEach(([name, expectedPropName]) => {
     [true, false].forEach(hasOnChange => {
-      it(`triggers ${hasOnChange ? "with" : "without"} an onChange when name=${String(name)}`, () => {
+      it(`triggers ${
+        hasOnChange ? "with" : "without"
+      } an onChange when name=${String(name)}`, () => {
         const onChangeStub = sandbox.stub()
         const wrapper = render({
           name,
