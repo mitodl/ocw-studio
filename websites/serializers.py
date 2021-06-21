@@ -199,17 +199,18 @@ class WebsiteContentDetailSerializer(
         return instance
 
     def to_representation(self, instance):
-        """Add the file field name and url to metadata if a file exists"""
+        """Add the file field name and url to the serializer if a file exists"""
         result = super().to_representation(instance)
         if instance.file:
             site_config = SiteConfig(instance.website.starter.config)
             content_config = site_config.find_item_by_name(instance.type)
             if content_config:
                 file_field = next(
-                    filter(lambda y: y.get("widget") == "file", content_config.fields)
+                    filter(lambda y: y.get("widget") == "file", content_config.fields),
+                    None,
                 )
                 if file_field:
-                    result["metadata"][file_field["name"]] = instance.file.url
+                    result[file_field["name"]] = instance.file.url
         return result
 
     class Meta:

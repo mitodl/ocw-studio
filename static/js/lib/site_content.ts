@@ -196,6 +196,8 @@ export const contentInitialValues = (
       values[field.name] = content.markdown ?? ""
     } else if (field.name === "title") {
       values[field.name] = content[field.name] ?? ""
+    } else if (field.widget === "file") {
+      values[field.name] = content[field.name] ?? null
     } else {
       values[field.name] = metadata[field.name] ?? defaultForField(field)
     }

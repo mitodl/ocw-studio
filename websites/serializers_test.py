@@ -159,7 +159,7 @@ def test_website_content_detail_with_file_serializer():
     content.file = SimpleUploadedFile("test.txt", b"content")
 
     serialized_data = WebsiteContentDetailSerializer(instance=content).data
-    assert serialized_data["metadata"]["image"] == content.file.url
+    assert serialized_data["image"] == content.file.url
     assert serialized_data["metadata"]["title"] == content.metadata["title"]
 
 
