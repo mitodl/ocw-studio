@@ -149,6 +149,7 @@ export const contentFormValuesToPayload = (
     payload["type"] = values["type"]
   }
 
+  let hasFileUpload = false
   for (const field of fields) {
     let value = values[field.name]
     if (!fieldHasData(field, values)) {
@@ -164,8 +165,9 @@ export const contentFormValuesToPayload = (
       } else if (field.name === "title") {
         payload[field.name] = value
         // @ts-ignore
-      } else if (field.name === "file" && value instanceof File) {
-        payload[field.name] = value
+      } else if (value instanceof File) {
+        payload["file"] = value
+        hasFileUpload = true
       } else {
         metadata[field.name] = value
       }
@@ -176,7 +178,7 @@ export const contentFormValuesToPayload = (
     payload["metadata"] = metadata
   }
 
-  return values["file"] ? objectToFormData(payload) : payload
+  return hasFileUpload ? objectToFormData(payload) : payload
 }
 
 /**
@@ -194,7 +196,7 @@ export const contentInitialValues = (
       values[field.name] = content.markdown ?? ""
     } else if (field.name === "title") {
       values[field.name] = content[field.name] ?? ""
-    } else if (field.name === "file") {
+    } else if (field.widget === "file") {
       values[field.name] = content[field.name] ?? null
     } else {
       values[field.name] = metadata[field.name] ?? defaultForField(field)

@@ -1,5 +1,6 @@
 """ Tests for websites.serializers """
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models import CharField, Value
 
 from main.constants import ISO_8601_FORMAT
@@ -150,6 +151,16 @@ def test_website_content_detail_serializer():
     assert serialized_data["type"] == content.type
     assert serialized_data["markdown"] == content.markdown
     assert serialized_data["metadata"] == content.metadata
+
+
+def test_website_content_detail_with_file_serializer():
+    """WebsiteContentDetailSerializer should include its file url in metadata"""
+    content = WebsiteContentFactory.create(type="resource", metadata={"title": "Test"})
+    content.file = SimpleUploadedFile("test.txt", b"content")
+
+    serialized_data = WebsiteContentDetailSerializer(instance=content).data
+    assert serialized_data["image"] == content.file.url
+    assert serialized_data["metadata"]["title"] == content.metadata["title"]
 
 
 def test_website_content_detail_serializer_save(mocker):

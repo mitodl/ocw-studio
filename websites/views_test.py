@@ -560,7 +560,9 @@ def test_websites_content_create_with_upload(
 def test_websites_content_edit_with_upload(drf_client, global_admin_user, file_upload):
     """Uploading a file when editing a new WebsiteContent object should work"""
     drf_client.force_login(global_admin_user)
-    content = WebsiteContentFactory.create(type=constants.CONTENT_TYPE_RESOURCE)
+    content = WebsiteContentFactory.create(
+        type=constants.CONTENT_TYPE_RESOURCE, metadata={"title": "test"}
+    )
     payload = {"file": file_upload, "title": "New Title"}
     resp = drf_client.patch(
         reverse(

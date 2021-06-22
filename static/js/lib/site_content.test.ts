@@ -99,9 +99,16 @@ describe("site_content", () => {
         title:       "a title",
         type:        "resource",
         description: "a description here",
-        file:        mockFile
+        upload:      mockFile
       }
-      const fields = makeFileConfigItem().fields
+      const fields = [
+        {
+          label:  "Image",
+          name:   "upload",
+          widget: "file"
+        },
+        ...makeFileConfigItem().fields
+      ]
       // @ts-ignore
       const payload = contentFormValuesToPayload(values, fields)
       expect(payload instanceof FormData).toBe(true)

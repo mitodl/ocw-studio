@@ -12,20 +12,21 @@ export interface Props {
  */
 export default function FileUploadField(props: Props): JSX.Element {
   const { name, value, setFieldValue } = props
-
+  const fileInputName = name || "file"
   return (
     <div>
       <input
         type="file"
-        name={name || "file"}
+        name={fileInputName}
         onChange={event => {
           setFieldValue(
-            "file",
+            fileInputName,
             event.target.files ? event.target.files[0] : null
           )
         }}
         className="form-control"
       />
+      <input type="hidden" name="file_field_name" value={fileInputName} />
       {value && !(value instanceof File) ? (
         <div className="current-file">
           Current file: <a href={value}>{filenameFromPath(value)}</a>
