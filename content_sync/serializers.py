@@ -89,18 +89,16 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
         dirpath, filename = get_dirpath_and_filename(
             filepath, expect_file_extension=True
         )
+        omitted_keys = ["uid", "title", "type"]
+        file_url = None
         config_item = site_config.find_item_by_name(content_type)
         if config_item is None:
             raise ValueError(
                 f"Could not find matching config item for this file ({filepath}, type: {content_type})"
             )
         content_config = site_config.find_item_by_name(content_type)
-        omitted_keys = ["uid", "title", "type"]
-        file_url = None
         if content_config:
-            file_field = next(
-                filter(lambda y: y.get("widget") == "file", content_config.fields), None
-            )
+            file_field = site_config.find_file_field(content_config)
             if file_field:
                 omitted_keys.append(file_field["name"])
                 file_url = front_matter_data.get(file_field["name"], None)

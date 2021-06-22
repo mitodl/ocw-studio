@@ -11,7 +11,6 @@ from users.models import User
 from websites import constants
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
-from websites.site_config_api import SiteConfig
 from websites.utils import permissions_group_name_for_role
 
 
@@ -202,15 +201,9 @@ class WebsiteContentDetailSerializer(
         """Add the file field name and url to the serializer if a file exists"""
         result = super().to_representation(instance)
         if instance.file:
-            site_config = SiteConfig(instance.website.starter.config)
-            content_config = site_config.find_item_by_name(instance.type)
-            if content_config:
-                file_field = next(
-                    filter(lambda y: y.get("widget") == "file", content_config.fields),
-                    None,
-                )
-                if file_field:
-                    result[file_field["name"]] = instance.file.url
+            file_field = instance.get_config_file_field()
+            if file_field:
+                result[file_field["name"]] = instance.file.url
         return result
 
     class Meta:

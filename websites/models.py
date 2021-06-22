@@ -178,24 +178,26 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     @property
     def full_metadata(self) -> Dict:
         """Return the metadata field with file upload included"""
+        file_field = self.get_config_file_field()
+        if file_field:
+            full_metadata = (
+                self.metadata
+                if (self.metadata and isinstance(self.metadata, dict))
+                else {}
+            )
+            if self.file and self.file.url:
+                full_metadata[file_field["name"]] = self.file.url
+            else:
+                full_metadata[file_field["name"]] = None
+            return full_metadata
+        return self.metadata
+
+    def get_config_file_field(self) -> Dict:
+        """Get the site config file field for the object, if any"""
         site_config = SiteConfig(self.website.starter.config)
         content_config = site_config.find_item_by_name(self.type)
         if content_config:
-            file_field = next(
-                filter(lambda y: y.get("widget") == "file", content_config.fields), None
-            )
-            if file_field:
-                full_metadata = (
-                    self.metadata
-                    if (self.metadata and isinstance(self.metadata, dict))
-                    else {}
-                )
-                if self.file and self.file.url:
-                    full_metadata[file_field["name"]] = self.file.url
-                else:
-                    full_metadata[file_field["name"]] = None
-                return full_metadata
-        return self.metadata
+            return site_config.find_file_field(content_config)
 
     class Meta:
         constraints = [
