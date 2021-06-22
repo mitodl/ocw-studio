@@ -28,6 +28,17 @@ uid: abcdefg
 - def
 """
 
+EXAMPLE_HUGO_MARKDOWN_WITH_FILE = """---
+title: Example File
+type: resource
+uid: abcdefg
+image: https://test.edu/image.png
+---
+# My markdown
+- abc
+- def
+"""
+
 EXAMPLE_JSON = """{
   "tags": [
     "Design"
@@ -106,7 +117,7 @@ def test_hugo_file_deserialize(mocker):
     assert website_content.is_page_content is True
     assert website_content.dirpath == dest_directory
     assert website_content.filename == dest_filename
-    patched_find_item.assert_called_once_with("page")
+    patched_find_item.assert_any_call("page")
 
     markdown_pos = EXAMPLE_HUGO_MARKDOWN.find(website_content.markdown)
     content_without_markdown = EXAMPLE_HUGO_MARKDOWN[0:markdown_pos]
@@ -119,6 +130,20 @@ def test_hugo_file_deserialize(mocker):
     )
     website_content.refresh_from_db()
     assert website_content.markdown is None
+
+
+@pytest.mark.django_db
+def test_hugo_file_deserialize_with_file():
+    """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
+    website = WebsiteFactory.create()
+    website_content = HugoMarkdownFileSerializer.deserialize(
+        website=website,
+        site_config=SiteConfig(website.starter.config),
+        filepath="/test/file.md",
+        file_contents=EXAMPLE_HUGO_MARKDOWN_WITH_FILE,
+    )
+    assert "image" not in website_content.metadata.keys()
+    assert website_content.file == "https://test.edu/image.png"
 
 
 @pytest.mark.django_db
@@ -151,7 +176,7 @@ def test_hugo_file_deserialize_dirpath(
         file_contents=EXAMPLE_HUGO_MARKDOWN,
     )
     assert website_content.dirpath == exp_content_dirpath
-    patched_find_item.assert_called_once_with("page")
+    patched_find_item.assert_any_call("page")
 
 
 @pytest.mark.parametrize("serializer_cls", [JsonFileSerializer, YamlFileSerializer])
