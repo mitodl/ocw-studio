@@ -144,3 +144,19 @@ def test_is_page_content(
     )
     config_item.item["folder"] = folder_file_target
     assert site_config.is_page_content(config_item) is exp_result
+
+
+@pytest.mark.parametrize(
+    "content_type,field_name", [["resource", "image"], ["blog", None]]
+)
+def test_find_file_field(basic_site_config, content_type, field_name):
+    """The expected file field should be returned if any"""
+    site_config = SiteConfig(basic_site_config)
+    config_item = next(
+        (item for item in site_config.iter_items() if item.name == content_type), None
+    )
+    file_field = site_config.find_file_field(config_item)
+    if field_name:
+        assert file_field["name"] == "image"
+    else:
+        assert file_field is None

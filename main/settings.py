@@ -414,6 +414,8 @@ AWS_QUERYSTRING_AUTH = get_bool(
     default=False,
     description="Enables querystring auth for S3 urls",
 )
+AWS_DEFAULT_ACL = "public-read"
+
 # Provide nice validation of the configuration
 if OCW_STUDIO_USE_S3 and (
     not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY or not AWS_STORAGE_BUCKET_NAME

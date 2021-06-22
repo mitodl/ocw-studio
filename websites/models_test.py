@@ -1,7 +1,12 @@
 """ Website models tests """
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 
-from websites.factories import WebsiteContentFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.models import WebsiteContent
 
 
@@ -12,19 +17,19 @@ from websites.models import WebsiteContent
             {"my": "metadata"},
             "# Markdown",
             None,
-            "8ba489693daddd16de0e9f9b2a6a243ed764d79341cf353bbad0b2b399140ba4",
+            "519b0f9225d269b6f2fe3636c8ef6d0de4c9fd8fde30990fb8a1c65c4575f3ae",
         ],
         [
             {"my": "metadata"},
             None,
             "path/to",
-            "dad8e87334675a60de694397bd6ab592ed83ea3fda3fe7e74446c636479fed4d",
+            "a6ffb383023705e862b9357c23155252808722a62a3effa7c0826a0918095a19",
         ],
         [
             None,
             "# Markdown",
             "path/to",
-            "9bba658e2a2bf057f8ce9132eb6454fe64430614f1431ea84e6ffc3a02613601",
+            "9323949f05768fb0a69ceb96eecb6bf040681fa17102fb93f33ee56493d8b41e",
         ],
     ],
 )
@@ -59,3 +64,45 @@ def test_websitecontent_generate_filename(mocker, title, exp_generated_filename)
     mocker.patch("websites.models.CONTENT_FILENAME_MAX_LEN", 14)
     generated_filename = WebsiteContent.generate_filename(title=title)
     assert generated_filename == exp_generated_filename
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("has_file_widget", [True, False])
+@pytest.mark.parametrize("has_file", [True, False])
+def test_websitecontent_full_metadata(has_file_widget, has_file):
+    """WebsiteContent.full_metadata returns expected file field in metadata when appropriate"""
+    file = SimpleUploadedFile("test.txt", b"content")
+    title = ("Test Title",)
+    description = "Test Description"
+    config_fields = [
+        {"label": "Description", "name": "description", "widget": "text"},
+        {"label": "My File", "name": "my_file", "widget": "file", "required": False},
+    ]
+    site_config = {
+        "content-dir": "content",
+        "collections": [
+            {
+                "name": "resource",
+                "label": "Resource",
+                "category": "Content",
+                "folder": "content/resource",
+                "fields": config_fields if has_file_widget else config_fields[0:1],
+            }
+        ],
+    }
+    starter = WebsiteStarterFactory.create(config=site_config)
+    content = WebsiteContentFactory.build(
+        type="resource",
+        metadata={"title": title, "description": description},
+        file=(file if has_file else None),
+        website=WebsiteFactory(starter=starter),
+    )
+
+    if has_file_widget:
+        assert content.full_metadata == {
+            "title": title,
+            "description": description,
+            "my_file": content.file.url if has_file else None,
+        }
+    else:
+        assert content.full_metadata == {"title": title, "description": description}

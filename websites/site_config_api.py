@@ -1,6 +1,6 @@
 """API functionality for working with site configs"""
 from dataclasses import dataclass
-from typing import Iterator, Optional
+from typing import Dict, Iterator, Optional
 
 from django.utils.functional import cached_property
 
@@ -106,4 +106,10 @@ class SiteConfig:
         return file_target is not None and (
             file_target == self.content_dir
             or file_target.startswith(f"{self.content_dir}/")
+        )
+
+    def find_file_field(self, config_item: ConfigItem) -> Dict:
+        """Return the file field for a config item if it exists"""
+        return next(
+            filter(lambda y: y.get("widget") == "file", config_item.fields), None
         )

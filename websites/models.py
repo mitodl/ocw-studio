@@ -1,6 +1,7 @@
 """ websites models """
 import json
 from hashlib import sha256
+from typing import Dict
 from uuid import uuid4
 
 import yaml
@@ -26,6 +27,7 @@ from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
 )
+from websites.site_config_api import SiteConfig
 from websites.utils import permissions_group_name_for_role
 
 
@@ -168,9 +170,34 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
                     self.type,
                     str(self.dirpath),
                     str(self.filename),
+                    str(self.file.url if self.file else ""),
                 ]
             ).encode("utf-8")
         ).hexdigest()
+
+    @property
+    def full_metadata(self) -> Dict:
+        """Return the metadata field with file upload included"""
+        file_field = self.get_config_file_field()
+        if file_field:
+            full_metadata = (
+                self.metadata
+                if (self.metadata and isinstance(self.metadata, dict))
+                else {}
+            )
+            if self.file and self.file.url:
+                full_metadata[file_field["name"]] = self.file.url
+            else:
+                full_metadata[file_field["name"]] = None
+            return full_metadata
+        return self.metadata
+
+    def get_config_file_field(self) -> Dict:
+        """Get the site config file field for the object, if any"""
+        site_config = SiteConfig(self.website.starter.config)
+        content_config = site_config.find_item_by_name(self.type)
+        if content_config:
+            return site_config.find_file_field(content_config)
 
     class Meta:
         constraints = [

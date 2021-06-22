@@ -61,7 +61,7 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
     @staticmethod
     def serialize(website_content: WebsiteContent) -> str:
         front_matter = {
-            **(website_content.metadata or {}),
+            **(website_content.full_metadata or {}),
             "uid": website_content.text_id,
             "title": website_content.title,
             "type": website_content.type,
@@ -70,7 +70,7 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
         return f"---\n{yaml.dump(front_matter)}---\n{website_content.markdown or ''}"
 
     @staticmethod
-    def deserialize(
+    def deserialize(  # pylint:disable=too-many-locals
         website: Website, site_config: SiteConfig, filepath: str, file_contents: str
     ) -> WebsiteContent:
         md_file_sections = [
@@ -89,13 +89,22 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
         dirpath, filename = get_dirpath_and_filename(
             filepath, expect_file_extension=True
         )
+        omitted_keys = ["uid", "title", "type"]
+        file_url = None
         config_item = site_config.find_item_by_name(content_type)
         if config_item is None:
             raise ValueError(
                 f"Could not find matching config item for this file ({filepath}, type: {content_type})"
             )
+        content_config = site_config.find_item_by_name(content_type)
+        if content_config:
+            file_field = site_config.find_file_field(content_config)
+            if file_field:
+                omitted_keys.append(file_field["name"])
+                file_url = front_matter_data.get(file_field["name"], None)
+
         base_defaults = {
-            "metadata": dict_without_keys(front_matter_data, "uid", "title", "type"),
+            "metadata": dict_without_keys(front_matter_data, *omitted_keys),
             "markdown": markdown,
             "text_id": text_id,
             "title": front_matter_data.get("title"),
@@ -103,6 +112,7 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
             "dirpath": remove_trailing_slashes(dirpath),
             "filename": filename,
             "is_page_content": True,
+            "file": file_url,
         }
         content, _ = WebsiteContent.objects.update_or_create(
             website=website, text_id=text_id, defaults=base_defaults
