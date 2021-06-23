@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.17.0
+Version 0.17.0 (Released June 23, 2021)
 --------------
 
 - add models, admin config, and the migration for the WebsiteCollection
