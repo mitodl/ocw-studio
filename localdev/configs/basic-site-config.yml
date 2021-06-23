@@ -1,4 +1,5 @@
 content-dir: content
+base-url: "courses"
 collections:
   - name: blog
     label: Blog

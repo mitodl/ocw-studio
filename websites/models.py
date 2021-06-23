@@ -110,7 +110,13 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
 
     def upload_file_to(self, filename):
         """Return the appropriate filepath for an upload"""
-        return f"{self.website.name}/{self.text_id.replace('-', '')}_{filename}"
+        site_config = SiteConfig(self.website.starter.config)
+        url_parts = [
+            site_config.base_url,
+            self.website.name,
+            f"{self.text_id.replace('-', '')}_{filename}",
+        ]
+        return "/".join([part for part in url_parts if part])
 
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
     updated_by = models.ForeignKey(

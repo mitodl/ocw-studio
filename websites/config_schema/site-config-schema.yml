@@ -1,3 +1,4 @@
+base-url: str()
 content-dir: str(required=False)
 collections: list(include('content_item'))
 ---

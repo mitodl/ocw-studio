@@ -6,6 +6,7 @@ from django.utils.functional import cached_property
 
 from main.utils import remove_trailing_slashes
 from websites.constants import (
+    WEBSITE_CONFIG_BASE_URL_KEY,
     WEBSITE_CONFIG_CONTENT_DIR_KEY,
     WEBSITE_CONFIG_DEFAULT_CONTENT_DIR,
 )
@@ -65,6 +66,13 @@ class SiteConfig:
             self.raw_data.get(WEBSITE_CONFIG_CONTENT_DIR_KEY)
             or WEBSITE_CONFIG_DEFAULT_CONTENT_DIR
         )
+
+    @cached_property
+    def base_url(self) -> str:
+        """
+        Returns the content directory described in the site config
+        """
+        return self.raw_data.get(WEBSITE_CONFIG_BASE_URL_KEY, "")
 
     def iter_items(self) -> Iterator[ConfigItem]:
         """Yields all config items for which users can enter data"""

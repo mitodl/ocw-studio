@@ -526,12 +526,23 @@ def test_websites_content_create(drf_client, global_admin_user):
     assert resp.data["text_id"] == str(content.text_id)
 
 
+@pytest.mark.parametrize(
+    "base_url, expected_prefix",
+    [
+        ["", ""],
+        ["testsites", "testsites/"],
+    ],
+)
 def test_websites_content_create_with_upload(
-    drf_client, global_admin_user, file_upload
+    drf_client, global_admin_user, file_upload, base_url, expected_prefix
 ):
     """Uploading a file when creating a new WebsiteContent object should work"""
     drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create()
+    if base_url is not None:
+        starter = website.starter
+        starter.config["base-url"] = base_url
+        starter.save()
     payload = {
         "title": "new title",
         "type": constants.CONTENT_TYPE_RESOURCE,
@@ -552,7 +563,7 @@ def test_websites_content_create_with_upload(
     assert content.title == payload["title"]
     assert (
         content.file.name
-        == f"{website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
+        == f"{expected_prefix}{website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
     )
     assert content.type == payload["type"]
     assert resp.data["text_id"] == str(content.text_id)
@@ -581,7 +592,7 @@ def test_websites_content_edit_with_upload(drf_client, global_admin_user, file_u
     assert content.title == payload["title"]
     assert (
         content.file.name
-        == f"{content.website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
+        == f"courses/{content.website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
     )
     assert resp.data["text_id"] == str(content.text_id)
 
