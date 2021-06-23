@@ -592,7 +592,7 @@ def test_websites_content_edit_with_upload(drf_client, global_admin_user, file_u
     assert content.title == payload["title"]
     assert (
         content.file.name
-        == f"courses/{content.website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
+        == f"sites/{content.website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
     )
     assert resp.data["text_id"] == str(content.text_id)
 

@@ -1,4 +1,5 @@
 {
+  "base-url": "omnibus",
   "collections": [
     {
       "category": "Content",
