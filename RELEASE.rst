@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.17.1
+--------------
+
+- Include uploaded filepath in backend (github) metadata (#333)
+- Filter out course sites with null metadata (#327)
+- Allow WebsiteContent file upload fields to have any name, not just "file" (#329)
+- Add MarkdownEditor tests (#330)
+- Bump postcss from 7.0.35 to 7.0.36 (#326)
+- Bump django from 3.1.8 to 3.1.12 (#318)
+- Added omnibus site config and pared down course config
+- Made 'title' field default for 'folder'-type items
+
 Version 0.17.0 (Released June 23, 2021)
 --------------
 
