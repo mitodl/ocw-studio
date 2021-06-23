@@ -70,7 +70,7 @@ class SiteConfig:
     @cached_property
     def base_url(self) -> str:
         """
-        Returns the content directory described in the site config
+        Returns the base url described in the site config
         """
         return self.raw_data.get(WEBSITE_CONFIG_BASE_URL_KEY)
 
