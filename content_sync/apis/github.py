@@ -80,7 +80,8 @@ def sync_starter_configs(
 ):
     """
     Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
-    Return lists of files that succeeded and failed.
+    If a commit was passed in and GITHUB_WEBHOOK_BRANCH is set, these are compared and the change
+    is ignored if it does not match the branch in settings
     """
     repo_path = urlparse(repo_url).path.lstrip("/")
     org_name, repo_name = repo_path.split("/", 1)
@@ -88,9 +89,15 @@ def sync_starter_configs(
     org = git.get_organization(org_name)
     repo = org.get_repo(repo_name)
 
+    settings_branch = settings.GITHUB_WEBHOOK_BRANCH
+    branch = repo.get_branch(settings_branch) if settings_branch else None
+    if commit and branch:
+        if commit != branch.commit:
+            return
+
     for config_file in config_files:
         try:
-            git_file = repo.get_contents(config_file)
+            git_file = repo.get_contents(config_file, commit)
             slug = (
                 git_file.path.split("/")[0]
                 if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE

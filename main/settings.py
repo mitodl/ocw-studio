@@ -637,6 +637,12 @@ GITHUB_WEBHOOK_KEY = get_string(
     description="Github secret key sent by webhook requests",
     required=False,
 )
+GITHUB_WEBHOOK_BRANCH = get_string(
+    name="GITHUB_WEBHOOK_BRANCH",
+    default="",
+    description="Github branch to filter webhook requests against",
+    required=False,
+)
 OCW_STUDIO_SITE_CONFIG_FILE = get_string(
     name="OCW_STUDIO_SITE_CONFIG_FILE",
     default="ocw-studio.yaml",
