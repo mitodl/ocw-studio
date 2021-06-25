@@ -1,5 +1,7 @@
 import * as yup from "yup"
 import { getContentSchema } from "./validation"
+import * as siteContentFuncs from "../../lib/site_content"
+import sinon, { SinonSandbox } from "sinon"
 
 import {
   makeRepeatableConfigItem,
@@ -18,7 +20,6 @@ import {
 } from "../../types/websites"
 
 describe("form validation util", () => {
-  const yupFileFieldSchema = yup.mixed()
   const repeatableConfigItem = makeRepeatableConfigItem()
   const singletonConfigItem = makeSingletonConfigItem()
   const partialField = {
@@ -28,7 +29,15 @@ describe("form validation util", () => {
   const defaultFormValues = {
     title: "My Title"
   }
-  let configItem: ConfigItem
+  let configItem: ConfigItem, sandbox: SinonSandbox
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox()
+  })
+
+  afterEach(() => {
+    sandbox.restore()
+  })
 
   describe("for 'title' field", () => {
     const titleField: StringConfigField = {
@@ -52,7 +61,7 @@ describe("form validation util", () => {
           // @ts-ignore
           fields: field ? [field] : []
         }
-        const schema = getContentSchema(configItem)
+        const schema = getContentSchema(configItem, {})
         if (expAddedTitleField) {
           expect(() => schema.validateSync({})).toThrow(
             new yup.ValidationError("Title is a required field")
@@ -69,37 +78,74 @@ describe("form validation util", () => {
     })
   })
 
-  it("produces a validation schema for fields regardless of whether they're required or not", () => {
+  it("should skip validation for fields which aren't visible", () => {
     configItem = {
       ...repeatableConfigItem,
       fields: [
         {
           ...partialField,
-          widget: WidgetVariant.String
+          widget:   WidgetVariant.String,
+          required: true
         }
       ]
     }
-    const schema = getContentSchema(configItem)
-    expect(schema.toString()).toStrictEqual(
-      yup
-        .object()
-        .shape({
-          [partialField.name]: yup
-            .string()
-            .label(partialField.label)
-            .required()
-        })
-        .toString()
-    )
+    const values = { val: "ues" }
+    let schema = getContentSchema(configItem, values)
+    expect(() =>
+      schema.validateSync({
+        ...defaultFormValues,
+        [partialField.name]: null
+      })
+    ).toThrow(`${partialField.label} is a required field`)
+
+    const fieldIsVisibleStub = sandbox
+      .stub(siteContentFuncs, "fieldIsVisible")
+      .returns(false)
+    schema = getContentSchema(configItem, values)
+    // no exception thrown
+    schema.validateSync({
+      ...defaultFormValues,
+      [partialField.name]: null
+    })
+    sinon.assert.calledWith(fieldIsVisibleStub, configItem.fields[0], values)
+  })
+
+  it("should skip validation for a title field which isn't visible", () => {
+    configItem = {
+      ...repeatableConfigItem,
+      fields: [
+        {
+          ...partialField,
+          name:     "title",
+          widget:   WidgetVariant.String,
+          required: true
+        }
+      ]
+    }
+    let schema = getContentSchema(configItem, {})
+    expect(() =>
+      schema.validateSync({
+        ...defaultFormValues,
+        ["title"]: null
+      })
+    ).toThrow(`${partialField.label} is a required field`)
+
+    sandbox.stub(siteContentFuncs, "fieldIsVisible").returns(false)
+    schema = getContentSchema(configItem, {})
+    // no exception thrown
+    schema.validateSync({
+      ...defaultFormValues,
+      ["title"]: null
+    })
   })
 
   //
   ;[
-    [WidgetVariant.String, yup.string()],
-    [WidgetVariant.Text, yup.string()],
-    [WidgetVariant.Markdown, yup.string()],
-    [WidgetVariant.File, yupFileFieldSchema]
-  ].forEach(([widget, expectedYupField]) => {
+    WidgetVariant.String,
+    WidgetVariant.Text,
+    WidgetVariant.Markdown,
+    WidgetVariant.File
+  ].forEach(widget => {
     it(`produces the correct validation schema for a required '${widget}' field`, () => {
       configItem = {
         ...repeatableConfigItem,
@@ -115,18 +161,13 @@ describe("form validation util", () => {
             | FileConfigField
         ]
       }
-      const schema = getContentSchema(configItem)
-      expect(schema.toString()).toStrictEqual(
-        yup
-          .object()
-          .shape({
-            [partialField.name]: expectedYupField
-              // @ts-ignore
-              .label(partialField.label)
-              .required()
-          })
-          .toString()
-      )
+      const schema = getContentSchema(configItem, {})
+      expect(() =>
+        schema.validateSync({
+          ...defaultFormValues,
+          [partialField.name]: null
+        })
+      ).toThrow(`${partialField.label} is a required field`)
     })
   })
 
@@ -148,23 +189,17 @@ describe("form validation util", () => {
         }
       ]
     }
-    const schema = getContentSchema(configItem)
-    // @ts-ignore
-    expect(schema.fields.myfield.toString()).toStrictEqual(
-      yup
-        .string()
-        .label("My Field")
-        .required()
-        .toString()
-    )
-    // @ts-ignore
-    expect(schema.fields.myfield2.toString()).toStrictEqual(
-      yup
-        .string()
-        .label("My Second Field")
-        .required()
-        .toString()
-    )
+    const schema = getContentSchema(configItem, {})
+    for (const field of configItem.fields) {
+      expect(() =>
+        schema.validateSync({
+          ...defaultFormValues,
+          myfield:      "text",
+          myfield2:     "text",
+          [field.name]: null
+        })
+      ).toThrow(`${field.label} is a required field`)
+    }
   })
 
   describe("select validation", () => {
@@ -184,7 +219,7 @@ describe("form validation util", () => {
         multiple: true,
         required: true
       })
-      const schema = getContentSchema(configItem)
+      const schema = getContentSchema(configItem, {})
       expect(() =>
         schema.validateSync({
           ...defaultFormValues,
@@ -195,7 +230,7 @@ describe("form validation util", () => {
 
     it("should pass validation for valid multiple select values", async () => {
       const [configItem, name] = makeSelectConfigItem({ multiple: true })
-      const schema = getContentSchema(configItem)
+      const schema = getContentSchema(configItem, {})
       await Promise.all(
         [[], ["some value"], ["some value", "another value"]].map(
           async value => {
@@ -216,7 +251,7 @@ describe("form validation util", () => {
         min:      1,
         max:      2
       })
-      const schema = getContentSchema(configItem)
+      const schema = getContentSchema(configItem, {})
 
       await Promise.all(
         [
@@ -250,7 +285,7 @@ describe("form validation util", () => {
 
     it("should validate a required non-multiple select field", async () => {
       const [configItem, name] = makeSelectConfigItem({ required: true })
-      const schema = getContentSchema(configItem)
+      const schema = getContentSchema(configItem, {})
 
       expect(() =>
         schema.validateSync({
@@ -281,7 +316,7 @@ describe("form validation util", () => {
         multiple: true,
         required: true
       })
-      const schema = getContentSchema(configItem)
+      const schema = getContentSchema(configItem, {})
       expect(() =>
         schema.validateSync({
           ...defaultFormValues,
@@ -295,7 +330,7 @@ describe("form validation util", () => {
 
     it("should pass validation for valid multiple relation values", async () => {
       const [configItem, name] = makeRelationConfigItem({ multiple: true })
-      const schema = getContentSchema(configItem)
+      const schema = getContentSchema(configItem, {})
       await Promise.all(
         [[], ["some value"], ["some value", "another value"]].map(
           async value => {
@@ -319,7 +354,7 @@ describe("form validation util", () => {
         min:      1,
         max:      2
       })
-      const schema = getContentSchema(configItem)
+      const schema = getContentSchema(configItem, {})
 
       await Promise.all(
         [
@@ -359,7 +394,7 @@ describe("form validation util", () => {
 
     it("should validate a required non-multiple field", async () => {
       const [configItem, name] = makeRelationConfigItem({ required: true })
-      const schema = getContentSchema(configItem)
+      const schema = getContentSchema(configItem, {})
 
       expect(() =>
         schema.validateSync({
@@ -410,7 +445,7 @@ describe("form validation util", () => {
 
     it("should validate the sub-fields", async () => {
       const [configItem, name] = makeObjectConfigItem({ required: true })
-      const schema = getContentSchema(configItem)
+      const schema = getContentSchema(configItem, {})
 
       await schema
         .validate({ ...defaultFormValues, [name]: {} }, { abortEarly: false })

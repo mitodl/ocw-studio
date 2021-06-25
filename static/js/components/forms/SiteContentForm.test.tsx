@@ -1,5 +1,4 @@
 import React from "react"
-import * as yup from "yup"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { shallow } from "enzyme"
 
@@ -40,7 +39,6 @@ describe("SiteContentForm", () => {
     setFieldValueStub = sinon.stub()
     content = makeWebsiteContentDetail()
     configItem = makeEditableConfigItem(content.type)
-    mockValidationSchema = yup.object().shape({})
     // @ts-ignore
     splitFieldsIntoColumns.mockImplementation(() => [])
   })
@@ -53,7 +51,7 @@ describe("SiteContentForm", () => {
     shallow(
       <SiteContentForm
         fields={configItem.fields}
-        schema={mockValidationSchema}
+        configItem={configItem}
         content={content}
         onSubmit={onSubmitStub}
         formType={ContentFormType.Add}

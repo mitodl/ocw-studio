@@ -1,7 +1,10 @@
 import * as yup from "yup"
 import { ArraySchema, setLocale } from "yup"
 
-import { isRepeatableCollectionItem } from "../../lib/site_content"
+import {
+  fieldIsVisible,
+  isRepeatableCollectionItem
+} from "../../lib/site_content"
 
 import {
   ConfigField,
@@ -12,6 +15,7 @@ import {
   EditableConfigItem
 } from "../../types/websites"
 import { FormSchema } from "../../types/forms"
+import { FormikValues } from "formik"
 
 // This is added to properly handle file fields, which can have a "null" value
 setLocale({
@@ -110,12 +114,16 @@ export const getFieldSchema = (field: ConfigField): FormSchema => {
  * a Yup validation schema which will validate a form for those fields.
  **/
 export const getContentSchema = (
-  configItem: ConfigItem | EditableConfigItem
+  configItem: ConfigItem | EditableConfigItem,
+  values: FormikValues
 ): FormSchema => {
+  const titleField = configItem.fields.find(field => field.name === "title")
   const yupObjectShape = Object.fromEntries(
-    configItem.fields.map(field => [field.name, getFieldSchema(field)])
+    configItem.fields
+      .filter(field => fieldIsVisible(field, values))
+      .map(field => [field.name, getFieldSchema(field)])
   )
-  if (isRepeatableCollectionItem(configItem) && !("title" in yupObjectShape)) {
+  if (isRepeatableCollectionItem(configItem) && !titleField) {
     yupObjectShape["title"] = defaultTitleFieldSchema
   }
   return yup.object().shape(yupObjectShape)

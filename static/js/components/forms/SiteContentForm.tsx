@@ -1,5 +1,12 @@
 import React, { useMemo } from "react"
-import { Form, Formik, FormikHelpers } from "formik"
+import {
+  Form,
+  Formik,
+  FormikHelpers,
+  FormikValues,
+  validateYupSchema,
+  yupToFormErrors
+} from "formik"
 
 import SiteContentField from "./SiteContentField"
 import ObjectField from "../widgets/ObjectField"
@@ -15,9 +22,11 @@ import {
 import {
   WebsiteContent,
   WidgetVariant,
-  ConfigField
+  ConfigField,
+  EditableConfigItem
 } from "../../types/websites"
-import { ContentFormType, FormSchema, SiteFormValues } from "../../types/forms"
+import { ContentFormType, SiteFormValues } from "../../types/forms"
+import { getContentSchema } from "./validation"
 
 interface Props {
   onSubmit: (
@@ -25,7 +34,7 @@ interface Props {
     formikHelpers: FormikHelpers<any>
   ) => void | Promise<any>
   fields: ConfigField[]
-  schema: FormSchema
+  configItem: EditableConfigItem
   content: WebsiteContent | null
   formType: ContentFormType
 }
@@ -33,7 +42,7 @@ interface Props {
 export default function SiteContentForm({
   onSubmit,
   fields,
-  schema,
+  configItem,
   content,
   formType
 }: Props): JSX.Element {
@@ -52,10 +61,20 @@ export default function SiteContentForm({
   const fieldsByColumn = splitFieldsIntoColumns(renamedFields)
   const columnClass = fieldsByColumn.length === 2 ? "col-6" : "col-12"
 
+  const validate = async (values: FormikValues) => {
+    const schema = getContentSchema(configItem, values)
+    try {
+      await validateYupSchema(values, schema)
+    } catch (e) {
+      return yupToFormErrors(e)
+    }
+    return {}
+  }
+
   return (
     <Formik
       onSubmit={onSubmit}
-      validationSchema={schema}
+      validate={validate}
       initialValues={initialValues}
       enableReinitialize={true}
     >

@@ -20,7 +20,6 @@ import {
   isSingletonCollectionItem
 } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
-import { getContentSchema } from "./forms/validation"
 
 import {
   ConfigField,
@@ -52,8 +51,6 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
   const fields: ConfigField[] = useMemo(() => addDefaultFields(configItem), [
     configItem
   ])
-  const schema = getContentSchema(configItem)
-
   const site = useWebsite()
   const [
     { isPending: addIsPending },
@@ -153,7 +150,7 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     <SiteContentForm
       onSubmit={onSubmitForm}
       fields={fields}
-      schema={schema}
+      configItem={configItem}
       content={content}
       formType={formType}
     />

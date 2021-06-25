@@ -3,6 +3,7 @@ import React from "react"
 import { act } from "react-dom/test-utils"
 import sinon, { SinonStub } from "sinon"
 import * as yup from "yup"
+import * as formikFuncs from "formik"
 
 import SiteContentEditor from "./SiteContentEditor"
 import WebsiteContext from "../context/Website"
@@ -19,6 +20,7 @@ import {
   makeWebsiteDetail
 } from "../util/factories/websites"
 import { getContentSchema } from "./forms/validation"
+import * as validationFuncs from "./forms/validation"
 import { shouldIf } from "../test_util"
 
 import {
@@ -124,7 +126,68 @@ describe("SiteContent", () => {
     const form = wrapper.find("SiteContentForm")
     expect(form.exists()).toBe(true)
     expect(form.prop("fields")).toStrictEqual(configItem.fields)
-    expect(form.prop("schema")).toStrictEqual(mockContentSchema)
+  })
+
+  describe("validates using the content schema", () => {
+    let validateYupSchemaStub: SinonStub,
+      yupToFormErrorsStub: SinonStub,
+      getContentSchemaStub: SinonStub
+    beforeEach(() => {
+      validateYupSchemaStub = helper.sandbox.stub(
+        formikFuncs,
+        "validateYupSchema"
+      )
+      yupToFormErrorsStub = helper.sandbox.stub(formikFuncs, "yupToFormErrors")
+      getContentSchemaStub = helper.sandbox.stub(
+        validationFuncs,
+        "getContentSchema"
+      )
+      getContentSchemaStub.returns(mockContentSchema)
+    })
+
+    it("with no errors", async () => {
+      const { wrapper } = await render()
+      const values = { val: "ues" }
+      // @ts-ignore
+      const result = await wrapper.find("Formik").prop("validate")(values)
+      expect(result).toStrictEqual({})
+      // @ts-ignore
+      sinon.assert.calledOnceWithExactly(
+        getContentSchemaStub,
+        configItem,
+        values
+      )
+      sinon.assert.calledOnceWithExactly(
+        validateYupSchemaStub,
+        values,
+        mockContentSchema
+      )
+      sinon.assert.notCalled(yupToFormErrorsStub)
+    })
+
+    it("with some errors", async () => {
+      const { wrapper } = await render()
+      const values = { val: "ues" }
+      const error = new Error("an error")
+      validateYupSchemaStub.throws(error)
+      const validationData = ["An error was found"]
+      yupToFormErrorsStub.returns(validationData)
+      // @ts-ignore
+      const result = await wrapper.find("Formik").prop("validate")(values)
+      expect(result).toStrictEqual(validationData)
+      // @ts-ignore
+      sinon.assert.calledOnceWithExactly(
+        getContentSchemaStub,
+        configItem,
+        values
+      )
+      sinon.assert.calledOnceWithExactly(
+        validateYupSchemaStub,
+        values,
+        mockContentSchema
+      )
+      sinon.assert.calledOnceWithExactly(yupToFormErrorsStub, error)
+    })
   })
 
   it("modifies config item fields before passing them on to form component", async () => {
