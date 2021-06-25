@@ -687,7 +687,10 @@ def test_sync_starter_configs_webhook_branch_hash_mismatch(mocker, mock_github):
 
 
 def test_sync_starter_configs_webhook_branch_hash_match(mocker, mock_github):
-    """A push to a branch other than the default branch without GITHUB_WEBHOOK_BRANCH should not trigger a starter update"""
+    """
+    A push to the branch set in settings.GITHUB_WEBHOOK_BRANCH should trigger
+    getting that branch and then the config files themselves
+    """
     git_url = "https://github.com/testorg/ocws-configs"
     config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
     fake_commit = "abc123"
