@@ -1,5 +1,6 @@
 """ Github API tests """
 import hashlib
+from posixpath import relpath
 from types import SimpleNamespace
 
 import factory
@@ -668,3 +669,43 @@ def test_sync_starter_configs_exception(mocker, mock_github):
     sync_starter_configs(git_url, config_filenames)
     for filename in config_filenames:
         mock_log.assert_any_call("Error processing config file %s", filename)
+
+
+def test_sync_starter_configs_webhook_branch_hash_mismatch(mocker, mock_github):
+    """A push to a branch other than the default branch without GITHUB_WEBHOOK_BRANCH should not trigger a starter update"""
+    git_url = "https://github.com/testorg/ocws-configs"
+    config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.default_branch.return_value = (
+        settings.GIT_BRANCH_MAIN
+    )
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_branch.return_value = mocker.Mock(
+        commit=mocker.Mock(sha="abc123")
+    )
+    fake_commit = "def456"
+    sync_starter_configs(git_url, config_filenames, fake_commit)
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.assert_not_called()
+
+
+def test_sync_starter_configs_webhook_branch_hash_match(mocker, mock_github):
+    """A push to a branch other than the default branch without GITHUB_WEBHOOK_BRANCH should not trigger a starter update"""
+    git_url = "https://github.com/testorg/ocws-configs"
+    config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
+    fake_commit = "abc123"
+    release_branch = "release"
+    config_content = b"---\ncollections: []"
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
+        mocker.Mock(path=config_filenames[0], decoded_content=config_content),
+        mocker.Mock(path=config_filenames[1], decoded_content=config_content),
+    ]
+    settings.GITHUB_WEBHOOK_BRANCH = release_branch
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_branch.return_value = mocker.Mock(
+        commit=mocker.Mock(sha=fake_commit)
+    )
+    sync_starter_configs(git_url, config_filenames, fake_commit)
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_branch.assert_called_once_with(
+        release_branch
+    )
+    for config_file in config_filenames:
+        mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.assert_any_call(
+            config_file, fake_commit
+        )
