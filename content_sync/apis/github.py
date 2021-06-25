@@ -81,7 +81,7 @@ def sync_starter_configs(
     """
     Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
     If a commit was passed in and GITHUB_WEBHOOK_BRANCH is set, these are compared and the change
-    is ignored if it does not match the branch in settings
+    is ignored if it does not match the branch in settings.
     """
     repo_path = urlparse(repo_url).path.lstrip("/")
     org_name, repo_name = repo_path.split("/", 1)
