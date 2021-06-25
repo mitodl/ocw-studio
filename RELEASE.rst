@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.17.1
+Version 0.17.1 (Released June 25, 2021)
 --------------
 
 - Include uploaded filepath in backend (github) metadata (#333)
