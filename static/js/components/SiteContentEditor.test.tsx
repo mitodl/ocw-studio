@@ -148,17 +148,8 @@ describe("SiteContent", () => {
     expect(form.prop("fields")).toStrictEqual([
       // Title field should be added by default
       DEFAULT_TITLE_FIELD,
-      // Nested object field should be renamed
-      {
-        ...objectField,
-        fields: [
-          {
-            // @ts-ignore
-            ...objectField.fields[0],
-            name: "myobject.mystring"
-          }
-        ]
-      }
+      // Nested object field should be not renamed
+      objectField
     ])
   })
 

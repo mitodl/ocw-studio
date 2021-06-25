@@ -17,8 +17,7 @@ import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import {
   addDefaultFields,
   contentFormValuesToPayload,
-  isSingletonCollectionItem,
-  renameNestedFields
+  isSingletonCollectionItem
 } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import { getContentSchema } from "./forms/validation"
@@ -50,10 +49,9 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     fetchWebsiteContentListing
   } = props
 
-  const fields: ConfigField[] = useMemo(() => {
-    const fields = addDefaultFields(configItem)
-    return renameNestedFields(fields)
-  }, [configItem])
+  const fields: ConfigField[] = useMemo(() => addDefaultFields(configItem), [
+    configItem
+  ])
   const schema = getContentSchema(configItem)
 
   const site = useWebsite()
