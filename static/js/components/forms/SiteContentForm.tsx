@@ -8,6 +8,7 @@ import {
   contentInitialValues,
   fieldIsVisible,
   newInitialValues,
+  renameNestedFields,
   splitFieldsIntoColumns
 } from "../../lib/site_content"
 
@@ -44,7 +45,11 @@ export default function SiteContentForm({
     [fields, formType, content]
   )
 
-  const fieldsByColumn = splitFieldsIntoColumns(fields)
+  const renamedFields: ConfigField[] = useMemo(
+    () => renameNestedFields(fields),
+    [fields]
+  )
+  const fieldsByColumn = splitFieldsIntoColumns(renamedFields)
   const columnClass = fieldsByColumn.length === 2 ? "col-6" : "col-12"
 
   return (
