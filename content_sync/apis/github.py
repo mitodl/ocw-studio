@@ -90,10 +90,13 @@ def sync_starter_configs(
     repo = org.get_repo(repo_name)
 
     settings_branch = settings.GITHUB_WEBHOOK_BRANCH
-    branch = repo.get_branch(settings_branch) if settings_branch else None
-    if commit and branch:
-        if commit != branch.commit.sha:
-            return
+    branch = (
+        repo.get_branch(settings_branch)
+        if settings_branch
+        else repo.get_branch(repo.default_branch)
+    )
+    if commit is not None and commit != branch.commit.sha:
+        return
 
     for config_file in config_files:
         try:
