@@ -72,7 +72,7 @@ class SiteConfig:
         """
         Returns the base url described in the site config
         """
-        return self.raw_data.get(WEBSITE_CONFIG_BASE_URL_KEY)
+        return self.raw_data.get(WEBSITE_CONFIG_BASE_URL_KEY, "")
 
     def iter_items(self) -> Iterator[ConfigItem]:
         """Yields all config items for which users can enter data"""
