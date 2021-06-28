@@ -55,8 +55,8 @@ def test_base_sync_backend_subclass_implemented(mocker):
 
 def test_base_sync_backend_subclass_not_implemented(mocker):
     """ Verify BaseSyncBackend doesn't unimplemented subclasses """
-    with pytest.raises(TypeError):  # pylint: disable=abstract-class-instantiated
-        _NotImplementedBackend(
+    with pytest.raises(TypeError):
+        _NotImplementedBackend(  # pylint: disable=abstract-class-instantiated
             mocker.Mock()
         )
 
