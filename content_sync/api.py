@@ -62,5 +62,4 @@ def sync_github_website_starters(
     url: str, files: List[str], commit: Optional[str] = None
 ):
     """ Sync website starters from github """
-    if settings.GIT_TOKEN:
-        tasks.sync_github_site_configs.delay(url, files, commit=commit)
+    tasks.sync_github_site_configs.delay(url, files, commit=commit)
