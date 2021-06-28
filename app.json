@@ -71,6 +71,10 @@
       "description": "Google analytics tracking ID",
       "required": false
     },
+    "GITHUB_WEBHOOK_BRANCH": {
+      "description": "Github branch to filter webhook requests against",
+      "required": false
+    },
     "GITHUB_WEBHOOK_KEY": {
       "description": "Github secret key sent by webhook requests",
       "required": false
