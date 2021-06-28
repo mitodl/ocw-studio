@@ -1,6 +1,5 @@
 """ Github API tests """
 import hashlib
-from posixpath import relpath
 from types import SimpleNamespace
 
 import factory
