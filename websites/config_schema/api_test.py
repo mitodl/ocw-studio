@@ -10,6 +10,9 @@ from websites.config_schema.api import (
 )
 
 
+# pylint:disable=redefined-outer-name
+
+
 SCHEMA_RESOURCES_DIR = "localdev/configs/"
 SCHEMA_CONFIG_FILE = "ocw-course-site-config.yml"
 VALID_TITLE_FIELD = {

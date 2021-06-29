@@ -45,6 +45,9 @@ class SyncResult:
 
 
 def decode_file_contents(content_file: ContentFile) -> str:
+    """
+    Decode repo file contents from base64 to a normal string.
+    """
     return str(b64decode(content_file.content), encoding="utf-8")
 
 
@@ -75,7 +78,7 @@ def get_destination_filepath(
     return None
 
 
-def sync_starter_configs(
+def sync_starter_configs(  # pylint:disable=too-many-locals
     repo_url: str, config_files: List[str], commit: Optional[str] = None
 ):
     """
@@ -120,7 +123,7 @@ def sync_starter_configs(
             if created:
                 starter.name = starter.slug
                 starter.save()
-        except YamaleError as ye:
+        except YamaleError:
             log.exception("Invalid site config YAML found in %s", config_file)
             continue
         except:  # pylint: disable=bare-except

@@ -9,6 +9,10 @@ from websites.site_config_api import SiteConfig
 
 
 class AddedSchemaRule:
+    """
+    Class for validating site config schema rules
+    """
+
     @staticmethod
     def apply_rule(data):
         """
@@ -65,7 +69,7 @@ class UniqueNamesRule(AddedSchemaRule):
     @staticmethod
     def apply_rule(data):
         name_paths = defaultdict(list)
-        for i, config_item in enumerate(SiteConfig(data).iter_items()):
+        for _, config_item in enumerate(SiteConfig(data).iter_items()):
             name_paths[config_item.item["name"]].append(config_item.path)
         faulty_name_paths = {
             name: paths for name, paths in name_paths.items() if len(paths) > 1
@@ -94,7 +98,7 @@ class ContentFolderRule(AddedSchemaRule):
     def apply_rule(data):
         faulty_paths = {}
         site_config = SiteConfig(data)
-        for i, config_item in enumerate(site_config.iter_items()):
+        for _, config_item in enumerate(site_config.iter_items()):
             if config_item.is_folder_item() and not site_config.is_page_content(
                 config_item
             ):
@@ -123,7 +127,7 @@ class RequiredTitleRule(AddedSchemaRule):
     def apply_rule(data):
         faulty_paths = {}
         site_config = SiteConfig(data)
-        for i, config_item in enumerate(site_config.iter_items()):
+        for _, config_item in enumerate(site_config.iter_items()):
             title_field = first_or_none(
                 [field for field in config_item.fields if field["name"] == "title"]
             )

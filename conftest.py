@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from fixtures.common import *
+from fixtures.common import *  # pylint:disable=wildcard-import,unused-wildcard-import
 from websites.constants import COURSE_STARTER_SLUG
 from websites.models import WebsiteStarter
 
