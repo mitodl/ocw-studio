@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.17.2
+Version 0.17.2 (Released June 29, 2021)
 --------------
 
 - Implement linking to content in other websites
