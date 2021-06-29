@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.17.2 (Released June 29, 2021)
+--------------
+
+- Implement linking to content in other websites
+- Fix object field validation (#342)
+- added serializers for the website collection related objects
+
 Version 0.17.1 (Released June 25, 2021)
 --------------
 
