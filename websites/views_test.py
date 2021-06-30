@@ -527,21 +527,21 @@ def test_websites_content_create(drf_client, global_admin_user):
 
 
 @pytest.mark.parametrize(
-    "base_url, expected_prefix",
+    "root_url_path, expected_prefix",
     [
         ["", ""],
         ["testsites", "testsites/"],
     ],
 )
 def test_websites_content_create_with_upload(
-    drf_client, global_admin_user, file_upload, base_url, expected_prefix
+    drf_client, global_admin_user, file_upload, root_url_path, expected_prefix
 ):
     """Uploading a file when creating a new WebsiteContent object should work"""
     drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create()
-    if base_url is not None:
+    if root_url_path is not None:
         starter = website.starter
-        starter.config["root-url-path"] = base_url
+        starter.config["root-url-path"] = root_url_path
         starter.save()
     payload = {
         "title": "new title",

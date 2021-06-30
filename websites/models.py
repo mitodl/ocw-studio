@@ -112,7 +112,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         """Return the appropriate filepath for an upload"""
         site_config = SiteConfig(self.website.starter.config)
         url_parts = [
-            site_config.base_url,
+            site_config.root_url_path,
             self.website.name,
             f"{self.text_id.replace('-', '')}_{filename}",
         ]
