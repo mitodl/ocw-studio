@@ -1,5 +1,4 @@
 {
-  "base-url": "omnibus",
   "collections": [
     {
       "category": "Content",
@@ -186,5 +185,6 @@
       "name": "metadata"
     }
   ],
-  "content-dir": "content"
+  "content-dir": "content",
+  "root-url-path": "omnibus"
 }

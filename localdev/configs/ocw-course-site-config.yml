@@ -1,5 +1,5 @@
 content-dir: content
-base-url: "courses"
+root-url-path: "courses"
 collections:
   - name: page
     label: Page

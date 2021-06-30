@@ -1,4 +1,4 @@
-base-url: "courses"
+root-url-path: "courses"
 collections:
   - label: "Page"
     name: "page"

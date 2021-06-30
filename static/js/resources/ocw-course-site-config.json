@@ -1,5 +1,4 @@
 {
-  "base-url": "courses",
   "collections": [
     {
       "category": "Content",
@@ -60,5 +59,6 @@
       "name": "metadata"
     }
   ],
-  "content-dir": "content"
+  "content-dir": "content",
+  "root-url-path": "courses"
 }

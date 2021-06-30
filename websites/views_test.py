@@ -541,7 +541,7 @@ def test_websites_content_create_with_upload(
     website = WebsiteFactory.create()
     if base_url is not None:
         starter = website.starter
-        starter.config["base-url"] = base_url
+        starter.config["root-url-path"] = base_url
         starter.save()
     payload = {
         "title": "new title",

@@ -1,5 +1,4 @@
 {
-  "base-url": "sites",
   "collections": [
     {
       "category": "Content",
@@ -70,5 +69,6 @@
       "name": "resource"
     }
   ],
-  "content-dir": "content"
+  "content-dir": "content",
+  "root-url-path": "sites"
 }
