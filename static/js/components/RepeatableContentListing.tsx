@@ -78,11 +78,12 @@ export default function RepeatableContentListing(props: {
     })
   }
 
+  const labelSingular = configItem.label_singular ?? configItem.label
   const modalTitle =
     panelState.formType &&
-    `${panelState.formType === ContentFormType.Edit ? "Edit" : "Add"} ${
-      configItem.label
-    }`
+    `${
+      panelState.formType === ContentFormType.Edit ? "Edit" : "Add"
+    } ${labelSingular}`
   const modalClassName = `right ${
     splitFieldsIntoColumns(configItem.fields).length > 1 ? "wide" : ""
   }`
@@ -113,9 +114,9 @@ export default function RepeatableContentListing(props: {
       <div>
         <Card>
           <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
-            <h3>{configItem.label}</h3>
+            <h3>{labelSingular}</h3>
             <a className="btn blue-button add" onClick={startAddOrEdit(null)}>
-              Add {configItem.label}
+              Add {labelSingular}
             </a>
           </div>
           <ul className="ruled-list">

@@ -126,6 +126,8 @@ export type ConfigField =
 export interface BaseConfigItem {
   name: string
   label: string
+  // eslint-disable-next-line camelcase
+  label_singular?: string
 }
 
 export type SingletonConfigItem = BaseConfigItem & {
@@ -151,6 +153,8 @@ export type EditableConfigItem = RepeatableConfigItem | SingletonConfigItem
 export interface ConfigItem {
   name: string
   label: string
+  // eslint-disable-next-line
+  label_singular?: string
   category: string
   fields: ConfigField[]
   file?: string

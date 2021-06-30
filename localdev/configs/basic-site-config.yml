@@ -2,13 +2,15 @@ content-dir: content
 root-url-path: "sites"
 collections:
   - name: blog
-    label: Blog
+    label: Blogs
+    label_singular: Blog
     category: Content
     folder: content/blog
     fields:
       - {"label": "Title", "name": "title", "widget": "string", "required": true}
   - name: bio
-    label: Bio
+    label: Bios
+    label_singular: Bio
     category: Content
     folder: content/bio
     fields:
@@ -23,7 +25,8 @@ collections:
         fields:
           - {"label": "Title", "name": "title", "widget": "string", "required": true}
   - name: resource
-    label: Resource
+    label: Resources
+    label_singular: Resource
     category: Content
     folder: content/resource
     fields:

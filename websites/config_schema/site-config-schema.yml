@@ -5,6 +5,7 @@ collections: list(include('content_item'))
 content_item:
     name: str()
     label: str()
+    label_singular: str(required=False)
     category: str()
     fields: list(include('field'), required=False)
     folder: str(required=False)

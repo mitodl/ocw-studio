@@ -79,7 +79,8 @@
         }
       ],
       "folder": "content",
-      "label": "Page",
+      "label": "Pages",
+      "label_singular": "Page",
       "name": "page"
     },
     {
@@ -114,7 +115,8 @@
         }
       ],
       "folder": "content",
-      "label": "Resource",
+      "label": "Resources",
+      "label_singular": "Resource",
       "name": "resource"
     },
     {

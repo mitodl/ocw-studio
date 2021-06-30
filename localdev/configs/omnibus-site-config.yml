@@ -2,7 +2,8 @@ root-url-path: "omnibus"
 content-dir: content
 collections:
   - name: page
-    label: Page
+    label: Pages
+    label_singular: Page
     category: Content
     folder: content
     fields:
@@ -40,7 +41,8 @@ collections:
           - { label: "Zip Code", name: "zip", widget: "string", required: false }
 
   - name: resource
-    label: Resource
+    label: Resources
+    label_singular: Resource
     category: Content
     folder: content
     fields:
