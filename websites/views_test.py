@@ -530,7 +530,8 @@ def test_websites_content_create(drf_client, global_admin_user):
     "root_url_path, expected_prefix",
     [
         ["", ""],
-        ["testsites", "testsites/"],
+        ["/", ""],
+        ["/test/sites/", "test/sites"],
     ],
 )
 def test_websites_content_create_with_upload(
@@ -561,9 +562,15 @@ def test_websites_content_create_with_upload(
     assert resp.status_code == 201
     content = website.websitecontent_set.get()
     assert content.title == payload["title"]
-    assert (
-        content.file.name
-        == f"{expected_prefix}{website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
+    assert content.file.name == "/".join(
+        [
+            part
+            for part in [
+                expected_prefix,
+                f"{website.name}/{content.text_id.replace('-', '')}_{file_upload.name}",
+            ]
+            if part
+        ]
     )
     assert content.type == payload["type"]
     assert resp.data["text_id"] == str(content.text_id)

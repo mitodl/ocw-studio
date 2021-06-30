@@ -72,7 +72,7 @@ class SiteConfig:
         """
         Returns the root url path described in the site config
         """
-        return self.raw_data.get(WEBSITE_CONFIG_ROOT_URL_PATH_KEY, "")
+        return self.raw_data.get(WEBSITE_CONFIG_ROOT_URL_PATH_KEY, "").strip("/")
 
     def iter_items(self) -> Iterator[ConfigItem]:
         """Yields all config items for which users can enter data"""

@@ -116,7 +116,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
             self.website.name,
             f"{self.text_id.replace('-', '')}_{filename}",
         ]
-        return "/".join([part for part in url_parts if part])
+        return "/".join([part for part in url_parts if part != ""])
 
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
     updated_by = models.ForeignKey(
