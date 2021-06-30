@@ -50,5 +50,5 @@ def test_format_site_config_env():
     )
     website = WebsiteFactory.build(starter=starter, name="my-website")
     assert format_site_config_env(website) == (
-        "CONFIG_PATH=https://github.com/my/config\nCONFIG_SLUG=config1\nSITE_SLUG=my-website"
+        "config_path: https://github.com/my/config\nconfig_slug: config1\nsite_slug: my-website\n"
     )

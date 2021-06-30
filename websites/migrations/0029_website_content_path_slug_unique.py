@@ -8,7 +8,7 @@ import websites.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("websites", "0026_remove_content_filepath"),
+        ("websites", "0028_omnibus_site_config"),
     ]
 
     operations = [

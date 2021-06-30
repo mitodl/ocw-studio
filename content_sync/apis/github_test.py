@@ -103,7 +103,7 @@ def test_get_repo_create(mocker, mock_api_wrapper):
     ]
     mock_api_wrapper.get_repo()
     mock_api_wrapper.org.create_repo.assert_called_once_with(
-        mock_api_wrapper.get_repo_name(), auto_init=True
+        mock_api_wrapper.get_repo_name(), auto_init=False
     )
 
 
@@ -112,7 +112,7 @@ def test_create_repo(mock_api_wrapper, kwargs):
     """create_repo should invoke the appropriate PyGithub call"""
     mock_api_wrapper.create_repo(**kwargs)
     mock_api_wrapper.org.create_repo.assert_called_once_with(
-        mock_api_wrapper.get_repo_name(), auto_init=True, **kwargs
+        mock_api_wrapper.get_repo_name(), auto_init=False, **kwargs
     )
 
 

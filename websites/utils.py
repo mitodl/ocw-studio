@@ -1,4 +1,6 @@
 """Websites utils"""
+import yaml
+
 from websites import constants
 
 
@@ -13,5 +15,11 @@ def permissions_group_name_for_role(role: str, website: "Website") -> str:
 
 
 def format_site_config_env(website: "Website") -> str:
-    """Return a string containing info for hugo publishing"""
-    return f"CONFIG_PATH={website.starter.path}\nCONFIG_SLUG={website.starter.slug}\nSITE_SLUG={website.name}"
+    """Return a yaml-formatted string containing info for hugo publishing"""
+    return yaml.dump(
+        {
+            "config_path": website.starter.path,
+            "config_slug": website.starter.slug,
+            "site_slug": website.name,
+        }
+    )
