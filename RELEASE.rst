@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.17.3
+Version 0.17.3 (Released July 01, 2021)
 --------------
 
 - Fix pylint (#348)
