@@ -69,5 +69,6 @@
       "name": "resource"
     }
   ],
-  "content-dir": "content"
+  "content-dir": "content",
+  "root-url-path": "sites"
 }

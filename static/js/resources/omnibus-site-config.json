@@ -185,5 +185,6 @@
       "name": "metadata"
     }
   ],
-  "content-dir": "content"
+  "content-dir": "content",
+  "root-url-path": "omnibus"
 }

@@ -8,6 +8,7 @@ from main.utils import remove_trailing_slashes
 from websites.constants import (
     WEBSITE_CONFIG_CONTENT_DIR_KEY,
     WEBSITE_CONFIG_DEFAULT_CONTENT_DIR,
+    WEBSITE_CONFIG_ROOT_URL_PATH_KEY,
 )
 
 
@@ -65,6 +66,13 @@ class SiteConfig:
             self.raw_data.get(WEBSITE_CONFIG_CONTENT_DIR_KEY)
             or WEBSITE_CONFIG_DEFAULT_CONTENT_DIR
         )
+
+    @cached_property
+    def root_url_path(self) -> str:
+        """
+        Returns the root url path described in the site config
+        """
+        return self.raw_data.get(WEBSITE_CONFIG_ROOT_URL_PATH_KEY, "").strip("/")
 
     def iter_items(self) -> Iterator[ConfigItem]:
         """Yields all config items for which users can enter data"""

@@ -1,3 +1,4 @@
+root-url-path: "omnibus"
 content-dir: content
 collections:
   - name: page

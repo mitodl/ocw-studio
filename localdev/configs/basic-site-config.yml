@@ -1,4 +1,5 @@
 content-dir: content
+root-url-path: "sites"
 collections:
   - name: blog
     label: Blog

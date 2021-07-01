@@ -526,12 +526,24 @@ def test_websites_content_create(drf_client, global_admin_user):
     assert resp.data["text_id"] == str(content.text_id)
 
 
+@pytest.mark.parametrize(
+    "root_url_path, expected_prefix",
+    [
+        ["", ""],
+        ["/", ""],
+        ["/test/sites/", "test/sites"],
+    ],
+)
 def test_websites_content_create_with_upload(
-    drf_client, global_admin_user, file_upload
+    drf_client, global_admin_user, file_upload, root_url_path, expected_prefix
 ):
     """Uploading a file when creating a new WebsiteContent object should work"""
     drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create()
+    if root_url_path is not None:
+        starter = website.starter
+        starter.config["root-url-path"] = root_url_path
+        starter.save()
     payload = {
         "title": "new title",
         "type": constants.CONTENT_TYPE_RESOURCE,
@@ -550,9 +562,15 @@ def test_websites_content_create_with_upload(
     assert resp.status_code == 201
     content = website.websitecontent_set.get()
     assert content.title == payload["title"]
-    assert (
-        content.file.name
-        == f"{website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
+    assert content.file.name == "/".join(
+        [
+            part
+            for part in [
+                expected_prefix,
+                f"{website.name}/{content.text_id.replace('-', '')}_{file_upload.name}",
+            ]
+            if part
+        ]
     )
     assert content.type == payload["type"]
     assert resp.data["text_id"] == str(content.text_id)
@@ -581,7 +599,7 @@ def test_websites_content_edit_with_upload(drf_client, global_admin_user, file_u
     assert content.title == payload["title"]
     assert (
         content.file.name
-        == f"{content.website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
+        == f"sites/{content.website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
     )
     assert resp.data["text_id"] == str(content.text_id)
 

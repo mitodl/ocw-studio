@@ -585,7 +585,7 @@ def test_sync_starter_configs_success_create(mocker, mock_github):
         "ocw-studio.yaml",
     ]
     git_url = "https://github.com/testorg/ocws-configs"
-    config_content = b"---\ncollections: []"
+    config_content = b"---\nroot-url-path: sites\ncollections: []"
     mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
         mocker.Mock(path=config_filenames[0], decoded_content=config_content),
         mocker.Mock(path=config_filenames[1], decoded_content=config_content),
@@ -599,7 +599,7 @@ def test_sync_starter_configs_success_create(mocker, mock_github):
             path="/".join([git_url, expected_slug]),
             slug=expected_slug,
             name=expected_slug,
-            config={"collections": []},
+            config={"root-url-path": "sites", "collections": []},
         ).exists()
 
 
@@ -607,7 +607,7 @@ def test_sync_starter_configs_success_update(mocker, mock_github):
     """sync_starter_configs should successfully update a WebsiteStarter object"""
     git_url = "https://github.com/testorg/ocws-configs"
     slug = "site-1"
-    config_content = b"---\ncollections: []"
+    config_content = b"---\nroot-url-path: sites\ncollections: []"
     file_list = [f"{slug}/ocw-studio.yaml"]
 
     starter = WebsiteStarterFactory.create(
@@ -627,7 +627,7 @@ def test_sync_starter_configs_success_update(mocker, mock_github):
     assert WebsiteStarter.objects.count() == starter_count
     starter.refresh_from_db()
     assert starter.name == "Site 1"
-    assert starter.config == {"collections": []}
+    assert starter.config == {"root-url-path": "sites", "collections": []}
 
 
 def test_sync_starter_configs_success_partial_failure(mocker, mock_github):
@@ -636,7 +636,10 @@ def test_sync_starter_configs_success_partial_failure(mocker, mock_github):
     git_url = "https://github.com/testorg/ocws-configs"
     mock_log = mocker.patch("content_sync.apis.github.log.exception")
     mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
-        mocker.Mock(path=config_filenames[0], decoded_content=b"---\ncollections: []"),
+        mocker.Mock(
+            path=config_filenames[0],
+            decoded_content=b"---\ncollections: []\nroot-url-path: sites",
+        ),
         mocker.Mock(
             path=config_filenames[1], decoded_content=b"---\nfcollections: []\nfoo: bar"
         ),
@@ -650,7 +653,7 @@ def test_sync_starter_configs_success_partial_failure(mocker, mock_github):
         path=f"{git_url}/site-1",
         slug="site-1",
         name="site-1",
-        config={"collections": []},
+        config={"collections": [], "root-url-path": "sites"},
     ).exists()
     assert not WebsiteStarter.objects.filter(
         path=f"{git_url}/site-2",
