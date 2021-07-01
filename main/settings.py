@@ -130,10 +130,10 @@ INSTALLED_APPS = (
     "hijack_admin",
     "server_status",
     "safedelete",
-    # django-robots
     "rest_framework",
     "social_django",
     "robots",
+    "anymail",
     # Put our apps after this point
     "main",
     "users",
@@ -141,9 +141,10 @@ INSTALLED_APPS = (
     "ocw_import",
     "news",
     "content_sync",
-    # common apps, need to be after ocw-studio apps for template overridding
+    # common apps, need to be after ocw-studio apps for template overriding
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
+    "mitol.mail.apps.MailApp",
 )
 
 if ENVIRONMENT not in {"prod", "production"}:
@@ -185,7 +186,7 @@ ROOT_URLCONF = "main.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [f"{BASE_DIR}/templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -699,4 +700,46 @@ ROOT_WEBSITE_SLUG = get_string(
     default="ocw-www",
     description="The WebsiteStarter slug for site(s) at the root domain",
     required=False,
+)
+
+# mitol-django-mail
+MAILGUN_SENDER_DOMAIN = get_string(
+    name="MAILGUN_SENDER_DOMAIN",
+    default=None,
+    description="The domain to send mailgun email through",
+    required=True,
+)
+MAILGUN_KEY = get_string(
+    name="MAILGUN_KEY",
+    default=None,
+    description="The token for authenticating against the Mailgun API",
+    required=True,
+)
+ANYMAIL = {
+    "MAILGUN_API_KEY": MAILGUN_KEY,
+    "MAILGUN_SENDER_DOMAIN": MAILGUN_SENDER_DOMAIN,
+}
+
+MITOL_MAIL_FROM_EMAIL = get_string(
+    name="MITOL_MAIL_FROM_EMAIL",
+    default="webmaster@localhost",
+    description="E-mail to use for the from field",
+)
+MITOL_MAIL_REPLY_TO_ADDRESS = get_string(
+    name="MITOL_MAIL_REPLY_TO_ADDRESS",
+    default="webmaster@localhost",
+    description="E-mail to use for reply-to address of emails",
+)
+MITOL_MAIL_MESSAGE_CLASSES = []
+MITOL_MAIL_RECIPIENT_OVERRIDE = get_string(
+    name="MITOL_MAIL_RECIPIENT_OVERRIDE",
+    default=None,
+    dev_only=True,
+    description="Override the recipient for outgoing email, development only",
+)
+MITOL_MAIL_ENABLE_EMAIL_DEBUGGER = get_bool(
+    name="MITOL_MAIL_ENABLE_EMAIL_DEBUGGER",
+    default=DEBUG,
+    description="Enable the mitol-mail email debugger",
+    dev_only=True,
 )

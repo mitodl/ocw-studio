@@ -75,8 +75,10 @@ django==3.1.12
     #   mitol-django-authentication
     #   mitol-django-common
     #   mitol-django-mail
-django-anymail==8.2
-    # via mitol-django-mail
+django-anymail[mailgun]==8.4
+    # via
+    #   -r requirements.in
+    #   mitol-django-mail
 django-compat==1.0.15
     # via
     #   django-hijack
@@ -150,7 +152,9 @@ mitol-django-common==1.2.0
     #   mitol-django-authentication
     #   mitol-django-mail
 mitol-django-mail==2.2.0
-    # via mitol-django-authentication
+    # via
+    #   -r requirements.in
+    #   mitol-django-authentication
 newrelic==5.16.1.146
     # via -r requirements.in
 oauthlib==3.1.0

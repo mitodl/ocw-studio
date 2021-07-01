@@ -3,6 +3,7 @@ django
 boto3
 celery
 dj-database-url
+django-anymail[mailgun]==8.4
 django-guardian
 django-hijack
 django-hijack-admin
@@ -15,6 +16,7 @@ django-storages
 django-webpack-loader
 mitol-django-authentication==1.2.0
 mitol-django-common==1.2.0
+mitol-django-mail==2.2.0
 drf-extensions
 ipython
 newrelic

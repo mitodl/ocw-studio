@@ -40,6 +40,7 @@ urlpatterns = [
     path("", include("news.urls")),
     path("", include("websites.urls")),
     path("", include("mitol.authentication.urls.saml")),
+    path("", include("mitol.mail.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
