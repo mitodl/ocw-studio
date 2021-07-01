@@ -4,7 +4,7 @@
 @import "variables";
 @import "home-page";
 @import "site-page";
-@import "sites-dashboard";
+@import "dashboard";
 @import "site-collaborators";
 @import "forms";
 @import "card";
@@ -126,4 +126,8 @@ $modal-sidebar-width-wide: 90%;
 :root {
   --ck-z-default: 10000 !important;
   --ck-z-modal: calc(var(--ck-z-default) + 999);
+}
+
+.text-gray {
+  color: $studio-text-gray;
 }

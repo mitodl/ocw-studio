@@ -1,7 +1,7 @@
 import { ActionPromiseValue, QueryConfig } from "redux-query"
 import { merge, reject, propEq, compose, evolve, when, assoc, map } from "ramda"
 
-import { nextState } from "./utils"
+import { nextState, PaginatedResponse } from "./utils"
 import { getCookie } from "../lib/api/util"
 import { DEFAULT_POST_OPTIONS } from "../lib/redux_query"
 import {
@@ -27,13 +27,6 @@ import {
   WebsiteContentListItem,
   WebsiteStarter
 } from "../types/websites"
-
-interface PaginatedResponse<Item> {
-  count: number | null
-  next: string | null
-  previous: string | null
-  results: Item[]
-}
 
 export type WebsiteDetails = Record<string, Website>
 
@@ -358,6 +351,7 @@ export type EditWebsiteContentPayload = {
   metadata?: any
   file?: File
 }
+
 export const editWebsiteContentMutation = (
   site: Website,
   textId: string,

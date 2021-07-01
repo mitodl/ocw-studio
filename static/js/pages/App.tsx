@@ -7,6 +7,7 @@ import SitesDashboard from "./SitesDashboard"
 import Header from "../components/Header"
 import HomePage from "./HomePage"
 import MarkdownEditorTestPage from "./MarkdownEditorTestPage"
+import WebsiteCollectionsPage from "./WebsiteCollectionsPage"
 import useTracker from "../hooks/tracker"
 
 export default function App(): JSX.Element {
@@ -14,7 +15,10 @@ export default function App(): JSX.Element {
 
   return (
     <div className="app">
-      <Route path={["/", "/new-site", "/sites", "/markdown-editor"]} exact>
+      <Route
+        path={["/", "/new-site", "/sites", "/markdown-editor", "/collections"]}
+        exact
+      >
         <Header />
       </Route>
       <div className="page-content">
@@ -23,6 +27,7 @@ export default function App(): JSX.Element {
           <Route exact path="/new-site" component={SiteCreationPage} />
           <Route exact path="/sites" component={SitesDashboard} />
           <Route path="/sites/:name" component={SitePage} />
+          <Route path="/collections" component={WebsiteCollectionsPage} />
           <Route path="/markdown-editor">
             <MarkdownEditorTestPage />
           </Route>

@@ -42,7 +42,7 @@ export default function SitesDashboard(
   }
 
   return (
-    <div className="px-4 sites-dashboard">
+    <div className="px-4 dashboard">
       <div className="content">
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
           <h3>Sites</h3>

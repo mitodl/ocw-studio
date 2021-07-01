@@ -35,6 +35,7 @@ urlpatterns = [
     re_path(r"^sites/.*$", restricted_index, name="sites"),
     path("new-site/", restricted_index, name="new-site"),
     path("markdown-editor", restricted_index, name="markdown-editor-test"),
+    re_path(r"^collections/.*$", restricted_index, name="collections"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("", include("news.urls")),
     path("", include("websites.urls")),

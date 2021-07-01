@@ -93,7 +93,7 @@ export default class IntegrationTestHelper {
       const store = configureStore(defaultState ?? perRenderDefaultState)
       beforeRenderActions.forEach(action => store.dispatch(action))
 
-      const wrapper = await mount(
+      const wrapper = mount(
         <Provider store={store}>
           <ReduxQueryProvider queriesSelector={getQueries}>
             <Router history={this.browserHistory}>

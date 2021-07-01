@@ -13,7 +13,12 @@ import {
   siteApiCollaboratorsDetailUrl,
   siteApiContentUrl,
   siteApiContentDetailUrl,
-  siteApiContentListingUrl
+  siteApiContentListingUrl,
+  collectionsApiUrl,
+  collectionsApiDetailUrl,
+  wcItemsApiUrl,
+  wcItemsApiDetailUrl,
+  collectionsBaseUrl
 } from "./urls"
 
 describe("urls", () => {
@@ -70,6 +75,19 @@ describe("urls", () => {
         ).toBe("/sites/site-name/collaborators/1/")
       })
     })
+
+    //
+    ;[
+      [0, "/collections/?offset=0"],
+      [10, "/collections/?offset=10"],
+      [20, "/collections/?offset=20"]
+    ].forEach(([offset, expectedLink]) => {
+      it(`renders a collection URL with offset=${offset}`, () => {
+        expect(collectionsBaseUrl.query({ offset }).toString()).toBe(
+          expectedLink
+        )
+      })
+    })
   })
 
   describe("apis", () => {
@@ -77,6 +95,7 @@ describe("urls", () => {
       it("renders a top-level site API", () => {
         expect(siteApi.toString()).toBe("/api/websites/")
       })
+
       it("renders a URL for site listing", () => {
         expect(siteApiListingUrl.query({ offset: 20 }).toString()).toBe(
           "/api/websites/?limit=10&offset=20"
@@ -127,6 +146,30 @@ describe("urls", () => {
             .query({ offset: 40 })
             .toString()
         ).toBe("/api/websites/the-best-course/content/?limit=10&offset=40")
+      })
+    })
+
+    describe("Collections APIs", () => {
+      it("renders the collections API url", () => {
+        expect(collectionsApiUrl.toString()).toBe("/api/collections/")
+      })
+
+      it("renders a collection detail API url", () => {
+        expect(
+          collectionsApiDetailUrl.param({ collection_id: 4 }).toString()
+        ).toBe("/api/collections/4/")
+      })
+
+      it("renders collection items list API url", () => {
+        expect(wcItemsApiUrl.param({ collection_id: 4 }).toString()).toBe(
+          "/api/collections/4/items/"
+        )
+      })
+
+      it("renders collection item detail API url", () => {
+        expect(
+          wcItemsApiDetailUrl.param({ collection_id: 4, item_id: 3 }).toString()
+        ).toBe("/api/collections/4/items/3/")
       })
     })
   })
