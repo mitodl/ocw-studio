@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.17.3 (Released July 01, 2021)
+--------------
+
+- Fix pylint (#348)
+- Remove GIT_TOKEN precondition check in content_sync.api.sync_github_website_starters (#347)
+- Github webhook branch filter (#343)
+
 Version 0.17.2 (Released June 29, 2021)
 --------------
 
