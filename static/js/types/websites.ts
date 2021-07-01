@@ -74,10 +74,22 @@ export interface ObjectConfigField extends ConfigFieldBaseProps {
   collapsed?: boolean
 }
 
+/**
+ * This captures the different types of RelationFilters we
+ * support. As of now it is just equality, but see this issue
+ * for some details:
+ * https://github.com/mitodl/ocw-studio/issues/289
+ **/
 export enum RelationFilterVariant {
   Equals = "equals"
 }
 
+/**
+ * A record containing the information needed to filter entries
+ * in a WidgetVariant.Relation field. Entries which match the
+ * filter (on `field`) defined here will be excluded from the
+ * UI.
+ **/
 export interface RelationFilter {
   field: string
   filter_type: RelationFilterVariant // eslint-disable-line camelcase
