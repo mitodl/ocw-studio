@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.17.4
+--------------
+
+- Get site/file url prefix from site config (#338)
+- Skip validation if fields are not visible (#351)
+
 Version 0.17.3 (Released July 01, 2021)
 --------------
 
