@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.17.4
+Version 0.17.4 (Released July 01, 2021)
 --------------
 
 - Get site/file url prefix from site config (#338)
