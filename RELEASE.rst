@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.18.0
+--------------
+
+- remove a few unneeded ts-ignore comments
+- Fix handling of empty values in new content (#360)
+- add APIs for WebsiteCollections and WebsiteCollectionItems
+
 Version 0.17.4 (Released July 01, 2021)
 --------------
 
