@@ -56,8 +56,10 @@ export default function SiteCollaboratorList(): JSX.Element | null {
 
   const [deleteQueryState, deleteCollaborator] = useMutation(
     (): QueryConfig => {
-      // @ts-ignore
-      return deleteWebsiteCollaboratorMutation(name, selectedCollaborator)
+      return deleteWebsiteCollaboratorMutation(
+        name,
+        selectedCollaborator as WebsiteCollaborator
+      )
     }
   )
 

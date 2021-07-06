@@ -35,7 +35,9 @@ export const emailValidation = {
     .required()
 }
 
-const getInitialValues = (collaborator: WebsiteCollaborator | null) =>
+const getInitialValues = (
+  collaborator: WebsiteCollaborator | null
+): WebsiteCollaboratorFormData =>
   collaborator ? { role: collaborator.role } : { email: "", role: "" }
 
 export default function SiteCollaboratorForm({
@@ -54,7 +56,6 @@ export default function SiteCollaboratorForm({
   return (
     <Formik
       onSubmit={onSubmit}
-      // @ts-ignore
       initialValues={getInitialValues(collaborator || null)}
       validationSchema={collaboratorValidation}
     >

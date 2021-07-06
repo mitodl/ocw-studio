@@ -102,13 +102,14 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
       values = { type: configItem.name, ...values }
     }
     const payload = contentFormValuesToPayload(values, fields)
-    // If the content being created is for a singleton config item, use the config item "name" value as the text_id.
+
+    // If the content being created is for a singleton config item,
+    // use the config item "name" value as the text_id.
     if (
       formType === ContentFormType.Add &&
       isSingletonCollectionItem(configItem)
     ) {
-      // @ts-ignore
-      payload.text_id = configItem.name
+      payload["text_id"] = configItem.name
     }
 
     const response =

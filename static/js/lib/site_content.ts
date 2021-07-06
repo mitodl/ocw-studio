@@ -145,7 +145,6 @@ export const contentFormValuesToPayload = (
         payload[MAIN_PAGE_CONTENT_DB_FIELD] = value
       } else if (field.name === "title") {
         payload[field.name] = value
-        // @ts-ignore
       } else if (value instanceof File) {
         payload["file"] = value
         hasFileUpload = true

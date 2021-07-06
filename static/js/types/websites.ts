@@ -189,7 +189,7 @@ export interface WebsiteCollaborator {
 
 export interface WebsiteCollaboratorFormData {
   email?: string
-  role: WebsiteRoleEditable
+  role: WebsiteRole | ""
 }
 
 export interface WebsiteContentListItem {

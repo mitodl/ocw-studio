@@ -178,7 +178,6 @@ export const deleteWebsiteCollaboratorMutation = (
         )
       })
     },
-    // @ts-ignore
     options: {
       method: "DELETE",
       ...DEFAULT_POST_OPTIONS
@@ -211,7 +210,6 @@ export const editWebsiteCollaboratorMutation = (
         )
       })
     },
-    // @ts-ignore
     options: {
       method: "PATCH",
       ...DEFAULT_POST_OPTIONS
@@ -241,7 +239,6 @@ export const createWebsiteCollaboratorMutation = (
         return { ...prev, ...next }
       }
     },
-    // @ts-ignore
     options: {
       method: "POST",
       ...DEFAULT_POST_OPTIONS

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react"
+import React, { useCallback, ChangeEvent } from "react"
 import Select from "react-select"
 import { is, isNil } from "ramda"
 
@@ -10,7 +10,7 @@ export interface Option {
 interface Props {
   name: string
   value: any
-  onChange: (event: Event) => void
+  onChange: (event: ChangeEvent<HTMLSelectElement>) => void
   multiple?: boolean
   options: Array<string | Option>
 }
@@ -27,8 +27,9 @@ export default function SelectField(props: Props): JSX.Element {
       const eventValue = multiple ?
         newValue.map((option: Option) => option.value) :
         newValue.value
-      // @ts-ignore
-      onChange({ target: { value: eventValue, name } })
+      onChange({ target: { value: eventValue, name } } as ChangeEvent<
+        HTMLSelectElement
+      >)
     },
     [name, multiple, onChange]
   )

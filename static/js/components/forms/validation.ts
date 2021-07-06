@@ -62,7 +62,6 @@ export const getFieldSchema = (field: ConfigField): FormSchema => {
   case WidgetVariant.Relation: {
     if (field.multiple) {
       schema = yup.object().shape({
-        // @ts-ignore
         content: minMax(yup.array(), field)
       })
     } else {

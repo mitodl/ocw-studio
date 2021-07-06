@@ -1,5 +1,6 @@
 import { isEmpty, isNil } from "ramda"
 import { ActionPromiseValue } from "redux-query"
+import { SiteFormValue } from "../types/forms"
 
 export const isErrorStatusCode = (statusCode: number): boolean =>
   statusCode >= 400
@@ -28,7 +29,9 @@ export const getResponseBodyError = (
   return errors
 }
 
-export const objectToFormData = (object: Record<string, unknown>): FormData => {
+export const objectToFormData = (
+  object: Record<string, SiteFormValue>
+): FormData => {
   const formData = new FormData()
 
   Object.entries(object).forEach(([key, value]) => {
