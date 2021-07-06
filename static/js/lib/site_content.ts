@@ -107,25 +107,6 @@ export const splitFieldsIntoColumns = (
 ): ConfigField[][] =>
   partition(isMainContentField, fields).filter(column => column.length > 0)
 
-/**
- * takes a ConfigField and returns an appropriate empty value
- * for that field.
- **/
-const emptyValue = (field: ConfigField): SiteFormValue => {
-  switch (field.widget) {
-  case "select":
-    if (field.multiple) {
-      return []
-    } else {
-      return null
-    }
-  case "file":
-    return null
-  default:
-    return ""
-  }
-}
-
 export const isRepeatableCollectionItem = (
   configItem: BaseConfigItem
 ): configItem is RepeatableConfigItem => "folder" in configItem
@@ -152,10 +133,9 @@ export const contentFormValuesToPayload = (
 
   let hasFileUpload = false
   for (const field of fields) {
-    let value = values[field.name]
-    if (!fieldHasData(field, values)) {
-      value = emptyValue(field)
-    }
+    const value = fieldHasData(field, values) ?
+      values[field.name] :
+      defaultForField(field)
 
     if (value !== undefined) {
       // Our API expects these bits of data as top-level keys in the payload:
@@ -197,7 +177,7 @@ export const contentInitialValues = (
       values[field.name] = content.markdown ?? ""
     } else if (field.name === "title") {
       values[field.name] = content[field.name] ?? ""
-    } else if (field.widget === "file") {
+    } else if (field.widget === WidgetVariant.File) {
       values[field.name] = content[field.name] ?? null
     } else {
       values[field.name] = metadata[field.name] ?? defaultForField(field)

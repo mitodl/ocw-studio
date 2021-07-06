@@ -39,6 +39,21 @@ import {
 } from "../types/websites"
 
 describe("site_content", () => {
+  const defaultsMapping = {
+    [WidgetVariant.Markdown]: "",
+    [WidgetVariant.File]:     null,
+    [WidgetVariant.Boolean]:  false,
+    [WidgetVariant.Text]:     "",
+    [WidgetVariant.String]:   "",
+    [WidgetVariant.Select]:   "",
+    [WidgetVariant.Relation]: { website: null, content: "" },
+    [WidgetVariant.Object]:   {
+      ["nested-one"]: "",
+      ["nested-two"]: ""
+    },
+    unexpected_type: ""
+  }
+
   describe("contentFormValuesToPayload", () => {
     it("changes the name of a 'content' field if it uses the markdown widget", () => {
       const values = {
@@ -161,6 +176,23 @@ describe("site_content", () => {
         expect(Object.values(payload).length).toBe(isPartOfPayload ? 1 : 0)
       })
     })
+
+    it("uses a default empty value if the original value shouldn't be sent to the server", () => {
+      for (const [widget, expectedDefault] of Object.entries(defaultsMapping)) {
+        const field = makeWebsiteConfigField({
+          widget,
+          name:      "test-field",
+          // condition should never match, which will cause fieldHasData to always return false
+          condition: { field: "doesn't exist", equals: "none" },
+          fields:    [
+            makeWebsiteConfigField({ name: "nested-one" }),
+            makeWebsiteConfigField({ name: "nested-two" })
+          ]
+        })
+        const payload = contentFormValuesToPayload({}, [field])
+        expect(payload["metadata"]["test-field"]).toStrictEqual(expectedDefault)
+      }
+    })
   })
 
   describe("contentInitialValues", () => {
@@ -201,18 +233,14 @@ describe("site_content", () => {
     })
 
     it("should use appropriate defaults for different widgets", () => {
-      [
-        [WidgetVariant.Markdown, ""],
-        [WidgetVariant.File, null],
-        [WidgetVariant.Boolean, false],
-        [WidgetVariant.Text, ""],
-        [WidgetVariant.String, ""],
-        [WidgetVariant.Select, ""],
-        [WidgetVariant.Relation, { website: null, content: "" }]
-      ].forEach(([widget, expectation]) => {
+      Object.entries(defaultsMapping).forEach(([widget, expectation]) => {
         const field = makeWebsiteConfigField({
           widget,
-          label: "Widget"
+          label:  "Widget",
+          fields: [
+            makeWebsiteConfigField({ name: "nested-one" }),
+            makeWebsiteConfigField({ name: "nested-two" })
+          ]
         })
         const initialValues = newInitialValues([field])
         expect(initialValues).toStrictEqual({ widget: expectation })
@@ -278,7 +306,8 @@ describe("site_content", () => {
         [WidgetVariant.Markdown, MarkdownEditor],
         [WidgetVariant.Text, "textarea"],
         [WidgetVariant.Hidden, null],
-        [WidgetVariant.Relation, RelationField]
+        [WidgetVariant.Relation, RelationField],
+        ["unexpected_type", "input"]
       ].forEach(([widget, expected]) => {
         const field = makeWebsiteConfigField({
           widget: widget as WidgetVariant
