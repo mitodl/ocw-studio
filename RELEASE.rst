@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.18.0
+Version 0.18.0 (Released July 07, 2021)
 --------------
 
 - remove a few unneeded ts-ignore comments
