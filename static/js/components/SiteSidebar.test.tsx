@@ -34,7 +34,7 @@ describe("SiteSidebar", () => {
 
     const expected = [
       [
-        "Page",
+        "Pages",
         siteContentListingUrl
           .param({
             name:        website.name,
@@ -43,7 +43,7 @@ describe("SiteSidebar", () => {
           .toString()
       ],
       [
-        "Resource",
+        "Resources",
         siteContentListingUrl
           .param({
             name:        website.name,

@@ -121,11 +121,12 @@ export const makeEditableConfigItem = (
 export const makeRepeatableConfigItem = (
   name?: string
 ): RepeatableConfigItem => ({
-  fields:   cloneDeep(exampleFields),
-  name:     name || casual.word,
-  label:    casual.word,
-  category: casual.word,
-  folder:   casual.word
+  fields:         cloneDeep(exampleFields),
+  name:           name || casual.word,
+  label:          casual.word,
+  label_singular: casual.word,
+  category:       casual.word,
+  folder:         casual.word
 })
 
 export const makeSingletonConfigItem = (

@@ -2,14 +2,16 @@ content-dir: content
 root-url-path: "courses"
 collections:
   - name: page
-    label: Page
+    label: Pages
+    label_singular: Page
     category: Content
     folder: content
     fields:
       - {"label": "Body", "name": "body", "widget": "markdown"}
 
   - name: resource
-    label: Resource
+    label: Resources
+    label_singular: Resource
     category: Content
     folder: content
     fields:

@@ -11,7 +11,8 @@
         }
       ],
       "folder": "content/blog",
-      "label": "Blog",
+      "label": "Blogs",
+      "label_singular": "Blog",
       "name": "blog"
     },
     {
@@ -25,7 +26,8 @@
         }
       ],
       "folder": "content/bio",
-      "label": "Bio",
+      "label": "Bios",
+      "label_singular": "Bio",
       "name": "bio"
     },
     {
@@ -65,7 +67,8 @@
         }
       ],
       "folder": "content/resource",
-      "label": "Resource",
+      "label": "Resources",
+      "label_singular": "Resource",
       "name": "resource"
     }
   ],

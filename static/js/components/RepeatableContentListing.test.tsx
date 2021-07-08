@@ -133,7 +133,7 @@ describe("RepeatableContentListing", () => {
     const { wrapper } = await render()
     expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
     const link = wrapper.find("a.add")
-    expect(link.text()).toBe(`Add ${configItem.label}`)
+    expect(link.text()).toBe(`Add ${configItem.label_singular}`)
     act(() => {
       // @ts-ignore
       link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
@@ -250,6 +250,42 @@ describe("RepeatableContentListing", () => {
           )
         }
       })
+    })
+  })
+
+  //
+  ;[true, false].forEach(isSingular => {
+    it("should use the singular label where appropriate", async () => {
+      let expectedLabel
+      if (!isSingular) {
+        configItem.label_singular = undefined
+        expectedLabel = configItem.label
+      } else {
+        expectedLabel = configItem.label_singular
+      }
+      const { wrapper } = await render()
+      expect(
+        wrapper
+          .find("Card")
+          .find("h3")
+          .text()
+      ).toBe(configItem.label)
+      expect(
+        wrapper
+          .find("Card")
+          .find(".add")
+          .text()
+      ).toBe(`Add ${expectedLabel}`)
+      act(() => {
+        const event: any = { preventDefault: jest.fn() }
+        const button = wrapper.find("Card").find(".add")
+        // @ts-ignore
+        button.prop("onClick")(event)
+      })
+      wrapper.update()
+      expect(wrapper.find("BasicModal").prop("title")).toBe(
+        `Add ${expectedLabel}`
+      )
     })
   })
 })
