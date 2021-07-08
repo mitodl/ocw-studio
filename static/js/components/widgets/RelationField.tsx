@@ -21,17 +21,29 @@ import {
   WebsiteContent
 } from "../../types/websites"
 import { SiteFormValue } from "../../types/forms"
+import { XOR } from "../../types/util"
 
-interface Props {
+type BaseProps = {
   name: string
-  collection: string
+  collection?: string | string[]
   display_field: string // eslint-disable-line camelcase
   multiple: boolean
   value: any
-  filter: RelationFilter
-  website: string
+  filter?: RelationFilter
+  website?: string
+  valuesToOmit?: Set<string>
+}
+
+/* NOTE: Either setFieldValue or onChange should be passed in, not both.
+ * setFieldValue is passed in under normal circumstances when this widget is being used for some field described
+ * in the site config.
+ * onChange can be passed in when this widget is needed in a different context and the change behavior needs to be
+ * customized.
+ */
+type NormalWidgetProps = BaseProps & {
   setFieldValue: (key: string, value: SiteFormValue) => void
 }
+type CustomProps = BaseProps & { onChange: (event: any) => void }
 
 const filterContent = curry((filter: RelationFilter, entry: WebsiteContent) => {
   if (!filter) {
@@ -45,16 +57,20 @@ const filterContent = curry((filter: RelationFilter, entry: WebsiteContent) => {
   return entry
 })
 
-export default function RelationField(props: Props): JSX.Element {
+export default function RelationField(
+  props: XOR<NormalWidgetProps, CustomProps>
+): JSX.Element {
   const {
     collection,
     display_field, // eslint-disable-line camelcase
     name,
     multiple,
-    setFieldValue,
     value,
     filter,
-    website: websitename
+    website: websitename,
+    valuesToOmit,
+    onChange,
+    setFieldValue
   } = props
 
   const [offset, setOffset] = useState(0)
@@ -75,7 +91,11 @@ export default function RelationField(props: Props): JSX.Element {
     contextWebsite
 
   const listingParams = website ?
-    { name: website.name, type: collection, offset } :
+    {
+      name:   website.name,
+      offset: offset,
+      ...(collection ? { type: collection } : { pageContent: true })
+    } :
     null
 
   useRequest(
@@ -104,19 +124,25 @@ export default function RelationField(props: Props): JSX.Element {
   }, [offset, setOffset, count])
 
   useEffect(() => {
-    const newContentListing = (listing?.results ?? [])
-      .map((entry: any) => ({
-        ...entry,
-        ...entry.metadata
-      }))
-      .filter(filterContent(filter))
+    let newContentListing = (listing?.results ?? []).map((entry: any) => ({
+      ...entry,
+      ...entry.metadata
+    }))
+    if (filter) {
+      newContentListing = newContentListing.filter(filterContent(filter))
+    }
+    if (valuesToOmit) {
+      newContentListing = newContentListing.filter(
+        entry => !valuesToOmit.has(entry.text_id) || value === entry.text_id
+      )
+    }
 
     // here we use uniqBy to remove any possible duplicates
     // e.g. from the request having been run once before
     setContentListing(oldContentListing =>
       uniqBy([...oldContentListing, ...newContentListing], "text_id")
     )
-  }, [listing, setContentListing, filter])
+  }, [listing, setContentListing, filter, valuesToOmit, value])
 
   const options = useMemo(
     () =>
@@ -127,25 +153,29 @@ export default function RelationField(props: Props): JSX.Element {
     [contentListing, display_field] // eslint-disable-line camelcase
   )
 
-  const onChange = useCallback(
+  const handleChange = useCallback(
     (event: any) => {
-      const content = event.target.value
+      if (onChange) {
+        onChange(event)
+      } else if (setFieldValue) {
+        const content = event.target.value
 
-      // need to do this because we've renamed the
-      // nested field to get validation working
-      setFieldValue(name.split(".")[0], {
-        website: website.name,
-        content
-      })
+        // need to do this because we've renamed the
+        // nested field to get validation working
+        setFieldValue(name.split(".")[0], {
+          website: website.name,
+          content
+        })
+      }
     },
-    [setFieldValue, name, website]
+    [setFieldValue, onChange, name, website]
   )
 
   return (
     <SelectField
       name={name}
       value={value}
-      onChange={onChange}
+      onChange={handleChange}
       options={options}
       multiple={multiple}
     />

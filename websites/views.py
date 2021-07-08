@@ -336,11 +336,28 @@ class WebsiteContentViewSet(
 
     def get_queryset(self):
         parent_lookup_website = self.kwargs.get("parent_lookup_website")
-        filter_type = self.request.query_params.get("type")
+        filter_type_keys = [
+            qs_key
+            for qs_key in self.request.query_params.keys()
+            # View should accept "type" as a single query param, or multiple types,
+            # e.g.: "?type[0]=sometype&type[1]=othertype"
+            if qs_key == "type" or qs_key.startswith("type[")
+        ]
 
         queryset = WebsiteContent.objects.filter(website__name=parent_lookup_website)
-        if filter_type:
-            queryset = queryset.filter(type=filter_type)
+        if filter_type_keys:
+            queryset = queryset.filter(
+                type__in=[
+                    self.request.query_params[filter_type_key]
+                    for filter_type_key in filter_type_keys
+                ]
+            )
+        if "page_content" in self.request.query_params:
+            queryset = queryset.filter(
+                is_page_content=(
+                    self.request.query_params["page_content"].lower() != "false"
+                )
+            )
         return queryset.order_by("-updated_on")
 
     def get_serializer_class(self):

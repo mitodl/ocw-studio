@@ -5,6 +5,7 @@ import FileUploadField from "../components/widgets/FileUploadField"
 import SelectField from "../components/widgets/SelectField"
 import BooleanField from "../components/widgets/BooleanField"
 import RelationField from "../components/widgets/RelationField"
+import MenuField from "../components/widgets/MenuField"
 
 import {
   makeWebsiteConfigField,
@@ -47,6 +48,7 @@ describe("site_content", () => {
     [WidgetVariant.String]:   "",
     [WidgetVariant.Select]:   "",
     [WidgetVariant.Relation]: { website: null, content: "" },
+    [WidgetVariant.Menu]:     [],
     [WidgetVariant.Object]:   {
       ["nested-one"]: "",
       ["nested-two"]: ""
@@ -307,6 +309,7 @@ describe("site_content", () => {
         [WidgetVariant.Text, "textarea"],
         [WidgetVariant.Hidden, null],
         [WidgetVariant.Relation, RelationField],
+        [WidgetVariant.Menu, MenuField],
         ["unexpected_type", "input"]
       ].forEach(([widget, expected]) => {
         const field = makeWebsiteConfigField({
@@ -359,6 +362,16 @@ describe("site_content", () => {
         max:           30,
         min:           22,
         multiple:      true
+      })
+    })
+
+    it("should grab menu props for the menu widget", () => {
+      const field = makeWebsiteConfigField({
+        widget:      WidgetVariant.Menu,
+        collections: ["collection1", "collection2"]
+      })
+      expect(widgetExtraProps(field)).toStrictEqual({
+        collections: ["collection1", "collection2"]
       })
     })
 

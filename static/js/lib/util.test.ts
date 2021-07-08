@@ -4,7 +4,10 @@ import {
   filenameFromPath,
   isErrorStatusCode,
   isErrorResponse,
-  getResponseBodyError
+  getResponseBodyError,
+  isUuid4,
+  generateHashCode,
+  isExternalLinkId
 } from "./util"
 
 describe("util", () => {
@@ -72,5 +75,22 @@ describe("util", () => {
     it("filenameFromPath should return expected values", () => {
       expect(filenameFromPath(filepath)).toBe(expected)
     })
+  })
+
+  it("isUuid4 should return true if the value is a valid UUID v4", () => {
+    const uuid4 = "32629a02-3dc5-4128-8e43-0392b51e7b61"
+    const notUuid4 = "abc"
+    expect(isUuid4(uuid4)).toBe(true)
+    expect(isUuid4(notUuid4)).toBe(false)
+  })
+
+  it("generateHashCode should produce a numeric hash code for some string value", () => {
+    expect(generateHashCode("abcdefg")).toEqual("-1206291356")
+    expect(generateHashCode("http://example.com")).toEqual("-631280213")
+  })
+
+  it("isExternalLinkId returns true if the string starts with the external link prefix", () => {
+    expect(isExternalLinkId("external-1234")).toBe(true)
+    expect(isExternalLinkId("not-external-link")).toBe(false)
   })
 })

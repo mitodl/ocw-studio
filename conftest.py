@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from fixtures.common import *  # pylint:disable=wildcard-import,unused-wildcard-import
-from websites.constants import COURSE_STARTER_SLUG
+from websites.constants import COURSE_STARTER_SLUG, OMNIBUS_STARTER_SLUG
 from websites.models import WebsiteStarter
 
 
@@ -37,6 +37,13 @@ def mocked_celery(mocker):
 def course_starter():
     """Returns the 'course'-type WebsiteStarter that is seeded in a data migration"""
     return WebsiteStarter.objects.get(slug=COURSE_STARTER_SLUG)
+
+
+@pytest.fixture()
+@pytest.mark.django_db
+def omnibus_starter():
+    """Returns the omnibus WebsiteStarter that is seeded in a data migration"""
+    return WebsiteStarter.objects.get(slug=OMNIBUS_STARTER_SLUG)
 
 
 def pytest_addoption(parser):

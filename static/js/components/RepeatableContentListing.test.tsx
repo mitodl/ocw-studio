@@ -93,7 +93,7 @@ describe("RepeatableContentListing", () => {
           .param({
             name: website.name
           })
-          .query({ type: configItem.name, offset: 0 })
+          .query({ offset: 0, type: configItem.name })
           .toString(),
         "GET"
       )
@@ -169,6 +169,7 @@ describe("RepeatableContentListing", () => {
     }
 
     const { wrapper } = await render()
+
     expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
 
     let idx = 0
@@ -207,7 +208,7 @@ describe("RepeatableContentListing", () => {
           .withArgs(
             siteApiContentListingUrl
               .param({ name: website.name })
-              .query({ type: configItem.name, offset: startingOffset })
+              .query({ offset: startingOffset, type: configItem.name })
               .toString(),
             "GET"
           )
