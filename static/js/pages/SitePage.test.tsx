@@ -61,34 +61,42 @@ describe("SitePage", () => {
     expect(wrapper.find("SiteSidebar").prop("website")).toBe(website)
     expect(wrapper.find("h1.title").text()).toBe(website.title)
   })
-
-  it("preview button sends the expected request", async () => {
-    const previewStub = helper.handleRequestStub
-      .withArgs(
-        siteApiActionUrl
-          .param({
-            name:   website.name,
-            action: "preview"
-          })
-          .toString()
-      )
-      .returns({
-        status: 200
+  ;[
+    ["preview", 0],
+    ["publish", 1]
+  ].forEach(([action, idx]) =>
+    it("preview button sends the expected request", async () => {
+      const actionStub = helper.handleRequestStub
+        .withArgs(
+          siteApiActionUrl
+            .param({
+              name: website.name,
+              action
+            })
+            .toString()
+        )
+        .returns({
+          status: 200
+        })
+      const { wrapper } = await render()
+      await act(async () => {
+        // @ts-ignore
+        wrapper
+          .find(".btn-publish")
+          // @ts-ignore
+          .at(idx)
+          .prop("onClick")()
       })
-    const { wrapper } = await render()
-    await act(async () => {
-      // @ts-ignore
-      wrapper.find(".btn-preview").prop("onClick")()
+      sinon.assert.calledOnceWithExactly(
+        actionStub,
+        `/api/websites/${website.name}/${action}/`,
+        "POST",
+        {
+          body:        {},
+          headers:     { "X-CSRFTOKEN": "" },
+          credentials: undefined
+        }
+      )
     })
-    sinon.assert.calledOnceWithExactly(
-      previewStub,
-      `/api/websites/${website.name}/preview/`,
-      "POST",
-      {
-        body:        {},
-        headers:     { "X-CSRFTOKEN": "" },
-        credentials: undefined
-      }
-    )
-  })
+  )
 })

@@ -22,6 +22,9 @@ export default function SitePage(): JSX.Element | null {
   const [{ isPending: previewIsPending }, previewWebsite] = useMutation(() =>
     websiteAction(name, "preview")
   )
+  const [{ isPending: publishIsPending }, publishWebsite] = useMutation(() =>
+    websiteAction(name, "publish")
+  )
 
   const [{ isPending }] = useRequest(websiteDetailRequest(name))
   const website = useSelector(getWebsiteDetailCursor)(name)
@@ -46,6 +49,18 @@ export default function SitePage(): JSX.Element | null {
     }
   }
 
+  const onPublish = async () => {
+    if (publishIsPending) {
+      return
+    }
+    const response = await publishWebsite()
+    if (!response) {
+      return
+    } else {
+      // TBD
+    }
+  }
+
   return (
     <div className="site-page std-page-body container pt-3">
       <div className="content-container">
@@ -60,9 +75,17 @@ export default function SitePage(): JSX.Element | null {
                 type="button"
                 onClick={onPreview}
                 disabled={previewIsPending}
-                className="btn btn-preview green-button-outline"
+                className="btn btn-publish green-button-outline"
               >
                 Preview
+              </button>
+              <button
+                type="button"
+                onClick={onPublish}
+                disabled={publishIsPending}
+                className="btn btn-publish green-button-outline"
+              >
+                Publish
               </button>
             </div>
           </div>
