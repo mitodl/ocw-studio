@@ -96,7 +96,7 @@ def test_get_repo(mock_api_wrapper):
 def test_get_repo_create(mocker, mock_api_wrapper):
     """get_repo should create the repo if a 404 is returned"""
     mock_api_wrapper.org.get_repo.side_effect = [
-        GithubException(status=404, data={}),
+        GithubException(status=404, data={}, headers={}),
         mocker.Mock(),
     ]
     mock_api_wrapper.get_repo()
@@ -117,8 +117,8 @@ def test_create_repo(mock_api_wrapper, kwargs):
 def test_create_repo_slow_api(mocker, mock_api_wrapper, mock_branches):
     """ Test that the create_repo function will be retried if it fails initially"""
     mock_api_wrapper.org.create_repo.side_effect = [
-        GithubException(status=404, data={}),
-        GithubException(status=429, data={}),
+        GithubException(status=404, data={}, headers={}),
+        GithubException(status=429, data={}, headers={}),
         mocker.Mock(get_branches=mocker.Mock(return_value=mock_branches[0:1])),
     ]
     new_repo = mock_api_wrapper.create_repo()
@@ -128,7 +128,9 @@ def test_create_repo_slow_api(mocker, mock_api_wrapper, mock_branches):
 
 def test_create_repo_broken_api(mock_api_wrapper):
     """ Test that the create_repo function fails if the Github API repeatedly fails basic calls"""
-    mock_api_wrapper.org.create_repo.side_effect = GithubException(status=404, data={})
+    mock_api_wrapper.org.create_repo.side_effect = GithubException(
+        status=404, data={}, headers={}
+    )
     with pytest.raises(Exception):
         mock_api_wrapper.create_repo()
 
@@ -188,7 +190,9 @@ def test_upsert_content_file(
         mock_repo.get_contents.return_value.sha.return_value = hashlib.sha1(b"fake_sha")
         github_api_method = mock_repo.update_file
     else:
-        mock_repo.get_contents.side_effect = GithubException(status=422, data={})
+        mock_repo.get_contents.side_effect = GithubException(
+            status=422, data={}, headers={}
+        )
         github_api_method = mock_repo.create_file
     serialized_contents = "my contents"
     patched_file_serialize.return_value = serialized_contents
@@ -501,7 +505,9 @@ def test_create_repo_new(mocker, mock_api_wrapper, mock_branches):
 def test_create_repo_again(mocker, mock_api_wrapper):
     """ Test that the create_repo function will try retrieving a repo if api.create_repo fails"""
     mock_log = mocker.patch("content_sync.apis.github.log.debug")
-    mock_api_wrapper.org.create_repo.side_effect = GithubException(status=422, data={})
+    mock_api_wrapper.org.create_repo.side_effect = GithubException(
+        status=422, data={}, headers={}
+    )
     new_repo = mock_api_wrapper.create_repo()
     assert new_repo is not None
     assert mock_api_wrapper.org.get_repo.call_count == 1
