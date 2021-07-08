@@ -77,7 +77,6 @@ export const getFieldSchema = (field: ConfigField): FormSchema => {
     } else {
       schema = yup.string()
     }
-
     break
   }
   case WidgetVariant.File: {
@@ -92,6 +91,10 @@ export const getFieldSchema = (field: ConfigField): FormSchema => {
           field.fields.map(field => [field.name, getFieldSchema(field)])
         )
       )
+    break
+  }
+  case WidgetVariant.Menu: {
+    schema = yup.array()
     break
   }
   case WidgetVariant.String:

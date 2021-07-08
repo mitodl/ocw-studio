@@ -6,6 +6,7 @@ import FileUploadField from "../components/widgets/FileUploadField"
 import SelectField from "../components/widgets/SelectField"
 import BooleanField from "../components/widgets/BooleanField"
 import RelationField from "../components/widgets/RelationField"
+import MenuField from "../components/widgets/MenuField"
 
 import { objectToFormData } from "./util"
 import {
@@ -47,6 +48,8 @@ export const componentFromWidget = (
     return null
   case WidgetVariant.Relation:
     return RelationField
+  case WidgetVariant.Menu:
+    return MenuField
   default:
     return "input"
   }
@@ -63,6 +66,8 @@ const RELATION_EXTRA_PROPS = [
   "filter",
   "website"
 ]
+
+const MENU_EXTRA_PROPS = ["collections"]
 
 export const DEFAULT_TITLE_FIELD: StringConfigField = {
   name:     "title",
@@ -83,6 +88,8 @@ export function widgetExtraProps(field: ConfigField): Record<string, any> {
     return { minimal: field.minimal ?? false }
   case WidgetVariant.Relation:
     return pick(RELATION_EXTRA_PROPS, field)
+  case WidgetVariant.Menu:
+    return pick(MENU_EXTRA_PROPS, field)
   default:
     return {}
   }
@@ -229,6 +236,8 @@ const defaultForField = (field: ConfigField): SiteFormValue => {
           defaultForField(field) as SiteFormPrimitive
       ])
     )
+  case WidgetVariant.Menu:
+    return []
   default:
     return ""
   }

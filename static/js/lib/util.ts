@@ -1,5 +1,6 @@
 import { isEmpty, isNil } from "ramda"
 import { ActionPromiseValue } from "redux-query"
+import { EXTERNAL_LINK_PREFIX } from "../constants"
 import { SiteFormValue } from "../types/forms"
 
 export const isErrorStatusCode = (statusCode: number): boolean =>
@@ -63,4 +64,27 @@ export const addToMapList = <TKey, TValue>(
 ): void => {
   const list = map.get(key) ?? []
   map.set(key, [...list, value])
+}
+
+const uuid4regex = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+
+export const isUuid4 = (strToTest: string): boolean =>
+  uuid4regex.test(strToTest)
+
+export const isExternalLinkId = (textId: string): boolean =>
+  textId.startsWith(EXTERNAL_LINK_PREFIX)
+
+export const generateHashCode = (strToHash: string): string => {
+  let hash = 0,
+    i,
+    chr
+  if (strToHash.length === 0) {
+    return hash.toString()
+  }
+  for (i = 0; i < strToHash.length; i++) {
+    chr = strToHash.charCodeAt(i)
+    hash = (hash << 5) - hash + chr
+    hash |= 0 // Convert to 32bit integer
+  }
+  return hash.toString()
 }

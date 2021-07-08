@@ -145,12 +145,14 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     filename = models.CharField(
         max_length=CONTENT_FILENAME_MAX_LEN,
         null=False,
+        blank=True,
         default="",
         help_text="The filename of the file that will be created from this object WITHOUT the file extension.",
     )
     dirpath = models.CharField(
         max_length=CONTENT_DIRPATH_MAX_LEN,
         null=False,
+        blank=True,
         default="",
         help_text=(
             "The directory path for the file that will be created from this object."

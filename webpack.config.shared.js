@@ -17,6 +17,14 @@ module.exports = {
           use: "url-loader"
         },
         {
+          test: /node_modules\/react-nestable\/.+\.svg$/,
+          use: "svg-inline-loader?classPrefix"
+        },
+        {
+          test: /node_modules\/react-nestable\/dist\/styles\/.+\.css/,
+          loader: "style-loader"
+        },
+        {
           test: /\.tsx?$/,
           use: "ts-loader",
           exclude: /node_modules/

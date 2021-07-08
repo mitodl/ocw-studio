@@ -43,3 +43,23 @@ $menu-spacing: 20px;
     min-height: 300px;
   }
 }
+
+.sortable-item {
+  border: 1px solid $studio-text-gray;
+  border-radius: 5px;
+  align-items: center;
+
+  .reorder {
+    cursor: grab;
+  }
+
+  button {
+    padding: 0;
+    border: 0;
+    background-color: unset;
+  }
+
+  .material-icons {
+    color: $studio-text-gray;
+  }
+}

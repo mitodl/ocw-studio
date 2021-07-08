@@ -18,7 +18,7 @@ inner_content_item:
     file: str(required=False)
 ---
 field:
-    widget: enum('string', 'text', 'markdown', 'file', 'select', 'boolean', 'hidden', 'object', 'relation')
+    widget: enum('string', 'text', 'markdown', 'file', 'select', 'boolean', 'hidden', 'object', 'relation', 'menu')
     label: str()
     name: str()
     minimal: bool(required=False)
@@ -33,6 +33,7 @@ field:
     condition: include('field_condition', required=False)
     display_field: str(required=False)
     collection: str(required=False)
+    collections: list(str(), required=False)
     filter: include('relation_filter', required=False)
     website: str(required=False)
 ---

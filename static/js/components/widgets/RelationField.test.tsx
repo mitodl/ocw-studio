@@ -1,5 +1,5 @@
 import React from "react"
-import { SinonStub } from "sinon"
+import sinon, { SinonStub } from "sinon"
 
 import RelationField from "./RelationField"
 import WebsiteContext from "../../context/Website"
@@ -54,7 +54,7 @@ describe("RelationField", () => {
         .withArgs(
           siteApiContentListingUrl
             .param({ name: website.name })
-            .query({ type: "page", offset: 0, detailed_list: true })
+            .query({ offset: 0, type: "page", detailed_list: true })
             .toString(),
           "GET"
         )
@@ -72,8 +72,8 @@ describe("RelationField", () => {
           siteApiContentListingUrl
             .param({ name: website.name })
             .query({
-              type:          "page",
               offset:        WEBSITE_CONTENT_PAGE_SIZE,
+              type:          "page",
               detailed_list: true
             })
             .toString(),
@@ -133,6 +133,56 @@ describe("RelationField", () => {
         value: contentListingItemsPages[0][0].text_id
       }
     ])
+  })
+
+  it("should omit values", async () => {
+    const allOptions = contentListingItemsPages.flat().map(item => ({
+      label: item.title,
+      value: item.text_id
+    }))
+    const firstTwoValues = allOptions.slice(0, 2).map(option => option.value)
+    const { wrapper } = await render({
+      valuesToOmit: new Set(firstTwoValues)
+    })
+    const selectOptions = wrapper.find("SelectField").prop("options")
+    expect(selectOptions).toHaveLength(allOptions.length - 2)
+    // @ts-ignore
+    const selectOptionValues = selectOptions.map(
+      // @ts-ignore
+      selectOption => selectOption.value
+    )
+    expect(selectOptionValues).toEqual(
+      allOptions.slice(2).map(option => option.value)
+    )
+  })
+
+  it("should accept an onChange prop, which gets passed to the child select component", async () => {
+    const onChangeStub = sinon.stub()
+    const { wrapper } = await render({
+      onChange: onChangeStub
+    })
+    const select = wrapper.find("SelectField")
+    const fakeEvent = { target: { value: "abc" } }
+    // @ts-ignore
+    select.prop("onChange")(fakeEvent)
+    sinon.assert.calledOnceWithExactly(onChangeStub, fakeEvent)
+  })
+
+  it("should accept a setFieldValue prop, which is called when the select field changes", async () => {
+    const setFieldValueStub = sinon.stub()
+    const { wrapper } = await render({
+      name:          "nested.field",
+      setFieldValue: setFieldValueStub,
+      onChange:      null
+    })
+    const select = wrapper.find("SelectField")
+    const fakeEvent = { target: { value: "abc" } }
+    // @ts-ignore
+    select.prop("onChange")(fakeEvent)
+    sinon.assert.calledOnceWithExactly(setFieldValueStub, "nested", {
+      website: website.name,
+      content: "abc"
+    })
   })
 
   describe("manually-set website parameter", () => {

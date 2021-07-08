@@ -44,7 +44,6 @@ export default function RepeatableContentListing(props: {
     type: configItem.name,
     offset
   }
-
   const [
     { isPending: contentListingPending },
     fetchWebsiteContentListing

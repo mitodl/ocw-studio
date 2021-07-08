@@ -36,7 +36,7 @@ from websites.serializers import (
 )
 
 
-# pylint:disable=redefined-outer-name,too-many-arguments
+# pylint:disable=redefined-outer-name,too-many-arguments,too-many-lines
 
 pytestmark = pytest.mark.django_db
 
@@ -343,14 +343,14 @@ def test_websites_autogenerate_name(drf_client):
     assert resp.data["name"] == slugified_title
 
 
-def test_website_starters_list(drf_client, course_starter):
+def test_website_starters_list(settings, drf_client, course_starter):
     """ Website starters endpoint should return a serialized list """
+    settings.FEATURES[features.USE_LOCAL_STARTERS] = False
     new_starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
     resp = drf_client.get(reverse("website_starters_api-list"))
-    serialized_data = WebsiteStarterSerializer(
-        [course_starter, new_starter], many=True
-    ).data
-    assert len(resp.data) == 2
+    expected_starters = [course_starter, new_starter]
+    serialized_data = WebsiteStarterSerializer(expected_starters, many=True).data
+    assert len(resp.data) == len(expected_starters)
     assert sorted(resp.data, key=lambda _starter: _starter["id"]) == sorted(
         serialized_data, key=lambda _starter: _starter["id"]
     )
@@ -434,15 +434,19 @@ def test_websites_content_list(
     content = WebsiteContentFactory.create(type="other")
     website = content.website
     num_results = 5
-    contents = [
-        WebsiteContentFactory.create(type="page", website=website)
-        for _ in range(num_results)
-    ]
+    contents = WebsiteContentFactory.create_batch(
+        num_results, type="page", website=website
+    )
     WebsiteContentFactory.create(
         type="page", website=website
     ).delete()  # soft-deleted content shouldn't show up
     if not filter_type:
         contents += [content]
+    query_params = {}
+    if filter_type:
+        query_params["type"] = filter_type
+    if detailed_list:
+        query_params["detailed_list"] = detailed_list
     resp = drf_client.get(
         reverse(
             "websites_content_api-list",
@@ -450,9 +454,7 @@ def test_websites_content_list(
                 "parent_lookup_website": website.name,
             },
         ),
-        {"type": filter_type, "detailed_list": detailed_list}
-        if detailed_list
-        else {"type": filter_type},
+        query_params,
     )
     results = resp.data["results"]
     assert resp.data["count"] == (num_results if filter_type else num_results + 1)
@@ -469,6 +471,55 @@ def test_websites_content_list(
             assert content.metadata == results[idx]["metadata"]
         else:
             assert "metadata" not in results[idx]
+
+
+def test_websites_content_list_multiple_type(drf_client, global_admin_user):
+    """The list view of WebsiteContent should be able to filter by multiple type values"""
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create_batch(
+        3,
+        website=website,
+        type=factory.Iterator(["page", "resource", "other"]),
+    )
+    api_url = reverse(
+        "websites_content_api-list",
+        kwargs={
+            "parent_lookup_website": website.name,
+        },
+    )
+    resp = drf_client.get(
+        api_url,
+        {"type[0]": "page", "type[1]": "resource"},
+    )
+    assert resp.data["count"] == 2
+    results = resp.data["results"]
+    assert {result["type"] for result in results} == {"page", "resource"}
+
+
+def test_websites_content_list_page_content(drf_client, global_admin_user):
+    """The list view of WebsiteContent should be able to filter by page content only"""
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create_batch(
+        3,
+        website=website,
+        type=factory.Iterator(["type1", "type2", "type3"]),
+        is_page_content=factory.Iterator([True, False, False]),
+    )
+    api_url = reverse(
+        "websites_content_api-list",
+        kwargs={
+            "parent_lookup_website": website.name,
+        },
+    )
+    resp = drf_client.get(
+        api_url,
+        {"page_content": True},
+    )
+    assert resp.data["count"] == 1
+    results = resp.data["results"]
+    assert results[0]["type"] == "type1"
 
 
 def test_websites_content_detail(drf_client, global_admin_user):

@@ -13,7 +13,8 @@ export enum WidgetVariant {
   Select = "select",
   Hidden = "hidden",
   Object = "object",
-  Relation = "relation"
+  Relation = "relation",
+  Menu = "menu"
 }
 
 export interface FieldValueCondition {
@@ -107,6 +108,11 @@ export interface RelationConfigField extends ConfigFieldBaseProps {
   website?: string
 }
 
+export interface MenuConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.Menu
+  collections: string[]
+}
+
 /**
  * A configuration for a field for site content. This type basically
  * contains the information needed to render the field in the UI, to edit it,
@@ -122,6 +128,7 @@ export type ConfigField =
   | SelectConfigField
   | ObjectConfigField
   | RelationConfigField
+  | MenuConfigField
 
 export interface BaseConfigItem {
   name: string
@@ -221,6 +228,12 @@ export interface WebsiteContent extends WebsiteContentListItem {
 
 export interface ContentListingParams {
   name: string
-  type: string
+  type?: string | string[]
+  pageContent?: boolean
   offset: number
+}
+
+export enum LinkType {
+  Internal = "internal",
+  External = "external"
 }

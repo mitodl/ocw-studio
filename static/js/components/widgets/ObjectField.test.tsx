@@ -38,7 +38,7 @@ describe("ObjectField", () => {
       )
   })
 
-  it("should should render an Object field, by passing sub-fields to SiteContentField", () => {
+  it("should render an Object field, by passing sub-fields to SiteContentField", () => {
     const wrapper = render()
     wrapper.find("SiteContentField").map((field: any) => {
       expect(field.prop("setFieldValue")).toEqual(setFieldValueStub)
