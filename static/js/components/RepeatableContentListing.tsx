@@ -114,7 +114,7 @@ export default function RepeatableContentListing(props: {
       <div>
         <Card>
           <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
-            <h3>{labelSingular}</h3>
+            <h3>{configItem.label}</h3>
             <a className="btn blue-button add" onClick={startAddOrEdit(null)}>
               Add {labelSingular}
             </a>

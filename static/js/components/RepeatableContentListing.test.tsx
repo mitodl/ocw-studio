@@ -269,7 +269,7 @@ describe("RepeatableContentListing", () => {
           .find("Card")
           .find("h3")
           .text()
-      ).toBe(expectedLabel)
+      ).toBe(configItem.label)
       expect(
         wrapper
           .find("Card")
