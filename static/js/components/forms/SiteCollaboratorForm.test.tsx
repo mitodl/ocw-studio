@@ -144,6 +144,7 @@ describe("SiteCollaboratorForm", () => {
     const collaboratorValidation = yup
       .object()
       .shape({ ...roleValidation, ...emailValidation })
+
     it("rejects an empty role", async () => {
       try {
         await expect(
@@ -154,6 +155,7 @@ describe("SiteCollaboratorForm", () => {
         expect(error.errors).toStrictEqual(["Role is a required field"])
       }
     })
+
     it("rejects an empty email", async () => {
       try {
         await expect(
@@ -164,6 +166,7 @@ describe("SiteCollaboratorForm", () => {
         expect(error.errors).toStrictEqual(["Email is a required field"])
       }
     })
+
     it("rejects an invalid email", async () => {
       try {
         await expect(
@@ -176,6 +179,7 @@ describe("SiteCollaboratorForm", () => {
         expect(error.errors).toStrictEqual(["Email must be a valid email"])
       }
     })
+
     it("does not reject a valid role", async () => {
       try {
         await expect(

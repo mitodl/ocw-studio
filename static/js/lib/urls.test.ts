@@ -156,19 +156,19 @@ describe("urls", () => {
 
       it("renders a collection detail API url", () => {
         expect(
-          collectionsApiDetailUrl.param({ collection_id: 4 }).toString()
+          collectionsApiDetailUrl.param({ collectionId: 4 }).toString()
         ).toBe("/api/collections/4/")
       })
 
       it("renders collection items list API url", () => {
-        expect(wcItemsApiUrl.param({ collection_id: 4 }).toString()).toBe(
+        expect(wcItemsApiUrl.param({ collectionId: 4 }).toString()).toBe(
           "/api/collections/4/items/"
         )
       })
 
       it("renders collection item detail API url", () => {
         expect(
-          wcItemsApiDetailUrl.param({ collection_id: 4, item_id: 3 }).toString()
+          wcItemsApiDetailUrl.param({ collectionId: 4, item_id: 3 }).toString()
         ).toBe("/api/collections/4/items/3/")
       })
     })

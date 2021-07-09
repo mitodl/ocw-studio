@@ -1,10 +1,12 @@
-import React from "react"
+import React, { useCallback, useState } from "react"
 import { useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
 import { useLocation } from "react-router-dom"
 
 import PaginationControls from "../components/PaginationControls"
 import Card from "../components/Card"
+import BasicModal from "../components/BasicModal"
+import WebsiteCollectionEditor from "../components/WebsiteCollectionEditor"
 
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 import {
@@ -12,15 +14,23 @@ import {
   WebsiteCollectionListingResponse
 } from "../query-configs/website_collections"
 import { getWebsiteCollectionListingCursor } from "../selectors/website_collections"
-import { WebsiteCollection } from "../types/website_collections"
+import {
+  WebsiteCollection,
+  WebsiteCollectionModalState
+} from "../types/website_collections"
 import { collectionsBaseUrl } from "../lib/urls"
+import { createModalState } from "../types/modal_state"
 
 export default function WebsiteCollectionsPage(): JSX.Element {
   const { search } = useLocation()
 
   const offset = Number(new URLSearchParams(search).get("offset") ?? 0)
 
-  useRequest(websiteCollectionListRequest(offset))
+  const [modalState, setModalState] = useState<WebsiteCollectionModalState>(
+    createModalState("closed", null)
+  )
+
+  const [, refresh] = useRequest(websiteCollectionListRequest(offset))
 
   const websiteCollectionsListingCursor = useSelector(
     getWebsiteCollectionListingCursor
@@ -30,32 +40,73 @@ export default function WebsiteCollectionsPage(): JSX.Element {
     offset
   )
 
+  const closeDrawer = useCallback(() => {
+    refresh()
+    setModalState(createModalState("closed", null))
+  }, [setModalState, refresh])
+
+  const startAddingCollection = useCallback(() => {
+    setModalState(createModalState("adding", null))
+  }, [setModalState])
+
+  const startEditingCollection = useCallback(
+    (websiteCollectionId: number) => {
+      setModalState(createModalState("editing", websiteCollectionId))
+    },
+    [setModalState]
+  )
+
   return (
-    <div className="px-4 dashboard">
-      <div className="content">
-        <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
-          <h3>Collections</h3>
+    <>
+      <BasicModal
+        isVisible={!modalState.closed()}
+        hideModal={closeDrawer}
+        title={modalState.editing() ? "Edit" : "Add"}
+        className="my-modal right"
+      >
+        {modalProps => (
+          <div className="m-3">
+            <WebsiteCollectionEditor
+              modalState={modalState}
+              hideModal={modalProps.hideModal}
+            />
+          </div>
+        )}
+      </BasicModal>
+      <div className="px-4 dashboard">
+        <div className="content">
+          <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
+            <h3>Collections</h3>
+            <a className="btn blue-button add" onClick={startAddingCollection}>
+              Add New
+            </a>
+          </div>
+          <Card>
+            <ul className="ruled-list">
+              {listing.results.map((collection: WebsiteCollection) => (
+                <li className="py-3" key={collection.id}>
+                  <a
+                    className="edit-collection"
+                    onClick={() => startEditingCollection(collection.id)}
+                  >
+                    {collection.title}
+                  </a>
+                  <div className="text-gray">{collection.description}</div>
+                </li>
+              ))}
+            </ul>
+            <PaginationControls
+              listing={listing}
+              previous={collectionsBaseUrl
+                .query({ offset: offset - WEBSITE_CONTENT_PAGE_SIZE })
+                .toString()}
+              next={collectionsBaseUrl
+                .query({ offset: offset + WEBSITE_CONTENT_PAGE_SIZE })
+                .toString()}
+            />
+          </Card>
         </div>
-        <Card>
-          <ul className="ruled-list">
-            {listing.results.map((collection: WebsiteCollection) => (
-              <li className="py-3" key={collection.id}>
-                <a>{collection.title}</a>
-                <div className="text-gray">{collection.description}</div>
-              </li>
-            ))}
-          </ul>
-          <PaginationControls
-            listing={listing}
-            previous={collectionsBaseUrl
-              .query({ offset: offset - WEBSITE_CONTENT_PAGE_SIZE })
-              .toString()}
-            next={collectionsBaseUrl
-              .query({ offset: offset + WEBSITE_CONTENT_PAGE_SIZE })
-              .toString()}
-          />
-        </Card>
       </div>
-    </div>
+    </>
   )
 }

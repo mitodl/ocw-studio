@@ -14,3 +14,11 @@ export type SiteFormValue =
   | Record<string, SiteFormPrimitive>
 
 export type SiteFormValues = Record<string, SiteFormValue>
+
+/**
+ * WebsiteCollectionFormFields
+ **/
+export interface WebsiteCollectionFormFields {
+  title: string
+  description: string
+}

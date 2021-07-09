@@ -2,8 +2,10 @@ import { QueryConfig } from "redux-query"
 
 import { PaginatedResponse } from "./utils"
 
-import { collectionsApiUrl } from "../lib/urls"
+import { collectionsApiDetailUrl, collectionsApiUrl } from "../lib/urls"
 import { WebsiteCollection } from "../types/website_collections"
+import { getCookie } from "../lib/api/util"
+import { WebsiteCollectionFormFields } from "../types/forms"
 
 export type WebsiteCollectionDetails = Record<number, WebsiteCollection>
 
@@ -53,6 +55,82 @@ export const websiteCollectionListRequest = (offset = 0): QueryConfig => ({
       prev: WebsiteCollectionDetails,
       next: WebsiteCollectionDetails
     ): WebsiteCollectionDetails => ({
+      ...prev,
+      ...next
+    })
+  }
+})
+
+export const websiteCollectionRequest = (id: number): QueryConfig => ({
+  url: collectionsApiDetailUrl
+    .param({
+      collectionId: id
+    })
+    .toString(),
+  transform: (body: WebsiteCollection) => {
+    return {
+      websiteCollectionDetails: {
+        [body.id]: body
+      }
+    }
+  },
+  update: {
+    websiteCollectionDetails: (
+      prev: WebsiteCollectionDetails,
+      next: WebsiteCollectionDetails
+    ): WebsiteCollectionDetails => ({
+      ...prev,
+      ...next
+    })
+  }
+})
+
+export const editWebsiteCollectionMutation = (
+  collection: WebsiteCollection
+): QueryConfig => ({
+  url: collectionsApiDetailUrl
+    .param({
+      collectionId: collection.id
+    })
+    .toString(),
+  body:    collection,
+  options: {
+    method:  "PATCH",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
+  },
+  transform: response => ({
+    websiteCollectionDetails: {
+      [collection.id]: response
+    }
+  }),
+  update: {
+    websiteCollectionDetails: (prev, next) => ({
+      ...prev,
+      ...next
+    })
+  }
+})
+
+export const createWebsiteCollectionMutation = (
+  collection: WebsiteCollectionFormFields
+): QueryConfig => ({
+  url:     collectionsApiUrl.toString(),
+  body:    collection,
+  options: {
+    method:  "POST",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
+  },
+  transform: response => ({
+    websiteCollectionDetails: {
+      [response.id]: response
+    }
+  }),
+  update: {
+    websiteCollectionDetails: (prev, next) => ({
       ...prev,
       ...next
     })

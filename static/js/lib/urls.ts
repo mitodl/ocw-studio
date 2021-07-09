@@ -55,7 +55,7 @@ export const collectionsApiUrl = api.segment("collections/")
  * not include its items.
  **/
 export const collectionsApiDetailUrl = collectionsApiUrl.segment(
-  ":collection_id/"
+  ":collectionId/"
 )
 
 /**
@@ -63,7 +63,7 @@ export const collectionsApiDetailUrl = collectionsApiUrl.segment(
  *
  * This looks like:
  *
- * /api/collections/:collection_id/items/
+ * /api/collections/:collectionId/items/
  *
  * It returns the items contained in a WebsiteCollection.
  **/
@@ -75,7 +75,7 @@ export const wcItemsApiUrl = collectionsApiDetailUrl.segment("items/")
  * Detail view for a single WebsiteCollectionItem record.
  * this looks like:
  *
- * /api/collections/:collection_id/items/:item_id/
+ * /api/collections/:collectionId/items/:item_id/
  *
  * It's mainly of use for changing the order of items in the
  * WebsiteCollection by editing the `position` attribute.

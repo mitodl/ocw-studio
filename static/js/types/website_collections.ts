@@ -1,3 +1,5 @@
+import { ModalState } from "./modal_state"
+
 /**
  * A user-editable collection of Websites
  *
@@ -12,6 +14,16 @@ export interface WebsiteCollection {
   id: number
 }
 
+/**
+ * An entry in a WebsiteCollection
+ **/
 export interface WebsiteCollectionItem {
   position: number
 }
+
+/**
+ * For the WebsiteCollection drawer we need to keep track
+ * of a WebsiteCollection ID, which is set in the drawer
+ * state if we're editing an existing collection.
+ */
+export type WebsiteCollectionModalState = ModalState<number>

@@ -7,6 +7,8 @@ import { WebsiteCollection } from "../types/website_collections"
 import { makeWebsiteCollection } from "../util/factories/website_collections"
 import { collectionsApiUrl, collectionsBaseUrl } from "../lib/urls"
 import { times } from "lodash"
+import { createModalState } from "../types/modal_state"
+import { act } from "react-dom/test-utils"
 
 describe("CollectionsPage", () => {
   let helper: IntegrationTestHelper,
@@ -83,5 +85,56 @@ describe("CollectionsPage", () => {
         .at(0)
         .prop("to")
     ).toBe(collectionsBaseUrl.query({ offset: 0 }).toString())
+  })
+
+  it("should let you open an editing form for a collection", async () => {
+    const { wrapper } = await render()
+    wrapper
+      .find(".edit-collection")
+      .at(0)
+      .simulate("click")
+    wrapper.update()
+    expect(wrapper.find("BasicModal").prop("isVisible")).toBeTruthy()
+    expect(wrapper.find("WebsiteCollectionEditor").prop("modalState")).toEqual(
+      createModalState("editing", collections[0].id)
+    )
+    expect(wrapper.find("BasicModal").prop("title")).toBe("Edit")
+  })
+
+  it("should let you open a form for adding a collection", async () => {
+    const { wrapper } = await render()
+    wrapper.find(".blue-button.add").simulate("click")
+    wrapper.update()
+    expect(wrapper.find("BasicModal").prop("isVisible")).toBeTruthy()
+    expect(wrapper.find("WebsiteCollectionEditor").prop("modalState")).toEqual(
+      createModalState("adding", null)
+    )
+    expect(wrapper.find("BasicModal").prop("title")).toBe("Add")
+  })
+
+  it("should refresh after closing the modal", async () => {
+    const { wrapper } = await render()
+    wrapper.find(".blue-button.add").simulate("click")
+    // should be able to close the modal
+    act(() => {
+      // @ts-ignore
+      wrapper.find("BasicModal").prop("hideModal")()
+    })
+    wrapper.update()
+    expect(wrapper.find("WebsiteCollectionEditor").prop("modalState")).toEqual(
+      createModalState("closed", null)
+    )
+    expect(helper.handleRequestStub.args).toEqual([
+      [
+        collectionsApiUrl.param({ offset: 0 }).toString(),
+        "GET",
+        { body: undefined, credentials: undefined, headers: undefined }
+      ],
+      [
+        collectionsApiUrl.param({ offset: 0 }).toString(),
+        "GET",
+        { body: undefined, credentials: undefined, headers: undefined }
+      ]
+    ])
   })
 })
