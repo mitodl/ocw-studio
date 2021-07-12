@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.19.0
+--------------
+
+- Added back-end for configuring navigation menus
+- add WebsiteCollection list / index page
+- Added front-end for configuring navigation menus
+- Add label_singular field for collections (#353)
+- add documentation comment for two types
+
 Version 0.18.0 (Released July 07, 2021)
 --------------
 
