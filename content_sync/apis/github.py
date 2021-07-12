@@ -1,6 +1,5 @@
 """ Github API wrapper"""
 import logging
-import os
 from base64 import b64decode
 from dataclasses import dataclass
 from typing import Iterator, List, Optional
@@ -20,11 +19,12 @@ from yamale import YamaleError
 from content_sync.decorators import retry_on_failure
 from content_sync.models import ContentSyncState
 from content_sync.serializers import serialize_content_to_file
+from content_sync.utils import get_destination_filepath
 from main import features
 from users.models import User
 from websites.api import get_valid_new_slug
 from websites.config_schema.api import validate_raw_site_config
-from websites.constants import STARTER_SOURCE_GITHUB, WEBSITE_CONTENT_FILETYPE
+from websites.constants import STARTER_SOURCE_GITHUB
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
 
@@ -49,33 +49,6 @@ def decode_file_contents(content_file: ContentFile) -> str:
     Decode repo file contents from base64 to a normal string.
     """
     return str(b64decode(content_file.content), encoding="utf-8")
-
-
-def get_destination_filepath(
-    content: WebsiteContent, site_config: SiteConfig
-) -> Optional[str]:
-    """
-    Returns the full filepath where the equivalent file for the WebsiteContent record should be placed
-    """
-    if content.is_page_content:
-        return os.path.join(
-            content.dirpath, f"{content.filename}.{WEBSITE_CONTENT_FILETYPE}"
-        )
-    config_item = site_config.find_item_by_name(name=content.type)
-    if config_item is None:
-        log.error(
-            "Config item not found (content: %s, name value missing from config: %s)",
-            (content.id, content.text_id),
-            content.type,
-        )
-        return None
-    if config_item.is_file_item():
-        return config_item.file_target
-    log.error(
-        "Invalid config item: is_page_content flag is False, and config item is not 'file'-type (content: %s)",
-        (content.id, content.text_id),
-    )
-    return None
 
 
 def sync_starter_configs(  # pylint:disable=too-many-locals

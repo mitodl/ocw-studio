@@ -10,7 +10,6 @@ from github import GithubException
 from content_sync.apis.github import (
     GIT_DATA_FILEPATH,
     GithubApiWrapper,
-    get_destination_filepath,
     sync_starter_configs,
 )
 from main import features
@@ -22,7 +21,7 @@ from websites.factories import (
     WebsiteStarterFactory,
 )
 from websites.models import WebsiteContent, WebsiteStarter
-from websites.site_config_api import ConfigItem, SiteConfig
+from websites.site_config_api import SiteConfig
 
 
 pytestmark = pytest.mark.django_db
@@ -540,41 +539,6 @@ def test_create_backend_two_branches_already_exist(
         f"refs/heads/{settings.GIT_BRANCH_RELEASE}", sha=mocker.ANY
     )
     assert new_repo == mock_api_wrapper.get_repo()
-
-
-@pytest.mark.parametrize(
-    "has_missing_name, is_bad_config_item",
-    [
-        [True, False],
-        [False, True],
-    ],
-)
-def test_get_destination_filepath_errors(mocker, has_missing_name, is_bad_config_item):
-    """
-    get_destination_filepath should log an error and return None if the site config is missing the given name, or if
-    the config item does not have a properly configured destination.
-    """
-    patched_log = mocker.patch("content_sync.apis.github.log")
-    # From basic-site-config.yml
-    config_item_name = "blog"
-    if is_bad_config_item:
-        mocker.patch.object(
-            SiteConfig,
-            "find_item_by_name",
-            return_value=ConfigItem(
-                item={"name": config_item_name, "poorly": "configured"}
-            ),
-        )
-    starter = WebsiteStarterFactory.build()
-    content = WebsiteContentFactory.build(
-        is_page_content=False,
-        type="non-existent-config-name" if has_missing_name else config_item_name,
-    )
-    return_value = get_destination_filepath(
-        content=content, site_config=SiteConfig(starter.config)
-    )
-    patched_log.error.assert_called_once()
-    assert return_value is None
 
 
 def test_sync_starter_configs_success_create(mocker, mock_github):

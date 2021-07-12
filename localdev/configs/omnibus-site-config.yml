@@ -91,3 +91,16 @@ collections:
             "minimal": true,
             "help": "A description of the item."
           }
+  - name: menu
+    label: Menu
+    category: Settings
+    files:
+      - file: config/menu-sidenav.yml
+        name: navmenu
+        label: Navigation Menu
+        fields:
+          - {
+            "label": "Menu",
+            "name": "mainmenu",
+            "widget": "menu",
+          }
