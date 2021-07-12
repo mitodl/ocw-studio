@@ -185,6 +185,25 @@
       ],
       "label": "Metadata",
       "name": "metadata"
+    },
+    {
+      "category": "Settings",
+      "files": [
+        {
+          "fields": [
+            {
+              "label": "Menu",
+              "name": "mainmenu",
+              "widget": "menu"
+            }
+          ],
+          "file": "config/menu-sidenav.yml",
+          "label": "Navigation Menu",
+          "name": "navmenu"
+        }
+      ],
+      "label": "Menu",
+      "name": "menu"
     }
   ],
   "content-dir": "content",

@@ -1,11 +1,14 @@
 """Project conftest"""
+import os
 from types import SimpleNamespace
 
 import pytest
+import yaml
 
 from fixtures.common import *  # pylint:disable=wildcard-import,unused-wildcard-import
 from websites.constants import COURSE_STARTER_SLUG, OMNIBUS_STARTER_SLUG
 from websites.models import WebsiteStarter
+from websites.site_config_api import SiteConfig
 
 
 @pytest.fixture(autouse=True)
@@ -44,6 +47,18 @@ def course_starter():
 def omnibus_starter():
     """Returns the omnibus WebsiteStarter that is seeded in a data migration"""
     return WebsiteStarter.objects.get(slug=OMNIBUS_STARTER_SLUG)
+
+
+@pytest.fixture()
+@pytest.mark.django_db
+def omnibus_config(settings):
+    """Returns the omnibus site config"""
+    with open(
+        os.path.join(settings.BASE_DIR, "localdev/configs/omnibus-site-config.yml")
+    ) as f:
+        raw_config = f.read().strip()
+    parsed_config = yaml.load(raw_config, Loader=yaml.Loader)
+    return SiteConfig(parsed_config)
 
 
 def pytest_addoption(parser):

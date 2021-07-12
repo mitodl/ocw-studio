@@ -9,14 +9,24 @@ from content_sync.serializers import (
     BaseContentFileSerializer,
     ContentFileSerializerFactory,
     HugoMarkdownFileSerializer,
+    HugoMenuYamlFileSerializer,
     JsonFileSerializer,
     YamlFileSerializer,
     deserialize_file_to_website_content,
     serialize_content_to_file,
 )
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.site_config_api import ConfigItem, SiteConfig
 
+
+EXAMPLE_UUIDS = [
+    "c5047db5-5d30-481f-878c-4fe79eebeeb1",
+    "38223bd4-8eae-4a81-91c2-b36cac529d69",
+]
 
 EXAMPLE_HUGO_MARKDOWN = """---
 title: Example File
@@ -54,21 +64,47 @@ description: '**This** is the description'
 title: Content Title
 """
 
+EXAMPLE_MENU_DATA = [
+    {"name": "Page 1", "weight": 0, "identifier": EXAMPLE_UUIDS[0]},
+    {
+        "name": "Ext Link",
+        "weight": 10,
+        "identifier": "external-12345",
+        "url": "http://example.com",
+    },
+]
 
+EXAMPLE_MENU_FILE_YAML = f"""menu:
+  mainmenu:
+  - identifier: {EXAMPLE_UUIDS[0]}
+    name: Page 1
+    weight: 0
+    url: content/page-1.md
+  - identifier: 'external-12345'
+    name: Ext Link
+    weight: 10
+    url: http://example.com
+"""
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "markdown, exp_sections", [["# Some markdown...\n- and\n- a\n- list", 2], [None, 1]]
 )
 def test_hugo_file_serialize(markdown, exp_sections):
     """HugoMarkdownFileSerializer.serialize should create the expected file contents"""
     metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
-    content = WebsiteContentFactory.build(
+    content = WebsiteContentFactory.create(
         text_id="abcdefg",
         title="Content Title",
         type="sometype",
         markdown=markdown,
         metadata=metadata,
     )
-    file_content = HugoMarkdownFileSerializer.serialize(website_content=content)
+    site_config = SiteConfig(content.website.starter.config)
+    file_content = HugoMarkdownFileSerializer(site_config).serialize(
+        website_content=content
+    )
     md_file_sections = [
         part
         for part in re.split(re.compile(r"^---\n", re.MULTILINE), file_content)
@@ -103,10 +139,10 @@ def test_hugo_file_deserialize(mocker):
     )
     website = WebsiteFactory.create()
     site_config = SiteConfig(website.starter.config)
+    serializer = HugoMarkdownFileSerializer(site_config)
 
-    website_content = HugoMarkdownFileSerializer.deserialize(
+    website_content = serializer.deserialize(
         website=website,
-        site_config=site_config,
         filepath=filepath,
         file_contents=EXAMPLE_HUGO_MARKDOWN,
     )
@@ -122,9 +158,8 @@ def test_hugo_file_deserialize(mocker):
     markdown_pos = EXAMPLE_HUGO_MARKDOWN.find(website_content.markdown)
     content_without_markdown = EXAMPLE_HUGO_MARKDOWN[0:markdown_pos]
     # deserialize() should update existing WebsiteContent records, and should be able to handle empty markdown.
-    HugoMarkdownFileSerializer.deserialize(
+    serializer.deserialize(
         website=website,
-        site_config=site_config,
         filepath=filepath,
         file_contents=content_without_markdown,
     )
@@ -133,12 +168,65 @@ def test_hugo_file_deserialize(mocker):
 
 
 @pytest.mark.django_db
+def test_hugo_menu_yaml_serialize(omnibus_config):
+    """HugoMenuYamlFileSerializer.serialize should create the expected file contents"""
+    nav_menu_config_item = omnibus_config.find_item_by_name("navmenu")
+    assert nav_menu_config_item is not None
+    # Create page object referred to in the menu data
+    WebsiteContentFactory.create(
+        text_id=EXAMPLE_UUIDS[0],
+        is_page_content=True,
+        dirpath="path/to",
+        filename="myfile",
+    )
+    content = WebsiteContentFactory.build(
+        is_page_content=False,
+        type=nav_menu_config_item.name,
+        metadata={"mainmenu": EXAMPLE_MENU_DATA, "otherfield": "othervalue"},
+    )
+    serialized_data = HugoMenuYamlFileSerializer(omnibus_config).serialize(content)
+    parsed_serialized_data = yaml.load(serialized_data, Loader=yaml.Loader)
+    assert parsed_serialized_data == {
+        "menu": {
+            "mainmenu": [
+                {**EXAMPLE_MENU_DATA[0], "url": "path/to/myfile.md"},
+                EXAMPLE_MENU_DATA[1],
+            ]
+        },
+        "otherfield": "othervalue",
+        "title": content.title,
+    }
+
+
+@pytest.mark.django_db
+def test_hugo_menu_yaml_deserialize(omnibus_config):
+    """HugoMenuYamlFileSerializer.deserialize should create the expected content object from some file contents"""
+    nav_menu_config_item = omnibus_config.find_item_by_name("navmenu")
+    assert nav_menu_config_item is not None
+    filepath = nav_menu_config_item.file_target
+    website = WebsiteFactory.create()
+    serializer = HugoMenuYamlFileSerializer(omnibus_config)
+    website_content = serializer.deserialize(
+        website=website,
+        filepath=filepath,
+        file_contents=f"{EXAMPLE_MENU_FILE_YAML}otherfield: othervalue",
+    )
+    assert website_content.metadata == {
+        "mainmenu": [
+            {**EXAMPLE_MENU_DATA[0], "url": "content/page-1.md"},
+            EXAMPLE_MENU_DATA[1],
+        ],
+        "otherfield": "othervalue",
+    }
+
+
+@pytest.mark.django_db
 def test_hugo_file_deserialize_with_file():
     """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
     website = WebsiteFactory.create()
-    website_content = HugoMarkdownFileSerializer.deserialize(
+    site_config = SiteConfig(website.starter.config)
+    website_content = HugoMarkdownFileSerializer(site_config).deserialize(
         website=website,
-        site_config=SiteConfig(website.starter.config),
         filepath="/test/file.md",
         file_contents=EXAMPLE_HUGO_MARKDOWN_WITH_FILE,
     )
@@ -169,9 +257,8 @@ def test_hugo_file_deserialize_dirpath(
     )
     website = WebsiteFactory.create()
     site_config = SiteConfig(website.starter.config)
-    website_content = HugoMarkdownFileSerializer.deserialize(
+    website_content = HugoMarkdownFileSerializer(site_config).deserialize(
         website=website,
-        site_config=site_config,
         filepath=filepath,
         file_contents=EXAMPLE_HUGO_MARKDOWN,
     )
@@ -179,17 +266,19 @@ def test_hugo_file_deserialize_dirpath(
     patched_find_item.assert_any_call("page")
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize("serializer_cls", [JsonFileSerializer, YamlFileSerializer])
 def test_data_file_serialize(serializer_cls):
     """JsonFileSerializer and YamlFileSerializer.serialize should create the expected data file contents"""
     metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
-    content = WebsiteContentFactory.build(
+    content = WebsiteContentFactory.create(
         text_id="abcdefg",
         title="Content Title",
         type="sometype",
         metadata=metadata,
     )
-    file_content = serializer_cls.serialize(website_content=content)
+    site_config = SiteConfig(content.website.starter.config)
+    file_content = serializer_cls(site_config).serialize(website_content=content)
     parsed_file_content = (
         json.loads(file_content)
         if serializer_cls == JsonFileSerializer
@@ -219,9 +308,8 @@ def test_data_file_deserialize(serializer_cls, file_content):
         if "file" in config_item.item
     )
     filepath = file_config_item.item["file"]
-    website_content = serializer_cls.deserialize(
+    website_content = serializer_cls(site_config).deserialize(
         website=website,
-        site_config=site_config,
         filepath=filepath,
         file_contents=file_content,
     )
@@ -236,34 +324,58 @@ def test_data_file_deserialize(serializer_cls, file_content):
 
 
 @pytest.mark.parametrize(
-    "filepath, exp_serializer",
+    "filepath, exp_serializer_cls",
     [
         ["content/file.md", HugoMarkdownFileSerializer],
         ["data/file.json", JsonFileSerializer],
         ["data/file.yml", YamlFileSerializer],
     ],
 )
-def test_factory_for_file(filepath, exp_serializer):
+def test_factory_for_file(filepath, exp_serializer_cls):
     """ContentFileSerializerFactory.for_file should return the correct serializer class"""
-    assert ContentFileSerializerFactory.for_file(filepath) == exp_serializer
+    site_config = SiteConfig(WebsiteStarterFactory.build().config)
+    assert isinstance(
+        ContentFileSerializerFactory.for_file(
+            site_config=site_config, filepath=filepath
+        ),
+        exp_serializer_cls,
+    )
+
+
+def test_factory_for_file_hugo_menu(omnibus_config):
+    """
+    ContentFileSerializerFactory.for_file should return the Hugo menu serializer class if the filepath is associated
+    with a config item that has "menu" fields
+    """
+    nav_menu_config_item = omnibus_config.find_item_by_name("navmenu")
+    assert nav_menu_config_item is not None
+    assert isinstance(
+        ContentFileSerializerFactory.for_file(
+            site_config=omnibus_config, filepath=nav_menu_config_item.file_target
+        ),
+        HugoMenuYamlFileSerializer,
+    )
 
 
 def test_factory_for_file_invalid():
     """ContentFileSerializerFactory.for_file should raise when given an unsupported file type"""
+    site_config = SiteConfig(WebsiteStarterFactory.build().config)
     with pytest.raises(ValueError):
-        assert ContentFileSerializerFactory.for_file("/path/to/myfile.tar.gz")
+        assert ContentFileSerializerFactory.for_file(
+            site_config=site_config, filepath="/path/to/myfile.tar.gz"
+        )
 
 
-def test_factory_for_content_hugo():
+def test_factory_for_content_hugo_markdown():
     """
     ContentFileSerializerFactory.for_content should return the Hugo markdown serializer if the content object
     is page content.
     """
     content = WebsiteContentFactory.build(is_page_content=True)
     site_config = SiteConfig(content.website.starter.config)
-    assert (
-        ContentFileSerializerFactory.for_content(site_config, content)
-        == HugoMarkdownFileSerializer
+    assert isinstance(
+        ContentFileSerializerFactory.for_content(site_config, content),
+        HugoMarkdownFileSerializer,
     )
 
 
@@ -295,9 +407,27 @@ def test_factory_for_content_data(file_value, exp_serializer_cls):
     ]
     site_config.raw_data["collections"].append(new_files_item)
 
-    assert (
-        ContentFileSerializerFactory.for_content(site_config, content)
-        == exp_serializer_cls
+    assert isinstance(
+        ContentFileSerializerFactory.for_content(site_config, content),
+        exp_serializer_cls,
+    )
+
+
+def test_factory_for_content_hugo_menu(omnibus_config):
+    """
+    ContentFileSerializerFactory.for_content should return the Hugo menu serializer class if the content is
+    associated with a config item that has "menu" fields
+    """
+    nav_menu_config_item = omnibus_config.find_item_by_name("navmenu")
+    assert nav_menu_config_item is not None
+    content = WebsiteContentFactory.build(
+        is_page_content=False, type=nav_menu_config_item.name
+    )
+    assert isinstance(
+        ContentFileSerializerFactory.for_content(
+            site_config=omnibus_config, website_content=content
+        ),
+        HugoMenuYamlFileSerializer,
     )
 
 
@@ -338,10 +468,9 @@ def test_deserialize_file_to_website_content(mocker):
         file_contents=file_contents,
     )
 
-    patched_serializer_factory.for_file.assert_called_once_with(filepath)
+    patched_serializer_factory.for_file.assert_called_once_with(site_config, filepath)
     mock_serializer.deserialize.assert_called_once_with(
         website=website,
-        site_config=site_config,
         filepath=filepath,
         file_contents=file_contents,
     )

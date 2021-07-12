@@ -5,7 +5,7 @@ import re
 from enum import Flag, auto
 from pathlib import Path
 from typing import Tuple
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from django.http import HttpRequest
 
@@ -29,6 +29,17 @@ def uuid_string():
         str: UUID cast as a string
     """
     return str(uuid4())
+
+
+def is_valid_uuid(uuid_to_test: str, version: int = 4) -> bool:
+    """
+    Returns True if the given string is a valid UUID
+    """
+    try:
+        uuid_obj = UUID(uuid_to_test, version=version)
+    except ValueError:
+        return False
+    return str(uuid_obj) == uuid_to_test
 
 
 def get_file_extension(filepath: str) -> str:
