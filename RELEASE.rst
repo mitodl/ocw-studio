@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.19.0
+Version 0.19.0 (Released July 13, 2021)
 --------------
 
 - Added back-end for configuring navigation menus
