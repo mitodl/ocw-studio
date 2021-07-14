@@ -234,7 +234,7 @@ def test_websites_endpoint_preview_error(mocker, drf_client):
     """ An exception raised by the api preview call should be handled gracefully """
     mocker.patch(
         "websites.views.preview_website",
-        side_effect=[GithubException(status=422, data={})],
+        side_effect=[GithubException(status=422, data={}, headers={})],
     )
     website = WebsiteFactory.create()
     editor = UserFactory.create()
@@ -284,7 +284,7 @@ def test_websites_endpoint_publish_error(mocker, drf_client):
     """ An exception raised by the api publish call should be handled gracefully """
     mocker.patch(
         "websites.views.publish_website",
-        side_effect=[GithubException(status=422, data={})],
+        side_effect=[GithubException(status=422, data={}, headers={})],
     )
     website = WebsiteFactory.create()
     admin = UserFactory.create()

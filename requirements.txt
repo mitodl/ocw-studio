@@ -8,6 +8,8 @@ amqp==2.6.1
     # via kombu
 asgiref==3.2.10
     # via django
+attrs==21.2.0
+    # via pytest
 backcall==0.2.0
     # via ipython
 beautifulsoup4==4.9.3
@@ -34,13 +36,11 @@ certifi==2020.6.20
     #   requests
     #   sentry-sdk
 cffi==1.14.2
-    # via cryptography
+    # via
+    #   cryptography
+    #   pynacl
 chardet==3.0.4
     # via requests
-codecov==2.1.11
-    # via mitol-django-authentication
-coverage==5.5
-    # via codecov
 cryptography==3.3.2
     # via
     #   pyopenssl
@@ -107,15 +107,20 @@ djangorestframework==3.12.2
     # via
     #   -r requirements.in
     #   drf-extensions
-    #   mitol-django-authentication
 drf-extensions==0.7.0
     # via -r requirements.in
 elasticsearch==7.8.1
     # via django-server-status
+factory-boy==3.2.0
+    # via mitol-django-common
+faker==8.10.1
+    # via factory-boy
 html5lib==1.1
     # via mitol-django-mail
 idna==2.10
     # via requests
+iniconfig==1.1.1
+    # via pytest
 ipython==7.19.0
     # via -r requirements.in
 ipython-genutils==0.2.0
@@ -137,14 +142,14 @@ lxml==4.6.3
     #   premailer
     #   python3-saml
     #   xmlsec
-mitol-django-authentication==1.1.0
+mitol-django-authentication==1.2.0
     # via -r requirements.in
-mitol-django-common==0.7.0
+mitol-django-common==1.2.0
     # via
     #   -r requirements.in
     #   mitol-django-authentication
     #   mitol-django-mail
-mitol-django-mail==1.0.0
+mitol-django-mail==2.2.0
     # via mitol-django-authentication
 newrelic==5.16.1.146
     # via -r requirements.in
@@ -152,12 +157,16 @@ oauthlib==3.1.0
     # via
     #   requests-oauthlib
     #   social-auth-core
+packaging==21.0
+    # via pytest
 parso==0.7.1
     # via jedi
 pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
+pluggy==0.13.1
+    # via pytest
 premailer==3.7.0
     # via mitol-django-mail
 prompt-toolkit==3.0.6
@@ -166,34 +175,43 @@ psycopg2==2.8.5
     # via
     #   -r requirements.in
     #   django-server-status
-psycopg2-binary==2.8.6
-    # via mitol-django-common
 ptyprocess==0.6.0
     # via pexpect
+py==1.10.0
+    # via pytest
 pycparser==2.20
     # via cffi
-pygithub==1.54.1
+pygithub==1.55
     # via -r requirements.in
 pygments==2.7.4
     # via ipython
-pyjwt==1.7.1
+pyjwt==2.1.0
     # via
     #   pygithub
     #   social-auth-core
+pynacl==1.4.0
+    # via pygithub
 pyopenssl==17.5.0
     # via django-server-status
+pyparsing==2.4.7
+    # via packaging
+pytest==6.1.2
+    # via mitol-django-common
 python-dateutil==2.8.1
-    # via botocore
+    # via
+    #   botocore
+    #   faker
 python-fly==0.0.2
     # via -r requirements.in
 python3-openid==3.2.0
     # via social-auth-core
 python3-saml==1.10.1
-    # via mitol-django-authentication
-pytz==2020.1
+    # via social-auth-core
+pytz==2021.1
     # via
     #   celery
     #   django
+    #   mitol-django-common
 pyyaml==5.4
     # via
     #   -r requirements.in
@@ -206,7 +224,6 @@ redis==3.5.3
 requests==2.24.0
     # via
     #   -r requirements.in
-    #   codecov
     #   django-anymail
     #   mitol-django-common
     #   premailer
@@ -227,25 +244,28 @@ six==1.15.0
     #   django-server-status
     #   html5lib
     #   isodate
+    #   pynacl
     #   pyopenssl
     #   python-dateutil
     #   social-auth-app-django
-    #   social-auth-core
     #   traitlets
-social-auth-app-django==3.4.0
+social-auth-app-django==4.0.0
     # via
     #   -r requirements.in
     #   mitol-django-authentication
-social-auth-core==3.4.0
+social-auth-core[saml]==4.1.0
     # via
     #   -r requirements.in
-    #   mitol-django-authentication
     #   social-auth-app-django
 soupsieve==2.1
     # via beautifulsoup4
 sqlparse==0.3.1
     # via django
-toolz==0.9.0
+text-unidecode==1.3
+    # via faker
+toml==0.10.2
+    # via pytest
+toolz==0.11.1
     # via mitol-django-mail
 traitlets==4.3.3
     # via ipython
@@ -267,7 +287,7 @@ webencodings==0.5.1
     # via html5lib
 wrapt==1.12.1
     # via deprecated
-xmlsec==1.3.9
+xmlsec==1.3.11
     # via python3-saml
 yamale==3.0.4
     # via -r requirements.in

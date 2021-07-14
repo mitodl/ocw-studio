@@ -152,7 +152,7 @@ def test_sync_all_websites_rate_limit_low(mocker, settings):
 def test_sync_all_websites_rate_limit_exceeded(api_mock):
     """Test that sync_all_websites halts if instantiating a GithubBackend exceeds the rate limit"""
     api_mock.get_sync_backend.side_effect = RateLimitExceededException(
-        status=403, data={}
+        status=403, data={}, headers={}
     )
     ContentSyncStateFactory.create_batch(2)
     with pytest.raises(RateLimitExceededException):
