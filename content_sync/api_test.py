@@ -64,7 +64,7 @@ def test_get_sync_backend(settings, mocker):
 
 
 def test_sync_content_enabled(settings, mocker):
-    """ Verify sync_content doesn't run anything is sync is disabled """
+    """ Verify sync_content runs if sync is enabled """
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
     mocker.patch("content_sync.api.is_sync_enabled", return_value=True)
     log_mock = mocker.patch("content_sync.api.log")
@@ -81,7 +81,7 @@ def test_sync_content_enabled(settings, mocker):
 
 
 def test_sync_content_disabled(settings, mocker):
-    """ Verify sync_content doesn't run anything is sync is disabled """
+    """ Verify sync_content doesn't run anything if sync is disabled """
     settings.CONTENT_SYNC_BACKEND = None
     mocker.patch("content_sync.api.is_sync_enabled", return_value=False)
     get_sync_backend_mock = mocker.patch("content_sync.api.get_sync_backend")
@@ -156,3 +156,40 @@ def test_sync_github_website_starters(mocker):
     kwargs = {"commit": "abc123"}
     api.sync_github_website_starters(*args, **kwargs)
     mock_task.assert_called_once_with(*args, **kwargs)
+
+
+def test_get_sync_pipeline(settings, mocker):
+    """ Verify that get_sync_pipeline() imports the pipeline class based on settings.py """
+    settings.CONTENT_SYNC_PIPELINE = (
+        "content_sync.pipelines.concourse.ConcourseGithubPipeline"
+    )
+    import_string_mock = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseGithubPipeline"
+    )
+    website = WebsiteFactory.create()
+    api.get_sync_pipeline(website)
+    import_string_mock.assert_any_call(website)
+
+
+def test_create_website_publishing_pipeline(settings, mocker):
+    """upsert_website_publishing_pipeline task should be called if pipelines are enabled"""
+    settings.CONTENT_SYNC_PIPELINE = (
+        "content_sync.pipelines.concourse.ConcourseGithubPipeline"
+    )
+    mock_task = mocker.patch(
+        "content_sync.api.tasks.upsert_website_publishing_pipeline.delay"
+    )
+    website = WebsiteFactory.create()
+    api.create_website_publishing_pipeline(website)
+    mock_task.assert_called_once_with(website.name)
+
+
+def test_create_website_publishing_pipeline_disabled(settings, mocker):
+    """upsert_website_publishing_pipeline task should not be called if pipelines are disabled"""
+    settings.CONTENT_SYNC_PIPELINE = None
+    mock_task = mocker.patch(
+        "content_sync.api.tasks.upsert_website_publishing_pipeline.delay"
+    )
+    website = WebsiteFactory.create()
+    api.create_website_publishing_pipeline(website)
+    mock_task.assert_not_called()
