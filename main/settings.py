@@ -409,6 +409,12 @@ AWS_SECRET_ACCESS_KEY = get_string(
 AWS_STORAGE_BUCKET_NAME = get_string(
     name="AWS_STORAGE_BUCKET_NAME", default=None, description="S3 Bucket name."
 )
+AWS_PREVIEW_BUCKET_NAME = get_string(
+    name="AWS_PREVIEW_BUCKET_NAME", default=None, description="S3 preview bucket name."
+)
+AWS_PUBLISH_BUCKET_NAME = get_string(
+    name="AWS_PUBLISH_BUCKET_NAME", default=None, description="S3 publish bucket name."
+)
 AWS_QUERYSTRING_AUTH = get_bool(
     name="AWS_QUERYSTRING_AUTH",
     default=False,
@@ -581,6 +587,38 @@ CONTENT_SYNC_RETRIES = get_int(
     description="Number of times to retry backend sync attempts",
     required=False,
 )
+CONTENT_SYNC_PIPELINE = get_string(
+    name="CONTENT_SYNC_PIPELINE",
+    default=None,
+    description="The pipeline to preview/publish websites with",
+    required=False,
+)
+
+# Concourse-CI settings
+CONCOURSE_URL = get_string(
+    name="CONCOURSE_URL",
+    default=None,
+    description="The concourse-ci URL",
+    required=False,
+)
+CONCOURSE_USERNAME = get_string(
+    name="CONCOURSE_USERNAME",
+    default=None,
+    description="The concourse-ci login username",
+    required=False,
+)
+CONCOURSE_PASSWORD = get_string(
+    name="CONCOURSE_PASSWORD",
+    default=None,
+    description="The concourse-ci login password",
+    required=False,
+)
+CONCOURSE_TEAM = get_string(
+    name="CONCOURSE_TEAM",
+    default="ocw",
+    description="The concourse-ci team",
+    required=False,
+)
 
 # Git backend settings
 GIT_TOKEN = get_string(
@@ -631,6 +669,12 @@ GIT_API_URL = get_string(
     description="Base URL of git API",
     required=False,
 )
+GIT_DOMAIN = get_string(
+    name="GIT_DOMAIN",
+    default="www.github.com",
+    description="Base URL of github for site repos",
+    required=False,
+)
 GITHUB_WEBHOOK_KEY = get_string(
     name="GITHUB_WEBHOOK_KEY",
     default="",
@@ -647,5 +691,12 @@ OCW_STUDIO_SITE_CONFIG_FILE = get_string(
     name="OCW_STUDIO_SITE_CONFIG_FILE",
     default="ocw-studio.yaml",
     description="Standard file name for site config files",
+    required=False,
+)
+
+ROOT_WEBSITE_SLUG = get_string(
+    name="ROOT_WEBSITE_SLUG",
+    default="ocw-www",
+    description="The WebsiteStarter slug for site(s) at the root domain",
     required=False,
 )

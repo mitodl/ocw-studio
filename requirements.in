@@ -20,6 +20,7 @@ ipython
 newrelic
 psycopg2
 pygithub==1.54.1
+python-fly
 redis
 requests
 sentry-sdk
