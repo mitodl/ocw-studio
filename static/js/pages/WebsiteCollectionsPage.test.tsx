@@ -10,6 +10,11 @@ import { times } from "lodash"
 import { createModalState } from "../types/modal_state"
 import { act } from "react-dom/test-utils"
 
+import WebsiteCollectionItemsEditor from "../components/WebsiteCollectionItemsEditor"
+jest.mock("../components/WebsiteCollectionItemsEditor")
+// @ts-ignore
+WebsiteCollectionItemsEditor.mockImplementation(() => "MockComponent")
+
 describe("CollectionsPage", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,

@@ -12,6 +12,11 @@ import { createModalState } from "../types/modal_state"
 import { makeWebsiteCollection } from "../util/factories/website_collections"
 import { WebsiteCollection } from "../types/website_collections"
 
+import WebsiteCollectionItemsEditor from "./WebsiteCollectionItemsEditor"
+jest.mock("./WebsiteCollectionItemsEditor")
+// @ts-ignore
+WebsiteCollectionItemsEditor.mockImplementation(() => "MockComponent")
+
 describe("WebsiteCollectionEditor", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
@@ -112,7 +117,7 @@ describe("WebsiteCollectionEditor", () => {
         })
     })
 
-    it("should pass values from focused website down to form", async () => {
+    it("should pass values from focused collection down to form", async () => {
       const { wrapper } = await render({
         modalState: createModalState("editing", collection.id)
       })
@@ -122,6 +127,16 @@ describe("WebsiteCollectionEditor", () => {
         title:       collection.title,
         description: collection.description
       })
+    })
+
+    it("should render item editor", async () => {
+      const { wrapper } = await render({
+        modalState: createModalState("editing", collection.id)
+      })
+      const editor = wrapper.find("WebsiteCollectionItemsEditor")
+
+      expect(editor.exists()).toBeTruthy()
+      expect(editor.prop("websiteCollection")).toEqual(collection)
     })
 
     it("should let us edit an existing collection", async () => {

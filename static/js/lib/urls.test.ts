@@ -168,7 +168,7 @@ describe("urls", () => {
 
       it("renders collection item detail API url", () => {
         expect(
-          wcItemsApiDetailUrl.param({ collectionId: 4, item_id: 3 }).toString()
+          wcItemsApiDetailUrl.param({ collectionId: 4, itemId: 3 }).toString()
         ).toBe("/api/collections/4/items/3/")
       })
     })

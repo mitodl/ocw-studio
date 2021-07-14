@@ -292,10 +292,16 @@ class WebsiteCollectionSerializer(
 class WebsiteCollectionItemSerializer(serializers.ModelSerializer):
     """Serializer for WebsiteCollectionItems"""
 
+    website_title = serializers.SerializerMethodField(read_only=True)
+
+    def get_website_title(self, obj):
+        """Get the title of the """
+        return obj.website.title
+
     class Meta:
         model = WebsiteCollectionItem
         read_only_fields = ["website_collection", "id"]
-        fields = read_only_fields + ["position", "website"]
+        fields = read_only_fields + ["position", "website", "website_title"]
         extra_kwargs = {"position": {"required": False}}
 
     def create(self, validated_data):

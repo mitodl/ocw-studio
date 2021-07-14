@@ -1,7 +1,8 @@
 import React from "react"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
-import { shallow } from "enzyme"
+import { mount } from "enzyme"
 import Select from "react-select"
+import AsyncSelect from "react-select/async"
 
 import SelectField, { Option } from "./SelectField"
 
@@ -32,7 +33,7 @@ describe("SelectField", () => {
   })
 
   const render = (props: any) =>
-    shallow(
+    mount(
       <SelectField
         onChange={onChangeStub}
         name={name}
@@ -42,6 +43,27 @@ describe("SelectField", () => {
         {...props}
       />
     )
+
+  it("should pass placeholder to Select", () => {
+    const wrapper = render({
+      placeholder: "This place is held!"
+    })
+    expect(wrapper.find("Select").prop("placeholder")).toBe(
+      "This place is held!"
+    )
+  })
+
+  it("should use AsyncSelect if a loadOptions callback is supplied", () => {
+    const loadOptions = sandbox.stub()
+    const wrapper = render({
+      loadOptions
+    })
+
+    const select = wrapper.find(AsyncSelect)
+    expect(select.exists()).toBeTruthy()
+
+    expect(select.prop("loadOptions")).toBe(loadOptions)
+  })
 
   describe("not multiple choice", () => {
     it("renders a select widget", () => {

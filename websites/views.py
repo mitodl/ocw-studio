@@ -89,6 +89,7 @@ class WebsiteViewSet(
         """
         ordering = self.request.query_params.get("sort", "-updated_on")
         website_type = self.request.query_params.get("type", None)
+        search = self.request.query_params.get("search", None)
 
         user = self.request.user
         if self.request.user.is_anonymous:
@@ -105,6 +106,11 @@ class WebsiteViewSet(
         else:
             # Other authenticated users should get a list of websites they are editors/admins/owners for.
             queryset = get_objects_for_user(user, constants.PERMISSION_VIEW)
+
+        if search is not None:
+            # search query param is used in react-select typeahead, and should match on the title
+            queryset = queryset.filter(title__icontains=search)
+
         if website_type is not None:
             queryset = queryset.filter(starter__slug=website_type)
         return queryset.select_related("starter").order_by(ordering)
@@ -420,7 +426,6 @@ class WebsiteCollectionItemViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
     """Viewset for WebsiteCollectionItems"""
 
     permission_classes = (HasWebsiteCollectionItemPermission,)
-    pagination_class = DefaultPagination
     serializer_class = WebsiteCollectionItemSerializer
 
     def get_serializer_context(self):
@@ -433,5 +438,5 @@ class WebsiteCollectionItemViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
         parent_lookup_collection = self.kwargs.get("parent_lookup_collection")
         queryset = WebsiteCollectionItem.objects.filter(
             website_collection__id=parent_lookup_collection
-        )
+        ).select_related("website")
         return queryset.order_by("position")

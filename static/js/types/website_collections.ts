@@ -19,6 +19,10 @@ export interface WebsiteCollection {
  **/
 export interface WebsiteCollectionItem {
   position: number
+  id: number
+  website: string
+  website_title: string // eslint-disable-line camelcase
+  website_collection: number // eslint-disable-line camelcase
 }
 
 /**

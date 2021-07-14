@@ -15,6 +15,7 @@ import {
 } from "../query-configs/website_collections"
 import { useSelector } from "react-redux"
 import { getWebsiteCollectionDetailCursor } from "../selectors/website_collections"
+import WebsiteCollectionItemsEditor from "./WebsiteCollectionItemsEditor"
 
 interface Props {
   hideModal: () => void
@@ -82,9 +83,14 @@ export default function WebsiteCollectionEditor(props: Props): JSX.Element {
   return fetchPending ? (
     <div>loading</div>
   ) : (
-    <WebsiteCollectionForm
-      initialValues={initialFormValues(websiteCollection)}
-      onSubmit={onSubmit}
-    />
+    <>
+      <WebsiteCollectionForm
+        initialValues={initialFormValues(websiteCollection)}
+        onSubmit={onSubmit}
+      />
+      {modalState.editing() && websiteCollection ? (
+        <WebsiteCollectionItemsEditor websiteCollection={websiteCollection} />
+      ) : null}
+    </>
   )
 }

@@ -292,6 +292,7 @@ def test_website_collection_item_serializer():
     assert serialized_data["website_collection"] == item.website_collection.id
     assert serialized_data["website"] == item.website.uuid
     assert serialized_data["id"] == item.id
+    assert serialized_data["website_title"] == item.website.title
 
 
 def test_website_collection_item_create():

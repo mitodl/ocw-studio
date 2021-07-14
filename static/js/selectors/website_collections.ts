@@ -4,9 +4,11 @@ import { memoize } from "lodash"
 import { ReduxState } from "../reducers"
 import {
   WebsiteCollectionDetails,
+  WebsiteCollectionItemListing,
   WebsiteCollectionListing,
   WebsiteCollectionListingResponse
 } from "../query-configs/website_collections"
+import { WebsiteCollectionItem } from "../types/website_collections"
 
 export const getWebsiteCollectionDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteCollectionDetails ?? {},
@@ -28,4 +30,16 @@ export const getWebsiteCollectionListingCursor = createSelector(
         }
       }
     )
+)
+
+/**
+ * Selector to get a cursor for WebsiteCollectionItems.
+ *
+ * This cursor takes a WebsiteCollection id and returns an array
+ * of WebsiteCollectionItems.
+ */
+export const getWebsiteCollectionItemsCursor = createSelector(
+  (state: ReduxState) => state.entities?.websiteCollectionItems ?? {},
+  (listing: WebsiteCollectionItemListing) =>
+    memoize((id: number): WebsiteCollectionItem[] => listing[id] ?? [])
 )

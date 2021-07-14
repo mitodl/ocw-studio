@@ -5,8 +5,8 @@ import { mount } from "enzyme"
 import { ErrorMessage } from "formik"
 
 import { WebsiteCollectionFormSchema } from "./validation"
-import WebsiteCollectionForm, { SubmitFunc } from "./WebsiteCollectionForm"
-import { WebsiteCollectionFormFields } from "../../types/forms"
+import WebsiteCollectionForm from "./WebsiteCollectionForm"
+import { WebsiteCollectionFormFields, SubmitFunc } from "../../types/forms"
 
 describe("WebsiteCollectionForm", () => {
   let sandbox: sinon.SinonSandbox,

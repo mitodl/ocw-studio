@@ -328,6 +328,17 @@ def test_websites_endpoint_sorting(drf_client, websites):
         assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
 
 
+def test_website_endpoint_search(drf_client):
+    """ should limit the queryset based on the search param """
+    superuser = UserFactory.create(is_superuser=True)
+    drf_client.force_login(superuser)
+
+    WebsiteFactory.create(title="BEST")
+    WebsiteFactory.create(title="WORST")
+    resp = drf_client.get(reverse("websites_api-list"), {"search": "BEST"})
+    assert [website["title"] for website in resp.data.get("results")] == ["BEST"]
+
+
 def test_websites_autogenerate_name(drf_client):
     """ Website POST endpoint should auto-generate a name if one is not supplied """
     superuser = UserFactory.create(is_superuser=True)
@@ -1006,6 +1017,6 @@ def test_website_collection_items_get(drf_client):
     )
     assert resp.status_code == status.HTTP_200_OK
     assert (
-        resp.data["results"]
+        resp.data
         == WebsiteCollectionItemSerializer([one, two, three, four], many=True).data
     )

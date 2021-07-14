@@ -2,9 +2,13 @@ import { createSelector } from "reselect"
 import { memoize } from "lodash"
 import { find, propEq } from "ramda"
 
-import { contentListingKey, WebsiteDetails } from "../query-configs/websites"
+import {
+  contentListingKey,
+  WebsiteDetails,
+  WebsiteListingResponse,
+  WebsitesListing
+} from "../query-configs/websites"
 import { ReduxState } from "../reducers"
-
 import {
   ContentListingParams,
   WebsiteStarter,
@@ -19,20 +23,25 @@ export const getWebsiteDetailCursor = createSelector(
     memoize((name: string): Website => websiteDetails[name])
 )
 
+type DetailCursor = ReturnType<typeof getWebsiteDetailCursor>
+
 export const getWebsiteListingCursor = createSelector(
   (state: ReduxState) => state.entities?.websitesListing ?? {},
   getWebsiteDetailCursor,
-  (listing, websiteDetailCursor) =>
-    memoize((offset: number) => {
-      const response = listing[offset] ?? {}
-      const names = response?.results ?? []
-      const sites = names.map(websiteDetailCursor)
+  (listing: WebsitesListing, websiteDetailCursor: DetailCursor) =>
+    memoize(
+      (offset: number): WebsiteListingResponse => {
+        const response = listing[offset] ?? {}
+        const names = response?.results ?? []
+        // @ts-ignore
+        const sites = names.map(websiteDetailCursor)
 
-      return {
-        ...response,
-        results: sites
+        return {
+          ...response,
+          results: sites
+        }
       }
-    })
+    )
 )
 
 export const startersSelector = (state: ReduxState): Array<WebsiteStarter> =>

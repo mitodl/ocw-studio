@@ -1,11 +1,25 @@
 import { QueryConfig } from "redux-query"
+import { findIndex, mergeRight } from "ramda"
 
 import { PaginatedResponse } from "./utils"
 
-import { collectionsApiDetailUrl, collectionsApiUrl } from "../lib/urls"
-import { WebsiteCollection } from "../types/website_collections"
+import {
+  collectionsApiDetailUrl,
+  collectionsApiUrl,
+  wcItemsApiDetailUrl,
+  wcItemsApiUrl
+} from "../lib/urls"
+import {
+  WebsiteCollection,
+  WebsiteCollectionItem
+} from "../types/website_collections"
 import { getCookie } from "../lib/api/util"
-import { WebsiteCollectionFormFields } from "../types/forms"
+import {
+  WCItemCreateFormFields,
+  WCItemMoveFormFields,
+  WebsiteCollectionFormFields
+} from "../types/forms"
+import { arrayMove } from "@dnd-kit/sortable"
 
 export type WebsiteCollectionDetails = Record<number, WebsiteCollection>
 
@@ -134,5 +148,100 @@ export const createWebsiteCollectionMutation = (
       ...prev,
       ...next
     })
+  }
+})
+
+export type WebsiteCollectionItemListing = Record<
+  number,
+  WebsiteCollectionItem[]
+>
+
+export const websiteCollectionItemsRequest = (id: number): QueryConfig => {
+  return {
+    url:       wcItemsApiUrl.param({ collectionId: id }).toString(),
+    transform: (body: WebsiteCollectionItem[]) => ({
+      websiteCollectionItems: {
+        [id]: body
+      }
+    }),
+    update: {
+      websiteCollectionItems: mergeRight
+    }
+  }
+}
+
+export const createWebsiteCollectionItemMutation = (
+  item: WCItemCreateFormFields,
+  collectionId: number
+): QueryConfig => ({
+  url:       wcItemsApiUrl.param({ collectionId }).toString(),
+  body:      item,
+  transform: (body: WebsiteCollectionItem) => ({
+    websiteCollectionItems: {
+      [collectionId]: [body]
+    }
+  }),
+  update: {
+    websiteCollectionItems: (
+      prev: WebsiteCollectionItemListing,
+      next: WebsiteCollectionItemListing
+    ) => {
+      const previous = (prev ?? {})[collectionId] ?? []
+
+      return {
+        [collectionId]: [...previous, ...next[collectionId]]
+      }
+    }
+  },
+  options: {
+    method:  "POST",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
+  }
+})
+
+/**
+ * This mutation is for changing the position of
+ * WebsiteCollectionItems.
+ */
+export const editWebsiteCollectionItemMutation = (
+  item: WCItemMoveFormFields,
+  collectionId: number,
+  itemId: number
+): QueryConfig => ({
+  url: wcItemsApiDetailUrl
+    .param({
+      collectionId,
+      itemId
+    })
+    .toString(),
+  body:      item,
+  transform: (body: WebsiteCollectionItem) => ({
+    websiteCollectionItems: body
+  }),
+  update: {
+    websiteCollectionItems: (
+      prev: WebsiteCollectionItemListing,
+      next: WebsiteCollectionItem
+    ) => {
+      const oldIndex = findIndex(
+        item => item.id === next.id,
+        prev[collectionId]
+      )
+
+      const newArray = [...prev[collectionId]]
+      newArray[oldIndex] = next
+
+      return {
+        [collectionId]: arrayMove(newArray, oldIndex, next.position)
+      }
+    }
+  },
+  options: {
+    method:  "PATCH",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
   }
 })

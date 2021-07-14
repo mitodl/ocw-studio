@@ -44,7 +44,7 @@ export const getTransformedWebsiteName = (
 
 export type WebsiteListingResponse = PaginatedResponse<Website>
 
-type WebsitesListing = Record<string, string[]> // offset to list of site names
+export type WebsitesListing = Record<string, PaginatedResponse<string>>
 
 export const websiteListingRequest = (offset: number): QueryConfig => ({
   url:       siteApiListingUrl.query({ offset }).toString(),

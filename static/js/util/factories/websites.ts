@@ -179,7 +179,7 @@ export const makeWebsiteDetail = (): Website => ({
 })
 
 export const makeWebsiteListing = (): Website[] =>
-  times(WEBSITES_PAGE_SIZE).map(() => makeWebsiteDetail())
+  times(WEBSITES_PAGE_SIZE).map(makeWebsiteDetail)
 
 export const makeWebsiteCollaborator = (): WebsiteCollaborator => ({
   user_id: incr.next().value,
@@ -196,7 +196,7 @@ export const makePermanentWebsiteCollaborator = (): WebsiteCollaborator => ({
 })
 
 export const makeWebsiteCollaborators = (): WebsiteCollaborator[] =>
-  times(5).map(() => makeWebsiteCollaborator())
+  times(5).map(makeWebsiteCollaborator)
 
 export const makeWebsiteContentListItem = (): WebsiteContentListItem => ({
   text_id: casual.uuid,

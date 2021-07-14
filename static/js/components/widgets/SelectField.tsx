@@ -1,5 +1,6 @@
 import React, { useCallback, ChangeEvent } from "react"
 import Select from "react-select"
+import AsyncSelect from "react-select/async"
 import { is, isNil } from "ramda"
 
 export interface Option {
@@ -13,10 +14,12 @@ interface Props {
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void
   multiple?: boolean
   options: Array<string | Option>
+  loadOptions?: (s: string, cb: (options: Option[]) => void) => void
+  placeholder?: string
 }
 
 export default function SelectField(props: Props): JSX.Element {
-  const { value, onChange, name, options } = props
+  const { value, onChange, name, options, loadOptions, placeholder } = props
   const multiple = props.multiple ?? false
   const selectOptions = options.map((option: any) =>
     is(String, option) ? { label: option, value: option } : option
@@ -57,12 +60,24 @@ export default function SelectField(props: Props): JSX.Element {
     selected = isNil(value) ? null : getSelectOption(value)
   }
 
-  return (
-    <Select
+  return loadOptions ? (
+    <AsyncSelect
+      className="w-100"
       value={selected}
       isMulti={multiple}
       onChange={changeHandler}
       options={selectOptions}
+      loadOptions={loadOptions}
+      placeholder={placeholder || null}
+    />
+  ) : (
+    <Select
+      className="w-100"
+      value={selected}
+      isMulti={multiple}
+      onChange={changeHandler}
+      options={selectOptions}
+      placeholder={placeholder || null}
     />
   )
 }

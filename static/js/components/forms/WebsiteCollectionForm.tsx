@@ -1,13 +1,9 @@
 import React from "react"
-import { Form, Formik, Field, FormikHelpers, ErrorMessage } from "formik"
+import { Form, Formik, Field, ErrorMessage } from "formik"
 
 import { FormError } from "./FormError"
-import { WebsiteCollectionFormFields } from "../../types/forms"
+import { WebsiteCollectionFormFields, SubmitFunc } from "../../types/forms"
 import { WebsiteCollectionFormSchema } from "./validation"
-
-export interface SubmitFunc {
-  (values: any, formikHelpers: FormikHelpers<any>): void | Promise<any>
-}
 
 interface Props {
   onSubmit: SubmitFunc
