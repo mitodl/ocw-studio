@@ -7,8 +7,9 @@ from django.utils.module_loading import import_string
 
 from content_sync import tasks
 from content_sync.backends.base import BaseSyncBackend
-from content_sync.decorators import is_sync_enabled
+from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
+from content_sync.pipelines.base import BaseSyncPipeline
 from websites.models import Website, WebsiteContent
 
 
@@ -27,6 +28,11 @@ def get_sync_backend(website: Website) -> BaseSyncBackend:
     return import_string(settings.CONTENT_SYNC_BACKEND)(website)
 
 
+def get_sync_pipeline(website: Website) -> BaseSyncPipeline:
+    """ Get the configured sync publishing pipeline """
+    return import_string(settings.CONTENT_SYNC_PIPELINE)(website)
+
+
 @is_sync_enabled
 def sync_content(sync_state: ContentSyncState):
     """ Sync a piece of content based on its sync state """
@@ -38,6 +44,12 @@ def sync_content(sync_state: ContentSyncState):
 def create_website_backend(website: Website):
     """ Create the backend for a website"""
     tasks.create_website_backend.delay(website.name)
+
+
+@is_publish_pipeline_enabled
+def create_website_publishing_pipeline(website: Website):
+    """ Create the publish pipeline for a website"""
+    tasks.upsert_website_publishing_pipeline.delay(website.name)
 
 
 @is_sync_enabled

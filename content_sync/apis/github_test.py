@@ -10,6 +10,7 @@ from github import GithubException
 from content_sync.apis.github import (
     GIT_DATA_FILEPATH,
     GithubApiWrapper,
+    get_repo_name,
     sync_starter_configs,
 )
 from main import features
@@ -88,7 +89,7 @@ def test_get_repo(mock_api_wrapper):
     """get_repo should invoke the appropriate PyGithub call"""
     mock_api_wrapper.get_repo()
     mock_api_wrapper.org.get_repo.assert_called_once_with(
-        mock_api_wrapper.get_repo_name()
+        get_repo_name(mock_api_wrapper.website)
     )
 
 
@@ -100,7 +101,7 @@ def test_get_repo_create(mocker, mock_api_wrapper):
     ]
     mock_api_wrapper.get_repo()
     mock_api_wrapper.org.create_repo.assert_called_once_with(
-        mock_api_wrapper.get_repo_name(), auto_init=True
+        get_repo_name(mock_api_wrapper.website), auto_init=True
     )
 
 
@@ -109,7 +110,7 @@ def test_create_repo(mock_api_wrapper, kwargs):
     """create_repo should invoke the appropriate PyGithub call"""
     mock_api_wrapper.create_repo(**kwargs)
     mock_api_wrapper.org.create_repo.assert_called_once_with(
-        mock_api_wrapper.get_repo_name(), auto_init=True, **kwargs
+        get_repo_name(mock_api_wrapper.website), auto_init=True, **kwargs
     )
 
 
@@ -490,7 +491,7 @@ def test_create_repo_new(mocker, mock_api_wrapper, mock_branches):
     )
     new_repo = mock_api_wrapper.create_repo()
     mock_api_wrapper.org.create_repo.assert_called_once_with(
-        mock_api_wrapper.get_repo_name(), auto_init=True
+        get_repo_name(mock_api_wrapper.website), auto_init=True
     )
     for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
         new_repo.create_git_ref.assert_any_call(f"refs/heads/{branch}", sha=mocker.ANY)

@@ -17,6 +17,7 @@ from content_sync.tasks import (
     sync_content,
     sync_github_site_configs,
     sync_website_content,
+    upsert_website_publishing_pipeline,
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
@@ -30,6 +31,7 @@ pytestmark = pytest.mark.django_db
 def api_mock(mocker, settings):
     """Return a mocked content_sync.tasks.api, and set the backend"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
+    settings.CONTENT_SYNC_PIPELINE = "content_sync.pipelines.TestPipeline"
     return mocker.patch("content_sync.tasks.api")
 
 
@@ -181,3 +183,20 @@ def test_sync_github_site_configs(mocker):
     kwargs = {"commit": "abc123"}
     sync_github_site_configs.delay(*args, **kwargs)
     mock_git.sync_starter_configs.assert_called_once_with(*args, **kwargs)
+
+
+def test_upsert_web_publishing_pipeline(api_mock):
+    """ upsert_web_publishing_pipeline should call api.get_sync_pipeline"""
+    website = WebsiteFactory.create()
+    upsert_website_publishing_pipeline.delay(website.name)
+    api_mock.get_sync_pipeline.assert_called_once_with(website)
+
+
+def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
+    """ upsert_web_publishing_pipeline should log a debug message if the website doesn't exist"""
+    upsert_website_publishing_pipeline.delay("fake")
+    log_mock.debug.assert_called_once_with(
+        "Attempted to create pipeline for Website that doesn't exist: name=%s",
+        "fake",
+    )
+    api_mock.get_sync_pipeline.assert_not_called()

@@ -1,4 +1,5 @@
 """Test config for content_sync app"""
+import os
 from base64 import b64encode
 from types import SimpleNamespace
 
@@ -32,3 +33,31 @@ def github_content_file(mocker):
         path=path,
         content_str=content_str,
     )
+
+
+@pytest.fixture
+def mock_fly(mocker):
+    """Default fly test setings"""
+    mock_fly_object = mocker.patch(
+        "content_sync.pipelines.concourse.Fly",
+        return_value=mocker.Mock(login=mocker.Mock(), run=mocker.Mock()),
+    )
+    return mock_fly_object
+
+
+@pytest.fixture(autouse=True)
+def required_concourse_settings(settings):
+    """ Other required settings for concourse pipelines """
+    settings.CONCOURSE_URL = "http://localconcourse.edu"
+    settings.CONCOURSE_USERNAME = "test"
+    settings.CONCOURSE_PASSWORD = "pass"
+    settings.CONCOURSE_TEAM = "ocwtest"
+    settings.AWS_PREVIEW_BUCKET_NAME = "preview_bucket"
+    settings.AWS_PUBLISH_BUCKET_NAME = "publish_bucket"
+    settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket"
+    settings.GIT_BRANCH_PREVIEW = "preview"
+    settings.GIT_BRANCH_RELEASE = "release"
+    settings.GIT_DOMAIN = "test.github.edu"
+    settings.GIT_ORGANIZATION = "test_org"
+    settings.GITHUB_WEBHOOK_BRANCH = "release"
+    os.environ["OCW_STUDIO_BASE_URL"] = "http://test.edu"
