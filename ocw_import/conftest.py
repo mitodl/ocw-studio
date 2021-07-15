@@ -2,7 +2,10 @@
 import glob
 from os.path import isfile
 
+import pytest
+
 from main.s3_utils import get_s3_resource
+from websites.factories import WebsiteFactory
 
 
 TEST_OCW2HUGO_PREFIX = "output/"
@@ -30,3 +33,9 @@ def setup_s3(settings):
         file_key = file.replace("./test_hugo2ocw/", "")
         with open(file, "r") as f:
             test_bucket.put_object(Key=file_key, Body=f.read())
+
+
+@pytest.fixture(autouse=True)
+def root_website():
+    """Create the ocw-www website"""
+    yield WebsiteFactory.create(name="ocw-www")
