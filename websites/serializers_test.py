@@ -172,9 +172,6 @@ def test_website_content_detail_serializer_save(mocker):
     mock_update_website_backend = mocker.patch(
         "websites.serializers.update_website_backend"
     )
-    mock_create_website_pipeline = mocker.patch(
-        "websites.serializers.create_website_publishing_pipeline"
-    )
     content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
     existing_text_id = content.text_id
     new_title = f"{content.title} with some more text"
@@ -207,7 +204,6 @@ def test_website_content_detail_serializer_save(mocker):
     assert content.metadata == metadata
     assert content.updated_by == user
     mock_update_website_backend.assert_called_once_with(content.website)
-    mock_create_website_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize("add_context_data", [True, False])

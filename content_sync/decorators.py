@@ -47,17 +47,6 @@ def is_sync_enabled(func: Callable) -> Callable:
     return wrapper
 
 
-def is_publish_pipeline_enabled(func: Callable) -> Callable:
-    """ Returns True if the publishing pipeline is enabled """
-
-    def wrapper(*args, **kwargs):
-        if settings.CONTENT_SYNC_PIPELINE:
-            return func(*args, **kwargs)
-        return None
-
-    return wrapper
-
-
 def check_sync_state(func: Callable) -> Callable:
     """
     Decorator that checks if a content_sync_state is synced before running a function,
