@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.19.1
+--------------
+
+- Publish button (#374)
+- add WebsiteCollection editing functionality
+- Upgrade mitol-django-authentication, common, pygithub (#373)
+- Generate concourse pipelines on website creation (#366)
+
 Version 0.19.0 (Released July 13, 2021)
 --------------
 
