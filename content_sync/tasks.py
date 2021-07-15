@@ -93,21 +93,6 @@ def create_website_backend(website_name: str):
         backend.create_website_in_backend()
 
 
-@app.task(acks_late=True)
-def upsert_website_publishing_pipeline(website_name: str):
-    """ Create/update a pipeline for previewing & publishing a website """
-    try:
-        website = Website.objects.get(name=website_name)
-    except Website.DoesNotExist:
-        log.debug(
-            "Attempted to create pipeline for Website that doesn't exist: name=%s",
-            website_name,
-        )
-    else:
-        pipeline = api.get_sync_pipeline(website)
-        pipeline.upsert_website_pipeline()
-
-
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_website_task(10)
 def sync_website_content(website_name: str):

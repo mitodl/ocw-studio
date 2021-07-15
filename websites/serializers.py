@@ -6,11 +6,7 @@ from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from content_sync.api import (
-    create_website_backend,
-    create_website_publishing_pipeline,
-    update_website_backend,
-)
+from content_sync.api import create_website_backend, update_website_backend
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
 from websites import constants
@@ -85,7 +81,6 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
         with transaction.atomic():
             website = super().create(validated_data)
         create_website_backend(website)
-        create_website_publishing_pipeline(website)
         return website
 
     def update(self, instance, validated_data):

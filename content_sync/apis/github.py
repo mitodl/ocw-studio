@@ -51,11 +51,6 @@ def decode_file_contents(content_file: ContentFile) -> str:
     return str(b64decode(content_file.content), encoding="utf-8")
 
 
-def get_repo_name(website):
-    """Determine a 100-char-limit repo name based on the website name and uuid"""
-    return f"{website.name[:67]}_{website.uuid.hex}"
-
-
 def sync_starter_configs(  # pylint:disable=too-many-locals
     repo_url: str, config_files: List[str], commit: Optional[str] = None
 ):
@@ -129,6 +124,10 @@ class GithubApiWrapper:
         self.site_config = site_config or SiteConfig(self.website.starter.config)
         self.repo = None
 
+    def get_repo_name(self):
+        """Determine a 100-char-limit repo name based on the website name and uuid"""
+        return f"{self.website.name[:67]}_{self.website.uuid.hex}"
+
     @retry_on_failure
     def get_repo(self) -> Repository:
         """
@@ -136,7 +135,7 @@ class GithubApiWrapper:
         """
         if not self.repo:
             try:
-                self.repo = self.org.get_repo(get_repo_name(self.website))
+                self.repo = self.org.get_repo(self.get_repo_name())
             except GithubException as ge:
                 if ge.status == 404:
                     self.repo = self.create_repo()
@@ -151,12 +150,12 @@ class GithubApiWrapper:
         """
         try:
             self.repo = self.org.create_repo(
-                get_repo_name(self.website), auto_init=True, **kwargs
+                self.get_repo_name(), auto_init=True, **kwargs
             )
         except GithubException as ge:
             if ge.status == 422:
                 # It may already exist, try to retrieve it
-                self.repo = self.org.get_repo(get_repo_name(self.website))
+                self.repo = self.org.get_repo(self.get_repo_name())
                 log.debug("Repo already exists: %s", self.website.name)
         if self.repo.default_branch != settings.GIT_BRANCH_MAIN:
             self.rename_branch(self.repo.default_branch, settings.GIT_BRANCH_MAIN)
