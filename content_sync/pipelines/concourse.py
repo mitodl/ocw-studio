@@ -1,11 +1,13 @@
 """ Concourse-CI preview/publish pipeline generator"""
 import os
+from urllib.parse import urljoin, urlparse
 
 from django.conf import settings
 from fly import Fly
 
 from content_sync.apis.github import get_repo_name
 from content_sync.pipelines.base import BaseSyncPipeline
+from websites.constants import STARTER_SOURCE_GITHUB
 from websites.site_config_api import SiteConfig
 
 
@@ -32,6 +34,18 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
         """
         Create or update a concourse pipeline for the given Website
         """
+        starter = self.website.starter
+        if starter.source != STARTER_SOURCE_GITHUB:
+            # This pipeline only handles sites with github-based starters
+            return
+        starter_path_url = urlparse(starter.path)
+        if not starter_path_url.netloc:
+            # Invalid github url, so skip
+            return
+        hugo_projects_url = urljoin(
+            f"{starter_path_url.scheme}://{starter_path_url.netloc}",
+            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
+        )
         site_config = SiteConfig(self.website.starter.config)
         site_url = f"{site_config.root_url_path}/{self.website.name}".strip("/")
         base_url = (
@@ -71,6 +85,8 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                 f"github-org={settings.GIT_ORGANIZATION}",
                 "-v",
                 f"ocw-bucket={destination_bucket}",
+                "-v",
+                f"ocw-hugo-projects-uri={hugo_projects_url}",
                 "-v",
                 f"ocw-hugo-projects-branch={settings.GITHUB_WEBHOOK_BRANCH}",
                 "-v",
