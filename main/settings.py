@@ -730,7 +730,7 @@ MITOL_MAIL_REPLY_TO_ADDRESS = get_string(
     default="webmaster@localhost",
     description="E-mail to use for reply-to address of emails",
 )
-MITOL_MAIL_MESSAGE_CLASSES = []
+MITOL_MAIL_MESSAGE_CLASSES = ["mail.messages.SampleMessage"]
 MITOL_MAIL_RECIPIENT_OVERRIDE = get_string(
     name="MITOL_MAIL_RECIPIENT_OVERRIDE",
     default=None,
