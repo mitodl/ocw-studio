@@ -9,11 +9,6 @@ COPY apt.txt /tmp/apt.txt
 RUN apt-get update
 RUN apt-get install -y $(grep -vE "^\s*#" apt.txt  | tr "\n" " ")
 
-# Add concourse-ci fly executable
-RUN curl --silent --location "https://cicd.odl.mit.edu/api/v1/cli?arch=amd64&platform=linux" --output fly
-RUN chmod +x fly
-RUN mv fly /usr/local/bin/fly
-
 # pip
 RUN curl --silent --location https://bootstrap.pypa.io/get-pip.py | python3 -
 

@@ -35,16 +35,6 @@ def github_content_file(mocker):
     )
 
 
-@pytest.fixture
-def mock_fly(mocker):
-    """Default fly test setings"""
-    mock_fly_object = mocker.patch(
-        "content_sync.pipelines.concourse.Fly",
-        return_value=mocker.Mock(login=mocker.Mock(), run=mocker.Mock()),
-    )
-    return mock_fly_object
-
-
 @pytest.fixture(autouse=True)
 def required_concourse_settings(settings):
     """ Other required settings for concourse pipelines """

@@ -280,8 +280,8 @@
       "description": "How long the robots.txt file should be cached",
       "required": false
     },
-    "ROOT_WEBSITE_SLUG": {
-      "description": "The WebsiteStarter slug for site(s) at the root domain",
+    "ROOT_WEBSITE_NAME": {
+      "description": "The Website name for the site at the root domain",
       "required": false
     },
     "SECRET_KEY": {

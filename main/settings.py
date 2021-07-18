@@ -694,9 +694,9 @@ OCW_STUDIO_SITE_CONFIG_FILE = get_string(
     required=False,
 )
 
-ROOT_WEBSITE_SLUG = get_string(
-    name="ROOT_WEBSITE_SLUG",
+ROOT_WEBSITE_NAME = get_string(
+    name="ROOT_WEBSITE_NAME",
     default="ocw-www",
-    description="The WebsiteStarter slug for site(s) at the root domain",
+    description="The Website name for the site at the root domain",
     required=False,
 )

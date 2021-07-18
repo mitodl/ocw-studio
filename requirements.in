@@ -2,6 +2,7 @@ beautifulsoup4
 django
 boto3
 celery
+concoursepy
 dj-database-url
 django-guardian
 django-hijack
@@ -20,7 +21,6 @@ ipython
 newrelic
 psycopg2
 pygithub==1.55
-python-fly
 redis
 requests
 sentry-sdk
