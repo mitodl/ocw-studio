@@ -12,8 +12,10 @@ from django.conf import settings
 from requests import HTTPError
 
 from content_sync.apis.github import get_repo_name
+from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import BaseSyncPipeline
 from websites.constants import STARTER_SOURCE_GITHUB
+from websites.models import Website
 from websites.site_config_api import SiteConfig
 
 
@@ -46,6 +48,7 @@ class ConcourseApi(BaseConcourseApi):
         else:
             r.raise_for_status()
 
+    @retry_on_failure
     def put_with_headers(
         self, path: str, data: Dict = None, headers: Dict = None
     ) -> bool:
@@ -68,6 +71,16 @@ class ConcourseApi(BaseConcourseApi):
             r.raise_for_status()
         return False
 
+    @retry_on_failure
+    def post(self, path, data=None):
+        """Same as base post method but with a retry"""
+        super().post(path, data)
+
+    @retry_on_failure
+    def put(self, path, data=None):
+        """Same as base put method but with a retry"""
+        super().put(path, data)
+
 
 class ConcourseGithubPipeline(BaseSyncPipeline):
     """
@@ -87,6 +100,17 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
         "GIT_ORGANIZATION",
         "GITHUB_WEBHOOK_BRANCH",
     ]
+
+    def __init__(self, website: Website):
+        """Initialize the pipeline API instance"""
+        super().__init__(website)
+        self.instance_vars = quote('{"site": "%s"}' % self.website.name)
+        self.ci = ConcourseApi(
+            settings.CONCOURSE_URL,
+            settings.CONCOURSE_USERNAME,
+            settings.CONCOURSE_PASSWORD,
+            settings.CONCOURSE_TEAM,
+        )
 
     def upsert_website_pipeline(self):  # pylint:disable=too-many-locals
         """
@@ -110,12 +134,6 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
             f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
         )
 
-        ci = ConcourseApi(
-            settings.CONCOURSE_URL,
-            settings.CONCOURSE_USERNAME,
-            settings.CONCOURSE_PASSWORD,
-            settings.CONCOURSE_TEAM,
-        )
         for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
             if branch == settings.GIT_BRANCH_PREVIEW:
                 version = "draft"
@@ -123,7 +141,6 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
             else:
                 version = "live"
                 destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
-            instance_vars = "{" + quote(f'"site": "{self.website.name}"') + "}"
 
             with open(
                 os.path.join(
@@ -152,23 +169,13 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
             log.debug(config)
             # Try to get the version of the pipeline if it already exists, because it will be
             # necessary to update an existing pipeline.
-            url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={instance_vars}"
+            url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={self.instance_vars}"
             try:
-                _, headers = ci.get_with_headers(url_path)
+                _, headers = self.ci.get_with_headers(url_path)
                 version_headers = {
                     "X-Concourse-Config-Version": headers["X-Concourse-Config-Version"]
                 }
             except HTTPError:
                 version_headers = None
-            # Usually takes 2 tries because the first fails with a 401 :(
-            success = False
-            attempts = 0
-            while not success and attempts <= 2:
-                try:
-                    ci.put_with_headers(url_path, data=config, headers=version_headers)
-                    success = True
-                except HTTPError:
-                    attempts += 1
-                    if attempts >= 2:
-                        raise
-            ci.put(url_path.replace("/config", "/unpause"))
+            self.ci.put_with_headers(url_path, data=config, headers=version_headers)
+            self.ci.put(url_path.replace("/config", "/unpause"))

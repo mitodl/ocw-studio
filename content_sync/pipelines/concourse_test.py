@@ -102,7 +102,7 @@ def test_upsert_website_pipelines(
         starter.config["root-url-path"] = "courses"
     website = WebsiteFactory.create(starter=starter, name=name)
 
-    instance_vars = "{" + f"%22site%22%3A%20%22{website.name}%22" + "}"
+    instance_vars = f"%7B%22site%22%3A%20%22{website.name}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={instance_vars}"
     mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
     if not pipeline_exists:
@@ -169,6 +169,7 @@ def test_upsert_website_pipelines(
 )
 def test_upsert_website_pipelines_invalid_starter(mocker, source, path):
     """A pipeline should not be upserted for invalid WebsiteStarters"""
+    mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
     mock_get = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.get")
     mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
     mock_put_headers = mocker.patch(
