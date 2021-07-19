@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from typing import Dict, Tuple
-from urllib.parse import quote
+from urllib.parse import quote, urljoin, urlparse
 
 import requests
 import yaml
@@ -13,6 +13,7 @@ from requests import HTTPError
 
 from content_sync.apis.github import get_repo_name
 from content_sync.pipelines.base import BaseSyncPipeline
+from websites.constants import STARTER_SOURCE_GITHUB
 from websites.site_config_api import SiteConfig
 
 
@@ -21,7 +22,7 @@ log = logging.getLogger(__name__)
 
 class ConcourseApi(BaseConcourseApi):
     """
-    Customized version of concoursepy.api.Api
+    Customized version of concoursepy.api.Api that allows for getting/setting headers
     """
 
     def get_with_headers(
@@ -91,10 +92,23 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
         """
         Create or update a concourse pipeline for the given Website
         """
+        starter = self.website.starter
+        if starter.source != STARTER_SOURCE_GITHUB:
+            # This pipeline only handles sites with github-based starters
+            return
+        starter_path_url = urlparse(starter.path)
+        if not starter_path_url.netloc:
+            # Invalid github url, so skip
+            return
+
         site_config = SiteConfig(self.website.starter.config)
         site_url = f"{site_config.root_url_path}/{self.website.name}".strip("/")
         base_url = "" if self.website.name == settings.ROOT_WEBSITE_NAME else site_url
         purge_url = "purge_all" if not base_url else f"purge/{site_url}"
+        hugo_projects_url = urljoin(
+            f"{starter_path_url.scheme}://{starter_path_url.netloc}",
+            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
+        )
 
         ci = ConcourseApi(
             settings.CONCOURSE_URL,
@@ -124,6 +138,7 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     .replace(
                         "((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH
                     )
+                    .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
                     .replace("((ocw-studio-url))", settings.SITE_BASE_URL)
                     .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME)
                     .replace("((ocw-site-repo))", get_repo_name(self.website))
@@ -145,13 +160,15 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                 }
             except HTTPError:
                 version_headers = None
+            # Usually takes 2 tries because the first fails with a 401 :(
             success = False
             attempts = 0
-            # Usually takes 2 tries because the first fails with a 401 :(
-            while attempts < 2 and not success:
+            while not success and attempts <= 2:
                 try:
                     ci.put_with_headers(url_path, data=config, headers=version_headers)
                     success = True
-                except:  # pylint:disable=bare-except
+                except HTTPError:
                     attempts += 1
+                    if attempts >= 2:
+                        raise
             ci.put(url_path.replace("/config", "/unpause"))

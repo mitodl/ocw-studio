@@ -14,7 +14,7 @@ resources:
   - name: ocw-hugo-projects
     type: git
     source:
-      uri: https://github.com/mitodl/ocw-hugo-projects.git
+      uri: ((ocw-hugo-projects-uri))
       branch: ((ocw-hugo-projects-branch))
 jobs:
   - name: build-ocw-site

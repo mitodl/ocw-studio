@@ -6,6 +6,7 @@ from django.core.exceptions import ImproperlyConfigured
 from requests import HTTPError
 
 from content_sync.pipelines.concourse import ConcourseApi, ConcourseGithubPipeline
+from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
 
@@ -89,13 +90,15 @@ def test_upsert_website_pipelines(
 ):  # pylint:disable=too-many-locals
     """The correct concourse API args should be made for a website"""
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
-    starter = WebsiteStarterFactory.create()
+    hugo_projects_path = "https://github.com/org/repo"
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
+    )
     if home_page:
         name = settings.ROOT_WEBSITE_NAME
         starter.config["root-url-path"] = ""
     else:
         name = "standard-course"
-        starter = WebsiteStarterFactory.create()
         starter.config["root-url-path"] = "courses"
     website = WebsiteFactory.create(starter=starter, name=name)
 
@@ -129,6 +132,7 @@ def test_upsert_website_pipelines(
 
     config_str = json.dumps(kwargs)
 
+    assert f"{hugo_projects_path}.git" in config_str
     if home_page:
         assert (
             f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/{website.name} s3://{settings.AWS_PREVIEW_BUCKET_NAME}/{website.name}"
@@ -154,3 +158,26 @@ def test_upsert_website_pipelines(
 
         assert f"purge/courses/{website.name}" in config_str
     mock_put.assert_any_call(url_path.replace("config", "unpause"))
+
+
+@pytest.mark.parametrize(
+    "source,path",
+    [
+        [STARTER_SOURCE_GITHUB, "badvalue"],
+        [STARTER_SOURCE_LOCAL, "https://github.com/testorg/testrepo/ocw-course"],
+    ],
+)
+def test_upsert_website_pipelines_invalid_starter(mocker, source, path):
+    """A pipeline should not be upserted for invalid WebsiteStarters"""
+    mock_get = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.get")
+    mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
+    mock_put_headers = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
+    )
+    starter = WebsiteStarterFactory.create(source=source, path=path)
+    website = WebsiteFactory.create(starter=starter)
+    pipeline = ConcourseGithubPipeline(website)
+    pipeline.upsert_website_pipeline()
+    mock_get.assert_not_called()
+    mock_put.assert_not_called()
+    mock_put_headers.assert_not_called()
