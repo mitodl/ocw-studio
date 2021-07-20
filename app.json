@@ -27,6 +27,14 @@
       "description": "AWS Access Key for S3 storage.",
       "required": false
     },
+    "AWS_PREVIEW_BUCKET_NAME": {
+      "description": "S3 preview bucket name.",
+      "required": false
+    },
+    "AWS_PUBLISH_BUCKET_NAME": {
+      "description": "S3 publish bucket name.",
+      "required": false
+    },
     "AWS_QUERYSTRING_AUTH": {
       "description": "Enables querystring auth for S3 urls",
       "required": false
@@ -51,8 +59,28 @@
       "description": "Early executed tasks propagate exceptions",
       "required": false
     },
+    "CONCOURSE_PASSWORD": {
+      "description": "The concourse-ci login password",
+      "required": false
+    },
+    "CONCOURSE_TEAM": {
+      "description": "The concourse-ci team",
+      "required": false
+    },
+    "CONCOURSE_URL": {
+      "description": "The concourse-ci URL",
+      "required": false
+    },
+    "CONCOURSE_USERNAME": {
+      "description": "The concourse-ci login username",
+      "required": false
+    },
     "CONTENT_SYNC_BACKEND": {
       "description": "The backend to sync websites/content with",
+      "required": false
+    },
+    "CONTENT_SYNC_PIPELINE": {
+      "description": "The pipeline to preview/publish websites with",
       "required": false
     },
     "CONTENT_SYNC_RETRIES": {
@@ -101,6 +129,10 @@
     },
     "GIT_DEFAULT_USER_NAME": {
       "description": "The name for the default git committer",
+      "required": false
+    },
+    "GIT_DOMAIN": {
+      "description": "Base URL of github for site repos",
       "required": false
     },
     "GIT_ORGANIZATION": {
@@ -246,6 +278,10 @@
     },
     "ROBOTS_CACHE_TIMEOUT": {
       "description": "How long the robots.txt file should be cached",
+      "required": false
+    },
+    "ROOT_WEBSITE_NAME": {
+      "description": "The Website name for the site at the root domain",
       "required": false
     },
     "SECRET_KEY": {
