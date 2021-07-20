@@ -57,6 +57,7 @@ class Website(TimestampedModel):
         "WebsiteStarter", null=True, blank=True, on_delete=models.CASCADE
     )
     name = models.CharField(max_length=512, db_index=True, unique=True)
+    short_id = models.CharField(max_length=100, db_index=True, unique=True, null=False)
     title = models.CharField(max_length=512, null=False)
     source = models.CharField(
         max_length=20,
