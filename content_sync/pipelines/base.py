@@ -11,6 +11,8 @@ class BaseSyncPipeline(abc.ABC):
     """ Base class for preview/publish pipelines """
 
     MANDATORY_SETTINGS = []
+    VERSION_LIVE = "live"
+    VERSION_DRAFT = "draft"
 
     def __init__(self, website: Website):
         """Make sure all required settings are present"""
@@ -33,5 +35,12 @@ class BaseSyncPipeline(abc.ABC):
     def upsert_website_pipeline(self):  # pragma: no cover
         """
         Called to create/update the website pipeline.
+        """
+        ...
+
+    @abc.abstractmethod
+    def trigger_pipeline_build(self, version: str):
+        """
+        Called to trigger the website pipeline.
         """
         ...
