@@ -169,6 +169,10 @@ export const makeWebsiteDetail = (): Website => ({
   name:       times(5)
     .map(() => casual.word)
     .join("-"),
+  short_id: times(3)
+    .map(() => casual.word)
+    .join("-")
+    .toLowerCase(),
   title:    casual.title,
   source:   null,
   starter:  makeWebsiteStarter("course"),

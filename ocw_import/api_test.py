@@ -34,6 +34,7 @@ def test_import_ocw2hugo_course(settings):
     website = Website.objects.get(name=name)
     assert website.starter == website_starter
     assert website.source == WEBSITE_SOURCE_OCW_IMPORT
+    assert website.short_id == "1.050-fall-2007"
     with open(f"{TEST_OCW2HUGO_PATH}/{name}/data/course.json", "r") as infile:
         assert json.dumps(website.metadata, sort_keys=True) == json.dumps(
             json.load(infile), sort_keys=True

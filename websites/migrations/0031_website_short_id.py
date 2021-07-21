@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 
+from ocw_import.api import get_short_id
 from websites.api import find_available_name
 
 
@@ -13,9 +14,7 @@ def backpopulate_short_id(apps, schema_editor):
         short_id = None
         if website_dict["metadata"]:
             try:
-                coursenum = website_dict["metadata"]["course_numbers"][0]
-                semester, year = website_dict["metadata"]["term"].split()
-                short_id = f"{coursenum}-{semester}-{year}"
+                short_id = get_short_id(website_dict["metadata"])
             except:
                 pass
         if not short_id:

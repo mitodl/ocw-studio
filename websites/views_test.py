@@ -143,6 +143,7 @@ def test_websites_endpoint_list_create(mocker, drf_client, permission_groups):
             data={
                 "name": f"{user.username}_site",
                 "title": "Fake",
+                "short_id": f"test-id-{user.id}",
                 "starter": starter.id,
             },
         )
@@ -356,13 +357,15 @@ def test_websites_autogenerate_name(mocker, drf_client):
     drf_client.force_login(superuser)
     starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
     website_title = "My Title"
+    website_short_id = "my-title"
     slugified_title = slugify(website_title)
     resp = drf_client.post(
         reverse("websites_api-list"),
-        {"title": website_title, "starter": starter.id},
+        {"title": website_title, "short_id": website_short_id, "starter": starter.id},
     )
     assert resp.status_code == status.HTTP_201_CREATED
     assert resp.data["name"] == slugified_title
+    assert resp.data["short_id"] == website_short_id
     mock_create_website_pipeline.assert_called_once()
 
 

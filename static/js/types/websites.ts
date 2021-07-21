@@ -185,6 +185,7 @@ export interface WebsiteStarter {
 
 export interface NewWebsitePayload {
   title: string
+  short_id: string // eslint-disable-line
   starter: number
 }
 
@@ -194,6 +195,7 @@ export interface Website {
   updated_on: string // eslint-disable-line
   name: string
   title: string
+  short_id: string // eslint-disable-line
   source: string | null
   starter: WebsiteStarter | null
   metadata?: any

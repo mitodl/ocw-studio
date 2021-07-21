@@ -152,6 +152,13 @@ def convert_data_to_content(
             return content
 
 
+def get_short_id(metadata):
+    """ Get a short_id from the metadata"""
+    course_num = metadata["course_numbers"][0]
+    semester, year = metadata["term"].split()
+    return f"{course_num}-{semester}-{year}".lower()
+
+
 def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     """
     Extract OCW course content for a course
@@ -180,6 +187,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
                 "title": s3_content.get("course_title", f"Course Site ({name})"),
                 "publish_date": publish_date,
                 "metadata": s3_content,
+                "short_id": get_short_id(s3_content),
                 "starter_id": starter_id,
                 "source": WEBSITE_SOURCE_OCW_IMPORT,
             },

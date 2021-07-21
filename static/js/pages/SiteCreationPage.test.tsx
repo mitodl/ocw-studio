@@ -88,8 +88,9 @@ describe("SiteCreationPage", () => {
         // @ts-ignore
         onSubmit(
           {
-            title:   "My Title",
-            starter: 1
+            title:    "My Title",
+            short_id: "My-Title",
+            starter:  1
           },
           // @ts-ignore
           formikStubs
@@ -121,8 +122,9 @@ describe("SiteCreationPage", () => {
         // @ts-ignore
         onSubmit(
           {
-            title:   errorMsg,
-            starter: 1
+            title:    errorMsg,
+            short_id: "my-site",
+            starter:  1
           },
           // @ts-ignore
           formikStubs
@@ -131,7 +133,8 @@ describe("SiteCreationPage", () => {
       sinon.assert.calledOnce(createWebsiteStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
         ...errorResp.errors,
-        starter: undefined
+        short_id: undefined,
+        starter:  undefined
       })
       sinon.assert.notCalled(historyPushStub)
     })
@@ -152,8 +155,9 @@ describe("SiteCreationPage", () => {
         // @ts-ignore
         onSubmit(
           {
-            title:   "My Title",
-            starter: 1
+            title:    "My Title",
+            short_id: "My-Title",
+            starter:  1
           },
           // @ts-ignore
           formikStubs

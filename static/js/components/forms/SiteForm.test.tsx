@@ -69,5 +69,15 @@ describe("SiteForm", () => {
         expect(error.errors).toStrictEqual(["Title is a required field"])
       }
     })
+    it("rejects an empty short_id", async () => {
+      try {
+        await expect(
+          await websiteValidation.validateAt("short_id", { short_id: "" })
+        ).rejects.toThrow()
+      } catch (error) {
+        expect(error).toBeInstanceOf(ValidationError)
+        expect(error.errors).toStrictEqual(["Short ID is a required field"])
+      }
+    })
   })
 })

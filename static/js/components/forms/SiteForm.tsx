@@ -9,6 +9,7 @@ import SelectField from "../widgets/SelectField"
 
 export interface SiteFormValues {
   title: string
+  short_id: string // eslint-disable-line
   starter: number | null
 }
 
@@ -26,6 +27,13 @@ export const websiteValidation = yup.object().shape({
     .label("Title")
     .trim()
     .required(),
+  short_id: yup
+    .string()
+    .label("Short ID")
+    .trim()
+    .lowercase()
+    .max(100, "Must be <= 100 characters")
+    .required(),
   starter: yup.number().required()
 })
 
@@ -34,8 +42,9 @@ export const SiteForm = ({
   websiteStarters
 }: Props): JSX.Element | null => {
   const initialValues: SiteFormValues = {
-    title:   "",
-    starter: websiteStarters.length > 0 ? websiteStarters[0].id : 0
+    title:    "",
+    short_id: "",
+    starter:  websiteStarters.length > 0 ? websiteStarters[0].id : 0
   }
 
   return (
@@ -50,6 +59,11 @@ export const SiteForm = ({
             <label htmlFor="title">Title*</label>
             <Field type="text" name="title" className="form-control" />
             <ErrorMessage name="title" component={FormError} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="short_id">Short ID*</label>
+            <Field type="text" name="short_id" className="form-control" />
+            <ErrorMessage name="short_id" component={FormError} />
           </div>
           <div className="form-group">
             <label htmlFor="starter">Starter*</label>
