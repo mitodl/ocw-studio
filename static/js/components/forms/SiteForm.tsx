@@ -62,7 +62,12 @@ export const SiteForm = ({
           </div>
           <div className="form-group">
             <label htmlFor="short_id">Short ID*</label>
-            <Field type="text" name="short_id" className="form-control" placeholder="Example: 6.0001-fall-2021"/>
+            <Field
+              type="text"
+              name="short_id"
+              className="form-control"
+              placeholder="Example: 6.0001-fall-2021"
+            />
             <ErrorMessage name="short_id" component={FormError} />
           </div>
           <div className="form-group">
