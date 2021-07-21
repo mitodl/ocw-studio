@@ -6,6 +6,7 @@ import uuid
 
 import yaml
 from dateutil import parser as dateparser
+from websites.api import find_available_name
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
 from main.utils import get_dirpath_and_filename
@@ -156,7 +157,17 @@ def get_short_id(metadata):
     """ Get a short_id from the metadata"""
     course_num = metadata["course_numbers"][0]
     semester, year = metadata["term"].split()
-    return f"{course_num}-{semester}-{year}".lower()
+    short_id = f"{course_num}-{semester}-{year}".lower()
+    short_id_exists = Website.objects.filter(short_id=short_id).exists()
+    if short_id_exists:
+        short_id_prefix = f"{short_id}-"
+        short_id = find_available_name(
+            Website.objects.filter(short_id__startswith=short_id),
+            short_id_prefix,
+            "short_id",
+            max_length=100,
+        )
+    return short_id
 
 
 def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):

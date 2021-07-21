@@ -9,6 +9,7 @@ from websites.api import find_available_name
 def backpopulate_short_id(apps, schema_editor):
     """ Backpopulate short_id field """
     Website = apps.get_model("websites", "Website")
+    ContentSyncState = apps.get_model("content_sync", "ContentSyncState")
     website_qset = Website.objects.values("uuid", "name", "metadata")
     for website_dict in website_qset:
         short_id = None
@@ -25,6 +26,8 @@ def backpopulate_short_id(apps, schema_editor):
                     Website.objects.iterator(), short_id, "short_id", max_length=100
                 )
         Website.objects.filter(uuid=website_dict["uuid"]).update(short_id=short_id)
+    # Start from scratch with content sync
+    ContentSyncState.objects.update(synced_checksum=None)
 
 
 class Migration(migrations.Migration):
