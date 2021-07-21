@@ -32,6 +32,10 @@ export const websiteValidation = yup.object().shape({
     .label("Short ID")
     .trim()
     .lowercase()
+    .matches(
+      /^[A-Za-z0-9\-_\.]+$/, // eslint-disable-line no-useless-escape
+      "Only alphanumeric characters, periods, dashes, or underscores allowed"
+    )
     .max(100, "Must be <= 100 characters")
     .required(),
   starter: yup.number().required()
@@ -62,12 +66,10 @@ export const SiteForm = ({
           </div>
           <div className="form-group">
             <label htmlFor="short_id">Short ID*</label>
-            <Field
-              type="text"
-              name="short_id"
-              className="form-control"
-              placeholder="Example: 6.0001-fall-2021"
-            />
+            <Field type="text" name="short_id" className="form-control" />
+            <span className="help-text">
+              Less then 100 characters, e.g: 6.01-fall-2021
+            </span>
             <ErrorMessage name="short_id" component={FormError} />
           </div>
           <div className="form-group">

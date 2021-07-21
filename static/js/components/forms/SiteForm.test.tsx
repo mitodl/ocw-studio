@@ -69,14 +69,18 @@ describe("SiteForm", () => {
         expect(error.errors).toStrictEqual(["Title is a required field"])
       }
     })
-    it("rejects an empty short_id", async () => {
+    it("rejects a short_id with invalid characters", async () => {
       try {
         await expect(
-          await websiteValidation.validateAt("short_id", { short_id: "" })
+          await websiteValidation.validateAt("short_id", {
+            short_id: "Bad ID!"
+          })
         ).rejects.toThrow()
       } catch (error) {
         expect(error).toBeInstanceOf(ValidationError)
-        expect(error.errors).toStrictEqual(["Short ID is a required field"])
+        expect(error.errors).toStrictEqual([
+          "Only alphanumeric characters, periods, dashes, or underscores allowed"
+        ])
       }
     })
   })
