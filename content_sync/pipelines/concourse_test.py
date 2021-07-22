@@ -14,6 +14,12 @@ pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
 
 
+@pytest.fixture(autouse=True)
+def mock_concoursepy_auth(mocker):
+    """Mock the concourse api auth method"""
+    mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
+
+
 @pytest.mark.parametrize("stream", [True, False])
 @pytest.mark.parametrize("iterator", [True, False])
 def test_api_get_with_headers(mocker, stream, iterator):
@@ -24,7 +30,6 @@ def test_api_get_with_headers(mocker, stream, iterator):
         "content_sync.pipelines.concourse.BaseConcourseApi.iter_sse_stream",
         return_value=stream_output,
     )
-    mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
     mock_response = mocker.Mock(
         text=mock_text, status_code=200, headers={"X-Test": "header"}
     )
@@ -104,7 +109,7 @@ def test_upsert_website_pipelines(
 
     instance_vars = f"%7B%22site%22%3A%20%22{website.name}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={instance_vars}"
-    mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
+
     if not pipeline_exists:
         mock_get = mocker.patch(
             "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
@@ -169,7 +174,6 @@ def test_upsert_website_pipelines(
 )
 def test_upsert_website_pipelines_invalid_starter(mocker, source, path):
     """A pipeline should not be upserted for invalid WebsiteStarters"""
-    mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
     mock_get = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.get")
     mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
     mock_put_headers = mocker.patch(
@@ -182,3 +186,27 @@ def test_upsert_website_pipelines_invalid_starter(mocker, source, path):
     mock_get.assert_not_called()
     mock_put.assert_not_called()
     mock_put_headers.assert_not_called()
+
+
+@pytest.mark.parametrize("version", ["live", "draft"])
+def test_trigger_pipeline_build(settings, mocker, version):
+    """The correct requests should be made to trigger a pipeline build"""
+    job_name = "build-ocw-site"
+    mock_get = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseApi.get",
+        return_value={"config": {"jobs": [{"name": job_name}]}},
+    )
+    mock_post = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.post")
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
+        )
+    )
+    pipeline = ConcourseGithubPipeline(website)
+    pipeline.trigger_pipeline_build(version)
+    mock_get.assert_called_once_with(
+        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={pipeline.instance_vars}"
+    )
+    mock_post.assert_called_once_with(
+        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/draft/jobs/{job_name}/builds?vars={pipeline.instance_vars}"
+    )

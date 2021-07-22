@@ -136,10 +136,10 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
 
         for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
             if branch == settings.GIT_BRANCH_PREVIEW:
-                version = "draft"
+                version = self.VERSION_LIVE
                 destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
             else:
-                version = "live"
+                version = self.VERSION_DRAFT
                 destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
 
             with open(
@@ -179,3 +179,13 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                 version_headers = None
             self.ci.put_with_headers(url_path, data=config, headers=version_headers)
             self.ci.put(url_path.replace("/config", "/unpause"))
+
+    def trigger_pipeline_build(self, version: str):
+        """Trigger a pipeline build"""
+        pipeline_info = self.ci.get(
+            f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={self.instance_vars}"
+        )
+        job_name = pipeline_info["config"]["jobs"][0]["name"]
+        self.ci.post(
+            f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/draft/jobs/{job_name}/builds?vars={self.instance_vars}"
+        )
