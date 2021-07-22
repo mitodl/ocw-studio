@@ -197,3 +197,28 @@ You can enable git integration so that website content will be synced with GitHu
     ```
 - If you need to use a custom git domain, add `GIT_API_URL=<your_domain>/api/v3`
 - If you would like git commits to be anonymized, add `FEATURE_GIT_ANONYMOUS_COMMITS=True`
+
+
+# Enabling Concourse-CI integration
+You can enable Concourse-CI integration to create and trigger publishing pipelines.
+- Set up github integration as described above
+- Set up a Concourse-CI instance with a team, username, and password
+- Add the following to your .env file:
+    ``` 
+    CONTENT_SYNC_PIPELINE=content_sync.pipelines.concourse.ConcourseGithubPipeline
+    AWS_PREVIEW_BUCKET_NAME=<S3 bucket for draft content>
+    AWS_PUBLISH_BUCKET_NAME=<S3 bucket for live content>
+    GIT_DOMAIN=<root domain for github repos, ie github.com>
+    ROOT_WEBSITE_NAME=<Website.name for the website that should be the 'home page'> 
+
+    CONCOURSE_URL=<The URL of your Concourse-CI instance>
+    CONCOURSE_TEAM=<Concourse-CI team, defaults to "ocw">
+    CONCOURSE_USERNAME=<Concourse-CI username>
+    CONCOURSE_PASSWORD=<Concourse-CI password>
+    ```
+- Draft and live pipelines should then be created for every new `Website` based on a `WebsiteStarter` with `source=github` and a valid github `path`.
+- There are also several management commands for Concourse-CI pipelines:
+  - `backpopulate_pipelines`: to create/update pipelines for all or some existing `Websites` (filters available)
+  - `trigger_pipelines <version>`: to manually trigger the draft or live pipeline for all or some existing `Websites` (filters available)
+  
+  
