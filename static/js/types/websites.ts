@@ -225,7 +225,8 @@ export interface WebsiteContentListItem {
 
 export interface WebsiteContent extends WebsiteContentListItem {
   markdown: string | null
-  metadata: null | { [key: string]: string }
+  metadata: null | Record<string, string>
+  content_context: WebsiteContent[] | null // eslint-disable-line camelcase
 }
 
 export interface ContentListingParams {

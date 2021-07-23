@@ -6,14 +6,19 @@ import SiteContentField from "./SiteContentField"
 import { componentFromWidget } from "../../lib/site_content"
 import { exampleSiteConfigFields } from "../../constants"
 
-import { WidgetVariant } from "../../types/websites"
+import { WebsiteContent, WidgetVariant } from "../../types/websites"
+import { makeWebsiteContentDetail } from "../../util/factories/websites"
 
 describe("SiteContentField", () => {
-  let sandbox: SinonSandbox, setFieldValueStub: SinonStub
+  let sandbox: SinonSandbox,
+    setFieldValueStub: SinonStub,
+    contentContext: WebsiteContent[]
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-    setFieldValueStub = sinon.stub()
+    setFieldValueStub = sandbox.stub()
+    const content = makeWebsiteContentDetail()
+    contentContext = [content]
   })
 
   afterEach(() => {
@@ -23,7 +28,11 @@ describe("SiteContentField", () => {
   it("renders a form group for a config field", () => {
     for (const field of exampleSiteConfigFields) {
       const wrapper = shallow(
-        <SiteContentField field={field} setFieldValue={setFieldValueStub} />
+        <SiteContentField
+          field={field}
+          setFieldValue={setFieldValueStub}
+          contentContext={contentContext}
+        />
       )
 
       expect(wrapper.find("label").text()).toBe(field.label)

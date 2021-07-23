@@ -16,10 +16,19 @@ interface Props {
   options: Array<string | Option>
   loadOptions?: (s: string, cb: (options: Option[]) => void) => void
   placeholder?: string
+  defaultOptions?: Option[]
 }
 
 export default function SelectField(props: Props): JSX.Element {
-  const { value, onChange, name, options, loadOptions, placeholder } = props
+  const {
+    value,
+    onChange,
+    name,
+    options,
+    loadOptions,
+    defaultOptions,
+    placeholder
+  } = props
   const multiple = props.multiple ?? false
   const selectOptions = options.map((option: any) =>
     is(String, option) ? { label: option, value: option } : option
@@ -69,6 +78,7 @@ export default function SelectField(props: Props): JSX.Element {
       options={selectOptions}
       loadOptions={loadOptions}
       placeholder={placeholder || null}
+      defaultOptions={defaultOptions}
     />
   ) : (
     <Select

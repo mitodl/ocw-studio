@@ -2,12 +2,22 @@ import React from "react"
 import { shallow } from "enzyme"
 
 import ObjectField from "./ObjectField"
-import { makeWebsiteConfigField } from "../../util/factories/websites"
+import {
+  makeWebsiteConfigField,
+  makeWebsiteContentDetail
+} from "../../util/factories/websites"
 
-import { ObjectConfigField, WidgetVariant } from "../../types/websites"
+import {
+  ObjectConfigField,
+  WebsiteContent,
+  WidgetVariant
+} from "../../types/websites"
 
 describe("ObjectField", () => {
-  let setFieldValueStub: any, render: any, field: ObjectConfigField
+  let setFieldValueStub: any,
+    render: any,
+    field: ObjectConfigField,
+    contentContext: WebsiteContent[]
 
   beforeEach(() => {
     setFieldValueStub = jest.fn()
@@ -28,11 +38,15 @@ describe("ObjectField", () => {
       ]
     }) as ObjectConfigField
 
+    const otherContent = makeWebsiteContentDetail()
+    contentContext = [otherContent]
+
     render = (props = {}) =>
       shallow(
         <ObjectField
           setFieldValue={setFieldValueStub}
           field={field}
+          contentContext={contentContext}
           {...props}
         />
       )
@@ -40,8 +54,9 @@ describe("ObjectField", () => {
 
   it("should render an Object field, by passing sub-fields to SiteContentField", () => {
     const wrapper = render()
-    wrapper.find("SiteContentField").map((field: any) => {
+    wrapper.find("SiteContentField").forEach((field: any) => {
       expect(field.prop("setFieldValue")).toEqual(setFieldValueStub)
+      expect(field.prop("contentContext")).toStrictEqual(contentContext)
     })
     expect(
       wrapper.find("SiteContentField").map((field: any) => field.prop("field"))

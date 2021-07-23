@@ -53,6 +53,7 @@ export default function SiteContentForm({
         contentInitialValues(content as WebsiteContent, fields),
     [fields, formType, content]
   )
+  const contentContext = content?.content_context ?? null
 
   const renamedFields: ConfigField[] = useMemo(
     () => renameNestedFields(fields),
@@ -90,12 +91,14 @@ export default function SiteContentForm({
                       field={field}
                       key={field.name}
                       setFieldValue={setFieldValue}
+                      contentContext={contentContext}
                     />
                   ) : (
                     <SiteContentField
                       field={field}
                       key={field.name}
                       setFieldValue={setFieldValue}
+                      contentContext={contentContext}
                     />
                   )
                 )}
