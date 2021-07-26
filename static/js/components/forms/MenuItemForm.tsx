@@ -137,7 +137,7 @@ export default function MenuItemForm({
                     display_field="title"
                     multiple={false}
                     onChange={event => {
-                      setFieldValue("internalLink", event.target.value)
+                      setFieldValue("internalLink", event.target.value.content)
                     }}
                     value={values.internalLink}
                     valuesToOmit={existingMenuIds}

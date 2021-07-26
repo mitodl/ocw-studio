@@ -8,17 +8,22 @@ import SiteContentForm from "./SiteContentForm"
 import { defaultFormikChildProps } from "../../test_util"
 import {
   makeEditableConfigItem,
+  makeWebsiteConfigField,
   makeWebsiteContentDetail,
-  makeWebsiteConfigField
+  makeWebsiteDetail
 } from "../../util/factories/websites"
 import {
   componentFromWidget,
+  contentInitialValues,
   fieldIsVisible,
+  newInitialValues,
   splitFieldsIntoColumns
 } from "../../lib/site_content"
+import { useWebsite } from "../../context/Website"
 
 import {
   EditableConfigItem,
+  Website,
   WebsiteContent,
   WidgetVariant
 } from "../../types/websites"
@@ -26,6 +31,7 @@ import { ContentFormType, FormSchema } from "../../types/forms"
 
 jest.mock("../../lib/site_content")
 jest.mock("./validation")
+jest.mock("../../context/Website")
 
 describe("SiteContentForm", () => {
   let sandbox: SinonSandbox,
@@ -33,7 +39,8 @@ describe("SiteContentForm", () => {
     setFieldValueStub: SinonStub,
     configItem: EditableConfigItem,
     content: WebsiteContent,
-    mockValidationSchema: FormSchema
+    mockValidationSchema: FormSchema,
+    website: Website
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
@@ -43,6 +50,9 @@ describe("SiteContentForm", () => {
     configItem = makeEditableConfigItem(content.type)
     // @ts-ignore
     splitFieldsIntoColumns.mockImplementation(() => [])
+    website = makeWebsiteDetail()
+    // @ts-ignore
+    useWebsite.mockReturnValue(website)
   })
 
   afterEach(() => {
@@ -146,6 +156,28 @@ describe("SiteContentForm", () => {
         expect(objectWrapper.prop("contentContext")).toBe(
           content.content_context
         )
+      })
+
+      it("creates initialValues", () => {
+        const newData = "new data",
+          oldData = "old data"
+        // @ts-ignore
+        newInitialValues.mockReturnValue(newData)
+        // @ts-ignore
+        contentInitialValues.mockReturnValue(oldData)
+        const wrapper = renderForm({ formType })
+        const initialValues = wrapper.find("Formik").prop("initialValues")
+        if (formType === ContentFormType.Add) {
+          expect(initialValues).toBe(newData)
+          expect(newInitialValues).toBeCalledWith(configItem.fields, website)
+        } else {
+          expect(initialValues).toBe(oldData)
+          expect(contentInitialValues).toBeCalledWith(
+            content,
+            configItem.fields,
+            website
+          )
+        }
       })
     })
   })

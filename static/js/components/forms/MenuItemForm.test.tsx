@@ -169,7 +169,9 @@ describe("MenuItemForm", () => {
     expect(relationField.prop("valuesToOmit")).toEqual(existingMenuIds)
     expect(relationField.prop("contentContext")).toBeNull()
     expect(relationField.prop("collection")).toEqual(collections)
-    const fakeEvent = { target: { value: "abc" } }
+    const fakeEvent = {
+      target: { value: { content: "abc", website: "ignored" } }
+    }
     // @ts-ignore
     relationField.prop("onChange")(fakeEvent)
     expect(setFieldValueStub).toBeCalledWith("internalLink", "abc")
