@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.19.1
+Version 0.19.1 (Released July 26, 2021)
 --------------
 
 - Revert "Generate concourse pipelines on website creation (#366)" (#389)
