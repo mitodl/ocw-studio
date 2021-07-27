@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.20.0
+--------------
+
+- Fix version/bucket mismatch in pipeline configuration (#417)
+- Pipeline management commands (#388)
+- Concourse pipelines, take 2 (#399)
+- add WebsiteCollectionItem editing UI
+- Create README.md (#380)
+
 Version 0.19.1 (Released July 26, 2021)
 --------------
 
