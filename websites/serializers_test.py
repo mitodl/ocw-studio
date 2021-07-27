@@ -173,43 +173,50 @@ def test_website_content_detail_with_file_serializer():
 @pytest.mark.parametrize("multiple", [True, False])
 @pytest.mark.parametrize("invalid_data", [True, False])
 @pytest.mark.parametrize("nested", [True, False])
+@pytest.mark.parametrize("widget", ["relation", "menu"])
 def test_website_content_detail_serializer_content_context(
-    content_context, multiple, invalid_data, nested
+    content_context, multiple, invalid_data, nested, widget
 ):
     """WebsiteContentDetailSerializer should serialize content_context for relation fields"""
-    referenced = WebsiteContentFactory.create()
-    # This one has the same text_id but a different website so it should not match
-    WebsiteContentFactory.create(text_id=referenced.text_id)
-    pdf_field = {
-        "name": "pdfs",
-        "label": "PDFs",
-        "widget": "relation",
+    field_name = "field_name"
+    field = {
+        "name": field_name,
+        "label": "Field label",
+        "widget": widget,
         "multiple": multiple,
     }
     starter = WebsiteStarterFactory.create(
         config={
             "collections": [
-                {
-                    "fields": [
-                        {"name": "outer", "fields": [pdf_field]}
-                        if nested
-                        else pdf_field
-                    ]
-                }
+                {"fields": [{"name": "outer", "fields": [field]} if nested else field]}
             ]
         }
     )
-    pdf_value = {
-        "content": [referenced.text_id] if multiple else referenced.text_id,
-        "website": referenced.website.name,
-    }
+    referenced = WebsiteContentFactory.create(website__starter=starter)
+    # This one has the same text_id but a different website so it should not match
+    WebsiteContentFactory.create(text_id=referenced.text_id)
+    if widget == "relation":
+        value = {
+            "content": [referenced.text_id] if multiple else referenced.text_id,
+            "website": referenced.website.name,
+        }
+    elif widget == "menu":
+        value = [
+            {
+                "identifier": "external-not-a-match",
+            },
+            {"identifier": "uuid-not-found-so-ignored"},
+            {
+                "identifier": referenced.text_id,
+            },
+        ]
     content = WebsiteContentFactory.create(
-        website__starter=starter,
-        metadata={"pdfs": []}
+        website=referenced.website,
+        metadata={field_name: None}
         if invalid_data
-        else {"outer": {"pdfs": pdf_value}}
+        else {"outer": {field_name: value}}
         if nested
-        else {"pdfs": pdf_value},
+        else {field_name: value},
     )
     serialized_data = WebsiteContentDetailSerializer(
         instance=content, context={"content_context": content_context}

@@ -230,7 +230,8 @@ class WebsiteContentDetailSerializer(
         metadata = instance.metadata or {}
         site_config = SiteConfig(instance.website.starter.config)
         for field in site_config.iter_fields():
-            if field.field.get("widget") == "relation":
+            widget = field.field.get("widget")
+            if widget in ("relation", "menu"):
                 try:
                     if field.parent_field is None:
                         value = metadata.get(field.field["name"])
@@ -239,12 +240,22 @@ class WebsiteContentDetailSerializer(
                             field.field["name"]
                         )
 
-                    content = value["content"]
-                    website_name = value["website"]
-                    if isinstance(content, str):
-                        text_ids.append(content)
-                    else:
-                        text_ids.extend(content)
+                    if widget == "relation":
+                        content = value["content"]
+                        website_name = value["website"]
+                        if isinstance(content, str):
+                            text_ids.append(content)
+                        else:
+                            text_ids.extend(content)
+                    elif widget == "menu":
+                        website_name = instance.website.name
+                        text_ids.extend(
+                            [
+                                item["identifier"]
+                                for item in value
+                                if not item["identifier"].startswith("external-")
+                            ]
+                        )
 
                 except (AttributeError, KeyError, TypeError):
                     # Either missing or malformed relation field value
