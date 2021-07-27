@@ -330,6 +330,27 @@ def _get_derived_website_content_data(
     return added_data
 
 
+def _get_value_list_from_query_params(query_params, key):
+    """
+    Get a list of values which have keys that start with key[ or key
+    """
+    filter_type_keys = [
+        qs_key
+        for qs_key in query_params.keys()
+        # View should accept "type" as a single query param, or multiple types,
+        # e.g.: "?type[0]=sometype&type[1]=othertype"
+        if qs_key == key or qs_key.startswith(f"{key}[")
+    ]
+    return [query_params[_key] for _key in filter_type_keys]
+
+
+def _parse_bool(value):
+    """
+    Parse a query string value into a bool
+    """
+    return value and value.lower() != "false"
+
+
 class WebsiteContentViewSet(
     NestedViewSetMixin,
     viewsets.ModelViewSet,
@@ -342,27 +363,25 @@ class WebsiteContentViewSet(
 
     def get_queryset(self):
         parent_lookup_website = self.kwargs.get("parent_lookup_website")
-        filter_type_keys = [
-            qs_key
-            for qs_key in self.request.query_params.keys()
-            # View should accept "type" as a single query param, or multiple types,
-            # e.g.: "?type[0]=sometype&type[1]=othertype"
-            if qs_key == "type" or qs_key.startswith("type[")
-        ]
+        search = self.request.query_params.get("search")
+        types = _get_value_list_from_query_params(self.request.query_params, "type")
+        text_ids = _get_value_list_from_query_params(
+            self.request.query_params, "text_id"
+        )
 
-        queryset = WebsiteContent.objects.filter(website__name=parent_lookup_website)
-        if filter_type_keys:
-            queryset = queryset.filter(
-                type__in=[
-                    self.request.query_params[filter_type_key]
-                    for filter_type_key in filter_type_keys
-                ]
-            )
+        queryset = WebsiteContent.objects.filter(
+            website__name=parent_lookup_website
+        ).select_related("website", "website__starter")
+        if types:
+            queryset = queryset.filter(type__in=types)
+        if search:
+            queryset = queryset.filter(title__icontains=search)
+        if text_ids:
+            queryset = queryset.filter(text_id__in=text_ids)
+
         if "page_content" in self.request.query_params:
             queryset = queryset.filter(
-                is_page_content=(
-                    self.request.query_params["page_content"].lower() != "false"
-                )
+                is_page_content=(_parse_bool(self.request.query_params["page_content"]))
             )
         return queryset.order_by("-updated_on")
 
@@ -379,7 +398,12 @@ class WebsiteContentViewSet(
 
     def get_serializer_context(self):
         if self.action != "create":
-            return super().get_serializer_context()
+            return {
+                **super().get_serializer_context(),
+                "content_context": _parse_bool(
+                    self.request.query_params.get("content_context")
+                ),
+            }
 
         parent_lookup_website = self.kwargs.get("parent_lookup_website")
         website_qset = Website.objects.values("pk", "starter__config").get(

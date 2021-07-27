@@ -449,23 +449,46 @@ def test_website_starters_site_configs_exception(mocker, drf_client):
     assert resp.data == {"details": "'Key not found'"}
 
 
-@pytest.mark.parametrize("filter_type", ["page", ""])
 @pytest.mark.parametrize("detailed_list", [True, False])
+@pytest.mark.parametrize(
+    "filter_type, search, has_text_id, expected_num_results",
+    [
+        ["page", "text3", True, 0],
+        ["page", "text3", False, 1],
+        ["page", "", True, 2],
+        ["page", "", False, 5],
+        ["", "text3", True, 0],
+        ["", "text3", False, 1],
+        ["", "", True, 2],
+        ["", "", False, 6],
+    ],
+)
 def test_websites_content_list(
-    drf_client, filter_type, detailed_list, global_admin_user
+    drf_client,
+    filter_type,
+    search,
+    detailed_list,
+    has_text_id,
+    global_admin_user,
+    expected_num_results,
 ):
     """The list view of WebsiteContent should optionally filter by type"""
     drf_client.force_login(global_admin_user)
     WebsiteContentFactory.create()  # a different website, shouldn't show up here
     content = WebsiteContentFactory.create(type="other")
     website = content.website
-    num_results = 5
-    contents = WebsiteContentFactory.create_batch(
-        num_results, type="page", website=website
-    )
+    contents = [
+        WebsiteContentFactory.create(
+            type="page",
+            website=website,
+            title=f"some TEXT{num} here for a case insensitive search",
+        )
+        for num in range(5)
+    ]
     WebsiteContentFactory.create(
         type="page", website=website
     ).delete()  # soft-deleted content shouldn't show up
+
     if not filter_type:
         contents += [content]
     query_params = {}
@@ -473,6 +496,12 @@ def test_websites_content_list(
         query_params["type"] = filter_type
     if detailed_list:
         query_params["detailed_list"] = detailed_list
+    if has_text_id:
+        query_params["text_id[0]"] = contents[0].text_id
+        query_params["text_id[1]"] = contents[1].text_id
+    if search:
+        query_params["search"] = search
+
     resp = drf_client.get(
         reverse(
             "websites_content_api-list",
@@ -483,9 +512,17 @@ def test_websites_content_list(
         query_params,
     )
     results = resp.data["results"]
-    assert resp.data["count"] == (num_results if filter_type else num_results + 1)
-    assert len(results) == (num_results if filter_type else num_results + 1)
+    assert resp.data["count"] == expected_num_results
+    assert len(results) == expected_num_results
 
+    if has_text_id:
+        contents = [
+            content
+            for content in contents
+            if content.text_id in (contents[0].text_id, contents[1].text_id)
+        ]
+    if search:
+        contents = [content for content in contents if search in content.title.lower()]
     for idx, content in enumerate(
         reversed(sorted(contents, key=lambda _content: _content.updated_on))
     ):
@@ -548,20 +585,25 @@ def test_websites_content_list_page_content(drf_client, global_admin_user):
     assert results[0]["type"] == "type1"
 
 
-def test_websites_content_detail(drf_client, global_admin_user):
+@pytest.mark.parametrize("content_context", [True, False])
+def test_websites_content_detail(drf_client, global_admin_user, content_context):
     """The detail view for WebsiteContent should return serialized data"""
     drf_client.force_login(global_admin_user)
     content = WebsiteContentFactory.create(type="other")
-    resp = drf_client.get(
-        reverse(
-            "websites_content_api-detail",
-            kwargs={
-                "parent_lookup_website": content.website.name,
-                "text_id": str(content.text_id),
-            },
-        )
+    url = reverse(
+        "websites_content_api-detail",
+        kwargs={
+            "parent_lookup_website": content.website.name,
+            "text_id": str(content.text_id),
+        },
     )
-    assert resp.data == WebsiteContentDetailSerializer(instance=content).data
+    resp = drf_client.get(f"{url}?content_context={content_context}")
+    assert (
+        resp.data
+        == WebsiteContentDetailSerializer(
+            instance=content, context={"content_context": content_context}
+        ).data
+    )
 
 
 def test_websites_content_delete(drf_client, permission_groups, mocker):

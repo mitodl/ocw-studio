@@ -51,6 +51,14 @@ class ConfigItem:
         return "file" in self.item
 
 
+@dataclass
+class ConfigField:
+    """Utility class for describing an individual site config field"""
+
+    field: dict
+    parent_field: Optional[dict] = None
+
+
 class SiteConfig:
     """Utility class for parsing and introspecting site configs"""
 
@@ -87,6 +95,15 @@ class SiteConfig:
                         parent_item=collection_item,
                         path=f"{path}.files.{j}",
                     )
+
+    def iter_fields(self) -> Iterator[ConfigField]:
+        """Yield all fields in the configuration"""
+        for item in self.iter_items():
+            for field in item.fields:
+                yield ConfigField(field=field, parent_field=None)
+
+                for inner_field in field.get("fields", []):
+                    yield ConfigField(field=inner_field, parent_field=field)
 
     def find_item_by_name(self, name: str) -> Optional[ConfigItem]:
         """Finds a config item in the site config with a matching 'name' value"""

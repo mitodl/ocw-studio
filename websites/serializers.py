@@ -1,4 +1,6 @@
 """ Serializers for websites """
+import logging
+
 from django.contrib.auth.models import Group
 from django.db import transaction
 from django.db.models import F, Max
@@ -22,7 +24,11 @@ from websites.models import (
     WebsiteStarter,
 )
 from websites.permissions import is_global_admin, is_site_admin
+from websites.site_config_api import SiteConfig
 from websites.utils import permissions_group_name_for_role
+
+
+log = logging.getLogger(__name__)
 
 
 ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is required"}
@@ -202,6 +208,8 @@ class WebsiteContentDetailSerializer(
 ):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""
 
+    content_context = serializers.SerializerMethodField()
+
     def update(self, instance, validated_data):
         """Add updated_by to the data"""
         instance = super().update(
@@ -209,6 +217,56 @@ class WebsiteContentDetailSerializer(
         )
         update_website_backend(instance.website)
         return instance
+
+    def get_content_context(self, instance):
+        """
+        Create mapping of uuid to a display name for any values in the metadata
+        """
+        if not self.context or not self.context.get("content_context"):
+            return None
+
+        text_ids = []
+        website_name = None
+        metadata = instance.metadata or {}
+        site_config = SiteConfig(instance.website.starter.config)
+        for field in site_config.iter_fields():
+            widget = field.field.get("widget")
+            if widget in ("relation", "menu"):
+                try:
+                    if field.parent_field is None:
+                        value = metadata.get(field.field["name"])
+                    else:
+                        value = metadata.get(field.parent_field["name"], {}).get(
+                            field.field["name"]
+                        )
+
+                    if widget == "relation":
+                        content = value["content"]
+                        website_name = value["website"]
+                        if isinstance(content, str):
+                            text_ids.append(content)
+                        else:
+                            text_ids.extend(content)
+                    elif widget == "menu":
+                        website_name = instance.website.name
+                        text_ids.extend(
+                            [
+                                item["identifier"]
+                                for item in value
+                                if not item["identifier"].startswith("external-")
+                            ]
+                        )
+
+                except (AttributeError, KeyError, TypeError):
+                    # Either missing or malformed relation field value
+                    continue
+
+        contents = WebsiteContent.objects.filter(
+            text_id__in=text_ids, website__name=website_name
+        )
+        return WebsiteContentDetailSerializer(
+            contents, many=True, context={"content_context": False}
+        ).data
 
     def to_representation(self, instance):
         """Add the file field name and url to the serializer if a file exists"""
@@ -221,7 +279,7 @@ class WebsiteContentDetailSerializer(
 
     class Meta:
         model = WebsiteContent
-        read_only_fields = ["text_id", "type"]
+        read_only_fields = ["text_id", "type", "content_context"]
         fields = read_only_fields + [
             "title",
             "markdown",

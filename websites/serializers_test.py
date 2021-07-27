@@ -169,6 +169,78 @@ def test_website_content_detail_with_file_serializer():
     assert serialized_data["metadata"]["title"] == content.metadata["title"]
 
 
+@pytest.mark.parametrize("content_context", [True, False])
+@pytest.mark.parametrize("multiple", [True, False])
+@pytest.mark.parametrize("invalid_data", [True, False])
+@pytest.mark.parametrize("nested", [True, False])
+@pytest.mark.parametrize("widget", ["relation", "menu"])
+def test_website_content_detail_serializer_content_context(
+    content_context, multiple, invalid_data, nested, widget
+):
+    """WebsiteContentDetailSerializer should serialize content_context for relation fields"""
+    field_name = "field_name"
+    field = {
+        "name": field_name,
+        "label": "Field label",
+        "widget": widget,
+        "multiple": multiple,
+    }
+    starter = WebsiteStarterFactory.create(
+        config={
+            "collections": [
+                {"fields": [{"name": "outer", "fields": [field]} if nested else field]}
+            ]
+        }
+    )
+    referenced = WebsiteContentFactory.create(website__starter=starter)
+    # This one has the same text_id but a different website so it should not match
+    WebsiteContentFactory.create(text_id=referenced.text_id)
+    if widget == "relation":
+        value = {
+            "content": [referenced.text_id] if multiple else referenced.text_id,
+            "website": referenced.website.name,
+        }
+    elif widget == "menu":
+        value = [
+            {
+                "identifier": "external-not-a-match",
+            },
+            {"identifier": "uuid-not-found-so-ignored"},
+            {
+                "identifier": referenced.text_id,
+            },
+        ]
+    content = WebsiteContentFactory.create(
+        website=referenced.website,
+        metadata={field_name: None}
+        if invalid_data
+        else {"outer": {field_name: value}}
+        if nested
+        else {field_name: value},
+    )
+    serialized_data = WebsiteContentDetailSerializer(
+        instance=content, context={"content_context": content_context}
+    ).data
+    assert serialized_data["text_id"] == str(content.text_id)
+    assert serialized_data["title"] == content.title
+    assert serialized_data["type"] == content.type
+    assert serialized_data["markdown"] == content.markdown
+    assert serialized_data["metadata"] == content.metadata
+    assert serialized_data["content_context"] == (
+        (
+            []
+            if invalid_data
+            else [
+                WebsiteContentDetailSerializer(
+                    instance=referenced, context={"content_context": False}
+                ).data
+            ]
+        )
+        if content_context
+        else None
+    )
+
+
 def test_website_content_detail_serializer_save(mocker):
     """WebsiteContentDetailSerializer should modify only certain fields"""
     mock_update_website_backend = mocker.patch(
