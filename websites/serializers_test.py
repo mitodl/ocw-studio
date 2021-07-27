@@ -43,6 +43,7 @@ def test_serialize_website_course():
     site = WebsiteFactory.create()
     serialized_data = WebsiteSerializer(instance=site).data
     assert serialized_data["name"] == site.name
+    assert serialized_data["short_id"] == site.short_id
     assert serialized_data["publish_date"] == site.publish_date.strftime(
         ISO_8601_FORMAT
     )
@@ -83,6 +84,7 @@ def test_website_detail_deserialize():
         data={
             "name": "my-site",
             "title": "My Title",
+            "short_id": "my-title",
             "source": WEBSITE_SOURCE_OCW_IMPORT,
             "metadata": None,
             "starter": 1,

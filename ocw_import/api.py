@@ -9,6 +9,7 @@ from dateutil import parser as dateparser
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
 from main.utils import get_dirpath_and_filename
+from websites.api import find_available_name
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     CONTENT_TYPE_PAGE,
@@ -152,6 +153,23 @@ def convert_data_to_content(
             return content
 
 
+def get_short_id(metadata):
+    """ Get a short_id from the metadata"""
+    course_num = metadata["course_numbers"][0]
+    semester, year = metadata["term"].split()
+    short_id = f"{course_num}-{semester}-{year}".lower()
+    short_id_exists = Website.objects.filter(short_id=short_id).exists()
+    if short_id_exists:
+        short_id_prefix = f"{short_id}-"
+        short_id = find_available_name(
+            Website.objects.filter(short_id__startswith=short_id),
+            short_id_prefix,
+            "short_id",
+            max_length=100,
+        )
+    return short_id
+
+
 def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     """
     Extract OCW course content for a course
@@ -180,6 +198,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
                 "title": s3_content.get("course_title", f"Course Site ({name})"),
                 "publish_date": publish_date,
                 "metadata": s3_content,
+                "short_id": get_short_id(s3_content),
                 "starter_id": starter_id,
                 "source": WEBSITE_SOURCE_OCW_IMPORT,
             },

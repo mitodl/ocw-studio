@@ -56,6 +56,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "created_on",
             "updated_on",
             "name",
+            "short_id",
             "title",
             "source",
             "publish_date",

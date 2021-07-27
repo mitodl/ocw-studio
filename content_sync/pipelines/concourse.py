@@ -11,7 +11,6 @@ from concoursepy.api import Api as BaseConcourseApi
 from django.conf import settings
 from requests import HTTPError
 
-from content_sync.apis.github import get_repo_name
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import BaseSyncPipeline
 from websites.constants import STARTER_SOURCE_GITHUB
@@ -158,7 +157,7 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
                     .replace("((ocw-studio-url))", settings.SITE_BASE_URL)
                     .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME)
-                    .replace("((ocw-site-repo))", get_repo_name(self.website))
+                    .replace("((ocw-site-repo))", self.website.short_id)
                     .replace("((ocw-site-repo-branch))", branch)
                     .replace("((config-slug))", self.website.starter.slug)
                     .replace("((base-url))", base_url)

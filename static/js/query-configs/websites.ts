@@ -104,7 +104,8 @@ export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({
   body:      payload,
   transform: (body: Website) => ({
     websiteDetails: {
-      [body.name]: body
+      [body.name]:     body,
+      [body.short_id]: body
     }
   }),
   update: {

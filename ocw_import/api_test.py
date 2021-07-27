@@ -4,7 +4,7 @@ import json
 import pytest
 from moto import mock_s3
 
-from ocw_import.api import import_ocw2hugo_course
+from ocw_import.api import get_short_id, import_ocw2hugo_course
 from ocw_import.conftest import (
     MOCK_BUCKET_NAME,
     TEST_OCW2HUGO_PATH,
@@ -16,7 +16,7 @@ from websites.constants import (
     CONTENT_TYPE_RESOURCE,
     WEBSITE_SOURCE_OCW_IMPORT,
 )
-from websites.factories import WebsiteStarterFactory
+from websites.factories import WebsiteFactory, WebsiteStarterFactory
 from websites.models import Website, WebsiteContent
 
 
@@ -34,6 +34,7 @@ def test_import_ocw2hugo_course(settings):
     website = Website.objects.get(name=name)
     assert website.starter == website_starter
     assert website.source == WEBSITE_SOURCE_OCW_IMPORT
+    assert website.short_id == "1.050-fall-2007"
     with open(f"{TEST_OCW2HUGO_PATH}/{name}/data/course.json", "r") as infile:
         assert json.dumps(website.metadata, sort_keys=True) == json.dumps(
             json.load(infile), sort_keys=True
@@ -132,3 +133,18 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
         "No UUID (text ID): %s",
         "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/content/sections/test_no_uid.md",
     )
+
+
+@pytest.mark.django_db
+def test_get_short_id():
+    """ get_short_id should return expected values """
+    course_num = "6.0001"
+    semester = "Spring"
+    year = "2024"
+    metadata = {"course_numbers": [course_num], "term": f"{semester} {year}"}
+    short_id = get_short_id(metadata)
+    assert short_id == f"{course_num}-{semester.lower()}-{year}"
+    for i in range(1, 4):
+        WebsiteFactory.create(short_id=short_id)
+        short_id = get_short_id(metadata)
+        assert short_id == f"{course_num}-{semester.lower()}-{year}-{i+1}"
