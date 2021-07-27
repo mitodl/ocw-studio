@@ -8,7 +8,7 @@ import * as formikFuncs from "formik"
 import SiteContentEditor from "./SiteContentEditor"
 import WebsiteContext from "../context/Website"
 
-import { addDefaultFields, DEFAULT_TITLE_FIELD } from "../lib/site_content"
+import { DEFAULT_TITLE_FIELD } from "../lib/site_content"
 import * as siteContentFuncs from "../lib/site_content"
 import { siteApiContentDetailUrl, siteApiContentUrl } from "../lib/urls"
 import IntegrationTestHelper, {
