@@ -7,6 +7,7 @@ import SingletonsContentListing from "./SingletonsContentListing"
 import WebsiteContext from "../context/Website"
 
 import { siteApiContentDetailUrl } from "../lib/urls"
+import * as siteContentFuncs from "../lib/site_content"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
@@ -144,32 +145,45 @@ describe("SingletonsContentListing", () => {
     ).toBe(true)
   })
 
-  it("loads content detail from the API if needed", async () => {
-    const tabIndexToSelect = 1
-    contentDetailStub = helper.handleRequestStub
-      .withArgs(
-        siteApiContentDetailUrl
-          .param({
-            name:   website.name,
-            textId: singletonConfigItems[tabIndexToSelect].name
-          })
-          .toString(),
-        "GET"
-      )
-      .returns({
-        body:   content,
-        status: 200
+  //
+  ;[true, false].forEach(contentContext => {
+    it(`loads content detail from the API if needed ${
+      contentContext ? "with" : "without"
+    } content context`, async () => {
+      const needsContentContextStub = helper.sandbox
+        .stub(siteContentFuncs, "needsContentContext")
+        .returns(contentContext)
+      const tabIndexToSelect = 1
+      contentDetailStub = helper.handleRequestStub
+        .withArgs(
+          siteApiContentDetailUrl
+            .param({
+              name:   website.name,
+              textId: singletonConfigItems[tabIndexToSelect].name
+            })
+            .query(contentContext ? { content_context: true } : {})
+            .toString(),
+          "GET"
+        )
+        .returns({
+          body:   content,
+          status: 200
+        })
+      const { wrapper } = await render()
+      // API should not initially be called since we already have the first item in our websiteContentDetails
+      // entities state
+      sinon.assert.notCalled(contentDetailStub)
+      const tabLink = wrapper.find("NavLink").at(tabIndexToSelect)
+      act(() => {
+        // @ts-ignore
+        tabLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
       })
-    const { wrapper } = await render()
-    // API should not initially be called since we already have the first item in our websiteContentDetails
-    // entities state
-    sinon.assert.notCalled(contentDetailStub)
-    const tabLink = wrapper.find("NavLink").at(tabIndexToSelect)
-    act(() => {
-      // @ts-ignore
-      tabLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+      sinon.assert.calledOnce(contentDetailStub)
+      sinon.assert.calledWith(
+        needsContentContextStub,
+        singletonConfigItems[0].fields
+      )
     })
-    sinon.assert.calledOnce(contentDetailStub)
   })
 
   it("should render the SiteContentEditor component", async () => {
