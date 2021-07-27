@@ -33,7 +33,7 @@ export default WebsiteContext
 export function useWebsite(): Website {
   const website = useContext(WebsiteContext)
   if (website === null) {
-    throw new Error("useTodoContext must be within TodoProvider")
+    throw new Error("useWebsite must be within WebsiteContext.Provider")
   }
 
   return website
