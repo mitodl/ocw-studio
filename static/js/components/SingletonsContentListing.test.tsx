@@ -169,6 +169,7 @@ describe("SingletonsContentListing", () => {
       // @ts-ignore
       tabLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
     })
+    wrapper.update()
     sinon.assert.calledOnce(contentDetailStub)
   })
 
