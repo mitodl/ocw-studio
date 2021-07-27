@@ -83,17 +83,20 @@ describe("RelationField", () => {
     ["other-site", ""].forEach(websiteNameProp => {
       it(`should render a SelectField with the expected options, ${
         hasContentContext ? "with" : "without"
-      } contentContext`, async () => {
+      } contentContext, ${
+        websiteNameProp ? "with" : "without"
+      } a website prop`, async () => {
         // @ts-ignore
         when(global.fetch).mockResolvedValue({ json: async () => fakeResponse })
         const websiteName = websiteNameProp ? websiteNameProp : website.name
         const textIdsUrl = siteApiContentListingUrl
           .param({ name: websiteName })
           .query({
-            detailed_list: true,
-            text_id:       contentListingItems.map(item => item.text_id),
-            limit:         contentListingItems.length,
-            type:          "page"
+            detailed_list:   true,
+            content_context: true,
+            text_id:         contentListingItems.map(item => item.text_id),
+            limit:           contentListingItems.length,
+            type:            "page"
           })
           .toString()
         const contentContext = hasContentContext ?
@@ -147,8 +150,9 @@ describe("RelationField", () => {
         const defaultUrl = siteApiContentListingUrl
           .param({ name: websiteName })
           .query({
-            detailed_list: true,
-            type:          "page"
+            detailed_list:   true,
+            content_context: true,
+            type:            "page"
           })
           .toString()
         // @ts-ignore
@@ -281,9 +285,10 @@ describe("RelationField", () => {
     const urlForSearch = (search: string) =>
       siteApiContentListingUrl
         .query({
-          detailed_list: true,
-          search:        search,
-          type:          "page"
+          detailed_list:   true,
+          content_context: true,
+          search:          search,
+          type:            "page"
         })
         .param({ name: website.name })
         .toString()

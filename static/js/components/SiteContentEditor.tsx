@@ -17,7 +17,8 @@ import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import {
   addDefaultFields,
   contentFormValuesToPayload,
-  isSingletonCollectionItem
+  isSingletonCollectionItem,
+  needsContentContext
 } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 
@@ -75,7 +76,11 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
 
   const queryTuple = useRequest(
     shouldLoadContent ?
-      websiteContentDetailRequest(site.name, textId as string) :
+      websiteContentDetailRequest(
+        site.name,
+          textId as string,
+          needsContentContext(fields)
+      ) :
       null
   )
   const websiteContentDetailSelector = useSelector(

@@ -131,7 +131,8 @@ export default function RelationField(
     const params = collection ? { type: collection } : { page_content: true }
     const url = siteApiContentListingUrl
       .query({
-        detailed_list: true,
+        detailed_list:   true,
+        content_context: true,
         ...(search ? { search: search } : {}),
         ...(textIds.length ? { text_id: textIds, limit: textIds.length } : {}),
         ...params

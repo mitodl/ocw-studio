@@ -47,7 +47,7 @@ export default function RepeatableContentListing(props: {
   const [
     { isPending: contentListingPending },
     fetchWebsiteContentListing
-  ] = useRequest(websiteContentListingRequest(listingParams))
+  ] = useRequest(websiteContentListingRequest(listingParams, false, false))
   const listing: WebsiteContentListingResponse = useSelector(
     getWebsiteContentListingCursor
   )(listingParams)

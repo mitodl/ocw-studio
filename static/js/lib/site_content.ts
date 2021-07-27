@@ -317,3 +317,17 @@ export const addDefaultFields = (
   }
   return [DEFAULT_TITLE_FIELD, ...fields]
 }
+
+export const needsContentContext = (fields: ConfigField[]): boolean => {
+  for (const field of fields) {
+    if (
+      field.widget === WidgetVariant.Relation ||
+      field.widget === WidgetVariant.Menu
+    ) {
+      return true
+    } else if (field.widget === WidgetVariant.Object) {
+      return needsContentContext(field.fields)
+    }
+  }
+  return false
+}

@@ -269,14 +269,16 @@ export const contentListingKey = (
  **/
 export const websiteContentListingRequest = (
   listingParams: ContentListingParams,
-  requestDetailedList = false
+  requestDetailedList: boolean,
+  requestContentContext: boolean
 ): QueryConfig => {
   const { name, type, offset, pageContent } = listingParams
   const url = siteApiContentListingUrl.param({ name }).query({
     offset,
     ...(type ? { type: type } : {}),
     ...(pageContent ? { page_content: pageContent } : {}),
-    ...(requestDetailedList ? { detailed_list: true } : {})
+    ...(requestDetailedList ? { detailed_list: true } : {}),
+    ...(requestContentContext ? { content_context: true } : {})
   })
   return {
     url:       url.toString(),
@@ -318,9 +320,13 @@ export const websiteContentListingRequest = (
 type WebsiteContentDetails = Record<string, WebsiteContent>
 export const websiteContentDetailRequest = (
   name: string,
-  textId: string
+  textId: string,
+  requestContentContext: boolean
 ): QueryConfig => ({
-  url:       siteApiContentDetailUrl.param({ name, textId }).toString(),
+  url: siteApiContentDetailUrl
+    .param({ name, textId })
+    .query(requestContentContext ? { content_context: true } : {})
+    .toString(),
   transform: (body: WebsiteContent) => ({
     websiteContentDetails: {
       [textId]: body

@@ -13,6 +13,7 @@ import { ContentFormType } from "../types/forms"
 
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import SiteContentEditor from "./SiteContentEditor"
+import { needsContentContext } from "../lib/site_content"
 
 export default function SingletonsContentListing(props: {
   configItem: SingletonsConfigItem
@@ -33,7 +34,11 @@ export default function SingletonsContentListing(props: {
   const [{ isPending }] = useRequest(
     content ?
       null :
-      websiteContentDetailRequest(website.name, activeFileConfigItem.name)
+      websiteContentDetailRequest(
+        website.name,
+        activeFileConfigItem.name,
+        needsContentContext(activeFileConfigItem.fields)
+      )
   )
   if (isPending) {
     return null
