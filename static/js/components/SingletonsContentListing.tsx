@@ -7,13 +7,11 @@ import Card from "./Card"
 import { useWebsite } from "../context/Website"
 
 import { websiteContentDetailRequest } from "../query-configs/websites"
-
 import { SingletonsConfigItem } from "../types/websites"
-import { ContentFormType } from "../types/forms"
-
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import SiteContentEditor from "./SiteContentEditor"
 import { needsContentContext } from "../lib/site_content"
+import { createModalState } from "../types/modal_state"
 
 export default function SingletonsContentListing(props: {
   configItem: SingletonsConfigItem
@@ -72,9 +70,10 @@ export default function SingletonsContentListing(props: {
                   content={activeTab === i ? content : null}
                   loadContent={false}
                   configItem={fileConfigItem}
-                  textId={fileConfigItem.name}
-                  formType={
-                    content ? ContentFormType.Edit : ContentFormType.Add
+                  editorState={
+                    content ?
+                      createModalState("editing", fileConfigItem.name) :
+                      createModalState("adding")
                   }
                 />
               )}

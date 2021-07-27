@@ -27,7 +27,7 @@ describe("WebsiteCollectionEditor", () => {
     hideModalStub = helper.sandbox.stub()
     render = helper.configureRenderer(WebsiteCollectionEditor, {
       hideModal:  hideModalStub,
-      modalState: createModalState("closed", null)
+      modalState: createModalState("closed")
     })
   })
 
@@ -45,7 +45,7 @@ describe("WebsiteCollectionEditor", () => {
 
     it("should pass initial values down to the form", async () => {
       const { wrapper } = await render({
-        modalState: createModalState("adding", null)
+        modalState: createModalState("adding")
       })
       expect(
         wrapper.find("WebsiteCollectionForm").prop("initialValues")
@@ -57,7 +57,7 @@ describe("WebsiteCollectionEditor", () => {
 
     it("should close the modal after saving", async () => {
       const { wrapper } = await render({
-        modalState: createModalState("adding", null)
+        modalState: createModalState("adding")
       })
       await act(async () =>
         wrapper.find("WebsiteCollectionForm").prop("onSubmit")!({
@@ -70,7 +70,7 @@ describe("WebsiteCollectionEditor", () => {
 
     it("should allow us to create a new collection", async () => {
       const { wrapper } = await render({
-        modalState: createModalState("adding", null)
+        modalState: createModalState("adding")
       })
       await act(async () =>
         wrapper.find("WebsiteCollectionForm").prop("onSubmit")!({

@@ -23,9 +23,10 @@ import {
   WebsiteContent,
   WidgetVariant,
   ConfigField,
-  EditableConfigItem
+  EditableConfigItem,
+  WebsiteContentModalState
 } from "../../types/websites"
-import { ContentFormType, SiteFormValues } from "../../types/forms"
+import { SiteFormValues } from "../../types/forms"
 import { getContentSchema } from "./validation"
 import { useWebsite } from "../../context/Website"
 
@@ -37,7 +38,7 @@ interface Props {
   fields: ConfigField[]
   configItem: EditableConfigItem
   content: WebsiteContent | null
-  formType: ContentFormType
+  editorState: WebsiteContentModalState
 }
 
 export default function SiteContentForm({
@@ -45,15 +46,15 @@ export default function SiteContentForm({
   fields,
   configItem,
   content,
-  formType
+  editorState
 }: Props): JSX.Element {
   const website = useWebsite()
   const initialValues: SiteFormValues = useMemo(
     () =>
-      formType === ContentFormType.Add ?
+      editorState.adding() ?
         newInitialValues(fields, website) :
         contentInitialValues(content as WebsiteContent, fields, website),
-    [fields, formType, content, website]
+    [fields, editorState, content, website]
   )
   const contentContext = content?.content_context ?? null
 

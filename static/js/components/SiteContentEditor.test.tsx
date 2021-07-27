@@ -1,4 +1,4 @@
-import { ContentFormType, FormSchema } from "../types/forms"
+import { FormSchema } from "../types/forms"
 import React from "react"
 import { act } from "react-dom/test-utils"
 import sinon, { SinonStub } from "sinon"
@@ -29,9 +29,11 @@ import {
   EditableConfigItem,
   Website,
   WebsiteContent,
+  WebsiteContentModalState,
   WidgetVariant
 } from "../types/websites"
 import { contentDetailKey } from "../query-configs/websites"
+import { createModalState } from "../types/modal_state"
 
 jest.mock("./forms/validation")
 
@@ -101,9 +103,9 @@ describe("SiteContent", () => {
       },
       {
         history:     { push: historyPushStub },
-        textId:      content.text_id,
         configItem:  configItem,
-        loadContent: true
+        loadContent: true,
+        editorState: createModalState("adding")
       },
       {
         entities: {
@@ -233,8 +235,6 @@ describe("SiteContent", () => {
         expAddedPayload = { text_id: configItem.name }
       }
       const { wrapper, store } = await render({
-        formType:   ContentFormType.Add,
-        textId:     null,
         configItem: configItem,
         ...successStubs
       })
@@ -291,7 +291,7 @@ describe("SiteContent", () => {
         status: 200
       })
     const { wrapper, store } = await render({
-      formType: ContentFormType.Edit,
+      editorState: createModalState("editing", content.text_id),
       ...successStubs
     })
 
@@ -334,12 +334,16 @@ describe("SiteContent", () => {
   })
 
   //
-  ;[ContentFormType.Edit, ContentFormType.Add].forEach(formType => {
-    describe(`form validation for ${formType}`, () => {
-      let url: string, method: string
+  ;["adding", "editing"].forEach(editorStateType => {
+    describe(`form validation for ${editorStateType}`, () => {
+      let url: string, method: string, editorState: WebsiteContentModalState
 
       beforeEach(() => {
-        if (formType === ContentFormType.Edit) {
+        editorState =
+          editorStateType === "editing" ?
+            createModalState("editing", content.text_id) :
+            createModalState("adding")
+        if (editorState.editing()) {
           url = siteApiContentDetailUrl
             .param({ name: website.name, textId: content.text_id })
             .toString()
@@ -357,7 +361,7 @@ describe("SiteContent", () => {
           status: 500
         })
         const { wrapper } = await render({
-          formType,
+          editorState,
           ...successStubs
         })
 
@@ -375,7 +379,7 @@ describe("SiteContent", () => {
           body:   errorMessage,
           status: 500
         })
-        const { wrapper } = await render({ formType, ...successStubs })
+        const { wrapper } = await render({ editorState, ...successStubs })
 
         const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
         await act(async () => {
@@ -420,7 +424,7 @@ describe("SiteContent", () => {
             })
 
           const { wrapper } = await render({
-            formType:    ContentFormType.Edit,
+            editorState: createModalState("editing", content.text_id),
             loadContent: loadingFlag,
             ...(hasContentProp ? { content: content } : {})
           })
@@ -438,9 +442,7 @@ describe("SiteContent", () => {
   })
 
   it("only fetches content listing and hides modal if props are passed in", async () => {
-    const { wrapper } = await render({
-      formType: ContentFormType.Add
-    })
+    const { wrapper } = await render()
 
     const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
     const values = {

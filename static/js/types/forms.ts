@@ -1,11 +1,6 @@
 import { SchemaOf } from "yup"
 import { FormikHelpers } from "formik"
 
-export enum ContentFormType {
-  Add = "add",
-  Edit = "edit"
-}
-
 export type FormSchema = SchemaOf<any>
 
 /**

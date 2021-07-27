@@ -112,7 +112,7 @@ describe("CollectionsPage", () => {
     wrapper.update()
     expect(wrapper.find("BasicModal").prop("isVisible")).toBeTruthy()
     expect(wrapper.find("WebsiteCollectionEditor").prop("modalState")).toEqual(
-      createModalState("adding", null)
+      createModalState("adding")
     )
     expect(wrapper.find("BasicModal").prop("title")).toBe("Add")
   })
@@ -127,7 +127,7 @@ describe("CollectionsPage", () => {
     })
     wrapper.update()
     expect(wrapper.find("WebsiteCollectionEditor").prop("modalState")).toEqual(
-      createModalState("closed", null)
+      createModalState("closed")
     )
     expect(helper.handleRequestStub.args).toEqual([
       [

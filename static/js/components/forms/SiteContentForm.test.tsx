@@ -25,9 +25,11 @@ import {
   EditableConfigItem,
   Website,
   WebsiteContent,
+  WebsiteContentModalState,
   WidgetVariant
 } from "../../types/websites"
-import { ContentFormType, FormSchema } from "../../types/forms"
+import { FormSchema } from "../../types/forms"
+import { createModalState } from "../../types/modal_state"
 
 jest.mock("../../lib/site_content")
 jest.mock("./validation")
@@ -64,16 +66,16 @@ describe("SiteContentForm", () => {
         configItem={configItem}
         content={content}
         onSubmit={onSubmitStub}
-        formType={ContentFormType.Add}
+        editorState={createModalState("adding")}
         {...props}
       />
     )
 
   const renderInnerForm = (
-    formType: ContentFormType,
+    editorState: WebsiteContentModalState,
     formikChildProps: { [key: string]: any } = {}
   ) => {
-    const wrapper = renderForm({ formType })
+    const wrapper = renderForm({ editorState })
     return (
       wrapper
         .find("Formik")
@@ -86,8 +88,11 @@ describe("SiteContentForm", () => {
   }
 
   //
-  ;[ContentFormType.Add, ContentFormType.Edit].forEach(formType => {
-    describe(formType, () => {
+  ;[
+    createModalState("adding") as WebsiteContentModalState,
+    createModalState("editing", "id")
+  ].forEach(editorState => {
+    describe(editorState.state, () => {
       it("renders a form", () => {
         const widget = "fakeWidgetComponent"
         // @ts-ignore
@@ -97,7 +102,7 @@ describe("SiteContentForm", () => {
         // @ts-ignore
         splitFieldsIntoColumns.mockImplementation(() => [configItem.fields])
 
-        const form = renderInnerForm(formType)
+        const form = renderInnerForm(editorState)
         let idx = 0
         for (const field of configItem.fields) {
           const fieldWrapper = form.find("SiteContentField").at(idx)
@@ -111,14 +116,14 @@ describe("SiteContentForm", () => {
 
       it("displays a status", () => {
         const status = "testing status"
-        const form = renderInnerForm(formType, { status })
+        const form = renderInnerForm(editorState, { status })
         expect(form.find(".form-error").text()).toBe(status)
       })
 
       //
       ;[true, false].forEach(isSubmitting => {
         it(`shows a button with disabled=${isSubmitting}`, () => {
-          const form = renderInnerForm(formType, { isSubmitting })
+          const form = renderInnerForm(editorState, { isSubmitting })
           expect(form.find("button[type='submit']").prop("disabled")).toBe(
             isSubmitting
           )
@@ -128,7 +133,7 @@ describe("SiteContentForm", () => {
       it("has the correct Formik props", () => {
         // @ts-ignore
         splitFieldsIntoColumns.mockImplementation(() => [])
-        const formik = renderForm({ formType }).find("Formik")
+        const formik = renderForm({ editorState }).find("Formik")
         const validationSchema = formik.prop("validationSchema")
         expect(validationSchema).toStrictEqual(mockValidationSchema)
         expect(formik.prop("enableReinitialize")).toBe(true)
@@ -141,7 +146,7 @@ describe("SiteContentForm", () => {
         fieldIsVisible.mockImplementation(() => true)
         // @ts-ignore
         splitFieldsIntoColumns.mockImplementation(() => [configItem.fields])
-        const wrapper = renderInnerForm(formType)
+        const wrapper = renderInnerForm(editorState)
         const objectWrapper = wrapper.find("ObjectField")
         expect(objectWrapper.exists()).toBeTruthy()
         expect(objectWrapper.prop("field")).toEqual(field)
@@ -157,9 +162,9 @@ describe("SiteContentForm", () => {
         newInitialValues.mockReturnValue(newData)
         // @ts-ignore
         contentInitialValues.mockReturnValue(oldData)
-        const wrapper = renderForm({ formType })
+        const wrapper = renderForm({ editorState })
         const initialValues = wrapper.find("Formik").prop("initialValues")
-        if (formType === ContentFormType.Add) {
+        if (editorState.adding()) {
           expect(initialValues).toBe(newData)
           expect(newInitialValues).toBeCalledWith(configItem.fields, website)
         } else {

@@ -25,7 +25,7 @@ import {
   WebsiteContent
 } from "../types/websites"
 import sinon, { SinonStub } from "sinon"
-import { ContentFormType } from "../types/forms"
+import { createModalState } from "../types/modal_state"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -209,8 +209,7 @@ describe("SingletonsContentListing", () => {
       content:     content,
       loadContent: false,
       configItem:  singletonConfigItems[0],
-      textId:      singletonConfigItems[0].name,
-      formType:    ContentFormType.Edit
+      editorState: createModalState("editing", singletonConfigItems[0].name)
     })
   })
 })

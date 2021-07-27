@@ -25,9 +25,10 @@ import { getWebsiteContentListingCursor } from "../selectors/websites"
 import {
   ContentListingParams,
   RepeatableConfigItem,
-  WebsiteContentListItem
+  WebsiteContentListItem,
+  WebsiteContentModalState
 } from "../types/websites"
-import { ContentFormType } from "../types/forms"
+import { createModalState } from "../types/modal_state"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -52,13 +53,13 @@ export default function RepeatableContentListing(props: {
     getWebsiteContentListingCursor
   )(listingParams)
 
-  const [panelState, setPanelState] = useState<{
-    textId: string | null
-    formType: ContentFormType | null
-  }>({ textId: null, formType: null })
-  const closeContentPanel = useCallback(() => {
-    setPanelState({ textId: null, formType: null })
-  }, [setPanelState])
+  const [drawerState, setDrawerState] = useState<WebsiteContentModalState>(
+    createModalState("closed")
+  )
+
+  const closeContentDrawer = useCallback(() => {
+    setDrawerState(createModalState("closed"))
+  }, [setDrawerState])
 
   if (contentListingPending) {
     return <div className="site-page container">Loading...</div>
@@ -71,18 +72,18 @@ export default function RepeatableContentListing(props: {
     event: ReactMouseEvent<HTMLLIElement | HTMLAnchorElement, MouseEvent>
   ) => {
     event.preventDefault()
-    setPanelState({
-      textId,
-      formType: textId ? ContentFormType.Edit : ContentFormType.Add
-    })
+
+    setDrawerState(
+      textId ? createModalState("editing", textId) : createModalState("adding")
+    )
   }
 
   const labelSingular = configItem.label_singular ?? configItem.label
-  const modalTitle =
-    panelState.formType &&
-    `${
-      panelState.formType === ContentFormType.Edit ? "Edit" : "Add"
-    } ${labelSingular}`
+
+  const modalTitle = `${
+    drawerState.editing() ? "Edit" : "Add"
+  } ${labelSingular}`
+
   const modalClassName = `right ${
     splitFieldsIntoColumns(configItem.fields).length > 1 ? "wide" : ""
   }`
@@ -90,24 +91,23 @@ export default function RepeatableContentListing(props: {
   return (
     <>
       <BasicModal
-        isVisible={!!panelState.formType}
-        hideModal={closeContentPanel}
+        isVisible={drawerState.open()}
+        hideModal={closeContentDrawer}
         title={modalTitle}
         className={modalClassName}
       >
         {modalProps =>
-          panelState.formType && (
+          drawerState.open() ? (
             <div className="m-3">
               <SiteContentEditor
                 loadContent={true}
                 configItem={configItem}
-                textId={panelState.textId}
-                formType={panelState.formType}
+                editorState={drawerState}
                 hideModal={modalProps.hideModal}
                 fetchWebsiteContentListing={fetchWebsiteContentListing}
               />
             </div>
-          )
+          ) : null
         }
       </BasicModal>
       <div>

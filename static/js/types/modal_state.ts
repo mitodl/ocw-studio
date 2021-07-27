@@ -28,6 +28,14 @@ abstract class ModalStateVariant<T> {
   closed(): this is Closed<T> {
     return this.state === "closed"
   }
+
+  /**
+   * Check whether the modal state is in either of the two possible
+   * open states.
+   */
+  open(): this is Adding<T> | Editing<T> {
+    return this.editing() || this.adding()
+  }
 }
 
 /**
@@ -78,13 +86,10 @@ export type ModalState<T> = Editing<T> | Adding<T> | Closed<T>
  * (these are used by the WebsiteCollection editing/
  * creation UI to represent possible drawer states).
  */
-export function createModalState<T>(state: "adding", wrapped: null): Adding<T>
-export function createModalState<T>(state: "closed", wrapped: null): Closed<T>
+export function createModalState<T>(state: "adding"): Adding<T>
+export function createModalState<T>(state: "closed"): Closed<T>
 export function createModalState<T>(state: "editing", wrapped: T): Editing<T>
-export function createModalState<T>(
-  state: string,
-  wrapped: T | null
-): ModalState<T> {
+export function createModalState<T>(state: string, wrapped?: T): ModalState<T> {
   if (state === "editing") {
     // the overloading gives us some assurance that we can cast
     // wrapped to T here

@@ -27,7 +27,7 @@ export default function WebsiteCollectionsPage(): JSX.Element {
   const offset = Number(new URLSearchParams(search).get("offset") ?? 0)
 
   const [modalState, setModalState] = useState<WebsiteCollectionModalState>(
-    createModalState("closed", null)
+    createModalState("closed")
   )
 
   const [, refresh] = useRequest(websiteCollectionListRequest(offset))
@@ -42,11 +42,11 @@ export default function WebsiteCollectionsPage(): JSX.Element {
 
   const closeDrawer = useCallback(() => {
     refresh()
-    setModalState(createModalState("closed", null))
+    setModalState(createModalState("closed"))
   }, [setModalState, refresh])
 
   const startAddingCollection = useCallback(() => {
-    setModalState(createModalState("adding", null))
+    setModalState(createModalState("adding"))
   }, [setModalState])
 
   const startEditingCollection = useCallback(

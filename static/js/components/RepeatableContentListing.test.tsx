@@ -32,6 +32,7 @@ import {
   WebsiteContentListItem
 } from "../types/websites"
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
+import { createModalState } from "../types/modal_state"
 
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
@@ -144,7 +145,9 @@ describe("RepeatableContentListing", () => {
     wrapper.update()
     const editorModal = wrapper.find("BasicModal")
     const siteContentEditor = editorModal.find("SiteContentEditor")
-    expect(siteContentEditor.prop("textId")).toBeNull()
+    expect(siteContentEditor.prop("editorState")).toEqual(
+      createModalState("adding")
+    )
     expect(editorModal.prop("isVisible")).toBe(true)
 
     act(() => {
@@ -186,7 +189,9 @@ describe("RepeatableContentListing", () => {
       wrapper.update()
       const editorModal = wrapper.find("BasicModal")
       const siteContentEditor = editorModal.find("SiteContentEditor")
-      expect(siteContentEditor.prop("textId")).toBe(item.text_id)
+      expect(siteContentEditor.prop("editorState")).toEqual(
+        createModalState("editing", item.text_id)
+      )
       expect(editorModal.prop("isVisible")).toBe(true)
 
       act(() => {
@@ -199,6 +204,8 @@ describe("RepeatableContentListing", () => {
       idx++
     }
   })
+
+  //
   ;[true, false].forEach(hasPrevLink => {
     [true, false].forEach(hasNextLink => {
       it(`shows the right links when there ${isIf(

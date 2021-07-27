@@ -25,45 +25,46 @@ import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import {
   ConfigField,
   EditableConfigItem,
+  WebsiteContentModalState,
   WebsiteContent
 } from "../types/websites"
-import { ContentFormType, SiteFormValues } from "../types/forms"
+import { SiteFormValues } from "../types/forms"
 
 interface Props {
   content?: WebsiteContent | null
   loadContent: boolean
-  textId: string | null
   configItem: EditableConfigItem
-  formType: ContentFormType
   hideModal?: () => void
   fetchWebsiteContentListing?: () => void
+  editorState: WebsiteContentModalState
 }
 
 export default function SiteContentEditor(props: Props): JSX.Element | null {
   const {
     hideModal,
     configItem,
-    textId,
     loadContent,
-    formType,
-    fetchWebsiteContentListing
+    fetchWebsiteContentListing,
+    editorState
   } = props
 
   const fields: ConfigField[] = useMemo(() => addDefaultFields(configItem), [
     configItem
   ])
   const site = useWebsite()
+
   const [
     { isPending: addIsPending },
     addWebsiteContent
   ] = useMutation((payload: NewWebsiteContentPayload) =>
     createWebsiteContentMutation(site.name, payload)
   )
+
   const [
     { isPending: editIsPending },
     editWebsiteContent
-  ] = useMutation((payload: EditWebsiteContentPayload | FormData) =>
-    editWebsiteContentMutation({ name: site.name, textId: textId! }, payload)
+  ] = useMutation((payload: EditWebsiteContentPayload | FormData, id: string) =>
+    editWebsiteContentMutation({ name: site.name, textId: id }, payload)
   )
 
   let isPending = false,
@@ -72,12 +73,12 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     content = props.content
   }
 
-  const shouldLoadContent = !props.content && loadContent && textId
+  const shouldLoadContent = !props.content && loadContent
 
   const queryTuple = useRequest(
-    shouldLoadContent ?
+    shouldLoadContent && editorState.editing() ?
       websiteContentDetailRequest(
-        { name: site.name, textId: textId as string },
+        { name: site.name, textId: editorState.wrapped },
         needsContentContext(fields)
       ) :
       null
@@ -86,15 +87,16 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     getWebsiteContentDetailCursor
   )
 
-  if (shouldLoadContent) {
+  if (shouldLoadContent && editorState.editing()) {
     isPending = queryTuple[0].isPending
+
     content = websiteContentDetailSelector({
       name:   site.name,
-      textId: textId as string
+      textId: editorState.wrapped
     })
   }
 
-  if (isPending || (formType === ContentFormType.Edit && !content)) {
+  if (isPending || (editorState.editing() && !content)) {
     return null
   }
 
@@ -105,24 +107,20 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     if (addIsPending || editIsPending) {
       return
     }
-    if (formType === ContentFormType.Add) {
+    if (editorState.adding()) {
       values = { type: configItem.name, ...values }
     }
     const payload = contentFormValuesToPayload(values, fields, site)
 
     // If the content being created is for a singleton config item,
     // use the config item "name" value as the text_id.
-    if (
-      formType === ContentFormType.Add &&
-      isSingletonCollectionItem(configItem)
-    ) {
+    if (editorState.adding() && isSingletonCollectionItem(configItem)) {
       payload["text_id"] = configItem.name
     }
 
-    const response =
-      formType === ContentFormType.Edit ?
-        await editWebsiteContent(payload) :
-        await addWebsiteContent(payload as NewWebsiteContentPayload)
+    const response = editorState.editing() ?
+      await editWebsiteContent(payload, editorState.wrapped) :
+      await addWebsiteContent(payload as NewWebsiteContentPayload)
 
     if (!response) {
       return
@@ -160,7 +158,7 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
       fields={fields}
       configItem={configItem}
       content={content}
-      formType={formType}
+      editorState={editorState}
     />
   )
 }
