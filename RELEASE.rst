@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.20.0
+Version 0.20.0 (Released July 27, 2021)
 --------------
 
 - Fix version/bucket mismatch in pipeline configuration (#417)
