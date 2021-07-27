@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from "react"
 import { Form, Formik, Field, FormikHelpers, FormikProps } from "formik"
+import { uniqBy } from "ramda"
 
 import SelectField, { Option } from "../widgets/SelectField"
 import { WCItemCreateFormFields } from "../../types/forms"
@@ -35,7 +36,9 @@ export default function WebsiteCollectionItemForm(props: Props): JSX.Element {
       const json: WebsiteListingResponse = await response.json()
       const { results } = json
       const options = formatOptions(results)
-      setOptions(current => [...current, ...options])
+      setOptions(current =>
+        uniqBy(option => option.value, [...current, ...options])
+      )
       callback(options)
     },
     [setOptions]

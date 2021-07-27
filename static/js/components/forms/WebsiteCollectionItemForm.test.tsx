@@ -77,38 +77,54 @@ describe("WebsiteCollectionItemForm", () => {
   })
 
   it("should pass loadOptions function down to SelectField", async () => {
-    const cb = helper.sandbox.stub()
+    const cb = jest.fn()
 
-    const websites = makeWebsiteListing()
-    const options = websites.map((website: Website) => ({
+    const asOption = (website: Website) => ({
       label: website.title,
       value: website.uuid
-    }))
+    })
+    // add one duplicate value to at the end of websites2 to verify it gets removed
+    const websites1 = makeWebsiteListing(),
+      websites2 = [...makeWebsiteListing(), websites1[0]]
+    const options1 = websites1.map(asOption),
+      options2 = websites2.map(asOption)
+    const expectedCombinedOptions = [
+      ...options1,
+      ...options2.slice(0, options2.length - 1)
+    ]
 
+    const mockFetch = jest.fn()
     // @ts-ignore
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        json: () => Promise.resolve({ results: websites })
-      })
-    )
+    global.fetch = mockFetch
+    mockFetch.mockResolvedValueOnce({
+      json: () => Promise.resolve({ results: websites1 })
+    })
+    mockFetch.mockResolvedValueOnce({
+      json: () => Promise.resolve({ results: websites2 })
+    })
 
     const { wrapper } = await render()
     await act(async () => {
       // @ts-ignore
-      await wrapper.find("Field").prop("loadOptions")("searchstring", cb)
+      await wrapper.find("Field").prop("loadOptions")("searchstring1", cb)
+      // @ts-ignore
+      await wrapper.find("Field").prop("loadOptions")("searchstring2", cb)
     })
     wrapper.update()
 
-    expect(cb.args[0][0]).toEqual(options)
-    expect(wrapper.find("SelectField").prop("options")).toEqual(options)
-    expect(
-      // @ts-ignore
-      global.fetch.mock.calls[0]
-    ).toEqual([
-      siteApiListingUrl
-        .query({ offset: 0 })
-        .param({ search: "searchstring" })
-        .toString()
-    ])
+    expect(cb).toBeCalledTimes(2)
+    expect(cb).toHaveBeenNthCalledWith(1, options1)
+    expect(cb).toHaveBeenNthCalledWith(2, options2)
+    expect(wrapper.find("SelectField").prop("options")).toEqual(
+      expectedCombinedOptions
+    )
+    for (const search of ["searchstring1", "searchstring2"]) {
+      expect(mockFetch).toBeCalledWith(
+        siteApiListingUrl
+          .query({ offset: 0 })
+          .param({ search: search })
+          .toString()
+      )
+    }
   })
 })
