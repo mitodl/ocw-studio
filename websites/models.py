@@ -129,7 +129,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     text_id = models.CharField(
         max_length=36, null=False, blank=False, default=uuid_string, db_index=True
     )
-    title = models.CharField(max_length=512, null=True, blank=True)
+    title = models.CharField(max_length=512, null=True, blank=True, db_index=True)
     type = models.CharField(max_length=24, blank=False, null=False)
     parent = models.ForeignKey(
         "self", null=True, blank=True, related_name="contents", on_delete=models.CASCADE
