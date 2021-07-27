@@ -136,10 +136,10 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
 
         for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
             if branch == settings.GIT_BRANCH_PREVIEW:
-                version = self.VERSION_LIVE
+                version = self.VERSION_DRAFT
                 destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
             else:
-                version = self.VERSION_DRAFT
+                version = self.VERSION_LIVE
                 destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
 
             with open(

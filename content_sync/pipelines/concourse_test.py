@@ -5,6 +5,7 @@ import pytest
 from django.core.exceptions import ImproperlyConfigured
 from requests import HTTPError
 
+from content_sync.pipelines.base import BaseSyncPipeline
 from content_sync.pipelines.concourse import ConcourseApi, ConcourseGithubPipeline
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
@@ -87,7 +88,9 @@ def test_upsert_website_pipeline_missing_settings(settings):
         ConcourseGithubPipeline(website)
 
 
-@pytest.mark.parametrize("version", ["live", "draft"])
+@pytest.mark.parametrize(
+    "version", [BaseSyncPipeline.VERSION_LIVE, BaseSyncPipeline.VERSION_DRAFT]
+)
 @pytest.mark.parametrize("home_page", [True, False])
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 def test_upsert_website_pipelines(
@@ -133,31 +136,33 @@ def test_upsert_website_pipelines(
         data=mocker.ANY,
         headers=({"X-Concourse-Config-Version": "3"} if pipeline_exists else None),
     )
-    _, kwargs = mock_put_headers.call_args_list[0]
+    if version == BaseSyncPipeline.VERSION_DRAFT:
+        _, kwargs = mock_put_headers.call_args_list[0]
+        bucket = settings.AWS_PREVIEW_BUCKET_NAME
+    else:
+        _, kwargs = mock_put_headers.call_args_list[1]
+        bucket = settings.AWS_PUBLISH_BUCKET_NAME
 
     config_str = json.dumps(kwargs)
 
     assert f"{hugo_projects_path}.git" in config_str
     if home_page:
         assert (
-            f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/{website.name} s3://{settings.AWS_PREVIEW_BUCKET_NAME}/{website.name}"
+            f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/{website.name} s3://{bucket}/{website.name}"
             in config_str
         )
 
-        assert (
-            f"aws s3 sync course-markdown/public s3://{settings.AWS_PREVIEW_BUCKET_NAME}/\\\\n"
-            in config_str
-        )
+        assert f"aws s3 sync course-markdown/public s3://{bucket}/\\\\n" in config_str
 
         assert "purge_all" in config_str
     else:
         assert (
-            f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/courses/{website.name} s3://{settings.AWS_PREVIEW_BUCKET_NAME}/courses/{website.name}"
+            f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/courses/{website.name} s3://{bucket}/courses/{website.name}"
             in config_str
         )
 
         assert (
-            f"aws s3 sync course-markdown/public s3://{settings.AWS_PREVIEW_BUCKET_NAME}/courses/{website.name}\\\\n"
+            f"aws s3 sync course-markdown/public s3://{bucket}/courses/{website.name}\\\\n"
             in config_str
         )
 
