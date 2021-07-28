@@ -5,10 +5,16 @@ import { makeWebsiteListing } from "../../util/factories/websites"
 import { makeWebsiteCollection } from "../../util/factories/website_collections"
 import { Website } from "../../types/websites"
 import { siteApiListingUrl, wcItemsApiUrl } from "../../lib/urls"
+import { debouncedFetch } from "../../lib/api/util"
 import { WebsiteCollection } from "../../types/website_collections"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../../util/integration_test_helper"
+
+jest.mock("../../lib/api/util", () => ({
+  ...jest.requireActual("../../lib/api/util"),
+  debouncedFetch: jest.fn()
+}))
 
 describe("WebsiteCollectionItemForm", () => {
   let helper: IntegrationTestHelper,
@@ -93,18 +99,22 @@ describe("WebsiteCollectionItemForm", () => {
       ...options2.slice(0, options2.length - 1)
     ]
 
-    const mockFetch = jest.fn()
+    // null for a fetch which was not made because there was another later one scheduled
     // @ts-ignore
-    global.fetch = mockFetch
-    mockFetch.mockResolvedValueOnce({
+    debouncedFetch.mockResolvedValueOnce(null)
+    // @ts-ignore
+    debouncedFetch.mockResolvedValueOnce({
       json: () => Promise.resolve({ results: websites1 })
     })
-    mockFetch.mockResolvedValueOnce({
+    // @ts-ignore
+    debouncedFetch.mockResolvedValueOnce({
       json: () => Promise.resolve({ results: websites2 })
     })
 
     const { wrapper } = await render()
     await act(async () => {
+      // @ts-ignore
+      await wrapper.find("Field").prop("loadOptions")("sear", cb)
       // @ts-ignore
       await wrapper.find("Field").prop("loadOptions")("searchstring1", cb)
       // @ts-ignore
@@ -119,11 +129,14 @@ describe("WebsiteCollectionItemForm", () => {
       expectedCombinedOptions
     )
     for (const search of ["searchstring1", "searchstring2"]) {
-      expect(mockFetch).toBeCalledWith(
+      expect(debouncedFetch).toBeCalledWith(
+        "website-collection",
+        300,
         siteApiListingUrl
           .query({ offset: 0 })
           .param({ search: search })
-          .toString()
+          .toString(),
+        { credentials: "include" }
       )
     }
   })
