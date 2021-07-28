@@ -38,7 +38,7 @@ collections:
     label: Menu
     category: Settings
     files:
-      - file: config/menu-sidenav.yml
+      - file: config/_default/menus.yaml
         name: navmenu
         label: Navigation Menu
         fields:

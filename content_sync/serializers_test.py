@@ -64,18 +64,7 @@ description: '**This** is the description'
 title: Content Title
 """
 
-EXAMPLE_MENU_DATA = [
-    {"name": "Page 1", "weight": 0, "identifier": EXAMPLE_UUIDS[0]},
-    {
-        "name": "Ext Link",
-        "weight": 10,
-        "identifier": "external-12345",
-        "url": "http://example.com",
-    },
-]
-
-EXAMPLE_MENU_FILE_YAML = f"""menu:
-  mainmenu:
+EXAMPLE_MENU_FILE_YAML = f"""mainmenu:
   - identifier: {EXAMPLE_UUIDS[0]}
     name: Page 1
     weight: 0
@@ -85,6 +74,19 @@ EXAMPLE_MENU_FILE_YAML = f"""menu:
     weight: 10
     url: http://example.com
 """
+
+
+def get_example_menu_data():
+    """Returns example menu data"""
+    return [
+        {"name": "Page 1", "weight": 0, "identifier": EXAMPLE_UUIDS[0]},
+        {
+            "name": "Ext Link",
+            "weight": 10,
+            "identifier": "external-12345",
+            "url": "http://example.com",
+        },
+    ]
 
 
 @pytest.mark.django_db
@@ -179,21 +181,19 @@ def test_hugo_menu_yaml_serialize(omnibus_config):
         dirpath="path/to",
         filename="myfile",
     )
+    example_menu_data = get_example_menu_data()
     content = WebsiteContentFactory.build(
         is_page_content=False,
         type=nav_menu_config_item.name,
-        metadata={"mainmenu": EXAMPLE_MENU_DATA, "otherfield": "othervalue"},
+        metadata={"mainmenu": example_menu_data},
     )
     serialized_data = HugoMenuYamlFileSerializer(omnibus_config).serialize(content)
     parsed_serialized_data = yaml.load(serialized_data, Loader=yaml.Loader)
     assert parsed_serialized_data == {
-        "menu": {
-            "mainmenu": [
-                {**EXAMPLE_MENU_DATA[0], "url": "path/to/myfile.md"},
-                EXAMPLE_MENU_DATA[1],
-            ]
-        },
-        "otherfield": "othervalue",
+        "mainmenu": [
+            {**example_menu_data[0], "url": "path/to/myfile.md"},
+            example_menu_data[1],
+        ],
         "title": content.title,
     }
 
@@ -209,14 +209,10 @@ def test_hugo_menu_yaml_deserialize(omnibus_config):
     website_content = serializer.deserialize(
         website=website,
         filepath=filepath,
-        file_contents=f"{EXAMPLE_MENU_FILE_YAML}otherfield: othervalue",
+        file_contents=EXAMPLE_MENU_FILE_YAML,
     )
     assert website_content.metadata == {
-        "mainmenu": [
-            {**EXAMPLE_MENU_DATA[0], "url": "content/page-1.md"},
-            EXAMPLE_MENU_DATA[1],
-        ],
-        "otherfield": "othervalue",
+        "mainmenu": get_example_menu_data(),
     }
 
 

@@ -67,7 +67,7 @@
               "widget": "menu"
             }
           ],
-          "file": "config/menu-sidenav.yml",
+          "file": "config/_default/menus.yaml",
           "label": "Navigation Menu",
           "name": "navmenu"
         }

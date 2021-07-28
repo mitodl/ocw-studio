@@ -1,10 +1,11 @@
 """Site config validation functionality to supplement the features that the schema gives us"""
 from collections import defaultdict
 
-from mitol.common.utils import first_or_none
+from mitol.common.utils import first_or_none, partition_to_lists
 from yamale import YamaleError
 from yamale.schema.validationresults import ValidationResult
 
+from websites.constants import CONTENT_MENU_FIELD
 from websites.site_config_api import SiteConfig
 
 
@@ -143,6 +144,41 @@ class RequiredTitleRule(AddedSchemaRule):
                         [
                             f"{' ' * 8}'{name}' ({path})"
                             for name, path in faulty_paths.items()
+                        ]
+                    ),
+                )
+            ]
+        return []
+
+
+class MenuOnlyRule(AddedSchemaRule):
+    """
+    Ensures that a config item with a "menu" field has no other field types besides "menu"
+    """
+
+    @staticmethod
+    def apply_rule(data):
+        faulty_path_tuples = {}
+        site_config = SiteConfig(data)
+        for _, config_item in enumerate(site_config.iter_items()):
+            non_menu_fields, menu_fields = partition_to_lists(
+                config_item.fields,
+                predicate=lambda field: field["widget"] == CONTENT_MENU_FIELD,
+            )
+            if not menu_fields:
+                continue
+            if non_menu_fields:
+                faulty_path_tuples[config_item.name] = (
+                    config_item.path,
+                    ", ".join([field["widget"] for field in non_menu_fields]),
+                )
+        if faulty_path_tuples:
+            return [
+                "Config with 'menu' fields must not have any fields with other widget types.\n{}".format(
+                    "\n".join(
+                        [
+                            f"{' ' * 8}'{name}' ({path_fields_tuple[0]}) – widgets: {path_fields_tuple[1]}"
+                            for name, path_fields_tuple in faulty_path_tuples.items()
                         ]
                     ),
                 )
