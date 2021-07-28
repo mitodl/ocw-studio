@@ -11,12 +11,10 @@ import {
   RelationFilterVariant,
   WebsiteContent
 } from "../../types/websites"
-import { SiteFormValue } from "../../types/forms"
-import { XOR } from "../../types/util"
 import { siteApiContentListingUrl } from "../../lib/urls"
 import { PaginatedResponse } from "../../query-configs/utils"
 
-type BaseProps = {
+type Props = {
   name: string
   collection?: string | string[]
   display_field: string // eslint-disable-line camelcase
@@ -28,17 +26,6 @@ type BaseProps = {
   contentContext: WebsiteContent[] | null
   onChange: (event: any) => void
 }
-
-/* NOTE: Either setFieldValue or onChange should be passed in, not both.
- * setFieldValue is passed in under normal circumstances when this widget is being used for some field described
- * in the site config.
- * onChange can be passed in when this widget is needed in a different context and the change behavior needs to be
- * customized.
- */
-type NormalWidgetProps = BaseProps & {
-  setFieldValue: (key: string, value: SiteFormValue) => void
-}
-type CustomProps = BaseProps & { onChange: (event: any) => void }
 
 const filterContent = curry((filter: RelationFilter, entry: WebsiteContent) => {
   if (!filter) {
@@ -52,9 +39,7 @@ const filterContent = curry((filter: RelationFilter, entry: WebsiteContent) => {
   return entry
 })
 
-export default function RelationField(
-  props: XOR<NormalWidgetProps, CustomProps>
-): JSX.Element {
+export default function RelationField(props: Props): JSX.Element {
   const {
     collection,
     contentContext,
