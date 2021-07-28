@@ -51,7 +51,7 @@ def test_import_ocw2hugo_course_content(settings):
         WebsiteContent.objects.filter(
             website=website, type=CONTENT_TYPE_RESOURCE
         ).count()
-        == 65
+        == 3
     )
 
     home_page = WebsiteContent.objects.get(
