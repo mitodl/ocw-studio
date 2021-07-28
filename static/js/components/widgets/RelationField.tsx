@@ -121,20 +121,13 @@ export default function RelationField(
     return newContentListing
   }
 
-  const fetchOptions = async (
-    search: string | null,
-    debounce: boolean,
-    withTextIds: boolean
-  ) => {
-    const textIds =
-      value && withTextIds ? (Array.isArray(value) ? value : [value]) : []
+  const fetchOptions = async (search: string | null, debounce: boolean) => {
     const params = collection ? { type: collection } : { page_content: true }
     const url = siteApiContentListingUrl
       .query({
         detailed_list:   true,
         content_context: true,
         ...(search ? { search: search } : {}),
-        ...(textIds.length ? { text_id: textIds, limit: textIds.length } : {}),
         ...params
       })
       .param({ name: websiteName })
@@ -156,7 +149,7 @@ export default function RelationField(
   }
 
   const loadOptions = async (inputValue: string) => {
-    const newOptions = await fetchOptions(inputValue, true, false)
+    const newOptions = await fetchOptions(inputValue, true)
     if (newOptions) {
       setOptions(oldOptions => uniqBy([...oldOptions, ...newOptions], "value"))
     }
@@ -164,19 +157,16 @@ export default function RelationField(
   }
 
   useEffect(() => {
-    // trigger an initial fetch with the text_ids of the value so we can look up the titles for each item
-    // then trigger a second fetch to get default options for the user to view when they open the dropdown
+    // trigger a fetch to get default options for the user to view when they open the dropdown
     let mounted = true
     const doFetch = async () => {
-      const newOptions = contentContext ?
-        [] :
-        await fetchOptions(null, false, true)
-      const defaultOptions = await fetchOptions(null, false, false)
+      const defaultOptions = await fetchOptions(null, false)
 
-      // Just making typescript happy. newOptions and defaultOptions should always be true here since debounce=false
-      if (mounted && newOptions && defaultOptions) {
+      // working around a warning where a setter was used after unmounting
+      // defaultOptions should always be true here since fetchOptions will only ever return null if debounce=true
+      if (mounted && defaultOptions) {
         setOptions(oldOptions =>
-          uniqBy([...oldOptions, ...defaultOptions, ...newOptions], "value")
+          uniqBy([...oldOptions, ...defaultOptions], "value")
         )
         setDefaultOptions(() => defaultOptions)
       }

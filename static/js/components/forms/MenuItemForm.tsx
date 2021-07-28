@@ -6,7 +6,7 @@ import { InternalSortableMenuItem } from "../widgets/MenuField"
 import RelationField from "../widgets/RelationField"
 import { FormError } from "./FormError"
 
-import { LinkType } from "../../types/websites"
+import { LinkType, WebsiteContent } from "../../types/websites"
 
 interface Props {
   onSubmit: (
@@ -16,6 +16,7 @@ interface Props {
   activeItem: InternalSortableMenuItem | null
   collections?: string[]
   existingMenuIds?: Set<string>
+  contentContext: WebsiteContent[] | null
 }
 
 export type MenuItemFormValues = {
@@ -59,7 +60,8 @@ export default function MenuItemForm({
   onSubmit,
   activeItem,
   collections,
-  existingMenuIds
+  existingMenuIds,
+  contentContext
 }: Props): JSX.Element {
   const initialValues = useMemo(
     () =>
@@ -141,7 +143,7 @@ export default function MenuItemForm({
                     }}
                     value={values.internalLink}
                     valuesToOmit={existingMenuIds}
-                    contentContext={null}
+                    contentContext={contentContext}
                   />
                   <ErrorMessage name="internalLink" component={FormError} />
                 </>

@@ -451,16 +451,12 @@ def test_website_starters_site_configs_exception(mocker, drf_client):
 
 @pytest.mark.parametrize("detailed_list", [True, False])
 @pytest.mark.parametrize(
-    "filter_type, search, has_text_id, expected_num_results",
+    "filter_type, search, expected_num_results",
     [
-        ["page", "text3", True, 0],
-        ["page", "text3", False, 1],
-        ["page", "", True, 2],
-        ["page", "", False, 5],
-        ["", "text3", True, 0],
-        ["", "text3", False, 1],
-        ["", "", True, 2],
-        ["", "", False, 6],
+        ["page", "text3", 1],
+        ["page", "", 5],
+        ["", "text3", 1],
+        ["", "", 6],
     ],
 )
 def test_websites_content_list(
@@ -468,7 +464,6 @@ def test_websites_content_list(
     filter_type,
     search,
     detailed_list,
-    has_text_id,
     global_admin_user,
     expected_num_results,
 ):
@@ -496,9 +491,6 @@ def test_websites_content_list(
         query_params["type"] = filter_type
     if detailed_list:
         query_params["detailed_list"] = detailed_list
-    if has_text_id:
-        query_params["text_id[0]"] = contents[0].text_id
-        query_params["text_id[1]"] = contents[1].text_id
     if search:
         query_params["search"] = search
 
@@ -515,12 +507,6 @@ def test_websites_content_list(
     assert resp.data["count"] == expected_num_results
     assert len(results) == expected_num_results
 
-    if has_text_id:
-        contents = [
-            content
-            for content in contents
-            if content.text_id in (contents[0].text_id, contents[1].text_id)
-        ]
     if search:
         contents = [content for content in contents if search in content.title.lower()]
     for idx, content in enumerate(
