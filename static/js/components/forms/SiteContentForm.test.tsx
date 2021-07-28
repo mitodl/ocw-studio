@@ -36,7 +36,6 @@ jest.mock("../../context/Website")
 describe("SiteContentForm", () => {
   let sandbox: SinonSandbox,
     onSubmitStub: SinonStub,
-    setFieldValueStub: SinonStub,
     configItem: EditableConfigItem,
     content: WebsiteContent,
     mockValidationSchema: FormSchema,
@@ -44,7 +43,6 @@ describe("SiteContentForm", () => {
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-    setFieldValueStub = sinon.stub()
     content = makeWebsiteContentDetail()
     content.content_context = times(() => makeWebsiteContentDetail(), 3)
     configItem = makeEditableConfigItem(content.type)
@@ -99,14 +97,11 @@ describe("SiteContentForm", () => {
         // @ts-ignore
         splitFieldsIntoColumns.mockImplementation(() => [configItem.fields])
 
-        const form = renderInnerForm(formType, {
-          setFieldValue: setFieldValueStub
-        })
+        const form = renderInnerForm(formType)
         let idx = 0
         for (const field of configItem.fields) {
           const fieldWrapper = form.find("SiteContentField").at(idx)
           expect(fieldWrapper.prop("field")).toBe(field)
-          expect(fieldWrapper.prop("setFieldValue")).toBe(setFieldValueStub)
           expect(fieldWrapper.prop("contentContext")).toBe(
             content.content_context
           )
@@ -146,13 +141,10 @@ describe("SiteContentForm", () => {
         fieldIsVisible.mockImplementation(() => true)
         // @ts-ignore
         splitFieldsIntoColumns.mockImplementation(() => [configItem.fields])
-        const wrapper = renderInnerForm(formType, {
-          setFieldValue: setFieldValueStub
-        })
+        const wrapper = renderInnerForm(formType)
         const objectWrapper = wrapper.find("ObjectField")
         expect(objectWrapper.exists()).toBeTruthy()
         expect(objectWrapper.prop("field")).toEqual(field)
-        expect(objectWrapper.prop("setFieldValue")).toBe(setFieldValueStub)
         expect(objectWrapper.prop("contentContext")).toBe(
           content.content_context
         )

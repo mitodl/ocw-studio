@@ -14,14 +14,9 @@ import {
 } from "../../types/websites"
 
 describe("ObjectField", () => {
-  let setFieldValueStub: any,
-    render: any,
-    field: ObjectConfigField,
-    contentContext: WebsiteContent[]
+  let render: any, field: ObjectConfigField, contentContext: WebsiteContent[]
 
   beforeEach(() => {
-    setFieldValueStub = jest.fn()
-
     field = makeWebsiteConfigField({
       widget: WidgetVariant.Object,
       label:  "myobject",
@@ -43,19 +38,13 @@ describe("ObjectField", () => {
 
     render = (props = {}) =>
       shallow(
-        <ObjectField
-          setFieldValue={setFieldValueStub}
-          field={field}
-          contentContext={contentContext}
-          {...props}
-        />
+        <ObjectField field={field} contentContext={contentContext} {...props} />
       )
   })
 
   it("should render an Object field, by passing sub-fields to SiteContentField", () => {
     const wrapper = render()
     wrapper.find("SiteContentField").forEach((field: any) => {
-      expect(field.prop("setFieldValue")).toEqual(setFieldValueStub)
       expect(field.prop("contentContext")).toStrictEqual(contentContext)
     })
     expect(

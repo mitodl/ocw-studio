@@ -81,7 +81,7 @@ export default function SiteContentForm({
       initialValues={initialValues}
       enableReinitialize={true}
     >
-      {({ isSubmitting, status, setFieldValue, values }) => (
+      {({ isSubmitting, status, values }) => (
         <Form className="row">
           {fieldsByColumn.map((columnFields, idx) => (
             <div className={columnClass} key={idx}>
@@ -92,14 +92,12 @@ export default function SiteContentForm({
                     <ObjectField
                       field={field}
                       key={field.name}
-                      setFieldValue={setFieldValue}
                       contentContext={contentContext}
                     />
                   ) : (
                     <SiteContentField
                       field={field}
                       key={field.name}
-                      setFieldValue={setFieldValue}
                       contentContext={contentContext}
                     />
                   )

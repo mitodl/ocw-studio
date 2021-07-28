@@ -10,7 +10,6 @@ import {
 
 interface Props {
   field: ObjectConfigField
-  setFieldValue: (key: string, value: File | null) => void
   contentContext: WebsiteContent[] | null
 }
 
@@ -19,7 +18,7 @@ interface Props {
  * to be edited.
  **/
 export default function ObjectField(props: Props): JSX.Element {
-  const { field, setFieldValue, contentContext } = props
+  const { field, contentContext } = props
 
   const [collapsed, setCollapsed] = useState(field.collapsed ?? false)
   const toggleCollapse = useCallback(
@@ -47,7 +46,6 @@ export default function ObjectField(props: Props): JSX.Element {
             <SiteContentField
               field={field}
               key={field.name}
-              setFieldValue={setFieldValue}
               contentContext={contentContext}
             />
           ))}

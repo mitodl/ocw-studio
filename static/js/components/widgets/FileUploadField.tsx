@@ -4,14 +4,14 @@ import { filenameFromPath } from "../../lib/util"
 export interface Props {
   name?: string
   value?: string | File | null
-  setFieldValue: (key: string, value: File | null) => void
+  onChange: (event: any) => void
 }
 
 /**
  * A component for uploading files
  */
 export default function FileUploadField(props: Props): JSX.Element {
-  const { name, value, setFieldValue } = props
+  const { name, value, onChange } = props
   const fileInputName = name || "file"
   return (
     <div>
@@ -19,10 +19,12 @@ export default function FileUploadField(props: Props): JSX.Element {
         type="file"
         name={fileInputName}
         onChange={event => {
-          setFieldValue(
-            fileInputName,
-            event.target.files ? event.target.files[0] : null
-          )
+          onChange({
+            target: {
+              name:  event.target.name,
+              value: event.target.files ? event.target.files[0] : null
+            }
+          })
         }}
         className="form-control"
       />
