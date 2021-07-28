@@ -155,7 +155,7 @@ def convert_data_to_content(
 
 def get_short_id(metadata):
     """ Get a short_id from the metadata"""
-    course_num = metadata["course_numbers"][0]
+    course_num = metadata["primary_course_number"]
     semester, year = metadata["term"].split()
     short_id = f"{course_num}-{semester}-{year}".lower()
     short_id_exists = Website.objects.filter(short_id=short_id).exists()

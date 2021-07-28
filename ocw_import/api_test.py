@@ -141,7 +141,7 @@ def test_get_short_id():
     course_num = "6.0001"
     semester = "Spring"
     year = "2024"
-    metadata = {"course_numbers": [course_num], "term": f"{semester} {year}"}
+    metadata = {"primary_course_number": course_num, "term": f"{semester} {year}"}
     short_id = get_short_id(metadata)
     assert short_id == f"{course_num}-{semester.lower()}-{year}"
     for i in range(1, 4):
