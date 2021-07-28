@@ -22,18 +22,18 @@ collections:
     label: Metadata
     category: Settings
     files:
-      - file: data/metadata.json
+      - file: data/course.json
         name: sitemetadata
-        label: Site Metadata
+        label: Course Metadata
         fields:
-          - { "label": "Course Title", "name": "title", "widget": "string", "required": true }
-          - {
-            "label": "Course Description",
-            "name": "description",
-            "widget": "markdown",
-            "minimal": true,
-            "help": "A description of the course that will be shown on the course site home page."
-          }
+          - label: Instructors
+            name: instructors
+            widget: relation
+            collection: instructor
+            display_field: title
+            multiple: true
+            website: ocw-www
+
   - name: menu
     label: Menu
     category: Settings

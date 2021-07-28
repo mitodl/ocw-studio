@@ -39,21 +39,17 @@
         {
           "fields": [
             {
-              "label": "Course Title",
-              "name": "title",
-              "required": true,
-              "widget": "string"
-            },
-            {
-              "help": "A description of the course that will be shown on the course site home page.",
-              "label": "Course Description",
-              "minimal": true,
-              "name": "description",
-              "widget": "markdown"
+              "collection": "instructor",
+              "display_field": "title",
+              "label": "Instructors",
+              "multiple": true,
+              "name": "instructors",
+              "website": "ocw-www",
+              "widget": "relation"
             }
           ],
-          "file": "data/metadata.json",
-          "label": "Site Metadata",
+          "file": "data/course.json",
+          "label": "Course Metadata",
           "name": "sitemetadata"
         }
       ],

@@ -7,9 +7,9 @@ from ocw_import.tasks import import_ocw2hugo_course_paths, import_ocw2hugo_cours
 
 
 # pylint:disable=too-many-arguments
+pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.django_db
 @pytest.mark.parametrize(
     "paths", [["1-050-mechanical-engineering", "3-34-transportation-systems"], [], None]
 )

@@ -6,17 +6,21 @@ import uuid
 
 import yaml
 from dateutil import parser as dateparser
+from django.conf import settings
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
 from main.utils import get_dirpath_and_filename
 from websites.api import find_available_name
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
+    CONTENT_TYPE_INSTRUCTOR,
+    CONTENT_TYPE_METADATA,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     COURSE_HOME,
     COURSE_PAGE_LAYOUTS,
     COURSE_RESOURCE_LAYOUTS,
+    INSTRUCTORS_FIELD_NAME,
     WEBSITE_SOURCE_OCW_IMPORT,
 )
 from websites.models import Website, WebsiteContent
@@ -98,7 +102,7 @@ def convert_data_to_content(
     filepath, data, website, course_home_uuid
 ):  # pylint:disable=too-many-locals
     """
-    Convert file data into a WebsiteContentObject
+    Convert file data into a WebsiteContent object
 
     Args:
         filepath(str): The path of the file (from S3 or git)
@@ -170,6 +174,65 @@ def get_short_id(metadata):
     return short_id
 
 
+def import_ocw2hugo_sitemetadata(
+    course_data, website
+):  # pylint:disable=too-many-locals
+    """
+    Create and populate sitemetadata from an ocw course
+
+    Args:
+        course_data (dict): Data from data/course.json
+        website (Website): The course website
+    """
+    try:
+        website_root = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+    except Website.DoesNotExist:
+        log.error("No root web site found, name=%s", settings.ROOT_WEBSITE_NAME)
+        return
+
+    instructor_contents = []
+    for instructor in course_data["instructors"]:
+        uid = instructor["uid"]
+        first_name = instructor.get("first_name", "")
+        last_name = instructor.get("last_name", "")
+        middle_initial = instructor.get("middle_initial", "")
+        salutation = instructor.get("salutation", "")
+        middle_initial_plus_space = f"{middle_initial} " if middle_initial else ""
+        salutation_plus_space = f"{salutation} " if salutation else ""
+
+        instructor_content, _ = WebsiteContent.objects.update_or_create(
+            website=website_root,
+            text_id=str(uuid.UUID(uid)),
+            defaults={
+                "metadata": {
+                    "headless": True,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "middle_initial": middle_initial,
+                    "salutation": salutation,
+                },
+                "title": f"{salutation_plus_space}{first_name} {middle_initial_plus_space}{last_name}",
+                "type": CONTENT_TYPE_INSTRUCTOR,
+            },
+        )
+        instructor_contents.append(instructor_content)
+
+    WebsiteContent.objects.update_or_create(
+        type=CONTENT_TYPE_METADATA,
+        website=website,
+        defaults={
+            "text_id": CONTENT_TYPE_METADATA,
+            "title": "Course Metadata",
+            "metadata": {
+                INSTRUCTORS_FIELD_NAME: {
+                    "website": website_root.name,
+                    "content": [content.text_id for content in instructor_contents],
+                }
+            },
+        },
+    )
+
+
 def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     """
     Extract OCW course content for a course
@@ -203,6 +266,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
                 "source": WEBSITE_SOURCE_OCW_IMPORT,
             },
         )
+        import_ocw2hugo_sitemetadata(s3_content, website)
         import_ocw2hugo_content(bucket, prefix, website)
     except:  # pylint:disable=bare-except
         log.exception("Error saving website %s", path)

@@ -2,6 +2,8 @@
 
 CONTENT_TYPE_PAGE = "page"
 CONTENT_TYPE_RESOURCE = "resource"
+CONTENT_TYPE_INSTRUCTOR = "instructor"
+CONTENT_TYPE_METADATA = "sitemetadata"
 
 COURSE_HOME = "course-home"
 COURSE_PAGE_LAYOUTS = ["course_home", "course_section", "instructor_insights"]
@@ -79,3 +81,6 @@ PERMISSIONS_ADMIN = PERMISSIONS_EDITOR + [
     PERMISSION_COLLABORATE,
     PERMISSION_EDIT,
 ]
+
+
+INSTRUCTORS_FIELD_NAME = "instructors"
