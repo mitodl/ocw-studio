@@ -8,6 +8,8 @@ import * as formikFuncs from "formik"
 import SiteContentEditor from "./SiteContentEditor"
 import WebsiteContext from "../context/Website"
 
+import { DEFAULT_TITLE_FIELD } from "../lib/site_content"
+import * as siteContentFuncs from "../lib/site_content"
 import { siteApiContentDetailUrl, siteApiContentUrl } from "../lib/urls"
 import IntegrationTestHelper, {
   TestRenderer
@@ -29,7 +31,6 @@ import {
   WebsiteContent,
   WidgetVariant
 } from "../types/websites"
-import { DEFAULT_TITLE_FIELD } from "../lib/site_content"
 
 jest.mock("./forms/validation")
 
@@ -369,34 +370,52 @@ describe("SiteContent", () => {
   })
 
   //
-  ;[
-    [true, false, false, "content is passed in via props"],
-    [true, true, false, "content is passed in and the loading flag=true"],
-    [false, true, true, "content is not passed in and the loading flag=true"]
-  ].forEach(([hasContentProp, loadingFlag, shouldLoad, desc]) => {
-    it(`${shouldIf(shouldLoad)} load a content object if ${desc}`, async () => {
-      const contentDetailStub = helper.handleRequestStub
-        .withArgs(
-          siteApiContentDetailUrl
-            .param({ name: website.name, textId: content.text_id })
-            .toString(),
-          "GET"
-        )
-        .returns({
-          body:   content,
-          status: 200
+  ;[true, false].forEach(contentContext => {
+    describe(`with contentContext=${String(contentContext)}`, () => {
+      [
+        [true, false, false, "content is passed in via props"],
+        [true, true, false, "content is passed in and the loading flag=true"],
+        [
+          false,
+          true,
+          true,
+          "content is not passed in and the loading flag=true"
+        ]
+      ].forEach(([hasContentProp, loadingFlag, shouldLoad, desc]) => {
+        it(`${shouldIf(
+          shouldLoad
+        )} load a content object if ${desc}`, async () => {
+          const needsContentContextStub = helper.sandbox
+            .stub(siteContentFuncs, "needsContentContext")
+            .returns(contentContext)
+          const contentDetailStub = helper.handleRequestStub
+            .withArgs(
+              siteApiContentDetailUrl
+                .param({ name: website.name, textId: content.text_id })
+                .query(contentContext ? { content_context: true } : {})
+                .toString(),
+              "GET"
+            )
+            .returns({
+              body:   content,
+              status: 200
+            })
+
+          const { wrapper } = await render({
+            formType:    ContentFormType.Edit,
+            loadContent: loadingFlag,
+            ...(hasContentProp ? { content: content } : {})
+          })
+
+          sinon.assert.callCount(contentDetailStub, shouldLoad ? 1 : 0)
+          const form = wrapper.find("SiteContentForm")
+          expect(form.exists()).toBe(true)
+          expect(form.prop("content")).toStrictEqual(content)
+          if (shouldLoad) {
+            sinon.assert.calledWith(needsContentContextStub, configItem.fields)
+          }
         })
-
-      const { wrapper } = await render({
-        formType:    ContentFormType.Edit,
-        loadContent: loadingFlag,
-        ...(hasContentProp ? { content: content } : {})
       })
-
-      sinon.assert.callCount(contentDetailStub, shouldLoad ? 1 : 0)
-      const form = wrapper.find("SiteContentForm")
-      expect(form.exists()).toBe(true)
-      expect(form.prop("content")).toStrictEqual(content)
     })
   })
 

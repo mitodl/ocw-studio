@@ -4,11 +4,12 @@ import React from "react"
 import { FormError } from "./FormError"
 import { componentFromWidget, widgetExtraProps } from "../../lib/site_content"
 
-import { ConfigField, WidgetVariant } from "../../types/websites"
+import { ConfigField, WebsiteContent } from "../../types/websites"
 
 interface Props {
   field: ConfigField
   setFieldValue: (key: string, value: File | null) => void
+  contentContext: WebsiteContent[] | null
 }
 
 /**
@@ -16,23 +17,22 @@ interface Props {
  */
 export default function SiteContentField({
   field,
-  setFieldValue
+  setFieldValue,
+  contentContext
 }: Props): JSX.Element {
   const extraProps = widgetExtraProps(field)
+  const component = componentFromWidget(field)
 
-  if (
-    field.widget === WidgetVariant.File ||
-    field.widget === WidgetVariant.Boolean ||
-    field.widget === WidgetVariant.Relation
-  ) {
+  if (component && typeof component !== "string") {
     extraProps.setFieldValue = setFieldValue
+    extraProps.contentContext = contentContext
   }
 
   return (
     <div className="form-group">
       <label htmlFor={field.name}>{field.label}</label>
       <Field
-        as={componentFromWidget(field)}
+        as={component}
         name={field.name}
         className="form-control"
         {...extraProps}

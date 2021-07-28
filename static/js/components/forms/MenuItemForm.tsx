@@ -141,6 +141,7 @@ export default function MenuItemForm({
                     }}
                     value={values.internalLink}
                     valuesToOmit={existingMenuIds}
+                    contentContext={null}
                   />
                   <ErrorMessage name="internalLink" component={FormError} />
                 </>

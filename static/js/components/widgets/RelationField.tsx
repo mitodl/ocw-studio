@@ -1,19 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react"
-import { useRequest } from "redux-query-react"
-import { useSelector } from "react-redux"
+import React, { useState, useCallback, useEffect } from "react"
 import { equals, curry } from "ramda"
 import { uniqBy } from "lodash"
 
-import SelectField from "./SelectField"
+import SelectField, { Option } from "./SelectField"
+import { debouncedFetch } from "../../lib/api/util"
 import { useWebsite } from "../../context/Website"
-
-import { websiteContentListingRequest } from "../../query-configs/websites"
-import { WEBSITE_CONTENT_PAGE_SIZE } from "../../constants"
-import {
-  getWebsiteContentListingCursor,
-  getWebsiteDetailCursor
-} from "../../selectors/websites"
-import { websiteDetailRequest } from "../../query-configs/websites"
 
 import {
   RelationFilter,
@@ -22,6 +13,8 @@ import {
 } from "../../types/websites"
 import { SiteFormValue } from "../../types/forms"
 import { XOR } from "../../types/util"
+import { siteApiContentListingUrl } from "../../lib/urls"
+import { PaginatedResponse } from "../../query-configs/utils"
 
 type BaseProps = {
   name: string
@@ -32,6 +25,7 @@ type BaseProps = {
   filter?: RelationFilter
   website?: string
   valuesToOmit?: Set<string>
+  contentContext: WebsiteContent[] | null
 }
 
 /* NOTE: Either setFieldValue or onChange should be passed in, not both.
@@ -62,96 +56,36 @@ export default function RelationField(
 ): JSX.Element {
   const {
     collection,
+    contentContext,
     display_field, // eslint-disable-line camelcase
     name,
     multiple,
     value,
     filter,
-    website: websitename,
     valuesToOmit,
     onChange,
     setFieldValue
   } = props
 
-  const [offset, setOffset] = useState(0)
-  const [contentListing, setContentListing] = useState<WebsiteContent[]>([])
-
-  const websiteDetailCursor = useSelector(getWebsiteDetailCursor)
-  const websiteContentListingCursor = useSelector(
-    getWebsiteContentListingCursor
+  const formatOptions = useCallback(
+    (listing: WebsiteContent[]) =>
+      listing.map(entry => ({
+        label: entry[display_field],
+        value: entry.text_id
+      })),
+    [display_field] // eslint-disable-line camelcase
   )
 
-  useRequest(websitename ? websiteDetailRequest(websitename) : null)
+  const [options, setOptions] = useState<Option[]>(
+    contentContext ? formatOptions(contentContext) : []
+  )
+  const [defaultOptions, setDefaultOptions] = useState<Option[]>([])
+
   const contextWebsite = useWebsite()
 
   // if website: websitename param is set, then we want to use the context
   // website, else we want to use the cursor to fetch the specified website
-  const website = websitename ?
-    websiteDetailCursor(websitename) :
-    contextWebsite
-
-  const listingParams = website ?
-    {
-      name:   website.name,
-      offset: offset,
-      ...(collection ? { type: collection } : { pageContent: true })
-    } :
-    null
-
-  useRequest(
-    listingParams ? websiteContentListingRequest(listingParams, true) : null
-  )
-
-  const listing = listingParams ?
-    websiteContentListingCursor(listingParams) :
-    null
-
-  const count = listing?.count ?? 0
-
-  useEffect(() => {
-    // check if we need to re-run the request
-    //
-    // if count is greater than our current offset plus page size (i.e. the
-    // number of items which will be fetched in the current request) then we
-    // need to bump up offset by WEBSITE_CONTENT_PAGE_SIZE to fetch the next
-    // page.
-    //
-    // this will then change the listingParams object and fire off a new
-    // request.
-    if (count > offset + WEBSITE_CONTENT_PAGE_SIZE) {
-      setOffset(offset => (offset += WEBSITE_CONTENT_PAGE_SIZE))
-    }
-  }, [offset, setOffset, count])
-
-  useEffect(() => {
-    let newContentListing = (listing?.results ?? []).map((entry: any) => ({
-      ...entry,
-      ...entry.metadata
-    }))
-    if (filter) {
-      newContentListing = newContentListing.filter(filterContent(filter))
-    }
-    if (valuesToOmit) {
-      newContentListing = newContentListing.filter(
-        entry => !valuesToOmit.has(entry.text_id) || value === entry.text_id
-      )
-    }
-
-    // here we use uniqBy to remove any possible duplicates
-    // e.g. from the request having been run once before
-    setContentListing(oldContentListing =>
-      uniqBy([...oldContentListing, ...newContentListing], "text_id")
-    )
-  }, [listing, setContentListing, filter, valuesToOmit, value])
-
-  const options = useMemo(
-    () =>
-      contentListing.map((entry: any) => ({
-        label: entry[display_field],
-        value: entry.text_id
-      })),
-    [contentListing, display_field] // eslint-disable-line camelcase
-  )
+  const websiteName = props.website ? props.website : contextWebsite.name
 
   const handleChange = useCallback(
     (event: any) => {
@@ -163,13 +97,95 @@ export default function RelationField(
         // need to do this because we've renamed the
         // nested field to get validation working
         setFieldValue(name.split(".")[0], {
-          website: website.name,
+          website: websiteName,
           content
         })
       }
     },
-    [setFieldValue, onChange, name, website]
+    [setFieldValue, onChange, name, websiteName]
   )
+
+  const filterContentListing = (results: WebsiteContent[]) => {
+    let newContentListing = results.map((entry: any) => ({
+      ...entry,
+      ...entry.metadata
+    }))
+    if (filter) {
+      newContentListing = newContentListing.filter(filterContent(filter))
+    }
+    if (valuesToOmit) {
+      newContentListing = newContentListing.filter(
+        entry => !valuesToOmit.has(entry.text_id) || value === entry.text_id
+      )
+    }
+    return newContentListing
+  }
+
+  const fetchOptions = async (
+    search: string | null,
+    debounce: boolean,
+    withTextIds: boolean
+  ) => {
+    const textIds =
+      value && withTextIds ? (Array.isArray(value) ? value : [value]) : []
+    const params = collection ? { type: collection } : { page_content: true }
+    const url = siteApiContentListingUrl
+      .query({
+        detailed_list:   true,
+        content_context: true,
+        ...(search ? { search: search } : {}),
+        ...(textIds.length ? { text_id: textIds, limit: textIds.length } : {}),
+        ...params
+      })
+      .param({ name: websiteName })
+      .toString()
+
+    const response = debounce ?
+      await debouncedFetch("relationfield", 300, url, {
+        credentials: "include"
+      }) :
+      await fetch(url, { credentials: "include" })
+
+    if (!response) {
+      // duplicate, another later instance of loadOptions will handle this instead
+      return
+    }
+    const json: PaginatedResponse<WebsiteContent> = await response.json()
+    const { results } = json
+    return formatOptions(filterContentListing(results))
+  }
+
+  const loadOptions = async (inputValue: string) => {
+    const newOptions = await fetchOptions(inputValue, true, false)
+    if (newOptions) {
+      setOptions(oldOptions => uniqBy([...oldOptions, ...newOptions], "value"))
+    }
+    return newOptions
+  }
+
+  useEffect(() => {
+    // trigger an initial fetch with the text_ids of the value so we can look up the titles for each item
+    // then trigger a second fetch to get default options for the user to view when they open the dropdown
+    let mounted = true
+    const doFetch = async () => {
+      const newOptions = contentContext ?
+        [] :
+        await fetchOptions(null, false, true)
+      const defaultOptions = await fetchOptions(null, false, false)
+
+      // Just making typescript happy. newOptions and defaultOptions should always be true here since debounce=false
+      if (mounted && newOptions && defaultOptions) {
+        setOptions(oldOptions =>
+          uniqBy([...oldOptions, ...defaultOptions, ...newOptions], "value")
+        )
+        setDefaultOptions(() => defaultOptions)
+      }
+    }
+    doFetch()
+    return () => {
+      mounted = false
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <SelectField
@@ -177,7 +193,9 @@ export default function RelationField(
       value={value}
       onChange={handleChange}
       options={options}
+      loadOptions={loadOptions}
       multiple={multiple}
+      defaultOptions={defaultOptions}
     />
   )
 }

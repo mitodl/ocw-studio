@@ -1,7 +1,10 @@
 import React from "react"
-import sinon, { SinonStub } from "sinon"
+import { act } from "react-dom/test-utils"
+import { when } from "jest-when"
+import R from "ramda"
 
 import RelationField from "./RelationField"
+import { debouncedFetch } from "../../lib/api/util"
 import WebsiteContext from "../../context/Website"
 
 import IntegrationTestHelper, {
@@ -12,23 +15,27 @@ import {
   makeWebsiteContentDetail,
   makeWebsiteDetail
 } from "../../util/factories/websites"
-import { siteApiContentListingUrl, siteApiDetailUrl } from "../../lib/urls"
+import { siteApiContentListingUrl } from "../../lib/urls"
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../../constants"
 
 import { Website, WebsiteContent } from "../../types/websites"
-import R from "ramda"
+import { ReactWrapper } from "enzyme"
+
+jest.mock("../../lib/api/util", () => ({
+  ...jest.requireActual("../../lib/api/util"),
+  debouncedFetch: jest.fn()
+}))
 
 describe("RelationField", () => {
   let website: Website,
-    otherWebsite: Website,
     render: TestRenderer,
     helper: IntegrationTestHelper,
-    onChange: SinonStub,
-    contentListingItemsPages: WebsiteContent[][]
+    onChange: () => void,
+    contentListingItems: WebsiteContent[],
+    fakeResponse: any
 
   beforeEach(() => {
     website = makeWebsiteDetail()
-    otherWebsite = makeWebsiteDetail()
     helper = new IntegrationTestHelper()
     onChange = helper.sandbox.stub()
     render = helper.configureRenderer(
@@ -45,175 +52,262 @@ describe("RelationField", () => {
         onChange
       }
     )
-    contentListingItemsPages = [
-      R.times(makeWebsiteContentDetail, WEBSITE_CONTENT_PAGE_SIZE),
-      R.times(makeWebsiteContentDetail, WEBSITE_CONTENT_PAGE_SIZE)
-    ]
-    ;[website, otherWebsite].forEach(website => {
-      helper.handleRequestStub
-        .withArgs(
-          siteApiContentListingUrl
-            .param({ name: website.name })
-            .query({ offset: 0, type: "page", detailed_list: true })
-            .toString(),
-          "GET"
-        )
-        .returns({
-          status: 200,
-          body:   {
-            results:  contentListingItemsPages[0],
-            count:    contentListingItemsPages.flat().length,
-            next:     null,
-            previous: null
-          }
-        })
-      helper.handleRequestStub
-        .withArgs(
-          siteApiContentListingUrl
-            .param({ name: website.name })
-            .query({
-              offset:        WEBSITE_CONTENT_PAGE_SIZE,
-              type:          "page",
-              detailed_list: true
-            })
-            .toString(),
-          "GET"
-        )
-        .returns({
-          status: 200,
-          body:   {
-            results:  contentListingItemsPages[1],
-            count:    contentListingItemsPages.flat().length,
-            next:     null,
-            previous: null
-          }
-        })
-    })
+    contentListingItems = R.times(
+      makeWebsiteContentDetail,
+      WEBSITE_CONTENT_PAGE_SIZE
+    )
+
+    global.fetch = jest.fn()
+    fakeResponse = {
+      results:  contentListingItems,
+      count:    contentListingItems.length,
+      next:     null,
+      previous: null
+    }
+
+    // @ts-ignore
+    global.fetch.mockResolvedValue({ json: async () => fakeResponse })
   })
 
   afterEach(() => {
     helper.cleanup()
   })
 
-  it("should render a SelectField with the expected options, hitting the API multiple times as needed", async () => {
-    const { wrapper } = await render()
-    expect(wrapper.find("SelectField").prop("options")).toEqual(
-      contentListingItemsPages.flat().map(item => ({
-        label: item.title,
-        value: item.text_id
-      }))
-    )
+  const asOption = (item: WebsiteContent) => ({
+    value: item.text_id,
+    label: item.title
+  })
+
+  //
+  ;[true, false].forEach(hasContentContext => {
+    ["other-site", ""].forEach(websiteNameProp => {
+      it(`should render a SelectField with the expected options, ${
+        hasContentContext ? "with" : "without"
+      } contentContext, ${
+        websiteNameProp ? "with" : "without"
+      } a website prop`, async () => {
+        // @ts-ignore
+        when(global.fetch).mockResolvedValue({ json: async () => fakeResponse })
+        const websiteName = websiteNameProp ? websiteNameProp : website.name
+        const textIdsUrl = siteApiContentListingUrl
+          .param({ name: websiteName })
+          .query({
+            detailed_list:   true,
+            content_context: true,
+            text_id:         contentListingItems.map(item => item.text_id),
+            limit:           contentListingItems.length,
+            type:            "page"
+          })
+          .toString()
+        const contentContext = hasContentContext ?
+          [makeWebsiteContentDetail()] :
+          null
+        const textIdsContentListingItems = [
+          makeWebsiteContentDetail(),
+          makeWebsiteContentDetail()
+        ]
+        when(global.fetch)
+          .calledWith(textIdsUrl, { credentials: "include" })
+          // @ts-ignore
+          .mockResolvedValue({
+            json: async () => ({
+              results:  textIdsContentListingItems,
+              count:    textIdsContentListingItems.length,
+              next:     null,
+              previous: null
+            })
+          })
+
+        let wrapper: ReactWrapper
+        await act(async () => {
+          wrapper = (
+            await render({
+              value:   contentListingItems.map(item => item.text_id),
+              website: websiteNameProp,
+              contentContext
+            })
+          ).wrapper
+        })
+        // @ts-ignore
+        wrapper.update()
+        const combinedListing = [
+          ...(contentContext ?? []),
+          ...contentListingItems,
+          ...(contentContext ? [] : textIdsContentListingItems)
+        ]
+        // @ts-ignore
+        expect(wrapper.find("SelectField").prop("options")).toEqual(
+          combinedListing.map(asOption)
+        )
+        // @ts-ignore
+        expect(wrapper.find("SelectField").prop("defaultOptions")).toEqual(
+          contentListingItems.map(asOption)
+        )
+
+        // there should be one or two initial fetches:
+        // - a default 10 items to show when a user opens the dropdown
+        // - text_ids for the case where contentContext is absent. If it is included in props, this fetch is skipped
+        const defaultUrl = siteApiContentListingUrl
+          .param({ name: websiteName })
+          .query({
+            detailed_list:   true,
+            content_context: true,
+            type:            "page"
+          })
+          .toString()
+        // @ts-ignore
+        expect(global.fetch).toHaveBeenCalledWith(defaultUrl, {
+          credentials: "include"
+        })
+
+        if (hasContentContext) {
+          expect(global.fetch).toHaveBeenCalledTimes(1)
+          expect(global.fetch).not.toHaveBeenCalledWith(textIdsUrl, {
+            credentials: "include"
+          })
+        } else {
+          expect(global.fetch).toHaveBeenCalledTimes(2)
+          expect(global.fetch).toHaveBeenCalledWith(textIdsUrl, {
+            credentials: "include"
+          })
+        }
+      })
+    })
   })
 
   //
   ;[true, false].forEach(multiple => {
     it(`should pass the 'multiple===${multiple}' down to the SelectField`, async () => {
-      const { wrapper } = await render({ multiple })
+      let wrapper: ReactWrapper
+      await act(async () => {
+        wrapper = (await render({ multiple })).wrapper
+      })
+      // @ts-ignore
       expect(wrapper.find("SelectField").prop("multiple")).toBe(multiple)
     })
   })
 
   it("should pass a value down to the SelectField", async () => {
-    const { wrapper } = await render({ value: "foobar" })
+    let wrapper: ReactWrapper
+    await act(async () => {
+      wrapper = (await render({ value: "foobar" })).wrapper
+    })
+    // @ts-ignore
     expect(wrapper.find("SelectField").prop("value")).toBe("foobar")
   })
 
   it("should filter results", async () => {
-    contentListingItemsPages[0][0].metadata!.testfield = "testvalue"
-    const { wrapper } = await render({
-      filter: {
-        field:       "testfield",
-        filter_type: "equals",
-        value:       "testvalue"
-      }
+    contentListingItems[0].metadata!.testfield = "testvalue"
+    let wrapper: ReactWrapper
+    await act(async () => {
+      wrapper = (
+        await render({
+          filter: {
+            field:       "testfield",
+            filter_type: "equals",
+            value:       "testvalue"
+          }
+        })
+      ).wrapper
     })
+    // @ts-ignore
+    wrapper.update()
+    // @ts-ignore
     expect(wrapper.find("SelectField").prop("options")).toEqual([
       {
-        label: contentListingItemsPages[0][0].title,
-        value: contentListingItemsPages[0][0].text_id
+        label: contentListingItems[0].title,
+        value: contentListingItems[0].text_id
       }
     ])
   })
 
-  it("should omit values", async () => {
-    const allOptions = contentListingItemsPages.flat().map(item => ({
-      label: item.title,
-      value: item.text_id
-    }))
-    const firstTwoValues = allOptions.slice(0, 2).map(option => option.value)
-    const { wrapper } = await render({
-      valuesToOmit: new Set(firstTwoValues)
-    })
-    const selectOptions = wrapper.find("SelectField").prop("options")
-    expect(selectOptions).toHaveLength(allOptions.length - 2)
-    // @ts-ignore
-    const selectOptionValues = selectOptions.map(
-      // @ts-ignore
-      selectOption => selectOption.value
-    )
-    expect(selectOptionValues).toEqual(
-      allOptions.slice(2).map(option => option.value)
-    )
-  })
-
   it("should accept an onChange prop, which gets passed to the child select component", async () => {
-    const onChangeStub = sinon.stub()
-    const { wrapper } = await render({
-      onChange: onChangeStub
-    })
-    const select = wrapper.find("SelectField")
+    const onChangeStub = jest.fn()
     const fakeEvent = { target: { value: "abc" } }
-    // @ts-ignore
-    select.prop("onChange")(fakeEvent)
-    sinon.assert.calledOnceWithExactly(onChangeStub, fakeEvent)
+    await act(async () => {
+      const { wrapper } = await render({
+        onChange: onChangeStub
+      })
+      const select = wrapper.find("SelectField")
+      // @ts-ignore
+      select.prop("onChange")(fakeEvent)
+    })
+    expect(onChangeStub).toBeCalledTimes(1)
+    expect(onChangeStub).toBeCalledWith(fakeEvent)
   })
 
   it("should accept a setFieldValue prop, which is called when the select field changes", async () => {
-    const setFieldValueStub = sinon.stub()
-    const { wrapper } = await render({
-      name:          "nested.field",
-      setFieldValue: setFieldValueStub,
-      onChange:      null
+    const setFieldValueStub = jest.fn()
+    await act(async () => {
+      const { wrapper } = await render({
+        name:          "nested.field",
+        setFieldValue: setFieldValueStub,
+        onChange:      null
+      })
+      const select = wrapper.find("SelectField")
+      const fakeEvent = { target: { value: "abc" } }
+      // @ts-ignore
+      select.prop("onChange")(fakeEvent)
     })
-    const select = wrapper.find("SelectField")
-    const fakeEvent = { target: { value: "abc" } }
-    // @ts-ignore
-    select.prop("onChange")(fakeEvent)
-    sinon.assert.calledOnceWithExactly(setFieldValueStub, "nested", {
+    expect(setFieldValueStub).toBeCalledTimes(1)
+    expect(setFieldValueStub).toBeCalledWith("nested", {
       website: website.name,
       content: "abc"
     })
   })
 
-  describe("manually-set website parameter", () => {
-    beforeEach(() => {
-      helper.handleRequestStub
-        .withArgs(
-          siteApiDetailUrl.param({ name: otherWebsite.name }).toString()
-        )
-        .returns({
-          status: 200,
-          body:   otherWebsite
+  it("should have a loadOptions prop which triggers a debounced fetch of results", async () => {
+    let wrapper: ReactWrapper, loadOptionsResponse
+    await act(async () => {
+      wrapper = (await render()).wrapper
+    })
+    // @ts-ignore
+    wrapper.update()
+    // @ts-ignore
+    global.fetch.mockClear()
+    // @ts-ignore
+    const loadOptions = wrapper.find("SelectField").prop("loadOptions")
+    const searchString1 = "searchstring1",
+      searchString2 = "searchstring2"
+
+    // @ts-ignore
+    debouncedFetch.mockResolvedValue({ json: async () => fakeResponse })
+
+    await act(async () => {
+      loadOptionsResponse = await Promise.all([
+        // @ts-ignore
+        loadOptions(searchString1),
+        // @ts-ignore
+        loadOptions(searchString2)
+      ])
+    })
+
+    const urlForSearch = (search: string) =>
+      siteApiContentListingUrl
+        .query({
+          detailed_list:   true,
+          content_context: true,
+          search:          search,
+          type:            "page"
         })
-    })
-
-    it("should support setting a 'website' parameter, fetching and using that website", async () => {
-      const { wrapper } = await render({
-        website: otherWebsite.name
-      })
-
-      expect(
-        helper.handleRequestStub.calledWith(
-          siteApiDetailUrl.param({ name: otherWebsite.name }).toString()
-        )
-      ).toBeTruthy()
-
-      expect(wrapper.find("SelectField").prop("options")).toEqual(
-        contentListingItemsPages.flat().map(entry => ({
-          label: entry.title,
-          value: entry.text_id
-        }))
-      )
-    })
+        .param({ name: website.name })
+        .toString()
+    expect(debouncedFetch).toBeCalledTimes(2)
+    expect(debouncedFetch).toBeCalledWith(
+      "relationfield",
+      300,
+      urlForSearch(searchString1),
+      { credentials: "include" }
+    )
+    expect(debouncedFetch).toBeCalledWith(
+      "relationfield",
+      300,
+      urlForSearch(searchString2),
+      { credentials: "include" }
+    )
+    expect(loadOptionsResponse).toStrictEqual([
+      fakeResponse.results.map(asOption),
+      fakeResponse.results.map(asOption)
+    ])
   })
 })

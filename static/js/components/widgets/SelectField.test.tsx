@@ -53,6 +53,14 @@ describe("SelectField", () => {
     )
   })
 
+  it("should pass defaultOptions to AsyncSelect", () => {
+    const wrapper = render({
+      defaultOptions: "options",
+      loadOptions:    () => null
+    })
+    expect(wrapper.find(AsyncSelect).prop("defaultOptions")).toBe("options")
+  })
+
   it("should use AsyncSelect if a loadOptions callback is supplied", () => {
     const loadOptions = sandbox.stub()
     const wrapper = render({

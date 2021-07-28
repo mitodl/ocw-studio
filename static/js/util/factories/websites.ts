@@ -213,5 +213,6 @@ export const makeWebsiteContentDetail = (): WebsiteContent => ({
   markdown: casual.text,
   metadata: {
     description: casual.short_description
-  }
+  },
+  content_context: []
 })

@@ -1,3 +1,4 @@
+import { times } from "ramda"
 import React from "react"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { shallow } from "enzyme"
@@ -38,6 +39,7 @@ describe("SiteContentForm", () => {
     sandbox = sinon.createSandbox()
     setFieldValueStub = sinon.stub()
     content = makeWebsiteContentDetail()
+    content.content_context = times(() => makeWebsiteContentDetail(), 3)
     configItem = makeEditableConfigItem(content.type)
     // @ts-ignore
     splitFieldsIntoColumns.mockImplementation(() => [])
@@ -95,6 +97,9 @@ describe("SiteContentForm", () => {
           const fieldWrapper = form.find("SiteContentField").at(idx)
           expect(fieldWrapper.prop("field")).toBe(field)
           expect(fieldWrapper.prop("setFieldValue")).toBe(setFieldValueStub)
+          expect(fieldWrapper.prop("contentContext")).toBe(
+            content.content_context
+          )
           idx++
         }
       })
@@ -131,9 +136,16 @@ describe("SiteContentForm", () => {
         fieldIsVisible.mockImplementation(() => true)
         // @ts-ignore
         splitFieldsIntoColumns.mockImplementation(() => [configItem.fields])
-        const wrapper = renderInnerForm(formType)
-        expect(wrapper.find("ObjectField").exists()).toBeTruthy()
-        expect(wrapper.find("ObjectField").prop("field")).toEqual(field)
+        const wrapper = renderInnerForm(formType, {
+          setFieldValue: setFieldValueStub
+        })
+        const objectWrapper = wrapper.find("ObjectField")
+        expect(objectWrapper.exists()).toBeTruthy()
+        expect(objectWrapper.prop("field")).toEqual(field)
+        expect(objectWrapper.prop("setFieldValue")).toBe(setFieldValueStub)
+        expect(objectWrapper.prop("contentContext")).toBe(
+          content.content_context
+        )
       })
     })
   })

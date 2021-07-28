@@ -2,11 +2,16 @@ import React, { useState, useCallback } from "react"
 
 import SiteContentField from "../forms/SiteContentField"
 
-import { ConfigField, ObjectConfigField } from "../../types/websites"
+import {
+  ConfigField,
+  ObjectConfigField,
+  WebsiteContent
+} from "../../types/websites"
 
 interface Props {
   field: ObjectConfigField
   setFieldValue: (key: string, value: File | null) => void
+  contentContext: WebsiteContent[] | null
 }
 
 /**
@@ -14,7 +19,7 @@ interface Props {
  * to be edited.
  **/
 export default function ObjectField(props: Props): JSX.Element {
-  const { field, setFieldValue } = props
+  const { field, setFieldValue, contentContext } = props
 
   const [collapsed, setCollapsed] = useState(field.collapsed ?? false)
   const toggleCollapse = useCallback(
@@ -43,6 +48,7 @@ export default function ObjectField(props: Props): JSX.Element {
               field={field}
               key={field.name}
               setFieldValue={setFieldValue}
+              contentContext={contentContext}
             />
           ))}
         </div>

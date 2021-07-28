@@ -167,6 +167,7 @@ describe("MenuItemForm", () => {
     expect(relationField.exists()).toBe(true)
     expect(relationField.prop("value")).toEqual(value)
     expect(relationField.prop("valuesToOmit")).toEqual(existingMenuIds)
+    expect(relationField.prop("contentContext")).toBeNull()
     expect(relationField.prop("collection")).toEqual(collections)
     const fakeEvent = { target: { value: "abc" } }
     // @ts-ignore
