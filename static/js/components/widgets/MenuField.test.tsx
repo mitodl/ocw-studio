@@ -95,8 +95,12 @@ describe("MenuField", () => {
     } else {
       formShowBtn = wrapper.find("button.blue-button")
     }
-    formShowBtn.simulate("click")
+    const preventDefaultStub = jest.fn()
+    formShowBtn.prop("onClick")({ preventDefault: preventDefaultStub })
     wrapper.update()
+    if (menuItem) {
+      expect(preventDefaultStub).toBeCalledTimes(1)
+    }
     const itemFormPanel = wrapper.find("BasicModal")
     expect(itemFormPanel.prop("isVisible")).toBe(true)
     return itemFormPanel.dive().find("MenuItemForm")
@@ -146,8 +150,11 @@ describe("MenuField", () => {
     expect(deleteBtn.exists()).toBe(true)
     expect(deleteBtn.prop("className")).toContain("material-icons")
     expect(deleteBtn.text()).toEqual("delete")
-    deleteBtn.simulate("click")
+    const preventDefaultStub = jest.fn()
+    // @ts-ignore
+    deleteBtn.prop("onClick")({ preventDefault: preventDefaultStub })
     wrapper.update()
+    expect(preventDefaultStub).toBeCalledTimes(1)
     const removeDialog = wrapper.find("Dialog")
     expect(removeDialog.prop("open")).toBe(true)
     removeDialog.prop("onAccept")()
