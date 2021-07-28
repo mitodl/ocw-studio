@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.20.1
+--------------
+
+- Replace "course_numbers" with "primary_course_number", "extra_course_numbers" in sample json and in get_short_id function (#423)
+- Async search backend (#407)
+- Add uniqBy to remove duplicate options for website collection UI (#422)
+- Add index to WebsiteContent.title and Website.title (#421)
+- fix comment typo
+- Website.short_id for repo names (#405)
+
 Version 0.20.0 (Released July 27, 2021)
 --------------
 
