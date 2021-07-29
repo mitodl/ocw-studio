@@ -7,6 +7,7 @@ import { WCItemCreateFormFields } from "../../types/forms"
 import { Website } from "../../types/websites"
 import { useMutation } from "redux-query-react"
 import { siteApiListingUrl } from "../../lib/urls"
+import { debouncedFetch } from "../../lib/api/util"
 import { WebsiteListingResponse } from "../../query-configs/websites"
 import { WebsiteCollection } from "../../types/website_collections"
 import { createWebsiteCollectionItemMutation } from "../../query-configs/website_collections"
@@ -32,7 +33,13 @@ export default function WebsiteCollectionItemForm(props: Props): JSX.Element {
       // using plain fetch rather than redux-query here because this
       // use-case doesn't exactly jibe with redux-query: we need to issue
       // a request programmatically on user input.
-      const response = await fetch(url)
+      const response = await debouncedFetch("website-collection", 300, url, {
+        credentials: "include"
+      })
+      if (!response) {
+        // this happens if this fetch was ignored in favor of a later fetch
+        return
+      }
       const json: WebsiteListingResponse = await response.json()
       const { results } = json
       const options = formatOptions(results)
