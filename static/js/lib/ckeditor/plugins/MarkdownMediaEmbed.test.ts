@@ -3,8 +3,7 @@ import Markdown from "./Markdown"
 import { createTestEditor, markdownTest } from "./test_util"
 import { turndownService } from "../turndown"
 
-const getEditor = (initialData = "") =>
-  createTestEditor([MarkdownMediaEmbed, Markdown], initialData)
+const getEditor = createTestEditor([MarkdownMediaEmbed, Markdown])
 
 describe("MarkdownMediaEmbed plugin", () => {
   afterEach(() => {
