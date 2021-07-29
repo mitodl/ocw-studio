@@ -234,8 +234,10 @@ describe("RelationField", () => {
       const select = wrapper.find("SelectField")
       const numbers = ["one", "two", "three"]
       const fakeEvent = { target: { value: numbers, name } }
-      // @ts-ignore
-      select.prop("onChange")(fakeEvent)
+      await act(async () => {
+        // @ts-ignore
+        await select.prop("onChange")(fakeEvent)
+      })
       expect(onChangeStub).toBeCalledWith({
         target: {
           name:  expectedName,
