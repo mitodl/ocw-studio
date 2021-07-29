@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.20.1
+Version 0.20.1 (Released July 29, 2021)
 --------------
 
 - Replace "course_numbers" with "primary_course_number", "extra_course_numbers" in sample json and in get_short_id function (#423)
