@@ -221,38 +221,30 @@ describe("RelationField", () => {
     ])
   })
 
-  it("should accept an onChange prop, which gets passed to the child select component", async () => {
-    const onChangeStub = jest.fn()
-    const fakeEvent = { target: { value: "abc" } }
-    await act(async () => {
+  //
+  ;[
+    ["name", "name"],
+    ["name.content", "name"]
+  ].forEach(([name, expectedName]) => {
+    it(`should accept an onChange prop with name=${name}, which gets modified then passed to the child select component`, async () => {
+      const onChangeStub = jest.fn()
       const { wrapper } = await render({
         onChange: onChangeStub
       })
       const select = wrapper.find("SelectField")
+      const numbers = ["one", "two", "three"]
+      const fakeEvent = { target: { value: numbers, name } }
       // @ts-ignore
       select.prop("onChange")(fakeEvent)
-    })
-    expect(onChangeStub).toBeCalledTimes(1)
-    expect(onChangeStub).toBeCalledWith(fakeEvent)
-  })
-
-  it("should accept a setFieldValue prop, which is called when the select field changes", async () => {
-    const setFieldValueStub = jest.fn()
-    await act(async () => {
-      const { wrapper } = await render({
-        name:          "nested.field",
-        setFieldValue: setFieldValueStub,
-        onChange:      null
+      expect(onChangeStub).toBeCalledWith({
+        target: {
+          name:  expectedName,
+          value: {
+            website: website.name,
+            content: numbers
+          }
+        }
       })
-      const select = wrapper.find("SelectField")
-      const fakeEvent = { target: { value: "abc" } }
-      // @ts-ignore
-      select.prop("onChange")(fakeEvent)
-    })
-    expect(setFieldValueStub).toBeCalledTimes(1)
-    expect(setFieldValueStub).toBeCalledWith("nested", {
-      website: website.name,
-      content: "abc"
     })
   })
 

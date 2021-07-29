@@ -6,14 +6,23 @@ const radioOptionId = (name: string, bool: boolean): string =>
 interface Props {
   name: string
   value: boolean
-  setFieldValue: (key: string, value: File | boolean | null) => void
+  onChange: (event: any) => void
 }
 
 /**
  * A widget for editing boolean values
  */
 export default function BooleanField(props: Props): JSX.Element {
-  const { name, value, setFieldValue } = props
+  const { name, value, onChange } = props
+
+  const handleChange = (event: any): void => {
+    onChange({
+      target: {
+        name:  event.target.name,
+        value: event.target.value === "true"
+      }
+    })
+  }
 
   return (
     <div>
@@ -23,9 +32,7 @@ export default function BooleanField(props: Props): JSX.Element {
         name={name}
         value="true"
         checked={value === true}
-        onChange={() => {
-          setFieldValue(name, true)
-        }}
+        onChange={handleChange}
       />
       <label className="px-2" htmlFor={radioOptionId(name, true)}>
         True
@@ -36,9 +43,7 @@ export default function BooleanField(props: Props): JSX.Element {
         name={name}
         value="false"
         checked={value === false}
-        onChange={() => {
-          setFieldValue(name, false)
-        }}
+        onChange={handleChange}
       />
       <label className="px-2" htmlFor={radioOptionId(name, false)}>
         False

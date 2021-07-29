@@ -1,16 +1,15 @@
 import React from "react"
 import { shallow } from "enzyme"
-import sinon, { SinonSandbox, SinonStub } from "sinon"
+import sinon, { SinonSandbox } from "sinon"
 
 import FileUploadField from "./FileUploadField"
 
 describe("FileUploadField", () => {
-  let sandbox: SinonSandbox, setFieldValueStub: SinonStub
+  let sandbox: SinonSandbox
   const mockFile = new File([new ArrayBuffer(1)], "fake.txt")
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-    setFieldValueStub = sinon.stub()
   })
 
   afterEach(() => {
@@ -18,11 +17,9 @@ describe("FileUploadField", () => {
   })
   ;["file", "name"].forEach(fileFieldName => {
     it(`renders a file upload field w/name=${fileFieldName}, no pre-existing file, with working button`, () => {
+      const onChangeStub = jest.fn()
       const wrapper = shallow(
-        <FileUploadField
-          name={fileFieldName}
-          setFieldValue={setFieldValueStub}
-        />
+        <FileUploadField name={fileFieldName} onChange={onChangeStub} />
       )
       expect(
         wrapper
@@ -46,17 +43,26 @@ describe("FileUploadField", () => {
       wrapper
         .find("input")
         .at(0)
-        .simulate("change", { target: { files: [mockFile] } })
-      expect(setFieldValueStub.calledWith(fileFieldName, mockFile)).toBeTruthy()
+        .simulate("change", {
+          target: { name: fileFieldName, files: [mockFile] }
+        })
+      expect(onChangeStub).toBeCalledWith({
+        target: {
+          name:  fileFieldName,
+          value: mockFile
+        }
+      })
     })
   })
+
+  //
   ;["file", "name"].forEach(fileFieldName => {
     it(`renders a file upload field w/name=${fileFieldName}, with pre-existing file`, () => {
       const currentFile = "oldfile.txt"
       const wrapper = shallow(
         <FileUploadField
           name={fileFieldName}
-          setFieldValue={setFieldValueStub}
+          onChange={jest.fn()}
           value={`https://aws.com/uuid_${currentFile}`}
         />
       )

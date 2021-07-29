@@ -1,6 +1,6 @@
 import React from "react"
 import { shallow } from "enzyme"
-import sinon, { SinonSandbox, SinonStub } from "sinon"
+import sinon, { SinonSandbox } from "sinon"
 
 import SiteContentField from "./SiteContentField"
 import { componentFromWidget } from "../../lib/site_content"
@@ -10,13 +10,10 @@ import { WebsiteContent, WidgetVariant } from "../../types/websites"
 import { makeWebsiteContentDetail } from "../../util/factories/websites"
 
 describe("SiteContentField", () => {
-  let sandbox: SinonSandbox,
-    setFieldValueStub: SinonStub,
-    contentContext: WebsiteContent[]
+  let sandbox: SinonSandbox, contentContext: WebsiteContent[]
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
-    setFieldValueStub = sandbox.stub()
     const content = makeWebsiteContentDetail()
     contentContext = [content]
   })
@@ -28,11 +25,7 @@ describe("SiteContentField", () => {
   it("renders a form group for a config field", () => {
     for (const field of exampleSiteConfigFields) {
       const wrapper = shallow(
-        <SiteContentField
-          field={field}
-          setFieldValue={setFieldValueStub}
-          contentContext={contentContext}
-        />
+        <SiteContentField field={field} contentContext={contentContext} />
       )
 
       expect(wrapper.find("label").text()).toBe(field.label)
@@ -40,10 +33,10 @@ describe("SiteContentField", () => {
       expect(props["as"]).toBe(componentFromWidget(field))
       expect(props["name"]).toBe(field.name)
       if (
-        field.widget === WidgetVariant.File ||
-        field.widget === WidgetVariant.Boolean
+        field.widget === WidgetVariant.Menu ||
+        field.widget === WidgetVariant.Relation
       ) {
-        expect(props["setFieldValue"]).toBe(setFieldValueStub)
+        expect(props["contentContext"]).toBe(contentContext)
       }
       if (field.widget === WidgetVariant.Select) {
         expect(props["min"]).toBe(field.min)

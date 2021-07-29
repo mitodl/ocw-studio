@@ -4,17 +4,17 @@ import { shallow } from "enzyme"
 import BooleanField from "./BooleanField"
 
 describe("BooleanField", () => {
-  let setFieldValueStub: any, render: any
+  let render: any, onChangeStub: any
 
   beforeEach(() => {
-    setFieldValueStub = jest.fn()
+    onChangeStub = jest.fn()
 
     render = (props = {}) =>
       shallow(
         <BooleanField
           name="name"
           value={false}
-          setFieldValue={setFieldValueStub}
+          onChange={onChangeStub}
           {...props}
         />
       )
@@ -44,15 +44,20 @@ describe("BooleanField", () => {
 
   it("clicking on a radio option should call setFieldValue", () => {
     const wrapper = render()
+    const name = "name"
     wrapper
       .find("input")
       .at(0)
-      .simulate("change")
-    expect(setFieldValueStub).toHaveBeenCalledWith("name", true)
+      .simulate("change", { target: { name, value: "true" } })
+    expect(onChangeStub).toHaveBeenCalledWith({
+      target: { name: "name", value: true }
+    })
     wrapper
       .find("input")
       .at(1)
-      .simulate("change")
-    expect(setFieldValueStub).toHaveBeenCalledWith("name", false)
+      .simulate("change", { target: { name, value: "false" } })
+    expect(onChangeStub).toHaveBeenCalledWith({
+      target: { name: "name", value: false }
+    })
   })
 })

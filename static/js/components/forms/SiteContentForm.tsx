@@ -27,6 +27,7 @@ import {
 } from "../../types/websites"
 import { ContentFormType, SiteFormValues } from "../../types/forms"
 import { getContentSchema } from "./validation"
+import { useWebsite } from "../../context/Website"
 
 interface Props {
   onSubmit: (
@@ -46,12 +47,13 @@ export default function SiteContentForm({
   content,
   formType
 }: Props): JSX.Element {
+  const website = useWebsite()
   const initialValues: SiteFormValues = useMemo(
     () =>
       formType === ContentFormType.Add ?
-        newInitialValues(fields) :
-        contentInitialValues(content as WebsiteContent, fields),
-    [fields, formType, content]
+        newInitialValues(fields, website) :
+        contentInitialValues(content as WebsiteContent, fields, website),
+    [fields, formType, content, website]
   )
   const contentContext = content?.content_context ?? null
 
@@ -79,7 +81,7 @@ export default function SiteContentForm({
       initialValues={initialValues}
       enableReinitialize={true}
     >
-      {({ isSubmitting, status, setFieldValue, values }) => (
+      {({ isSubmitting, status, values }) => (
         <Form className="row">
           {fieldsByColumn.map((columnFields, idx) => (
             <div className={columnClass} key={idx}>
@@ -90,14 +92,12 @@ export default function SiteContentForm({
                     <ObjectField
                       field={field}
                       key={field.name}
-                      setFieldValue={setFieldValue}
                       contentContext={contentContext}
                     />
                   ) : (
                     <SiteContentField
                       field={field}
                       key={field.name}
-                      setFieldValue={setFieldValue}
                       contentContext={contentContext}
                     />
                   )

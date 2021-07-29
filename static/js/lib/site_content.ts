@@ -21,6 +21,7 @@ import {
   RepeatableConfigItem,
   SingletonConfigItem,
   StringConfigField,
+  Website,
   WebsiteContent,
   WidgetVariant
 } from "../types/websites"
@@ -127,7 +128,8 @@ export const isSingletonCollectionItem = (
  **/
 export const contentFormValuesToPayload = (
   values: SiteFormValues,
-  fields: ConfigField[]
+  fields: ConfigField[],
+  website: Website
 ):
   | (Record<string, string> & { metadata?: Record<string, string> })
   | FormData => {
@@ -142,7 +144,7 @@ export const contentFormValuesToPayload = (
   for (const field of fields) {
     const value = fieldHasData(field, values) ?
       values[field.name] :
-      defaultForField(field)
+      defaultForField(field, website)
 
     if (value !== undefined) {
       // Our API expects these bits of data as top-level keys in the payload:
@@ -173,7 +175,8 @@ export const contentFormValuesToPayload = (
  **/
 export const contentInitialValues = (
   content: WebsiteContent,
-  fields: ConfigField[]
+  fields: ConfigField[],
+  website: Website
 ): SiteFormValues => {
   const values = {}
   const metadata = content.metadata ?? {}
@@ -186,7 +189,8 @@ export const contentInitialValues = (
     } else if (field.widget === WidgetVariant.File) {
       values[field.name] = content[field.name] ?? null
     } else {
-      values[field.name] = metadata[field.name] ?? defaultForField(field)
+      values[field.name] =
+        metadata[field.name] ?? defaultForField(field, website)
     }
   }
   return values
@@ -196,13 +200,16 @@ export const contentInitialValues = (
  * Returns appropriate values for the ContentForm when we're instantiating it
  * anew.
  **/
-export const newInitialValues = (fields: ConfigField[]): SiteFormValues =>
+export const newInitialValues = (
+  fields: ConfigField[],
+  website: Website
+): SiteFormValues =>
   Object.fromEntries(
     fields.map((field: ConfigField) => [
       field.name,
       field.widget === WidgetVariant.Object ?
-        newInitialValues(field.fields) :
-        field.default ?? defaultForField(field)
+        newInitialValues(field.fields, website) :
+        field.default ?? defaultForField(field, website)
     ])
   )
 
@@ -211,13 +218,16 @@ export const newInitialValues = (fields: ConfigField[]): SiteFormValues =>
  * switches of off `field.widget: WidgetVariant` but also looks at other props
  * like `.multiple: boolean` on `WidgetVariant.Select` fields, for instance.
  **/
-const defaultForField = (field: ConfigField): SiteFormValue => {
+const defaultForField = (
+  field: ConfigField,
+  website: Website
+): SiteFormValue => {
   switch (field.widget) {
   case WidgetVariant.Boolean:
     return false
   case WidgetVariant.Relation:
     return {
-      website: null,
+      website: website.name,
       content: field.multiple ? [] : ""
     }
   case WidgetVariant.Select:
@@ -233,7 +243,7 @@ const defaultForField = (field: ConfigField): SiteFormValue => {
           // nested field *should* only return SiteFormPrimitive (i.e. boolean,
           // string, etc) and *not* another nested
           // Record<string, SiteFormPrimitive>
-          defaultForField(field) as SiteFormPrimitive
+          defaultForField(field, website) as SiteFormPrimitive
       ])
     )
   case WidgetVariant.Menu:

@@ -8,6 +8,7 @@ import RelationField from "../components/widgets/RelationField"
 import MenuField from "../components/widgets/MenuField"
 
 import {
+  makeWebsiteDetail,
   makeWebsiteConfigField,
   makeWebsiteContentDetail,
   makeFileConfigItem,
@@ -39,6 +40,7 @@ import {
   WidgetVariant
 } from "../types/websites"
 
+const OUR_WEBSITE = "our-website"
 describe("site_content", () => {
   const defaultsMapping = {
     [WidgetVariant.Markdown]: "",
@@ -47,7 +49,7 @@ describe("site_content", () => {
     [WidgetVariant.Text]:     "",
     [WidgetVariant.String]:   "",
     [WidgetVariant.Select]:   "",
-    [WidgetVariant.Relation]: { website: null, content: "" },
+    [WidgetVariant.Relation]: { website: OUR_WEBSITE, content: "" },
     [WidgetVariant.Menu]:     [],
     [WidgetVariant.Object]:   {
       ["nested-one"]: "",
@@ -74,7 +76,11 @@ describe("site_content", () => {
           widget: WidgetVariant.Markdown
         }
       ]
-      const payload = contentFormValuesToPayload(values, fields)
+      const payload = contentFormValuesToPayload(
+        values,
+        fields,
+        makeWebsiteDetail()
+      )
       expect(payload).toStrictEqual({
         markdown: "some content",
         title:    "a title"
@@ -147,7 +153,8 @@ describe("site_content", () => {
           tags: []
         },
         // @ts-ignore
-        [descriptionField]
+        [descriptionField],
+        makeWebsiteDetail()
       )
       expect(payload).toStrictEqual({ metadata: { tags: [] } })
     })
@@ -173,7 +180,8 @@ describe("site_content", () => {
             // @ts-ignore
             description: value
           },
-          [field]
+          [field],
+          makeWebsiteDetail()
         )
         expect(Object.values(payload).length).toBe(isPartOfPayload ? 1 : 0)
       })
@@ -191,7 +199,10 @@ describe("site_content", () => {
             makeWebsiteConfigField({ name: "nested-two" })
           ]
         })
-        const payload = contentFormValuesToPayload({}, [field])
+        const payload = contentFormValuesToPayload({}, [field], {
+          ...makeWebsiteDetail(),
+          name: OUR_WEBSITE
+        })
         expect(payload["metadata"]["test-field"]).toStrictEqual(expectedDefault)
       }
     })
@@ -244,7 +255,8 @@ describe("site_content", () => {
             makeWebsiteConfigField({ name: "nested-two" })
           ]
         })
-        const initialValues = newInitialValues([field])
+        const website = { ...makeWebsiteDetail(), name: OUR_WEBSITE }
+        const initialValues = newInitialValues([field], website)
         expect(initialValues).toStrictEqual({ widget: expectation })
       })
     })
@@ -255,7 +267,9 @@ describe("site_content", () => {
         multiple: true,
         label:    "Widget"
       })
-      expect(newInitialValues([field])).toStrictEqual({ widget: [] })
+      expect(newInitialValues([field], makeWebsiteDetail())).toStrictEqual({
+        widget: []
+      })
     })
 
     it("should use appropriate default for multiple relation", () => {
@@ -264,10 +278,11 @@ describe("site_content", () => {
         multiple: true,
         label:    "Widget"
       })
+      const website = makeWebsiteDetail()
 
-      expect(newInitialValues([field])).toStrictEqual({
+      expect(newInitialValues([field], website)).toStrictEqual({
         widget: {
-          website: null,
+          website: website.name,
           content: []
         }
       })
@@ -289,7 +304,7 @@ describe("site_content", () => {
           })
         ]
       })
-      expect(newInitialValues([field])).toStrictEqual({
+      expect(newInitialValues([field], makeWebsiteDetail())).toStrictEqual({
         myobject: {
           myselect: [],
           mystring: ""

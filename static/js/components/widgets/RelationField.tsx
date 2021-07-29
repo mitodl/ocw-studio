@@ -11,12 +11,10 @@ import {
   RelationFilterVariant,
   WebsiteContent
 } from "../../types/websites"
-import { SiteFormValue } from "../../types/forms"
-import { XOR } from "../../types/util"
 import { siteApiContentListingUrl } from "../../lib/urls"
 import { PaginatedResponse } from "../../query-configs/utils"
 
-type BaseProps = {
+type Props = {
   name: string
   collection?: string | string[]
   display_field: string // eslint-disable-line camelcase
@@ -26,18 +24,8 @@ type BaseProps = {
   website?: string
   valuesToOmit?: Set<string>
   contentContext: WebsiteContent[] | null
+  onChange: (event: any) => void
 }
-
-/* NOTE: Either setFieldValue or onChange should be passed in, not both.
- * setFieldValue is passed in under normal circumstances when this widget is being used for some field described
- * in the site config.
- * onChange can be passed in when this widget is needed in a different context and the change behavior needs to be
- * customized.
- */
-type NormalWidgetProps = BaseProps & {
-  setFieldValue: (key: string, value: SiteFormValue) => void
-}
-type CustomProps = BaseProps & { onChange: (event: any) => void }
 
 const filterContent = curry((filter: RelationFilter, entry: WebsiteContent) => {
   if (!filter) {
@@ -51,9 +39,7 @@ const filterContent = curry((filter: RelationFilter, entry: WebsiteContent) => {
   return entry
 })
 
-export default function RelationField(
-  props: XOR<NormalWidgetProps, CustomProps>
-): JSX.Element {
+export default function RelationField(props: Props): JSX.Element {
   const {
     collection,
     contentContext,
@@ -63,8 +49,7 @@ export default function RelationField(
     value,
     filter,
     valuesToOmit,
-    onChange,
-    setFieldValue
+    onChange
   } = props
 
   const formatOptions = useCallback(
@@ -89,20 +74,25 @@ export default function RelationField(
 
   const handleChange = useCallback(
     (event: any) => {
-      if (onChange) {
-        onChange(event)
-      } else if (setFieldValue) {
-        const content = event.target.value
-
-        // need to do this because we've renamed the
-        // nested field to get validation working
-        setFieldValue(name.split(".")[0], {
-          website: websiteName,
-          content
-        })
+      // When we run renameNestedFields we add a '.content' suffix to the name of the field for RelationField
+      // because the data structure looks like this: { content, website }
+      // where 'content' is either a string or a list of strings.
+      // Validation by yup is easier to work with when the field name ends with .content because
+      // formik validates the value of 'content' instead of '{ content, website }'.
+      // But while that's easier for validation, we still need to send the whole object.
+      // So we need to remove that .content suffix and also add back 'website' when onChange is called.
+      const updatedEvent = {
+        target: {
+          name:  event.target.name.replace(/\.content$/, ""),
+          value: {
+            website: websiteName,
+            content: event.target.value
+          }
+        }
       }
+      onChange(updatedEvent)
     },
-    [setFieldValue, onChange, name, websiteName]
+    [onChange, websiteName]
   )
 
   const filterContentListing = (results: WebsiteContent[]) => {

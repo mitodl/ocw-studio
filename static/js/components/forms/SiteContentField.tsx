@@ -8,7 +8,6 @@ import { ConfigField, WebsiteContent } from "../../types/websites"
 
 interface Props {
   field: ConfigField
-  setFieldValue: (key: string, value: File | null) => void
   contentContext: WebsiteContent[] | null
 }
 
@@ -17,14 +16,12 @@ interface Props {
  */
 export default function SiteContentField({
   field,
-  setFieldValue,
   contentContext
 }: Props): JSX.Element {
   const extraProps = widgetExtraProps(field)
   const component = componentFromWidget(field)
 
   if (component && typeof component !== "string") {
-    extraProps.setFieldValue = setFieldValue
     extraProps.contentContext = contentContext
   }
 
