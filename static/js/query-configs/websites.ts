@@ -18,6 +18,7 @@ import {
 } from "../lib/urls"
 
 import {
+  ContentDetailParams,
   ContentListingParams,
   NewWebsitePayload,
   Website,
@@ -258,6 +259,9 @@ export const contentListingKey = (
 ): string =>
   JSON.stringify([listingParams.name, listingParams.type, listingParams.offset])
 
+export const contentDetailKey = (params: ContentDetailParams): string =>
+  JSON.stringify([params.name, params.textId])
+
 /**
  * Query config for fetching the content items for a website.
  *
@@ -285,7 +289,7 @@ export const websiteContentListingRequest = (
     transform: (body: WebsiteContentListingResponse) => {
       const details = {}
       for (const item of body.results) {
-        details[item.text_id] = item
+        details[contentDetailKey({ textId: item.text_id, name })] = item
       }
       return {
         websiteContentListing: {
@@ -319,17 +323,16 @@ export const websiteContentListingRequest = (
 
 type WebsiteContentDetails = Record<string, WebsiteContent>
 export const websiteContentDetailRequest = (
-  name: string,
-  textId: string,
+  params: ContentDetailParams,
   requestContentContext: boolean
 ): QueryConfig => ({
   url: siteApiContentDetailUrl
-    .param({ name, textId })
+    .param({ name: params.name, textId: params.textId })
     .query(requestContentContext ? { content_context: true } : {})
     .toString(),
   transform: (body: WebsiteContent) => ({
     websiteContentDetails: {
-      [textId]: body
+      [contentDetailKey(params)]: body
     }
   }),
   update: {
@@ -360,13 +363,11 @@ export type EditWebsiteContentPayload = {
 }
 
 export const editWebsiteContentMutation = (
-  site: Website,
-  textId: string,
-  contentType: string,
+  params: ContentDetailParams,
   payload: EditWebsiteContentPayload | FormData
 ): QueryConfig => ({
   url: siteApiContentDetailUrl
-    .param({ name: site.name, textId: textId })
+    .param({ name: params.name, textId: params.textId })
     .toString(),
   options: {
     method:  "PATCH",
@@ -377,7 +378,7 @@ export const editWebsiteContentMutation = (
   body:      payload,
   transform: (response: WebsiteContent) => ({
     websiteContentDetails: {
-      [textId]: response
+      [contentDetailKey(params)]: response
     }
   }),
   update: {
@@ -415,7 +416,7 @@ export const createWebsiteContentMutation = (
   body:      payload,
   transform: (response: WebsiteContent) => ({
     websiteContentDetails: {
-      [response.text_id]: response
+      [contentDetailKey({ textId: response.text_id, name: siteName })]: response
     }
   }),
   update: {

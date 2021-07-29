@@ -30,7 +30,7 @@ import {
 import { ContentFormType, SiteFormValues } from "../types/forms"
 
 interface Props {
-  content?: WebsiteContent
+  content?: WebsiteContent | null
   loadContent: boolean
   textId: string | null
   configItem: EditableConfigItem
@@ -63,7 +63,7 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     { isPending: editIsPending },
     editWebsiteContent
   ] = useMutation((payload: EditWebsiteContentPayload | FormData) =>
-    editWebsiteContentMutation(site, textId!, configItem.name, payload)
+    editWebsiteContentMutation({ name: site.name, textId: textId! }, payload)
   )
 
   let isPending = false,
@@ -77,9 +77,8 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
   const queryTuple = useRequest(
     shouldLoadContent ?
       websiteContentDetailRequest(
-        site.name,
-          textId as string,
-          needsContentContext(fields)
+        { name: site.name, textId: textId as string },
+        needsContentContext(fields)
       ) :
       null
   )
@@ -89,7 +88,10 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
 
   if (shouldLoadContent) {
     isPending = queryTuple[0].isPending
-    content = websiteContentDetailSelector(textId as string)
+    content = websiteContentDetailSelector({
+      name:   site.name,
+      textId: textId as string
+    })
   }
 
   if (isPending || (formType === ContentFormType.Edit && !content)) {

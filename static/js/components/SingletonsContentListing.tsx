@@ -27,16 +27,19 @@ export default function SingletonsContentListing(props: {
   }
 
   const activeFileConfigItem = configItem.files[activeTab]
+  const contentDetailParams = {
+    name:   website.name,
+    textId: activeFileConfigItem.name
+  }
   const content = useSelector(getWebsiteContentDetailCursor)(
-    activeFileConfigItem.name
+    contentDetailParams
   )
 
   const [{ isPending }] = useRequest(
     content ?
       null :
       websiteContentDetailRequest(
-        website.name,
-        activeFileConfigItem.name,
+        contentDetailParams,
         needsContentContext(activeFileConfigItem.fields)
       )
   )
@@ -66,7 +69,7 @@ export default function SingletonsContentListing(props: {
                 "Loading..."
               ) : (
                 <SiteContentEditor
-                  content={content}
+                  content={activeTab === i ? content : null}
                   loadContent={false}
                   configItem={fileConfigItem}
                   textId={fileConfigItem.name}

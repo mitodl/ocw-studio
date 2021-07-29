@@ -154,6 +154,7 @@ describe("SingletonsContentListing", () => {
         .stub(siteContentFuncs, "needsContentContext")
         .returns(contentContext)
       const tabIndexToSelect = 1
+      const newContent = makeWebsiteContentDetail()
       contentDetailStub = helper.handleRequestStub
         .withArgs(
           siteApiContentDetailUrl
@@ -166,7 +167,7 @@ describe("SingletonsContentListing", () => {
           "GET"
         )
         .returns({
-          body:   content,
+          body:   newContent,
           status: 200
         })
       const { wrapper } = await render()
@@ -178,11 +179,23 @@ describe("SingletonsContentListing", () => {
         // @ts-ignore
         tabLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
       })
+      wrapper.update()
       sinon.assert.calledOnce(contentDetailStub)
       sinon.assert.calledWith(
         needsContentContextStub,
-        singletonConfigItems[0].fields
+        singletonConfigItems[tabIndexToSelect].fields
       )
+      expect(
+        wrapper
+          .find("SiteContentEditor")
+          .at(tabIndexToSelect)
+          .prop("content")
+      ).toBe(newContent)
+      wrapper.find("SiteContentEditor").forEach((editorWrapper, idx) => {
+        if (idx !== tabIndexToSelect) {
+          expect(editorWrapper.prop("content")).toBeNull()
+        }
+      })
     })
   })
 
