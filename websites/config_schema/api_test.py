@@ -126,3 +126,19 @@ def test_required_title_rule(parsed_site_config, attr, value):
     }
     with pytest.raises(ValueError):
         validate_parsed_site_config(config)
+
+
+def test_menu_rule(parsed_site_config):
+    """If a config item includes a "menu" widget field, it should not have any other fields with other widget types"""
+    config = parsed_site_config.copy()
+    menu_field = {"name": "menu1", "label": "Menu 1", "widget": "menu"}
+    # One "menu"-widget field and one non-"menu"-widget field
+    config["collections"][0] = {
+        **config["collections"][0],
+        "fields": config["collections"][0]["fields"] + [menu_field],
+    }
+    with pytest.raises(ValueError):
+        validate_parsed_site_config(config)
+    # Two "menu"-widget fields
+    config["collections"][0]["fields"] = [menu_field, {**menu_field, "name": "menu2"}]
+    validate_parsed_site_config(config)

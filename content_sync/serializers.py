@@ -2,7 +2,7 @@
 import abc
 import json
 import re
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 import yaml
 from mitol.common.utils import dict_without_keys
@@ -191,13 +191,12 @@ def _get_uuid_content_map(hugo_menu_data: dict) -> Dict[str, WebsiteContent]:
 
 def _transform_hugo_menu_data(
     website_content: WebsiteContent, site_config: SiteConfig
-) -> Tuple[dict, dict]:
+) -> dict:
     """
-    Adds 'url' property to internal links in menu data, and namespaces the menu data under "menu" in the
-    resulting dict (ref: https://gohugo.io/content-management/menus/#add-non-content-entries-to-a-menu)
+    Adds 'url' property to internal links in menu data.
 
-    Returns two dicts: the metadata with "menu" widget fields removed, and the transformed menu data namespaced
-        under "menu"
+    Returns the dict of all values that will be serialized to the target file, including the transformed
+    "menu" fields.
     """
     config_item = site_config.find_item_by_name(website_content.type)
     menu_fields = {
@@ -205,14 +204,13 @@ def _transform_hugo_menu_data(
         for field in config_item.fields
         if field.get("widget") == CONTENT_MENU_FIELD
     }
-    result_menu = {}
-    for field_name in website_content.metadata.keys():
+    transformed_menu_fields = {}
+    for field_name, field_data in website_content.metadata.items():
         if field_name not in menu_fields:
             continue
-        menu_data = website_content.metadata[field_name]
-        uuid_content_map = _get_uuid_content_map(menu_data)
+        uuid_content_map = _get_uuid_content_map(field_data)
         result_menu_items = []
-        for menu_item in menu_data:
+        for menu_item in field_data:
             updated_menu_item = menu_item
             # Add/update the 'url' value if this is an internal link
             if menu_item["identifier"] in uuid_content_map:
@@ -221,11 +219,40 @@ def _transform_hugo_menu_data(
                     menu_item_content, site_config
                 )
             result_menu_items.append(updated_menu_item)
-        result_menu[field_name] = result_menu_items
-    return (
-        dict_without_keys(website_content.metadata, *menu_fields),
-        ({CONTENT_MENU_FIELD: result_menu} if result_menu else {}),
-    )
+        transformed_menu_fields[field_name] = result_menu_items
+    return {**website_content.metadata, **transformed_menu_fields}
+
+
+def _untransform_hugo_menu_data(
+    data: dict, filepath: str, site_config: SiteConfig
+) -> dict:
+    """
+    Removes 'url' property from internal links in serialized menu data.
+
+    Returns the dict of all values that will be deserialized to website content, including the transformed
+    "menu" fields.
+    """
+    config_item = site_config.find_item_by_filepath(filepath)
+    menu_fields = {
+        field["name"]
+        for field in config_item.fields
+        if field.get("widget") == CONTENT_MENU_FIELD
+    }
+    transformed_menu_fields = {}
+    for field_name, field_data in data.items():
+        if field_name not in menu_fields:
+            continue
+        result_menu_items = []
+        for menu_item in field_data:
+            updated_menu_item = menu_item.copy()
+            if (
+                is_valid_uuid(updated_menu_item["identifier"])
+                and "url" in updated_menu_item
+            ):
+                del updated_menu_item["url"]
+            result_menu_items.append(updated_menu_item)
+        transformed_menu_fields[field_name] = result_menu_items
+    return {**data, **transformed_menu_fields}
 
 
 class HugoMenuYamlFileSerializer(BaseContentFileSerializer):
@@ -236,12 +263,10 @@ class HugoMenuYamlFileSerializer(BaseContentFileSerializer):
     """
 
     def serialize(self, website_content: WebsiteContent) -> str:
-        non_menu_metadata, menu_data = _transform_hugo_menu_data(
-            website_content, self.site_config
-        )
         return yaml.dump(
             self.serialize_contents(
-                metadata={**menu_data, **non_menu_metadata}, title=website_content.title
+                metadata=_transform_hugo_menu_data(website_content, self.site_config),
+                title=website_content.title,
             ),
             Dumper=yaml.Dumper,
         )
@@ -250,15 +275,14 @@ class HugoMenuYamlFileSerializer(BaseContentFileSerializer):
         self, website: Website, filepath: str, file_contents: str
     ) -> WebsiteContent:
         parsed_file_data = yaml.load(file_contents, Loader=yaml.Loader)
-        if CONTENT_MENU_FIELD in parsed_file_data:
-            parsed_file_data = {
-                **parsed_file_data[CONTENT_MENU_FIELD],
-                **dict_without_keys(parsed_file_data, CONTENT_MENU_FIELD),
-            }
         return self.deserialize_data_file(
             website=website,
             filepath=filepath,
-            parsed_file_data=parsed_file_data,
+            parsed_file_data=_untransform_hugo_menu_data(
+                data=parsed_file_data,
+                filepath=filepath,
+                site_config=self.site_config,
+            ),
         )
 
 
@@ -276,7 +300,7 @@ class ContentFileSerializerFactory:
             cls = HugoMarkdownFileSerializer
         elif file_ext == "json":
             cls = JsonFileSerializer
-        elif file_ext == "yml":
+        elif file_ext in {"yml", "yaml"}:
             # HACK: Hugo-specific logic for properly transforming data if the "menu" widget is used
             config_item = site_config.find_item_by_filepath(filepath)
             if config_item is not None and _has_menu_fields(config_item):
@@ -308,7 +332,7 @@ class ContentFileSerializerFactory:
         file_ext = get_file_extension(destination_filepath)
         if file_ext == "json":
             cls = JsonFileSerializer
-        elif file_ext == "yml":
+        elif file_ext in {"yml", "yaml"}:
             # HACK: Hugo-specific logic for properly transforming data if the "menu" widget is used
             if _has_menu_fields(config_item):
                 cls = HugoMenuYamlFileSerializer
