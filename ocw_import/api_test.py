@@ -200,15 +200,25 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
 
 
 @pytest.mark.django_db
-def test_get_short_id():
-    """ get_short_id should return expected values """
-    course_num = "6.0001"
-    semester = "Spring"
-    year = "2024"
-    metadata = {"primary_course_number": course_num, "term": f"{semester} {year}"}
-    short_id = get_short_id(metadata)
-    assert short_id == f"{course_num}-{semester.lower()}-{year}"
-    for i in range(1, 4):
-        WebsiteFactory.create(short_id=short_id)
+@pytest.mark.parametrize(
+    "course_num, term, expected_id",
+    [
+        ["6.0001", "", "6.0001"],
+        ["5.3", "Spring 2022", "5.3-spring-2022"],
+        ["5.3", "January IAP 2011", "5.3-january-iap-2011"],
+        [None, "January IAP 2011", None],
+    ],
+)
+def test_get_short_id(course_num, term, expected_id):
+    """ get_short_id should return expected values, or raise an error if no course number"""
+    metadata = {"primary_course_number": course_num, "term": f"{term}"}
+    if expected_id:
         short_id = get_short_id(metadata)
-        assert short_id == f"{course_num}-{semester.lower()}-{year}-{i+1}"
+        assert short_id == expected_id
+        for i in range(1, 4):
+            WebsiteFactory.create(short_id=short_id)
+            short_id = get_short_id(metadata)
+            assert short_id == f"{expected_id}-{i+1}"
+    else:
+        with pytest.raises(ValueError):
+            get_short_id(metadata)
