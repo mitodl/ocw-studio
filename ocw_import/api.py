@@ -96,9 +96,6 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
         )
         if part
     ]
-    course_home_uuid = yaml.load(
-        course_home_s3_content_parts[0], Loader=yaml.Loader
-    ).get("uid", COURSE_HOME)
     for resp in bucket.meta.client.get_paginator("list_objects").paginate(
         Bucket=bucket.name, Prefix=f"{prefix}{website.name}/content"
     ):
@@ -107,13 +104,13 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
             s3_content = get_s3_object_and_read(bucket.Object(s3_key)).decode()
             filepath = obj["Key"].replace(prefix, "")
             try:
-                convert_data_to_content(filepath, s3_content, website, course_home_uuid)
+                convert_data_to_content(filepath, s3_content, website)
             except:  # pylint:disable=bare-except
                 log.exception("Error saving WebsiteContent for %s", s3_key)
 
 
 def convert_data_to_content(
-    filepath, data, website, course_home_uuid
+    filepath, data, website
 ):  # pylint:disable=too-many-locals
     """
     Convert file data into a WebsiteContent object
@@ -122,7 +119,6 @@ def convert_data_to_content(
         filepath(str): The path of the file (from S3 or git)
         data(str): The file data to be converted
         website: The website to which the content belongs
-        course_home_uuid: The UUID of the course page
     """
     s3_content_parts = [
         part for part in re.split(re.compile(r"^---\n", re.MULTILINE), data) if part

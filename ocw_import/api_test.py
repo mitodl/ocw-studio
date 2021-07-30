@@ -227,7 +227,7 @@ def test_get_short_id(course_num, term, expected_id):
 
 
 @mock_s3
-def test_import_ocw2hugo_menu(mocker, settings):
+def test_import_ocw2hugo_menu(settings):
     """ Website publish date should be null if the JSON date can't be parsed """
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
