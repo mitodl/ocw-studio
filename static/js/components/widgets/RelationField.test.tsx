@@ -258,8 +258,6 @@ describe("RelationField", () => {
     // @ts-ignore
     wrapper.update()
     // @ts-ignore
-    global.fetch.mockClear()
-    // @ts-ignore
     const loadOptions = wrapper.find("SelectField").prop("loadOptions")
     const searchString1 = "searchstring1",
       searchString2 = "searchstring2"
@@ -303,5 +301,44 @@ describe("RelationField", () => {
       fakeResponse.results.map(asOption),
       fakeResponse.results.map(asOption)
     ])
+  })
+
+  //
+  ;[true, false].forEach(valueIsArray => {
+    it(`should omit items listed by valuesToOmit, except those already selected, when value ${
+      valueIsArray ? "is" : "is not"
+    } an array`, async () => {
+      let wrapper: ReactWrapper, loadOptionsResponse
+      const valuesToOmit = new Set([
+        contentListingItems[0].text_id,
+        contentListingItems[2].text_id,
+        contentListingItems[3].text_id
+      ])
+      const value = valueIsArray ?
+        [contentListingItems[0].text_id, contentListingItems[1].text_id] :
+        contentListingItems[0].text_id
+      const expectedResults = fakeResponse.results.filter(
+        (_: any, idx: number) => idx !== 2 && idx !== 3
+      )
+      const expectedOptions = expectedResults.map(asOption)
+
+      await act(async () => {
+        wrapper = (await render({ valuesToOmit, value })).wrapper
+      })
+      // @ts-ignore
+      wrapper.update()
+      // @ts-ignore
+      const loadOptions = wrapper.find("SelectField").prop("loadOptions")
+
+      // @ts-ignore
+      debouncedFetch.mockResolvedValue({ json: async () => fakeResponse })
+
+      await act(async () => {
+        // @ts-ignore
+        loadOptionsResponse = await loadOptions()
+      })
+
+      expect(loadOptionsResponse).toStrictEqual(expectedOptions)
+    })
   })
 })

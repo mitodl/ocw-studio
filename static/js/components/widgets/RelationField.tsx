@@ -104,8 +104,12 @@ export default function RelationField(props: Props): JSX.Element {
       newContentListing = newContentListing.filter(filterContent(filter))
     }
     if (valuesToOmit) {
+      const valueAsSet = Array.isArray(value) ?
+        new Set(value) :
+        new Set([value])
       newContentListing = newContentListing.filter(
-        entry => !valuesToOmit.has(entry.text_id) || value === entry.text_id
+        entry =>
+          !valuesToOmit.has(entry.text_id) || valueAsSet.has(entry.text_id)
       )
     }
     return newContentListing
