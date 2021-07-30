@@ -98,9 +98,7 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                 log.exception("Error saving WebsiteContent for %s", s3_key)
 
 
-def convert_data_to_content(
-    filepath, data, website
-):  # pylint:disable=too-many-locals
+def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many-locals
     """
     Convert file data into a WebsiteContent object
 
