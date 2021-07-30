@@ -36,7 +36,7 @@ class Command(BaseCommand):
             dest="chunks",
             default=100,
             type=int,
-            help="Number of courses to process per celery task (default 250)",
+            help="Number of courses to process per celery task (default 100)",
         )
         parser.add_argument(
             "-l",
@@ -94,6 +94,7 @@ class Command(BaseCommand):
             limit=limit,
             chunk_size=options["chunks"],
         )
+        self.stdout.write(f"Starting task {task}...")
         task.get()
         total_seconds = (now_in_utc() - start).total_seconds()
         self.stdout.write(
@@ -104,6 +105,7 @@ class Command(BaseCommand):
             self.stdout.write("Syncing all unsynced courses to the designated backend")
             start = now_in_utc()
             task = sync_all_websites.delay()
+            self.stdout.write(f"Starting task {task}...")
             task.get()
             total_seconds = (now_in_utc() - start).total_seconds()
             self.stdout.write(
