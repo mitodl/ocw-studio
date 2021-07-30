@@ -87,7 +87,9 @@
     "level": "Undergraduate",
     "url": "/search/?l=Undergraduate"
   },
-  "other_versions": [],
+  "other_versions": [
+    "[1.050 SOLID MECHANICS](/courses/1-050-solid-mechanics-fall-2004) |  FALL 2004"
+  ],
   "archived_versions": [],
   "open_learning_library_versions": []
 }

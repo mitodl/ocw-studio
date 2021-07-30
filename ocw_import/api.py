@@ -5,7 +5,7 @@ import re
 import uuid
 
 import yaml
-from dateutil import parser as dateparser
+import dateutil
 from django.conf import settings
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
@@ -39,6 +39,19 @@ NON_ID_COURSE_NAMES = [
     "more",
     "physics",
 ]
+
+
+def parse_date(date_string):
+    """
+    Small utility function for calling dateutil.parser.parse, done so we can
+    mock out date parsing in unit tests
+
+    Args:
+        date_string (str): A date string to parse
+    Yeilds:
+        A date object
+    """
+    return dateutil.parser.parse(date_string)
 
 
 def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_str=""):
@@ -278,12 +291,13 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     menu_data = yaml.load(
         get_s3_object_and_read(
             bucket.Object(f"{prefix}{name}/config/_default/menus.yaml")
-        )
+        ),
+        Loader=yaml.FullLoader,
     )
     if name in NON_ID_COURSE_NAMES:
         return
     try:
-        publish_date = dateparser.parse(course_data.get("publishdate", None))
+        publish_date = parse_date(course_data.get("publishdate", None))
     except ValueError:
         publish_date = None
         course_data["publishdate"] = None

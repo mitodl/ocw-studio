@@ -6,6 +6,7 @@ description: >-
 type: course
 layout: pdf
 uid: a4064fb01c4285ba2c801a8e66000434
+parent_uid: dec40ff4e8ca636fc6dbd88880914a96
 file_type: application/pdf
 file_location: >-
   https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/a4064fb01c4285ba2c801a8e66000434_lec19.pdf

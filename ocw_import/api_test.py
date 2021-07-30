@@ -24,6 +24,10 @@ from websites.models import Website, WebsiteContent
 
 pytestmark = pytest.mark.django_db
 
+import logging
+
+log = logging.getLogger(__name__)
+
 
 @mock_s3
 def test_import_ocw2hugo_course_content(settings):
@@ -51,7 +55,7 @@ def test_import_ocw2hugo_course_content(settings):
         WebsiteContent.objects.filter(
             website=website, type=CONTENT_TYPE_RESOURCE
         ).count()
-        == 3
+        == 65
     )
 
     home_page = WebsiteContent.objects.get(
@@ -70,13 +74,17 @@ def test_import_ocw2hugo_course_content(settings):
     )
     assert related_page.type == CONTENT_TYPE_PAGE
     assert related_page.metadata.get("title") == "Related Resources"
-    assert related_page.parent == WebsiteContent.objects.get(
-        text_id="ba83162e-713c-c931-5ff9-bfe952c79b82"
-    )
     assert related_page.filename == "_index"
     assert (
         related_page.dirpath
         == "1-050-engineering-mechanics-i-fall-2007/content/sections/related-resources"
+    )
+
+    matlab_page = WebsiteContent.objects.get(
+        text_id="c8cd9384-0305-bfbb-46ae-a7e7a8229f57"
+    )
+    assert matlab_page.parent == WebsiteContent.objects.get(
+        text_id="4f5c3926-e4d5-6974-7f16-131a6f692568"
     )
 
     lecture_pdf = WebsiteContent.objects.get(
@@ -113,22 +121,22 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
         .order_by("title")
     ) == [
         {
-            "title": "Franz-Josef Ulm",
+            "title": "Prof. Franz-Josef Ulm",
             "metadata": {
                 "first_name": "Franz-Josef",
                 "middle_initial": "",
                 "last_name": "Ulm",
-                "salutation": "",
+                "salutation": "Prof.",
                 "headless": True,
             },
         },
         {
-            "title": "Markus Buehler",
+            "title": "Prof. Markus Buehler",
             "metadata": {
                 "first_name": "Markus",
                 "middle_initial": "",
                 "last_name": "Buehler",
-                "salutation": "",
+                "salutation": "Prof.",
                 "headless": True,
             },
         },
@@ -153,9 +161,7 @@ def test_import_ocw2hugo_course_bad_date(mocker, settings):
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
-    mocker.patch(
-        "ocw_import.api.dateparser.parse", side_effect=["2021-01-01", ValueError()]
-    )
+    mocker.patch("ocw_import.api.parse_date", side_effect=ValueError())
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     website = Website.objects.get(name=name)
     assert website.publish_date is None
