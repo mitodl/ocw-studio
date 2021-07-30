@@ -4,6 +4,7 @@ CONTENT_TYPE_PAGE = "page"
 CONTENT_TYPE_RESOURCE = "resource"
 CONTENT_TYPE_INSTRUCTOR = "instructor"
 CONTENT_TYPE_METADATA = "sitemetadata"
+CONTENT_TYPE_NAVMENU = "navmenu"
 
 COURSE_HOME = "course-home"
 COURSE_PAGE_LAYOUTS = ["course_home", "course_section", "instructor_insights"]
@@ -28,7 +29,7 @@ WEBSITE_CONFIG_ROOT_URL_PATH_KEY = "root-url-path"
 WEBSITE_CONTENT_FILETYPE = "md"
 CONTENT_MENU_FIELD = "menu"
 
-COURSE_STARTER_SLUG = "course"
+COURSE_STARTER_SLUG = "ocw-course"
 OMNIBUS_STARTER_SLUG = "omnibus-starter"
 
 GLOBAL_ADMIN = "global_admin"

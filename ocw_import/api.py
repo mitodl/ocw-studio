@@ -15,6 +15,7 @@ from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     CONTENT_TYPE_INSTRUCTOR,
     CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     COURSE_HOME,
@@ -117,16 +118,11 @@ def convert_data_to_content(
     if len(s3_content_parts) >= 1:
         content_json = yaml.load(s3_content_parts[0], Loader=yaml.Loader)
         layout = content_json.get("layout", None)
-        menu = content_json.get("menu", None)
         uid = content_json.get("uid", None)
         dirpath, filename = get_dirpath_and_filename(
             filepath, expect_file_extension=True
         )
-        if menu:
-            menu_values = list(menu.values())[0]
-            parent_uid = menu_values.get("parent", course_home_uuid)
-        else:
-            parent_uid = content_json.get("parent", None)
+        parent_uid = content_json.get("parent_uid", None)
         if layout in COURSE_PAGE_LAYOUTS:
             # This is a page
             content_type = CONTENT_TYPE_PAGE
@@ -138,6 +134,7 @@ def convert_data_to_content(
                 website=website, text_id=str(uuid.UUID(parent_uid))
             )
         base_defaults = {
+            "is_page_content": True,
             "metadata": content_json,
             "markdown": (s3_content_parts[1] if len(s3_content_parts) == 2 else None),
             "parent": parent,
@@ -235,6 +232,35 @@ def import_ocw2hugo_sitemetadata(
     )
 
 
+def import_ocw2hugo_menu(menu_data, website):
+    """
+    Create and populate a navmenu for the course
+
+    Args:
+        menu_data (dict): Data from config/_default/menus.yaml
+        website (Website): The course website
+    """
+    for i in range(len(menu_data["leftnav"])):
+        menu_data["leftnav"][i]["identifier"] = str(
+            uuid.UUID(menu_data["leftnav"][i]["identifier"])
+        )
+        if "parent" in menu_data["leftnav"][i]:
+            menu_data["leftnav"][i]["parent"] = str(
+                uuid.UUID(menu_data["leftnav"][i]["parent"])
+            )
+    WebsiteContent.objects.update_or_create(
+        filename="menus.yaml",
+        website=website,
+        defaults={
+            "title": "Left Nav",
+            "type": CONTENT_TYPE_NAVMENU,
+            "text_id": CONTENT_TYPE_NAVMENU,
+            "dirpath": "config/_default/menus.yaml",
+            "metadata": menu_data,
+        },
+    )
+
+
 def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     """
     Extract OCW course content for a course
@@ -247,28 +273,34 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     """
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
-    s3_content = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
-    name = s3_content.get("course_id")
+    course_data = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
+    name = course_data.get("course_id")
+    menu_data = yaml.load(
+        get_s3_object_and_read(
+            bucket.Object(f"{prefix}{name}/config/_default/menus.yaml")
+        )
+    )
     if name in NON_ID_COURSE_NAMES:
         return
     try:
-        publish_date = dateparser.parse(s3_content.get("publishdate", None))
+        publish_date = dateparser.parse(course_data.get("publishdate", None))
     except ValueError:
         publish_date = None
-        s3_content["publishdate"] = None
+        course_data["publishdate"] = None
     try:
         website, _ = Website.objects.update_or_create(
             name=name,
             defaults={
-                "title": s3_content.get("course_title", f"Course Site ({name})"),
+                "title": course_data.get("course_title", f"Course Site ({name})"),
                 "publish_date": publish_date,
-                "metadata": s3_content,
-                "short_id": get_short_id(s3_content),
+                "metadata": course_data,
+                "short_id": get_short_id(course_data),
                 "starter_id": starter_id,
                 "source": WEBSITE_SOURCE_OCW_IMPORT,
             },
         )
-        import_ocw2hugo_sitemetadata(s3_content, website)
+        import_ocw2hugo_sitemetadata(course_data, website)
+        import_ocw2hugo_menu(menu_data, website)
         import_ocw2hugo_content(bucket, prefix, website)
     except:  # pylint:disable=bare-except
         log.exception("Error saving website %s", path)
