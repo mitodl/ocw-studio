@@ -32,3 +32,14 @@
   background-color: white;
   color: $studio-green;
 }
+
+.gray-button {
+  cursor: pointer;
+  color: $studio-gray;
+
+  &.hover {
+    &:hover {
+      color: $studio-black;
+    }
+  }
+}

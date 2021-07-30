@@ -15,8 +15,12 @@ import {
 } from "@dnd-kit/sortable"
 
 import { useMutation, useRequest } from "redux-query-react"
-import { WebsiteCollection } from "../types/website_collections"
 import {
+  WebsiteCollection,
+  WebsiteCollectionItem
+} from "../types/website_collections"
+import {
+  deleteWebsiteCollectionItemMutation,
   editWebsiteCollectionItemMutation,
   websiteCollectionItemsRequest
 } from "../query-configs/website_collections"
@@ -69,6 +73,10 @@ export default function WebsiteCollectionItemsEditor(
     [updateWCItemPosition, websiteCollection, items]
   )
 
+  const [, deleteWCItem] = useMutation((item: WebsiteCollectionItem) =>
+    deleteWebsiteCollectionItemMutation(item, websiteCollection)
+  )
+
   return (
     <div className="collection-item-editor pt-5 pb-3">
       <h4>Courses in this collection</h4>
@@ -87,6 +95,7 @@ export default function WebsiteCollectionItemsEditor(
               key={item.id}
               id={String(item.id)}
               item={item}
+              deleteItem={deleteWCItem}
             />
           ))}
         </SortableContext>

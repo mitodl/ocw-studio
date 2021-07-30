@@ -106,4 +106,40 @@ describe("WebsiteCollectionItemsEditor", () => {
       }
     ])
   })
+
+  it("should pass down a delete callback to sortable items", async () => {
+    const { wrapper } = await render()
+    const [item] = items
+
+    helper.handleRequestStub
+      .withArgs(
+        wcItemsApiDetailUrl
+          .param({ collectionId: collection.id, itemId: item.id })
+          .toString()
+      )
+      .returns({
+        status: 204
+      })
+
+    act(() => {
+      // @ts-ignore
+      wrapper
+        .find("SortableWebsiteCollectionItem")
+        .at(0)
+        .prop("deleteItem")(item)
+    })
+
+    expect(helper.handleRequestStub.args[1]).toEqual([
+      wcItemsApiDetailUrl
+        .param({ collectionId: collection.id, itemId: item.id })
+        .toString(),
+      "DELETE",
+      {
+        credentials: undefined,
+        headers:     {
+          "X-CSRFTOKEN": ""
+        }
+      }
+    ])
+  })
 })

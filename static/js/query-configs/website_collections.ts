@@ -1,5 +1,5 @@
 import { QueryConfig } from "redux-query"
-import { findIndex, mergeRight } from "ramda"
+import { evolve, findIndex, mergeRight } from "ramda"
 
 import { PaginatedResponse } from "./utils"
 
@@ -240,6 +240,33 @@ export const editWebsiteCollectionItemMutation = (
   },
   options: {
     method:  "PATCH",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
+  }
+})
+
+/**
+ * Delete delete delete!!!
+ */
+export const deleteWebsiteCollectionItemMutation = (
+  item: WebsiteCollectionItem,
+  collection: WebsiteCollection
+): QueryConfig => ({
+  url: wcItemsApiDetailUrl
+    .param({
+      collectionId: collection.id,
+      itemId:       item.id
+    })
+    .toString(),
+  optimisticUpdate: {
+    websiteCollectionItems: evolve({
+      [collection.id]: (items: WebsiteCollectionItem[]) =>
+        (items ?? []).filter(x => x.id !== item.id)
+    })
+  },
+  options: {
+    method:  "DELETE",
     headers: {
       "X-CSRFTOKEN": getCookie("csrftoken") || ""
     }
