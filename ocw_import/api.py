@@ -18,7 +18,6 @@ from websites.constants import (
     CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
-    COURSE_HOME,
     COURSE_PAGE_LAYOUTS,
     COURSE_RESOURCE_LAYOUTS,
     INSTRUCTORS_FIELD_NAME,
@@ -86,16 +85,6 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
         prefix (str): S3 prefix for filtering by course
         website (Website): Website to import content for
     """
-    course_home_s3_content = get_s3_object_and_read(
-        bucket.Object(f"{prefix}{website.name}/content/_index.md")
-    ).decode()
-    course_home_s3_content_parts = [
-        part
-        for part in re.split(
-            re.compile(r"^---\n", re.MULTILINE), course_home_s3_content
-        )
-        if part
-    ]
     for resp in bucket.meta.client.get_paginator("list_objects").paginate(
         Bucket=bucket.name, Prefix=f"{prefix}{website.name}/content"
     ):

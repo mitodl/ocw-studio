@@ -6,7 +6,6 @@ CONTENT_TYPE_INSTRUCTOR = "instructor"
 CONTENT_TYPE_METADATA = "sitemetadata"
 CONTENT_TYPE_NAVMENU = "navmenu"
 
-COURSE_HOME = "course-home"
 COURSE_PAGE_LAYOUTS = ["course_home", "course_section", "instructor_insights"]
 COURSE_RESOURCE_LAYOUTS = ["pdf", "video"]
 
