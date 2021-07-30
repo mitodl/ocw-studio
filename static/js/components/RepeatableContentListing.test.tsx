@@ -13,6 +13,7 @@ import {
   siteApiContentListingUrl
 } from "../lib/urls"
 import {
+  contentDetailKey,
   contentListingKey,
   WebsiteContentListingResponse
 } from "../query-configs/websites"
@@ -67,7 +68,9 @@ describe("RepeatableContentListing", () => {
     ]
     websiteContentDetailsLookup = {}
     for (const item of contentListingItems) {
-      websiteContentDetailsLookup[item.text_id] = item
+      websiteContentDetailsLookup[
+        contentDetailKey({ name: website.name, textId: item.text_id })
+      ] = item
     }
 
     const listingParams = {
@@ -204,6 +207,10 @@ describe("RepeatableContentListing", () => {
         apiResponse.next = hasNextLink ? "next" : null
         apiResponse.previous = hasPrevLink ? "prev" : null
         const startingOffset = 20
+        const nextPageItems = [
+          makeWebsiteContentListItem(),
+          makeWebsiteContentListItem()
+        ]
         helper.handleRequestStub
           .withArgs(
             siteApiContentListingUrl
@@ -213,13 +220,20 @@ describe("RepeatableContentListing", () => {
             "GET"
           )
           .returns({
-            body:   apiResponse,
+            body: {
+              next:     hasNextLink ? "next" : null,
+              previous: hasPrevLink ? "prev" : null,
+              count:    2,
+              results:  nextPageItems
+            },
             status: 200
           })
 
         helper.browserHistory.push({ search: `offset=${startingOffset}` })
 
         const { wrapper } = await render()
+        const titles = wrapper.find(".ruled-list li").map(item => item.text())
+        expect(titles).toStrictEqual(nextPageItems.map(item => item.title))
 
         const prevWrapper = wrapper.find(".pagination Link.previous")
         expect(prevWrapper.exists()).toBe(hasPrevLink)

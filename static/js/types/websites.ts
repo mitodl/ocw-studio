@@ -236,6 +236,11 @@ export interface ContentListingParams {
   offset: number
 }
 
+export interface ContentDetailParams {
+  name: string
+  textId: string
+}
+
 export enum LinkType {
   Internal = "internal",
   External = "external"

@@ -31,6 +31,7 @@ import {
   WebsiteContent,
   WidgetVariant
 } from "../types/websites"
+import { contentDetailKey } from "../query-configs/websites"
 
 jest.mock("./forms/validation")
 
@@ -110,7 +111,10 @@ describe("SiteContent", () => {
             [website.name]: website
           },
           websiteContentDetails: {
-            [content.text_id]: content
+            [contentDetailKey({
+              name:   website.name,
+              textId: content.text_id
+            })]: content
           }
         },
         queries: {}
@@ -228,7 +232,7 @@ describe("SiteContent", () => {
         configItem = makeSingletonConfigItem(configItem.name)
         expAddedPayload = { text_id: configItem.name }
       }
-      const { wrapper } = await render({
+      const { wrapper, store } = await render({
         formType:   ContentFormType.Add,
         textId:     null,
         configItem: configItem,
@@ -264,6 +268,13 @@ describe("SiteContent", () => {
 
       sinon.assert.calledWith(refreshStub)
       sinon.assert.calledWith(hideModalStub)
+      const key = contentDetailKey({
+        textId: content.text_id,
+        name:   website.name
+      })
+      expect(
+        store.getState().entities.websiteContentDetails[key]
+      ).toStrictEqual(content)
     })
   })
 
@@ -279,7 +290,7 @@ describe("SiteContent", () => {
         body:   content,
         status: 200
       })
-    const { wrapper } = await render({
+    const { wrapper, store } = await render({
       formType: ContentFormType.Edit,
       ...successStubs
     })
@@ -313,6 +324,13 @@ describe("SiteContent", () => {
 
     sinon.assert.calledWith(refreshStub)
     sinon.assert.calledWith(hideModalStub)
+    // @ts-ignore
+    expect(store.getState().entities.websiteContentDetails).toStrictEqual({
+      [contentDetailKey({
+        textId: content.text_id,
+        name:   website.name
+      })]: content
+    })
   })
 
   //

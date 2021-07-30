@@ -3,6 +3,7 @@ import { memoize } from "lodash"
 import { find, propEq } from "ramda"
 
 import {
+  contentDetailKey,
   contentListingKey,
   WebsiteDetails,
   WebsiteListingResponse,
@@ -14,7 +15,8 @@ import {
   WebsiteStarter,
   WebsiteContentListItem,
   Website,
-  WebsiteContent
+  WebsiteContent,
+  ContentDetailParams
 } from "../types/websites"
 
 export const getWebsiteDetailCursor = createSelector(
@@ -63,7 +65,7 @@ export const getWebsiteCollaboratorDetailCursor = createSelector(
 export const getWebsiteContentDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteContentDetails ?? {},
   (content: Record<string, WebsiteContent>) =>
-    memoize((textId: string) => content[textId])
+    memoize((params: ContentDetailParams) => content[contentDetailKey(params)])
 )
 
 interface WebsiteContentItem {
@@ -81,7 +83,9 @@ export const getWebsiteContentListingCursor = createSelector(
       (listingParams: ContentListingParams): WebsiteContentItem => {
         const response = listing[contentListingKey(listingParams)] ?? {}
         const uuids: string[] = response?.results ?? []
-        const items = uuids.map(websiteContentDetailCursor)
+        const items = uuids.map(uuid =>
+          websiteContentDetailCursor({ name: listingParams.name, textId: uuid })
+        )
 
         return {
           ...response,
