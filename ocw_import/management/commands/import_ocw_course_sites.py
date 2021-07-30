@@ -34,9 +34,9 @@ class Command(BaseCommand):
             "-c",
             "--chunks",
             dest="chunks",
-            default=100,
+            default=10,
             type=int,
-            help="Number of courses to process per celery task (default 100)",
+            help="Number of courses to process per celery task (default 10)",
         )
         parser.add_argument(
             "-l",
