@@ -183,7 +183,7 @@ def test_import_ocw2hugo_course_log_exception(mocker, settings):
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
-    mocker.patch("ocw_import.api.dateparser.parse", return_value="Invalid date")
+    mocker.patch("ocw_import.api.parse_date", return_value="Invalid date")
     mock_log = mocker.patch("ocw_import.api.log.exception")
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     assert Website.objects.filter(name=name).first() is None
@@ -228,3 +228,48 @@ def test_get_short_id(course_num, term, expected_id):
     else:
         with pytest.raises(ValueError):
             get_short_id(metadata)
+
+
+@mock_s3
+def test_import_ocw2hugo_menu(mocker, settings):
+    """ Website publish date should be null if the JSON date can't be parsed """
+    setup_s3(settings)
+    name = "1-050-engineering-mechanics-i-fall-2007"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
+    website = Website.objects.get(name=name)
+    navmenu = WebsiteContent.objects.get(website=website, type="navmenu")
+    assert navmenu.metadata == {
+        "leftnav": [
+            {
+                "url": "/sections/syllabus",
+                "name": "Syllabus",
+                "weight": 10,
+                "identifier": "96c31e82-69f0-6d67-daee-8272526ac56a",
+            },
+            {
+                "url": "/sections/calendar",
+                "name": "Calendar",
+                "weight": 20,
+                "identifier": "ff5e415d-cded-bcfc-d6b2-c4a96377207c",
+            },
+            {
+                "url": "/sections/lecture-notes",
+                "name": "Lecture Notes",
+                "weight": 30,
+                "identifier": "dec40ff4-e8ca-636f-c6db-d88880914a96",
+            },
+            {
+                "url": "/sections/assignments",
+                "name": "Assignments",
+                "weight": 40,
+                "identifier": "8e344ad5-a553-4368-9048-9e95e736657a",
+            },
+            {
+                "url": "/sections/related-resources",
+                "name": "Related Resources",
+                "weight": 50,
+                "identifier": "4f5c3926-e4d5-6974-7f16-131a6f692568",
+            },
+        ]
+    }
