@@ -1,5 +1,4 @@
 """Test config for content_sync app"""
-import os
 from base64 import b64encode
 from types import SimpleNamespace
 
