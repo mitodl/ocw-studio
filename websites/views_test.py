@@ -21,6 +21,7 @@ from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
 )
+from websites.messages import PreviewOrPublishSuccessMessage
 from websites.models import (
     Website,
     WebsiteCollection,
@@ -296,6 +297,53 @@ def test_websites_endpoint_publish_error(mocker, drf_client):
     )
     assert resp.status_code == 500
     assert resp.data == {"details": "422 {}"}
+
+
+@pytest.mark.parametrize("version", ["live", "draft"])
+def test_websites_endpoint_pipeline_complete(
+    settings, mocker, drf_client, permission_groups, version
+):
+    """The pipeline_complete endpoint should send notifications to site owner/admins"""
+    settings.OCW_STUDIO_LIVE_URL = "http://test.live.edu/"
+    settings.OCW_STUDIO_DRAFT_URL = "http://test.draft.edu"
+    mock_get_message_sender = mocker.patch("websites.views.get_message_sender")
+    mock_sender = mock_get_message_sender.return_value.__enter__.return_value
+    settings.API_BEARER_TOKEN = "abc123"
+    website = permission_groups.websites[0]
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.post(
+        reverse("websites_api-pipeline-complete", kwargs={"name": website.name}),
+        data={"version": version, "success": True},
+    )
+    mock_get_message_sender.assert_called_once_with(PreviewOrPublishSuccessMessage)
+    assert mock_sender.build_and_send_message.call_count == 2
+    for user in [website.owner]:
+        mock_sender.build_and_send_message.assert_any_call(
+            user,
+            {
+                "site": {
+                    "title": website.title,
+                    "url": f"http://test.{version}.edu/{website.name}",
+                },
+                "version": version,
+            },
+        )
+    assert resp.status_code == 200
+
+
+@pytest.mark.parametrize("token", ["abc123", None])
+def test_websites_endpoint_pipeline_complete_denied(
+    settings, drf_client, permission_groups, token
+):
+    """The pipeline_complete endpoint should raise a permission error without a valid token"""
+    settings.API_BEARER_TOKEN = token
+    website = permission_groups.websites[0]
+    drf_client.credentials(HTTP_AUTHORIZATION="Bearer wrong-token")
+    resp = drf_client.post(
+        reverse("websites_api-pipeline-complete", kwargs={"name": website.name}),
+        json={"version": "live", "success": True},
+    )
+    assert resp.status_code == 403
 
 
 def test_websites_endpoint_detail_update_denied(drf_client):

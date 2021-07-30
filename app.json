@@ -23,6 +23,10 @@
   ],
   "description": "OCW Studio manages deployments for OCW courses.",
   "env": {
+    "API_BEARER_TOKEN": {
+      "description": "Authorization bearer token for webhook endpoints",
+      "required": false
+    },
     "AWS_ACCESS_KEY_ID": {
       "description": "AWS Access Key for S3 storage.",
       "required": false
@@ -167,6 +171,14 @@
       "description": "This server's host IP",
       "required": false
     },
+    "MAILGUN_KEY": {
+      "description": "The token for authenticating against the Mailgun API",
+      "required": true
+    },
+    "MAILGUN_SENDER_DOMAIN": {
+      "description": "The domain to send mailgun email through",
+      "required": true
+    },
     "MAX_S3_GET_ITERATIONS": {
       "description": "Max retry attempts to get an S3 object",
       "required": false
@@ -185,6 +197,14 @@
     },
     "MIDDLEWARE_FEATURE_FLAG_QS_PREFIX": {
       "description": "Feature flag middleware querystring prefix",
+      "required": false
+    },
+    "MITOL_MAIL_FROM_EMAIL": {
+      "description": "E-mail to use for the from field",
+      "required": false
+    },
+    "MITOL_MAIL_REPLY_TO_ADDRESS": {
+      "description": "E-mail to use for reply-to address of emails",
       "required": false
     },
     "NEW_RELIC_APP_NAME": {
@@ -212,6 +232,10 @@
     },
     "OCW_STUDIO_DB_DISABLE_SS_CURSORS": {
       "description": "Disables Postgres server side cursors",
+      "required": false
+    },
+    "OCW_STUDIO_DRAFT_URL": {
+      "description": "The base url of the preview site",
       "required": false
     },
     "OCW_STUDIO_EMAIL_BACKEND": {
@@ -244,6 +268,10 @@
     },
     "OCW_STUDIO_FROM_EMAIL": {
       "description": "E-mail to use for the from field",
+      "required": false
+    },
+    "OCW_STUDIO_LIVE_URL": {
+      "description": "The base url of the live site",
       "required": false
     },
     "OCW_STUDIO_LOG_HOST": {

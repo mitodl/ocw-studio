@@ -50,4 +50,5 @@ def required_concourse_settings(settings):
     settings.GIT_DOMAIN = "test.github.edu"
     settings.GIT_ORGANIZATION = "test_org"
     settings.GITHUB_WEBHOOK_BRANCH = "release"
-    os.environ["OCW_STUDIO_BASE_URL"] = "http://test.edu"
+    settings.SITE_BASE_URL = "http://test.edu"
+    settings.API_BEARER_TOKEN = "abc123"

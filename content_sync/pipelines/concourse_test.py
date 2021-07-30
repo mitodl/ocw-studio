@@ -98,6 +98,7 @@ def test_upsert_website_pipelines(
 ):  # pylint:disable=too-many-locals
     """The correct concourse API args should be made for a website"""
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
+    settings.API_BEARER_TOKEN = "top-secret-token"
     hugo_projects_path = "https://github.com/org/repo"
     starter = WebsiteStarterFactory.create(
         source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
@@ -146,6 +147,7 @@ def test_upsert_website_pipelines(
     config_str = json.dumps(kwargs)
 
     assert f"{hugo_projects_path}.git" in config_str
+    assert settings.API_BEARER_TOKEN in config_str
     if home_page:
         assert (
             f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/{website.name} s3://{bucket}/{website.name}"
@@ -213,5 +215,5 @@ def test_trigger_pipeline_build(settings, mocker, version):
         f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={pipeline.instance_vars}"
     )
     mock_post.assert_called_once_with(
-        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/draft/jobs/{job_name}/builds?vars={pipeline.instance_vars}"
+        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/jobs/{job_name}/builds?vars={pipeline.instance_vars}"
     )

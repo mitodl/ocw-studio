@@ -2,9 +2,11 @@
 import json
 from hashlib import sha256
 from typing import Dict
+from urllib.parse import urljoin
 from uuid import uuid4
 
 import yaml
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -82,6 +84,15 @@ class Website(TimestampedModel):
         return Group.objects.filter(
             name=permissions_group_name_for_role(constants.ROLE_EDITOR, self)
         ).first()
+
+    def get_url(self, version="live"):
+        """Get the home page (live or draft) of the website"""
+        base_url = (
+            settings.OCW_STUDIO_LIVE_URL
+            if version == "live"
+            else settings.OCW_STUDIO_DRAFT_URL
+        )
+        return urljoin(base_url, self.name)
 
     class Meta:
         permissions = (

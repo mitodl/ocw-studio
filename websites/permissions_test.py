@@ -402,3 +402,23 @@ def test_create_global_groups():
     for permission in constants.PERMISSIONS_EDITOR:
         assert author.has_perm(permission) is False
     assert author.has_perm(constants.PERMISSION_ADD) is True
+
+
+@pytest.mark.parametrize(
+    "token,has_permission",
+    [
+        [None, False],
+        ["Bearer abc123", False],
+        ["Bearer 123abc", True],
+        ["123abc", False],
+    ],
+)
+def test_bearer_token_permission(settings, mocker, token, has_permission):
+    """BearerTokenPermission.has_permission should return expected values"""
+    settings.API_BEARER_TOKEN = "123abc"
+    request = mocker.Mock(headers={"Authorization": token})
+    view = mocker.Mock()
+    assert (
+        permissions.BearerTokenPermission().has_permission(request, view)
+        is has_permission
+    )
