@@ -24,10 +24,6 @@ from websites.models import Website, WebsiteContent
 
 pytestmark = pytest.mark.django_db
 
-import logging
-
-log = logging.getLogger(__name__)
-
 
 @mock_s3
 def test_import_ocw2hugo_course_content(settings):
