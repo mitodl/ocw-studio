@@ -4,8 +4,8 @@ import logging
 import re
 import uuid
 
-import yaml
 import dateutil
+import yaml
 from django.conf import settings
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
