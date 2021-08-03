@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.20.2 (Released August 03, 2021)
+--------------
+
+- Use debounced fetch for website collection course search (#432)
+- add an 'act' to get rid of some warnings
+- Fix null website error with RelationField (#414)
+- Fixed Hugo nav menu format
+- Create and sync sitemetadata with instructors (#409)
+- Add preventDefault to menu buttons (#427)
+- Use async search for RelationField widget (#402)
+
 Version 0.20.1 (Released July 29, 2021)
 --------------
 
