@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.20.2
+Version 0.20.2 (Released August 03, 2021)
 --------------
 
 - Use debounced fetch for website collection course search (#432)
