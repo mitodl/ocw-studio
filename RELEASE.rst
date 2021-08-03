@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.21.0
+--------------
+
+- import menus.yaml files as navmenus and update test data (#448)
+- Adjust get_short_id function (#444)
+- add resource widget plugin for CKEditor
+- Reduce default chunk size for import_ocw_course_sites (#446)
+- Remove text_id parameter, instead use content_context for MenuField (#428)
+- add UI for deleting websites from a WebsiteCollection
+- Use both website name and content textId for lookup (#435)
+- Handle valuesToOmit when value is a list (#433)
+- Write task id to console for import_ocw_course_sites (#439)
+
 Version 0.20.2 (Released August 03, 2021)
 --------------
 
