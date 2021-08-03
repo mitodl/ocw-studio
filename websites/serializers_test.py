@@ -173,51 +173,67 @@ def test_website_content_detail_with_file_serializer():
 @pytest.mark.parametrize("multiple", [True, False])
 @pytest.mark.parametrize("invalid_data", [True, False])
 @pytest.mark.parametrize("nested", [True, False])
-@pytest.mark.parametrize("widget", ["relation", "menu"])
+@pytest.mark.parametrize("field_order_reversed", [True, False])
 def test_website_content_detail_serializer_content_context(
-    content_context, multiple, invalid_data, nested, widget
+    content_context, multiple, invalid_data, nested, field_order_reversed
 ):
-    """WebsiteContentDetailSerializer should serialize content_context for relation fields"""
-    field_name = "field_name"
-    field = {
-        "name": field_name,
-        "label": "Field label",
-        "widget": widget,
+    """WebsiteContentDetailSerializer should serialize content_context for relation and menu fields"""
+    relation_field = {
+        "name": "relation_field_name",
+        "label": "Relation field label",
         "multiple": multiple,
+        "widget": "relation",
     }
-    starter = WebsiteStarterFactory.create(
-        config={
+    menu_field = {
+        "name": "menu_field_name",
+        "label": "Menu field label",
+        "widget": "menu",
+    }
+    field_list = [menu_field, relation_field]
+    if field_order_reversed:
+        field_list = list(reversed(field_list))
+    website = WebsiteFactory.create(
+        starter__config={
             "collections": [
-                {"fields": [{"name": "outer", "fields": [field]} if nested else field]}
+                {
+                    "fields": [{"name": "outer", "fields": field_list}]
+                    if nested
+                    else field_list
+                }
             ]
         }
     )
-    referenced = WebsiteContentFactory.create(website__starter=starter)
-    # This one has the same text_id but a different website so it should not match
-    WebsiteContentFactory.create(text_id=referenced.text_id)
-    if widget == "relation":
-        value = {
-            "content": [referenced.text_id] if multiple else referenced.text_id,
-            "website": referenced.website.name,
-        }
-    elif widget == "menu":
-        value = [
+    menu_referenced = WebsiteContentFactory.create(website=website)
+    relation_referenced = WebsiteContentFactory.create()
+    referenced_list = [menu_referenced, relation_referenced]
+    if field_order_reversed:
+        referenced_list = list(reversed(referenced_list))
+    for content in referenced_list:
+        # These have the same text_id but a different website so it should not match and therefore be ignored
+        WebsiteContentFactory.create(text_id=content.text_id)
+    metadata = {
+        relation_field["name"]: {
+            "content": [relation_referenced.text_id]
+            if multiple
+            else relation_referenced.text_id,
+            "website": relation_referenced.website.name,
+        },
+        menu_field["name"]: [
             {
                 "identifier": "external-not-a-match",
             },
             {"identifier": "uuid-not-found-so-ignored"},
             {
-                "identifier": referenced.text_id,
+                "identifier": menu_referenced.text_id,
             },
-        ]
-    content = WebsiteContentFactory.create(
-        website=referenced.website,
-        metadata={field_name: None}
-        if invalid_data
-        else {"outer": {field_name: value}}
-        if nested
-        else {field_name: value},
-    )
+        ],
+    }
+    if invalid_data:
+        metadata = {}
+    elif nested:
+        metadata = {"outer": metadata}
+
+    content = WebsiteContentFactory.create(website=website, metadata=metadata)
     serialized_data = WebsiteContentDetailSerializer(
         instance=content, context={"content_context": content_context}
     ).data
@@ -230,11 +246,9 @@ def test_website_content_detail_serializer_content_context(
         (
             []
             if invalid_data
-            else [
-                WebsiteContentDetailSerializer(
-                    instance=referenced, context={"content_context": False}
-                ).data
-            ]
+            else WebsiteContentDetailSerializer(
+                instance=referenced_list, many=True, context={"content_context": False}
+            ).data
         )
         if content_context
         else None

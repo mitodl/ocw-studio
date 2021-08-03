@@ -1,5 +1,6 @@
 """ Serializers for websites """
 import logging
+from collections import defaultdict
 
 from django.contrib.auth.models import Group
 from django.db import transaction
@@ -225,8 +226,7 @@ class WebsiteContentDetailSerializer(
         if not self.context or not self.context.get("content_context"):
             return None
 
-        text_ids = []
-        website_name = None
+        lookup = defaultdict(list)  # website name -> list of text_id
         metadata = instance.metadata or {}
         site_config = SiteConfig(instance.website.starter.config)
         for field in site_config.iter_fields():
@@ -244,12 +244,11 @@ class WebsiteContentDetailSerializer(
                         content = value["content"]
                         website_name = value["website"]
                         if isinstance(content, str):
-                            text_ids.append(content)
-                        else:
-                            text_ids.extend(content)
+                            content = [content]
+                        lookup[website_name].extend(content)
                     elif widget == "menu":
                         website_name = instance.website.name
-                        text_ids.extend(
+                        lookup[website_name].extend(
                             [
                                 item["identifier"]
                                 for item in value
@@ -261,9 +260,13 @@ class WebsiteContentDetailSerializer(
                     # Either missing or malformed relation field value
                     continue
 
-        contents = WebsiteContent.objects.filter(
-            text_id__in=text_ids, website__name=website_name
-        )
+        contents = []
+        for website_name, text_ids in lookup.items():
+            contents.extend(
+                WebsiteContent.objects.filter(
+                    website__name=website_name, text_id__in=text_ids
+                )
+            )
         return WebsiteContentDetailSerializer(
             contents, many=True, context={"content_context": False}
         ).data
