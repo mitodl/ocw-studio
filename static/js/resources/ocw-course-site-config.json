@@ -4,6 +4,7 @@
       "category": "Content",
       "fields": [
         {
+          "attach": "resource",
           "label": "Title",
           "name": "title",
           "required": true,

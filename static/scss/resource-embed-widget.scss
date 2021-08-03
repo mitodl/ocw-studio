@@ -1,0 +1,14 @@
+.resource-embed-widget {
+  .resource-list {
+    max-height: 225px;
+    overflow: scroll;
+    border-left: 1px solid $form-control-gray;
+    border-right: 1px solid $form-control-gray;
+    border-bottom: 1px solid $form-control-gray;
+    border-radius: 0 0 0.25rem 0.25rem;
+
+    .resource {
+      cursor: pointer;
+    }
+  }
+}

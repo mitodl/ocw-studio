@@ -50,6 +50,11 @@ describe("MarkdownEditor", () => {
     })
   })
 
+  it("should pass attach down ato a ResourceEmbedField", () => {
+    const wrapper = render({ attach: "resource" })
+    expect(wrapper.find("ResourceEmbedField").prop("attach")).toBe("resource")
+  })
+
   //
   ;[
     ["name", "name"],

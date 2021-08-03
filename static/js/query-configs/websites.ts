@@ -267,7 +267,7 @@ export const contentDetailKey = (params: ContentDetailParams): string =>
  *
  * Pass the `requestDetailedList` param if you need to get the detailed view of
  * all the content items, as opposed to a minimal, summary view of the items
- * (requestDetailedList == true tells the serializer to use the
+ * (requestDetailedList == true tells the backend to use the
  * WebsiteContentDetailSerializer as opposed to the WebsiteContentSerializer,
  * the default for this view).
  **/
@@ -276,16 +276,22 @@ export const websiteContentListingRequest = (
   requestDetailedList: boolean,
   requestContentContext: boolean
 ): QueryConfig => {
-  const { name, type, offset, pageContent } = listingParams
-  const url = siteApiContentListingUrl.param({ name }).query({
-    offset,
-    ...(type ? { type: type } : {}),
-    ...(pageContent ? { page_content: pageContent } : {}),
-    ...(requestDetailedList ? { detailed_list: true } : {}),
-    ...(requestContentContext ? { content_context: true } : {})
-  })
+  const { name, type, offset, pageContent, search } = listingParams
+  const url = siteApiContentListingUrl
+    .param({ name })
+    .query(
+      Object.assign(
+        { offset },
+        type && { type: type },
+        pageContent && { page_content: pageContent },
+        requestDetailedList && { detailed_list: true },
+        requestContentContext && { content_context: true },
+        search && { search }
+      )
+    )
+    .toString()
   return {
-    url:       url.toString(),
+    url,
     transform: (body: WebsiteContentListingResponse) => {
       const details = {}
       for (const item of body.results) {

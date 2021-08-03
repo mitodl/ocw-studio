@@ -36,6 +36,7 @@ field:
     collections: list(str(), required=False)
     filter: include('relation_filter', required=False)
     website: str(required=False)
+    attach: str(required=False)
 ---
 field_condition:
     field: str()

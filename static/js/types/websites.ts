@@ -40,6 +40,7 @@ interface ConfigFieldBaseProps {
 export interface MarkdownConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.Markdown
   minimal?: boolean
+  attach?: string
 }
 
 export interface FileConfigField extends ConfigFieldBaseProps {
@@ -235,6 +236,7 @@ export interface ContentListingParams {
   type?: string | string[]
   pageContent?: boolean
   offset: number
+  search?: string
 }
 
 export interface ContentDetailParams {

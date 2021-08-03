@@ -339,10 +339,12 @@ describe("site_content", () => {
     it("should grab the minimal prop for a markdown widget", () => {
       const field = makeWebsiteConfigField({
         widget:  WidgetVariant.Markdown,
-        minimal: true
+        minimal: true,
+        attach:  "resource"
       })
       expect(widgetExtraProps(field)).toStrictEqual({
-        minimal: true
+        minimal: true,
+        attach:  "resource"
       })
     })
 

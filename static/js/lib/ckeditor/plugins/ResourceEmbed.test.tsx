@@ -1,11 +1,11 @@
-import SiteContentEmbed from "./SiteContentEmbed"
+import ResourceEmbed from "./ResourceEmbed"
 import Markdown from "./Markdown"
 import { createTestEditor, markdownTest } from "./test_util"
 import { turndownService } from "../turndown"
 
-const getEditor = createTestEditor([SiteContentEmbed, Markdown])
+const getEditor = createTestEditor([ResourceEmbed, Markdown])
 
-describe("SiteContentEmbed plugin", () => {
+describe("ResourceEmbed plugin", () => {
   afterEach(() => {
     turndownService.rules.array = turndownService.rules.array.filter(
       (rule: any) => rule.filter !== "figure"
