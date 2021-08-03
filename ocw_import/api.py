@@ -47,8 +47,8 @@ def parse_date(date_string):
 
     Args:
         date_string (str): A date string to parse
-    Yeilds:
-        A date object
+    Returns:
+        A datetime.datetime object
     """
     return dateutil.parser.parse(date_string)
 
