@@ -51,7 +51,7 @@ def test_import_ocw2hugo_course_content(settings):
         WebsiteContent.objects.filter(
             website=website, type=CONTENT_TYPE_RESOURCE
         ).count()
-        == 3
+        == 65
     )
 
     home_page = WebsiteContent.objects.get(
@@ -70,13 +70,17 @@ def test_import_ocw2hugo_course_content(settings):
     )
     assert related_page.type == CONTENT_TYPE_PAGE
     assert related_page.metadata.get("title") == "Related Resources"
-    assert related_page.parent == WebsiteContent.objects.get(
-        text_id="ba83162e-713c-c931-5ff9-bfe952c79b82"
-    )
     assert related_page.filename == "_index"
     assert (
         related_page.dirpath
         == "1-050-engineering-mechanics-i-fall-2007/content/sections/related-resources"
+    )
+
+    matlab_page = WebsiteContent.objects.get(
+        text_id="c8cd9384-0305-bfbb-46ae-a7e7a8229f57"
+    )
+    assert matlab_page.parent == WebsiteContent.objects.get(
+        text_id="4f5c3926-e4d5-6974-7f16-131a6f692568"
     )
 
     lecture_pdf = WebsiteContent.objects.get(
@@ -113,22 +117,22 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
         .order_by("title")
     ) == [
         {
-            "title": "Franz-Josef Ulm",
+            "title": "Prof. Franz-Josef Ulm",
             "metadata": {
                 "first_name": "Franz-Josef",
                 "middle_initial": "",
                 "last_name": "Ulm",
-                "salutation": "",
+                "salutation": "Prof.",
                 "headless": True,
             },
         },
         {
-            "title": "Markus Buehler",
+            "title": "Prof. Markus Buehler",
             "metadata": {
                 "first_name": "Markus",
                 "middle_initial": "",
                 "last_name": "Buehler",
-                "salutation": "",
+                "salutation": "Prof.",
                 "headless": True,
             },
         },
@@ -153,9 +157,7 @@ def test_import_ocw2hugo_course_bad_date(mocker, settings):
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
-    mocker.patch(
-        "ocw_import.api.dateparser.parse", side_effect=["2021-01-01", ValueError()]
-    )
+    mocker.patch("ocw_import.api.parse_date", side_effect=ValueError())
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     website = Website.objects.get(name=name)
     assert website.publish_date is None
@@ -177,7 +179,7 @@ def test_import_ocw2hugo_course_log_exception(mocker, settings):
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
-    mocker.patch("ocw_import.api.dateparser.parse", return_value="Invalid date")
+    mocker.patch("ocw_import.api.parse_date", return_value="Invalid date")
     mock_log = mocker.patch("ocw_import.api.log.exception")
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     assert Website.objects.filter(name=name).first() is None
@@ -222,3 +224,48 @@ def test_get_short_id(course_num, term, expected_id):
     else:
         with pytest.raises(ValueError):
             get_short_id(metadata)
+
+
+@mock_s3
+def test_import_ocw2hugo_menu(settings):
+    """ Website publish date should be null if the JSON date can't be parsed """
+    setup_s3(settings)
+    name = "1-050-engineering-mechanics-i-fall-2007"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
+    website = Website.objects.get(name=name)
+    navmenu = WebsiteContent.objects.get(website=website, type="navmenu")
+    assert navmenu.metadata == {
+        "leftnav": [
+            {
+                "url": "/sections/syllabus",
+                "name": "Syllabus",
+                "weight": 10,
+                "identifier": "96c31e82-69f0-6d67-daee-8272526ac56a",
+            },
+            {
+                "url": "/sections/calendar",
+                "name": "Calendar",
+                "weight": 20,
+                "identifier": "ff5e415d-cded-bcfc-d6b2-c4a96377207c",
+            },
+            {
+                "url": "/sections/lecture-notes",
+                "name": "Lecture Notes",
+                "weight": 30,
+                "identifier": "dec40ff4-e8ca-636f-c6db-d88880914a96",
+            },
+            {
+                "url": "/sections/assignments",
+                "name": "Assignments",
+                "weight": 40,
+                "identifier": "8e344ad5-a553-4368-9048-9e95e736657a",
+            },
+            {
+                "url": "/sections/related-resources",
+                "name": "Related Resources",
+                "weight": 50,
+                "identifier": "4f5c3926-e4d5-6974-7f16-131a6f692568",
+            },
+        ]
+    }

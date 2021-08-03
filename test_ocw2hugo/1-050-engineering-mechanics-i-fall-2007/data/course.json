@@ -1,0 +1,95 @@
+{
+  "course_id": "1-050-engineering-mechanics-i-fall-2007",
+  "course_title": "Engineering Mechanics I",
+  "course_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/ba36b42898988e4581d42067ac439546_1-050f07.jpg",
+  "course_thumbnail_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/4cdfb4e332fa9fdfa166c337e35fc009_1-050f07-th.jpg",
+  "course_image_alternate_text": "Sketch of the World Trade Center towers and graph showing velocity profiles.",
+  "course_image_caption_text": "<p>Lecture 4 explores the collapse of the World Trade Center towers. Here, velocity profiles are shown based on conservation of momentum and free fall. (Figure by MIT OpenCourseWare, adapted from Prof. Franz-Josef Ulm.)</p>",
+  "publishdate": "2008-06-17T13:40:38-04:00",
+  "instructors": [
+    {
+      "instructor": "Prof. Franz-Josef Ulm",
+      "url": "/search/?q=%22Prof.%20Franz-Josef%20Ulm%22",
+      "first_name": "Franz-Josef",
+      "last_name": "Ulm",
+      "middle_initial": "",
+      "salutation": "Prof.",
+      "uid": "0b39fff481fbb9688e2da0ce16ece1d4"
+    },
+    {
+      "instructor": "Prof. Markus Buehler",
+      "url": "/search/?q=%22Prof.%20Markus%20Buehler%22",
+      "first_name": "Markus",
+      "last_name": "Buehler",
+      "middle_initial": "",
+      "salutation": "Prof.",
+      "uid": "95041ae9ab5b75aff71113fcd917f464"
+    }
+  ],
+  "departments": [
+    {
+      "department": "Civil and Environmental Engineering",
+      "url": "/search/?d=Civil%20and%20Environmental%20Engineering"
+    }
+  ],
+  "course_features": [
+    {
+      "feature": "Problem Sets",
+      "url": "/sections/assignments"
+    },
+    {
+      "feature": "Lecture Notes",
+      "url": "/sections/lecture-notes"
+    }
+  ],
+  "topics": [
+    {
+      "topic": "Engineering",
+      "subtopics": [
+        {
+          "subtopic": "Mechanical Engineering",
+          "specialities": [
+            {
+              "speciality": "Solid Mechanics",
+              "url": "/search/?t=Solid%20Mechanics"
+            }
+          ],
+          "url": "/search/?t=Mechanical%20Engineering"
+        },
+        {
+          "subtopic": "Aerospace Engineering",
+          "specialities": [
+            {
+              "speciality": "Structural Mechanics",
+              "url": "/search/?t=Structural%20Mechanics"
+            }
+          ],
+          "url": "/search/?t=Aerospace%20Engineering"
+        },
+        {
+          "subtopic": "Civil Engineering",
+          "specialities": [
+            {
+              "speciality": "Structural Engineering",
+              "url": "/search/?t=Structural%20Engineering"
+            }
+          ],
+          "url": "/search/?t=Civil%20Engineering"
+        }
+      ],
+      "url": "/search/?t=Engineering"
+    }
+  ],
+  "primary_course_number": "1.050",
+  "extra_course_numbers": [],
+  "term": "Fall 2007",
+  "level": {
+    "level": "Undergraduate",
+    "url": "/search/?l=Undergraduate"
+  },
+  "other_versions": [
+    "[1.050 SOLID MECHANICS](/courses/1-050-solid-mechanics-fall-2004) |  FALL 2004"
+  ],
+  "archived_versions": [],
+  "open_learning_library_versions": []
+}
