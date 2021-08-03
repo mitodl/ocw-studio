@@ -4,18 +4,25 @@ import { shallow } from "enzyme"
 import MenuItemForm from "./MenuItemForm"
 import { defaultFormikChildProps } from "../../test_util"
 
-import { LinkType } from "../../types/websites"
+import { LinkType, WebsiteContent } from "../../types/websites"
+import { makeWebsiteContentDetail } from "../../util/factories/websites"
 
 describe("MenuItemForm", () => {
-  let onSubmitStub: any
+  let onSubmitStub: any, contentContext: WebsiteContent[]
 
   beforeEach(() => {
     onSubmitStub = jest.fn()
+    contentContext = [makeWebsiteContentDetail(), makeWebsiteContentDetail()]
   })
 
   const renderForm = (props = {}) =>
     shallow(
-      <MenuItemForm activeItem={null} onSubmit={onSubmitStub} {...props} />
+      <MenuItemForm
+        activeItem={null}
+        onSubmit={onSubmitStub}
+        contentContext={contentContext}
+        {...props}
+      />
     )
 
   const renderInnerForm = (
@@ -167,7 +174,7 @@ describe("MenuItemForm", () => {
     expect(relationField.exists()).toBe(true)
     expect(relationField.prop("value")).toEqual(value)
     expect(relationField.prop("valuesToOmit")).toEqual(existingMenuIds)
-    expect(relationField.prop("contentContext")).toBeNull()
+    expect(relationField.prop("contentContext")).toBe(contentContext)
     expect(relationField.prop("collection")).toEqual(collections)
     const fakeEvent = {
       target: { value: { content: "abc", website: "ignored" } }

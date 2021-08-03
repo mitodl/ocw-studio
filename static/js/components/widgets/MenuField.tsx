@@ -7,13 +7,14 @@ import Dialog from "../Dialog"
 import { EXTERNAL_LINK_PREFIX } from "../../constants"
 import { generateHashCode, isExternalLinkId } from "../../lib/util"
 
-import { LinkType } from "../../types/websites"
+import { LinkType, WebsiteContent } from "../../types/websites"
 
 interface MenuFieldProps {
   name: string
   value: HugoItem[]
   onChange: (event: Event) => void
   collections?: string[]
+  contentContext: WebsiteContent[] | null
 }
 
 export type HugoItem = {
@@ -237,7 +238,7 @@ const getItemPath = (
 }
 
 export default function MenuField(props: MenuFieldProps): JSX.Element {
-  const { name, value, onChange, collections } = props
+  const { name, value, onChange, collections, contentContext } = props
 
   const [menuData, setMenuData] = useState<{
     hugoItems: HugoItem[]
@@ -405,6 +406,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
               onSubmit={values => {
                 onSubmitMenuItem({ values, hideModal: modalProps.hideModal })
               }}
+              contentContext={contentContext}
               {...(collections ? { collections: collections } : {})}
             />
           </div>

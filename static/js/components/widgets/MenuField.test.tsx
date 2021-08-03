@@ -3,7 +3,8 @@ import { shallow } from "enzyme"
 import MenuField, { HugoItem, InternalSortableMenuItem } from "./MenuField"
 import { EXTERNAL_LINK_PREFIX } from "../../constants"
 
-import { LinkType } from "../../types/websites"
+import { LinkType, WebsiteContent } from "../../types/websites"
+import { makeWebsiteContentDetail } from "../../util/factories/websites"
 
 const dummyHugoItems: HugoItem[] = [
   {
@@ -65,11 +66,12 @@ const dummyInternalMenuItems: InternalSortableMenuItem[] = [
 ]
 
 describe("MenuField", () => {
-  let render: any, onChangeStub: any
+  let render: any, onChangeStub: any, contentContext: WebsiteContent[]
   const fieldName = "mymenu"
 
   beforeEach(() => {
     onChangeStub = jest.fn()
+    contentContext = [makeWebsiteContentDetail(), makeWebsiteContentDetail()]
 
     render = (props = {}) =>
       shallow(
@@ -77,6 +79,7 @@ describe("MenuField", () => {
           onChange={onChangeStub}
           name={fieldName}
           value={dummyHugoItems}
+          contentContext={contentContext}
           {...props}
         />
       )

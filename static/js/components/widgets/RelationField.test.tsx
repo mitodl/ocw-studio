@@ -1,6 +1,5 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
-import { when } from "jest-when"
 import R from "ramda"
 
 import RelationField from "./RelationField"
@@ -87,36 +86,10 @@ describe("RelationField", () => {
         websiteNameProp ? "with" : "without"
       } a website prop`, async () => {
         // @ts-ignore
-        when(global.fetch).mockResolvedValue({ json: async () => fakeResponse })
         const websiteName = websiteNameProp ? websiteNameProp : website.name
-        const textIdsUrl = siteApiContentListingUrl
-          .param({ name: websiteName })
-          .query({
-            detailed_list:   true,
-            content_context: true,
-            text_id:         contentListingItems.map(item => item.text_id),
-            limit:           contentListingItems.length,
-            type:            "page"
-          })
-          .toString()
         const contentContext = hasContentContext ?
           [makeWebsiteContentDetail()] :
           null
-        const textIdsContentListingItems = [
-          makeWebsiteContentDetail(),
-          makeWebsiteContentDetail()
-        ]
-        when(global.fetch)
-          .calledWith(textIdsUrl, { credentials: "include" })
-          // @ts-ignore
-          .mockResolvedValue({
-            json: async () => ({
-              results:  textIdsContentListingItems,
-              count:    textIdsContentListingItems.length,
-              next:     null,
-              previous: null
-            })
-          })
 
         let wrapper: ReactWrapper
         await act(async () => {
@@ -132,8 +105,7 @@ describe("RelationField", () => {
         wrapper.update()
         const combinedListing = [
           ...(contentContext ?? []),
-          ...contentListingItems,
-          ...(contentContext ? [] : textIdsContentListingItems)
+          ...contentListingItems
         ]
         // @ts-ignore
         expect(wrapper.find("SelectField").prop("options")).toEqual(
@@ -155,22 +127,10 @@ describe("RelationField", () => {
             type:            "page"
           })
           .toString()
-        // @ts-ignore
+        expect(global.fetch).toHaveBeenCalledTimes(1)
         expect(global.fetch).toHaveBeenCalledWith(defaultUrl, {
           credentials: "include"
         })
-
-        if (hasContentContext) {
-          expect(global.fetch).toHaveBeenCalledTimes(1)
-          expect(global.fetch).not.toHaveBeenCalledWith(textIdsUrl, {
-            credentials: "include"
-          })
-        } else {
-          expect(global.fetch).toHaveBeenCalledTimes(2)
-          expect(global.fetch).toHaveBeenCalledWith(textIdsUrl, {
-            credentials: "include"
-          })
-        }
       })
     })
   })
