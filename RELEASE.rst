@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.21.1
+Version 0.21.1 (Released August 04, 2021)
 --------------
 
 - switch site content modal over to ModalState
