@@ -8,7 +8,6 @@ import * as formikFuncs from "formik"
 import SiteContentEditor from "./SiteContentEditor"
 import WebsiteContext from "../context/Website"
 
-import { DEFAULT_TITLE_FIELD } from "../lib/site_content"
 import * as siteContentFuncs from "../lib/site_content"
 import { siteApiContentDetailUrl, siteApiContentUrl } from "../lib/urls"
 import IntegrationTestHelper, {
@@ -17,7 +16,6 @@ import IntegrationTestHelper, {
 import {
   makeRepeatableConfigItem,
   makeSingletonConfigItem,
-  makeWebsiteConfigField,
   makeWebsiteContentDetail,
   makeWebsiteDetail
 } from "../util/factories/websites"
@@ -29,8 +27,7 @@ import {
   EditableConfigItem,
   Website,
   WebsiteContent,
-  WebsiteContentModalState,
-  WidgetVariant
+  WebsiteContentModalState
 } from "../types/websites"
 import { contentDetailKey } from "../query-configs/websites"
 import { createModalState } from "../types/modal_state"
@@ -132,7 +129,7 @@ describe("SiteContent", () => {
     const { wrapper } = await render()
     const form = wrapper.find("SiteContentForm")
     expect(form.exists()).toBe(true)
-    expect(form.prop("fields")).toStrictEqual(configItem.fields)
+    expect(form.prop("configItem")).toStrictEqual(configItem)
   })
 
   describe("validates using the content schema", () => {
@@ -195,32 +192,6 @@ describe("SiteContent", () => {
       )
       sinon.assert.calledOnceWithExactly(yupToFormErrorsStub, error)
     })
-  })
-
-  it("modifies config item fields before passing them on to form component", async () => {
-    const objectField = makeWebsiteConfigField({
-      widget: WidgetVariant.Object,
-      label:  "myobject",
-      fields: [
-        makeWebsiteConfigField({
-          widget: WidgetVariant.String,
-          label:  "mystring"
-        })
-      ]
-    })
-    const { wrapper } = await render({
-      configItem: {
-        ...makeRepeatableConfigItem(),
-        fields: [objectField]
-      }
-    })
-    const form = wrapper.find("SiteContentForm")
-    expect(form.prop("fields")).toStrictEqual([
-      // Title field should be added by default
-      DEFAULT_TITLE_FIELD,
-      // Nested object field should be not renamed
-      objectField
-    ])
   })
 
   //

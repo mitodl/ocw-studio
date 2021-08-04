@@ -35,7 +35,6 @@ interface Props {
     values: any,
     formikHelpers: FormikHelpers<any>
   ) => void | Promise<any>
-  fields: ConfigField[]
   configItem: EditableConfigItem
   content: WebsiteContent | null
   editorState: WebsiteContentModalState
@@ -43,7 +42,6 @@ interface Props {
 
 export default function SiteContentForm({
   onSubmit,
-  fields,
   configItem,
   content,
   editorState
@@ -52,15 +50,19 @@ export default function SiteContentForm({
   const initialValues: SiteFormValues = useMemo(
     () =>
       editorState.adding() ?
-        newInitialValues(fields, website) :
-        contentInitialValues(content as WebsiteContent, fields, website),
-    [fields, editorState, content, website]
+        newInitialValues(configItem.fields, website) :
+        contentInitialValues(
+            content as WebsiteContent,
+            configItem.fields,
+            website
+        ),
+    [configItem.fields, editorState, content, website]
   )
   const contentContext = content?.content_context ?? null
 
   const renamedFields: ConfigField[] = useMemo(
-    () => renameNestedFields(fields),
-    [fields]
+    () => renameNestedFields(configItem.fields),
+    [configItem]
   )
   const fieldsByColumn = splitFieldsIntoColumns(renamedFields)
   const columnClass = fieldsByColumn.length === 2 ? "col-6" : "col-12"

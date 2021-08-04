@@ -1,4 +1,4 @@
-import React, { useMemo } from "react"
+import React from "react"
 import { useMutation, useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
 import { FormikHelpers } from "formik"
@@ -15,7 +15,6 @@ import {
 } from "../query-configs/websites"
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import {
-  addDefaultFields,
   contentFormValuesToPayload,
   isSingletonCollectionItem,
   needsContentContext
@@ -23,7 +22,6 @@ import {
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 
 import {
-  ConfigField,
   EditableConfigItem,
   WebsiteContentModalState,
   WebsiteContent
@@ -48,9 +46,6 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     editorState
   } = props
 
-  const fields: ConfigField[] = useMemo(() => addDefaultFields(configItem), [
-    configItem
-  ])
   const site = useWebsite()
 
   const [
@@ -79,7 +74,7 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     shouldLoadContent && editorState.editing() ?
       websiteContentDetailRequest(
         { name: site.name, textId: editorState.wrapped },
-        needsContentContext(fields)
+        needsContentContext(configItem.fields)
       ) :
       null
   )
@@ -110,7 +105,7 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     if (editorState.adding()) {
       values = { type: configItem.name, ...values }
     }
-    const payload = contentFormValuesToPayload(values, fields, site)
+    const payload = contentFormValuesToPayload(values, configItem.fields, site)
 
     // If the content being created is for a singleton config item,
     // use the config item "name" value as the text_id.
@@ -155,7 +150,6 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
   return (
     <SiteContentForm
       onSubmit={onSubmitForm}
-      fields={fields}
       configItem={configItem}
       content={content}
       editorState={editorState}

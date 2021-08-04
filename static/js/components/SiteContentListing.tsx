@@ -5,7 +5,10 @@ import { useSelector } from "react-redux"
 import RepeatableContentListing from "./RepeatableContentListing"
 import SingletonsContentListing from "./SingletonsContentListing"
 
-import { isRepeatableCollectionItem } from "../lib/site_content"
+import {
+  addDefaultFields,
+  isRepeatableCollectionItem
+} from "../lib/site_content"
 import { getWebsiteDetailCursor } from "../selectors/websites"
 import WebsiteContext from "../context/Website"
 
@@ -31,7 +34,7 @@ export default function SiteContentListing(): JSX.Element | null {
   return (
     <WebsiteContext.Provider value={website}>
       {isRepeatableCollectionItem(configItem) ? (
-        <RepeatableContentListing configItem={configItem} />
+        <RepeatableContentListing configItem={addDefaultFields(configItem)} />
       ) : (
         <SingletonsContentListing configItem={configItem} />
       )}

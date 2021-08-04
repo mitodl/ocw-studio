@@ -551,7 +551,8 @@ describe("site_content", () => {
         const expectedResult = expAddField ?
           [DEFAULT_TITLE_FIELD, randomField] :
           fields
-        expect(addDefaultFields(configItem)).toEqual(expectedResult)
+        // @ts-ignore
+        expect(addDefaultFields(configItem).fields).toEqual(expectedResult)
       })
     })
   })

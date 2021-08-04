@@ -62,7 +62,6 @@ describe("SiteContentForm", () => {
   const renderForm = (props = {}) =>
     shallow(
       <SiteContentForm
-        fields={configItem.fields}
         configItem={configItem}
         content={content}
         onSubmit={onSubmitStub}

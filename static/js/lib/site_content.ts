@@ -314,18 +314,27 @@ export const renameNestedFields = (fields: ConfigField[]): ConfigField[] =>
     }
   })
 
-export const addDefaultFields = (
+export function addDefaultFields(
+  configItem: RepeatableConfigItem
+): RepeatableConfigItem
+export function addDefaultFields(
+  configItem: SingletonConfigItem
+): SingletonConfigItem
+export function addDefaultFields(
   configItem: EditableConfigItem
-): ConfigField[] => {
+): EditableConfigItem {
   const fields = configItem.fields
   if (!isRepeatableCollectionItem(configItem)) {
-    return fields
+    return configItem
   }
   const titleField = fields.find(field => field.name === "title")
   if (titleField) {
-    return fields
+    return configItem
   }
-  return [DEFAULT_TITLE_FIELD, ...fields]
+  return {
+    ...configItem,
+    fields: [DEFAULT_TITLE_FIELD, ...fields]
+  }
 }
 
 export const needsContentContext = (fields: ConfigField[]): boolean => {

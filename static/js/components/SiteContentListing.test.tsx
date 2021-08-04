@@ -10,13 +10,15 @@ import IntegrationTestHelper, {
 import {
   makeRepeatableConfigItem,
   makeSingletonsConfigItem,
+  makeWebsiteConfigField,
   makeWebsiteDetail
 } from "../util/factories/websites"
 
 import {
   RepeatableConfigItem,
   SingletonsConfigItem,
-  Website
+  Website,
+  WidgetVariant
 } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
@@ -35,14 +37,19 @@ jest.mock("./SingletonsContentListing", () => ({
 }))
 import MockRepeatable from "./RepeatableContentListing"
 import MockSingletons from "./SingletonsContentListing"
+import { DEFAULT_TITLE_FIELD } from "../lib/site_content"
 
 describe("SiteContentListing", () => {
-  const repeatableConfigItem: RepeatableConfigItem = makeRepeatableConfigItem(),
-    singletonsConfigItem: SingletonsConfigItem = makeSingletonsConfigItem()
-  let helper: IntegrationTestHelper, website: Website, render: TestRenderer
+  let helper: IntegrationTestHelper,
+    website: Website,
+    render: TestRenderer,
+    repeatableConfigItem: RepeatableConfigItem,
+    singletonsConfigItem: SingletonsConfigItem
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
+    repeatableConfigItem = makeRepeatableConfigItem()
+    singletonsConfigItem = makeSingletonsConfigItem()
     website = makeWebsiteDetail()
     // @ts-ignore
     website.starter = {
@@ -70,24 +77,59 @@ describe("SiteContentListing", () => {
   afterEach(() => {
     helper.cleanup()
   })
-  ;[
-    [repeatableConfigItem, MockRepeatable, "RepeatableContentListing"],
-    [singletonsConfigItem, MockSingletons, "SingletonsContentListing"]
-  ].forEach(([configItem, expChildComponent, desc]) => {
-    it(`renders a ${desc} component with the correct props`, async () => {
+
+  //
+  ;[MockRepeatable, MockSingletons].forEach(child => {
+    it(`renders listing components with the correct props`, async () => {
+      let configItem
+
+      if (child === MockRepeatable) {
+        configItem = repeatableConfigItem
+      } else {
+        configItem = singletonsConfigItem
+      }
+
       // @ts-ignore
       const params = { name: website.name, contenttype: configItem.name }
       mockUseRouteMatch.mockImplementation(() => ({
         params
       }))
-
       const { wrapper } = await render()
-      // @ts-ignore
-      const listing = wrapper.find(expChildComponent)
+      const listing = wrapper.find(child)
       expect(listing.exists()).toBe(true)
       expect(listing.props()).toEqual({
         configItem
       })
     })
+  })
+
+  it("modifies config item fields before passing them on RepeatableContentListing", async () => {
+    const params = {
+      name:        website.name,
+      contenttype: repeatableConfigItem.name
+    }
+    mockUseRouteMatch.mockImplementation(() => ({
+      params
+    }))
+
+    const objectField = makeWebsiteConfigField({
+      widget: WidgetVariant.Object,
+      label:  "myobject",
+      fields: [
+        makeWebsiteConfigField({
+          widget: WidgetVariant.String,
+          label:  "mystring"
+        })
+      ]
+    })
+    repeatableConfigItem.fields = [objectField]
+    const { wrapper } = await render()
+    const listing = wrapper.find(MockRepeatable)
+    expect(listing.prop("configItem").fields).toStrictEqual([
+      // Title field should be added by default
+      DEFAULT_TITLE_FIELD,
+      // Nested object field should be not renamed
+      objectField
+    ])
   })
 })
