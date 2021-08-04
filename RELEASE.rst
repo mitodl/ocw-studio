@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.21.0
+Version 0.21.0 (Released August 04, 2021)
 --------------
 
 - import menus.yaml files as navmenus and update test data (#448)
