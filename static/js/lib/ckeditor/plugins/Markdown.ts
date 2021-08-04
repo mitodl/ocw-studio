@@ -100,12 +100,11 @@ export default class Markdown extends MarkdownConfigPlugin {
     // some typescript wrangling necessary here unfortunately b/c of some
     // shortcomings in the typings for @ckeditor/ckeditor5-engine
     // and @ckeditor/ckeditor5-core
-    (editor.data
-      .processor as MarkdownDataProcessor) = new MarkdownDataProcessor(
-        (editor.data as any).viewDocument,
-        md2html,
-        html2md
-      )
+    (editor.data.processor as unknown) = new MarkdownDataProcessor(
+      (editor.data as any).viewDocument,
+      md2html,
+      html2md
+    )
   }
 
   static get pluginName(): string {

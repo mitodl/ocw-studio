@@ -21,7 +21,8 @@ export function markdownTest(
 ): void {
   // grab showdown and turndown functions defined by Markdown plugin
   // and passed to the MarkdownDataProcessor
-  const { md2html, html2md } = editor.data.processor as MarkdownDataProcessor
+  const { md2html, html2md } = (editor.data
+    .processor as unknown) as MarkdownDataProcessor
 
   // should run both conversions without error
   md2html(markdown)
