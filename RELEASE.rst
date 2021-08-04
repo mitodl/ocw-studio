@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.21.1
+--------------
+
+- switch site content modal over to ModalState
+- Fix for multiple field types in content_context (#449)
+
 Version 0.21.0 (Released August 04, 2021)
 --------------
 
