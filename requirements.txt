@@ -18,14 +18,16 @@ beautifulsoup4==4.9.3
     #   mitol-django-mail
 billiard==3.6.3.0
     # via celery
-boto3==1.16.36
+boto3==1.18.7
     # via -r requirements.in
-botocore==1.19.36
+botocore==1.21.8
     # via
     #   boto3
     #   s3transfer
 cachetools==4.2.1
-    # via premailer
+    # via
+    #   google-auth
+    #   premailer
 celery==4.4.7
     # via
     #   -r requirements.in
@@ -117,8 +119,26 @@ factory-boy==3.2.0
     # via mitol-django-common
 faker==8.10.1
     # via factory-boy
+google-api-core==1.31.0
+    # via google-api-python-client
+google-api-python-client==2.14.0
+    # via -r requirements.in
+google-auth==1.33.1
+    # via
+    #   -r requirements.in
+    #   google-api-core
+    #   google-api-python-client
+    #   google-auth-httplib2
+google-auth-httplib2==0.1.0
+    # via google-api-python-client
+googleapis-common-protos==1.53.0
+    # via google-api-core
 html5lib==1.1
     # via mitol-django-mail
+httplib2==0.19.1
+    # via
+    #   google-api-python-client
+    #   google-auth-httplib2
 idna==2.10
     # via requests
 iniconfig==1.1.1
@@ -160,7 +180,9 @@ oauthlib==3.1.0
     #   requests-oauthlib
     #   social-auth-core
 packaging==21.0
-    # via pytest
+    # via
+    #   google-api-core
+    #   pytest
 parso==0.7.1
     # via jedi
 pexpect==4.8.0
@@ -173,6 +195,10 @@ premailer==3.7.0
     # via mitol-django-mail
 prompt-toolkit==3.0.6
     # via ipython
+protobuf==3.17.3
+    # via
+    #   google-api-core
+    #   googleapis-common-protos
 psycopg2==2.8.5
     # via
     #   -r requirements.in
@@ -181,6 +207,12 @@ ptyprocess==0.6.0
     # via pexpect
 py==1.10.0
     # via pytest
+pyasn1==0.4.8
+    # via
+    #   pyasn1-modules
+    #   rsa
+pyasn1-modules==0.2.8
+    # via google-auth
 pycparser==2.20
     # via cffi
 pygithub==1.55
@@ -196,7 +228,9 @@ pynacl==1.4.0
 pyopenssl==17.5.0
     # via django-server-status
 pyparsing==2.4.7
-    # via packaging
+    # via
+    #   httplib2
+    #   packaging
 pytest==6.1.2
     # via mitol-django-common
 python-dateutil==2.8.1
@@ -211,6 +245,7 @@ pytz==2021.1
     # via
     #   celery
     #   django
+    #   google-api-core
     #   mitol-django-common
 pyyaml==5.4
     # via
@@ -226,6 +261,7 @@ requests==2.24.0
     #   -r requirements.in
     #   concoursepy
     #   django-anymail
+    #   google-api-core
     #   mitol-django-common
     #   premailer
     #   pygithub
@@ -233,7 +269,9 @@ requests==2.24.0
     #   social-auth-core
 requests-oauthlib==1.3.0
     # via social-auth-core
-s3transfer==0.3.3
+rsa==4.7.2
+    # via google-auth
+s3transfer==0.5.0
     # via boto3
 sentry-sdk==0.16.5
     # via -r requirements.in
@@ -242,8 +280,13 @@ six==1.15.0
     #   cryptography
     #   django-compat
     #   django-server-status
+    #   google-api-core
+    #   google-api-python-client
+    #   google-auth
+    #   google-auth-httplib2
     #   html5lib
     #   isodate
+    #   protobuf
     #   pynacl
     #   pyopenssl
     #   python-dateutil
@@ -271,6 +314,8 @@ toolz==0.11.1
     # via mitol-django-mail
 traitlets==4.3.3
     # via ipython
+uritemplate==3.0.1
+    # via google-api-python-client
 urllib3==1.25.10
     # via
     #   botocore

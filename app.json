@@ -95,6 +95,22 @@
       "description": "The log level for django",
       "required": false
     },
+    "DRIVE_QUERY_SECONDS": {
+      "description": "The frequency to check for new google drive videos, in seconds",
+      "required": false
+    },
+    "DRIVE_S3_UPLOAD_PREFIX": {
+      "description": "Prefix to be used for S3 keys of files uploaded from Google Drive",
+      "required": false
+    },
+    "DRIVE_SERVICE_ACCOUNT_CREDS": {
+      "description": "The contents of the Service Account credentials JSON to use for Google API auth",
+      "required": false
+    },
+    "DRIVE_SHARED_ID": {
+      "description": "ID of the Shared Drive (a.k.a. Team Drive). This is equal to the top-level folder ID.",
+      "required": false
+    },
     "GA_TRACKING_ID": {
       "description": "Google analytics tracking ID",
       "required": false

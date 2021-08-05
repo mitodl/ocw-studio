@@ -1,6 +1,6 @@
 beautifulsoup4
 django
-boto3
+boto3==1.18.7
 celery
 concoursepy
 dj-database-url
@@ -30,3 +30,6 @@ social-auth-app-django>=4
 uwsgi
 pyyaml
 yamale
+
+google-api-python-client
+google-auth
