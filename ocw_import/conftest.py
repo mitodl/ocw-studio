@@ -29,11 +29,9 @@ def setup_s3(settings):
 
     # Add data to the fake bucket
     test_bucket = conn.Bucket(name=MOCK_BUCKET_NAME)
-    # print(TEST_OCW2HUGO_FILES)
     for file in TEST_OCW2HUGO_FILES:
         file_key = file.replace("./test_ocw2hugo/", "")
         with open(file, "r") as f:
-            # print(file_key)
             test_bucket.put_object(Key=file_key, Body=f.read())
 
 
