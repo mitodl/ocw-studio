@@ -3,7 +3,7 @@ root-url-path: courses
 collections:
   - category: Content
     folder: content/pages
-    label: Page
+    label: Pages
     name: page
     fields:
       - label: Title

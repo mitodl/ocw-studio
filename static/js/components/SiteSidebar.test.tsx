@@ -17,6 +17,7 @@ describe("SiteSidebar", () => {
 
   beforeEach(() => {
     website = makeWebsiteDetail()
+    console.log(website.starter?.config?.collections)
     helper = new IntegrationTestHelper()
     render = helper.configureRenderer(SiteSidebar, { website })
   })
@@ -59,9 +60,17 @@ describe("SiteSidebar", () => {
             contentType: "metadata"
           })
           .toString()
+      ],
+      [
+        "Menu",
+        siteContentListingUrl
+          .param({
+            name:        website.name,
+            contentType: "menu"
+          })
+          .toString()
       ]
     ]
-
     expect(links).toEqual(expect.arrayContaining(expected))
   })
 
