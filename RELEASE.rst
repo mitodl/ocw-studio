@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.21.2
+--------------
+
+- fix drawer width bug
+
 Version 0.21.1 (Released August 04, 2021)
 --------------
 
