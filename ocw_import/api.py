@@ -237,9 +237,10 @@ def import_ocw2hugo_menu(menu_data, website):
         website (Website): The course website
     """
     for i in range(len(menu_data["leftnav"])):
-        menu_data["leftnav"][i]["identifier"] = str(
-            uuid.UUID(menu_data["leftnav"][i]["identifier"])
-        )
+        if "identifier" in menu_data["leftnav"][i]:
+            menu_data["leftnav"][i]["identifier"] = str(
+                uuid.UUID(menu_data["leftnav"][i]["identifier"])
+            )
         if "parent" in menu_data["leftnav"][i]:
             menu_data["leftnav"][i]["parent"] = str(
                 uuid.UUID(menu_data["leftnav"][i]["parent"])
