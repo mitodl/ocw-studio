@@ -316,7 +316,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
       <span className="flex-grow-1 menu-title">{item.text}</span>
       <span className="flex-grow-0 d-inline-flex">
         <button
-          className="material-icons mr-2"
+          className="material-icons mr-2 item-action-button"
           onClick={event => {
             event.preventDefault()
             startEditMenuItem(item as InternalSortableMenuItem)
@@ -325,7 +325,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
           settings
         </button>
         <button
-          className="material-icons"
+          className="material-icons item-action-button"
           onClick={event => {
             event.preventDefault()
             setItemToRemove(item as InternalSortableMenuItem)

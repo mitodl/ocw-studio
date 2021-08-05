@@ -18,8 +18,9 @@ inner_content_item:
     file: str(required=False)
 ---
 field:
-    widget: enum('string', 'text', 'markdown', 'file', 'select', 'boolean', 'hidden', 'object', 'relation', 'menu')
+    widget: enum('string', 'text', 'markdown', 'file', 'select', 'boolean', 'hidden', 'object', 'relation', 'menu', 'hierarchical-select')
     label: str()
+    label_singular: str(required=False)
     name: str()
     minimal: bool(required=False)
     required: bool(required=False)
@@ -29,6 +30,7 @@ field:
     min: int(required=False)
     max: int(required=False)
     options: list(str(), required=False)
+    options_map: map(required=False)
     default: any(required=False)
     condition: include('field_condition', required=False)
     display_field: str(required=False)
@@ -37,6 +39,7 @@ field:
     filter: include('relation_filter', required=False)
     website: str(required=False)
     attach: str(required=False)
+    levels: list(include('level'), required=False)
 ---
 field_condition:
     field: str()
@@ -46,4 +49,7 @@ relation_filter:
     field: str()
     filter_type: enum('equals')
     value: any()
-
+---
+level:
+    name: str()
+    label: str()

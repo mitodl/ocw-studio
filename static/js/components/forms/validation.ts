@@ -9,10 +9,10 @@ import {
 import {
   ConfigField,
   ConfigItem,
+  EditableConfigItem,
   RelationConfigField,
   SelectConfigField,
-  WidgetVariant,
-  EditableConfigItem
+  WidgetVariant
 } from "../../types/websites"
 import { FormSchema } from "../../types/forms"
 import { FormikValues } from "formik"
@@ -94,6 +94,10 @@ export const getFieldSchema = (field: ConfigField): FormSchema => {
     break
   }
   case WidgetVariant.Menu: {
+    schema = yup.array()
+    break
+  }
+  case WidgetVariant.HierarchicalSelect: {
     schema = yup.array()
     break
   }

@@ -7,6 +7,7 @@ import SelectField from "../components/widgets/SelectField"
 import BooleanField from "../components/widgets/BooleanField"
 import RelationField from "../components/widgets/RelationField"
 import MenuField from "../components/widgets/MenuField"
+import HierarchicalSelectField from "../components/widgets/HierarchicalSelectField"
 
 import { objectToFormData } from "./util"
 import {
@@ -51,13 +52,14 @@ export const componentFromWidget = (
     return RelationField
   case WidgetVariant.Menu:
     return MenuField
+  case WidgetVariant.HierarchicalSelect:
+    return HierarchicalSelectField
   default:
     return "input"
   }
 }
 
 const SELECT_EXTRA_PROPS = ["options", "multiple", "max", "min"]
-
 const RELATION_EXTRA_PROPS = [
   "collection",
   "display_field",
@@ -67,8 +69,13 @@ const RELATION_EXTRA_PROPS = [
   "filter",
   "website"
 ]
-
 const MENU_EXTRA_PROPS = ["collections"]
+const HIERARCHICAL_SELECT_EXTRA_PROPS = [
+  "options_map",
+  "label",
+  "label_singular",
+  "levels"
+]
 
 export const DEFAULT_TITLE_FIELD: StringConfigField = {
   name:     "title",
@@ -94,6 +101,8 @@ export function widgetExtraProps(field: ConfigField): Record<string, any> {
     return pick(RELATION_EXTRA_PROPS, field)
   case WidgetVariant.Menu:
     return pick(MENU_EXTRA_PROPS, field)
+  case WidgetVariant.HierarchicalSelect:
+    return pick(HIERARCHICAL_SELECT_EXTRA_PROPS, field)
   default:
     return {}
   }
@@ -249,6 +258,8 @@ const defaultForField = (
           defaultForField(field, website) as SiteFormPrimitive
       ])
     )
+  case WidgetVariant.HierarchicalSelect:
+    return []
   case WidgetVariant.Menu:
     return []
   default:

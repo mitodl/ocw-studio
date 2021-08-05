@@ -57,14 +57,14 @@ $menu-spacing: 20px;
   .reorder {
     cursor: grab;
   }
+}
 
-  button {
-    padding: 0;
-    border: 0;
-    background-color: unset;
-  }
+.item-action-button {
+  padding: 0;
+  border: 0;
+  background-color: unset;
 
-  .material-icons {
+  &.material-icons {
     color: $studio-text-gray;
   }
 }

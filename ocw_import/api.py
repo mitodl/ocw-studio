@@ -302,3 +302,37 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         import_ocw2hugo_content(bucket, prefix, website)
     except:  # pylint:disable=bare-except
         log.exception("Error saving website %s", path)
+
+
+def generate_topics_dict(course_paths, bucket_name):
+    """
+    Crawl through a S3 bucket with course data output from ocw-to-hugo and construct a list of topics
+
+    Args:
+        course_paths (list of str): List of paths to the data/course.json file for each course
+        bucket_name (str): The name of the S3 bucket to use
+    """
+    topics = {}
+
+    s3 = get_s3_resource()
+    bucket = s3.Bucket(bucket_name)
+    for path in course_paths:
+        course_data = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
+
+        for topic_obj in course_data.get("topics", []):
+            topic = topic_obj["topic"]
+            if topic not in topics:
+                topics[topic] = {}
+
+            for subtopic_obj in topic_obj["subtopics"]:
+                subtopic = subtopic_obj["subtopic"]
+                if subtopic not in topics[topic]:
+                    topics[topic][subtopic] = set()
+                for speciality in subtopic_obj["specialities"]:
+                    topics[topic][subtopic].add(speciality["speciality"])
+
+    for topic, subtopic_dict in topics.items():
+        for subtopic in subtopic_dict.keys():
+            subtopic_dict[subtopic] = list(subtopic_dict[subtopic])
+
+    return topics

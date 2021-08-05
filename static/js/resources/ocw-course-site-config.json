@@ -303,6 +303,390 @@
               "name": "instructors",
               "website": "ocw-www",
               "widget": "relation"
+            },
+            {
+              "label": "Topics",
+              "label_singular": "Topic",
+              "name": "topics",
+              "options_map": {
+                "Business": {
+                  "Accounting": [],
+                  "Business Ethics": [],
+                  "Entrepreneurship": [],
+                  "Finance": [],
+                  "Globalization": [],
+                  "Health Care Management": [],
+                  "Industrial Relations and Human Resource Management": [],
+                  "Information Technology": [],
+                  "Innovation": [],
+                  "Leadership": [],
+                  "Management": [],
+                  "Marketing": [],
+                  "Operations Management": [],
+                  "Organizational Behavior": [],
+                  "Project Management": [],
+                  "Real Estate": [],
+                  "Supply Chain Management": []
+                },
+                "Energy": {
+                  "Buildings": [],
+                  "Climate": [],
+                  "Combustion": [],
+                  "Electricity": [],
+                  "Fossil Fuels": [],
+                  "Fuel Cells": [],
+                  "Hydrogen and Alternatives": [],
+                  "Nuclear": [],
+                  "Renewables": [],
+                  "Technology": [],
+                  "Transportation": []
+                },
+                "Engineering": {
+                  "Aerospace Engineering": [
+                    "Astrodynamics",
+                    "Structural Mechanics",
+                    "Aerodynamics",
+                    "Propulsion Systems",
+                    "Materials Selection",
+                    "Avionics",
+                    "Guidance and Control Systems",
+                    "Bioastronautics"
+                  ],
+                  "Biological Engineering": [
+                    "Biostatistics",
+                    "Biotechnology",
+                    "Computational Biology",
+                    "Biomaterials",
+                    "Synthetic Biology",
+                    "Cell and Tissue Engineering",
+                    "Biomechanics"
+                  ],
+                  "Chemical Engineering": [
+                    "Molecular Engineering",
+                    "Process Control Systems",
+                    "Polymers",
+                    "Transport Processes",
+                    "Separation Processes"
+                  ],
+                  "Civil Engineering": [
+                    "Geotechnical Engineering",
+                    "Surveying",
+                    "Transportation Engineering",
+                    "Structural Engineering",
+                    "Construction Management"
+                  ],
+                  "Computer Science": [
+                    "Algorithms and Data Structures",
+                    "Graphics and Visualization",
+                    "Human-Computer Interfaces",
+                    "Operating Systems",
+                    "Programming Languages",
+                    "Artificial Intelligence",
+                    "Software Design and Engineering",
+                    "Data Mining",
+                    "Theory of Computation",
+                    "Cryptography",
+                    "Computer Design and Engineering",
+                    "Computer Networks"
+                  ],
+                  "Electrical Engineering": [
+                    "Robotics and Control Systems",
+                    "Electronics",
+                    "Signal Processing",
+                    "Electric Power",
+                    "Digital Systems",
+                    "Telecommunications"
+                  ],
+                  "Environmental Engineering": [
+                    "Hydrology and Water Resource Systems",
+                    "Aquatic Sciences and Water Quality Control",
+                    "Hydrodynamics and Coastal Engineering",
+                    "Environmental Management"
+                  ],
+                  "Materials Science and Engineering": [
+                    "Electronic Materials",
+                    "Metallurgical Engineering",
+                    "Polymeric Materials",
+                    "Composite Materials"
+                  ],
+                  "Mechanical Engineering": [
+                    "Microtechnology",
+                    "Fluid Mechanics",
+                    "Solid Mechanics",
+                    "Mechanical Design",
+                    "Dynamics and Control"
+                  ],
+                  "Nanotechnology": [],
+                  "Nuclear Engineering": [
+                    "Nuclear Systems, Policy, and Economics",
+                    "Radiological Engineering",
+                    "Nuclear Materials"
+                  ],
+                  "Ocean Engineering": [
+                    "Oceanic Pollution Control",
+                    "Ocean Structures",
+                    "Hydrodynamics",
+                    "Ocean Exploration"
+                  ],
+                  "Systems Engineering": [
+                    "Systems Optimization",
+                    "Computational Modeling and Simulation",
+                    "Computational Science and Engineering",
+                    "Systems Design",
+                    "Numerical Simulation"
+                  ]
+                },
+                "Fine Arts": {
+                  "Architecture": [
+                    "Religious Architecture",
+                    "Architectural Design",
+                    "Environmental Design",
+                    "Architectural History and Criticism",
+                    "Architectural Engineering"
+                  ],
+                  "Art History": [],
+                  "Game Design": [],
+                  "Media Studies": [
+                    "Digital Media"
+                  ],
+                  "Music": [
+                    "Music Theory",
+                    "Music History",
+                    "Music Performance"
+                  ],
+                  "Performance Arts": [
+                    "Dance",
+                    "Theatrical Design",
+                    "Theater"
+                  ],
+                  "Visual Arts": [
+                    "Photography",
+                    "Film and Video",
+                    "Graphic Design"
+                  ]
+                },
+                "Health and Medicine": {
+                  "Anatomy and Physiology": [],
+                  "Biomedical Enterprise": [],
+                  "Biomedical Instrumentation": [],
+                  "Biomedical Signal and Image Processing": [],
+                  "Biomedicine": [],
+                  "Cancer": [],
+                  "Cellular and Molecular Medicine": [],
+                  "Epidemiology": [],
+                  "Functional Genomics": [],
+                  "Health and Exercise Science": [],
+                  "Immunology": [],
+                  "Medical Imaging": [],
+                  "Mental Health": [],
+                  "Pathology and Pathophysiology": [],
+                  "Pharmacology and Toxicology": [],
+                  "Physical Education and Recreation": [],
+                  "Public Health": [],
+                  "Sensory-Neural Systems": [],
+                  "Social Medicine": [],
+                  "Spectroscopy": [],
+                  "Speech Pathology": []
+                },
+                "Humanities": {
+                  "History": [
+                    "European History",
+                    "American History",
+                    "Historiography",
+                    "Latin American History",
+                    "Asian History",
+                    "World History",
+                    "Military History",
+                    "Ancient History",
+                    "History of Science and Technology",
+                    "Intellectual History",
+                    "Comparative History",
+                    "Medieval History",
+                    "Historical Methods",
+                    "Modern History",
+                    "Middle Eastern History",
+                    "African History",
+                    "Jewish History"
+                  ],
+                  "Language": [
+                    "French",
+                    "Spanish",
+                    "Portuguese",
+                    "English as a Second Language",
+                    "Chinese",
+                    "Italian",
+                    "Japanese",
+                    "German"
+                  ],
+                  "Linguistics": [
+                    "Phonology",
+                    "Syntax",
+                    "Semantics"
+                  ],
+                  "Literature": [
+                    "Academic Writing",
+                    "Fiction",
+                    "Periodic Literature",
+                    "Criticism",
+                    "Rhetoric",
+                    "Technical Writing",
+                    "American Literature",
+                    "Biography",
+                    "Drama",
+                    "Comedy",
+                    "Classics",
+                    "Comparative Literature",
+                    "International Literature",
+                    "Creative Writing",
+                    "Nonfiction Prose",
+                    "Poetry"
+                  ],
+                  "Philosophy": [
+                    "Philosophy of Language",
+                    "Epistemology",
+                    "Political Philosophy",
+                    "Metaphysics",
+                    "Ethics",
+                    "Logic"
+                  ],
+                  "Religion": []
+                },
+                "Mathematics": {
+                  "Algebra and Number Theory": [],
+                  "Applied Mathematics": [],
+                  "Calculus": [],
+                  "Computation": [],
+                  "Differential Equations": [],
+                  "Discrete Mathematics": [],
+                  "Linear Algebra": [],
+                  "Mathematical Analysis": [],
+                  "Mathematical Logic": [],
+                  "Probability and Statistics": [],
+                  "Topology and Geometry": []
+                },
+                "Science": {
+                  "Biology": [
+                    "Stem Cells",
+                    "Virology",
+                    "Molecular Biology",
+                    "Neuroscience",
+                    "Cell Biology",
+                    "Developmental Biology",
+                    "Computation and Systems Biology",
+                    "Structural Biology",
+                    "Biophysics",
+                    "Genetics",
+                    "Neurobiology",
+                    "Microbiology",
+                    "Proteomics",
+                    "Ecology",
+                    "Biochemistry"
+                  ],
+                  "Chemistry": [
+                    "Analytical Chemistry",
+                    "Physical Chemistry",
+                    "Organic Chemistry",
+                    "Inorganic Chemistry"
+                  ],
+                  "Cognitive Science": [],
+                  "Earth Science": [
+                    "Planetary Science",
+                    "Geology",
+                    "Atmospheric Science",
+                    "Climate Studies",
+                    "Environmental Science",
+                    "Geochemistry",
+                    "Oceanography",
+                    "Geobiology",
+                    "Sustainability",
+                    "Geophysics"
+                  ],
+                  "Physics": [
+                    "Quantum Mechanics",
+                    "Atomic, Molecular, Optical Physics",
+                    "Theoretical Physics",
+                    "High Energy Physics",
+                    "Nuclear Physics",
+                    "Particle Physics",
+                    "Classical Mechanics",
+                    "Electromagnetism",
+                    "Relativity",
+                    "Condensed Matter Physics",
+                    "Astrophysics",
+                    "Thermodynamics"
+                  ]
+                },
+                "Social Science": {
+                  "Anthropology": [
+                    "Cultural Anthropology",
+                    "Ethnography",
+                    "Social Anthropology",
+                    "Biological Anthropology"
+                  ],
+                  "Archaeology": [],
+                  "Communication": [],
+                  "Economics": [
+                    "Industrial Organization",
+                    "Political Economy",
+                    "Macroeconomics",
+                    "Public Economics",
+                    "Financial Economics",
+                    "Microeconomics",
+                    "Developmental Economics",
+                    "International Development",
+                    "Labor Economics",
+                    "International Economics",
+                    "Econometrics"
+                  ],
+                  "Game Theory": [],
+                  "Geography": [],
+                  "Legal Studies": [],
+                  "Political Science": [
+                    "American Politics",
+                    "International Relations",
+                    "Comparative Politics"
+                  ],
+                  "Psychology": [],
+                  "Public Administration": [
+                    "Environmental Policy",
+                    "Social Welfare",
+                    "Regional Politics",
+                    "Public Policy",
+                    "Military Studies",
+                    "Security Studies",
+                    "Science and Technology Policy"
+                  ],
+                  "Sociology": [
+                    "Community Development",
+                    "Social Justice"
+                  ],
+                  "Urban Studies": [
+                    "Housing Development",
+                    "Regional Planning",
+                    "Urban Planning",
+                    "Transportation Planning"
+                  ]
+                },
+                "Society": {
+                  "African American Studies": [],
+                  "Asian Studies": [],
+                  "European and Russian Studies": [],
+                  "Gender Studies": [],
+                  "Global Poverty": [],
+                  "Indigenous Studies": [],
+                  "Latin and Caribbean Studies": [],
+                  "Middle Eastern Studies": [],
+                  "The Developing World": [],
+                  "Women's Studies": []
+                },
+                "Teaching and Education": {
+                  "Curriculum and Teaching": [],
+                  "Education Policy": [],
+                  "Educational Technology": [],
+                  "Higher Education": []
+                }
+              },
+              "widget": "hierarchical-select"
             }
           ],
           "file": "data/course.json",
