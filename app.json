@@ -214,6 +214,10 @@
       "description": "If false, disables the node_modules cache to fix yarn install",
       "value": "false"
     },
+    "OCW_IMPORT_STARTER_SLUG": {
+      "description": "The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
+      "required": false
+    },
     "OCW_STUDIO_ADMIN_EMAIL": {
       "description": "E-mail to send 500 reports to.",
       "required": false

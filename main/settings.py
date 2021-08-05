@@ -723,6 +723,12 @@ GITHUB_WEBHOOK_BRANCH = get_string(
     description="Github branch to filter webhook requests against",
     required=False,
 )
+OCW_IMPORT_STARTER_SLUG = get_string(
+    name="OCW_IMPORT_STARTER_SLUG",
+    default="course",
+    description="The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
+    required=False,
+)
 OCW_STUDIO_SITE_CONFIG_FILE = get_string(
     name="OCW_STUDIO_SITE_CONFIG_FILE",
     default="ocw-studio.yaml",

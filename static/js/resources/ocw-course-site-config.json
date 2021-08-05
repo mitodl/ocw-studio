@@ -4,33 +4,133 @@
       "category": "Content",
       "fields": [
         {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
           "label": "Body",
           "name": "body",
           "widget": "markdown"
         }
       ],
-      "folder": "content",
-      "label": "Pages",
-      "label_singular": "Page",
+      "folder": "content/pages",
+      "label": "Page",
       "name": "page"
     },
     {
       "category": "Content",
       "fields": [
         {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
           "label": "Description",
+          "minimal": true,
           "name": "description",
-          "widget": "text"
+          "widget": "markdown"
+        },
+        {
+          "label": "File Type",
+          "name": "filetype",
+          "options": [
+            "Image",
+            "Video",
+            "Document",
+            "Other"
+          ],
+          "required": true,
+          "widget": "select"
         },
         {
           "label": "File",
           "name": "file",
           "widget": "file"
+        },
+        {
+          "label": "Course Feature Tags",
+          "multiple": true,
+          "name": "course_feature_tags",
+          "options": [
+            "Activity Assignments",
+            "Activity Assignments with Examples",
+            "Competition Videos",
+            "Course Introduction",
+            "Demonstration Audio",
+            "Demonstration Videos",
+            "Design Assignments",
+            "Design Assignments with Examples",
+            "Exam Materials",
+            "Exams",
+            "Exams with Solutions",
+            "Image Gallery",
+            "Labs",
+            "Lecture Audio",
+            "Lecture Notes",
+            "Lecture Videos",
+            "Media Assignments",
+            "Media Assignments with Examples",
+            "Multiple Assignment Types",
+            "Multiple Assignment Types with Solutions",
+            "Music",
+            "Online Textbook",
+            "Other Audio",
+            "Other Video",
+            "Presentation Assignments",
+            "Presentation Assignments with Examples",
+            "Problem Sets",
+            "Problem Sets with Solutions",
+            "Programming Assignments",
+            "Programming Assignments with Examples",
+            "Projects",
+            "Projects with Examples",
+            "Readings",
+            "Recitation Videos",
+            "Simulation Videos",
+            "Simulations",
+            "Tools",
+            "Tutorial Videos",
+            "Video Materials",
+            "Videos",
+            "Workshop Videos",
+            "Written Assignments",
+            "Written Assignments with Examples"
+          ],
+          "widget": "select"
+        },
+        {
+          "condition": {
+            "equals": "Image",
+            "field": "filetype"
+          },
+          "fields": [
+            {
+              "label": "ALT text",
+              "name": "image-alt",
+              "widget": "string"
+            },
+            {
+              "label": "Caption",
+              "name": "caption",
+              "widget": "string"
+            },
+            {
+              "label": "Credit",
+              "name": "credit",
+              "widget": "text"
+            }
+          ],
+          "label": "Image Metadata",
+          "name": "metadata",
+          "widget": "object"
         }
       ],
-      "folder": "content",
+      "folder": "content/resources",
       "label": "Resources",
-      "label_singular": "Resource",
       "name": "resource"
     },
     {
@@ -38,6 +138,162 @@
       "files": [
         {
           "fields": [
+            {
+              "label": "Course Title",
+              "name": "course_title",
+              "required": true,
+              "widget": "string"
+            },
+            {
+              "label": "Course Description",
+              "name": "course_description",
+              "widget": "markdown"
+            },
+            {
+              "label": "Primary Course Number",
+              "name": "primary_course_number",
+              "required": true,
+              "widget": "string"
+            },
+            {
+              "label": "Extra Course Numbers (comma separated list)",
+              "name": "extra_course_numbers",
+              "widget": "string"
+            },
+            {
+              "collection": "resource",
+              "display_field": "title",
+              "filter": {
+                "field": "filetype",
+                "filter_type": "equals",
+                "value": "Image"
+              },
+              "label": "Course Image",
+              "multiple": false,
+              "name": "course_image",
+              "widget": "relation"
+            },
+            {
+              "collection": "resource",
+              "display_field": "title",
+              "filter": {
+                "field": "filetype",
+                "filter_type": "equals",
+                "value": "Image"
+              },
+              "label": "Course Image Thumbnail",
+              "multiple": false,
+              "name": "course_image_thumbnail",
+              "widget": "relation"
+            },
+            {
+              "label": "Department Numbers",
+              "min": 1,
+              "multiple": true,
+              "name": "department_numbers",
+              "options": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "11",
+                "12",
+                "14",
+                "15",
+                "16",
+                "17",
+                "18",
+                "20",
+                "21A",
+                "21G",
+                "21H",
+                "21L",
+                "21M",
+                "22",
+                "24",
+                "CC",
+                "CMS-W",
+                "EC",
+                "ES",
+                "ESD",
+                "HST",
+                "IDS",
+                "MAS",
+                "PE",
+                "RES",
+                "STS",
+                "WGS"
+              ],
+              "widget": "select"
+            },
+            {
+              "label": "Level",
+              "name": "level",
+              "options": [
+                "Undergraduate",
+                "Graduate",
+                "Both",
+                "Non Credit"
+              ],
+              "widget": "select"
+            },
+            {
+              "label": "Course Feature Tags",
+              "multiple": true,
+              "name": "course_feature_tags",
+              "options": [
+                "Activity Assignments",
+                "Activity Assignments with Examples",
+                "Competition Videos",
+                "Course Introduction",
+                "Demonstration Audio",
+                "Demonstration Videos",
+                "Design Assignments",
+                "Design Assignments with Examples",
+                "Exam Materials",
+                "Exams",
+                "Exams with Solutions",
+                "Image Gallery",
+                "Labs",
+                "Lecture Audio",
+                "Lecture Notes",
+                "Lecture Videos",
+                "Media Assignments",
+                "Media Assignments with Examples",
+                "Multiple Assignment Types",
+                "Multiple Assignment Types with Solutions",
+                "Music",
+                "Online Textbook",
+                "Other Audio",
+                "Other Video",
+                "Presentation Assignments",
+                "Presentation Assignments with Examples",
+                "Problem Sets",
+                "Problem Sets with Solutions",
+                "Programming Assignments",
+                "Programming Assignments with Examples",
+                "Projects",
+                "Projects with Examples",
+                "Readings",
+                "Recitation Videos",
+                "Simulation Videos",
+                "Simulations",
+                "Tools",
+                "Tutorial Videos",
+                "Video Materials",
+                "Videos",
+                "Workshop Videos",
+                "Written Assignments",
+                "Written Assignments with Examples"
+              ],
+              "widget": "select"
+            },
             {
               "collection": "instructor",
               "display_field": "title",
@@ -63,7 +319,7 @@
           "fields": [
             {
               "label": "Menu",
-              "name": "mainmenu",
+              "name": "leftnav",
               "widget": "menu"
             }
           ],
@@ -76,6 +332,5 @@
       "name": "menu"
     }
   ],
-  "content-dir": "content",
   "root-url-path": "courses"
 }
