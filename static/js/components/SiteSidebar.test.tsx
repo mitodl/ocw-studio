@@ -17,7 +17,6 @@ describe("SiteSidebar", () => {
 
   beforeEach(() => {
     website = makeWebsiteDetail()
-    console.log(website.starter?.config?.collections)
     helper = new IntegrationTestHelper()
     render = helper.configureRenderer(SiteSidebar, { website })
   })
