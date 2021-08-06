@@ -25,13 +25,13 @@ resources:
   - name: ocw-studio-webhook
     type: http-api
     source:
-        uri: ((ocw-studio-url))/api/websites/((site))/pipeline_complete/
+        uri: ((ocw-studio-url))/api/websites/((site-url))/pipeline_complete/
         method: POST
         headers:
             Authorization: "Bearer {bearer_token}"
         json:
             version: ((version))
-            site: ((site))
+            site: ((site-url))
             success: "{succeeded}"
         bearer_token: ((api-token))
 jobs:
