@@ -1,4 +1,6 @@
 """ Website models tests """
+from urllib.parse import urljoin
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -106,3 +108,30 @@ def test_websitecontent_full_metadata(has_file_widget, has_file):
         }
     else:
         assert content.full_metadata == {"title": title, "description": description}
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "name,root_url,is_home,version,expected_path",
+    [
+        ["test-course", "courses", False, "live", "courses/test-course"],
+        ["ocw-home-page", "", True, "draft", ""],
+    ],
+)
+def test_website_get_url(
+    settings, name, root_url, is_home, version, expected_path
+):  # pylint:disable=too-many-arguments
+    """Verify that Website.get_url returns the expected value"""
+    settings.OCW_STUDIO_LIVE_URL = "http://test-live.edu"
+    settings.OCW_STUDIO_DRAFT_URL = "http://test-draft.edu"
+    expected_domain = (
+        settings.OCW_STUDIO_LIVE_URL
+        if version == "live"
+        else settings.OCW_STUDIO_DRAFT_URL
+    )
+    starter = WebsiteStarterFactory.create()
+    starter.config["root-url-path"] = root_url
+    starter.save()
+    settings.ROOT_WEBSITE_NAME = name if is_home else "test-home"
+    website = WebsiteFactory.create(name=name, starter=starter)
+    assert website.get_url(version) == urljoin(expected_domain, expected_path)

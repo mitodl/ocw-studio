@@ -323,7 +323,7 @@ def test_websites_endpoint_pipeline_complete(
             {
                 "site": {
                     "title": website.title,
-                    "url": f"http://test.{version}.edu/{website.name}",
+                    "url": f"http://test.{version}.edu/{website.starter.config['root-url-path']}/{website.name}",
                 },
                 "version": version,
             },

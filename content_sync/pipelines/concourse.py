@@ -162,6 +162,7 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     .replace("((config-slug))", self.website.starter.slug)
                     .replace("((base-url))", base_url)
                     .replace("((site-url))", site_url)
+                    .replace("((site-name))", self.website.name)
                     .replace("((purge-url))", purge_url)
                     .replace("((version))", version)
                     .replace("((api-token))", settings.API_BEARER_TOKEN)

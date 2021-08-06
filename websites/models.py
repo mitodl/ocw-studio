@@ -92,7 +92,13 @@ class Website(TimestampedModel):
             if version == "live"
             else settings.OCW_STUDIO_DRAFT_URL
         )
-        return urljoin(base_url, self.name)
+        site_config = SiteConfig(self.starter.config)
+        site_url = (
+            ""
+            if self.name == settings.ROOT_WEBSITE_NAME
+            else f"{site_config.root_url_path}/{self.name}".strip("/")
+        )
+        return urljoin(base_url, site_url)
 
     class Meta:
         permissions = (
