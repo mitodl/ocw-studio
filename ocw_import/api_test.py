@@ -267,5 +267,6 @@ def test_import_ocw2hugo_menu(settings):
                 "weight": 50,
                 "identifier": "4f5c3926-e4d5-6974-7f16-131a6f692568",
             },
+            {"url": "https://openlearning.mit.edu/", "name": "Open Learning"},
         ]
     }
