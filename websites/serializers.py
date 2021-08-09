@@ -14,6 +14,7 @@ from content_sync.api import (
     create_website_publishing_pipeline,
     update_website_backend,
 )
+from gdrive_sync.tasks import create_gdrive_folder_if_not_exists
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
 from websites import constants
@@ -94,6 +95,9 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
             website = super().create(validated_data)
         create_website_backend(website)
         create_website_publishing_pipeline(website)
+        create_gdrive_folder_if_not_exists.delay(
+            website_short_id=website.short_id, website_name=website.name
+        )
         return website
 
     def update(self, instance, validated_data):
