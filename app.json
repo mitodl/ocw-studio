@@ -115,6 +115,10 @@
       "description": "ID of the Shared Drive (a.k.a. Team Drive). This is equal to the top-level folder ID.",
       "required": false
     },
+    "DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID": {
+      "description": "Gdrive folder for video uploads",
+      "required": false
+    },
     "GA_TRACKING_ID": {
       "description": "Google analytics tracking ID",
       "required": false

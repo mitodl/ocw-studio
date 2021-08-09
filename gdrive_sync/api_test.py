@@ -92,23 +92,26 @@ def test_get_drive_service(settings, mocker):
 
 
 @pytest.mark.parametrize("drive_id", [None, "testDrive"])
-@pytest.mark.parametrize("query", [None, "(mimeType contains 'video/')"])
-def test_get_file_list(settings, mock_service, query, drive_id):
+def test_get_file_list(settings, mock_service, drive_id):
     """get_file_list should return expected results"""
     settings.DRIVE_SHARED_ID = drive_id
+    query = "(mimeType contains 'video/')"
+
     mock_list = mock_service.return_value.files.return_value.list
     mock_execute = mock_list.return_value.execute
     mock_execute.side_effect = LIST_RESPONSES
+    fields = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)"
+
     drive_kwargs = {"driveId": drive_id, "corpora": "drive"} if drive_id else {}
     query_kwargs = {"q": query} if query else {}
     extra_kwargs = {**drive_kwargs, **query_kwargs}
-    files = api.get_file_list(query=query)
+    files = api.get_file_list(query=query, fields=fields)
     assert files == LIST_RESPONSES[0]["files"] + LIST_RESPONSES[1]["files"]
     assert mock_execute.call_count == 2
     expected_kwargs = {
         "supportsAllDrives": True,
         "includeItemsFromAllDrives": True,
-        "fields": "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)",
+        "fields": fields,
         **extra_kwargs,
     }
     mock_list.assert_any_call(**expected_kwargs)
@@ -131,6 +134,7 @@ def test_get_parent_tree(mock_service):
     ]
 
 
+# pylint:disable=too-many-arguments, too-many-locals
 @pytest.mark.parametrize(
     "arg_last_dt",
     [None, datetime.strptime("2021-01-01", "%Y-%m-%d").replace(tzinfo=pytz.UTC)],
@@ -139,12 +143,23 @@ def test_get_parent_tree(mock_service):
     "tracker_last_dt",
     [None, datetime.strptime("2021-02-02", "%Y-%m-%d").replace(tzinfo=pytz.UTC)],
 )
+@pytest.mark.parametrize(
+    "parent_folder,parent_folder_in_ancestors",
+    [(None, False), ("parent", True), ("parent", False)],
+)
 @pytest.mark.parametrize("same_checksum", [True, False])
 def test_import_recent_videos(
-    settings, mocker, arg_last_dt, tracker_last_dt, same_checksum
+    settings,
+    mocker,
+    arg_last_dt,
+    tracker_last_dt,
+    parent_folder,
+    parent_folder_in_ancestors,
+    same_checksum,
 ):
     """import_recent_videos should created expected objects and call s3 tasks"""
     settings.DRIVE_SHARED_ID = "test_drive"
+    settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID = parent_folder
     website = WebsiteFactory.create()
     DriveFileFactory.create(
         file_id=LIST_RESPONSES[1]["files"][0]["id"],
@@ -155,35 +170,44 @@ def test_import_recent_videos(
         ),
     )
 
-    mocker.patch(
-        "gdrive_sync.api.get_parent_tree",
-        side_effect=[
-            [
-                {
-                    "id": LIST_RESPONSES[0]["files"][0]["parents"][0],
-                    "name": website.short_id,
-                }
-            ],
-            [
-                {
-                    "id": LIST_RESPONSES[0]["files"][1]["parents"][0],
-                    "name": "no-matching-website",
-                }
-            ],
-            [
-                {
-                    "id": LIST_RESPONSES[0]["files"][0]["parents"][0],
-                    "name": website.short_id,
-                }
-            ],
-            [
-                {
-                    "id": LIST_RESPONSES[0]["files"][1]["parents"][0],
-                    "name": "no-matching-website",
-                }
-            ],
+    parent_tree_responses = [
+        [
+            {
+                "id": LIST_RESPONSES[0]["files"][0]["parents"][0],
+                "name": website.short_id,
+            }
         ],
-    )
+        [
+            {
+                "id": LIST_RESPONSES[0]["files"][1]["parents"][0],
+                "name": "no-matching-website",
+            }
+        ],
+        [
+            {
+                "id": LIST_RESPONSES[0]["files"][0]["parents"][0],
+                "name": website.short_id,
+            }
+        ],
+        [
+            {
+                "id": LIST_RESPONSES[0]["files"][1]["parents"][0],
+                "name": "no-matching-website",
+            }
+        ],
+    ]
+
+    if parent_folder_in_ancestors:
+        for response in parent_tree_responses:
+            response.append(
+                {
+                    "id": "parent",
+                    "name": "ancestor_exists",
+                }
+            )
+
+    mocker.patch("gdrive_sync.api.get_parent_tree", side_effect=parent_tree_responses)
+
     mock_list_files = mocker.patch(
         "gdrive_sync.api.get_file_list",
         return_value=LIST_RESPONSES[0]["files"] + LIST_RESPONSES[1]["files"],
@@ -204,16 +228,24 @@ def test_import_recent_videos(
         else ""
     )
     expected_query = f"(mimeType contains 'video/' and not trashed){dt_query}"
-    mock_list_files.assert_called_once_with(query=expected_query)
+
+    expected_fields = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)"
+    mock_list_files.assert_called_once_with(
+        query=expected_query, fields=expected_fields
+    )
     for i in range(2):
-        if i == 1 and same_checksum:
+        if (i == 1 and same_checksum) or (
+            parent_folder and not parent_folder_in_ancestors
+        ):
             with pytest.raises(AssertionError):
                 mock_upload_task.assert_any_call(LIST_RESPONSES[i]["files"][0]["id"])
         else:
             mock_upload_task.assert_any_call(LIST_RESPONSES[i]["files"][0]["id"])
-        assert DriveFile.objects.filter(
-            file_id=LIST_RESPONSES[i]["files"][0]["id"]
-        ).exists()
+
+        if not parent_folder or parent_folder_in_ancestors:
+            assert DriveFile.objects.filter(
+                file_id=LIST_RESPONSES[i]["files"][0]["id"]
+            ).exists()
         assert (
             DriveFile.objects.filter(
                 file_id=LIST_RESPONSES[i]["files"][1]["id"]
@@ -259,3 +291,81 @@ def test_stream_to_s3_error(mocker):
     drive_file.refresh_from_db()
     assert drive_file.status == DriveFileStatus.UPLOAD_FAILED
     mock_service.return_value.permissions.return_value.delete.assert_called_once()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "parent_folder,parent_folder_in_ancestors",
+    [(None, False), ("correct_parent", False), ("correct_parent", True)],
+)
+@pytest.mark.parametrize("folder_exists", [True, False])
+def test_create_gdrive_folder_if_not_exists(
+    settings,
+    mocker,
+    parent_folder,
+    parent_folder_in_ancestors,
+    folder_exists,
+    mock_service,
+):
+    """Task should make expected drive api and S3 upload calls"""
+    website_short_id = "short_id"
+    website_name = "name"
+
+    settings.DRIVE_SHARED_ID = "test_drive"
+    settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID = parent_folder
+
+    if folder_exists:
+        existing_list_response = [{"id": "id", "parents": ["first_parent"]}]
+    else:
+        existing_list_response = []
+
+    mock_list_files = mocker.patch(
+        "gdrive_sync.api.get_file_list",
+        return_value=existing_list_response,
+    )
+
+    if parent_folder_in_ancestors:
+        get_parent_tree_response = [{"id": "correct_parent"}, {"id": "first_parent"}]
+    else:
+        get_parent_tree_response = [{"id": "first_parent"}]
+
+    mock_get_parent_tree = mocker.patch(
+        "gdrive_sync.api.get_parent_tree",
+        return_value=get_parent_tree_response,
+    )
+
+    expected_list_query = f"(mimeType = 'application/vnd.google-apps.folder') and not trashed and (name = '{website_short_id}' or name = '{website_name}')"
+    expected_fields = "nextPageToken, files(id, name, parents)"
+
+    mock_create = mock_service.return_value.files.return_value.create
+    mock_execute = mock_create.return_value.execute
+
+    api.create_gdrive_folder_if_not_exists(
+        website_short_id=website_short_id, website_name=website_name
+    )
+
+    mock_list_files.assert_called_once_with(
+        query=expected_list_query, fields=expected_fields
+    )
+
+    if folder_exists and parent_folder:
+        mock_get_parent_tree.assert_called_once_with(["first_parent"])
+    else:
+        mock_get_parent_tree.assert_not_called()
+
+    if not folder_exists or (parent_folder and not parent_folder_in_ancestors):
+        expected_file_metadata = {
+            "name": website_short_id,
+            "mimeType": "application/vnd.google-apps.folder",
+        }
+
+        if parent_folder:
+            expected_file_metadata["parents"] = [parent_folder]
+        else:
+            expected_file_metadata["parents"] = ["test_drive"]
+
+        mock_create.assert_called_once_with(
+            supportsAllDrives=True, body=expected_file_metadata, fields="id"
+        )
+    else:
+        mock_execute.assert_not_called()

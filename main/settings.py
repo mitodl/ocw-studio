@@ -462,7 +462,12 @@ DRIVE_S3_UPLOAD_PREFIX = get_string(
     default="gdrive_uploads",
     description=("Prefix to be used for S3 keys of files uploaded from Google Drive"),
 )
-
+DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID = get_string(
+    name="DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID",
+    default=None,
+    description="Gdrive folder for video uploads",
+    required=False,
+)
 
 # Celery
 REDISCLOUD_URL = get_string(

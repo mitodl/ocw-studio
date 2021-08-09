@@ -19,3 +19,10 @@ def import_gdrive_videos():
     """Import any new videos uploaded to Google Drive"""
     if settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS:
         api.import_recent_videos()
+
+
+@app.task
+def create_gdrive_folder_if_not_exists(website_short_id: str, website_name: str):
+    """Create gdrive folder for website if it doesn't already exist"""
+    if settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS:
+        api.create_gdrive_folder_if_not_exists(website_short_id, website_name)

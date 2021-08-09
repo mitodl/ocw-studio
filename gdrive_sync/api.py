@@ -32,7 +32,7 @@ def get_drive_service() -> Resource:
     return build("drive", "v3", credentials=creds, cache_discovery=False)
 
 
-def get_file_list(query: str = None) -> List[Dict]:
+def get_file_list(query: str, fields: str) -> List[Dict]:
     """
     Get a list of Google Drive files filtered by an optional query and drive id.
     """
@@ -41,8 +41,8 @@ def get_file_list(query: str = None) -> List[Dict]:
     if settings.DRIVE_SHARED_ID:
         extra_kwargs["driveId"] = settings.DRIVE_SHARED_ID
         extra_kwargs["corpora"] = "drive"
-    if query:
-        extra_kwargs["q"] = query
+
+    extra_kwargs["q"] = query
     files = []
     next_token = "initial"
     while next_token is not None:
@@ -51,7 +51,7 @@ def get_file_list(query: str = None) -> List[Dict]:
             .list(
                 supportsAllDrives=True,
                 includeItemsFromAllDrives=True,
-                fields="nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)",
+                fields=fields,
                 **extra_kwargs,
             )
             .execute()
@@ -87,6 +87,13 @@ def process_file_result(file_obj: Dict):
     parents = file_obj.get("parents")
     if parents:
         folder_tree = get_parent_tree(parents)
+        if (
+            settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID
+            and settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID
+            not in [folder["id"] for folder in folder_tree]
+        ):
+            return
+
         for folder in folder_tree:
             website = Website.objects.filter(
                 Q(short_id=folder["name"]) | Q(name=folder["name"])
@@ -134,11 +141,13 @@ def import_recent_videos(last_dt=None):
         api_call=DRIVE_API_FILES
     )
     query = "(mimeType contains 'video/' and not trashed)"
+    fields = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)"
     last_checked = last_dt or file_token_obj.last_dt
     if last_checked:
         dt_str = last_checked.strftime("%Y-%m-%dT%H:%M:%S.%f")
         query += f" and (modifiedTime > '{dt_str}' or createdTime > '{dt_str}')"
-    videos = get_file_list(query=query)
+
+    videos = get_file_list(query=query, fields=fields)
     for video in videos:
         process_file_result(video)
         maxLastTime = datetime.strptime(
@@ -217,3 +226,43 @@ def stream_to_s3(drive_file: DriveFile):
             permissionId=permission["id"],
             fileId=drive_file.file_id,
         ).execute()
+
+
+def create_gdrive_folder_if_not_exists(website_short_id: str, website_name: str):
+    """Create gdrive folder for website if it doesn't already exist"""
+    query = f"(mimeType = 'application/vnd.google-apps.folder') and not trashed and (name = '{website_short_id}' or name = '{website_name}')"
+
+    fields = "nextPageToken, files(id, name, parents)"
+    folders = get_file_list(query=query, fields=fields)
+
+    if settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID:
+        filtered_folders = []
+        for folder in folders:
+            ancestors = get_parent_tree(folder["parents"])
+
+            if settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID in [
+                ancestor["id"] for ancestor in ancestors
+            ]:
+                filtered_folders.append(folder)
+
+    else:
+        filtered_folders = folders
+
+    if len(filtered_folders) == 0:
+        service = get_drive_service()
+
+        file_metadata = {
+            "name": website_short_id,
+            "mimeType": "application/vnd.google-apps.folder",
+        }
+
+        if settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID:
+            file_metadata["parents"] = [settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID]
+        else:
+            file_metadata["parents"] = [settings.DRIVE_SHARED_ID]
+
+        return (
+            service.files()
+            .create(supportsAllDrives=True, body=file_metadata, fields="id")
+            .execute()
+        )
