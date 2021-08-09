@@ -2,11 +2,11 @@
 import logging
 
 import celery
+from django.conf import settings
 from mitol.common.utils.collections import chunks
 
 from main.celery import app
 from ocw_import.api import fetch_ocw2hugo_course_paths, import_ocw2hugo_course
-from websites.constants import COURSE_STARTER_SLUG
 from websites.models import WebsiteStarter
 
 
@@ -27,7 +27,7 @@ def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
     if not paths:
         return
     course_site_starter_id = (
-        WebsiteStarter.objects.filter(slug=COURSE_STARTER_SLUG)
+        WebsiteStarter.objects.filter(slug=settings.OCW_IMPORT_STARTER_SLUG)
         .values_list("id", flat=True)
         .first()
     )

@@ -59,9 +59,17 @@ describe("SiteSidebar", () => {
             contentType: "metadata"
           })
           .toString()
+      ],
+      [
+        "Menu",
+        siteContentListingUrl
+          .param({
+            name:        website.name,
+            contentType: "menu"
+          })
+          .toString()
       ]
     ]
-
     expect(links).toEqual(expect.arrayContaining(expected))
   })
 
