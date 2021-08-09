@@ -1,0 +1,1 @@
+{{ site_name }}: "{{site.title}}" {{ version }} version available for viewing

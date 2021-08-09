@@ -1,4 +1,7 @@
 """ permissions for websites """
+import logging
+
+from django.conf import settings
 from django.contrib.auth.models import Group, Permission
 from django.db import transaction
 from guardian.shortcuts import assign_perm, get_perms
@@ -9,6 +12,9 @@ from users.models import User
 from websites import constants
 from websites.models import Website
 from websites.utils import permissions_group_name_for_role
+
+
+log = logging.getLogger(__name__)
 
 
 def assign_website_permissions(group_or_user, perms, website=None):
@@ -309,3 +315,17 @@ class HasWebsitePreviewPermission(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return check_perm(request.user, constants.PERMISSION_PREVIEW, obj)
+
+
+class BearerTokenPermission(BasePermission):
+    """Restrict access to api endpoints via access token"""
+
+    def has_permission(self, request, view):
+        if not settings.API_BEARER_TOKEN:
+            log.error("API_BEARER_TOKEN not set")
+            return False
+        header = request.headers.get("Authorization", "")
+        if header and header.startswith("Bearer "):
+            token = header[len("Bearer ") :]
+            return token == settings.API_BEARER_TOKEN
+        return False

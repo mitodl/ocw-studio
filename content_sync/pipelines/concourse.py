@@ -162,7 +162,10 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     .replace("((config-slug))", self.website.starter.slug)
                     .replace("((base-url))", base_url)
                     .replace("((site-url))", site_url)
+                    .replace("((site-name))", self.website.name)
                     .replace("((purge-url))", purge_url)
+                    .replace("((version))", version)
+                    .replace("((api-token))", settings.API_BEARER_TOKEN)
                 )
             config = json.dumps(yaml.load(config_str, Loader=yaml.Loader))
             log.debug(config)
@@ -186,5 +189,5 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
         )
         job_name = pipeline_info["config"]["jobs"][0]["name"]
         self.ci.post(
-            f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/draft/jobs/{job_name}/builds?vars={self.instance_vars}"
+            f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/jobs/{job_name}/builds?vars={self.instance_vars}"
         )

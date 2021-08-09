@@ -1,4 +1,10 @@
 ---
+resource_types:
+  - name: http-api
+    type: docker-image
+    source:
+      repository: aequitas/http-api-resource
+      tag: latest
 resources:
   - name: ocw-hugo-themes
     type: s3
@@ -16,6 +22,18 @@ resources:
     source:
       uri: ((ocw-hugo-projects-uri))
       branch: ((ocw-hugo-projects-branch))
+  - name: ocw-studio-webhook
+    type: http-api
+    source:
+        uri: ((ocw-studio-url))/api/websites/((site-name))/pipeline_complete/
+        method: POST
+        headers:
+            Authorization: "Bearer {bearer_token}"
+        json:
+            version: ((version))
+            site: ((base-url))
+            success: "{succeeded}"
+        bearer_token: ((api-token))
 jobs:
   - name: build-ocw-site
     serial: true
@@ -39,6 +57,7 @@ jobs:
             - name: course-markdown
             - name: ocw-hugo-projects
           outputs:
+            - name: ocw-studio-hook
             - name: course-markdown
             - name: ocw-hugo-themes
           run:
@@ -50,11 +69,18 @@ jobs:
               mkdir ../ocw-hugo-themes/theme
               tar -xvzf ../ocw-hugo-themes/ocw-hugo-themes-*.tgz -C ../ocw-hugo-themes/theme
               hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/theme
+        on_failure:
+          try:
+            put: ocw-studio-webhook
+            params:
+                succeeded: false
       - task: copy-s3-buckets
         config:
           inputs:
             - name: ocw-hugo-themes
             - name: course-markdown
+          outputs:
+            - name: ocw-studio-webhook
           platform: linux
           image_resource:
             type: docker-image
@@ -67,6 +93,11 @@ jobs:
               aws s3 sync course-markdown/public s3://((ocw-bucket))/((base-url))
               aws s3 sync s3://((ocw-studio-bucket))/((site-url)) s3://((ocw-bucket))/((site-url))
               if [[ "((base-url))" == "" ]]; then aws s3 sync ocw-hugo-themes/theme/base-theme/dist s3://((ocw-bucket)); fi
+        on_failure:
+          try:
+            put: ocw-studio-webhook
+            params:
+                succeeded: false
       - task: clear-cdn-cache
         config:
           platform: linux
@@ -84,3 +115,13 @@ jobs:
               - -H
               - 'Fastly-Soft-Purge: 1'
               - https://api.fastly.com/service/((fastly.service_id))/((purge-url))
+        on_success:
+          try:
+            put: ocw-studio-webhook
+            params:
+                succeeded: true
+        on_failure:
+          try:
+            put: ocw-studio-webhook
+            params:
+                succeeded: false

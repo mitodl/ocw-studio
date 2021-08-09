@@ -10,6 +10,7 @@ from django.utils.functional import cached_property
 from django.utils.text import slugify
 from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
 from mitol.common.utils.datetime import now_in_utc
+from mitol.mail.api import get_message_sender
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -29,6 +30,7 @@ from main.views import DefaultPagination
 from users.models import User
 from websites import constants
 from websites.api import get_valid_new_filename
+from websites.messages import PreviewOrPublishSuccessMessage
 from websites.models import (
     Website,
     WebsiteCollection,
@@ -37,6 +39,7 @@ from websites.models import (
     WebsiteStarter,
 )
 from websites.permissions import (
+    BearerTokenPermission,
     HasWebsiteCollaborationPermission,
     HasWebsiteCollectionItemPermission,
     HasWebsiteCollectionPermission,
@@ -172,6 +175,27 @@ class WebsiteViewSet(
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error publishing %s", name)
             return Response(status=500, data={"details": str(exc)})
+
+    @action(detail=True, methods=["post"], permission_classes=[BearerTokenPermission])
+    def pipeline_complete(self, request, name=None):
+        """Process webhook requests from completed preview/publish pipeline runs"""
+        data = request.data
+        version = data["version"]
+        website = Website.objects.get(name=name)
+        site_admins = list(website.admin_group.user_set.all()) + [website.owner]
+        with get_message_sender(PreviewOrPublishSuccessMessage) as sender:
+            for user in site_admins:
+                sender.build_and_send_message(
+                    user,
+                    {
+                        "site": {
+                            "title": website.title,
+                            "url": website.get_url(version),
+                        },
+                        "version": version,
+                    },
+                )
+        return Response(status=200)
 
 
 class WebsiteStarterViewSet(

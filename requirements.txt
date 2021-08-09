@@ -24,7 +24,7 @@ botocore==1.21.8
     # via
     #   boto3
     #   s3transfer
-cachetools==4.2.1
+cachetools==4.2.2
     # via
     #   google-auth
     #   premailer
@@ -51,7 +51,7 @@ cryptography==3.3.2
     #   social-auth-core
 cssselect==1.1.0
     # via premailer
-cssutils==2.2.0
+cssutils==2.3.0
     # via premailer
 decorator==4.4.2
     # via
@@ -79,8 +79,10 @@ django==3.1.12
     #   mitol-django-authentication
     #   mitol-django-common
     #   mitol-django-mail
-django-anymail==8.2
-    # via mitol-django-mail
+django-anymail[mailgun]==8.4
+    # via
+    #   -r requirements.in
+    #   mitol-django-mail
 django-compat==1.0.15
     # via
     #   django-hijack
@@ -117,7 +119,7 @@ elasticsearch==7.8.1
     # via django-server-status
 factory-boy==3.2.0
     # via mitol-django-common
-faker==8.10.1
+faker==8.10.0
     # via factory-boy
 google-api-core==1.31.0
     # via google-api-python-client
@@ -172,10 +174,12 @@ mitol-django-common==1.2.0
     #   mitol-django-authentication
     #   mitol-django-mail
 mitol-django-mail==2.2.0
-    # via mitol-django-authentication
+    # via
+    #   -r requirements.in
+    #   mitol-django-authentication
 newrelic==5.16.1.146
     # via -r requirements.in
-oauthlib==3.1.0
+oauthlib==3.1.1
     # via
     #   requests-oauthlib
     #   social-auth-core
@@ -191,7 +195,7 @@ pickleshare==0.7.5
     # via ipython
 pluggy==0.13.1
     # via pytest
-premailer==3.7.0
+premailer==3.9.0
     # via mitol-django-mail
 prompt-toolkit==3.0.6
     # via ipython
