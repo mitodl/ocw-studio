@@ -141,6 +141,7 @@ INSTALLED_APPS = (
     "ocw_import",
     "news",
     "content_sync",
+    "gdrive_sync",
     # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
@@ -434,6 +435,30 @@ if OCW_STUDIO_USE_S3 and (
 if OCW_STUDIO_USE_S3:
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
+
+# Google Drive settings
+DRIVE_SERVICE_ACCOUNT_CREDS = get_string(
+    name="DRIVE_SERVICE_ACCOUNT_CREDS",
+    default=None,
+    description="The contents of the Service Account credentials JSON to use for Google API auth",
+)
+DRIVE_SHARED_ID = get_string(
+    name="DRIVE_SHARED_ID",
+    default=None,
+    description="ID of the Shared Drive (a.k.a. Team Drive). This is equal to the top-level folder ID.",
+)
+DRIVE_QUERY_SECONDS = get_int(
+    name="DRIVE_QUERY_SECONDS",
+    default=60,
+    description=("The frequency to check for new google drive videos, in seconds"),
+)
+DRIVE_S3_UPLOAD_PREFIX = get_string(
+    name="DRIVE_S3_UPLOAD_PREFIX",
+    default="gdrive_uploads",
+    description=("Prefix to be used for S3 keys of files uploaded from Google Drive"),
+)
+
+
 # Celery
 REDISCLOUD_URL = get_string(
     name="REDISCLOUD_URL", default=None, description="RedisCloud connection url"
@@ -472,6 +497,12 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = "UTC"
 
+CELERY_BEAT_SCHEDULE = {
+    "import-gdrive-videos": {
+        "task": "gdrive_sync.tasks.import_gdrive_videos",
+        "schedule": DRIVE_QUERY_SECONDS,
+    },
+}
 
 # django cache back-ends
 CACHES = {
