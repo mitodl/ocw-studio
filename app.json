@@ -95,6 +95,10 @@
       "description": "The log level for django",
       "required": false
     },
+    "DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID": {
+      "description": "Gdrive parent folder for video uploads",
+      "required": false
+    },
     "GA_TRACKING_ID": {
       "description": "Google analytics tracking ID",
       "required": false
