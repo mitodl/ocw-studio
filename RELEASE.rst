@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.22.0
+--------------
+
+- Draft/live publish notifications (#381)
+- some JS dependency upgrades
+- Google Drive integration (#431)
+- check for identifier before accessing it (#473)
+
 Version 0.21.2 (Released August 05, 2021)
 --------------
 
