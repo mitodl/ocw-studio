@@ -20,7 +20,6 @@ inner_content_item:
 field:
     widget: enum('string', 'text', 'markdown', 'file', 'select', 'boolean', 'hidden', 'object', 'relation', 'menu', 'hierarchical-select')
     label: str()
-    label_singular: str(required=False)
     name: str()
     minimal: bool(required=False)
     required: bool(required=False)

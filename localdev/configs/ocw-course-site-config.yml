@@ -254,7 +254,6 @@ collections:
             multiple: true
             website: ocw-www
           - label: Topics
-            label_singular: Topic
             name: topics
             widget: hierarchical-select
             levels:

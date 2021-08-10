@@ -11,8 +11,6 @@ type OptionsMap = Record<string, Record<string, any> | string[]>
 type HierarchicalSelection = Array<string | null>
 type Props = {
   name: string
-  label: string
-  label_singular?: string // eslint-disable-line camelcase
   levels: Level[] // eslint-disable-line camelcase
   value: HierarchicalSelection[] | null
   onChange: (event: any) => void
@@ -62,7 +60,6 @@ export const calcOptions = (
 export default function HierarchicalSelectField(props: Props): JSX.Element {
   const { options_map: optionsMap, levels, value, onChange, name } = props
 
-  const labelSingular = props.label_singular ?? props.label
   const valueList = value ?? []
 
   const defaultValue = times(levels.length, () => null)
@@ -131,7 +128,7 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
           </div>
         ))}
         <button onClick={handleAdd} className="btn blue-button">
-          Add {labelSingular}
+          Add
         </button>
       </div>
       <div className="py-2">

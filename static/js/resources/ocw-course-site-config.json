@@ -306,7 +306,6 @@
             },
             {
               "label": "Topics",
-              "label_singular": "Topic",
               "levels": [
                 {
                   "label": "Topic",
