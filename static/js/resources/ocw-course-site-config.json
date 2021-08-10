@@ -307,6 +307,20 @@
             {
               "label": "Topics",
               "label_singular": "Topic",
+              "levels": [
+                {
+                  "label": "Topic",
+                  "name": "topic"
+                },
+                {
+                  "label": "Subtopic",
+                  "name": "subtopic"
+                },
+                {
+                  "label": "Specialty",
+                  "name": "specialty"
+                }
+              ],
               "name": "topics",
               "options_map": {
                 "Business": {

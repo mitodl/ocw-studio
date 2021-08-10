@@ -257,6 +257,10 @@ collections:
             label_singular: Topic
             name: topics
             widget: hierarchical-select
+            levels:
+              - { label: "Topic", name: "topic" }
+              - { label: "Subtopic", name: "subtopic" }
+              - { label: "Specialty", name: "specialty" }
             options_map:
               Business:
                 Accounting: [ ]
