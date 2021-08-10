@@ -3,14 +3,18 @@ import { sortedUniqBy, sortBy, times } from "lodash"
 
 import SelectField, { Option } from "./SelectField"
 
-type Level = { label: string; name: string }
+type Level = {
+  label: string
+  name: string
+}
 type OptionsMap = Record<string, Record<string, any> | string[]>
+type HierarchicalSelection = Array<string | null>
 type Props = {
   name: string
   label: string
   label_singular?: string // eslint-disable-line camelcase
   levels: Level[] // eslint-disable-line camelcase
-  value: Tuple[] | null
+  value: HierarchicalSelection[] | null
   onChange: (event: any) => void
   options_map: OptionsMap // eslint-disable-line camelcase
 }
@@ -20,22 +24,19 @@ const asOption = (str: string | null) => ({
   value: str ?? ""
 })
 
-type TupleItem = string | null
-type Tuple = TupleItem[]
-
-export const describeTuple = (tuple: Tuple): string =>
-  tuple.filter(Boolean).join(" - ")
+export const describeSelection = (selection: HierarchicalSelection): string =>
+  selection.filter(Boolean).join(" - ")
 
 export const calcOptions = (
   optionsMap: OptionsMap,
-  selectedTuple: Tuple,
+  selection: HierarchicalSelection,
   levels: Level[]
 ): Option[][] => {
   let previousSelected = true
   let currentOptionsMap: any = optionsMap
 
   return levels.map((_, levelIdx) => {
-    const selectedItem = selectedTuple[levelIdx]
+    const selectedItem = selection[levelIdx]
     if (!previousSelected) {
       return [null].map(asOption)
     }
@@ -65,12 +66,14 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
   const valueList = value ?? []
 
   const defaultValue = times(levels.length, () => null)
-  const [selectedTuple, setSelectedTuple] = useState<Tuple>(defaultValue)
+  const [selection, setSelection] = useState<HierarchicalSelection>(
+    defaultValue
+  )
 
   const setSelectedValueFor = (levelIdx: number, selected: string) => {
-    setSelectedTuple(oldTuple =>
-      oldTuple.map((tuple, idx) =>
-        idx < levelIdx ? tuple : idx === levelIdx ? selected : null
+    setSelection(oldSelection =>
+      oldSelection.map((selection, idx) =>
+        idx < levelIdx ? selection : idx === levelIdx ? selected : null
       )
     )
   }
@@ -78,19 +81,22 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
   const handleAdd = (event: SyntheticEvent<HTMLButtonElement>) => {
     event.preventDefault()
 
-    if (selectedTuple[0] === null) {
+    if (selection[0] === null) {
       // nothing is selected, ignore
       return
     }
 
-    const combinedList = [selectedTuple, ...valueList]
+    const combinedList = [selection, ...valueList]
     onChange({
       target: {
-        value: sortedUniqBy(sortBy(combinedList, describeTuple), describeTuple),
+        value: sortedUniqBy(
+          sortBy(combinedList, describeSelection),
+          describeSelection
+        ),
         name
       }
     })
-    setSelectedTuple(defaultValue)
+    setSelection(defaultValue)
   }
 
   const handleDelete = (idx: number) => (
@@ -106,7 +112,7 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
     })
   }
 
-  const options = calcOptions(optionsMap, selectedTuple, levels)
+  const options = calcOptions(optionsMap, selection, levels)
 
   return (
     <div className="hierarchical-select">
@@ -115,7 +121,7 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
           <div key={level.name} className="pr-4 w-100">
             <SelectField
               name={level.name}
-              value={selectedTuple[levelIdx]}
+              value={selection[levelIdx]}
               onChange={(event: any) => {
                 setSelectedValueFor(levelIdx, event.target.value)
               }}
@@ -129,12 +135,12 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
         </button>
       </div>
       <div className="py-2">
-        {valueList.map((tuple: Tuple, idx: number) => (
+        {valueList.map((tuple: HierarchicalSelection, idx: number) => (
           <div
             key={idx}
             className="d-flex flex-direction-row align-items-center py-1"
           >
-            {describeTuple(tuple)}
+            {describeSelection(tuple)}
             <button
               className="material-icons item-action-button"
               onClick={handleDelete(idx)}
