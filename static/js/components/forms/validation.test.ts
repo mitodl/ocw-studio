@@ -302,6 +302,28 @@ describe("form validation utils", () => {
       })
     })
 
+    it("validates for a hierarchical select field", async () => {
+      const configItem = {
+        ...repeatableConfigItem,
+        fields: [
+          makeWebsiteConfigField({ widget: WidgetVariant.HierarchicalSelect })
+        ],
+        required: false
+      }
+      const name = configItem.fields[0].name
+
+      const schema = getContentSchema(configItem, {})
+      expect(() =>
+        schema.validateSync({
+          ...defaultFormValues,
+          [name]: "not-an-array"
+        })
+      ).toThrow(new yup.ValidationError(`${name} is a required field.`))
+      await expect(
+        schema.isValid({ ...defaultFormValues, [name]: ["selected value"] })
+      ).resolves.toBeTruthy()
+    })
+
     describe("relation validation", () => {
       const makeRelationConfigItem = (props = {}): [ConfigItem, string] => {
         const configItem = {
