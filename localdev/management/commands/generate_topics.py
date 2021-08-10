@@ -9,12 +9,11 @@ from ocw_import.api import fetch_ocw2hugo_course_paths, generate_topics_dict
 
 
 class Command(BaseCommand):
-    """Generate yaml for topics and write it to """
+    """Generate yaml for topics and write it to a local file"""
 
     help = __doc__
 
     def add_arguments(self, parser):
-
         parser.add_argument(
             "-b",
             "--bucket",

@@ -311,6 +311,10 @@ def generate_topics_dict(course_paths, bucket_name):
     Args:
         course_paths (list of str): List of paths to the data/course.json file for each course
         bucket_name (str): The name of the S3 bucket to use
+
+    Returns:
+        dict:
+            Nested dicts and lists representing topics, subtopics, and specialties
     """
     topics = {}
 
