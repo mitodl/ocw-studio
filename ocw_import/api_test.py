@@ -4,11 +4,7 @@ import json
 import pytest
 from moto import mock_s3
 
-from ocw_import.api import (
-    generate_topics_dict,
-    get_short_id,
-    import_ocw2hugo_course,
-)
+from ocw_import.api import generate_topics_dict, get_short_id, import_ocw2hugo_course
 from ocw_import.conftest import (
     MOCK_BUCKET_NAME,
     TEST_OCW2HUGO_PATH,
