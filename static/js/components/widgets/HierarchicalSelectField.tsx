@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { SyntheticEvent, useState } from "react"
 import { sortedUniqBy, sortBy, times } from "lodash"
 
 import SelectField from "./SelectField"
@@ -76,7 +76,7 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
     )
   }
 
-  const handleAdd = (event: any) => {
+  const handleAdd = (event: SyntheticEvent<HTMLButtonElement>) => {
     event.preventDefault()
 
     if (selectedTuple[0] === null) {
@@ -94,7 +94,9 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
     setSelectedTuple(defaultValue)
   }
 
-  const handleDelete = (idx: number) => (event: any) => {
+  const handleDelete = (idx: number) => (
+    event: SyntheticEvent<HTMLButtonElement>
+  ) => {
     event.preventDefault()
 
     onChange({
