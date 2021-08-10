@@ -337,6 +337,6 @@ def generate_topics_dict(course_paths, bucket_name):
 
     for topic, subtopic_dict in topics.items():
         for subtopic in subtopic_dict.keys():
-            subtopic_dict[subtopic] = list(subtopic_dict[subtopic])
+            subtopic_dict[subtopic] = sorted(subtopic_dict[subtopic])
 
     return topics
