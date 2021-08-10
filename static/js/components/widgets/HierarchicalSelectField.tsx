@@ -1,10 +1,9 @@
 import React, { SyntheticEvent, useState } from "react"
 import { sortedUniqBy, sortBy, times } from "lodash"
 
-import SelectField from "./SelectField"
+import SelectField, { Option } from "./SelectField"
 
 type Level = { label: string; name: string }
-type Option = { label: string; value: string }
 type OptionsMap = Record<string, Record<string, any> | string[]>
 type Props = {
   name: string
