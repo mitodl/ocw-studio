@@ -68,3 +68,9 @@ $menu-spacing: 20px;
     color: $studio-text-gray;
   }
 }
+
+.hierarchical-select {
+  button {
+    min-width: 150px;
+  }
+}

@@ -109,23 +109,25 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
   const options = calcOptions(optionsMap, selectedTuple, levels)
 
   return (
-    <>
-      {levels.map((level, levelIdx) => (
-        <div key={level.name} className="py-2">
-          <SelectField
-            name={level.name}
-            value={selectedTuple[levelIdx]}
-            onChange={(event: any) => {
-              setSelectedValueFor(levelIdx, event.target.value)
-            }}
-            options={options[levelIdx]}
-            placeholder={level.label}
-          />
-        </div>
-      ))}
-      <button onClick={handleAdd} className="py-2">
-        Add {labelSingular}
-      </button>
+    <div className="hierarchical-select">
+      <div className="d-flex flex-direction-row align-items-center py-2">
+        {levels.map((level, levelIdx) => (
+          <div key={level.name} className="pr-4 w-100">
+            <SelectField
+              name={level.name}
+              value={selectedTuple[levelIdx]}
+              onChange={(event: any) => {
+                setSelectedValueFor(levelIdx, event.target.value)
+              }}
+              options={options[levelIdx]}
+              placeholder={level.label}
+            />
+          </div>
+        ))}
+        <button onClick={handleAdd} className="btn blue-button">
+          Add {labelSingular}
+        </button>
+      </div>
       <div className="py-2">
         {valueList.map((tuple: Tuple, idx: number) => (
           <div
@@ -142,6 +144,6 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
           </div>
         ))}
       </div>
-    </>
+    </div>
   )
 }
