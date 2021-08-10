@@ -10,6 +10,7 @@ import {
   ConfigField,
   ConfigItem,
   EditableConfigItem,
+  HierarchicalSelectConfigField,
   RelationConfigField,
   SelectConfigField,
   WidgetVariant
@@ -31,7 +32,7 @@ const defaultTitleFieldSchema = yup
 
 const minMax = (
   schema: ArraySchema<any>,
-  field: RelationConfigField | SelectConfigField
+  field: RelationConfigField | SelectConfigField | HierarchicalSelectConfigField
 ) => {
   if (field.min) {
     schema = schema.min(
@@ -98,7 +99,7 @@ export const getFieldSchema = (field: ConfigField): FormSchema => {
     break
   }
   case WidgetVariant.HierarchicalSelect: {
-    schema = yup.array()
+    schema = minMax(yup.array(), field)
     break
   }
   case WidgetVariant.String:

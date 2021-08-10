@@ -81,6 +81,8 @@ export interface ObjectConfigField extends ConfigFieldBaseProps {
 export interface HierarchicalSelectConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.HierarchicalSelect
   options_map: Record<string, any> // eslint-disable-line camelcase
+  min?: number
+  max?: number
 }
 
 /**
