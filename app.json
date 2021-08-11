@@ -199,6 +199,10 @@
       "description": "Feature flag middleware querystring prefix",
       "required": false
     },
+    "MITOL_MAIL_FORMAT_RECIPIENT_FUNC": {
+      "description": "function to format email recipients",
+      "required": false
+    },
     "MITOL_MAIL_FROM_EMAIL": {
       "description": "E-mail to use for the from field",
       "required": false
