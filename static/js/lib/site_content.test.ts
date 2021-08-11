@@ -39,6 +39,7 @@ import {
   StringConfigField,
   WidgetVariant
 } from "../types/websites"
+import HierarchicalSelectField from "../components/widgets/HierarchicalSelectField"
 
 const OUR_WEBSITE = "our-website"
 describe("site_content", () => {
@@ -55,7 +56,8 @@ describe("site_content", () => {
       ["nested-one"]: "",
       ["nested-two"]: ""
     },
-    unexpected_type: ""
+    [WidgetVariant.HierarchicalSelect]: [],
+    unexpected_type:                    ""
   }
 
   describe("contentFormValuesToPayload", () => {
@@ -325,6 +327,7 @@ describe("site_content", () => {
         [WidgetVariant.Hidden, null],
         [WidgetVariant.Relation, RelationField],
         [WidgetVariant.Menu, MenuField],
+        [WidgetVariant.HierarchicalSelect, HierarchicalSelectField],
         ["unexpected_type", "input"]
       ].forEach(([widget, expected]) => {
         const field = makeWebsiteConfigField({
@@ -403,6 +406,18 @@ describe("site_content", () => {
           widgetExtraProps(makeWebsiteConfigField({ widget }))
         ).toStrictEqual({})
       })
+    })
+
+    it("should grab extra props for the hierarchical select widget", () => {
+      const extras = {
+        options_map: "options-map",
+        levels:      ["some", "levels"]
+      }
+      const field = makeWebsiteConfigField({
+        widget: WidgetVariant.HierarchicalSelect,
+        ...extras
+      })
+      expect(widgetExtraProps(field)).toStrictEqual(extras)
     })
   })
 
