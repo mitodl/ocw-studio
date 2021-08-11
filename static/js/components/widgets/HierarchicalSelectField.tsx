@@ -1,4 +1,4 @@
-import React, { SyntheticEvent, useCallback, useState } from "react"
+import React, { SyntheticEvent, useCallback, useMemo, useState } from "react"
 import { sortedUniqBy, sortBy, times } from "lodash"
 
 import SelectField, { Option } from "./SelectField"
@@ -120,7 +120,11 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
     [name, onChange, value]
   )
 
-  const options = calcOptions(optionsMap, selection, levels)
+  const options = useMemo(() => calcOptions(optionsMap, selection, levels), [
+    optionsMap,
+    selection,
+    levels
+  ])
 
   return (
     <div className="hierarchical-select">
