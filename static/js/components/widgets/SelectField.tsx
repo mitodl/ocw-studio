@@ -11,7 +11,6 @@ export interface Option {
 interface Props {
   name: string
   value: any
-  className?: string
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void
   multiple?: boolean
   options: Array<string | Option>

@@ -72,8 +72,6 @@ const RELATION_EXTRA_PROPS = [
 const MENU_EXTRA_PROPS = ["collections"]
 const HIERARCHICAL_SELECT_EXTRA_PROPS = [
   "options_map",
-  "label",
-  "label_singular",
   "levels"
 ]
 
