@@ -316,8 +316,8 @@
                   "name": "subtopic"
                 },
                 {
-                  "label": "Specialty",
-                  "name": "specialty"
+                  "label": "Speciality",
+                  "name": "speciality"
                 }
               ],
               "name": "topics",

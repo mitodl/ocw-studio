@@ -3,7 +3,7 @@ import { sortedUniqBy, sortBy, times } from "lodash"
 
 import SelectField, { Option } from "./SelectField"
 
-type Level = {
+export type Level = {
   label: string
   name: string
 }
@@ -22,7 +22,7 @@ const asOption = (str: string | null) => ({
   value: str ?? ""
 })
 
-export const describeSelection = (selection: HierarchicalSelection): string =>
+const describeSelection = (selection: HierarchicalSelection): string =>
   selection.filter(Boolean).join(" - ")
 
 /**
@@ -53,6 +53,7 @@ export const calcOptions = (
       // if currentOptionsMap is an array, we are at the deepest level
       currentOptionsMap = null
     } else {
+      console.log("level", levelIdx, selectedItem, currentOptionsMap)
       optionValues = optionValues.concat(sortBy(Object.keys(currentOptionsMap)))
       // move currentOptionsMap one level deeper
       currentOptionsMap = selectedItem ? currentOptionsMap[selectedItem] : null
@@ -90,7 +91,7 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
         return
       }
 
-      const combinedList = [selection, ...(value ?? [])]
+      const combinedList = [selection.filter(Boolean), ...(value ?? [])]
       onChange({
         target: {
           value: sortedUniqBy(
@@ -142,11 +143,11 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
             />
           </div>
         ))}
-        <button onClick={handleAdd} className="btn blue-button">
+        <button onClick={handleAdd} className="btn blue-button add">
           Add
         </button>
       </div>
-      <div className="py-2">
+      <div className="py-2 values">
         {(value ?? []).map((tuple: HierarchicalSelection, idx: number) => (
           <div
             key={idx}

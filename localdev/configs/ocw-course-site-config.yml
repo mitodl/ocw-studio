@@ -259,7 +259,7 @@ collections:
             levels:
               - { label: "Topic", name: "topic" }
               - { label: "Subtopic", name: "subtopic" }
-              - { label: "Specialty", name: "specialty" }
+              - { label: "Speciality", name: "speciality" }
             options_map:
               Business:
                 Accounting: [ ]
