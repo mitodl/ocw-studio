@@ -25,34 +25,39 @@ const asOption = (str: string | null) => ({
 export const describeSelection = (selection: HierarchicalSelection): string =>
   selection.filter(Boolean).join(" - ")
 
+/**
+ This function takes field data and the current selection and returns a set of options
+ to be displayed in each dropdown.
+*/
 export const calcOptions = (
   optionsMap: OptionsMap,
   selection: HierarchicalSelection,
   levels: Level[]
 ): Option[][] => {
-  let previousSelected = true
+  // currentOptionsMap is the piece of optionsMap which is at the level depth being looked at.
+  // If falsey, assume there are no options to show.
   let currentOptionsMap: any = optionsMap
 
+  // Iterate through the levels in order to show the right options.
+  // When an option is selected at one level, options in deeper levels are filtered on that selection.
   return levels.map((_, levelIdx) => {
     const selectedItem = selection[levelIdx]
-    if (!previousSelected) {
-      return [null].map(asOption)
-    }
 
-    if (!selectedItem) {
-      previousSelected = false
-    }
-
-    let optionValues: Array<string | null>
-    if (Array.isArray(currentOptionsMap)) {
-      optionValues = [null, ...sortBy(currentOptionsMap)]
+    // null indicates an empty selection, and we want to show that as the first option
+    let optionValues: Array<string | null> = [null]
+    if (!currentOptionsMap) {
+      // If the previous select field has no selection, then no select field at a deeper level
+      // should have options to select.
+    } else if (Array.isArray(currentOptionsMap)) {
+      optionValues = optionValues.concat(sortBy(currentOptionsMap))
+      // if currentOptionsMap is an array, we are at the deepest level
       currentOptionsMap = null
     } else {
-      const keys = Object.keys(currentOptionsMap)
-      // @ts-ignore
-      optionValues = [null, ...sortBy(keys)]
+      optionValues = optionValues.concat(sortBy(Object.keys(currentOptionsMap)))
+      // move currentOptionsMap one level deeper
       currentOptionsMap = selectedItem ? currentOptionsMap[selectedItem] : null
     }
+
     return optionValues.map(asOption)
   })
 }
