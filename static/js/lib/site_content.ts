@@ -70,10 +70,7 @@ const RELATION_EXTRA_PROPS = [
   "website"
 ]
 const MENU_EXTRA_PROPS = ["collections"]
-const HIERARCHICAL_SELECT_EXTRA_PROPS = [
-  "options_map",
-  "levels"
-]
+const HIERARCHICAL_SELECT_EXTRA_PROPS = ["options_map", "levels"]
 
 export const DEFAULT_TITLE_FIELD: StringConfigField = {
   name:     "title",

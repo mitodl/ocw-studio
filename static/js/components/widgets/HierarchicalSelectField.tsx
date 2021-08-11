@@ -1,4 +1,4 @@
-import React, { SyntheticEvent, useState } from "react"
+import React, { SyntheticEvent, useCallback, useState } from "react"
 import { sortedUniqBy, sortBy, times } from "lodash"
 
 import SelectField, { Option } from "./SelectField"
@@ -65,54 +65,60 @@ export const calcOptions = (
 export default function HierarchicalSelectField(props: Props): JSX.Element {
   const { options_map: optionsMap, levels, value, onChange, name } = props
 
-  const valueList = value ?? []
-
   const defaultValue = times(levels.length, () => null)
   const [selection, setSelection] = useState<HierarchicalSelection>(
     defaultValue
   )
 
-  const setSelectedValueFor = (levelIdx: number, selected: string) => {
-    setSelection(oldSelection =>
-      oldSelection.map((selection, idx) =>
-        idx < levelIdx ? selection : idx === levelIdx ? selected : null
+  const setSelectedValueFor = useCallback(
+    (levelIdx: number, selected: string) => {
+      setSelection(oldSelection =>
+        oldSelection.map((selection, idx) =>
+          idx < levelIdx ? selection : idx === levelIdx ? selected : null
+        )
       )
-    )
-  }
+    },
+    [setSelection]
+  )
 
-  const handleAdd = (event: SyntheticEvent<HTMLButtonElement>) => {
-    event.preventDefault()
+  const handleAdd = useCallback(
+    (event: SyntheticEvent<HTMLButtonElement>) => {
+      event.preventDefault()
 
-    if (selection[0] === null) {
-      // nothing is selected, ignore
-      return
-    }
-
-    const combinedList = [selection, ...valueList]
-    onChange({
-      target: {
-        value: sortedUniqBy(
-          sortBy(combinedList, describeSelection),
-          describeSelection
-        ),
-        name
+      if (selection[0] === null) {
+        // nothing is selected, ignore
+        return
       }
-    })
-    setSelection(defaultValue)
-  }
 
-  const handleDelete = (idx: number) => (
-    event: SyntheticEvent<HTMLButtonElement>
-  ) => {
-    event.preventDefault()
+      const combinedList = [selection, ...(value ?? [])]
+      onChange({
+        target: {
+          value: sortedUniqBy(
+            sortBy(combinedList, describeSelection),
+            describeSelection
+          ),
+          name
+        }
+      })
+      setSelection(defaultValue)
+    },
+    [defaultValue, name, setSelection, onChange, selection, value]
+  )
 
-    onChange({
-      target: {
-        value: valueList.filter((_, _idx) => _idx !== idx),
-        name
-      }
-    })
-  }
+  const handleDelete = useCallback(
+    (idx: number) => (event: SyntheticEvent<HTMLButtonElement>) => {
+      event.preventDefault()
+
+      const valueList = value ?? []
+      onChange({
+        target: {
+          value: valueList.filter((_, _idx) => _idx !== idx),
+          name
+        }
+      })
+    },
+    [name, onChange, value]
+  )
 
   const options = calcOptions(optionsMap, selection, levels)
 
@@ -137,7 +143,7 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
         </button>
       </div>
       <div className="py-2">
-        {valueList.map((tuple: HierarchicalSelection, idx: number) => (
+        {(value ?? []).map((tuple: HierarchicalSelection, idx: number) => (
           <div
             key={idx}
             className="d-flex flex-direction-row align-items-center py-1"
