@@ -791,7 +791,11 @@ MITOL_MAIL_ENABLE_EMAIL_DEBUGGER = get_bool(
     description="Enable the mitol-mail email debugger",
     dev_only=True,
 )
-
+MITOL_MAIL_FORMAT_RECIPIENT_FUNC = get_string(
+    name="MITOL_MAIL_FORMAT_RECIPIENT_FUNC",
+    default="users.utils.format_recipient",
+    description="function to format email recipients",
+)
 OCW_STUDIO_DRAFT_URL = get_string(
     name="OCW_STUDIO_DRAFT_URL",
     default=None,
