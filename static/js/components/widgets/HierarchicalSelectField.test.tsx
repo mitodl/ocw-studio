@@ -251,7 +251,7 @@ describe("HierarchicalSelectField", () => {
     expect(onChangeStub).not.toBeCalled()
   })
 
-  describe.only("calcOptions", () => {
+  describe("calcOptions", () => {
     let calcOptions: any
     const emptyOption = { label: "-- empty --", value: "" }
 
