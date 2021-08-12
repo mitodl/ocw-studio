@@ -1,3 +1,5 @@
+import casual from "casual-browserify"
+
 const mockUseRouteMatch = jest.fn()
 
 import React from "react"
@@ -101,6 +103,25 @@ describe("SiteContentListing", () => {
         configItem
       })
     })
+  })
+
+  it(`renders without erroring when rendering a minimal starter config`, async () => {
+    const configItem = {
+      name:     "minimalist",
+      label:    casual.word,
+      category: casual.word
+    }
+    // @ts-ignore
+    website.starter?.config?.collections = [configItem]
+
+    // @ts-ignore
+    const params = { name: website.name, contenttype: configItem.name }
+    mockUseRouteMatch.mockImplementation(() => ({
+      params
+    }))
+    const { wrapper } = await render()
+    expect(wrapper.find(MockSingletons).exists()).toBeFalsy()
+    expect(wrapper.find(MockRepeatable).exists()).toBeFalsy()
   })
 
   it("modifies config item fields before passing them on RepeatableContentListing", async () => {

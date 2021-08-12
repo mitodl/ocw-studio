@@ -7,7 +7,8 @@ import SingletonsContentListing from "./SingletonsContentListing"
 
 import {
   addDefaultFields,
-  isRepeatableCollectionItem
+  isRepeatableCollectionItem,
+  isSingletonCollectionItem
 } from "../lib/site_content"
 import { getWebsiteDetailCursor } from "../selectors/websites"
 import WebsiteContext from "../context/Website"
@@ -35,9 +36,9 @@ export default function SiteContentListing(): JSX.Element | null {
     <WebsiteContext.Provider value={website}>
       {isRepeatableCollectionItem(configItem) ? (
         <RepeatableContentListing configItem={addDefaultFields(configItem)} />
-      ) : (
+      ) : isSingletonCollectionItem(configItem) ? (
         <SingletonsContentListing configItem={configItem} />
-      )}
+      ) : null}
     </WebsiteContext.Provider>
   )
 }
