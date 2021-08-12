@@ -35,7 +35,7 @@ def site_config_yml(settings):
 @pytest.fixture()
 def parsed_site_config(site_config_yml):
     """Fixture that returns the parsed contents of the example site config YAML file in the resource directory"""
-    return yaml.load(site_config_yml, Loader=yaml.Loader)
+    return yaml.load(site_config_yml, Loader=yaml.SafeLoader)
 
 
 def test_valid_config(site_config_yml):

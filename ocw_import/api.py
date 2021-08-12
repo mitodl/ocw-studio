@@ -112,7 +112,7 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
     ]
     parent = None
     if len(s3_content_parts) >= 1:
-        content_json = yaml.load(s3_content_parts[0], Loader=yaml.Loader)
+        content_json = yaml.load(s3_content_parts[0], Loader=yaml.SafeLoader)
         layout = content_json.get("layout", None)
         uid = content_json.get("uid", None)
         dirpath, filename = get_dirpath_and_filename(

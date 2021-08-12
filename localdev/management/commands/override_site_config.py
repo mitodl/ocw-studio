@@ -60,7 +60,7 @@ class Command(BaseCommand):
         for config_path, starter_slug in zip(config_paths, slugs_to_override):
             with open(os.path.join(settings.BASE_DIR, config_path)) as f:
                 raw_config = f.read().strip()
-            parsed_config = yaml.load(raw_config, Loader=yaml.Loader)
+            parsed_config = yaml.load(raw_config, Loader=yaml.SafeLoader)
             try:
                 starter = WebsiteStarter.objects.get(slug=starter_slug)
             except WebsiteStarter.DoesNotExist:

@@ -8,7 +8,7 @@ from django.db import migrations, models
 def set_config_to_json(apps, schema_editor):
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
     for starter in WebsiteStarter.objects.all():
-        parsed_config = yaml.load(starter.config, Loader=yaml.Loader)
+        parsed_config = yaml.load(starter.config, Loader=yaml.SafeLoader)
         starter.config = json.dumps(parsed_config)
         starter.save()
 

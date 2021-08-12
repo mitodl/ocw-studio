@@ -14,7 +14,7 @@ def test_valid_local_dev_configs():
     for dirpath, base_filename, extension in example_config_file_iter():
         with open(os.path.join(dirpath, f"{base_filename}.{extension}")) as f:
             raw_config_override = f.read().strip()
-        parsed_site_config = yaml.load(raw_config_override, Loader=yaml.Loader)
+        parsed_site_config = yaml.load(raw_config_override, Loader=yaml.SafeLoader)
         validate_parsed_site_config(parsed_site_config)
         total_example_configs += 1
     assert total_example_configs >= 1
@@ -33,7 +33,7 @@ def test_equivalent_example_configs(settings):
         filename = f"{base_filename}.{extension}"
         with open(os.path.join(dirpath, filename)) as f:
             raw_yaml_config = f.read().strip()
-        parsed_config = yaml.load(raw_yaml_config, Loader=yaml.Loader)
+        parsed_config = yaml.load(raw_yaml_config, Loader=yaml.SafeLoader)
         #
         js_config_path = os.path.join(
             settings.BASE_DIR, JS_CONFIG_DIRECTORY, f"{base_filename}.json"

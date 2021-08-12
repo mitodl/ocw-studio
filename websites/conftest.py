@@ -62,7 +62,7 @@ def basic_site_config(settings):
     """Returns an example site config"""
     return yaml.load(
         (Path(settings.BASE_DIR) / FACTORY_SITE_CONFIG_PATH).read_text(),
-        Loader=yaml.Loader,
+        Loader=yaml.SafeLoader,
     )
 
 

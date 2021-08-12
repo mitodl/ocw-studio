@@ -86,7 +86,7 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
             unique_slug = get_valid_new_slug(slug, path)
             raw_yaml = git_file.decoded_content
             validate_raw_site_config(raw_yaml.decode("utf-8"))
-            config = yaml.load(raw_yaml, Loader=yaml.Loader)
+            config = yaml.load(raw_yaml, Loader=yaml.SafeLoader)
             starter, created = WebsiteStarter.objects.update_or_create(
                 source=STARTER_SOURCE_GITHUB,
                 path=path,

@@ -36,7 +36,7 @@ from websites.utils import permissions_group_name_for_role
 def validate_yaml(value):
     """Validator function to ensure that the value is YAML-formatted"""
     try:
-        yaml.load(value, Loader=yaml.Loader)
+        yaml.load(value, Loader=yaml.SafeLoader)
     except yaml.YAMLError as exc:
         raise ValidationError("Value must be YAML-formatted.") from exc
 

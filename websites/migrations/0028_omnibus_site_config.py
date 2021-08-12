@@ -107,7 +107,7 @@ def add_omnibus_starter_repo(apps, schema_editor):
             name=OMNIBUS_STARTER_NAME,
             source="local",
             commit=None,
-            config=yaml.load(OMNIBUS_STARTER_CONFIG, Loader=yaml.Loader),
+            config=yaml.load(OMNIBUS_STARTER_CONFIG, Loader=yaml.SafeLoader),
         ),
     )
 

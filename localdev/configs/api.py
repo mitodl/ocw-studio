@@ -43,7 +43,7 @@ def generate_example_config_json(config_filepath):
     """
     with open(config_filepath) as f:
         raw_config = f.read().strip()
-    parsed_config = yaml.load(raw_config, Loader=yaml.Loader)
+    parsed_config = yaml.load(raw_config, Loader=yaml.SafeLoader)
     return json.dumps(parsed_config, sort_keys=True, indent=2)
 
 
