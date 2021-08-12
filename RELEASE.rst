@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.22.0
+Version 0.22.0 (Released August 12, 2021)
 --------------
 
 - add OCW_IMPORT_STARTER_SLUG setting and update included testing config (#468)
