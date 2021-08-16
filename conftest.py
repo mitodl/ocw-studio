@@ -57,7 +57,7 @@ def omnibus_config(settings):
         os.path.join(settings.BASE_DIR, "localdev/configs/omnibus-site-config.yml")
     ) as f:
         raw_config = f.read().strip()
-    parsed_config = yaml.load(raw_config, Loader=yaml.Loader)
+    parsed_config = yaml.load(raw_config, Loader=yaml.SafeLoader)
     return SiteConfig(parsed_config)
 
 

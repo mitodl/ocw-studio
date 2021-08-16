@@ -188,7 +188,7 @@ def test_hugo_menu_yaml_serialize(omnibus_config):
         metadata={"mainmenu": example_menu_data},
     )
     serialized_data = HugoMenuYamlFileSerializer(omnibus_config).serialize(content)
-    parsed_serialized_data = yaml.load(serialized_data, Loader=yaml.Loader)
+    parsed_serialized_data = yaml.load(serialized_data, Loader=yaml.SafeLoader)
     assert parsed_serialized_data == {
         "mainmenu": [
             {**example_menu_data[0], "url": "path/to/myfile.md"},
@@ -278,7 +278,7 @@ def test_data_file_serialize(serializer_cls):
     parsed_file_content = (
         json.loads(file_content)
         if serializer_cls == JsonFileSerializer
-        else yaml.load(file_content, Loader=yaml.Loader)
+        else yaml.load(file_content, Loader=yaml.SafeLoader)
     )
     assert parsed_file_content == {**metadata, "title": "Content Title"}
 

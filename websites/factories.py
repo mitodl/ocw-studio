@@ -33,7 +33,7 @@ class WebsiteStarterFactory(DjangoModelFactory):
     config = factory.LazyAttribute(
         lambda _: yaml.load(
             (Path(settings.BASE_DIR) / FACTORY_SITE_CONFIG_PATH).read_text(),
-            Loader=yaml.Loader,
+            Loader=yaml.SafeLoader,
         )
     )
 

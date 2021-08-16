@@ -91,7 +91,7 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
         ]
         if not 1 <= len(md_file_sections) <= 2:
             raise ValueError(f"Incorrectly formatted Markdown file ({filepath}).")
-        front_matter_data = yaml.load(md_file_sections[0], Loader=yaml.Loader)
+        front_matter_data = yaml.load(md_file_sections[0], Loader=yaml.SafeLoader)
         markdown = md_file_sections[1] if len(md_file_sections) == 2 else None
         text_id = front_matter_data.get("uid", None)
         content_type = front_matter_data.get("type")
@@ -161,7 +161,7 @@ class YamlFileSerializer(BaseContentFileSerializer):
     def deserialize(
         self, website: Website, filepath: str, file_contents: str
     ) -> WebsiteContent:
-        parsed_file_data = yaml.load(file_contents, Loader=yaml.Loader)
+        parsed_file_data = yaml.load(file_contents, Loader=yaml.SafeLoader)
         return self.deserialize_data_file(
             website=website,
             filepath=filepath,
@@ -274,7 +274,7 @@ class HugoMenuYamlFileSerializer(BaseContentFileSerializer):
     def deserialize(
         self, website: Website, filepath: str, file_contents: str
     ) -> WebsiteContent:
-        parsed_file_data = yaml.load(file_contents, Loader=yaml.Loader)
+        parsed_file_data = yaml.load(file_contents, Loader=yaml.SafeLoader)
         return self.deserialize_data_file(
             website=website,
             filepath=filepath,

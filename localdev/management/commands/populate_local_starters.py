@@ -43,7 +43,7 @@ class Command(BaseCommand):
                 raw_config = f.read().strip()
             if not raw_config:
                 continue
-            parsed_config = yaml.load(raw_config, Loader=yaml.Loader)
+            parsed_config = yaml.load(raw_config, Loader=yaml.SafeLoader)
             starter, created = WebsiteStarter.objects.get_or_create(
                 slug=dir_name,
                 source=STARTER_SOURCE_LOCAL,

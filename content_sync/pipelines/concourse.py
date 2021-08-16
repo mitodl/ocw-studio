@@ -167,7 +167,7 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     .replace("((version))", version)
                     .replace("((api-token))", settings.API_BEARER_TOKEN)
                 )
-            config = json.dumps(yaml.load(config_str, Loader=yaml.Loader))
+            config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
             log.debug(config)
             # Try to get the version of the pipeline if it already exists, because it will be
             # necessary to update an existing pipeline.

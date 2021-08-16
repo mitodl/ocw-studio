@@ -102,7 +102,7 @@ class JsonOrYamlField(JSONField):
         except ValidationError as ex:
             # Try parsing as YAML
             try:
-                return yaml.load(value, Loader=yaml.Loader)
+                return yaml.load(value, Loader=yaml.SafeLoader)
             except yaml.YAMLError:
                 raise ex  # pylint: disable=raise-missing-from
 
