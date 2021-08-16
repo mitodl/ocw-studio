@@ -26,7 +26,9 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
         {
           type:    "lang",
           regex:   RESOURCE_SHORTCODE_REGEX,
-          replace: (_s: string, match: string) => `<section>${match}</section>`
+          replace: (_s: string, match: string) => {
+            return `<section data-uuid="${match}"></section>`
+          }
         }
       ]
     }
@@ -37,8 +39,10 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
       name: "resourceEmbed",
       rule: {
         filter:      "section",
-        replacement: (content: string, _node: Turndown.Node): string => {
-          return `{{< resource ${content} >}}\n`
+        replacement: (_content: string, node: Turndown.Node): string => {
+          // @ts-ignore
+          const uuid = node.getAttribute("data-uuid")
+          return `{{< resource ${uuid} >}}\n`
         }
       }
     }
@@ -56,9 +60,7 @@ class InsertResourceEmbedCommand extends Command {
 
   execute(uuid: string) {
     this.editor.model.change((writer: any) => {
-      const embed = writer.createElement(RESOURCE_EMBED)
-      const text = writer.createText(uuid)
-      writer.append(text, embed)
+      const embed = writer.createElement(RESOURCE_EMBED, { uuid })
       this.editor.model.insertContent(embed)
     })
   }
@@ -95,9 +97,9 @@ class ResourceEmbedEditing extends Plugin {
     const schema = this.editor.model.schema
 
     schema.register(RESOURCE_EMBED, {
-      isObject:       true,
-      allowWhere:     "$block",
-      allowContentOf: "$block"
+      isObject:        true,
+      allowWhere:      "$block",
+      allowAttributes: ["uuid"]
     })
   }
 
@@ -109,9 +111,14 @@ class ResourceEmbedEditing extends Plugin {
      * internal state, *not* to a DOM element)
      */
     conversion.for("upcast").elementToElement({
-      model: RESOURCE_EMBED,
-      view:  {
+      view: {
         name: "section"
+      },
+
+      model: (viewElement: any, { writer: modelWriter }: any) => {
+        return modelWriter.createElement(RESOURCE_EMBED, {
+          uuid: viewElement.getAttribute("data-uuid")
+        })
       }
     })
 
@@ -120,11 +127,16 @@ class ResourceEmbedEditing extends Plugin {
      */
     conversion.for("dataDowncast").elementToElement({
       model: RESOURCE_EMBED,
-      view:  {
-        name: "section"
+      view:  (modelElement: any, { writer: viewWriter }: any) => {
+        return viewWriter.createEmptyElement("section", {
+          "data-uuid": modelElement.getAttribute("uuid")
+        })
       }
     })
 
+    // @ts-ignore
+    const { renderResourceEmbed } =
+      this.editor.config.get("resourceEmbed") ?? {}
     /**
      * editingDowncast converts a view element to HTML which is actually shown
      * in the editor for WYSIWYG purposes
@@ -133,16 +145,27 @@ class ResourceEmbedEditing extends Plugin {
     conversion.for("editingDowncast").elementToElement({
       model: RESOURCE_EMBED,
       view:  (modelElement: any, { writer: viewWriter }: any) => {
-        // this looks bad but I promise it's fine
-        const resourceID = modelElement._children._nodes[0]._data
+        const uuid = modelElement.getAttribute("uuid")
 
-        // TODO: this is where we will insert the React render for
-        // showing the embedded content in the editor
-        const div = viewWriter.createContainerElement("div", {
-          class: "resource-embed",
-          text:  resourceID
+        const section = viewWriter.createContainerElement("section", {
+          class: "resource-embed"
         })
-        return toWidget(div, viewWriter, { label: "Resources Embed" })
+
+        const reactWrapper = viewWriter.createRawElement(
+          "div",
+          {
+            class: "resource-react-wrapper"
+          },
+          function(el: HTMLElement) {
+            if (renderResourceEmbed) {
+              renderResourceEmbed(uuid, el)
+            }
+          }
+        )
+
+        viewWriter.insert(viewWriter.createPositionAt(section, 0), reactWrapper)
+
+        return toWidget(section, viewWriter, { label: "Resources Embed" })
       }
     })
   }

@@ -41,15 +41,11 @@ describe("SitePage", () => {
         name: website.name
       }
     }))
-    helper.handleRequestStub
-      .withArgs(
-        siteApiDetailUrl.param({ name: website.name }).toString(),
-        "GET"
-      )
-      .returns({
-        body:   website,
-        status: 200
-      })
+
+    helper.mockGetRequest(
+      siteApiDetailUrl.param({ name: website.name }).toString(),
+      website
+    )
   })
 
   afterEach(() => {

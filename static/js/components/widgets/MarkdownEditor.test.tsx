@@ -2,6 +2,7 @@ import React from "react"
 import { shallow } from "enzyme"
 import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
 import sinon, { SinonSandbox } from "sinon"
+import { omit } from "ramda"
 
 import MarkdownEditor from "./MarkdownEditor"
 import {
@@ -44,15 +45,32 @@ describe("MarkdownEditor", () => {
         })
         const ckWrapper = wrapper.find("CKEditor")
         expect(ckWrapper.prop("editor")).toBe(ClassicEditor)
-        expect(ckWrapper.prop("config")).toBe(expectedComponent)
+        expect(omit(["resourceEmbed"], ckWrapper.prop("config"))).toEqual(
+          expectedComponent
+        )
         expect(ckWrapper.prop("data")).toBe(expectedPropValue)
       })
     })
   })
 
-  it("should pass attach down ato a ResourceEmbedField", () => {
+  it("should pass attach down to a ResourceEmbedField", () => {
     const wrapper = render({ attach: "resource" })
     expect(wrapper.find("ResourceEmbedField").prop("attach")).toBe("resource")
+  })
+
+  it("should render embedded resources", () => {
+    const wrapper = render()
+    const editor = wrapper.find("CKEditor").prop("config")
+    const el = document.createElement("div")
+    // @ts-ignore
+    editor.resourceEmbed.renderResourceEmbed("resource-uuid", el)
+    wrapper.update()
+    expect(
+      wrapper
+        .find("EmbeddedResource")
+        .at(0)
+        .prop("uuid")
+    ).toEqual("resource-uuid")
   })
 
   //

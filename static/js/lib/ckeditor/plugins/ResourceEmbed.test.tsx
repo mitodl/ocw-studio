@@ -8,7 +8,7 @@ const getEditor = createTestEditor([ResourceEmbed, Markdown])
 describe("ResourceEmbed plugin", () => {
   afterEach(() => {
     turndownService.rules.array = turndownService.rules.array.filter(
-      (rule: any) => rule.filter !== "figure"
+      (rule: any) => rule.filter !== "figure" && rule.filter !== "section"
     )
     // @ts-ignore
     turndownService._customRulesSet = undefined
@@ -25,7 +25,7 @@ describe("ResourceEmbed plugin", () => {
     markdownTest(
       editor,
       "{{< resource asdfasdfasdfasdf >}}",
-      `<section>asdfasdfasdfasdf</section>`
+      '<section data-uuid="asdfasdfasdfasdf"></section>'
     )
   })
 })

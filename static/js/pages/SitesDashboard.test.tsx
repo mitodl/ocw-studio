@@ -47,12 +47,10 @@ describe("SitesDashboard", () => {
       previous: null,
       count:    10
     }
-    helper.handleRequestStub
-      .withArgs(siteApiListingUrl.param({ offset: 0 }).toString(), "GET")
-      .returns({
-        body:   response,
-        status: 200
-      })
+    helper.mockGetRequest(
+      siteApiListingUrl.param({ offset: 0 }).toString(),
+      response
+    )
     render = helper.configureRenderer(
       SitesDashboard,
       {
@@ -110,15 +108,10 @@ describe("SitesDashboard", () => {
         response.next = hasNextLink ? "next" : null
         response.previous = hasPrevLink ? "prev" : null
         const startingOffset = 20
-        helper.handleRequestStub
-          .withArgs(
-            siteApiListingUrl.query({ offset: startingOffset }).toString(),
-            "GET"
-          )
-          .returns({
-            body:   response,
-            status: 200
-          })
+        helper.mockGetRequest(
+          siteApiListingUrl.query({ offset: startingOffset }).toString(),
+          response
+        )
         const { wrapper } = await render({
           location: {
             search: `offset=${startingOffset}`

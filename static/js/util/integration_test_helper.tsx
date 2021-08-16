@@ -47,12 +47,12 @@ export default class IntegrationTestHelper {
       .stub(networkInterfaceFuncs, "makeRequest")
       .callsFake((url, method, options) => ({
         execute: callback => {
-          const response = this.handleRequestStub(url, method, options)
+          const response = this.handleRequestStub(url, method, options) ?? {}
           const err = null
-          const resStatus = (response && response.status) || 0
-          const resBody = (response && response.body) || undefined
-          const resText = (response && response.text) || undefined
-          const resHeaders = (response && response.header) || undefined
+          const resStatus = response.status ?? 0
+          const resBody = response.body ?? undefined
+          const resText = response.text ?? undefined
+          const resHeaders = response.header ?? undefined
 
           callback(err, resStatus, resBody, resText, resHeaders)
         },
@@ -63,6 +63,19 @@ export default class IntegrationTestHelper {
     this.realWarn = console.warn
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     console.warn = () => {}
+  }
+
+  /**
+   * Convenience method for mocking out a GET request
+   *
+   * pass the API url you want to mock and the object which should be
+   * returned as the request body!
+   */
+  mockGetRequest(url: string, body: unknown): void {
+    this.handleRequestStub.withArgs(url, "GET").returns({
+      body,
+      status: 200
+    })
   }
 
   cleanup(unmount = true): void {
@@ -77,6 +90,22 @@ export default class IntegrationTestHelper {
     console.warn = this.realWarn
   }
 
+  /**
+   * Configure the integration test renderer!
+   *
+   * Takes a component, some defaultProps, and a defaultState for
+   * the Redux store and returns a render function which can be used
+   * to render the component and then make assertions and so on about it.
+   *
+   * Usage example:
+   *
+   * ```ts
+   * const render = helper.configureRenderer(
+   *   MyComponent, { prop: 'default value' }
+   * )
+   * const { wrapper, store } = await render()
+   * ```
+   */
   configureRenderer(
     Component: ComponentType<any> | FunctionComponent<any>,
     defaultProps = {},

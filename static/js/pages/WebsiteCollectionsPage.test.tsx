@@ -25,30 +25,20 @@ describe("CollectionsPage", () => {
     collections = times(20, makeWebsiteCollection)
 
     // first page
-    helper.handleRequestStub
-      .withArgs(collectionsApiUrl.param({ offset: 0 }).toString(), "GET")
-      .returns({
-        body: {
-          results:  collections.slice(0, 10),
-          next:     "https://example.com",
-          previous: null,
-          count:    20
-        },
-        status: 200
-      })
+    helper.mockGetRequest(collectionsApiUrl.param({ offset: 0 }).toString(), {
+      results:  collections.slice(0, 10),
+      next:     "https://example.com",
+      previous: null,
+      count:    20
+    })
 
     // second page
-    helper.handleRequestStub
-      .withArgs(collectionsApiUrl.param({ offset: 10 }).toString(), "GET")
-      .returns({
-        body: {
-          results:  collections.slice(10),
-          next:     null,
-          previous: "https://example.com",
-          count:    20
-        },
-        status: 200
-      })
+    helper.mockGetRequest(collectionsApiUrl.param({ offset: 10 }).toString(), {
+      results:  collections.slice(10),
+      next:     null,
+      previous: "https://example.com",
+      count:    20
+    })
 
     render = helper.configureRenderer(WebsiteCollectionsPage)
   })
