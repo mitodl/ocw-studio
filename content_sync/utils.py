@@ -36,3 +36,20 @@ def get_destination_filepath(
         (content.id, content.text_id),
     )
     return None
+
+
+def get_destination_url(
+    content: WebsiteContent, site_config: SiteConfig
+) -> Optional[str]:
+    """
+    Returns the URL a given piece of content is expected to be at
+    """
+    if content.is_page_content:
+        return os.path.join(
+            content.dirpath.replace(site_config.content_dir, "", 1), content.filename
+        )
+    log.error(
+        "Cannot get destination URL because is_page_content is false (content: %s)",
+        (content.id, content.text_id),
+    )
+    return None
