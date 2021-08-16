@@ -540,6 +540,29 @@ describe("form validation utils", () => {
           })
         ).resolves.toBeTruthy()
       })
+
+      it("should skip validation on sub-fields which don't have data to send", async () => {
+        const [configItem, name] = makeObjectConfigItem({ required: true })
+        const fieldIsVisibleStub = sandbox
+          .stub(siteContentFuncs, "fieldIsVisible")
+          .returns(false)
+        const values = {}
+        const schema = getContentSchema(configItem, values)
+
+        await expect(
+          schema.isValid({
+            ...defaultFormValues,
+            [name]: {
+              mystring: null
+            }
+          })
+        ).resolves.toBeTruthy()
+        sinon.assert.calledWith(
+          fieldIsVisibleStub,
+          configItem.fields[0],
+          values
+        )
+      })
     })
   })
 

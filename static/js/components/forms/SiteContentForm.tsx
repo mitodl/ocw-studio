@@ -96,6 +96,7 @@ export default function SiteContentForm({
                       field={field}
                       key={field.name}
                       contentContext={contentContext}
+                      values={values}
                     />
                   ) : (
                     <SiteContentField

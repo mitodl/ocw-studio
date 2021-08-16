@@ -130,6 +130,39 @@ export const isSingletonCollectionItem = (
   configItem: BaseConfigItem
 ): configItem is SingletonConfigItem => "file" in configItem
 
+const contentFormValueForField = (
+  field: ConfigField,
+  parentField: ConfigField | null,
+  values: SiteFormValues,
+  website: Website
+): SiteFormValue => {
+  if (!fieldHasData(field, values)) {
+    return defaultForField(field, website)
+  }
+
+  if (field.widget === WidgetVariant.Object) {
+    return Object.fromEntries(
+      field.fields.map(innerField => [
+        innerField.name,
+        contentFormValueForField(
+          innerField,
+          field,
+          values,
+          website
+        ) as SiteFormPrimitive
+      ])
+    )
+  } else if (field.widget === WidgetVariant.Hidden) {
+    return field.default
+  } else {
+    if (parentField) {
+      return (values[parentField.name] ?? {})[field.name]
+    } else {
+      return values[field.name]
+    }
+  }
+}
+
 /**
  * Translates page content form values into a payload that our REST API understands.
  **/
@@ -149,9 +182,7 @@ export const contentFormValuesToPayload = (
 
   let hasFileUpload = false
   for (const field of fields) {
-    const value = fieldHasData(field, values) ?
-      values[field.name] :
-      defaultForField(field, website)
+    const value = contentFormValueForField(field, null, values, website)
 
     if (value !== undefined) {
       // Our API expects these bits of data as top-level keys in the payload:
@@ -265,10 +296,10 @@ const defaultForField = (
 /*
  * Should field data be sent to the server?
  */
-export function fieldHasData(
+export const fieldHasData = (
   field: ConfigField,
   values: SiteFormValues
-): boolean {
+): boolean => {
   if (!field.condition) {
     return true
   }
