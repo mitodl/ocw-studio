@@ -45,7 +45,7 @@ class AddedSchemaRule:
 
 
 class CollectionsKeysRule(AddedSchemaRule):
-    """Ensures that collections items only define one of a set of mutually-exclusive keys"""
+    """Ensures that collections items must define one of a set of mutually-exclusive keys for files and folders"""
 
     @staticmethod
     def apply_rule(data):
@@ -61,6 +61,11 @@ class CollectionsKeysRule(AddedSchemaRule):
                     "{}: Only one of the following keys can be specified for a collection item - {}".format(
                         path, ", ".join(exclusive_keys)
                     )
+                ]
+            if len(matching_keys) < 1:
+                path = f"collections.{i}"
+                return [
+                    f"{path}: A collection must have one of the following keys: {', '.join(sorted(exclusive_keys))}"
                 ]
 
 
