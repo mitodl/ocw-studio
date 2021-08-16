@@ -9,10 +9,11 @@ import {
 import {
   ConfigField,
   ConfigItem,
+  EditableConfigItem,
+  HierarchicalSelectConfigField,
   RelationConfigField,
   SelectConfigField,
-  WidgetVariant,
-  EditableConfigItem
+  WidgetVariant
 } from "../../types/websites"
 import { FormSchema } from "../../types/forms"
 import { FormikValues } from "formik"
@@ -31,7 +32,7 @@ const defaultTitleFieldSchema = yup
 
 const minMax = (
   schema: ArraySchema<any>,
-  field: RelationConfigField | SelectConfigField
+  field: RelationConfigField | SelectConfigField | HierarchicalSelectConfigField
 ) => {
   if (field.min) {
     schema = schema.min(
@@ -95,6 +96,10 @@ export const getFieldSchema = (field: ConfigField): FormSchema => {
   }
   case WidgetVariant.Menu: {
     schema = yup.array()
+    break
+  }
+  case WidgetVariant.HierarchicalSelect: {
+    schema = minMax(yup.array(), field)
     break
   }
   case WidgetVariant.String:

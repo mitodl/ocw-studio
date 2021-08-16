@@ -302,6 +302,74 @@ describe("form validation utils", () => {
       })
     })
 
+    describe("hierarchical select validation", () => {
+      it("validates for a hierarchical select field", async () => {
+        const configItem = {
+          ...repeatableConfigItem,
+          fields: [
+            makeWebsiteConfigField({ widget: WidgetVariant.HierarchicalSelect })
+          ]
+        }
+        const name = configItem.fields[0].name
+
+        const schema = getContentSchema(configItem, {})
+        expect(() =>
+          schema.validateSync({
+            ...defaultFormValues,
+            [name]: "not-an-array"
+          })
+        ).toThrow(new yup.ValidationError(`${name} is a required field.`))
+        await expect(
+          schema.isValid({ ...defaultFormValues, [name]: ["selected value"] })
+        ).resolves.toBeTruthy()
+      })
+
+      it("should validate a multiple select field with max and min set", async () => {
+        const configItem = {
+          ...repeatableConfigItem,
+          fields: [
+            makeWebsiteConfigField({
+              widget:   WidgetVariant.HierarchicalSelect,
+              multiple: true,
+              min:      1,
+              max:      2
+            })
+          ]
+        }
+        const name = configItem.fields[0].name
+        const schema = getContentSchema(configItem, {})
+
+        await Promise.all(
+          [
+            [[], false, `${name} must have at least 1 entry.`],
+            [["some value"], true, ""],
+            [["some value", "another value"], true, ""],
+            [
+              ["some value", "another value", "yet another value"],
+              false,
+              `${name} may have at most 2 entries.`
+            ]
+          ].map(async ([value, shouldValidate, message]) => {
+            if (shouldValidate) {
+              await expect(
+                schema.isValid({
+                  ...defaultFormValues,
+                  [name]: value
+                })
+              ).resolves.toBeTruthy()
+            } else {
+              await expect(
+                schema.validate({
+                  ...defaultFormValues,
+                  [name]: value
+                })
+              ).rejects.toThrow(new yup.ValidationError(message as string))
+            }
+          })
+        )
+      })
+    })
+
     describe("relation validation", () => {
       const makeRelationConfigItem = (props = {}): [ConfigItem, string] => {
         const configItem = {

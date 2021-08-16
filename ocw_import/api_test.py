@@ -4,7 +4,7 @@ import json
 import pytest
 from moto import mock_s3
 
-from ocw_import.api import get_short_id, import_ocw2hugo_course
+from ocw_import.api import generate_topics_dict, get_short_id, import_ocw2hugo_course
 from ocw_import.conftest import (
     MOCK_BUCKET_NAME,
     TEST_OCW2HUGO_PATH,
@@ -269,4 +269,32 @@ def test_import_ocw2hugo_menu(settings):
             },
             {"url": "https://openlearning.mit.edu/", "name": "Open Learning"},
         ]
+    }
+
+
+@mock_s3
+def test_generate_topics_dict(settings):
+    """generate_topics_dict should create a representation of topics from course.json files"""
+    setup_s3(settings)
+    course_paths = [
+        f"{TEST_OCW2HUGO_PREFIX}{course_name}/data/course.json"
+        for course_name in [
+            "1-050-engineering-mechanics-i-fall-2007",
+            "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008",
+        ]
+    ]
+    topics = generate_topics_dict(course_paths, MOCK_BUCKET_NAME)
+    assert topics == {
+        "Engineering": {
+            "Aerospace Engineering": ["Structural Mechanics"],
+            "Civil Engineering": [
+                "Structural Engineering",
+                "Transportation Engineering",
+            ],
+            "Mechanical Engineering": ["Solid Mechanics"],
+        },
+        "Social Science": {
+            "Economics": ["Financial Economics"],
+            "Urban Studies": ["Transportation Planning"],
+        },
     }

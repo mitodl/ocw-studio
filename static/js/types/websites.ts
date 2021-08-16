@@ -15,7 +15,8 @@ export enum WidgetVariant {
   Hidden = "hidden",
   Object = "object",
   Relation = "relation",
-  Menu = "menu"
+  Menu = "menu",
+  HierarchicalSelect = "hierarchical-select"
 }
 
 export interface FieldValueCondition {
@@ -77,6 +78,13 @@ export interface ObjectConfigField extends ConfigFieldBaseProps {
   collapsed?: boolean
 }
 
+export interface HierarchicalSelectConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.HierarchicalSelect
+  options_map: Record<string, any> // eslint-disable-line camelcase
+  min?: number
+  max?: number
+}
+
 /**
  * This captures the different types of RelationFilters we
  * support. As of now it is just equality, but see this issue
@@ -131,6 +139,7 @@ export type ConfigField =
   | ObjectConfigField
   | RelationConfigField
   | MenuConfigField
+  | HierarchicalSelectConfigField
 
 export interface BaseConfigItem {
   name: string
