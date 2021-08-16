@@ -53,7 +53,6 @@ export const calcOptions = (
       // if currentOptionsMap is an array, we are at the deepest level
       currentOptionsMap = null
     } else {
-      console.log("level", levelIdx, selectedItem, currentOptionsMap)
       optionValues = optionValues.concat(sortBy(Object.keys(currentOptionsMap)))
       // move currentOptionsMap one level deeper
       currentOptionsMap = selectedItem ? currentOptionsMap[selectedItem] : null
