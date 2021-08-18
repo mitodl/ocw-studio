@@ -4,13 +4,13 @@
       "category": "Content",
       "fields": [
         {
-          "attach": "resource",
           "label": "Title",
           "name": "title",
           "required": true,
           "widget": "string"
         },
         {
+          "attach": "resource",
           "label": "Body",
           "name": "body",
           "widget": "markdown"

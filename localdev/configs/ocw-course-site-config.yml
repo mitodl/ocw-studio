@@ -10,11 +10,11 @@ collections:
         name: title
         widget: string
         required: true
-        attach: "resource"
 
       - label: Body
         name: body
         widget: markdown
+        attach: "resource"
 
   - category: Content
     folder: content/resources
