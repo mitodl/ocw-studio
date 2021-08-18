@@ -257,7 +257,12 @@ export type WebsiteContentListing = Record<
 export const contentListingKey = (
   listingParams: ContentListingParams
 ): string =>
-  JSON.stringify([listingParams.name, listingParams.type, listingParams.offset])
+  JSON.stringify([
+    listingParams.name,
+    listingParams.type,
+    listingParams.offset,
+    listingParams.filetype
+  ])
 
 export const contentDetailKey = (params: ContentDetailParams): string =>
   JSON.stringify([params.name, params.textId])
@@ -276,7 +281,7 @@ export const websiteContentListingRequest = (
   requestDetailedList: boolean,
   requestContentContext: boolean
 ): QueryConfig => {
-  const { name, type, offset, pageContent, search } = listingParams
+  const { name, type, filetype, offset, pageContent, search } = listingParams
   const url = siteApiContentListingUrl
     .param({ name })
     .query(
@@ -286,7 +291,8 @@ export const websiteContentListingRequest = (
         pageContent && { page_content: pageContent },
         requestDetailedList && { detailed_list: true },
         requestContentContext && { content_context: true },
-        search && { search }
+        search && { search },
+        filetype && { filetype }
       )
     )
     .toString()

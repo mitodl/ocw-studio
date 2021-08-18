@@ -7,9 +7,9 @@ import {
   FullEditorConfig,
   MinimalEditorConfig
 } from "../../lib/ckeditor/CKEditor"
-import ResourceEmbedField from "./ResourceEmbedField"
 import EmbeddedResource from "./EmbeddedResource"
 import { RESOURCE_EMBED_COMMAND } from "../../lib/ckeditor/plugins/ResourceEmbed"
+import ResourcePickerDialog from "./ResourcePickerDialog"
 
 export interface Props {
   value?: string
@@ -34,6 +34,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const setEditorRef = useCallback(editorInstance => {
     editor.current = editorInstance
   }, [])
+  const [resourcePickerOpen, setResourcePickerOpen] = useState(false)
 
   const addResourceEmbed = useCallback(
     (id: string) => {
@@ -55,6 +56,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     [setRenderQueue]
   )
 
+  const openResourcePicker = useCallback(() => {
+    setResourcePickerOpen(true)
+  }, [setResourcePickerOpen])
+
   const editorConfig = useMemo(() => {
     if (minimal) {
       return MinimalEditorConfig
@@ -64,10 +69,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       // and then use it to render resources within the editor.
       return {
         ...FullEditorConfig,
-        resourceEmbed: { renderResourceEmbed }
+        resourceEmbed: { renderResourceEmbed, openResourcePicker }
       }
     }
-  }, [minimal, renderResourceEmbed])
+  }, [minimal, renderResourceEmbed, openResourcePicker])
 
   const onChangeCB = useCallback(
     (_event: any, editor: any) => {
@@ -98,11 +103,16 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         onReady={setEditorRef}
         onChange={onChangeCB}
       />
-      {attach && attach.length !== 0 ? (
-        <ResourceEmbedField insertEmbed={addResourceEmbed} attach={attach} />
+      {attach && attach.length > 0 ? (
+        <ResourcePickerDialog
+          open={resourcePickerOpen}
+          setOpen={setResourcePickerOpen}
+          insertEmbed={addResourceEmbed}
+          attach={attach}
+        />
       ) : null}
-      {renderQueue.map(([uuid, el]) => (
-        <EmbeddedResource key={uuid} uuid={uuid} el={el} />
+      {renderQueue.map(([uuid, el], idx) => (
+        <EmbeddedResource key={`${uuid}_${idx}`} uuid={uuid} el={el} />
       ))}
     </>
   )

@@ -388,6 +388,7 @@ class WebsiteContentViewSet(
     def get_queryset(self):
         parent_lookup_website = self.kwargs.get("parent_lookup_website")
         search = self.request.query_params.get("search")
+        filetype = self.request.query_params.get("filetype")
         types = _get_value_list_from_query_params(self.request.query_params, "type")
 
         queryset = WebsiteContent.objects.filter(
@@ -397,6 +398,13 @@ class WebsiteContentViewSet(
             queryset = queryset.filter(type__in=types)
         if search:
             queryset = queryset.filter(title__icontains=search)
+        if filetype:
+            if filetype == "Other":
+                queryset = queryset.exclude(
+                    metadata__filetype__in=["Image", "Document", "Video"]
+                )
+            else:
+                queryset = queryset.filter(metadata__filetype=filetype)
 
         if "page_content" in self.request.query_params:
             queryset = queryset.filter(

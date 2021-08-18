@@ -15,7 +15,7 @@ import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 import Markdown from "./plugins/Markdown"
 import MarkdownMediaEmbed from "./plugins/MarkdownMediaEmbed"
-import ResourceEmbed from "./plugins/ResourceEmbed"
+import ResourceEmbed, { ADD_RESOURCE } from "./plugins/ResourceEmbed"
 
 export const FullEditorConfig = {
   plugins: [
@@ -50,7 +50,8 @@ export const FullEditorConfig = {
       "mediaEmbed",
       "blockQuote",
       "undo",
-      "redo"
+      "redo",
+      ADD_RESOURCE
     ]
   },
   image: {

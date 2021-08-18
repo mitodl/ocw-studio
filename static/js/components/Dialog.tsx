@@ -1,7 +1,7 @@
 import React from "react"
 import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap"
 
-interface Props {
+export interface Props {
   open: boolean
   toggleModal: () => void
   onCancel?: () => void
@@ -10,6 +10,10 @@ interface Props {
   cancelText?: string
   headerContent: JSX.Element | string
   bodyContent: JSX.Element | string
+  wrapClassName?: string
+  modalClassName?: string
+  backdropClassName?: string
+  contentClassName?: string
 }
 
 export default function Dialog(props: Props): JSX.Element | null {
@@ -21,7 +25,11 @@ export default function Dialog(props: Props): JSX.Element | null {
     onAccept,
     onCancel,
     acceptText,
-    cancelText
+    cancelText,
+    wrapClassName,
+    modalClassName,
+    backdropClassName,
+    contentClassName
   } = props
 
   const closeBtn = (
@@ -31,7 +39,14 @@ export default function Dialog(props: Props): JSX.Element | null {
   )
 
   return (
-    <Modal isOpen={open} toggle={toggleModal}>
+    <Modal
+      isOpen={open}
+      toggle={toggleModal}
+      wrapClassName={wrapClassName}
+      modalClassName={modalClassName}
+      backdropClassName={backdropClassName}
+      contentClassName={contentClassName}
+    >
       <ModalHeader toggle={toggleModal} close={closeBtn}>
         {headerContent}
       </ModalHeader>

@@ -55,7 +55,7 @@ describe("MarkdownEditor", () => {
 
   it("should pass attach down to a ResourceEmbedField", () => {
     const wrapper = render({ attach: "resource" })
-    expect(wrapper.find("ResourceEmbedField").prop("attach")).toBe("resource")
+    expect(wrapper.find("ResourcePickerDialog").prop("attach")).toBe("resource")
   })
 
   it("should render embedded resources", () => {
@@ -71,6 +71,20 @@ describe("MarkdownEditor", () => {
         .at(0)
         .prop("uuid")
     ).toEqual("resource-uuid")
+  })
+
+  it("should open the resource picker", () => {
+    const wrapper = render({ attach: "resource" })
+    const editor = wrapper.find("CKEditor").prop("config")
+    // @ts-ignore
+    editor.resourceEmbed.openResourcePicker()
+    wrapper.update()
+    expect(
+      wrapper
+        .find("ResourcePickerDialog")
+        .at(0)
+        .prop("open")
+    ).toBeTruthy()
   })
 
   //

@@ -10,6 +10,10 @@ interface ExtraProps {
   cancelText?: string
   headerContent: JSX.Element | string
   bodyContent: JSX.Element | string
+  wrapClassName?: string
+  modalClassName?: string
+  backdropClassName?: string
+  contentClassName?: string
 }
 
 describe("Dialog", () => {
@@ -95,5 +99,23 @@ describe("Dialog", () => {
       .find("Button")
       .at(1)
     expect(cancelButton.childAt(0).text()).toBe(cancelText)
+  })
+
+  it("sets various classnames", () => {
+    headerContent = "Header"
+    bodyContent = <div>Body</div>
+    const wrapper = render({
+      headerContent,
+      bodyContent,
+      open:              true,
+      wrapClassName:     "wrap",
+      modalClassName:    "modal",
+      backdropClassName: "backdrop",
+      contentClassName:  "content"
+    })
+    expect(wrapper.find("Modal").prop("wrapClassName")).toBe("wrap")
+    expect(wrapper.find("Modal").prop("modalClassName")).toBe("modal")
+    expect(wrapper.find("Modal").prop("backdropClassName")).toBe("backdrop")
+    expect(wrapper.find("Modal").prop("contentClassName")).toBe("content")
   })
 })

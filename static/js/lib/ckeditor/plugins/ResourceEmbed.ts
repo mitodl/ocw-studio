@@ -4,11 +4,13 @@ import Showdown from "showdown"
 import { toWidget } from "@ckeditor/ckeditor5-widget/src/utils"
 import { editor } from "@ckeditor/ckeditor5-core"
 import Command from "@ckeditor/ckeditor5-core/src/command"
+import ButtonView from "@ckeditor/ckeditor5-ui/src/button/buttonview"
 
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 
 export const RESOURCE_SHORTCODE_REGEX = /{{< resource (\S+) >}}/g
+export const ADD_RESOURCE = "addResource"
 
 const RESOURCE_EMBED = "resourceEmbed"
 
@@ -78,6 +80,11 @@ class InsertResourceEmbedCommand extends Command {
 
 export const RESOURCE_EMBED_COMMAND = "insertResourceEmbed"
 
+/**
+ * The main 'editing plugin for ResourceEmbeds. This basically
+ * adds the node type to the schema and sets up all the serialization/
+ * deserialization rules for it.
+ */
 class ResourceEmbedEditing extends Plugin {
   constructor(editor: editor.Editor) {
     super(editor)
@@ -172,6 +179,38 @@ class ResourceEmbedEditing extends Plugin {
 }
 
 /**
+ * Plugin for opening the ResourcePicker
+ *
+ * This basically just plucks the `openResourcePicker` callback
+ * out of our `resourceEmbed` object on `editor.config` and then
+ * adds a button to the toolbar which will call that cb on click.
+ */
+export class OpenResourcePickerButton extends Plugin {
+  init(): void {
+    const editor = this.editor
+
+    // @ts-ignore
+    const { openResourcePicker } = this.editor.config.get("resourceEmbed") ?? {}
+
+    editor.ui.componentFactory.add(ADD_RESOURCE, (locale: any) => {
+      const view = new ButtonView(locale)
+
+      view.set({
+        label:    "Add resource",
+        withText: true
+      })
+      // TODO: icon? how to right-justify?
+
+      view.on("execute", () => {
+        openResourcePicker()
+      })
+
+      return view
+    })
+  }
+}
+
+/**
  * CKEditor plugin that provides functionality to embed resource records
  * into the editor. These are rendered to Markdown as `{{< resource UUID >}}`
  * shortcodes.
@@ -182,12 +221,18 @@ export default class ResourceEmbed extends Plugin {
   }
 
   static get requires(): Plugin[] {
-    // this line here is throwing a type error that I don't understand,
+    // this return value here is throwing a type error that I don't understand,
     // since very similar code in MarkdownMediaEmbed.ts is fine
     //
     // Anyhow, since I have not diagnosed it and since things seem to
     // be running fine I'm going to just ignore for now.
-    // @ts-ignore
-    return [ResourceEmbedEditing, ResourceMarkdownSyntax]
+    return [
+      // @ts-ignore
+      ResourceEmbedEditing,
+      // @ts-ignore
+      ResourceMarkdownSyntax,
+      // @ts-ignore
+      OpenResourcePickerButton
+    ]
   }
 }

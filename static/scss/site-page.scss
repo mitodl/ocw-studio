@@ -74,3 +74,33 @@ $menu-spacing: 20px;
     min-width: 100px;
   }
 }
+
+.resource-picker-listing {
+  .resource-item {
+    cursor: pointer;
+  }
+}
+
+.resource-picker-dialog {
+  .tab-content {
+    padding: 20px 0;
+  }
+
+  .nav-tabs {
+    border-bottom: 1px solid $dialog-gray;
+
+    .nav-item {
+      margin-left: 10px;
+      margin-right: 2px;
+      background-color: $dialog-gray;
+      border-top: 1px solid $dialog-gray;
+      border-left: 1px solid $dialog-gray;
+      border-right: 1px solid $dialog-gray;
+
+      &.active {
+        //border-bottom: white;
+        background-color: white;
+      }
+    }
+  }
+}

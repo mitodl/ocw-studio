@@ -17,3 +17,11 @@ export const isIf = (
 export const shouldIf = (
   tf: any // eslint-disable-line
 ): string => (tf ? "should" : "should not")
+
+export const wait = async (ms: number): Promise<undefined> => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(undefined)
+    }, ms)
+  })
+}

@@ -152,3 +152,9 @@ export const exampleSiteConfigFields: ConfigField[] = uniq(
     })
   ])
 )
+
+// these should match with the values in the ocw-course schema
+export const RESOURCE_TYPE_IMAGE = "Image"
+export const RESOURCE_TYPE_VIDEO = "Video"
+export const RESOURCE_TYPE_DOCUMENT = "Document"
+export const RESOURCE_TYPE_OTHER = "Other"

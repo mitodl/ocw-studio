@@ -246,6 +246,7 @@ export interface ContentListingParams {
   pageContent?: boolean
   offset: number
   search?: string
+  filetype?: string
 }
 
 export interface ContentDetailParams {
