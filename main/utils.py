@@ -31,7 +31,7 @@ def uuid_string():
     return str(uuid4())
 
 
-def is_valid_uuid(uuid_to_test: str, version: None) -> bool:
+def is_valid_uuid(uuid_to_test: str, version: int=None) -> bool:
     """
     Returns True if the given string is a valid UUID
     """
