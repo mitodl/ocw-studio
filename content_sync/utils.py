@@ -46,7 +46,7 @@ def get_destination_url(
     """
     if content.is_page_content:
         filename = "" if content.filename == "_index" else content.filename
-        prefix = "{}/{}".format(content.website.name, site_config.content_dir)
+        prefix = f"{content.website.name}/{site_config.content_dir}"
         dirpath = (
             content.dirpath.replace(prefix, "", 1)
             if content.dirpath.startswith(prefix)
