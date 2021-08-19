@@ -5,9 +5,24 @@ from main.utils import (
     are_equivalent_paths,
     get_dirpath_and_filename,
     get_file_extension,
+    is_valid_uuid,
     remove_trailing_slashes,
     valid_key,
 )
+
+
+@pytest.mark.parametrize(
+    "uuid_to_test, version, is_valid",
+    [
+        ["50fe3182-b1c9-ad10-de16-aeaae7f137cd", None, True],
+        ["50fe3182-b1c9-ad10-de16-aeaae7f137cd", 4, False],
+        ["not-a-uuid", None, False],
+        ["28bcec93-eb51-447e-84e1-ed453eea818e", 4, True],
+    ],
+)
+def test_is_valid_uuid(uuid_to_test, version, is_valid):
+    """ is_valid_uuid should return True for a valid UUID, false otherwise """
+    assert is_valid_uuid(uuid_to_test, version) is is_valid
 
 
 @pytest.mark.parametrize(
