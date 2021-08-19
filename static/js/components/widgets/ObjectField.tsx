@@ -46,7 +46,7 @@ export default function ObjectField(props: Props): JSX.Element {
       {collapsed ? null : (
         <div className="object-sub-fields">
           {field.fields
-            ?.filter(innerField => fieldIsVisible(innerField, values))
+            .filter(innerField => fieldIsVisible(innerField, values))
             .map((innerField: ConfigField) => (
               <SiteContentField
                 field={innerField}
