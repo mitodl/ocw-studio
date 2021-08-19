@@ -130,6 +130,9 @@ export const isSingletonCollectionItem = (
   configItem: BaseConfigItem
 ): configItem is SingletonConfigItem => "file" in configItem
 
+/**
+ * Creates a value for a payload to be sent to the server, for a given field
+ */
 const contentFormValueForField = (
   field: ConfigField,
   parentField: ConfigField | null,
