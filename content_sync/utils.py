@@ -46,8 +46,12 @@ def get_destination_url(
     """
     if content.is_page_content:
         filename = "" if content.filename == "_index" else content.filename
-        dirpath = content.dirpath.replace(content.website.name, "", 1)
-        dirpath = dirpath.replace("/{}".format(site_config.content_dir), "", 1)
+        prefix = "{}/{}".format(content.website.name, site_config.content_dir)
+        dirpath = (
+            content.dirpath.replace(prefix, "", 1)
+            if content.dirpath.startswith(prefix)
+            else content.dirpath
+        )
         return os.path.join(dirpath, filename)
     log.error(
         "Cannot get destination URL because is_page_content is false (content: %s)",
