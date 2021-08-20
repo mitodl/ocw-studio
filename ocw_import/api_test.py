@@ -71,10 +71,7 @@ def test_import_ocw2hugo_course_content(settings):
     assert related_page.type == CONTENT_TYPE_PAGE
     assert related_page.metadata.get("title") == "Related Resources"
     assert related_page.filename == "_index"
-    assert (
-        related_page.dirpath
-        == "content/sections/related-resources"
-    )
+    assert related_page.dirpath == "content/sections/related-resources"
 
     matlab_page = WebsiteContent.objects.get(
         text_id="c8cd9384-0305-bfbb-46ae-a7e7a8229f57"
@@ -89,10 +86,7 @@ def test_import_ocw2hugo_course_content(settings):
     assert lecture_pdf.type == CONTENT_TYPE_RESOURCE
     assert lecture_pdf.metadata.get("file_type") == "application/pdf"
     assert lecture_pdf.filename == "lec1"
-    assert (
-        lecture_pdf.dirpath
-        == "content/sections/lecture-notes"
-    )
+    assert lecture_pdf.dirpath == "content/sections/lecture-notes"
 
 
 @mock_s3
