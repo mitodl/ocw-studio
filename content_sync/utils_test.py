@@ -39,3 +39,23 @@ def test_get_destination_filepath_errors(mocker, has_missing_name, is_bad_config
     )
     patched_log.error.assert_called_once()
     assert return_value is None
+
+
+def test_get_destination_url_errors(mocker):
+    """
+    get_destination_url should log an error if it is called with a a WebsiteContent object without
+    is_page_content set to true
+    """
+    patched_log = mocker.patch("content_sync.utils.log")
+    # From basic-site-config.yml
+    config_item_name = "blog"
+    starter = WebsiteStarterFactory.build()
+    content = WebsiteContentFactory.build(
+        is_page_content=False,
+        type=config_item_name,
+    )
+    return_value = get_destination_filepath(
+        content=content, site_config=SiteConfig(starter.config)
+    )
+    patched_log.error.assert_called_once()
+    assert return_value is None

@@ -191,7 +191,7 @@ def test_hugo_menu_yaml_serialize(omnibus_config):
     parsed_serialized_data = yaml.load(serialized_data, Loader=yaml.SafeLoader)
     assert parsed_serialized_data == {
         "mainmenu": [
-            {**example_menu_data[0], "url": "path/to/myfile.md"},
+            {**example_menu_data[0], "url": "path/to/myfile"},
             example_menu_data[1],
         ],
         "title": content.title,

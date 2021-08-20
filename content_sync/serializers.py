@@ -7,7 +7,7 @@ from typing import Dict, Optional
 import yaml
 from mitol.common.utils import dict_without_keys
 
-from content_sync.utils import get_destination_filepath
+from content_sync.utils import get_destination_url
 from main.utils import (
     get_dirpath_and_filename,
     get_file_extension,
@@ -215,7 +215,7 @@ def _transform_hugo_menu_data(
             # Add/update the 'url' value if this is an internal link
             if menu_item["identifier"] in uuid_content_map:
                 menu_item_content = uuid_content_map[menu_item["identifier"]]
-                updated_menu_item["url"] = get_destination_filepath(
+                updated_menu_item["url"] = get_destination_url(
                     menu_item_content, site_config
                 )
             result_menu_items.append(updated_menu_item)
