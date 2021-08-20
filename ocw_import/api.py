@@ -85,13 +85,17 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
         prefix (str): S3 prefix for filtering by course
         website (Website): Website to import content for
     """
+    site_prefix = f"{prefix}{website.name}"
     for resp in bucket.meta.client.get_paginator("list_objects").paginate(
-        Bucket=bucket.name, Prefix=f"{prefix}{website.name}/content"
+        Bucket=bucket.name, Prefix=f"{site_prefix}/content"
     ):
         for obj in resp["Contents"]:
             s3_key = obj["Key"]
             s3_content = get_s3_object_and_read(bucket.Object(s3_key)).decode()
-            filepath = obj["Key"].replace(prefix, "")
+            if obj["Key"].startswith(site_prefix):
+                filepath = obj["Key"].replace(site_prefix, "", 1)
+            else:
+                filepath = obj["Key"]
             try:
                 convert_data_to_content(filepath, s3_content, website)
             except:  # pylint:disable=bare-except
