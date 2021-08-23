@@ -1,16 +1,19 @@
 import React, { useState, useCallback } from "react"
 
 import SiteContentField from "../forms/SiteContentField"
+import { fieldIsVisible } from "../../lib/site_content"
 
 import {
   ConfigField,
   ObjectConfigField,
   WebsiteContent
 } from "../../types/websites"
+import { SiteFormValues } from "../../types/forms"
 
 interface Props {
   field: ObjectConfigField
   contentContext: WebsiteContent[] | null
+  values: SiteFormValues
 }
 
 /**
@@ -18,7 +21,7 @@ interface Props {
  * to be edited.
  **/
 export default function ObjectField(props: Props): JSX.Element {
-  const { field, contentContext } = props
+  const { field, contentContext, values } = props
 
   const [collapsed, setCollapsed] = useState(field.collapsed ?? false)
   const toggleCollapse = useCallback(
@@ -42,13 +45,15 @@ export default function ObjectField(props: Props): JSX.Element {
       </div>
       {collapsed ? null : (
         <div className="object-sub-fields">
-          {field.fields?.map((field: ConfigField) => (
-            <SiteContentField
-              field={field}
-              key={field.name}
-              contentContext={contentContext}
-            />
-          ))}
+          {field.fields
+            .filter(innerField => fieldIsVisible(innerField, values))
+            .map((innerField: ConfigField) => (
+              <SiteContentField
+                field={innerField}
+                key={innerField.name}
+                contentContext={contentContext}
+              />
+            ))}
         </div>
       )}
       {field.help && <span className="help-text">{field.help}</span>}

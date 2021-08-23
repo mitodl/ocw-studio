@@ -15,8 +15,7 @@ import {
   SelectConfigField,
   WidgetVariant
 } from "../../types/websites"
-import { FormSchema } from "../../types/forms"
-import { FormikValues } from "formik"
+import { FormSchema, SiteFormValues } from "../../types/forms"
 
 // This is added to properly handle file fields, which can have a "null" value
 setLocale({
@@ -56,7 +55,10 @@ const minMax = (
  * WidgetVariant, but also looks at some other props like `min`, `max`,
  * `required`, and `label`.
  **/
-export const getFieldSchema = (field: ConfigField): FormSchema => {
+export const getFieldSchema = (
+  field: ConfigField,
+  values: SiteFormValues
+): FormSchema => {
   let schema
 
   switch (field.widget) {
@@ -89,7 +91,9 @@ export const getFieldSchema = (field: ConfigField): FormSchema => {
       .object()
       .shape(
         Object.fromEntries(
-          field.fields.map(field => [field.name, getFieldSchema(field)])
+          field.fields
+            .filter(field => fieldIsVisible(field, values))
+            .map(field => [field.name, getFieldSchema(field, values)])
         )
       )
     break
@@ -122,13 +126,13 @@ export const getFieldSchema = (field: ConfigField): FormSchema => {
  **/
 export const getContentSchema = (
   configItem: ConfigItem | EditableConfigItem,
-  values: FormikValues
+  values: SiteFormValues
 ): FormSchema => {
   const titleField = configItem.fields.find(field => field.name === "title")
   const yupObjectShape = Object.fromEntries(
     configItem.fields
       .filter(field => fieldIsVisible(field, values))
-      .map(field => [field.name, getFieldSchema(field)])
+      .map(field => [field.name, getFieldSchema(field, values)])
   )
   if (isRepeatableCollectionItem(configItem) && !titleField) {
     yupObjectShape["title"] = defaultTitleFieldSchema

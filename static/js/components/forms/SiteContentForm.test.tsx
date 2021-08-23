@@ -138,20 +138,22 @@ describe("SiteContentForm", () => {
         expect(formik.prop("enableReinitialize")).toBe(true)
       })
 
-      it("should pass an 'object' field to the ObjectWidget component", () => {
+      it("should pass an 'object' field to the ObjectField component", () => {
         const field = makeWebsiteConfigField({ widget: WidgetVariant.Object })
         configItem.fields = [field]
         // @ts-ignore
         fieldIsVisible.mockImplementation(() => true)
         // @ts-ignore
         splitFieldsIntoColumns.mockImplementation(() => [configItem.fields])
-        const wrapper = renderInnerForm(editorState)
+        const values = { some: "values" }
+        const wrapper = renderInnerForm(editorState, { values })
         const objectWrapper = wrapper.find("ObjectField")
         expect(objectWrapper.exists()).toBeTruthy()
         expect(objectWrapper.prop("field")).toEqual(field)
         expect(objectWrapper.prop("contentContext")).toBe(
           content.content_context
         )
+        expect(objectWrapper.prop("values")).toStrictEqual(values)
       })
 
       it("creates initialValues", () => {

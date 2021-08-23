@@ -29,6 +29,7 @@ import {
   addDefaultFields,
   DEFAULT_TITLE_FIELD
 } from "./site_content"
+import * as siteContentFuncs from "./site_content"
 import { exampleSiteConfigFields, MAIN_PAGE_CONTENT_FIELD } from "../constants"
 import { isIf, shouldIf } from "../test_util"
 
@@ -52,6 +53,7 @@ describe("site_content", () => {
     [WidgetVariant.Select]:   "",
     [WidgetVariant.Relation]: { website: OUR_WEBSITE, content: "" },
     [WidgetVariant.Menu]:     [],
+    [WidgetVariant.Hidden]:   "",
     [WidgetVariant.Object]:   {
       ["nested-one"]: "",
       ["nested-two"]: ""
@@ -61,6 +63,14 @@ describe("site_content", () => {
   }
 
   describe("contentFormValuesToPayload", () => {
+    let fieldHasDataMock: jest.MockedFunction<any>
+
+    afterEach(() => {
+      if (fieldHasDataMock) {
+        fieldHasDataMock.mockRestore()
+      }
+    })
+
     it("changes the name of a 'content' field if it uses the markdown widget", () => {
       const values = {
         title: "a title",
@@ -207,6 +217,91 @@ describe("site_content", () => {
         })
         expect(payload["metadata"]["test-field"]).toStrictEqual(expectedDefault)
       }
+    })
+
+    it("always uses the default value for hidden fields", () => {
+      const defaultValue = "defaultValue"
+      const field = makeWebsiteConfigField({
+        widget:  WidgetVariant.Hidden,
+        default: defaultValue
+      })
+      const payload = contentFormValuesToPayload(
+        {
+          [field.name]: "a new value"
+        },
+        // @ts-ignore
+        [field],
+        makeWebsiteDetail()
+      )
+      expect(payload).toStrictEqual({
+        metadata: { [field.name]: defaultValue }
+      })
+    })
+
+    it("creates a payload using data from each inner field in an object field", () => {
+      const field = makeWebsiteConfigField({
+        widget: WidgetVariant.Object,
+        fields: [
+          makeWebsiteConfigField({ widget: WidgetVariant.Boolean }),
+          makeWebsiteConfigField({ widget: WidgetVariant.Boolean })
+        ]
+      }) as ObjectConfigField
+      const payload = contentFormValuesToPayload(
+        {
+          [field.name]: {
+            [field.fields[1].name]: true
+          }
+        },
+        // @ts-ignore
+        [field],
+        makeWebsiteDetail()
+      )
+      expect(payload).toStrictEqual({
+        metadata: {
+          [field.name]: {
+            [field.fields[0].name]: undefined,
+            [field.fields[1].name]: true
+          }
+        }
+      })
+    })
+
+    it("removes values and uses default data in an field inside an object if the inner field should not send data", () => {
+      fieldHasDataMock = jest.spyOn(siteContentFuncs, "fieldHasData")
+      fieldHasDataMock.mockImplementation(
+        (field: ConfigField) => field.widget === WidgetVariant.Object
+      )
+
+      const field = makeWebsiteConfigField({
+        widget: WidgetVariant.Object,
+        fields: [
+          makeWebsiteConfigField({ widget: WidgetVariant.Boolean }),
+          makeWebsiteConfigField({ widget: WidgetVariant.Boolean })
+        ]
+      }) as ObjectConfigField
+
+      const values = {
+        [field.name]: {
+          [field.fields[1].name]: true
+        }
+      }
+      const payload = contentFormValuesToPayload(
+        values,
+        // @ts-ignore
+        [field],
+        makeWebsiteDetail()
+      )
+      expect(payload).toStrictEqual({
+        metadata: {
+          [field.name]: {
+            [field.fields[0].name]: false,
+            [field.fields[1].name]: false
+          }
+        }
+      })
+      expect(fieldHasDataMock).toBeCalledWith(field, values)
+      expect(fieldHasDataMock).toBeCalledWith(field.fields[0], values)
+      expect(fieldHasDataMock).toBeCalledWith(field.fields[1], values)
     })
   })
 
