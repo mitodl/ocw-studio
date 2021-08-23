@@ -131,8 +131,13 @@ export const isSingletonCollectionItem = (
 ): configItem is SingletonConfigItem => "file" in configItem
 
 /**
- * Creates a value for a payload to be sent to the server, for a given field. This is used by to
- * contentFormValuesForPayload to figure out what should go in the payload for a field and nested fields.
+ * Returns a value for a payload to be sent to the server for a field, given a ConfigField
+ * and the current state of the form (`values`).
+ *
+ * We need to look at the values for the entire form in order to handle
+ * the case of Object fields, where for the 'nested' entries in the 
+ * Object we need to look at the value for their 'parent' field in order
+ * to set them correctly.
  */
 const contentFormValueForField = (
   field: ConfigField,
