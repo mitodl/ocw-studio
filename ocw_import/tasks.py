@@ -29,7 +29,7 @@ def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
     course_site_starter_id = (
         WebsiteStarter.objects.filter(slug=settings.OCW_IMPORT_STARTER_SLUG)
         .values_list("id", flat=True)
-        .first()
+        .get()
     )
     for path in paths:
         log.info("Importing course: '%s'", path)

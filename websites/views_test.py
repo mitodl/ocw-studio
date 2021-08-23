@@ -71,9 +71,10 @@ def file_upload():
     return SimpleUploadedFile("exam.pdf", b"sample pdf", content_type="application/pdf")
 
 
-@pytest.mark.parametrize("website_type", [constants.COURSE_STARTER_SLUG, None])
-def test_websites_endpoint_list(drf_client, website_type, websites):
+@pytest.mark.parametrize("filter_by_type", [True, False])
+def test_websites_endpoint_list(drf_client, filter_by_type, websites, settings):
     """Test new websites endpoint for lists"""
+    website_type = settings.OCW_IMPORT_STARTER_SLUG if filter_by_type else None
     filter_by_type = website_type is not None
     now = now_in_utc()
 
@@ -90,7 +91,7 @@ def test_websites_endpoint_list(drf_client, website_type, websites):
     ):
         assert resp.data.get("results")[idx]["uuid"] == str(site.uuid)
         assert resp.data.get("results")[idx]["starter"]["slug"] == (
-            constants.COURSE_STARTER_SLUG if filter_by_type else site.starter.slug
+            settings.OCW_IMPORT_STARTER_SLUG if filter_by_type else site.starter.slug
         )
         assert resp.data.get("results")[idx]["publish_date"] <= now.strftime(
             ISO_8601_FORMAT
@@ -373,13 +374,13 @@ def test_websites_endpoint_detail_get_denied(drf_client):
         assert resp.status_code == 403 if not user else 404
 
 
-def test_websites_endpoint_sorting(drf_client, websites):
+def test_websites_endpoint_sorting(drf_client, websites, settings):
     """ Response should be sorted according to query parameter """
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
     resp = drf_client.get(
         reverse("websites_api-list"),
-        {"sort": "title", "type": constants.COURSE_STARTER_SLUG},
+        {"sort": "title", "type": settings.OCW_IMPORT_STARTER_SLUG},
     )
     for idx, course in enumerate(sorted(websites.courses, key=lambda site: site.title)):
         assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)

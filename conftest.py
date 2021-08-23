@@ -6,7 +6,7 @@ import pytest
 import yaml
 
 from fixtures.common import *  # pylint:disable=wildcard-import,unused-wildcard-import
-from websites.constants import COURSE_STARTER_SLUG, OMNIBUS_STARTER_SLUG
+from websites.constants import OMNIBUS_STARTER_SLUG
 from websites.models import WebsiteStarter
 from websites.site_config_api import SiteConfig
 
@@ -37,9 +37,9 @@ def mocked_celery(mocker):
 
 @pytest.fixture()
 @pytest.mark.django_db
-def course_starter():
+def course_starter(settings):
     """Returns the 'course'-type WebsiteStarter that is seeded in a data migration"""
-    return WebsiteStarter.objects.get(slug=COURSE_STARTER_SLUG)
+    return WebsiteStarter.objects.get(slug=settings.OCW_IMPORT_STARTER_SLUG)
 
 
 @pytest.fixture()
