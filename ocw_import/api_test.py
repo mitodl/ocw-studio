@@ -63,7 +63,7 @@ def test_import_ocw2hugo_course_content(settings):
         "This subject provides an introduction to the mechanics of materials"
     )
     assert home_page.filename == "_index"
-    assert home_page.dirpath == "1-050-engineering-mechanics-i-fall-2007/content"
+    assert home_page.dirpath == "content"
 
     related_page = WebsiteContent.objects.get(
         text_id="4f5c3926-e4d5-6974-7f16-131a6f692568"
@@ -71,10 +71,7 @@ def test_import_ocw2hugo_course_content(settings):
     assert related_page.type == CONTENT_TYPE_PAGE
     assert related_page.metadata.get("title") == "Related Resources"
     assert related_page.filename == "_index"
-    assert (
-        related_page.dirpath
-        == "1-050-engineering-mechanics-i-fall-2007/content/sections/related-resources"
-    )
+    assert related_page.dirpath == "content/sections/related-resources"
 
     matlab_page = WebsiteContent.objects.get(
         text_id="c8cd9384-0305-bfbb-46ae-a7e7a8229f57"
@@ -89,10 +86,7 @@ def test_import_ocw2hugo_course_content(settings):
     assert lecture_pdf.type == CONTENT_TYPE_RESOURCE
     assert lecture_pdf.metadata.get("file_type") == "application/pdf"
     assert lecture_pdf.filename == "lec1"
-    assert (
-        lecture_pdf.dirpath
-        == "1-050-engineering-mechanics-i-fall-2007/content/sections/lecture-notes"
-    )
+    assert lecture_pdf.dirpath == "content/sections/lecture-notes"
 
 
 @mock_s3
@@ -197,7 +191,7 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     assert mock_log.call_count == 1
     mock_log.assert_called_once_with(
         "No UUID (text ID): %s",
-        "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/content/sections/test_no_uid.md",
+        "/content/sections/test_no_uid.md",
     )
 
 
