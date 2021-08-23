@@ -135,7 +135,7 @@ export const isSingletonCollectionItem = (
  * and the current state of the form (`values`).
  *
  * We need to look at the values for the entire form in order to handle
- * the case of Object fields, where for the 'nested' entries in the 
+ * the case of Object fields, where for the 'nested' entries in the
  * Object we need to look at the value for their 'parent' field in order
  * to set them correctly.
  */
