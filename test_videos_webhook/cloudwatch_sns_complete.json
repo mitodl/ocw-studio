@@ -1,0 +1,57 @@
+{
+  "version": "0",
+  "id": "c120fe11-87db-c292-b3e5-1cc90740f6e1",
+  "detail-type": "MediaConvert Job State Change",
+  "source": "aws.mediaconvert",
+  "account": "AWS_ACCOUNT_ID",
+  "time": "2021-08-05T16:52:33Z",
+  "region": "{aws_region}",
+  "resources": [
+    "arn:aws:mediaconvert:AWS_REGION:AWS_ACCOUNT_ID:jobs/26235173873033-qav1eq"
+  ],
+  "detail": {
+    "timestamp": 1628172900136,
+    "accountId": "AWS_ACCOUNT_ID",
+    "queue": "arn:aws:mediaconvert:AWS_REGION:AWS_ACCOUNT_ID:queues/Default",
+    "jobId": "VIDEO_JOB_ID",
+    "status": "COMPLETE",
+    "userMetadata": {},
+    "outputGroupDetails": [
+      {
+        "outputDetails": [
+          {
+            "outputFilePaths": [
+              "s3://AWS_BUCKET/TRANSCODE_PREFIX/SHORT_ID/DRIVE_FILE_ID/testvid_youtube.mp4"
+            ],
+            "durationInMs": 132033,
+            "videoDetails": {
+              "widthInPx": 1280,
+              "heightInPx": 720
+            }
+          },
+          {
+            "outputFilePaths": [
+              "s3://AWS_BUCKET/TRANSCODE_PREFIX/SHORT_ID/DRIVE_FILE_ID/testvid_360p_16_9.mp4"
+            ],
+            "durationInMs": 132033,
+            "videoDetails": {
+              "widthInPx": 640,
+              "heightInPx": 360
+            }
+          },
+          {
+            "outputFilePaths": [
+              "s3://AWS_BUCKET/TRANSCODE_PREFIX/SHORT_ID/DRIVE_FILE_ID/testvid_360p_4_3.mp4"
+            ],
+            "durationInMs": 132033,
+            "videoDetails": {
+              "widthInPx": 480,
+              "heightInPx": 360
+            }
+          }
+        ],
+        "type": "FILE_GROUP"
+      }
+    ]
+  }
+}

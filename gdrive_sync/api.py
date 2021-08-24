@@ -7,6 +7,7 @@ from typing import Dict, List
 import boto3
 import pytz
 import requests
+from celery import chain
 from django.conf import settings
 from django.db.models import Q
 from google.oauth2.service_account import (  # pylint:disable=no-name-in-module
@@ -82,7 +83,7 @@ def get_parent_tree(parents):
     return tree[1:]  # first one is the drive
 
 
-def process_file_result(file_obj: Dict):
+def process_file_result(file_obj: Dict) -> bool:
     """Convert an API file response into DriveFile objects"""
     parents = file_obj.get("parents")
     if parents:
@@ -123,13 +124,18 @@ def process_file_result(file_obj: Dict):
                         "website": website,
                     },
                 )
-                tasks.stream_drive_file_to_s3.delay(drive_file.file_id)
-                return
+                # Kick off chained async celery tasks to transfer file to S3, then start a transcode job
+                chain(
+                    tasks.stream_drive_file_to_s3.s(drive_file.file_id),
+                    tasks.transcode_drive_file_video.si(drive_file.file_id),
+                )()
+                return True
     log.error(
         "No matching website could be found for file %s (%s)",
         file_obj.get("name"),
         file_obj.get("fileId"),
     )
+    return False
 
 
 def import_recent_videos(last_dt=None):
@@ -149,13 +155,13 @@ def import_recent_videos(last_dt=None):
 
     videos = get_file_list(query=query, fields=fields)
     for video in videos:
-        process_file_result(video)
-        maxLastTime = datetime.strptime(
-            max(video.get("createdTime"), video.get("modifiedTime")),
-            "%Y-%m-%dT%H:%M:%S.%fZ",
-        ).replace(tzinfo=pytz.utc)
-        if not last_checked or maxLastTime > last_checked:
-            last_checked = maxLastTime
+        if process_file_result(video):
+            maxLastTime = datetime.strptime(
+                max(video.get("createdTime"), video.get("modifiedTime")),
+                "%Y-%m-%dT%H:%M:%S.%fZ",
+            ).replace(tzinfo=pytz.utc)
+            if not last_checked or maxLastTime > last_checked:
+                last_checked = maxLastTime
     file_token_obj.last_dt = last_checked
     file_token_obj.save()
 

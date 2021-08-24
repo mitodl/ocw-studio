@@ -28,6 +28,7 @@ class DriveFileFactory(DjangoModelFactory):
     mime_type = FuzzyChoice(["video/mp4", "video/avi"])
     checksum = factory.Faker("md5")
     download_link = factory.Faker("uri")
+    s3_key = factory.Faker("uri_path")
     status = FuzzyChoice(DriveFileStatus.ALL_STATUSES)
     modified_time = factory.Faker("date_time", tzinfo=pytz.utc)
     created_time = factory.Faker("date_time", tzinfo=pytz.utc)

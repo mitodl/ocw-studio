@@ -212,8 +212,9 @@ def test_import_recent_videos(
         "gdrive_sync.api.get_file_list",
         return_value=LIST_RESPONSES[0]["files"] + LIST_RESPONSES[1]["files"],
     )
-    mock_upload_task = mocker.patch(
-        "gdrive_sync.api.tasks.stream_drive_file_to_s3.delay"
+    mock_upload_task = mocker.patch("gdrive_sync.api.tasks.stream_drive_file_to_s3.s")
+    mock_transcode_task = mocker.patch(
+        "gdrive_sync.api.tasks.transcode_drive_file_video.si"
     )
     tracker = DriveApiQueryTrackerFactory.create(
         api_call=DRIVE_API_FILES, last_dt=tracker_last_dt
@@ -233,15 +234,21 @@ def test_import_recent_videos(
     mock_list_files.assert_called_once_with(
         query=expected_query, fields=expected_fields
     )
+    tracker.refresh_from_db()
     for i in range(2):
         if (i == 1 and same_checksum) or (
             parent_folder and not parent_folder_in_ancestors
         ):
             with pytest.raises(AssertionError):
                 mock_upload_task.assert_any_call(LIST_RESPONSES[i]["files"][0]["id"])
+            with pytest.raises(AssertionError):
+                mock_transcode_task.assert_any_call(LIST_RESPONSES[i]["files"][0]["id"])
         else:
             mock_upload_task.assert_any_call(LIST_RESPONSES[i]["files"][0]["id"])
-
+            assert tracker.last_dt == datetime.strptime(
+                LIST_RESPONSES[0]["files"][0]["modifiedTime"], "%Y-%m-%dT%H:%M:%S.%fZ"
+            ).replace(tzinfo=pytz.utc)
+            mock_transcode_task.assert_any_call(LIST_RESPONSES[i]["files"][0]["id"])
         if not parent_folder or parent_folder_in_ancestors:
             assert DriveFile.objects.filter(
                 file_id=LIST_RESPONSES[i]["files"][0]["id"]
@@ -252,10 +259,6 @@ def test_import_recent_videos(
             ).exists()
             is False
         )
-    tracker.refresh_from_db()
-    assert tracker.last_dt == datetime.strptime(
-        LIST_RESPONSES[1]["files"][1]["modifiedTime"], "%Y-%m-%dT%H:%M:%S.%fZ"
-    ).replace(tzinfo=pytz.utc)
 
 
 def test_stream_to_s3(settings, mocker):
