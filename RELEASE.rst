@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.22.1
+Version 0.22.1 (Released August 24, 2021)
 --------------
 
 - Add custom format_recipient function, assign to MITOL_MAIL_FORMAT_RECIPIENT_FUNC (#483)
