@@ -107,11 +107,13 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
     )
     assert list(
         WebsiteContent.objects.filter(type=CONTENT_TYPE_INSTRUCTOR)
-        .values("title", "metadata")
+        .values("title", "dirpath", "is_page_content", "metadata")
         .order_by("title")
     ) == [
         {
             "title": "Prof. Franz-Josef Ulm",
+            "dirpath": "content/instructors",
+            "is_page_content": True,
             "metadata": {
                 "first_name": "Franz-Josef",
                 "middle_initial": "",
@@ -122,6 +124,8 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
         },
         {
             "title": "Prof. Markus Buehler",
+            "dirpath": "content/instructors",
+            "is_page_content": True,
             "metadata": {
                 "first_name": "Markus",
                 "middle_initial": "",
