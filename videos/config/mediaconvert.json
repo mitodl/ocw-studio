@@ -1,0 +1,151 @@
+{
+  "UserMetadata": {},
+  "Settings": {
+    "TimecodeConfig": {
+      "Source": "ZEROBASED"
+    },
+    "OutputGroups": [
+      {
+        "CustomName": "OCW Output Group",
+        "Name": "File Group",
+        "Outputs": [
+          {
+            "ContainerSettings": {
+              "Container": "MP4",
+              "Mp4Settings": {}
+            },
+            "VideoDescription": {
+              "CodecSettings": {
+                "Codec": "H_264",
+                "H264Settings": {
+                  "FramerateDenominator": 1,
+                  "MaxBitrate": 8000000,
+                  "FramerateControl": "SPECIFIED",
+                  "RateControlMode": "QVBR",
+                  "QvbrSettings": {
+                    "QvbrQualityLevel": 6
+                  },
+                  "FramerateNumerator": 30,
+                  "SceneChangeDetect": "TRANSITION_DETECTION"
+                }
+              }
+            },
+            "AudioDescriptions": [
+              {
+                "AudioSourceName": "Audio Selector 1",
+                "CodecSettings": {
+                  "Codec": "AAC",
+                  "AacSettings": {
+                    "Bitrate": 96000,
+                    "CodingMode": "CODING_MODE_2_0",
+                    "SampleRate": 48000
+                  }
+                }
+              }
+            ],
+            "NameModifier": "_youtube"
+          },
+          {
+            "ContainerSettings": {
+              "Container": "MP4",
+              "Mp4Settings": {}
+            },
+            "VideoDescription": {
+              "Width": 640,
+              "Height": 360,
+              "CodecSettings": {
+                "Codec": "H_264",
+                "H264Settings": {
+                  "FramerateDenominator": 1,
+                  "MaxBitrate": 8000000,
+                  "FramerateControl": "SPECIFIED",
+                  "RateControlMode": "QVBR",
+                  "QvbrSettings": {
+                    "QvbrQualityLevel": 6
+                  },
+                  "FramerateNumerator": 30,
+                  "SceneChangeDetect": "TRANSITION_DETECTION",
+                  "ParControl": "SPECIFIED"
+                }
+              }
+            },
+            "AudioDescriptions": [
+              {
+                "CodecSettings": {
+                  "Codec": "AAC",
+                  "AacSettings": {
+                    "Bitrate": 96000,
+                    "CodingMode": "CODING_MODE_2_0",
+                    "SampleRate": 48000
+                  }
+                }
+              }
+            ],
+            "NameModifier": "_360p_16_9"
+          },
+          {
+            "ContainerSettings": {
+              "Container": "MP4",
+              "Mp4Settings": {}
+            },
+            "VideoDescription": {
+              "Width": 480,
+              "Height": 360,
+              "CodecSettings": {
+                "Codec": "H_264",
+                "H264Settings": {
+                  "FramerateDenominator": 1,
+                  "MaxBitrate": 8000000,
+                  "FramerateControl": "SPECIFIED",
+                  "RateControlMode": "QVBR",
+                  "QvbrSettings": {
+                    "QvbrQualityLevel": 6
+                  },
+                  "FramerateNumerator": 30,
+                  "SceneChangeDetect": "TRANSITION_DETECTION",
+                  "ParControl": "SPECIFIED"
+                }
+              }
+            },
+            "AudioDescriptions": [
+              {
+                "CodecSettings": {
+                  "Codec": "AAC",
+                  "AacSettings": {
+                    "Bitrate": 96000,
+                    "CodingMode": "CODING_MODE_2_0",
+                    "SampleRate": 48000
+                  }
+                }
+              }
+            ],
+            "NameModifier": "_360p_4_3"
+          }
+        ],
+        "OutputGroupSettings": {
+          "Type": "FILE_GROUP_SETTINGS",
+          "FileGroupSettings": {
+            "Destination": null
+          }
+        }
+      }
+    ],
+    "Inputs": [
+      {
+        "AudioSelectors": {
+          "Audio Selector 1": {
+            "DefaultSelection": "DEFAULT"
+          }
+        },
+        "VideoSelector": {},
+        "TimecodeSource": "ZEROBASED",
+        "FileInput": null
+      }
+    ]
+  },
+  "AccelerationSettings": {
+    "Mode": "DISABLED"
+  },
+  "StatusUpdateInterval": "SECONDS_60",
+  "Priority": 0
+}

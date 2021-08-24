@@ -31,6 +31,10 @@
       "description": "AWS Access Key for S3 storage.",
       "required": false
     },
+    "AWS_ACCOUNT_ID": {
+      "description": "AWS Account ID",
+      "required": false
+    },
     "AWS_PREVIEW_BUCKET_NAME": {
       "description": "S3 preview bucket name.",
       "required": false
@@ -41,6 +45,14 @@
     },
     "AWS_QUERYSTRING_AUTH": {
       "description": "Enables querystring auth for S3 urls",
+      "required": false
+    },
+    "AWS_REGION": {
+      "description": "AWS Region",
+      "required": false
+    },
+    "AWS_ROLE_NAME": {
+      "description": "AWS role name to be used for MediaConvert jobs",
       "required": false
     },
     "AWS_SECRET_ACCESS_KEY": {
@@ -419,6 +431,10 @@
     },
     "USE_X_FORWARDED_PORT": {
       "description": "Use the PORT from original url accessed by user",
+      "required": false
+    },
+    "VIDEO_S3_TRANSCODE_PREFIX": {
+      "description": "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert",
       "required": false
     }
   },

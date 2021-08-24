@@ -1,0 +1,22 @@
+{
+     "version": "0",
+     "id": "c8879bt5-730e-6a80-3340-80712099846e",
+     "detail-type": "MediaConvert Job State Change",
+     "source": "aws.mediaconvert",
+     "account": "AWS_ACCOUNT_ID",
+     "time": "2021-08-05T19:15:37Z",
+     "region": "AWS_REGION",
+     "resources": [
+         "arn:aws:mediaconvert:AWS_REGION:AWS_ACCOUNT_ID:jobs/VIDEO_JOB_ID"
+     ],
+     "detail": {
+         "timestamp": 1628190937233,
+         "accountId": "919801701561",
+         "queue": "arn:aws:mediaconvert:AWS_REGION:AWS_ACCOUNT_ID:queues/Default",
+         "jobId": "VIDEO_JOB_ID",
+         "status": "ERROR",
+         "errorCode": 1030,
+         "errorMessage": "Video codec [indeo4] is not a supported input video codec",
+         "userMetadata": {}
+     }
+ }

@@ -1,0 +1,12 @@
+{
+ "Type": "SubscriptionConfirmation",
+ "MessageId": "88b400b3-2fd3-49a3-b182-f64a4224d3e2",
+ "Token": "fake-token",
+ "TopicArn": "arn:aws:sns:AWS_REGION:AWS_ACCOUNT_ID:MediaConvertJobAlert",
+ "Message": "To confirm the subscription, visit the SubscribeURL included in this message.",
+ "SubscribeURL": "https://sns.AWS_REGION.amazonaws.com/?Action=ConfirmSubscription&TopicArn=arn:aws:sns:AWS_REGION:AWS_ACCOUNT_ID:MediaConvertJobAlert&Token=fake-token",
+ "Timestamp": "2021-08-05T14:32:17.423Z",
+ "SignatureVersion": "1",
+ "Signature": "fake-signature",
+ "SigningCertURL": "https://sns.AWS_REGION.amazonaws.com/SimpleNotificationService.pem"
+}

@@ -146,7 +146,8 @@ INSTALLED_APPS = (
     "news",
     "content_sync",
     "gdrive_sync",
-    # common apps, need to be after ocw-studio apps for template overriding
+    "videos",
+    # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
     "mitol.mail.apps.MailApp",
@@ -427,6 +428,15 @@ AWS_QUERYSTRING_AUTH = get_bool(
     description="Enables querystring auth for S3 urls",
 )
 AWS_DEFAULT_ACL = "public-read"
+AWS_ACCOUNT_ID = get_string(name="AWS_ACCOUNT_ID", description="AWS Account ID")
+AWS_REGION = get_string(
+    name="AWS_REGION", default="us-east-1", description="AWS Region"
+)
+AWS_ROLE_NAME = get_string(
+    name="AWS_ROLE_NAME",
+    default=None,
+    description="AWS role name to be used for MediaConvert jobs",
+)
 
 # Provide nice validation of the configuration
 if OCW_STUDIO_USE_S3 and (
@@ -441,7 +451,7 @@ if OCW_STUDIO_USE_S3:
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
 
-# Google Drive settings
+# Google Drive and Video settings
 DRIVE_SERVICE_ACCOUNT_CREDS = get_string(
     name="DRIVE_SERVICE_ACCOUNT_CREDS",
     default=None,
@@ -467,6 +477,13 @@ DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID = get_string(
     default=None,
     description="Gdrive folder for video uploads",
     required=False,
+)
+VIDEO_S3_TRANSCODE_PREFIX = get_string(
+    name="VIDEO_S3_TRANSCODE_PREFIX",
+    default="aws_mediaconvert_transcodes",
+    description=(
+        "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert"
+    ),
 )
 
 # Celery
