@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.22.1 (Released August 24, 2021)
+--------------
+
+- Add custom format_recipient function, assign to MITOL_MAIL_FORMAT_RECIPIENT_FUNC (#483)
+- add resource embed UI
+- upgrade eslint config, remove some unneeded packages
+
 Version 0.22.0 (Released August 12, 2021)
 --------------
 
