@@ -192,6 +192,7 @@ def import_ocw2hugo_sitemetadata(
     instructor_contents = []
     for instructor in course_data["instructors"]:
         uid = instructor["uid"]
+        text_id = str(uuid.UUID(uid))
         first_name = instructor.get("first_name", "")
         last_name = instructor.get("last_name", "")
         middle_initial = instructor.get("middle_initial", "")
@@ -201,7 +202,7 @@ def import_ocw2hugo_sitemetadata(
 
         instructor_content, _ = WebsiteContent.objects.update_or_create(
             website=website_root,
-            text_id=str(uuid.UUID(uid)),
+            text_id=text_id,
             defaults={
                 "metadata": {
                     "headless": True,
@@ -212,6 +213,9 @@ def import_ocw2hugo_sitemetadata(
                 },
                 "title": f"{salutation_plus_space}{first_name} {middle_initial_plus_space}{last_name}",
                 "type": CONTENT_TYPE_INSTRUCTOR,
+                "dirpath": "content/instructors",
+                "filename": text_id,
+                "is_page_content": True,
             },
         )
         instructor_contents.append(instructor_content)
