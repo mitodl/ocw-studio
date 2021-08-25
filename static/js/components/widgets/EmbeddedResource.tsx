@@ -5,6 +5,7 @@ import { useRequest } from "redux-query-react"
 import { websiteContentDetailRequest } from "../../query-configs/websites"
 import { useSelector } from "react-redux"
 import { getWebsiteContentDetailCursor } from "../../selectors/websites"
+import { RESOURCE_TYPE_IMAGE } from "../../constants"
 
 interface Props {
   uuid: string
@@ -43,10 +44,27 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
     const filetype = resource.metadata?.filetype ?? "..."
     const title = resource.title ?? resource.text_id
 
+    if (filetype === RESOURCE_TYPE_IMAGE) {
+      const filename = resource.file!.split("/").slice(-1)
+
+      return createPortal(
+        <div className="embedded-resource image my-2 d-flex align-items-center">
+          <img className="img-fluid m-2" src={resource.file} />
+          <div>
+            <h3 className="m-2 title">{title}</h3>
+            <span className="font-italic mx-2 text-gray resource-info d-block">
+              {filename}
+            </span>
+          </div>
+        </div>,
+        el
+      )
+    }
+
     return createPortal(
       <div className="embedded-resource my-2">
         <h3 className="ml-2 title">{title}</h3>
-        <span className="font-italic ml-2 text-gray filetype">
+        <span className="font-italic ml-2 text-gray resource-info">
           Filetype: {filetype}
         </span>
       </div>,

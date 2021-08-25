@@ -16,5 +16,19 @@
 .ck-editor {
   .embedded-resource {
     border: 1px solid $studio-gray;
+
+    img {
+      max-height: 225px;
+      // CKEditor puts a min-width property on images
+      // which screws everything up, so we need to unset
+      // it here
+      min-width: initial !important;
+      max-width: 175px !important;
+    }
+
+    .resource-info {
+      font-size: 14px;
+      word-break: break-all;
+    }
   }
 }

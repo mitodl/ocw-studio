@@ -9,6 +9,7 @@ import {
 } from "../../util/factories/websites"
 import { Website, WebsiteContent } from "../../types/websites"
 import { siteApiContentDetailUrl } from "../../lib/urls"
+import { RESOURCE_TYPE_IMAGE } from "../../constants"
 
 jest.mock("../../context/Website")
 jest.mock("../../hooks/state")
@@ -53,6 +54,15 @@ describe("EmbeddedResource", () => {
   it("should render a filetype if it's there in the metadata", async () => {
     content.metadata!.filetype = "PDF"
     const { wrapper } = await render()
-    expect(wrapper.find(".filetype").text()).toBe("Filetype: PDF")
+    expect(wrapper.find(".resource-info").text()).toBe("Filetype: PDF")
+  })
+
+  it("should render an image", async () => {
+    content.metadata!.filetype = RESOURCE_TYPE_IMAGE
+    content.file = "https://example.com/foo/bar/baz.png"
+    const { wrapper } = await render()
+    expect(wrapper.find(".resource-info").text()).toBe("baz.png")
+    expect(wrapper.find("h3").text()).toBe(content.title)
+    expect(wrapper.find("img").prop("src")).toBe(content.file)
   })
 })

@@ -1,5 +1,15 @@
 import { ActionPromiseValue, QueryConfig } from "redux-query"
-import { merge, reject, propEq, compose, evolve, when, assoc, map } from "ramda"
+import {
+  merge,
+  reject,
+  propEq,
+  compose,
+  evolve,
+  when,
+  assoc,
+  map,
+  mergeDeepRight
+} from "ramda"
 
 import { nextState, PaginatedResponse } from "./utils"
 import { getCookie } from "../lib/api/util"
@@ -321,13 +331,7 @@ export const websiteContentListingRequest = (
         ...prev,
         ...next
       }),
-      websiteContentDetails: (
-        prev: WebsiteContentDetails,
-        next: WebsiteContentDetails
-      ) => ({
-        ...prev,
-        ...next
-      })
+      websiteContentDetails: mergeDeepRight
     },
     force: true // try to prevent stale information
   }
