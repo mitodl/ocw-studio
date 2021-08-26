@@ -4,7 +4,12 @@ import json
 import pytest
 from moto import mock_s3
 
-from ocw_import.api import generate_topics_dict, get_short_id, import_ocw2hugo_course
+from ocw_import.api import (
+    delete_unpublished_courses,
+    generate_topics_dict,
+    get_short_id,
+    import_ocw2hugo_course,
+)
 from ocw_import.conftest import (
     MOCK_BUCKET_NAME,
     TEST_OCW2HUGO_PATH,
@@ -296,3 +301,24 @@ def test_generate_topics_dict(settings):
             "Urban Studies": ["Transportation Planning"],
         },
     }
+
+
+@mock_s3
+def test_delete_unpublished_courses(settings):
+    """delete_unpublished_courses should remove Website objects for courses that don't exist anymore in S3"""
+    setup_s3(settings)
+    course_paths = [
+        f"{TEST_OCW2HUGO_PREFIX}{course_name}/data/course.json"
+        for course_name in [
+            "1-050-engineering-mechanics-i-fall-2007",
+            "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008",
+        ]
+    ]
+    for course_path in course_paths:
+        import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, course_path)
+    assert Website.objects.all().count() == 3
+    assert WebsiteContent.objects.all().count() == 117
+    course_paths.pop()
+    delete_unpublished_courses(paths=course_paths)
+    assert Website.objects.all().count() == 2
+    assert WebsiteContent.objects.all().count() == 77
