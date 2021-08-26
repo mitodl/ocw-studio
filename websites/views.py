@@ -400,6 +400,7 @@ class WebsiteContentViewSet(
         search = self.request.query_params.get("search")
         filetype = self.request.query_params.get("filetype")
         types = _get_value_list_from_query_params(self.request.query_params, "type")
+        hide_unpublished = self.request.query_params.get("hide_unpublished")
 
         queryset = WebsiteContent.objects.filter(
             website__name=parent_lookup_website
@@ -415,6 +416,11 @@ class WebsiteContentViewSet(
                 )
             else:
                 queryset = queryset.filter(metadata__filetype=filetype)
+
+        if _parse_bool(hide_unpublished):
+            queryset = queryset.filter(
+                content_sync_state__synced_checksum__isnull=False
+            )
 
         if "page_content" in self.request.query_params:
             queryset = queryset.filter(

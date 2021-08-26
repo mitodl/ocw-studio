@@ -10,6 +10,7 @@ from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
 from rest_framework import status
 
+from content_sync.factories import ContentSyncStateFactory
 from main import features
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
@@ -30,6 +31,7 @@ from websites.models import (
 from websites.serializers import (
     WebsiteCollectionItemSerializer,
     WebsiteContentDetailSerializer,
+    WebsiteContentSerializer,
     WebsiteDetailSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
@@ -634,6 +636,54 @@ def test_websites_content_list_page_content(drf_client, global_admin_user):
     assert resp.data["count"] == 1
     results = resp.data["results"]
     assert results[0]["type"] == "type1"
+
+
+@pytest.mark.parametrize(
+    "has_content_sync_state, has_synced_checksum, unpublished, expected",
+    [
+        [True, True, True, True],
+        [True, True, False, True],
+        [True, False, True, True],
+        [True, False, False, False],
+        [False, True, True, True],
+        [False, True, False, False],
+        [False, False, True, True],
+        [False, False, False, False],
+    ],
+)
+def test_websites_content_list_not_published(
+    drf_client,
+    global_admin_user,
+    has_content_sync_state,
+    has_synced_checksum,
+    unpublished,
+    expected,
+):
+    """No content should be visible in the REST API if it's not published"""
+    drf_client.force_login(global_admin_user)
+    content = WebsiteContentFactory.create()
+    if has_content_sync_state:
+        sync_state = ContentSyncStateFactory.create(
+            content=content,
+        )
+        if has_synced_checksum:
+            sync_state.synced_checksum = "X" * 64
+            sync_state.save()
+    api_url = reverse(
+        "websites_content_api-list",
+        kwargs={
+            "parent_lookup_website": content.website.name,
+        },
+    )
+    resp = drf_client.get(api_url, {"unpublished": str(unpublished)})
+    results = resp.data["results"]
+    assert (
+        results
+        == WebsiteContentSerializer(
+            instance=[content] if expected else [],
+            many=True,
+        ).data
+    )
 
 
 @pytest.mark.parametrize("content_context", [True, False])

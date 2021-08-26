@@ -71,6 +71,7 @@ export default function RelationField(props: Props): JSX.Element {
   // if website: websitename param is set, then we want to use the context
   // website, else we want to use the cursor to fetch the specified website
   const websiteName = props.website ? props.website : contextWebsite.name
+  const differentSite = !props.website || (props.website !== contextWebsite.name)
 
   const handleChange = useCallback(
     (event: any) => {
@@ -119,8 +120,9 @@ export default function RelationField(props: Props): JSX.Element {
     const params = collection ? { type: collection } : { page_content: true }
     const url = siteApiContentListingUrl
       .query({
-        detailed_list:   true,
-        content_context: true,
+        detailed_list:    true,
+        content_context:  true,
+        hide_unpublished: differentSite,
         ...(search ? { search: search } : {}),
         ...params
       })
