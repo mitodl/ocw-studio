@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.23.0
+Version 0.23.0 (Released August 26, 2021)
 --------------
 
 - Transcode videos with AWS MediaConvert (#469)
