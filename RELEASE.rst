@@ -1,6 +1,22 @@
 Release Notes
 =============
 
+Version 0.23.0 (Released August 26, 2021)
+--------------
+
+- Transcode videos with AWS MediaConvert (#469)
+- gdrive folder creation
+- remove course_id prefix on dirpath of imported course content (#513)
+- Hide hidden fields inside object fields (#498)
+- add the get_destination_url helper function and use it for menu urls (#496)
+- make UUID check version agnostic by default and add tests (#509)
+- add in-editor display of embedded resources
+- Fix attach: "resource" (#501)
+- Topics UI and backend (#471)
+- Add rule to require one of files or folder in collection schema (#492)
+- Bump yamale from 3.0.4 to 3.0.8 (#485)
+- Use yaml.SafeLoader (#489)
+
 Version 0.22.1 (Released August 24, 2021)
 --------------
 
