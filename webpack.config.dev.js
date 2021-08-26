@@ -31,12 +31,12 @@ const devConfig = Object.assign({}, config, {
     })
   ],
   optimization: {
-    namedModules: true,
+    moduleIds: 'named',
     splitChunks: {
       name: "common",
       minChunks: 2
     },
-    noEmitOnErrors: true
+    emitOnErrors: true
   }
 })
 
@@ -49,7 +49,12 @@ devConfig.module.rules = [
       { loader: "style-loader" },
       { loader: "css-loader" },
       { loader: "postcss-loader" },
-      { loader: "sass-loader" }
+      { 
+        loader: "sass-loader",
+        options: {
+          sassOptions: { quietDeps: true },
+        },
+      }
     ]
   }
 ]

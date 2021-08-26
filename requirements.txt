@@ -105,7 +105,7 @@ django-server-status==0.6.0
     # via -r requirements.in
 django-storages==1.11.1
     # via -r requirements.in
-django-webpack-loader==0.7.0
+django-webpack-loader==1.1.0
     # via
     #   -r requirements.in
     #   mitol-django-common

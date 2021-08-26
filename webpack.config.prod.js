@@ -17,7 +17,12 @@ prodConfig.module.rules = [
       },
       "css-loader",
       "postcss-loader",
-      "sass-loader"
+      { 
+        loader: "sass-loader", 
+        options: {
+          sassOptions: { quietDeps: true },
+        },
+      }
     ]
   }
 ]
