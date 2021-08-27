@@ -3,13 +3,14 @@ import json
 import logging
 import re
 import uuid
+from copy import deepcopy
 
 import dateutil
 import yaml
 from django.conf import settings
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
-from main.utils import get_dirpath_and_filename
+from main.utils import get_dirpath_and_filename, is_valid_uuid
 from websites.api import find_available_name
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
@@ -20,6 +21,7 @@ from websites.constants import (
     CONTENT_TYPE_RESOURCE,
     COURSE_PAGE_LAYOUTS,
     COURSE_RESOURCE_LAYOUTS,
+    EXTERNAL_IDENTIFIER_PREFIX,
     INSTRUCTORS_FIELD_NAME,
     WEBSITE_SOURCE_OCW_IMPORT,
 )
@@ -244,15 +246,15 @@ def import_ocw2hugo_menu(menu_data, website):
         menu_data (dict): Data from config/_default/menus.yaml
         website (Website): The course website
     """
-    for i in range(len(menu_data["leftnav"])):
-        if "identifier" in menu_data["leftnav"][i]:
-            menu_data["leftnav"][i]["identifier"] = str(
-                uuid.UUID(menu_data["leftnav"][i]["identifier"])
-            )
-        if "parent" in menu_data["leftnav"][i]:
-            menu_data["leftnav"][i]["parent"] = str(
-                uuid.UUID(menu_data["leftnav"][i]["parent"])
-            )
+    menu_data = deepcopy(menu_data)
+    for item in menu_data["leftnav"]:
+        if "identifier" not in item:
+            item["identifier"] = f"{EXTERNAL_IDENTIFIER_PREFIX}{uuid.uuid4().hex}"
+
+        for key in ["identifier", "parent"]:
+            if is_valid_uuid(item.get(key, "")):
+                item[key] = str(uuid.UUID(item[key]))
+
     WebsiteContent.objects.update_or_create(
         filename="menus.yaml",
         website=website,
