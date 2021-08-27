@@ -367,5 +367,5 @@ def delete_unpublished_courses(paths=None, filter_str=None):
     if filter_str:
         unpublished_courses = unpublished_courses.filter(name__contains=filter_str)
     if unpublished_courses.count() > 0:
-        log.info(f"Removing unpublished imported courses: {unpublished_courses}")
+        log.info("Removing unpublished imported courses: %s", unpublished_courses)
         unpublished_courses.delete()
