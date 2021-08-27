@@ -279,7 +279,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
     course_data = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
-    name = course_data.get("course_id")
+    name = path.replace("/data/course.json", "", 1)
     menu_data = yaml.load(
         get_s3_object_and_read(
             bucket.Object(f"{prefix}{name}/config/_default/menus.yaml")
@@ -363,9 +363,9 @@ def delete_unpublished_courses(paths=None, filter_str=None):
     course_ids = list(map((lambda key: key.replace("/data/course.json", "", 1)), paths))
     unpublished_courses = Website.objects.filter(
         source=WEBSITE_SOURCE_OCW_IMPORT
-    ).exclude(metadata__course_id__in=course_ids)
+    ).exclude(name__in=course_ids)
     if filter_str:
-        unpublished_courses = unpublished_courses.filter(
-            metadata__course_id__contains=filter_str
-        )
-    unpublished_courses.delete()
+        unpublished_courses = unpublished_courses.filter(name__contains=filter_str)
+    if unpublished_courses.count() > 0:
+        log.info(f"Removing unpublished imported courses: {unpublished_courses}")
+        unpublished_courses.delete()
