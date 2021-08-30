@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.24.0
+--------------
+
+- Make starter required for OCW_IMPORT_STARTER_SLUG (#516)
+- Add resource picker to Markdown editor
+
 Version 0.23.1 (Released August 30, 2021)
 --------------
 
