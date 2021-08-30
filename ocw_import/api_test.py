@@ -319,6 +319,6 @@ def test_delete_unpublished_courses(settings):
     assert Website.objects.all().count() == 3
     assert WebsiteContent.objects.all().count() == 117
     course_paths.pop()
-    delete_unpublished_courses(paths=course_paths)
+    delete_unpublished_courses(paths=course_paths, filter_str="1-201j")
     assert Website.objects.all().count() == 2
     assert WebsiteContent.objects.all().count() == 77
