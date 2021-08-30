@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.23.1 (Released August 30, 2021)
+--------------
+
+- when importing ocw-to-hugo courses and creating instructors, mark those instructors is_page_content = True, set the correct dirpath and set the filename to the text_id (#518)
+
 Version 0.23.0 (Released August 26, 2021)
 --------------
 
