@@ -45,7 +45,7 @@ def test_import_ocw2hugo_course_content(settings):
         )
     assert (
         WebsiteContent.objects.filter(website=website, type=CONTENT_TYPE_PAGE).count()
-        == 6
+        == 5
     )
     assert (
         WebsiteContent.objects.filter(
@@ -54,24 +54,13 @@ def test_import_ocw2hugo_course_content(settings):
         == 65
     )
 
-    home_page = WebsiteContent.objects.get(
-        website=website, metadata__layout="course_home"
-    )
-    assert home_page.type == CONTENT_TYPE_PAGE
-    assert home_page.metadata.get("layout") == "course_home"
-    assert home_page.markdown.startswith(
-        "This subject provides an introduction to the mechanics of materials"
-    )
-    assert home_page.filename == "_index"
-    assert home_page.dirpath == "content"
-
     related_page = WebsiteContent.objects.get(
         text_id="4f5c3926-e4d5-6974-7f16-131a6f692568"
     )
     assert related_page.type == CONTENT_TYPE_PAGE
     assert related_page.metadata.get("title") == "Related Resources"
     assert related_page.filename == "_index"
-    assert related_page.dirpath == "content/sections/related-resources"
+    assert related_page.dirpath == "content/pages/related-resources"
 
     matlab_page = WebsiteContent.objects.get(
         text_id="c8cd9384-0305-bfbb-46ae-a7e7a8229f57"
@@ -86,7 +75,7 @@ def test_import_ocw2hugo_course_content(settings):
     assert lecture_pdf.type == CONTENT_TYPE_RESOURCE
     assert lecture_pdf.metadata.get("file_type") == "application/pdf"
     assert lecture_pdf.filename == "lec1"
-    assert lecture_pdf.dirpath == "content/sections/lecture-notes"
+    assert lecture_pdf.dirpath == "content/pages/lecture-notes"
 
 
 @mock_s3
@@ -195,7 +184,7 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     assert mock_log.call_count == 1
     mock_log.assert_called_once_with(
         "No UUID (text ID): %s",
-        "/content/sections/test_no_uid.md",
+        "/content/pages/test_no_uid.md",
     )
 
 
@@ -238,31 +227,31 @@ def test_import_ocw2hugo_menu(settings, mocker):
     assert navmenu.metadata == {
         "leftnav": [
             {
-                "url": "/sections/syllabus",
+                "url": "/pages/syllabus",
                 "name": "Syllabus",
                 "weight": 10,
                 "identifier": "96c31e82-69f0-6d67-daee-8272526ac56a",
             },
             {
-                "url": "/sections/calendar",
+                "url": "/pages/calendar",
                 "name": "Calendar",
                 "weight": 20,
                 "identifier": "ff5e415d-cded-bcfc-d6b2-c4a96377207c",
             },
             {
-                "url": "/sections/lecture-notes",
+                "url": "/pages/lecture-notes",
                 "name": "Lecture Notes",
                 "weight": 30,
                 "identifier": "dec40ff4-e8ca-636f-c6db-d88880914a96",
             },
             {
-                "url": "/sections/assignments",
+                "url": "/pages/assignments",
                 "name": "Assignments",
                 "weight": 40,
                 "identifier": "8e344ad5-a553-4368-9048-9e95e736657a",
             },
             {
-                "url": "/sections/related-resources",
+                "url": "/pages/related-resources",
                 "name": "Related Resources",
                 "weight": 50,
                 "identifier": "4f5c3926-e4d5-6974-7f16-131a6f692568",

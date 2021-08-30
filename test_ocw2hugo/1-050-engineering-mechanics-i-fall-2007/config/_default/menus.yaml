@@ -1,23 +1,23 @@
 leftnav:
   - identifier: 96c31e8269f06d67daee8272526ac56a
     name: Syllabus
-    url: /sections/syllabus
+    url: /pages/syllabus
     weight: 10
   - identifier: ff5e415dcdedbcfcd6b2c4a96377207c
     name: Calendar
-    url: /sections/calendar
+    url: /pages/calendar
     weight: 20
   - identifier: dec40ff4e8ca636fc6dbd88880914a96
     name: Lecture Notes
-    url: /sections/lecture-notes
+    url: /pages/lecture-notes
     weight: 30
   - identifier: 8e344ad5a553436890489e95e736657a
     name: Assignments
-    url: /sections/assignments
+    url: /pages/assignments
     weight: 40
   - identifier: 4f5c3926e4d569747f16131a6f692568
     name: Related Resources
-    url: /sections/related-resources
+    url: /pages/related-resources
     weight: 50
   - name: Open Learning
     url: https://openlearning.mit.edu/
