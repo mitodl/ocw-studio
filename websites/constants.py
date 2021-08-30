@@ -28,7 +28,6 @@ WEBSITE_CONFIG_ROOT_URL_PATH_KEY = "root-url-path"
 WEBSITE_CONTENT_FILETYPE = "md"
 CONTENT_MENU_FIELD = "menu"
 
-COURSE_STARTER_SLUG = "course"
 OMNIBUS_STARTER_SLUG = "omnibus-starter"
 
 GLOBAL_ADMIN = "global_admin"
