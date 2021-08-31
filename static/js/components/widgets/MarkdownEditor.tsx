@@ -76,8 +76,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         resourceEmbed: { renderResourceEmbed, openResourcePicker },
         toolbar:       {
           ...FullEditorConfig.toolbar,
-          items: FullEditorConfig.toolbar.items.filter(item =>
-            hasAttach ? true : item !== ADD_RESOURCE
+          items: FullEditorConfig.toolbar.items.filter(
+            item => hasAttach || item !== ADD_RESOURCE
           )
         }
       }
@@ -118,8 +118,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           open={resourcePickerOpen}
           setOpen={setResourcePickerOpen}
           insertEmbed={addResourceEmbed}
-          // @ts-ignore
-          attach={attach}
+          attach={attach as string}
         />
       ) : null}
       {renderQueue.map(([uuid, el], idx) => (
