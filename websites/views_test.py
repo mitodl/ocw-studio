@@ -713,9 +713,11 @@ def test_websites_content_create(drf_client, global_admin_user):
     ],
 )
 def test_websites_content_create_with_upload(
-    drf_client, global_admin_user, file_upload, root_url_path, expected_prefix
+    mocker, drf_client, global_admin_user, file_upload, root_url_path, expected_prefix
 ):
     """Uploading a file when creating a new WebsiteContent object should work"""
+    mime_type = "text/doof"
+    mocker.patch("websites.serializers.detect_mime_type", return_value=mime_type)
     drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create()
     if root_url_path is not None:
@@ -751,11 +753,16 @@ def test_websites_content_create_with_upload(
         ]
     )
     assert content.type == payload["type"]
+    assert content.metadata["file_type"] == mime_type
     assert resp.data["text_id"] == str(content.text_id)
 
 
-def test_websites_content_edit_with_upload(drf_client, global_admin_user, file_upload):
+def test_websites_content_edit_with_upload(
+    mocker, drf_client, global_admin_user, file_upload
+):
     """Uploading a file when editing a new WebsiteContent object should work"""
+    mime_type = "text/doof"
+    mocker.patch("websites.serializers.detect_mime_type", return_value=mime_type)
     drf_client.force_login(global_admin_user)
     content = WebsiteContentFactory.create(
         type=constants.CONTENT_TYPE_RESOURCE, metadata={"title": "test"}
@@ -779,6 +786,7 @@ def test_websites_content_edit_with_upload(drf_client, global_admin_user, file_u
         content.file.name
         == f"sites/{content.website.name}/{content.text_id.replace('-', '')}_{file_upload.name}"
     )
+    assert content.metadata["file_type"] == mime_type
     assert resp.data["text_id"] == str(content.text_id)
 
 

@@ -18,7 +18,7 @@ from gdrive_sync.tasks import create_gdrive_folder_if_not_exists
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
 from websites import constants
-from websites.api import update_youtube_thumbnail
+from websites.api import detect_mime_type, update_youtube_thumbnail
 from websites.models import (
     Website,
     WebsiteCollection,
@@ -222,6 +222,12 @@ class WebsiteContentDetailSerializer(
             update_youtube_thumbnail(
                 instance.website.uuid, validated_data.get("metadata"), overwrite=True
             )
+        if "file" in validated_data:
+            if "metadata" not in validated_data:
+                validated_data["metadata"] = {}
+            validated_data["metadata"]["file_type"] = detect_mime_type(
+                validated_data["file"]
+            )
         instance = super().update(
             instance, {"updated_by": self.user_from_request(), **validated_data}
         )
@@ -317,6 +323,13 @@ class WebsiteContentCreateSerializer(
         if validated_data.get("type") == "resource":
             update_youtube_thumbnail(
                 self.context["website_id"], validated_data.get("metadata")
+            )
+
+        if "file" in validated_data:
+            if "metadata" not in validated_data:
+                validated_data["metadata"] = {}
+            validated_data["metadata"]["file_type"] = detect_mime_type(
+                validated_data["file"]
             )
 
         instance = super().create(

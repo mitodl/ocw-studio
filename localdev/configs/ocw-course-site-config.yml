@@ -29,8 +29,8 @@ collections:
         name: description
         widget: markdown
         minimal: true
-      - label: File Type
-        name: filetype
+      - label: Resource Type
+        name: resourcetype
         required: true
         widget: select
         options:
@@ -38,6 +38,9 @@ collections:
           - Video
           - Document
           - Other
+      - label: Mime Type
+        name: file_type
+        widget: hidden
       - label: File
         name: file
         widget: file
@@ -93,7 +96,7 @@ collections:
       - label: Image Metadata
         name: image_metadata
         widget: object
-        condition: { field: filetype, equals: Image }
+        condition: { field: resourcetype, equals: Image }
         fields:
           - label: ALT text
             name: image-alt
@@ -108,7 +111,7 @@ collections:
       - label: Video Metadata
         name: video_metadata
         widget: object
-        condition: {field: filetype, equals: Video}
+        condition: {field: resourcetype, equals: Video}
         fields:
         - label: Youtube ID
           name: youtube_id
@@ -122,7 +125,7 @@ collections:
       - label: Video Files
         name: video_files
         widget: object
-        condition: {field: filetype, equals: Video}
+        condition: {field: resourcetype, equals: Video}
         fields:
         - label: Video Thumbnail URL
           name: video_thumbnail_file
@@ -163,7 +166,7 @@ collections:
             display_field: title
             multiple: false
             filter:
-              field: "filetype"
+              field: "resourcetype"
               filter_type: "equals"
               value: "Image"
           - label: Course Image Thumbnail
@@ -173,7 +176,7 @@ collections:
             display_field: title
             multiple: false
             filter:
-              field: "filetype"
+              field: "resourcetype"
               filter_type: "equals"
               value: "Image"
           - label: "Department Numbers"

@@ -4,7 +4,9 @@ from typing import Dict, List, Optional
 from uuid import UUID
 
 from django.conf import settings
+from django.core.files.uploadedfile import UploadedFile
 from django.db.models import Q, QuerySet
+from magic import Magic
 from mitol.common.utils import max_or_none
 from mitol.mail.api import get_message_sender
 
@@ -204,3 +206,10 @@ def mail_website_admins_on_publish(website: Website, version: str, success: bool
                     "version": version,
                 },
             )
+
+
+def detect_mime_type(uploaded_file: UploadedFile) -> str:
+    """Detect mime type of an uploaded file"""
+    magic = Magic(mime=True)
+    chunk = next(uploaded_file.chunks(chunk_size=2048))
+    return magic.from_buffer(chunk)

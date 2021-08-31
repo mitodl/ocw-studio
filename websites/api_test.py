@@ -5,6 +5,7 @@ import factory
 import pytest
 
 from websites.api import (
+    detect_mime_type,
     fetch_website,
     get_valid_new_filename,
     get_valid_new_slug,
@@ -273,3 +274,19 @@ def test_mail_website_admins_on_publish(
                 "version": version,
             },
         )
+
+
+def test_detect_mime_type(mocker):
+    """detect_mime_type should use python-magic to detect the mime type of an uploaded file"""
+    chunk = b"chunk"
+    chunks_mock = mocker.Mock(return_value=iter([chunk]))
+    uploaded_file = mocker.Mock(chunks=chunks_mock)
+    mime_type = "image/tiff"
+    magic_mock = mocker.patch("websites.api.Magic")
+    from_buffer_mock = magic_mock.return_value.from_buffer
+    from_buffer_mock.return_value = mime_type
+
+    assert detect_mime_type(uploaded_file) == mime_type
+    from_buffer_mock.assert_called_once_with(chunk)
+    chunks_mock.assert_called_once_with(chunk_size=2048)
+    magic_mock.assert_called_once_with(mime=True)

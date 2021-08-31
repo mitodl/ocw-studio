@@ -225,25 +225,6 @@ describe("site_content", () => {
       }
     })
 
-    it("always uses the default value for hidden fields", () => {
-      const defaultValue = "defaultValue"
-      const field = makeWebsiteConfigField({
-        widget:  WidgetVariant.Hidden,
-        default: defaultValue
-      })
-      const payload = contentFormValuesToPayload(
-        {
-          [field.name]: "a new value"
-        },
-        // @ts-ignore
-        [field],
-        makeWebsiteDetail()
-      )
-      expect(payload).toStrictEqual({
-        metadata: { [field.name]: defaultValue }
-      })
-    })
-
     it("creates a payload using data from each inner field in an object field", () => {
       const field = makeWebsiteConfigField({
         widget: WidgetVariant.Object,
