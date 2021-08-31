@@ -9,6 +9,7 @@ import {
   FullEditorConfig,
   MinimalEditorConfig
 } from "../../lib/ckeditor/CKEditor"
+import { ADD_RESOURCE } from "../../lib/ckeditor/plugins/ResourceEmbed"
 
 jest.mock("@ckeditor/ckeditor5-react", () => ({
   CKEditor: () => <div />
@@ -41,7 +42,8 @@ describe("MarkdownEditor", () => {
       } MarkdownEditor with value=${String(value)}`, () => {
         const wrapper = render({
           minimal,
-          value
+          value,
+          attach: "attach"
         })
         const ckWrapper = wrapper.find("CKEditor")
         expect(ckWrapper.prop("editor")).toBe(ClassicEditor)
@@ -71,6 +73,20 @@ describe("MarkdownEditor", () => {
         .at(0)
         .prop("uuid")
     ).toEqual("resource-uuid")
+  })
+
+  //
+  ;[true, false].forEach(hasAttach => {
+    it(`${
+      hasAttach ? "should" : "shouldn't"
+    } have an add resource button since attach ${
+      hasAttach ? "was" : "wasn't"
+    } set`, () => {
+      const wrapper = render(hasAttach ? { attach: "resource" } : {})
+      const editorConfig = wrapper.find("CKEditor").prop("config")
+      // @ts-ignore
+      expect(editorConfig.toolbar.items.includes(ADD_RESOURCE)).toBe(hasAttach)
+    })
   })
 
   it("should open the resource picker", () => {

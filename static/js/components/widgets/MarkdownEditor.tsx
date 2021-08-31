@@ -8,7 +8,10 @@ import {
   MinimalEditorConfig
 } from "../../lib/ckeditor/CKEditor"
 import EmbeddedResource from "./EmbeddedResource"
-import { RESOURCE_EMBED_COMMAND } from "../../lib/ckeditor/plugins/ResourceEmbed"
+import {
+  ADD_RESOURCE,
+  RESOURCE_EMBED_COMMAND
+} from "../../lib/ckeditor/plugins/ResourceEmbed"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 
 export interface Props {
@@ -60,6 +63,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     setResourcePickerOpen(true)
   }, [setResourcePickerOpen])
 
+  const hasAttach = attach && attach.length > 0
   const editorConfig = useMemo(() => {
     if (minimal) {
       return MinimalEditorConfig
@@ -69,10 +73,16 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       // and then use it to render resources within the editor.
       return {
         ...FullEditorConfig,
-        resourceEmbed: { renderResourceEmbed, openResourcePicker }
+        resourceEmbed: { renderResourceEmbed, openResourcePicker },
+        toolbar:       {
+          ...FullEditorConfig.toolbar,
+          items: FullEditorConfig.toolbar.items.filter(
+            item => hasAttach || item !== ADD_RESOURCE
+          )
+        }
       }
     }
-  }, [minimal, renderResourceEmbed, openResourcePicker])
+  }, [minimal, renderResourceEmbed, openResourcePicker, hasAttach])
 
   const onChangeCB = useCallback(
     (_event: any, editor: any) => {
@@ -103,12 +113,12 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         onReady={setEditorRef}
         onChange={onChangeCB}
       />
-      {attach && attach.length > 0 ? (
+      {hasAttach ? (
         <ResourcePickerDialog
           open={resourcePickerOpen}
           setOpen={setResourcePickerOpen}
           insertEmbed={addResourceEmbed}
-          attach={attach}
+          attach={attach as string}
         />
       ) : null}
       {renderQueue.map(([uuid, el], idx) => (
