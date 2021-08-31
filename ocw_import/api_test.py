@@ -230,8 +230,10 @@ def test_get_short_id(course_num, term, expected_id):
 
 
 @mock_s3
-def test_import_ocw2hugo_menu(settings):
+def test_import_ocw2hugo_menu(settings, mocker):
     """ Website publish date should be null if the JSON date can't be parsed """
+    uuid4_hex = "a" * 32
+    mocker.patch("uuid.uuid4").return_value.hex = uuid4_hex
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
@@ -270,7 +272,11 @@ def test_import_ocw2hugo_menu(settings):
                 "weight": 50,
                 "identifier": "4f5c3926-e4d5-6974-7f16-131a6f692568",
             },
-            {"url": "https://openlearning.mit.edu/", "name": "Open Learning"},
+            {
+                "url": "https://openlearning.mit.edu/",
+                "name": "Open Learning",
+                "identifier": f"external-{uuid4_hex}",
+            },
         ]
     }
 

@@ -31,18 +31,15 @@ def uuid_string():
     return str(uuid4())
 
 
-def is_valid_uuid(uuid_to_test: str, version: int = None) -> bool:
+def is_valid_uuid(uuid_to_test: str) -> bool:
     """
     Returns True if the given string is a valid UUID
     """
     try:
-        if version:
-            uuid_obj = UUID(uuid_to_test, version=version)
-        else:
-            uuid_obj = UUID(uuid_to_test)
+        UUID(uuid_to_test)
+        return True
     except ValueError:
         return False
-    return str(uuid_obj) == uuid_to_test
 
 
 def get_file_extension(filepath: str) -> str:

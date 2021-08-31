@@ -256,7 +256,9 @@ class WebsiteContentDetailSerializer(
                             [
                                 item["identifier"]
                                 for item in value
-                                if not item["identifier"].startswith("external-")
+                                if not item["identifier"].startswith(
+                                    constants.EXTERNAL_IDENTIFIER_PREFIX
+                                )
                             ]
                         )
 

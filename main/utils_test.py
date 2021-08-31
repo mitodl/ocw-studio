@@ -12,17 +12,16 @@ from main.utils import (
 
 
 @pytest.mark.parametrize(
-    "uuid_to_test, version, is_valid",
+    "uuid_to_test, is_valid",
     [
-        ["50fe3182-b1c9-ad10-de16-aeaae7f137cd", None, True],
-        ["50fe3182-b1c9-ad10-de16-aeaae7f137cd", 4, False],
-        ["not-a-uuid", None, False],
-        ["28bcec93-eb51-447e-84e1-ed453eea818e", 4, True],
+        ["50fe3182-b1c9-ad10-de16-aeaae7f137cd", True],
+        ["not-a-uuid", False],
+        ["28bcec93-eb51-447e-84e1-ed453eea818e", True],
     ],
 )
-def test_is_valid_uuid(uuid_to_test, version, is_valid):
+def test_is_valid_uuid(uuid_to_test, is_valid):
     """ is_valid_uuid should return True for a valid UUID, false otherwise """
-    assert is_valid_uuid(uuid_to_test, version) is is_valid
+    assert is_valid_uuid(uuid_to_test) is is_valid
 
 
 @pytest.mark.parametrize(
