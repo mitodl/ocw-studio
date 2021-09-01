@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.23.3
+Version 0.23.3 (Released September 01, 2021)
 --------------
 
 - Only show "Add resource" button when attach field is set (#530)
