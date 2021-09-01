@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.23.3 (Released September 01, 2021)
+--------------
+
+- Only show "Add resource" button when attach field is set (#530)
+- Add identifier for external links to import_ocw_course_sites (#527)
+
 Version 0.23.2 (Released September 01, 2021)
 --------------
 
