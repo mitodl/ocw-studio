@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.23.2
+Version 0.23.2 (Released September 01, 2021)
 --------------
 
 - Upgrade the ckeditor packages and webpack
