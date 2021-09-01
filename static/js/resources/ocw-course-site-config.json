@@ -128,6 +128,58 @@
           "label": "Image Metadata",
           "name": "metadata",
           "widget": "object"
+        },
+        {
+          "condition": {
+            "equals": "Video",
+            "field": "filetype"
+          },
+          "fields": [
+            {
+              "label": "Youtube ID",
+              "name": "youtube_id",
+              "widget": "string"
+            },
+            {
+              "label": "Youtube Speakers",
+              "name": "video_speakers",
+              "widget": "string"
+            },
+            {
+              "label": "Youtube Tags (comma separated; max 100 characters)",
+              "name": "video_tags",
+              "widget": "text"
+            }
+          ],
+          "label": "Video Metadata",
+          "name": "metadata",
+          "widget": "object"
+        },
+        {
+          "condition": {
+            "equals": "Video",
+            "field": "filetype"
+          },
+          "fields": [
+            {
+              "label": "Video Thumbnail URL",
+              "name": "video_thumbnail_file",
+              "widget": "string"
+            },
+            {
+              "label": "Video Captions (WebVTT) URL",
+              "name": "video_captions_file",
+              "widget": "string"
+            },
+            {
+              "label": "Video Transcript (PDF) URL",
+              "name": "video_transcript_file",
+              "widget": "string"
+            }
+          ],
+          "label": "Video Files",
+          "name": "video_files",
+          "widget": "object"
         }
       ],
       "folder": "content/resources",
