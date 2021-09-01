@@ -362,10 +362,12 @@ export const websiteContentDetailRequest = (
     websiteContentDetails: (
       prev: WebsiteContentDetails,
       next: WebsiteContentDetails
-    ) => ({
-      ...prev,
-      ...next
-    })
+    ) => {
+      return {
+        ...prev,
+        ...next
+      }
+    }
   },
   force: true // some data may be fetched in the collection view which is incomplete
 })

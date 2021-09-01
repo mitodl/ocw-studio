@@ -5,7 +5,8 @@ import { useRequest } from "redux-query-react"
 import { websiteContentDetailRequest } from "../../query-configs/websites"
 import { useSelector } from "react-redux"
 import { getWebsiteContentDetailCursor } from "../../selectors/websites"
-import { RESOURCE_TYPE_IMAGE } from "../../constants"
+import { RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO } from "../../constants"
+import { SiteFormValue } from "../../types/forms"
 
 interface Props {
   uuid: string
@@ -54,6 +55,37 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
             <h3 className="m-2 title">{title}</h3>
             <span className="font-italic mx-2 text-gray resource-info d-block">
               {filename}
+            </span>
+          </div>
+        </div>,
+        el
+      )
+    }
+
+    if (filetype === RESOURCE_TYPE_VIDEO) {
+      const videoMetadata = resource.metadata?.metadata as Record<
+        string,
+        SiteFormValue
+      >
+
+      const youtubeId = (videoMetadata?.youtube_id as string) ?? ""
+
+      return createPortal(
+        <div className="embedded-resource video my-2 d-flex align-items-center">
+          <iframe
+            className="m-2"
+            width="320"
+            height="180"
+            src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
+            title="YouTube video player"
+            frameBorder="0"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+          <div>
+            <h3 className="m-2 title">{title}</h3>
+            <span className="font-italic mx-2 text-gray description resource-info d-block">
+              {resource.metadata?.description ?? ""}
             </span>
           </div>
         </div>,

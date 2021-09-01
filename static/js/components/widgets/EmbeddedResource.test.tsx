@@ -9,7 +9,7 @@ import {
 } from "../../util/factories/websites"
 import { Website, WebsiteContent } from "../../types/websites"
 import { siteApiContentDetailUrl } from "../../lib/urls"
-import { RESOURCE_TYPE_IMAGE } from "../../constants"
+import { RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO } from "../../constants"
 
 jest.mock("../../context/Website")
 jest.mock("../../hooks/state")
@@ -64,5 +64,19 @@ describe("EmbeddedResource", () => {
     expect(wrapper.find(".resource-info").text()).toBe("baz.png")
     expect(wrapper.find("h3").text()).toBe(content.title)
     expect(wrapper.find("img").prop("src")).toBe(content.file)
+  })
+
+  it("should render a video", async () => {
+    content.metadata!.filetype = RESOURCE_TYPE_VIDEO
+    content.metadata!.description = "My Video!!!"
+    content.metadata!.metadata = { youtube_id: "2XID_W4neJo" }
+    const { wrapper } = await render()
+    expect(wrapper.find(".title").text()).toBe(content.title)
+    expect(wrapper.find(".description").text()).toBe(
+      content.metadata!.description
+    )
+    expect(wrapper.find("iframe").prop("src")).toBe(
+      "https://www.youtube-nocookie.com/embed/2XID_W4neJo"
+    )
   })
 })
