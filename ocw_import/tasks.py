@@ -6,15 +6,22 @@ from django.conf import settings
 from mitol.common.utils.collections import chunks
 
 from main.celery import app
-from ocw_import.api import fetch_ocw2hugo_course_paths, import_ocw2hugo_course
-from websites.models import WebsiteStarter
+from ocw_import.api import (
+    delete_unpublished_courses,
+    fetch_ocw2hugo_course_paths,
+    import_ocw2hugo_course,
+)
+from websites.constants import WEBSITE_SOURCE_OCW_IMPORT
+from websites.models import Website, WebsiteStarter
 
 
 log = logging.getLogger(__name__)
 
 
 @app.task()
-def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
+def import_ocw2hugo_course_paths(
+    paths=None, bucket_name=None, prefix=None
+):
     """
     Import all ocw2hugo courses & content
 
@@ -22,7 +29,6 @@ def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
         paths (list of str): list of course url paths
         bucket_name (str): S3 bucket name
         prefix (str): S3 prefix before start of course_id path
-
     """
     if not paths:
         return
@@ -57,12 +63,25 @@ def import_ocw2hugo_courses(
     course_paths = iter(
         fetch_ocw2hugo_course_paths(bucket_name, prefix=prefix, filter_str=filter_str)
     )
+    if delete_unpublished:
+        course_ids = list(map((lambda key: key.replace("/data/course.json", "", 1)), course_paths))
+        unpublished_courses = Website.objects.filter(
+            source=WEBSITE_SOURCE_OCW_IMPORT
+        ).exclude(name__in=course_ids)
+        delete_unpublished_courses_tasks = 
+    else:
+        unpublished_courses = None
     if limit is not None:
         course_paths = (path for i, path in enumerate(course_paths) if i < limit)
     course_tasks = celery.group(
         [
             import_ocw2hugo_course_paths.si(
-                paths=paths, bucket_name=bucket_name, prefix=prefix
+                paths=paths,
+                bucket_name=bucket_name,
+                prefix=prefix,
+                filter_str=filter_str,
+                delete_unpublished=delete_unpublished,
+                unpublished_courses=unpublished_courses
             )
             for paths in chunks(course_paths, chunk_size=chunk_size)
         ]
