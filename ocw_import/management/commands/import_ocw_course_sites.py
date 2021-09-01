@@ -65,6 +65,14 @@ class Command(BaseCommand):
             action="store_true",
             help="Sync all unsynced courses to the backend",
         )
+        parser.add_argument(
+            "-d",
+            "--delete_unpublished",
+            dest="delete_unpublished",
+            default=True,
+            type=bool,
+            help="If True, delete all courses that have been unpublished in the source data"
+        )
         super().add_arguments(parser)
 
     def handle(self, *args, **options):
@@ -75,6 +83,7 @@ class Command(BaseCommand):
         bucket_name = options["bucket"]
         filter_str = options["filter"]
         limit = options["limit"]
+        delete_unpublished = options["delete_unpublished"]
 
         if options["list"] is True:
             course_paths = list(
@@ -92,6 +101,7 @@ class Command(BaseCommand):
             prefix=prefix,
             filter_str=filter_str,
             limit=limit,
+            delete_unpublished=delete_unpublished,
             chunk_size=options["chunks"],
         )
         self.stdout.write(f"Starting task {task}...")
