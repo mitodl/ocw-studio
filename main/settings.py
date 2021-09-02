@@ -485,6 +485,36 @@ VIDEO_S3_TRANSCODE_PREFIX = get_string(
         "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert"
     ),
 )
+YT_ACCESS_TOKEN = get_string(
+    name="YT_ACCESS_TOKEN", default="", description="Youtube access token"
+)
+YT_CLIENT_ID = get_string(
+    name="YT_CLIENT_ID", default="", description="Youtube Client ID"
+)
+YT_CLIENT_SECRET = get_string(
+    name="YT_CLIENT_SECRET", default="", description="Youtube client secret key"
+)
+YT_REFRESH_TOKEN = get_string(
+    name="YT_REFRESH_TOKEN", default="", description="YT_REFRESH_TOKEN"
+)
+YT_PROJECT_ID = get_string(
+    name="YT_PROJECT_ID", default="", description="Youtube project ID"
+)
+YT_STATUS_UPDATE_FREQUENCY = get_int(
+    name="YT_STATUS_UPDATE_FREQUENCY",
+    default=60,
+    description="The frequency to check for status updates on uploaded youtube videos",
+)
+YT_UPLOAD_FREQUENCY = get_int(
+    name="YT_UPLOAD_FREQUENCY",
+    default=60,
+    description="The frequency to check for videos to upload to Youtube",
+)
+YT_UPLOAD_LIMIT = get_int(
+    name="YT_UPLOAD_LIMIT",
+    default=50,
+    description="Max Youtube uploads allowed per day",
+)
 
 # Celery
 REDISCLOUD_URL = get_string(
@@ -528,6 +558,14 @@ CELERY_BEAT_SCHEDULE = {
     "import-gdrive-videos": {
         "task": "gdrive_sync.tasks.import_gdrive_videos",
         "schedule": DRIVE_QUERY_SECONDS,
+    },
+    "update-youtube-statuses": {
+        "task": "videos.tasks.update_youtube_statuses",
+        "schedule": YT_STATUS_UPDATE_FREQUENCY,
+    },
+    "upload-youtube-videos": {
+        "task": "videos.tasks.upload_youtube_videos",
+        "schedule": YT_UPLOAD_FREQUENCY,
     },
 }
 

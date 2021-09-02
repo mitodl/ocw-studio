@@ -436,6 +436,38 @@
     "VIDEO_S3_TRANSCODE_PREFIX": {
       "description": "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert",
       "required": false
+    },
+    "YT_ACCESS_TOKEN": {
+      "description": "Youtube access token",
+      "required": false
+    },
+    "YT_CLIENT_ID": {
+      "description": "Youtube Client ID",
+      "required": false
+    },
+    "YT_CLIENT_SECRET": {
+      "description": "Youtube client secret key",
+      "required": false
+    },
+    "YT_PROJECT_ID": {
+      "description": "Youtube project ID",
+      "required": false
+    },
+    "YT_REFRESH_TOKEN": {
+      "description": "YT_REFRESH_TOKEN",
+      "required": false
+    },
+    "YT_STATUS_UPDATE_FREQUENCY": {
+      "description": "The frequency to check for status updates on uploaded youtube videos",
+      "required": false
+    },
+    "YT_UPLOAD_FREQUENCY": {
+      "description": "The frequency to check for videos to upload to Youtube",
+      "required": false
+    },
+    "YT_UPLOAD_LIMIT": {
+      "description": "Max Youtube uploads allowed per day",
+      "required": false
     }
   },
   "keywords": [

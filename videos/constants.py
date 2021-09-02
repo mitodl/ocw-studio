@@ -34,3 +34,16 @@ class VideoFileStatus:
     UPLOADED = "Uploaded"
     FAILED = STATUS_FAILED
     COMPLETE = STATUS_COMPLETE
+
+
+class YouTubeStatus:
+    """Simple class for YouTube statuses"""
+
+    UPLOADED = "uploaded"
+    UPLOADING = "uploading"
+    PROCESSING = "processing"
+    PROCESSED = "processed"
+    REJECTED = "rejected"
+    FAILED = "failed"
+    SUCCEEDED = "succeeded"
+    RETRY = "retry"
