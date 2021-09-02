@@ -26,7 +26,7 @@ export default WebsiteContext
  * This ensures that we're only reading from the context in a setting
  * where the component has an ancestor component setting the value.
  *
- * Additionally, this simplifies the typing of the context value, since
+ * Additionally, this simplifies the typing of the context value. Since
  * we have a nice run-time guard against a null value we can safely type
  * the return value as `Website`, instead of `Website | null`.
  **/

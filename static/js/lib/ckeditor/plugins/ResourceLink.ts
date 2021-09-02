@@ -10,16 +10,18 @@ import { TurndownRule } from "../../../types/ckeditor_markdown"
 import {
   CKEDITOR_RESOURCE_UTILS,
   RenderResourceFunc,
-  RESOURCE_EMBED,
-  RESOURCE_EMBED_COMMAND
+  RESOURCE_LINK,
+  RESOURCE_LINK_COMMAND
 } from "./constants"
 
-export const RESOURCE_SHORTCODE_REGEX = /{{< resource (\S+) >}}/g
+export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) >}}/g
+
+const RESOURCE_LINK_CKEDITOR_CLASS = "resource-link"
 
 /**
  * Class for defining Markdown conversion rules for ResourceEmbed
  */
-class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
+class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
   constructor(editor: editor.Editor) {
     super(editor)
   }
@@ -29,9 +31,9 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
       return [
         {
           type:    "lang",
-          regex:   RESOURCE_SHORTCODE_REGEX,
+          regex:   RESOURCE_LINK_SHORTCODE_REGEX,
           replace: (_s: string, match: string) => {
-            return `<section data-uuid="${match}"></section>`
+            return `<span class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${match}"></span>`
           }
         }
       ]
@@ -40,13 +42,14 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
 
   get turndownRule(): TurndownRule {
     return {
-      name: "resourceEmbed",
+      name: RESOURCE_LINK,
       rule: {
-        filter:      "section",
+        // TODO fix filter here
+        filter:      "span",
         replacement: (_content: string, node: Turndown.Node): string => {
           // @ts-ignore
           const uuid = node.getAttribute("data-uuid")
-          return `{{< resource ${uuid} >}}\n`
+          return `{{< resource_link ${uuid} >}}`
         }
       }
     }
@@ -57,15 +60,15 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
  * A CKEditor Command for inserting a new ResourceEmbed (resourceEmbed)
  * node into the editor.
  */
-class InsertResourceEmbedCommand extends Command {
+class InsertResourceLinkCommand extends Command {
   constructor(editor: editor.Editor) {
     super(editor)
   }
 
   execute(uuid: string) {
     this.editor.model.change((writer: any) => {
-      const embed = writer.createElement(RESOURCE_EMBED, { uuid })
-      this.editor.model.insertContent(embed)
+      const link = writer.createElement(RESOURCE_LINK, { uuid })
+      this.editor.model.insertContent(link)
     })
   }
 
@@ -74,18 +77,18 @@ class InsertResourceEmbedCommand extends Command {
     const selection = model.document.selection
     const allowedIn = model.schema.findAllowedParent(
       selection.getFirstPosition(),
-      RESOURCE_EMBED
+      RESOURCE_LINK
     )
     this.isEnabled = allowedIn !== null
   }
 }
 
 /**
- * The main 'editing plugin for ResourceEmbeds. This basically
+ * The main 'editing' plugin for Resource Links. This basically
  * adds the node type to the schema and sets up all the serialization/
  * deserialization rules for it.
  */
-class ResourceEmbedEditing extends Plugin {
+class ResourceLinkEditing extends Plugin {
   constructor(editor: editor.Editor) {
     super(editor)
   }
@@ -95,17 +98,19 @@ class ResourceEmbedEditing extends Plugin {
     this._defineConverters()
 
     this.editor.commands.add(
-      RESOURCE_EMBED_COMMAND,
-      new InsertResourceEmbedCommand(this.editor)
+      RESOURCE_LINK_COMMAND,
+      new InsertResourceLinkCommand(this.editor)
     )
   }
 
   _defineSchema() {
     const schema = this.editor.model.schema
 
-    schema.register(RESOURCE_EMBED, {
+    schema.register(RESOURCE_LINK, {
       isObject:        true,
-      allowWhere:      "$block",
+      isInline:        true,
+      isBlock:         false,
+      allowIn:         ["$root", "$block"],
       allowAttributes: ["uuid"]
     })
   }
@@ -119,11 +124,12 @@ class ResourceEmbedEditing extends Plugin {
      */
     conversion.for("upcast").elementToElement({
       view: {
-        name: "section"
+        name:  "span",
+        class: RESOURCE_LINK_CKEDITOR_CLASS
       },
 
       model: (viewElement: any, { writer: modelWriter }: any) => {
-        return modelWriter.createElement(RESOURCE_EMBED, {
+        return modelWriter.createElement(RESOURCE_LINK, {
           uuid: viewElement.getAttribute("data-uuid")
         })
       }
@@ -133,10 +139,11 @@ class ResourceEmbedEditing extends Plugin {
      * converts view element to HTML element for data output
      */
     conversion.for("dataDowncast").elementToElement({
-      model: RESOURCE_EMBED,
+      model: RESOURCE_LINK,
       view:  (modelElement: any, { writer: viewWriter }: any) => {
-        return viewWriter.createEmptyElement("section", {
-          "data-uuid": modelElement.getAttribute("uuid")
+        return viewWriter.createEmptyElement("span", {
+          "data-uuid": modelElement.getAttribute("uuid"),
+          class:       RESOURCE_LINK_CKEDITOR_CLASS
         })
       }
     })
@@ -151,42 +158,42 @@ class ResourceEmbedEditing extends Plugin {
      * (for the youtube embed this is an iframe)
      */
     conversion.for("editingDowncast").elementToElement({
-      model: RESOURCE_EMBED,
+      model: RESOURCE_LINK,
       view:  (modelElement: any, { writer: viewWriter }: any) => {
         const uuid = modelElement.getAttribute("uuid")
 
-        const section = viewWriter.createContainerElement("section", {
-          class: "resource-embed"
+        const span = viewWriter.createContainerElement("span", {
+          class: RESOURCE_LINK_CKEDITOR_CLASS
         })
 
         const reactWrapper = viewWriter.createRawElement(
-          "div",
+          "span",
           {
             class: "resource-react-wrapper"
           },
           function(el: HTMLElement) {
             if (renderResource) {
-              renderResource(uuid, el, RESOURCE_EMBED)
+              renderResource(uuid, el, RESOURCE_LINK)
             }
           }
         )
 
-        viewWriter.insert(viewWriter.createPositionAt(section, 0), reactWrapper)
+        viewWriter.insert(viewWriter.createPositionAt(span, 0), reactWrapper)
 
-        return toWidget(section, viewWriter, { label: "Resources Embed" })
+        return toWidget(span, viewWriter, { label: "Resource Link" })
       }
     })
   }
 }
 
 /**
- * CKEditor plugin that provides functionality to embed resource records
- * into the editor. These are rendered to Markdown as `{{< resource UUID >}}`
+ * CKEditor plugin that provides functionality to link to resource records
+ * in the editor. These are rendered to Markdown as `{{< resource_link UUID >}}`
  * shortcodes.
  */
-export default class ResourceEmbed extends Plugin {
+export default class ResourceLink extends Plugin {
   static get pluginName(): string {
-    return "ResourceEmbed"
+    return "ResourceLink"
   }
 
   static get requires(): Plugin[] {
@@ -197,9 +204,9 @@ export default class ResourceEmbed extends Plugin {
     // be running fine I'm going to just ignore for now.
     return [
       // @ts-ignore
-      ResourceEmbedEditing,
+      ResourceLinkEditing,
       // @ts-ignore
-      ResourceMarkdownSyntax
+      ResourceLinkMarkdownSyntax
     ]
   }
 }

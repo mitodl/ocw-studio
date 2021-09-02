@@ -15,7 +15,10 @@ import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 import Markdown from "./plugins/Markdown"
 import MarkdownMediaEmbed from "./plugins/MarkdownMediaEmbed"
-import ResourceEmbed, { ADD_RESOURCE } from "./plugins/ResourceEmbed"
+import ResourceEmbed from "./plugins/ResourceEmbed"
+import ResourcePicker from "./plugins/ResourcePicker"
+import { ADD_RESOURCE } from "./plugins/constants"
+import ResourceLink from "./plugins/ResourceLink"
 
 export const FullEditorConfig = {
   plugins: [
@@ -34,6 +37,8 @@ export const FullEditorConfig = {
     ListPlugin,
     ParagraphPlugin,
     ResourceEmbed,
+    ResourcePicker,
+    ResourceLink,
     MarkdownMediaEmbed,
     Markdown
   ],

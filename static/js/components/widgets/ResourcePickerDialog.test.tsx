@@ -9,6 +9,13 @@ import IntegrationTestHelper, {
 } from "../../util/integration_test_helper"
 import { useDebouncedState } from "../../hooks/state"
 import { useState } from "react"
+import { makeWebsiteContentDetail } from "../../util/factories/websites"
+import { WebsiteContent } from "../../types/websites"
+import {
+  RESOURCE_EMBED,
+  RESOURCE_LINK
+} from "../../lib/ckeditor/plugins/constants"
+import { ReactWrapper } from "enzyme"
 
 jest.mock("../../hooks/state")
 
@@ -22,18 +29,30 @@ jest.mock("./ResourcePickerListing", () => ({
   default:    ResourcePickerListing
 }))
 
+const focusResource = (wrapper: ReactWrapper, resource: WebsiteContent) => {
+  act(() => {
+    // @ts-ignore
+    wrapper.find("ResourcePickerListing").prop("focusResource")(
+      resource.text_id
+    )
+  })
+  wrapper.update()
+}
+
 describe("ResourcePickerDialog", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     insertEmbedStub: any,
     setOpenStub: any,
-    setStub: any
+    setStub: any,
+    resource: WebsiteContent
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
 
     insertEmbedStub = helper.sandbox.stub()
     setOpenStub = helper.sandbox.stub()
+    resource = makeWebsiteContentDetail()
 
     setStub = helper.sandbox.stub()
     // @ts-ignore
@@ -60,23 +79,59 @@ describe("ResourcePickerDialog", () => {
     ])
   })
 
-  it("should pass some props down to the dialog", async () => {
+  it("should pass some basic props down to the dialog", async () => {
     const { wrapper } = await render()
     const dialog = wrapper.find("Dialog")
     expect(dialog.prop("open")).toBeTruthy()
     expect(dialog.prop("wrapClassName")).toBe("resource-picker-dialog")
   })
 
+  it("should allow focusing and linking a resource", async () => {
+    const { wrapper } = await render()
+    // callback should be 'undefined' before resource is focused
+    expect(wrapper.find("Dialog").prop("altOnAccept")).toBeUndefined()
+    focusResource(wrapper, resource)
+
+    act(() => {
+      // @ts-ignore
+      wrapper.find("Dialog").prop("altOnAccept")()
+    })
+
+    wrapper.update()
+
+    expect(insertEmbedStub.args[0]).toStrictEqual([
+      resource.text_id,
+      RESOURCE_LINK
+    ])
+  })
+
+  it("should focusing and embedding a resource", async () => {
+    const { wrapper } = await render()
+    // callback should be 'undefined' before resource is focused
+    expect(wrapper.find("Dialog").prop("onAccept")).toBeUndefined()
+    focusResource(wrapper, resource)
+
+    act(() => {
+      // @ts-ignore
+      wrapper.find("Dialog").prop("onAccept")()
+    })
+
+    wrapper.update()
+
+    expect(insertEmbedStub.args[0]).toStrictEqual([
+      resource.text_id,
+      RESOURCE_EMBED
+    ])
+  })
+
   it("should pass basic props to ResourcePickerListing", async () => {
     const { wrapper } = await render()
-    expect(wrapper.find("ResourcePickerListing").prop("insertEmbed")).toEqual(
-      insertEmbedStub
-    )
-    expect(wrapper.find("ResourcePickerListing").prop("setOpen")).toEqual(
-      setOpenStub
-    )
     expect(wrapper.find("ResourcePickerListing").prop("attach")).toEqual(
       "resource"
+    )
+    focusResource(wrapper, resource)
+    expect(wrapper.find("ResourcePickerListing").prop("focusedResource")).toBe(
+      resource.text_id
     )
   })
 

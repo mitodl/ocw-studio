@@ -22,7 +22,7 @@ const apiResponse = (results: WebsiteContentListItem[]) => ({
 describe("ResourcePickerListing", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    insertEmbedStub: any,
+    focusResourceStub: any,
     setOpenStub: any,
     website: Website,
     contentListingItems: WebsiteContentListItem[][]
@@ -30,15 +30,15 @@ describe("ResourcePickerListing", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
 
-    insertEmbedStub = helper.sandbox.stub()
+    focusResourceStub = helper.sandbox.stub()
     setOpenStub = helper.sandbox.stub()
 
     render = helper.configureRenderer(ResourcePickerListing, {
-      insertEmbed: insertEmbedStub,
-      setOpen:     setOpenStub,
-      attach:      "resource",
-      filter:      null,
-      filetype:    "Video"
+      focusResource: focusResourceStub,
+      setOpen:       setOpenStub,
+      attach:        "resource",
+      filter:        null,
+      filetype:      "Video"
     })
 
     website = makeWebsiteDetail()
@@ -89,7 +89,7 @@ describe("ResourcePickerListing", () => {
     ).toEqual(contentListingItems[0].map(item => item.title))
   })
 
-  it("should call insertEmbed prop with resources", async () => {
+  it("should call focusResource prop with resources", async () => {
     const { wrapper } = await render()
 
     wrapper
@@ -97,8 +97,22 @@ describe("ResourcePickerListing", () => {
       .at(0)
       .simulate("click")
     expect(
-      insertEmbedStub.calledWith(contentListingItems[0][0].text_id)
+      focusResourceStub.calledWith(contentListingItems[0][0].text_id)
     ).toBeTruthy()
+    wrapper.update()
+  })
+
+  it("should put a class on if a resource is focused", async () => {
+    const { wrapper } = await render({
+      focusedResource: contentListingItems[0][0].text_id
+    })
+
+    expect(
+      wrapper
+        .find(".resource-item")
+        .at(0)
+        .prop("className")
+    ).toBe("resource-item focused")
   })
 
   it("should allow the user to filter, sort filetype", async () => {

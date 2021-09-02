@@ -10,11 +10,16 @@ import {
 } from "../../constants"
 import ResourcePickerListing from "./ResourcePickerListing"
 import { useDebouncedState } from "../../hooks/state"
+import {
+  CKEResourceNodeType,
+  RESOURCE_EMBED,
+  RESOURCE_LINK
+} from "../../lib/ckeditor/plugins/constants"
 
 interface Props {
   open: boolean
   setOpen: (open: boolean) => void
-  insertEmbed: (id: string) => void
+  insertEmbed: (id: string, variant: CKEResourceNodeType) => void
   attach: string
 }
 
@@ -69,12 +74,32 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     [setShowFilterUI]
   )
 
+  const [focusedResource, setFocusedResource] = useState<string | null>(null)
+
+  const embedResource = useCallback(() => {
+    if (focusedResource) {
+      insertEmbed(focusedResource, RESOURCE_EMBED)
+      setOpen(false)
+    }
+  }, [insertEmbed, focusedResource, setOpen])
+
+  const linkResource = useCallback(() => {
+    if (focusedResource) {
+      insertEmbed(focusedResource, RESOURCE_LINK)
+      setOpen(false)
+    }
+  }, [insertEmbed, focusedResource, setOpen])
+
   return (
     <Dialog
       open={open}
       toggleModal={() => setOpen(false)}
       wrapClassName="resource-picker-dialog"
       headerContent="Resources"
+      onAccept={focusedResource ? embedResource : undefined}
+      acceptText="Embed Resource"
+      altOnAccept={focusedResource ? linkResource : undefined}
+      altAcceptText="Link Resource"
       bodyContent={
         <>
           <Nav tabs>
@@ -115,8 +140,8 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                   <ResourcePickerListing
                     filetype={tab.filetype}
                     filter={showFilterUI ? filter : null}
-                    insertEmbed={insertEmbed}
-                    setOpen={setOpen}
+                    focusResource={setFocusedResource}
+                    focusedResource={focusedResource}
                     attach={attach}
                   />
                 ) : null}

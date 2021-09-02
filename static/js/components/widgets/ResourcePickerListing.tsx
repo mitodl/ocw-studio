@@ -11,17 +11,17 @@ import { useSelector } from "react-redux"
 import { getWebsiteContentListingCursor } from "../../selectors/websites"
 
 interface Props {
-  insertEmbed: (id: string) => void
-  setOpen: (open: boolean) => void
+  focusResource: (id: string) => void
   attach: string
   filter: string | null
   filetype: string
+  focusedResource: string | null
 }
 
 export default function ResourcePickerListing(
   props: Props
 ): JSX.Element | null {
-  const { insertEmbed, setOpen, attach, filter, filetype } = props
+  const { focusResource, focusedResource, attach, filter, filetype } = props
   const website = useWebsite()
 
   const listingParams: ContentListingParams = useMemo(
@@ -50,20 +50,24 @@ export default function ResourcePickerListing(
 
   return (
     <div className="resource-picker-listing">
-      {listing.results.map((item, idx) => (
-        <div
-          className="resource-item"
-          key={`${item.text_id}_${idx}`}
-          onClick={(event: SyntheticEvent<HTMLDivElement>) => {
-            event.preventDefault()
+      {listing.results.map((item, idx) => {
+        const className = `resource-item${
+          focusedResource && focusedResource === item.text_id ? " focused" : ""
+        }`
 
-            insertEmbed(item.text_id)
-            setOpen(false)
-          }}
-        >
-          <h4>{item.title}</h4>
-        </div>
-      ))}
+        return (
+          <div
+            className={className}
+            key={`${item.text_id}_${idx}`}
+            onClick={(event: SyntheticEvent<HTMLDivElement>) => {
+              event.preventDefault()
+              focusResource(item.text_id)
+            }}
+          >
+            <h4>{item.title}</h4>
+          </div>
+        )
+      })}
     </div>
   )
 }

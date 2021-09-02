@@ -10,9 +10,15 @@ import {
 import EmbeddedResource from "./EmbeddedResource"
 import {
   ADD_RESOURCE,
-  RESOURCE_EMBED_COMMAND
-} from "../../lib/ckeditor/plugins/ResourceEmbed"
+  CKEResourceNodeType,
+  CKEDITOR_RESOURCE_UTILS,
+  RenderResourceFunc,
+  ResourceCommandMap,
+  RESOURCE_EMBED,
+  RESOURCE_LINK
+} from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
+import ResourceLink from "./ResourceLink"
 
 export interface Props {
   value?: string
@@ -23,7 +29,7 @@ export interface Props {
   attach?: string
 }
 
-type RenderQueueEntry = [string, HTMLElement]
+type RenderQueueEntry = [string, HTMLElement, CKEResourceNodeType]
 
 /**
  * A component for editing Markdown using CKEditor.
@@ -40,9 +46,9 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const [resourcePickerOpen, setResourcePickerOpen] = useState(false)
 
   const addResourceEmbed = useCallback(
-    (id: string) => {
+    (uuid: string, variant: CKEResourceNodeType) => {
       if (editor.current) {
-        editor.current.execute(RESOURCE_EMBED_COMMAND, id)
+        editor.current.execute(ResourceCommandMap[variant], uuid)
         // @ts-ignore
         editor.current.editing.view.focus()
       }
@@ -52,9 +58,9 @@ export default function MarkdownEditor(props: Props): JSX.Element {
 
   const [renderQueue, setRenderQueue] = useState<RenderQueueEntry[]>([])
 
-  const renderResourceEmbed = useCallback(
-    (uuid: string, el: HTMLElement) => {
-      setRenderQueue(xs => [...xs, [uuid, el]])
+  const renderResource: RenderResourceFunc = useCallback(
+    (uuid: string, el: HTMLElement, variant: CKEResourceNodeType) => {
+      setRenderQueue(xs => [...xs, [uuid, el, variant]])
     },
     [setRenderQueue]
   )
@@ -64,6 +70,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   }, [setResourcePickerOpen])
 
   const hasAttach = attach && attach.length > 0
+
   const editorConfig = useMemo(() => {
     if (minimal) {
       return MinimalEditorConfig
@@ -73,8 +80,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       // and then use it to render resources within the editor.
       return {
         ...FullEditorConfig,
-        resourceEmbed: { renderResourceEmbed, openResourcePicker },
-        toolbar:       {
+        [CKEDITOR_RESOURCE_UTILS]: { renderResource, openResourcePicker },
+        toolbar:                   {
           ...FullEditorConfig.toolbar,
           items: FullEditorConfig.toolbar.items.filter(
             item => hasAttach || item !== ADD_RESOURCE
@@ -82,7 +89,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         }
       }
     }
-  }, [minimal, renderResourceEmbed, openResourcePicker, hasAttach])
+  }, [minimal, renderResource, openResourcePicker, hasAttach])
 
   const onChangeCB = useCallback(
     (_event: any, editor: any) => {
@@ -121,9 +128,16 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           attach={attach as string}
         />
       ) : null}
-      {renderQueue.map(([uuid, el], idx) => (
-        <EmbeddedResource key={`${uuid}_${idx}`} uuid={uuid} el={el} />
-      ))}
+      {renderQueue.map(([uuid, el, variant], idx) => {
+        if (variant === RESOURCE_EMBED) {
+          return <EmbeddedResource key={`${uuid}_${idx}`} uuid={uuid} el={el} />
+        }
+
+        if (variant === RESOURCE_LINK) {
+          return <ResourceLink key={`${uuid}_${idx}`} uuid={uuid} el={el} />
+        }
+        return null
+      })}
     </>
   )
 }

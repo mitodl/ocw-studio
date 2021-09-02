@@ -1,11 +1,8 @@
-import { createPortal } from "react-dom"
 import React from "react"
-import { useWebsite } from "../../context/Website"
-import { useRequest } from "redux-query-react"
-import { websiteContentDetailRequest } from "../../query-configs/websites"
-import { useSelector } from "react-redux"
-import { getWebsiteContentDetailCursor } from "../../selectors/websites"
+import { createPortal } from "react-dom"
+
 import { RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO } from "../../constants"
+import { useWebsiteContent } from "../../hooks/websiteContent"
 import { SiteFormValue } from "../../types/forms"
 
 interface Props {
@@ -24,20 +21,7 @@ interface Props {
 export default function EmbeddedResource(props: Props): JSX.Element | null {
   const { uuid, el } = props
 
-  const website = useWebsite()
-
-  const contentParams = {
-    name:   website.name,
-    textId: uuid
-  }
-
-  useRequest(websiteContentDetailRequest(contentParams, false))
-
-  const websiteContentDetailSelector = useSelector(
-    getWebsiteContentDetailCursor
-  )
-
-  const resource = websiteContentDetailSelector(contentParams)
+  const resource = useWebsiteContent(uuid)
 
   if (!resource) {
     return null
@@ -46,7 +30,7 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
     const title = resource.title ?? resource.text_id
 
     if (filetype === RESOURCE_TYPE_IMAGE) {
-      const filename = resource.file!.split("/").slice(-1)
+      const filename = (resource.file ?? "").split("/").slice(-1)[0]
 
       return createPortal(
         <div className="embedded-resource image my-2 d-flex align-items-center">

@@ -7,6 +7,7 @@ import Dialog from "./Dialog"
 interface ExtraProps {
   open: boolean
   acceptText?: string
+  altAcceptText?: string
   cancelText?: string
   headerContent: JSX.Element | string
   bodyContent: JSX.Element | string
@@ -20,6 +21,7 @@ describe("Dialog", () => {
   let toggleModalStub: SinonStub,
     onCancelStub: SinonStub,
     onAcceptStub: SinonStub,
+    altOnAcceptStub: SinonStub,
     headerContent: JSX.Element | string,
     bodyContent: JSX.Element | string,
     render: (props: ExtraProps) => ShallowWrapper
@@ -28,11 +30,13 @@ describe("Dialog", () => {
     toggleModalStub = sinon.stub()
     onCancelStub = sinon.stub()
     onAcceptStub = sinon.stub()
+    altOnAcceptStub = sinon.stub()
     render = (props: ExtraProps) =>
       shallow(
         <Dialog
           toggleModal={toggleModalStub}
           onAccept={onAcceptStub}
+          altOnAccept={altOnAcceptStub}
           onCancel={onCancelStub}
           {...props}
         />
@@ -66,10 +70,18 @@ describe("Dialog", () => {
     okButton.simulate("click")
     sinon.assert.calledOnce(onAcceptStub)
 
-    const cancelButton = wrapper
+    const altOkButton = wrapper
       .find("ModalFooter")
       .find("Button")
       .at(1)
+    expect(altOkButton.childAt(0).text()).toBe("OK")
+    altOkButton.simulate("click")
+    sinon.assert.calledOnce(altOnAcceptStub)
+
+    const cancelButton = wrapper
+      .find("ModalFooter")
+      .find("Button")
+      .at(2)
     expect(cancelButton.childAt(0).text()).toBe("Cancel")
     cancelButton.simulate("click")
     sinon.assert.calledOnce(onCancelStub)
@@ -79,12 +91,14 @@ describe("Dialog", () => {
     headerContent = <h1>Header</h1>
     bodyContent = <div>Body</div>
     const acceptText = "Save"
+    const altAcceptText = "Create Draft"
     const cancelText = "Back"
     const wrapper = render({
       open: false,
       headerContent,
       bodyContent,
       acceptText,
+      altAcceptText,
       cancelText
     })
     expect(wrapper.find("Modal").prop("isOpen")).toBe(false)
@@ -94,10 +108,19 @@ describe("Dialog", () => {
       .at(0)
     expect(okButton.childAt(0).text()).toBe(acceptText)
 
+    expect(
+      wrapper
+        .find("ModalFooter")
+        .find("Button")
+        .at(1)
+        .childAt(0)
+        .text()
+    ).toBe(altAcceptText)
+
     const cancelButton = wrapper
       .find("ModalFooter")
       .find("Button")
-      .at(1)
+      .at(2)
     expect(cancelButton.childAt(0).text()).toBe(cancelText)
   })
 

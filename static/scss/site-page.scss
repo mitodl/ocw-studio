@@ -78,6 +78,18 @@ $menu-spacing: 20px;
 .resource-picker-listing {
   .resource-item {
     cursor: pointer;
+    padding: 2px;
+    margin: 2px;
+
+    &.focused {
+      border: 2px solid black;
+      padding: 0;
+    }
+
+    h4 {
+      margin-bottom: 0;
+      padding: 2px;
+    }
   }
 }
 

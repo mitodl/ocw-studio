@@ -9,7 +9,12 @@ import {
   FullEditorConfig,
   MinimalEditorConfig
 } from "../../lib/ckeditor/CKEditor"
-import { ADD_RESOURCE } from "../../lib/ckeditor/plugins/ResourceEmbed"
+import {
+  ADD_RESOURCE,
+  CKEDITOR_RESOURCE_UTILS,
+  RESOURCE_EMBED,
+  RESOURCE_LINK
+} from "../../lib/ckeditor/plugins/constants"
 
 jest.mock("@ckeditor/ckeditor5-react", () => ({
   CKEditor: () => <div />
@@ -47,9 +52,9 @@ describe("MarkdownEditor", () => {
         })
         const ckWrapper = wrapper.find("CKEditor")
         expect(ckWrapper.prop("editor")).toBe(ClassicEditor)
-        expect(omit(["resourceEmbed"], ckWrapper.prop("config"))).toEqual(
-          expectedComponent
-        )
+        expect(
+          omit([CKEDITOR_RESOURCE_UTILS], ckWrapper.prop("config"))
+        ).toEqual(expectedComponent)
         expect(ckWrapper.prop("data")).toBe(expectedPropValue)
       })
     })
@@ -60,19 +65,29 @@ describe("MarkdownEditor", () => {
     expect(wrapper.find("ResourcePickerDialog").prop("attach")).toBe("resource")
   })
 
-  it("should render embedded resources", () => {
-    const wrapper = render()
-    const editor = wrapper.find("CKEditor").prop("config")
-    const el = document.createElement("div")
-    // @ts-ignore
-    editor.resourceEmbed.renderResourceEmbed("resource-uuid", el)
-    wrapper.update()
-    expect(
-      wrapper
-        .find("EmbeddedResource")
-        .at(0)
-        .prop("uuid")
-    ).toEqual("resource-uuid")
+  //
+  ;[
+    [RESOURCE_EMBED, "EmbeddedResource"],
+    [RESOURCE_LINK, "ResourceLink"]
+  ].forEach(([embedType, componentDisplayName]) => {
+    it(`should render resources with ${embedType} using ${componentDisplayName}`, () => {
+      const wrapper = render()
+      const editor = wrapper.find("CKEditor").prop("config")
+      const el = document.createElement("div")
+      // @ts-ignore
+      editor[CKEDITOR_RESOURCE_UTILS].renderResource(
+        "resource-uuid",
+        el,
+        embedType
+      )
+      wrapper.update()
+      expect(
+        wrapper
+          .find(componentDisplayName)
+          .at(0)
+          .prop("uuid")
+      ).toEqual("resource-uuid")
+    })
   })
 
   //
@@ -93,7 +108,7 @@ describe("MarkdownEditor", () => {
     const wrapper = render({ attach: "resource" })
     const editor = wrapper.find("CKEditor").prop("config")
     // @ts-ignore
-    editor.resourceEmbed.openResourcePicker()
+    editor[CKEDITOR_RESOURCE_UTILS].openResourcePicker()
     wrapper.update()
     expect(
       wrapper
