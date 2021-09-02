@@ -91,7 +91,7 @@ collections:
           - 'Written Assignments with Examples'
       # show the field below only if the type of resource is "image"
       - label: Image Metadata
-        name: metadata
+        name: image_metadata
         widget: object
         condition: { field: filetype, equals: Image }
         fields:
@@ -106,7 +106,7 @@ collections:
             widget: text
       # show the sections below only if the type of resource is "Video"
       - label: Video Metadata
-        name: metadata
+        name: video_metadata
         widget: object
         condition: {field: filetype, equals: Video}
         fields:

@@ -126,7 +126,7 @@
             }
           ],
           "label": "Image Metadata",
-          "name": "metadata",
+          "name": "image_metadata",
           "widget": "object"
         },
         {
@@ -152,7 +152,7 @@
             }
           ],
           "label": "Video Metadata",
-          "name": "metadata",
+          "name": "video_metadata",
           "widget": "object"
         },
         {
