@@ -71,7 +71,7 @@ class Command(BaseCommand):
             dest="delete_unpublished",
             default=True,
             type=bool,
-            help="If True, delete all courses that have been unpublished in the source data"
+            help="If True, delete all courses that have been unpublished in the source data",
         )
         super().add_arguments(parser)
 

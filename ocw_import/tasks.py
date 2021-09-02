@@ -6,10 +6,7 @@ from django.conf import settings
 from mitol.common.utils.collections import chunks
 
 from main.celery import app
-from ocw_import.api import (
-    fetch_ocw2hugo_course_paths,
-    import_ocw2hugo_course,
-)
+from ocw_import.api import fetch_ocw2hugo_course_paths, import_ocw2hugo_course
 from websites.constants import WEBSITE_SOURCE_OCW_IMPORT
 from websites.models import Website, WebsiteStarter
 
@@ -86,17 +83,17 @@ def import_ocw2hugo_courses(
     """
     if not bucket_name:
         raise TypeError("Bucket name must be specified")
-    course_paths = iter(fetch_ocw2hugo_course_paths(bucket_name, prefix=prefix))
+    course_paths = list(fetch_ocw2hugo_course_paths(bucket_name, prefix=prefix))
     if delete_unpublished:
         delete_unpublished_courses_task = delete_unpublished_courses.si(
-            paths=list(course_paths)
+            paths=course_paths
         )
     else:
         delete_unpublished_courses_task = None
     if filter_str is not None:
         course_paths = [path for path in course_paths if filter_str in path]
     if limit is not None:
-        course_paths = (path for i, path in enumerate(course_paths) if i < limit)
+        course_paths = course_paths[:limit]
     course_tasks = [
         import_ocw2hugo_course_paths.si(
             paths=paths,
