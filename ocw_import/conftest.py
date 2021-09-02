@@ -13,8 +13,14 @@ MOCK_BUCKET_NAME = "testbucket"
 TEST_OCW2HUGO_PREFIX = ""
 
 
+def get_ocw2hugo_path(path):
+    """ get the path to ocw-to-hugo test data """
+    return f"{path}/{TEST_OCW2HUGO_PREFIX}"
+
+
 def get_ocw2hugo_files(path):
-    TEST_OCW2HUGO_PATH = f"{path}/{TEST_OCW2HUGO_PREFIX}"
+    """ get the files from an ocw-to-hugo test data directory """
+    TEST_OCW2HUGO_PATH = get_ocw2hugo_path(path)
     return [
         f for f in glob.glob(TEST_OCW2HUGO_PATH + "**/*", recursive=True) if isfile(f)
     ]
@@ -37,7 +43,6 @@ def setup_s3(settings):
     for file in get_ocw2hugo_files("./test_ocw2hugo"):
         file_key = file.replace("./test_ocw2hugo/", "")
         with open(file, "r") as f:
-            print(file_key)
             test_bucket.put_object(Key=file_key, Body=f.read())
 
 
@@ -63,7 +68,7 @@ def setup_s3_tmpdir(settings, tmpdir, courses=None):
     test_bucket = conn.Bucket(name=MOCK_BUCKET_NAME)
     test_bucket.objects.all().delete()
     for file in get_ocw2hugo_files(tmpdir):
-        file_key = file.replace(tmpdir, "")
+        file_key = file.replace(f"{tmpdir}/", "")
         with open(file, "r") as f:
             test_bucket.put_object(Key=file_key, Body=f.read())
 

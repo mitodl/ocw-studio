@@ -353,24 +353,3 @@ def generate_topics_dict(course_paths, bucket_name):
             subtopic_dict[subtopic] = sorted(subtopic_dict[subtopic])
 
     return topics
-
-
-def delete_unpublished_course(paths=None, filter_str=None):
-    """
-    Remove all unpublished courses based on paths that don't exist anymore
-
-    Args:
-        paths (list of str): list of paths to course data templates
-        filter_str (str): (Optional) If specified, filter courses to remove
-    """
-    if not paths:
-        return
-    course_ids = list(map((lambda key: key.replace("/data/course.json", "", 1)), paths))
-    unpublished_courses = Website.objects.filter(
-        source=WEBSITE_SOURCE_OCW_IMPORT
-    ).exclude(name__in=course_ids)
-    if filter_str:
-        unpublished_courses = unpublished_courses.filter(name__contains=filter_str)
-    if unpublished_courses.count() > 0:
-        log.info("Removing unpublished imported courses: %s", unpublished_courses)
-        unpublished_courses.delete()

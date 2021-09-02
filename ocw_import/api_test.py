@@ -7,8 +7,8 @@ from moto import mock_s3
 from ocw_import.api import generate_topics_dict, get_short_id, import_ocw2hugo_course
 from ocw_import.conftest import (
     MOCK_BUCKET_NAME,
-    TEST_OCW2HUGO_PATH,
     TEST_OCW2HUGO_PREFIX,
+    get_ocw2hugo_path,
     setup_s3,
 )
 from websites.constants import (
@@ -23,6 +23,8 @@ from websites.models import Website, WebsiteContent
 
 
 pytestmark = pytest.mark.django_db
+
+TEST_OCW2HUGO_PATH = get_ocw2hugo_path("./test_ocw2hugo")
 
 
 @mock_s3
