@@ -38,7 +38,6 @@ def create_media_convert_job(video: Video, source_prefix=None):
         job_dict[
             "Role"
         ] = f"arn:aws:iam::{settings.AWS_ACCOUNT_ID}:role/{settings.AWS_ROLE_NAME}"
-
         destination = os.path.splitext(
             video.source_key.replace(
                 source_prefix,

@@ -222,3 +222,21 @@ You can enable Concourse-CI integration to create and trigger publishing pipelin
   - `trigger_pipelines <version>`: to manually trigger the draft or live pipeline for all or some existing `Websites` (filters available)
   
   
+YouTube Integration
+~~~~~~~~~~~~~~~~~~~
+
+- Create a new project at https://console.cloud.google.com/apis/dashboard
+  - Save the project ID in your ``.env`` file as ``YT_PROJECT_ID``
+- Create an OAuth client ID for the project (type: ``Desktop client``)
+  - You may need to create an oauth consent screen if prompted; make sure to publish it.
+  - Save your client ID and client secret in your ``.env`` file (as ``YT_CLIENT_ID`` and ``YT_CLIENT_SECRET``)
+- Enable the YouTube Data API v3 for your project
+- Run the following Django command to generate values for ``YT_ACCESS_TOKEN`` and ``YT_REFRESH_TOKEN``:
+
+.. code-block:: bash
+
+    docker-compose run web python manage.py youtube_tokens
+
+- Click on the provided link, follow the prompts, and enter the verification code back in the shell.
+- Save the ``YT_ACCESS_TOKEN`` and ``YT_REFRESH_TOKEN`` values to your ``.env`` file
+

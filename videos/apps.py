@@ -9,3 +9,4 @@ class VideoApp(AppConfig):
 
     def ready(self):
         """ Application is ready """
+        import videos.signals  # pylint:disable=unused-import, import-outside-toplevel
