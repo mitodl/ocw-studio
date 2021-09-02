@@ -109,7 +109,6 @@ def test_import_ocw2hugo_courses_delete_unpublished(settings, mocker, mocked_cel
     mock_delete_unpublished_courses = mocker.patch(
         "ocw_import.tasks.delete_unpublished_courses.si"
     )
-    settings.OCW_IMPORT_STARTER_SLUG = "course"
     tmpdir = TemporaryDirectory()
     setup_s3_tmpdir(settings, tmpdir.name)
     with pytest.raises(mocked_celery.replace_exception_class):
@@ -128,3 +127,21 @@ def test_import_ocw2hugo_courses_delete_unpublished(settings, mocker, mocked_cel
         )
     mock_delete_unpublished_courses.assert_called_with(paths=SINGLE_COURSE_PATHS)
     tmpdir.cleanup()
+
+
+@mock_s3
+def test_import_ocw2hugo_courses_delete_unpublished_false(
+    settings, mocker, mocked_celery
+):
+    """ import_ocw2hugo_courses should not call delete_unpublished when the argument is false """
+    mock_delete_unpublished_courses = mocker.patch(
+        "ocw_import.tasks.delete_unpublished_courses.si"
+    )
+    setup_s3(settings)
+    with pytest.raises(mocked_celery.replace_exception_class):
+        import_ocw2hugo_courses.delay(
+            bucket_name=MOCK_BUCKET_NAME,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            delete_unpublished=False,
+        )
+    mock_delete_unpublished_courses.assert_not_called()
