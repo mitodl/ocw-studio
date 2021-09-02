@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.23.4
+--------------
+
+- Upload videos to YouTube (#484)
+- Revert "delete unpublished courses originally imported from ocw-to-hugo (#526)" (#543)
+- add display of embedded images in Markdown editor
+- Update local ocw course site config to match ocw-hugo-projects (#538)
+
 Version 0.23.3 (Released September 01, 2021)
 --------------
 
