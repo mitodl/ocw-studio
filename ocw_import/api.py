@@ -284,7 +284,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
     course_data = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
-    name = course_data.get("course_id")
+    name = path.replace("/data/course.json", "", 1)
     menu_data = yaml.load(
         get_s3_object_and_read(
             bucket.Object(f"{prefix}{name}/config/_default/menus.yaml")
