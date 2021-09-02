@@ -1,0 +1,12 @@
+---
+title: summary16.pdf
+description: >-
+  Lecture summary on how to measure and describe deformation, and measurement of
+  strain.
+layout: pdf
+uid: cf46effb13e876aebd053f609daa8754
+parent_uid: dec40ff4e8ca636fc6dbd88880914a96
+file_type: application/pdf
+file_location: >-
+  https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/cf46effb13e876aebd053f609daa8754_summary16.pdf
+---

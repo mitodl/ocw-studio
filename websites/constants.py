@@ -6,7 +6,7 @@ CONTENT_TYPE_INSTRUCTOR = "instructor"
 CONTENT_TYPE_METADATA = "sitemetadata"
 CONTENT_TYPE_NAVMENU = "navmenu"
 
-COURSE_PAGE_LAYOUTS = ["course_home", "course_section", "instructor_insights"]
+COURSE_PAGE_LAYOUTS = ["instructor_insights"]
 COURSE_RESOURCE_LAYOUTS = ["pdf", "video"]
 
 CONTENT_FILENAME_MAX_LEN = 125

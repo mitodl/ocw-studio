@@ -126,11 +126,14 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
         )
         parent_uid = content_json.get("parent_uid", None)
         if layout in COURSE_PAGE_LAYOUTS:
-            # This is a page
+            # This is a special type of page
             content_type = CONTENT_TYPE_PAGE
         elif layout in COURSE_RESOURCE_LAYOUTS:
             # This is a file
             content_type = CONTENT_TYPE_RESOURCE
+        else:
+            # This is a normal page
+            content_type = CONTENT_TYPE_PAGE
         if parent_uid:
             parent, _ = WebsiteContent.objects.get_or_create(
                 website=website, text_id=str(uuid.UUID(parent_uid))
@@ -281,7 +284,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
     course_data = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
-    name = course_data.get("course_id")
+    name = path.replace("/data/course.json", "", 1)
     menu_data = yaml.load(
         get_s3_object_and_read(
             bucket.Object(f"{prefix}{name}/config/_default/menus.yaml")
