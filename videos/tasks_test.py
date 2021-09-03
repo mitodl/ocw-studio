@@ -1,9 +1,11 @@
 """ videos.tasks tests"""
 import string
+from datetime import datetime
 from random import choice
 
 import boto3
 import pytest
+import pytz
 from django.conf import settings
 from googleapiclient.errors import HttpError, ResumableUploadError
 from moto import mock_s3
@@ -16,11 +18,14 @@ from videos.constants import (
     VideoStatus,
     YouTubeStatus,
 )
-from videos.factories import VideoFileFactory
+from videos.factories import VideoFactory, VideoFileFactory
 from videos.models import VideoFile
 from videos.tasks import (
+    attempt_to_update_missing_transcripts,
     delete_s3_objects,
     remove_youtube_video,
+    update_transcripts_for_updated_videos,
+    update_transcripts_for_video,
     update_youtube_statuses,
     upload_youtube_videos,
 )
@@ -29,6 +34,30 @@ from videos.youtube import API_QUOTA_ERROR_MSG
 
 # pylint:disable=unused-argument,redefined-outer-name
 pytestmark = pytest.mark.django_db
+
+
+def updated_transctipts_reponse():
+    """Mock api response for s3 updated transcripts api call"""
+    return {
+        "code": 200,
+        "data": [
+            {
+                "id": 6737396,
+                "name": "12. Carbohydrates/Introduction to Membranes\n",
+                "duration": 10.0,
+                "word_count": 16,
+                "language_id": 1,
+                "language_ids": [1],
+                "source": "https://www.youtube.com/watch?v=test",
+                "batch_id": 200797,
+                "reference_id": "reference_id",
+                "labels": ["updated"],
+                "created_at": "2021-08-19T10:43:26.000-04:00",
+                "updated_at": "2021-09-01T21:14:19.000-04:00",
+            }
+        ],
+        "pagination": {"page": 1, "per_page": 25, "total_entries": 1},
+    }
 
 
 @pytest.fixture
@@ -286,3 +315,53 @@ def test_delete_s3_objects(settings):
     delete_s3_objects(key="biology/content", as_filter=True)
     with pytest.raises(client.exceptions.NoSuchKey):
         client.get_object(Bucket=MOCK_BUCKET_NAME, Key="biology/content/_index.md")
+
+
+def test_update_transcripts_for_video(mocker):
+    """Test update_transcripts_for_video"""
+    video = VideoFactory.create()
+    update_transcript_mock = mocker.patch(
+        "videos.tasks.threeplay_api.update_transcripts_for_video"
+    )
+    update_transcripts_for_video(video.id)
+    update_transcript_mock.assert_called_once_with(video)
+
+
+def test_update_transcripts_for_updated_videos(mocker):
+    """Test update_transcripts_for_updated_videos"""
+
+    video_file = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="reference_id"
+    )
+
+    updated_files_mock = mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_updated_media_file_request",
+        return_value=updated_transctipts_reponse(),
+    )
+    update_transcript_mock = mocker.patch(
+        "videos.tasks.threeplay_api.update_transcripts_for_video", return_value=True
+    )
+    remove_tags_mock = mocker.patch("videos.tasks.threeplay_api.threeplay_remove_tags")
+
+    update_transcripts_for_updated_videos()
+
+    updated_files_mock.assert_called_once()
+    update_transcript_mock.assert_called_once_with(video_file.video)
+    remove_tags_mock.assert_called_once_with(6737396)
+
+
+def test_attempt_to_update_missing_transcripts(mocker):
+    """Test attempt_to_update_missing_transcripts"""
+
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="reference_id"
+    )
+    website = videofile.video.website
+    website.publish_date = datetime.now(pytz.timezone("America/New_York"))
+    website.save()
+
+    update_transcript_mock = mocker.patch("videos.tasks.update_transcripts_for_video")
+
+    attempt_to_update_missing_transcripts()
+
+    update_transcript_mock.delay.assert_called_once_with(videofile.video.id)

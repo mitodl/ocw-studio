@@ -10,6 +10,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 from mitol.common.envs import (
     get_bool,
+    get_delimited_list,
     get_features,
     get_int,
     get_site_name,
@@ -516,6 +517,19 @@ YT_UPLOAD_LIMIT = get_int(
     description="Max Youtube uploads allowed per day",
 )
 
+UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY = get_int(
+    name="UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY",
+    default=3600,
+    description="The frequency to check for videos tagged as updated in 3play",
+)
+
+UPDATE_MISSING_TRANSCRIPT_FREQUENCY = get_int(
+    name="UPDATE_MISSING_TRANSCRIPT_FREQUENCY",
+    default=43200,
+    description="The frequency to check for transcripts for published videos with blank transcripts",
+)
+
+
 # Celery
 REDISCLOUD_URL = get_string(
     name="REDISCLOUD_URL", default=None, description="RedisCloud connection url"
@@ -567,6 +581,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "videos.tasks.upload_youtube_videos",
         "schedule": YT_UPLOAD_FREQUENCY,
     },
+    "update-transcripts-for-updated-videos": {
+        "task": "videos.tasks.update_transcripts_for_updated_videos",
+        "schedule": UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY,
+    },
+    "attempt-to-update-missing-transcripts": {
+        "task": "videos.tasks.attempt_to_update_missing_transcripts",
+        "schedule": UPDATE_MISSING_TRANSCRIPT_FREQUENCY,
+    },
 }
 
 # django cache back-ends
@@ -613,6 +635,23 @@ if MIDDLEWARE_FEATURE_FLAG_QS_PREFIX:
         "main.middleware.CookieFeatureFlagMiddleware",
     )
 
+THREEPLAY_API_KEY = get_string(
+    name="THREEPLAY_API_KEY",
+    default=None,
+    description="3play api key",
+)
+
+THREEPLAY_PROJECT_ID = get_int(
+    name="THREEPLAY_PROJECT_ID",
+    default=2,
+    description="3play project id",
+)
+
+S3_TRANSCRIPTS_PREFIX = get_string(
+    name="S3_TRANSCRIPTS_PREFIX",
+    default="transcript_files",
+    description="s3 transcripts subfolder",
+)
 
 # django debug toolbar only in debug mode
 if DEBUG:
@@ -869,4 +908,9 @@ OCW_STUDIO_LIVE_URL = get_string(
     name="OCW_STUDIO_LIVE_URL",
     default=None,
     description="The base url of the live site",
+)
+PREPUBLISH_ACTIONS = get_delimited_list(
+    name="PREPUBLISH_ACTIONS",
+    default=[],
+    description="Actions to perform before publish",
 )
