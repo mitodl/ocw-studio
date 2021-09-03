@@ -20,9 +20,10 @@ def get_ocw2hugo_path(path):
 
 def get_ocw2hugo_files(path):
     """ get the files from an ocw-to-hugo test data directory """
-    TEST_OCW2HUGO_PATH = get_ocw2hugo_path(path)
     return [
-        f for f in glob.glob(TEST_OCW2HUGO_PATH + "**/*", recursive=True) if isfile(f)
+        f
+        for f in glob.glob(get_ocw2hugo_path(path) + "**/*", recursive=True)
+        if isfile(f)
     ]
 
 
