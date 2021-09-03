@@ -66,6 +66,7 @@ describe("SiteForm", () => {
         ).rejects.toThrow()
       } catch (error) {
         expect(error).toBeInstanceOf(ValidationError)
+        // @ts-ignore
         expect(error.errors).toStrictEqual(["Title is a required field"])
       }
     })
@@ -78,6 +79,7 @@ describe("SiteForm", () => {
         ).rejects.toThrow()
       } catch (error) {
         expect(error).toBeInstanceOf(ValidationError)
+        // @ts-ignore
         expect(error.errors).toStrictEqual([
           "Only alphanumeric characters, periods, dashes, or underscores allowed"
         ])

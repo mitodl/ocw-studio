@@ -152,6 +152,7 @@ describe("SiteCollaboratorForm", () => {
         ).rejects.toThrow()
       } catch (error) {
         expect(error).toBeInstanceOf(yup.ValidationError)
+        // @ts-ignore
         expect(error.errors).toStrictEqual(["Role is a required field"])
       }
     })
@@ -163,6 +164,7 @@ describe("SiteCollaboratorForm", () => {
         ).rejects.toThrow()
       } catch (error) {
         expect(error).toBeInstanceOf(yup.ValidationError)
+        // @ts-ignore
         expect(error.errors).toStrictEqual(["Email is a required field"])
       }
     })
@@ -176,6 +178,7 @@ describe("SiteCollaboratorForm", () => {
         ).rejects.toThrow()
       } catch (error) {
         expect(error).toBeInstanceOf(yup.ValidationError)
+        // @ts-ignore
         expect(error.errors).toStrictEqual(["Email must be a valid email"])
       }
     })
@@ -187,6 +190,7 @@ describe("SiteCollaboratorForm", () => {
         ).rejects.toThrow()
       } catch (error) {
         expect(error).toBeInstanceOf(yup.ValidationError)
+        // @ts-ignore
         expect(error.errors).toStrictEqual(["Role is a required field"])
       }
     })
