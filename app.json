@@ -336,6 +336,10 @@
     "PGBOUNCER_MIN_POOL_SIZE": {
       "value": "5"
     },
+    "PREPUBLISH_ACTIONS": {
+      "description": "Actions to perform before publish",
+      "required": false
+    },
     "REDISCLOUD_URL": {
       "description": "RedisCloud connection url",
       "required": false
@@ -350,6 +354,10 @@
     },
     "ROOT_WEBSITE_NAME": {
       "description": "The Website name for the site at the root domain",
+      "required": false
+    },
+    "S3_TRANSCRIPTS_PREFIX": {
+      "description": "s3 transcripts subfolder",
       "required": false
     },
     "SECRET_KEY": {
@@ -423,6 +431,22 @@
     },
     "STATUS_TOKEN": {
       "description": "Token to access the status API.",
+      "required": false
+    },
+    "THREEPLAY_API_KEY": {
+      "description": "3play api key",
+      "required": false
+    },
+    "THREEPLAY_PROJECT_ID": {
+      "description": "3play project id",
+      "required": false
+    },
+    "UPDATE_MISSING_TRANSCRIPT_FREQUENCY": {
+      "description": "The frequency to check for transcripts for published videos with blank transcripts",
+      "required": false
+    },
+    "UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY": {
+      "description": "The frequency to check for videos tagged as updated in 3play",
       "required": false
     },
     "USE_X_FORWARDED_HOST": {

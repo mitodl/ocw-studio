@@ -5,15 +5,34 @@ from mitol.common.models import TimestampedModel
 
 from videos.constants import VideoFileStatus, VideoJobStatus, VideoStatus
 from websites.models import Website
+from websites.site_config_api import SiteConfig
 
 
 class Video(TimestampedModel):
     """ Video object"""
 
+    def upload_file_to(self, filename):
+        """Return the appropriate filepath for an upload"""
+        site_config = SiteConfig(self.website.starter.config)
+        source_folder = self.source_key.split("/")[-2]
+
+        url_parts = [
+            site_config.root_url_path,
+            self.website.name,
+            f"{source_folder}_{filename}",
+        ]
+        return "/".join([part for part in url_parts if part != ""])
+
     source_key = models.CharField(max_length=2048, unique=True)
-    website = models.ForeignKey(Website, on_delete=CASCADE)
+    website = models.ForeignKey(Website, on_delete=CASCADE, related_name="videos")
     status = models.CharField(
         max_length=50, null=False, blank=False, default=VideoStatus.CREATED
+    )
+    pdf_transcript_file = models.FileField(
+        upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
+    )
+    webvtt_transcript_file = models.FileField(
+        upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
     )
 
     def __str__(self):

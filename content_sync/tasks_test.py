@@ -160,20 +160,35 @@ def test_sync_all_websites_rate_limit_exceeded(api_mock):
     api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_not_called()
 
 
-def test_create_backend_preview(api_mock):
+@pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
+def test_create_backend_preview(api_mock, mocker, settings, prepublish_actions):
     """Verify that the appropriate backend calls are made by the create_backend_preview task """
+    settings.PREPUBLISH_ACTIONS = prepublish_actions
+    import_string_mock = mocker.patch("content_sync.tasks.import_string")
+
     website = WebsiteFactory.create()
     preview_website_backend(website.name)
     api_mock.get_sync_backend.assert_called_once_with(website)
     api_mock.get_sync_backend.return_value.create_backend_preview.assert_called_once()
 
+    if len(prepublish_actions) > 0:
+        import_string_mock.assert_any_call("some.Action")
+        import_string_mock.return_value.assert_any_call(website)
 
-def test_create_backend_publish(api_mock):
+
+@pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
+def test_create_backend_publish(api_mock, mocker, settings, prepublish_actions):
     """Verify that the appropriate backend calls are made by the create_backend_publish task"""
+    settings.PREPUBLISH_ACTIONS = prepublish_actions
+    import_string_mock = mocker.patch("content_sync.tasks.import_string")
+
     website = WebsiteFactory.create()
     publish_website_backend(website.name)
     api_mock.get_sync_backend.assert_called_once_with(website)
     api_mock.get_sync_backend.return_value.create_backend_release.assert_called_once()
+    if len(prepublish_actions) > 0:
+        import_string_mock.assert_any_call("some.Action")
+        import_string_mock.return_value.assert_any_call(website)
 
 
 def test_sync_github_site_configs(mocker):

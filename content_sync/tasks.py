@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from django.conf import settings
 from django.db.models import F, Q
+from django.utils.module_loading import import_string
 from github.GithubException import RateLimitExceededException
 from mitol.common.utils import now_in_utc, pytz
 
@@ -130,7 +131,12 @@ def preview_website_backend(website_name: str):
     """
     Create a new backend preview for the website.
     """
-    backend = api.get_sync_backend(Website.objects.get(name=website_name))
+
+    website = Website.objects.get(name=website_name)
+    for action in settings.PREPUBLISH_ACTIONS:
+        import_string(action)(website)
+
+    backend = api.get_sync_backend(website)
     backend.create_backend_preview()
 
 
@@ -140,7 +146,11 @@ def publish_website_backend(website_name: str):
     """
     Create a new backend release for the website.
     """
-    backend = api.get_sync_backend(Website.objects.get(name=website_name))
+    website = Website.objects.get(name=website_name)
+    for action in settings.PREPUBLISH_ACTIONS:
+        import_string(action)(website)
+
+    backend = api.get_sync_backend(website)
     backend.create_backend_release()
 
 

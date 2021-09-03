@@ -8,8 +8,9 @@ from googleapiclient.errors import HttpError
 
 from main.celery import app
 from main.constants import STATUS_CREATED
+from videos import threeplay_api
 from videos.constants import DESTINATION_YOUTUBE, VideoFileStatus, YouTubeStatus
-from videos.models import VideoFile
+from videos.models import Video, VideoFile
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
     YouTubeApi,
@@ -137,3 +138,51 @@ def delete_s3_objects(
     else:
         for obj in bucket.objects.filter(Prefix=key):
             obj.delete()
+
+
+@app.task(acks_late=True)
+def update_transcripts_for_video(video_id: int):
+    """Update transcripts for a video"""
+    threeplay_api.update_transcripts_for_video(Video.objects.get(id=video_id))
+
+
+@app.task(acks_late=True)
+def update_transcripts_for_updated_videos():
+    """Check 3play for transcripts with 'updated' tag and update their transcripts"""
+    updated_files_response = threeplay_api.threeplay_updated_media_file_request()
+    updated_video_data = updated_files_response.get("data")
+    if not updated_video_data:
+        return
+
+    for video_response in updated_video_data:
+        videofiles = VideoFile.objects.filter(
+            destination=DESTINATION_YOUTUBE,
+            destination_id=video_response.get("reference_id"),
+        )
+        videos = {videofile.video for videofile in videofiles}
+        for video in videos:
+            updated = threeplay_api.update_transcripts_for_video(video)
+            if updated:
+                threeplay_api.threeplay_remove_tags(video_response.get("id"))
+
+
+@app.task(acks_late=True)
+def attempt_to_update_missing_transcripts():
+    """Check 3play for transcripts for published videos without transcripts"""
+    videos = Video.objects.filter(
+        Q(pdf_transcript_file__isnull=True)
+        | Q(pdf_transcript_file="")
+        | Q(webvtt_transcript_file__isnull=True)
+        | Q(webvtt_transcript_file="")
+    ).filter(website__publish_date__isnull=False)
+
+    for video in videos:
+        if (
+            VideoFile.objects.filter(
+                destination=DESTINATION_YOUTUBE,
+                destination_id__isnull=False,
+                video=video,
+            ).count()
+            > 0
+        ):
+            update_transcripts_for_video.delay(video.id)
