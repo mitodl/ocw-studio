@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.23.4
+Version 0.23.4 (Released September 07, 2021)
 --------------
 
 - delete unpublished courses take two (#551)
