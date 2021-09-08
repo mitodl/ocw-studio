@@ -85,6 +85,15 @@ class Website(TimestampedModel):
             name=permissions_group_name_for_role(constants.ROLE_EDITOR, self)
         ).first()
 
+    @property
+    def collaborators(self):
+        """ Get all site collaborators """
+        return (
+            list(self.admin_group.user_set.all())
+            + [self.owner]
+            + list(self.editor_group.user_set.all())
+        )
+
     def get_url(self, version="live"):
         """Get the home page (live or draft) of the website"""
         base_url = (

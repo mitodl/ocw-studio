@@ -3,6 +3,7 @@ import http
 import logging
 import re
 import time
+from urllib.parse import urljoin
 
 import boto3
 import httplib2
@@ -11,19 +12,64 @@ from django.conf import settings
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseUpload
+from mitol.mail.api import get_message_sender
 from smart_open.s3 import Reader
 
+from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
 
 
 log = logging.getLogger(__name__)
 
-# Quota errors may contain either one of the following
-API_QUOTA_ERROR_MSG = "dailyLimitExceeded"
+# Quota errors should contain the following
+API_QUOTA_ERROR_MSG = "quota"
 
 
 class YouTubeUploadException(Exception):
     """Custom exception for YouTube uploads"""
+
+
+def mail_youtube_upload_failure(video_file: VideoFile):
+    """Notify collaborators that a youtube upload failed"""
+    with get_message_sender(YouTubeUploadFailureMessage) as sender:
+        website = video_file.video.website
+        for collaborator in website.collaborators:
+            sender.build_and_send_message(
+                collaborator,
+                {
+                    "site": {
+                        "title": website.title,
+                        "url": urljoin(
+                            settings.SITE_BASE_URL,
+                            f"sites/{website.name}",
+                        ),
+                    },
+                    "video": {"filename": video_file.video.source_key.split("/")[-1]},
+                },
+            )
+
+
+def mail_youtube_upload_success(video_file: VideoFile):
+    """Notify collaborators that a youtube upload succeeded"""
+    with get_message_sender(YouTubeUploadSuccessMessage) as sender:
+        website = video_file.video.website
+        for collaborator in website.collaborators:
+            sender.build_and_send_message(
+                collaborator,
+                {
+                    "site": {
+                        "title": website.title,
+                        "url": urljoin(
+                            settings.SITE_BASE_URL,
+                            f"sites/{website.name}",
+                        ),
+                    },
+                    "video": {
+                        "filename": video_file.video.source_key.split("/")[-1],
+                        "url": f"https://www.youtube.com/watch?v={video_file.destination_id}",
+                    },
+                },
+            )
 
 
 def resumable_upload(request, max_retries=10):
