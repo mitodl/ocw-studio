@@ -3,18 +3,46 @@ Tests for youtube api
 """
 import random
 import string
+from types import SimpleNamespace
 
 import pytest
 from googleapiclient.errors import HttpError
 
+from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
 from videos.factories import VideoFileFactory
-from videos.youtube import YouTubeApi, YouTubeUploadException, strip_bad_chars
+from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
+from videos.youtube import (
+    YouTubeApi,
+    YouTubeUploadException,
+    mail_youtube_upload_failure,
+    mail_youtube_upload_success,
+    strip_bad_chars,
+)
 
 
 pytestmark = pytest.mark.django_db
 
 # pylint: disable=redefined-outer-name,unused-argument,no-value-for-parameter,unused-variable
+
+
+@pytest.fixture
+def mock_mail(mocker):
+    """ Objects and mocked functions for mail tests"""
+    mock_get_message_sender = mocker.patch("videos.youtube.get_message_sender")
+    mock_sender = mock_get_message_sender.return_value.__enter__.return_value
+    video_file = VideoFileFactory.create()
+    users = UserFactory.create_batch(4)
+    for user in users[:2]:
+        user.groups.add(video_file.video.website.admin_group)
+    for user in users[2:]:
+        user.groups.add(video_file.video.website.editor_group)
+    return SimpleNamespace(
+        mock_get_message_sender=mock_get_message_sender,
+        mock_sender=mock_sender,
+        video_file=video_file,
+        users=users,
+    )
 
 
 def test_youtube_settings(mocker, settings):
@@ -158,3 +186,56 @@ def test_strip_bad_chars():
     Test that `<`,`>` characters are removed from text
     """
     assert strip_bad_chars("<OV>S>") == "OVS"
+
+
+def test_mail_youtube_upload_failure(settings, mock_mail):
+    """Test that the appropriate mail functions are called with correct args"""
+    mail_youtube_upload_failure(mock_mail.video_file)
+    mock_mail.mock_get_message_sender.assert_called_once_with(
+        YouTubeUploadFailureMessage
+    )
+    assert (
+        mock_mail.mock_sender.build_and_send_message.call_count
+        == len(mock_mail.users) + 1
+    )
+    website = mock_mail.video_file.video.website
+    for collaborator in website.collaborators:
+        mock_mail.mock_sender.build_and_send_message.assert_any_call(
+            collaborator,
+            {
+                "site": {
+                    "title": website.title,
+                    "url": f"{settings.SITE_BASE_URL}sites/{website.name}",
+                },
+                "video": {
+                    "filename": mock_mail.video_file.video.source_key.split("/")[-1]
+                },
+            },
+        )
+
+
+def test_mail_youtube_upload_success(settings, mock_mail):
+    """Test that the appropriate mail functions are called with correct args"""
+    mail_youtube_upload_success(mock_mail.video_file)
+    mock_mail.mock_get_message_sender.assert_called_once_with(
+        YouTubeUploadSuccessMessage
+    )
+    assert (
+        mock_mail.mock_sender.build_and_send_message.call_count
+        == len(mock_mail.users) + 1
+    )
+    website = mock_mail.video_file.video.website
+    for collaborator in website.collaborators:
+        mock_mail.mock_sender.build_and_send_message.assert_any_call(
+            collaborator,
+            {
+                "site": {
+                    "title": website.title,
+                    "url": f"{settings.SITE_BASE_URL}sites/{website.name}",
+                },
+                "video": {
+                    "filename": mock_mail.video_file.video.source_key.split("/")[-1],
+                    "url": f"https://www.youtube.com/watch?v={mock_mail.video_file.destination_id}",
+                },
+            },
+        )

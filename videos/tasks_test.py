@@ -140,10 +140,18 @@ def test_update_youtube_statuses(
     mocker.patch(
         "videos.tasks.YouTubeApi.video_status", return_value=YouTubeStatus.PROCESSED
     )
+    mock_mail_youtube_upload_success = mocker.patch(
+        "videos.tasks.mail_youtube_upload_success"
+    )
     update_youtube_statuses()
     assert VideoFile.objects.filter(
         destination_status=YouTubeStatus.PROCESSED, status=VideoFileStatus.COMPLETE
     ).count() == (3 if is_enabled else 0)
+    if is_enabled:
+        for video_file in youtube_video_files_processing:
+            mock_mail_youtube_upload_success.assert_any_call(video_file)
+    else:
+        mock_mail_youtube_upload_success.assert_not_called()
 
 
 def test_update_youtube_statuses_api_quota_exceeded(
@@ -170,9 +178,17 @@ def test_update_youtube_statuses_http_error(mocker, youtube_video_files_processi
         "videos.tasks.YouTubeApi.video_status",
         side_effect=HttpError(MockHttpErrorResponse(403), b"other error"),
     )
-    with pytest.raises(HttpError):
-        update_youtube_statuses()
-    mock_video_status.assert_called_once()
+    mock_mail_youtube_upload_failure = mocker.patch(
+        "videos.tasks.mail_youtube_upload_failure"
+    )
+    mock_log = mocker.patch("videos.tasks.log.exception")
+    update_youtube_statuses()
+    for video_file in youtube_video_files_processing:
+        mock_video_status.assert_any_call(video_file.destination_id)
+        mock_log.assert_any_call(
+            "Error for youtube_id %s: %s", video_file.destination_id, "other error"
+        )
+        mock_mail_youtube_upload_failure.assert_any_call(video_file)
 
 
 def test_update_youtube_statuses_index_error(mocker, youtube_video_files_processing):
@@ -184,13 +200,16 @@ def test_update_youtube_statuses_index_error(mocker, youtube_video_files_process
         "videos.tasks.YouTubeApi.video_status",
         side_effect=IndexError(),
     )
+    mock_mail_youtube_upload_failure = mocker.patch(
+        "videos.tasks.mail_youtube_upload_failure"
+    )
     update_youtube_statuses()
     for video_file in youtube_video_files_processing:
         mock_log.assert_any_call(
-            "Status of YoutubeVideo not found: s3_key %s, youtube_id %s",
-            video_file.s3_key,
+            "Status of YouTube video not found: youtube_id %s",
             video_file.destination_id,
         )
+        mock_mail_youtube_upload_failure.assert_any_call(video_file)
 
 
 @pytest.mark.parametrize("is_enabled", [True, False])

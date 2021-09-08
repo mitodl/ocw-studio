@@ -10,7 +10,12 @@ from main.celery import app
 from main.constants import STATUS_CREATED
 from videos.constants import DESTINATION_YOUTUBE, VideoFileStatus, YouTubeStatus
 from videos.models import VideoFile
-from videos.youtube import API_QUOTA_ERROR_MSG, YouTubeApi
+from videos.youtube import (
+    API_QUOTA_ERROR_MSG,
+    YouTubeApi,
+    mail_youtube_upload_failure,
+    mail_youtube_upload_success,
+)
 
 
 log = logging.getLogger()
@@ -40,6 +45,7 @@ def upload_youtube_videos():
         & Q(status=STATUS_CREATED)
     ).order_by("-created_on")[: settings.YT_UPLOAD_LIMIT]
     for video_file in yt_queue.all():
+        error_msg = None
         try:
             youtube = YouTubeApi()
             response = youtube.upload_video(video_file)
@@ -47,14 +53,17 @@ def upload_youtube_videos():
             video_file.destination_status = response["status"]["uploadStatus"]
             video_file.status = VideoFileStatus.UPLOADED
         except HttpError as error:
-            log.exception("HttpError uploading video to Youtube: %s", video_file.s3_key)
-            if API_QUOTA_ERROR_MSG in error.content.decode("utf-8"):
+            error_msg = error.content.decode("utf-8")
+            if API_QUOTA_ERROR_MSG in error_msg:
                 break
+            log.exception("HttpError uploading video to Youtube: %s", video_file.s3_key)
             video_file.status = VideoFileStatus.FAILED
         except:  # pylint: disable=bare-except
             log.exception("Error uploading video to Youtube: %s", video_file.s3_key)
             video_file.status = VideoFileStatus.FAILED
         video_file.save()
+        if error_msg:
+            mail_youtube_upload_failure(video_file)
 
 
 @app.task
@@ -76,19 +85,26 @@ def update_youtube_statuses():
             if video_file.destination_status == YouTubeStatus.PROCESSED:
                 video_file.status = VideoFileStatus.COMPLETE
             video_file.save()
+            mail_youtube_upload_success(video_file)
         except IndexError:
             # Video might be a dupe or deleted, mark it as failed and continue to next one.
             video_file.status = VideoFileStatus.FAILED
+            video_file.save()
             log.exception(
-                "Status of YoutubeVideo not found: s3_key %s, youtube_id %s",
-                video_file.s3_key,
+                "Status of YouTube video not found: youtube_id %s",
                 video_file.destination_id,
             )
+            mail_youtube_upload_failure(video_file)
         except HttpError as error:
             if API_QUOTA_ERROR_MSG in error.content.decode("utf-8"):
                 # Don't raise the error, task will try on next run until daily quota is reset
                 break
-            raise
+            log.exception(
+                "Error for youtube_id %s: %s",
+                video_file.destination_id,
+                error.content.decode("utf-8"),
+            )
+            mail_youtube_upload_failure(video_file)
 
 
 @app.task(acks_late=True)
