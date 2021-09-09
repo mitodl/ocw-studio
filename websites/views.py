@@ -30,7 +30,10 @@ from main.views import DefaultPagination
 from users.models import User
 from websites import constants
 from websites.api import get_valid_new_filename
-from websites.messages import PreviewOrPublishSuccessMessage
+from websites.messages import (
+    PreviewOrPublishFailureMessage,
+    PreviewOrPublishSuccessMessage,
+)
 from websites.models import (
     Website,
     WebsiteCollection,
@@ -183,7 +186,15 @@ class WebsiteViewSet(
         version = data["version"]
         website = Website.objects.get(name=name)
         site_admins = list(website.admin_group.user_set.all()) + [website.owner]
-        with get_message_sender(PreviewOrPublishSuccessMessage) as sender:
+        success = data["success"]
+        if not success:
+            log.error("Pipeline build failed for site %s", name)
+        message = (
+            PreviewOrPublishSuccessMessage
+            if data["success"]
+            else PreviewOrPublishFailureMessage
+        )
+        with get_message_sender(message) as sender:
             for user in site_admins:
                 sender.build_and_send_message(
                     user,
