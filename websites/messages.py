@@ -14,6 +14,7 @@ class PreviewOrPublishSuccessMessage(TemplatedMessage):
     def get_debug_template_context() -> dict:
         """Returns the extra context for the email debugger"""
         return {
+            "user": SimpleNamespace(name="Test User"),
             "site": SimpleNamespace(
                 name="1-1-computer-science-fall-2024",
                 title="Intro to Computer Science",
@@ -33,6 +34,7 @@ class PreviewOrPublishFailureMessage(TemplatedMessage):
     def get_debug_template_context() -> dict:
         """Returns the extra context for the email debugger"""
         return {
+            "user": SimpleNamespace(name="Test User"),
             "site": SimpleNamespace(
                 name="1-1-computer-science-fall-2024",
                 title="Intro to Computer Science",
