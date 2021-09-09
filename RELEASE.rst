@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.24.0
+--------------
+
+- Add support for linking to resources in the Markdown editor
+- Youtube upload email notifications (#535)
+- run some dependency upgrades
+- add rich display for videos embedded in markdown editor
+
 Version 0.23.4 (Released September 07, 2021)
 --------------
 
