@@ -69,7 +69,7 @@ describe("EmbeddedResource", () => {
   it("should render a video", async () => {
     content.metadata!.filetype = RESOURCE_TYPE_VIDEO
     content.metadata!.description = "My Video!!!"
-    content.metadata!.metadata = { youtube_id: "2XID_W4neJo" }
+    content.metadata!.video_metadata = { youtube_id: "2XID_W4neJo" }
     const { wrapper } = await render()
     expect(wrapper.find(".title").text()).toBe(content.title)
     expect(wrapper.find(".description").text()).toBe(

@@ -47,12 +47,12 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
     }
 
     if (filetype === RESOURCE_TYPE_VIDEO) {
-      const videoMetadata = resource.metadata?.metadata as Record<
+      const videoMetadata = (resource.metadata?.video_metadata ?? {}) as Record<
         string,
         SiteFormValue
       >
 
-      const youtubeId = (videoMetadata?.youtube_id as string) ?? ""
+      const youtubeId = (videoMetadata["youtube_id"] as string) ?? ""
 
       return createPortal(
         <div className="embedded-resource video my-2 d-flex align-items-center">
