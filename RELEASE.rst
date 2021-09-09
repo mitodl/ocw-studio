@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.24.0
+Version 0.24.0 (Released September 09, 2021)
 --------------
 
 - Add support for linking to resources in the Markdown editor
