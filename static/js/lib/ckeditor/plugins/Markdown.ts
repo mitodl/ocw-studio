@@ -77,6 +77,7 @@ export default class Markdown extends MarkdownConfigPlugin {
     const { showdownExtensions, turndownRules } = this.getMarkdownConfig()
 
     const converter = new Converter({
+      tables:     true,
       extensions: showdownExtensions
     })
 

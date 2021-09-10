@@ -63,3 +63,7 @@ declare module '@ckeditor/ckeditor5-media-embed/src/mediaembed';
 declare module '@mitodl/ckeditor5-resource-link/src/link';
 
 declare module '@mitodl/ckeditor5-resource-link/src/constants';
+
+declare module '@ckeditor/ckeditor5-table/src/tabletoolbar';
+
+declare module '@ckeditor/ckeditor5-table/src/table';

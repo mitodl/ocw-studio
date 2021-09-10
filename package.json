@@ -28,6 +28,7 @@
     "@ckeditor/ckeditor5-media-embed": "^29.2.0",
     "@ckeditor/ckeditor5-paragraph": "^29.2.0",
     "@ckeditor/ckeditor5-react": "^3.0.2",
+    "@ckeditor/ckeditor5-table": "29.2.0",
     "@ckeditor/ckeditor5-theme-lark": "^29.2.0",
     "@ckeditor/ckeditor5-upload": "^29.2.0",
     "@ckeditor/ckeditor5-widget": "^29.2.0",

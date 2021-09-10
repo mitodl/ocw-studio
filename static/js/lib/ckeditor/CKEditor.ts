@@ -12,6 +12,8 @@ import ImageToolbarPlugin from "@ckeditor/ckeditor5-image/src/imagetoolbar"
 import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
 import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
+import TablePlugin from "@ckeditor/ckeditor5-table/src/table"
+import TableToolbarPlugin from "@ckeditor/ckeditor5-table/src/tabletoolbar"
 
 import Markdown from "./plugins/Markdown"
 import ResourceEmbed from "./plugins/ResourceEmbed"
@@ -37,6 +39,8 @@ export const FullEditorConfig = {
     LinkPlugin,
     ListPlugin,
     ParagraphPlugin,
+    TablePlugin,
+    TableToolbarPlugin,
     ResourceEmbed,
     ResourcePicker,
     ResourceLink,
@@ -54,6 +58,7 @@ export const FullEditorConfig = {
       "bulletedList",
       "numberedList",
       "blockQuote",
+      "insertTable",
       "undo",
       "redo",
       ADD_RESOURCE_LINK,
@@ -62,6 +67,10 @@ export const FullEditorConfig = {
   },
   image: {
     toolbar: ["imageStyle:full", "imageStyle:side", "|", "imageTextAlternative"]
+  },
+  table: {
+    contentToolbar:  ["tableColumn", "tableRow", "mergeTableCells"],
+    defaultHeadings: { rows: 1 }
   },
   language: "en"
 }
