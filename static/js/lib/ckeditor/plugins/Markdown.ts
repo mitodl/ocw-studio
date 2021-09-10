@@ -59,6 +59,7 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
    */
   toData(viewFragment: DocumentFragment): string {
     const html = this._htmlDP.toData(viewFragment)
+    console.log(html);
     return this.html2md(html)
   }
 }
