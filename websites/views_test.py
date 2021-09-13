@@ -21,7 +21,10 @@ from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
 )
-from websites.messages import PreviewOrPublishSuccessMessage
+from websites.messages import (
+    PreviewOrPublishFailureMessage,
+    PreviewOrPublishSuccessMessage,
+)
 from websites.models import (
     Website,
     WebsiteCollection,
@@ -300,23 +303,32 @@ def test_websites_endpoint_publish_error(mocker, drf_client):
     assert resp.data == {"details": "422 {}"}
 
 
+@pytest.mark.parametrize("success", [True, False])
 @pytest.mark.parametrize("version", ["live", "draft"])
 def test_websites_endpoint_pipeline_complete(
-    settings, mocker, drf_client, permission_groups, version
+    settings, mocker, drf_client, permission_groups, version, success
 ):
     """The pipeline_complete endpoint should send notifications to site owner/admins"""
     settings.OCW_STUDIO_LIVE_URL = "http://test.live.edu/"
     settings.OCW_STUDIO_DRAFT_URL = "http://test.draft.edu"
     mock_get_message_sender = mocker.patch("websites.views.get_message_sender")
     mock_sender = mock_get_message_sender.return_value.__enter__.return_value
+    mock_log = mocker.patch("websites.views.log.error")
     settings.API_BEARER_TOKEN = "abc123"
     website = permission_groups.websites[0]
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
     resp = drf_client.post(
         reverse("websites_api-pipeline-complete", kwargs={"name": website.name}),
-        data={"version": version, "success": True},
+        data={"version": version, "success": success},
     )
-    mock_get_message_sender.assert_called_once_with(PreviewOrPublishSuccessMessage)
+    message = (
+        PreviewOrPublishSuccessMessage if success else PreviewOrPublishFailureMessage
+    )
+    mock_get_message_sender.assert_called_once_with(message)
+    if not success:
+        mock_log.assert_called_once_with(
+            "Pipeline build failed for site %s", website.name
+        )
     assert mock_sender.build_and_send_message.call_count == 2
     for user in [website.owner]:
         mock_sender.build_and_send_message.assert_any_call(

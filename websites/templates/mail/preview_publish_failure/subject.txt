@@ -1,0 +1,1 @@
+{{ site_name }}: "{{site.title}}" new {{ version }} version failed to complete
