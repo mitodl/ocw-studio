@@ -18,6 +18,7 @@ from gdrive_sync.tasks import create_gdrive_folder_if_not_exists
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
 from websites import constants
+from websites.api import update_youtube_thumbnail
 from websites.models import (
     Website,
     WebsiteCollection,
@@ -217,6 +218,9 @@ class WebsiteContentDetailSerializer(
 
     def update(self, instance, validated_data):
         """Add updated_by to the data"""
+        update_youtube_thumbnail(
+            instance.website.uuid, validated_data.get("metadata"), overwrite=True
+        )
         instance = super().update(
             instance, {"updated_by": self.user_from_request(), **validated_data}
         )
@@ -309,6 +313,10 @@ class WebsiteContentCreateSerializer(
             for field in {"is_page_content", "filename", "dirpath"}
             if field in self.context
         }
+        update_youtube_thumbnail(
+            self.context["website_id"], validated_data.get("metadata")
+        )
+
         instance = super().create(
             {
                 "website_id": self.context["website_id"],

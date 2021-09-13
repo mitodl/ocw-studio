@@ -28,8 +28,9 @@ from main.permissions import ReadonlyPermission
 from main.utils import valid_key
 from main.views import DefaultPagination
 from users.models import User
+from videos.youtube import update_youtube_metadata
 from websites import constants
-from websites.api import get_valid_new_filename
+from websites.api import get_valid_new_filename, unassigned_youtube_ids
 from websites.messages import (
     PreviewOrPublishFailureMessage,
     PreviewOrPublishSuccessMessage,
@@ -152,10 +153,17 @@ class WebsiteViewSet(
     def preview(self, request, name=None):
         """Trigger a preview task for the website"""
         try:
-            preview_website(self.get_object())
+            website = self.get_object()
+            incomplete_videos = [
+                video.title for video in unassigned_youtube_ids(website)
+            ]
+            message = ""
+            if len(incomplete_videos) > 0:
+                message = f"WARNING: The following videos have missing YouTube IDs: {','.join(incomplete_videos)}"
+            preview_website(website)
             return Response(
                 status=200,
-                data={"details": f"Success adding a preview task for {name}"},
+                data={"details": message},
             )
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error previewing %s", name)
@@ -168,12 +176,22 @@ class WebsiteViewSet(
         """Trigger a publish task for the website"""
         try:
             website = self.get_object()
+            incomplete_videos = [
+                video.title for video in unassigned_youtube_ids(website)
+            ]
+            if len(incomplete_videos) > 0:
+                return Response(
+                    status=400,
+                    data={
+                        "details": f"The following video resources require YouTube ID's: {','.join(incomplete_videos)}"
+                    },
+                )
             publish_website(website)
             website.publish_date = now_in_utc()
             website.save()
             return Response(
                 status=200,
-                data={"details": f"Success adding a publish task for {name}"},
+                data={"details": ""},
             )
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error publishing %s", name)

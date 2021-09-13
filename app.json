@@ -465,12 +465,36 @@
       "description": "Youtube access token",
       "required": false
     },
+    "YT_CATEGORY_ID": {
+      "description": "Default video category ID for youtube",
+      "required": false
+    },
     "YT_CLIENT_ID": {
       "description": "Youtube Client ID",
       "required": false
     },
     "YT_CLIENT_SECRET": {
       "description": "Youtube client secret key",
+      "required": false
+    },
+    "YT_FIELD_DESCRIPTION": {
+      "description": "The site config metadata field for YouTube description",
+      "required": false
+    },
+    "YT_FIELD_ID": {
+      "description": "The site config metadata field for YouTube ID",
+      "required": false
+    },
+    "YT_FIELD_SPEAKERS": {
+      "description": "The site config metadata field for YouTube speakers",
+      "required": false
+    },
+    "YT_FIELD_TAGS": {
+      "description": "The site config metadata field for YouTube video tags",
+      "required": false
+    },
+    "YT_FIELD_THUMBNAIL": {
+      "description": "The site config metadata field for YouTube thumbnail url",
       "required": false
     },
     "YT_PROJECT_ID": {

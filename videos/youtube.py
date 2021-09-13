@@ -9,6 +9,7 @@ import boto3
 import httplib2
 import oauth2client
 from django.conf import settings
+from django.db.models import Q
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseUpload
@@ -17,6 +18,9 @@ from smart_open.s3 import Reader
 
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
+from websites.api import is_ocw_site
+from websites.models import Website, WebsiteContent
+from websites.utils import get_dict_field
 
 
 log = logging.getLogger(__name__)
@@ -27,6 +31,17 @@ API_QUOTA_ERROR_MSG = "quota"
 
 class YouTubeUploadException(Exception):
     """Custom exception for YouTube uploads"""
+
+
+def is_youtube_enabled() -> bool:
+    """ Returns True if youtube is enabled """
+    return (
+        settings.YT_ACCESS_TOKEN
+        and settings.YT_REFRESH_TOKEN
+        and settings.YT_CLIENT_ID
+        and settings.YT_CLIENT_SECRET
+        and settings.YT_PROJECT_ID
+    )
 
 
 def mail_youtube_upload_failure(video_file: VideoFile):
@@ -191,6 +206,7 @@ class YouTubeApi:
             snippet=dict(
                 title=strip_bad_chars(original_name)[:100],
                 description="",
+                categoryId=settings.YT_CATEGORY_ID,
             ),
             status=dict(privacyStatus=privacy),
         )
@@ -207,6 +223,40 @@ class YouTubeApi:
         response = resumable_upload(request)
         return response
 
+    def update_privacy(self, youtube_id: str, privacy: str):
+        """Update the privacy level of a video"""
+        response = (
+            self.client.videos()
+            .update(part="status", body={"id": youtube_id, "privacyStatus": privacy})
+            .execute()
+        )
+        log.error(response)
+
+    def update_video(self, resource: WebsiteContent, privacy=None):
+        """
+        Update a video's metadata based on a WebsiteContent object that is assumed to have certain fields.
+        """
+        metadata = resource.metadata
+        description = get_dict_field(metadata, settings.YT_FIELD_DESCRIPTION)
+        speakers = get_dict_field(metadata, settings.YT_FIELD_SPEAKERS)
+        if speakers:
+            description = f"{description}\n\nSpeakers: {speakers}"
+        youtube_id = get_dict_field(metadata, settings.YT_FIELD_ID)
+        self.client.videos().update(
+            part="snippet",
+            body={
+                "id": youtube_id,
+                "snippet": {
+                    "title": resource.title,
+                    "description": description,
+                    "tags": get_dict_field(metadata, settings.YT_FIELD_TAGS),
+                    "categoryId": settings.YT_CATEGORY_ID,
+                },
+            },
+        ).execute()
+        if privacy:
+            self.update_privacy(youtube_id, privacy=privacy)
+
     def delete_video(self, video_id):
         """
         Delete a video from YouTube
@@ -218,3 +268,15 @@ class YouTubeApi:
             int: 204 status code if successful
         """
         return self.client.videos().delete(id=video_id).execute()
+
+
+def update_youtube_metadata(website: Website, privacy=None):
+    """ Update YouTube video metadata via the API """
+    if not is_youtube_enabled() or not is_ocw_site(website):
+        return
+    youtube = YouTubeApi()
+    query_id_field = f"metadata__{'__'.join(settings.YT_FIELD_ID.split('.'))}"
+    for video_resource in website.websitecontent_set.filter(
+        Q(metadata__filetype="Video")
+    ).exclude(Q(**{query_id_field: None}) | Q(**{query_id_field: ""})):
+        youtube.update_video(video_resource, privacy=privacy)

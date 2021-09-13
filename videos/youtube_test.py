@@ -18,12 +18,22 @@ from videos.youtube import (
     mail_youtube_upload_failure,
     mail_youtube_upload_success,
     strip_bad_chars,
+    update_youtube_metadata,
 )
+from websites.constants import CONTENT_TYPE_RESOURCE
+from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.models import WebsiteContent
 
 
 pytestmark = pytest.mark.django_db
 
 # pylint: disable=redefined-outer-name,unused-argument,no-value-for-parameter,unused-variable
+
+
+@pytest.fixture
+def youtube_mocker(mocker):
+    """Return a mock youtube api client"""
+    return mocker.patch("videos.youtube.build")
 
 
 @pytest.fixture
@@ -66,7 +76,7 @@ def test_youtube_settings(mocker, settings):
     )
 
 
-def test_upload_video(mocker):
+def test_upload_video(youtube_mocker):
     """
     Test that the upload_video task calls the YouTube API execute method
     """
@@ -78,7 +88,6 @@ def test_upload_video(mocker):
         "snippet": {"description": "Testing description", "title": "Testing123"},
         "status": {"uploadStatus": "uploaded"},
     }
-    youtube_mocker = mocker.patch("videos.youtube.build")
     youtube_mocker().videos.return_value.insert.return_value.next_chunk.side_effect = [
         (None, None),
         (None, video_upload_response),
@@ -87,12 +96,11 @@ def test_upload_video(mocker):
     assert response == video_upload_response
 
 
-def test_upload_video_no_id(mocker):
+def test_upload_video_no_id(youtube_mocker):
     """
     Test that the upload_video task fails if the response contains no id
     """
     videofile = VideoFileFactory()
-    youtube_mocker = mocker.patch("videos.youtube.build")
     youtube_mocker().videos.return_value.insert.return_value.next_chunk.return_value = (
         None,
         {},
@@ -110,11 +118,10 @@ def test_upload_video_no_id(mocker):
         [IndexError, False],
     ],
 )
-def test_upload_errors_retryable(mocker, error, retryable):
+def test_upload_errors_retryable(mocker, youtube_mocker, error, retryable):
     """
     Test that uploads are retried 10x for retryable exceptions
     """
-    youtube_mocker = mocker.patch("videos.youtube.build")
     mocker.patch("videos.youtube.time")
     videofile = VideoFileFactory()
     youtube_mocker().videos.return_value.insert.return_value.next_chunk.side_effect = (
@@ -125,7 +132,7 @@ def test_upload_errors_retryable(mocker, error, retryable):
     assert str(exc.value).startswith("Retried YouTube upload 10x") == retryable
 
 
-def test_upload_video_long_fields(mocker):
+def test_upload_video_long_fields(mocker, youtube_mocker):
     """
     Test that the upload_youtube_video task truncates title and description if too long
     """
@@ -133,29 +140,63 @@ def test_upload_video_long_fields(mocker):
     video_file = VideoFileFactory.create()
     video_file.video.source_key = video_file.s3_key.replace("file_", name)
     mocker.patch("videos.youtube.resumable_upload")
-    youtube_mocker = mocker.patch("videos.youtube.build")
     mock_upload = youtube_mocker().videos.return_value.insert
     YouTubeApi().upload_video(video_file)
     called_args, called_kwargs = mock_upload.call_args
     assert called_kwargs["body"]["snippet"]["title"] == name[:100]
 
 
-def test_delete_video(mocker):
+def test_delete_video(youtube_mocker):
     """
     Test that the 'delete_video' method executes a YouTube API deletion request and returns the status code
     """
-    youtube_mocker = mocker.patch("videos.youtube.build")
     youtube_mocker().videos.return_value.delete.return_value.execute.return_value = 204
     assert YouTubeApi().delete_video("foo") == 204
     youtube_mocker().videos.return_value.delete.assert_called_with(id="foo")
 
 
-def test_video_status(mocker):
+@pytest.mark.parametrize("privacy", [None, "public"])
+def test_update_video(settings, youtube_mocker, privacy):
+    """update_video should send the correct data in a request to update youtube metadata"""
+    speakers = "speaker1, speaker2"
+    tags = "tag1, tag2"
+    youtube_id = "abc123"
+    description = "video test description"
+    content = WebsiteContentFactory.create(
+        metadata={
+            "filetype": "Video",
+            "description": description,
+            "video_metadata": {
+                "youtube_id": youtube_id,
+                "video_tags": tags,
+                "video_speakers": speakers,
+            },
+        }
+    )
+    YouTubeApi().update_video(content, privacy=privacy)
+    youtube_mocker().videos.return_value.update.assert_any_call(
+        part="snippet",
+        body={
+            "id": youtube_id,
+            "snippet": {
+                "title": content.title,
+                "description": f"{description}\n\nSpeakers: {speakers}",
+                "tags": tags,
+                "categoryId": settings.YT_CATEGORY_ID,
+            },
+        },
+    )
+    if privacy is not None:
+        youtube_mocker().videos.return_value.update.assert_any_call(
+            part="status", body={"id": youtube_id, "privacyStatus": privacy}
+        )
+
+
+def test_video_status(youtube_mocker):
     """
     Test that the 'video_status' method returns the correct value from the API response
     """
     expected_status = "processed"
-    youtube_mocker = mocker.patch("videos.youtube.build")
     youtube_mocker().videos.return_value.list.return_value.execute.return_value = {
         "etag": '"ld9biNPKjAjgjV7EZ4EKeEGrhao/Lf7oS5V-Gjw0XHBBKFJRpn60z3w"',
         "items": [
@@ -239,3 +280,38 @@ def test_mail_youtube_upload_success(settings, mock_mail):
                 },
             },
         )
+
+
+@pytest.mark.parametrize("youtube_enabled", [True, False])
+@pytest.mark.parametrize("is_ocw", [True, False])
+def test_update_youtube_metadata(mocker, youtube_enabled, is_ocw):
+    """ Check that youtube.update_video is called for appropriate resources and not others"""
+    mock_update_video = mocker.patch("videos.youtube.YouTubeApi.update_video")
+    mocker.patch("videos.youtube.is_ocw_site", return_value=is_ocw)
+    mocker.patch("videos.youtube.is_youtube_enabled", return_value=youtube_enabled)
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={"filetype": "Image", "video_metadata": {"youtube_id": "fakeid"}},
+    )
+    for youtube_id in ["", None, "abc123", "def456"]:
+        WebsiteContentFactory.create(
+            website=website,
+            type=CONTENT_TYPE_RESOURCE,
+            metadata={
+                "filetype": "Video",
+                "video_metadata": {"youtube_id": youtube_id},
+            },
+        )
+    update_youtube_metadata(website, privacy="public")
+    if youtube_enabled and is_ocw:
+        assert mock_update_video.call_count == 2
+        for youtube_id in ["abc123", "def456"]:
+            mock_update_video.assert_any_call(
+                WebsiteContent.objects.get(
+                    website=website, metadata__video_metadata__youtube_id=youtube_id
+                ),
+                privacy="public",
+            )
+    else:
+        mock_update_video.assert_not_called()

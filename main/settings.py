@@ -489,6 +489,11 @@ VIDEO_S3_TRANSCODE_PREFIX = get_string(
 YT_ACCESS_TOKEN = get_string(
     name="YT_ACCESS_TOKEN", default="", description="Youtube access token"
 )
+YT_CATEGORY_ID = get_int(
+    name="YT_CATEGORY_ID",
+    default=27,
+    description="Default video category ID for youtube",
+)
 YT_CLIENT_ID = get_string(
     name="YT_CLIENT_ID", default="", description="Youtube Client ID"
 )
@@ -516,6 +521,33 @@ YT_UPLOAD_LIMIT = get_int(
     default=50,
     description="Max Youtube uploads allowed per day",
 )
+# YouTube OCW metadata fields
+YT_FIELD_ID = get_string(
+    name="YT_FIELD_ID",
+    default="video_metadata.youtube_id",
+    description="The site config metadata field for YouTube ID",
+)
+YT_FIELD_DESCRIPTION = get_string(
+    name="YT_FIELD_DESCRIPTION",
+    default="description",
+    description="The site config metadata field for YouTube description",
+)
+YT_FIELD_SPEAKERS = get_string(
+    name="YT_FIELD_SPEAKERS",
+    default="video_metadata.video_speakers",
+    description="The site config metadata field for YouTube speakers",
+)
+YT_FIELD_TAGS = get_string(
+    name="YT_FIELD_TAGS",
+    default="video_metadata.video_tags",
+    description="The site config metadata field for YouTube video tags",
+)
+YT_FIELD_THUMBNAIL = get_string(
+    name="YT_FIELD_THUMBNAIL",
+    default="video_files.video_thumbnail_file",
+    description="The site config metadata field for YouTube thumbnail url",
+)
+
 
 UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY = get_int(
     name="UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY",

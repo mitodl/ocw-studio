@@ -4,7 +4,14 @@ from uuid import UUID
 import factory
 import pytest
 
-from websites.api import fetch_website, get_valid_new_filename, get_valid_new_slug
+from websites.api import (
+    fetch_website,
+    get_valid_new_filename,
+    get_valid_new_slug,
+    is_ocw_site,
+    unassigned_youtube_ids,
+    update_youtube_thumbnail,
+)
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
@@ -143,3 +150,86 @@ def test_websitestarter_autogen_slug_unique(existing_slugs, exp_result_slug):
         )
         == exp_result_slug
     )
+
+
+def test_is_ocw_site(settings):
+    """is_ocw_site() should return expected bool value for a website"""
+    settings.OCW_IMPORT_STARTER_SLUG = "ocw-course"
+    ocw_site = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course")
+    )
+    other_site = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="not-ocw-course")
+    )
+    assert is_ocw_site(ocw_site) is True
+    assert is_ocw_site(other_site) is False
+
+
+@pytest.mark.parametrize(
+    "youtube_id,existing_thumb,overwrite,expected_thumb",
+    [
+        [
+            None,
+            "https://img.youtube.com/fake/0.jpg",
+            True,
+            "https://img.youtube.com/fake/0.jpg",
+        ],
+        [
+            "abc123",
+            "https://img.youtube.com/def456/0.jpg",
+            False,
+            "https://img.youtube.com/def456/0.jpg",
+        ],
+        ["abc123", "", False, "https://img.youtube.com/vi/abc123/0.jpg"],
+        ["abc123", None, False, "https://img.youtube.com/vi/abc123/0.jpg"],
+        [
+            "abc123",
+            "https://img.youtube.com/def456/0.jpg",
+            True,
+            "https://img.youtube.com/vi/abc123/0.jpg",
+        ],
+    ],
+)
+def test_update_youtube_thumbnail(
+    mocker, youtube_id, existing_thumb, overwrite, expected_thumb
+):
+    """The youtube thumbnail field should be set to the specified value if it exists"""
+    mocker.patch("websites.api.is_ocw_site", return_value=True)
+    website = WebsiteFactory.create()
+    metadata = {
+        "video_metadata": {"youtube_id": youtube_id},
+        "video_files": {"video_thumbnail_file": existing_thumb},
+    }
+    update_youtube_thumbnail(website.uuid, metadata, overwrite=overwrite)
+    assert metadata["video_files"]["video_thumbnail_file"] == expected_thumb
+
+
+@pytest.mark.parametrize("is_ocw", [True, False])
+def test_unassigned_youtube_ids(mocker, is_ocw):
+    """unassigned_youtube_ids should return WebsiteContent objects for videos with no youtube ids"""
+    mocker.patch("websites.api.is_ocw_site", return_value=is_ocw)
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create_batch(
+        3,
+        website=website,
+        metadata={"filetype": "Video", "video_metadata": {"youtube_id": "abc123"}},
+    )
+    videos_without_ids = []
+    for yt_id in [None, ""]:
+        videos_without_ids.append(
+            WebsiteContentFactory.create(
+                website=website,
+                metadata={"filetype": "Video", "video_metadata": {"youtube_id": yt_id}},
+            )
+        )
+    WebsiteContentFactory.create(
+        website=website,
+        metadata={"filetype": "Image", "video_metadata": {"youtube_id": "bad_data"}},
+    )
+    unassigned_content = unassigned_youtube_ids(website)
+    if is_ocw:
+        assert len(unassigned_content) == 2
+        for content in videos_without_ids:
+            assert content in unassigned_content
+    else:
+        assert len(unassigned_content) == 0

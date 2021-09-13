@@ -1,12 +1,14 @@
 """API functionality for websites"""
-from typing import Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
+from django.conf import settings
 from django.db.models import Q, QuerySet
 from mitol.common.utils import max_or_none
 
 from websites.constants import CONTENT_FILENAME_MAX_LEN
 from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.utils import get_dict_field, set_dict_field
 
 
 def get_valid_new_filename(
@@ -139,3 +141,35 @@ def fetch_website(filter_value: str) -> Website:
         website_results, key=lambda _website: 1 if _website.name == filter_value else 2
     )
     return next(sorted_results)
+
+
+def is_ocw_site(website: Website) -> bool:
+    """Return true if the site is an OCW site"""
+    return website.starter.slug == settings.OCW_IMPORT_STARTER_SLUG
+
+
+def update_youtube_thumbnail(website_id: str, metadata: Dict, overwrite=False):
+    """ Assign a youtube thumbnail url if appropriate to a website's metadata"""
+    website = Website.objects.get(uuid=website_id)
+    if is_ocw_site(website):
+        youtube_id = get_dict_field(metadata, settings.YT_FIELD_ID)
+        if youtube_id and (
+            not get_dict_field(metadata, settings.YT_FIELD_THUMBNAIL) or overwrite
+        ):
+            set_dict_field(
+                metadata,
+                settings.YT_FIELD_THUMBNAIL,
+                f"https://img.youtube.com/vi/{youtube_id}/0.jpg",
+            )
+
+
+def unassigned_youtube_ids(website: Website) -> List[WebsiteContent]:
+    """Return a list of WebsiteContent objects for videos with unassigned youtube ids"""
+    if not is_ocw_site(website):
+        return []
+    query_id_field = f"metadata__{'__'.join(settings.YT_FIELD_ID.split('.'))}"
+    return WebsiteContent.objects.filter(
+        Q(website=website)
+        & Q(metadata__filetype="Video")
+        & (Q(**{query_id_field: None}) | Q(**{query_id_field: ""}))
+    )
