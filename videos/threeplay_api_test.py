@@ -5,16 +5,14 @@ from io import BytesIO
 import pytest
 
 from videos.constants import DESTINATION_YOUTUBE
-from videos.factories import VideoFactory, VideoFileFactory
+from videos.factories import VideoFileFactory
 from videos.threeplay_api import (
     fetch_file,
     threeplay_remove_tags,
     threeplay_transcript_api_request,
     threeplay_updated_media_file_request,
     update_transcripts_for_video,
-    update_transcripts_for_website,
 )
-from websites.factories import WebsiteFactory
 from websites.site_config_api import SiteConfig
 
 
@@ -152,17 +150,3 @@ def test_update_transcripts_for_video(
         )
     else:
         assert video_file.video.webvtt_transcript_file == ""
-
-
-def test_update_transcripts_for_website(mocker):
-    """test update_transcripts_for_website"""
-    website = WebsiteFactory.create()
-    videos = VideoFactory.create_batch(4, website=website)
-    update_video_transcript = mocker.patch(
-        "videos.threeplay_api.update_transcripts_for_video"
-    )
-
-    update_transcripts_for_website(website)
-
-    for video in videos:
-        update_video_transcript.assert_any_call(video)

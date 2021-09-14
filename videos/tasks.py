@@ -18,6 +18,9 @@ from videos.youtube import (
     mail_youtube_upload_failure,
     mail_youtube_upload_success,
 )
+from websites.api import is_ocw_site
+from websites.models import Website
+from websites.utils import get_dict_query_field, set_dict_field
 
 
 log = logging.getLogger()
@@ -133,7 +136,31 @@ def delete_s3_objects(
 @app.task(acks_late=True)
 def update_transcripts_for_video(video_id: int):
     """Update transcripts for a video"""
-    threeplay_api.update_transcripts_for_video(Video.objects.get(id=video_id))
+    video = Video.objects.get(id=video_id)
+    if threeplay_api.update_transcripts_for_video(video):
+        website = video.website
+        if is_ocw_site(website):
+            search_fields = {}
+            search_fields[
+                get_dict_query_field("metadata", settings.FIELD_FILETYPE)
+            ] = "Video"
+            search_fields[
+                get_dict_query_field("metadata", settings.YT_FIELD_ID)
+            ] = video.youtube_id()
+
+            for video_resource in website.websitecontent_set.filter(**search_fields):
+                metadata = video_resource.metadata
+                set_dict_field(
+                    metadata,
+                    settings.YT_FIELD_TRANSCRIPT,
+                    video.pdf_transcript_file.name,
+                )
+                set_dict_field(
+                    metadata,
+                    settings.YT_FIELD_CAPTIONS,
+                    video.webvtt_transcript_file.name,
+                )
+                video_resource.save()
 
 
 @app.task(acks_late=True)
@@ -151,7 +178,7 @@ def update_transcripts_for_updated_videos():
         )
         videos = {videofile.video for videofile in videofiles}
         for video in videos:
-            updated = threeplay_api.update_transcripts_for_video(video)
+            updated = update_transcripts_for_video(video.id)
             if updated:
                 threeplay_api.threeplay_remove_tags(video_response.get("id"))
 
@@ -176,3 +203,11 @@ def attempt_to_update_missing_transcripts():
             > 0
         ):
             update_transcripts_for_video.delay(video.id)
+
+
+@app.task(acks_late=True)
+def update_transcripts_for_website(website: Website):
+    """Update transcripts from 3play for every video for a website"""
+
+    for video in website.videos.all():
+        update_transcripts_for_video(video.id)

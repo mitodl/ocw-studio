@@ -8,7 +8,6 @@ from django.core.files import File
 
 from videos.constants import DESTINATION_YOUTUBE
 from videos.models import Video
-from websites.models import Website
 
 
 log = logging.getLogger(__name__)
@@ -111,10 +110,3 @@ def update_transcripts_for_video(video: Video) -> bool:
         return True
 
     return False
-
-
-def update_transcripts_for_website(website: Website):
-    """Update transcripts from 3play for every video for a website"""
-
-    for video in website.videos.all():
-        update_transcripts_for_video(video)

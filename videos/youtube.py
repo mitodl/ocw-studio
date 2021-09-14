@@ -20,7 +20,7 @@ from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMes
 from videos.models import VideoFile
 from websites.api import is_ocw_site
 from websites.models import Website, WebsiteContent
-from websites.utils import get_dict_field
+from websites.utils import get_dict_field, get_dict_query_field
 
 
 log = logging.getLogger(__name__)
@@ -275,7 +275,7 @@ def update_youtube_metadata(website: Website, privacy=None):
     if not is_youtube_enabled() or not is_ocw_site(website):
         return
     youtube = YouTubeApi()
-    query_id_field = f"metadata__{'__'.join(settings.YT_FIELD_ID.split('.'))}"
+    query_id_field = get_dict_query_field("metadata", settings.YT_FIELD_ID)
     for video_resource in website.websitecontent_set.filter(
         Q(metadata__filetype="Video")
     ).exclude(Q(**{query_id_field: None}) | Q(**{query_id_field: ""})):
