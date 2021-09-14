@@ -21,10 +21,6 @@ from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
 )
-from websites.messages import (
-    PreviewOrPublishFailureMessage,
-    PreviewOrPublishSuccessMessage,
-)
 from websites.models import (
     Website,
     WebsiteCollection,
@@ -226,7 +222,6 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
 def test_websites_endpoint_preview(mocker, drf_client, has_missing_ids):
     """A user with admin/edit permissions should be able to request a website preview"""
     mock_preview_website = mocker.patch("websites.views.preview_website")
-    mock_youtube_update = mocker.patch("websites.views.update_youtube_metadata")
     website = WebsiteFactory.create()
     video_content = WebsiteContentFactory.create_batch(2, website=website)
     mocker.patch(
@@ -248,7 +243,6 @@ def test_websites_endpoint_preview(mocker, drf_client, has_missing_ids):
         )
     assert resp.data["details"] == expected_msg
     mock_preview_website.assert_called_once_with(website)
-    mock_youtube_update.assert_called_once_with(website)
 
 
 def test_websites_endpoint_preview_error(mocker, drf_client):
@@ -272,7 +266,6 @@ def test_websites_endpoint_preview_error(mocker, drf_client):
 def test_websites_endpoint_publish(mocker, drf_client, has_missing_ids):
     """A user with admin permissions should be able to request a website publish"""
     mock_publish_website = mocker.patch("websites.views.publish_website")
-    mock_youtube_update = mocker.patch("websites.views.update_youtube_metadata")
     website = WebsiteFactory.create()
     video_content = WebsiteContentFactory.create_batch(2, website=website)
     mocker.patch(
@@ -295,12 +288,10 @@ def test_websites_endpoint_publish(mocker, drf_client, has_missing_ids):
         )
         assert website.publish_date == last_published
         mock_publish_website.assert_not_called()
-        mock_youtube_update.assert_not_called()
     else:
         expected_msg = ""
         assert website.publish_date > last_published
         mock_publish_website.assert_called_once_with(website)
-        mock_youtube_update.assert_called_once_with(website, privacy="public")
     assert resp.data["details"] == expected_msg
 
 
@@ -343,11 +334,9 @@ def test_websites_endpoint_pipeline_complete(
     settings, mocker, drf_client, permission_groups, version, success
 ):
     """The pipeline_complete endpoint should send notifications to site owner/admins"""
-    settings.OCW_STUDIO_LIVE_URL = "http://test.live.edu/"
-    settings.OCW_STUDIO_DRAFT_URL = "http://test.draft.edu"
-    mock_get_message_sender = mocker.patch("websites.views.get_message_sender")
-    mock_sender = mock_get_message_sender.return_value.__enter__.return_value
-    mock_log = mocker.patch("websites.views.log.error")
+    mock_mail_website_admins = mocker.patch(
+        "websites.views.mail_website_admins_on_publish"
+    )
     settings.API_BEARER_TOKEN = "abc123"
     website = permission_groups.websites[0]
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
@@ -355,26 +344,7 @@ def test_websites_endpoint_pipeline_complete(
         reverse("websites_api-pipeline-complete", kwargs={"name": website.name}),
         data={"version": version, "success": success},
     )
-    message = (
-        PreviewOrPublishSuccessMessage if success else PreviewOrPublishFailureMessage
-    )
-    mock_get_message_sender.assert_called_once_with(message)
-    if not success:
-        mock_log.assert_called_once_with(
-            "Pipeline build failed for site %s", website.name
-        )
-    assert mock_sender.build_and_send_message.call_count == 2
-    for user in [website.owner]:
-        mock_sender.build_and_send_message.assert_any_call(
-            user,
-            {
-                "site": {
-                    "title": website.title,
-                    "url": f"http://test.{version}.edu/{website.starter.config['root-url-path']}/{website.name}",
-                },
-                "version": version,
-            },
-        )
+    mock_mail_website_admins.assert_called_once_with(website, version, success)
     assert resp.status_code == 200
 
 

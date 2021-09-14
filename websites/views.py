@@ -10,7 +10,6 @@ from django.utils.functional import cached_property
 from django.utils.text import slugify
 from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
 from mitol.common.utils.datetime import now_in_utc
-from mitol.mail.api import get_message_sender
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -28,12 +27,11 @@ from main.permissions import ReadonlyPermission
 from main.utils import valid_key
 from main.views import DefaultPagination
 from users.models import User
-from videos.youtube import update_youtube_metadata
 from websites import constants
-from websites.api import get_valid_new_filename, unassigned_youtube_ids
-from websites.messages import (
-    PreviewOrPublishFailureMessage,
-    PreviewOrPublishSuccessMessage,
+from websites.api import (
+    get_valid_new_filename,
+    mail_website_admins_on_publish,
+    unassigned_youtube_ids,
 )
 from websites.models import (
     Website,
@@ -202,28 +200,9 @@ class WebsiteViewSet(
         """Process webhook requests from completed preview/publish pipeline runs"""
         data = request.data
         version = data["version"]
-        website = Website.objects.get(name=name)
-        site_admins = list(website.admin_group.user_set.all()) + [website.owner]
-        success = data["success"]
-        if not success:
-            log.error("Pipeline build failed for site %s", name)
-        message = (
-            PreviewOrPublishSuccessMessage
-            if data["success"]
-            else PreviewOrPublishFailureMessage
+        mail_website_admins_on_publish(
+            Website.objects.get(name=name), version, data["success"]
         )
-        with get_message_sender(message) as sender:
-            for user in site_admins:
-                sender.build_and_send_message(
-                    user,
-                    {
-                        "site": {
-                            "title": website.title,
-                            "url": website.get_url(version),
-                        },
-                        "version": version,
-                    },
-                )
         return Response(status=200)
 
 

@@ -1,14 +1,23 @@
 """API functionality for websites"""
+import logging
 from typing import Dict, List, Optional
 from uuid import UUID
 
 from django.conf import settings
 from django.db.models import Q, QuerySet
 from mitol.common.utils import max_or_none
+from mitol.mail.api import get_message_sender
 
 from websites.constants import CONTENT_FILENAME_MAX_LEN
+from websites.messages import (
+    PreviewOrPublishFailureMessage,
+    PreviewOrPublishSuccessMessage,
+)
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.utils import get_dict_field, set_dict_field
+
+
+log = logging.getLogger(__name__)
 
 
 def get_valid_new_filename(
@@ -173,3 +182,25 @@ def unassigned_youtube_ids(website: Website) -> List[WebsiteContent]:
         & Q(metadata__filetype="Video")
         & (Q(**{query_id_field: None}) | Q(**{query_id_field: ""}))
     )
+
+
+def mail_website_admins_on_publish(website: Website, version: str, success: bool):
+    """Send a success or failure message to site admins on publishing failure"""
+    site_admins = list(website.admin_group.user_set.all()) + [website.owner]
+    if not success:
+        log.error("%s version build failed for site %s", version, website.name)
+    message = (
+        PreviewOrPublishSuccessMessage if success else PreviewOrPublishFailureMessage
+    )
+    with get_message_sender(message) as sender:
+        for user in site_admins:
+            sender.build_and_send_message(
+                user,
+                {
+                    "site": {
+                        "title": website.title,
+                        "url": website.get_url(version),
+                    },
+                    "version": version,
+                },
+            )

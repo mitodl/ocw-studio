@@ -13,7 +13,9 @@ from content_sync import api
 from content_sync.apis import github
 from content_sync.decorators import single_website_task
 from content_sync.models import ContentSyncState
+from content_sync.pipelines.base import BaseSyncPipeline
 from main.celery import app
+from websites.api import mail_website_admins_on_publish
 from websites.models import Website
 
 
@@ -131,13 +133,16 @@ def preview_website_backend(website_name: str):
     """
     Create a new backend preview for the website.
     """
+    try:
+        website = Website.objects.get(name=website_name)
+        for action in settings.PREPUBLISH_ACTIONS:
+            import_string(action)(website)
 
-    website = Website.objects.get(name=website_name)
-    for action in settings.PREPUBLISH_ACTIONS:
-        import_string(action)(website)
-
-    backend = api.get_sync_backend(website)
-    backend.create_backend_preview()
+        backend = api.get_sync_backend(website)
+        backend.create_backend_preview()
+    except:  # pylint:disable=bare-except
+        log.exception("Error previewing site %s", website.name)
+        mail_website_admins_on_publish(website, BaseSyncPipeline.VERSION_DRAFT, False)
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
@@ -146,12 +151,16 @@ def publish_website_backend(website_name: str):
     """
     Create a new backend release for the website.
     """
-    website = Website.objects.get(name=website_name)
-    for action in settings.PREPUBLISH_ACTIONS:
-        import_string(action)(website)
+    try:
+        website = Website.objects.get(name=website_name)
+        for action in settings.PREPUBLISH_ACTIONS:
+            import_string(action)(website)
 
-    backend = api.get_sync_backend(website)
-    backend.create_backend_release()
+        backend = api.get_sync_backend(website)
+        backend.create_backend_release()
+    except:  # pylint:disable=bare-except
+        log.exception("Error publishing site %s", website.name)
+        mail_website_admins_on_publish(website, BaseSyncPipeline.VERSION_LIVE, False)
 
 
 @app.task(acks_late=True)
