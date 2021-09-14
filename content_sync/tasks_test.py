@@ -8,17 +8,8 @@ from github.GithubException import RateLimitExceededException
 from mitol.common.utils import now_in_utc
 from pytest import fixture
 
+from content_sync import tasks
 from content_sync.factories import ContentSyncStateFactory
-from content_sync.tasks import (
-    create_website_backend,
-    preview_website_backend,
-    publish_website_backend,
-    sync_all_websites,
-    sync_content,
-    sync_github_site_configs,
-    sync_website_content,
-    upsert_website_publishing_pipeline,
-)
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
@@ -44,7 +35,7 @@ def log_mock(mocker):
 def test_sync_content(api_mock, log_mock):
     """ Verify the sync_content task calls the corresponding API method """
     sync_state = ContentSyncStateFactory.create()
-    sync_content.delay(sync_state.id)
+    tasks.sync_content.delay(sync_state.id)
 
     log_mock.debug.assert_not_called()
     api_mock.sync_content.assert_called_once_with(sync_state)
@@ -52,7 +43,7 @@ def test_sync_content(api_mock, log_mock):
 
 def test_sync_content_not_exists(api_mock, log_mock):
     """ Verify the sync_content task does not call the corresponding API method """
-    sync_content.delay(12354)
+    tasks.sync_content.delay(12354)
     log_mock.debug.assert_called_once_with(
         "Attempted to sync ContentSyncState that doesn't exist: id=%s",
         12354,
@@ -63,7 +54,7 @@ def test_sync_content_not_exists(api_mock, log_mock):
 def test_create_website_backend(api_mock, log_mock):
     """Verify the create_website_backend task calls the appropriate API and backend methods"""
     website = WebsiteFactory.create()
-    create_website_backend.delay(website.name)
+    tasks.create_website_backend.delay(website.name)
 
     log_mock.debug.assert_not_called()
     api_mock.get_sync_backend.assert_called_once_with(website)
@@ -72,7 +63,7 @@ def test_create_website_backend(api_mock, log_mock):
 
 def test_create_website_backend_not_exists(api_mock, log_mock):
     """ Verify the create_website_backend task does not call API and backend methods """
-    create_website_backend.delay("fakesite")
+    tasks.create_website_backend.delay("fakesite")
 
     log_mock.debug.assert_called_once_with(
         "Attempted to create backend for Website that doesn't exist: name=%s",
@@ -84,7 +75,7 @@ def test_create_website_backend_not_exists(api_mock, log_mock):
 def test_sync_website_content(api_mock, log_mock):
     """Verify the sync_website_content task calls the appropriate API and backend methods"""
     website = WebsiteFactory.create()
-    sync_website_content.delay(website.name)
+    tasks.sync_website_content.delay(website.name)
 
     log_mock.debug.assert_not_called()
     api_mock.get_sync_backend.assert_called_once_with(website)
@@ -93,7 +84,7 @@ def test_sync_website_content(api_mock, log_mock):
 
 def test_sync_website_content_not_exists(api_mock, log_mock):
     """Verify the sync_website_content task does not call API and backend methods for nonexistent site"""
-    sync_website_content.delay("fakesite")
+    tasks.sync_website_content.delay("fakesite")
 
     log_mock.debug.assert_called_once_with(
         "Attempted to update backend for Website that doesn't exist: name=%s",
@@ -121,7 +112,7 @@ def test_sync_all_websites(api_mock):
         2, content=WebsiteContentFactory.create(website=websites_unsynced[1])
     )
 
-    sync_all_websites.delay()
+    tasks.sync_all_websites.delay()
     for website in websites_unsynced:
         api_mock.get_sync_backend.assert_any_call(website)
     with pytest.raises(AssertionError):
@@ -145,7 +136,7 @@ def test_sync_all_websites_rate_limit_low(mocker, settings):
     )
     mock_git_wrapper.return_value.git.get_rate_limit.return_value.core = mock_core
     ContentSyncStateFactory.create_batch(2)
-    sync_all_websites.delay()
+    tasks.sync_all_websites.delay()
     assert sleep_mock.call_count == 2
 
 
@@ -156,18 +147,18 @@ def test_sync_all_websites_rate_limit_exceeded(api_mock):
     )
     ContentSyncStateFactory.create_batch(2)
     with pytest.raises(RateLimitExceededException):
-        sync_all_websites.delay()
+        tasks.sync_all_websites.delay()
     api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_not_called()
 
 
 @pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
-def test_create_backend_preview(api_mock, mocker, settings, prepublish_actions):
-    """Verify that the appropriate backend calls are made by the create_backend_preview task """
+def test_preview_website_backend(api_mock, mocker, settings, prepublish_actions):
+    """Verify that the appropriate backend calls are made by the preview_website_backend task """
     settings.PREPUBLISH_ACTIONS = prepublish_actions
     import_string_mock = mocker.patch("content_sync.tasks.import_string")
 
     website = WebsiteFactory.create()
-    preview_website_backend(website.name)
+    tasks.preview_website_backend(website.name)
     api_mock.get_sync_backend.assert_called_once_with(website)
     api_mock.get_sync_backend.return_value.create_backend_preview.assert_called_once()
 
@@ -177,13 +168,13 @@ def test_create_backend_preview(api_mock, mocker, settings, prepublish_actions):
 
 
 @pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
-def test_create_backend_publish(api_mock, mocker, settings, prepublish_actions):
-    """Verify that the appropriate backend calls are made by the create_backend_publish task"""
+def test_publish_website_backend(api_mock, mocker, settings, prepublish_actions):
+    """Verify that the appropriate backend calls are made by the publish_website_backend task"""
     settings.PREPUBLISH_ACTIONS = prepublish_actions
     import_string_mock = mocker.patch("content_sync.tasks.import_string")
 
     website = WebsiteFactory.create()
-    publish_website_backend(website.name)
+    tasks.publish_website_backend(website.name)
     api_mock.get_sync_backend.assert_called_once_with(website)
     api_mock.get_sync_backend.return_value.create_backend_release.assert_called_once()
     if len(prepublish_actions) > 0:
@@ -191,25 +182,46 @@ def test_create_backend_publish(api_mock, mocker, settings, prepublish_actions):
         import_string_mock.return_value.assert_any_call(website)
 
 
+@pytest.mark.parametrize(
+    "func, version",
+    [
+        ["preview_website_backend", "draft"],
+        ["publish_website_backend", "live"],
+    ],
+)
+def test_preview_publish_backend_error(api_mock, mocker, settings, func, version):
+    """Verify that the appropriate error handling occurs if preview/publish_website_backend throws an exception"""
+    settings.PREPUBLISH_ACTIONS = [["some.Action"]]
+    mocker.patch("content_sync.tasks.import_string", side_effect=Exception("error"))
+    mock_email_admins = mocker.patch(
+        "content_sync.tasks.mail_website_admins_on_publish"
+    )
+    website = WebsiteFactory.create()
+    method_call = getattr(tasks, func)
+    method_call(website.name)
+    api_mock.get_sync_backend.assert_not_called()
+    mock_email_admins.assert_called_once_with(website, version, False)
+
+
 def test_sync_github_site_configs(mocker):
     """ sync_github_site_configs should call apis.github.sync_starter_configs with same args, kwargs"""
     mock_git = mocker.patch("content_sync.tasks.github")
     args = "https://github.com/testorg/testconfigs", ["site1/studio.yaml"]
     kwargs = {"commit": "abc123"}
-    sync_github_site_configs.delay(*args, **kwargs)
+    tasks.sync_github_site_configs.delay(*args, **kwargs)
     mock_git.sync_starter_configs.assert_called_once_with(*args, **kwargs)
 
 
 def test_upsert_web_publishing_pipeline(api_mock):
     """ upsert_web_publishing_pipeline should call api.get_sync_pipeline"""
     website = WebsiteFactory.create()
-    upsert_website_publishing_pipeline.delay(website.name)
+    tasks.upsert_website_publishing_pipeline.delay(website.name)
     api_mock.get_sync_pipeline.assert_called_once_with(website)
 
 
 def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
     """ upsert_web_publishing_pipeline should log a debug message if the website doesn't exist"""
-    upsert_website_publishing_pipeline.delay("fake")
+    tasks.upsert_website_publishing_pipeline.delay("fake")
     log_mock.debug.assert_called_once_with(
         "Attempted to create pipeline for Website that doesn't exist: name=%s",
         "fake",

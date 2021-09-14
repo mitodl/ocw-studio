@@ -14,23 +14,13 @@ from videos.models import Video, VideoFile
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
     YouTubeApi,
+    is_youtube_enabled,
     mail_youtube_upload_failure,
     mail_youtube_upload_success,
 )
 
 
 log = logging.getLogger()
-
-
-def is_youtube_enabled() -> bool:
-    """ Returns True if youtube is enabled """
-    return (
-        settings.YT_ACCESS_TOKEN
-        and settings.YT_REFRESH_TOKEN
-        and settings.YT_CLIENT_ID
-        and settings.YT_CLIENT_SECRET
-        and settings.YT_PROJECT_ID
-    )
 
 
 @app.task

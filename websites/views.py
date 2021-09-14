@@ -10,7 +10,6 @@ from django.utils.functional import cached_property
 from django.utils.text import slugify
 from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
 from mitol.common.utils.datetime import now_in_utc
-from mitol.mail.api import get_message_sender
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -29,10 +28,10 @@ from main.utils import valid_key
 from main.views import DefaultPagination
 from users.models import User
 from websites import constants
-from websites.api import get_valid_new_filename
-from websites.messages import (
-    PreviewOrPublishFailureMessage,
-    PreviewOrPublishSuccessMessage,
+from websites.api import (
+    get_valid_new_filename,
+    mail_website_admins_on_publish,
+    unassigned_youtube_ids,
 )
 from websites.models import (
     Website,
@@ -152,10 +151,17 @@ class WebsiteViewSet(
     def preview(self, request, name=None):
         """Trigger a preview task for the website"""
         try:
-            preview_website(self.get_object())
+            website = self.get_object()
+            incomplete_videos = [
+                video.title for video in unassigned_youtube_ids(website)
+            ]
+            message = ""
+            if len(incomplete_videos) > 0:
+                message = f"WARNING: The following videos have missing YouTube IDs: {','.join(incomplete_videos)}"
+            preview_website(website)
             return Response(
                 status=200,
-                data={"details": f"Success adding a preview task for {name}"},
+                data={"details": message},
             )
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error previewing %s", name)
@@ -168,12 +174,22 @@ class WebsiteViewSet(
         """Trigger a publish task for the website"""
         try:
             website = self.get_object()
+            incomplete_videos = [
+                video.title for video in unassigned_youtube_ids(website)
+            ]
+            if len(incomplete_videos) > 0:
+                return Response(
+                    status=400,
+                    data={
+                        "details": f"The following video resources require YouTube ID's: {','.join(incomplete_videos)}"
+                    },
+                )
             publish_website(website)
             website.publish_date = now_in_utc()
             website.save()
             return Response(
                 status=200,
-                data={"details": f"Success adding a publish task for {name}"},
+                data={"details": ""},
             )
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error publishing %s", name)
@@ -184,28 +200,9 @@ class WebsiteViewSet(
         """Process webhook requests from completed preview/publish pipeline runs"""
         data = request.data
         version = data["version"]
-        website = Website.objects.get(name=name)
-        site_admins = list(website.admin_group.user_set.all()) + [website.owner]
-        success = data["success"]
-        if not success:
-            log.error("Pipeline build failed for site %s", name)
-        message = (
-            PreviewOrPublishSuccessMessage
-            if data["success"]
-            else PreviewOrPublishFailureMessage
+        mail_website_admins_on_publish(
+            Website.objects.get(name=name), version, data["success"]
         )
-        with get_message_sender(message) as sender:
-            for user in site_admins:
-                sender.build_and_send_message(
-                    user,
-                    {
-                        "site": {
-                            "title": website.title,
-                            "url": website.get_url(version),
-                        },
-                        "version": version,
-                    },
-                )
         return Response(status=200)
 
 
