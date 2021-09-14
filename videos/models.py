@@ -3,7 +3,12 @@ from django.db import models
 from django.db.models import CASCADE
 from mitol.common.models import TimestampedModel
 
-from videos.constants import VideoFileStatus, VideoJobStatus, VideoStatus
+from videos.constants import (
+    DESTINATION_YOUTUBE,
+    VideoFileStatus,
+    VideoJobStatus,
+    VideoStatus,
+)
 from websites.models import Website
 from websites.site_config_api import SiteConfig
 
@@ -22,6 +27,16 @@ class Video(TimestampedModel):
             f"{source_folder}_{filename}",
         ]
         return "/".join([part for part in url_parts if part != ""])
+
+    def youtube_id(self):
+        """Returns destination_id of youtube VideoFile object"""
+        youtube_videofile = self.videofiles.filter(
+            destination=DESTINATION_YOUTUBE
+        ).first()
+        if youtube_videofile:
+            return youtube_videofile.destination_id
+        else:
+            return None
 
     source_key = models.CharField(max_length=2048, unique=True)
     website = models.ForeignKey(Website, on_delete=CASCADE, related_name="videos")

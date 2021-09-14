@@ -3,7 +3,7 @@ import pytest
 
 from websites import constants
 from websites.factories import WebsiteFactory
-from websites.utils import permissions_group_name_for_role
+from websites.utils import get_dict_query_field, permissions_group_name_for_role
 
 
 @pytest.mark.parametrize(
@@ -41,3 +41,11 @@ def test_permissions_group_for_role_invalid(role):
     with pytest.raises(ValueError) as exc:
         permissions_group_name_for_role(role, website)
     assert exc.value.args == (f"Invalid role for a website group: {role}",)
+
+
+def test_get_dict_query_field():
+    """test get_dict_query_field"""
+    assert (
+        get_dict_query_field("metadata", "video_files.video_captions_file")
+        == "metadata__video_files__video_captions_file"
+    )

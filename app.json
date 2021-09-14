@@ -131,6 +131,10 @@
       "description": "Gdrive folder for video uploads",
       "required": false
     },
+    "FIELD_FILETYPE": {
+      "description": "The site config metadata field for the filetype",
+      "required": false
+    },
     "GA_TRACKING_ID": {
       "description": "Google analytics tracking ID",
       "required": false
@@ -477,6 +481,10 @@
       "description": "Youtube client secret key",
       "required": false
     },
+    "YT_FIELD_CAPTIONS": {
+      "description": "The site config metadata field for the caption url",
+      "required": false
+    },
     "YT_FIELD_DESCRIPTION": {
       "description": "The site config metadata field for YouTube description",
       "required": false
@@ -495,6 +503,10 @@
     },
     "YT_FIELD_THUMBNAIL": {
       "description": "The site config metadata field for YouTube thumbnail url",
+      "required": false
+    },
+    "YT_FIELD_TRANSCRIPT": {
+      "description": "The site config metadata field for the transcript url",
       "required": false
     },
     "YT_PROJECT_ID": {

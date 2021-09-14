@@ -26,14 +26,28 @@ from videos.tasks import (
     remove_youtube_video,
     update_transcripts_for_updated_videos,
     update_transcripts_for_video,
+    update_transcripts_for_website,
     update_youtube_statuses,
     upload_youtube_videos,
 )
 from videos.youtube import API_QUOTA_ERROR_MSG
+from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.utils import get_dict_field
 
 
 # pylint:disable=unused-argument,redefined-outer-name
 pytestmark = pytest.mark.django_db
+
+
+def set_nested_dicts(obj, field_path, value):
+    """Set the value of a potentially nested dict path"""
+    fields = field_path.split(".")
+    current_obj = obj
+    for field in fields[:-1]:
+        current_obj[field] = {}
+        current_obj = current_obj[field]
+
+    current_obj[fields[-1]] = value
 
 
 def updated_transctipts_reponse():
@@ -317,14 +331,54 @@ def test_delete_s3_objects(settings):
         client.get_object(Bucket=MOCK_BUCKET_NAME, Key="biology/content/_index.md")
 
 
-def test_update_transcripts_for_video(mocker):
+@pytest.mark.parametrize("update_transcript_return_value", [True, False])
+@pytest.mark.parametrize("is_ocw", [True, False])
+def test_update_transcripts_for_video(
+    settings, mocker, update_transcript_return_value, is_ocw
+):
     """Test update_transcripts_for_video"""
-    video = VideoFactory.create()
+
+    mocker.patch("videos.tasks.is_ocw_site", return_value=is_ocw)
+
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    video.pdf_transcript_file = "pdf_transcript"
+    video.webvtt_transcript_file = "webvtt_transcript"
+    video.save()
+
+    resource = WebsiteContentFactory.create(website=video.website, metadata={})
+    metadata = resource.metadata
+
+    set_nested_dicts(metadata, settings.FIELD_FILETYPE, "Video")
+    set_nested_dicts(metadata, settings.YT_FIELD_ID, "expected_id")
+    set_nested_dicts(metadata, settings.YT_FIELD_CAPTIONS, None)
+    set_nested_dicts(metadata, settings.YT_FIELD_TRANSCRIPT, None)
+
+    resource.save()
+
     update_transcript_mock = mocker.patch(
-        "videos.tasks.threeplay_api.update_transcripts_for_video"
+        "videos.tasks.threeplay_api.update_transcripts_for_video",
+        return_value=update_transcript_return_value,
     )
     update_transcripts_for_video(video.id)
     update_transcript_mock.assert_called_once_with(video)
+
+    resource.refresh_from_db()
+
+    if update_transcript_return_value and is_ocw:
+        assert (
+            get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS)
+            == "webvtt_transcript"
+        )
+        assert (
+            get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT)
+            == "pdf_transcript"
+        )
+    else:
+        assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) is None
+        assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) is None
 
 
 def test_update_transcripts_for_updated_videos(mocker):
@@ -339,14 +393,14 @@ def test_update_transcripts_for_updated_videos(mocker):
         return_value=updated_transctipts_reponse(),
     )
     update_transcript_mock = mocker.patch(
-        "videos.tasks.threeplay_api.update_transcripts_for_video", return_value=True
+        "videos.tasks.update_transcripts_for_video", return_value=True
     )
     remove_tags_mock = mocker.patch("videos.tasks.threeplay_api.threeplay_remove_tags")
 
     update_transcripts_for_updated_videos()
 
     updated_files_mock.assert_called_once()
-    update_transcript_mock.assert_called_once_with(video_file.video)
+    update_transcript_mock.assert_called_once_with(video_file.video.id)
     remove_tags_mock.assert_called_once_with(6737396)
 
 
@@ -365,3 +419,15 @@ def test_attempt_to_update_missing_transcripts(mocker):
     attempt_to_update_missing_transcripts()
 
     update_transcript_mock.delay.assert_called_once_with(videofile.video.id)
+
+
+def test_update_transcripts_for_website(mocker):
+    """test update_transcripts_for_website"""
+    website = WebsiteFactory.create()
+    videos = VideoFactory.create_batch(4, website=website)
+    update_video_transcript = mocker.patch("videos.tasks.update_transcripts_for_video")
+
+    update_transcripts_for_website(website)
+
+    for video in videos:
+        update_video_transcript.assert_any_call(video.id)

@@ -30,3 +30,8 @@ def set_dict_field(obj: Dict, field_path: str, value: Any):
     for field in fields[:-1]:
         current_obj = current_obj.get(field)
     current_obj[fields[-1]] = value
+
+
+def get_dict_query_field(dict_field_name: str, sub_field: str):
+    """Generate django query key for searching a nested json feild"""
+    return dict_field_name + "__" + sub_field.replace(".", "__")
