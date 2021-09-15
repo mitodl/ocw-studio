@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.25.0
+Version 0.25.0 (Released September 15, 2021)
 --------------
 
 - transcript sync
