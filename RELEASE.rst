@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.25.1
+--------------
+
+- fix video preview on resource embed
+- Bump addressable from 2.7.0 to 2.8.0 in /docs (#379)
+- Youtube metadata update (#562)
+- Failure message for bad concourse builds (#566)
+
 Version 0.25.0 (Released September 15, 2021)
 --------------
 
