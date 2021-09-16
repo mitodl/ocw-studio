@@ -16,8 +16,10 @@ import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import Markdown from "./plugins/Markdown"
 import ResourceEmbed from "./plugins/ResourceEmbed"
 import ResourcePicker from "./plugins/ResourcePicker"
-import { ADD_RESOURCE } from "./plugins/constants"
-import ResourceLink from "./plugins/ResourceLink"
+import { ADD_RESOURCE_EMBED, ADD_RESOURCE_LINK } from "./plugins/constants"
+
+import ResourceLink from "@mitodl/ckeditor5-resource-link/src/link"
+import ResourceLinkMarkdownSyntax from "./plugins/ResourceLinkMarkdownSyntax"
 
 export const FullEditorConfig = {
   plugins: [
@@ -38,6 +40,7 @@ export const FullEditorConfig = {
     ResourceEmbed,
     ResourcePicker,
     ResourceLink,
+    ResourceLinkMarkdownSyntax,
     Markdown
   ],
   toolbar: {
@@ -53,7 +56,8 @@ export const FullEditorConfig = {
       "blockQuote",
       "undo",
       "redo",
-      ADD_RESOURCE
+      ADD_RESOURCE_LINK,
+      ADD_RESOURCE_EMBED
     ]
   },
   image: {

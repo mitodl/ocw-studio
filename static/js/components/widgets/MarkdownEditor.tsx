@@ -9,16 +9,15 @@ import {
 } from "../../lib/ckeditor/CKEditor"
 import EmbeddedResource from "./EmbeddedResource"
 import {
-  ADD_RESOURCE,
+  ADD_RESOURCE_LINK,
   CKEResourceNodeType,
   CKEDITOR_RESOURCE_UTILS,
   RenderResourceFunc,
   ResourceCommandMap,
-  RESOURCE_EMBED,
-  RESOURCE_LINK
+  ResourceDialogState,
+  ADD_RESOURCE_EMBED
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
-import ResourceLink from "./ResourceLink"
 
 export interface Props {
   value?: string
@@ -29,7 +28,7 @@ export interface Props {
   attach?: string
 }
 
-type RenderQueueEntry = [string, HTMLElement, CKEResourceNodeType]
+type RenderQueueEntry = [string, HTMLElement]
 
 /**
  * A component for editing Markdown using CKEditor.
@@ -43,7 +42,9 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const setEditorRef = useCallback(editorInstance => {
     editor.current = editorInstance
   }, [])
-  const [resourcePickerOpen, setResourcePickerOpen] = useState(false)
+  const [resourcePickerState, setResourcePickerState] = useState<
+    ResourceDialogState
+  >("closed")
 
   const addResourceEmbed = useCallback(
     (uuid: string, variant: CKEResourceNodeType) => {
@@ -59,15 +60,18 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const [renderQueue, setRenderQueue] = useState<RenderQueueEntry[]>([])
 
   const renderResource: RenderResourceFunc = useCallback(
-    (uuid: string, el: HTMLElement, variant: CKEResourceNodeType) => {
-      setRenderQueue(xs => [...xs, [uuid, el, variant]])
+    (uuid: string, el: HTMLElement) => {
+      setRenderQueue(xs => [...xs, [uuid, el]])
     },
     [setRenderQueue]
   )
 
-  const openResourcePicker = useCallback(() => {
-    setResourcePickerOpen(true)
-  }, [setResourcePickerOpen])
+  const openResourcePicker = useCallback(
+    (resourceDialogType: CKEResourceNodeType) => {
+      setResourcePickerState(resourceDialogType)
+    },
+    [setResourcePickerState]
+  )
 
   const hasAttach = attach && attach.length > 0
 
@@ -80,11 +84,16 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       // and then use it to render resources within the editor.
       return {
         ...FullEditorConfig,
-        [CKEDITOR_RESOURCE_UTILS]: { renderResource, openResourcePicker },
-        toolbar:                   {
+        [CKEDITOR_RESOURCE_UTILS]: {
+          renderResource,
+          openResourcePicker
+        },
+        toolbar: {
           ...FullEditorConfig.toolbar,
-          items: FullEditorConfig.toolbar.items.filter(
-            item => hasAttach || item !== ADD_RESOURCE
+          items: FullEditorConfig.toolbar.items.filter(item =>
+            hasAttach ?
+              true :
+              item !== ADD_RESOURCE_LINK && item !== ADD_RESOURCE_EMBED
           )
         }
       }
@@ -111,6 +120,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     [onChange, setRenderQueue, name]
   )
 
+  const closeResourcePicker = useCallback(() => {
+    setResourcePickerState("closed")
+  }, [setResourcePickerState])
+
   return (
     <>
       <CKEditor
@@ -122,22 +135,15 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       />
       {hasAttach ? (
         <ResourcePickerDialog
-          open={resourcePickerOpen}
-          setOpen={setResourcePickerOpen}
+          state={resourcePickerState}
+          closeDialog={closeResourcePicker}
           insertEmbed={addResourceEmbed}
           attach={attach as string}
         />
       ) : null}
-      {renderQueue.map(([uuid, el, variant], idx) => {
-        if (variant === RESOURCE_EMBED) {
-          return <EmbeddedResource key={`${uuid}_${idx}`} uuid={uuid} el={el} />
-        }
-
-        if (variant === RESOURCE_LINK) {
-          return <ResourceLink key={`${uuid}_${idx}`} uuid={uuid} el={el} />
-        }
-        return null
-      })}
+      {renderQueue.map(([uuid, el], idx) => (
+        <EmbeddedResource key={`${uuid}_${idx}`} uuid={uuid} el={el} />
+      ))}
     </>
   )
 }

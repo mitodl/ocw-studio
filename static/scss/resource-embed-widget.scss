@@ -14,6 +14,12 @@
 }
 
 .ck-editor {
+  .resource-link {
+    border: 1px solid $studio-gray;
+    padding: 0 3px;
+    border-radius: 5px;
+  }
+
   .embedded-resource {
     border: 1px solid $studio-gray;
 
@@ -30,13 +36,5 @@
       font-size: 14px;
       word-break: break-all;
     }
-  }
-}
-
-.resource-link {
-  i {
-    font-size: 16px;
-    vertical-align: middle;
-    margin: 0 2px;
   }
 }

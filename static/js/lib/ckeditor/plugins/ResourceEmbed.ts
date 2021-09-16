@@ -166,7 +166,7 @@ class ResourceEmbedEditing extends Plugin {
           },
           function(el: HTMLElement) {
             if (renderResource) {
-              renderResource(uuid, el, RESOURCE_EMBED)
+              renderResource(uuid, el)
             }
           }
         )

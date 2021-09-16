@@ -12,13 +12,13 @@ import ResourcePickerListing from "./ResourcePickerListing"
 import { useDebouncedState } from "../../hooks/state"
 import {
   CKEResourceNodeType,
-  RESOURCE_EMBED,
-  RESOURCE_LINK
+  ResourceDialogState,
+  RESOURCE_EMBED
 } from "../../lib/ckeditor/plugins/constants"
 
 interface Props {
-  open: boolean
-  setOpen: (open: boolean) => void
+  state: ResourceDialogState
+  closeDialog: () => void
   insertEmbed: (id: string, variant: CKEResourceNodeType) => void
   attach: string
 }
@@ -39,7 +39,7 @@ const RESOURCE_PICKER_TABS = [
 ]
 
 export default function ResourcePickerDialog(props: Props): JSX.Element {
-  const { open, setOpen, insertEmbed, attach } = props
+  const { state, closeDialog, insertEmbed, attach } = props
 
   const [activeTab, setActiveTab] = useState(RESOURCE_TYPE_IMAGE)
 
@@ -76,30 +76,24 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
 
   const [focusedResource, setFocusedResource] = useState<string | null>(null)
 
-  const embedResource = useCallback(() => {
-    if (focusedResource) {
-      insertEmbed(focusedResource, RESOURCE_EMBED)
-      setOpen(false)
+  const addResource = useCallback(() => {
+    if (focusedResource && state !== "closed") {
+      insertEmbed(focusedResource, state)
+      closeDialog()
     }
-  }, [insertEmbed, focusedResource, setOpen])
+  }, [insertEmbed, focusedResource, closeDialog, state])
 
-  const linkResource = useCallback(() => {
-    if (focusedResource) {
-      insertEmbed(focusedResource, RESOURCE_LINK)
-      setOpen(false)
-    }
-  }, [insertEmbed, focusedResource, setOpen])
+  const acceptText =
+    state === RESOURCE_EMBED ? "Embed resource" : "Link resource"
 
   return (
     <Dialog
-      open={open}
-      toggleModal={() => setOpen(false)}
+      open={state !== "closed"}
+      toggleModal={closeDialog}
       wrapClassName="resource-picker-dialog"
       headerContent="Resources"
-      onAccept={focusedResource ? embedResource : undefined}
-      acceptText="Embed Resource"
-      altOnAccept={focusedResource ? linkResource : undefined}
-      altAcceptText="Link Resource"
+      onAccept={focusedResource ? addResource : undefined}
+      acceptText={focusedResource ? acceptText : undefined}
       bodyContent={
         <>
           <Nav tabs>

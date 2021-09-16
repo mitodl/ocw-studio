@@ -1,7 +1,13 @@
 import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
 import ButtonView from "@ckeditor/ckeditor5-ui/src/button/buttonview"
+import { RESOURCE_LINK } from "@mitodl/ckeditor5-resource-link/src/constants"
 
-import { ADD_RESOURCE, CKEDITOR_RESOURCE_UTILS } from "./constants"
+import {
+  ADD_RESOURCE_EMBED,
+  ADD_RESOURCE_LINK,
+  CKEDITOR_RESOURCE_UTILS,
+  RESOURCE_EMBED
+} from "./constants"
 
 /**
  * Plugin for opening the ResourcePicker
@@ -18,17 +24,31 @@ export default class ResourcePicker extends Plugin {
     const { openResourcePicker } =
       this.editor.config.get(CKEDITOR_RESOURCE_UTILS) ?? {}
 
-    editor.ui.componentFactory.add(ADD_RESOURCE, (locale: any) => {
+    editor.ui.componentFactory.add(ADD_RESOURCE_LINK, (locale: any) => {
       const view = new ButtonView(locale)
 
       view.set({
-        label:    "Add resource",
+        label:    "Link resource",
         withText: true
       })
-      // TODO: icon? how to right-justify?
 
       view.on("execute", () => {
-        openResourcePicker()
+        openResourcePicker(RESOURCE_LINK)
+      })
+
+      return view
+    })
+
+    editor.ui.componentFactory.add(ADD_RESOURCE_EMBED, (locale: any) => {
+      const view = new ButtonView(locale)
+
+      view.set({
+        label:    "Embed resource",
+        withText: true
+      })
+
+      view.on("execute", () => {
+        openResourcePicker(RESOURCE_EMBED)
       })
 
       return view

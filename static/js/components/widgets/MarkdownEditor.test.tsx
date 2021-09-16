@@ -10,7 +10,8 @@ import {
   MinimalEditorConfig
 } from "../../lib/ckeditor/CKEditor"
 import {
-  ADD_RESOURCE,
+  ADD_RESOURCE_EMBED,
+  ADD_RESOURCE_LINK,
   CKEDITOR_RESOURCE_UTILS,
   RESOURCE_EMBED,
   RESOURCE_LINK
@@ -65,29 +66,19 @@ describe("MarkdownEditor", () => {
     expect(wrapper.find("ResourcePickerDialog").prop("attach")).toBe("resource")
   })
 
-  //
-  ;[
-    [RESOURCE_EMBED, "EmbeddedResource"],
-    [RESOURCE_LINK, "ResourceLink"]
-  ].forEach(([embedType, componentDisplayName]) => {
-    it(`should render resources with ${embedType} using ${componentDisplayName}`, () => {
-      const wrapper = render()
-      const editor = wrapper.find("CKEditor").prop("config")
-      const el = document.createElement("div")
-      // @ts-ignore
-      editor[CKEDITOR_RESOURCE_UTILS].renderResource(
-        "resource-uuid",
-        el,
-        embedType
-      )
-      wrapper.update()
-      expect(
-        wrapper
-          .find(componentDisplayName)
-          .at(0)
-          .prop("uuid")
-      ).toEqual("resource-uuid")
-    })
+  it("should render resources with using EmbeddedResource", () => {
+    const wrapper = render()
+    const editor = wrapper.find("CKEditor").prop("config")
+    const el = document.createElement("div")
+    // @ts-ignore
+    editor[CKEDITOR_RESOURCE_UTILS].renderResource("resource-uuid", el)
+    wrapper.update()
+    expect(
+      wrapper
+        .find("EmbeddedResource")
+        .at(0)
+        .prop("uuid")
+    ).toEqual("resource-uuid")
   })
 
   //
@@ -100,22 +91,31 @@ describe("MarkdownEditor", () => {
       const wrapper = render(hasAttach ? { attach: "resource" } : {})
       const editorConfig = wrapper.find("CKEditor").prop("config")
       // @ts-ignore
-      expect(editorConfig.toolbar.items.includes(ADD_RESOURCE)).toBe(hasAttach)
+      expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_EMBED)).toBe(
+        hasAttach
+      )
+      // @ts-ignore
+      expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_LINK)).toBe(
+        hasAttach
+      )
     })
   })
 
-  it("should open the resource picker", () => {
-    const wrapper = render({ attach: "resource" })
-    const editor = wrapper.find("CKEditor").prop("config")
-    // @ts-ignore
-    editor[CKEDITOR_RESOURCE_UTILS].openResourcePicker()
-    wrapper.update()
-    expect(
-      wrapper
-        .find("ResourcePickerDialog")
-        .at(0)
-        .prop("open")
-    ).toBeTruthy()
+  //
+  ;[RESOURCE_EMBED, RESOURCE_LINK].forEach(resourceNodeType => {
+    it(`should open the resource picker for ${resourceNodeType}`, () => {
+      const wrapper = render({ attach: "resource" })
+      const editor = wrapper.find("CKEditor").prop("config")
+      // @ts-ignore
+      editor[CKEDITOR_RESOURCE_UTILS].openResourcePicker(resourceNodeType)
+      wrapper.update()
+      expect(
+        wrapper
+          .find("ResourcePickerDialog")
+          .at(0)
+          .prop("state")
+      ).toBe(resourceNodeType)
+    })
   })
 
   //

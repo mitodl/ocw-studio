@@ -48,7 +48,7 @@ describe("ResourcePickerDialog", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     insertEmbedStub: any,
-    setOpenStub: any,
+    closeDialogStub: any,
     setStub: any,
     resource: WebsiteContent
 
@@ -56,7 +56,7 @@ describe("ResourcePickerDialog", () => {
     helper = new IntegrationTestHelper()
 
     insertEmbedStub = helper.sandbox.stub()
-    setOpenStub = helper.sandbox.stub()
+    closeDialogStub = helper.sandbox.stub()
     resource = makeWebsiteContentDetail()
 
     setStub = helper.sandbox.stub()
@@ -64,8 +64,8 @@ describe("ResourcePickerDialog", () => {
     useDebouncedState.mockReturnValue(["", setStub])
 
     render = helper.configureRenderer(ResourcePickerDialog, {
-      open:        true,
-      setOpen:     setOpenStub,
+      state:       RESOURCE_EMBED,
+      closeDialog: closeDialogStub,
       insertEmbed: insertEmbedStub,
       attach:      "resource"
     })
@@ -92,14 +92,18 @@ describe("ResourcePickerDialog", () => {
   })
 
   it("should allow focusing and linking a resource", async () => {
-    const { wrapper } = await render()
+    const { wrapper } = await render({
+      state: RESOURCE_LINK
+    })
     // callback should be 'undefined' before resource is focused
-    expect(wrapper.find("Dialog").prop("altOnAccept")).toBeUndefined()
+    expect(wrapper.find("Dialog").prop("onAccept")).toBeUndefined()
     focusResource(wrapper, resource)
+
+    expect(wrapper.find("Dialog").prop("acceptText")).toBe("Link resource")
 
     act(() => {
       // @ts-ignore
-      wrapper.find("Dialog").prop("altOnAccept")()
+      wrapper.find("Dialog").prop("onAccept")()
     })
 
     wrapper.update()
@@ -111,10 +115,14 @@ describe("ResourcePickerDialog", () => {
   })
 
   it("should focusing and embedding a resource", async () => {
-    const { wrapper } = await render()
+    const { wrapper } = await render({
+      state: RESOURCE_EMBED
+    })
     // callback should be 'undefined' before resource is focused
     expect(wrapper.find("Dialog").prop("onAccept")).toBeUndefined()
     focusResource(wrapper, resource)
+
+    expect(wrapper.find("Dialog").prop("acceptText")).toBe("Embed resource")
 
     act(() => {
       // @ts-ignore

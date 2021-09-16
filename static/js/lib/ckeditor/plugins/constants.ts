@@ -1,14 +1,16 @@
-export const ADD_RESOURCE = "addResource"
+export const ADD_RESOURCE_LINK = "addResourceLink"
+
+export const ADD_RESOURCE_EMBED = "addResourceEmbed"
 
 export const CKEDITOR_RESOURCE_UTILS = "CKEDITOR_RESOURCE_UTILS"
 
-export const RESOURCE_LINK = "resourceLink"
-
 export const RESOURCE_EMBED = "resourceEmbed"
 
-export const RESOURCE_LINK_COMMAND = "insertResourceLink"
+export const RESOURCE_LINK = "resourceLink"
 
 export const RESOURCE_EMBED_COMMAND = "insertResourceEmbed"
+
+import { RESOURCE_LINK_COMMAND } from "@mitodl/ckeditor5-resource-link/src/constants"
 
 /**
  * Union type capturing the possible typs of resource nodes we
@@ -35,5 +37,10 @@ export const ResourceCommandMap: Record<CKEResourceNodeType, string> = {
  * resource links and embeds.
  */
 export interface RenderResourceFunc {
-  (uuid: string, el: HTMLElement, variant: CKEResourceNodeType): void
+  (uuid: string, el: HTMLElement): void
 }
+
+export type ResourceDialogState =
+  | typeof RESOURCE_LINK
+  | typeof RESOURCE_EMBED
+  | "closed"

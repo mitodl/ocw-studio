@@ -59,3 +59,7 @@ declare module '@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor';
 declare module '@ckeditor/ckeditor5-react';
 
 declare module '@ckeditor/ckeditor5-media-embed/src/mediaembed';
+
+declare module '@mitodl/ckeditor5-resource-link/src/link';
+
+declare module '@mitodl/ckeditor5-resource-link/src/constants';
