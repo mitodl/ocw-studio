@@ -41,8 +41,8 @@ collections:
       - label: File
         name: file
         widget: file
-      - label: "Course Feature Tags"
-        name: "course_feature_tags"
+      - label: "Learning Resource Types"
+        name: "learning_resource_types"
         widget: select
         multiple: true
         options:
@@ -227,8 +227,8 @@ collections:
               - 'Both'
               - 'Non Credit'
             widget: "select"
-          - label: "Course Feature Tags"
-            name: "course_feature_tags"
+          - label: "Learning Resource Types"
+            name: "learning_resource_types"
             widget: select
             multiple: true
             options:

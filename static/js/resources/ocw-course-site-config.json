@@ -53,9 +53,9 @@
           "widget": "file"
         },
         {
-          "label": "Course Feature Tags",
+          "label": "Learning Resource Types",
           "multiple": true,
-          "name": "course_feature_tags",
+          "name": "learning_resource_types",
           "options": [
             "Activity Assignments",
             "Activity Assignments with Examples",
@@ -297,9 +297,9 @@
               "widget": "select"
             },
             {
-              "label": "Course Feature Tags",
+              "label": "Learning Resource Types",
               "multiple": true,
-              "name": "course_feature_tags",
+              "name": "learning_resource_types",
               "options": [
                 "Activity Assignments",
                 "Activity Assignments with Examples",
