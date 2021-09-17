@@ -3,6 +3,7 @@ import http
 import logging
 import re
 import time
+from io import BytesIO
 from urllib.parse import urljoin
 
 import boto3
@@ -16,6 +17,7 @@ from googleapiclient.http import MediaIoBaseUpload
 from mitol.mail.api import get_message_sender
 from smart_open.s3 import Reader
 
+from videos.constants import DESTINATION_YOUTUBE
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
 from websites.api import is_ocw_site
@@ -27,6 +29,7 @@ log = logging.getLogger(__name__)
 
 # Quota errors should contain the following
 API_QUOTA_ERROR_MSG = "quota"
+CAPTION_UPLOAD_NAME = "ocw_captions_upload"
 
 
 class YouTubeUploadException(Exception):
@@ -232,6 +235,57 @@ class YouTubeApi:
         )
         log.error(response)
 
+    def update_captions(self, resource: WebsiteContent, youtube_id: str):
+        """Update captions for video"""
+
+        videofile = VideoFile.objects.filter(
+            destination=DESTINATION_YOUTUBE,
+            destination_id=youtube_id,
+            video__website=resource.website,
+        ).last()
+
+        if not videofile or not videofile.video.webvtt_transcript_file:
+            return
+
+        content = videofile.video.webvtt_transcript_file.open(mode="rb").read()
+
+        media_body = MediaIoBaseUpload(
+            BytesIO(content), mimetype="text/vtt", chunksize=-1, resumable=True
+        )
+
+        existing_captions = (
+            self.client.captions().list(part="snippet", videoId=youtube_id).execute()
+        )
+
+        existing_captions = existing_captions.get("items", [])
+        existing_captions = list(
+            filter(
+                lambda caption_file: caption_file.get("snippet", {}).get("name")
+                == CAPTION_UPLOAD_NAME,
+                existing_captions,
+            )
+        )
+
+        if existing_captions:
+            self.client.captions().update(
+                part="snippet",
+                body={"id": existing_captions[0].get("id")},
+                media_body=media_body,
+            ).execute()
+        else:
+            self.client.captions().insert(
+                part="snippet",
+                sync=False,
+                body={
+                    "snippet": {
+                        "language": "en",
+                        "name": CAPTION_UPLOAD_NAME,
+                        "videoId": youtube_id,
+                    }
+                },
+                media_body=media_body,
+            ).execute()
+
     def update_video(self, resource: WebsiteContent, privacy=None):
         """
         Update a video's metadata based on a WebsiteContent object that is assumed to have certain fields.
@@ -254,6 +308,9 @@ class YouTubeApi:
                 },
             },
         ).execute()
+
+        self.update_captions(resource, youtube_id)
+
         if privacy:
             self.update_privacy(youtube_id, privacy=privacy)
 

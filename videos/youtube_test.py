@@ -6,13 +6,16 @@ import string
 from types import SimpleNamespace
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from googleapiclient.errors import HttpError
 
 from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
+from videos.constants import DESTINATION_YOUTUBE
 from videos.factories import VideoFileFactory
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.youtube import (
+    CAPTION_UPLOAD_NAME,
     YouTubeApi,
     YouTubeUploadException,
     mail_youtube_upload_failure,
@@ -156,7 +159,7 @@ def test_delete_video(youtube_mocker):
 
 
 @pytest.mark.parametrize("privacy", [None, "public"])
-def test_update_video(settings, youtube_mocker, privacy):
+def test_update_video(settings, mocker, youtube_mocker, privacy):
     """update_video should send the correct data in a request to update youtube metadata"""
     speakers = "speaker1, speaker2"
     tags = "tag1, tag2"
@@ -173,6 +176,9 @@ def test_update_video(settings, youtube_mocker, privacy):
             },
         }
     )
+
+    mock_update_caption = mocker.patch("videos.youtube.YouTubeApi.update_captions")
+
     YouTubeApi().update_video(content, privacy=privacy)
     youtube_mocker().videos.return_value.update.assert_any_call(
         part="snippet",
@@ -190,6 +196,8 @@ def test_update_video(settings, youtube_mocker, privacy):
         youtube_mocker().videos.return_value.update.assert_any_call(
             part="status", body={"id": youtube_id, "privacyStatus": privacy}
         )
+
+    mock_update_caption.assert_called_once_with(content, youtube_id)
 
 
 def test_video_status(youtube_mocker):
@@ -315,3 +323,77 @@ def test_update_youtube_metadata(mocker, youtube_enabled, is_ocw):
             )
     else:
         mock_update_video.assert_not_called()
+
+
+@pytest.mark.parametrize("existing_captions", [True, False])
+def test_update_captions(settings, mocker, youtube_mocker, existing_captions):
+    """
+    Test update_captions
+    """
+    youtube_id = "abc123"
+    captions = b"these are the file contents!"
+
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id=youtube_id
+    )
+    video = videofile.video
+
+    video.webvtt_transcript_file = SimpleUploadedFile("file.txt", captions)
+    video.save()
+
+    content = WebsiteContentFactory.create(
+        metadata={
+            "filetype": "Video",
+            "video_metadata": {
+                "youtube_id": youtube_id,
+            },
+        },
+        website=video.website,
+    )
+
+    if existing_captions:
+        existing_captions_response = {
+            "items": [
+                {"id": "youtube_caption_id", "snippet": {"name": CAPTION_UPLOAD_NAME}}
+            ]
+        }
+    else:
+        existing_captions_response = {"items": []}
+
+    mock_media_upload = mocker.patch("videos.youtube.MediaIoBaseUpload")
+    mock_bytes_io = mocker.patch("videos.youtube.BytesIO")
+
+    youtube_mocker().captions.return_value.list.return_value.execute.return_value = (
+        existing_captions_response
+    )
+
+    YouTubeApi().update_captions(content, youtube_id)
+    youtube_mocker().captions.return_value.list.assert_any_call(
+        part="snippet", videoId=youtube_id
+    )
+
+    mock_bytes_io.assert_called_once_with(captions)
+
+    mock_media_upload.assert_called_once_with(
+        mock_bytes_io.return_value, mimetype="text/vtt", chunksize=-1, resumable=True
+    )
+
+    if existing_captions:
+        youtube_mocker().captions.return_value.update.assert_any_call(
+            part="snippet",
+            body={"id": "youtube_caption_id"},
+            media_body=mock_media_upload.return_value,
+        )
+    else:
+        youtube_mocker().captions.return_value.insert.assert_any_call(
+            part="snippet",
+            sync=False,
+            body={
+                "snippet": {
+                    "language": "en",
+                    "name": CAPTION_UPLOAD_NAME,
+                    "videoId": youtube_id,
+                }
+            },
+            media_body=mock_media_upload.return_value,
+        )
