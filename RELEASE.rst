@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.25.1
+Version 0.25.1 (Released September 17, 2021)
 --------------
 
 - fix video preview on resource embed
