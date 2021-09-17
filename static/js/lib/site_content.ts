@@ -201,9 +201,12 @@ export const contentFormValuesToPayload = (
         payload[MAIN_PAGE_CONTENT_DB_FIELD] = value
       } else if (field.name === "title") {
         payload[field.name] = value
-      } else if (value instanceof File) {
-        payload["file"] = value
-        hasFileUpload = true
+      } else if (field.widget === WidgetVariant.File) {
+        if (value instanceof File) {
+          payload[field.name] = value
+          hasFileUpload = true
+        }
+        // if value is a string, it came from the GET request and we should ignore it
       } else {
         metadata[field.name] = value
       }

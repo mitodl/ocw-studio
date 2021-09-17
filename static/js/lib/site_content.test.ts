@@ -215,7 +215,13 @@ describe("site_content", () => {
           ...makeWebsiteDetail(),
           name: OUR_WEBSITE
         })
-        expect(payload["metadata"]["test-field"]).toStrictEqual(expectedDefault)
+        if (widget === WidgetVariant.File) {
+          expect(payload["metadata"]).toBeUndefined()
+        } else {
+          expect(payload["metadata"]["test-field"]).toStrictEqual(
+            expectedDefault
+          )
+        }
       }
     })
 
