@@ -200,8 +200,10 @@ class WebsiteViewSet(
         """Process webhook requests from completed preview/publish pipeline runs"""
         data = request.data
         version = data["version"]
+        # success value will come back as a string
+        succeeded = data.get("success", "false").lower() == "true"
         mail_website_admins_on_publish(
-            Website.objects.get(name=name), version, data["success"]
+            Website.objects.get(name=name), version, succeeded
         )
         return Response(status=200)
 

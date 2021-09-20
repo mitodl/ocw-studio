@@ -342,7 +342,7 @@ def test_websites_endpoint_pipeline_complete(
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
     resp = drf_client.post(
         reverse("websites_api-pipeline-complete", kwargs={"name": website.name}),
-        data={"version": version, "success": success},
+        data={"version": version, "success": f"{success}"},
     )
     mock_mail_website_admins.assert_called_once_with(website, version, success)
     assert resp.status_code == 200
