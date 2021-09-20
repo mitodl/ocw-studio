@@ -18,7 +18,7 @@ from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
 )
-from websites.models import WebsiteCollectionItem, WebsiteContent
+from websites.models import WebsiteCollectionItem, WebsiteContent, WebsiteStarter
 from websites.serializers import (
     WebsiteCollaboratorSerializer,
     WebsiteCollectionItemSerializer,
@@ -157,6 +157,48 @@ def test_website_content_detail_serializer():
     assert serialized_data["type"] == content.type
     assert serialized_data["markdown"] == content.markdown
     assert serialized_data["metadata"] == content.metadata
+
+
+@pytest.mark.parametrize("is_resource", [True, False])
+def test_website_content_detail_serializer_youtube_ocw(settings, is_resource):
+    """WebsiteContent serializers should conditionally fill in youtube thumbnail metadata"""
+    settings.OCW_IMPORT_STARTER_SLUG = "course"
+    starter = WebsiteStarter.objects.get(slug=settings.OCW_IMPORT_STARTER_SLUG)
+    website = WebsiteFactory.create(starter=starter)
+    youtube_id = "abc123"
+    content_type = "resource" if is_resource else "page"
+    existing_content = WebsiteContentFactory.create(
+        type=content_type,
+        website=website,
+    )
+    data = (
+        {
+            "metadata": {
+                "video_metadata": {"youtube_id": youtube_id},
+                "video_files": {"video_thumbnail_file": ""},
+            },
+        }
+        if is_resource
+        else {"metadata": {"body": "text"}}
+    )
+    existing_serializer = WebsiteContentDetailSerializer()
+    existing_serializer.update(existing_content, data)
+
+    data["type"] = content_type
+    data["title"] = "new content"
+    new_serializer = WebsiteContentCreateSerializer()
+    new_serializer.context["website_id"] = website.uuid
+    new_content = new_serializer.create(data)
+
+    for content in [existing_content, new_content]:
+        if is_resource:
+            assert content.metadata["video_metadata"]["youtube_id"] == youtube_id
+            assert (
+                content.metadata["video_files"]["video_thumbnail_file"]
+                == f"https://img.youtube.com/vi/{youtube_id}/0.jpg"
+            )
+        else:
+            assert content.metadata["body"] == "text"
 
 
 def test_website_content_detail_with_file_serializer():
