@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.26.0 (Released September 21, 2021)
+--------------
+
+- Only run `update_youtube_thumbnail` when appropriate (#586)
+- Handle bool as string returned by concourse pipeline request (#582)
+- update transcript metadata
+
 Version 0.25.1 (Released September 17, 2021)
 --------------
 
