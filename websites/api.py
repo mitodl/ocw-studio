@@ -10,10 +10,7 @@ from magic import Magic
 from mitol.common.utils import max_or_none
 from mitol.mail.api import get_message_sender
 
-from websites.constants import (
-    CONTENT_FILENAME_MAX_LEN,
-    RESOURCE_TYPE_VIDEO,
-)
+from websites.constants import CONTENT_FILENAME_MAX_LEN, RESOURCE_TYPE_VIDEO
 from websites.messages import (
     PreviewOrPublishFailureMessage,
     PreviewOrPublishSuccessMessage,

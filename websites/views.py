@@ -34,10 +34,10 @@ from websites.api import (
     unassigned_youtube_ids,
 )
 from websites.constants import (
-    RESOURCE_TYPE_OTHER,
-    RESOURCE_TYPE_IMAGE,
-    RESOURCE_TYPE_VIDEO,
     RESOURCE_TYPE_DOCUMENT,
+    RESOURCE_TYPE_IMAGE,
+    RESOURCE_TYPE_OTHER,
+    RESOURCE_TYPE_VIDEO,
 )
 from websites.models import (
     Website,

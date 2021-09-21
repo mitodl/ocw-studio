@@ -14,10 +14,7 @@ from websites.api import (
     unassigned_youtube_ids,
     update_youtube_thumbnail,
 )
-from websites.constants import (
-    RESOURCE_TYPE_IMAGE,
-    RESOURCE_TYPE_VIDEO,
-)
+from websites.constants import RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
