@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.26.0
+Version 0.26.0 (Released September 21, 2021)
 --------------
 
 - Only run `update_youtube_thumbnail` when appropriate (#586)
