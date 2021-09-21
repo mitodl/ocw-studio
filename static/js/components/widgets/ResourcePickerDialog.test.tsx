@@ -78,9 +78,9 @@ describe("ResourcePickerDialog", () => {
   it("should render tabs", async () => {
     const { wrapper } = await render()
     expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual([
-      "Image",
-      "Video",
-      "Document"
+      RESOURCE_TYPE_IMAGE,
+      RESOURCE_TYPE_VIDEO,
+      RESOURCE_TYPE_DOCUMENT
     ])
   })
 

@@ -9,7 +9,7 @@ import IntegrationTestHelper, {
 } from "../../util/integration_test_helper"
 import { useWebsite } from "../../context/Website"
 import ResourcePickerListing from "./ResourcePickerListing"
-import {RESOURCE_TYPE_DOCUMENT, RESOURCE_TYPE_VIDEO} from "../../constants";
+import { RESOURCE_TYPE_DOCUMENT, RESOURCE_TYPE_VIDEO } from "../../constants"
 
 jest.mock("../../context/Website")
 
@@ -56,7 +56,11 @@ describe("ResourcePickerListing", () => {
         .param({
           name: website.name
         })
-        .query({ offset: 0, type: "resource", resourcetype: RESOURCE_TYPE_VIDEO })
+        .query({
+          offset:       0,
+          type:         "resource",
+          resourcetype: RESOURCE_TYPE_VIDEO
+        })
         .toString(),
       apiResponse(contentListingItems[0])
     )

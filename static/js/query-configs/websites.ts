@@ -291,7 +291,14 @@ export const websiteContentListingRequest = (
   requestDetailedList: boolean,
   requestContentContext: boolean
 ): QueryConfig => {
-  const { name, type, resourcetype, offset, pageContent, search } = listingParams
+  const {
+    name,
+    type,
+    resourcetype,
+    offset,
+    pageContent,
+    search
+  } = listingParams
   const url = siteApiContentListingUrl
     .param({ name })
     .query(
