@@ -14,7 +14,7 @@ interface Props {
   el: HTMLElement
 }
 
-const filetypeIconMap = {
+const resourcetypeIconMap = {
   [RESOURCE_TYPE_IMAGE]:    "image",
   [RESOURCE_TYPE_VIDEO]:    "movie",
   [RESOURCE_TYPE_DOCUMENT]: "description",
@@ -33,10 +33,10 @@ export default function ResourceLink(props: Props): JSX.Element | null {
     return null
   } else {
     const title = resource.title
-    const filetype = resource.metadata?.filetype
-    const icon = filetype ?
-      filetypeIconMap[filetype as string] :
-      filetypeIconMap[RESOURCE_TYPE_OTHER]
+    const resourcetype = resource.metadata?.resourcetype
+    const icon = resourcetype ?
+      resourcetypeIconMap[resourcetype as string] :
+      resourcetypeIconMap[RESOURCE_TYPE_OTHER]
 
     return createPortal(
       <span className="border">

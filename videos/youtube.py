@@ -21,6 +21,7 @@ from videos.constants import DESTINATION_YOUTUBE
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
 from websites.api import is_ocw_site
+from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import Website, WebsiteContent
 from websites.utils import get_dict_field, get_dict_query_field
 
@@ -334,6 +335,6 @@ def update_youtube_metadata(website: Website, privacy=None):
     youtube = YouTubeApi()
     query_id_field = get_dict_query_field("metadata", settings.YT_FIELD_ID)
     for video_resource in website.websitecontent_set.filter(
-        Q(metadata__filetype="Video")
+        Q(metadata__resourcetype=RESOURCE_TYPE_VIDEO)
     ).exclude(Q(**{query_id_field: None}) | Q(**{query_id_field: ""})):
         youtube.update_video(video_resource, privacy=privacy)

@@ -351,7 +351,7 @@ def test_update_transcripts_for_video(
     resource = WebsiteContentFactory.create(website=video.website, metadata={})
     metadata = resource.metadata
 
-    set_nested_dicts(metadata, settings.FIELD_FILETYPE, "Video")
+    set_nested_dicts(metadata, settings.FIELD_RESOURCETYPE, "Video")
     set_nested_dicts(metadata, settings.YT_FIELD_ID, "expected_id")
     set_nested_dicts(metadata, settings.YT_FIELD_CAPTIONS, None)
     set_nested_dicts(metadata, settings.YT_FIELD_TRANSCRIPT, None)

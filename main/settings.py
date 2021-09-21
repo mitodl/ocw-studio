@@ -522,10 +522,10 @@ YT_UPLOAD_LIMIT = get_int(
     description="Max Youtube uploads allowed per day",
 )
 # OCW metadata fields
-FIELD_FILETYPE = get_string(
-    name="FIELD_FILETYPE",
-    default="filetype",
-    description="The site config metadata field for the filetype",
+FIELD_RESOURCETYPE = get_string(
+    name="FIELD_RESOURCETYPE",
+    default="resourcetype",
+    description="The site config metadata field for the resource type",
 )
 
 # YouTube OCW metadata fields

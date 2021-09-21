@@ -64,7 +64,7 @@ describe("ResourceLink", () => {
     [RESOURCE_TYPE_OTHER, "attachment"]
   ].forEach(([resourceType, iconName]) => {
     it(`should render an appropriate icon for ${resourceType}`, async () => {
-      content.metadata!.filetype = resourceType
+      content.metadata!.resourcetype = resourceType
       const { wrapper } = await render()
       expect(wrapper.find("i").text()).toBe(iconName)
     })

@@ -271,7 +271,7 @@ export const contentListingKey = (
     listingParams.name,
     listingParams.type,
     listingParams.offset,
-    listingParams.filetype
+    listingParams.resourcetype
   ])
 
 export const contentDetailKey = (params: ContentDetailParams): string =>
@@ -291,7 +291,7 @@ export const websiteContentListingRequest = (
   requestDetailedList: boolean,
   requestContentContext: boolean
 ): QueryConfig => {
-  const { name, type, filetype, offset, pageContent, search } = listingParams
+  const { name, type, resourcetype, offset, pageContent, search } = listingParams
   const url = siteApiContentListingUrl
     .param({ name })
     .query(
@@ -302,7 +302,7 @@ export const websiteContentListingRequest = (
         requestDetailedList && { detailed_list: true },
         requestContentContext && { content_context: true },
         search && { search },
-        filetype && { filetype }
+        resourcetype && { resourcetype }
       )
     )
     .toString()

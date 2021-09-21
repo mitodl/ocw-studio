@@ -131,8 +131,8 @@
       "description": "Gdrive folder for video uploads",
       "required": false
     },
-    "FIELD_FILETYPE": {
-      "description": "The site config metadata field for the filetype",
+    "FIELD_RESOURCETYPE": {
+      "description": "The site config metadata field for the resourcetype",
       "required": false
     },
     "GA_TRACKING_ID": {

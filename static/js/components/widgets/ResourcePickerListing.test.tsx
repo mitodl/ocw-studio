@@ -9,6 +9,7 @@ import IntegrationTestHelper, {
 } from "../../util/integration_test_helper"
 import { useWebsite } from "../../context/Website"
 import ResourcePickerListing from "./ResourcePickerListing"
+import {RESOURCE_TYPE_DOCUMENT, RESOURCE_TYPE_VIDEO} from "../../constants";
 
 jest.mock("../../context/Website")
 
@@ -38,7 +39,7 @@ describe("ResourcePickerListing", () => {
       setOpen:       setOpenStub,
       attach:        "resource",
       filter:        null,
-      filetype:      "Video"
+      resourcetype:  RESOURCE_TYPE_VIDEO
     })
 
     website = makeWebsiteDetail()
@@ -55,7 +56,7 @@ describe("ResourcePickerListing", () => {
         .param({
           name: website.name
         })
-        .query({ offset: 0, type: "resource", filetype: "Video" })
+        .query({ offset: 0, type: "resource", resourcetype: RESOURCE_TYPE_VIDEO })
         .toString(),
       apiResponse(contentListingItems[0])
     )
@@ -66,10 +67,10 @@ describe("ResourcePickerListing", () => {
           name: website.name
         })
         .query({
-          offset:   0,
-          type:     "resource",
-          search:   "newfilter",
-          filetype: "Document"
+          offset:       0,
+          type:         "resource",
+          search:       "newfilter",
+          resourcetype: RESOURCE_TYPE_DOCUMENT
         })
         .toString(),
       apiResponse(contentListingItems[1])
@@ -115,10 +116,10 @@ describe("ResourcePickerListing", () => {
     ).toBe("resource-item focused")
   })
 
-  it("should allow the user to filter, sort filetype", async () => {
+  it("should allow the user to filter, sort resourcetype", async () => {
     const { wrapper } = await render({
-      filter:   "newfilter",
-      filetype: "Document"
+      filter:       "newfilter",
+      resourcetype: RESOURCE_TYPE_DOCUMENT
     })
 
     expect(

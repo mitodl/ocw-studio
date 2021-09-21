@@ -10,7 +10,10 @@ from magic import Magic
 from mitol.common.utils import max_or_none
 from mitol.mail.api import get_message_sender
 
-from websites.constants import CONTENT_FILENAME_MAX_LEN
+from websites.constants import (
+    CONTENT_FILENAME_MAX_LEN,
+    RESOURCE_TYPE_VIDEO,
+)
 from websites.messages import (
     PreviewOrPublishFailureMessage,
     PreviewOrPublishSuccessMessage,
@@ -181,7 +184,7 @@ def unassigned_youtube_ids(website: Website) -> List[WebsiteContent]:
     query_id_field = f"metadata__{'__'.join(settings.YT_FIELD_ID.split('.'))}"
     return WebsiteContent.objects.filter(
         Q(website=website)
-        & Q(metadata__filetype="Video")
+        & Q(metadata__resourcetype=RESOURCE_TYPE_VIDEO)
         & (Q(**{query_id_field: None}) | Q(**{query_id_field: ""}))
     )
 

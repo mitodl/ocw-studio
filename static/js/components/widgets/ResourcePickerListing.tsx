@@ -14,14 +14,14 @@ interface Props {
   focusResource: (id: string) => void
   attach: string
   filter: string | null
-  filetype: string
+  resourcetype: string
   focusedResource: string | null
 }
 
 export default function ResourcePickerListing(
   props: Props
 ): JSX.Element | null {
-  const { focusResource, focusedResource, attach, filter, filetype } = props
+  const { focusResource, focusedResource, attach, filter, resourcetype } = props
   const website = useWebsite()
 
   const listingParams: ContentListingParams = useMemo(
@@ -32,10 +32,10 @@ export default function ResourcePickerListing(
           type:   attach,
           offset: 0
         },
-        filetype ? { filetype } : null,
+        resourcetype ? { resourcetype } : null,
         filter ? { search: filter } : null
       ),
-    [website, attach, filter, filetype]
+    [website, attach, filter, resourcetype]
   )
 
   useRequest(websiteContentListingRequest(listingParams, false, false))

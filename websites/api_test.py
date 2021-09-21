@@ -14,6 +14,10 @@ from websites.api import (
     unassigned_youtube_ids,
     update_youtube_thumbnail,
 )
+from websites.constants import (
+    RESOURCE_TYPE_IMAGE,
+    RESOURCE_TYPE_VIDEO,
+)
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
@@ -218,19 +222,28 @@ def test_unassigned_youtube_ids(mocker, is_ocw):
     WebsiteContentFactory.create_batch(
         3,
         website=website,
-        metadata={"filetype": "Video", "video_metadata": {"youtube_id": "abc123"}},
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {"youtube_id": "abc123"},
+        },
     )
     videos_without_ids = []
     for yt_id in [None, ""]:
         videos_without_ids.append(
             WebsiteContentFactory.create(
                 website=website,
-                metadata={"filetype": "Video", "video_metadata": {"youtube_id": yt_id}},
+                metadata={
+                    "resourcetype": RESOURCE_TYPE_VIDEO,
+                    "video_metadata": {"youtube_id": yt_id},
+                },
             )
         )
     WebsiteContentFactory.create(
         website=website,
-        metadata={"filetype": "Image", "video_metadata": {"youtube_id": "bad_data"}},
+        metadata={
+            "resourcetype": RESOURCE_TYPE_IMAGE,
+            "video_metadata": {"youtube_id": "bad_data"},
+        },
     )
     unassigned_content = unassigned_youtube_ids(website)
     if is_ocw:

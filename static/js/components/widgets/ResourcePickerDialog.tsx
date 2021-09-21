@@ -25,16 +25,16 @@ interface Props {
 
 const RESOURCE_PICKER_TABS = [
   {
-    title:    "Images",
-    filetype: RESOURCE_TYPE_IMAGE
+    title:        "Images",
+    resourcetype: RESOURCE_TYPE_IMAGE
   },
   {
-    title:    "Videos",
-    filetype: RESOURCE_TYPE_VIDEO
+    title:        "Videos",
+    resourcetype: RESOURCE_TYPE_VIDEO
   },
   {
-    title:    "Documents",
-    filetype: RESOURCE_TYPE_DOCUMENT
+    title:        "Documents",
+    resourcetype: RESOURCE_TYPE_DOCUMENT
   }
 ]
 
@@ -104,11 +104,11 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
         <>
           <Nav tabs>
             {RESOURCE_PICKER_TABS.map(tab => (
-              <NavItem key={tab.filetype}>
+              <NavItem key={tab.resourcetype}>
                 <NavLink
-                  className={activeTab === tab.filetype ? "active" : ""}
+                  className={activeTab === tab.resourcetype ? "active" : ""}
                   onClick={() => {
-                    setActiveTab(tab.filetype)
+                    setActiveTab(tab.resourcetype)
                   }}
                 >
                   {tab.title}
@@ -135,10 +135,10 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
           ) : null}
           <TabContent activeTab={activeTab}>
             {RESOURCE_PICKER_TABS.map(tab => (
-              <TabPane tabId={tab.filetype} key={tab.filetype}>
-                {activeTab === tab.filetype ? (
+              <TabPane tabId={tab.resourcetype} key={tab.resourcetype}>
+                {activeTab === tab.resourcetype ? (
                   <ResourcePickerListing
-                    filetype={tab.filetype}
+                    resourcetype={tab.resourcetype}
                     filter={showFilterUI ? filter : null}
                     focusResource={setFocusedResource}
                     focusedResource={focusedResource}
