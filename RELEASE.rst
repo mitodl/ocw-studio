@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.26.1
+--------------
+
+- Omit file url from payload (#587)
+- upload youtube transcript
+- course_feature_tags-> learning_resource_types
+
 Version 0.26.0 (Released September 21, 2021)
 --------------
 
