@@ -23,7 +23,11 @@ from videos.youtube import (
     strip_bad_chars,
     update_youtube_metadata,
 )
-from websites.constants import CONTENT_TYPE_RESOURCE
+from websites.constants import (
+    CONTENT_TYPE_RESOURCE,
+    RESOURCE_TYPE_IMAGE,
+    RESOURCE_TYPE_VIDEO,
+)
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 
@@ -167,7 +171,7 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
     description = "video test description"
     content = WebsiteContentFactory.create(
         metadata={
-            "filetype": "Video",
+            "resourcetype": RESOURCE_TYPE_VIDEO,
             "description": description,
             "video_metadata": {
                 "youtube_id": youtube_id,
@@ -300,14 +304,17 @@ def test_update_youtube_metadata(mocker, youtube_enabled, is_ocw):
     website = WebsiteFactory.create()
     WebsiteContentFactory.create(
         type=CONTENT_TYPE_RESOURCE,
-        metadata={"filetype": "Image", "video_metadata": {"youtube_id": "fakeid"}},
+        metadata={
+            "resourcetype": RESOURCE_TYPE_IMAGE,
+            "video_metadata": {"youtube_id": "fakeid"},
+        },
     )
     for youtube_id in ["", None, "abc123", "def456"]:
         WebsiteContentFactory.create(
             website=website,
             type=CONTENT_TYPE_RESOURCE,
             metadata={
-                "filetype": "Video",
+                "resourcetype": RESOURCE_TYPE_VIDEO,
                 "video_metadata": {"youtube_id": youtube_id},
             },
         )
@@ -343,7 +350,7 @@ def test_update_captions(settings, mocker, youtube_mocker, existing_captions):
 
     content = WebsiteContentFactory.create(
         metadata={
-            "filetype": "Video",
+            "resourcetype": RESOURCE_TYPE_VIDEO,
             "video_metadata": {
                 "youtube_id": youtube_id,
             },

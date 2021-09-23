@@ -19,6 +19,7 @@ from videos.youtube import (
     mail_youtube_upload_success,
 )
 from websites.api import is_ocw_site
+from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import Website
 from websites.utils import get_dict_query_field, set_dict_field
 
@@ -142,8 +143,8 @@ def update_transcripts_for_video(video_id: int):
         if is_ocw_site(website):
             search_fields = {}
             search_fields[
-                get_dict_query_field("metadata", settings.FIELD_FILETYPE)
-            ] = "Video"
+                get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)
+            ] = RESOURCE_TYPE_VIDEO
             search_fields[
                 get_dict_query_field("metadata", settings.YT_FIELD_ID)
             ] = video.youtube_id()

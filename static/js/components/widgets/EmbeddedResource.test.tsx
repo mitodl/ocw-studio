@@ -9,7 +9,11 @@ import {
 } from "../../util/factories/websites"
 import { Website, WebsiteContent } from "../../types/websites"
 import { siteApiContentDetailUrl } from "../../lib/urls"
-import { RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO } from "../../constants"
+import {
+  RESOURCE_TYPE_DOCUMENT,
+  RESOURCE_TYPE_IMAGE,
+  RESOURCE_TYPE_VIDEO
+} from "../../constants"
 
 jest.mock("../../context/Website")
 jest.mock("../../hooks/state")
@@ -51,14 +55,14 @@ describe("EmbeddedResource", () => {
     expect(wrapper.find(".title").text()).toBe(content.title)
   })
 
-  it("should render a filetype if it's there in the metadata", async () => {
-    content.metadata!.filetype = "PDF"
+  it("should render a resourcetype if it's there in the metadata", async () => {
+    content.metadata!.resourcetype = RESOURCE_TYPE_DOCUMENT
     const { wrapper } = await render()
-    expect(wrapper.find(".resource-info").text()).toBe("Filetype: PDF")
+    expect(wrapper.find(".resource-info").text()).toBe("Resourcetype: Document")
   })
 
   it("should render an image", async () => {
-    content.metadata!.filetype = RESOURCE_TYPE_IMAGE
+    content.metadata!.resourcetype = RESOURCE_TYPE_IMAGE
     content.file = "https://example.com/foo/bar/baz.png"
     const { wrapper } = await render()
     expect(wrapper.find(".resource-info").text()).toBe("baz.png")
@@ -67,7 +71,7 @@ describe("EmbeddedResource", () => {
   })
 
   it("should render a video", async () => {
-    content.metadata!.filetype = RESOURCE_TYPE_VIDEO
+    content.metadata!.resourcetype = RESOURCE_TYPE_VIDEO
     content.metadata!.description = "My Video!!!"
     content.metadata!.video_metadata = { youtube_id: "2XID_W4neJo" }
     const { wrapper } = await render()

@@ -161,8 +161,6 @@ const contentFormValueForField = (
         ) as SiteFormPrimitive
       ])
     )
-  } else if (field.widget === WidgetVariant.Hidden) {
-    return field.default
   } else {
     if (parentField) {
       return (values[parentField.name] ?? {})[field.name]

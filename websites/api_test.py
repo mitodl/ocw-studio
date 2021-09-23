@@ -5,6 +5,7 @@ import factory
 import pytest
 
 from websites.api import (
+    detect_mime_type,
     fetch_website,
     get_valid_new_filename,
     get_valid_new_slug,
@@ -13,6 +14,7 @@ from websites.api import (
     unassigned_youtube_ids,
     update_youtube_thumbnail,
 )
+from websites.constants import RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
@@ -217,19 +219,28 @@ def test_unassigned_youtube_ids(mocker, is_ocw):
     WebsiteContentFactory.create_batch(
         3,
         website=website,
-        metadata={"filetype": "Video", "video_metadata": {"youtube_id": "abc123"}},
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {"youtube_id": "abc123"},
+        },
     )
     videos_without_ids = []
     for yt_id in [None, ""]:
         videos_without_ids.append(
             WebsiteContentFactory.create(
                 website=website,
-                metadata={"filetype": "Video", "video_metadata": {"youtube_id": yt_id}},
+                metadata={
+                    "resourcetype": RESOURCE_TYPE_VIDEO,
+                    "video_metadata": {"youtube_id": yt_id},
+                },
             )
         )
     WebsiteContentFactory.create(
         website=website,
-        metadata={"filetype": "Image", "video_metadata": {"youtube_id": "bad_data"}},
+        metadata={
+            "resourcetype": RESOURCE_TYPE_IMAGE,
+            "video_metadata": {"youtube_id": "bad_data"},
+        },
     )
     unassigned_content = unassigned_youtube_ids(website)
     if is_ocw:
@@ -273,3 +284,19 @@ def test_mail_website_admins_on_publish(
                 "version": version,
             },
         )
+
+
+def test_detect_mime_type(mocker):
+    """detect_mime_type should use python-magic to detect the mime type of an uploaded file"""
+    chunk = b"chunk"
+    chunks_mock = mocker.Mock(return_value=iter([chunk]))
+    uploaded_file = mocker.Mock(chunks=chunks_mock)
+    mime_type = "image/tiff"
+    magic_mock = mocker.patch("websites.api.Magic")
+    from_buffer_mock = magic_mock.return_value.from_buffer
+    from_buffer_mock.return_value = mime_type
+
+    assert detect_mime_type(uploaded_file) == mime_type
+    from_buffer_mock.assert_called_once_with(chunk)
+    chunks_mock.assert_called_once_with(chunk_size=2048)
+    magic_mock.assert_called_once_with(mime=True)

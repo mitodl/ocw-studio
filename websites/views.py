@@ -33,6 +33,12 @@ from websites.api import (
     mail_website_admins_on_publish,
     unassigned_youtube_ids,
 )
+from websites.constants import (
+    RESOURCE_TYPE_DOCUMENT,
+    RESOURCE_TYPE_IMAGE,
+    RESOURCE_TYPE_OTHER,
+    RESOURCE_TYPE_VIDEO,
+)
 from websites.models import (
     Website,
     WebsiteCollection,
@@ -398,7 +404,7 @@ class WebsiteContentViewSet(
     def get_queryset(self):
         parent_lookup_website = self.kwargs.get("parent_lookup_website")
         search = self.request.query_params.get("search")
-        filetype = self.request.query_params.get("filetype")
+        resourcetype = self.request.query_params.get("resourcetype")
         types = _get_value_list_from_query_params(self.request.query_params, "type")
 
         queryset = WebsiteContent.objects.filter(
@@ -408,13 +414,17 @@ class WebsiteContentViewSet(
             queryset = queryset.filter(type__in=types)
         if search:
             queryset = queryset.filter(title__icontains=search)
-        if filetype:
-            if filetype == "Other":
+        if resourcetype:
+            if resourcetype == RESOURCE_TYPE_OTHER:
                 queryset = queryset.exclude(
-                    metadata__filetype__in=["Image", "Document", "Video"]
+                    metadata__resourcetype__in=[
+                        RESOURCE_TYPE_IMAGE,
+                        RESOURCE_TYPE_DOCUMENT,
+                        RESOURCE_TYPE_VIDEO,
+                    ]
                 )
             else:
-                queryset = queryset.filter(metadata__filetype=filetype)
+                queryset = queryset.filter(metadata__resourcetype=resourcetype)
 
         if "page_content" in self.request.query_params:
             queryset = queryset.filter(

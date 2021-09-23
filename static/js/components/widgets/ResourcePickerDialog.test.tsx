@@ -2,6 +2,7 @@ import React from "react"
 import { act } from "react-dom/test-utils"
 import { TabPane } from "reactstrap"
 import Switch from "react-switch"
+import { ReactWrapper } from "enzyme"
 
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import IntegrationTestHelper, {
@@ -15,7 +16,11 @@ import {
   RESOURCE_EMBED,
   RESOURCE_LINK
 } from "../../lib/ckeditor/plugins/constants"
-import { ReactWrapper } from "enzyme"
+import {
+  RESOURCE_TYPE_IMAGE,
+  RESOURCE_TYPE_DOCUMENT,
+  RESOURCE_TYPE_VIDEO
+} from "../../constants"
 
 jest.mock("../../hooks/state")
 
@@ -73,9 +78,9 @@ describe("ResourcePickerDialog", () => {
   it("should render tabs", async () => {
     const { wrapper } = await render()
     expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual([
-      "Image",
-      "Video",
-      "Document"
+      RESOURCE_TYPE_IMAGE,
+      RESOURCE_TYPE_VIDEO,
+      RESOURCE_TYPE_DOCUMENT
     ])
   })
 
@@ -135,22 +140,24 @@ describe("ResourcePickerDialog", () => {
     )
   })
 
-  it("should pass correct filetype to active tab", async () => {
+  it("should pass correct resourcetype to active tab", async () => {
     const { wrapper } = await render()
 
     //
-    ;["Image", "Video", "Document"].forEach((filetype, idx) => {
-      act(() => {
-        wrapper
-          .find("NavLink")
-          .at(idx)
-          .simulate("click")
-      })
-      wrapper.update()
-      expect(wrapper.find("ResourcePickerListing").prop("filetype")).toEqual(
-        filetype
-      )
-    })
+    ;[RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_DOCUMENT].forEach(
+      (resourcetype, idx) => {
+        act(() => {
+          wrapper
+            .find("NavLink")
+            .at(idx)
+            .simulate("click")
+        })
+        wrapper.update()
+        expect(
+          wrapper.find("ResourcePickerListing").prop("resourcetype")
+        ).toEqual(resourcetype)
+      }
+    )
   })
 
   it("should pass filter string to picker, when filter is on", async () => {

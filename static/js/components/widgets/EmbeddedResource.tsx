@@ -26,10 +26,10 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
   if (!resource) {
     return null
   } else {
-    const filetype = resource.metadata?.filetype ?? "..."
+    const resourcetype = resource.metadata?.resourcetype ?? "..."
     const title = resource.title ?? resource.text_id
 
-    if (filetype === RESOURCE_TYPE_IMAGE) {
+    if (resourcetype === RESOURCE_TYPE_IMAGE) {
       const filename = (resource.file ?? "").split("/").slice(-1)[0]
 
       return createPortal(
@@ -46,7 +46,7 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
       )
     }
 
-    if (filetype === RESOURCE_TYPE_VIDEO) {
+    if (resourcetype === RESOURCE_TYPE_VIDEO) {
       const videoMetadata = (resource.metadata?.video_metadata ?? {}) as Record<
         string,
         SiteFormValue
@@ -81,7 +81,7 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
       <div className="embedded-resource my-2">
         <h3 className="ml-2 title">{title}</h3>
         <span className="font-italic ml-2 text-gray resource-info">
-          Filetype: {filetype}
+          Resourcetype: {resourcetype}
         </span>
       </div>,
       el

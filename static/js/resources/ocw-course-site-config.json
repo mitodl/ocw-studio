@@ -36,8 +36,8 @@
           "widget": "markdown"
         },
         {
-          "label": "File Type",
-          "name": "filetype",
+          "label": "Resource Type",
+          "name": "resourcetype",
           "options": [
             "Image",
             "Video",
@@ -46,6 +46,11 @@
           ],
           "required": true,
           "widget": "select"
+        },
+        {
+          "label": "Mime Type",
+          "name": "file_type",
+          "widget": "hidden"
         },
         {
           "label": "File",
@@ -106,7 +111,7 @@
         {
           "condition": {
             "equals": "Image",
-            "field": "filetype"
+            "field": "resourcetype"
           },
           "fields": [
             {
@@ -132,7 +137,7 @@
         {
           "condition": {
             "equals": "Video",
-            "field": "filetype"
+            "field": "resourcetype"
           },
           "fields": [
             {
@@ -158,7 +163,7 @@
         {
           "condition": {
             "equals": "Video",
-            "field": "filetype"
+            "field": "resourcetype"
           },
           "fields": [
             {
@@ -217,7 +222,7 @@
               "collection": "resource",
               "display_field": "title",
               "filter": {
-                "field": "filetype",
+                "field": "resourcetype",
                 "filter_type": "equals",
                 "value": "Image"
               },
@@ -230,7 +235,7 @@
               "collection": "resource",
               "display_field": "title",
               "filter": {
-                "field": "filetype",
+                "field": "resourcetype",
                 "filter_type": "equals",
                 "value": "Image"
               },

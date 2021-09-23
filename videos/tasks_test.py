@@ -31,6 +31,7 @@ from videos.tasks import (
     upload_youtube_videos,
 )
 from videos.youtube import API_QUOTA_ERROR_MSG
+from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.utils import get_dict_field
 
@@ -351,7 +352,7 @@ def test_update_transcripts_for_video(
     resource = WebsiteContentFactory.create(website=video.website, metadata={})
     metadata = resource.metadata
 
-    set_nested_dicts(metadata, settings.FIELD_FILETYPE, "Video")
+    set_nested_dicts(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
     set_nested_dicts(metadata, settings.YT_FIELD_ID, "expected_id")
     set_nested_dicts(metadata, settings.YT_FIELD_CAPTIONS, None)
     set_nested_dicts(metadata, settings.YT_FIELD_TRANSCRIPT, None)
