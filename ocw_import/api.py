@@ -11,7 +11,7 @@ from django.conf import settings
 
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
 from main.utils import get_dirpath_and_filename, is_valid_uuid
-from websites.api import find_available_name
+from websites.api import find_available_name, get_valid_new_filename
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     CONTENT_TYPE_INSTRUCTOR,
@@ -111,7 +111,7 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
     Args:
         filepath(str): The path of the file (from S3 or git)
         data(str): The file data to be converted
-        website: The website to which the content belongs
+        website (Website): The website to which the content belongs
     """
     s3_content_parts = [
         part for part in re.split(re.compile(r"^---\n", re.MULTILINE), data) if part
@@ -119,10 +119,11 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
     parent = None
     if len(s3_content_parts) >= 1:
         content_json = yaml.load(s3_content_parts[0], Loader=yaml.SafeLoader)
-        uid = content_json.get("uid", None)
-        dirpath, filename = get_dirpath_and_filename(
+        text_id = str(uuid.UUID(content_json["uid"]))
+        dirpath, filename_base = get_dirpath_and_filename(
             filepath, expect_file_extension=True
         )
+        filename = get_valid_new_filename(website.pk, dirpath, filename_base, text_id)
         parent_uid = content_json.get("parent_uid", None)
         if dirpath == "content/resources":
             # This is a file
@@ -145,14 +146,11 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
             # Replace dots with dashes to simplify file name/extension parsing, and limit length
             "filename": filename.replace(".", "-")[0:CONTENT_FILENAME_MAX_LEN],
         }
-        if not uid:
-            log.error("No UUID (text ID): %s", filepath)
-        else:
 
-            content, _ = WebsiteContent.objects.update_or_create(
-                website=website, text_id=str(uuid.UUID(uid)), defaults=base_defaults
-            )
-            return content
+        content, _ = WebsiteContent.objects.update_or_create(
+            website=website, text_id=text_id, defaults=base_defaults
+        )
+        return content
 
 
 def get_short_id(metadata):
@@ -291,7 +289,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         return
     try:
         publish_date = parse_date(course_data.get("publishdate", None))
-    except ValueError:
+    except (ValueError, TypeError):
         publish_date = None
         course_data["publishdate"] = None
     try:

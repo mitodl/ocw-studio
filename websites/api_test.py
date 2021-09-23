@@ -32,17 +32,18 @@ pytestmark = pytest.mark.django_db
 EXAMPLE_UUID_STR = "ae6cfe0b-37a7-4fe6-b194-5b7f1e3c349e"
 
 
+@pytest.mark.parametrize("exclude_content", [True, False])
 @pytest.mark.parametrize(
-    "existing_filenames,exp_result_filename",
+    "filename_base,existing_filenames,exp_result_filename",
     [
-        [[], "my-title"],
-        [["my-title"], "my-title2"],
-        [["my-title", "my-title9"], "my-title10"],
-        [["my-long-title", "my-long-title9"], "my-long-titl10"],
+        ["my-title", [], "my-title"],
+        ["my-title", ["my-title"], "my-title2"],
+        ["my-title", ["my-title", "my-title9"], "my-title10"],
+        ["my-long-title", ["my-long-title", "my-long-title9"], "my-long-titl10"],
     ],
 )
 def test_websitecontent_autogen_filename_unique(
-    mocker, existing_filenames, exp_result_filename
+    mocker, filename_base, existing_filenames, exp_result_filename, exclude_content
 ):
     """
     get_valid_new_filename should return a filename that obeys uniqueness constraints, adding a suffix and
@@ -50,26 +51,27 @@ def test_websitecontent_autogen_filename_unique(
     """
     # Set a lower limit for max filename length to test that filenames are truncated appropriately
     mocker.patch("websites.api.CONTENT_FILENAME_MAX_LEN", 14)
-    filename_base = (
-        exp_result_filename if not existing_filenames else existing_filenames[0]
-    )
     content_type = "page"
     dirpath = "path/to"
     website = WebsiteFactory.create()
-    WebsiteContentFactory.create_batch(
+    contents = WebsiteContentFactory.create_batch(
         len(existing_filenames),
         website=website,
         type=content_type,
         dirpath=dirpath,
         filename=factory.Iterator(existing_filenames),
     )
+
+    exclude_text_id = contents[0].text_id if exclude_content and contents else None
+
     assert (
         get_valid_new_filename(
             website_pk=website.pk,
             dirpath=dirpath,
             filename_base=filename_base,
+            exclude_text_id=exclude_text_id,
         )
-        == exp_result_filename
+        == (exp_result_filename if not exclude_content else filename_base)
     )
 
 

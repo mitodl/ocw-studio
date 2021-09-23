@@ -369,11 +369,10 @@ def _get_derived_website_content_data(
         or request_data.get("metadata", {}).get(slug_key)
     )
     if slug is not None:
-        filename_base = WebsiteContent.generate_filename(slug)
         added_data["filename"] = get_valid_new_filename(
             website_pk=website_pk,
             dirpath=dirpath,
-            filename_base=filename_base,
+            filename_base=slug,
         )
     return added_data
 

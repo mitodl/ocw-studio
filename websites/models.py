@@ -189,11 +189,6 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
     )
 
-    @staticmethod
-    def generate_filename(title: str) -> str:
-        """Generates a filename from a title value"""
-        return slugify(title)[0:CONTENT_FILENAME_MAX_LEN]
-
     def calculate_checksum(self) -> str:
         """ Returns a calculated checksum of the content """
         return sha256(
