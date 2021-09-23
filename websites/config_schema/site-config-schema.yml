@@ -10,6 +10,7 @@ content_item:
     fields: list(include('field'), required=False)
     folder: str(required=False)
     files: list(include('inner_content_item'), required=False)
+    slug: str(required=False)
 ---
 inner_content_item:
     name: str()

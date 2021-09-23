@@ -24,7 +24,7 @@ from content_sync.api import (
 )
 from main import features
 from main.permissions import ReadonlyPermission
-from main.utils import valid_key
+from main.utils import uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
 from websites import constants
@@ -344,7 +344,7 @@ def _get_derived_website_content_data(
     request_data: dict, site_config: SiteConfig, website_pk: str
 ) -> dict:
     """Derives values that should be added to the request data if a WebsiteContent object is being created"""
-    added_data = {}
+    added_data = {"text_id": uuid_string()}
     content_type = request_data.get("type")
     config_item = (
         site_config.find_item_by_name(name=content_type)
@@ -359,9 +359,16 @@ def _get_derived_website_content_data(
     if dirpath is None and config_item is not None and is_page_content:
         dirpath = config_item.file_target
         added_data["dirpath"] = dirpath
-    title = request_data.get("title")
-    if "filename" not in request_data and title is not None:
-        filename_base = WebsiteContent.generate_filename(title)
+    slug_key = config_item.item.get("slug") if config_item is not None else None
+    if not slug_key:
+        slug_key = "title"
+    slug = (
+        added_data.get(slug_key)
+        or request_data.get(slug_key)
+        or request_data.get("metadata", {}).get(slug_key)
+    )
+    if slug is not None:
+        filename_base = WebsiteContent.generate_filename(slug)
         added_data["filename"] = get_valid_new_filename(
             website_pk=website_pk,
             dirpath=dirpath,
