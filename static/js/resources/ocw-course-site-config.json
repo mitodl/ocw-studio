@@ -109,6 +109,31 @@
           "widget": "select"
         },
         {
+          "default": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+          "label": "License",
+          "name": "license",
+          "options": [
+            {
+              "label": "CC-BY-NC-SA",
+              "value": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+            },
+            {
+              "label": "CC-BY",
+              "value": "https://creativecommons.org/licenses/by/4.0/"
+            },
+            {
+              "label": "CC-BY-NC",
+              "value": "https://creativecommons.org/licenses/by-nc/4.0/"
+            },
+            {
+              "label": "public domain",
+              "value": "https://creativecommons.org/publicdomain/zero/1.0/"
+            }
+          ],
+          "required": true,
+          "widget": "select"
+        },
+        {
           "condition": {
             "equals": "Image",
             "field": "resourcetype"

@@ -28,7 +28,7 @@ field:
     multiple: bool(required=False)
     min: int(required=False)
     max: int(required=False)
-    options: list(str(), required=False)
+    options: list(any(str(), include('option_item')), required=False)
     options_map: map(required=False)
     default: any(required=False)
     condition: include('field_condition', required=False)
@@ -51,4 +51,8 @@ relation_filter:
 ---
 level:
     name: str()
+    label: str()
+---
+option_item:
+    value: str()
     label: str()
