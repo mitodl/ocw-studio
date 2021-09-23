@@ -14,7 +14,7 @@ collections:
       - label: Body
         name: body
         widget: markdown
-        attach: "resource"
+        attach: resource
 
   - category: Content
     folder: content/resources
@@ -92,6 +92,21 @@ collections:
           - 'Workshop Videos'
           - 'Written Assignments'
           - 'Written Assignments with Examples'
+      - label: License
+        name: license
+        options:
+          - label: CC-BY-NC-SA
+            value: https://creativecommons.org/licenses/by-nc-sa/4.0/
+          - label: CC-BY
+            value: https://creativecommons.org/licenses/by/4.0/
+          - label: CC-BY-NC
+            value: https://creativecommons.org/licenses/by-nc/4.0/
+          - label: public domain
+            value: https://creativecommons.org/publicdomain/zero/1.0/
+        widget: select
+        default: https://creativecommons.org/licenses/by-nc-sa/4.0/
+        required: true
+
       # show the field below only if the type of resource is "image"
       - label: Image Metadata
         name: image_metadata
