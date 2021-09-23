@@ -81,10 +81,10 @@ def find_available_name(
         Return value = "myfile6"
     initial_filename_base = "abcdefghijklmnopqrstuvwxyz" (26 characters, assuming 26 character max)
         Existing filenames = "abcdefghijklmnopqrstuvwxyz"
-        Return value = "abcdefghijklmnopqrstuvwxy1"
+        Return value = "abcdefghijklmnopqrstuvwxy1"  # pragma: allowlist secret
     initial_filename_base = "abcdefghijklmnopqrstuvwxy" (25 characters long, assuming 26 character max)
         Existing filenames = "abc...y", "abc...y1" through "abc...y9"
-        Return value = "abcdefghijklmnopqrstuvwx10"
+        Return value = "abcdefghijklmnopqrstuvwx10"  # pragma: allowlist secret
     """
     # Keeps track of the number of characters that must be cut from the filename to be less than
     # the filename max length when the suffix is applied.
