@@ -14,12 +14,14 @@ class DriveApiQueryTracker(TimestampedModel):
         null=False,
         blank=False,
         max_length=128,
-        unique=True,
         choices=zip(DRIVE_API_RESOURCES, DRIVE_API_RESOURCES),
     )
     for_video = models.BooleanField(default=True, null=False, blank=False)
     last_page = models.CharField(max_length=2048, null=True, blank=True)
     last_dt = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("api_call", "for_video")
 
 
 class DriveFile(TimestampedModel):

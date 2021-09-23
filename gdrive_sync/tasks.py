@@ -67,7 +67,7 @@ def create_resource_from_gdrive(self, drive_file_id: str):
             title=drive_file.name,
             file=drive_file.s3_key,
             type="resource",
-            metadata={"filetype": get_resource_type(drive_file.s3_key)},
+            metadata={"resourcetype": get_resource_type(drive_file.s3_key)},
         )
     else:
         resource.file = drive_file.s3_key
@@ -76,7 +76,8 @@ def create_resource_from_gdrive(self, drive_file_id: str):
     drive_file.save()
 
 
-@app.task(bind=True)
+@app.task(bind=True, name="import_recent_files")
+@is_gdrive_enabled
 def import_recent_files(self, last_dt: str = None, import_video: bool = False):
     """
     Query the Drive API for recently uploaded or modified files and process them
@@ -124,7 +125,8 @@ def import_recent_files(self, last_dt: str = None, import_video: bool = False):
     raise self.replace(celery.group(*chains))
 
 
-@app.task(bind=True)
+@app.task(bind=True, name="import_website_files")
+@is_gdrive_enabled
 def import_website_files(self, short_id: str):
     """Query the Drive API for all children of a website folder (files_final subfolder) and import the files"""
     fields = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)"
@@ -158,7 +160,7 @@ def import_website_files(self, short_id: str):
                     create_resource_from_gdrive.si(drive_file.file_id),
                 )
             )
-    if chains:
+    if len(chains) > 0:
         raise self.replace(celery.group(*chains))
 
 
@@ -168,11 +170,9 @@ def import_gdrive_videos(self):
     raise self.replace(import_recent_files.si(import_video=True))
 
 
-@app.task(bind=True, name="import_gdrive_files")
-def import_gdrive_files(self, short_id: str = None):
-    """Import any new videos uploaded to Google Drive"""
-    if short_id:
-        raise self.replace(import_website_files.si(short_id))
+@app.task(bind=True)
+def import_gdrive_files(self):
+    """Import any new non-video files uploaded to Google Drive"""
     raise self.replace(import_recent_files.si(import_video=False))
 
 

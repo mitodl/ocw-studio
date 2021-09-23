@@ -22,7 +22,7 @@ from content_sync.api import (
     sync_github_website_starters,
     update_website_backend,
 )
-from gdrive_sync.tasks import import_gdrive_files
+from gdrive_sync.tasks import import_website_files
 from main import features
 from main.permissions import ReadonlyPermission
 from main.utils import valid_key
@@ -487,7 +487,7 @@ class WebsiteContentViewSet(
     def gdrive_sync(self, request, **kwargs):  # pylint:disable=unused-argument
         """ Trigger a task to sync all non-video Google Drive files"""
         website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
-        import_gdrive_files.delay(short_id=website.short_id)
+        import_website_files.delay(website.short_id)
         return Response(status=200)
 
 

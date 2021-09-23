@@ -29,18 +29,13 @@ from websites.models import WebsiteContent
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.parametrize("short_id", [None, "12.1-fall-2020"])
-def test_import_gdrive_files(mocker, mocked_celery, short_id):
+def test_import_gdrive_files(mocker, mocked_celery):
     """ Files should be imported only if required settings are present"""
     mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
-    task_name = "import_website_files" if short_id else "import_recent_files"
-    mock_task = mocker.patch(f"gdrive_sync.tasks.{task_name}.si")
+    mock_import_recent_files = mocker.patch("gdrive_sync.tasks.import_recent_files.si")
     with pytest.raises(mocked_celery.replace_exception_class):
-        import_gdrive_files.delay(short_id=short_id)
-    if short_id:
-        mock_task.assert_called_once_with(short_id)
-    else:
-        mock_task.assert_called_once_with(import_video=False)
+        import_gdrive_files.delay()
+    mock_import_recent_files.assert_called_once_with(import_video=False)
 
 
 @pytest.mark.parametrize("shared_id", [None, "testDrive"])
@@ -280,7 +275,7 @@ def test_create_resource_from_gdrive(mocker):
         title=drive_file.name,
         file=drive_file.s3_key,
         type="resource",
-        metadata={"filetype": RESOURCE_TYPE_DOCUMENT},
+        metadata={"resourcetype": RESOURCE_TYPE_DOCUMENT},
     ).first()
     assert content is not None
     drive_file.refresh_from_db()
@@ -306,6 +301,7 @@ def test_create_resource_from_gdrive_update(mocker):
 
 def test_import_website_files(mocker, mocked_celery):
     """import_website_files should run process_file_result for each drive file and trigger tasks"""
+    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
     website = WebsiteFactory.create()
     drive_files = DriveFileFactory.create_batch(2, website=website)
     mock_process_file_result = mocker.patch(
@@ -343,6 +339,7 @@ def test_import_website_files(mocker, mocked_celery):
 
 def test_import_website_files_dupe_site_folders(mocker):
     """import_website_files should run process_file_result for each drive file and trigger tasks"""
+    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
     website = WebsiteFactory.create()
     mocker.patch(
         "gdrive_sync.tasks.get_file_list",
@@ -368,6 +365,7 @@ def test_import_website_files_dupe_site_folders(mocker):
 
 def test_import_website_files_missing_folder(mocker):
     """import_website_files should run process_file_result for each drive file and trigger tasks"""
+    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
     website = WebsiteFactory.create()
     mocker.patch(
         "gdrive_sync.tasks.get_file_list",

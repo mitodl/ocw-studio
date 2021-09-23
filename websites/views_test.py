@@ -638,7 +638,7 @@ def test_websites_content_list_page_content(drf_client, global_admin_user):
 
 def test_websites_content_gdrive_sync(mocker, drf_client, permission_groups):
     """The endpoint should kick off a task to sync Google Drive files for the website"""
-    mock_sync = mocker.patch("websites.views.import_gdrive_files.delay")
+    mock_sync = mocker.patch("websites.views.import_website_files.delay")
     website = permission_groups.websites[0]
     drf_client.force_login(permission_groups.site_editor)
     resp = drf_client.post(
@@ -647,7 +647,7 @@ def test_websites_content_gdrive_sync(mocker, drf_client, permission_groups):
             kwargs={"parent_lookup_website": website.name},
         )
     )
-    mock_sync.assert_called_once_with(short_id=website.short_id)
+    mock_sync.assert_called_once_with(website.short_id)
     assert resp.status_code == 200
 
 
