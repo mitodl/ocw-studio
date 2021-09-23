@@ -14,7 +14,7 @@ from googleapiclient.discovery import Resource, build
 
 from gdrive_sync.constants import (
     DRIVE_FOLDER_FILES,
-    DRIVE_FOLDER_VIDEO,
+    DRIVE_FOLDER_VIDEOS,
     VALID_TEXT_FILE_TYPES,
     DriveFileStatus,
 )
@@ -107,7 +107,7 @@ def process_file_result(file_obj: Dict) -> bool:
             website = Website.objects.filter(short_id=folder_name).first()
             if website:
                 break
-        is_video = DRIVE_FOLDER_VIDEO in folder_names
+        is_video = DRIVE_FOLDER_VIDEOS in folder_names
         is_file = DRIVE_FOLDER_FILES in folder_names
         if website and (is_file or is_video):
             existing_file = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
@@ -206,9 +206,12 @@ def stream_to_s3(drive_file: DriveFile):
         ).execute()
 
 
-def create_gdrive_folder_if_not_exists(website_short_id: str, website_name: str):
+def create_gdrive_folders(website_short_id: str) -> bool:
     """Create gdrive folder for website if it doesn't already exist"""
-    query = f"(mimeType = 'application/vnd.google-apps.folder') and not trashed and (name = '{website_short_id}' or name = '{website_name}')"
+    folder_created = False
+    service = get_drive_service()
+    base_query = "mimeType = 'application/vnd.google-apps.folder' and not trashed and "
+    query = f"{base_query}name = '{website_short_id}'"
 
     fields = "nextPageToken, files(id, name, parents)"
     folders = get_file_list(query=query, fields=fields)
@@ -227,23 +230,37 @@ def create_gdrive_folder_if_not_exists(website_short_id: str, website_name: str)
         filtered_folders = folders
 
     if len(filtered_folders) == 0:
-        service = get_drive_service()
-
-        file_metadata = {
+        folder_metadata = {
             "name": website_short_id,
             "mimeType": "application/vnd.google-apps.folder",
         }
-
         if settings.DRIVE_UPLOADS_PARENT_FOLDER_ID:
-            file_metadata["parents"] = [settings.DRIVE_UPLOADS_PARENT_FOLDER_ID]
+            folder_metadata["parents"] = [settings.DRIVE_UPLOADS_PARENT_FOLDER_ID]
         else:
-            file_metadata["parents"] = [settings.DRIVE_SHARED_ID]
+            folder_metadata["parents"] = [settings.DRIVE_SHARED_ID]
 
-        return (
+        folder = (
             service.files()
-            .create(supportsAllDrives=True, body=file_metadata, fields="id")
+            .create(supportsAllDrives=True, body=folder_metadata, fields="id")
             .execute()
         )
+        folder_created = True
+    else:
+        folder = filtered_folders[0]
+    for subfolder in [DRIVE_FOLDER_FILES, DRIVE_FOLDER_VIDEOS]:
+        query = f"{base_query}name = '{subfolder}' and parents = '{folder['id']}'"
+        folders = get_file_list(query=query, fields=fields)
+        if len(folders) == 0:
+            folder_metadata = {
+                "name": subfolder,
+                "mimeType": "application/vnd.google-apps.folder",
+                "parents": [folder["id"]],
+            }
+            service.files().create(
+                supportsAllDrives=True, body=folder_metadata, fields="id"
+            ).execute()
+            folder_created = True
+    return folder_created
 
 
 def get_s3_content_type(key: str) -> str:

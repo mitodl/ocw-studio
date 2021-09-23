@@ -12,7 +12,7 @@ from django.db import transaction
 
 from gdrive_sync import api
 from gdrive_sync.api import get_file_list, get_resource_type, process_file_result
-from gdrive_sync.constants import DRIVE_API_FILES, DRIVE_FOLDER_VIDEO
+from gdrive_sync.constants import DRIVE_API_FILES, DRIVE_FOLDER_VIDEOS
 from gdrive_sync.decorators import is_gdrive_enabled
 from gdrive_sync.models import DriveApiQueryTracker, DriveFile
 from main.celery import app
@@ -110,7 +110,7 @@ def import_recent_files(self, last_dt: str = None, import_video: bool = False):
                 last_checked = maxLastTime
             chained_task = (
                 transcode_drive_file_video
-                if DRIVE_FOLDER_VIDEO in drive_file.drive_path
+                if DRIVE_FOLDER_VIDEOS in drive_file.drive_path
                 else create_resource_from_gdrive
             )
             chains.append(
@@ -176,8 +176,8 @@ def import_gdrive_files(self, short_id: str = None):
     raise self.replace(import_recent_files.si(import_video=False))
 
 
-@app.task(name="create_gdrive_folder_if_not_exists")
+@app.task(name="create_gdrive_folders")
 @is_gdrive_enabled
-def create_gdrive_folder_if_not_exists(website_short_id: str, website_name: str):
+def create_gdrive_folders(website_short_id: str):
     """Create gdrive folder for website if it doesn't already exist"""
-    api.create_gdrive_folder_if_not_exists(website_short_id, website_name)
+    api.create_gdrive_folders(website_short_id)

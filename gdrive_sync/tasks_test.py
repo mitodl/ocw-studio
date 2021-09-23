@@ -9,7 +9,7 @@ from gdrive_sync.conftest import LIST_FILE_RESPONSES, LIST_VIDEO_RESPONSES
 from gdrive_sync.constants import (
     DRIVE_API_FILES,
     DRIVE_FOLDER_FILES,
-    DRIVE_FOLDER_VIDEO,
+    DRIVE_FOLDER_VIDEOS,
 )
 from gdrive_sync.factories import DriveApiQueryTrackerFactory, DriveFileFactory
 from gdrive_sync.models import DriveFile
@@ -57,14 +57,12 @@ def test_stream_drive_file_to_s3(settings, mocker, shared_id, drive_creds):
 
 @pytest.mark.parametrize("shared_id", [None, "testDrive"])
 @pytest.mark.parametrize("drive_creds", [None, '{"key": "value"}'])
-def test_create_gdrive_folder_if_not_exists(settings, mocker, shared_id, drive_creds):
+def test_create_gdrive_folders(settings, mocker, shared_id, drive_creds):
     """ Folder should be created if settings are present"""
     settings.DRIVE_SHARED_ID = shared_id
     settings.DRIVE_SERVICE_ACCOUNT_CREDS = drive_creds
-    mock_create_folder = mocker.patch(
-        "gdrive_sync.tasks.api.create_gdrive_folder_if_not_exists"
-    )
-    tasks.create_gdrive_folder_if_not_exists.delay("test", "test")
+    mock_create_folder = mocker.patch("gdrive_sync.tasks.api.create_gdrive_folders")
+    tasks.create_gdrive_folders.delay("test")
     assert mock_create_folder.call_count == (1 if shared_id and drive_creds else 0)
 
 
@@ -137,7 +135,7 @@ def test_import_recent_files(
             },
             {
                 "id": "abc123",
-                "name": DRIVE_FOLDER_VIDEO if import_video else DRIVE_FOLDER_FILES,
+                "name": DRIVE_FOLDER_VIDEOS if import_video else DRIVE_FOLDER_FILES,
             },
         ],
         [
@@ -147,7 +145,7 @@ def test_import_recent_files(
             },
             {
                 "id": "xyz987",
-                "name": DRIVE_FOLDER_VIDEO if import_video else DRIVE_FOLDER_FILES,
+                "name": DRIVE_FOLDER_VIDEOS if import_video else DRIVE_FOLDER_FILES,
             },
         ],
         [
@@ -157,7 +155,7 @@ def test_import_recent_files(
             },
             {
                 "id": "def456",
-                "name": DRIVE_FOLDER_VIDEO if import_video else DRIVE_FOLDER_FILES,
+                "name": DRIVE_FOLDER_VIDEOS if import_video else DRIVE_FOLDER_FILES,
             },
         ],
         [
@@ -167,7 +165,7 @@ def test_import_recent_files(
             },
             {
                 "id": "ghi789",
-                "name": DRIVE_FOLDER_VIDEO if import_video else DRIVE_FOLDER_FILES,
+                "name": DRIVE_FOLDER_VIDEOS if import_video else DRIVE_FOLDER_FILES,
             },
         ],
     ]

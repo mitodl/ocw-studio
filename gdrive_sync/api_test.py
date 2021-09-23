@@ -8,7 +8,11 @@ from requests import HTTPError
 from gdrive_sync import api
 from gdrive_sync.api import get_resource_type
 from gdrive_sync.conftest import LIST_VIDEO_RESPONSES
-from gdrive_sync.constants import DriveFileStatus
+from gdrive_sync.constants import (
+    DRIVE_FOLDER_FILES,
+    DRIVE_FOLDER_VIDEOS,
+    DriveFileStatus,
+)
 from gdrive_sync.factories import DriveFileFactory
 from main.s3_utils import get_s3_resource
 from websites.constants import (
@@ -125,7 +129,7 @@ def test_stream_to_s3_error(mocker):
     [(None, False), ("correct_parent", False), ("correct_parent", True)],
 )
 @pytest.mark.parametrize("folder_exists", [True, False])
-def test_create_gdrive_folder_if_not_exists(  # pylint:disable=too-many-locals,too-many-arguments
+def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-arguments
     settings,
     mocker,
     parent_folder,
@@ -135,19 +139,18 @@ def test_create_gdrive_folder_if_not_exists(  # pylint:disable=too-many-locals,t
 ):
     """Task should make expected drive api and S3 upload calls"""
     website_short_id = "short_id"
-    website_name = "name"
+    site_folder_id = "SiteFolderID"
 
     settings.DRIVE_SHARED_ID = "test_drive"
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = parent_folder
 
     if folder_exists:
-        existing_list_response = [{"id": "id", "parents": ["first_parent"]}]
+        existing_list_response = [{"id": site_folder_id, "parents": ["first_parent"]}]
     else:
         existing_list_response = []
 
     mock_list_files = mocker.patch(
-        "gdrive_sync.api.get_file_list",
-        return_value=existing_list_response,
+        "gdrive_sync.api.get_file_list", side_effect=[existing_list_response, [], []]
     )
 
     if parent_folder_in_ancestors:
@@ -160,19 +163,17 @@ def test_create_gdrive_folder_if_not_exists(  # pylint:disable=too-many-locals,t
         return_value=get_parent_tree_response,
     )
 
-    expected_list_query = f"(mimeType = 'application/vnd.google-apps.folder') and not trashed and (name = '{website_short_id}' or name = '{website_name}')"
+    base_query = "mimeType = 'application/vnd.google-apps.folder' and not trashed and "
+    expected_folder_query = f"{base_query}name = '{website_short_id}'"
     expected_fields = "nextPageToken, files(id, name, parents)"
 
     mock_create = mock_service.return_value.files.return_value.create
     mock_execute = mock_create.return_value.execute
+    mock_execute.side_effect = [{"id": site_folder_id}, {"id": "sub1"}, {"id": "sub2"}]
 
-    api.create_gdrive_folder_if_not_exists(
-        website_short_id=website_short_id, website_name=website_name
-    )
+    api.create_gdrive_folders(website_short_id=website_short_id)
 
-    mock_list_files.assert_called_once_with(
-        query=expected_list_query, fields=expected_fields
-    )
+    mock_list_files.assert_any_call(query=expected_folder_query, fields=expected_fields)
 
     if folder_exists and parent_folder:
         mock_get_parent_tree.assert_called_once_with(["first_parent"])
@@ -190,11 +191,25 @@ def test_create_gdrive_folder_if_not_exists(  # pylint:disable=too-many-locals,t
         else:
             expected_file_metadata["parents"] = ["test_drive"]
 
-        mock_create.assert_called_once_with(
+        mock_create.assert_any_call(
             supportsAllDrives=True, body=expected_file_metadata, fields="id"
         )
-    else:
-        mock_execute.assert_not_called()
+
+    for subfolder in [DRIVE_FOLDER_FILES, DRIVE_FOLDER_VIDEOS]:
+        expected_folder_query = (
+            f"{base_query}name = '{subfolder}' and parents = '{site_folder_id}'"
+        )
+        expected_file_metadata = {
+            "name": subfolder,
+            "mimeType": "application/vnd.google-apps.folder",
+            "parents": [site_folder_id],
+        }
+        mock_list_files.assert_any_call(
+            query=expected_folder_query, fields=expected_fields
+        )
+        mock_create.assert_any_call(
+            supportsAllDrives=True, body=expected_file_metadata, fields="id"
+        )
 
 
 @mock_s3
