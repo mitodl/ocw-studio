@@ -11,9 +11,13 @@ from django.conf import settings
 from django.db import transaction
 
 from gdrive_sync import api
-from gdrive_sync.api import get_file_list, get_resource_type, process_file_result
+from gdrive_sync.api import (
+    get_file_list,
+    get_resource_type,
+    is_gdrive_enabled,
+    process_file_result,
+)
 from gdrive_sync.constants import DRIVE_API_FILES, DRIVE_FOLDER_VIDEOS
-from gdrive_sync.decorators import is_gdrive_enabled
 from gdrive_sync.models import DriveApiQueryTracker, DriveFile
 from main.celery import app
 from videos.api import create_media_convert_job
@@ -77,12 +81,13 @@ def create_resource_from_gdrive(self, drive_file_id: str):
 
 
 @app.task(bind=True, name="import_recent_files")
-@is_gdrive_enabled
 def import_recent_files(self, last_dt: str = None, import_video: bool = False):
     """
     Query the Drive API for recently uploaded or modified files and process them
     if they are in folders that match Website short_ids or names.
     """
+    if not is_gdrive_enabled():
+        return
     if last_dt and isinstance(last_dt, str):
         # Dates get serialized into strings when passed to celery tasks
         last_dt = parse(last_dt).replace(tzinfo=pytz.UTC)
@@ -126,9 +131,10 @@ def import_recent_files(self, last_dt: str = None, import_video: bool = False):
 
 
 @app.task(bind=True, name="import_website_files")
-@is_gdrive_enabled
 def import_website_files(self, short_id: str):
     """Query the Drive API for all children of a website folder (files_final subfolder) and import the files"""
+    if not is_gdrive_enabled():
+        return
     fields = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)"
     common_query = 'mimeType = "application/vnd.google-apps.folder" and not trashed'
     folders = get_file_list(
@@ -177,7 +183,7 @@ def import_gdrive_files(self):
 
 
 @app.task(name="create_gdrive_folders")
-@is_gdrive_enabled
 def create_gdrive_folders(website_short_id: str):
     """Create gdrive folder for website if it doesn't already exist"""
-    api.create_gdrive_folders(website_short_id)
+    if is_gdrive_enabled():
+        api.create_gdrive_folders(website_short_id)

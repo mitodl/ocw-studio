@@ -281,3 +281,8 @@ def get_resource_type(key: str) -> str:
     if content_type.startswith("text") or extension in VALID_TEXT_FILE_TYPES:
         return RESOURCE_TYPE_DOCUMENT
     return RESOURCE_TYPE_OTHER
+
+
+def is_gdrive_enabled():
+    """Determine if Gdrive integration is enabled via required settings"""
+    return settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS
