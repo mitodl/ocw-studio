@@ -5,109 +5,44 @@
   "course_thumbnail_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/6d7b103f7ee8600b369f8b7ed69c1519_1-201jf08-th.jpg",
   "course_image_alternate_text": "Passengers boarding a subway in Madrid.",
   "course_image_caption_text": "\n<p>This course discusses urban transportation issues, such as the importance of passenger waiting time. (Image by <a href=\"http://www.flickr.com/photos/caravinagre/1397350778/\">caravinagre</a> on Flickr.)</p>",
-  "publishdate": "2009-09-15T10:51:12-04:00",
-  "instructors": [
-    {
-      "instructor": "Michael Frumin",
-      "url": "/search/?q=%22Michael%20Frumin%22",
-      "first_name": "Michael",
-      "last_name": "Frumin",
-      "middle_initial": "",
-      "salutation": "",
-      "uid": "0e8c35a6c131408f19ff0eaae8ab3913"
-    },
-    {
-      "instructor": "Prof. Moshe Ben-Akiva",
-      "url": "/search/?q=%22Prof.%20Moshe%20Ben-Akiva%22",
-      "first_name": "Moshe",
-      "last_name": "Ben-Akiva",
-      "middle_initial": "",
-      "salutation": "Prof.",
-      "uid": "8f6ecc2fb76d126adf900cfdd47ba63a"
-    }
+  "instructors": {
+    "content": [
+      "0e8c35a6-c131-408f-19ff-0eaae8ab3913",
+      "8f6ecc2f-b76d-126a-df90-0cfdd47ba63a"
+    ],
+    "website": "ocw-www"
+  },
+  "department_numbers": [
+    "1",
+    "11",
+    "ESD"
   ],
-  "departments": [
-    {
-      "department": "Civil and Environmental Engineering",
-      "url": "/search/?d=Civil%20and%20Environmental%20Engineering"
-    },
-    {
-      "department": "Urban Studies and Planning",
-      "url": "/search/?d=Urban%20Studies%20and%20Planning"
-    },
-    {
-      "department": "Engineering Systems Division",
-      "url": "/search/?d=Engineering%20Systems%20Division"
-    }
-  ],
-  "course_features": [
-    {
-      "feature": "Problem Sets",
-      "url": "/pages/assignments"
-    },
-    {
-      "feature": "Exams",
-      "url": "/pages/exams"
-    },
-    {
-      "feature": "Lecture Notes",
-      "url": "/pages/lecture-notes"
-    }
+  "learning_resource_types": [
+    "Problem Sets",
+    "Exams",
+    "Lecture Notes"
   ],
   "topics": [
-    {
-      "topic": "Social Science",
-      "subtopics": [
-        {
-          "subtopic": "Urban Studies",
-          "specialities": [
-            {
-              "speciality": "Transportation Planning",
-              "url": "/search/?t=Transportation%20Planning"
-            }
-          ],
-          "url": "/search/?t=Urban%20Studies"
-        },
-        {
-          "subtopic": "Economics",
-          "specialities": [
-            {
-              "speciality": "Financial Economics",
-              "url": "/search/?t=Financial%20Economics"
-            }
-          ],
-          "url": "/search/?t=Economics"
-        }
-      ],
-      "url": "/search/?t=Social%20Science"
-    },
-    {
-      "topic": "Engineering",
-      "subtopics": [
-        {
-          "subtopic": "Civil Engineering",
-          "specialities": [
-            {
-              "speciality": "Transportation Engineering",
-              "url": "/search/?t=Transportation%20Engineering"
-            }
-          ],
-          "url": "/search/?t=Civil%20Engineering"
-        }
-      ],
-      "url": "/search/?t=Engineering"
-    }
+    [
+      "Social Science",
+      "Urban Studies",
+      "Transportation Planning"
+    ],
+    [
+      "Engineering",
+      "Civil Engineering",
+      "Transportation Engineering"
+    ],
+    [
+      "Social Science",
+      "Economics",
+      "Financial Economics"
+    ]
   ],
   "primary_course_number": "1.201J",
-  "extra_course_numbers": [
-    "11.545J",
-    "ESD.210J"
-  ],
+  "extra_course_numbers": "11.545J, ESD.210J",
   "term": "Fall 2008",
-  "level": {
-    "level": "Graduate",
-    "url": "/search/?l=Graduate"
-  },
+  "level": "Graduate",
   "other_versions": [],
   "archived_versions": [],
   "open_learning_library_versions": []

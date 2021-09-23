@@ -23,11 +23,13 @@ from websites.models import Website
 pytestmark = pytest.mark.django_db
 
 ALL_COURSES_PATHS = [
-    "1-050-engineering-mechanics-i-fall-2007/data/course.json",
-    "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/data/course.json",
-    "biology/data/course.json",
+    "1-050-engineering-mechanics-i-fall-2007/data/course_legacy.json",
+    "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/data/course_legacy.json",
+    "biology/data/course_legacy.json",
 ]
-SINGLE_COURSE_PATHS = ["1-050-engineering-mechanics-i-fall-2007/data/course.json"]
+SINGLE_COURSE_PATHS = [
+    "1-050-engineering-mechanics-i-fall-2007/data/course_legacy.json"
+]
 
 
 @pytest.mark.parametrize(

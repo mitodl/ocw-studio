@@ -48,7 +48,9 @@ def delete_unpublished_courses(paths=None):
     """
     if not paths:
         return
-    course_ids = list(map((lambda key: key.replace("/data/course.json", "", 1)), paths))
+    course_ids = list(
+        map((lambda key: key.replace("/data/course_legacy.json", "", 1)), paths)
+    )
     unpublished_courses = Website.objects.filter(
         source=WEBSITE_SOURCE_OCW_IMPORT
     ).exclude(name__in=course_ids)
