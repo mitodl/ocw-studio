@@ -1,23 +1,30 @@
 """ Google Drive API functions"""
 import json
 import logging
-from datetime import datetime
+import os
 from typing import Dict, List
 
 import boto3
-import pytz
 import requests
-from celery import chain
 from django.conf import settings
-from django.db.models import Q
 from google.oauth2.service_account import (  # pylint:disable=no-name-in-module
     Credentials as ServiceAccountCredentials,
 )
 from googleapiclient.discovery import Resource, build
 
-from gdrive_sync import tasks
-from gdrive_sync.constants import DRIVE_API_FILES, DriveFileStatus
-from gdrive_sync.models import DriveApiQueryTracker, DriveFile
+from gdrive_sync.constants import (
+    DRIVE_FOLDER_FILES,
+    DRIVE_FOLDER_VIDEO,
+    VALID_TEXT_FILE_TYPES,
+    DriveFileStatus,
+)
+from gdrive_sync.models import DriveFile
+from websites.constants import (
+    RESOURCE_TYPE_DOCUMENT,
+    RESOURCE_TYPE_IMAGE,
+    RESOURCE_TYPE_OTHER,
+    RESOURCE_TYPE_VIDEO,
+)
 from websites.models import Website
 
 
@@ -84,86 +91,51 @@ def get_parent_tree(parents):
 
 
 def process_file_result(file_obj: Dict) -> bool:
-    """Convert an API file response into DriveFile objects"""
+    """Convert an API file response into a DriveFile object"""
     parents = file_obj.get("parents")
     if parents:
         folder_tree = get_parent_tree(parents)
-        if (
-            settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID
-            and settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID
+        if len(folder_tree) < 2 or (
+            settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
+            and settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
             not in [folder["id"] for folder in folder_tree]
         ):
             return
 
-        for folder in folder_tree:
-            website = Website.objects.filter(
-                Q(short_id=folder["name"]) | Q(name=folder["name"])
-            ).first()
+        folder_names = [folder["name"] for folder in folder_tree]
+        for folder_name in folder_names:
+            website = Website.objects.filter(short_id=folder_name).first()
             if website:
-                existing_file = DriveFile.objects.filter(
-                    file_id=file_obj.get("id")
-                ).first()
-                if existing_file and existing_file.checksum == file_obj.get(
-                    "md5Checksum"
-                ):
-                    # For inexplicable reasons, sometimes Google Drive continuously updates
-                    # the modifiedTime of files, so only update the DriveFile if the checksum changed.
-                    return
-                drive_file, _ = DriveFile.objects.update_or_create(
-                    file_id=file_obj.get("id"),
-                    defaults={
-                        "name": file_obj.get("name"),
-                        "mime_type": file_obj.get("mimeType"),
-                        "checksum": file_obj.get("md5Checksum"),
-                        "modified_time": file_obj.get("modifiedTime"),
-                        "created_time": file_obj.get("createdTime"),
-                        "download_link": file_obj.get("webContentLink"),
-                        "drive_path": "/".join(
-                            [folder.get("name") for folder in folder_tree]
-                        ),
-                        "website": website,
-                    },
-                )
-                # Kick off chained async celery tasks to transfer file to S3, then start a transcode job
-                chain(
-                    tasks.stream_drive_file_to_s3.s(drive_file.file_id),
-                    tasks.transcode_drive_file_video.si(drive_file.file_id),
-                )()
-                return True
-    log.error(
-        "No matching website could be found for file %s (%s)",
-        file_obj.get("name"),
-        file_obj.get("fileId"),
-    )
-    return False
-
-
-def import_recent_videos(last_dt=None):
-    """
-    Query the Drive API for recently uploaded or modified video files and process them
-    if they are in folders that match Website short_ids or names.
-    """
-    file_token_obj, _ = DriveApiQueryTracker.objects.get_or_create(
-        api_call=DRIVE_API_FILES
-    )
-    query = "(mimeType contains 'video/' and not trashed)"
-    fields = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)"
-    last_checked = last_dt or file_token_obj.last_dt
-    if last_checked:
-        dt_str = last_checked.strftime("%Y-%m-%dT%H:%M:%S.%f")
-        query += f" and (modifiedTime > '{dt_str}' or createdTime > '{dt_str}')"
-
-    videos = get_file_list(query=query, fields=fields)
-    for video in videos:
-        if process_file_result(video):
-            maxLastTime = datetime.strptime(
-                max(video.get("createdTime"), video.get("modifiedTime")),
-                "%Y-%m-%dT%H:%M:%S.%fZ",
-            ).replace(tzinfo=pytz.utc)
-            if not last_checked or maxLastTime > last_checked:
-                last_checked = maxLastTime
-    file_token_obj.last_dt = last_checked
-    file_token_obj.save()
+                break
+        is_video = DRIVE_FOLDER_VIDEO in folder_names
+        is_file = DRIVE_FOLDER_FILES in folder_names
+        if website and (is_file or is_video):
+            existing_file = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
+            if (
+                existing_file
+                and existing_file.checksum == file_obj.get("md5Checksum")
+                and existing_file.name == file_obj.get("name")
+            ):
+                # For inexplicable reasons, sometimes Google Drive continuously updates
+                # the modifiedTime of files, so only update the DriveFile if the checksum or name changed.
+                return
+            drive_file, _ = DriveFile.objects.update_or_create(
+                file_id=file_obj.get("id"),
+                defaults={
+                    "name": file_obj.get("name"),
+                    "mime_type": file_obj.get("mimeType"),
+                    "checksum": file_obj.get("md5Checksum"),
+                    "modified_time": file_obj.get("modifiedTime"),
+                    "created_time": file_obj.get("createdTime"),
+                    "download_link": file_obj.get("webContentLink"),
+                    "drive_path": "/".join(
+                        [folder.get("name") for folder in folder_tree]
+                    ),
+                    "website": website,
+                },
+            )
+            return drive_file
+    return None
 
 
 def streaming_download(drive_file: DriveFile) -> requests.Response:
@@ -241,12 +213,12 @@ def create_gdrive_folder_if_not_exists(website_short_id: str, website_name: str)
     fields = "nextPageToken, files(id, name, parents)"
     folders = get_file_list(query=query, fields=fields)
 
-    if settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID:
+    if settings.DRIVE_UPLOADS_PARENT_FOLDER_ID:
         filtered_folders = []
         for folder in folders:
             ancestors = get_parent_tree(folder["parents"])
 
-            if settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID in [
+            if settings.DRIVE_UPLOADS_PARENT_FOLDER_ID in [
                 ancestor["id"] for ancestor in ancestors
             ]:
                 filtered_folders.append(folder)
@@ -262,8 +234,8 @@ def create_gdrive_folder_if_not_exists(website_short_id: str, website_name: str)
             "mimeType": "application/vnd.google-apps.folder",
         }
 
-        if settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID:
-            file_metadata["parents"] = [settings.DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID]
+        if settings.DRIVE_UPLOADS_PARENT_FOLDER_ID:
+            file_metadata["parents"] = [settings.DRIVE_UPLOADS_PARENT_FOLDER_ID]
         else:
             file_metadata["parents"] = [settings.DRIVE_SHARED_ID]
 
@@ -272,3 +244,23 @@ def create_gdrive_folder_if_not_exists(website_short_id: str, website_name: str)
             .create(supportsAllDrives=True, body=file_metadata, fields="id")
             .execute()
         )
+
+
+def get_s3_content_type(key: str) -> str:
+    """Return the S3 object content_type"""
+    s3 = boto3.resource("s3")
+    bucket = s3.Bucket(name=settings.AWS_STORAGE_BUCKET_NAME)
+    return bucket.Object(key).content_type
+
+
+def get_resource_type(key: str) -> str:
+    """ Guess the resource type from S3 content_type or extension"""
+    content_type = get_s3_content_type(key)
+    _, extension = os.path.splitext(key)
+    if content_type.startswith("image"):
+        return RESOURCE_TYPE_IMAGE
+    if content_type.startswith("video"):
+        return RESOURCE_TYPE_VIDEO
+    if content_type.startswith("text") or extension in VALID_TEXT_FILE_TYPES:
+        return RESOURCE_TYPE_DOCUMENT
+    return RESOURCE_TYPE_OTHER

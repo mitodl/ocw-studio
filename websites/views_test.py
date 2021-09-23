@@ -636,6 +636,21 @@ def test_websites_content_list_page_content(drf_client, global_admin_user):
     assert results[0]["type"] == "type1"
 
 
+def test_websites_content_gdrive_sync(mocker, drf_client, permission_groups):
+    """The endpoint should kick off a task to sync Google Drive files for the website"""
+    mock_sync = mocker.patch("websites.views.import_gdrive_files.delay")
+    website = permission_groups.websites[0]
+    drf_client.force_login(permission_groups.site_editor)
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-gdrive-sync",
+            kwargs={"parent_lookup_website": website.name},
+        )
+    )
+    mock_sync.assert_called_once_with(short_id=website.short_id)
+    assert resp.status_code == 200
+
+
 @pytest.mark.parametrize("content_context", [True, False])
 def test_websites_content_detail(drf_client, global_admin_user, content_context):
     """The detail view for WebsiteContent should return serialized data"""

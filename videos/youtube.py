@@ -229,12 +229,9 @@ class YouTubeApi:
 
     def update_privacy(self, youtube_id: str, privacy: str):
         """Update the privacy level of a video"""
-        response = (
-            self.client.videos()
-            .update(part="status", body={"id": youtube_id, "privacyStatus": privacy})
-            .execute()
-        )
-        log.error(response)
+        self.client.videos().update(
+            part="status", body={"id": youtube_id, "privacyStatus": privacy}
+        ).execute()
 
     def update_captions(self, resource: WebsiteContent, youtube_id: str):
         """Update captions for video"""

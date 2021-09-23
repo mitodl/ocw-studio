@@ -4,7 +4,7 @@ from mitol.common.models import TimestampedModel
 
 from gdrive_sync.constants import DRIVE_API_RESOURCES, DriveFileStatus
 from videos.models import Video
-from websites.models import Website
+from websites.models import Website, WebsiteContent
 
 
 class DriveApiQueryTracker(TimestampedModel):
@@ -17,6 +17,7 @@ class DriveApiQueryTracker(TimestampedModel):
         unique=True,
         choices=zip(DRIVE_API_RESOURCES, DRIVE_API_RESOURCES),
     )
+    for_video = models.BooleanField(default=True, null=False, blank=False)
     last_page = models.CharField(max_length=2048, null=True, blank=True)
     last_dt = models.DateTimeField(null=True, blank=True)
 
@@ -42,6 +43,9 @@ class DriveFile(TimestampedModel):
     drive_path = models.CharField(null=False, max_length=2048)
     website = models.ForeignKey(Website, null=True, on_delete=models.SET_NULL)
     video = models.ForeignKey(Video, null=True, blank=True, on_delete=models.SET_NULL)
+    resource = models.ForeignKey(
+        WebsiteContent, null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     def update_status(self, status):
         """ Update the DriveFile status"""
