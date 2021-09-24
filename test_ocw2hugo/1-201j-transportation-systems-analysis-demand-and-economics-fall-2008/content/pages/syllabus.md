@@ -1,5 +1,5 @@
 ---
-uid: 4bb2e8f1277b108211e3471c42e948f3
+uid: 4bb2e8f1-277b-1082-11e3-471c42e948f3
 title: Syllabus
 ---
 

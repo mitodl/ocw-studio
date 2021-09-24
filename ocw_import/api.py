@@ -19,8 +19,6 @@ from websites.constants import (
     CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
-    COURSE_PAGE_LAYOUTS,
-    COURSE_RESOURCE_LAYOUTS,
     EXTERNAL_IDENTIFIER_PREFIX,
     INSTRUCTORS_FIELD_NAME,
     WEBSITE_SOURCE_OCW_IMPORT,
@@ -74,7 +72,9 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_str=""):
     for resp in paginator.paginate(Bucket=bucket.name, Prefix=f"{prefix}"):
         for obj in resp["Contents"]:
             key = obj["Key"]
-            if key.endswith("course.json") and (not filter_str or filter_str in key):
+            if key.endswith("course_legacy.json") and (
+                not filter_str or filter_str in key
+            ):
                 yield key
 
 
@@ -119,16 +119,15 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
     parent = None
     if len(s3_content_parts) >= 1:
         content_json = yaml.load(s3_content_parts[0], Loader=yaml.SafeLoader)
-        layout = content_json.get("layout", None)
         uid = content_json.get("uid", None)
         dirpath, filename = get_dirpath_and_filename(
             filepath, expect_file_extension=True
         )
         parent_uid = content_json.get("parent_uid", None)
-        if layout in COURSE_PAGE_LAYOUTS:
+        if dirpath == "content/pages":
             # This is a special type of page
             content_type = CONTENT_TYPE_PAGE
-        elif layout in COURSE_RESOURCE_LAYOUTS:
+        elif dirpath == "content/resources":
             # This is a file
             content_type = CONTENT_TYPE_RESOURCE
         else:
@@ -185,7 +184,7 @@ def import_ocw2hugo_sitemetadata(
     Create and populate sitemetadata from an ocw course
 
     Args:
-        course_data (dict): Data from data/course.json
+        course_data (dict): Data from data/course_legacy.json
         website (Website): The course website
     """
     try:
@@ -284,7 +283,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
     course_data = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
-    name = path.replace("/data/course.json", "", 1)
+    name = path.replace("/data/course_legacy.json", "", 1)
     menu_data = yaml.load(
         get_s3_object_and_read(
             bucket.Object(f"{prefix}{name}/config/_default/menus.yaml")
@@ -315,41 +314,3 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         import_ocw2hugo_content(bucket, prefix, website)
     except:  # pylint:disable=bare-except
         log.exception("Error saving website %s", path)
-
-
-def generate_topics_dict(course_paths, bucket_name):
-    """
-    Crawl through a S3 bucket with course data output from ocw-to-hugo and construct a list of topics
-
-    Args:
-        course_paths (list of str): List of paths to the data/course.json file for each course
-        bucket_name (str): The name of the S3 bucket to use
-
-    Returns:
-        dict:
-            Nested dicts and lists representing topics, subtopics, and specialties
-    """
-    topics = {}
-
-    s3 = get_s3_resource()
-    bucket = s3.Bucket(bucket_name)
-    for path in course_paths:
-        course_data = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
-
-        for topic_obj in course_data.get("topics", []):
-            topic = topic_obj["topic"]
-            if topic not in topics:
-                topics[topic] = {}
-
-            for subtopic_obj in topic_obj["subtopics"]:
-                subtopic = subtopic_obj["subtopic"]
-                if subtopic not in topics[topic]:
-                    topics[topic][subtopic] = set()
-                for speciality in subtopic_obj["specialities"]:
-                    topics[topic][subtopic].add(speciality["speciality"])
-
-    for topic, subtopic_dict in topics.items():
-        for subtopic in subtopic_dict.keys():
-            subtopic_dict[subtopic] = sorted(subtopic_dict[subtopic])
-
-    return topics

@@ -4,7 +4,7 @@ import json
 import pytest
 from moto import mock_s3
 
-from ocw_import.api import generate_topics_dict, get_short_id, import_ocw2hugo_course
+from ocw_import.api import get_short_id, import_ocw2hugo_course
 from ocw_import.conftest import (
     MOCK_BUCKET_NAME,
     TEST_OCW2HUGO_PREFIX,
@@ -32,7 +32,7 @@ def test_import_ocw2hugo_course_content(settings):
     """ import_ocw2hugo_course should create a new website plus content"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
     website_starter = WebsiteStarterFactory.create()
     import_ocw2hugo_course(
         MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key, starter_id=website_starter.id
@@ -41,19 +41,19 @@ def test_import_ocw2hugo_course_content(settings):
     assert website.starter == website_starter
     assert website.source == WEBSITE_SOURCE_OCW_IMPORT
     assert website.short_id == "1.050-fall-2007"
-    with open(f"{TEST_OCW2HUGO_PATH}/{name}/data/course.json", "r") as infile:
+    with open(f"{TEST_OCW2HUGO_PATH}/{name}/data/course_legacy.json", "r") as infile:
         assert json.dumps(website.metadata, sort_keys=True) == json.dumps(
             json.load(infile), sort_keys=True
         )
     assert (
         WebsiteContent.objects.filter(website=website, type=CONTENT_TYPE_PAGE).count()
-        == 5
+        == 7
     )
     assert (
         WebsiteContent.objects.filter(
             website=website, type=CONTENT_TYPE_RESOURCE
         ).count()
-        == 65
+        == 67
     )
 
     related_page = WebsiteContent.objects.get(
@@ -61,14 +61,14 @@ def test_import_ocw2hugo_course_content(settings):
     )
     assert related_page.type == CONTENT_TYPE_PAGE
     assert related_page.metadata.get("title") == "Related Resources"
-    assert related_page.filename == "_index"
-    assert related_page.dirpath == "content/pages/related-resources"
+    assert related_page.filename == "related-resources"
+    assert related_page.dirpath == "content/pages"
 
-    matlab_page = WebsiteContent.objects.get(
-        text_id="c8cd9384-0305-bfbb-46ae-a7e7a8229f57"
+    child_page = WebsiteContent.objects.get(
+        text_id="6a79c92a-7b81-44f5-b23e-870c73367065"
     )
-    assert matlab_page.parent == WebsiteContent.objects.get(
-        text_id="4f5c3926-e4d5-6974-7f16-131a6f692568"
+    assert child_page.parent == WebsiteContent.objects.get(
+        text_id="a38d0e39-8dc8-4a90-b38f-96f349e73c26"
     )
 
     lecture_pdf = WebsiteContent.objects.get(
@@ -77,7 +77,7 @@ def test_import_ocw2hugo_course_content(settings):
     assert lecture_pdf.type == CONTENT_TYPE_RESOURCE
     assert lecture_pdf.metadata.get("file_type") == "application/pdf"
     assert lecture_pdf.filename == "lec1"
-    assert lecture_pdf.dirpath == "content/pages/lecture-notes"
+    assert lecture_pdf.dirpath == "content/resources"
 
 
 @mock_s3
@@ -85,7 +85,7 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
     """ import_ocw2hugo_course should also populate site metadata"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
     website_starter = WebsiteStarterFactory.create()
     assert (
         WebsiteContent.objects.filter(
@@ -145,7 +145,7 @@ def test_import_ocw2hugo_course_bad_date(mocker, settings):
     """ Website publish date should be null if the JSON date can't be parsed """
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
     mocker.patch("ocw_import.api.parse_date", side_effect=ValueError())
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     website = Website.objects.get(name=name)
@@ -157,7 +157,7 @@ def test_import_ocw2hugo_course_noncourse(settings):
     """ Website should not be created for a non-course """
     setup_s3(settings)
     name = "biology"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     assert Website.objects.filter(name=name).count() == 0
 
@@ -167,7 +167,7 @@ def test_import_ocw2hugo_course_log_exception(mocker, settings):
     """ Log an exception if the website cannot be saved/updated """
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
     mocker.patch("ocw_import.api.parse_date", return_value="Invalid date")
     mock_log = mocker.patch("ocw_import.api.log.exception")
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
@@ -180,7 +180,7 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     """ Log an exception if the website content cannot be saved/updated """
     setup_s3(settings)
     name = "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
     mock_log = mocker.patch("ocw_import.api.log.error")
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     assert mock_log.call_count == 1
@@ -222,7 +222,7 @@ def test_import_ocw2hugo_menu(settings, mocker):
     mocker.patch("uuid.uuid4").return_value.hex = uuid4_hex
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course.json"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     website = Website.objects.get(name=name)
     navmenu = WebsiteContent.objects.get(website=website, type="navmenu")
@@ -264,32 +264,4 @@ def test_import_ocw2hugo_menu(settings, mocker):
                 "identifier": f"external-{uuid4_hex}",
             },
         ]
-    }
-
-
-@mock_s3
-def test_generate_topics_dict(settings):
-    """generate_topics_dict should create a representation of topics from course.json files"""
-    setup_s3(settings)
-    course_paths = [
-        f"{TEST_OCW2HUGO_PREFIX}{course_name}/data/course.json"
-        for course_name in [
-            "1-050-engineering-mechanics-i-fall-2007",
-            "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008",
-        ]
-    ]
-    topics = generate_topics_dict(course_paths, MOCK_BUCKET_NAME)
-    assert topics == {
-        "Engineering": {
-            "Aerospace Engineering": ["Structural Mechanics"],
-            "Civil Engineering": [
-                "Structural Engineering",
-                "Transportation Engineering",
-            ],
-            "Mechanical Engineering": ["Solid Mechanics"],
-        },
-        "Social Science": {
-            "Economics": ["Financial Economics"],
-            "Urban Studies": ["Transportation Planning"],
-        },
     }
