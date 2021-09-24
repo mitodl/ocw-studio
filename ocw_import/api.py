@@ -124,14 +124,11 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
             filepath, expect_file_extension=True
         )
         parent_uid = content_json.get("parent_uid", None)
-        if dirpath == "content/pages":
-            # This is a special type of page
-            content_type = CONTENT_TYPE_PAGE
-        elif dirpath == "content/resources":
+        if dirpath == "content/resources":
             # This is a file
             content_type = CONTENT_TYPE_RESOURCE
         else:
-            # This is a normal page
+            # This is a page
             content_type = CONTENT_TYPE_PAGE
         if parent_uid:
             parent, _ = WebsiteContent.objects.get_or_create(
