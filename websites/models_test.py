@@ -9,7 +9,6 @@ from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
 )
-from websites.models import WebsiteContent
 
 
 @pytest.mark.parametrize(
