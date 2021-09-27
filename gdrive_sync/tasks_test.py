@@ -96,7 +96,7 @@ def test_transcode_drive_file_video(settings, mocker, account_id, region, role_n
 )
 @pytest.mark.parametrize("same_checksum", [True, False])
 @pytest.mark.parametrize("import_video", [True, False])
-def test_import_recent_files(
+def test_import_recent_files_videos(
     settings,
     mocker,
     mocked_celery,
@@ -107,7 +107,7 @@ def test_import_recent_files(
     same_checksum,
     import_video,
 ):
-    """import_recent_files should created expected objects and call s3 tasks"""
+    """import_recent_files should created expected video objects and call s3 tasks"""
     mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
     settings.DRIVE_SHARED_ID = "test_drive"
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = parent_folder
@@ -128,40 +128,28 @@ def test_import_recent_files(
                 "id": LIST_VIDEO_RESPONSES[0]["files"][0]["parents"][0],
                 "name": website.short_id,
             },
-            {
-                "id": "abc123",
-                "name": DRIVE_FOLDER_VIDEOS if import_video else DRIVE_FOLDER_FILES,
-            },
+            {"id": "abc123", "name": DRIVE_FOLDER_VIDEOS},
         ],
         [
             {
                 "id": LIST_VIDEO_RESPONSES[0]["files"][1]["parents"][0],
                 "name": "no-matching-website",
             },
-            {
-                "id": "xyz987",
-                "name": DRIVE_FOLDER_VIDEOS if import_video else DRIVE_FOLDER_FILES,
-            },
+            {"id": "xyz987", "name": DRIVE_FOLDER_VIDEOS},
         ],
         [
             {
                 "id": LIST_VIDEO_RESPONSES[0]["files"][0]["parents"][0],
                 "name": website.short_id,
             },
-            {
-                "id": "def456",
-                "name": DRIVE_FOLDER_VIDEOS if import_video else DRIVE_FOLDER_FILES,
-            },
+            {"id": "def456", "name": DRIVE_FOLDER_VIDEOS},
         ],
         [
             {
                 "id": LIST_VIDEO_RESPONSES[0]["files"][1]["parents"][0],
                 "name": "no-matching-website",
             },
-            {
-                "id": "ghi789",
-                "name": DRIVE_FOLDER_VIDEOS if import_video else DRIVE_FOLDER_FILES,
-            },
+            {"id": "ghi789", "name": DRIVE_FOLDER_VIDEOS},
         ],
     ]
 
@@ -182,10 +170,8 @@ def test_import_recent_files(
         + LIST_VIDEO_RESPONSES[1]["files"],
     )
     mock_upload_task = mocker.patch("gdrive_sync.tasks.stream_drive_file_to_s3.s")
-    mock_second_task = mocker.patch(
+    mock_transcode_task = mocker.patch(
         "gdrive_sync.tasks.transcode_drive_file_video.si"
-        if import_video
-        else "gdrive_sync.tasks.create_resource_from_gdrive.si"
     )
 
     tracker = DriveApiQueryTrackerFactory.create(
@@ -221,10 +207,10 @@ def test_import_recent_files(
                     LIST_VIDEO_RESPONSES[i]["files"][0]["id"]
                 )
             with pytest.raises(AssertionError):
-                mock_second_task.assert_any_call(
+                mock_transcode_task.assert_any_call(
                     LIST_VIDEO_RESPONSES[i]["files"][0]["id"]
                 )
-        else:  # chained tasks should be run
+        elif import_video:  # chained tasks should be run
             mock_upload_task.assert_any_call(LIST_VIDEO_RESPONSES[i]["files"][0]["id"])
             assert (
                 tracker.last_dt
@@ -233,10 +219,12 @@ def test_import_recent_files(
                     "%Y-%m-%dT%H:%M:%S.%fZ",
                 ).replace(tzinfo=pytz.utc)
             )
-            mock_second_task.assert_any_call(LIST_VIDEO_RESPONSES[i]["files"][0]["id"])
+            mock_transcode_task.assert_any_call(
+                LIST_VIDEO_RESPONSES[i]["files"][0]["id"]
+            )
         if (
             not parent_folder or parent_folder_in_ancestors
-        ):  # DriveFile should be created
+        ) and import_video:  # DriveFile should be created
             assert DriveFile.objects.filter(
                 file_id=LIST_VIDEO_RESPONSES[i]["files"][0]["id"]
             ).exists()
@@ -246,6 +234,61 @@ def test_import_recent_files(
             ).exists()
             is False
         )
+
+
+@pytest.mark.parametrize("import_video", [True, False])
+def test_import_recent_files_novideos(settings, mocker, mocked_celery, import_video):
+    """
+    import_recent_files should import non-video files if called with import_video=False
+    """
+    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
+    settings.DRIVE_SHARED_ID = "test_drive"
+    settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
+    website = WebsiteFactory.create()
+
+    parent_tree_responses = [
+        [
+            {
+                "id": "parent",
+                "name": "ancestor_exists",
+            },
+            {
+                "id": LIST_FILE_RESPONSES[0]["files"][i]["parents"][0],
+                "name": website.short_id,
+            },
+            {"id": "abc123", "name": DRIVE_FOLDER_FILES},
+        ]
+        for i in range(2)
+    ]
+    mocker.patch("gdrive_sync.api.get_parent_tree", side_effect=parent_tree_responses)
+
+    mocker.patch(
+        "gdrive_sync.tasks.get_file_list", return_value=LIST_FILE_RESPONSES[0]["files"]
+    )
+    mock_upload_task = mocker.patch("gdrive_sync.tasks.stream_drive_file_to_s3.s")
+    mock_resource_task = mocker.patch(
+        "gdrive_sync.tasks.create_resource_from_gdrive.si"
+    )
+
+    with pytest.raises(mocked_celery.replace_exception_class):
+        import_recent_files.delay(
+            last_dt=datetime.strptime("2021-01-01", "%Y-%m-%d").replace(
+                tzinfo=pytz.UTC
+            ),
+            import_video=import_video,
+        )
+        with pytest.raises(AssertionError):
+            mock_upload_task.assert_any_call(LIST_FILE_RESPONSES[1]["files"][0]["id"])
+        if import_video:  # chained tasks should not be run (this is for files only)
+            with pytest.raises(AssertionError):
+                mock_upload_task.assert_any_call(
+                    LIST_FILE_RESPONSES[0]["files"][0]["id"]
+                )
+        elif import_video:  # chained tasks should be run
+            mock_upload_task.assert_any_call(LIST_VIDEO_RESPONSES[0]["files"][0]["id"])
+            mock_resource_task.assert_any_call(
+                LIST_VIDEO_RESPONSES[0]["files"][0]["id"]
+            )
 
 
 @pytest.mark.parametrize("shared_id", [None, "testDrive"])
@@ -311,7 +354,7 @@ def test_import_website_files(mocker, mocked_celery):
     mock_create_resource = mocker.patch(
         "gdrive_sync.tasks.create_resource_from_gdrive.si"
     )
-    mocker.patch(
+    mock_get_file_list = mocker.patch(
         "gdrive_sync.tasks.get_file_list",
         side_effect=[
             [
@@ -331,6 +374,10 @@ def test_import_website_files(mocker, mocked_celery):
     )
     with pytest.raises(mocked_celery.replace_exception_class):
         import_website_files.delay(website.short_id)
+    mock_get_file_list.assert_any_call(
+        query='parents = "websiteFileFinalFolderId" and not mimeType = "application/vnd.google-apps.folder" and not trashed and not mimeType contains "video/"',
+        fields="nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)",
+    )
     assert mock_process_file_result.call_count == 2
     for drive_file in drive_files:
         mock_stream_task.assert_any_call(drive_file.file_id)

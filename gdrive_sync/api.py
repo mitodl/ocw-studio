@@ -90,7 +90,7 @@ def get_parent_tree(parents):
     return tree[1:]  # first one is the drive
 
 
-def process_file_result(file_obj: Dict) -> bool:
+def process_file_result(file_obj: Dict, import_video: bool = False) -> bool:
     """Convert an API file response into a DriveFile object"""
     parents = file_obj.get("parents")
     if parents:
@@ -107,9 +107,13 @@ def process_file_result(file_obj: Dict) -> bool:
             website = Website.objects.filter(short_id=folder_name).first()
             if website:
                 break
-        is_video = DRIVE_FOLDER_VIDEOS in folder_names
-        is_file = DRIVE_FOLDER_FILES in folder_names
-        if website and (is_file or is_video):
+        in_video_folder = DRIVE_FOLDER_VIDEOS in folder_names
+        in_file_folder = DRIVE_FOLDER_FILES in folder_names
+        is_video = "video/" in file_obj["mimeType"]
+        processable = (in_video_folder and import_video and is_video) or (
+            in_file_folder and not import_video and not is_video
+        )
+        if website and processable:
             existing_file = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
             if (
                 existing_file

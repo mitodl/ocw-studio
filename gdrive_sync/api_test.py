@@ -6,7 +6,7 @@ from moto import mock_s3
 from requests import HTTPError
 
 from gdrive_sync import api
-from gdrive_sync.api import get_resource_type
+from gdrive_sync.api import get_resource_type, process_file_result
 from gdrive_sync.conftest import LIST_VIDEO_RESPONSES
 from gdrive_sync.constants import (
     DRIVE_FOLDER_FILES,
@@ -14,6 +14,7 @@ from gdrive_sync.constants import (
     DriveFileStatus,
 )
 from gdrive_sync.factories import DriveFileFactory
+from gdrive_sync.models import DriveFile
 from main.s3_utils import get_s3_resource
 from websites.constants import (
     RESOURCE_TYPE_DOCUMENT,
@@ -21,6 +22,7 @@ from websites.constants import (
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
 )
+from websites.factories import WebsiteFactory
 
 
 pytestmark = pytest.mark.django_db
@@ -234,3 +236,48 @@ def test_get_resource_type(settings, filename, mimetype, expected_type) -> str:
     test_bucket.objects.all().delete()
     test_bucket.put_object(Key=filename, Body=b"", ContentType=mimetype)
     assert get_resource_type(filename) == expected_type
+
+
+@pytest.mark.parametrize("is_video", [True, False])
+@pytest.mark.parametrize("in_video_folder", [True, False])
+@pytest.mark.parametrize("import_video", [True, False])
+def test_process_file_result(settings, mocker, is_video, in_video_folder, import_video):
+    """process_file_result should create a DriveFile only if all conditions are met"""
+    settings.DRIVE_SHARED_ID = "test_drive"
+    settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
+    website = WebsiteFactory.create()
+
+    mocker.patch(
+        "gdrive_sync.api.get_parent_tree",
+        return_value=[
+            {
+                "id": "parent",
+                "name": "ancestor_exists",
+            },
+            {
+                "id": "websiteId",
+                "name": website.short_id,
+            },
+            {
+                "id": "subFolderId",
+                "name": DRIVE_FOLDER_VIDEOS if in_video_folder else DRIVE_FOLDER_FILES,
+            },
+        ],
+    )
+
+    file_result = {
+        "id": "Ay5grfCTHr_12JCgxaoHrGve",
+        "name": "test_file",
+        "mimeType": "video/mp4" if is_video else "image/jpeg",
+        "parents": ["subFolderId"],
+        "webContentLink": "https://drive.google.com/uc?id=Ay5grfCTHr_12JCgxaoHrGve&export=download",
+        "createdTime": "2021-07-28T00:06:40.439Z",
+        "modifiedTime": "2021-07-29T14:25:19.375Z",
+        "md5Checksum": "633410252",
+        "trashed": False,
+    }
+    process_file_result(file_result, import_video=import_video)
+    assert DriveFile.objects.filter(file_id=file_result["id"]).exists() is (
+        (is_video and import_video and in_video_folder)
+        or (not is_video and not import_video and not in_video_folder)
+    )

@@ -106,7 +106,7 @@ def import_recent_files(self, last_dt: str = None, import_video: bool = False):
     gdfiles = get_file_list(query=query, fields=fields)
     chains = []
     for gdfile in gdfiles:
-        drive_file = process_file_result(gdfile)
+        drive_file = process_file_result(gdfile, import_video=import_video)
         if drive_file:
             maxLastTime = datetime.strptime(
                 max(gdfile.get("createdTime"), gdfile.get("modifiedTime")),
@@ -154,11 +154,11 @@ def import_website_files(self, short_id: str):
         )
     chains = []
     gdfiles = get_file_list(
-        query=f'parents = "{files_folder[0]["id"]}" and not {common_query}',
+        query=f'parents = "{files_folder[0]["id"]}" and not {common_query} and not mimeType contains "video/"',
         fields=fields,
     )
     for gdfile in gdfiles:
-        drive_file = process_file_result(gdfile)
+        drive_file = process_file_result(gdfile, import_video=False)
         if drive_file:
             chains.append(
                 chain(

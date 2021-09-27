@@ -72,8 +72,8 @@ LIST_FILE_RESPONSES = [
             },
             {
                 "id": "BuyFl10B381Co1ZE7nodTjCr",
-                "name": "test_document.doc",
-                "mimeType": "application/ms-word",
+                "name": "test_video_wrong_folder.mp4",
+                "mimeType": "video/mp4",
                 "parents": ["websiteFileFinalFolderId"],
                 "webContentLink": "https://drive.google.com/uc?id=BuyFl10B381Co1ZE7nodTjCr&export=download",
                 "createdTime": "2020-08-27T12:51:41.000Z",
