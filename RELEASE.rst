@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.26.1
+Version 0.26.1 (Released September 27, 2021)
 --------------
 
 - Omit file url from payload (#587)
