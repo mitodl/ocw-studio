@@ -62,7 +62,6 @@ def test_react_page(
     settings.ENVIRONMENT = "test"
     settings.VERSION = "4.5.6"
     settings.WEBPACK_USE_DEV_SERVER = False
-    settings.OCW_IMPORT_STARTER_SLUG = "test-course"
 
     mocker.patch("main.views.is_gdrive_enabled", return_value=is_gdrive_enabled)
 
