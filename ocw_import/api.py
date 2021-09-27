@@ -38,6 +38,8 @@ NON_ID_COURSE_NAMES = [
     "more",
     "physics",
 ]
+DEPARTMENTS_JSON_FILE = open("static/js/resources/departments.json", "r")
+DEPARTMENTS_JSON = json.loads(DEPARTMENTS_JSON_FILE.read())
 
 
 def parse_date(date_string):
@@ -188,6 +190,25 @@ def import_ocw2hugo_sitemetadata(
         log.error("No root web site found, name=%s", settings.ROOT_WEBSITE_NAME)
         return
 
+    metadata = {}
+    metadata["course_title"] = course_data["course_title"]
+    metadata["course_description"] = course_data["course_description"]
+    metadata["department_numbers"] = list(
+        map(
+            (
+                lambda course_department: next(
+                    (
+                        department["depNo"]
+                        for department in DEPARTMENTS_JSON
+                        if department["title"] == course_department["department"]
+                    ),
+                    None,
+                )
+            ),
+            course_data["departments"],
+        )
+    )
+
     instructor_contents = []
     for instructor in course_data["instructors"]:
         uid = instructor["uid"]
@@ -219,18 +240,18 @@ def import_ocw2hugo_sitemetadata(
         )
         instructor_contents.append(instructor_content)
 
+    metadata[INSTRUCTORS_FIELD_NAME] = {
+        "website": website_root.name,
+        "content": [content.text_id for content in instructor_contents],
+    }
+
     WebsiteContent.objects.update_or_create(
         type=CONTENT_TYPE_METADATA,
         website=website,
         defaults={
             "text_id": CONTENT_TYPE_METADATA,
             "title": "Course Metadata",
-            "metadata": {
-                INSTRUCTORS_FIELD_NAME: {
-                    "website": website_root.name,
-                    "content": [content.text_id for content in instructor_contents],
-                }
-            },
+            "metadata": metadata,
         },
     )
 
