@@ -14,7 +14,6 @@ import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 import Markdown from "./plugins/Markdown"
-import MarkdownMediaEmbed from "./plugins/MarkdownMediaEmbed"
 import ResourceEmbed from "./plugins/ResourceEmbed"
 import ResourcePicker from "./plugins/ResourcePicker"
 import { ADD_RESOURCE } from "./plugins/constants"
@@ -39,7 +38,6 @@ export const FullEditorConfig = {
     ResourceEmbed,
     ResourcePicker,
     ResourceLink,
-    MarkdownMediaEmbed,
     Markdown
   ],
   toolbar: {
@@ -52,7 +50,6 @@ export const FullEditorConfig = {
       "link",
       "bulletedList",
       "numberedList",
-      "mediaEmbed",
       "blockQuote",
       "undo",
       "redo",
@@ -62,19 +59,7 @@ export const FullEditorConfig = {
   image: {
     toolbar: ["imageStyle:full", "imageStyle:side", "|", "imageTextAlternative"]
   },
-  language:   "en",
-  mediaEmbed: {
-    removeProviders: [
-      "dailymotion",
-      "spotify",
-      "vimeo",
-      "instagram",
-      "twitter",
-      "googleMaps",
-      "flickr",
-      "facebook"
-    ]
-  }
+  language: "en"
 }
 
 export const MinimalEditorConfig = {
