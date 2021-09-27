@@ -372,7 +372,7 @@ def _get_derived_website_content_data(
         added_data["filename"] = get_valid_new_filename(
             website_pk=website_pk,
             dirpath=dirpath,
-            filename_base=slug,
+            filename_base=slugify(slug),
         )
     return added_data
 
