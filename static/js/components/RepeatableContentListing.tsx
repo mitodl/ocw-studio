@@ -4,7 +4,7 @@ import React, {
   useState
 } from "react"
 import { useLocation } from "react-router-dom"
-import { useRequest } from "redux-query-react"
+import { useMutation, useRequest } from "redux-query-react"
 import { useSelector } from "react-redux"
 
 import SiteContentEditor from "./SiteContentEditor"
@@ -17,6 +17,7 @@ import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 import { siteContentListingUrl } from "../lib/urls"
 import { splitFieldsIntoColumns } from "../lib/site_content"
 import {
+  syncWebsiteContentMutation,
   websiteContentListingRequest,
   WebsiteContentListingResponse
 } from "../query-configs/websites"
@@ -52,10 +53,22 @@ export default function RepeatableContentListing(props: {
   const listing: WebsiteContentListingResponse = useSelector(
     getWebsiteContentListingCursor
   )(listingParams)
+  const [{ isPending: syncIsPending }, syncWebsiteContent] = useMutation(() =>
+    syncWebsiteContentMutation(website.name)
+  )
 
   const [drawerState, setDrawerState] = useState<WebsiteContentModalState>(
     createModalState("closed")
   )
+  const [syncModalState, setSyncModalState] = useState({
+    message:   "",
+    isVisible: false
+  })
+  const toggleSyncModal = (message: string) =>
+    setSyncModalState({
+      message:   message,
+      isVisible: !syncModalState.isVisible
+    })
 
   const closeContentDrawer = useCallback(() => {
     setDrawerState(createModalState("closed"))
@@ -88,6 +101,21 @@ export default function RepeatableContentListing(props: {
     splitFieldsIntoColumns(configItem.fields).length > 1 ? "wide" : ""
   }`
 
+  const onSubmitContentSync = async (
+    event: ReactMouseEvent<HTMLLIElement | HTMLAnchorElement, MouseEvent>
+  ) => {
+    event.preventDefault()
+    if (syncIsPending) {
+      return
+    }
+    const response = await syncWebsiteContent()
+    const successMsg =
+      "Resources are being synced with Google Drive. Please revisit this page in a few minutes."
+    const failMsg =
+      "Something went wrong syncing with Google Drive.  Please try again or contact support."
+    toggleSyncModal(!response || response.status !== 200 ? failMsg : successMsg)
+  }
+
   return (
     <>
       <BasicModal
@@ -110,13 +138,35 @@ export default function RepeatableContentListing(props: {
           ) : null
         }
       </BasicModal>
+      <BasicModal
+        isVisible={syncModalState.isVisible}
+        hideModal={() => toggleSyncModal("")}
+        title="Syncing with Google Drive"
+        className={null}
+      >
+        {_ =>
+          syncModalState ? (
+            <div className="m-3">{syncModalState.message}</div>
+          ) : null
+        }
+      </BasicModal>
       <div>
         <Card>
-          <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
+          <div className="d-flex flex-direction-row align-items-right justify-content-between pb-1Z">
             <h3>{configItem.label}</h3>
-            <a className="btn blue-button add" onClick={startAddOrEdit(null)}>
-              Add {labelSingular}
-            </a>
+            <div>
+              <a className="btn blue-button add" onClick={startAddOrEdit(null)}>
+                Add {labelSingular}
+              </a>
+              {SETTINGS.gdrive_enabled ? (
+                <a
+                  className="btn blue-button sync ml-2"
+                  onClick={onSubmitContentSync}
+                >
+                  Sync w/Google Drive
+                </a>
+              ) : null}
+            </div>
           </div>
           <ul className="ruled-list">
             {listing.results.map((item: WebsiteContentListItem) => (

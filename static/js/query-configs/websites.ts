@@ -24,7 +24,8 @@ import {
   siteApiActionUrl,
   siteApiContentListingUrl,
   siteApiContentDetailUrl,
-  siteApiContentUrl
+  siteApiContentUrl,
+  siteApiContentSyncGDriveUrl
 } from "../lib/urls"
 
 import {
@@ -453,4 +454,15 @@ export const createWebsiteContentMutation = (
       ...next
     })
   }
+})
+
+export const syncWebsiteContentMutation = (siteName: string): QueryConfig => ({
+  url:     siteApiContentSyncGDriveUrl.param({ name: siteName }).toString(),
+  options: {
+    method:  "POST",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
+  },
+  body: {}
 })

@@ -7,6 +7,7 @@ interface SETTINGS {
   environment: string;
   release_version: string;
   sentry_dsn: string;
+  gdrive_enabled: bool;
   user: {
     username: string;
     email: string;

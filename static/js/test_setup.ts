@@ -12,6 +12,7 @@ const _createSettings = (): SETTINGS => ({
   environment:     "",
   release_version: "0.0.0",
   sentry_dsn:      "",
+  gdrive_enabled:  false,
   user:            {
     username: "example",
     name:     "Jane Doe",
