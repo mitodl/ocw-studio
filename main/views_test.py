@@ -46,13 +46,24 @@ def test_webpack_url(mocker, settings, client):
         ["markdown-editor-test", True, True],
         ["markdown-editor-test", False, False],
     ],
-)
-def test_react_page(settings, client, name, is_authenticated, expected_success):
+)  # pylint: disable=too-many-arguments
+@pytest.mark.parametrize("is_gdrive_enabled", [True, False])
+def test_react_page(
+    settings,
+    mocker,
+    client,
+    name,
+    is_authenticated,
+    expected_success,
+    is_gdrive_enabled,
+):
     """Verify that JS settings render correctly for pages used to render React pages"""
     settings.GA_TRACKING_ID = "fake"
     settings.ENVIRONMENT = "test"
     settings.VERSION = "4.5.6"
     settings.WEBPACK_USE_DEV_SERVER = False
+
+    mocker.patch("main.views.is_gdrive_enabled", return_value=is_gdrive_enabled)
 
     user = UserFactory.create()
 
@@ -69,6 +80,7 @@ def test_react_page(settings, client, name, is_authenticated, expected_success):
             "environment": settings.ENVIRONMENT,
             "sentry_dsn": "",
             "release_version": settings.VERSION,
+            "gdrive_enabled": is_gdrive_enabled,
             "user": {
                 "username": user.username,
                 "email": user.email,

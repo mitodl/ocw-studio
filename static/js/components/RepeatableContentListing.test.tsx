@@ -6,11 +6,12 @@ import { act } from "react-dom/test-utils"
 import RepeatableContentListing from "./RepeatableContentListing"
 import WebsiteContext from "../context/Website"
 
-import { isIf } from "../test_util"
+import { isIf, shouldIf } from "../test_util"
 import {
   siteApiContentDetailUrl,
   siteContentListingUrl,
-  siteApiContentListingUrl
+  siteApiContentListingUrl,
+  siteApiContentSyncGDriveUrl
 } from "../lib/urls"
 import {
   contentDetailKey,
@@ -132,10 +133,55 @@ describe("RepeatableContentListing", () => {
   afterEach(() => {
     helper.cleanup()
   })
+  ;[true, false].forEach(isGdriveEnabled => {
+    it(`${shouldIf(isGdriveEnabled)} show the gdrive sync link`, async () => {
+      SETTINGS.gdrive_enabled = isGdriveEnabled
+      // @ts-ignore
+      const { wrapper } = await render()
+      const syncLink = wrapper.find("a.sync")
+      expect(syncLink.exists()).toBe(isGdriveEnabled)
+    })
+  })
+  ;[
+    [200, "Resources are being synced with Google Drive"],
+    [500, "Something went wrong syncing with Google Drive"]
+  ].forEach(([status, message]) => {
+    it("Clicking the gdrive sync link should open a feedback modal", async () => {
+      helper.handleRequestStub
+        .withArgs(
+          siteApiContentSyncGDriveUrl
+            .param({
+              name: website.name
+            })
+            .toString(),
+          "POST"
+        )
+        .returns({
+          body:   {},
+          status: status
+        })
+      SETTINGS.gdrive_enabled = true
+      const { wrapper } = await render()
+      const syncLink = wrapper.find("a.sync")
+      await act(async () => {
+        // @ts-ignore
+        syncLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+      })
+      wrapper.update()
+      const syncFeedbackModal = wrapper.find("BasicModal").at(1)
+      expect(syncFeedbackModal.prop("isVisible")).toBe(true)
+      expect(syncFeedbackModal.text().includes(message.toString()))
+    })
+  })
 
   it("should render a link to the add content page", async () => {
     const { wrapper } = await render()
-    expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
+    expect(
+      wrapper
+        .find("BasicModal")
+        .at(0)
+        .prop("isVisible")
+    ).toBe(false)
     const link = wrapper.find("a.add")
     expect(link.text()).toBe(`Add ${configItem.label_singular}`)
     act(() => {
@@ -143,7 +189,7 @@ describe("RepeatableContentListing", () => {
       link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
     })
     wrapper.update()
-    const editorModal = wrapper.find("BasicModal")
+    const editorModal = wrapper.find("BasicModal").at(0)
     const siteContentEditor = editorModal.find("SiteContentEditor")
     expect(siteContentEditor.prop("editorState")).toEqual(
       createModalState("adding")
@@ -155,7 +201,12 @@ describe("RepeatableContentListing", () => {
       siteContentEditor.prop("hideModal")()
     })
     wrapper.update()
-    expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
+    expect(
+      wrapper
+        .find("BasicModal")
+        .at(0)
+        .prop("isVisible")
+    ).toBe(false)
   })
 
   it("should show each content item with edit links", async () => {
@@ -176,7 +227,12 @@ describe("RepeatableContentListing", () => {
 
     const { wrapper } = await render()
 
-    expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
+    expect(
+      wrapper
+        .find("BasicModal")
+        .at(0)
+        .prop("isVisible")
+    ).toBe(false)
 
     let idx = 0
     for (const item of contentListingItems) {
@@ -187,7 +243,7 @@ describe("RepeatableContentListing", () => {
         li.prop("onClick")({ preventDefault: helper.sandbox.stub() })
       })
       wrapper.update()
-      const editorModal = wrapper.find("BasicModal")
+      const editorModal = wrapper.find("BasicModal").at(0)
       const siteContentEditor = editorModal.find("SiteContentEditor")
       expect(siteContentEditor.prop("editorState")).toEqual(
         createModalState("editing", item.text_id)
@@ -199,7 +255,12 @@ describe("RepeatableContentListing", () => {
         siteContentEditor.prop("hideModal")()
       })
       wrapper.update()
-      expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
+      expect(
+        wrapper
+          .find("BasicModal")
+          .at(0)
+          .prop("isVisible")
+      ).toBe(false)
 
       idx++
     }
@@ -305,9 +366,12 @@ describe("RepeatableContentListing", () => {
         button.prop("onClick")(event)
       })
       wrapper.update()
-      expect(wrapper.find("BasicModal").prop("title")).toBe(
-        `Add ${expectedLabel}`
-      )
+      expect(
+        wrapper
+          .find("BasicModal")
+          .at(0)
+          .prop("title")
+      ).toBe(`Add ${expectedLabel}`)
     })
   })
 })

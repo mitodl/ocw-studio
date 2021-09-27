@@ -9,6 +9,8 @@ from django.shortcuts import render
 from mitol.common.utils.webpack import webpack_public_path
 from rest_framework.pagination import LimitOffsetPagination
 
+from gdrive_sync.api import is_gdrive_enabled
+
 
 def _index(request):
     """Render the view for React pages"""
@@ -19,6 +21,7 @@ def _index(request):
         "public_path": webpack_public_path(request),
         "release_version": settings.VERSION,
         "sentry_dsn": settings.SENTRY_DSN,
+        "gdrive_enabled": is_gdrive_enabled(),
     }
 
     user = request.user
