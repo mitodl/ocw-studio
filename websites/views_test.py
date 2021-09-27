@@ -1,4 +1,5 @@
 """ Tests for websites views """
+import uuid
 from types import SimpleNamespace
 
 import factory
@@ -842,17 +843,25 @@ def test_content_create_page_content(
     )
 
 
-def test_content_create_page_added_context(mocker, drf_client, global_admin_user):
+@pytest.mark.parametrize("slug", [None, "text_id"])
+def test_content_create_page_added_context(mocker, drf_client, global_admin_user, slug):
     """
-    POSTing to the WebsiteContent list view without a filename should add a generated filename if a filename was not
-    included in the request data
+    POSTing to the WebsiteContent list view without a filename should add a generated filename
     """
+    patched_uuid_string = mocker.patch(
+        "websites.views.uuid_string", return_value=str(uuid.uuid4())
+    )
     patched_get_filename = mocker.patch(
-        "websites.views.get_valid_new_filename", return_value="my-title-100"
+        "websites.views.get_valid_new_filename",
+        return_value="my-title-100"
+        if slug is None
+        else patched_uuid_string.return_value,
     )
     drf_client.force_login(global_admin_user)
     title = "My Title"
     website = WebsiteFactory.create()
+    website.starter.config["collections"][0]["slug"] = slug
+    website.starter.save()
     payload = {
         "title": title,
         "markdown": "some markdown",
@@ -860,7 +869,12 @@ def test_content_create_page_added_context(mocker, drf_client, global_admin_user
     }
     # "folder" path for the config item with type="blog" in basic-site-config.yml
     expected_dirpath = "content/blog"
-    expected_filename = "my-title-100"
+    expected_filename_base = (
+        "my-title" if slug is None else patched_uuid_string.return_value
+    )
+    expected_filename = (
+        "my-title-100" if slug is None else patched_uuid_string.return_value
+    )
     resp = drf_client.post(
         reverse(
             "websites_content_api-list",
@@ -872,7 +886,9 @@ def test_content_create_page_added_context(mocker, drf_client, global_admin_user
     )
     assert resp.status_code == 201
     patched_get_filename.assert_called_once_with(
-        website_pk=website.pk, dirpath=expected_dirpath, filename_base="my-title"
+        website_pk=website.pk,
+        dirpath=expected_dirpath,
+        filename_base=expected_filename_base,
     )
     content = website.websitecontent_set.order_by("-created_on").first()
     assert content.website == website
