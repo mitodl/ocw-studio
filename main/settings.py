@@ -463,18 +463,25 @@ DRIVE_SHARED_ID = get_string(
     default=None,
     description="ID of the Shared Drive (a.k.a. Team Drive). This is equal to the top-level folder ID.",
 )
-DRIVE_QUERY_SECONDS = get_int(
-    name="DRIVE_QUERY_SECONDS",
+DRIVE_QUERY_VIDEOS_SECONDS = get_int(
+    name="DRIVE_QUERY_VIDEOS_SECONDS",
     default=60,
     description=("The frequency to check for new google drive videos, in seconds"),
+)
+DRIVE_QUERY_FILES_SECONDS = get_int(
+    name="DRIVE_QUERY_FILES_SECONDS",
+    default=3600,
+    description=(
+        "The frequency to check for new google drive files (non-videos), in seconds"
+    ),
 )
 DRIVE_S3_UPLOAD_PREFIX = get_string(
     name="DRIVE_S3_UPLOAD_PREFIX",
     default="gdrive_uploads",
     description=("Prefix to be used for S3 keys of files uploaded from Google Drive"),
 )
-DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID = get_string(
-    name="DRIVE_VIDEO_UPLOADS_PARENT_FOLDER_ID",
+DRIVE_UPLOADS_PARENT_FOLDER_ID = get_string(
+    name="DRIVE_UPLOADS_PARENT_FOLDER_ID",
     default=None,
     description="Gdrive folder for video uploads",
     required=False,
@@ -620,7 +627,11 @@ CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULE = {
     "import-gdrive-videos": {
         "task": "gdrive_sync.tasks.import_gdrive_videos",
-        "schedule": DRIVE_QUERY_SECONDS,
+        "schedule": DRIVE_QUERY_VIDEOS_SECONDS,
+    },
+    "import-gdrive-files": {
+        "task": "gdrive_sync.tasks.import_gdrive_files",
+        "schedule": DRIVE_QUERY_FILES_SECONDS,
     },
     "update-youtube-statuses": {
         "task": "videos.tasks.update_youtube_statuses",
