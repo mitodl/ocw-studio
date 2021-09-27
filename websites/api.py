@@ -23,7 +23,10 @@ log = logging.getLogger(__name__)
 
 
 def get_valid_new_filename(
-    website_pk: str, dirpath: Optional[str], filename_base: str
+    website_pk: str,
+    dirpath: Optional[str],
+    filename_base: str,
+    exclude_text_id: Optional[str] = None,
 ) -> str:
     """
     Given a filename to act as a base/prefix, returns a filename that will satisfy unique constraints,
@@ -31,13 +34,15 @@ def get_valid_new_filename(
 
     Examples:
         In database: WebsiteContent(filename="my-filename")...
-            get_valid_new_filename("my-filename") == "my-filename-2"
-        In database: WebsiteContent(filename="my-filename-99")...
-            get_valid_new_filename("my-filename-99") == "my-filename-100"
+            get_valid_new_filename("my-filename") == "my-filename2"
+        In database: WebsiteContent(filename="my-filename99")...
+            get_valid_new_filename("my-filename99") == "my-filename100"
     """
     website_content_qset = WebsiteContent.objects.all_with_deleted().filter(
         website_id=website_pk, dirpath=dirpath
     )
+    if exclude_text_id is not None:
+        website_content_qset = website_content_qset.exclude(text_id=exclude_text_id)
     filename_exists = website_content_qset.filter(filename=filename_base).exists()
     if not filename_exists:
         return filename_base

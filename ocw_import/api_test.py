@@ -28,11 +28,15 @@ TEST_OCW2HUGO_PATH = get_ocw2hugo_path("./test_ocw2hugo")
 
 
 @mock_s3
-def test_import_ocw2hugo_course_content(settings):
+def test_import_ocw2hugo_course_content(mocker, settings):
     """ import_ocw2hugo_course should create a new website plus content"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
+    filenames = [f"file-{i}" for i in range(100)]
+    get_valid_new_filename_mock = mocker.patch(
+        "ocw_import.api.get_valid_new_filename", side_effect=filenames
+    )
     website_starter = WebsiteStarterFactory.create()
     import_ocw2hugo_course(
         MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key, starter_id=website_starter.id
@@ -61,8 +65,14 @@ def test_import_ocw2hugo_course_content(settings):
     )
     assert related_page.type == CONTENT_TYPE_PAGE
     assert related_page.metadata.get("title") == "Related Resources"
-    assert related_page.filename == "related-resources"
+    assert related_page.filename == "file-3"
     assert related_page.dirpath == "content/pages"
+    get_valid_new_filename_mock.assert_any_call(
+        website.pk,
+        related_page.dirpath,
+        "related-resources",
+        related_page.text_id,
+    )
 
     child_page = WebsiteContent.objects.get(
         text_id="6a79c92a-7b81-44f5-b23e-870c73367065"
@@ -76,8 +86,14 @@ def test_import_ocw2hugo_course_content(settings):
     )
     assert lecture_pdf.type == CONTENT_TYPE_RESOURCE
     assert lecture_pdf.metadata.get("file_type") == "application/pdf"
-    assert lecture_pdf.filename == "lec1"
+    assert lecture_pdf.filename == "file-20"
     assert lecture_pdf.dirpath == "content/resources"
+    get_valid_new_filename_mock.assert_any_call(
+        website.pk,
+        lecture_pdf.dirpath,
+        "lec1",
+        lecture_pdf.text_id,
+    )
 
 
 @mock_s3
@@ -181,12 +197,11 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     setup_s3(settings)
     name = "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
-    mock_log = mocker.patch("ocw_import.api.log.error")
+    mock_log = mocker.patch("ocw_import.api.log.exception")
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
     assert mock_log.call_count == 1
     mock_log.assert_called_once_with(
-        "No UUID (text ID): %s",
-        "/content/pages/test_no_uid.md",
+        "Error saving WebsiteContent for %s", f"{name}/content/pages/test_no_uid.md"
     )
 
 
