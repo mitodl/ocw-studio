@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.27.0 (Released September 28, 2021)
+--------------
+
+- Remove if check on dirpath == content/page (#602)
+- add license
+- use course_legacy.json instead of course.json, update topics import, update test data, mock out parent / child test (#599)
+- Add pragma: allowlist secret to ignore false positives for secret detection (#597)
+- Populate file_type on file upload (#573)
+
 Version 0.26.1 (Released September 27, 2021)
 --------------
 
