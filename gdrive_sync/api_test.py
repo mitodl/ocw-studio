@@ -90,16 +90,21 @@ def test_get_parent_tree(mock_service):
     ]
 
 
-def test_stream_to_s3(settings, mocker):
+@pytest.mark.parametrize("is_video", [True, False])
+def test_stream_to_s3(settings, mocker, is_video):
     """stream_to_s3 should make expected drive api and S3 upload calls"""
     mock_service = mocker.patch("gdrive_sync.api.get_drive_service")
     mock_download = mocker.patch("gdrive_sync.api.streaming_download")
     mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
     mock_bucket = mock_boto3.resource.return_value.Bucket.return_value
     drive_file = DriveFileFactory.create()
-    api.stream_to_s3(drive_file)
+    prefix = settings.DRIVE_S3_UPLOAD_PREFIX if is_video else "courses"
+    api.stream_to_s3(drive_file, prefix=prefix)
     mock_service.return_value.permissions.return_value.create.assert_called_once()
-    key = f"{settings.DRIVE_S3_UPLOAD_PREFIX}/{drive_file.website.short_id}/{drive_file.file_id}/{drive_file.name}"
+    if is_video:
+        key = f"{settings.DRIVE_S3_UPLOAD_PREFIX}/{drive_file.website.short_id}/{drive_file.file_id}/{drive_file.name}"
+    else:
+        key = f"courses/{drive_file.website.short_id}/{drive_file.name}"
     mock_bucket.upload_fileobj.assert_called_with(
         Fileobj=mocker.ANY,
         Key=key,
@@ -109,6 +114,7 @@ def test_stream_to_s3(settings, mocker):
     mock_service.return_value.permissions.return_value.delete.assert_called_once()
     drive_file.refresh_from_db()
     assert drive_file.status == DriveFileStatus.UPLOAD_COMPLETE
+    assert drive_file.s3_key == key
 
 
 @pytest.mark.django_db
