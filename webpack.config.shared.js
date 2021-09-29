@@ -12,6 +12,11 @@ module.exports = {
     module: {
       rules: [
         {
+          // this regex is necessary to explicitly exclude ckeditor stuff
+          test: /static\/.+\.(svg|ttf|woff|woff2|eot|gif)$/,
+          use: "url-loader"
+        },
+        {
           test: /node_modules\/react-nestable\/.+\.svg$/,
           use: "svg-inline-loader?classPrefix"
         },
@@ -25,11 +30,11 @@ module.exports = {
           exclude: /node_modules/
         },
         {
-          test: /.+\.svg$/,
+          test: /ckeditor5-[^/\\]+[/\\]theme[/\\]icons[/\\][^/\\]+\.svg$/,
           use: ["raw-loader"]
         },
         {
-          test: /\.css$/,
+          test: /ckeditor5-[^/\\]+[/\\]theme[/\\].+\.css$/,
           use: [
             {
               loader: "style-loader",
