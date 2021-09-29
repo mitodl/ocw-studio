@@ -243,6 +243,8 @@ def test_websites_endpoint_preview(mocker, drf_client, has_missing_ids):
         )
     assert resp.data["details"] == expected_msg
     mock_preview_website.assert_called_once_with(website)
+    website.refresh_from_db()
+    assert website.has_unpublished_draft is False
 
 
 def test_websites_endpoint_preview_error(mocker, drf_client):
@@ -292,6 +294,7 @@ def test_websites_endpoint_publish(mocker, drf_client, has_missing_ids):
         expected_msg = ""
         assert website.publish_date > last_published
         mock_publish_website.assert_called_once_with(website)
+        assert website.has_unpublished_live is False
     assert resp.data["details"] == expected_msg
 
 

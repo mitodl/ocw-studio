@@ -166,6 +166,9 @@ class WebsiteViewSet(
             if len(incomplete_videos) > 0:
                 message = f"WARNING: The following videos have missing YouTube IDs: {','.join(incomplete_videos)}"
             preview_website(website)
+            website.draft_publish_date = now_in_utc()
+            website.has_unpublished_draft = False
+            website.save()
             return Response(
                 status=200,
                 data={"details": message},
@@ -193,6 +196,7 @@ class WebsiteViewSet(
                 )
             publish_website(website)
             website.publish_date = now_in_utc()
+            website.has_unpublished_live = False
             website.save()
             return Response(
                 status=200,

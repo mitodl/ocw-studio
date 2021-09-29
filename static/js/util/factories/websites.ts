@@ -162,7 +162,7 @@ export const makeWebsiteStarter = (type = "course"): WebsiteStarter => ({
   config: makeWebsiteStarterConfig()
 })
 
-export const makeWebsiteDetail = (): Website => ({
+export const makeWebsiteDetail = (): any => ({
   uuid:       casual.uuid,
   created_on: casual.moment.format(),
   updated_on: casual.moment.format(),
@@ -179,7 +179,13 @@ export const makeWebsiteDetail = (): Website => ({
   metadata: {
     course_numbers: [`${casual.integer(1, 20)}.${casual.integer(1, 999)}`],
     term:           `${casual.month_name} ${casual.year}`
-  }
+  },
+  publish_date:          casual.moment.format(),
+  draft_publish_date:    casual.moment.format(),
+  draft_url:             casual.url,
+  live_url:              casual.url,
+  has_unpublished_draft: casual.boolean,
+  has_unpublished_live:  casual.boolean
 })
 
 export const makeWebsiteListing = (): Website[] =>

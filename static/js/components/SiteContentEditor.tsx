@@ -1,7 +1,8 @@
 import React from "react"
 import { useMutation, useRequest } from "redux-query-react"
-import { useSelector } from "react-redux"
+import { useSelector, useStore } from "react-redux"
 import { FormikHelpers } from "formik"
+import { requestAsync } from "redux-query"
 
 import SiteContentForm from "./forms/SiteContentForm"
 import { useWebsite } from "../context/Website"
@@ -11,7 +12,8 @@ import {
   editWebsiteContentMutation,
   EditWebsiteContentPayload,
   NewWebsiteContentPayload,
-  websiteContentDetailRequest
+  websiteContentDetailRequest,
+  websiteDetailRequest
 } from "../query-configs/websites"
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import {
@@ -47,6 +49,9 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
   } = props
 
   const site = useWebsite()
+  const store = useStore()
+  const refreshWebsite = () =>
+    store.dispatch(requestAsync(websiteDetailRequest(site.name)))
 
   const [
     { isPending: addIsPending },
@@ -139,6 +144,8 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     if (fetchWebsiteContentListing) {
       // refresh to have the new item show up in the listing
       fetchWebsiteContentListing()
+      // and to update the publish status
+      refreshWebsite()
     }
 
     if (hideModal) {

@@ -69,6 +69,9 @@ class Website(TimestampedModel):
         blank=True,
     )
     publish_date = models.DateTimeField(null=True, blank=True)
+    draft_publish_date = models.DateTimeField(null=True, blank=True)
+    has_unpublished_live = models.BooleanField(default=True)
+    has_unpublished_draft = models.BooleanField(default=True)
     metadata = models.JSONField(null=True, blank=True)
 
     @property
@@ -96,6 +99,10 @@ class Website(TimestampedModel):
 
     def get_url(self, version="live"):
         """Get the home page (live or draft) of the website"""
+        if self.starter is None:
+            # if there is no starter, there is no ability to publish
+            return None
+
         base_url = (
             settings.OCW_STUDIO_LIVE_URL
             if version == "live"
@@ -229,6 +236,14 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         if content_config:
             return site_config.find_file_field(content_config)
 
+    def save(self, **kwargs):  # pylint: disable=arguments-differ
+        """Update dirty flags on save"""
+        super().save(**kwargs)
+        website = self.website
+        website.has_unpublished_live = True
+        website.has_unpublished_draft = True
+        website.save()
+
     class Meta:
         constraints = [
             UniqueConstraint(name="unique_text_id", fields=["website", "text_id"]),
@@ -278,6 +293,14 @@ class WebsiteStarter(TimestampedModel):
     config = models.JSONField(
         null=False, help_text="Site config describing content types, widgets, etc."
     )
+
+    def save(self, **kwargs):  # pylint: disable=arguments-differ
+        """Update dirty flag on save"""
+        super().save(**kwargs)
+        Website.objects.filter(starter=self).update(
+            has_unpublished_live=True,
+            has_unpublished_draft=True,
+        )
 
     def __str__(self):
         return f"name='{self.name}', source={self.source}, commit={self.commit}"

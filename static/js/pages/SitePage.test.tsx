@@ -1,7 +1,6 @@
-import { act } from "react-dom/test-utils"
-import sinon from "sinon"
-
 const mockUseRouteMatch = jest.fn()
+
+import { act } from "react-dom/test-utils"
 
 import SitePage from "./SitePage"
 
@@ -9,9 +8,7 @@ import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
 import { makeWebsiteDetail } from "../util/factories/websites"
-
-import { siteApiActionUrl, siteApiDetailUrl } from "../lib/urls"
-
+import { siteApiDetailUrl } from "../lib/urls"
 import { Website } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
@@ -57,42 +54,21 @@ describe("SitePage", () => {
     expect(wrapper.find("SiteSidebar").prop("website")).toBe(website)
     expect(wrapper.find("h1.title").text()).toBe(website.title)
   })
-  ;[
-    ["preview", 0],
-    ["publish", 1]
-  ].forEach(([action, idx]) =>
-    it("preview button sends the expected request", async () => {
-      const actionStub = helper.handleRequestStub
-        .withArgs(
-          siteApiActionUrl
-            .param({
-              name: website.name,
-              action
-            })
-            .toString()
-        )
-        .returns({
-          status: 200
-        })
-      const { wrapper } = await render()
-      await act(async () => {
-        // @ts-ignore
-        wrapper
-          .find(".btn-publish")
-          // @ts-ignore
-          .at(idx)
-          .prop("onClick")()
-      })
-      sinon.assert.calledOnceWithExactly(
-        actionStub,
-        `/api/websites/${website.name}/${action}/`,
-        "POST",
-        {
-          body:        {},
-          headers:     { "X-CSRFTOKEN": "" },
-          credentials: undefined
-        }
-      )
+
+  it("toggles the publish drawer", async () => {
+    const { wrapper } = await render()
+    expect(wrapper.find("PublishDrawer").prop("visibility")).toBeFalsy()
+    act(() => {
+      // @ts-ignore
+      wrapper.find("PublishDrawer").prop("toggleVisibility")()
     })
-  )
+    wrapper.update()
+    expect(wrapper.find("PublishDrawer").prop("visibility")).toBeTruthy()
+    act(() => {
+      // @ts-ignore
+      wrapper.find("PublishDrawer").prop("toggleVisibility")()
+    })
+    wrapper.update()
+    expect(wrapper.find("PublishDrawer").prop("visibility")).toBeFalsy()
+  })
 })
