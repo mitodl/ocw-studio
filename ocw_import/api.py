@@ -38,8 +38,6 @@ NON_ID_COURSE_NAMES = [
     "more",
     "physics",
 ]
-DEPARTMENTS_JSON_FILE = open("static/js/resources/departments.json", "r")
-DEPARTMENTS_JSON = json.loads(DEPARTMENTS_JSON_FILE.read())
 
 
 def parse_date(date_string):
@@ -195,21 +193,23 @@ def import_ocw2hugo_sitemetadata(
     metadata["course_description"] = course_data["course_description"]
     metadata["primary_course_number"] = course_data["primary_course_number"]
     metadata["extra_course_numbers"] = ",".join(course_data["extra_course_numbers"])
-    metadata["department_numbers"] = list(
-        map(
-            (
-                lambda course_department: next(
-                    (
-                        department["depNo"]
-                        for department in DEPARTMENTS_JSON
-                        if department["title"] == course_department["department"]
-                    ),
-                    None,
-                )
-            ),
-            course_data["departments"],
+    with open("static/js/resources/departments.json", "r") as departments_json_file:
+        departments_json = json.loads(departments_json_file.read())
+        metadata["department_numbers"] = list(
+            map(
+                (
+                    lambda course_department: next(
+                        (
+                            department["depNo"]
+                            for department in departments_json
+                            if department["title"] == course_department["department"]
+                        ),
+                        None,
+                    )
+                ),
+                course_data["departments"],
+            )
         )
-    )
     metadata["level"] = course_data["level"]["level"]
     metadata["learning_resource_types"] = list(
         map(
