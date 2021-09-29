@@ -146,13 +146,22 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
     website = Website.objects.get(name=name)
     metadata = WebsiteContent.objects.get(website=website, type=CONTENT_TYPE_METADATA)
     assert metadata.metadata == {
+        "level": "Undergraduate",
+        "topics": [
+            ["Engineering", "Mechanical Engineering", "Solid Mechanics"],
+            ["Engineering", "Aerospace Engineering", "Structural Mechanics"],
+            ["Engineering", "Civil Engineering", "Structural Engineering"]
+        ],
         "instructors": {
-            "content": [
-                "0b39fff4-81fb-b968-8e2d-a0ce16ece1d4",
-                "95041ae9-ab5b-75af-f711-13fcd917f464",
-            ],
-            "website": "ocw-www",
-        }
+            "content": ["0b39fff4-81fb-b968-8e2d-a0ce16ece1d4", "95041ae9-ab5b-75af-f711-13fcd917f464"],
+            "website": "ocw-www"
+        },
+        "course_title": "Engineering Mechanics I",
+        "course_description": "This subject provides an introduction to the mechanics of materials and structures. You will be introduced to and become familiar with all relevant physical properties and fundamental laws governing the behavior of materials and structures and you will learn how to solve a variety of problems of interest to civil and environmental engineers. While there will be a chance for you to put your mathematical skills obtained in 18.01, 18.02, and eventually 18.03 to use in this subject, the emphasis is on the physical understanding of why a material or structure behaves the way it does in the engineering design of materials and structures.\n",
+        "department_numbers": ["1"],
+        "extra_course_numbers": "",
+        "primary_course_number": "1.050",
+        "learning_resource_types": ["Problem Sets", "Lecture Notes"]
     }
 
 
