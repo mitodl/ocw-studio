@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.28.0
+--------------
+
+- allow users to create inline links to resources
+- remove media embed plugin button from Markdown editor toolbar
+- Rename duplicate names during ocw-import (#603)
+- Front-end for google drive syncing (#604)
+- dependency upgrade
+- Sync all files in Google Drive (#591)
+- Add slug field to set a different value for filenames of content (#600)
+
 Version 0.27.0 (Released September 28, 2021)
 --------------
 
