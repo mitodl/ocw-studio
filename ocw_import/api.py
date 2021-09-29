@@ -193,6 +193,8 @@ def import_ocw2hugo_sitemetadata(
     metadata = {}
     metadata["course_title"] = course_data["course_title"]
     metadata["course_description"] = course_data["course_description"]
+    metadata["primary_course_number"] = course_data["primary_course_number"]
+    metadata["extra_course_numbers"] = ",".join(course_data["extra_course_numbers"])
     metadata["department_numbers"] = list(
         map(
             (
@@ -208,6 +210,14 @@ def import_ocw2hugo_sitemetadata(
             course_data["departments"],
         )
     )
+    metadata["level"] = course_data["level"]["level"]
+    metadata["learning_resource_types"] = list(
+        map(
+            lambda course_feature: course_feature["feature"],
+            course_data["course_features"],
+        )
+    )
+    metadata["topics"] = course_data["topics"]
 
     instructor_contents = []
     for instructor in course_data["instructors"]:
