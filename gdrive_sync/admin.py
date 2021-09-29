@@ -29,7 +29,7 @@ class DriveFileAdmin(TimestampedModelAdmin):
         "website__short_id",
         "s3_key",
     )
-    autocomplete_fields = ["website", "video"]
+    autocomplete_fields = ["website", "video", "resource"]
     list_display = (
         "name",
         "status",
