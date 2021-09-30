@@ -1,5 +1,4 @@
 """ Tests for websites views """
-import uuid
 from types import SimpleNamespace
 
 import factory
@@ -858,25 +857,17 @@ def test_content_create_page_content(
     )
 
 
-@pytest.mark.parametrize("slug", [None, "text_id"])
-def test_content_create_page_added_context(mocker, drf_client, global_admin_user, slug):
+def test_content_create_page_added_context(mocker, drf_client, global_admin_user):
     """
     POSTing to the WebsiteContent list view without a filename should add a generated filename
     """
-    patched_uuid_string = mocker.patch(
-        "websites.views.uuid_string", return_value=str(uuid.uuid4())
-    )
     patched_get_filename = mocker.patch(
         "websites.views.get_valid_new_filename",
-        return_value="my-title-100"
-        if slug is None
-        else patched_uuid_string.return_value,
+        return_value="my-title-100",
     )
     drf_client.force_login(global_admin_user)
     title = "My Title"
     website = WebsiteFactory.create()
-    website.starter.config["collections"][0]["slug"] = slug
-    website.starter.save()
     payload = {
         "title": title,
         "markdown": "some markdown",
@@ -884,12 +875,8 @@ def test_content_create_page_added_context(mocker, drf_client, global_admin_user
     }
     # "folder" path for the config item with type="blog" in basic-site-config.yml
     expected_dirpath = "content/blog"
-    expected_filename_base = (
-        "my-title" if slug is None else patched_uuid_string.return_value
-    )
-    expected_filename = (
-        "my-title-100" if slug is None else patched_uuid_string.return_value
-    )
+    expected_filename_base = "my-title"
+    expected_filename = "my-title-100"
     resp = drf_client.post(
         reverse(
             "websites_content_api-list",
@@ -908,6 +895,40 @@ def test_content_create_page_added_context(mocker, drf_client, global_admin_user
     content = website.websitecontent_set.order_by("-created_on").first()
     assert content.website == website
     assert content.filename == expected_filename
+    # "folder" path for the config item with type="blog" in basic-site-config.yml
+    assert content.dirpath == expected_dirpath
+    assert content.is_page_content is True
+
+
+def test_content_create_page_added_context_with_slug(drf_client, global_admin_user):
+    """
+    POSTing to the WebsiteContent list view without a filename should add a generated filename based on the slug field
+    """
+    drf_client.force_login(global_admin_user)
+    title = "My Title"
+    website = WebsiteFactory.create()
+    website.starter.config["collections"][0]["slug"] = "text_id"
+    website.starter.save()
+    payload = {
+        "title": title,
+        "markdown": "some markdown",
+        "type": "blog",
+    }
+    # "folder" path for the config item with type="blog" in basic-site-config.yml
+    expected_dirpath = "content/blog"
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        data=payload,
+    )
+    assert resp.status_code == 201
+    content = website.websitecontent_set.order_by("-created_on").first()
+    assert content.website == website
+    assert content.filename == content.text_id
     # "folder" path for the config item with type="blog" in basic-site-config.yml
     assert content.dirpath == expected_dirpath
     assert content.is_page_content is True
