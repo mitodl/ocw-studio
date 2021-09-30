@@ -1,0 +1,149 @@
+[{
+  "title": "Chemistry",
+  "id": "chemistry",
+  "depNo": "5"
+}, {
+  "title": "Biological Engineering",
+  "id": "biological-engineering",
+  "depNo": "20"
+}, {
+  "title": "Aeronautics and Astronautics",
+  "id": "aeronautics-and-astronautics",
+  "depNo": "16"
+}, {
+  "title": "Global Studies and Languages",
+  "id": "global-studies-and-languages",
+  "depNo": "21G"
+}, {
+  "title": "Mathematics",
+  "id": "mathematics",
+  "depNo": "18"
+}, {
+  "title": "Health Sciences and Technology",
+  "id": "health-sciences-and-technology",
+  "depNo": "HST"
+}, {
+  "title": "Edgerton Center",
+  "id": "edgerton-center",
+  "depNo": "EC"
+}, {
+  "title": "Women's and Gender Studies",
+  "id": "womens-and-gender-studies",
+  "depNo": "WGS"
+}, {
+  "title": "Urban Studies and Planning",
+  "id": "urban-studies-and-planning",
+  "depNo": "11"
+}, {
+  "title": "Sloan School of Management",
+  "id": "sloan-school-of-management",
+  "depNo": "15"
+}, {
+  "title": "Anthropology",
+  "id": "anthropology",
+  "depNo": "21A"
+}, {
+  "title": "Engineering Systems Division",
+  "id": "engineering-systems-division",
+  "depNo": "ESD"
+}, {
+  "title": "Chemical Engineering",
+  "id": "chemical-engineering",
+  "depNo": "10"
+}, {
+  "title": "Earth, Atmospheric, and Planetary Sciences",
+  "id": "earth-atmospheric-and-planetary-sciences",
+  "depNo": "12"
+}, {
+  "title": "Music and Theater Arts",
+  "id": "music-and-theater-arts",
+  "depNo": "21M"
+}, {
+  "title": "Athletics, Physical Education and Recreation",
+  "id": "athletics-physical-education-and-recreation",
+  "depNo": "PE"
+}, {
+  "title": "Architecture",
+  "id": "architecture",
+  "depNo": "4"
+}, {
+  "title": "Experimental Study Group",
+  "id": "experimental-study-group",
+  "depNo": "ES"
+}, {
+  "title": "Literature",
+  "id": "literature",
+  "depNo": "21L"
+}, {
+  "title": "Mechanical Engineering",
+  "id": "mechanical-engineering",
+  "depNo": "2"
+}, {
+  "title": "Electrical Engineering and Computer Science",
+  "id": "electrical-engineering-and-computer-science",
+  "depNo": "6"
+}, {
+  "title": "Materials Science and Engineering",
+  "id": "materials-science-and-engineering",
+  "depNo": "3"
+}, {
+  "title": "History",
+  "id": "history",
+  "depNo": "21H"
+}, {
+  "title": "Linguistics and Philosophy",
+  "id": "linguistics-and-philosophy",
+  "depNo": "24"
+}, {
+  "title": "Institute for Data, Systems, and Society",
+  "id": "institute-for-data-systems-and-society",
+  "depNo": "IDS"
+}, {
+  "title": "Biology",
+  "id": "biology",
+  "depNo": "7"
+}, {
+  "title": "Civil and Environmental Engineering",
+  "id": "civil-and-environmental-engineering",
+  "depNo": "1"
+}, {
+  "title": "Comparative Media Studies/Writing",
+  "id": "comparative-media-studies-writing",
+  "depNo": "CMS-W"
+}, {
+  "title": "Nuclear Science and Engineering",
+  "id": "nuclear-engineering",
+  "depNo": "22"
+}, {
+  "title": "Economics",
+  "id": "economics",
+  "depNo": "14"
+}, {
+  "title": "Concourse",
+  "id": "concourse",
+  "depNo": "CC"
+}, {
+  "title": "Brain and Cognitive Sciences",
+  "id": "brain-and-cognitive-sciences",
+  "depNo": "9"
+}, {
+  "title": "Science, Technology, and Society",
+  "id": "science-technology-and-society",
+  "depNo": "STS"
+}, {
+  "title": "Political Science",
+  "id": "political-science",
+  "depNo": "17"
+}, {
+  "title": "Media Arts and Sciences",
+  "id": "media-arts-and-sciences",
+  "depNo": "MAS"
+}, {
+  "title": "Physics",
+  "id": "physics",
+  "depNo": "8"
+}, {
+  "title": "Supplemental Resources",
+  "id": "supplemental-resources",
+  "depNo": "RES"
+}]
