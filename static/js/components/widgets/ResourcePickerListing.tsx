@@ -1,14 +1,20 @@
 import React, { SyntheticEvent, useMemo } from "react"
 import { useRequest } from "redux-query-react"
+import { path } from "ramda"
+import { useSelector } from "react-redux"
 
+import {
+  RESOURCE_TYPE_DOCUMENT,
+  RESOURCE_TYPE_IMAGE,
+  RESOURCE_TYPE_VIDEO
+} from "../../constants"
 import { useWebsite } from "../../context/Website"
 import { ContentListingParams } from "../../types/websites"
+import { websiteContentListingRequest } from "../../query-configs/websites"
 import {
-  websiteContentListingRequest,
-  WebsiteContentListingResponse
-} from "../../query-configs/websites"
-import { useSelector } from "react-redux"
-import { getWebsiteContentListingCursor } from "../../selectors/websites"
+  getWebsiteContentListingCursor,
+  WebsiteContentSelection
+} from "../../selectors/websites"
 
 interface Props {
   focusResource: (id: string) => void
@@ -38,22 +44,40 @@ export default function ResourcePickerListing(
     [website, attach, filter, resourcetype]
   )
 
-  useRequest(websiteContentListingRequest(listingParams, false, false))
+  useRequest(websiteContentListingRequest(listingParams, true, false))
 
-  const listing: WebsiteContentListingResponse = useSelector(
-    getWebsiteContentListingCursor
-  )(listingParams)
+  const listing = useSelector(getWebsiteContentListingCursor)(
+    listingParams
+  ) as WebsiteContentSelection
 
   if (!listing) {
     return null
   }
 
+  const className =
+    resourcetype === RESOURCE_TYPE_DOCUMENT ?
+      "resource-picker-listing column-view" :
+      "resource-picker-listing"
+
   return (
-    <div className="resource-picker-listing">
+    <div className={className}>
       {listing.results.map((item, idx) => {
         const className = `resource-item${
           focusedResource && focusedResource === item.text_id ? " focused" : ""
         }`
+
+        let imageSrc: string | undefined
+
+        if (item.metadata) {
+          if (item.metadata.resourcetype === RESOURCE_TYPE_IMAGE) {
+            imageSrc = path(["file"], item)
+          } else if (item.metadata.resourcetype === RESOURCE_TYPE_VIDEO) {
+            imageSrc = path(
+              ["metadata", "video_files", "video_thumbnail_file"],
+              item
+            )
+          }
+        }
 
         return (
           <div
@@ -64,6 +88,9 @@ export default function ResourcePickerListing(
               focusResource(item.text_id)
             }}
           >
+            {imageSrc ? (
+              <img className="img-fluid w-100" src={imageSrc} />
+            ) : null}
             <h4>{item.title}</h4>
           </div>
         )

@@ -71,10 +71,17 @@ export const getWebsiteContentDetailCursor = createSelector(
     )
 )
 
-interface WebsiteContentItem {
+export interface WCSelection {
   count: number | null
   next: string | null
   previous: string | null
+}
+
+export interface WebsiteContentSelection extends WCSelection {
+  results: WebsiteContent[]
+}
+
+export interface WebsiteContentListSelection extends WCSelection {
   results: WebsiteContentListItem[]
 }
 
@@ -83,7 +90,9 @@ export const getWebsiteContentListingCursor = createSelector(
   getWebsiteContentDetailCursor,
   (listing, websiteContentDetailCursor) =>
     memoize(
-      (listingParams: ContentListingParams): WebsiteContentItem => {
+      (
+        listingParams: ContentListingParams
+      ): WebsiteContentSelection | WebsiteContentListSelection => {
         const response = listing[contentListingKey(listingParams)] ?? {}
         const uuids: string[] = response?.results ?? []
         const items = uuids.map(uuid =>

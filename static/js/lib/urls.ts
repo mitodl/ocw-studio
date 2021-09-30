@@ -1,10 +1,10 @@
-import UrlAssembler from "url-assembler"
+import UrlAssembler from "./url-assembler"
 
 import { WEBSITES_PAGE_SIZE } from "../constants"
 
 // PAGE URLS
-export const sitesBaseUrl = UrlAssembler().prefix("/sites/")
-export const newSiteUrl = UrlAssembler().prefix("/new-site/")
+export const sitesBaseUrl = UrlAssembler.prefix("/sites/")
+export const newSiteUrl = UrlAssembler.prefix("/new-site/")
 
 export const siteDetailUrl = sitesBaseUrl.segment(":name/")
 export const siteContentListingUrl = siteDetailUrl.segment("type/:contentType/")
@@ -14,10 +14,10 @@ export const siteCollaboratorsDetailUrl = siteCollaboratorsUrl.segment(
   ":userId/"
 )
 
-export const collectionsBaseUrl = UrlAssembler().prefix("/collections/")
+export const collectionsBaseUrl = UrlAssembler.prefix("/collections/")
 
 // API URLS
-const api = UrlAssembler().prefix("/api/")
+const api = UrlAssembler.prefix("/api/")
 
 export const startersApi = api.segment("starters/")
 

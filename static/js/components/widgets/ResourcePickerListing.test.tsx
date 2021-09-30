@@ -1,7 +1,7 @@
 import { siteApiContentListingUrl } from "../../lib/urls"
 import { Website, WebsiteContentListItem } from "../../types/websites"
 import {
-  makeWebsiteContentListItem,
+  makeWebsiteContentDetail,
   makeWebsiteDetail
 } from "../../util/factories/websites"
 import IntegrationTestHelper, {
@@ -9,7 +9,11 @@ import IntegrationTestHelper, {
 } from "../../util/integration_test_helper"
 import { useWebsite } from "../../context/Website"
 import ResourcePickerListing from "./ResourcePickerListing"
-import { RESOURCE_TYPE_DOCUMENT, RESOURCE_TYPE_VIDEO } from "../../constants"
+import {
+  RESOURCE_TYPE_DOCUMENT,
+  RESOURCE_TYPE_IMAGE,
+  RESOURCE_TYPE_VIDEO
+} from "../../constants"
 
 jest.mock("../../context/Website")
 
@@ -47,8 +51,8 @@ describe("ResourcePickerListing", () => {
     useWebsite.mockReturnValue(website)
 
     contentListingItems = [
-      [makeWebsiteContentListItem(), makeWebsiteContentListItem()],
-      [makeWebsiteContentListItem(), makeWebsiteContentListItem()]
+      [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
+      [makeWebsiteContentDetail(), makeWebsiteContentDetail()]
     ]
 
     helper.mockGetRequest(
@@ -57,9 +61,10 @@ describe("ResourcePickerListing", () => {
           name: website.name
         })
         .query({
-          offset:       0,
-          type:         "resource",
-          resourcetype: RESOURCE_TYPE_VIDEO
+          offset:        0,
+          type:          "resource",
+          detailed_list: true,
+          resourcetype:  RESOURCE_TYPE_VIDEO
         })
         .toString(),
       apiResponse(contentListingItems[0])
@@ -71,10 +76,11 @@ describe("ResourcePickerListing", () => {
           name: website.name
         })
         .query({
-          offset:       0,
-          type:         "resource",
-          search:       "newfilter",
-          resourcetype: RESOURCE_TYPE_DOCUMENT
+          offset:        0,
+          type:          "resource",
+          search:        "newfilter",
+          detailed_list: true,
+          resourcetype:  RESOURCE_TYPE_DOCUMENT
         })
         .toString(),
       apiResponse(contentListingItems[1])
@@ -118,6 +124,38 @@ describe("ResourcePickerListing", () => {
         .at(0)
         .prop("className")
     ).toBe("resource-item focused")
+  })
+
+  it("should display an image for images", async () => {
+    // @ts-ignore
+    contentListingItems[0][0].metadata.resourcetype = RESOURCE_TYPE_IMAGE
+    // @ts-ignore
+    contentListingItems[0][0].file = "/path/to/image.jpg"
+    const { wrapper } = await render()
+    expect(
+      wrapper
+        .find(".resource-item")
+        .at(0)
+        .find("img")
+        .prop("src")
+    ).toBe("/path/to/image.jpg")
+  })
+
+  it("should display a thumbnail for videos", async () => {
+    // @ts-ignore
+    contentListingItems[0][0].metadata.resourcetype = RESOURCE_TYPE_VIDEO
+    // @ts-ignore
+    contentListingItems[0][0].metadata.video_files = {
+      video_thumbnail_file: "/path/to/image.jpg"
+    }
+    const { wrapper } = await render()
+    expect(
+      wrapper
+        .find(".resource-item")
+        .at(0)
+        .find("img")
+        .prop("src")
+    ).toBe("/path/to/image.jpg")
   })
 
   it("should allow the user to filter, sort resourcetype", async () => {

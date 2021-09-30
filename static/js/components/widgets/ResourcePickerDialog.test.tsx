@@ -1,7 +1,6 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
 import { TabPane } from "reactstrap"
-import Switch from "react-switch"
 import { ReactWrapper } from "enzyme"
 
 import ResourcePickerDialog from "./ResourcePickerDialog"
@@ -78,9 +77,9 @@ describe("ResourcePickerDialog", () => {
   it("should render tabs", async () => {
     const { wrapper } = await render()
     expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual([
-      RESOURCE_TYPE_IMAGE,
+      RESOURCE_TYPE_DOCUMENT,
       RESOURCE_TYPE_VIDEO,
-      RESOURCE_TYPE_DOCUMENT
+      RESOURCE_TYPE_IMAGE
     ])
   })
 
@@ -152,7 +151,7 @@ describe("ResourcePickerDialog", () => {
     const { wrapper } = await render()
 
     //
-    ;[RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_DOCUMENT].forEach(
+    ;[RESOURCE_TYPE_DOCUMENT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_IMAGE].forEach(
       (resourcetype, idx) => {
         act(() => {
           wrapper
@@ -168,7 +167,7 @@ describe("ResourcePickerDialog", () => {
     )
   })
 
-  it("should pass filter string to picker, when filter is on", async () => {
+  it("should pass filter string to picker, when filter is set", async () => {
     const setStub = helper.sandbox.stub()
     // @ts-ignore
     useDebouncedState.mockImplementation((initial, _ms) => {
@@ -186,11 +185,6 @@ describe("ResourcePickerDialog", () => {
 
     const { wrapper } = await render()
 
-    wrapper
-      .find(Switch)
-      .find(".react-switch-bg")
-      .simulate("click")
-    wrapper.update()
     act(() => {
       wrapper.find("input.filter-input").prop("onChange")!({
         // @ts-ignore

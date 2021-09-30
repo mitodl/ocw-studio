@@ -1,0 +1,85 @@
+.resource-picker-listing {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  column-gap: 10px;
+  row-gap: 10px; // sass-lint:disable-line no-misspelled-properties
+
+  &.column-view {
+    display: flex;
+    flex-direction: column;
+    row-gap: 0; // sass-lint:disable-line no-misspelled-properties
+
+    .resource-item {
+      background-color: initial;
+      border-radius: 0;
+      padding: 10px 0;
+      margin: 0;
+
+      &:not(:last-child) {
+        border-bottom: 1px solid $studio-gray;
+      }
+
+      &.focused {
+        border: 1px solid black;
+      }
+    }
+  }
+
+  .resource-item {
+    cursor: pointer;
+    background-color: $dialog-gray;
+    border-radius: 5px;
+    margin: 2px;
+
+    &.focused {
+      border: 2px solid black;
+      margin: 0;
+    }
+
+    h4 {
+      margin-bottom: 0;
+      padding: 2px;
+      font-size: 1rem;
+      margin: 0 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    img {
+      height: 100px;
+      object-fit: cover;
+      border-radius: 3px 3px 0 0;
+    }
+  }
+}
+
+.resource-picker-dialog {
+  .modal-dialog {
+    max-width: 650px;
+
+    .modal-body {
+      min-height: 500px;
+    }
+  }
+
+  .tab-content {
+    padding: 20px 0;
+  }
+
+  .nav-tabs {
+    border-bottom: 1px solid $dialog-gray;
+
+    .nav-item {
+      margin-left: 10px;
+      margin-right: 2px;
+      background-color: $dialog-gray;
+      border-top: 1px solid $dialog-gray;
+      border-left: 1px solid $dialog-gray;
+      border-right: 1px solid $dialog-gray;
+
+      &.active {
+        background-color: white;
+      }
+    }
+  }
+}
