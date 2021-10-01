@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.28.0
+Version 0.28.0 (Released October 01, 2021)
 --------------
 
 - Fix bug so slug field is used for filename (#625)
