@@ -99,6 +99,9 @@ def test_upsert_website_pipelines(
     """The correct concourse API args should be made for a website"""
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
     settings.API_BEARER_TOKEN = "top-secret-token"
+    settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
+    settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
+    settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
     hugo_projects_path = "https://github.com/org/repo"
     starter = WebsiteStarterFactory.create(
         source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
@@ -140,13 +143,17 @@ def test_upsert_website_pipelines(
     if version == BaseSyncPipeline.VERSION_DRAFT:
         _, kwargs = mock_put_headers.call_args_list[0]
         bucket = settings.AWS_PREVIEW_BUCKET_NAME
+        api_url = settings.OCW_STUDIO_DRAFT_URL
     else:
         _, kwargs = mock_put_headers.call_args_list[1]
         bucket = settings.AWS_PUBLISH_BUCKET_NAME
+        api_url = settings.OCW_STUDIO_LIVE_URL
 
     config_str = json.dumps(kwargs)
 
     assert f"{hugo_projects_path}.git" in config_str
+    assert settings.OCW_IMPORT_STARTER_SLUG in config_str
+    assert api_url in config_str
     assert settings.API_BEARER_TOKEN in config_str
     if home_page:
         assert (
