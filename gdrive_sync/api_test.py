@@ -98,7 +98,7 @@ def test_stream_to_s3(settings, mocker, is_video):
     mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
     mock_bucket = mock_boto3.resource.return_value.Bucket.return_value
     drive_file = DriveFileFactory.create()
-    prefix = settings.DRIVE_S3_UPLOAD_PREFIX if is_video else "courses"
+    prefix = None if is_video else "courses"
     api.stream_to_s3(drive_file, prefix=prefix)
     mock_service.return_value.permissions.return_value.create.assert_called_once()
     if is_video:

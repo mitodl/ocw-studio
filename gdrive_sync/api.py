@@ -167,8 +167,10 @@ def streaming_download(drive_file: DriveFile) -> requests.Response:
     return response
 
 
-def stream_to_s3(drive_file: DriveFile, prefix=settings.DRIVE_S3_UPLOAD_PREFIX):
+def stream_to_s3(drive_file: DriveFile, prefix: str = None):
     """ Stream a Google Drive file to S3 """
+    if prefix is None:
+        prefix = settings.DRIVE_S3_UPLOAD_PREFIX
     service = get_drive_service()
     permission = (
         service.permissions()
