@@ -2,6 +2,9 @@
 import ReactDOM from "react-dom"
 import Adapter from "enzyme-adapter-react-16"
 import Enzyme from "enzyme"
+import failOnConsole from "jest-fail-on-console"
+
+failOnConsole()
 
 Enzyme.configure({ adapter: new Adapter() })
 

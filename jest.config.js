@@ -1,5 +1,9 @@
 module.exports = {
-  setupFilesAfterEnv: ["<rootDir>static/js/test_setup.ts"],
+  setupFilesAfterEnv: [
+    // see https://github.com/ricardo-ch/jest-fail-on-console/issues/4
+    '@testing-library/react-hooks/disable-error-filtering.js',
+    "<rootDir>static/js/test_setup.ts"
+  ],
   cacheDirectory: ".jest-cache",
   transform: {
     "^.+\\.tsx?$": "ts-jest",

@@ -9,7 +9,11 @@ import SiteContentEditor from "./SiteContentEditor"
 import WebsiteContext from "../context/Website"
 
 import * as siteContentFuncs from "../lib/site_content"
-import { siteApiContentDetailUrl, siteApiContentUrl } from "../lib/urls"
+import {
+  siteApiContentDetailUrl,
+  siteApiContentUrl,
+  siteApiDetailUrl
+} from "../lib/urls"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
@@ -90,6 +94,24 @@ describe("SiteContent", () => {
       setSubmitting: helper.sandbox.stub(),
       setStatus:     helper.sandbox.stub()
     }
+
+    helper.mockGetRequest(
+      siteApiContentDetailUrl
+        .param({ name: website.name, textId: content.text_id })
+        .toString(),
+      content
+    )
+
+    helper.mockGetRequest(
+      siteApiDetailUrl.param({ name: website.name }).toString(),
+      website
+    )
+
+    helper.mockPostRequest(
+      siteApiContentUrl.param({ name: website.name }).toString(),
+      {}
+    )
+
     render = helper.configureRenderer(
       function(props) {
         return (
@@ -209,12 +231,12 @@ describe("SiteContent", () => {
         configItem: configItem,
         ...successStubs
       })
-
       const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
       const values = {
         title:       "A title",
         description: "Some description"
       }
+
       await act(async () => {
         // @ts-ignore
         await onSubmit(values, formikStubs)
@@ -237,8 +259,8 @@ describe("SiteContent", () => {
         }
       )
 
-      sinon.assert.calledWith(refreshStub)
-      sinon.assert.calledWith(hideModalStub)
+      sinon.assert.called(refreshStub)
+      sinon.assert.called(hideModalStub)
       const key = contentDetailKey({
         textId: content.text_id,
         name:   website.name
@@ -331,6 +353,7 @@ describe("SiteContent", () => {
           body:   errorObj,
           status: 500
         })
+
         const { wrapper } = await render({
           editorState,
           ...successStubs

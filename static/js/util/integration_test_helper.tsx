@@ -38,16 +38,27 @@ export default class IntegrationTestHelper {
       this.currentLocation = url
     })
 
-    const defaultResponse = {
-      body:   {},
-      status: 200
-    }
-    this.handleRequestStub = this.sandbox.stub().returns(defaultResponse)
+    // we return "no match" here as a sentinel default response
+    // basically, if this is returned it's an indication that mocks
+    // weren't set up correctly for the URL and HTTP verb which
+    // handleRequestStub is being called with.
+    this.handleRequestStub = this.sandbox.stub().returns("no match")
     this.sandbox
       .stub(networkInterfaceFuncs, "makeRequest")
       .callsFake((url, method, options) => ({
         execute: callback => {
-          const response = this.handleRequestStub(url, method, options) ?? {}
+          let response = this.handleRequestStub(url, method, options)
+          // if response is "no match" then no call to `.withArgs` has
+          // been sufficient to match the current URL and method combo.
+          // in that case, we'll log to `console.error` the method and
+          // url and thereby fail the test.
+          if (response === "no match") {
+            console.error(`unmatched ${method} request made to ${url}`)
+            response = {
+              body:   {},
+              status: 200
+            }
+          }
           const err = null
           const resStatus = response.status ?? 0
           const resBody = response.body ?? undefined
@@ -65,6 +76,18 @@ export default class IntegrationTestHelper {
     console.warn = () => {}
   }
 
+  mockRequest(
+    url: string,
+    method: "GET" | "POST" | "PATCH",
+    responseBody: unknown,
+    code: number
+  ): void {
+    this.handleRequestStub.withArgs(url, method).returns({
+      body:   responseBody,
+      status: code
+    })
+  }
+
   /**
    * Convenience method for mocking out a GET request
    *
@@ -72,10 +95,21 @@ export default class IntegrationTestHelper {
    * returned as the request body!
    */
   mockGetRequest(url: string, body: unknown): void {
-    this.handleRequestStub.withArgs(url, "GET").returns({
-      body,
-      status: 200
-    })
+    this.mockRequest(url, "GET", body, 200)
+  }
+
+  /**
+   * Convenience method for mocking out a POST request
+   */
+  mockPostRequest(url: string, body: unknown): void {
+    this.mockRequest(url, "POST", body, 201)
+  }
+
+  /**
+   * Convenience method for mocking out a PATCH request
+   */
+  mockPatchRequest(url: string, body: unknown): void {
+    this.mockRequest(url, "PATCH", body, 200)
   }
 
   cleanup(unmount = true): void {
