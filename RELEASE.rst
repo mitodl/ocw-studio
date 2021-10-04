@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.29.0
+Version 0.29.0 (Released October 04, 2021)
 --------------
 
 - Tweak s3 path for gdrive-imported nonvideo files (#611)
