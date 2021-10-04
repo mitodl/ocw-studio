@@ -143,7 +143,7 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
                 if website.starter
                 else "courses"
             )
-            file_location = file_location.replace("coursemedia", ocw_prefix)
+            file_location = re.sub(r"^/?coursemedia", ocw_prefix, file_location)
 
         base_defaults = {
             "is_page_content": True,
