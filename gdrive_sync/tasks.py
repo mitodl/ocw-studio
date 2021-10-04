@@ -32,11 +32,11 @@ log = logging.getLogger(__name__)
 
 
 @app.task(bind=True)
-def stream_drive_file_to_s3(
-    self, drive_file_id: str, prefix=settings.DRIVE_S3_UPLOAD_PREFIX
-):
+def stream_drive_file_to_s3(self, drive_file_id: str, prefix: str = None):
     """ Stream a Google Drive file to S3 """
     if settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS:
+        if prefix is None:
+            prefix = settings.DRIVE_S3_UPLOAD_PREFIX
         drive_file = DriveFile.objects.get(file_id=drive_file_id)
         api.stream_to_s3(drive_file, prefix=prefix)
 
