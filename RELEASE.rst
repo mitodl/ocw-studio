@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.29.0
+--------------
+
+- Tweak s3 path for gdrive-imported nonvideo files (#611)
+- Additional env variables for concourse pipelines (#632)
+
 Version 0.28.0 (Released October 01, 2021)
 --------------
 
