@@ -135,8 +135,19 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
             parent, _ = WebsiteContent.objects.get_or_create(
                 website=website, text_id=str(uuid.UUID(parent_uid))
             )
+        # Assumes that s3 objects will be independently synced to the ocw-studio bucket via devops
+        file_location = content_json.get("file_location", None)
+        if file_location:
+            ocw_prefix = (
+                website.starter.config.get("root-url-path", "courses")
+                if website.starter
+                else "courses"
+            )
+            file_location = file_location.replace("coursemedia", ocw_prefix)
+
         base_defaults = {
             "is_page_content": True,
+            "file": file_location,
             "metadata": content_json,
             "markdown": (s3_content_parts[1] if len(s3_content_parts) == 2 else None),
             "parent": parent,
