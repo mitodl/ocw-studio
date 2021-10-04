@@ -137,10 +137,11 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
             if branch == settings.GIT_BRANCH_PREVIEW:
                 version = self.VERSION_DRAFT
                 destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
+                static_api_url = settings.OCW_STUDIO_DRAFT_URL
             else:
                 version = self.VERSION_LIVE
                 destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
-
+                static_api_url = settings.OCW_STUDIO_LIVE_URL
             with open(
                 os.path.join(
                     os.path.dirname(__file__), "definitions/concourse/site-pipeline.yml"
@@ -156,6 +157,10 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     )
                     .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
                     .replace("((ocw-studio-url))", settings.SITE_BASE_URL)
+                    .replace("((static-api-base-url))", static_api_url)
+                    .replace(
+                        "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
+                    )
                     .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME)
                     .replace("((ocw-site-repo))", self.website.short_id)
                     .replace("((ocw-site-repo-branch))", branch)

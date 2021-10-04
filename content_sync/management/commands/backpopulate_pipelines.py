@@ -28,6 +28,13 @@ class Command(BaseCommand):
             default="",
             help="If specified, only process websites that are based on this starter slug",
         )
+        parser.add_argument(
+            "-source",
+            "--source",
+            dest="source",
+            default="",
+            help="If specified, only process websites that are based on this source",
+        )
 
     def handle(self, *args, **options):
 
@@ -40,6 +47,7 @@ class Command(BaseCommand):
 
         filter_str = options["filter"].lower()
         starter_str = options["starter"]
+        source_str = options["source"]
         is_verbose = options["verbosity"] > 1
 
         total_websites = 0
@@ -53,6 +61,9 @@ class Command(BaseCommand):
 
         if starter_str:
             website_qset = website_qset.filter(starter__slug=starter_str)
+
+        if source_str:
+            website_qset = website_qset.filter(source=source_str)
 
         for website in website_qset.iterator():
             get_sync_pipeline(website).upsert_website_pipeline()
