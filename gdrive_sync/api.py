@@ -167,8 +167,10 @@ def streaming_download(drive_file: DriveFile) -> requests.Response:
     return response
 
 
-def stream_to_s3(drive_file: DriveFile):
+def stream_to_s3(drive_file: DriveFile, prefix: str = None):
     """ Stream a Google Drive file to S3 """
+    if prefix is None:
+        prefix = settings.DRIVE_S3_UPLOAD_PREFIX
     service = get_drive_service()
     permission = (
         service.permissions()
@@ -185,14 +187,13 @@ def stream_to_s3(drive_file: DriveFile):
         bucket = s3.Bucket(bucket_name)
 
         drive_file.update_status(DriveFileStatus.UPLOADING)
-        drive_file.s3_key = "/".join(
-            [
-                settings.DRIVE_S3_UPLOAD_PREFIX,
-                drive_file.website.short_id,
-                drive_file.file_id,
-                drive_file.name,
-            ]
-        )
+        key_sections = [
+            prefix,
+            drive_file.website.short_id,
+            drive_file.file_id if prefix == settings.DRIVE_S3_UPLOAD_PREFIX else None,
+            drive_file.name,
+        ]
+        drive_file.s3_key = "/".join([section for section in key_sections if section])
         bucket.upload_fileobj(
             Fileobj=streaming_download(drive_file).raw,
             Key=drive_file.s3_key,

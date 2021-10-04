@@ -211,7 +211,10 @@ def test_import_recent_files_videos(
                     LIST_VIDEO_RESPONSES[i]["files"][0]["id"]
                 )
         elif import_video:  # chained tasks should be run
-            mock_upload_task.assert_any_call(LIST_VIDEO_RESPONSES[i]["files"][0]["id"])
+            mock_upload_task.assert_any_call(
+                LIST_VIDEO_RESPONSES[i]["files"][0]["id"],
+                prefix=settings.DRIVE_S3_UPLOAD_PREFIX,
+            )
             assert (
                 tracker.last_dt
                 == datetime.strptime(
@@ -278,7 +281,10 @@ def test_import_recent_files_novideos(settings, mocker, mocked_celery, import_vi
             import_video=import_video,
         )
         with pytest.raises(AssertionError):
-            mock_upload_task.assert_any_call(LIST_FILE_RESPONSES[1]["files"][0]["id"])
+            mock_upload_task.assert_any_call(
+                LIST_FILE_RESPONSES[1]["files"][0]["id"],
+                prefix=website.starter.config["root-url-path"],
+            )
         if import_video:  # chained tasks should not be run (this is for files only)
             with pytest.raises(AssertionError):
                 mock_upload_task.assert_any_call(
@@ -380,7 +386,9 @@ def test_import_website_files(mocker, mocked_celery):
     )
     assert mock_process_file_result.call_count == 2
     for drive_file in drive_files:
-        mock_stream_task.assert_any_call(drive_file.file_id)
+        mock_stream_task.assert_any_call(
+            drive_file.file_id, prefix=website.starter.config["root-url-path"]
+        )
         mock_create_resource.assert_any_call(drive_file.file_id)
 
 

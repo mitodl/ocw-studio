@@ -32,11 +32,13 @@ log = logging.getLogger(__name__)
 
 
 @app.task(bind=True)
-def stream_drive_file_to_s3(self, drive_file_id: str):
+def stream_drive_file_to_s3(self, drive_file_id: str, prefix: str = None):
     """ Stream a Google Drive file to S3 """
     if settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS:
+        if prefix is None:
+            prefix = settings.DRIVE_S3_UPLOAD_PREFIX
         drive_file = DriveFile.objects.get(file_id=drive_file_id)
-        api.stream_to_s3(drive_file)
+        api.stream_to_s3(drive_file, prefix=prefix)
 
 
 @app.task(bind=True)
@@ -103,9 +105,8 @@ def import_recent_files(self, last_dt: str = None, import_video: bool = False):
         dt_str = last_checked.strftime("%Y-%m-%dT%H:%M:%S.%f")
         query += f" and (modifiedTime > '{dt_str}' or createdTime > '{dt_str}')"
 
-    gdfiles = get_file_list(query=query, fields=fields)
     chains = []
-    for gdfile in gdfiles:
+    for gdfile in get_file_list(query=query, fields=fields):
         drive_file = process_file_result(gdfile, import_video=import_video)
         if drive_file:
             maxLastTime = datetime.strptime(
@@ -119,9 +120,14 @@ def import_recent_files(self, last_dt: str = None, import_video: bool = False):
                 if DRIVE_FOLDER_VIDEOS in drive_file.drive_path
                 else create_resource_from_gdrive
             )
+            s3_prefix = (
+                settings.DRIVE_S3_UPLOAD_PREFIX
+                if import_video
+                else drive_file.website.starter.config.get("root-url-path")
+            )
             chains.append(
                 chain(
-                    stream_drive_file_to_s3.s(drive_file.file_id),
+                    stream_drive_file_to_s3.s(drive_file.file_id, prefix=s3_prefix),
                     chained_task.si(drive_file.file_id),
                 )
             )
@@ -162,7 +168,12 @@ def import_website_files(self, short_id: str):
         if drive_file:
             chains.append(
                 chain(
-                    stream_drive_file_to_s3.s(drive_file.file_id),
+                    stream_drive_file_to_s3.s(
+                        drive_file.file_id,
+                        prefix=drive_file.website.starter.config.get(
+                            "root-url-path"
+                        ).rstrip("/"),
+                    ),
                     create_resource_from_gdrive.si(drive_file.file_id),
                 )
             )
