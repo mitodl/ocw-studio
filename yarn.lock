@@ -1859,6 +1859,11 @@
   resolved "https://registry.yarnpkg.com/@types/q/-/q-1.5.5.tgz#75a2a8e7d8ab4b230414505d92335d1dcb53a6df"
   integrity sha512-L28j2FcJfSZOnL1WBjDYp2vUHCeIFlyYI/53EwD/rKUBQ7MtUUfbQWiyKJGpcnv4/WgrhWsFKrcPstcAt/J0tQ==
 
+"@types/qs@*":
+  version "6.9.7"
+  resolved "https://registry.yarnpkg.com/@types/qs/-/qs-6.9.7.tgz#63bb7d067db107cc1e457c303bc25d511febf6cb"
+  integrity sha512-FGa1F62FT09qcrueBA6qYTrJPVDzah9a+493+o2PCXsesWHIn27G98TsSMs3WPNbZIEj4+VJf6saSFpvD+3Zsw==
+
 "@types/ramda@^0.27.44":
   version "0.27.44"
   resolved "https://registry.yarnpkg.com/@types/ramda/-/ramda-0.27.44.tgz#ba2283d67fcff366f7e68bd5124a0466e467967f"
@@ -1967,10 +1972,12 @@
   resolved "https://registry.yarnpkg.com/@types/turndown/-/turndown-5.0.1.tgz#fcda7b02cda4c9d445be1440036df20f335b9387"
   integrity sha512-N8Ad4e3oJxh9n9BiZx9cbe/0M3kqDpOTm2wzj13wdDUxDPjfjloWIJaquZzWE1cYTAHpjOH3rcTnXQdpEfS/SQ==
 
-"@types/url-assembler@^1.2.2":
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/@types/url-assembler/-/url-assembler-1.2.2.tgz#47692bd7eca47f5d936cbaae64695e5dc95b9f32"
-  integrity sha512-kl4aP9Zsf0fgF1DXIbZZzlqkJf9OchFCUD+SdHUi3GBrp60ztwA5MJsI/PHQ7ctTcOjsbFFbFxAw/hM2G0A+og==
+"@types/url-assembler@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@types/url-assembler/-/url-assembler-2.1.0.tgz#f0c853f22cfb2ff593f8afac11e131a5e89784ab"
+  integrity sha512-ord+KEjCZ9NCrXKWPFnj4foLXnbql/YBE8Bj4Bzqa0uEOg7+bfJFIj5ueNCqe8GFP+F/Qt7yYRsfOSiJDy9/MA==
+  dependencies:
+    "@types/qs" "*"
 
 "@types/yargs-parser@*":
   version "20.2.1"

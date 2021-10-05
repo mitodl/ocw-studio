@@ -11,10 +11,8 @@ const alphabeticalSort = (a: string, b: string) => a.localeCompare(b)
 // means that passing query parameters in any order to a URL built
 // with UrlAssembler will return the same overall URL, instead of
 // being order dependent.
-const OurUrlAssembler: UrlAssembler = UrlAssembler()
-  // @ts-ignore
-  .qsConfig({
-    sort: alphabeticalSort
-  })
+const OurUrlAssembler = UrlAssembler().qsConfig({
+  sort: alphabeticalSort
+})
 
 export default OurUrlAssembler
