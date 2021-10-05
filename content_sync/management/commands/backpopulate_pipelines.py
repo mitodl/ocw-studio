@@ -35,6 +35,13 @@ class Command(BaseCommand):
             default="",
             help="If specified, only process websites that are based on this source",
         )
+        parser.add_argument(
+            "-c",
+            "--create_backends",
+            dest="create_backends",
+            action="store_true",
+            help="Create backends if they do not exist (and sync them too)",
+        )
 
     def handle(self, *args, **options):
 
@@ -49,6 +56,7 @@ class Command(BaseCommand):
         starter_str = options["starter"]
         source_str = options["source"]
         is_verbose = options["verbosity"] > 1
+        create_backends = options["create_backends"]
 
         total_websites = 0
 
@@ -67,6 +75,9 @@ class Command(BaseCommand):
 
         for website in website_qset.iterator():
             backend = get_sync_backend(website)
+            if create_backends:
+                backend.create_website_in_backend()
+                backend.sync_all_content_to_backend()
             if backend.backend_exists():
                 get_sync_pipeline(website).upsert_website_pipeline()
                 total_websites += 1

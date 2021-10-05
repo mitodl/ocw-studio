@@ -73,6 +73,7 @@ def sync_all_websites(create_backends: bool = False):
                         # wait a bit between websites to avoid using up the hourly API rate limit
                         sleep(5)
                 if create_backends or backend.backend_exists():
+                    backend.create_website_in_backend()
                     backend.sync_all_content_to_backend()
             except RateLimitExceededException:
                 # Too late, can't even check rate limit reset time now so bail
