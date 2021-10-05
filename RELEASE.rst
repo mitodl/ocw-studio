@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.29.1
+--------------
+
+- Save file location to WebsiteContent.file for imported OCW courses (#635)
+- style / layout / ux updates to the resource picker
+- Bump nokogiri from 1.11.4 to 1.12.5 in /docs (#610)
+- Bump django from 3.1.12 to 3.1.13 (#595)
+
 Version 0.29.0 (Released October 04, 2021)
 --------------
 
