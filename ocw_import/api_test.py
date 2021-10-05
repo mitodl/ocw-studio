@@ -1,5 +1,6 @@
 """ Tests for ocw_import.api """
 import json
+import re
 
 import pytest
 from moto import mock_s3
@@ -88,6 +89,9 @@ def test_import_ocw2hugo_course_content(mocker, settings):
     assert lecture_pdf.metadata.get("file_type") == "application/pdf"
     assert lecture_pdf.filename == "file-20"
     assert lecture_pdf.dirpath == "content/resources"
+    assert lecture_pdf.file == re.sub(
+        r"^/?coursemedia", "courses", lecture_pdf.metadata.get("file_location")
+    )
     get_valid_new_filename_mock.assert_any_call(
         website.pk,
         lecture_pdf.dirpath,
