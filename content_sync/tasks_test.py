@@ -93,10 +93,13 @@ def test_sync_website_content_not_exists(api_mock, log_mock):
     api_mock.get_sync_backend.assert_not_called()
 
 
-def test_sync_all_websites(api_mock):
+@pytest.mark.parametrize("backend_exists", [True, False])
+@pytest.mark.parametrize("create_backend", [True, False])
+def test_sync_all_websites(api_mock, backend_exists, create_backend):
     """
     Test that sync_all_content_to_backend is run on all websites needing a sync
     """
+    api_mock.get_sync_backend.return_value.backend_exists.return_value = backend_exists
     website_synced = WebsiteFactory.create()
     websites_unsynced = WebsiteFactory.create_batch(2)
     with mute_signals(post_save):
@@ -112,14 +115,14 @@ def test_sync_all_websites(api_mock):
         2, content=WebsiteContentFactory.create(website=websites_unsynced[1])
     )
 
-    tasks.sync_all_websites.delay()
+    tasks.sync_all_websites.delay(create_backends=create_backend)
     for website in websites_unsynced:
         api_mock.get_sync_backend.assert_any_call(website)
     with pytest.raises(AssertionError):
         api_mock.get_sync_backend.assert_any_call(website_synced)
     assert (
         api_mock.get_sync_backend.return_value.sync_all_content_to_backend.call_count
-        == 2
+        == (2 if (create_backend or backend_exists) else 0)
     )
 
 
@@ -160,6 +163,7 @@ def test_preview_website_backend(api_mock, mocker, settings, prepublish_actions)
     website = WebsiteFactory.create()
     tasks.preview_website_backend(website.name)
     api_mock.get_sync_backend.assert_called_once_with(website)
+    api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_called_once()
     api_mock.get_sync_backend.return_value.create_backend_preview.assert_called_once()
 
     if len(prepublish_actions) > 0:
@@ -176,6 +180,7 @@ def test_publish_website_backend(api_mock, mocker, settings, prepublish_actions)
     website = WebsiteFactory.create()
     tasks.publish_website_backend(website.name)
     api_mock.get_sync_backend.assert_called_once_with(website)
+    api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_called_once()
     api_mock.get_sync_backend.return_value.create_backend_release.assert_called_once()
     if len(prepublish_actions) > 0:
         import_string_mock.assert_any_call("some.Action")

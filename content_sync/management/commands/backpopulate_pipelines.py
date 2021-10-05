@@ -4,7 +4,7 @@ from django.core.management import BaseCommand
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.api import get_sync_pipeline
+from content_sync.api import get_sync_backend, get_sync_pipeline
 from websites.models import Website
 
 
@@ -66,8 +66,10 @@ class Command(BaseCommand):
             website_qset = website_qset.filter(source=source_str)
 
         for website in website_qset.iterator():
-            get_sync_pipeline(website).upsert_website_pipeline()
-            total_websites += 1
+            backend = get_sync_backend(website)
+            if backend.backend_exists():
+                get_sync_pipeline(website).upsert_website_pipeline()
+                total_websites += 1
 
             if is_verbose:
                 self.stdout.write(f"{website.name} pipeline created or updated")

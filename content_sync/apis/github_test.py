@@ -84,6 +84,20 @@ def patched_destination_filepath(mocker):
     )
 
 
+def test_repo_exists_true(mocker, mock_api_wrapper):
+    """repo_exists should return True"""
+    mock_api_wrapper.org.get_repo.return_value = mocker.Mock()
+    assert mock_api_wrapper.repo_exists() is True
+
+
+def test_repo_exists_false(mock_api_wrapper):
+    """repo_exists should return False"""
+    mock_api_wrapper.org.get_repo.side_effect = GithubException(
+        status=404, data={}, headers={}
+    )
+    assert mock_api_wrapper.repo_exists() is False
+
+
 def test_get_repo(mock_api_wrapper):
     """get_repo should invoke the appropriate PyGithub call"""
     mock_api_wrapper.get_repo()
