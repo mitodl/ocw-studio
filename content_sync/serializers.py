@@ -74,7 +74,7 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
             **(website_content.full_metadata or {}),
             "uid": website_content.text_id,
             "title": website_content.title,
-            "type": website_content.type,
+            "content_type": website_content.type,
         }
         # NOTE: yaml.dump adds a newline to the end of its output by default
         return f"---\n{yaml.dump(front_matter)}---\n{website_content.markdown or ''}"
@@ -94,7 +94,7 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
         front_matter_data = yaml.load(md_file_sections[0], Loader=yaml.SafeLoader)
         markdown = md_file_sections[1] if len(md_file_sections) == 2 else None
         text_id = front_matter_data.get("uid", None)
-        content_type = front_matter_data.get("type")
+        content_type = front_matter_data.get("content_type")
         dirpath, filename = get_dirpath_and_filename(
             filepath, expect_file_extension=True
         )

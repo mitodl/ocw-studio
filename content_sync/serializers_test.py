@@ -30,7 +30,7 @@ EXAMPLE_UUIDS = [
 
 EXAMPLE_HUGO_MARKDOWN = """---
 title: Example File
-type: page
+content_type: page
 uid: abcdefg
 ---
 # My markdown
@@ -40,7 +40,7 @@ uid: abcdefg
 
 EXAMPLE_HUGO_MARKDOWN_WITH_FILE = """---
 title: Example File
-type: resource
+content_type: resource
 uid: abcdefg
 image: https://test.edu/image.png
 ---
@@ -120,7 +120,7 @@ def test_hugo_file_serialize(markdown, exp_sections):
     assert front_matter_lines == sorted(
         [
             f"title: {content.title}",
-            f"type: {content.type}",
+            f"content_type: {content.type}",
             f"uid: {content.text_id}",
         ]
         + [f"{k}: {v}" for k, v in metadata.items()]
