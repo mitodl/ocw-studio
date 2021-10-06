@@ -17,6 +17,13 @@ class BaseSyncBackend(abc.ABC):
         self.site_config = SiteConfig(website.starter.config)
 
     @abc.abstractmethod
+    def backend_exists(self):  # pragma: no cover
+        """
+        Called to determine if the website backend exists.
+        """
+        ...
+
+    @abc.abstractmethod
     def create_website_in_backend(self):  # pragma: no cover
         """
         Called to create the website in the backend.

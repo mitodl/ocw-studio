@@ -140,6 +140,19 @@ class GithubApiWrapper:
         return self.repo
 
     @retry_on_failure
+    def repo_exists(self):
+        """Return True if the repo already exists"""
+        try:
+            self.org.get_repo(self.website.short_id)
+            return True
+        except GithubException as ge:
+            if ge.status == 404:
+                return False
+            else:
+                raise
+        return False
+
+    @retry_on_failure
     def create_repo(self, **kwargs) -> Repository:
         """
         Create a website repo

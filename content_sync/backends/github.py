@@ -31,6 +31,10 @@ class GithubBackend(BaseSyncBackend):
         super().__init__(website)
         self.api = GithubApiWrapper(self.website, self.site_config)
 
+    def backend_exists(self):
+        """Determine if the website repo exists"""
+        return self.api.repo_exists()
+
     def create_website_in_backend(self) -> Repository:
         """
         Create a Website git repo with 3 branches.  Requires ~6 API calls.

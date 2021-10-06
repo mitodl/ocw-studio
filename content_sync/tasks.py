@@ -37,10 +37,10 @@ def sync_content(content_sync_id: str):
 
 
 @app.task(acks_late=True)
-def sync_all_websites():
+def sync_all_websites(create_backends: bool = False):
     """
-    Sync all websites with unsynced content.  This should be rarely called, and only
-    in a management command.
+    Sync all websites with unsynced content if they have existing repos.
+    This should be rarely called, and only in a management command.
     """
     from content_sync.backends.github import (  # pylint:disable=import-outside-toplevel
         GithubBackend,
@@ -72,8 +72,9 @@ def sync_all_websites():
                     else:
                         # wait a bit between websites to avoid using up the hourly API rate limit
                         sleep(5)
-
-                backend.sync_all_content_to_backend()
+                if create_backends or backend.backend_exists():
+                    backend.create_website_in_backend()
+                    backend.sync_all_content_to_backend()
             except RateLimitExceededException:
                 # Too late, can't even check rate limit reset time now so bail
                 raise
@@ -139,6 +140,7 @@ def preview_website_backend(website_name: str):
             import_string(action)(website)
 
         backend = api.get_sync_backend(website)
+        backend.sync_all_content_to_backend()
         backend.create_backend_preview()
     except:  # pylint:disable=bare-except
         log.exception("Error previewing site %s", website.name)
@@ -157,6 +159,7 @@ def publish_website_backend(website_name: str):
             import_string(action)(website)
 
         backend = api.get_sync_backend(website)
+        backend.sync_all_content_to_backend()
         backend.create_backend_release()
     except:  # pylint:disable=bare-except
         log.exception("Error publishing site %s", website.name)

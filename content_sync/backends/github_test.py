@@ -44,6 +44,13 @@ def patched_file_serialize(mocker):
     )
 
 
+@pytest.mark.parametrize("exists", [True, False])
+def test_backend_exists(github, exists):
+    """backend_exists should return the expected boolean value"""
+    github.api.repo_exists.return_value = exists
+    assert github.backend.backend_exists() is exists
+
+
 def test_create_website_in_backend(github):
     """ Test that the create_website_in_backend function completes without errors and calls expected api functions"""
     github.backend.create_website_in_backend()

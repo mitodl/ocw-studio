@@ -12,6 +12,9 @@ from websites.factories import WebsiteFactory
 class _ImplementedBackend(BaseSyncBackend):
     """ Not implemented """
 
+    def backend_exists(self):
+        ...
+
     def create_website_in_backend(self):
         ...
 
