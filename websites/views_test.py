@@ -722,6 +722,33 @@ def test_websites_content_create(drf_client, global_admin_user):
     assert resp.data["text_id"] == str(content.text_id)
 
 
+def test_websites_content_create_with_textid(drf_client, global_admin_user):
+    """If a text_id is added when POSTing to the WebsiteContent, we should use that instead of creating a uuid"""
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create()
+    payload = {
+        "type": "sitemetadata",
+        "metadata": {
+            "course_title": "a title",
+        },
+        "text_id": "sitemetadata",
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": website.name,
+            },
+        ),
+        data=payload,
+    )
+    assert resp.status_code == 201
+    content = website.websitecontent_set.get()
+    assert content.type == payload["type"]
+    assert resp.data["text_id"] == str(content.text_id)
+    assert content.text_id == "sitemetadata"
+
+
 @pytest.mark.parametrize(
     "root_url_path, expected_prefix",
     [
