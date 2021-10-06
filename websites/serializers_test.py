@@ -1,5 +1,6 @@
 """ Tests for websites.serializers """
 import pytest
+from dateutil.parser import parse as parse_date
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models import CharField, Value
 
@@ -121,6 +122,33 @@ def test_website_detail_serializer(has_starter):
         if has_starter
         else None
     )
+    assert serialized_data["source"] == website.source
+    assert parse_date(serialized_data["publish_date"]) == website.publish_date
+    assert (
+        parse_date(serialized_data["draft_publish_date"]) == website.draft_publish_date
+    )
+    assert serialized_data["live_url"] == website.get_url("live")
+    assert serialized_data["draft_url"] == website.get_url("draft")
+    assert serialized_data["has_unpublished_live"] == website.has_unpublished_live
+    assert serialized_data["has_unpublished_draft"] == website.has_unpublished_draft
+
+
+@pytest.mark.parametrize("user_is_admin", [True, False])
+@pytest.mark.parametrize("has_user", [True, False])
+def test_website_detail_serializer_is_admin(mocker, user_is_admin, has_user):
+    """is_admin should be true or false depending on the user status"""
+    is_site_admin_mock = mocker.patch(
+        "websites.serializers.is_site_admin", return_value=user_is_admin
+    )
+    user = UserFactory.create()
+    website = WebsiteFactory.create()
+    serialized = WebsiteDetailSerializer(
+        instance=website,
+        context={"request": mocker.Mock(user=user if has_user else None)},
+    ).data
+    assert serialized["is_admin"] == (user_is_admin and has_user)
+    if has_user:
+        is_site_admin_mock.assert_called_once_with(user, website)
 
 
 def test_website_collaborator_serializer():

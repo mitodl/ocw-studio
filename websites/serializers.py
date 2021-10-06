@@ -68,6 +68,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "short_id",
             "title",
             "source",
+            "draft_publish_date",
             "publish_date",
             "metadata",
             "starter",
@@ -81,6 +82,8 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
 
     starter = WebsiteStarterDetailSerializer(read_only=True)
     is_admin = serializers.SerializerMethodField(read_only=True)
+    live_url = serializers.SerializerMethodField()
+    draft_url = serializers.SerializerMethodField()
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
@@ -88,6 +91,14 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
         if user:
             return is_site_admin(user, obj)
         return False
+
+    def get_live_url(self, instance):
+        """Get the live url for the site"""
+        return instance.get_url(version="live")
+
+    def get_draft_url(self, instance):
+        """Get the draft url for the site"""
+        return instance.get_url(version="draft")
 
     def create(self, validated_data):
         """Ensure that the website is created by the requesting user"""
@@ -109,7 +120,13 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
 
     class Meta:
         model = Website
-        fields = WebsiteSerializer.Meta.fields + ["is_admin"]
+        fields = WebsiteSerializer.Meta.fields + [
+            "is_admin",
+            "draft_url",
+            "live_url",
+            "has_unpublished_live",
+            "has_unpublished_draft",
+        ]
 
 
 class WebsiteWriteSerializer(WebsiteDetailSerializer):

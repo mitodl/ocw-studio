@@ -91,6 +91,44 @@ def test_websitecontent_full_metadata(has_file_widget, has_file):
 
 
 @pytest.mark.django_db
+def test_website_starter_unpublished():
+    """Website should set has_unpublished_live and has_unpublished_draft if the starter is updated"""
+    website = WebsiteFactory.create(
+        has_unpublished_live=False, has_unpublished_draft=False
+    )
+    second_website = WebsiteFactory.create(
+        has_unpublished_live=False, has_unpublished_draft=False, starter=website.starter
+    )
+    website.starter.save()
+    website.refresh_from_db()
+    assert website.has_unpublished_draft is True
+    assert website.has_unpublished_live is True
+    second_website.refresh_from_db()
+    assert second_website.has_unpublished_draft is True
+    assert second_website.has_unpublished_live is True
+
+
+@pytest.mark.django_db
+def test_website_content_unpublished():
+    """Website should set has_unpublished_live and has_unpublished_draft if any related content is updated"""
+    website = WebsiteFactory.create()
+    content = WebsiteContentFactory.create(website=website)
+    website.has_unpublished_live = False
+    website.has_unpublished_draft = False
+    website.save()
+    other_content = WebsiteContentFactory.create()
+    other_content.save()
+    website.refresh_from_db()
+    # website should not have changed since the content is for a different website
+    assert website.has_unpublished_live is False
+    assert website.has_unpublished_draft is False
+    content.save()
+    website.refresh_from_db()
+    assert website.has_unpublished_live is True
+    assert website.has_unpublished_draft is True
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "name,root_url,is_home,version,expected_path",
     [
@@ -115,3 +153,11 @@ def test_website_get_url(
     settings.ROOT_WEBSITE_NAME = name if is_home else "test-home"
     website = WebsiteFactory.create(name=name, starter=starter)
     assert website.get_url(version) == urljoin(expected_domain, expected_path)
+
+
+@pytest.mark.django_db
+def test_website_get_url_no_starter():
+    """Verify that Website.get_url returns None if there is no starter"""
+    website = WebsiteFactory.create(starter=None)
+    assert website.get_url("draft") is None
+    assert website.get_url("live") is None

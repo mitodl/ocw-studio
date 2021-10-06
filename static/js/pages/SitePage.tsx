@@ -1,15 +1,17 @@
 import * as React from "react"
 import { useSelector } from "react-redux"
-import { useMutation, useRequest } from "redux-query-react"
+import { useRequest } from "redux-query-react"
 import { Route, Switch, useRouteMatch } from "react-router-dom"
 
 import SiteSidebar from "../components/SiteSidebar"
 import SiteContentListing from "../components/SiteContentListing"
 import SiteCollaboratorList from "../components/SiteCollaboratorList"
 import Card from "../components/Card"
+import PublishDrawer from "../components/PublishDrawer"
 
-import { websiteAction, websiteDetailRequest } from "../query-configs/websites"
+import { websiteDetailRequest } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
+import { useCallback, useState } from "react"
 
 interface MatchParams {
   name: string
@@ -19,15 +21,19 @@ export default function SitePage(): JSX.Element | null {
   const match = useRouteMatch<MatchParams>()
   const { name } = match.params
 
-  const [{ isPending: previewIsPending }, previewWebsite] = useMutation(() =>
-    websiteAction(name, "preview")
-  )
-  const [{ isPending: publishIsPending }, publishWebsite] = useMutation(() =>
-    websiteAction(name, "publish")
-  )
-
   const [{ isPending }] = useRequest(websiteDetailRequest(name))
   const website = useSelector(getWebsiteDetailCursor)(name)
+
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false)
+
+  const openPublishDrawer = useCallback(
+    (event: any) => {
+      event.preventDefault()
+
+      setDrawerOpen(true)
+    },
+    [setDrawerOpen]
+  )
 
   if (!website) {
     return null
@@ -35,30 +41,6 @@ export default function SitePage(): JSX.Element | null {
 
   if (isPending) {
     return <div className="site-page std-page-body container">Loading...</div>
-  }
-
-  const onPreview = async () => {
-    if (previewIsPending) {
-      return
-    }
-    const response = await previewWebsite()
-    if (!response) {
-      return
-    } else {
-      // TBD
-    }
-  }
-
-  const onPublish = async () => {
-    if (publishIsPending) {
-      return
-    }
-    const response = await publishWebsite()
-    if (!response) {
-      return
-    } else {
-      // TBD
-    }
   }
 
   return (
@@ -73,20 +55,19 @@ export default function SitePage(): JSX.Element | null {
             <div className="my-auto">
               <button
                 type="button"
-                onClick={onPreview}
-                disabled={previewIsPending}
-                className="btn btn-publish green-button-outline"
+                onClick={openPublishDrawer}
+                className="btn btn-publish green-button-outline d-flex flex-direction-row align-items-center"
               >
-                Preview
-              </button>
-              <button
-                type="button"
-                onClick={onPublish}
-                disabled={publishIsPending}
-                className="btn btn-publish green-button-outline"
-              >
+                <i className="material-icons">settings</i>
                 Publish
               </button>
+              <PublishDrawer
+                website={website}
+                visibility={drawerOpen}
+                toggleVisibility={() =>
+                  setDrawerOpen(visibility => !visibility)
+                }
+              />
             </div>
           </div>
           <Switch>
