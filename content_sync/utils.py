@@ -50,7 +50,7 @@ def get_destination_url(
         content_dir_prefix = f"{site_config.content_dir}/"
         if url_with_content.startswith(content_dir_prefix):
             url_with_content = url_with_content[len(content_dir_prefix) :]
-        return url_with_content
+        return os.path.join("/", url_with_content)
     log.error(
         "Cannot get destination URL because is_page_content is false (content: %s)",
         (content.id, content.text_id),
