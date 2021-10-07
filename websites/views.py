@@ -349,7 +349,9 @@ def _get_derived_website_content_data(
     request_data: dict, site_config: SiteConfig, website_pk: str
 ) -> dict:
     """Derives values that should be added to the request data if a WebsiteContent object is being created"""
-    added_data = {"text_id": uuid_string()}
+    added_data = {}
+    if "text_id" not in request_data:
+        added_data["text_id"] = uuid_string()
     content_type = request_data.get("type")
     config_item = (
         site_config.find_item_by_name(name=content_type)
