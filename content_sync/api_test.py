@@ -197,8 +197,11 @@ def test_create_website_publishing_pipeline_disabled(settings, mocker):
 
 
 @pytest.mark.parametrize("version", ["live", "draft"])
-def test_unpause_publishing_pipeline(mocker, version):
+def test_unpause_publishing_pipeline(settings, mocker, version):
     """unpause_publishing_pipeline should call the expected functions"""
+    settings.CONTENT_SYNC_PIPELINE = (
+        "content_sync.pipelines.concourse.ConcourseGithubPipeline"
+    )
     mock_pipeline_api = mocker.patch("content_sync.api.get_sync_pipeline")
     website = WebsiteFactory.create()
     unpause_publishing_pipeline(website, version)
