@@ -67,15 +67,15 @@ def test_get_destination_url_errors(mocker):
 @pytest.mark.parametrize(
     "is_page_content, dirpath, filename, expected",
     [
-        [True, "content/pages", "_index", "pages/"],
-        [True, "content/pages", "hx_network", "pages/hx_network"],
+        [True, "content/pages", "_index", "/pages/"],
+        [True, "content/pages", "hx_network", "/pages/hx_network"],
         [
             True,
             "content/pages/lecture-notes",
             "java_3d_lecture",
-            "pages/lecture-notes/java_3d_lecture",
+            "/pages/lecture-notes/java_3d_lecture",
         ],
-        [True, "content/resources", "image", "resources/image"],
+        [True, "content/resources", "image", "/resources/image"],
         [False, "", "", None],
     ],
 )
