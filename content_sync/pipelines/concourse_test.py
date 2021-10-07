@@ -127,7 +127,6 @@ def test_upsert_website_pipelines(
             "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
             return_value=({}, {"X-Concourse-Config-Version": "3"}),
         )
-    mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
     mock_put_headers = mocker.patch(
         "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
     )
@@ -223,6 +222,7 @@ def test_trigger_pipeline_build(settings, mocker, version):
 
 @pytest.mark.parametrize("version", ["live", "draft"])
 def test_unpause_pipeline(settings, mocker, version):
+    """unpause_pipeline should make the expected put request"""
     settings.CONCOURSE_TEAM = "myteam"
     mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
     website = WebsiteFactory.create(
