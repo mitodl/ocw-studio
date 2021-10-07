@@ -127,7 +127,6 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
         site_config = SiteConfig(self.website.starter.config)
         site_url = f"{site_config.root_url_path}/{self.website.name}".strip("/")
         base_url = "" if self.website.name == settings.ROOT_WEBSITE_NAME else site_url
-        purge_url = "purge_all" if not base_url else f"purge/{site_url}"
         hugo_projects_url = urljoin(
             f"{starter_path_url.scheme}://{starter_path_url.netloc}",
             f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
@@ -168,7 +167,7 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     .replace("((base-url))", base_url)
                     .replace("((site-url))", site_url)
                     .replace("((site-name))", self.website.name)
-                    .replace("((purge-url))", purge_url)
+                    .replace("((purge-url))", f"purge/{self.website.name}")
                     .replace("((version))", version)
                     .replace("((api-token))", settings.API_BEARER_TOKEN)
                 )
