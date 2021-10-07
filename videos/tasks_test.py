@@ -109,15 +109,15 @@ def test_upload_youtube_videos(
     if not is_enabled:
         settings.YT_CLIENT_ID = None
     settings.YT_UPLOAD_LIMIT = max_uploads
-    mock_uploader = mocker.patch(
-        "videos.tasks.YouTubeApi.upload_video",
-        return_value={
-            "id": "".join([choice(string.ascii_lowercase) for n in range(8)]),
-            "status": {"uploadStatus": "uploaded"},
-        },
-    )
+    mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
+    mock_uploader = mock_youtube.return_value.upload_video
+    mock_uploader.return_value = {
+        "id": "".join([choice(string.ascii_lowercase) for n in range(8)]),
+        "status": {"uploadStatus": "uploaded"},
+    }
     upload_youtube_videos()
     assert mock_uploader.call_count == (min(3, max_uploads) if is_enabled else 0)
+    assert mock_youtube.call_count == (1 if is_enabled else 0)
     if is_enabled:
         for video_file in VideoFile.objects.order_by("-created_on")[
             : settings.YT_UPLOAD_LIMIT
@@ -139,6 +139,13 @@ def test_upload_youtube_videos_error(mocker, youtube_video_files_new):
     for video_file in youtube_video_files_new:
         video_file.refresh_from_db()
         assert video_file.status == VideoFileStatus.FAILED
+
+
+def test_upload_youtube_videos_no_videos(mocker):
+    """YouTube API shoould not be instantiated if there are no videos to upload"""
+    mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
+    upload_youtube_videos()
+    mock_youtube.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -181,9 +188,8 @@ def test_update_youtube_statuses(
     """
     if not is_enabled:
         settings.YT_CLIENT_ID = None
-    mocker.patch(
-        "videos.tasks.YouTubeApi.video_status", return_value=YouTubeStatus.PROCESSED
-    )
+    mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
+    mock_youtube.return_value.video_status.return_value = YouTubeStatus.PROCESSED
     mock_mail_youtube_upload_success = mocker.patch(
         "videos.tasks.mail_youtube_upload_success"
     )
@@ -192,9 +198,11 @@ def test_update_youtube_statuses(
         destination_status=YouTubeStatus.PROCESSED, status=VideoFileStatus.COMPLETE
     ).count() == (3 if is_enabled else 0)
     if is_enabled:
+        mock_youtube.assert_called_once()
         for video_file in youtube_video_files_processing:
             mock_mail_youtube_upload_success.assert_any_call(video_file)
     else:
+        mock_youtube.assert_not_called()
         mock_mail_youtube_upload_success.assert_not_called()
 
 
@@ -254,6 +262,13 @@ def test_update_youtube_statuses_index_error(mocker, youtube_video_files_process
             video_file.destination_id,
         )
         mock_mail_youtube_upload_failure.assert_any_call(video_file)
+
+
+def test_update_youtube_statuses_no_videos(mocker):
+    """Youtube API should not be instantiated if there are no videos to process"""
+    mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
+    update_youtube_statuses()
+    mock_youtube.assert_not_called()
 
 
 @pytest.mark.parametrize("is_enabled", [True, False])

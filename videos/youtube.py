@@ -329,9 +329,12 @@ def update_youtube_metadata(website: Website, privacy=None):
     """ Update YouTube video metadata via the API """
     if not is_youtube_enabled() or not is_ocw_site(website):
         return
-    youtube = YouTubeApi()
     query_id_field = get_dict_query_field("metadata", settings.YT_FIELD_ID)
-    for video_resource in website.websitecontent_set.filter(
+    video_resources = website.websitecontent_set.filter(
         Q(metadata__resourcetype=RESOURCE_TYPE_VIDEO)
-    ).exclude(Q(**{query_id_field: None}) | Q(**{query_id_field: ""})):
+    ).exclude(Q(**{query_id_field: None}) | Q(**{query_id_field: ""}))
+    if video_resources.count() == 0:
+        return
+    youtube = YouTubeApi()
+    for video_resource in video_resources:
         youtube.update_video(video_resource, privacy=privacy)
