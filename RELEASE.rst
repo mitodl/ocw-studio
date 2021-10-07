@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.29.1
+Version 0.29.1 (Released October 07, 2021)
 --------------
 
 - Site publish drawer (#623)
