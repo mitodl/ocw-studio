@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.29.1 (Released October 07, 2021)
+--------------
+
+- Site publish drawer (#623)
+- Management command for resetting synced checksums and optionally syncing all github repos (#644)
+- when serializing Hugo markdown files, write out the WebsiteContent type property as content_type and deserialize that back into type (#646)
+- Save file location to WebsiteContent.file for imported OCW courses (#635)
+- style / layout / ux updates to the resource picker
+- Bump nokogiri from 1.11.4 to 1.12.5 in /docs (#610)
+- Bump django from 3.1.12 to 3.1.13 (#595)
+
 Version 0.29.0 (Released October 04, 2021)
 --------------
 
