@@ -298,7 +298,8 @@ def test_mail_youtube_upload_success(settings, mock_mail):
 @pytest.mark.parametrize("is_ocw", [True, False])
 def test_update_youtube_metadata(mocker, youtube_enabled, is_ocw):
     """ Check that youtube.update_video is called for appropriate resources and not others"""
-    mock_update_video = mocker.patch("videos.youtube.YouTubeApi.update_video")
+    mock_youtube = mocker.patch("videos.youtube.YouTubeApi")
+    mock_update_video = mock_youtube.return_value.update_video
     mocker.patch("videos.youtube.is_ocw_site", return_value=is_ocw)
     mocker.patch("videos.youtube.is_youtube_enabled", return_value=youtube_enabled)
     website = WebsiteFactory.create()
@@ -320,6 +321,7 @@ def test_update_youtube_metadata(mocker, youtube_enabled, is_ocw):
         )
     update_youtube_metadata(website, privacy="public")
     if youtube_enabled and is_ocw:
+        mock_youtube.assert_called_once()
         assert mock_update_video.call_count == 2
         for youtube_id in ["abc123", "def456"]:
             mock_update_video.assert_any_call(
@@ -330,6 +332,15 @@ def test_update_youtube_metadata(mocker, youtube_enabled, is_ocw):
             )
     else:
         mock_update_video.assert_not_called()
+
+
+def test_update_youtube_metadata_no_videos(mocker):
+    """Youtube API should not be instantiated if there are no videos"""
+    mocker.patch("videos.youtube.is_ocw_site", return_value=True)
+    mocker.patch("videos.youtube.is_youtube_enabled", return_value=True)
+    mock_youtube = mocker.patch("videos.youtube.YouTubeApi")
+    update_youtube_metadata(WebsiteFactory.create())
+    mock_youtube.assert_not_called()
 
 
 @pytest.mark.parametrize("existing_captions", [True, False])

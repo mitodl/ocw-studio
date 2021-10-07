@@ -39,10 +39,12 @@ def upload_youtube_videos():
         & Q(destination_id__isnull=True)
         & Q(status=STATUS_CREATED)
     ).order_by("-created_on")[: settings.YT_UPLOAD_LIMIT]
-    for video_file in yt_queue.all():
+    if yt_queue.count() == 0:
+        return
+    youtube = YouTubeApi()
+    for video_file in yt_queue:
         error_msg = None
         try:
-            youtube = YouTubeApi()
             response = youtube.upload_video(video_file)
             video_file.destination_id = response["id"]
             video_file.destination_status = response["status"]["uploadStatus"]
@@ -68,10 +70,12 @@ def update_youtube_statuses():
     """
     if not is_youtube_enabled():
         return
-    youtube = YouTubeApi()
     videos_processing = VideoFile.objects.filter(
         Q(status=VideoFileStatus.UPLOADED) & Q(destination=DESTINATION_YOUTUBE)
     )
+    if videos_processing.count() == 0:
+        return
+    youtube = YouTubeApi()
     for video_file in videos_processing:
         try:
             video_file.destination_status = youtube.video_status(
