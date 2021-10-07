@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.29.2
+--------------
+
+- Ensure that delete_unpublished_courses runs only after all courses have finished importing (#649)
+- Dont instantiate the YouTubeAPI class unless it has something to do (#661)
+- update url-assembler typedef so we can remove @ts-ignore
+- change how URL matching works in IntegrationTestHelper
+- Set site-id metadata during pipeline s3 sync (#660)
+- Use text_id from frontend when creating WebsiteContent (#656)
+- prefix destination urls with / to make them root relative (#657)
+
 Version 0.29.1 (Released October 07, 2021)
 --------------
 
