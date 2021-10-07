@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from factory.django import mute_signals
 
 from content_sync import api
+from content_sync.api import unpause_publishing_pipeline
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
@@ -137,7 +138,7 @@ def test_preview_website(settings, mocker):
     mock_task = mocker.patch("content_sync.tasks.preview_website_backend")
     website = WebsiteFactory.create()
     api.preview_website(website)
-    mock_task.delay.assert_called_once_with(website.name)
+    mock_task.delay.assert_called_once_with(website.name, website.draft_publish_date)
 
 
 def test_publish_website(settings, mocker):
@@ -146,7 +147,7 @@ def test_publish_website(settings, mocker):
     mock_task = mocker.patch("content_sync.tasks.publish_website_backend")
     website = WebsiteFactory.create()
     api.publish_website(website)
-    mock_task.delay.assert_called_once_with(website.name)
+    mock_task.delay.assert_called_once_with(website.name, website.publish_date)
 
 
 def test_sync_github_website_starters(mocker):
@@ -193,3 +194,13 @@ def test_create_website_publishing_pipeline_disabled(settings, mocker):
     website = WebsiteFactory.create()
     api.create_website_publishing_pipeline(website)
     mock_task.assert_not_called()
+
+
+@pytest.mark.parametrize("version", ["live", "draft"])
+def test_unpause_publishing_pipeline(mocker, version):
+    """unpause_publishing_pipeline should call the expected functions"""
+    mock_pipeline_api = mocker.patch("content_sync.api.get_sync_pipeline")
+    website = WebsiteFactory.create()
+    unpause_publishing_pipeline(website, version)
+    mock_pipeline_api.assert_called_once_with(website)
+    mock_pipeline_api.return_value.unpause_pipeline.assert_called_once_with(version)

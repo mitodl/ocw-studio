@@ -172,7 +172,6 @@ def test_upsert_website_pipelines(
         )
     assert f"purge/{website.name}" in config_str
     assert f" --metadata site-id={website.name}" in config_str
-    mock_put.assert_any_call(url_path.replace("config", "unpause"))
 
 
 @pytest.mark.parametrize(
@@ -219,4 +218,20 @@ def test_trigger_pipeline_build(settings, mocker, version):
     )
     mock_post.assert_called_once_with(
         f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/jobs/{job_name}/builds?vars={pipeline.instance_vars}"
+    )
+
+
+@pytest.mark.parametrize("version", ["live", "draft"])
+def test_unpause_pipeline(settings, mocker, version):
+    settings.CONCOURSE_TEAM = "myteam"
+    mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
+        )
+    )
+    pipeline = ConcourseGithubPipeline(website)
+    pipeline.unpause_pipeline(version)
+    mock_put.assert_called_once_with(
+        f"/api/v1/teams/myteam/pipelines/{version}/unpause?vars={pipeline.instance_vars}"
     )

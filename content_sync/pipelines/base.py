@@ -44,3 +44,10 @@ class BaseSyncPipeline(abc.ABC):
         Called to trigger the website pipeline.
         """
         ...
+
+    @abc.abstractmethod
+    def unpause_pipeline(self, version: str):
+        """
+        Called to unpause a website pipeline.
+        """
+        ...
