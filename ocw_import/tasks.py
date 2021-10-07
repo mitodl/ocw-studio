@@ -6,6 +6,7 @@ from django.conf import settings
 from mitol.common.utils.collections import chunks
 
 from main.celery import app
+from main.tasks import chord_finisher
 from ocw_import.api import fetch_ocw2hugo_course_paths, import_ocw2hugo_course
 from websites.constants import WEBSITE_SOURCE_OCW_IMPORT
 from websites.models import Website, WebsiteStarter
@@ -104,6 +105,10 @@ def import_ocw2hugo_courses(
         )
         for paths in chunks(course_paths, chunk_size=chunk_size)
     ]
-    if delete_unpublished_courses_task is not None:
-        course_tasks.append(delete_unpublished_courses_task)
-    raise self.replace(celery.group(course_tasks))
+    # Make sure that the delete task doesn't take place until after all the import tasks complete
+    import_steps = celery.chord(celery.group(course_tasks), chord_finisher.si())
+    delete_steps = celery.group(
+        [delete_unpublished_courses_task] if delete_unpublished else []
+    )
+    workflow = celery.chain(import_steps, delete_steps)
+    raise self.replace(celery.group(workflow))

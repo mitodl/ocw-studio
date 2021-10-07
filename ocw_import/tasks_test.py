@@ -57,14 +57,23 @@ def test_import_ocw2hugo_course_paths(mocker, paths, course_starter, settings):
     "chunk_size, filter_str, limit, call_count",
     [[1, None, None, 3], [1, "1-050", None, 1], [2, None, None, 2], [1, None, 1, 1]],
 )
+@pytest.mark.parametrize("delete_unpublished", [True, False])
 def test_import_ocw2hugo_courses(
-    settings, mocked_celery, mocker, filter_str, chunk_size, limit, call_count
+    settings,
+    mocked_celery,
+    mocker,
+    filter_str,
+    chunk_size,
+    limit,
+    call_count,
+    delete_unpublished,
 ):
     """
     import_ocw2hugo_course_paths should be called correct # times for given chunk size, limit, filter, and # of paths
     """
     setup_s3(settings)
     mock_import_paths = mocker.patch("ocw_import.tasks.import_ocw2hugo_course_paths.si")
+    mock_delete_task = mocker.patch("ocw_import.tasks.delete_unpublished_courses.si")
     with pytest.raises(mocked_celery.replace_exception_class):
         import_ocw2hugo_courses.delay(
             bucket_name=MOCK_BUCKET_NAME,
@@ -72,8 +81,10 @@ def test_import_ocw2hugo_courses(
             chunk_size=chunk_size,
             filter_str=filter_str,
             limit=limit,
+            delete_unpublished=delete_unpublished,
         )
     assert mock_import_paths.call_count == call_count
+    assert mock_delete_task.call_count == (1 if delete_unpublished else 0)
 
 
 def test_import_ocw2hugo_courses_nobucket(mocker):
