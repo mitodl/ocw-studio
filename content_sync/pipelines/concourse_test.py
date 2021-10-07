@@ -160,22 +160,18 @@ def test_upsert_website_pipelines(
             f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/{website.name} s3://{bucket}/{website.name}"
             in config_str
         )
-
-        assert f"aws s3 sync course-markdown/public s3://{bucket}/\\\\n" in config_str
-
-        assert "purge_all" in config_str
+        assert f"aws s3 sync course-markdown/public s3://{bucket}/" in config_str
     else:
         assert (
             f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/courses/{website.name} s3://{bucket}/courses/{website.name}"
             in config_str
         )
-
         assert (
-            f"aws s3 sync course-markdown/public s3://{bucket}/courses/{website.name}\\\\n"
+            f"aws s3 sync course-markdown/public s3://{bucket}/courses/{website.name}"
             in config_str
         )
-
-        assert f"purge/courses/{website.name}" in config_str
+    assert f"purge/{website.name}" in config_str
+    assert f" --metadata site-id={website.name}" in config_str
     mock_put.assert_any_call(url_path.replace("config", "unpause"))
 
 
