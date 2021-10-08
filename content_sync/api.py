@@ -52,6 +52,13 @@ def create_website_publishing_pipeline(website: Website):
     tasks.upsert_website_publishing_pipeline.delay(website.name)
 
 
+@is_publish_pipeline_enabled
+def unpause_publishing_pipeline(website: Website, version: str):
+    """Unpause the publishing pipeline"""
+    pipeline = get_sync_pipeline(website)
+    pipeline.unpause_pipeline(version)
+
+
 @is_sync_enabled
 def update_website_backend(website: Website):
     """ Update the backend content for a website"""
@@ -61,13 +68,13 @@ def update_website_backend(website: Website):
 @is_sync_enabled
 def preview_website(website: Website):
     """ Create a preview for the website on the backend"""
-    tasks.preview_website_backend.delay(website.name)
+    tasks.preview_website_backend.delay(website.name, website.draft_publish_date)
 
 
 @is_sync_enabled
 def publish_website(website: Website):
     """ Publish the website on the backend"""
-    tasks.publish_website_backend.delay(website.name)
+    tasks.publish_website_backend.delay(website.name, website.publish_date)
 
 
 def sync_github_website_starters(

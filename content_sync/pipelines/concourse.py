@@ -184,7 +184,6 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
             except HTTPError:
                 version_headers = None
             self.ci.put_with_headers(url_path, data=config, headers=version_headers)
-            self.ci.put(url_path.replace("/config", "/unpause"))
 
     def trigger_pipeline_build(self, version: str):
         """Trigger a pipeline build"""
@@ -194,4 +193,10 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
         job_name = pipeline_info["config"]["jobs"][0]["name"]
         self.ci.post(
             f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/jobs/{job_name}/builds?vars={self.instance_vars}"
+        )
+
+    def unpause_pipeline(self, version):
+        """Unpause the pipeline"""
+        self.ci.put(
+            f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/unpause?vars={self.instance_vars}"
         )

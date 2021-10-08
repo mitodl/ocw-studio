@@ -130,7 +130,7 @@ def sync_website_content(website_name: str):
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_website_task(10)
-def preview_website_backend(website_name: str):
+def preview_website_backend(website_name: str, preview_date: str):
     """
     Create a new backend preview for the website.
     """
@@ -138,10 +138,11 @@ def preview_website_backend(website_name: str):
         website = Website.objects.get(name=website_name)
         for action in settings.PREPUBLISH_ACTIONS:
             import_string(action)(website)
-
         backend = api.get_sync_backend(website)
         backend.sync_all_content_to_backend()
         backend.create_backend_preview()
+        if preview_date is None:
+            api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_DRAFT)
     except:  # pylint:disable=bare-except
         log.exception("Error previewing site %s", website.name)
         mail_website_admins_on_publish(website, BaseSyncPipeline.VERSION_DRAFT, False)
@@ -149,7 +150,7 @@ def preview_website_backend(website_name: str):
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_website_task(10)
-def publish_website_backend(website_name: str):
+def publish_website_backend(website_name: str, publish_date: str):
     """
     Create a new backend release for the website.
     """
@@ -157,10 +158,11 @@ def publish_website_backend(website_name: str):
         website = Website.objects.get(name=website_name)
         for action in settings.PREPUBLISH_ACTIONS:
             import_string(action)(website)
-
         backend = api.get_sync_backend(website)
         backend.sync_all_content_to_backend()
         backend.create_backend_release()
+        if publish_date is None:
+            api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_LIVE)
     except:  # pylint:disable=bare-except
         log.exception("Error publishing site %s", website.name)
         mail_website_admins_on_publish(website, BaseSyncPipeline.VERSION_LIVE, False)

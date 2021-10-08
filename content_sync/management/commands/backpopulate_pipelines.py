@@ -5,6 +5,7 @@ from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.api import get_sync_backend, get_sync_pipeline
+from content_sync.pipelines.base import BaseSyncPipeline
 from websites.models import Website
 
 
@@ -42,6 +43,13 @@ class Command(BaseCommand):
             action="store_true",
             help="Create backends if they do not exist (and sync them too)",
         )
+        parser.add_argument(
+            "-u",
+            "--unpause",
+            dest="unpause",
+            action="store_true",
+            help="Unpause the pipelines after creating/updating them",
+        )
 
     def handle(self, *args, **options):
 
@@ -57,6 +65,7 @@ class Command(BaseCommand):
         source_str = options["source"]
         is_verbose = options["verbosity"] > 1
         create_backends = options["create_backends"]
+        unpause = options["unpause"]
 
         total_websites = 0
 
@@ -79,7 +88,14 @@ class Command(BaseCommand):
                 backend.create_website_in_backend()
                 backend.sync_all_content_to_backend()
             if backend.backend_exists():
-                get_sync_pipeline(website).upsert_website_pipeline()
+                pipeline = get_sync_pipeline(website)
+                pipeline.upsert_website_pipeline()
+                if unpause:
+                    for version in [
+                        BaseSyncPipeline.VERSION_LIVE,
+                        BaseSyncPipeline.VERSION_DRAFT,
+                    ]:
+                        pipeline.unpause_pipeline(version)
                 total_websites += 1
 
             if is_verbose:
