@@ -33,7 +33,7 @@ class DriveFile(TimestampedModel):
     )
     name = models.CharField(null=False, blank=False, max_length=32767)
     mime_type = models.CharField(max_length=256, null=False, blank=False)
-    checksum = models.CharField(null=False, blank=False, max_length=32)
+    checksum = models.CharField(max_length=32, null=True, blank=True)
     download_link = models.URLField(null=False, blank=False)
     s3_key = models.CharField(max_length=32767, null=True, blank=True)
     status = models.CharField(

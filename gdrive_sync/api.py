@@ -101,53 +101,60 @@ def get_parent_tree(parents):
 
 def process_file_result(file_obj: Dict) -> bool:
     """Convert an API file response into a DriveFile object"""
-    parents = file_obj.get("parents")
-    if parents:
-        folder_tree = get_parent_tree(parents)
-        if len(folder_tree) < 2 or (
-            settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
-            and settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
-            not in [folder["id"] for folder in folder_tree]
-        ):
-            return
-
-        folder_names = [folder["name"] for folder in folder_tree]
-        for folder_name in folder_names:
-            website = Website.objects.filter(short_id=folder_name).first()
-            if website:
-                break
-        in_video_folder = DRIVE_FOLDER_VIDEOS_FINAL in folder_names
-        in_file_folder = DRIVE_FOLDER_FILES_FINAL in folder_names
-        is_video = "video/" in file_obj["mimeType"]
-        processable = (in_video_folder and is_video) or (
-            in_file_folder and not is_video
-        )
-        if website and processable:
-            existing_file = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
-            if (
-                existing_file
-                and existing_file.checksum == file_obj.get("md5Checksum")
-                and existing_file.name == file_obj.get("name")
+    try:
+        parents = file_obj.get("parents")
+        if parents:
+            folder_tree = get_parent_tree(parents)
+            if len(folder_tree) < 2 or (
+                settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
+                and settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
+                not in [folder["id"] for folder in folder_tree]
             ):
-                # For inexplicable reasons, sometimes Google Drive continuously updates
-                # the modifiedTime of files, so only update the DriveFile if the checksum or name changed.
                 return
-            drive_file, _ = DriveFile.objects.update_or_create(
-                file_id=file_obj.get("id"),
-                defaults={
-                    "name": file_obj.get("name"),
-                    "mime_type": file_obj.get("mimeType"),
-                    "checksum": file_obj.get("md5Checksum"),
-                    "modified_time": file_obj.get("modifiedTime"),
-                    "created_time": file_obj.get("createdTime"),
-                    "download_link": file_obj.get("webContentLink"),
-                    "drive_path": "/".join(
-                        [folder.get("name") for folder in folder_tree]
-                    ),
-                    "website": website,
-                },
+
+            folder_names = [folder["name"] for folder in folder_tree]
+            for folder_name in folder_names:
+                website = Website.objects.filter(short_id=folder_name).first()
+                if website:
+                    break
+            in_video_folder = DRIVE_FOLDER_VIDEOS_FINAL in folder_names
+            in_file_folder = DRIVE_FOLDER_FILES_FINAL in folder_names
+            is_video = "video/" in file_obj["mimeType"]
+            processable = (
+                (in_video_folder and is_video)
+                or (in_file_folder and not is_video)
+                and file_obj.get("webContentLink") is not None
             )
-            return drive_file
+            if website and processable:
+                existing_file = DriveFile.objects.filter(
+                    file_id=file_obj.get("id")
+                ).first()
+                if (
+                    existing_file
+                    and existing_file.checksum == file_obj.get("md5Checksum", "")
+                    and existing_file.name == file_obj.get("name")
+                ):
+                    # For inexplicable reasons, sometimes Google Drive continuously updates
+                    # the modifiedTime of files, so only update the DriveFile if the checksum or name changed.
+                    return
+                drive_file, _ = DriveFile.objects.update_or_create(
+                    file_id=file_obj.get("id"),
+                    defaults={
+                        "name": file_obj.get("name"),
+                        "mime_type": file_obj.get("mimeType"),
+                        "checksum": file_obj.get("md5Checksum"),
+                        "modified_time": file_obj.get("modifiedTime"),
+                        "created_time": file_obj.get("createdTime"),
+                        "download_link": file_obj.get("webContentLink"),
+                        "drive_path": "/".join(
+                            [folder.get("name") for folder in folder_tree]
+                        ),
+                        "website": website,
+                    },
+                )
+                return drive_file
+    except:  # pylint:disable=bare-except
+        log.exception("Error processing gdrive file id %s", file_obj.get("id", ""))
     return None
 
 
