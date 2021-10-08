@@ -113,9 +113,7 @@ jobs:
               - -X
               - POST
               - -H
-              - 'Fastly-Key: ((fastly.api_token))'
-              - -H
-              - 'Fastly-Soft-Purge: 1'
+              - 'Fastly-Key: ((fastly.api_token))'((purge_header))
               - https://api.fastly.com/service/((fastly.service_id))/((purge-url))
         on_success:
           try:

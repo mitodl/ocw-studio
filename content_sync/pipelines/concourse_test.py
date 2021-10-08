@@ -93,10 +93,12 @@ def test_upsert_website_pipeline_missing_settings(settings):
 )
 @pytest.mark.parametrize("home_page", [True, False])
 @pytest.mark.parametrize("pipeline_exists", [True, False])
+@pytest.mark.parametrize("hard_purge", [True, False])
 def test_upsert_website_pipelines(
-    mocker, settings, version, home_page, pipeline_exists
+    mocker, settings, version, home_page, pipeline_exists, hard_purge
 ):  # pylint:disable=too-many-locals
     """The correct concourse API args should be made for a website"""
+    settings.CONCOURSE_HARD_PURGE = hard_purge
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
     settings.API_BEARER_TOKEN = "top-secret-token"
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
@@ -171,6 +173,8 @@ def test_upsert_website_pipelines(
         )
     assert f"purge/{website.name}" in config_str
     assert f" --metadata site-id={website.name}" in config_str
+    has_soft_purge_header = "Fastly-Soft-Purge" in config_str
+    assert has_soft_purge_header is not hard_purge
 
 
 @pytest.mark.parametrize(

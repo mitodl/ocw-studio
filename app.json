@@ -75,6 +75,10 @@
       "description": "Early executed tasks propagate exceptions",
       "required": false
     },
+    "CONCOURSE_HARD_PURGE": {
+      "description": "Perform a hard purge of the fastly cache",
+      "required": false
+    },
     "CONCOURSE_PASSWORD": {
       "description": "The concourse-ci login password",
       "required": false

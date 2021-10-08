@@ -814,6 +814,12 @@ CONCOURSE_TEAM = get_string(
     description="The concourse-ci team",
     required=False,
 )
+CONCOURSE_HARD_PURGE = get_bool(
+    name="CONCOURSE_HARD_PURGE",
+    default=True,
+    description="Perform a hard purge of the fastly cache",
+    required=False,
+)
 
 # Git backend settings
 GIT_TOKEN = get_string(
