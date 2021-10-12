@@ -209,6 +209,7 @@ def test_update_youtube_statuses(
             mock_mail_youtube_upload_success.assert_any_call(video_file)
             assert video_file.video.drivefile_set.first().resource.metadata == {
                 "resourcetype": "Video",
+                "file_type": video_file.video.drivefile_set.first().mime_type,
                 "video_files": {
                     "video_thumbnail_file": f"https://img.youtube.com/vi/{video_file.destination_id}/0.jpg"
                 },
