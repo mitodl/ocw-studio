@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.29.2
+Version 0.29.2 (Released October 12, 2021)
 --------------
 
 - add tables to CKEditor config for Markdown editor #645
