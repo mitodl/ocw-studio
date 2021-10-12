@@ -144,9 +144,10 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     if (fetchWebsiteContentListing) {
       // refresh to have the new item show up in the listing
       fetchWebsiteContentListing()
-      // and to update the publish status
-      refreshWebsite()
     }
+
+    // update the publish status
+    refreshWebsite()
 
     if (hideModal) {
       // turn off modal on success
