@@ -94,7 +94,7 @@ def test_upsert_website_pipeline_missing_settings(settings):
 @pytest.mark.parametrize("home_page", [True, False])
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("hard_purge", [True, False])
-def test_upsert_website_pipelines(
+def test_upsert_website_pipelines(  # pylint: disable=too-many-arguments
     mocker, settings, version, home_page, pipeline_exists, hard_purge
 ):  # pylint:disable=too-many-locals
     """The correct concourse API args should be made for a website"""
