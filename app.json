@@ -111,12 +111,8 @@
       "description": "The log level for django",
       "required": false
     },
-    "DRIVE_QUERY_FILES_SECONDS": {
-      "description": "The frequency to check for new google drive files (non-videos), in seconds",
-      "required": false
-    },
-    "DRIVE_QUERY_VIDEOS_SECONDS": {
-      "description": "The frequency to check for new google drive videos, in seconds",
+    "DRIVE_IMPORT_RECENT_FILES_SECONDS": {
+      "description": "The frequency to check for new google drive files/videos, in seconds",
       "required": false
     },
     "DRIVE_S3_UPLOAD_PREFIX": {

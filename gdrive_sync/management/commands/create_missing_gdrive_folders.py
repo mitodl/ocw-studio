@@ -19,16 +19,36 @@ class Command(BaseCommand):
             default="",
             help="If specified, only process websites that have this short_id or name",
         )
+        parser.add_argument(
+            "-c",
+            "--starter",
+            dest="starter",
+            default="",
+            help="If specified, only process websites that have this site config starter slug",
+        )
+        parser.add_argument(
+            "-s",
+            "--source",
+            dest="source",
+            default="",
+            help="If specified, only process websites that have this type",
+        )
 
     def handle(self, *args, **options):
         if settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS:
             websites = Website.objects.filter(owner_id__isnull=False)
             website_filter = options["website"].lower()
+            starter_filter = options["starter"].lower()
+            source_filter = options["source"].lower()
             if website_filter:
                 websites = websites.filter(
                     Q(name__icontains=website_filter)
                     | Q(short_id__icontains=website_filter)
                 )
+            if starter_filter:
+                websites = websites.filter(starter__slug=starter_filter)
+            if source_filter:
+                websites = websites.filter(source=source_filter)
 
             self.stdout.write(
                 self.style.WARNING(

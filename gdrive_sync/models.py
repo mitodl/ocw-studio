@@ -2,7 +2,11 @@
 from django.db import models
 from mitol.common.models import TimestampedModel
 
-from gdrive_sync.constants import DRIVE_API_RESOURCES, DriveFileStatus
+from gdrive_sync.constants import (
+    DRIVE_API_RESOURCES,
+    DRIVE_FOLDER_VIDEOS_FINAL,
+    DriveFileStatus,
+)
 from videos.models import Video
 from websites.models import Website, WebsiteContent
 
@@ -15,13 +19,10 @@ class DriveApiQueryTracker(TimestampedModel):
         blank=False,
         max_length=128,
         choices=zip(DRIVE_API_RESOURCES, DRIVE_API_RESOURCES),
+        unique=True,
     )
-    for_video = models.BooleanField(default=True, null=False, blank=False)
     last_page = models.CharField(max_length=2048, null=True, blank=True)
     last_dt = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        unique_together = ("api_call", "for_video")
 
 
 class DriveFile(TimestampedModel):
@@ -53,6 +54,10 @@ class DriveFile(TimestampedModel):
         """ Update the DriveFile status"""
         self.status = status
         self.save()
+
+    def is_video(self):
+        """Return True if is is in the video folder"""
+        return DRIVE_FOLDER_VIDEOS_FINAL in self.drive_path.split("/")
 
     def __str__(self):
         return f"'{self.name}' ({self.drive_path} {self.status} {self.file_id})"

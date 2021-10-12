@@ -139,7 +139,9 @@ describe("RepeatableContentListing", () => {
       // @ts-ignore
       const { wrapper } = await render()
       const syncLink = wrapper.find("a.sync")
+      const addLink = wrapper.find("a.add")
       expect(syncLink.exists()).toBe(isGdriveEnabled)
+      expect(addLink.exists()).toBe(!isGdriveEnabled)
     })
   })
   ;[

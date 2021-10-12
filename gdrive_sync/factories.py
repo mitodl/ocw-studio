@@ -15,7 +15,6 @@ class DriveApiQueryTrackerFactory(DjangoModelFactory):
     api_call = FuzzyChoice(DRIVE_API_RESOURCES)
     last_page = factory.Faker("md5")
     last_dt = factory.Faker("date_time", tzinfo=pytz.utc)
-    for_video = True
 
     class Meta:
         model = models.DriveApiQueryTracker
