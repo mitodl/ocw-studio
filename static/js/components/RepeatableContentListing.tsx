@@ -155,7 +155,7 @@ export default function RepeatableContentListing(props: {
           <div className="d-flex flex-direction-row align-items-right justify-content-between pb-1Z">
             <h3>{configItem.label}</h3>
             <div>
-              {SETTINGS.gdrive_enabled ? (
+              {SETTINGS.gdrive_enabled && configItem.name === "resource" ? (
                 <a
                   className="btn blue-button sync ml-2"
                   onClick={onSubmitContentSync}

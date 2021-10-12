@@ -63,7 +63,7 @@ describe("RepeatableContentListing", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
-    configItem = makeRepeatableConfigItem()
+    configItem = makeRepeatableConfigItem("resource")
     contentListingItems = [
       makeWebsiteContentListItem(),
       makeWebsiteContentListItem()
@@ -134,14 +134,17 @@ describe("RepeatableContentListing", () => {
     helper.cleanup()
   })
   ;[true, false].forEach(isGdriveEnabled => {
-    it(`${shouldIf(isGdriveEnabled)} show the gdrive sync link`, async () => {
-      SETTINGS.gdrive_enabled = isGdriveEnabled
-      // @ts-ignore
-      const { wrapper } = await render()
-      const syncLink = wrapper.find("a.sync")
-      const addLink = wrapper.find("a.add")
-      expect(syncLink.exists()).toBe(isGdriveEnabled)
-      expect(addLink.exists()).toBe(!isGdriveEnabled)
+    [true, false].forEach(isResource => {
+      it(`${shouldIf(isGdriveEnabled)} show the gdrive sync link`, async () => {
+        SETTINGS.gdrive_enabled = isGdriveEnabled
+        // @ts-ignore
+        configItem = makeRepeatableConfigItem(isResource ? "resource" : "page")
+        const { wrapper } = await render()
+        const syncLink = wrapper.find("a.sync")
+        const addLink = wrapper.find("a.add")
+        expect(syncLink.exists()).toBe(isGdriveEnabled)
+        expect(addLink.exists()).toBe(!isGdriveEnabled)
+      })
     })
   })
   ;[
