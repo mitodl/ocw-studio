@@ -10,6 +10,8 @@ from django.conf import settings
 from googleapiclient.errors import HttpError, ResumableUploadError
 from moto import mock_s3
 
+from gdrive_sync.api import create_gdrive_resource_content
+from gdrive_sync.factories import DriveFileFactory
 from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
 from videos.conftest import MockHttpErrorResponse
 from videos.constants import (
@@ -193,6 +195,10 @@ def test_update_youtube_statuses(
     mock_mail_youtube_upload_success = mocker.patch(
         "videos.tasks.mail_youtube_upload_success"
     )
+    mocker.patch("gdrive_sync.api.get_resource_type", return_value=RESOURCE_TYPE_VIDEO)
+    for video_file in youtube_video_files_processing:
+        drive_file = DriveFileFactory.create(video=video_file.video)
+        create_gdrive_resource_content(drive_file)
     update_youtube_statuses()
     assert VideoFile.objects.filter(
         destination_status=YouTubeStatus.PROCESSED, status=VideoFileStatus.COMPLETE
@@ -201,6 +207,13 @@ def test_update_youtube_statuses(
         mock_youtube.assert_called_once()
         for video_file in youtube_video_files_processing:
             mock_mail_youtube_upload_success.assert_any_call(video_file)
+            assert video_file.video.drivefile_set.first().resource.metadata == {
+                "resourcetype": "Video",
+                "video_files": {
+                    "video_thumbnail_file": f"https://img.youtube.com/vi/{video_file.destination_id}/0.jpg"
+                },
+                "video_metadata": {"youtube_id": video_file.destination_id},
+            }
     else:
         mock_youtube.assert_not_called()
         mock_mail_youtube_upload_success.assert_not_called()

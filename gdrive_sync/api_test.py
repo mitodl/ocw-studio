@@ -1,28 +1,40 @@
 """gdrive_sync.api tests"""
 import json
+import os
 
 import pytest
+from botocore.exceptions import ClientError
 from moto import mock_s3
 from requests import HTTPError
 
 from gdrive_sync import api
-from gdrive_sync.api import get_resource_type, process_file_result
+from gdrive_sync.api import (
+    create_gdrive_resource_content,
+    get_resource_type,
+    process_file_result,
+    transcode_gdrive_video,
+    walk_gdrive_folder,
+)
 from gdrive_sync.conftest import LIST_VIDEO_RESPONSES
 from gdrive_sync.constants import (
-    DRIVE_FOLDER_FILES,
-    DRIVE_FOLDER_VIDEOS,
+    DRIVE_FILE_FIELDS,
+    DRIVE_FOLDER_FILES_FINAL,
+    DRIVE_FOLDER_VIDEOS_FINAL,
+    DRIVE_MIMETYPE_FOLDER,
     DriveFileStatus,
 )
 from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.models import DriveFile
 from main.s3_utils import get_s3_resource
+from videos.constants import VideoStatus
 from websites.constants import (
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
 )
-from websites.factories import WebsiteFactory
+from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.models import WebsiteContent
 
 
 pytestmark = pytest.mark.django_db
@@ -48,26 +60,28 @@ def test_get_drive_service(settings, mocker):
 
 
 @pytest.mark.parametrize("drive_id", [None, "testDrive"])
-def test_get_file_list(settings, mock_service, drive_id):
-    """get_file_list should return expected results"""
+def test_query_files(settings, mock_service, drive_id):
+    """query_files should return expected results"""
     settings.DRIVE_SHARED_ID = drive_id
     query = "(mimeType contains 'video/')"
 
     mock_list = mock_service.return_value.files.return_value.list
     mock_execute = mock_list.return_value.execute
     mock_execute.side_effect = LIST_VIDEO_RESPONSES
-    fields = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)"
 
     drive_kwargs = {"driveId": drive_id, "corpora": "drive"} if drive_id else {}
     query_kwargs = {"q": query} if query else {}
     extra_kwargs = {**drive_kwargs, **query_kwargs}
-    files = api.get_file_list(query=query, fields=fields)
-    assert files == LIST_VIDEO_RESPONSES[0]["files"] + LIST_VIDEO_RESPONSES[1]["files"]
+    files = api.query_files(query=query, fields=DRIVE_FILE_FIELDS)
+    assert (
+        list(files)
+        == LIST_VIDEO_RESPONSES[0]["files"] + LIST_VIDEO_RESPONSES[1]["files"]
+    )
     assert mock_execute.call_count == 2
     expected_kwargs = {
         "supportsAllDrives": True,
         "includeItemsFromAllDrives": True,
-        "fields": fields,
+        "fields": DRIVE_FILE_FIELDS,
         **extra_kwargs,
     }
     mock_list.assert_any_call(**expected_kwargs)
@@ -158,7 +172,7 @@ def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-argum
         existing_list_response = []
 
     mock_list_files = mocker.patch(
-        "gdrive_sync.api.get_file_list", side_effect=[existing_list_response, [], []]
+        "gdrive_sync.api.query_files", side_effect=[existing_list_response, [], [], []]
     )
 
     if parent_folder_in_ancestors:
@@ -177,7 +191,12 @@ def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-argum
 
     mock_create = mock_service.return_value.files.return_value.create
     mock_execute = mock_create.return_value.execute
-    mock_execute.side_effect = [{"id": site_folder_id}, {"id": "sub1"}, {"id": "sub2"}]
+    mock_execute.side_effect = [
+        {"id": site_folder_id},
+        {"id": "sub1"},
+        {"id": "sub2"},
+        {"id": "sub3"},
+    ]
 
     api.create_gdrive_folders(website_short_id=website_short_id)
 
@@ -191,7 +210,7 @@ def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-argum
     if not folder_exists or (parent_folder and not parent_folder_in_ancestors):
         expected_file_metadata = {
             "name": website_short_id,
-            "mimeType": "application/vnd.google-apps.folder",
+            "mimeType": DRIVE_MIMETYPE_FOLDER,
         }
 
         if parent_folder:
@@ -203,13 +222,13 @@ def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-argum
             supportsAllDrives=True, body=expected_file_metadata, fields="id"
         )
 
-    for subfolder in [DRIVE_FOLDER_FILES, DRIVE_FOLDER_VIDEOS]:
+    for subfolder in [DRIVE_FOLDER_FILES_FINAL, DRIVE_FOLDER_VIDEOS_FINAL]:
         expected_folder_query = (
             f"{base_query}name = '{subfolder}' and parents = '{site_folder_id}'"
         )
         expected_file_metadata = {
             "name": subfolder,
-            "mimeType": "application/vnd.google-apps.folder",
+            "mimeType": DRIVE_MIMETYPE_FOLDER,
             "parents": [site_folder_id],
         }
         mock_list_files.assert_any_call(
@@ -246,8 +265,7 @@ def test_get_resource_type(settings, filename, mimetype, expected_type) -> str:
 
 @pytest.mark.parametrize("is_video", [True, False])
 @pytest.mark.parametrize("in_video_folder", [True, False])
-@pytest.mark.parametrize("import_video", [True, False])
-def test_process_file_result(settings, mocker, is_video, in_video_folder, import_video):
+def test_process_file_result(settings, mocker, is_video, in_video_folder):
     """process_file_result should create a DriveFile only if all conditions are met"""
     settings.DRIVE_SHARED_ID = "test_drive"
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
@@ -266,7 +284,9 @@ def test_process_file_result(settings, mocker, is_video, in_video_folder, import
             },
             {
                 "id": "subFolderId",
-                "name": DRIVE_FOLDER_VIDEOS if in_video_folder else DRIVE_FOLDER_FILES,
+                "name": DRIVE_FOLDER_VIDEOS_FINAL
+                if in_video_folder
+                else DRIVE_FOLDER_FILES_FINAL,
             },
         ],
     )
@@ -282,8 +302,120 @@ def test_process_file_result(settings, mocker, is_video, in_video_folder, import
         "md5Checksum": "633410252",
         "trashed": False,
     }
-    process_file_result(file_result, import_video=import_video)
+    process_file_result(file_result)
     assert DriveFile.objects.filter(file_id=file_result["id"]).exists() is (
-        (is_video and import_video and in_video_folder)
-        or (not is_video and not import_video and not in_video_folder)
+        (is_video and in_video_folder) or (not is_video and not in_video_folder)
     )
+
+
+def test_walk_gdrive_folder(mocker):
+    """walk_gdrive_folder should yield all expected files"""
+    files = [
+        [
+            {"id": "image1.jpg", "mimeType": "image/jpeg"},
+            {"id": "image2.jpg", "mimeType": "image/jpeg"},
+            {"id": "subfolder1", "mimeType": DRIVE_MIMETYPE_FOLDER},
+            {"id": "subfolder2", "mimeType": DRIVE_MIMETYPE_FOLDER},
+        ],
+        [
+            {"id": "subfolder1a.jpg", "mimeType": "image/jpeg"},
+            {"id": "subfolder1b.jpg", "mimeType": "image/jpeg"},
+            {"id": "subfolder1_1", "mimeType": DRIVE_MIMETYPE_FOLDER},
+        ],
+        [
+            {"id": "subfolder1_1a.pdf", "mimeType": "application/pdf"},
+            {"id": "subfolder1_1b.pdf", "mimeType": "application/pdf"},
+        ],
+        [
+            {"id": "subfolder2a.mp4", "mimeType": "application/pdf"},
+            {"id": "subfolder2b.mp4", "mimeType": "application/pdf"},
+        ],
+    ]
+    mock_query_files = mocker.patch("gdrive_sync.api.query_files", side_effect=files)
+    assert (list(walk_gdrive_folder("folderId", "field1,field2,field3"))) == [
+        item
+        for sublist in files
+        for item in sublist
+        if item["mimeType"] != DRIVE_MIMETYPE_FOLDER
+    ]
+    assert (
+        mock_query_files.call_count == 4
+    )  # parent, subfolder1, subfolder1_1, subfolder2
+
+
+def test_create_gdrive_resource_content(mocker):
+    """create_resource_from_gdrive should create a WebsiteContent object linked to a DriveFile object"""
+    mocker.patch(
+        "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
+    )
+    drive_file = DriveFileFactory.create(s3_key="test/path/word.docx")
+    create_gdrive_resource_content(drive_file)
+    content = WebsiteContent.objects.filter(
+        website=drive_file.website,
+        title=drive_file.name,
+        file=drive_file.s3_key,
+        type="resource",
+        is_page_content=True,
+        metadata={"resourcetype": RESOURCE_TYPE_DOCUMENT},
+    ).first()
+    assert content is not None
+    assert content.dirpath == "content/resource"
+    assert content.filename == os.path.splitext(drive_file.name)[0]
+    drive_file.refresh_from_db()
+    assert drive_file.resource == content
+
+
+def test_create_gdrive_resource_content_update(mocker):
+    """create_resource_from_gdrive should update a WebsiteContent object linked to a DriveFile object"""
+    mocker.patch(
+        "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
+    )
+    content = WebsiteContentFactory.create(file="test/path/old.doc")
+    drive_file = DriveFileFactory.create(
+        website=content.website, s3_key="test/path/word.docx", resource=content
+    )
+    assert content.file != drive_file.s3_key
+    create_gdrive_resource_content(drive_file)
+    content.refresh_from_db()
+    drive_file.refresh_from_db()
+    assert content.file == drive_file.s3_key
+    assert drive_file.resource == content
+
+
+@pytest.mark.parametrize("account_id", [None, "accountid123"])
+@pytest.mark.parametrize("region", [None, "us-west-1"])
+@pytest.mark.parametrize("role_name", [None, "test-role"])
+def test_transcode_gdrive_video(settings, mocker, account_id, region, role_name):
+    """ transcode_gdrive_video should create Video object and call create_media_convert_job"""
+    settings.AWS_ACCOUNT_ID = account_id
+    settings.AWS_REGION = region
+    settings.AWS_ROLE_NAME = role_name
+    mock_convert_job = mocker.patch("gdrive_sync.api.create_media_convert_job")
+    drive_file = DriveFileFactory.create()
+    transcode_gdrive_video(drive_file)
+    drive_file.refresh_from_db()
+    if account_id and region and role_name:
+        assert drive_file.video.source_key == drive_file.s3_key
+        mock_convert_job.assert_called_once_with(drive_file.video)
+    else:
+        assert drive_file.video is None
+        mock_convert_job.assert_not_called()
+
+
+def test_transcode_gdrive_video_error(settings, mocker):
+    """Video status should be set to failure if a client error occurs"""
+    settings.AWS_ACCOUNT_ID = "accountABC"
+    settings.AWS_REGION = "us-east-1"
+    settings.AWS_ROLE_NAME = "roleDEF"
+    mocker.patch(
+        "gdrive_sync.api.create_media_convert_job",
+        side_effect=ClientError({"Error": {}}, "transcode"),
+    )
+    mock_log = mocker.patch("gdrive_sync.api.log.exception")
+    drive_file = DriveFileFactory.create()
+    transcode_gdrive_video(drive_file)
+    drive_file.refresh_from_db()
+    mock_log.assert_called_once_with(
+        "Error creating transcode job for %s", drive_file.video.source_key
+    )
+    assert drive_file.video.status == VideoStatus.FAILED

@@ -2,11 +2,14 @@
 import json
 import logging
 import os
-from typing import Dict, List
+from typing import Dict, Iterable
 
 import boto3
 import requests
+from botocore.exceptions import ClientError
 from django.conf import settings
+from django.db import transaction
+from django.utils.text import slugify
 from google.oauth2.service_account import (  # pylint:disable=no-name-in-module
     Credentials as ServiceAccountCredentials,
 )
@@ -14,18 +17,25 @@ from googleapiclient.discovery import Resource, build
 
 from gdrive_sync.constants import (
     DRIVE_FOLDER_FILES,
-    DRIVE_FOLDER_VIDEOS,
+    DRIVE_FOLDER_FILES_FINAL,
+    DRIVE_FOLDER_VIDEOS_FINAL,
+    DRIVE_MIMETYPE_FOLDER,
     VALID_TEXT_FILE_TYPES,
     DriveFileStatus,
 )
 from gdrive_sync.models import DriveFile
+from videos.api import create_media_convert_job
+from videos.constants import VideoStatus
+from videos.models import Video
+from websites.api import get_valid_new_filename
 from websites.constants import (
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
 )
-from websites.models import Website
+from websites.models import Website, WebsiteContent
+from websites.site_config_api import SiteConfig
 
 
 log = logging.getLogger(__name__)
@@ -40,7 +50,7 @@ def get_drive_service() -> Resource:
     return build("drive", "v3", credentials=creds, cache_discovery=False)
 
 
-def get_file_list(query: str, fields: str) -> List[Dict]:
+def query_files(query: str, fields: str) -> Iterable[Dict]:
     """
     Get a list of Google Drive files filtered by an optional query and drive id.
     """
@@ -51,7 +61,6 @@ def get_file_list(query: str, fields: str) -> List[Dict]:
         extra_kwargs["corpora"] = "drive"
 
     extra_kwargs["q"] = query
-    files = []
     next_token = "initial"
     while next_token is not None:
         file_response = (
@@ -64,13 +73,13 @@ def get_file_list(query: str, fields: str) -> List[Dict]:
             )
             .execute()
         )
-        files.extend(file_response["files"])
         next_token = file_response.get("nextPageToken", None)
         if next_token:
             extra_kwargs["pageToken"] = next_token
         else:
             extra_kwargs.pop("pageToken", None)
-    return files
+        for file_obj in file_response["files"]:
+            yield file_obj
 
 
 def get_parent_tree(parents):
@@ -90,7 +99,7 @@ def get_parent_tree(parents):
     return tree[1:]  # first one is the drive
 
 
-def process_file_result(file_obj: Dict, import_video: bool = False) -> bool:
+def process_file_result(file_obj: Dict) -> bool:
     """Convert an API file response into a DriveFile object"""
     parents = file_obj.get("parents")
     if parents:
@@ -107,11 +116,11 @@ def process_file_result(file_obj: Dict, import_video: bool = False) -> bool:
             website = Website.objects.filter(short_id=folder_name).first()
             if website:
                 break
-        in_video_folder = DRIVE_FOLDER_VIDEOS in folder_names
-        in_file_folder = DRIVE_FOLDER_FILES in folder_names
+        in_video_folder = DRIVE_FOLDER_VIDEOS_FINAL in folder_names
+        in_file_folder = DRIVE_FOLDER_FILES_FINAL in folder_names
         is_video = "video/" in file_obj["mimeType"]
-        processable = (in_video_folder and import_video and is_video) or (
-            in_file_folder and not import_video and not is_video
+        processable = (in_video_folder and is_video) or (
+            in_file_folder and not is_video
         )
         if website and processable:
             existing_file = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
@@ -219,7 +228,7 @@ def create_gdrive_folders(website_short_id: str) -> bool:
     query = f"{base_query}name = '{website_short_id}'"
 
     fields = "nextPageToken, files(id, name, parents)"
-    folders = get_file_list(query=query, fields=fields)
+    folders = query_files(query=query, fields=fields)
 
     if settings.DRIVE_UPLOADS_PARENT_FOLDER_ID:
         filtered_folders = []
@@ -237,7 +246,7 @@ def create_gdrive_folders(website_short_id: str) -> bool:
     if len(filtered_folders) == 0:
         folder_metadata = {
             "name": website_short_id,
-            "mimeType": "application/vnd.google-apps.folder",
+            "mimeType": DRIVE_MIMETYPE_FOLDER,
         }
         if settings.DRIVE_UPLOADS_PARENT_FOLDER_ID:
             folder_metadata["parents"] = [settings.DRIVE_UPLOADS_PARENT_FOLDER_ID]
@@ -252,13 +261,17 @@ def create_gdrive_folders(website_short_id: str) -> bool:
         folder_created = True
     else:
         folder = filtered_folders[0]
-    for subfolder in [DRIVE_FOLDER_FILES, DRIVE_FOLDER_VIDEOS]:
+    for subfolder in [
+        DRIVE_FOLDER_FILES,
+        DRIVE_FOLDER_FILES_FINAL,
+        DRIVE_FOLDER_VIDEOS_FINAL,
+    ]:
         query = f"{base_query}name = '{subfolder}' and parents = '{folder['id']}'"
-        folders = get_file_list(query=query, fields=fields)
+        folders = list(query_files(query=query, fields=fields))
         if len(folders) == 0:
             folder_metadata = {
                 "name": subfolder,
-                "mimeType": "application/vnd.google-apps.folder",
+                "mimeType": DRIVE_MIMETYPE_FOLDER,
                 "parents": [folder["id"]],
             }
             service.files().create(
@@ -291,3 +304,65 @@ def get_resource_type(key: str) -> str:
 def is_gdrive_enabled():
     """Determine if Gdrive integration is enabled via required settings"""
     return settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS
+
+
+def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[Dict]:
+    """ Yield a list of all files under a Google Drive folder and its subfolders"""
+    query = f'parents = "{folder_id}" and not trashed'
+    drive_results = query_files(query=query, fields=fields)
+    for result in drive_results:
+        if result["mimeType"] != DRIVE_MIMETYPE_FOLDER:
+            yield result
+        else:
+            for sub_result in walk_gdrive_folder(result["id"], fields):
+                yield sub_result
+
+
+@transaction.atomic
+def create_gdrive_resource_content(drive_file: DriveFile):
+    """Create a WebsiteContent resource from a Google Drive file"""
+    resource_type = get_resource_type(drive_file.s3_key)
+    resource = drive_file.resource
+    if not resource:
+        site_config = SiteConfig(drive_file.website.starter.config)
+        config_item = site_config.find_item_by_name(name="resource")
+        dirpath = config_item.file_target if config_item else None
+        basename, _ = os.path.splitext(drive_file.name)
+        filename = get_valid_new_filename(
+            website_pk=drive_file.website.pk,
+            dirpath=dirpath,
+            filename_base=slugify(basename),
+        )
+        resource = WebsiteContent.objects.create(
+            website=drive_file.website,
+            title=drive_file.name,
+            file=drive_file.s3_key,
+            type="resource",
+            is_page_content=True,
+            dirpath=dirpath,
+            filename=filename,
+            metadata={"resourcetype": resource_type},
+        )
+    else:
+        resource.file = drive_file.s3_key
+        resource.save()
+    drive_file.resource = resource
+    drive_file.save()
+
+
+def transcode_gdrive_video(drive_file: DriveFile):
+    """Create a MediaConvert transcode job and Video object for the given drive file id"""
+    if settings.AWS_ACCOUNT_ID and settings.AWS_REGION and settings.AWS_ROLE_NAME:
+        video, _ = Video.objects.get_or_create(
+            source_key=drive_file.s3_key,
+            website=drive_file.website,
+            defaults={"status": VideoStatus.CREATED},
+        )
+        drive_file.video = video
+        drive_file.save()
+        try:
+            create_media_convert_job(video)
+        except ClientError:
+            log.exception("Error creating transcode job for %s", video.source_key)
+            video.status = VideoStatus.FAILED
+            video.save()

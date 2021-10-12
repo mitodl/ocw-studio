@@ -3,7 +3,11 @@ import pytest
 
 from websites import constants
 from websites.factories import WebsiteFactory
-from websites.utils import get_dict_query_field, permissions_group_name_for_role
+from websites.utils import (
+    get_dict_query_field,
+    permissions_group_name_for_role,
+    set_dict_field,
+)
 
 
 @pytest.mark.parametrize(
@@ -49,3 +53,29 @@ def test_get_dict_query_field():
         get_dict_query_field("metadata", "video_files.video_captions_file")
         == "metadata__video_files__video_captions_file"
     )
+
+
+def test_set_dict_field():
+    """The input dict should get updated with the expected keys/values"""
+    input_dict = {"section_a": {"section_b": {"parameter_1": "a", "parameter_2": "b"}}}
+    set_dict_field(input_dict, "section_a.section_b.parameter_3", "c")
+    set_dict_field(input_dict, "section_a.new_param", "new_val_for_a")
+    set_dict_field(input_dict, "section_a.section_b.parameter_2", "b_updated")
+    set_dict_field(input_dict, "section_c.parameter_1", "new_section_val")
+    set_dict_field(input_dict, "video_files.parameter_1", "value1")
+    set_dict_field(input_dict, "video_files.parameter_2", "value2")
+    assert input_dict == {
+        "section_a": {
+            "new_param": "new_val_for_a",
+            "section_b": {
+                "parameter_1": "a",
+                "parameter_2": "b_updated",
+                "parameter_3": "c",
+            },
+        },
+        "section_c": {"parameter_1": "new_section_val"},
+        "video_files": {
+            "parameter_1": "value1",
+            "parameter_2": "value2",
+        },
+    }

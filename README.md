@@ -222,9 +222,7 @@ You can enable Concourse-CI integration to create and trigger publishing pipelin
   - `trigger_pipelines <version>`: to manually trigger the draft or live pipeline for all or some existing `Websites` (filters available)
   
   
-YouTube Integration
-~~~~~~~~~~~~~~~~~~~
-
+# Enabling YouTube integration
 - Create a new project at https://console.cloud.google.com/apis/dashboard
   - Save the project ID in your ``.env`` file as ``YT_PROJECT_ID``
 - Create an OAuth client ID for the project (type: ``Desktop client``)
@@ -240,3 +238,21 @@ YouTube Integration
 - Click on the provided link, follow the prompts, and enter the verification code back in the shell.
 - Save the ``YT_ACCESS_TOKEN`` and ``YT_REFRESH_TOKEN`` values to your ``.env`` file
 
+
+# Enabling Google Drive integration
+With Google Drive integration enabled, a folder on the specified Team Drive will be created for each new website.
+The folder will have the same name as the short_id of the website.  Under this folder will be 3 subfolders:
+`files`, `files_final`, `videos_final`.  Videos should be uploaded to `videos_final`, everything else should be uploaded
+to `files_final`.  The `files` folder is just for temporary storage.  
+
+If this integration is enabled, manual resource creation and file uploads will no longer be possible.  Files must
+be uploaded to Google Drive first, and then the "Sync w/Google Drive" button will import and create resources for them.
+
+- Add the following to your .env file:
+    ``` 
+    AWS_STORAGE_BUCKET_NAME: The S3 bucket to upload google drive files to.  Also populate AWS authentication settings.
+    DRIVE_SHARED_ID=The id of your Google Team Drive
+    DRIVE_SERVICE_ACCOUNT_CREDS=The required Google service account credentials in JSON format.
+    DRIVE_IMPORT_RECENT_FILES_SECONDS=Optional, default 3600. The frequency to check for new/updated files.
+    DRIVE_UPLOADS_PARENT_FOLDER_ID=Optional, the folder id in the team drive where course folders should go.
+   ```

@@ -19,7 +19,7 @@ def get_dict_field(obj: Dict, field_path: str) -> Any:
     fields = field_path.split(".")
     current_obj = obj
     for field in fields[:-1]:
-        current_obj = current_obj.get(field)
+        current_obj = current_obj.get(field, {})
     return current_obj.get(fields[-1])
 
 
@@ -28,7 +28,12 @@ def set_dict_field(obj: Dict, field_path: str, value: Any):
     fields = field_path.split(".")
     current_obj = obj
     for field in fields[:-1]:
-        current_obj = current_obj.get(field)
+        current_obj_field = current_obj.get(field)
+        if current_obj_field:
+            current_obj = current_obj_field
+        else:
+            current_obj[field] = {}
+            current_obj = current_obj[field]
     current_obj[fields[-1]] = value
 
 

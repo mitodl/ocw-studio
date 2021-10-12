@@ -155,9 +155,6 @@ export default function RepeatableContentListing(props: {
           <div className="d-flex flex-direction-row align-items-right justify-content-between pb-1Z">
             <h3>{configItem.label}</h3>
             <div>
-              <a className="btn blue-button add" onClick={startAddOrEdit(null)}>
-                Add {labelSingular}
-              </a>
               {SETTINGS.gdrive_enabled ? (
                 <a
                   className="btn blue-button sync ml-2"
@@ -165,7 +162,14 @@ export default function RepeatableContentListing(props: {
                 >
                   Sync w/Google Drive
                 </a>
-              ) : null}
+              ) : (
+                <a
+                  className="btn blue-button add"
+                  onClick={startAddOrEdit(null)}
+                >
+                  Add {labelSingular}
+                </a>
+              )}
             </div>
           </div>
           <ul className="ruled-list">

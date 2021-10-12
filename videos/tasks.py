@@ -3,9 +3,11 @@ import logging
 
 import boto3
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Q
 from googleapiclient.errors import HttpError
 
+from gdrive_sync.models import DriveFile
 from main.celery import app
 from main.constants import STATUS_CREATED
 from videos import threeplay_api
@@ -78,12 +80,27 @@ def update_youtube_statuses():
     youtube = YouTubeApi()
     for video_file in videos_processing:
         try:
-            video_file.destination_status = youtube.video_status(
-                video_file.destination_id
-            )
-            if video_file.destination_status == YouTubeStatus.PROCESSED:
-                video_file.status = VideoFileStatus.COMPLETE
-            video_file.save()
+            with transaction.atomic():
+                video_file.destination_status = youtube.video_status(
+                    video_file.destination_id
+                )
+                if video_file.destination_status == YouTubeStatus.PROCESSED:
+                    video_file.status = VideoFileStatus.COMPLETE
+                video_file.save()
+                drive_file = DriveFile.objects.filter(video=video_file.video).first()
+                if drive_file and drive_file.resource:
+                    resource = drive_file.resource
+                    set_dict_field(
+                        resource.metadata,
+                        settings.YT_FIELD_ID,
+                        video_file.destination_id,
+                    )
+                    set_dict_field(
+                        resource.metadata,
+                        settings.YT_FIELD_THUMBNAIL,
+                        f"https://img.youtube.com/vi/{video_file.destination_id}/0.jpg",
+                    )
+                    resource.save()
             mail_youtube_upload_success(video_file)
         except IndexError:
             # Video might be a dupe or deleted, mark it as failed and continue to next one.
