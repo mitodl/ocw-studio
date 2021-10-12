@@ -348,7 +348,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
             is_page_content=True,
             dirpath=dirpath,
             filename=filename,
-            metadata={"resourcetype": resource_type},
+            metadata={"resourcetype": resource_type, "file_type": drive_file.mime_type},
         )
     else:
         resource.file = drive_file.s3_key

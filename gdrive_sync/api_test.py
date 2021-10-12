@@ -369,12 +369,17 @@ def test_walk_gdrive_folder(mocker):
     )  # parent, subfolder1, subfolder1_1, subfolder2
 
 
-def test_create_gdrive_resource_content(mocker):
+@pytest.mark.parametrize(
+    "mime_type", ["application/pdf", "application/vnd.ms-powerpoint"]
+)
+def test_create_gdrive_resource_content(mocker, mime_type):
     """create_resource_from_gdrive should create a WebsiteContent object linked to a DriveFile object"""
     mocker.patch(
         "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
     )
-    drive_file = DriveFileFactory.create(s3_key="test/path/word.docx")
+    drive_file = DriveFileFactory.create(
+        s3_key="test/path/word.docx", mime_type=mime_type
+    )
     create_gdrive_resource_content(drive_file)
     content = WebsiteContent.objects.filter(
         website=drive_file.website,
@@ -382,7 +387,7 @@ def test_create_gdrive_resource_content(mocker):
         file=drive_file.s3_key,
         type="resource",
         is_page_content=True,
-        metadata={"resourcetype": RESOURCE_TYPE_DOCUMENT},
+        metadata={"resourcetype": RESOURCE_TYPE_DOCUMENT, "file_type": mime_type},
     ).first()
     assert content is not None
     assert content.dirpath == "content/resource"
