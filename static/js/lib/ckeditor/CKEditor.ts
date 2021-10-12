@@ -19,9 +19,9 @@ import Markdown from "./plugins/Markdown"
 import ResourceEmbed from "./plugins/ResourceEmbed"
 import ResourcePicker from "./plugins/ResourcePicker"
 import { ADD_RESOURCE_EMBED, ADD_RESOURCE_LINK } from "./plugins/constants"
-
 import ResourceLink from "@mitodl/ckeditor5-resource-link/src/link"
 import ResourceLinkMarkdownSyntax from "./plugins/ResourceLinkMarkdownSyntax"
+import DisallowNestedTables from "./plugins/DisallowNestedTables"
 
 export const FullEditorConfig = {
   plugins: [
@@ -45,7 +45,8 @@ export const FullEditorConfig = {
     ResourcePicker,
     ResourceLink,
     ResourceLinkMarkdownSyntax,
-    Markdown
+    Markdown,
+    DisallowNestedTables
   ],
   toolbar: {
     items: [
