@@ -135,15 +135,25 @@ describe("RepeatableContentListing", () => {
   })
   ;[true, false].forEach(isGdriveEnabled => {
     [true, false].forEach(isResource => {
-      it(`${shouldIf(isGdriveEnabled)} show the gdrive sync link`, async () => {
+      it(`${shouldIf(
+        isGdriveEnabled && isResource
+      )} show the gdrive sync link when gdriveis ${isGdriveEnabled} and isResource is ${isResource}`, async () => {
         SETTINGS.gdrive_enabled = isGdriveEnabled
-        // @ts-ignore
         configItem = makeRepeatableConfigItem(isResource ? "resource" : "page")
-        const { wrapper } = await render()
+        helper.mockGetRequest(
+          siteApiContentListingUrl
+            .param({
+              name: website.name
+            })
+            .query({ offset: 0, type: configItem.name })
+            .toString(),
+          apiResponse
+        )
+        const { wrapper } = await render({ configItem })
         const syncLink = wrapper.find("a.sync")
         const addLink = wrapper.find("a.add")
-        expect(syncLink.exists()).toBe(isGdriveEnabled)
-        expect(addLink.exists()).toBe(!isGdriveEnabled)
+        expect(syncLink.exists()).toBe(isGdriveEnabled && isResource)
+        expect(addLink.exists()).toBe(!isGdriveEnabled || !isResource)
       })
     })
   })
