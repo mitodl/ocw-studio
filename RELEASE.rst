@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.30.0
+Version 0.30.0 (Released October 12, 2021)
 --------------
 
 - Ignore drive folders with no download links, handle null checksums (#666)
