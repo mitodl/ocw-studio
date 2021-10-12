@@ -265,7 +265,11 @@ def test_get_resource_type(settings, filename, mimetype, expected_type) -> str:
 
 @pytest.mark.parametrize("is_video", [True, False])
 @pytest.mark.parametrize("in_video_folder", [True, False])
-def test_process_file_result(settings, mocker, is_video, in_video_folder):
+@pytest.mark.parametrize("checksum", ["633410252", None])
+@pytest.mark.parametrize("link", ["http://download/url", None])
+def test_process_file_result(
+    settings, mocker, is_video, in_video_folder, checksum, link
+):
     """process_file_result should create a DriveFile only if all conditions are met"""
     settings.DRIVE_SHARED_ID = "test_drive"
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
@@ -296,15 +300,37 @@ def test_process_file_result(settings, mocker, is_video, in_video_folder):
         "name": "test_file",
         "mimeType": "video/mp4" if is_video else "image/jpeg",
         "parents": ["subFolderId"],
-        "webContentLink": "https://drive.google.com/uc?id=Ay5grfCTHr_12JCgxaoHrGve&export=download",
+        "webContentLink": link,
         "createdTime": "2021-07-28T00:06:40.439Z",
         "modifiedTime": "2021-07-29T14:25:19.375Z",
-        "md5Checksum": "633410252",
+        "md5Checksum": checksum,
         "trashed": False,
     }
     process_file_result(file_result)
-    assert DriveFile.objects.filter(file_id=file_result["id"]).exists() is (
-        (is_video and in_video_folder) or (not is_video and not in_video_folder)
+    drive_file = DriveFile.objects.filter(file_id=file_result["id"]).first()
+    file_exists = drive_file is not None
+    assert file_exists is (
+        link is not None
+        and ((is_video and in_video_folder) or (not is_video and not in_video_folder))
+    )
+    if drive_file:
+        assert drive_file.checksum == checksum
+
+
+def test_process_file_result_exception(settings, mocker):
+    """Verify that an exception is logged if anything goes wrong"""
+    settings.DRIVE_SHARED_ID = "test_drive"
+    settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
+    mocker.patch("gdrive_sync.api.get_parent_tree", side_effect=Exception)
+    mock_log = mocker.patch("gdrive_sync.api.log.exception")
+    file_result = {
+        "id": "Ay5grfCTHr_12JCgxaoHrGve",
+        "parents": ["subFolderId"],
+        "trashed": False,
+    }
+    process_file_result(file_result)
+    mock_log.assert_called_once_with(
+        "Error processing gdrive file id %s", file_result["id"]
     )
 
 
