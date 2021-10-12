@@ -1,0 +1,22 @@
+header {
+  background-color: white;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 33px;
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14);
+
+  img {
+    height: 33px;
+  }
+
+  button,
+  .btn {
+    display: inline-flex;
+    line-height: 24px;
+  }
+
+  h2 {
+    font-size: 24px;
+    line-height: 42px;
+  }
+}
