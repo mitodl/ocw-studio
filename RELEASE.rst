@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.30.0
+--------------
+
+- Autocreate all gdrive resources, fix github syncing for them (#630)
+- Leave new pipelines paused until previewed/published for the first time (#662)
+
 Version 0.29.2 (Released October 12, 2021)
 --------------
 
