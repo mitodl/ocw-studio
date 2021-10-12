@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.30.0
+--------------
+
+- Ignore drive folders with no download links, handle null checksums (#666)
+- Fix google drive sync bug with pages (#676)
+- Do a hard or soft fastly purge based on settings (#671)
+- Autocreate all gdrive resources, fix github syncing for them (#630)
+- Leave new pipelines paused until previewed/published for the first time (#662)
+
 Version 0.29.2 (Released October 12, 2021)
 --------------
 
