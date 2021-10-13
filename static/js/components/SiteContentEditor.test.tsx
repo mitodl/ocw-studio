@@ -66,7 +66,7 @@ describe("SiteContent", () => {
     content: WebsiteContent,
     hideModalStub: SinonStub,
     routeParams: any,
-    refreshStub: SinonStub,
+    fetchWebsiteListingStub: SinonStub,
     successStubs: Record<string, SinonStub>,
     mockContentSchema: FormSchema
 
@@ -84,10 +84,10 @@ describe("SiteContent", () => {
     getContentSchema.mockImplementation(() => mockContentSchema)
     historyPushStub = helper.sandbox.stub()
     hideModalStub = helper.sandbox.stub()
-    refreshStub = helper.sandbox.stub()
+    fetchWebsiteListingStub = helper.sandbox.stub()
     successStubs = {
       hideModal:                  hideModalStub,
-      fetchWebsiteContentListing: refreshStub
+      fetchWebsiteContentListing: fetchWebsiteListingStub
     }
     formikStubs = {
       setErrors:     helper.sandbox.stub(),
@@ -241,6 +241,7 @@ describe("SiteContent", () => {
         // @ts-ignore
         await onSubmit(values, formikStubs)
       })
+      await wrapper.update()
       sinon.assert.calledWith(
         helper.handleRequestStub,
         siteApiContentUrl.param({ name: website.name }).toString(),
@@ -259,7 +260,18 @@ describe("SiteContent", () => {
         }
       )
 
-      sinon.assert.called(refreshStub)
+      sinon.assert.calledWith(
+        helper.handleRequestStub,
+        siteApiDetailUrl.param({ name: website.name }).toString(),
+        "GET",
+        {
+          body:        undefined,
+          headers:     undefined,
+          credentials: undefined
+        }
+      )
+
+      sinon.assert.called(fetchWebsiteListingStub)
       sinon.assert.called(hideModalStub)
       const key = contentDetailKey({
         textId: content.text_id,
@@ -315,7 +327,17 @@ describe("SiteContent", () => {
       }
     )
 
-    sinon.assert.calledWith(refreshStub)
+    sinon.assert.calledWith(
+      helper.handleRequestStub,
+      siteApiDetailUrl.param({ name: website.name }).toString(),
+      "GET",
+      {
+        body:        undefined,
+        headers:     undefined,
+        credentials: undefined
+      }
+    )
+    sinon.assert.calledWith(fetchWebsiteListingStub)
     sinon.assert.calledWith(hideModalStub)
     // @ts-ignore
     expect(store.getState().entities.websiteContentDetails).toStrictEqual({
@@ -464,7 +486,7 @@ describe("SiteContent", () => {
       }
     )
 
-    sinon.assert.notCalled(refreshStub)
+    sinon.assert.notCalled(fetchWebsiteListingStub)
     sinon.assert.notCalled(hideModalStub)
   })
 })
