@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react"
+import React, { SyntheticEvent, useCallback, useEffect, useState } from "react"
 import Nestable, { Item } from "react-nestable"
 import * as R from "ramda"
 import BasicModal from "../BasicModal"
@@ -264,17 +264,28 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     activeItem: InternalSortableMenuItem | null
     isVisible: boolean
   }>({ activeItemPath: [], activeItem: null, isVisible: false })
+
   const closeContentPanel = useCallback(() => {
     setPanelState({ activeItemPath: [], activeItem: null, isVisible: false })
   }, [setPanelState])
-  const openNewContentPanel = useCallback(() => {
-    setPanelState({ activeItemPath: [], activeItem: null, isVisible: true })
-  }, [setPanelState])
+
+  const openNewContentPanel = useCallback(
+    (e: SyntheticEvent<HTMLButtonElement>) => {
+      e.preventDefault()
+      setPanelState({
+        activeItemPath: [],
+        activeItem:     null,
+        isVisible:      true
+      })
+    },
+    [setPanelState]
+  )
 
   const [
     itemToRemove,
     setItemToRemove
   ] = useState<InternalSortableMenuItem | null>(null)
+
   const closeRemoveDialog = useCallback(() => {
     setItemToRemove(null)
   }, [setItemToRemove])
