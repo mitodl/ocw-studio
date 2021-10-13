@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.30.1
+--------------
+
+- Update website publish date for singleton content (#684)
+- Copy gdrive mime_type to file_type in content  metadata (#683)
+
 Version 0.30.0 (Released October 12, 2021)
 --------------
 
