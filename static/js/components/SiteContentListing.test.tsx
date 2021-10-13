@@ -13,6 +13,7 @@ import {
   makeWebsiteConfigField,
   makeWebsiteDetail
 } from "../util/factories/websites"
+import WebsiteContext from "../context/Website"
 
 import {
   RepeatableConfigItem,
@@ -59,17 +60,15 @@ describe("SiteContentListing", () => {
       }
     }
     render = helper.configureRenderer(
-      SiteContentListing,
+      props => (
+        <WebsiteContext.Provider value={website}>
+          <SiteContentListing {...props} />
+        </WebsiteContext.Provider>
+      ),
       {
         location: {
           search: ""
         }
-      },
-      {
-        entities: {
-          websiteDetails: { [website.name]: website }
-        },
-        queries: {}
       }
     )
   })

@@ -1,29 +1,24 @@
 import React, { MouseEvent as ReactMouseEvent, useState } from "react"
-import { useRouteMatch } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { QueryConfig } from "redux-query"
 import { useMutation, useRequest } from "redux-query-react"
 
 import Dialog from "./Dialog"
 import Card from "./Card"
+import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
 
 import { EDITABLE_ROLES, ROLE_LABELS } from "../constants"
 import {
   deleteWebsiteCollaboratorMutation,
   websiteCollaboratorsRequest
 } from "../query-configs/websites"
+import { useWebsite } from "../context/Website"
 import { getWebsiteCollaboratorsCursor } from "../selectors/websites"
 
 import { WebsiteCollaborator } from "../types/websites"
-import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
-
-interface MatchParams {
-  name: string
-}
 
 export default function SiteCollaboratorList(): JSX.Element | null {
-  const match = useRouteMatch<MatchParams>()
-  const { name } = match.params
+  const { name } = useWebsite()
 
   const [{ isPending }] = useRequest(websiteCollaboratorsRequest(name))
   const collaborators = useSelector(getWebsiteCollaboratorsCursor)(name)
@@ -149,7 +144,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
             onDelete()
             toggleDeleteModal()
           }}
-        ></Dialog>
+        />
       </div>
     </>
   )

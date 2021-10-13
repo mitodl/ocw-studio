@@ -1,46 +1,27 @@
 import * as React from "react"
-import { useSelector } from "react-redux"
-import { useRequest } from "redux-query-react"
-import { Route, Switch, useRouteMatch } from "react-router-dom"
+import { Route, Switch } from "react-router-dom"
 
 import SiteSidebar from "../components/SiteSidebar"
 import SiteContentListing from "../components/SiteContentListing"
 import SiteCollaboratorList from "../components/SiteCollaboratorList"
 import Card from "../components/Card"
-import PublishDrawer from "../components/PublishDrawer"
+import { siteCollaboratorsUrl, siteDetailUrl } from "../lib/urls"
 
-import { websiteDetailRequest } from "../query-configs/websites"
-import { getWebsiteDetailCursor } from "../selectors/websites"
-import { useCallback, useState } from "react"
+import { useWebsite } from "../context/Website"
 
-interface MatchParams {
-  name: string
+interface SitePageProps {
+  isLoading: boolean
 }
 
-export default function SitePage(): JSX.Element | null {
-  const match = useRouteMatch<MatchParams>()
-  const { name } = match.params
+export default function SitePage(props: SitePageProps): JSX.Element | null {
+  const { isLoading } = props
 
-  const [{ isPending }] = useRequest(websiteDetailRequest(name))
-  const website = useSelector(getWebsiteDetailCursor)(name)
-
-  const [drawerOpen, setDrawerOpen] = useState<boolean>(false)
-
-  const openPublishDrawer = useCallback(
-    (event: any) => {
-      event.preventDefault()
-
-      setDrawerOpen(true)
-    },
-    [setDrawerOpen]
-  )
-
+  const website = useWebsite()
+  if (isLoading) {
+    return <div className="site-page std-page-body container">Loading...</div>
+  }
   if (!website) {
     return null
-  }
-
-  if (isPending) {
-    return <div className="site-page std-page-body container">Loading...</div>
   }
 
   return (
@@ -50,31 +31,19 @@ export default function SitePage(): JSX.Element | null {
           <SiteSidebar website={website} />
         </Card>
         <div className="content pl-3">
-          <div className="d-flex flex-row justify-content-between">
-            <h1 className="py-5 title my-auto">{website.title}</h1>
-            <div className="my-auto">
-              <button
-                type="button"
-                onClick={openPublishDrawer}
-                className="btn btn-publish green-button-outline d-flex flex-direction-row align-items-center"
-              >
-                <i className="material-icons">settings</i>
-                Publish
-              </button>
-              <PublishDrawer
-                website={website}
-                visibility={drawerOpen}
-                toggleVisibility={() =>
-                  setDrawerOpen(visibility => !visibility)
-                }
-              />
-            </div>
-          </div>
           <Switch>
-            <Route path={`${match.path}/collaborators/`}>
+            <Route
+              path={siteCollaboratorsUrl.param("name", website.name).toString()}
+            >
               <SiteCollaboratorList />
             </Route>
-            <Route exact path={`${match.path}/type/:contenttype`}>
+            <Route
+              exact
+              path={`${siteDetailUrl.param(
+                "name",
+                website.name
+              )}type/:contenttype`}
+            >
               <SiteContentListing />
             </Route>
           </Switch>

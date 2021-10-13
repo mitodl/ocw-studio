@@ -1,5 +1,4 @@
-const mockUseRouteMatch = jest.fn()
-
+import React from "react"
 import { act } from "react-dom/test-utils"
 import { concat } from "ramda"
 import sinon, { SinonStub } from "sinon"
@@ -17,14 +16,9 @@ import {
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
+import WebsiteContext from "../context/Website"
 
 import { Website, WebsiteCollaborator } from "../types/websites"
-
-jest.mock("react-router-dom", () => ({
-  // @ts-ignore
-  ...jest.requireActual("react-router-dom"),
-  useRouteMatch: mockUseRouteMatch
-}))
 
 describe("SiteCollaboratorList", () => {
   let helper: IntegrationTestHelper,
@@ -40,12 +34,14 @@ describe("SiteCollaboratorList", () => {
     collaborators = makeWebsiteCollaborators()
     permanentAdmins = [makePermanentWebsiteCollaborator()]
     render = helper.configureRenderer(
-      // @ts-ignore
-      SiteCollaboratorList,
+      props => (
+        <WebsiteContext.Provider value={website}>
+          <SiteCollaboratorList {...props} />
+        </WebsiteContext.Provider>
+      ),
       {},
       {
         entities: {
-          websites:      { website },
           collaborators: {
             [website.name]: concat(collaborators, permanentAdmins)
           }
@@ -53,11 +49,6 @@ describe("SiteCollaboratorList", () => {
         queries: {}
       }
     )
-    mockUseRouteMatch.mockImplementation(() => ({
-      params: {
-        name: website.name
-      }
-    }))
     helper.handleRequestStub
       .withArgs(
         siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
@@ -160,7 +151,7 @@ describe("SiteCollaboratorList", () => {
     expect(wrapper.find("tr").length).toBe(numCollaborators - 1)
   })
 
-  it("the add collaborator button  sets correct state and opens the modal", async () => {
+  it("the add collaborator button sets correct state and opens the modal", async () => {
     const { wrapper } = await render()
     const addLink = wrapper.find(".collaborator-add-btn").at(0)
     act(() => {

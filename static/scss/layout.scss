@@ -2,6 +2,7 @@
 @import "node_modules/bootstrap/scss/bootstrap";
 @import "react-nestable/dist/styles/index.css";
 @import "variables";
+@import "header";
 @import "home-page";
 @import "site-page";
 @import "dashboard";
@@ -16,7 +17,7 @@
 @import "resource-picker-dialog";
 
 body {
-  font-family: "Roboto", sans-serif;
+  font-family: "Montserrat", sans-serif;
   background-color: $studio-background;
   // default font color
   color: $studio-black;
@@ -52,10 +53,6 @@ body {
 
 .narrow-page-body {
   max-width: $narrow-max-width;
-}
-
-header {
-  background-color: white;
 }
 
 a {

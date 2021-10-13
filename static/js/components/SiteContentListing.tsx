@@ -1,6 +1,5 @@
 import React from "react"
 import { useRouteMatch } from "react-router-dom"
-import { useSelector } from "react-redux"
 
 import RepeatableContentListing from "./RepeatableContentListing"
 import SingletonsContentListing from "./SingletonsContentListing"
@@ -9,8 +8,7 @@ import {
   addDefaultFields,
   isRepeatableCollectionItem
 } from "../lib/site_content"
-import { getWebsiteDetailCursor } from "../selectors/websites"
-import WebsiteContext from "../context/Website"
+import { useWebsite } from "../context/Website"
 
 import { TopLevelConfigItem } from "../types/websites"
 
@@ -20,10 +18,11 @@ interface MatchParams {
 }
 
 export default function SiteContentListing(): JSX.Element | null {
-  const match = useRouteMatch<MatchParams>()
-  const { contenttype, name } = match.params
+  const website = useWebsite()
 
-  const website = useSelector(getWebsiteDetailCursor)(name)
+  const match = useRouteMatch<MatchParams>()
+  const { contenttype } = match.params
+
   const configItem = website?.starter?.config?.collections.find(
     (config: TopLevelConfigItem) => config.name === contenttype
   )
@@ -31,13 +30,9 @@ export default function SiteContentListing(): JSX.Element | null {
     return null
   }
 
-  return (
-    <WebsiteContext.Provider value={website}>
-      {isRepeatableCollectionItem(configItem) ? (
-        <RepeatableContentListing configItem={addDefaultFields(configItem)} />
-      ) : (
-        <SingletonsContentListing configItem={configItem} />
-      )}
-    </WebsiteContext.Provider>
+  return isRepeatableCollectionItem(configItem) ? (
+    <RepeatableContentListing configItem={addDefaultFields(configItem)} />
+  ) : (
+    <SingletonsContentListing configItem={configItem} />
   )
 }
