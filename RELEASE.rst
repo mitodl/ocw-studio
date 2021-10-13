@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.30.2
+Version 0.30.2 (Released October 13, 2021)
 --------------
 
 - fix issue preventing opening MenuField dialog
