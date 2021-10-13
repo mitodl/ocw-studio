@@ -30,7 +30,7 @@ pygithub==1.55
 python-magic
 redis
 requests
-sentry-sdk
+sentry-sdk==1.4.3
 smart_open[s3]
 social-auth-core>=4
 social-auth-core[saml]>=4
