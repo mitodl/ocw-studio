@@ -45,9 +45,12 @@ export default function SitesDashboard(
     <div className="px-4 dashboard">
       <div className="content">
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
-          <h3>Sites</h3>
-          <Link className="btn blue-button add-new" to={newSiteUrl.toString()}>
-            Add New
+          <h2 className="my-2 p-0">Sites</h2>
+          <Link
+            className="btn cyan-button larger add-new"
+            to={newSiteUrl.toString()}
+          >
+            Add Site
           </Link>
         </div>
         <Card>

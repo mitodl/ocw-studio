@@ -50,7 +50,7 @@ export default function Header(props: HeaderProps): JSX.Element {
             <button
               type="button"
               onClick={openPublishDrawer}
-              className="btn btn-site-action black-outline py-2 px-3"
+              className="btn cyan-button-outline"
             >
               <i className="material-icons mr-1">publish</i> Publish
             </button>

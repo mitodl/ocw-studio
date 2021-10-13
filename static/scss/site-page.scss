@@ -12,17 +12,12 @@ $menu-spacing: 20px;
     width: $sidebar-width;
 
     a {
-      color: $studio-black;
       display: block;
+      font-weight: 300;
 
       &.active {
-        color: $studio-green;
-      }
-    }
-
-    h4 {
-      i {
-        color: $studio-green;
+        color: $studio-red;
+        font-weight: 600;
       }
     }
   }
@@ -50,8 +45,6 @@ $menu-spacing: 20px;
 }
 
 .sortable-item {
-  border: 1px solid $studio-text-gray;
-  border-radius: 5px;
   align-items: center;
 
   .reorder {
@@ -65,7 +58,7 @@ $menu-spacing: 20px;
   background-color: unset;
 
   &.material-icons {
-    color: $studio-text-gray;
+    color: $studio-cyan;
   }
 }
 

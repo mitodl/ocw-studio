@@ -1,0 +1,29 @@
+h1 {
+  font-size: 2.25rem;
+}
+
+h2 {
+  font-size: 1.75rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+h4 {
+  font-size: 1.25rem;
+}
+
+a {
+  cursor: pointer;
+  color: $studio-black;
+
+  &:hover {
+    color: $studio-red;
+  }
+}
+
+.studio-card {
+  background-color: white;
+  box-shadow: 0 1px rgba(0, 0, 0, 0.23);
+}

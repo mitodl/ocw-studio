@@ -42,7 +42,7 @@ export default function WebsiteCollectionForm(props: Props): JSX.Element {
             <ErrorMessage name="description" component={FormError} />
           </div>
           <div className="form-group d-flex w-100 justify-content-end">
-            <button type="submit" className="px-5 btn blue-button">
+            <button type="submit" className="px-5 btn cyan-button">
               Save
             </button>
           </div>

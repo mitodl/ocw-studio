@@ -1,43 +1,37 @@
-.blue-button {
-  background-color: $studio-blue;
-  color: white;
-  font-size: 14px;
-  border-radius: 8px;
-  padding: 6px 16px;
-}
+$standard-border-radius: 2px;
 
-.blue-button-outline {
-  border-color: $studio-blue;
-  background-color: white;
-  font-size: 14px;
-  border-radius: 8px;
-  padding: 6px 16px;
-}
-
-.green-button,
-.green-button-outline {
-  font-size: 14px;
-  border-radius: 8px;
-  padding: 6px 16px;
-}
-
-.green-button,
-.green-button-outline:hover {
-  background-color: $studio-green;
-  color: white;
-}
-
-.green-button-outline {
-  border-color: $studio-green;
-  background-color: white;
-  color: $studio-green;
-}
-
-.black-outline {
-  box-sizing: border-box;
-  border: 1px solid $black;
-  border-radius: 2px;
+.cyan-button,
+.cyan-button-outline {
   font-size: 16px;
+  padding: 6px 16px;
+  border-radius: $standard-border-radius;
+
+  &:hover {
+    background-color: $black;
+    color: $white;
+  }
+
+  &:active {
+    background-color: $studio-dark-gray;
+    color: $white;
+  }
+
+  &.larger {
+    font-size: 18px;
+    padding: 8px 30px;
+  }
+}
+
+.cyan-button {
+  background-color: $studio-cyan;
+  color: $white;
+  font-weight: 500;
+}
+
+.cyan-button-outline {
+  border-color: $studio-cyan;
+  background-color: $white;
+  color: $black;
 }
 
 .gray-button {
@@ -48,5 +42,11 @@
     &:hover {
       color: $studio-black;
     }
+  }
+}
+
+.pagination {
+  i {
+    font-size: 45px;
   }
 }

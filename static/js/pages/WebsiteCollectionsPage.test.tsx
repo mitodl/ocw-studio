@@ -98,7 +98,7 @@ describe("CollectionsPage", () => {
 
   it("should let you open a form for adding a collection", async () => {
     const { wrapper } = await render()
-    wrapper.find(".blue-button.add").simulate("click")
+    wrapper.find(".cyan-button.add").simulate("click")
     wrapper.update()
     expect(wrapper.find("BasicModal").prop("isVisible")).toBeTruthy()
     expect(wrapper.find("WebsiteCollectionEditor").prop("modalState")).toEqual(
@@ -109,7 +109,7 @@ describe("CollectionsPage", () => {
 
   it("should refresh after closing the modal", async () => {
     const { wrapper } = await render()
-    wrapper.find(".blue-button.add").simulate("click")
+    wrapper.find(".cyan-button.add").simulate("click")
     // should be able to close the modal
     act(() => {
       // @ts-ignore

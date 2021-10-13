@@ -64,33 +64,22 @@ describe("SiteCollaboratorList", () => {
     helper.cleanup()
   })
 
-  it("renders the collaborators list with expected number of rows in table", async () => {
+  it("renders the collaborators list with expected number of items", async () => {
     const { wrapper } = await render()
     const numCollaborators = concat(collaborators, permanentAdmins).length
-    expect(wrapper.find("tr").length).toBe(numCollaborators)
+    const items = wrapper.find("li")
+    expect(items.length).toBe(numCollaborators)
     // First collaborator in list should be editable
-    expect(
-      wrapper
-        .find("tr")
-        .at(0)
-        .find("i").length
-    ).toBe(2)
+    expect(items.at(0).find("button.item-action-button").length).toBe(2)
     // Last collaborator in list should not be editable
     expect(
-      wrapper
-        .find("tr")
-        .at(numCollaborators - 1)
-        .find("i").length
+      items.at(numCollaborators - 1).find("button.item-action-button").length
     ).toBe(0)
   })
 
   it("the edit collaborator icon sets correct state and opens the modal", async () => {
     const { wrapper } = await render()
-    const editLink = wrapper
-      .find("tr")
-      .at(0)
-      .find(".edit-link")
-      .at(0)
+    const editLink = wrapper.find("button.item-action-button").at(0)
 
     act(() => {
       // @ts-ignore
@@ -128,10 +117,7 @@ describe("SiteCollaboratorList", () => {
         status: 204
       })
     const { wrapper } = await render()
-    const deleteIcon = wrapper
-      .find("tr")
-      .find("i")
-      .at(1)
+    const deleteIcon = wrapper.find("button.item-action-button").at(1)
     act(() => {
       deleteIcon.simulate("click")
     })
@@ -148,12 +134,12 @@ describe("SiteCollaboratorList", () => {
     })
     wrapper.update()
     sinon.assert.calledOnce(deleteCollaboratorStub)
-    expect(wrapper.find("tr").length).toBe(numCollaborators - 1)
+    expect(wrapper.find("li").length).toBe(numCollaborators - 1)
   })
 
   it("the add collaborator button sets correct state and opens the modal", async () => {
     const { wrapper } = await render()
-    const addLink = wrapper.find(".collaborator-add-btn").at(0)
+    const addLink = wrapper.find("button").at(0)
     act(() => {
       // @ts-ignore
       addLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })

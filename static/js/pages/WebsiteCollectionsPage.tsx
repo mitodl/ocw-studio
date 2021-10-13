@@ -77,7 +77,7 @@ export default function WebsiteCollectionsPage(): JSX.Element {
         <div className="content">
           <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
             <h3>Collections</h3>
-            <a className="btn blue-button add" onClick={startAddingCollection}>
+            <a className="btn cyan-button add" onClick={startAddingCollection}>
               Add New
             </a>
           </div>

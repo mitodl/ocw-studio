@@ -34,7 +34,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   const toggleEditVisibility = () => setEditVisibility(!editVisibility)
 
   const startEdit = (collaborator: WebsiteCollaborator | null) => (
-    event: ReactMouseEvent<HTMLAnchorElement, MouseEvent>
+    event: ReactMouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     event.preventDefault()
     setSelectedCollaborator(collaborator)
@@ -42,7 +42,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   }
 
   const startDelete = (collaborator: WebsiteCollaborator) => (
-    event: ReactMouseEvent<HTMLAnchorElement, MouseEvent>
+    event: ReactMouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     event.preventDefault()
     setSelectedCollaborator(collaborator)
@@ -84,68 +84,55 @@ export default function SiteCollaboratorList(): JSX.Element | null {
         visibility={editVisibility}
         toggleVisibility={toggleEditVisibility}
       />
-      <div className="collaborator-list">
-        <Card>
-          <div className="d-flex justify-content-between align-items-center pb-3">
-            <h3>Collaborators</h3>
-            <a
-              className="collaborator-add-btn btn blue-button"
-              onClick={startEdit(null)}
-            >
-              Add collaborator
-            </a>
-          </div>
-          <div className="narrow-page-body pb-5">
-            <table className="table collaborator-table">
-              <tbody>
-                {collaborators.map(
-                  (collaborator: WebsiteCollaborator, i: number) => (
-                    <tr key={i}>
-                      <td className="pr-5">
-                        {collaborator.name || collaborator.email}
-                      </td>
-                      <td className="pr-5 gray">
-                        {ROLE_LABELS[collaborator.role]}&nbsp;
-                      </td>
-                      <td className="gray">
-                        {EDITABLE_ROLES.includes(collaborator.role) ? (
-                          <>
-                            <a
-                              className="edit-link"
-                              onClick={startEdit(collaborator)}
-                            >
-                              <i className="material-icons">edit</i>
-                            </a>
-                            <i
-                              className="material-icons"
-                              onClick={startDelete(collaborator)}
-                            >
-                              delete_outline
-                            </i>
-                          </>
-                        ) : null}
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-        <Dialog
-          open={deleteModal}
-          toggleModal={toggleDeleteModal}
-          headerContent={"Remove collaborator"}
-          bodyContent={`Are you sure you want to remove ${
-            selectedCollaborator ? selectedCollaborator.name : "this user"
-          }?`}
-          acceptText="Delete"
-          onAccept={() => {
-            onDelete()
-            toggleDeleteModal()
-          }}
-        />
+      <div className="d-flex justify-content-between align-items-center py-3">
+        <h2 className="m-0 p-0">Collaborators</h2>
+        <button className="btn cyan-button" onClick={startEdit(null)}>
+          Add collaborator
+        </button>
       </div>
+      <Card>
+        <ul className="ruled-list">
+          {collaborators.map((collaborator: WebsiteCollaborator, i: number) => (
+            <li className="py-3" key={i}>
+              <div className="d-flex flex-direction-row align-items-center justify-content-between">
+                <span className="flex-grow-0 d-inline-flex font-weight-bold">
+                  {collaborator.name || collaborator.email}
+                </span>
+                {EDITABLE_ROLES.includes(collaborator.role) && (
+                  <span className="flex-grow-0 d-inline-flex">
+                    <button
+                      className="material-icons mr-2 item-action-button"
+                      onClick={startEdit(collaborator)}
+                    >
+                      settings
+                    </button>
+                    <button
+                      className="material-icons item-action-button"
+                      onClick={startDelete(collaborator)}
+                    >
+                      delete
+                    </button>
+                  </span>
+                )}
+              </div>
+              <div>{ROLE_LABELS[collaborator.role]}</div>
+            </li>
+          ))}
+        </ul>
+      </Card>
+      <Dialog
+        open={deleteModal}
+        toggleModal={toggleDeleteModal}
+        headerContent={"Remove collaborator"}
+        bodyContent={`Are you sure you want to remove ${
+          selectedCollaborator ? selectedCollaborator.name : "this user"
+        }?`}
+        acceptText="Delete"
+        onAccept={() => {
+          onDelete()
+          toggleDeleteModal()
+        }}
+      />
     </>
   )
 }

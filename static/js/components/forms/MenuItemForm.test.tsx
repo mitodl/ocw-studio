@@ -47,7 +47,7 @@ describe("MenuItemForm", () => {
     wrapper.prop("onSubmit")()
     expect(onSubmitStub).toBeCalledTimes(1)
     const innerWrapper = renderInnerForm({}, {})
-    const submitBtn = innerWrapper.find("button.blue-button")
+    const submitBtn = innerWrapper.find("button.cyan-button")
     expect(submitBtn.prop("type")).toEqual("submit")
   })
 

@@ -80,9 +80,9 @@ export default function SiteCreationPage({
 
   return (
     <div className="new-site narrow-page-body container mt-5">
-      <h4 className="font-weight-light">Add Site</h4>
       <Card>
-        <div className="p-5">
+        <div className="p-2">
+          <h3 className="font-weight-bold mb-4">Add Site</h3>
           <SiteForm onSubmit={onSubmitForm} websiteStarters={websiteStarters} />
         </div>
       </Card>

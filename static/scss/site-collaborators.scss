@@ -1,23 +1,18 @@
-.collaborator-list {
-  position: relative;
-  max-width: $narrow-max-width;
+.collaborator-table {
+  i {
+    vertical-align: middle;
+    padding-right: 10px;
+    cursor: pointer;
+  }
 
-  .collaborator-table {
-    i {
-      vertical-align: middle;
-      padding-right: 10px;
-      cursor: pointer;
-    }
+  tr {
+    border: 1px solid $studio-gray;
 
-    tr {
-      border: 1px solid $studio-gray;
+    td.gray {
+      color: $studio-gray;
 
-      td.gray {
+      a {
         color: $studio-gray;
-
-        a {
-          color: $studio-gray;
-        }
       }
     }
   }

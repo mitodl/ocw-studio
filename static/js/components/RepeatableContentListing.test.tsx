@@ -150,8 +150,8 @@ describe("RepeatableContentListing", () => {
           apiResponse
         )
         const { wrapper } = await render({ configItem })
-        const syncLink = wrapper.find("a.sync")
-        const addLink = wrapper.find("a.add")
+        const syncLink = wrapper.find("button.sync")
+        const addLink = wrapper.find("button.add")
         expect(syncLink.exists()).toBe(isGdriveEnabled && isResource)
         expect(addLink.exists()).toBe(!isGdriveEnabled || !isResource)
       })
@@ -161,7 +161,7 @@ describe("RepeatableContentListing", () => {
     [200, "Resources are being synced with Google Drive"],
     [500, "Something went wrong syncing with Google Drive"]
   ].forEach(([status, message]) => {
-    it("Clicking the gdrive sync link should open a feedback modal", async () => {
+    it("Clicking the gdrive sync button should open a feedback modal", async () => {
       helper.handleRequestStub
         .withArgs(
           siteApiContentSyncGDriveUrl
@@ -177,7 +177,7 @@ describe("RepeatableContentListing", () => {
         })
       SETTINGS.gdrive_enabled = true
       const { wrapper } = await render()
-      const syncLink = wrapper.find("a.sync")
+      const syncLink = wrapper.find("button.sync")
       await act(async () => {
         // @ts-ignore
         syncLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
@@ -189,7 +189,7 @@ describe("RepeatableContentListing", () => {
     })
   })
 
-  it("should render a link to the add content page", async () => {
+  it("should render a button to open the content editor", async () => {
     const { wrapper } = await render()
     expect(
       wrapper
@@ -197,7 +197,7 @@ describe("RepeatableContentListing", () => {
         .at(0)
         .prop("isVisible")
     ).toBe(false)
-    const link = wrapper.find("a.add")
+    const link = wrapper.find("button.add")
     expect(link.text()).toBe(`Add ${configItem.label_singular}`)
     act(() => {
       // @ts-ignore
@@ -362,21 +362,11 @@ describe("RepeatableContentListing", () => {
         expectedLabel = configItem.label_singular
       }
       const { wrapper } = await render()
-      expect(
-        wrapper
-          .find("Card")
-          .find("h3")
-          .text()
-      ).toBe(configItem.label)
-      expect(
-        wrapper
-          .find("Card")
-          .find(".add")
-          .text()
-      ).toBe(`Add ${expectedLabel}`)
+      expect(wrapper.find("h2").text()).toBe(configItem.label)
+      expect(wrapper.find("button.add").text()).toBe(`Add ${expectedLabel}`)
       act(() => {
         const event: any = { preventDefault: jest.fn() }
-        const button = wrapper.find("Card").find(".add")
+        const button = wrapper.find("button.add")
         // @ts-ignore
         button.prop("onClick")(event)
       })

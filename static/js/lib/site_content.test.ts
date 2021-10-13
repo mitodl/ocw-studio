@@ -24,7 +24,7 @@ import {
   newInitialValues,
   widgetExtraProps,
   isMainContentField,
-  splitFieldsIntoColumns,
+  hasMainContentField,
   renameNestedFields,
   addDefaultFields,
   DEFAULT_TITLE_FIELD
@@ -503,7 +503,7 @@ describe("site_content", () => {
     })
   })
 
-  describe("main content and column UI", () => {
+  describe("main content UI", () => {
     it("isMainContentField should return true when appropriate", () => {
       Object.values(WidgetVariant).forEach(widget => {
         const configField = makeWebsiteConfigField({ widget })
@@ -516,21 +516,23 @@ describe("site_content", () => {
       })
     })
 
-    it("splitFieldsIntoColumns should split the main content field out from others", () => {
-      const fields: ConfigField[] = [
-        makeWebsiteConfigField({ widget: WidgetVariant.Text }),
-        makeWebsiteConfigField({ widget: WidgetVariant.Select }),
+    it("hasMainContentField should return true when appropriate", () => {
+      const configFields = [
         {
-          label:  "Body",
-          name:   MAIN_PAGE_CONTENT_FIELD,
-          widget: WidgetVariant.Markdown
+          ...makeWebsiteConfigField({ widget: WidgetVariant.Markdown }),
+          name: MAIN_PAGE_CONTENT_FIELD
         },
-        makeWebsiteConfigField({ widget: WidgetVariant.Boolean })
+        {
+          ...makeWebsiteConfigField({ widget: WidgetVariant.Text }),
+          name: "my-text"
+        },
+        {
+          ...makeWebsiteConfigField({ widget: WidgetVariant.Boolean }),
+          name: "my-boolean"
+        }
       ]
-      expect(splitFieldsIntoColumns(fields)).toEqual([
-        [fields[2]],
-        [fields[0], fields[1], fields[3]]
-      ])
+      expect(hasMainContentField(configFields)).toEqual(true)
+      expect(hasMainContentField(configFields.slice(1))).toEqual(false)
     })
   })
 

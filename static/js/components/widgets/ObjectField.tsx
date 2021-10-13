@@ -38,7 +38,12 @@ export default function ObjectField(props: Props): JSX.Element {
         className="d-flex justify-content-between align-objects-center object-field-label"
         onClick={toggleCollapse}
       >
-        <label htmlFor={field.name}>{field.label}</label>
+        <label
+          className="expandable-section-title font-weight-bold"
+          htmlFor={field.name}
+        >
+          {field.label}
+        </label>
         <i className="material-icons">
           {collapsed ? "expand_more" : "expand_less"}
         </i>

@@ -3,7 +3,6 @@ import { useMutation } from "redux-query-react"
 import { FormikHelpers } from "formik"
 import { is } from "ramda"
 
-import Card from "./Card"
 import SiteCollaboratorForm from "./forms/SiteCollaboratorForm"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import {
@@ -95,15 +94,11 @@ export default function SiteCollaboratorDrawer(
           {collaborator ? `Edit ${collaborator.email}` : "Add collaborator"}
         </ModalHeader>
         <ModalBody>
-          <Card>
-            <div className="form-container m-3 p-3">
-              <SiteCollaboratorForm
-                collaborator={collaborator}
-                onSubmit={onSubmit}
-                onCancel={onCancel}
-              />
-            </div>
-          </Card>
+          <SiteCollaboratorForm
+            collaborator={collaborator}
+            onSubmit={onSubmit}
+            onCancel={onCancel}
+          />
         </ModalBody>
       </Modal>
     </div>
