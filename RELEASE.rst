@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.30.1
+Version 0.30.1 (Released October 13, 2021)
 --------------
 
 - use theme assets from RC for now (#686)
