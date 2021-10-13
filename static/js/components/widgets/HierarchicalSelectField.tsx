@@ -7,8 +7,11 @@ export type Level = {
   label: string
   name: string
 }
+
 type OptionsMap = Record<string, Record<string, any> | string[]>
+
 type HierarchicalSelection = Array<string | null>
+
 type Props = {
   name: string
   levels: Level[] // eslint-disable-line camelcase

@@ -10,10 +10,10 @@ import ResourceLinkMarkdownSyntax from "./ResourceLinkMarkdownSyntax"
 import Paragraph from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 const getEditor = createTestEditor([
-  ResourceLinkMarkdownSyntax,
+  Paragraph,
   ResourceLink,
-  Markdown,
-  Paragraph
+  ResourceLinkMarkdownSyntax,
+  Markdown
 ])
 
 jest.mock("@mitodl/ckeditor5-resource-link/src/linkui")

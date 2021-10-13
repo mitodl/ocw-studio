@@ -1,4 +1,4 @@
-import * as React from "react"
+import React from "react"
 import { Formik, Form, ErrorMessage, Field, FormikHelpers } from "formik"
 import * as yup from "yup"
 

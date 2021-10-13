@@ -26,7 +26,7 @@ module.exports = {
         },
         {
           test: /\.tsx?$/,
-          use: "ts-loader",
+          use: "swc-loader",
           exclude: /node_modules/
         },
         {

@@ -5,10 +5,7 @@ module.exports = {
     "<rootDir>static/js/test_setup.ts"
   ],
   cacheDirectory: ".jest-cache",
-  transform: {
-    "^.+\\.tsx?$": "ts-jest",
-    "^.+\\.js$": "babel-jest",
-  },
+  transform: {    "^.+\\.(t|j)sx?$": ["@swc/jest"],  },
   moduleNameMapper: {
     "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
       "<rootDir>/static/js/mocks/fileMock.js",

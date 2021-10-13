@@ -28,17 +28,19 @@ import {
 jest.mock("react-router-dom", () => ({
   // @ts-ignore
   ...jest.requireActual("react-router-dom"),
-  useRouteMatch: mockUseRouteMatch
+  useRouteMatch: () => mockUseRouteMatch()
 }))
 
 jest.mock("./RepeatableContentListing", () => ({
   __esModule: true,
   default:    () => <div>MockComponent</div>
 }))
+
 jest.mock("./SingletonsContentListing", () => ({
   __esModule: true,
   default:    () => <div>MockComponent</div>
 }))
+
 import MockRepeatable from "./RepeatableContentListing"
 import MockSingletons from "./SingletonsContentListing"
 import { DEFAULT_TITLE_FIELD } from "../lib/site_content"
@@ -62,18 +64,11 @@ describe("SiteContentListing", () => {
         collections: [repeatableConfigItem, singletonsConfigItem]
       }
     }
-    render = helper.configureRenderer(
-      props => (
-        <WebsiteContext.Provider value={website}>
-          <SiteContentListing {...props} />
-        </WebsiteContext.Provider>
-      ),
-      {
-        location: {
-          search: ""
-        }
-      }
-    )
+    render = helper.configureRenderer(props => (
+      <WebsiteContext.Provider value={website}>
+        <SiteContentListing {...props} />
+      </WebsiteContext.Provider>
+    ))
   })
 
   afterEach(() => {

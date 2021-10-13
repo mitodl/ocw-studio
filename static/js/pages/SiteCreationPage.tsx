@@ -1,4 +1,4 @@
-import * as React from "react"
+import React from "react"
 import { useSelector } from "react-redux"
 import { useMutation, useRequest } from "redux-query-react"
 import { RouteComponentProps } from "react-router-dom"

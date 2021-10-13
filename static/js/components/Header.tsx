@@ -1,4 +1,4 @@
-import * as React from "react"
+import React from "react"
 import { useCallback, useState } from "react"
 import { useStore } from "react-redux"
 import { Link } from "react-router-dom"

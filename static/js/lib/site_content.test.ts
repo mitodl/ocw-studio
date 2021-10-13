@@ -29,7 +29,6 @@ import {
   addDefaultFields,
   DEFAULT_TITLE_FIELD
 } from "./site_content"
-import * as siteContentFuncs from "./site_content"
 import { exampleSiteConfigFields, MAIN_PAGE_CONTENT_FIELD } from "../constants"
 import { isIf, shouldIf } from "../test_util"
 
@@ -254,13 +253,13 @@ describe("site_content", () => {
     })
 
     it("removes values and uses default data in an field inside an object if the inner field should not send data", () => {
-      fieldHasDataMock = jest.spyOn(siteContentFuncs, "fieldHasData")
-      fieldHasDataMock.mockImplementation(
-        (field: ConfigField) => field.widget === WidgetVariant.Object
-      )
-
       const field = makeWebsiteConfigField({
-        widget: WidgetVariant.Object,
+        widget:    WidgetVariant.Object,
+        name:      "object",
+        condition: {
+          field:  "object",
+          equals: true
+        },
         fields: [
           makeWebsiteConfigField({ widget: WidgetVariant.Boolean }),
           makeWebsiteConfigField({ widget: WidgetVariant.Boolean })
@@ -286,9 +285,6 @@ describe("site_content", () => {
           }
         }
       })
-      expect(fieldHasDataMock).toBeCalledWith(field, values)
-      expect(fieldHasDataMock).toBeCalledWith(field.fields[0], values)
-      expect(fieldHasDataMock).toBeCalledWith(field.fields[1], values)
     })
   })
 

@@ -4,8 +4,10 @@ import { sortBy, times } from "lodash"
 import { shallow, ShallowWrapper } from "enzyme"
 import casual from "casual"
 
-import HierarchicalSelectField, * as namedExports from "./HierarchicalSelectField"
-import { Level } from "./HierarchicalSelectField"
+import HierarchicalSelectField, {
+  calcOptions,
+  Level
+} from "./HierarchicalSelectField"
 import { Option } from "./SelectField"
 
 describe("HierarchicalSelectField", () => {
@@ -15,8 +17,7 @@ describe("HierarchicalSelectField", () => {
     value: any,
     onChangeStub: typeof jest.fn,
     optionsMap: any,
-    options: Option[][],
-    spyCalcOptions: jest.MockedFunction<any>
+    options: Option[][]
 
   const makeOptions = (idx: number) => [
     { label: "Empty", value: "" },
@@ -24,25 +25,38 @@ describe("HierarchicalSelectField", () => {
     { label: `Option 2 for ${idx}`, value: `option2${idx}` }
   ]
 
-  beforeEach(() => {
-    spyCalcOptions = jest.spyOn(namedExports, "calcOptions")
+  const selectPath = [
+    { label: "Topic1", value: "Topic1" },
+    { label: "Subtopic1", value: "Subtopic1" },
+    { label: "speciality", value: "speciality" }
+  ]
 
+  beforeEach(() => {
     name = casual.name
     levels = times(3, () => ({
       name:  casual.name,
       label: casual.word
     }))
     options = times(levels.length, makeOptions)
-    spyCalcOptions.mockReturnValue(options)
     value = null
     onChangeStub = jest.fn()
     optionsMap = {
       Topic1: {
         Subtopic1: ["speciality"],
-        Subtopic2: []
+        Subtopic2: ["potato"]
       },
       Topic2: {}
     }
+
+    options = [
+      [
+        { label: "-- empty --", value: "" },
+        { label: "Topic1", value: "Topic1" },
+        { label: "Topic2", value: "Topic2" }
+      ],
+      [{ label: "-- empty --", value: "" }],
+      [{ label: "-- empty --", value: "" }]
+    ]
     render = (props = {}) =>
       shallow(
         <HierarchicalSelectField
@@ -54,10 +68,6 @@ describe("HierarchicalSelectField", () => {
           {...props}
         />
       )
-  })
-
-  afterEach(() => {
-    spyCalcOptions.mockRestore()
   })
 
   it("renders a select field for each level", () => {
@@ -79,6 +89,7 @@ describe("HierarchicalSelectField", () => {
 
   it("selects a value", () => {
     const wrapper = render()
+
     for (let idx = 0; idx < levels.length; ++idx) {
       act(() => {
         // @ts-ignore
@@ -86,14 +97,14 @@ describe("HierarchicalSelectField", () => {
           .find("SelectField")
           .at(idx)
           // @ts-ignore
-          .prop("onChange")({ target: { value: options[idx][1].value } })
+          .prop("onChange")({ target: { value: selectPath[idx].value } })
       })
       expect(
         wrapper
           .find("SelectField")
           .at(idx)
           .prop("value")
-      ).toBe(options[idx][1].value)
+      ).toBe(selectPath[idx].value)
     }
   })
 
@@ -106,7 +117,7 @@ describe("HierarchicalSelectField", () => {
           .find("SelectField")
           .at(idx)
           // @ts-ignore
-          .prop("onChange")({ target: { value: options[idx][1].value } })
+          .prop("onChange")({ target: { value: selectPath[idx].value } })
       })
     }
     act(() => {
@@ -115,14 +126,14 @@ describe("HierarchicalSelectField", () => {
         .find("SelectField")
         .at(0)
         // @ts-ignore
-        .prop("onChange")({ target: { value: options[0][2].value } })
+        .prop("onChange")({ target: { value: "Topic2" } })
     })
     expect(
       wrapper
         .find("SelectField")
         .at(0)
         .prop("value")
-    ).toBe(options[0][2].value)
+    ).toBe("Topic2")
     for (let idx = 1; idx < levels.length; ++idx) {
       expect(
         wrapper
@@ -142,7 +153,7 @@ describe("HierarchicalSelectField", () => {
           .find("SelectField")
           .at(idx)
           // @ts-ignore
-          .prop("onChange")({ target: { value: options[idx][1].value } })
+          .prop("onChange")({ target: { value: selectPath[idx].value } })
       })
     }
     const lastIdx = levels.length - 1
@@ -152,21 +163,21 @@ describe("HierarchicalSelectField", () => {
         .find("SelectField")
         .at(lastIdx)
         // @ts-ignore
-        .prop("onChange")({ target: { value: options[lastIdx][2].value } })
+        .prop("onChange")({ target: { value: "potato" } })
     })
     expect(
       wrapper
         .find("SelectField")
         .at(lastIdx)
         .prop("value")
-    ).toBe(options[lastIdx][2].value)
+    ).toBe("potato")
     for (let idx = 0; idx < lastIdx; ++idx) {
       expect(
         wrapper
           .find("SelectField")
           .at(idx)
           .prop("value")
-      ).toBe(options[idx][1].value)
+      ).toBe(selectPath[idx].value)
     }
   })
 
@@ -207,10 +218,7 @@ describe("HierarchicalSelectField", () => {
     it(`adds the selection as a new value${
       duplicate ? ", but it's a duplicate value so it's ignored" : ""
     }`, () => {
-      const value = [
-        [duplicate ? options[0][1].value : "Topic1"],
-        ["Topic2", "Subtopic"]
-      ]
+      const value = [[duplicate ? "Topic2" : "Topic1"], ["Topic2", "Subtopic"]]
       const wrapper = render({
         value
       })
@@ -220,7 +228,7 @@ describe("HierarchicalSelectField", () => {
           .find("SelectField")
           .at(0)
           // @ts-ignore
-          .prop("onChange")({ target: { value: options[0][1].value } })
+          .prop("onChange")({ target: { value: "Topic2" } })
       })
 
       const event = { preventDefault: jest.fn() }
@@ -230,7 +238,7 @@ describe("HierarchicalSelectField", () => {
       expect(event.preventDefault).toBeCalled()
       expect(onChangeStub).toBeCalledWith({
         target: {
-          value: sortBy(duplicate ? value : [...value, [options[0][1].value]]),
+          value: sortBy(duplicate ? value : [...value, ["Topic2"]]),
           name
         }
       })
@@ -252,13 +260,7 @@ describe("HierarchicalSelectField", () => {
   })
 
   describe("calcOptions", () => {
-    let calcOptions: any
     const emptyOption = { label: "-- empty --", value: "" }
-
-    beforeEach(() => {
-      spyCalcOptions.mockRestore()
-      calcOptions = namedExports.calcOptions
-    })
 
     it("returns options if there is no selection", () => {
       const selection = [null, null, null]

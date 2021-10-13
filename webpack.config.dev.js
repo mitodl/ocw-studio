@@ -37,7 +37,7 @@ const devConfig = Object.assign({}, config, {
       minChunks: 2
     },
     emitOnErrors: true
-  }
+  },
 })
 
 devConfig.module.rules = [
