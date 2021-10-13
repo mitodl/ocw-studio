@@ -92,13 +92,13 @@ export default function SiteCollaboratorForm({
           <div className="form-group d-flex">
             <button
               type="submit"
-              className="btn blue-button mr-5 w-25"
+              className="btn cyan-button mr-5 w-25"
               disabled={isSubmitting}
             >
               Save
             </button>
             <button
-              className="btn blue-button-outline w-25"
+              className="btn cyan-button-outline w-25"
               type="button"
               disabled={isSubmitting}
               onClick={onCancel}

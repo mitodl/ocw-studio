@@ -142,7 +142,7 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
             />
           </div>
         ))}
-        <button onClick={handleAdd} className="btn blue-button add">
+        <button onClick={handleAdd} className="btn cyan-button add">
           Add
         </button>
       </div>

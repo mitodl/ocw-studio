@@ -437,7 +437,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
       <div>
         <div className="form-group w-100">
           <button
-            className="px-3 btn blue-button"
+            className="px-3 btn cyan-button"
             onClick={openNewContentPanel}
           >
             Add New

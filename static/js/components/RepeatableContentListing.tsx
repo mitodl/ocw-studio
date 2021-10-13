@@ -15,7 +15,7 @@ import { useWebsite } from "../context/Website"
 
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 import { siteContentListingUrl } from "../lib/urls"
-import { splitFieldsIntoColumns } from "../lib/site_content"
+import { hasMainContentField } from "../lib/site_content"
 import {
   syncWebsiteContentMutation,
   websiteContentListingRequest,
@@ -82,7 +82,7 @@ export default function RepeatableContentListing(props: {
   }
 
   const startAddOrEdit = (textId: string | null) => (
-    event: ReactMouseEvent<HTMLLIElement | HTMLAnchorElement, MouseEvent>
+    event: ReactMouseEvent<HTMLLIElement | HTMLButtonElement, MouseEvent>
   ) => {
     event.preventDefault()
 
@@ -98,11 +98,11 @@ export default function RepeatableContentListing(props: {
   } ${labelSingular}`
 
   const modalClassName = `right ${
-    splitFieldsIntoColumns(configItem.fields).length > 1 ? "wide" : ""
+    hasMainContentField(configItem.fields) ? "wide" : ""
   }`
 
   const onSubmitContentSync = async (
-    event: ReactMouseEvent<HTMLLIElement | HTMLAnchorElement, MouseEvent>
+    event: ReactMouseEvent<HTMLLIElement | HTMLButtonElement, MouseEvent>
   ) => {
     event.preventDefault()
     if (syncIsPending) {
@@ -126,7 +126,7 @@ export default function RepeatableContentListing(props: {
       >
         {modalProps =>
           drawerState.open() ? (
-            <div className="m-3">
+            <div className="m-2">
               <SiteContentEditor
                 loadContent={true}
                 configItem={configItem}
@@ -146,47 +146,45 @@ export default function RepeatableContentListing(props: {
       >
         {_ =>
           syncModalState ? (
-            <div className="m-3">{syncModalState.message}</div>
+            <div className="m-2">{syncModalState.message}</div>
           ) : null
         }
       </BasicModal>
-      <div>
-        <Card>
-          <div className="d-flex flex-direction-row align-items-right justify-content-between pb-1Z">
-            <h3>{configItem.label}</h3>
-            <div>
-              {SETTINGS.gdrive_enabled && configItem.name === "resource" ? (
-                <a
-                  className="btn blue-button sync ml-2"
-                  onClick={onSubmitContentSync}
-                >
-                  Sync w/Google Drive
-                </a>
-              ) : (
-                <a
-                  className="btn blue-button add"
-                  onClick={startAddOrEdit(null)}
-                >
-                  Add {labelSingular}
-                </a>
-              )}
-            </div>
-          </div>
-          <ul className="ruled-list">
-            {listing.results.map((item: WebsiteContentListItem) => (
-              <li
-                key={item.text_id}
-                className="py-3 listing-result"
-                onClick={startAddOrEdit(item.text_id)}
-              >
-                <div className="d-flex flex-direction-row align-items-center justify-content-between">
-                  <span>{item.title}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
+      <div className="d-flex flex-direction-row align-items-right justify-content-between py-3">
+        <h2 className="m-0 p-0">{configItem.label}</h2>
+        <div>
+          {SETTINGS.gdrive_enabled && configItem.name === "resource" ? (
+            <button
+              className="btn cyan-button sync ml-2"
+              onClick={onSubmitContentSync}
+            >
+              Sync w/Google Drive
+            </button>
+          ) : (
+            <button
+              className="btn cyan-button add"
+              onClick={startAddOrEdit(null)}
+            >
+              Add {labelSingular}
+            </button>
+          )}
+        </div>
       </div>
+      <Card>
+        <ul className="ruled-list">
+          {listing.results.map((item: WebsiteContentListItem) => (
+            <li
+              key={item.text_id}
+              className="py-3 listing-result"
+              onClick={startAddOrEdit(item.text_id)}
+            >
+              <div className="d-flex flex-direction-row align-items-center justify-content-between">
+                <span>{item.title}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Card>
       <PaginationControls
         listing={listing}
         previous={siteContentListingUrl

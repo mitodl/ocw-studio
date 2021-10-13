@@ -15,8 +15,7 @@ import {
   contentInitialValues,
   fieldIsVisible,
   newInitialValues,
-  renameNestedFields,
-  splitFieldsIntoColumns
+  renameNestedFields
 } from "../../lib/site_content"
 
 import {
@@ -64,8 +63,6 @@ export default function SiteContentForm({
     () => renameNestedFields(configItem.fields),
     [configItem]
   )
-  const fieldsByColumn = splitFieldsIntoColumns(renamedFields)
-  const columnClass = fieldsByColumn.length === 2 ? "col-6" : "col-12"
 
   const validate = async (values: FormikValues) => {
     const schema = getContentSchema(configItem, values)
@@ -85,34 +82,32 @@ export default function SiteContentForm({
       enableReinitialize={true}
     >
       {({ isSubmitting, status, values }) => (
-        <Form className="row">
-          {fieldsByColumn.map((columnFields, idx) => (
-            <div className={columnClass} key={idx}>
-              {columnFields
-                .filter(field => fieldIsVisible(field, values))
-                .map(field =>
-                  field.widget === WidgetVariant.Object ? (
-                    <ObjectField
-                      field={field}
-                      key={field.name}
-                      contentContext={contentContext}
-                      values={values}
-                    />
-                  ) : (
-                    <SiteContentField
-                      field={field}
-                      key={field.name}
-                      contentContext={contentContext}
-                    />
-                  )
-                )}
-            </div>
-          ))}
+        <Form>
+          <div>
+            {renamedFields
+              .filter(field => fieldIsVisible(field, values))
+              .map(field =>
+                field.widget === WidgetVariant.Object ? (
+                  <ObjectField
+                    field={field}
+                    key={field.name}
+                    contentContext={contentContext}
+                    values={values}
+                  />
+                ) : (
+                  <SiteContentField
+                    field={field}
+                    key={field.name}
+                    contentContext={contentContext}
+                  />
+                )
+              )}
+          </div>
           <div className="form-group d-flex w-100 justify-content-end">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 btn blue-button"
+              className="px-5 btn cyan-button"
             >
               Save
             </button>

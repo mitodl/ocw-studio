@@ -1,3 +1,28 @@
+$form-border: 1px solid $studio-gray !important;
+
+.form-control,
+.form-input,
+.ck.ck-editor,
+.sortable-item {
+  border: $form-border;
+  border-radius: 0.25rem;
+  box-shadow: 0 1px $studio-gray;
+}
+
+.ck.ck-editor__top {
+  border-bottom: $form-border;
+}
+
+.ck.ck-content,
+.ck.ck-sticky-panel,
+.ck.ck-toolbar {
+  border-style: none !important;
+}
+
+form input[type="file"] {
+  height: 44px;
+}
+
 .form-error {
   color: $error-red;
 }
@@ -21,4 +46,8 @@
   i {
     font-size: 30px;
   }
+}
+
+.expandable-section-title {
+  font-size: 1.25rem;
 }

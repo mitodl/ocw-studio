@@ -120,7 +120,7 @@ export default function PublishDrawer(props: Props): JSX.Element {
             <button
               onClick={publish}
               disabled={!hasUnpublishedChanges}
-              className="btn btn-publish green-button-outline d-flex flex-direction-row align-items-center"
+              className="btn btn-publish cyan-button-outline d-flex flex-direction-row align-items-center"
             >
               Publish
             </button>

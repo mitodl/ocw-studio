@@ -43,21 +43,16 @@ interface SectionProps {
 function SidebarSection(props: SectionProps): JSX.Element {
   const { website, configItems, category, bottomPadding } = props
 
-  const iconName = category === "Settings" ? "settings" : "create"
-
   const className = bottomPadding ? "sidebar-section pb-4" : "sidebar-section"
 
   return (
     <div className={className}>
-      <h4 className="d-flex font-weight-bold align-items-center">
-        <i className="material-icons pr-2">{iconName}</i>
-        {category}
-      </h4>
+      <h4 className="font-weight-bold">{category}</h4>
       {configItems.map((item: TopLevelConfigItem) => (
         <NavLink
           key={item.name}
           exact
-          className="font-weight-light my-2"
+          className="my-2"
           to={
             item.name === collaboratorsConfigName ?
               siteCollaboratorsUrl.param({ name: website.name }).toString() :
@@ -87,7 +82,6 @@ export default function SiteSidebar(props: Props): JSX.Element {
 
   return (
     <div className="sidebar">
-      <h2 className="pb-5 border-bottom-gray mb-3">OCW Studio</h2>
       {configSections.map(([category, configItems], idx) => (
         <SidebarSection
           key={idx}

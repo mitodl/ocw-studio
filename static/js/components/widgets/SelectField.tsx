@@ -69,25 +69,29 @@ export default function SelectField(props: Props): JSX.Element {
     selected = isNil(value) ? null : getSelectOption(value)
   }
 
+  const commonSelectOptions = {
+    className:   "w-100 form-input",
+    value:       selected,
+    isMulti:     multiple,
+    onChange:    changeHandler,
+    options:     selectOptions,
+    placeholder: placeholder || null,
+    styles:      {
+      control: (base: any) => ({
+        ...base,
+        border:    0,
+        boxShadow: "none"
+      })
+    }
+  }
+
   return loadOptions ? (
     <AsyncSelect
-      className="w-100"
-      value={selected}
-      isMulti={multiple}
-      onChange={changeHandler}
-      options={selectOptions}
+      {...commonSelectOptions}
       loadOptions={loadOptions}
-      placeholder={placeholder || null}
       defaultOptions={defaultOptions}
     />
   ) : (
-    <Select
-      className="w-100"
-      value={selected}
-      isMulti={multiple}
-      onChange={changeHandler}
-      options={selectOptions}
-      placeholder={placeholder || null}
-    />
+    <Select {...commonSelectOptions} />
   )
 }

@@ -2,15 +2,14 @@
 @import "node_modules/bootstrap/scss/bootstrap";
 @import "react-nestable/dist/styles/index.css";
 @import "variables";
+@import "common";
+@import "button";
 @import "header";
 @import "home-page";
 @import "site-page";
 @import "dashboard";
 @import "site-collaborators";
 @import "forms";
-@import "card";
-@import "pagination";
-@import "button";
 @import "list";
 @import "ckeditor";
 @import "resource-embed-widget";
@@ -22,22 +21,6 @@ body {
   // default font color
   color: $studio-black;
   font-size: $std-font-size;
-
-  h1 {
-    font-size: 2.25rem;
-  }
-
-  h2 {
-    font-size: 1.75rem;
-  }
-
-  h3 {
-    font-size: 1.5rem;
-  }
-
-  h4 {
-    font-size: 1.25rem;
-  }
 }
 
 .app {
@@ -55,22 +38,17 @@ body {
   max-width: $narrow-max-width;
 }
 
-a {
-  cursor: pointer;
-  color: $studio-black;
-
-  &:hover {
-    color: $studio-black;
-  }
-}
-
 .border-bottom-gray {
   border-bottom: 1px solid $studio-gray;
 }
 
+.text-gray {
+  color: $studio-text-gray;
+}
+
 // modal as sidebar CSS adapted from https://codepen.io/bootpen/pen/jbbaRa
 $modal-sidebar-width-narrow: 540px;
-$modal-sidebar-width-wide: 90%;
+$modal-sidebar-width-wide: 80%;
 
 .modal.right {
   .modal-dialog {
@@ -85,9 +63,14 @@ $modal-sidebar-width-wide: 90%;
     min-width: $modal-sidebar-width-wide;
   }
 
+  .modal-header {
+    border-bottom: none;
+  }
+
   .modal-content {
     height: 100%;
     overflow-y: auto;
+    border-radius: 0;
   }
 
   .modal-body {
@@ -125,8 +108,4 @@ $modal-sidebar-width-wide: 90%;
 :root {
   --ck-z-default: 10000 !important;
   --ck-z-modal: calc(var(--ck-z-default) + 999);
-}
-
-.text-gray {
-  color: $studio-text-gray;
 }

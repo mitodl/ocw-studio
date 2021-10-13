@@ -17,7 +17,7 @@ import {
   contentInitialValues,
   fieldIsVisible,
   newInitialValues,
-  splitFieldsIntoColumns
+  renameNestedFields
 } from "../../lib/site_content"
 import { useWebsite } from "../../context/Website"
 
@@ -49,7 +49,7 @@ describe("SiteContentForm", () => {
     content.content_context = times(() => makeWebsiteContentDetail(), 3)
     configItem = makeEditableConfigItem(content.type)
     // @ts-ignore
-    splitFieldsIntoColumns.mockImplementation(() => [])
+    renameNestedFields.mockImplementation(() => [])
     website = makeWebsiteDetail()
     // @ts-ignore
     useWebsite.mockReturnValue(website)
@@ -97,9 +97,9 @@ describe("SiteContentForm", () => {
         // @ts-ignore
         componentFromWidget.mockImplementation(() => widget)
         // @ts-ignore
-        fieldIsVisible.mockImplementation(() => true)
+        renameNestedFields.mockImplementation(() => configItem.fields)
         // @ts-ignore
-        splitFieldsIntoColumns.mockImplementation(() => [configItem.fields])
+        fieldIsVisible.mockImplementation(() => true)
 
         const form = renderInnerForm(editorState)
         let idx = 0
@@ -131,7 +131,6 @@ describe("SiteContentForm", () => {
 
       it("has the correct Formik props", () => {
         // @ts-ignore
-        splitFieldsIntoColumns.mockImplementation(() => [])
         const formik = renderForm({ editorState }).find("Formik")
         const validationSchema = formik.prop("validationSchema")
         expect(validationSchema).toStrictEqual(mockValidationSchema)
@@ -144,7 +143,7 @@ describe("SiteContentForm", () => {
         // @ts-ignore
         fieldIsVisible.mockImplementation(() => true)
         // @ts-ignore
-        splitFieldsIntoColumns.mockImplementation(() => [configItem.fields])
+        renameNestedFields.mockImplementation(() => configItem.fields)
         const values = { some: "values" }
         const wrapper = renderInnerForm(editorState, { values })
         const objectWrapper = wrapper.find("ObjectField")

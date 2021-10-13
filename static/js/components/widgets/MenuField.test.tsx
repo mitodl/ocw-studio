@@ -96,7 +96,7 @@ describe("MenuField", () => {
       )
       formShowBtn = renderedMenuItem.find("button").at(0)
     } else {
-      formShowBtn = wrapper.find("button.blue-button")
+      formShowBtn = wrapper.find("button.cyan-button")
     }
     const preventDefaultStub = jest.fn()
     formShowBtn.prop("onClick")({ preventDefault: preventDefaultStub })

@@ -92,10 +92,10 @@ export const SiteForm = ({
           <div className="form-group d-flex justify-content-end">
             <button
               type="submit"
-              className="btn blue-button"
+              className="btn cyan-button"
               disabled={isSubmitting}
             >
-              Submit
+              Save
             </button>
           </div>
           {status && (

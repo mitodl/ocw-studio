@@ -168,7 +168,7 @@ export default function MenuItemForm({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 btn blue-button"
+                className="px-5 btn cyan-button"
               >
                 Save
               </button>

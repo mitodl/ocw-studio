@@ -91,7 +91,7 @@ export default function WebsiteCollectionItemForm(props: Props): JSX.Element {
             <button
               type="submit"
               disabled={itemCreatePending || values.website === undefined}
-              className="px-4 ml-3 btn blue-button"
+              className="px-4 ml-3 btn cyan-button"
             >
               Add
             </button>

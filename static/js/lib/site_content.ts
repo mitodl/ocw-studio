@@ -1,5 +1,5 @@
 import { ComponentType, ElementType } from "react"
-import { evolve, map, partition, pick } from "ramda"
+import { evolve, map, pick } from "ramda"
 
 import MarkdownEditor from "../components/widgets/MarkdownEditor"
 import FileUploadField from "../components/widgets/FileUploadField"
@@ -113,14 +113,10 @@ export const isMainContentField = (field: ConfigField): boolean =>
   field.widget === WidgetVariant.Markdown
 
 /**
- * split an array of ConfigField into two arrays, with the first containing
- * 'main content' fields and the second containing all the other fields.
- * these two arrays can then be used to render our fields into two columns.
+ * Returns true if an array of config fields contains a main content field
  **/
-export const splitFieldsIntoColumns = (
-  fields: ConfigField[]
-): ConfigField[][] =>
-  partition(isMainContentField, fields).filter(column => column.length > 0)
+export const hasMainContentField = (fields: ConfigField[]): boolean =>
+  fields.find(field => isMainContentField(field)) !== undefined
 
 export const isRepeatableCollectionItem = (
   configItem: BaseConfigItem
