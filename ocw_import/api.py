@@ -298,6 +298,7 @@ def import_ocw2hugo_menu(menu_data, website):
         filename="menus.yaml",
         website=website,
         defaults={
+            "title": "Left Nav",
             "type": CONTENT_TYPE_NAVMENU,
             "text_id": CONTENT_TYPE_NAVMENU,
             "dirpath": "config/_default/menus.yaml",
