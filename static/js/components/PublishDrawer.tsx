@@ -135,7 +135,7 @@ export default function PublishDrawer(props: Props): JSX.Element {
       <ModalHeader toggle={toggleVisibility}>Publish your site</ModalHeader>
       <ModalBody>
         {renderOption(STAGING)}
-        {renderOption(PRODUCTION)}
+        {website.is_admin ? renderOption(PRODUCTION) : null}
       </ModalBody>
     </Modal>
   )

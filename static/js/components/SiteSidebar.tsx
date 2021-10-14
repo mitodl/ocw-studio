@@ -15,9 +15,12 @@ const buildConfigMap = (
   // Create a map with all defined categories mapped to the config items in that category.
   // ex: {"Content": [<config item>, <config item>], "Settings": [<config item>]}
   // Using a Map to maintain the order of insertion for keys.
+  const adminOnlyItems = ["metadata"]
   const configMap = new Map<string, Array<TopLevelConfigItem>>()
   configItems.forEach((configItem: TopLevelConfigItem) => {
-    addToMapList(configMap, configItem.category, configItem)
+    if (website.is_admin || !adminOnlyItems.includes(configItem.name)) {
+      addToMapList(configMap, configItem.category, configItem)
+    }
   })
 
   if (website.is_admin) {

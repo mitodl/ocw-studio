@@ -185,7 +185,8 @@ export const makeWebsiteDetail = (): any => ({
   draft_url:             casual.url,
   live_url:              casual.url,
   has_unpublished_draft: casual.boolean,
-  has_unpublished_live:  casual.boolean
+  has_unpublished_live:  casual.boolean,
+  is_admin:              casual.boolean
 })
 
 export const makeWebsiteListing = (): Website[] =>

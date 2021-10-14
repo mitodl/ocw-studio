@@ -23,7 +23,8 @@ describe("PublishDrawer", () => {
     website = {
       ...makeWebsiteDetail(),
       has_unpublished_draft: true,
-      has_unpublished_live:  true
+      has_unpublished_live:  true,
+      is_admin:              true
     }
     refreshWebsiteStub = helper.handleRequestStub
       .withArgs(siteApiDetailUrl.param({ name: website.name }).toString())
@@ -171,6 +172,14 @@ describe("PublishDrawer", () => {
           })
           await wrapper.update()
           expect(wrapper.find(".btn-publish").prop("disabled")).toBe(true)
+        })
+
+        it("render only the preview button if user is not an admin", async () => {
+          website["is_admin"] = false
+          const { wrapper } = await render()
+          expect(wrapper.find(`#publish-${action}`).exists()).toBe(
+            action === "staging" ? true : false
+          )
         })
 
         it("renders a message about unpublished content", async () => {
