@@ -265,7 +265,8 @@ class HugoMenuYamlFileSerializer(BaseContentFileSerializer):
     def serialize(self, website_content: WebsiteContent) -> str:
         return yaml.dump(
             self.serialize_contents(
-                metadata=_transform_hugo_menu_data(website_content, self.site_config)
+                metadata=_transform_hugo_menu_data(website_content, self.site_config),
+                title=None,
             ),
             Dumper=yaml.Dumper,
         )
