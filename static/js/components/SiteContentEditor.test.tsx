@@ -38,14 +38,6 @@ import { createModalState } from "../types/modal_state"
 
 jest.mock("./forms/validation")
 
-const mockUseRouteMatch = jest.fn()
-
-jest.mock("react-router-dom", () => ({
-  // @ts-ignore
-  ...jest.requireActual("react-router-dom"),
-  useRouteMatch: mockUseRouteMatch
-}))
-
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
   return <div>mock</div>
@@ -65,7 +57,6 @@ describe("SiteContent", () => {
     formikStubs: { [key: string]: SinonStub },
     content: WebsiteContent,
     hideModalStub: SinonStub,
-    routeParams: any,
     fetchWebsiteListingStub: SinonStub,
     successStubs: Record<string, SinonStub>,
     mockContentSchema: FormSchema
@@ -75,10 +66,6 @@ describe("SiteContent", () => {
     website = makeWebsiteDetail()
     content = makeWebsiteContentDetail()
     configItem = makeRepeatableConfigItem()
-    routeParams = { name: website.name, contenttype: configItem.name }
-    mockUseRouteMatch.mockImplementation(() => ({
-      params: routeParams
-    }))
     mockContentSchema = yup.object().shape({})
     // @ts-ignore
     getContentSchema.mockImplementation(() => mockContentSchema)
@@ -248,7 +235,7 @@ describe("SiteContent", () => {
         "POST",
         {
           body: {
-            type:     routeParams.contenttype,
+            type:     configItem.name,
             title:    values.title,
             metadata: {
               description: values.description
@@ -475,7 +462,7 @@ describe("SiteContent", () => {
       "POST",
       {
         body: {
-          type:     routeParams.contenttype,
+          type:     configItem.name,
           title:    values.title,
           metadata: {
             description: values.description

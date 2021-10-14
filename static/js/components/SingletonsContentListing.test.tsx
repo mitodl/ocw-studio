@@ -1,5 +1,3 @@
-const mockUseRouteMatch = jest.fn()
-
 import React from "react"
 import { act } from "react-dom/test-utils"
 
@@ -26,12 +24,6 @@ import {
 } from "../types/websites"
 import sinon, { SinonStub } from "sinon"
 import { createModalState } from "../types/modal_state"
-
-jest.mock("react-router-dom", () => ({
-  // @ts-ignore
-  ...jest.requireActual("react-router-dom"),
-  useRouteMatch: mockUseRouteMatch
-}))
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {

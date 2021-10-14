@@ -1,5 +1,3 @@
-const mockUseRouteMatch = jest.fn()
-
 import SitesDashboard, { siteDescription } from "./SitesDashboard"
 
 import { WEBSITES_PAGE_SIZE } from "../constants"
@@ -20,12 +18,6 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 
 import { Website } from "../types/websites"
-
-jest.mock("react-router-dom", () => ({
-  // @ts-ignore
-  ...jest.requireActual("react-router-dom"),
-  useRouteMatch: mockUseRouteMatch
-}))
 
 describe("SitesDashboard", () => {
   let helper: IntegrationTestHelper,

@@ -1,5 +1,3 @@
-const mockUseRouteMatch = jest.fn()
-
 import sinon, { SinonStub } from "sinon"
 import { act } from "react-dom/test-utils"
 
@@ -14,12 +12,6 @@ import {
 import { siteDetailUrl, siteApi, startersApi } from "../lib/urls"
 
 import { Website, WebsiteStarter } from "../types/websites"
-
-jest.mock("react-router-dom", () => ({
-  // @ts-ignore
-  ...jest.requireActual("react-router-dom"),
-  useRouteMatch: mockUseRouteMatch
-}))
 
 describe("SiteCreationPage", () => {
   let helper: IntegrationTestHelper,
