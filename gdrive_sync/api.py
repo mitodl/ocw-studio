@@ -235,7 +235,7 @@ def create_gdrive_folders(website_short_id: str) -> bool:
     query = f"{base_query}name = '{website_short_id}'"
 
     fields = "nextPageToken, files(id, name, parents)"
-    folders = query_files(query=query, fields=fields)
+    folders = list(query_files(query=query, fields=fields))
 
     if settings.DRIVE_UPLOADS_PARENT_FOLDER_ID:
         filtered_folders = []
