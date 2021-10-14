@@ -16,7 +16,7 @@ interface Props {
   websiteCollection: WebsiteCollection
 }
 
-const formatOptions = (websites: Website[]) =>
+const formatOptions = (websites: Website[]): Option[] =>
   websites.map(website => ({ label: website.title, value: website.uuid }))
 
 export default function WebsiteCollectionItemForm(props: Props): JSX.Element {

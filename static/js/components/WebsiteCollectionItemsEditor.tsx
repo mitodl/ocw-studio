@@ -1,18 +1,5 @@
 import React, { useCallback } from "react"
 import { useSelector } from "react-redux"
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors
-} from "@dnd-kit/core"
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy
-} from "@dnd-kit/sortable"
 
 import { useMutation, useRequest } from "redux-query-react"
 import {
@@ -26,7 +13,9 @@ import {
 } from "../query-configs/website_collections"
 import { getWebsiteCollectionItemsCursor } from "../selectors/website_collections"
 import WebsiteCollectionItemForm from "./forms/WebsiteCollectionItemForm"
-import SortableWebsiteCollectionItem from "./SortableWebsiteCollectionItem"
+import SortableItem from "./SortableItem"
+import SortWrapper from "./SortWrapper"
+import { DragEndEvent } from "@dnd-kit/core"
 
 interface Props {
   websiteCollection: WebsiteCollection
@@ -36,13 +25,6 @@ export default function WebsiteCollectionItemsEditor(
   props: Props
 ): JSX.Element {
   const { websiteCollection } = props
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
-  )
 
   useRequest(websiteCollectionItemsRequest(websiteCollection.id))
 
@@ -57,16 +39,16 @@ export default function WebsiteCollectionItemsEditor(
   )
 
   const handleDragEnd = useCallback(
-    function handleDragEnd(event: any) {
+    function handleDragEnd(event: DragEndEvent) {
       const { active, over } = event
 
-      if (active.id !== over.id) {
+      if (over && active.id !== over.id) {
         updateWCItemPosition(
           {
             position: items.map(item => String(item.id)).indexOf(over.id)
           },
           websiteCollection.id,
-          active.id
+          Number(active.id)
         )
       }
     },
@@ -81,25 +63,21 @@ export default function WebsiteCollectionItemsEditor(
     <div className="collection-item-editor pt-5 pb-3">
       <h4>Courses in this collection</h4>
       <WebsiteCollectionItemForm websiteCollection={websiteCollection} />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
+      <SortWrapper
+        handleDragEnd={handleDragEnd}
+        items={items}
+        generateItemUUID={item => String(item.id)}
       >
-        <SortableContext
-          items={items.map(item => String(item.id))}
-          strategy={verticalListSortingStrategy}
-        >
-          {items.map(item => (
-            <SortableWebsiteCollectionItem
-              key={item.id}
-              id={String(item.id)}
-              item={item}
-              deleteItem={deleteWCItem}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
+        {items.map(item => (
+          <SortableItem
+            key={item.id}
+            id={String(item.id)}
+            item={item}
+            deleteItem={deleteWCItem}
+            title={item.website_title}
+          />
+        ))}
+      </SortWrapper>
     </div>
   )
 }

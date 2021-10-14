@@ -2,18 +2,15 @@ import React, { useCallback } from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 
-import { WebsiteCollectionItem } from "../types/website_collections"
-
-interface Props {
-  item: WebsiteCollectionItem
+interface Props<T> {
+  item: T
   id: string
-  deleteItem: (item: WebsiteCollectionItem) => void
+  deleteItem: (item: T) => void
+  title: string
 }
 
-export default function SortableWebsiteCollectionItem(
-  props: Props
-): JSX.Element {
-  const { item, deleteItem } = props
+export default function SortableItem<T>(props: Props<T>): JSX.Element {
+  const { item, deleteItem, id, title } = props
 
   const {
     attributes,
@@ -22,7 +19,7 @@ export default function SortableWebsiteCollectionItem(
     transform,
     transition
   } = useSortable({
-    id: String(item.id)
+    id
   })
 
   const style = {
@@ -44,7 +41,7 @@ export default function SortableWebsiteCollectionItem(
       {...listeners}
     >
       <span className="material-icons">drag_indicator</span>
-      <div className="title">{item.website_title}</div>
+      <div className="title">{title}</div>
       <span
         className="material-icons ml-auto gray-button hover"
         onClick={deleteItemCB}

@@ -44,11 +44,9 @@ describe("WebsiteCollectionItemsEditor", () => {
 
   it("should render, show items", async () => {
     const { wrapper } = await render()
-    expect(
-      wrapper
-        .find("SortableWebsiteCollectionItem")
-        .map(item => item.prop("item"))
-    ).toEqual(items)
+    expect(wrapper.find("SortableItem").map(item => item.prop("item"))).toEqual(
+      items
+    )
   })
 
   it("should render the WebsiteCollectionItemForm", async () => {
@@ -124,7 +122,7 @@ describe("WebsiteCollectionItemsEditor", () => {
     act(() => {
       // @ts-ignore
       wrapper
-        .find("SortableWebsiteCollectionItem")
+        .find("SortableItem")
         .at(0)
         .prop("deleteItem")(item)
     })

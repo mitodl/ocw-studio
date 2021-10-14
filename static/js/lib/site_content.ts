@@ -67,7 +67,8 @@ const RELATION_EXTRA_PROPS = [
   "min",
   "multiple",
   "filter",
-  "website"
+  "website",
+  "sortable"
 ]
 const MENU_EXTRA_PROPS = ["collections"]
 const HIERARCHICAL_SELECT_EXTRA_PROPS = ["options_map", "levels"]

@@ -1,19 +1,20 @@
 import React from "react"
 import { shallow } from "enzyme"
 
-import SortableWebsiteCollectionItem from "./SortableWebsiteCollectionItem"
+import SortableItem from "./SortableItem"
 import { WebsiteCollectionItem } from "../types/website_collections"
 import { makeWebsiteCollectionItem } from "../util/factories/website_collections"
 
-describe("SortableWebsiteCollectionItem", () => {
+describe("SortableItem", () => {
   let item: WebsiteCollectionItem, deleteStub: jest.Mock<any, any>
 
   const renderItem = () =>
     shallow(
-      <SortableWebsiteCollectionItem
+      <SortableItem
         deleteItem={deleteStub}
         item={item}
-        id={String(item.id)}
+        id="item-id"
+        title="A TITLE"
       />
     )
 
@@ -30,7 +31,7 @@ describe("SortableWebsiteCollectionItem", () => {
         .at(0)
         .text()
     ).toBe("drag_indicator")
-    expect(wrapper.find(".title").text()).toBe(item.website_title)
+    expect(wrapper.find(".title").text()).toBe("A TITLE")
   })
 
   it("should include a delete button", () => {

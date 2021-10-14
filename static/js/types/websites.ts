@@ -116,6 +116,7 @@ export interface RelationConfigField extends ConfigFieldBaseProps {
   max?: number
   filter?: RelationFilter
   website?: string
+  sortable?: boolean
 }
 
 export interface MenuConfigField extends ConfigFieldBaseProps {

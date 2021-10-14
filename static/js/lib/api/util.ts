@@ -53,6 +53,12 @@ export const sharedWait = async (
   resolve()
 }
 
+/**
+ * A debounced fetch function which will make the specified request only if it
+ * is not called again for `delayMillis` ms.
+ *
+ * Especially useful for typeahead option fetching!
+ */
 export const debouncedFetch = async (
   key: string,
   delayMillis: number,

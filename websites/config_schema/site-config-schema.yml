@@ -40,6 +40,7 @@ field:
     website: str(required=False)
     attach: str(required=False)
     levels: list(include('level'), required=False)
+    sortable: bool(required=False)
 ---
 field_condition:
     field: str()

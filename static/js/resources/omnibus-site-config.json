@@ -87,6 +87,28 @@
       "category": "Content",
       "fields": [
         {
+          "collection": "resource",
+          "display_field": "title",
+          "filter": {
+            "field": "resourcetype",
+            "filter_type": "equals",
+            "value": "Video"
+          },
+          "label": "Videos",
+          "multiple": true,
+          "name": "videos",
+          "sortable": true,
+          "widget": "relation"
+        }
+      ],
+      "folder": "content/video_galleries",
+      "label": "Video Gallery",
+      "name": "video_gallery"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
           "label": "Title",
           "name": "title",
           "required": true,
@@ -109,6 +131,18 @@
             "PDF",
             "Word Doc",
             "PPT"
+          ],
+          "required": true,
+          "widget": "select"
+        },
+        {
+          "label": "Resource Type",
+          "name": "resourcetype",
+          "options": [
+            "Image",
+            "Video",
+            "Document",
+            "Other"
           ],
           "required": true,
           "widget": "select"

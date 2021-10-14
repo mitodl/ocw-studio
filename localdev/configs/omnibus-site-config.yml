@@ -40,6 +40,23 @@ collections:
           - { label: "State", name: "state", widget: "string", required: false }
           - { label: "Zip Code", name: "zip", widget: "string", required: false }
 
+  - category: Content
+    folder: content/video_galleries
+    label: "Video Gallery"
+    name: video_gallery
+    fields:
+      - label: Videos
+        name: videos
+        widget: relation
+        multiple: true
+        collection: resource
+        display_field: title
+        sortable: true
+        filter:
+          field: "resourcetype"
+          filter_type: "equals"
+          value: "Video"
+
   - name: resource
     label: Resources
     label_singular: Resource
@@ -56,6 +73,15 @@ collections:
         "options": [ "PDF", "Word Doc", "PPT" ],
         "widget": "select"
         }
+      - label: Resource Type
+        name: resourcetype
+        required: true
+        widget: select
+        options:
+          - Image
+          - Video
+          - Document
+          - Other
 
   - name: metadata
     label: Metadata
