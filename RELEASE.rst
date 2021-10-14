@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.30.3
+Version 0.30.3 (Released October 14, 2021)
 --------------
 
 - Updated common UI elements and basic page layout to match new designs
