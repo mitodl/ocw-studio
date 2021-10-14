@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.30.3
+--------------
+
+- Updated common UI elements and basic page layout to match new designs
+- disallow nested tables
+
 Version 0.30.2 (Released October 13, 2021)
 --------------
 
