@@ -44,7 +44,7 @@ def stream_drive_file_to_s3(self, drive_file_id: str, prefix: str = None):
         if prefix is None:
             prefix = settings.DRIVE_S3_UPLOAD_PREFIX
         drive_file = DriveFile.objects.get(file_id=drive_file_id)
-        api.stream_to_s3(drive_file, prefix=prefix)
+        api.stream_to_s3(drive_file)
 
 
 @app.task(bind=True)
@@ -90,13 +90,10 @@ def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-
             ).replace(tzinfo=pytz.utc)
             if not last_checked or maxLastTime > last_checked:
                 last_checked = maxLastTime
-            s3_prefix = (
-                settings.DRIVE_S3_UPLOAD_PREFIX
-                if drive_file.is_video()
-                else drive_file.website.starter.config.get("root-url-path")
-            )
             task_list = [
-                stream_drive_file_to_s3.s(drive_file.file_id, prefix=s3_prefix),
+                stream_drive_file_to_s3.s(
+                    drive_file.file_id, prefix=drive_file.s3_prefix
+                ),
                 transcode_drive_file_video.si(drive_file.file_id)
                 if drive_file.is_video()
                 else None,
@@ -155,10 +152,7 @@ def import_website_files(self, short_id: str):
             if drive_file:
                 task_list = [
                     stream_drive_file_to_s3.s(
-                        drive_file.file_id,
-                        prefix=drive_file.website.starter.config.get(
-                            "root-url-path"
-                        ).rstrip("/"),
+                        drive_file.file_id, prefix=drive_file.s3_prefix
                     ),
                     transcode_drive_file_video.si(drive_file.file_id)
                     if drive_file.is_video()

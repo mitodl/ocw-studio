@@ -1,5 +1,6 @@
 """API functionality for websites"""
 import logging
+import os
 from typing import Dict, List, Optional
 from uuid import UUID
 
@@ -71,6 +72,7 @@ def find_available_name(
     initial_filename_base: str,
     fieldname: str,
     max_length: Optional[int] = CONTENT_FILENAME_MAX_LEN,
+    extension: Optional[str] = None,
 ) -> str:
     """
     Returns a filename with the lowest possible suffix given some base filename. If the applied suffix
@@ -97,25 +99,31 @@ def find_available_name(
     # Any query for suffixed filenames could come up empty. The minimum suffix will be added to
     # the filename in that case.
     current_min_suffix = 2
+    if extension is None:
+        extension = ""
     while chars_to_truncate < len(initial_filename_base):
         name_base = initial_filename_base[
             0 : len(initial_filename_base) - chars_to_truncate
         ]
         kwargs = {
-            f"{fieldname}__regex": r"{name_base}[0-9]+".format(name_base=name_base)
+            f"{fieldname}__regex": r"{name_base}[0-9]+{extension}".format(
+                name_base=name_base, extension=extension
+            )
         }
         # Find names that match the namebase and have a numerical suffix, then find the max suffix
         existing_names = website_content_qset.filter(**kwargs).values_list(
             fieldname, flat=True
         )
+        if extension:
+            existing_names = [os.path.splitext(name)[0] for name in existing_names]
         max_suffix = max_or_none(
             int(filename[len(name_base) :]) for filename in existing_names
         )
         if max_suffix is None:
-            return "".join([name_base, str(current_min_suffix)])
+            return f"{''.join([name_base, str(current_min_suffix)])}{extension}"
         else:
             next_suffix = max_suffix + 1
-            candidate_name = "".join([name_base, str(next_suffix)])
+            candidate_name = "".join([name_base, str(next_suffix), extension])
             # If the next suffix adds a digit and causes the filename to exceed the character limit,
             # keep searching.
             if len(candidate_name) <= max_length:
