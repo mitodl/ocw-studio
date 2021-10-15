@@ -62,6 +62,7 @@ describe("PublishDrawer", () => {
       "Staging",
       "draft_url",
       "draft_publish_date",
+      "draft_publish_status",
       0
     ],
     [
@@ -71,6 +72,7 @@ describe("PublishDrawer", () => {
       "Production",
       "live_url",
       "publish_date",
+      "live_publish_status",
       1
     ]
   ].forEach(
@@ -81,6 +83,7 @@ describe("PublishDrawer", () => {
       label,
       urlField,
       publishDateField,
+      publishStatusField,
       idx
     ]) => {
       describe(action, () => {
@@ -122,6 +125,29 @@ describe("PublishDrawer", () => {
           expect(
             wrapper.find(".publish-option-description a").prop("target")
           ).toBe("_blank")
+          expect(wrapper.find(".publish-option-description a").text()).toBe(
+            website[urlField]
+          )
+        })
+
+        it("renders the publish status", async () => {
+          const { wrapper } = await render()
+          await act(async () => {
+            // @ts-ignore
+            wrapper
+              .find("input[type='radio']")
+              // @ts-ignore
+              .at(idx)
+              // @ts-ignore
+              .prop("onChange")()
+          })
+          await wrapper.update()
+          expect(wrapper.find("PublishStatusIndicator").prop("status")).toBe(
+            website[publishStatusField]
+          )
+          expect(
+            wrapper.find(".publish-option-description a").prop("href")
+          ).toBe(website[urlField])
           expect(wrapper.find(".publish-option-description a").text()).toBe(
             website[urlField]
           )

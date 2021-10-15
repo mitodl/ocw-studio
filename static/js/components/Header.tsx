@@ -1,10 +1,16 @@
 import * as React from "react"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+import { useStore } from "react-redux"
 import { Link } from "react-router-dom"
+import wait from "waait"
+import { requestAsync } from "redux-query"
 
 import PublishDrawer from "../components/PublishDrawer"
 
 import { logoutUrl, sitesBaseUrl } from "../lib/urls"
+import { websiteStatusRequest } from "../query-configs/websites"
+import { PUBLISH_STATUS_PROCESSING_STATES } from "../constants"
+import PublishStatusIndicator from "./PublishStatusIndicator"
 
 import { Website } from "../types/websites"
 
@@ -14,6 +20,7 @@ export interface HeaderProps {
 
 export default function Header(props: HeaderProps): JSX.Element {
   const { website } = props
+  const store = useStore()
 
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false)
   const openPublishDrawer = useCallback(
@@ -23,6 +30,42 @@ export default function Header(props: HeaderProps): JSX.Element {
     },
     [setDrawerOpen]
   )
+
+  useEffect(() => {
+    let mounted = true
+
+    const waitFunc = async () => {
+      if (website) {
+        while (
+          PUBLISH_STATUS_PROCESSING_STATES.includes(
+            website.draft_publish_status ?? ""
+          ) ||
+          PUBLISH_STATUS_PROCESSING_STATES.includes(
+            website.live_publish_status ?? ""
+          )
+        ) {
+          await wait(5000)
+          if (mounted) {
+            await store.dispatch(
+              requestAsync(websiteStatusRequest(website.name))
+            )
+          }
+        }
+      }
+    }
+    waitFunc()
+
+    return () => {
+      mounted = false
+    }
+  }, [website, store])
+
+  const latestPublishStatus = website ?
+    (website.draft_publish_status_updated_on ?? "") <
+      (website.live_publish_status_updated_on ?? "") ?
+      website.live_publish_status :
+      website.draft_publish_status :
+    null
 
   return (
     <header className="p-3">
@@ -54,6 +97,7 @@ export default function Header(props: HeaderProps): JSX.Element {
             >
               <i className="material-icons mr-1">publish</i> Publish
             </button>
+            <PublishStatusIndicator status={latestPublishStatus} />
             <PublishDrawer
               website={website}
               visibility={drawerOpen}

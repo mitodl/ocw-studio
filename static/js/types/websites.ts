@@ -201,7 +201,20 @@ export interface NewWebsitePayload {
   starter: number
 }
 
-export interface Website {
+export interface WebsiteStatus {
+  uuid: string
+  name: string
+  publish_date: string | null // eslint-disable-line
+  draft_publish_date: string | null // eslint-disable-line
+  has_unpublished_draft: boolean // eslint-disable-line
+  has_unpublished_live: boolean // eslint-disable-line
+  live_publish_status: string | null // eslint-disable-line
+  live_publish_status_updated_on: string | null // eslint-disable-line
+  draft_publish_status: string | null // eslint-disable-line
+  draft_publish_status_updated_on: string | null // eslint-disable-line
+}
+
+export type Website = WebsiteStatus & {
   uuid: string
   created_on: string // eslint-disable-line
   updated_on: string // eslint-disable-line
@@ -212,8 +225,6 @@ export interface Website {
   starter: WebsiteStarter | null
   metadata?: any
   is_admin?: boolean // eslint-disable-line
-  publish_date: string | null // eslint-disable-line
-  draft_publish_date: string | null // eslint-disable-line
   draft_url: string // eslint-disable-line
   live_url: string // eslint-disable-line
   gdrive_url: string // eslint-disable-line

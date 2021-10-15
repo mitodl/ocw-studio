@@ -22,6 +22,7 @@ from content_sync.api import (
     sync_github_website_starters,
     update_website_backend,
 )
+from content_sync.tasks import poll_build_status_until_complete
 from gdrive_sync.tasks import import_website_files
 from main import features
 from main.permissions import ReadonlyPermission
@@ -69,6 +70,7 @@ from websites.serializers import (
     WebsiteSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
+    WebsiteStatusSerializer,
     WebsiteWriteSerializer,
 )
 from websites.site_config_api import SiteConfig
@@ -90,7 +92,6 @@ class WebsiteViewSet(
     Viewset for Websites
     """
 
-    serializer_class = WebsiteSerializer
     pagination_class = DefaultPagination
     permission_classes = (HasWebsitePermission,)
     lookup_field = "name"
@@ -132,6 +133,10 @@ class WebsiteViewSet(
             return WebsiteSerializer
         elif self.action == "create":
             return WebsiteWriteSerializer
+        elif self.action == "retrieve" and _parse_bool(
+            self.request.query_params.get("only_status")
+        ):
+            return WebsiteStatusSerializer
         else:
             return WebsiteDetailSerializer
 
@@ -166,9 +171,11 @@ class WebsiteViewSet(
             if len(incomplete_videos) > 0:
                 message = f"WARNING: The following videos have missing YouTube IDs: {','.join(incomplete_videos)}"
             preview_website(website)
-            website.draft_publish_date = now_in_utc()
             website.has_unpublished_draft = False
+            website.draft_publish_status = constants.PUBLISH_STATUS_NOT_STARTED
+            website.draft_publish_status_updated_on = now_in_utc()
             website.save()
+            poll_build_status_until_complete.delay(website.name, "draft")
             return Response(
                 status=200,
                 data={"details": message},
@@ -195,9 +202,11 @@ class WebsiteViewSet(
                     },
                 )
             publish_website(website)
-            website.publish_date = now_in_utc()
             website.has_unpublished_live = False
+            website.live_publish_status = constants.PUBLISH_STATUS_NOT_STARTED
+            website.live_publish_status_updated_on = now_in_utc()
             website.save()
+            poll_build_status_until_complete.delay(website.name, "live")
             return Response(
                 status=200,
                 data={"details": ""},

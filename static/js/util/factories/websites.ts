@@ -24,7 +24,8 @@ import {
   WebsiteContent,
   WebsiteContentListItem,
   WebsiteStarter,
-  WebsiteStarterConfig
+  WebsiteStarterConfig,
+  WebsiteStatus
 } from "../../types/websites"
 
 const incr = incrementer()
@@ -162,7 +163,7 @@ export const makeWebsiteStarter = (type = "course"): WebsiteStarter => ({
   config: makeWebsiteStarterConfig()
 })
 
-export const makeWebsiteDetail = (): any => ({
+export const makeWebsiteDetail = (): Website => ({
   uuid:       casual.uuid,
   created_on: casual.moment.format(),
   updated_on: casual.moment.format(),
@@ -180,15 +181,35 @@ export const makeWebsiteDetail = (): any => ({
     course_numbers: [`${casual.integer(1, 20)}.${casual.integer(1, 999)}`],
     term:           `${casual.month_name} ${casual.year}`
   },
-  publish_date:          casual.moment.format(),
-  draft_publish_date:    casual.moment.format(),
-  draft_url:             casual.url,
-  live_url:              casual.url,
-  gdrive_url:            casual.url,
-  has_unpublished_draft: casual.boolean,
-  has_unpublished_live:  casual.boolean,
-  is_admin:              casual.boolean
+  publish_date:                    casual.moment.format(),
+  draft_publish_date:              casual.moment.format(),
+  draft_url:                       casual.url,
+  live_url:                        casual.url,
+  gdrive_url:                      casual.url,
+  has_unpublished_draft:           casual.boolean,
+  has_unpublished_live:            casual.boolean,
+  draft_publish_status:            null,
+  live_publish_status:             null,
+  draft_publish_status_updated_on: null,
+  live_publish_status_updated_on:  null,
+  is_admin:                        casual.boolean
 })
+
+export const makeWebsiteStatus = (): WebsiteStatus => {
+  const website = makeWebsiteDetail()
+  return {
+    uuid:                            website.uuid,
+    name:                            website.name,
+    publish_date:                    website.publish_date,
+    draft_publish_date:              website.draft_publish_date,
+    has_unpublished_draft:           website.has_unpublished_draft,
+    has_unpublished_live:            website.has_unpublished_live,
+    live_publish_status:             website.live_publish_status,
+    draft_publish_status:            website.draft_publish_status,
+    live_publish_status_updated_on:  website.live_publish_status_updated_on,
+    draft_publish_status_updated_on: website.draft_publish_status_updated_on
+  }
+}
 
 export const makeWebsiteListing = (): Website[] =>
   times(WEBSITES_PAGE_SIZE).map(makeWebsiteDetail)

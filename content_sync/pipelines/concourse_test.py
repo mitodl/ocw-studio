@@ -1,5 +1,6 @@
 """ concourse tests """
 import json
+from unittest.mock import Mock
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -238,4 +239,39 @@ def test_unpause_pipeline(settings, mocker, version):
     pipeline.unpause_pipeline(version)
     mock_put.assert_called_once_with(
         f"/api/v1/teams/myteam/pipelines/{version}/unpause?vars={pipeline.instance_vars}"
+    )
+
+
+@pytest.mark.parametrize(
+    "response, expected_status",
+    [
+        [{}, "not-started"],
+        [{"next_build": {"status": "pending"}}, "pending"],
+        [{"finished_build": {"status": "succeeded"}}, "succeeded"],
+        [{"finished_build": {"status": "errored"}}, "errored"],
+        [{"finished_build": {"status": "aborted"}}, "aborted"],
+        [{"finished_build": {}}, "not-started"],
+        [HTTPError(response=Mock(status_code=404)), "not-started"],
+    ],
+)
+@pytest.mark.parametrize("version", ["live", "draft"])
+def test_get_latest_build_status(settings, mocker, response, expected_status, version):
+    """Get the status of the build for the site"""
+    job_name = "build-ocw-sites"
+    mock_get = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseApi.get",
+        side_effect=[{"config": {"jobs": [{"name": job_name}]}}, response],
+    )
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
+        )
+    )
+    pipeline = ConcourseGithubPipeline(website)
+    assert pipeline.get_latest_build_status(version) == expected_status
+    mock_get.assert_any_call(
+        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={pipeline.instance_vars}"
+    )
+    mock_get.assert_any_call(
+        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/jobs/{job_name}?vars={pipeline.instance_vars}"
     )

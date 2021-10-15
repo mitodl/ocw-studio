@@ -37,7 +37,8 @@ import {
   WebsiteCollaboratorFormData,
   WebsiteContent,
   WebsiteContentListItem,
-  WebsiteStarter
+  WebsiteStarter,
+  WebsiteStatus
 } from "../types/websites"
 
 export type WebsiteDetails = Record<string, Website>
@@ -103,6 +104,27 @@ export const websiteDetailRequest = (name: string): QueryConfig => ({
     })
   },
   force: true // force a refresh to update incomplete information from listing API
+})
+
+export const websiteStatusRequest = (name: string): QueryConfig => ({
+  queryKey: `publish-status-${name}`,
+  url:      siteApiDetailUrl
+    .param({ name })
+    .query({ only_status: true })
+    .toString(),
+  transform: (body: WebsiteStatus) => ({
+    websiteDetails: body
+  }),
+  update: {
+    websiteDetails: (prev: WebsiteDetails, next: WebsiteStatus) => ({
+      ...prev,
+      [name]: {
+        ...(prev[name] ?? {}),
+        ...next
+      }
+    })
+  },
+  force: true
 })
 
 export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({

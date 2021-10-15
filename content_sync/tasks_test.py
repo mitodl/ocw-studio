@@ -1,7 +1,9 @@
 """ Content sync task tests """
+import datetime
 from datetime import timedelta
 
 import pytest
+import pytz
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 from github.GithubException import RateLimitExceededException
@@ -11,6 +13,13 @@ from pytest import fixture
 from content_sync import tasks
 from content_sync.factories import ContentSyncStateFactory
 from content_sync.pipelines.base import BaseSyncPipeline
+from websites.constants import (
+    PUBLISH_STATUS_ABORTED,
+    PUBLISH_STATUS_ERRORED,
+    PUBLISH_STATUS_NOT_STARTED,
+    PUBLISH_STATUS_PENDING,
+    PUBLISH_STATUS_SUCCEEDED,
+)
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
@@ -259,3 +268,55 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
         "fake",
     )
     api_mock.get_sync_pipeline.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "final_status",
+    [
+        PUBLISH_STATUS_SUCCEEDED,
+        PUBLISH_STATUS_ERRORED,
+        PUBLISH_STATUS_ABORTED,
+    ],
+)
+@pytest.mark.parametrize("version", ["draft", "live"])
+def test_poll_build_status_until_complete(mocker, api_mock, final_status, version):
+    """poll_build_status_until_complete should repeatedly poll until a finished state is reached"""
+    sleep_mock = mocker.patch("content_sync.tasks.sleep")
+    website = WebsiteFactory.create(
+        has_unpublished_live=False, has_unpublished_draft=False
+    )
+    now_dates = [
+        datetime.datetime(2020, 1, 1, tzinfo=pytz.utc),
+        datetime.datetime(2020, 2, 1, tzinfo=pytz.utc),
+        datetime.datetime(2020, 3, 1, tzinfo=pytz.utc),
+    ]
+    mocker.patch("content_sync.tasks.now_in_utc", side_effect=now_dates)
+    latest_status_mock = api_mock.get_sync_pipeline.return_value.get_latest_build_status
+    latest_status_mock.side_effect = [
+        PUBLISH_STATUS_NOT_STARTED,
+        PUBLISH_STATUS_PENDING,
+        final_status,
+    ]
+    tasks.poll_build_status_until_complete.delay(website.name, version)
+    website.refresh_from_db()
+    sleep_mock.assert_any_call(5)
+    final_now_date = now_dates[2]
+    if version == "draft":
+        assert website.draft_publish_status == final_status
+        assert website.draft_publish_status_updated_on == final_now_date
+        assert website.draft_publish_date == final_now_date
+        assert website.has_unpublished_draft == (
+            final_status != PUBLISH_STATUS_SUCCEEDED
+        )
+    else:
+        assert website.live_publish_status == final_status
+        assert website.live_publish_status_updated_on == final_now_date
+        assert website.publish_date == final_now_date
+        assert website.has_unpublished_live == (
+            final_status != PUBLISH_STATUS_SUCCEEDED
+        )
+
+    assert sleep_mock.call_count == 2
+    assert latest_status_mock.call_count == 3
+    latest_status_mock.assert_any_call(version)
+    api_mock.get_sync_pipeline.assert_called_once_with(website)

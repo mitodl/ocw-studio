@@ -21,7 +21,8 @@ import {
   makeRepeatableConfigItem,
   makeSingletonConfigItem,
   makeWebsiteContentDetail,
-  makeWebsiteDetail
+  makeWebsiteDetail,
+  makeWebsiteStatus
 } from "../util/factories/websites"
 import { getContentSchema } from "./forms/validation"
 import * as validationFuncs from "./forms/validation"
@@ -31,7 +32,8 @@ import {
   EditableConfigItem,
   Website,
   WebsiteContent,
-  WebsiteContentModalState
+  WebsiteContentModalState,
+  WebsiteStatus
 } from "../types/websites"
 import { contentDetailKey } from "../query-configs/websites"
 import { createModalState } from "../types/modal_state"
@@ -52,6 +54,7 @@ describe("SiteContent", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     website: Website,
+    websiteStatus: WebsiteStatus,
     configItem: EditableConfigItem,
     historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub },
@@ -64,6 +67,11 @@ describe("SiteContent", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
+    websiteStatus = {
+      ...makeWebsiteStatus(),
+      name: website.name,
+      uuid: website.uuid
+    }
     content = makeWebsiteContentDetail()
     configItem = makeRepeatableConfigItem()
     mockContentSchema = yup.object().shape({})
@@ -92,6 +100,14 @@ describe("SiteContent", () => {
     helper.mockGetRequest(
       siteApiDetailUrl.param({ name: website.name }).toString(),
       website
+    )
+
+    helper.mockGetRequest(
+      siteApiDetailUrl
+        .param({ name: website.name })
+        .query({ only_status: true })
+        .toString(),
+      websiteStatus
     )
 
     helper.mockPostRequest(
@@ -249,7 +265,10 @@ describe("SiteContent", () => {
 
       sinon.assert.calledWith(
         helper.handleRequestStub,
-        siteApiDetailUrl.param({ name: website.name }).toString(),
+        siteApiDetailUrl
+          .param({ name: website.name })
+          .query({ only_status: true })
+          .toString(),
         "GET",
         {
           body:        undefined,
@@ -316,7 +335,10 @@ describe("SiteContent", () => {
 
     sinon.assert.calledWith(
       helper.handleRequestStub,
-      siteApiDetailUrl.param({ name: website.name }).toString(),
+      siteApiDetailUrl
+        .param({ name: website.name })
+        .query({ only_status: true })
+        .toString(),
       "GET",
       {
         body:        undefined,

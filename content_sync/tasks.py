@@ -16,6 +16,11 @@ from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
 from main.celery import app
 from websites.api import mail_website_admins_on_publish
+from websites.constants import (
+    PUBLISH_STATUS_ABORTED,
+    PUBLISH_STATUS_ERRORED,
+    PUBLISH_STATUS_SUCCEEDED,
+)
 from websites.models import Website
 
 
@@ -176,3 +181,55 @@ def sync_github_site_configs(url: str, files: List[str], commit: Optional[str] =
     Sync WebsiteStarter objects from github
     """
     github.sync_starter_configs(url, files, commit=commit)
+
+
+@app.task(acks_late=True)
+def poll_build_status_until_complete(website_name: str, version: str):
+    """
+    Poll concourses REST API repeatedly until the build completes
+    """
+    pipeline = api.get_sync_pipeline(Website.objects.get(name=website_name))
+    while True:
+        status = pipeline.get_latest_build_status(version)
+        now = now_in_utc()
+        if version == "draft":
+            update_kwargs = {
+                "draft_publish_status": status,
+                "draft_publish_status_updated_on": now,
+            }
+            if status in [
+                PUBLISH_STATUS_SUCCEEDED,
+                PUBLISH_STATUS_ERRORED,
+                PUBLISH_STATUS_ABORTED,
+            ]:
+                update_kwargs["draft_publish_date"] = now
+
+                if status != PUBLISH_STATUS_SUCCEEDED:
+                    # Allow user to retry
+                    update_kwargs["has_unpublished_draft"] = True
+        else:
+            update_kwargs = {
+                "live_publish_status": status,
+                "live_publish_status_updated_on": now,
+            }
+            if status in [
+                PUBLISH_STATUS_SUCCEEDED,
+                PUBLISH_STATUS_ERRORED,
+                PUBLISH_STATUS_ABORTED,
+            ]:
+                update_kwargs["publish_date"] = now
+
+                if status != PUBLISH_STATUS_SUCCEEDED:
+                    # Allow user to retry
+                    update_kwargs["has_unpublished_live"] = True
+
+        Website.objects.filter(name=website_name).update(**update_kwargs)
+
+        if status in [
+            PUBLISH_STATUS_SUCCEEDED,
+            PUBLISH_STATUS_ERRORED,
+            PUBLISH_STATUS_ABORTED,
+        ]:
+            break
+
+        sleep(5)

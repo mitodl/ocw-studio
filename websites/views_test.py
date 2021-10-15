@@ -33,6 +33,7 @@ from websites.serializers import (
     WebsiteDetailSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
+    WebsiteStatusSerializer,
 )
 
 
@@ -181,6 +182,18 @@ def test_websites_endpoint_detail(drf_client, is_admin, permission_groups):
     assert response_data == serialized_data
 
 
+def test_websites_endpoint_status(drf_client):
+    """The status API should return a subset of info for the website"""
+    website = WebsiteFactory.create()
+    drf_client.force_login(website.owner)
+    resp = drf_client.get(
+        f'{reverse("websites_api-detail", kwargs={"name": website.name})}?only_status=true'
+    )
+    response_data = resp.json()
+    serialized_data = WebsiteStatusSerializer(instance=website).data
+    assert response_data == serialized_data
+
+
 @pytest.mark.parametrize(
     "method,status", [["post", 405], ["put", 403], ["delete", 405]]
 )
@@ -222,6 +235,7 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
 def test_websites_endpoint_preview(mocker, drf_client, has_missing_ids):
     """A user with admin/edit permissions should be able to request a website preview"""
     mock_preview_website = mocker.patch("websites.views.preview_website")
+    mock_poll = mocker.patch("websites.views.poll_build_status_until_complete")
     website = WebsiteFactory.create()
     video_content = WebsiteContentFactory.create_batch(2, website=website)
     mocker.patch(
@@ -243,6 +257,7 @@ def test_websites_endpoint_preview(mocker, drf_client, has_missing_ids):
         )
     assert resp.data["details"] == expected_msg
     mock_preview_website.assert_called_once_with(website)
+    mock_poll.delay.assert_called_once_with(website.name, "draft")
     website.refresh_from_db()
     assert website.has_unpublished_draft is False
 
@@ -268,6 +283,7 @@ def test_websites_endpoint_preview_error(mocker, drf_client):
 def test_websites_endpoint_publish(mocker, drf_client, has_missing_ids):
     """A user with admin permissions should be able to request a website publish"""
     mock_publish_website = mocker.patch("websites.views.publish_website")
+    mock_poll = mocker.patch("websites.views.poll_build_status_until_complete")
     website = WebsiteFactory.create()
     video_content = WebsiteContentFactory.create_batch(2, website=website)
     mocker.patch(
@@ -292,9 +308,9 @@ def test_websites_endpoint_publish(mocker, drf_client, has_missing_ids):
         mock_publish_website.assert_not_called()
     else:
         expected_msg = ""
-        assert website.publish_date > last_published
         mock_publish_website.assert_called_once_with(website)
         assert website.has_unpublished_live is False
+        mock_poll.delay.assert_called_once_with(website.name, "live")
     assert resp.data["details"] == expected_msg
 
 

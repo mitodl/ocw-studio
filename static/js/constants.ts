@@ -158,3 +158,14 @@ export const RESOURCE_TYPE_IMAGE = "Image"
 export const RESOURCE_TYPE_VIDEO = "Video"
 export const RESOURCE_TYPE_DOCUMENT = "Document"
 export const RESOURCE_TYPE_OTHER = "Other"
+
+export const PUBLISH_STATUS_SUCCEEDED = "succeeded"
+export const PUBLISH_STATUS_PENDING = "pending"
+export const PUBLISH_STATUS_ERRORED = "errored"
+export const PUBLISH_STATUS_ABORTED = "aborted"
+export const PUBLISH_STATUS_NOT_STARTED = "not-started"
+
+export const PUBLISH_STATUS_PROCESSING_STATES = [
+  PUBLISH_STATUS_PENDING,
+  PUBLISH_STATUS_NOT_STARTED
+]

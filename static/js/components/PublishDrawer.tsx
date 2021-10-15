@@ -8,6 +8,7 @@ import { websiteAction, websiteDetailRequest } from "../query-configs/websites"
 import { Website } from "../types/websites"
 import { isErrorStatusCode } from "../lib/util"
 import { useStore } from "react-redux"
+import PublishStatusIndicator from "./PublishStatusIndicator"
 
 const STAGING = "staging"
 const PRODUCTION = "production"
@@ -70,16 +71,20 @@ export default function PublishDrawer(props: Props): JSX.Element {
   }
 
   const renderOption = (option: string) => {
-    const label = option === STAGING ? "Staging" : "Production"
-    const publish = option === STAGING ? onPreview : onPublish
-    const error = option === STAGING ? errorStaging : errorProduction
-    const siteUrl = option === STAGING ? website.draft_url : website.live_url
-    const publishDate =
-      option === STAGING ? website.draft_publish_date : website.publish_date
-    const hasUnpublishedChanges =
-      option === STAGING ?
-        website.has_unpublished_draft :
-        website.has_unpublished_live
+    const isStaging = option === STAGING
+    const label = isStaging ? "Staging" : "Production"
+    const publish = isStaging ? onPreview : onPublish
+    const error = isStaging ? errorStaging : errorProduction
+    const siteUrl = isStaging ? website.draft_url : website.live_url
+    const publishDate = isStaging ?
+      website.draft_publish_date :
+      website.publish_date
+    const hasUnpublishedChanges = isStaging ?
+      website.has_unpublished_draft :
+      website.has_unpublished_live
+    const publishStatus = isStaging ?
+      website.draft_publish_status :
+      website.live_publish_status
 
     return (
       <div className="publish-option my-2">
@@ -126,6 +131,7 @@ export default function PublishDrawer(props: Props): JSX.Element {
             >
               Publish
             </button>
+            <PublishStatusIndicator status={publishStatus} />
           </div>
         ) : null}
       </div>

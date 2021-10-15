@@ -109,16 +109,6 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
             return urljoin(gdrive_root_url(), instance.gdrive_folder)
         return None
 
-    def create(self, validated_data):
-        """Ensure that the website is created by the requesting user"""
-        validated_data["owner"] = self.user_from_request()
-        with transaction.atomic():
-            website = super().create(validated_data)
-        create_website_backend(website)
-        create_website_publishing_pipeline(website)
-        create_gdrive_folders.delay(website.short_id)
-        return website
-
     def update(self, instance, validated_data):
         """ Remove owner attribute if present, it should not be changed"""
         validated_data.pop("owner", None)
@@ -136,10 +126,49 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
             "has_unpublished_live",
             "has_unpublished_draft",
             "gdrive_url",
+            "live_publish_status",
+            "live_publish_status_updated_on",
+            "draft_publish_status",
+            "draft_publish_status_updated_on",
+        ]
+        read_only_fields = [
+            "uuid",
+            "created_on",
+            "updated_on",
+            "starter",
+            "owner",
+            "has_unpublished_live",
+            "has_unpublished_draft",
+            "publish_date",
+            "draft_publish_date",
+            "live_publish_status",
+            "live_publish_status_updated_on",
+            "draft_publish_status",
+            "draft_publish_status_updated_on",
         ]
 
 
-class WebsiteWriteSerializer(WebsiteDetailSerializer):
+class WebsiteStatusSerializer(serializers.ModelSerializer):
+    """Serializer for website status fields"""
+
+    class Meta:
+        model = Website
+        fields = [
+            "uuid",
+            "name",
+            "publish_date",
+            "draft_publish_date",
+            "has_unpublished_live",
+            "has_unpublished_draft",
+            "live_publish_status",
+            "live_publish_status_updated_on",
+            "draft_publish_status",
+            "draft_publish_status_updated_on",
+        ]
+        read_only_fields = fields
+
+
+class WebsiteWriteSerializer(serializers.ModelSerializer, RequestUserSerializerMixin):
     """
     Deserializer for websites
     NOTE: This is needed because DRF does not directly support saving a related field using just an id. We want to
@@ -150,6 +179,30 @@ class WebsiteWriteSerializer(WebsiteDetailSerializer):
     starter = serializers.PrimaryKeyRelatedField(
         queryset=WebsiteStarter.objects.all(), write_only=True
     )
+
+    def create(self, validated_data):
+        """Ensure that the website is created by the requesting user"""
+        validated_data["owner"] = self.user_from_request()
+        with transaction.atomic():
+            website = super().create(validated_data)
+        create_website_backend(website)
+        create_website_publishing_pipeline(website)
+        create_gdrive_folders.delay(website.short_id)
+        return website
+
+    class Meta:
+        model = Website
+        fields = WebsiteSerializer.Meta.fields
+        read_only_fields = [
+            "has_unpublished_live",
+            "has_unpublished_draft",
+            "publish_date",
+            "draft_publish_date",
+            "live_publish_status",
+            "live_publish_status_updated_on",
+            "draft_publish_status",
+            "draft_publish_status_updated_on",
+        ]
 
 
 class WebsiteCollaboratorSerializer(serializers.Serializer):
