@@ -1,10 +1,14 @@
 {
   "course_title": "Transportation Systems Analysis: Demand and Economics",
   "course_description": "The main objective of this course is to give broad insight into the different facets of transportation systems, while providing a solid introduction to transportation demand and cost analyses. As part of the core in the Master of Science in Transportation program, the course will not focus on a specific transportation mode but will use the various modes to apply the theoretical and analytical concepts presented in the lectures and readings.\n\nIntroduces transportation systems analysis, stressing demand and economic aspects. Covers the key principles governing transportation planning, investment, operations and maintenance. Introduces the microeconomic concepts central to transportation systems. Topics covered include economic theories of the firm, the consumer, and the market, demand models, discrete choice analysis, cost models and production functions, and pricing theory. Application to transportation systems include congestion pricing, technological change, resource allocation, market structure and regulation, revenue forecasting, public and private transportation finance, and project evaluation; covering urban passenger transportation, freight, aviation and intelligent transportation systems.\n",
-  "course_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/0c62366c41d2af0b8e1ec4b9dc3748d7_1-201jf08.jpg",
-  "course_thumbnail_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/6d7b103f7ee8600b369f8b7ed69c1519_1-201jf08-th.jpg",
-  "course_image_alternate_text": "Passengers boarding a subway in Madrid.",
-  "course_image_caption_text": "\n<p>This course discusses urban transportation issues, such as the importance of passenger waiting time. (Image by <a href=\"http://www.flickr.com/photos/caravinagre/1397350778/\">caravinagre</a> on Flickr.)</p>",
+  "course_image": {
+    "content": "0c62366c-41d2-af0b-8e1e-c4b9dc3748d7",
+    "website": "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008"
+  },
+  "course_image_thumbnail": {
+    "content": "6d7b103f-7ee8-600b-369f-8b7ed69c1519",
+    "website": "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008"
+  },
   "instructors": {
     "content": [
       "0e8c35a6-c131-408f-19ff-0eaae8ab3913",
@@ -43,7 +47,9 @@
   "extra_course_numbers": "11.545J, ESD.210J",
   "term": "Fall 2008",
   "level": "Graduate",
-  "other_versions": [],
+  "other_versions": [
+    "[1.201J INTRODUCTION TO TRANSPORTATION SYSTEMS](/courses/1-201j-introduction-to-transportation-systems-fall-2006) |  FALL 2006"
+  ],
   "archived_versions": [],
   "open_learning_library_versions": []
 }

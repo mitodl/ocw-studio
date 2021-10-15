@@ -1,10 +1,14 @@
 {
   "course_title": "Engineering Mechanics I",
   "course_description": "This subject provides an introduction to the mechanics of materials and structures. You will be introduced to and become familiar with all relevant physical properties and fundamental laws governing the behavior of materials and structures and you will learn how to solve a variety of problems of interest to civil and environmental engineers. While there will be a chance for you to put your mathematical skills obtained in 18.01, 18.02, and eventually 18.03 to use in this subject, the emphasis is on the physical understanding of why a material or structure behaves the way it does in the engineering design of materials and structures.\n",
-  "course_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/ba36b42898988e4581d42067ac439546_1-050f07.jpg",
-  "course_thumbnail_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/4cdfb4e332fa9fdfa166c337e35fc009_1-050f07-th.jpg",
-  "course_image_alternate_text": "Sketch of the World Trade Center towers and graph showing velocity profiles.",
-  "course_image_caption_text": "<p>Lecture 4 explores the collapse of the World Trade Center towers. Here, velocity profiles are shown based on conservation of momentum and free fall. (Figure by MIT OpenCourseWare, adapted from Prof. Franz-Josef Ulm.)</p>",
+  "course_image": {
+    "content": "ba36b428-9898-8e45-81d4-2067ac439546",
+    "website": "1-050-engineering-mechanics-i-fall-2007"
+  },
+  "course_image_thumbnail": {
+    "content": "4cdfb4e3-32fa-9fdf-a166-c337e35fc009",
+    "website": "1-050-engineering-mechanics-i-fall-2007"
+  },
   "instructors": [
     {
       "instructor": "Prof. Franz-Josef Ulm",
@@ -53,9 +57,15 @@
     "level": "Undergraduate",
     "url": "/search/?l=Undergraduate"
   },
-  "other_versions": [],
+  "other_versions": [
+    "[1.050 SOLID MECHANICS](/courses/1-050-solid-mechanics-fall-2004) |  FALL 2004"
+  ],
   "archived_versions": [],
   "open_learning_library_versions": [],
+  "course_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/ba36b42898988e4581d42067ac439546_1-050f07.jpg",
+  "course_thumbnail_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/4cdfb4e332fa9fdfa166c337e35fc009_1-050f07-th.jpg",
+  "course_image_alternate_text": "Sketch of the World Trade Center towers and graph showing velocity profiles.",
+  "course_image_caption_text": "<p>Lecture 4 explores the collapse of the World Trade Center towers. Here, velocity profiles are shown based on conservation of momentum and free fall. (Figure by MIT OpenCourseWare, adapted from Prof. Franz-Josef Ulm.)</p>",
   "publishdate": "2008-06-17T13:40:38-04:00",
   "departments": [
     {

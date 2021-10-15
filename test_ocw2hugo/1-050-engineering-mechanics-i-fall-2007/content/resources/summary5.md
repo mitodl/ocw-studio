@@ -6,6 +6,6 @@ description: >-
 uid: deee67ff-5462-1a53-6b42-9396258c5d32
 resourcetype: Document
 file_type: application/pdf
-file_location: >-
+file: >-
   https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/deee67ff54621a536b429396258c5d32_summary5.pdf
 ---
