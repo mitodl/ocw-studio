@@ -128,6 +128,9 @@ describe("WebsiteCollectionItemForm", () => {
     expect(wrapper.find("SelectField").prop("options")).toEqual(
       expectedCombinedOptions
     )
+    expect(wrapper.find("SelectField").prop("defaultOptions")).toEqual(
+      expectedCombinedOptions
+    )
     for (const search of ["searchstring1", "searchstring2"]) {
       expect(debouncedFetch).toBeCalledWith(
         "website-collection",

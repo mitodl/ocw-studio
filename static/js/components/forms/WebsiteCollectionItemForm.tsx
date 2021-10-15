@@ -87,6 +87,7 @@ export default function WebsiteCollectionItemForm(props: Props): JSX.Element {
               as={SelectField}
               loadOptions={loadOptions}
               placeholder="Find a course to add to this collection"
+              defaultOptions={options}
             />
             <button
               type="submit"
