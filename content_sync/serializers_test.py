@@ -193,8 +193,7 @@ def test_hugo_menu_yaml_serialize(omnibus_config):
         "mainmenu": [
             {**example_menu_data[0], "url": "/path/to/myfile"},
             example_menu_data[1],
-        ],
-        "title": content.title,
+        ]
     }
 
 
