@@ -28,5 +28,7 @@ def test_get_valid_s3_key():
     file_3.s3_key = file_3.get_valid_s3_key()
     assert file_3.s3_key == f"{site_prefix}/{site.name}/file3.png"
     # Different website
-    file_4 = DriveFileFactory.create(name="(file).PnG",  mime_type="image/png", s3_key=None)
+    file_4 = DriveFileFactory.create(
+        name="(file).PnG", mime_type="image/png", s3_key=None
+    )
     assert file_4.get_valid_s3_key() == f"{site_prefix}/{file_4.website.name}/file.png"

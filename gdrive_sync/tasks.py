@@ -38,11 +38,9 @@ log = logging.getLogger(__name__)
 
 
 @app.task(bind=True)
-def stream_drive_file_to_s3(self, drive_file_id: str, prefix: str = None):
+def stream_drive_file_to_s3(self, drive_file_id: str):
     """ Stream a Google Drive file to S3 """
     if settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS:
-        if prefix is None:
-            prefix = settings.DRIVE_S3_UPLOAD_PREFIX
         drive_file = DriveFile.objects.get(file_id=drive_file_id)
         api.stream_to_s3(drive_file)
 
@@ -91,9 +89,7 @@ def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-
             if not last_checked or maxLastTime > last_checked:
                 last_checked = maxLastTime
             task_list = [
-                stream_drive_file_to_s3.s(
-                    drive_file.file_id, prefix=drive_file.s3_prefix
-                ),
+                stream_drive_file_to_s3.s(drive_file.file_id),
                 transcode_drive_file_video.si(drive_file.file_id)
                 if drive_file.is_video()
                 else None,
@@ -151,9 +147,7 @@ def import_website_files(self, short_id: str):
             drive_file = process_file_result(gdfile)
             if drive_file:
                 task_list = [
-                    stream_drive_file_to_s3.s(
-                        drive_file.file_id, prefix=drive_file.s3_prefix
-                    ),
+                    stream_drive_file_to_s3.s(drive_file.file_id),
                     transcode_drive_file_video.si(drive_file.file_id)
                     if drive_file.is_video()
                     else None,

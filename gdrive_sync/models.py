@@ -5,7 +5,6 @@ from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 from mitol.common.models import TimestampedModel
-from websites.api import find_available_name
 
 from gdrive_sync.constants import (
     DRIVE_API_RESOURCES,
@@ -13,6 +12,7 @@ from gdrive_sync.constants import (
     DriveFileStatus,
 )
 from videos.models import Video
+from websites.api import find_available_name
 from websites.models import Website, WebsiteContent
 
 
