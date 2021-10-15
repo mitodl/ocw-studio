@@ -166,13 +166,20 @@ def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-argum
     settings.DRIVE_SHARED_ID = "test_drive"
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = parent_folder
 
+    empty_yield = iter([])
     if folder_exists:
         existing_list_response = [{"id": site_folder_id, "parents": ["first_parent"]}]
     else:
         existing_list_response = []
 
     mock_list_files = mocker.patch(
-        "gdrive_sync.api.query_files", side_effect=[existing_list_response, [], [], []]
+        "gdrive_sync.api.query_files",
+        side_effect=[
+            iter(existing_list_response),
+            empty_yield,
+            empty_yield,
+            empty_yield,
+        ],
     )
 
     if parent_folder_in_ancestors:
@@ -357,7 +364,9 @@ def test_walk_gdrive_folder(mocker):
             {"id": "subfolder2b.mp4", "mimeType": "application/pdf"},
         ],
     ]
-    mock_query_files = mocker.patch("gdrive_sync.api.query_files", side_effect=files)
+    mock_query_files = mocker.patch(
+        "gdrive_sync.api.query_files", side_effect=iter(files)
+    )
     assert (list(walk_gdrive_folder("folderId", "field1,field2,field3"))) == [
         item
         for sublist in files
