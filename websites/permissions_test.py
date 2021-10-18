@@ -6,6 +6,7 @@ from rest_framework.permissions import SAFE_METHODS
 
 from users.factories import UserFactory
 from websites import constants, permissions
+from websites.constants import ADMIN_ONLY_CONTENT
 from websites.factories import WebsiteFactory
 from websites.permissions import (
     assign_website_permissions,
@@ -270,7 +271,10 @@ def test_can_create_website_content(mocker, permission_groups):
         )
 
 
-def test_can_view_edit_website_content(mocker, permission_groups):
+@pytest.mark.parametrize("is_admin_only_content", [True, False])
+def test_can_view_edit_website_content(
+    mocker, permission_groups, is_admin_only_content
+):
     """
     Test that appropriate users are allowed to view, create, edit WebsiteContent objects
     """
@@ -279,31 +283,37 @@ def test_can_view_edit_website_content(mocker, permission_groups):
     # This assumes the WebsiteContent API view will be nested via DRF extensions
     view = mocker.Mock(kwargs={"parent_lookup_website": str(website.name)})
 
-    for [user, has_perm] in [
-        [permission_groups.global_admin, True],
-        [permission_groups.global_author, False],
-        [permission_groups.site_admin, True],
-        [permission_groups.site_editor, True],
-        [website.owner, True],
+    for [user, safe_perm, unsafe_perm] in [
+        [permission_groups.global_admin, True, True],
+        [permission_groups.global_author, False, False],
+        [permission_groups.site_admin, True, True],
+        [permission_groups.site_editor, True, (True and not is_admin_only_content)],
+        [website.owner, True, True],
     ]:
-        for method in ["GET", "POST"]:
+        data = {
+            "type": (ADMIN_ONLY_CONTENT[0] if is_admin_only_content else "resource")
+        }
+        for method, method_perm in [("GET", safe_perm), ("POST", unsafe_perm)]:
             assert (
                 permissions.HasWebsiteContentPermission().has_permission(
-                    mocker.Mock(user=user, method=method), view
+                    mocker.Mock(user=user, method=method, data=data), view
                 )
-                is has_perm
+                is method_perm
             )
 
-        for method in ["GET", "PATCH"]:
+        for method, method_perm in [("GET", safe_perm), ("PATCH", unsafe_perm)]:
             for content in [
                 permission_groups.owner_content,
                 permission_groups.editor_content,
             ]:
+                content.type = (
+                    ADMIN_ONLY_CONTENT[0] if is_admin_only_content else "resource"
+                )
                 assert (
                     permissions.HasWebsiteContentPermission().has_object_permission(
                         mocker.Mock(user=user, method=method), view, content
                     )
-                    is has_perm
+                    is method_perm
                 )
 
 

@@ -24,56 +24,61 @@ describe("SiteSidebar", () => {
   afterEach(() => {
     helper.cleanup()
   })
+  ;[true, false].forEach(isAdminUser => {
+    it(`renders ${isAdminUser ? "all" : "non-admin"} links`, async () => {
+      website.is_admin = isAdminUser
+      const { wrapper } = await render()
 
-  it("renders some links", async () => {
-    const { wrapper } = await render()
+      const links = wrapper
+        .find("NavLink")
+        .map(link => [link.text(), link.prop("to")])
 
-    const links = wrapper
-      .find("NavLink")
-      .map(link => [link.text(), link.prop("to")])
-
-    const expected = [
-      [
-        "Pages",
-        siteContentListingUrl
-          .param({
-            name:        website.name,
-            contentType: "page"
-          })
-          .toString()
-      ],
-      [
-        "Resources",
-        siteContentListingUrl
-          .param({
-            name:        website.name,
-            contentType: "resource"
-          })
-          .toString()
-      ],
-      [
-        "Metadata",
-        siteContentListingUrl
-          .param({
-            name:        website.name,
-            contentType: "metadata"
-          })
-          .toString()
-      ],
-      [
-        "Menu",
-        siteContentListingUrl
-          .param({
-            name:        website.name,
-            contentType: "menu"
-          })
-          .toString()
+      const expected = [
+        [
+          "Pages",
+          siteContentListingUrl
+            .param({
+              name:        website.name,
+              contentType: "page"
+            })
+            .toString()
+        ],
+        [
+          "Resources",
+          siteContentListingUrl
+            .param({
+              name:        website.name,
+              contentType: "resource"
+            })
+            .toString()
+        ],
+        [
+          "Menu",
+          siteContentListingUrl
+            .param({
+              name:        website.name,
+              contentType: "menu"
+            })
+            .toString()
+        ]
       ]
-    ]
-    expect(links).toEqual(expect.arrayContaining(expected))
+      if (isAdminUser) {
+        expected.splice(2, 0, [
+          "Metadata",
+          siteContentListingUrl
+            .param({
+              name:        website.name,
+              contentType: "metadata"
+            })
+            .toString()
+        ])
+      }
+      expect(links).toEqual(expect.arrayContaining(expected))
+    })
   })
 
   it("should pad all .config-sections excepting the last one", async () => {
+    website.is_admin = false // Prevent an extra section getting added if true
     website.starter!.config!.collections = times(5).map(idx =>
       makeTopLevelConfigItem(`foobar${idx}`, null, `category${idx}`)
     )

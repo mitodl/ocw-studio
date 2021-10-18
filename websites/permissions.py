@@ -10,6 +10,7 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 from users.models import User
 from websites import constants
+from websites.constants import ADMIN_ONLY_CONTENT
 from websites.models import Website
 from websites.utils import permissions_group_name_for_role
 
@@ -267,14 +268,17 @@ class HasWebsiteContentPermission(BasePermission):
         )
         if request.method in SAFE_METHODS:
             return check_perm(request.user, constants.PERMISSION_VIEW, website)
-        else:
-            return check_perm(request.user, constants.PERMISSION_EDIT_CONTENT, website)
+        if request.data and request.data.get("type") in ADMIN_ONLY_CONTENT:
+            return is_site_admin(request.user, website)
+        return check_perm(request.user, constants.PERMISSION_EDIT_CONTENT, website)
 
     def has_object_permission(self, request, view, obj):
         user = request.user
         website = obj.website
         if request.method in SAFE_METHODS:
             return check_perm(user, constants.PERMISSION_VIEW, website)
+        if obj.type in ADMIN_ONLY_CONTENT:
+            return is_site_admin(user, website)
         if request.method == "PATCH":
             return check_perm(user, constants.PERMISSION_EDIT_CONTENT, website)
         if request.method == "DELETE":
