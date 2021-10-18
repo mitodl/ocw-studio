@@ -90,7 +90,7 @@ def test_import_ocw2hugo_course_content(mocker, settings):
     assert lecture_pdf.filename == "file-20"
     assert lecture_pdf.dirpath == "content/resources"
     assert lecture_pdf.file == re.sub(
-        r"^/?coursemedia", "courses", lecture_pdf.metadata.get("file_location")
+        r"^/?coursemedia", "courses", lecture_pdf.metadata.get("file")
     )
     get_valid_new_filename_mock.assert_any_call(
         website.pk,
@@ -168,6 +168,14 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
         "department_numbers": ["1"],
         "extra_course_numbers": "",
         "primary_course_number": "1.050",
+        "course_image": {
+            "content": "ba36b428-9898-8e45-81d4-2067ac439546",
+            "website": "1-050-engineering-mechanics-i-fall-2007",
+        },
+        "course_image_thumbnail": {
+            "content": "4cdfb4e3-32fa-9fdf-a166-c337e35fc009",
+            "website": "1-050-engineering-mechanics-i-fall-2007",
+        },
         "learning_resource_types": ["Problem Sets", "Lecture Notes"],
     }
 

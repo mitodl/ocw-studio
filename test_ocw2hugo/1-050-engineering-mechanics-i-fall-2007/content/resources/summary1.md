@@ -6,6 +6,6 @@ description: >-
 uid: fee09afc-a9f7-7fd1-982f-af1b26ad790a
 resourcetype: Document
 file_type: application/pdf
-file_location: >-
+file: >-
   https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/fee09afca9f77fd1982faf1b26ad790a_summary1.pdf
 ---

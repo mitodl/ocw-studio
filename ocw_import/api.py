@@ -136,18 +136,18 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
                 website=website, text_id=str(uuid.UUID(parent_uid))
             )
         # Assumes that s3 objects will be independently synced to the ocw-studio bucket via devops
-        file_location = content_json.get("file_location", None)
-        if file_location:
+        file = content_json.get("file", None)
+        if file:
             ocw_prefix = (
                 website.starter.config.get("root-url-path", "courses")
                 if website.starter
                 else "courses"
             )
-            file_location = re.sub(r"^/?coursemedia", ocw_prefix, file_location)
+            file = re.sub(r"^/?coursemedia", ocw_prefix, file)
 
         base_defaults = {
             "is_page_content": True,
-            "file": file_location,
+            "file": file,
             "metadata": content_json,
             "markdown": (s3_content_parts[1] if len(s3_content_parts) == 2 else None),
             "parent": parent,
@@ -204,6 +204,8 @@ def import_ocw2hugo_sitemetadata(
     metadata["course_description"] = course_data["course_description"]
     metadata["primary_course_number"] = course_data["primary_course_number"]
     metadata["extra_course_numbers"] = ",".join(course_data["extra_course_numbers"])
+    metadata["course_image"] = course_data["course_image"]
+    metadata["course_image_thumbnail"] = course_data["course_image_thumbnail"]
     with open("static/js/resources/departments.json", "r") as departments_json_file:
         departments_json = json.load(departments_json_file)
         metadata["department_numbers"] = list(
