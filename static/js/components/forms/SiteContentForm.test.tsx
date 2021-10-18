@@ -158,7 +158,9 @@ describe("SiteContentForm", () => {
         [true, false].forEach(isResourceFileField => {
           it(`${shouldIf(
             !isResourceFileField || !isGdriveEnabled
-          )} render file field`, () => {
+          )} render file field if isResourceFileField=${String(
+            isResourceFileField
+          )} and isGdriveEnabled=${String(isGdriveEnabled)}`, () => {
             SETTINGS.gdrive_enabled = isGdriveEnabled
             content.type = isResourceFileField ? "resource" : "page"
             configItem = makeEditableConfigItem(content.type)
