@@ -5,7 +5,7 @@ import { shallow } from "enzyme"
 
 import SiteContentForm from "./SiteContentForm"
 
-import { defaultFormikChildProps } from "../../test_util"
+import { defaultFormikChildProps, shouldIf } from "../../test_util"
 import {
   makeEditableConfigItem,
   makeWebsiteConfigField,
@@ -153,6 +153,30 @@ describe("SiteContentForm", () => {
           content.content_context
         )
         expect(objectWrapper.prop("values")).toStrictEqual(values)
+      })
+      ;[true, false].forEach(isGdriveEnabled => {
+        [true, false].forEach(isResourceFileField => {
+          it(`${shouldIf(
+            !isResourceFileField || !isGdriveEnabled
+          )} render file field if isResourceFileField=${String(
+            isResourceFileField
+          )} and isGdriveEnabled=${String(isGdriveEnabled)}`, () => {
+            SETTINGS.gdrive_enabled = isGdriveEnabled
+            content.type = isResourceFileField ? "resource" : "page"
+            configItem = makeEditableConfigItem(content.type)
+            const field = makeWebsiteConfigField({ widget: WidgetVariant.File })
+            configItem.fields = [field]
+            // @ts-ignore
+            fieldIsVisible.mockImplementation(() => true)
+            // @ts-ignore
+            renameNestedFields.mockImplementation(() => configItem.fields)
+            const values = { file: "courses/file.pdf" }
+            const wrapper = renderInnerForm(editorState, { values })
+            expect(wrapper.find("SiteContentField").exists()).toBe(
+              !isResourceFileField || !isGdriveEnabled
+            )
+          })
+        })
       })
 
       it("creates initialValues", () => {

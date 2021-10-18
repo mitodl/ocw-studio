@@ -19,11 +19,11 @@ import {
 } from "../../lib/site_content"
 
 import {
-  WebsiteContent,
-  WidgetVariant,
   ConfigField,
   EditableConfigItem,
-  WebsiteContentModalState
+  WebsiteContent,
+  WebsiteContentModalState,
+  WidgetVariant
 } from "../../types/websites"
 import { SiteFormValues } from "../../types/forms"
 import { getContentSchema } from "./validation"
@@ -94,13 +94,15 @@ export default function SiteContentForm({
                     contentContext={contentContext}
                     values={values}
                   />
-                ) : (
-                  <SiteContentField
-                    field={field}
-                    key={field.name}
-                    contentContext={contentContext}
-                  />
-                )
+                ) : SETTINGS.gdrive_enabled &&
+                  content?.type === "resource" &&
+                  field.widget === WidgetVariant.File ? null : (
+                    <SiteContentField
+                      field={field}
+                      key={field.name}
+                      contentContext={contentContext}
+                    />
+                  )
               )}
           </div>
           <div className="form-group d-flex w-100 justify-content-end">
