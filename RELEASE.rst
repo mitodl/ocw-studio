@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.31.0
+--------------
+
+- update ocw_import (#715)
+- Fix flaky test (test_format_recipient) (#713)
+- small fix for UX issue on website collections page
+- Fix bug in create_gdrive_folders (#704)
+
 Version 0.30.4 (Released October 18, 2021)
 --------------
 
