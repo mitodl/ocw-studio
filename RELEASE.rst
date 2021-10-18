@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.30.4 (Released October 18, 2021)
+--------------
+
+- remove title from hugo menu serialization (#703)
+- remove some unneeded testing code
+
 Version 0.30.3 (Released October 14, 2021)
 --------------
 
