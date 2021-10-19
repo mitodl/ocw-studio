@@ -127,7 +127,8 @@ def test_sync_all_websites(api_mock, backend_exists, create_backend):
     )
 
 
-def test_sync_all_websites_rate_limit_low(mocker, settings):
+@pytest.mark.parametrize("check_limit", [True, False])
+def test_sync_all_websites_rate_limit_low(mocker, settings, check_limit):
     """Test that sync_all_websites pauses if the GithubBackend is close to exceeding rate limit"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
     mock_git_wrapper = mocker.patch("content_sync.backends.github.GithubApiWrapper")
@@ -140,8 +141,8 @@ def test_sync_all_websites_rate_limit_low(mocker, settings):
     )
     mock_git_wrapper.return_value.git.get_rate_limit.return_value.core = mock_core
     ContentSyncStateFactory.create_batch(2)
-    tasks.sync_all_websites.delay()
-    assert sleep_mock.call_count == 2
+    tasks.sync_all_websites.delay(check_limit=check_limit)
+    assert sleep_mock.call_count == (2 if check_limit else 0)
 
 
 def test_sync_all_websites_rate_limit_exceeded(api_mock):
