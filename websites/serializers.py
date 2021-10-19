@@ -1,6 +1,7 @@
 """ Serializers for websites """
 import logging
 from collections import defaultdict
+from urllib.parse import urljoin
 
 from django.contrib.auth.models import Group
 from django.db import transaction
@@ -14,6 +15,7 @@ from content_sync.api import (
     create_website_publishing_pipeline,
     update_website_backend,
 )
+from gdrive_sync.api import is_gdrive_enabled, gdrive_root_url
 from gdrive_sync.tasks import create_gdrive_folders
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
@@ -84,6 +86,7 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
     is_admin = serializers.SerializerMethodField(read_only=True)
     live_url = serializers.SerializerMethodField()
     draft_url = serializers.SerializerMethodField()
+    gdrive_url = serializers.SerializerMethodField()
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
@@ -99,6 +102,12 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
     def get_draft_url(self, instance):
         """Get the draft url for the site"""
         return instance.get_url(version="draft")
+
+    def get_gdrive_url(self, instance):
+        """ Get the Google Drive folder URL for the site"""
+        if is_gdrive_enabled() and instance.gdrive_folder:
+            return urljoin(gdrive_root_url(), instance.gdrive_folder)
+        return None
 
     def create(self, validated_data):
         """Ensure that the website is created by the requesting user"""
@@ -126,6 +135,7 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
             "live_url",
             "has_unpublished_live",
             "has_unpublished_draft",
+            "gdrive_url"
         ]
 
 
