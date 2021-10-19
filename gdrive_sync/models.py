@@ -1,5 +1,9 @@
 """ Models for gdrive_sync """
+import os
+
+from django.conf import settings
 from django.db import models
+from django.utils.text import slugify
 from mitol.common.models import TimestampedModel
 
 from gdrive_sync.constants import (
@@ -8,6 +12,7 @@ from gdrive_sync.constants import (
     DriveFileStatus,
 )
 from videos.models import Video
+from websites.api import find_available_name
 from websites.models import Website, WebsiteContent
 
 
@@ -58,6 +63,43 @@ class DriveFile(TimestampedModel):
     def is_video(self):
         """Return True if is is in the video folder"""
         return DRIVE_FOLDER_VIDEOS_FINAL in self.drive_path.split("/")
+
+    def get_valid_s3_key(self) -> str:
+        """
+        Return a unique s3 key for a DriveFile that will satisfy unique constraints,
+        adding/incrementing a numerical suffix as necessary.
+        """
+        basename, ext = os.path.splitext(self.name)
+        basename = slugify(basename)
+        ext = ext.lower()
+        prefix = self.s3_prefix
+        key_sections = [
+            prefix,
+            self.website.short_id,
+            self.file_id if self.is_video() else None,
+            f"{basename}{ext}",
+        ]
+        s3_key = "/".join([section for section in key_sections if section])
+        drive_file_exists = DriveFile.objects.filter(s3_key=s3_key).exists()
+        if not drive_file_exists:
+            return s3_key
+        drive_file_qset = DriveFile.objects.exclude(s3_key=s3_key)
+        return find_available_name(
+            drive_file_qset,
+            os.path.splitext(s3_key)[0],
+            "s3_key",
+            max_length=4096,
+            extension=ext,
+        )
+
+    @property
+    def s3_prefix(self):
+        """Return the S3 prefix that should be used for the file"""
+        return (
+            settings.DRIVE_S3_UPLOAD_PREFIX
+            if self.is_video()
+            else self.website.starter.config.get("root-url-path").rstrip("/")
+        )
 
     def __str__(self):
         return f"'{self.name}' ({self.drive_path} {self.status} {self.file_id})"

@@ -105,30 +105,39 @@ def test_get_parent_tree(mock_service):
 
 
 @pytest.mark.parametrize("is_video", [True, False])
-def test_stream_to_s3(settings, mocker, is_video):
+@pytest.mark.parametrize("current_s3_key", [None, "courses/website/current-file.png"])
+def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     """stream_to_s3 should make expected drive api and S3 upload calls"""
     mock_service = mocker.patch("gdrive_sync.api.get_drive_service")
     mock_download = mocker.patch("gdrive_sync.api.streaming_download")
     mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
     mock_bucket = mock_boto3.resource.return_value.Bucket.return_value
-    drive_file = DriveFileFactory.create()
-    prefix = None if is_video else "courses"
-    api.stream_to_s3(drive_file, prefix=prefix)
+    drive_file = DriveFileFactory.create(
+        name="A (Test) File!.ext",
+        s3_key=current_s3_key,
+        mime_type="video/mp4" if is_video else "application/pdf",
+        drive_path=f"website/{DRIVE_FOLDER_VIDEOS_FINAL if is_video else DRIVE_FOLDER_FILES_FINAL}",
+    )
+    api.stream_to_s3(drive_file)
     mock_service.return_value.permissions.return_value.create.assert_called_once()
-    if is_video:
-        key = f"{settings.DRIVE_S3_UPLOAD_PREFIX}/{drive_file.website.short_id}/{drive_file.file_id}/{drive_file.name}"
+    if current_s3_key:
+        expected_key = current_s3_key
+    elif is_video:
+        expected_key = f"{settings.DRIVE_S3_UPLOAD_PREFIX}/{drive_file.website.short_id}/{drive_file.file_id}/a-test-file.ext"
     else:
-        key = f"courses/{drive_file.website.short_id}/{drive_file.name}"
+        expected_key = (
+            f"{drive_file.s3_prefix}/{drive_file.website.short_id}/a-test-file.ext"
+        )
     mock_bucket.upload_fileobj.assert_called_with(
         Fileobj=mocker.ANY,
-        Key=key,
+        Key=expected_key,
         ExtraArgs={"ContentType": drive_file.mime_type, "ACL": "public-read"},
     )
     mock_download.assert_called_once_with(drive_file)
     mock_service.return_value.permissions.return_value.delete.assert_called_once()
     drive_file.refresh_from_db()
     assert drive_file.status == DriveFileStatus.UPLOAD_COMPLETE
-    assert drive_file.s3_key == key
+    assert drive_file.s3_key == expected_key
 
 
 @pytest.mark.django_db
