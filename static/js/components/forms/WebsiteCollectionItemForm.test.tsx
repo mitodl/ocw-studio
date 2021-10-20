@@ -28,11 +28,10 @@ describe("WebsiteCollectionItemForm", () => {
       websiteCollection
     })
 
-    helper.handleRequestStub
-      .withArgs(
-        wcItemsApiUrl.param({ collectionId: websiteCollection.id }).toString()
-      )
-      .returns({ status: 200 })
+    helper.mockGetRequest(
+      wcItemsApiUrl.param({ collectionId: websiteCollection.id }).toString(),
+      {}
+    )
   })
 
   afterEach(() => {
@@ -53,7 +52,10 @@ describe("WebsiteCollectionItemForm", () => {
 
   it("onSubmit should issue request then resetForm", async () => {
     const resetFormStub = helper.sandbox.stub()
-
+    helper.mockPostRequest(
+      wcItemsApiUrl.param({ collectionId: websiteCollection.id }).toString(),
+      { website: "hey!" }
+    )
     const { wrapper } = await render()
     act(() => {
       wrapper

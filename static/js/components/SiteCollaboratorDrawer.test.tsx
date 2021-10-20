@@ -79,20 +79,16 @@ describe("SiteCollaboratorDrawerTest", () => {
     })
 
     it("edits a collaborator role and closes the dialog on success", async () => {
-      editCollaboratorStub = helper.handleRequestStub
-        .withArgs(
-          siteApiCollaboratorsDetailUrl
-            .param({
-              name:   website.name,
-              userId: collaborator.user_id
-            })
-            .toString(),
-          "PATCH"
-        )
-        .returns({
-          body:   collaborator,
-          status: 201
-        })
+      editCollaboratorStub = helper.mockPatchRequest(
+        siteApiCollaboratorsDetailUrl
+          .param({
+            name:   website.name,
+            userId: collaborator.user_id
+          })
+          .toString(),
+        collaborator,
+        201
+      )
       const { wrapper } = await render({ collaborator })
       const form = wrapper.find("SiteCollaboratorForm")
       const onSubmit = form.prop("onSubmit")
@@ -117,21 +113,16 @@ describe("SiteCollaboratorDrawerTest", () => {
           role: errorMsg
         }
       }
-      editCollaboratorStub = helper.handleRequestStub
-        .withArgs(
-          siteApiCollaboratorsDetailUrl
-            .param({
-              name:   website.name,
-              userId: collaborator.user_id
-            })
-            .toString(),
-
-          "PATCH"
-        )
-        .returns({
-          body:   errorResp,
-          status: 400
-        })
+      editCollaboratorStub = helper.mockPatchRequest(
+        siteApiCollaboratorsDetailUrl
+          .param({
+            name:   website.name,
+            userId: collaborator.user_id
+          })
+          .toString(),
+        errorResp,
+        400
+      )
       const { wrapper } = await render({ collaborator })
       const form = wrapper.find("SiteCollaboratorForm")
       const onSubmit = form.prop("onSubmit")
@@ -156,20 +147,16 @@ describe("SiteCollaboratorDrawerTest", () => {
       const errorResp = {
         errors: errorMsg
       }
-      editCollaboratorStub = helper.handleRequestStub
-        .withArgs(
-          siteApiCollaboratorsDetailUrl
-            .param({
-              name:   website.name,
-              userId: collaborator.user_id
-            })
-            .toString(),
-          "PATCH"
-        )
-        .returns({
-          body:   errorResp,
-          status: 400
-        })
+      editCollaboratorStub = helper.mockPatchRequest(
+        siteApiCollaboratorsDetailUrl
+          .param({
+            name:   website.name,
+            userId: collaborator.user_id
+          })
+          .toString(),
+        errorResp,
+        400
+      )
       const { wrapper } = await render({ collaborator })
       const form = wrapper.find("SiteCollaboratorForm")
       const onSubmit = form.prop("onSubmit")
@@ -197,15 +184,10 @@ describe("SiteCollaboratorDrawerTest", () => {
     })
 
     it("creates a new collaborator", async () => {
-      addCollaboratorStub = helper.handleRequestStub
-        .withArgs(
-          siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-          "POST"
-        )
-        .returns({
-          body:   makeWebsiteCollaborator(),
-          status: 201
-        })
+      addCollaboratorStub = helper.mockPostRequest(
+        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+        makeWebsiteCollaborator()
+      )
       const { wrapper } = await render()
       const form = wrapper.find("SiteCollaboratorForm")
       const onSubmit = form.prop("onSubmit")
@@ -232,15 +214,11 @@ describe("SiteCollaboratorDrawerTest", () => {
           role:  errorMsg
         }
       }
-      addCollaboratorStub = helper.handleRequestStub
-        .withArgs(
-          siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-          "POST"
-        )
-        .returns({
-          body:   errorResp,
-          status: 400
-        })
+      addCollaboratorStub = helper.mockPostRequest(
+        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+        errorResp,
+        400
+      )
       const { wrapper } = await render()
       const form = wrapper.find("SiteCollaboratorForm")
       const onSubmit = form.prop("onSubmit")
@@ -266,15 +244,11 @@ describe("SiteCollaboratorDrawerTest", () => {
       const errorResp = {
         errors: errorMsg
       }
-      addCollaboratorStub = helper.handleRequestStub
-        .withArgs(
-          siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-          "POST"
-        )
-        .returns({
-          body:   errorResp,
-          status: 400
-        })
+      addCollaboratorStub = helper.mockPostRequest(
+        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+        errorResp,
+        400
+      )
       const { wrapper } = await render()
       const form = wrapper.find("SiteCollaboratorForm")
       const onSubmit = form.prop("onSubmit")

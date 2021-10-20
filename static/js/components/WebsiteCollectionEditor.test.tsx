@@ -37,10 +37,9 @@ describe("WebsiteCollectionEditor", () => {
 
   describe("adding a new website collection", () => {
     beforeEach(() => {
-      helper.handleRequestStub.withArgs(collectionsApiUrl.toString()).returns({
-        body:   { id: 32 },
-        status: 200
-      })
+      helper.mockGetRequest(collectionsApiUrl.toString(), { id: 32 })
+
+      helper.mockPostRequest(collectionsApiUrl.toString(), {})
     })
 
     it("should pass initial values down to the form", async () => {
@@ -102,19 +101,18 @@ describe("WebsiteCollectionEditor", () => {
 
     beforeEach(() => {
       collection = makeWebsiteCollection()
-
-      helper.handleRequestStub
-        .withArgs(
-          collectionsApiDetailUrl
-            .param({
-              collectionId: collection.id
-            })
-            .toString()
-        )
-        .returns({
-          body:   collection,
-          status: 200
-        })
+      helper.mockGetRequest(
+        collectionsApiDetailUrl
+          .param({ collectionId: collection.id })
+          .toString(),
+        collection
+      )
+      helper.mockPatchRequest(
+        collectionsApiDetailUrl
+          .param({ collectionId: collection.id })
+          .toString(),
+        collection
+      )
     })
 
     it("should pass values from focused collection down to form", async () => {

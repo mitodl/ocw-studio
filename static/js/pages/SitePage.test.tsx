@@ -20,15 +20,10 @@ describe("SitePage", () => {
       ...makeWebsiteDetail(),
       name: siteName
     }
-    helper.handleRequestStub
-      .withArgs(
-        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-        "GET"
-      )
-      .returns({
-        body:   { results: [] },
-        status: 200
-      })
+    helper.mockGetRequest(
+      siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+      { results: [] }
+    )
     render = helper.configureRenderer(props => (
       <WebsiteContext.Provider value={website}>
         <SitePage {...props} />

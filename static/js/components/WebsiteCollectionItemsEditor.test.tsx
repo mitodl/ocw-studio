@@ -30,12 +30,10 @@ describe("WebsiteCollectionItemsEditor", () => {
       websiteCollection: collection
     })
 
-    helper.handleRequestStub
-      .withArgs(wcItemsApiUrl.param({ collectionId: collection.id }).toString())
-      .returns({
-        body:   items,
-        status: 200
-      })
+    helper.mockGetRequest(
+      wcItemsApiUrl.param({ collectionId: collection.id }).toString(),
+      items
+    )
   })
 
   afterEach(() => {
@@ -69,19 +67,14 @@ describe("WebsiteCollectionItemsEditor", () => {
 
     const itemToMove = items[6]
 
-    helper.handleRequestStub
-      .withArgs(
-        wcItemsApiDetailUrl
-          .param({ collectionId: collection.id, itemId: items[6].id })
-          .toString()
-      )
-      .returns({
-        status: 200,
-        body:   {
-          id: items[6].id
-        }
-      })
-
+    helper.mockPatchRequest(
+      wcItemsApiDetailUrl
+        .param({ collectionId: collection.id, itemId: items[6].id })
+        .toString(),
+      {
+        id: items[6].id
+      }
+    )
     act(() => {
       wrapper.find(DndContext)!.prop("onDragEnd")!({
         active: { id: String(itemToMove.id) },
@@ -109,15 +102,13 @@ describe("WebsiteCollectionItemsEditor", () => {
     const { wrapper } = await render()
     const [item] = items
 
-    helper.handleRequestStub
-      .withArgs(
-        wcItemsApiDetailUrl
-          .param({ collectionId: collection.id, itemId: item.id })
-          .toString()
-      )
-      .returns({
-        status: 204
-      })
+    helper.mockDeleteRequest(
+      wcItemsApiDetailUrl
+        .param({ collectionId: collection.id, itemId: item.id })
+        .toString(),
+      {},
+      204
+    )
 
     act(() => {
       // @ts-ignore

@@ -26,9 +26,10 @@ describe("PublishDrawer", () => {
       has_unpublished_live:  true,
       is_admin:              true
     }
-    refreshWebsiteStub = helper.handleRequestStub
-      .withArgs(siteApiDetailUrl.param({ name: website.name }).toString())
-      .returns({ body: website, status: 200 })
+    refreshWebsiteStub = helper.mockGetRequest(
+      siteApiDetailUrl.param({ name: website.name }).toString(),
+      website
+    )
     render = helper.configureRenderer(
       PublishDrawer,
       {
@@ -199,18 +200,16 @@ describe("PublishDrawer", () => {
         })
 
         it("renders an error message if the publish didn't work", async () => {
-          const actionStub = helper.handleRequestStub
-            .withArgs(
-              siteApiActionUrl
-                .param({
-                  name:   website.name,
-                  action: api
-                })
-                .toString()
-            )
-            .returns({
-              status: 500
-            })
+          const actionStub = helper.mockPostRequest(
+            siteApiActionUrl
+              .param({
+                name:   website.name,
+                action: api
+              })
+              .toString(),
+            {},
+            500
+          )
           const { wrapper } = await render()
           await act(async () => {
             // @ts-ignore
@@ -240,18 +239,15 @@ describe("PublishDrawer", () => {
         })
 
         it("publish button sends the expected request", async () => {
-          const actionStub = helper.handleRequestStub
-            .withArgs(
-              siteApiActionUrl
-                .param({
-                  name:   website.name,
-                  action: api
-                })
-                .toString()
-            )
-            .returns({
-              status: 200
-            })
+          const actionStub = helper.mockPostRequest(
+            siteApiActionUrl
+              .param({
+                name:   website.name,
+                action: api
+              })
+              .toString(),
+            {}
+          )
           const { wrapper } = await render()
           await act(async () => {
             // @ts-ignore

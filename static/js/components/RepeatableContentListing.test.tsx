@@ -84,20 +84,15 @@ describe("RepeatableContentListing", () => {
         results: apiResponse.results.map(item => item.text_id)
       }
     }
-    helper.handleRequestStub
-      .withArgs(
-        siteApiContentListingUrl
-          .param({
-            name: website.name
-          })
-          .query({ offset: 0, type: configItem.name })
-          .toString(),
-        "GET"
-      )
-      .returns({
-        body:   apiResponse,
-        status: 200
-      })
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .param({
+          name: website.name
+        })
+        .query({ offset: 0, type: configItem.name })
+        .toString(),
+      apiResponse
+    )
 
     render = helper.configureRenderer(
       props => (
@@ -156,19 +151,15 @@ describe("RepeatableContentListing", () => {
     [500, "Something went wrong syncing with Google Drive"]
   ].forEach(([status, message]) => {
     it("Clicking the gdrive sync button should open a feedback modal", async () => {
-      helper.handleRequestStub
-        .withArgs(
-          siteApiContentSyncGDriveUrl
-            .param({
-              name: website.name
-            })
-            .toString(),
-          "POST"
-        )
-        .returns({
-          body:   {},
-          status: status
-        })
+      helper.mockPostRequest(
+        siteApiContentSyncGDriveUrl
+          .param({
+            name: website.name
+          })
+          .toString(),
+        {},
+        status as number
+      )
       SETTINGS.gdrive_enabled = true
       const { wrapper } = await render()
       const syncLink = wrapper.find("button.sync")
@@ -221,17 +212,12 @@ describe("RepeatableContentListing", () => {
   it("should show each content item with edit links", async () => {
     for (const item of contentListingItems) {
       // when the edit button is tapped the detail view is requested, so mock each one out
-      helper.handleRequestStub
-        .withArgs(
-          siteApiContentDetailUrl
-            .param({ name: website.name, textId: item.text_id })
-            .toString(),
-          "GET"
-        )
-        .returns({
-          body:   item,
-          status: 200
-        })
+      helper.mockGetRequest(
+        siteApiContentDetailUrl
+          .param({ name: website.name, textId: item.text_id })
+          .toString(),
+        item
+      )
     }
 
     const { wrapper } = await render()
@@ -288,23 +274,18 @@ describe("RepeatableContentListing", () => {
           makeWebsiteContentListItem(),
           makeWebsiteContentListItem()
         ]
-        helper.handleRequestStub
-          .withArgs(
-            siteApiContentListingUrl
-              .param({ name: website.name })
-              .query({ offset: startingOffset, type: configItem.name })
-              .toString(),
-            "GET"
-          )
-          .returns({
-            body: {
-              next:     hasNextLink ? "next" : null,
-              previous: hasPrevLink ? "prev" : null,
-              count:    2,
-              results:  nextPageItems
-            },
-            status: 200
-          })
+        helper.mockGetRequest(
+          siteApiContentListingUrl
+            .param({ name: website.name })
+            .query({ offset: startingOffset, type: configItem.name })
+            .toString(),
+          {
+            next:     hasNextLink ? "next" : null,
+            previous: hasPrevLink ? "prev" : null,
+            count:    2,
+            results:  nextPageItems
+          }
+        )
 
         helper.browserHistory.push({ search: `offset=${startingOffset}` })
 

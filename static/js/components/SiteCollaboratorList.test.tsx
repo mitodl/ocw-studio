@@ -49,15 +49,10 @@ describe("SiteCollaboratorList", () => {
         queries: {}
       }
     )
-    helper.handleRequestStub
-      .withArgs(
-        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-        "GET"
-      )
-      .returns({
-        body:   { results: concat(collaborators, permanentAdmins) },
-        status: 200
-      })
+    helper.mockGetRequest(
+      siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+      { results: concat(collaborators, permanentAdmins) }
+    )
   })
 
   afterEach(() => {
@@ -103,19 +98,15 @@ describe("SiteCollaboratorList", () => {
   it("the delete collaborator dialog works as expected", async () => {
     const collaborator = collaborators[0]
     const numCollaborators = concat(collaborators, permanentAdmins).length
-    deleteCollaboratorStub = helper.handleRequestStub
-      .withArgs(
-        siteApiCollaboratorsDetailUrl
-          .param({
-            name:   website.name,
-            userId: collaborator.user_id
-          })
-          .toString(),
-        "DELETE"
-      )
-      .returns({
-        status: 204
-      })
+    deleteCollaboratorStub = helper.mockDeleteRequest(
+      siteApiCollaboratorsDetailUrl
+        .param({
+          name:   website.name,
+          userId: collaborator.user_id
+        })
+        .toString(),
+      {}
+    )
     const { wrapper } = await render()
     const deleteIcon = wrapper.find("button.item-action-button").at(1)
     act(() => {

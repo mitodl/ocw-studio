@@ -78,11 +78,11 @@ export default class IntegrationTestHelper {
 
   mockRequest(
     url: string,
-    method: "GET" | "POST" | "PATCH",
+    method: "GET" | "POST" | "PATCH" | "DELETE",
     responseBody: unknown,
     code: number
-  ): void {
-    this.handleRequestStub.withArgs(url, method).returns({
+  ): sinon.SinonStub {
+    return this.handleRequestStub.withArgs(url, method).returns({
       body:   responseBody,
       status: code
     })
@@ -94,22 +94,29 @@ export default class IntegrationTestHelper {
    * pass the API url you want to mock and the object which should be
    * returned as the request body!
    */
-  mockGetRequest(url: string, body: unknown): void {
-    this.mockRequest(url, "GET", body, 200)
+  mockGetRequest(url: string, body: unknown): sinon.SinonStub {
+    return this.mockRequest(url, "GET", body, 200)
   }
 
   /**
    * Convenience method for mocking out a POST request
    */
-  mockPostRequest(url: string, body: unknown): void {
-    this.mockRequest(url, "POST", body, 201)
+  mockPostRequest(url: string, body: unknown, code = 201): sinon.SinonStub {
+    return this.mockRequest(url, "POST", body, code)
   }
 
   /**
    * Convenience method for mocking out a PATCH request
    */
-  mockPatchRequest(url: string, body: unknown): void {
-    this.mockRequest(url, "PATCH", body, 200)
+  mockPatchRequest(url: string, body: unknown, code = 200): sinon.SinonStub {
+    return this.mockRequest(url, "PATCH", body, code)
+  }
+
+  /**
+   * Convenience method for mocking out a DELETE request
+   */
+  mockDeleteRequest(url: string, body: unknown, code = 204): sinon.SinonStub {
+    return this.mockRequest(url, "DELETE", body, code)
   }
 
   cleanup(unmount = true): void {

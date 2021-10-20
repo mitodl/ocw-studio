@@ -37,10 +37,7 @@ describe("SiteCreationPage", () => {
       }
     )
 
-    helper.handleRequestStub.withArgs(startersApi.toString(), "GET").returns({
-      body:   starters,
-      status: 200
-    })
+    helper.mockGetRequest(startersApi.toString(), starters)
   })
 
   afterEach(() => {
@@ -67,12 +64,7 @@ describe("SiteCreationPage", () => {
     })
 
     it("that creates a new site and redirect on success", async () => {
-      createWebsiteStub = helper.handleRequestStub
-        .withArgs(siteApi.toString(), "POST")
-        .returns({
-          body:   website,
-          status: 201
-        })
+      createWebsiteStub = helper.mockPostRequest(siteApi.toString(), website)
       const { wrapper } = await render()
       const form = wrapper.find("SiteForm")
       const onSubmit = form.prop("onSubmit")
@@ -95,18 +87,18 @@ describe("SiteCreationPage", () => {
         siteDetailUrl.param({ name: website.name }).toString()
       )
     })
+
     it("that sets form errors if the API request fails", async () => {
       const errorResp = {
         errors: {
           title: errorMsg
         }
       }
-      createWebsiteStub = helper.handleRequestStub
-        .withArgs(siteApi.toString(), "POST")
-        .returns({
-          body:   errorResp,
-          status: 400
-        })
+      createWebsiteStub = helper.mockPostRequest(
+        siteApi.toString(),
+        errorResp,
+        400
+      )
       const { wrapper } = await render()
       const form = wrapper.find("SiteForm")
       const onSubmit = form.prop("onSubmit")
@@ -130,16 +122,16 @@ describe("SiteCreationPage", () => {
       })
       sinon.assert.notCalled(historyPushStub)
     })
+
     it("that sets a status if the API request fails with a string error message", async () => {
       const errorResp = {
         errors: errorMsg
       }
-      createWebsiteStub = helper.handleRequestStub
-        .withArgs(siteApi.toString(), "POST")
-        .returns({
-          body:   errorResp,
-          status: 400
-        })
+      createWebsiteStub = helper.mockPostRequest(
+        siteApi.toString(),
+        errorResp,
+        400
+      )
       const { wrapper } = await render()
       const form = wrapper.find("SiteForm")
       const onSubmit = form.prop("onSubmit")
