@@ -15,7 +15,7 @@ from content_sync.api import (
     create_website_publishing_pipeline,
     update_website_backend,
 )
-from gdrive_sync.api import is_gdrive_enabled, gdrive_root_url
+from gdrive_sync.api import gdrive_root_url, is_gdrive_enabled
 from gdrive_sync.tasks import create_gdrive_folders
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
@@ -105,7 +105,7 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
 
     def get_gdrive_url(self, instance):
         """ Get the Google Drive folder URL for the site"""
-        if is_gdrive_enabled() and instance.gdrive_folder:
+        if is_gdrive_enabled():
             return urljoin(gdrive_root_url(), instance.gdrive_folder)
         return None
 
@@ -135,7 +135,7 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
             "live_url",
             "has_unpublished_live",
             "has_unpublished_draft",
-            "gdrive_url"
+            "gdrive_url",
         ]
 
 

@@ -215,7 +215,7 @@ export interface Website {
   draft_publish_date: string | null // eslint-disable-line
   draft_url: string // eslint-disable-line
   live_url: string // eslint-disable-line
-  gdrive_url: string | null // eslint-disable-line
+  gdrive_url: string // eslint-disable-line
   has_unpublished_draft: boolean // eslint-disable-line
   has_unpublished_live: boolean // eslint-disable-line
 }

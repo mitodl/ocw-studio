@@ -9,7 +9,7 @@ from django.shortcuts import render
 from mitol.common.utils.webpack import webpack_public_path
 from rest_framework.pagination import LimitOffsetPagination
 
-from gdrive_sync.api import is_gdrive_enabled, gdrive_root_url
+from gdrive_sync.api import is_gdrive_enabled
 
 
 def _index(request):

@@ -154,25 +154,22 @@ export default function RepeatableContentListing(props: {
         <h2 className="m-0 p-0">{configItem.label}</h2>
         <div>
           {SETTINGS.gdrive_enabled && configItem.name === "resource" ? (
-            website && website.gdrive_url ? (
-              <>
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn cyan-button sync ml-2"
-                  href={website.gdrive_url}
-                >
-                  View Google Drive
-                </a>
-
-                <button
-                  className="btn cyan-button sync ml-2"
-                  onClick={onSubmitContentSync}
-                >
-                  Sync w/Google Drive
-                </button>
-              </>
-            ) : null
+            <>
+              <a
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn cyan-button view ml-2"
+                href={website.gdrive_url}
+              >
+                View Google Drive
+              </a>
+              <button
+                className="btn cyan-button sync ml-2"
+                onClick={onSubmitContentSync}
+              >
+                Sync w/Google Drive
+              </button>
+            </>
           ) : (
             <button
               className="btn cyan-button add"

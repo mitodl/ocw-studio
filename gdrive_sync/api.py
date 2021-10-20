@@ -319,7 +319,9 @@ def is_gdrive_enabled():
 def gdrive_root_url():
     """Get the root url of the Google Drive"""
     if is_gdrive_enabled():
-        folder = f"{settings.DRIVE_UPLOADS_PARENT_FOLDER_ID or settings.SHARED_ID}/"
+        folder = (
+            f"{settings.DRIVE_UPLOADS_PARENT_FOLDER_ID or settings.DRIVE_SHARED_ID}/"
+        )
         return f"https://drive.google.com/drive/folders/{folder}"
 
 

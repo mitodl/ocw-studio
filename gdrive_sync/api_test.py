@@ -10,6 +10,7 @@ from requests import HTTPError
 from gdrive_sync import api
 from gdrive_sync.api import (
     create_gdrive_resource_content,
+    gdrive_root_url,
     get_resource_type,
     process_file_result,
     transcode_gdrive_video,
@@ -459,3 +460,21 @@ def test_transcode_gdrive_video_error(settings, mocker):
         "Error creating transcode job for %s", drive_file.video.source_key
     )
     assert drive_file.video.status == VideoStatus.FAILED
+
+
+@pytest.mark.parametrize(
+    "shared_id, parent_id, folder",
+    [
+        [None, "def456", None],
+        ["abc123", None, "abc123"],
+        ["abc123", "def456", "def456"],
+    ],
+)
+def test_gdrive_root_url(settings, shared_id, parent_id, folder):
+    """gdrive_root_url should return the expected URL"""
+    settings.DRIVE_SERVICE_ACCOUNT_CREDS = {"creds": True}
+    settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = parent_id
+    settings.DRIVE_SHARED_ID = shared_id
+    assert gdrive_root_url() == (
+        f"https://drive.google.com/drive/folders/{folder}/" if folder else None
+    )

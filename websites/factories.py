@@ -52,6 +52,7 @@ class WebsiteFactory(DjangoModelFactory):
     draft_publish_date = factory.Faker("date_time", tzinfo=pytz.utc)
     starter = factory.SubFactory(WebsiteStarterFactory)
     owner = factory.SubFactory(UserFactory)
+    gdrive_folder = factory.Faker("md5")
 
     class Meta:
         model = Website
