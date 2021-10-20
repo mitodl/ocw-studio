@@ -66,6 +66,20 @@ class Command(BaseCommand):
             help="Sync all unsynced courses to the backend",
         )
         parser.add_argument(
+            "-cb",
+            "--create_backend",
+            dest="create_backend",
+            action="store_true",
+            help="Create backends if they don't exist",
+        )
+        parser.add_argument(
+            "-r",
+            "--rate_limit",
+            dest="rate_limit",
+            action="store_true",
+            help="Check the rate limit when making git api requests",
+        )
+        parser.add_argument(
             "-d",
             "--delete_unpublished",
             dest="delete_unpublished",
@@ -114,7 +128,10 @@ class Command(BaseCommand):
         if options["sync"] is True and settings.CONTENT_SYNC_BACKEND:
             self.stdout.write("Syncing all unsynced courses to the designated backend")
             start = now_in_utc()
-            task = sync_all_websites.delay()
+            task = sync_all_websites.delay(
+                create_backends=options["create_backend"],
+                check_limit=options["rate_limit"],
+            )
             self.stdout.write(f"Starting task {task}...")
             task.get()
             total_seconds = (now_in_utc() - start).total_seconds()

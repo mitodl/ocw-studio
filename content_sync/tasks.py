@@ -37,7 +37,7 @@ def sync_content(content_sync_id: str):
 
 
 @app.task(acks_late=True)
-def sync_all_websites(create_backends: bool = False):
+def sync_all_websites(create_backends: bool = False, check_limit: bool = False):
     """
     Sync all websites with unsynced content if they have existing repos.
     This should be rarely called, and only in a management command.
@@ -48,7 +48,7 @@ def sync_all_websites(create_backends: bool = False):
 
     if not settings.CONTENT_SYNC_BACKEND:
         return
-    for website_name in (
+    for website_name in (  # pylint:disable=too-many-nested-blocks
         ContentSyncState.objects.exclude(
             Q(current_checksum=F("synced_checksum")) & Q(synced_checksum__isnull=False)
         )
@@ -60,18 +60,20 @@ def sync_all_websites(create_backends: bool = False):
             try:
                 backend = api.get_sync_backend(Website.objects.get(name=website_name))
                 if isinstance(backend, GithubBackend):
-                    # Check the remaining api calls available; if low, wait til the rate limit resets
-                    rate_limit = backend.api.git.get_rate_limit().core
-                    log.debug("Remaining github calls %d:", rate_limit.remaining)
-                    if rate_limit.remaining <= 100:
-                        sleep(
-                            (
-                                rate_limit.reset.replace(tzinfo=pytz.utc) - now_in_utc()
-                            ).seconds
-                        )
-                    else:
-                        # wait a bit between websites to avoid using up the hourly API rate limit
-                        sleep(5)
+                    if check_limit:
+                        # Check the remaining api calls available; if low, wait til the rate limit resets
+                        rate_limit = backend.api.git.get_rate_limit().core
+                        log.debug("Remaining github calls %d:", rate_limit.remaining)
+                        if rate_limit.remaining <= 100:
+                            sleep(
+                                (
+                                    rate_limit.reset.replace(tzinfo=pytz.utc)
+                                    - now_in_utc()
+                                ).seconds
+                            )
+                        else:
+                            # wait a bit between websites to avoid using up the hourly API rate limit
+                            sleep(5)
                 if create_backends or backend.backend_exists():
                     backend.create_website_in_backend()
                     backend.sync_all_content_to_backend()
