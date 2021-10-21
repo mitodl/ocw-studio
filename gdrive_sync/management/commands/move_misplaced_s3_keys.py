@@ -34,6 +34,8 @@ class Command(BaseCommand):
                         f'{drive_file.s3_prefix}/{site["name"]}',
                         1,
                     )
+                    if old_s3_key == new_s3_key:
+                        continue
                     try:
                         self.stdout.write(f"Moving {old_s3_key} to {new_s3_key}")
                         s3.copy_object(
@@ -52,8 +54,10 @@ class Command(BaseCommand):
                         if content:
                             content.file = new_s3_key
                             content.save()
-                    except:
-                        self.stderr.write(f"Error copying {old_s3_key} to {new_s3_key}")
+                    except Exception as exc:
+                        self.stderr.write(
+                            f"Error copying {old_s3_key} to {new_s3_key}: {str(exc)}"
+                        )
             sync_website_content.delay(site["name"])
 
         self.stdout.write("Finished moving s3 objects")
