@@ -73,6 +73,7 @@ class Website(TimestampedModel):
     has_unpublished_live = models.BooleanField(default=True)
     has_unpublished_draft = models.BooleanField(default=True)
     metadata = models.JSONField(null=True, blank=True)
+    gdrive_folder = models.CharField(null=True, blank=True, max_length=64)
 
     @property
     def admin_group(self):

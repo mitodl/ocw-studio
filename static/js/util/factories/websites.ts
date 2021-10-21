@@ -184,6 +184,7 @@ export const makeWebsiteDetail = (): any => ({
   draft_publish_date:    casual.moment.format(),
   draft_url:             casual.url,
   live_url:              casual.url,
+  gdrive_url:            casual.url,
   has_unpublished_draft: casual.boolean,
   has_unpublished_live:  casual.boolean,
   is_admin:              casual.boolean

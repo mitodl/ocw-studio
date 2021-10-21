@@ -260,6 +260,9 @@ def create_gdrive_folders(website_short_id: str) -> bool:
         folder_created = True
     else:
         folder = filtered_folders[0]
+
+    Website.objects.filter(short_id=website_short_id).update(gdrive_folder=folder["id"])
+
     for subfolder in [
         DRIVE_FOLDER_FILES,
         DRIVE_FOLDER_FILES_FINAL,
@@ -303,6 +306,15 @@ def get_resource_type(key: str) -> str:
 def is_gdrive_enabled():
     """Determine if Gdrive integration is enabled via required settings"""
     return settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS
+
+
+def gdrive_root_url():
+    """Get the root url of the Google Drive"""
+    if is_gdrive_enabled():
+        folder = (
+            f"{settings.DRIVE_UPLOADS_PARENT_FOLDER_ID or settings.DRIVE_SHARED_ID}/"
+        )
+        return f"https://drive.google.com/drive/folders/{folder}"
 
 
 def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[Dict]:

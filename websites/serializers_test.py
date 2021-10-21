@@ -108,8 +108,12 @@ def test_website_serializer(has_starter):
 
 
 @pytest.mark.parametrize("has_starter", [True, False])
-def test_website_detail_serializer(has_starter):
+@pytest.mark.parametrize("drive_credentials", [None, {"creds: True"}])
+def test_website_detail_serializer(settings, has_starter, drive_credentials):
     """WebsiteDetailSerializer should serialize a Website object with the correct fields, including config"""
+    settings.DRIVE_SERVICE_ACCOUNT_CREDS = drive_credentials
+    settings.DRIVE_SHARED_ID = "abc123"
+    settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = None
     website = (
         WebsiteFactory.build() if has_starter else WebsiteFactory.build(starter=None)
     )
@@ -131,6 +135,11 @@ def test_website_detail_serializer(has_starter):
     assert serialized_data["draft_url"] == website.get_url("draft")
     assert serialized_data["has_unpublished_live"] == website.has_unpublished_live
     assert serialized_data["has_unpublished_draft"] == website.has_unpublished_draft
+    assert serialized_data["gdrive_url"] == (
+        f"https://drive.google.com/drive/folders/abc123/{website.gdrive_folder}"
+        if drive_credentials is not None
+        else None
+    )
 
 
 @pytest.mark.parametrize("user_is_admin", [True, False])

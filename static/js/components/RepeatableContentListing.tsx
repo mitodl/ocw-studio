@@ -152,14 +152,24 @@ export default function RepeatableContentListing(props: {
       </BasicModal>
       <div className="d-flex flex-direction-row align-items-right justify-content-between py-3">
         <h2 className="m-0 p-0">{configItem.label}</h2>
-        <div>
+        <div className="noflex">
           {SETTINGS.gdrive_enabled && configItem.name === "resource" ? (
-            <button
-              className="btn cyan-button sync ml-2"
-              onClick={onSubmitContentSync}
-            >
-              Sync w/Google Drive
-            </button>
+            <>
+              <button
+                className="btn cyan-button sync ml-2"
+                onClick={onSubmitContentSync}
+              >
+                Sync w/Google Drive
+              </button>
+              <a
+                className="view"
+                target="_blank"
+                rel="noopener noreferrer"
+                href={website.gdrive_url}
+              >
+                <i className="material-icons gdrive-link">open_in_new</i>
+              </a>
+            </>
           ) : (
             <button
               className="btn cyan-button add"

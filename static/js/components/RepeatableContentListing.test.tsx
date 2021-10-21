@@ -129,7 +129,7 @@ describe("RepeatableContentListing", () => {
     [true, false].forEach(isResource => {
       it(`${shouldIf(
         isGdriveEnabled && isResource
-      )} show the gdrive sync link when gdriveis ${isGdriveEnabled} and isResource is ${isResource}`, async () => {
+      )} show the gdrive links when gdriveis ${isGdriveEnabled} and isResource is ${isResource}`, async () => {
         SETTINGS.gdrive_enabled = isGdriveEnabled
         configItem = makeRepeatableConfigItem(isResource ? "resource" : "page")
         helper.mockGetRequest(
@@ -142,8 +142,10 @@ describe("RepeatableContentListing", () => {
           apiResponse
         )
         const { wrapper } = await render({ configItem })
+        const driveLink = wrapper.find("a.view")
         const syncLink = wrapper.find("button.sync")
         const addLink = wrapper.find("button.add")
+        expect(driveLink.exists()).toBe(isGdriveEnabled && isResource)
         expect(syncLink.exists()).toBe(isGdriveEnabled && isResource)
         expect(addLink.exists()).toBe(!isGdriveEnabled || !isResource)
       })
