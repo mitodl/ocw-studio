@@ -466,7 +466,9 @@ def test_transcode_gdrive_video_error(settings, mocker):
     "shared_id, parent_id, folder",
     [
         [None, "def456", None],
+        ["", "def456", None],
         ["abc123", None, "abc123"],
+        ["abc123", "", "abc123"],
         ["abc123", "def456", "def456"],
     ],
 )
