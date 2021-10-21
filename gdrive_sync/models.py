@@ -75,7 +75,7 @@ class DriveFile(TimestampedModel):
         prefix = self.s3_prefix
         key_sections = [
             prefix,
-            self.website.short_id,
+            self.website.name,
             self.file_id if self.is_video() else None,
             f"{basename}{ext}",
         ]

@@ -45,8 +45,8 @@ class WebsiteFactory(DjangoModelFactory):
     """Factory for Website"""
 
     title = factory.Sequence(lambda n: "Site %s" % n)
-    name = factory.Sequence(lambda n: "site-%s" % n)
-    short_id = factory.Sequence(lambda n: "site-%s" % n)
+    name = factory.Sequence(lambda n: "site-name-%s" % n)
+    short_id = factory.Sequence(lambda n: "site-shortid-%s" % n)
     metadata = factory.Faker("json")
     publish_date = factory.Faker("date_time", tzinfo=pytz.utc)
     draft_publish_date = factory.Faker("date_time", tzinfo=pytz.utc)
