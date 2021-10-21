@@ -123,10 +123,10 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     if current_s3_key:
         expected_key = current_s3_key
     elif is_video:
-        expected_key = f"{settings.DRIVE_S3_UPLOAD_PREFIX}/{drive_file.website.short_id}/{drive_file.file_id}/a-test-file.ext"
+        expected_key = f"{settings.DRIVE_S3_UPLOAD_PREFIX}/{drive_file.website.name}/{drive_file.file_id}/a-test-file.ext"
     else:
         expected_key = (
-            f"{drive_file.s3_prefix}/{drive_file.website.short_id}/a-test-file.ext"
+            f"{drive_file.s3_prefix}/{drive_file.website.name}/a-test-file.ext"
         )
     mock_bucket.upload_fileobj.assert_called_with(
         Fileobj=mocker.ANY,
