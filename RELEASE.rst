@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.31.0 (Released October 22, 2021)
+--------------
+
+- Make check for rate limits optional in sync_all_websites task (#721)
+- Slugify s3 keys and make sure they're still unique (#710)
+- Hide production publish btn, prohibit metadata editing for non-admin editors (#702)
+- Hide the file upload field on resource form if google drive integration is enabled (#712)
+- add a line to .gitignore
+- update ocw_import (#715)
+- Fix flaky test (test_format_recipient) (#713)
+- small fix for UX issue on website collections page
+- Fix bug in create_gdrive_folders (#704)
+
 Version 0.30.4 (Released October 18, 2021)
 --------------
 
