@@ -118,6 +118,9 @@ describe("PublishDrawer", () => {
           expect(
             wrapper.find(".publish-option-description a").prop("href")
           ).toBe(website[urlField])
+          expect(
+            wrapper.find(".publish-option-description a").prop("target")
+          ).toBe("_blank")
           expect(wrapper.find(".publish-option-description a").text()).toBe(
             website[urlField]
           )

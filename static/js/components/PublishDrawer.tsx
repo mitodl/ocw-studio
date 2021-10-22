@@ -95,7 +95,9 @@ export default function PublishDrawer(props: Props): JSX.Element {
         </div>
         {publishOption === option ? (
           <div className="publish-option-description">
-            <a href={siteUrl}>{siteUrl}</a>
+            <a href={siteUrl} target="_blank" rel="noreferrer">
+              {siteUrl}
+            </a>
             <br />
             Last updated:{" "}
             {publishDate ?
