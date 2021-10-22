@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.31.0
+Version 0.31.0 (Released October 22, 2021)
 --------------
 
 - Make check for rate limits optional in sync_all_websites task (#721)
