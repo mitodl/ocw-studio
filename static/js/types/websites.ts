@@ -1,4 +1,10 @@
-import { ROLE_ADMIN, ROLE_EDITOR, ROLE_GLOBAL, ROLE_OWNER } from "../constants"
+import {
+  PublishStatuses,
+  ROLE_ADMIN,
+  ROLE_EDITOR,
+  ROLE_GLOBAL,
+  ROLE_OWNER
+} from "../constants"
 import { SiteFormValue } from "./forms"
 import { ModalState } from "./modal_state"
 
@@ -208,9 +214,9 @@ export interface WebsiteStatus {
   draft_publish_date: string | null // eslint-disable-line
   has_unpublished_draft: boolean // eslint-disable-line
   has_unpublished_live: boolean // eslint-disable-line
-  live_publish_status: string | null // eslint-disable-line
+  live_publish_status: PublishStatuses | null // eslint-disable-line
   live_publish_status_updated_on: string | null // eslint-disable-line
-  draft_publish_status: string | null // eslint-disable-line
+  draft_publish_status: PublishStatuses | null // eslint-disable-line
   draft_publish_status_updated_on: string | null // eslint-disable-line
 }
 

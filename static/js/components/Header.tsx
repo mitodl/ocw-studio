@@ -37,12 +37,14 @@ export default function Header(props: HeaderProps): JSX.Element {
     const waitFunc = async () => {
       if (website) {
         while (
-          PUBLISH_STATUS_PROCESSING_STATES.includes(
-            website.draft_publish_status ?? ""
-          ) ||
-          PUBLISH_STATUS_PROCESSING_STATES.includes(
-            website.live_publish_status ?? ""
-          )
+          (website.draft_publish_status &&
+            PUBLISH_STATUS_PROCESSING_STATES.includes(
+              website.draft_publish_status
+            )) ||
+          (website.live_publish_status &&
+            PUBLISH_STATUS_PROCESSING_STATES.includes(
+              website.live_publish_status
+            ))
         ) {
           await wait(5000)
           if (mounted) {

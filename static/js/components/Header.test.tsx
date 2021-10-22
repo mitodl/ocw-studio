@@ -13,13 +13,7 @@ import IntegrationTestHelper, {
 import { logoutUrl } from "../lib/urls"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { Website } from "../types/websites"
-import {
-  PUBLISH_STATUS_ABORTED,
-  PUBLISH_STATUS_ERRORED,
-  PUBLISH_STATUS_NOT_STARTED,
-  PUBLISH_STATUS_PENDING,
-  PUBLISH_STATUS_SUCCEEDED
-} from "../constants"
+import { PublishStatuses } from "../constants"
 
 describe("Header", () => {
   let helper: IntegrationTestHelper, render: TestRenderer
@@ -94,11 +88,11 @@ describe("Header", () => {
       ["live_publish_status", "live_publish_status_updated_on"]
     ].forEach(([statusField, statusDateField]) => {
       [
-        [PUBLISH_STATUS_SUCCEEDED, false],
-        [PUBLISH_STATUS_ERRORED, false],
-        [PUBLISH_STATUS_ABORTED, false],
-        [PUBLISH_STATUS_PENDING, true],
-        [PUBLISH_STATUS_NOT_STARTED, true]
+        [PublishStatuses.PUBLISH_STATUS_SUCCEEDED, false],
+        [PublishStatuses.PUBLISH_STATUS_ERRORED, false],
+        [PublishStatuses.PUBLISH_STATUS_ABORTED, false],
+        [PublishStatuses.PUBLISH_STATUS_PENDING, true],
+        [PublishStatuses.PUBLISH_STATUS_NOT_STARTED, true]
       ].forEach(([status, shouldUpdate]) => {
         it(`${
           shouldUpdate ? "polls" : "doesn't poll"
@@ -107,13 +101,13 @@ describe("Header", () => {
           wait.mockReturnValue(
             new Promise(() => {
               // break infinite loop
-              website[statusField] = PUBLISH_STATUS_ABORTED
+              website[statusField] = PublishStatuses.PUBLISH_STATUS_ABORTED
             })
           )
           website = {
             ...website,
-            live_publish_status:             PUBLISH_STATUS_ABORTED,
-            draft_publish_status:            PUBLISH_STATUS_ABORTED,
+            live_publish_status:             PublishStatuses.PUBLISH_STATUS_ABORTED,
+            draft_publish_status:            PublishStatuses.PUBLISH_STATUS_ABORTED,
             live_publish_status_updated_on:  "2020-01-01",
             draft_publish_status_updated_on: "2020-01-01"
           }

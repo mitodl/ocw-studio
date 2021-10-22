@@ -1,40 +1,34 @@
 import * as React from "react"
 
-import {
-  PUBLISH_STATUS_ABORTED,
-  PUBLISH_STATUS_ERRORED,
-  PUBLISH_STATUS_NOT_STARTED,
-  PUBLISH_STATUS_PENDING,
-  PUBLISH_STATUS_SUCCEEDED
-} from "../constants"
+import { PublishStatuses } from "../constants"
 
-const publishStatusMessage = (status: string): string => {
+const publishStatusMessage = (status: PublishStatuses): string => {
   switch (status) {
-  case PUBLISH_STATUS_NOT_STARTED:
+  case PublishStatuses.PUBLISH_STATUS_NOT_STARTED:
     return "Not started"
-  case PUBLISH_STATUS_PENDING:
+  case PublishStatuses.PUBLISH_STATUS_PENDING:
     return "In progress..."
-  case PUBLISH_STATUS_ABORTED:
+  case PublishStatuses.PUBLISH_STATUS_ABORTED:
     return "Aborted"
-  case PUBLISH_STATUS_ERRORED:
+  case PublishStatuses.PUBLISH_STATUS_ERRORED:
     return "Failed"
-  case PUBLISH_STATUS_SUCCEEDED:
+  case PublishStatuses.PUBLISH_STATUS_SUCCEEDED:
     return "Succeeded"
   default:
     return ""
   }
 }
 
-const publishStatusIndicatorClass = (status: string): string => {
+const publishStatusIndicatorClass = (status: PublishStatuses): string => {
   switch (status) {
-  case PUBLISH_STATUS_NOT_STARTED:
+  case PublishStatuses.PUBLISH_STATUS_NOT_STARTED:
     return "bg-secondary"
-  case PUBLISH_STATUS_PENDING:
+  case PublishStatuses.PUBLISH_STATUS_PENDING:
     return "bg-warning"
-  case PUBLISH_STATUS_ABORTED:
-  case PUBLISH_STATUS_ERRORED:
+  case PublishStatuses.PUBLISH_STATUS_ABORTED:
+  case PublishStatuses.PUBLISH_STATUS_ERRORED:
     return "bg-danger"
-  case PUBLISH_STATUS_SUCCEEDED:
+  case PublishStatuses.PUBLISH_STATUS_SUCCEEDED:
     return "bg-success"
   default:
     return ""
@@ -42,7 +36,7 @@ const publishStatusIndicatorClass = (status: string): string => {
 }
 
 interface Props {
-  status: string | null
+  status: PublishStatuses | null
 }
 export default function PublishStatusIndicator(
   props: Props

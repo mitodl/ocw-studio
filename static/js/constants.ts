@@ -159,13 +159,15 @@ export const RESOURCE_TYPE_VIDEO = "Video"
 export const RESOURCE_TYPE_DOCUMENT = "Document"
 export const RESOURCE_TYPE_OTHER = "Other"
 
-export const PUBLISH_STATUS_SUCCEEDED = "succeeded"
-export const PUBLISH_STATUS_PENDING = "pending"
-export const PUBLISH_STATUS_ERRORED = "errored"
-export const PUBLISH_STATUS_ABORTED = "aborted"
-export const PUBLISH_STATUS_NOT_STARTED = "not-started"
+export enum PublishStatuses {
+  PUBLISH_STATUS_SUCCEEDED = "succeeded",
+  PUBLISH_STATUS_PENDING = "pending",
+  PUBLISH_STATUS_ERRORED = "errored",
+  PUBLISH_STATUS_ABORTED = "aborted",
+  PUBLISH_STATUS_NOT_STARTED = "not-started"
+}
 
 export const PUBLISH_STATUS_PROCESSING_STATES = [
-  PUBLISH_STATUS_PENDING,
-  PUBLISH_STATUS_NOT_STARTED
+  PublishStatuses.PUBLISH_STATUS_PENDING,
+  PublishStatuses.PUBLISH_STATUS_NOT_STARTED
 ]
