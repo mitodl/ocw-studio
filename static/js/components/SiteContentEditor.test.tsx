@@ -67,11 +67,7 @@ describe("SiteContent", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
-    websiteStatus = {
-      ...makeWebsiteStatus(),
-      name: website.name,
-      uuid: website.uuid
-    }
+    websiteStatus = makeWebsiteStatus(website)
     content = makeWebsiteContentDetail()
     configItem = makeRepeatableConfigItem()
     mockContentSchema = yup.object().shape({})

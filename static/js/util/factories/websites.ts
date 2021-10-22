@@ -195,8 +195,11 @@ export const makeWebsiteDetail = (): Website => ({
   is_admin:                        casual.boolean
 })
 
-export const makeWebsiteStatus = (): WebsiteStatus => {
-  const website = makeWebsiteDetail()
+export const makeWebsiteStatus = (website?: Website): WebsiteStatus => {
+  if (!website) {
+    website = makeWebsiteDetail()
+  }
+
   return {
     uuid:                            website.uuid,
     name:                            website.name,
