@@ -79,7 +79,8 @@ export default function PrivacyPolicyPage(): JSX.Element | null {
       </ul>
       <p>
         If you have concerns about any of these purposes, or how we communicate
-        with you, please contact us at <a href="mailto:ocw@mit.edu">ocw@mit.edu</a>. We will always respect a
+        with you, please contact us at{" "}
+        <a href="mailto:ocw@mit.edu">ocw@mit.edu</a>. We will always respect a
         request by you to stop processing your personal information (subject to
         our legal obligations).
       </p>
@@ -148,12 +149,12 @@ export default function PrivacyPolicyPage(): JSX.Element | null {
       </p>
       <h3>How long we keep your personal information</h3>
       <p>
-        We consider our relationship with the MIT OCW community to be
-        lifelong. This means that we will maintain a record for you until such
-        time as you tell us that you no longer wish us to keep in touch. After
-        such time, we will retain a core set of information for MIT
-        OCW’s legitimate purposes, such as archival, scientific and
-        historical research and for the defense of potential legal claims.
+        We consider our relationship with the MIT OCW community to be lifelong.
+        This means that we will maintain a record for you until such time as you
+        tell us that you no longer wish us to keep in touch. After such time, we
+        will retain a core set of information for MIT OCW’s legitimate purposes,
+        such as archival, scientific and historical research and for the defense
+        of potential legal claims.
       </p>
       <h3>Rights for Individuals in the European Economic Area</h3>
       <p>
