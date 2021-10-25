@@ -95,7 +95,7 @@ export default function PrivacyPolicyPage(): JSX.Element | null {
           on the Site, processing purchases via third party providers, and other
           transactions through the Site, operating the Site or portions of it,
           providing or administering courses, or in connection with other
-          aspects of MIT Micromasters services.
+          aspects of MIT OCW services.
         </li>
         <li>
           For purposes of scientific research, particularly, for example, in the
@@ -148,11 +148,11 @@ export default function PrivacyPolicyPage(): JSX.Element | null {
       </p>
       <h3>How long we keep your personal information</h3>
       <p>
-        We consider our relationship with the MIT Micromasters community to be
+        We consider our relationship with the MIT OCW community to be
         lifelong. This means that we will maintain a record for you until such
         time as you tell us that you no longer wish us to keep in touch. After
         such time, we will retain a core set of information for MIT
-        Micromasters’s legitimate purposes, such as archival, scientific and
+        OCW’s legitimate purposes, such as archival, scientific and
         historical research and for the defense of potential legal claims.
       </p>
       <h3>Rights for Individuals in the European Economic Area</h3>
