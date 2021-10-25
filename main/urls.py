@@ -32,6 +32,7 @@ urlpatterns = [
     # Example view
     re_path("^$", public_index, name="main-index"),
     path("login/", public_index, name="login"),
+    path("privacy-policy/", public_index, name="privacy-policy"),
     re_path(r"^sites/.*$", restricted_index, name="sites"),
     path("new-site/", restricted_index, name="new-site"),
     path("markdown-editor", restricted_index, name="markdown-editor-test"),

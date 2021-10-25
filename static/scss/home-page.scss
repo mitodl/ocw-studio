@@ -1,3 +1,30 @@
 .home-page {
   height: 6em;
+  font-size: 11px;
+  width: 650px;
+
+  .home-page-div {
+    .home-page-logo {
+      height: 100px;
+      width: 100%;
+      background-color: #000;
+
+      img {
+        height: 44px;
+      }
+    }
+
+    .home-page-background {
+      height: 497px;
+      width: 100%;
+      border: 1px solid #5d5d5d;
+      background: url("../../static/images/signin-photo.jpg") repeat;
+    }
+
+    .login {
+      margin-top: 325px;
+      padding: 10px 24px;
+      font-size: 20px;
+    }
+  }
 }
