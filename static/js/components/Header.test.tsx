@@ -1,12 +1,20 @@
 import { act } from "react-dom/test-utils"
+import sinon from "sinon"
+import useInterval from "@use-it/interval"
+
+jest.mock("@use-it/interval", () => ({
+  __esModule: true,
+  default:    jest.fn()
+}))
 
 import Header from "./Header"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
-import { logoutUrl } from "../lib/urls"
+import { logoutUrl, siteApiDetailUrl } from "../lib/urls"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { Website } from "../types/websites"
+import { PublishStatuses } from "../constants"
 
 describe("Header", () => {
   let helper: IntegrationTestHelper, render: TestRenderer
@@ -18,6 +26,8 @@ describe("Header", () => {
 
   afterEach(() => {
     helper.cleanup()
+    // @ts-ignore
+    useInterval.mockClear()
   })
 
   it("includes the site logo", async () => {
@@ -48,6 +58,39 @@ describe("Header", () => {
 
     beforeEach(() => {
       website = makeWebsiteDetail()
+
+      render = helper.configureRenderer(
+        Header,
+        {},
+        {
+          entities: {
+            websiteDetails: {
+              [website.name]: website
+            }
+          },
+          queries: {}
+        }
+      )
+
+      helper.handleRequestStub
+        .withArgs(
+          siteApiDetailUrl
+            .param({
+              name: website.name
+            })
+            .query({ only_status: true })
+            .toString(),
+          "GET",
+          {
+            body:        undefined,
+            headers:     undefined,
+            credentials: undefined
+          }
+        )
+        .returns({
+          status: 200,
+          body:   website
+        })
     })
 
     it("shows the website title", async () => {
@@ -70,6 +113,71 @@ describe("Header", () => {
       })
       wrapper.update()
       expect(wrapper.find("PublishDrawer").prop("visibility")).toBeFalsy()
+    })
+
+    //
+    ;[
+      [PublishStatuses.PUBLISH_STATUS_SUCCEEDED, false],
+      [PublishStatuses.PUBLISH_STATUS_ERRORED, false],
+      [PublishStatuses.PUBLISH_STATUS_ABORTED, false],
+      [PublishStatuses.PUBLISH_STATUS_PENDING, true],
+      [PublishStatuses.PUBLISH_STATUS_NOT_STARTED, true]
+    ].forEach(([status, shouldUpdate]) => {
+      [
+        ["draft_publish_status", "draft_publish_status_updated_on"],
+        ["live_publish_status", "live_publish_status_updated_on"]
+      ].forEach(([statusField, statusDateField]) => {
+        describe("publish status", () => {
+          beforeEach(() => {
+            website = {
+              ...website,
+              live_publish_status:             PublishStatuses.PUBLISH_STATUS_ABORTED,
+              draft_publish_status:            PublishStatuses.PUBLISH_STATUS_ABORTED,
+              live_publish_status_updated_on:  "2020-01-01",
+              draft_publish_status_updated_on: "2020-01-01",
+              [statusField]:                   status,
+              [statusDateField]:               "2021-01-01"
+            }
+          })
+
+          it(`${
+            shouldUpdate ? "polls" : "doesn't poll"
+          } the website status when ${statusField}=${status}`, async () => {
+            await render({ website })
+            // @ts-ignore
+            expect(useInterval).toBeCalledTimes(1)
+            // @ts-ignore
+            await useInterval.mock.calls[0][0]()
+
+            const statusUrl = siteApiDetailUrl
+              .param({ name: website.name })
+              .query({ only_status: true })
+              .toString()
+            // @ts-ignore
+            if (shouldUpdate) {
+              sinon.assert.calledOnceWithExactly(
+                helper.handleRequestStub,
+                statusUrl,
+                "GET",
+                {
+                  body:        undefined,
+                  headers:     undefined,
+                  credentials: undefined
+                }
+              )
+            } else {
+              sinon.assert.notCalled(helper.handleRequestStub)
+            }
+          })
+
+          it("shows the right publish status", async () => {
+            const { wrapper } = await render({ website })
+            expect(wrapper.find("PublishStatusIndicator").prop("status")).toBe(
+              status
+            )
+          })
+        })
+      })
     })
   })
 })

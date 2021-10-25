@@ -51,3 +51,16 @@ class BaseSyncPipeline(abc.ABC):
         Called to unpause a website pipeline.
         """
         ...
+
+    @abc.abstractmethod
+    def get_latest_build_status(self, version: str):
+        """
+        Get the status of a build for a site on a pipeline
+
+        Args:
+            version (str): Either draft or live
+
+        Returns:
+            str:
+                The status of the currently running or most recently finished build.
+        """

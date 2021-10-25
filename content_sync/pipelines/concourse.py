@@ -13,7 +13,11 @@ from requests import HTTPError
 
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import BaseSyncPipeline
-from websites.constants import STARTER_SOURCE_GITHUB
+from websites.constants import (
+    PUBLISH_STATUS_NOT_STARTED,
+    PUBLISH_STATUS_PENDING,
+    STARTER_SOURCE_GITHUB,
+)
 from websites.models import Website
 from websites.site_config_api import SiteConfig
 
@@ -103,13 +107,29 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
     def __init__(self, website: Website):
         """Initialize the pipeline API instance"""
         super().__init__(website)
-        self.instance_vars = quote('{"site": "%s"}' % self.website.name)
+        self.instance_vars = quote(json.dumps({"site": self.website.name}))
         self.ci = ConcourseApi(
             settings.CONCOURSE_URL,
             settings.CONCOURSE_USERNAME,
             settings.CONCOURSE_PASSWORD,
             settings.CONCOURSE_TEAM,
         )
+
+    def _make_builds_url(self, version: str, job_name: str):
+        """Make URL for fetching builds information"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/jobs/{job_name}/builds?vars={self.instance_vars}"
+
+    def _make_pipeline_config_url(self, version: str):
+        """Make URL for fetching pipeline info"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={self.instance_vars}"
+
+    def _make_job_url(self, version: str, job_name: str):
+        """Make URL for fetching job info"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/jobs/{job_name}?vars={self.instance_vars}"
+
+    def _make_pipeline_unpause_url(self, version: str):
+        """Make URL for unpausing a pipeline"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/unpause?vars={self.instance_vars}"
 
     def upsert_website_pipeline(self):  # pylint:disable=too-many-locals
         """
@@ -181,7 +201,7 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
             log.debug(config)
             # Try to get the version of the pipeline if it already exists, because it will be
             # necessary to update an existing pipeline.
-            url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={self.instance_vars}"
+            url_path = self._make_pipeline_config_url(version)
             try:
                 _, headers = self.ci.get_with_headers(url_path)
                 version_headers = {
@@ -193,16 +213,42 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
 
     def trigger_pipeline_build(self, version: str):
         """Trigger a pipeline build"""
-        pipeline_info = self.ci.get(
-            f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={self.instance_vars}"
-        )
+        pipeline_info = self.ci.get(self._make_pipeline_config_url(version))
         job_name = pipeline_info["config"]["jobs"][0]["name"]
-        self.ci.post(
-            f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/jobs/{job_name}/builds?vars={self.instance_vars}"
-        )
+        self.ci.post(self._make_builds_url(version, job_name))
 
     def unpause_pipeline(self, version):
         """Unpause the pipeline"""
-        self.ci.put(
-            f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/unpause?vars={self.instance_vars}"
-        )
+        self.ci.put(self._make_pipeline_unpause_url(version))
+
+    def get_latest_build_status(self, version):
+        """
+        Get the status of a build for a site
+
+        Args:
+            version (str): Either draft or live
+
+        Returns:
+            str:
+                The status of the currently running or most recently finished build.
+                status is one of websites.constants.PUBLISH_STATUSES
+        """
+        pipeline_info = self.ci.get(self._make_pipeline_config_url(version))
+        job_name = pipeline_info["config"]["jobs"][0]["name"]
+        try:
+            job_info = self.ci.get(self._make_job_url(version, job_name))
+        except requests.exceptions.HTTPError as ex:
+            if ex.response.status_code == 404:
+                return PUBLISH_STATUS_NOT_STARTED
+            else:
+                raise
+
+        if (
+            job_info.get("next_build")
+            and job_info["next_build"].get("status") == PUBLISH_STATUS_PENDING
+        ):
+            return PUBLISH_STATUS_PENDING
+
+        if job_info.get("finished_build"):
+            return job_info["finished_build"].get("status", PUBLISH_STATUS_NOT_STARTED)
+        return PUBLISH_STATUS_NOT_STARTED

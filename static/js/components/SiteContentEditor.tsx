@@ -13,7 +13,7 @@ import {
   EditWebsiteContentPayload,
   NewWebsiteContentPayload,
   websiteContentDetailRequest,
-  websiteDetailRequest
+  websiteStatusRequest
 } from "../query-configs/websites"
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import {
@@ -50,8 +50,8 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
 
   const site = useWebsite()
   const store = useStore()
-  const refreshWebsite = () =>
-    store.dispatch(requestAsync(websiteDetailRequest(site.name)))
+  const refreshWebsiteStatus = () =>
+    store.dispatch(requestAsync(websiteStatusRequest(site.name)))
 
   const [
     { isPending: addIsPending },
@@ -147,7 +147,7 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     }
 
     // update the publish status
-    refreshWebsite()
+    refreshWebsiteStatus()
 
     if (hideModal) {
       // turn off modal on success

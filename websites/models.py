@@ -72,6 +72,18 @@ class Website(TimestampedModel):
     draft_publish_date = models.DateTimeField(null=True, blank=True)
     has_unpublished_live = models.BooleanField(default=True)
     has_unpublished_draft = models.BooleanField(default=True)
+    live_publish_status = models.CharField(
+        max_length=20,
+        null=True,
+        choices=zip(constants.PUBLISH_STATUSES, constants.PUBLISH_STATUSES),
+    )
+    live_publish_status_updated_on = models.DateTimeField(null=True, blank=True)
+    draft_publish_status = models.CharField(
+        max_length=20,
+        null=True,
+        choices=zip(constants.PUBLISH_STATUSES, constants.PUBLISH_STATUSES),
+    )
+    draft_publish_status_updated_on = models.DateTimeField(null=True, blank=True)
     metadata = models.JSONField(null=True, blank=True)
     gdrive_folder = models.CharField(null=True, blank=True, max_length=64)
 
