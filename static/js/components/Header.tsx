@@ -1,9 +1,9 @@
 import * as React from "react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import { useStore } from "react-redux"
 import { Link } from "react-router-dom"
-import wait from "waait"
 import { requestAsync } from "redux-query"
+import useInterval from "@use-it/interval"
 
 import PublishDrawer from "../components/PublishDrawer"
 
@@ -31,36 +31,24 @@ export default function Header(props: HeaderProps): JSX.Element {
     [setDrawerOpen]
   )
 
-  useEffect(() => {
-    let mounted = true
-
-    const waitFunc = async () => {
-      if (website) {
-        while (
-          (website.draft_publish_status &&
-            PUBLISH_STATUS_PROCESSING_STATES.includes(
-              website.draft_publish_status
-            )) ||
+  useInterval(
+    async () => {
+      if (
+        website &&
+        ((website.draft_publish_status &&
+          PUBLISH_STATUS_PROCESSING_STATES.includes(
+            website.draft_publish_status
+          )) ||
           (website.live_publish_status &&
             PUBLISH_STATUS_PROCESSING_STATES.includes(
               website.live_publish_status
-            ))
-        ) {
-          await wait(5000)
-          if (mounted) {
-            await store.dispatch(
-              requestAsync(websiteStatusRequest(website.name))
-            )
-          }
-        }
+            )))
+      ) {
+        await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
       }
-    }
-    waitFunc()
-
-    return () => {
-      mounted = false
-    }
-  }, [website, store])
+    },
+    website ? 5000 : null
+  )
 
   const latestPublishStatus = website ?
     (website.draft_publish_status_updated_on ?? "") <

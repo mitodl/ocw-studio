@@ -60,6 +60,7 @@
     "@types/url-assembler": "^2.1.0",
     "@typescript-eslint/eslint-plugin": "^4.29.0",
     "@typescript-eslint/parser": "^4.29.0",
+    "@use-it/interval": "^1.0.0",
     "autoprefixer": "9",
     "babel-jest": "^27.2.1",
     "bootstrap": "4",
