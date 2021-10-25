@@ -63,6 +63,9 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
   }
 }
 
+const TD_CONTENT_REGEX = /<td>([\S\s]*?)<\/td>/g
+const TH_CONTENT_REGEX = /<th>([\S\s]*?)<\/th>/g
+
 /**
  * Plugin implementing Markdown for CKEditor
  *
@@ -77,9 +80,10 @@ export default class Markdown extends MarkdownConfigPlugin {
     const { showdownExtensions, turndownRules } = this.getMarkdownConfig()
 
     const converter = new Converter({
-      tables:     true,
       extensions: showdownExtensions
     })
+
+    converter.setFlavor("github")
 
     // @ts-ignore
     if (!turndownService._customRulesSet) {
@@ -91,7 +95,16 @@ export default class Markdown extends MarkdownConfigPlugin {
     }
 
     function md2html(md: string): string {
-      return converter.makeHtml(md)
+      return converter
+        .makeHtml(md)
+        .replace(
+          TD_CONTENT_REGEX,
+          (_match, contents) => `<td>${converter.makeHtml(contents)}</td>`
+        )
+        .replace(
+          TH_CONTENT_REGEX,
+          (_match, contents) => `<th>${converter.makeHtml(contents)}</th>`
+        )
     }
 
     function html2md(html: string): string {

@@ -22,6 +22,7 @@ import { ADD_RESOURCE_EMBED, ADD_RESOURCE_LINK } from "./plugins/constants"
 import ResourceLink from "@mitodl/ckeditor5-resource-link/src/link"
 import ResourceLinkMarkdownSyntax from "./plugins/ResourceLinkMarkdownSyntax"
 import DisallowNestedTables from "./plugins/DisallowNestedTables"
+import TableMarkdownSyntax from "./plugins/TableMarkdownSyntax"
 
 export const FullEditorConfig = {
   plugins: [
@@ -45,6 +46,7 @@ export const FullEditorConfig = {
     ResourcePicker,
     ResourceLink,
     ResourceLinkMarkdownSyntax,
+    TableMarkdownSyntax,
     Markdown,
     DisallowNestedTables
   ],

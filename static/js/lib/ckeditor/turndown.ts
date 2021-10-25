@@ -1,7 +1,44 @@
 import { turndownService as ckeditorTurndownService } from "@ckeditor/ckeditor5-markdown-gfm/src/html2markdown/html2markdown"
 import Turndown from "turndown"
+import { TABLE_ELS } from "./plugins/constants"
 
 export const turndownService = ckeditorTurndownService
+
+export function ruleMatches(rule: Turndown.Rule, node: HTMLElement): boolean {
+  const filter = rule.filter
+  const nodeName = node.nodeName.toLowerCase() as Turndown.TagName
+
+  if (typeof filter === "string") {
+    return filter === nodeName
+  }
+
+  if (Array.isArray(filter)) {
+    return filter.includes(nodeName)
+  }
+
+  if (typeof filter === "function") {
+    return filter(node, {})
+  }
+  throw new TypeError("`filter` needs to be a string, array, or function")
+}
+
+// this removes all table-related rules
+turndownService.rules.array = turndownService.rules.array.filter(rule => {
+  const anyMatch = TABLE_ELS.some(el => {
+    const element = document.createElement(el)
+    document.body.appendChild(element)
+
+    if (el === "table") {
+      const thead = document.createElement("thead")
+      const trow = document.createElement("tr")
+      element.appendChild(thead)
+      thead.appendChild(trow)
+    }
+    return ruleMatches(rule, element)
+  })
+
+  return !anyMatch
+})
 
 export function html2md(html: string): string {
   return turndownService.turndown(html)

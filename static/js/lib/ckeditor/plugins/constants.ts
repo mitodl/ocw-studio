@@ -11,6 +11,7 @@ export const RESOURCE_LINK = "resourceLink"
 export const RESOURCE_EMBED_COMMAND = "insertResourceEmbed"
 
 import { RESOURCE_LINK_COMMAND } from "@mitodl/ckeditor5-resource-link/src/constants"
+import TurndownService from "turndown"
 
 /**
  * Union type capturing the possible typs of resource nodes we
@@ -44,3 +45,13 @@ export type ResourceDialogState =
   | typeof RESOURCE_LINK
   | typeof RESOURCE_EMBED
   | "closed"
+
+export const TABLE_ELS: TurndownService.TagName[] = [
+  "table",
+  "tbody",
+  "th",
+  "td",
+  "tr",
+  "thead",
+  "tfoot"
+]

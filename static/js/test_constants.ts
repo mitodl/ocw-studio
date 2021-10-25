@@ -19,7 +19,7 @@ also have some
 
 good stuff.`
 
-export const TEST_HTML = `<h2 id="aheading">A heading</h2>
+export const TEST_HTML = `<h2 id="a-heading">A heading</h2>
 <p>Amazing stuff! Paragraphs!</p>
 <p>And another paragraph!</p>
 <p><strong>bold</strong> and even <em>ita<strong>lic and bold</strong> text</em></p>

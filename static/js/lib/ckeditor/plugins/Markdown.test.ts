@@ -29,38 +29,4 @@ describe("Markdown CKEditor plugin", () => {
       markdownTest(editor, TEST_MARKDOWN, TEST_HTML)
     })
   })
-
-  describe("tables", () => {
-    it("should support tables", async () => {
-      // TODO why is this passing at the turndown level but failing here?
-      //
-      // figured it out: Tables MUST have a `thead` with `th` elements in it, otherwise turndown doesn't seem to know what to do
-      const editor = await getEditor("")
-      markdownTest(
-        editor,
-        "| Heading 1 | Heading 2 |\n" +
-          "| --- | --- |\n" +
-          "| Cell 1 | Cell 2 |\n" +
-          "| Cell 3 | Cell 4 |",
-        "<table>" +
-          "<thead>" +
-          "<tr>" +
-          "<th>Heading 1</th>" +
-          "<th>Heading 2</th>" +
-          "</tr>" +
-          "</thead>" +
-          "<tbody>" +
-          "<tr>" +
-          "<td>Cell 1</td>" +
-          "<td>Cell 2</td>" +
-          "</tr>" +
-          "<tr>" +
-          "<td>Cell 3</td>" +
-          "<td>Cell 4</td>" +
-          "</tr>" +
-          "</tbody>" +
-          "</table>"
-      )
-    })
-  })
 })
