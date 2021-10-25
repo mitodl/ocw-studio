@@ -17,7 +17,7 @@ export default function PrivacyPolicyPage(): JSX.Element | null {
       </p>
       <ul>
         <li>
-          Biographic information – nam and email address, as provided by MIT’s
+          Biographic information – name and email address, as provided by MIT’s
           Identity Provider, Touchstone
         </li>
         <li>IP addresses</li>
@@ -74,12 +74,12 @@ export default function PrivacyPolicyPage(): JSX.Element | null {
         </li>
         <li>
           As otherwise described to you at the point of collection or pursuant
-          to your consent..
+          to your consent.
         </li>
       </ul>
       <p>
         If you have concerns about any of these purposes, or how we communicate
-        with you, please contact us at ocw@mit.edu. We will always respect a
+        with you, please contact us at <a href="mailto:ocw@mit.edu">ocw@mit.edu</a>. We will always respect a
         request by you to stop processing your personal information (subject to
         our legal obligations).
       </p>
