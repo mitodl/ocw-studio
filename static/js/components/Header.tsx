@@ -28,9 +28,15 @@ export default function Header(props: HeaderProps): JSX.Element {
     <header className="p-3">
       <div className="d-flex justify-content-between">
         <div>
+          <Link to="https://www.mit.edu">
+            <img
+              src="/static/images/mit-logo.png"
+              className="pr-1 border-right border-dark"
+            />
+          </Link>
           <Link to={sitesBaseUrl.toString()}>
             <img
-              className="logo"
+              className="logo pl-2"
               src="/static/images/ocw-studio-logo.png"
               alt="OCW Studio"
             />

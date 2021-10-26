@@ -36,15 +36,14 @@ export default function PrivacyPolicyPage(): JSX.Element | null {
         We may log the IP address, operating system, and browser software used
         by each user of the Site, and we may be able to determine from an IP
         address a user's Internet Service Provider and the geographic location
-        of his or her point of connectivity. Various web analytics tools are
-        used to collect this information. Some of the information is collected
-        through cookies (small text files placed on your computer that store
-        information about you, which can be accessed by the Site). You should be
-        able to control how and whether cookies will be accepted by your web
-        browser. Most browsers offer instructions on how to reset the browser to
-        reject cookies in the 'Help' section of the toolbar. If you reject our
-        cookies, many functions and conveniences of this Site may not work
-        properly.
+        of their point of connectivity. Various web analytics tools are used to
+        collect this information. Some of the information is collected through
+        cookies (small text files placed on your computer that store information
+        about you, which can be accessed by the Site). You should be able to
+        control how and whether cookies will be accepted by your web browser.
+        Most browsers offer instructions on how to reset the browser to reject
+        cookies in the 'Help' section of the toolbar. If you reject our cookies,
+        many functions and conveniences of this Site may not work properly.
       </p>
       <h3>How we use your personal information</h3>
       <p>

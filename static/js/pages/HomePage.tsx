@@ -4,10 +4,6 @@ export default function HomePage(): JSX.Element | null {
   return (
     <div className="container home-page">
       <div className="row pt-5 home-page-div">
-        <div className="d-flex align-items-center justify-content-center home-page-logo">
-          <img src="/static/images/mit-logo.png" className="pr-2" />
-          <img src="/static/images/ocw-white-logo.png" className="pl-2" />
-        </div>
         <div className="home-page-background">
           {!SETTINGS.user ? (
             <div className="text-center">
