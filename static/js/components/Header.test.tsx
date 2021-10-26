@@ -20,11 +20,20 @@ describe("Header", () => {
     helper.cleanup()
   })
 
-  it("includes the site logo", async () => {
+  it("includes the site logo and mit logo", async () => {
     const { wrapper } = await render()
-    expect(wrapper.find("img").prop("src")).toBe(
-      "/static/images/ocw-studio-logo.png"
-    )
+    expect(
+      wrapper
+        .find("img")
+        .at(0)
+        .prop("src")
+    ).toBe("/static/images/mit-logo.png")
+    expect(
+      wrapper
+        .find("img")
+        .at(1)
+        .prop("src")
+    ).toBe("/static/images/ocw-studio-logo.png")
   })
 
   it("shows the user's name and logout link for logged in users", async () => {
