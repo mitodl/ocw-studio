@@ -8,6 +8,7 @@ import SitePage from "./SitePage"
 import SiteCreationPage from "./SiteCreationPage"
 import SitesDashboard from "./SitesDashboard"
 import Header from "../components/Header"
+import Footer from "../components/Footer"
 import HomePage from "./HomePage"
 import MarkdownEditorTestPage from "./MarkdownEditorTestPage"
 import WebsiteCollectionsPage from "./WebsiteCollectionsPage"
@@ -15,6 +16,7 @@ import useTracker from "../hooks/tracker"
 import { websiteDetailRequest } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
 import WebsiteContext from "../context/Website"
+import PrivacyPolicyPage from "./PrivacyPolicyPage"
 
 interface SiteMatchParams {
   name: string
@@ -36,23 +38,27 @@ export default function App(): JSX.Element {
 
   return (
     <div className="app">
-      <Header website={website} />
-      <div className="page-content">
-        <Switch>
-          <Route exact path="/" component={HomePage} />
-          <Route exact path="/new-site" component={SiteCreationPage} />
-          <Route exact path="/sites" component={SitesDashboard} />
-          <Route path="/sites/:name">
-            <WebsiteContext.Provider value={website}>
-              <SitePage isLoading={isSiteLoading} />
-            </WebsiteContext.Provider>
-          </Route>
-          <Route path="/collections" component={WebsiteCollectionsPage} />
-          <Route path="/markdown-editor">
-            <MarkdownEditorTestPage />
-          </Route>
-        </Switch>
+      <div className="app-content">
+        <Header website={website} />
+        <div className="page-content">
+          <Switch>
+            <Route exact path="/" component={HomePage} />
+            <Route exact path="/new-site" component={SiteCreationPage} />
+            <Route exact path="/sites" component={SitesDashboard} />
+            <Route path="/sites/:name">
+              <WebsiteContext.Provider value={website}>
+                <SitePage isLoading={isSiteLoading} />
+              </WebsiteContext.Provider>
+            </Route>
+            <Route path="/collections" component={WebsiteCollectionsPage} />
+            <Route path="/privacy-policy" component={PrivacyPolicyPage} />
+            <Route path="/markdown-editor">
+              <MarkdownEditorTestPage />
+            </Route>
+          </Switch>
+        </div>
       </div>
+      <Footer />
     </div>
   )
 }

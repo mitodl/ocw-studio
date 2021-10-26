@@ -5,6 +5,7 @@
 @import "common";
 @import "button";
 @import "header";
+@import "footer";
 @import "home-page";
 @import "site-page";
 @import "dashboard";
@@ -25,10 +26,17 @@ body {
 }
 
 .app {
+  height: calc(100vh - 50px);
+
   .page-content {
     max-width: $std-max-width;
     margin: 0 auto;
   }
+}
+
+.app-content {
+  min-height: calc(100vh - 48px);
+  margin: 0 auto;
 }
 
 .std-page-body {

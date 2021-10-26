@@ -47,9 +47,9 @@ devConfig.module.rules = [
     test: /static\/scss\/.+(\.css$|\.scss$)/,
     use: [
       { loader: "style-loader" },
-      { loader: "css-loader" },
+      { loader: "css-loader?url=false" },
       { loader: "postcss-loader" },
-      { 
+      {
         loader: "sass-loader",
         options: {
           sassOptions: { quietDeps: true },

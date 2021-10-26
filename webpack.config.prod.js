@@ -15,10 +15,10 @@ prodConfig.module.rules = [
       {
         loader: MiniCssExtractPlugin.loader
       },
-      "css-loader",
+      "css-loader?url=false",
       "postcss-loader",
-      { 
-        loader: "sass-loader", 
+      {
+        loader: "sass-loader",
         options: {
           sassOptions: { quietDeps: true },
         },
