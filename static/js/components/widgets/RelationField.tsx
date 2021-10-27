@@ -1,9 +1,9 @@
 import React, {
-  useState,
+  ChangeEvent,
+  SyntheticEvent,
   useCallback,
   useEffect,
-  SyntheticEvent,
-  ChangeEvent
+  useState
 } from "react"
 import { equals, without } from "ramda"
 import { uniqBy } from "lodash"
@@ -125,7 +125,12 @@ export default function RelationField(props: Props): JSX.Element {
         .query({
           detailed_list:   true,
           content_context: true,
-          ...(search ? { search: search } : {}),
+          ...(search ? { search } : {}),
+          ...(filter &&
+          filter.filter_type === RelationFilterVariant.Equals &&
+          filter.field === "resourcetype" ?
+            { resourcetype: filter.value } :
+            {}),
           ...params
         })
         .param({ name: websiteName })
@@ -153,7 +158,7 @@ export default function RelationField(props: Props): JSX.Element {
       return formatOptions(filterContentListing(results), display_field)
     },
     // eslint-disable-next-line camelcase
-    [filterContentListing, websiteName, display_field, collection]
+    [filterContentListing, websiteName, display_field, collection, filter]
   )
 
   const loadOptions = useCallback(

@@ -535,20 +535,25 @@ def test_website_starters_site_configs_exception(mocker, drf_client):
 
 @pytest.mark.parametrize("detailed_list", [True, False])
 @pytest.mark.parametrize(
-    "filter_type, search, expected_num_results",
+    "resourcetype, filter_type, search, expected_num_results",
     [
-        ["page", "text3", 1],
-        ["page", "", 5],
-        ["", "text3", 1],
-        ["", "", 6],
+        ["Image", "page", "text2", 1],
+        ["Image", "page", "", 3],
+        ["Image", "", "text2", 1],
+        ["Image", "", "", 3],
+        ["", "page", "text2", 1],
+        ["", "page", "", 5],
+        ["", "", "text2", 1],
+        ["", "", "", 6],
     ],
 )
-def test_websites_content_list(
+def test_websites_content_list(  # pylint: disable=too-many-locals
     drf_client,
-    filter_type,
-    search,
     detailed_list,
     global_admin_user,
+    resourcetype,
+    filter_type,
+    search,
     expected_num_results,
 ):
     """The list view of WebsiteContent should optionally filter by type"""
@@ -561,6 +566,7 @@ def test_websites_content_list(
             type="page",
             website=website,
             title=f"some TEXT{num} here for a case insensitive search",
+            metadata={"resourcetype": "Image" if num % 2 == 0 else "Video"},
         )
         for num in range(5)
     ]
@@ -577,6 +583,8 @@ def test_websites_content_list(
         query_params["detailed_list"] = detailed_list
     if search:
         query_params["search"] = search
+    if resourcetype:
+        query_params["resourcetype"] = resourcetype
 
     resp = drf_client.get(
         reverse(
@@ -593,17 +601,30 @@ def test_websites_content_list(
 
     if search:
         contents = [content for content in contents if search in content.title.lower()]
-    for idx, content in enumerate(
+
+    if resourcetype:
+        contents = [
+            content
+            for content in contents
+            if content.metadata.get("resourcetype") == resourcetype
+        ]
+
+    sorted_contents = list(
         reversed(sorted(contents, key=lambda _content: _content.updated_on))
-    ):
-        assert content.title == results[idx]["title"]
-        assert str(content.text_id) == results[idx]["text_id"]
-        assert content.type == results[idx]["type"]
+    )
+    # we set it up so Image resources are every other result, so step by 2 to account for that if filtering
+    for idx in range(0, len(sorted_contents), 2 if resourcetype else 1):
+        content = sorted_contents[idx]
+        result = results[idx]
+
+        assert content.title == result["title"]
+        assert str(content.text_id) == result["text_id"]
+        assert content.type == result["type"]
         if detailed_list:
             # metadata appears because the detail serializer was used
-            assert content.metadata == results[idx]["metadata"]
+            assert content.metadata == result["metadata"]
         else:
-            assert "metadata" not in results[idx]
+            assert "metadata" not in result
 
 
 def test_websites_content_list_multiple_type(drf_client, global_admin_user):

@@ -103,6 +103,7 @@ class WebsiteViewSet(
         ordering = self.request.query_params.get("sort", "-updated_on")
         website_type = self.request.query_params.get("type", None)
         search = self.request.query_params.get("search", None)
+        resourcetype = self.request.query_params.get("resourcetype", None)
 
         user = self.request.user
         if self.request.user.is_anonymous:
@@ -123,6 +124,9 @@ class WebsiteViewSet(
         if search is not None:
             # search query param is used in react-select typeahead, and should match on the title
             queryset = queryset.filter(title__icontains=search)
+
+        if resourcetype is not None:
+            queryset = queryset.filter(metadata__resourcetype=resourcetype)
 
         if website_type is not None:
             queryset = queryset.filter(starter__slug=website_type)
