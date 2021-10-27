@@ -49,8 +49,8 @@ describe("SiteContentListing", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    repeatableConfigItem = makeRepeatableConfigItem()
-    singletonsConfigItem = makeSingletonsConfigItem()
+    repeatableConfigItem = makeRepeatableConfigItem("repeatable")
+    singletonsConfigItem = makeSingletonsConfigItem("singletons")
     website = makeWebsiteDetail()
     // @ts-ignore
     website.starter = {
@@ -78,15 +78,13 @@ describe("SiteContentListing", () => {
   })
 
   //
-  ;[MockRepeatable, MockSingletons].forEach(child => {
-    it(`renders listing components with the correct props`, async () => {
-      let configItem
-
-      if (child === MockRepeatable) {
-        configItem = repeatableConfigItem
-      } else {
-        configItem = singletonsConfigItem
-      }
+  ;[
+    ["repeatable", MockRepeatable],
+    ["singleton", MockSingletons]
+  ].forEach(([name, child]) => {
+    it(`renders ${name} with the correct props`, async () => {
+      const configItem =
+        child === MockRepeatable ? repeatableConfigItem : singletonsConfigItem
 
       // @ts-ignore
       const params = { name: website.name, contenttype: configItem.name }
@@ -94,6 +92,7 @@ describe("SiteContentListing", () => {
         params
       }))
       const { wrapper } = await render()
+      // @ts-ignore
       const listing = wrapper.find(child)
       expect(listing.exists()).toBe(true)
       expect(listing.props()).toEqual({
