@@ -54,6 +54,8 @@ class DriveFile(TimestampedModel):
     resource = models.ForeignKey(
         WebsiteContent, null=True, blank=True, on_delete=models.SET_NULL
     )
+    sync_error = models.TextField(null=True, blank=True)
+    sync_dt = models.DateTimeField(null=True, blank=True)
 
     def update_status(self, status):
         """ Update the DriveFile status"""
