@@ -7,7 +7,6 @@ import pytz
 from celery import chain, chord
 from dateutil.parser import parse
 from django.conf import settings
-from mitol.common.utils import now_in_utc
 
 from content_sync.tasks import sync_website_content
 from gdrive_sync import api
@@ -17,7 +16,6 @@ from gdrive_sync.api import (
     process_file_result,
     query_files,
     transcode_gdrive_video,
-    update_sync_status,
     walk_gdrive_folder,
 )
 from gdrive_sync.constants import (
@@ -26,7 +24,6 @@ from gdrive_sync.constants import (
     DRIVE_FOLDER_FILES_FINAL,
     DRIVE_FOLDER_VIDEOS_FINAL,
     DRIVE_MIMETYPE_FOLDER,
-    WebsiteSyncStatus,
 )
 from gdrive_sync.models import DriveApiQueryTracker, DriveFile
 from main.celery import app
@@ -83,10 +80,7 @@ def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-
     chains = []
     website_names = set()
     for gdfile in query_files(query=query, fields=DRIVE_FILE_FIELDS):
-        try:
-            drive_file = process_file_result(gdfile)
-        except:  # pylint:disable=bare-except
-            log.exception("Error processing google drive file %s", gdfile.get("id"))
+        drive_file = process_file_result(gdfile)
         if drive_file:
             maxLastTime = datetime.strptime(
                 max(gdfile.get("createdTime"), gdfile.get("modifiedTime")),
@@ -122,64 +116,52 @@ def import_website_files(self, short_id: str):
     """Query the Drive API for all children of a website folder and import the files"""
     if not is_gdrive_enabled():
         return
-    website = Website.objects.get(short_id=short_id)
-    website.sync_status = WebsiteSyncStatus.PROCESSING
-    website.synced_on = now_in_utc()
-    website.sync_errors = []
-    errors = []
+    common_query = f'mimeType = "{DRIVE_MIMETYPE_FOLDER}" and not trashed'
+    site_folders = list(
+        query_files(
+            query=f'name = "{short_id}" and {common_query}', fields=DRIVE_FILE_FIELDS
+        )
+    )
+    if len(site_folders) != 1:
+        raise Exception(
+            "Expected 1 drive folder for %s but found %d", short_id, len(site_folders)
+        )
+
     chains = []
     for subfolder in [DRIVE_FOLDER_FILES_FINAL, DRIVE_FOLDER_VIDEOS_FINAL]:
-        try:
-            query = f'parents = "{website.gdrive_folder}" and name="{subfolder}" and mimeType = "{DRIVE_MIMETYPE_FOLDER}" and not trashed'
-            subfolder_list = list(query_files(query=query, fields=DRIVE_FILE_FIELDS))
-            if not subfolder_list:
-                error_msg = f"Could not find drive subfolder {subfolder}"
-                log.error("%s for %s", error_msg, website.short_id)
-                errors.append(error_msg)
-                continue
-            for gdfile in walk_gdrive_folder(
-                subfolder_list[0]["id"],
-                DRIVE_FILE_FIELDS,
-            ):
-                try:
-                    drive_file = process_file_result(
-                        gdfile, sync_date=website.synced_on
-                    )
-                    if drive_file:
-                        task_list = [
-                            stream_drive_file_to_s3.s(drive_file.file_id),
-                            transcode_drive_file_video.si(drive_file.file_id)
-                            if drive_file.is_video()
-                            else None,
-                            create_resource_from_gdrive.si(drive_file.file_id),
-                        ]
-                        chains.append(chain(*[task for task in task_list if task]))
-                except:  # pylint:disable=bare-except
-                    errors.append(f"Error processing gdrive file {gdfile.get('name')}")
-                    log.exception(
-                        "Error processing gdrive file %s for %s",
-                        gdfile.get("name"),
-                        website.short_id,
-                    )
-        except:  # pylint:disable=bare-except
-            error_msg = f"An error occurred when querying the {subfolder} google drive subfolder"
-            errors.append(error_msg)
-            log.exception("%s for %s", error_msg, website.short_id)
-    website.sync_errors = errors
-    website.save()
-
+        query = f'parents = "{site_folders[0]["id"]}" and name="{subfolder}" and {common_query}'
+        subfolder_list = list(query_files(query=query, fields=DRIVE_FILE_FIELDS))
+        if len(subfolder_list) != 1:
+            log.error(
+                "Expected 1 drive folder for %s/%s but found %d",
+                short_id,
+                subfolder,
+                len(subfolder_list),
+            )
+            continue
+        gdfiles = walk_gdrive_folder(
+            subfolder_list[0]["id"],
+            DRIVE_FILE_FIELDS,
+        )
+        for gdfile in gdfiles:
+            drive_file = process_file_result(gdfile)
+            if drive_file:
+                task_list = [
+                    stream_drive_file_to_s3.s(drive_file.file_id),
+                    transcode_drive_file_video.si(drive_file.file_id)
+                    if drive_file.is_video()
+                    else None,
+                    create_resource_from_gdrive.si(drive_file.file_id),
+                ]
+                chains.append(chain(*[task for task in task_list if task]))
     if chains:
         # Import the files first, then sync the website for those files in git
-        file_steps = chord(
-            celery.group(*chains),
-            update_website_status.si(website.pk, website.synced_on),
-        )
+        file_steps = chord(celery.group(*chains), chord_finisher.si())
         website_step = sync_website_content.si(
             Website.objects.get(short_id=short_id).name
         )
         workflow = chain(file_steps, website_step)
         raise self.replace(celery.group(workflow))
-    update_website_status(website.pk, website.synced_on)
 
 
 @app.task()
@@ -187,11 +169,3 @@ def create_gdrive_folders(website_short_id: str):
     """Create gdrive folder for website if it doesn't already exist"""
     if is_gdrive_enabled():
         api.create_gdrive_folders(website_short_id)
-
-
-@app.task
-def update_website_status(website_pk: str, sync_dt: datetime):
-    """
-    Update the website gdrive sync status
-    """
-    update_sync_status(Website.objects.get(pk=website_pk), sync_dt)
