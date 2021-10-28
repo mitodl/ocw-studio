@@ -74,6 +74,9 @@ class Website(TimestampedModel):
     has_unpublished_draft = models.BooleanField(default=True)
     metadata = models.JSONField(null=True, blank=True)
     gdrive_folder = models.CharField(null=True, blank=True, max_length=64)
+    sync_status = models.CharField(null=True, blank=True, max_length=12)
+    synced_on = models.DateTimeField(null=True, blank=True)
+    sync_errors = models.JSONField(null=True, blank=True)
 
     @property
     def admin_group(self):

@@ -12,6 +12,7 @@ DRIVE_FOLDER_FILES = "files"
 DRIVE_FILE_FIELDS = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)"
 DRIVE_MIMETYPE_FOLDER = "application/vnd.google-apps.folder"
 
+
 VALID_TEXT_FILE_TYPES = [
     ".pdf",
     ".htm",
@@ -38,7 +39,28 @@ class DriveFileStatus:
 
     CREATED = STATUS_CREATED
     UPLOADING = "Uploading"
-    UPLOAD_FAILED = "Upload failed"
+    UPLOAD_FAILED = "Upload Failed"
     UPLOAD_COMPLETE = "Upload Complete"
+    TRANSCODING = "Transcoding"
+    TRANSCODE_FAILED = "Transcode Failed"
+    COMPLETE = "Complete"
+    FAILED = "Failed"
+    ALL_STATUSES = [
+        CREATED,
+        UPLOADING,
+        UPLOAD_FAILED,
+        UPLOAD_COMPLETE,
+        TRANSCODING,
+        TRANSCODE_FAILED,
+        COMPLETE,
+        FAILED,
+    ]
 
-    ALL_STATUSES = [CREATED, UPLOADING, UPLOAD_FAILED, UPLOAD_COMPLETE]
+
+class WebsiteSyncStatus:
+    """Simple class for possible Website sync statuses"""
+
+    PROCESSING = "Processing"
+    COMPLETE = "Complete"
+    FAILED = "Failed"
+    ERRORS = "Errors"
