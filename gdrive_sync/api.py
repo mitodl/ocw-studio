@@ -202,10 +202,15 @@ def stream_to_s3(drive_file: DriveFile):
         if not drive_file.s3_key:
             drive_file.s3_key = drive_file.get_valid_s3_key()
         drive_file.update_status(DriveFileStatus.UPLOADING)
+        extra_args = {"ContentType": drive_file.mime_type, "ACL": "public-read"}
+
+        if drive_file.mime_type.startswith("video/"):
+            extra_args["ContentDisposition"] = "attachment"
+
         bucket.upload_fileobj(
             Fileobj=streaming_download(drive_file).raw,
             Key=drive_file.s3_key,
-            ExtraArgs={"ContentType": drive_file.mime_type, "ACL": "public-read"},
+            ExtraArgs=extra_args,
         )
         drive_file.update_status(DriveFileStatus.UPLOAD_COMPLETE)
     except:  # pylint:disable=bare-except

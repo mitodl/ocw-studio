@@ -129,10 +129,23 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
         expected_key = (
             f"{drive_file.s3_prefix}/{drive_file.website.name}/a-test-file.ext"
         )
+
+    if is_video:
+        expected_extra_args = {
+            "ContentType": drive_file.mime_type,
+            "ACL": "public-read",
+            "ContentDisposition": "attachment",
+        }
+    else:
+        expected_extra_args = {
+            "ContentType": drive_file.mime_type,
+            "ACL": "public-read",
+        }
+
     mock_bucket.upload_fileobj.assert_called_with(
         Fileobj=mocker.ANY,
         Key=expected_key,
-        ExtraArgs={"ContentType": drive_file.mime_type, "ACL": "public-read"},
+        ExtraArgs=expected_extra_args,
     )
     mock_download.assert_called_once_with(drive_file)
     mock_service.return_value.permissions.return_value.delete.assert_called_once()
