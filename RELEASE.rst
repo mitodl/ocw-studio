@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.32.0 (Released October 28, 2021)
+--------------
+
+- Open publish site links in new tab (#729)
+- Show google drive links (#720)
+- Use name instead of short_id for resource S3 keys (#726)
+- add to validation schema, add an example thing in there
+
 Version 0.31.0 (Released October 22, 2021)
 --------------
 
