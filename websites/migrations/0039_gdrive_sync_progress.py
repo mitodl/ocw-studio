@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("websites", "0037_website_gdrive_folder"),
+        ("websites", "0038_website_publish_status"),
     ]
 
     operations = [
