@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytest
 import pytz
+from mitol.common.utils import now_in_utc
 
 from gdrive_sync import tasks
 from gdrive_sync.conftest import LIST_FILE_RESPONSES, LIST_VIDEO_RESPONSES
@@ -11,6 +12,8 @@ from gdrive_sync.constants import (
     DRIVE_FILE_FIELDS,
     DRIVE_FOLDER_FILES_FINAL,
     DRIVE_FOLDER_VIDEOS_FINAL,
+    DriveFileStatus,
+    WebsiteSyncStatus,
 )
 from gdrive_sync.factories import DriveApiQueryTrackerFactory, DriveFileFactory
 from gdrive_sync.models import DriveFile
@@ -19,11 +22,40 @@ from gdrive_sync.tasks import (
     import_recent_files,
     import_website_files,
     transcode_drive_file_video,
+    update_website_status,
 )
 from websites.factories import WebsiteFactory
 
 
 pytestmark = pytest.mark.django_db
+
+# pylint:disable=redefined-outer-name
+
+
+@pytest.fixture()
+def mock_gdrive_files(mocker):
+    """Return mock results from a google drive api request"""
+    mocker.patch(
+        "gdrive_sync.tasks.query_files",
+        side_effect=[
+            [
+                {
+                    "id": "websiteVideoFinalFolderId",
+                    "name": DRIVE_FOLDER_VIDEOS_FINAL,
+                },
+            ],
+            [
+                {
+                    "id": "websiteFileFinalFolderId",
+                    "name": DRIVE_FOLDER_FILES_FINAL,
+                },
+            ],
+        ],
+    )
+    mocker.patch(
+        "gdrive_sync.tasks.walk_gdrive_folder",
+        side_effect=[[], LIST_FILE_RESPONSES[0]["files"]],
+    )
 
 
 @pytest.mark.parametrize("shared_id", [None, "testDrive"])
@@ -94,6 +126,7 @@ def test_import_recent_files_videos(
             if same_checksum is True
             else "differentmd5"
         ),
+        status=DriveFileStatus.COMPLETE,
     )
 
     parent_tree_responses = [
@@ -272,7 +305,9 @@ def test_create_resource_from_gdrive(mocker):
     mock_create_content.assert_called_once_with(drive_file)
 
 
-def test_import_website_files(mocker, mocked_celery):
+def test_import_website_files(
+    mocker, mocked_celery, mock_gdrive_files
+):  # pylint:disable=unused-argument
     """import_website_files should run process_file_result for each drive file and trigger tasks"""
     mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
     website = WebsiteFactory.create()
@@ -285,33 +320,7 @@ def test_import_website_files(mocker, mocked_celery):
         "gdrive_sync.tasks.create_resource_from_gdrive.si"
     )
     mock_sync_content = mocker.patch("gdrive_sync.tasks.sync_website_content.si")
-    mocker.patch(
-        "gdrive_sync.tasks.query_files",
-        side_effect=[
-            [
-                {
-                    "id": "websiteFolderId",
-                    "name": website.short_id,
-                },
-            ],
-            [
-                {
-                    "id": "websiteVideoFinalFolderId",
-                    "name": DRIVE_FOLDER_VIDEOS_FINAL,
-                },
-            ],
-            [
-                {
-                    "id": "websiteFileFinalFolderId",
-                    "name": DRIVE_FOLDER_FILES_FINAL,
-                },
-            ],
-        ],
-    )
-    mocker.patch(
-        "gdrive_sync.tasks.walk_gdrive_folder",
-        side_effect=[[], LIST_FILE_RESPONSES[0]["files"]],
-    )
+    mock_update_status = mocker.patch("gdrive_sync.tasks.update_website_status.si")
     with pytest.raises(mocked_celery.replace_exception_class):
         import_website_files.delay(website.short_id)
     assert mock_process_file_result.call_count == 2
@@ -319,32 +328,8 @@ def test_import_website_files(mocker, mocked_celery):
         mock_stream_task.assert_any_call(drive_file.file_id)
         mock_create_resource.assert_any_call(drive_file.file_id)
     mock_sync_content.assert_called_once_with(website.name)
-
-
-def test_import_website_files_dupe_site_folders(mocker):
-    """import_website_files should run process_file_result for each drive file and trigger tasks"""
-    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
-    website = WebsiteFactory.create()
-    mocker.patch(
-        "gdrive_sync.tasks.query_files",
-        return_value=[
-            {
-                "id": "websiteFolderId",
-                "name": website.short_id,
-            },
-            {
-                "id": "websiteFolderId2",
-                "name": website.short_id,
-            },
-        ],
-    )
-    with pytest.raises(Exception) as exc:
-        import_website_files.delay(website.short_id)
-    assert exc.value.args == (
-        "Expected 1 drive folder for %s but found %d",
-        website.short_id,
-        2,
-    )
+    website.refresh_from_db()
+    mock_update_status.assert_called_once_with(website.pk, website.synced_on)
 
 
 def test_import_website_files_missing_folder(mocker):
@@ -355,12 +340,6 @@ def test_import_website_files_missing_folder(mocker):
     mocker.patch(
         "gdrive_sync.tasks.query_files",
         side_effect=[
-            [
-                {
-                    "id": "websiteFolderId",
-                    "name": website.short_id,
-                },
-            ],
             [],
             [],
         ],
@@ -368,8 +347,71 @@ def test_import_website_files_missing_folder(mocker):
     import_website_files.delay(website.short_id)
     for folder in [DRIVE_FOLDER_VIDEOS_FINAL, DRIVE_FOLDER_FILES_FINAL]:
         mock_log.assert_any_call(
-            "Expected 1 drive folder for %s/%s but found %d",
-            website.short_id,
-            folder,
-            0,
+            "%s for %s", f"Could not find drive subfolder {folder}", website.short_id
         )
+    website.refresh_from_db()
+    assert website.sync_status == WebsiteSyncStatus.FAILED
+    assert sorted(website.sync_errors) == sorted(
+        [
+            f"Could not find drive subfolder {DRIVE_FOLDER_VIDEOS_FINAL}",
+            f"Could not find drive subfolder {DRIVE_FOLDER_FILES_FINAL}",
+        ]
+    )
+
+
+def test_import_website_files_query_error(mocker):
+    """import_website_files should run process_file_result for each drive file and trigger tasks"""
+    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
+    mock_log = mocker.patch("gdrive_sync.tasks.log.exception")
+    mocker.patch(
+        "gdrive_sync.tasks.query_files",
+        side_effect=Exception("Error querying google drive"),
+    )
+    website = WebsiteFactory.create()
+    import_website_files.delay(website.short_id)
+    sync_errors = []
+    for folder in [DRIVE_FOLDER_VIDEOS_FINAL, DRIVE_FOLDER_FILES_FINAL]:
+        sync_error = (
+            f"An error occurred when querying the {folder} google drive subfolder"
+        )
+        sync_errors.append(sync_error)
+        mock_log.assert_any_call("%s for %s", sync_error, website.short_id)
+    website.refresh_from_db()
+    assert website.sync_status == WebsiteSyncStatus.FAILED
+    assert sorted(website.sync_errors) == sorted(sync_errors)
+
+
+def test_import_website_files_processing_error(
+    mocker, mock_gdrive_files
+):  # pylint:disable=unused-argument
+    """import_website_files should log exceptions raised by process_file_result and update website status"""
+    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
+    mock_log = mocker.patch("gdrive_sync.tasks.log.exception")
+    mocker.patch(
+        "gdrive_sync.tasks.process_file_result",
+        side_effect=Exception("Error processing the file"),
+    )
+    website = WebsiteFactory.create()
+    import_website_files.delay(website.short_id)
+    sync_errors = []
+    for gdfile in LIST_FILE_RESPONSES[0]["files"]:
+        sync_errors.append(f"Error processing gdrive file {gdfile.get('name')}")
+        mock_log.assert_any_call(
+            "Error processing gdrive file %s for %s",
+            gdfile.get("name"),
+            website.short_id,
+        )
+    website.refresh_from_db()
+    assert website.sync_status == WebsiteSyncStatus.FAILED
+    assert sorted(website.sync_errors) == sorted(sync_errors)
+
+
+def test_update_website_status(mocker):
+    """Calling the update_website_status task should call api.update_sync_status with args"""
+    website = WebsiteFactory.create()
+    now = now_in_utc()
+    mock_update_sync_status = mocker.patch("gdrive_sync.tasks.update_sync_status")
+    update_website_status.delay(website.pk, now)
+    mock_update_sync_status.assert_called_once_with(
+        website, now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    )

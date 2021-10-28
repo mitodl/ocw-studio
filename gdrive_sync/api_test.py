@@ -1,9 +1,10 @@
 """gdrive_sync.api tests"""
 import json
-import os
+from datetime import timedelta
 
 import pytest
 from botocore.exceptions import ClientError
+from mitol.common.utils import now_in_utc
 from moto import mock_s3
 from requests import HTTPError
 
@@ -14,6 +15,7 @@ from gdrive_sync.api import (
     get_resource_type,
     process_file_result,
     transcode_gdrive_video,
+    update_sync_status,
     walk_gdrive_folder,
 )
 from gdrive_sync.conftest import LIST_VIDEO_RESPONSES
@@ -23,12 +25,14 @@ from gdrive_sync.constants import (
     DRIVE_FOLDER_VIDEOS_FINAL,
     DRIVE_MIMETYPE_FOLDER,
     DriveFileStatus,
+    WebsiteSyncStatus,
 )
 from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.models import DriveFile
 from main.s3_utils import get_s3_resource
 from videos.constants import VideoStatus
 from websites.constants import (
+    CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -336,32 +340,15 @@ def test_process_file_result(
         "md5Checksum": checksum,
         "trashed": False,
     }
+    correct_folder = (is_video and in_video_folder) or (
+        not is_video and not in_video_folder
+    )
     process_file_result(file_result)
     drive_file = DriveFile.objects.filter(file_id=file_result["id"]).first()
     file_exists = drive_file is not None
-    assert file_exists is (
-        link is not None
-        and ((is_video and in_video_folder) or (not is_video and not in_video_folder))
-    )
+    assert file_exists is (correct_folder and link is not None)
     if drive_file:
         assert drive_file.checksum == checksum
-
-
-def test_process_file_result_exception(settings, mocker):
-    """Verify that an exception is logged if anything goes wrong"""
-    settings.DRIVE_SHARED_ID = "test_drive"
-    settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
-    mocker.patch("gdrive_sync.api.get_parent_tree", side_effect=Exception)
-    mock_log = mocker.patch("gdrive_sync.api.log.exception")
-    file_result = {
-        "id": "Ay5grfCTHr_12JCgxaoHrGve",
-        "parents": ["subFolderId"],
-        "trashed": False,
-    }
-    process_file_result(file_result)
-    mock_log.assert_called_once_with(
-        "Error processing gdrive file id %s", file_result["id"]
-    )
 
 
 def test_walk_gdrive_folder(mocker):
@@ -409,23 +396,29 @@ def test_create_gdrive_resource_content(mocker, mime_type):
     mocker.patch(
         "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
     )
-    drive_file = DriveFileFactory.create(
-        s3_key="test/path/word.docx", mime_type=mime_type
-    )
-    create_gdrive_resource_content(drive_file)
-    content = WebsiteContent.objects.filter(
-        website=drive_file.website,
-        title=drive_file.name,
-        file=drive_file.s3_key,
-        type="resource",
-        is_page_content=True,
-        metadata={"resourcetype": RESOURCE_TYPE_DOCUMENT, "file_type": mime_type},
-    ).first()
-    assert content is not None
-    assert content.dirpath == "content/resource"
-    assert content.filename == os.path.splitext(drive_file.name)[0]
-    drive_file.refresh_from_db()
-    assert drive_file.resource == content
+    filenames = ["word.docx", "word!.docx", "(word?).docx"]
+    deduped_names = ["word", "word2", "word3"]
+    website = WebsiteFactory.create()
+    for filename, deduped_name in zip(filenames, deduped_names):
+        drive_file = DriveFileFactory.create(
+            website=website,
+            name=filename,
+            s3_key=f"test/path/{deduped_name}.docx",
+            mime_type=mime_type,
+        )
+        create_gdrive_resource_content(drive_file)
+        content = WebsiteContent.objects.filter(
+            website=website,
+            title=filename,
+            type="resource",
+            is_page_content=True,
+            metadata={"resourcetype": RESOURCE_TYPE_DOCUMENT, "file_type": mime_type},
+        ).first()
+        assert content is not None
+        assert content.dirpath == "content/resource"
+        assert content.filename == deduped_name
+        drive_file.refresh_from_db()
+        assert drive_file.resource == content
 
 
 def test_create_gdrive_resource_content_update(mocker):
@@ -443,6 +436,26 @@ def test_create_gdrive_resource_content_update(mocker):
     drive_file.refresh_from_db()
     assert content.file == drive_file.s3_key
     assert drive_file.resource == content
+
+
+def test_create_gdrive_resource_content_error(mocker):
+    """create_resource_from_gdrive should log an exception, update status if something goes wrong"""
+    mocker.patch(
+        "gdrive_sync.api.get_s3_content_type",
+        return_value=Exception("Could not determine resource type"),
+    )
+    mock_log = mocker.patch("gdrive_sync.api.log.exception")
+    content = WebsiteContentFactory.create()
+    drive_file = DriveFileFactory.create(
+        website=content.website, s3_key="test/path/word.docx", resource=content
+    )
+    create_gdrive_resource_content(drive_file)
+    content.refresh_from_db()
+    drive_file.refresh_from_db()
+    assert drive_file.status == DriveFileStatus.FAILED
+    mock_log.assert_called_once_with(
+        "Error creating resource for drive file %s", drive_file.file_id
+    )
 
 
 @pytest.mark.parametrize("account_id", [None, "accountid123"])
@@ -501,4 +514,61 @@ def test_gdrive_root_url(settings, shared_id, parent_id, folder):
     settings.DRIVE_SHARED_ID = shared_id
     assert gdrive_root_url() == (
         f"https://drive.google.com/drive/folders/{folder}/" if folder else None
+    )
+
+
+@pytest.mark.parametrize(
+    "file_errors, site_errors, status",
+    [
+        [[None, None], None, WebsiteSyncStatus.COMPLETE],
+        [[None, None], ["Error querying files_final folder"], WebsiteSyncStatus.ERRORS],
+        [[], [], WebsiteSyncStatus.COMPLETE],
+        [[], ["Error querying Google Drive"], WebsiteSyncStatus.FAILED],
+        [["Could not sync to S3", None], [], WebsiteSyncStatus.ERRORS],
+        [
+            ["Could not sync to S3", None],
+            ["Could not query videos_final"],
+            WebsiteSyncStatus.ERRORS,
+        ],
+        [
+            ["Could not sync to S3", "Could not create resource"],
+            [],
+            WebsiteSyncStatus.FAILED,
+        ],
+    ],
+)
+def test_update_sync_status(file_errors, site_errors, status):
+    """update_sync_status should update the website sync_status field as expected"""
+    now = now_in_utc()
+    website = WebsiteFactory.create(
+        synced_on=now, sync_status=WebsiteSyncStatus.PROCESSING, sync_errors=site_errors
+    )
+    for error in file_errors:
+        DriveFileFactory.create(
+            website=website,
+            sync_error=error,
+            sync_dt=now,
+            resource=(
+                WebsiteContentFactory.create(
+                    type=CONTENT_TYPE_RESOURCE, website=website
+                )
+                if not error
+                else None
+            ),
+            status=(
+                DriveFileStatus.COMPLETE if error is None else DriveFileStatus.FAILED
+            ),
+        )
+    DriveFileFactory.create(
+        website=website,
+        sync_dt=now_in_utc() + timedelta(seconds=10),
+        resource=WebsiteContentFactory.create(
+            type=CONTENT_TYPE_RESOURCE, website=website
+        ),
+    )
+    update_sync_status(website, now)
+    website.refresh_from_db()
+    assert website.sync_status == status
+    assert sorted(website.sync_errors) == sorted(
+        [error for error in file_errors if error] + (site_errors or [])
     )
