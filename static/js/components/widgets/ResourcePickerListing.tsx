@@ -89,7 +89,9 @@ export default function ResourcePickerListing(
             }}
           >
             {imageSrc ? (
-              <img className="img-fluid w-100" src={imageSrc} />
+              <div className="img-wrapper">
+                <img className="img-fluid w-100" src={imageSrc} />
+              </div>
             ) : null}
             <h4>{item.title}</h4>
           </div>

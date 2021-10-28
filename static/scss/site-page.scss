@@ -68,48 +68,6 @@ $menu-spacing: 20px;
   }
 }
 
-.resource-picker-listing {
-  .resource-item {
-    cursor: pointer;
-    padding: 2px;
-    margin: 2px;
-
-    &.focused {
-      border: 2px solid black;
-      padding: 0;
-    }
-
-    h4 {
-      margin-bottom: 0;
-      padding: 2px;
-    }
-  }
-}
-
-.resource-picker-dialog {
-  .tab-content {
-    padding: 20px 0;
-  }
-
-  .nav-tabs {
-    border-bottom: 1px solid $dialog-gray;
-
-    .nav-item {
-      margin-left: 10px;
-      margin-right: 2px;
-      background-color: $dialog-gray;
-      border-top: 1px solid $dialog-gray;
-      border-left: 1px solid $dialog-gray;
-      border-right: 1px solid $dialog-gray;
-
-      &.active {
-        //border-bottom: white;
-        background-color: white;
-      }
-    }
-  }
-}
-
 .publish-option {
   a {
     text-decoration: underline;
