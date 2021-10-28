@@ -2,8 +2,7 @@
 import json
 import logging
 import os
-from datetime import datetime
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable
 
 import boto3
 import requests
@@ -23,7 +22,6 @@ from gdrive_sync.constants import (
     DRIVE_MIMETYPE_FOLDER,
     VALID_TEXT_FILE_TYPES,
     DriveFileStatus,
-    WebsiteSyncStatus,
 )
 from gdrive_sync.models import DriveFile
 from videos.api import create_media_convert_job
@@ -101,59 +99,62 @@ def get_parent_tree(parents):
     return tree[1:]  # first one is the drive
 
 
-def process_file_result(
-    file_obj: Dict, sync_date: Optional[datetime] = None
-) -> Optional[DriveFile]:
+def process_file_result(file_obj: Dict) -> bool:
     """Convert an API file response into a DriveFile object"""
-    parents = file_obj.get("parents")
-    if parents:
-        folder_tree = get_parent_tree(parents)
-        if len(folder_tree) < 2 or (
-            settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
-            and (
+    try:
+        parents = file_obj.get("parents")
+        if parents:
+            folder_tree = get_parent_tree(parents)
+            if len(folder_tree) < 2 or (
                 settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
+                and settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
                 not in [folder["id"] for folder in folder_tree]
-            )
-        ):
-            return
-
-        folder_names = [folder["name"] for folder in folder_tree]
-        website = Website.objects.filter(short_id__in=folder_names).first()
-        in_video_folder = DRIVE_FOLDER_VIDEOS_FINAL in folder_names
-        in_file_folder = DRIVE_FOLDER_FILES_FINAL in folder_names
-        is_video = file_obj["mimeType"].lower().startswith("video/")
-        processable = (
-            (in_video_folder and is_video) or (in_file_folder and not is_video)
-        ) and file_obj.get("webContentLink") is not None
-        if website and processable:
-            existing_file = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
-            if (
-                existing_file
-                and existing_file.checksum == file_obj.get("md5Checksum", "")
-                and existing_file.name == file_obj.get("name")
-                and existing_file.status == DriveFileStatus.COMPLETE
             ):
-                # For inexplicable reasons, sometimes Google Drive continuously updates
-                # the modifiedTime of files, so only update the DriveFile if the checksum or name changed.
                 return
-            drive_file, _ = DriveFile.objects.update_or_create(
-                file_id=file_obj.get("id"),
-                defaults={
-                    "name": file_obj.get("name"),
-                    "mime_type": file_obj.get("mimeType"),
-                    "checksum": file_obj.get("md5Checksum"),
-                    "modified_time": file_obj.get("modifiedTime"),
-                    "created_time": file_obj.get("createdTime"),
-                    "download_link": file_obj.get("webContentLink"),
-                    "drive_path": "/".join(
-                        [folder.get("name") for folder in folder_tree]
-                    ),
-                    "website": website,
-                    "sync_error": None,
-                    "sync_dt": sync_date,
-                },
+
+            folder_names = [folder["name"] for folder in folder_tree]
+            for folder_name in folder_names:
+                website = Website.objects.filter(short_id=folder_name).first()
+                if website:
+                    break
+            in_video_folder = DRIVE_FOLDER_VIDEOS_FINAL in folder_names
+            in_file_folder = DRIVE_FOLDER_FILES_FINAL in folder_names
+            is_video = "video/" in file_obj["mimeType"]
+            processable = (
+                (in_video_folder and is_video)
+                or (in_file_folder and not is_video)
+                and file_obj.get("webContentLink") is not None
             )
-            return drive_file
+            if website and processable:
+                existing_file = DriveFile.objects.filter(
+                    file_id=file_obj.get("id")
+                ).first()
+                if (
+                    existing_file
+                    and existing_file.checksum == file_obj.get("md5Checksum", "")
+                    and existing_file.name == file_obj.get("name")
+                ):
+                    # For inexplicable reasons, sometimes Google Drive continuously updates
+                    # the modifiedTime of files, so only update the DriveFile if the checksum or name changed.
+                    return
+                drive_file, _ = DriveFile.objects.update_or_create(
+                    file_id=file_obj.get("id"),
+                    defaults={
+                        "name": file_obj.get("name"),
+                        "mime_type": file_obj.get("mimeType"),
+                        "checksum": file_obj.get("md5Checksum"),
+                        "modified_time": file_obj.get("modifiedTime"),
+                        "created_time": file_obj.get("createdTime"),
+                        "download_link": file_obj.get("webContentLink"),
+                        "drive_path": "/".join(
+                            [folder.get("name") for folder in folder_tree]
+                        ),
+                        "website": website,
+                    },
+                )
+                return drive_file
+    except:  # pylint:disable=bare-except
+        log.exception("Error processing gdrive file id %s", file_obj.get("id", ""))
     return None
 
 
@@ -208,9 +209,6 @@ def stream_to_s3(drive_file: DriveFile):
         )
         drive_file.update_status(DriveFileStatus.UPLOAD_COMPLETE)
     except:  # pylint:disable=bare-except
-        drive_file.sync_error = (
-            f"An error occurred uploading google drive file {drive_file.name} to S3"
-        )
         drive_file.update_status(DriveFileStatus.UPLOAD_FAILED)
         raise
     finally:
@@ -334,43 +332,33 @@ def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[Dict]:
 @transaction.atomic
 def create_gdrive_resource_content(drive_file: DriveFile):
     """Create a WebsiteContent resource from a Google Drive file"""
-    try:
-        resource_type = get_resource_type(drive_file.s3_key)
-        resource = drive_file.resource
-        if not resource:
-            site_config = SiteConfig(drive_file.website.starter.config)
-            config_item = site_config.find_item_by_name(name="resource")
-            dirpath = config_item.file_target if config_item else None
-            basename, _ = os.path.splitext(drive_file.name)
-            filename = get_valid_new_filename(
-                website_pk=drive_file.website.pk,
-                dirpath=dirpath,
-                filename_base=slugify(basename),
-            )
-            resource = WebsiteContent.objects.create(
-                website=drive_file.website,
-                title=drive_file.name,
-                file=drive_file.s3_key,
-                type="resource",
-                is_page_content=True,
-                dirpath=dirpath,
-                filename=filename,
-                metadata={
-                    "resourcetype": resource_type,
-                    "file_type": drive_file.mime_type,
-                },
-            )
-        else:
-            resource.file = drive_file.s3_key
-            resource.save()
-        drive_file.resource = resource
-        drive_file.update_status(DriveFileStatus.COMPLETE)
-    except:  # pylint:disable=bare-except
-        log.exception("Error creating resource for drive file %s", drive_file.file_id)
-        drive_file.sync_error = (
-            f"Could not create a resource from google drive file {drive_file.name}"
+    resource_type = get_resource_type(drive_file.s3_key)
+    resource = drive_file.resource
+    if not resource:
+        site_config = SiteConfig(drive_file.website.starter.config)
+        config_item = site_config.find_item_by_name(name="resource")
+        dirpath = config_item.file_target if config_item else None
+        basename, _ = os.path.splitext(drive_file.name)
+        filename = get_valid_new_filename(
+            website_pk=drive_file.website.pk,
+            dirpath=dirpath,
+            filename_base=slugify(basename),
         )
-        drive_file.update_status(DriveFileStatus.FAILED)
+        resource = WebsiteContent.objects.create(
+            website=drive_file.website,
+            title=drive_file.name,
+            file=drive_file.s3_key,
+            type="resource",
+            is_page_content=True,
+            dirpath=dirpath,
+            filename=filename,
+            metadata={"resourcetype": resource_type, "file_type": drive_file.mime_type},
+        )
+    else:
+        resource.file = drive_file.s3_key
+        resource.save()
+    drive_file.resource = resource
+    drive_file.save()
 
 
 def transcode_gdrive_video(drive_file: DriveFile):
@@ -385,43 +373,7 @@ def transcode_gdrive_video(drive_file: DriveFile):
         drive_file.save()
         try:
             create_media_convert_job(video)
-            drive_file.update_status(DriveFileStatus.TRANSCODING)
         except ClientError:
             log.exception("Error creating transcode job for %s", video.source_key)
             video.status = VideoStatus.FAILED
             video.save()
-            drive_file.sync_error = f"Error transcoding video {drive_file.name}, please contact us for assistance"
-            drive_file.update_status(DriveFileStatus.TRANSCODE_FAILED)
-
-
-def update_sync_status(website: Website, sync_datetime: datetime):
-    """Update the Google Drive sync status based on DriveFile statuses and sync errors"""
-    drive_files = DriveFile.objects.filter(website=website, sync_dt=sync_datetime)
-    resources = []
-    errors = []
-    statuses = []
-
-    for drive_file in drive_files:
-        statuses.append(drive_file.status)
-        if drive_file.resource is not None:
-            resources.append(drive_file.resource_id)
-        if drive_file.sync_error is not None:
-            errors.append(drive_file.sync_error)
-    if (
-        list(set(statuses)) == [DriveFileStatus.COMPLETE]
-        and not errors
-        and not website.sync_errors
-    ):  # Resources created for all DriveFiles, no website errors
-        new_status = WebsiteSyncStatus.COMPLETE
-    elif (
-        drive_files.count() == 0 and not website.sync_errors
-    ):  # There was nothing to sync
-        new_status = WebsiteSyncStatus.COMPLETE
-    elif not resources or (resources and len(drive_files) == len(errors)):  # All failed
-        new_status = WebsiteSyncStatus.FAILED
-    else:  # Some failed, some did not
-        new_status = WebsiteSyncStatus.ERRORS
-        log.error(new_status)
-    website.sync_status = new_status
-    website.sync_errors = (website.sync_errors or []) + errors
-    website.save()
