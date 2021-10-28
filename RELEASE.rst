@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.32.0
+Version 0.32.0 (Released October 28, 2021)
 --------------
 
 - Open publish site links in new tab (#729)
