@@ -169,8 +169,23 @@ def get_short_id(metadata):
     course_num = metadata.get("primary_course_number")
     if not course_num:
         raise ValueError("Primary course number is missing")
-    term = "-".join(metadata.get("term", "").split())
-    short_id = "-".join(segment for segment in [course_num, term] if segment).lower()
+    short_id = (
+        (
+            "-".join(
+                [
+                    piece
+                    for piece in [
+                        course_num,
+                        metadata.get("term", ""),
+                        metadata.get("year", ""),
+                    ]
+                    if piece
+                ]
+            )
+        )
+        .lower()
+        .replace(" ", "-")
+    )
     short_id_exists = Website.objects.filter(short_id=short_id).exists()
     if short_id_exists:
         short_id_prefix = f"{short_id}-"
@@ -223,7 +238,13 @@ def import_ocw2hugo_sitemetadata(
                 course_data["departments"],
             )
         )
-    metadata["level"] = course_data["level"]["level"]
+    # level used to be a { level, url } dictionary, but now it's a [level] for any number of levels
+    # handle both cases temporarily for back compat
+    metadata["level"] = (
+        [course_data["level"]["level"]]
+        if isinstance(course_data["level"], dict)
+        else course_data["level"]
+    )
     metadata["learning_resource_types"] = list(
         map(
             lambda course_feature: course_feature["feature"],
@@ -267,6 +288,9 @@ def import_ocw2hugo_sitemetadata(
         "website": website_root.name,
         "content": [content.text_id for content in instructor_contents],
     }
+
+    metadata["term"] = course_data["term"]
+    metadata["year"] = course_data.get("year")
 
     WebsiteContent.objects.update_or_create(
         type=CONTENT_TYPE_METADATA,

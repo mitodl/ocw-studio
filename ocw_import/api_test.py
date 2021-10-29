@@ -5,7 +5,11 @@ import re
 import pytest
 from moto import mock_s3
 
-from ocw_import.api import get_short_id, import_ocw2hugo_course
+from ocw_import.api import (
+    get_short_id,
+    import_ocw2hugo_course,
+    import_ocw2hugo_sitemetadata,
+)
 from ocw_import.conftest import (
     MOCK_BUCKET_NAME,
     TEST_OCW2HUGO_PREFIX,
@@ -101,6 +105,30 @@ def test_import_ocw2hugo_course_content(mocker, settings):
 
 
 @mock_s3
+def test_import_ocw2hugo_sitemetadata_legacy(
+    settings, root_website
+):  # pylint: disable=unused-argument
+    """Make sure we handle importing levels, term, and year in a legacy format"""
+    setup_s3(settings)
+    name = "1-050-engineering-mechanics-i-fall-2007"
+    with open(f"test_ocw2hugo/{name}/data/course_legacy.json") as course_json_file:
+        course_json = json.load(course_json_file)
+
+    level_dict = {"level": "name of level", "url": "ignore"}
+    course_json["level"] = level_dict
+    del course_json["year"]
+    website = Website.objects.create(name=name)
+    import_ocw2hugo_sitemetadata(course_json, website)
+    metadata = website.websitecontent_set.get(type="sitemetadata").metadata
+
+    assert metadata["level"] == [level_dict["level"]]
+    assert metadata["term"] == course_json["term"]
+    assert (
+        metadata["year"] is None
+    )  # this was added later but we should not break on older legacy course JSON files
+
+
+@mock_s3
 def test_import_ocw2hugo_course_metadata(settings, root_website):
     """ import_ocw2hugo_course should also populate site metadata"""
     setup_s3(settings)
@@ -150,7 +178,7 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
     website = Website.objects.get(name=name)
     metadata = WebsiteContent.objects.get(website=website, type=CONTENT_TYPE_METADATA)
     assert metadata.metadata == {
-        "level": "Undergraduate",
+        "level": ["Undergraduate"],
         "topics": [
             ["Engineering", "Mechanical Engineering", "Solid Mechanics"],
             ["Engineering", "Aerospace Engineering", "Structural Mechanics"],
@@ -177,6 +205,8 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
             "website": "1-050-engineering-mechanics-i-fall-2007",
         },
         "learning_resource_types": ["Problem Sets", "Lecture Notes"],
+        "term": "Fall",
+        "year": "2007",
     }
 
 
@@ -231,17 +261,18 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "course_num, term, expected_id",
+    "course_num, term, year, expected_id",
     [
-        ["6.0001", "", "6.0001"],
-        ["5.3", "Spring 2022", "5.3-spring-2022"],
-        ["5.3", "January IAP 2011", "5.3-january-iap-2011"],
-        [None, "January IAP 2011", None],
+        ["6.0001", "", "", "6.0001"],
+        ["5.3", "Spring", "2022", "5.3-spring-2022"],
+        ["5.3", "Spring 2022", None, "5.3-spring-2022"],
+        ["5.3", "January IAP", "2011", "5.3-january-iap-2011"],
+        [None, "January IAP", "2011", None],
     ],
 )
-def test_get_short_id(course_num, term, expected_id):
+def test_get_short_id(course_num, term, year, expected_id):
     """ get_short_id should return expected values, or raise an error if no course number"""
-    metadata = {"primary_course_number": course_num, "term": f"{term}"}
+    metadata = {"primary_course_number": course_num, "term": term, "year": year}
     if expected_id:
         short_id = get_short_id(metadata)
         assert short_id == expected_id

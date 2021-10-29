@@ -42,8 +42,11 @@
   ],
   "primary_course_number": "1.050",
   "extra_course_numbers": "",
-  "term": "Fall 2007",
-  "level": "Undergraduate",
+  "term": "Fall",
+  "year": "2007",
+  "level": [
+    "Undergraduate"
+  ],
   "other_versions": [
     "[1.050 SOLID MECHANICS](/courses/1-050-solid-mechanics-fall-2004) |  FALL 2004"
   ],
