@@ -73,7 +73,7 @@ class WebsiteContentFactory(DjangoModelFactory):
     title = factory.Sequence(lambda n: "OCW Site Content %s" % n)
     type = FuzzyChoice([CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE])
     markdown = factory.Faker("text")
-    metadata = factory.Faker("json")
+    metadata = factory.LazyAttribute(lambda _: {})
     filename = factory.Sequence(lambda n: "my-file-%s" % n)
     dirpath = factory.Faker("uri_path", deep=2)
     website = factory.SubFactory(WebsiteFactory)

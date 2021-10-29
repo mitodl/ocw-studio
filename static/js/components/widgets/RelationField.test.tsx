@@ -19,7 +19,11 @@ import {
 import { siteApiContentListingUrl } from "../../lib/urls"
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../../constants"
 
-import { Website, WebsiteContent } from "../../types/websites"
+import {
+  RelationFilterVariant,
+  Website,
+  WebsiteContent
+} from "../../types/websites"
 import { ReactWrapper } from "enzyme"
 import { DndContext } from "@dnd-kit/core"
 
@@ -27,6 +31,7 @@ jest.mock("../../lib/api/util", () => ({
   ...jest.requireActual("../../lib/api/util"),
   debouncedFetch: jest.fn()
 }))
+global.fetch = jest.fn()
 
 describe("RelationField", () => {
   let website: Website,
@@ -76,11 +81,15 @@ describe("RelationField", () => {
     }
 
     contentListingItems = R.times(
-      makeWebsiteContentDetail,
+      () => ({
+        ...makeWebsiteContentDetail(),
+        metadata: {
+          resourcetype: "Image"
+        }
+      }),
       WEBSITE_CONTENT_PAGE_SIZE
     )
 
-    global.fetch = jest.fn()
     fakeResponse = {
       results:  contentListingItems,
       count:    contentListingItems.length,
@@ -90,10 +99,17 @@ describe("RelationField", () => {
 
     // @ts-ignore
     global.fetch.mockResolvedValue({ json: async () => fakeResponse })
+    // @ts-ignore
+    debouncedFetch.mockResolvedValue({ json: async () => fakeResponse })
   })
 
   afterEach(() => {
     helper.cleanup()
+
+    // @ts-ignore
+    debouncedFetch.mockClear()
+    // @ts-ignore
+    global.fetch.mockClear()
   })
 
   const asOption = (item: WebsiteContent) => ({
@@ -103,50 +119,62 @@ describe("RelationField", () => {
 
   //
   ;[true, false].forEach(hasContentContext => {
-    ["other-site", ""].forEach(websiteNameProp => {
-      it(`should render a SelectField with the expected options, ${
-        hasContentContext ? "with" : "without"
-      } contentContext, ${
-        websiteNameProp ? "with" : "without"
-      } a website prop`, async () => {
-        const websiteName = websiteNameProp ? websiteNameProp : website.name
-        const contentContext = hasContentContext ?
-          [makeWebsiteContentDetail()] :
-          null
+    [true, false].forEach(withResourcetypeFilter => {
+      ["other-site", ""].forEach(websiteNameProp => {
+        it(`should render a SelectField with the expected options, ${
+          hasContentContext ? "with" : "without"
+        } contentContext, ${
+          websiteNameProp ? "with" : "without"
+        } a website prop, ${
+          withResourcetypeFilter ? "with" : "without"
+        } a resourcetype filter`, async () => {
+          const websiteName = websiteNameProp ? websiteNameProp : website.name
+          const contentContext = hasContentContext ?
+            [makeWebsiteContentDetail()] :
+            null
 
-        const { wrapper } = await render({
-          value:   contentListingItems.map(item => item.text_id),
-          website: websiteNameProp,
-          contentContext
-        })
-        wrapper.update()
-        const combinedListing = [
-          ...(contentContext ?? []),
-          ...contentListingItems
-        ]
-        expect(wrapper.find("SelectField").prop("options")).toEqual(
-          combinedListing.map(asOption)
-        )
-        expect(wrapper.find("SelectField").prop("defaultOptions")).toEqual(
-          contentListingItems.map(asOption)
-        )
-
-        // there should be one or two initial fetches:
-        //
-        // - a default 10 items to show when a user opens the dropdown
-        // - text_ids for the case where contentContext is absent. If it is
-        //   included in props, this fetch is skipped
-        const defaultUrl = siteApiContentListingUrl
-          .param({ name: websiteName })
-          .query({
-            detailed_list:   true,
-            content_context: true,
-            type:            "page"
+          const { wrapper } = await render({
+            value:   contentListingItems.map(item => item.text_id),
+            website: websiteNameProp,
+            contentContext,
+            filter:  withResourcetypeFilter ?
+              {
+                filter_type: RelationFilterVariant.Equals,
+                field:       "resourcetype",
+                value:       "Image"
+              } :
+              null
           })
-          .toString()
-        expect(global.fetch).toHaveBeenCalledTimes(1)
-        expect(global.fetch).toHaveBeenCalledWith(defaultUrl, {
-          credentials: "include"
+          wrapper.update()
+          const combinedListing = [
+            ...(contentContext ?? []),
+            ...contentListingItems
+          ]
+          expect(wrapper.find("SelectField").prop("options")).toEqual(
+            combinedListing.map(asOption)
+          )
+          expect(wrapper.find("SelectField").prop("defaultOptions")).toEqual(
+            contentListingItems.map(asOption)
+          )
+
+          // there should be one or two initial fetches:
+          //
+          // - a default 10 items to show when a user opens the dropdown
+          // - text_ids for the case where contentContext is absent. If it is
+          //   included in props, this fetch is skipped
+          const defaultUrl = siteApiContentListingUrl
+            .param({ name: websiteName })
+            .query({
+              detailed_list:   true,
+              content_context: true,
+              type:            "page",
+              ...(withResourcetypeFilter ? { resourcetype: "Image" } : {})
+            })
+            .toString()
+          expect(global.fetch).toHaveBeenCalledTimes(1)
+          expect(global.fetch).toHaveBeenCalledWith(defaultUrl, {
+            credentials: "include"
+          })
         })
       })
     })
@@ -213,53 +241,64 @@ describe("RelationField", () => {
     })
   })
 
-  it("should have a loadOptions prop which triggers a debounced fetch of results", async () => {
-    let loadOptionsResponse
-    const { wrapper } = await render()
-    wrapper.update()
-    const loadOptions: (input: string) => Promise<Option[]> = wrapper
-      .find("SelectField")
-      .prop("loadOptions")
-    const searchString1 = "searchstring1",
-      searchString2 = "searchstring2"
+  //
+  ;[true, false].forEach(withResourcetypeFilter => {
+    it(`should have a loadOptions prop which triggers a debounced fetch of results, ${
+      withResourcetypeFilter ? "with" : "without"
+    } a resourcetype filter`, async () => {
+      let loadOptionsResponse
+      const { wrapper } = await render({
+        filter: withResourcetypeFilter ?
+          {
+            filter_type: RelationFilterVariant.Equals,
+            field:       "resourcetype",
+            value:       "Image"
+          } :
+          null
+      })
+      wrapper.update()
+      const loadOptions: (input: string) => Promise<Option[]> = wrapper
+        .find("SelectField")
+        .prop("loadOptions")
+      const searchString1 = "searchstring1",
+        searchString2 = "searchstring2"
 
-    // @ts-ignore
-    debouncedFetch.mockResolvedValue({ json: async () => fakeResponse })
+      await act(async () => {
+        loadOptionsResponse = await Promise.all([
+          loadOptions(searchString1),
+          loadOptions(searchString2)
+        ])
+      })
 
-    await act(async () => {
-      loadOptionsResponse = await Promise.all([
-        loadOptions(searchString1),
-        loadOptions(searchString2)
+      const urlForSearch = (search: string) =>
+        siteApiContentListingUrl
+          .query({
+            detailed_list:   true,
+            content_context: true,
+            search:          search,
+            type:            "page",
+            ...(withResourcetypeFilter ? { resourcetype: "Image" } : {})
+          })
+          .param({ name: website.name })
+          .toString()
+      expect(debouncedFetch).toBeCalledTimes(2)
+      expect(debouncedFetch).toBeCalledWith(
+        "relationfield",
+        300,
+        urlForSearch(searchString1),
+        { credentials: "include" }
+      )
+      expect(debouncedFetch).toBeCalledWith(
+        "relationfield",
+        300,
+        urlForSearch(searchString2),
+        { credentials: "include" }
+      )
+      expect(loadOptionsResponse).toStrictEqual([
+        fakeResponse.results.map(asOption),
+        fakeResponse.results.map(asOption)
       ])
     })
-
-    const urlForSearch = (search: string) =>
-      siteApiContentListingUrl
-        .query({
-          detailed_list:   true,
-          content_context: true,
-          search:          search,
-          type:            "page"
-        })
-        .param({ name: website.name })
-        .toString()
-    expect(debouncedFetch).toBeCalledTimes(2)
-    expect(debouncedFetch).toBeCalledWith(
-      "relationfield",
-      300,
-      urlForSearch(searchString1),
-      { credentials: "include" }
-    )
-    expect(debouncedFetch).toBeCalledWith(
-      "relationfield",
-      300,
-      urlForSearch(searchString2),
-      { credentials: "include" }
-    )
-    expect(loadOptionsResponse).toStrictEqual([
-      fakeResponse.results.map(asOption),
-      fakeResponse.results.map(asOption)
-    ])
   })
 
   //
@@ -288,9 +327,6 @@ describe("RelationField", () => {
       wrapper.update()
       // @ts-ignore
       const loadOptions = wrapper.find("SelectField").prop("loadOptions")
-
-      // @ts-ignore
-      debouncedFetch.mockResolvedValue({ json: async () => fakeResponse })
 
       await act(async () => {
         // @ts-ignore
