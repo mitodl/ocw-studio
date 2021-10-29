@@ -12,7 +12,9 @@ OCW Studio manages deployments for OCW courses.
 
 ocw_studio follows the same [initial setup steps outlined in the common ODL web app guide](https://github.com/mitodl/handbook/blob/master/common-web-app-guide.md).
 Run through those steps **including the addition of `/etc/hosts` aliases and the optional step for running the
-`createsuperuser` command**.
+`createsuperuser` command**. 
+
+In addition, you should create a starter with `slug=ocw-www` through the admin interface with config data taken from the `ocw-www` starter on RC or production. Then, you should go to the `/sites` UI and create a new site with `name=ocw-www` using the `ocw-www` starter.
 
 
 ### Testing Touchstone login with SAML via SSOCircle
