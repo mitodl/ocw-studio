@@ -22,6 +22,8 @@ import { DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import SortableItem from "../SortableItem"
 import SortWrapper from "../SortWrapper"
+import { FormError } from "../forms/FormError"
+import { FetchStatus } from "../../lib/api/FetchStatus"
 
 interface Props {
   name: string
@@ -71,6 +73,7 @@ export default function RelationField(props: Props): JSX.Element {
   const [contentMap, setContentMap] = useState<Map<string, WebsiteContent>>(
     new Map()
   )
+  const [fetchStatus, setFetchStatus] = useState<FetchStatus>(FetchStatus.Ok)
 
   const [focusedContent, setFocusedContent] = useState<string | undefined>(
     undefined
@@ -148,17 +151,32 @@ export default function RelationField(props: Props): JSX.Element {
       }
       const json: PaginatedResponse<WebsiteContent> = await response.json()
       const { results } = json
-      setContentMap(cur => {
-        const newMap = new Map(cur)
-        results.forEach(content => {
-          newMap.set(content.text_id, content)
+
+      if (results) {
+        setContentMap(cur => {
+          const newMap = new Map(cur)
+          results.forEach(content => {
+            newMap.set(content.text_id, content)
+          })
+          return newMap
         })
-        return newMap
-      })
-      return formatOptions(filterContentListing(results), display_field)
+        setFetchStatus(FetchStatus.Ok)
+        return formatOptions(filterContentListing(results), display_field)
+      } else {
+        // there was some error fetching the results
+        setFetchStatus(FetchStatus.Error)
+        return []
+      }
     },
-    // eslint-disable-next-line camelcase
-    [filterContentListing, websiteName, display_field, collection, filter]
+    [
+      setFetchStatus,
+      filterContentListing,
+      websiteName,
+      // eslint-disable-next-line camelcase
+      display_field,
+      collection,
+      filter
+    ]
   )
 
   const loadOptions = useCallback(
@@ -293,54 +311,61 @@ export default function RelationField(props: Props): JSX.Element {
     [focusedContent, setFocusedContent, onChangeShim, value]
   )
 
-  return sortable && multiple ? (
+  return (
     <>
-      <div className="d-flex">
+      {sortable && multiple ? (
+        <>
+          <div className="d-flex">
+            <SelectField
+              name={name}
+              value={focusedContent}
+              onChange={handleAddSortableItem}
+              options={options}
+              loadOptions={loadOptions}
+              defaultOptions={defaultOptions}
+            />
+            <button
+              className="px-4 ml-3 btn cyan-button"
+              disabled={focusedContent === undefined}
+              onClick={addFocusedItem}
+            >
+              Add
+            </button>
+          </div>
+          <SortWrapper
+            handleDragEnd={handleDragEnd}
+            items={(value as string[]) ?? []}
+            generateItemUUID={x => x}
+          >
+            {((value as string[]) ?? []).map(textId => {
+              const content = contentMap.get(textId)
+
+              return (
+                <SortableItem
+                  key={textId}
+                  title={content ? (content.title as string) : textId}
+                  id={textId}
+                  item={textId}
+                  deleteItem={deleteItem}
+                />
+              )
+            })}
+          </SortWrapper>
+        </>
+      ) : (
         <SelectField
           name={name}
-          value={focusedContent}
-          onChange={handleAddSortableItem}
+          value={value}
+          onChange={handleChange}
           options={options}
           loadOptions={loadOptions}
+          multiple={multiple}
           defaultOptions={defaultOptions}
         />
-        <button
-          className="px-4 ml-3 btn cyan-button"
-          disabled={focusedContent === undefined}
-          onClick={addFocusedItem}
-        >
-          Add
-        </button>
-      </div>
-      <SortWrapper
-        handleDragEnd={handleDragEnd}
-        items={(value as string[]) ?? []}
-        generateItemUUID={x => x}
-      >
-        {((value as string[]) ?? []).map(textId => {
-          const content = contentMap.get(textId)
-
-          return (
-            <SortableItem
-              key={textId}
-              title={content ? (content.title as string) : textId}
-              id={textId}
-              item={textId}
-              deleteItem={deleteItem}
-            />
-          )
-        })}
-      </SortWrapper>
+      )}
+      {fetchStatus === FetchStatus.Error ? (
+        <FormError>Unable to fetch entries for this field.</FormError>
+      ) : null}
     </>
-  ) : (
-    <SelectField
-      name={name}
-      value={value}
-      onChange={handleChange}
-      options={options}
-      loadOptions={loadOptions}
-      multiple={multiple}
-      defaultOptions={defaultOptions}
-    />
   )
 }

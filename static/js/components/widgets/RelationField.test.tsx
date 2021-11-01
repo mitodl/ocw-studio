@@ -26,6 +26,7 @@ import {
 } from "../../types/websites"
 import { ReactWrapper } from "enzyme"
 import { DndContext } from "@dnd-kit/core"
+import { FormError } from "../forms/FormError"
 
 jest.mock("../../lib/api/util", () => ({
   ...jest.requireActual("../../lib/api/util"),
@@ -335,6 +336,23 @@ describe("RelationField", () => {
 
       expect(loadOptionsResponse).toStrictEqual(expectedOptions)
     })
+  })
+
+  it("should display an error message ", async () => {
+    // @ts-ignore
+    global.fetch.mockClear()
+    const fakeResponse = {
+      results:  undefined,
+      count:    0,
+      next:     null,
+      previous: null
+    }
+    // @ts-ignore
+    global.fetch.mockResolvedValue({ json: async () => fakeResponse })
+    const { wrapper } = await render()
+    wrapper.update()
+    const error = wrapper.find(FormError)
+    expect(error.text()).toBe("Unable to fetch entries for this field.")
   })
 
   describe("sortable UI", () => {
