@@ -279,9 +279,7 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
     ],
 )
 @pytest.mark.parametrize("version", ["draft", "live"])
-def test_poll_build_status_until_complete(
-    mocker, api_mock, final_status, version
-):
+def test_poll_build_status_until_complete(mocker, api_mock, final_status, version):
     """poll_build_status_until_complete should repeatedly poll until a finished state is reached"""
     website = WebsiteFactory.create(
         has_unpublished_live=False, has_unpublished_draft=False
