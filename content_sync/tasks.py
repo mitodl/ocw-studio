@@ -3,6 +3,7 @@ import logging
 from time import sleep
 from typing import List, Optional
 
+from dateutil.parser import parse
 from django.conf import settings
 from django.db.models import F, Q
 from django.utils.module_loading import import_string
@@ -184,52 +185,58 @@ def sync_github_site_configs(url: str, files: List[str], commit: Optional[str] =
 
 
 @app.task(acks_late=True)
-def poll_build_status_until_complete(website_name: str, version: str):
+def poll_build_status_until_complete(
+    website_name: str, version: str, datetime_to_expire: str
+):
     """
     Poll concourses REST API repeatedly until the build completes
     """
     pipeline = api.get_sync_pipeline(Website.objects.get(name=website_name))
-    while True:
-        status = pipeline.get_latest_build_status(version)
-        now = now_in_utc()
-        if version == "draft":
-            update_kwargs = {
-                "draft_publish_status": status,
-                "draft_publish_status_updated_on": now,
-            }
-            if status in [
-                PUBLISH_STATUS_SUCCEEDED,
-                PUBLISH_STATUS_ERRORED,
-                PUBLISH_STATUS_ABORTED,
-            ]:
-                update_kwargs["draft_publish_date"] = now
-
-                if status != PUBLISH_STATUS_SUCCEEDED:
-                    # Allow user to retry
-                    update_kwargs["has_unpublished_draft"] = True
-        else:
-            update_kwargs = {
-                "live_publish_status": status,
-                "live_publish_status_updated_on": now,
-            }
-            if status in [
-                PUBLISH_STATUS_SUCCEEDED,
-                PUBLISH_STATUS_ERRORED,
-                PUBLISH_STATUS_ABORTED,
-            ]:
-                update_kwargs["publish_date"] = now
-
-                if status != PUBLISH_STATUS_SUCCEEDED:
-                    # Allow user to retry
-                    update_kwargs["has_unpublished_live"] = True
-
-        Website.objects.filter(name=website_name).update(**update_kwargs)
-
+    status = pipeline.get_latest_build_status(version)
+    now = now_in_utc()
+    if version == "draft":
+        update_kwargs = {
+            "draft_publish_status": status,
+            "draft_publish_status_updated_on": now,
+        }
         if status in [
             PUBLISH_STATUS_SUCCEEDED,
             PUBLISH_STATUS_ERRORED,
             PUBLISH_STATUS_ABORTED,
         ]:
-            break
+            update_kwargs["draft_publish_date"] = now
 
-        sleep(5)
+            if status != PUBLISH_STATUS_SUCCEEDED:
+                # Allow user to retry
+                update_kwargs["has_unpublished_draft"] = True
+    else:
+        update_kwargs = {
+            "live_publish_status": status,
+            "live_publish_status_updated_on": now,
+        }
+        if status in [
+            PUBLISH_STATUS_SUCCEEDED,
+            PUBLISH_STATUS_ERRORED,
+            PUBLISH_STATUS_ABORTED,
+        ]:
+            update_kwargs["publish_date"] = now
+
+            if status != PUBLISH_STATUS_SUCCEEDED:
+                # Allow user to retry
+                update_kwargs["has_unpublished_live"] = True
+
+    Website.objects.filter(name=website_name).update(**update_kwargs)
+
+    if status in [
+        PUBLISH_STATUS_SUCCEEDED,
+        PUBLISH_STATUS_ERRORED,
+        PUBLISH_STATUS_ABORTED,
+    ]:
+        return
+
+    if now < parse(datetime_to_expire):
+        # if not past expiration date, check again in 10 seconds
+        poll_build_status_until_complete.apply_async(
+            args=[website_name, version, datetime_to_expire],
+            countdown=settings.WEBSITE_POLL_FREQUENCY,
+        )

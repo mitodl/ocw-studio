@@ -279,9 +279,10 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
     ],
 )
 @pytest.mark.parametrize("version", ["draft", "live"])
-def test_poll_build_status_until_complete(mocker, api_mock, final_status, version):
+def test_poll_build_status_until_complete(
+    settings, mocker, api_mock, final_status, version
+):
     """poll_build_status_until_complete should repeatedly poll until a finished state is reached"""
-    sleep_mock = mocker.patch("content_sync.tasks.sleep")
     website = WebsiteFactory.create(
         has_unpublished_live=False, has_unpublished_draft=False
     )
@@ -297,10 +298,11 @@ def test_poll_build_status_until_complete(mocker, api_mock, final_status, versio
         PUBLISH_STATUS_PENDING,
         final_status,
     ]
-    tasks.poll_build_status_until_complete.delay(website.name, version)
-    website.refresh_from_db()
-    sleep_mock.assert_any_call(5)
     final_now_date = now_dates[2]
+    tasks.poll_build_status_until_complete.delay(
+        website.name, version, final_now_date.isoformat()
+    )
+    website.refresh_from_db()
     if version == "draft":
         assert website.draft_publish_status == final_status
         assert website.draft_publish_status_updated_on == final_now_date
@@ -316,7 +318,7 @@ def test_poll_build_status_until_complete(mocker, api_mock, final_status, versio
             final_status != PUBLISH_STATUS_SUCCEEDED
         )
 
-    assert sleep_mock.call_count == 2
     assert latest_status_mock.call_count == 3
     latest_status_mock.assert_any_call(version)
-    api_mock.get_sync_pipeline.assert_called_once_with(website)
+    api_mock.get_sync_pipeline.assert_any_call(website)
+    assert api_mock.get_sync_pipeline.call_count == len(now_dates)

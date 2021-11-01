@@ -1,8 +1,10 @@
 """ Tests for websites views """
+import datetime
 from types import SimpleNamespace
 
 import factory
 import pytest
+import pytz
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils.text import slugify
@@ -232,10 +234,12 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
 
 
 @pytest.mark.parametrize("has_missing_ids", [True, False])
-def test_websites_endpoint_preview(mocker, drf_client, has_missing_ids):
+def test_websites_endpoint_preview(settings, mocker, drf_client, has_missing_ids):
     """A user with admin/edit permissions should be able to request a website preview"""
     mock_preview_website = mocker.patch("websites.views.preview_website")
     mock_poll = mocker.patch("websites.views.poll_build_status_until_complete")
+    now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
+    mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create()
     video_content = WebsiteContentFactory.create_batch(2, website=website)
     mocker.patch(
@@ -257,7 +261,13 @@ def test_websites_endpoint_preview(mocker, drf_client, has_missing_ids):
         )
     assert resp.data["details"] == expected_msg
     mock_preview_website.assert_called_once_with(website)
-    mock_poll.delay.assert_called_once_with(website.name, "draft")
+    mock_poll.delay.assert_called_once_with(
+        website.name,
+        "draft",
+        (
+            now + datetime.timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS)
+        ).isoformat(),
+    )
     website.refresh_from_db()
     assert website.has_unpublished_draft is False
 
@@ -280,10 +290,12 @@ def test_websites_endpoint_preview_error(mocker, drf_client):
 
 
 @pytest.mark.parametrize("has_missing_ids", [True, False])
-def test_websites_endpoint_publish(mocker, drf_client, has_missing_ids):
+def test_websites_endpoint_publish(settings, mocker, drf_client, has_missing_ids):
     """A user with admin permissions should be able to request a website publish"""
     mock_publish_website = mocker.patch("websites.views.publish_website")
     mock_poll = mocker.patch("websites.views.poll_build_status_until_complete")
+    now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
+    mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create()
     video_content = WebsiteContentFactory.create_batch(2, website=website)
     mocker.patch(
@@ -310,7 +322,13 @@ def test_websites_endpoint_publish(mocker, drf_client, has_missing_ids):
         expected_msg = ""
         mock_publish_website.assert_called_once_with(website)
         assert website.has_unpublished_live is False
-        mock_poll.delay.assert_called_once_with(website.name, "live")
+        mock_poll.delay.assert_called_once_with(
+            website.name,
+            "live",
+            (
+                now + datetime.timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS)
+            ).isoformat(),
+        )
     assert resp.data["details"] == expected_msg
 
 
