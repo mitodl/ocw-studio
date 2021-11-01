@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -179,7 +180,13 @@ class WebsiteViewSet(
             website.draft_publish_status = constants.PUBLISH_STATUS_NOT_STARTED
             website.draft_publish_status_updated_on = now_in_utc()
             website.save()
-            poll_build_status_until_complete.delay(website.name, "draft")
+            poll_build_status_until_complete.delay(
+                website.name,
+                "draft",
+                (
+                    timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS) + now_in_utc()
+                ).isoformat(),
+            )
             return Response(
                 status=200,
                 data={"details": message},
@@ -210,7 +217,13 @@ class WebsiteViewSet(
             website.live_publish_status = constants.PUBLISH_STATUS_NOT_STARTED
             website.live_publish_status_updated_on = now_in_utc()
             website.save()
-            poll_build_status_until_complete.delay(website.name, "live")
+            poll_build_status_until_complete.delay(
+                website.name,
+                "live",
+                (
+                    timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS) + now_in_utc()
+                ).isoformat(),
+            )
             return Response(
                 status=200,
                 data={"details": ""},
