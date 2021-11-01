@@ -238,5 +238,5 @@ def poll_build_status_until_complete(
         # if not past expiration date, check again in 10 seconds
         poll_build_status_until_complete.apply_async(
             args=[website_name, version, datetime_to_expire],
-            countdown=settings.WEBSITE_POLL_FREQUENCY,
+            countdown=settings.CONCOURSE_POLL_FREQUENCY,
         )
