@@ -240,10 +240,21 @@ export const makePermanentWebsiteCollaborator = (): WebsiteCollaborator => ({
 export const makeWebsiteCollaborators = (): WebsiteCollaborator[] =>
   times(5).map(makeWebsiteCollaborator)
 
+/**
+ * Helper function for producing a random-ish ISO 8601-formatted
+ * datetime string.
+ *
+ * This isn't _so_ random because it will only pick random dates
+ * in the Unix epoch, but that should be good enough for testing :)
+ */
+const randomISO8601 = (): string =>
+  new Date(casual.integer(0, Date.now())).toISOString()
+
 export const makeWebsiteContentListItem = (): WebsiteContentListItem => ({
-  text_id: casual.uuid,
-  title:   casual.title,
-  type:    casual.word
+  text_id:    casual.uuid,
+  title:      casual.title,
+  type:       casual.word,
+  updated_on: randomISO8601()
 })
 
 export const makeWebsiteContentDetail = (): WebsiteContent => ({

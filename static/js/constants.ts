@@ -159,17 +159,17 @@ export const RESOURCE_TYPE_VIDEO = "Video"
 export const RESOURCE_TYPE_DOCUMENT = "Document"
 export const RESOURCE_TYPE_OTHER = "Other"
 
-export enum PublishStatuses {
-  PUBLISH_STATUS_SUCCEEDED = "succeeded",
-  PUBLISH_STATUS_PENDING = "pending",
-  PUBLISH_STATUS_ERRORED = "errored",
-  PUBLISH_STATUS_ABORTED = "aborted",
-  PUBLISH_STATUS_NOT_STARTED = "not-started"
+export enum PublishStatus {
+  Success = "succeeded",
+  Pending = "pending",
+  Errored = "errored",
+  Aborted = "aborted",
+  NotStarted = "not-started"
 }
 
 export const PUBLISH_STATUS_PROCESSING_STATES = [
-  PublishStatuses.PUBLISH_STATUS_PENDING,
-  PublishStatuses.PUBLISH_STATUS_NOT_STARTED
+  PublishStatus.Pending,
+  PublishStatus.NotStarted
 ]
 
 export enum GoogleDriveSyncStatuses {

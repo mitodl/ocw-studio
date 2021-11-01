@@ -14,7 +14,7 @@ import IntegrationTestHelper, {
 import { logoutUrl, siteApiDetailUrl } from "../lib/urls"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { Website } from "../types/websites"
-import { PublishStatuses } from "../constants"
+import { PublishStatus } from "../constants"
 
 describe("Header", () => {
   let helper: IntegrationTestHelper, render: TestRenderer
@@ -126,11 +126,11 @@ describe("Header", () => {
 
     //
     ;[
-      [PublishStatuses.PUBLISH_STATUS_SUCCEEDED, false],
-      [PublishStatuses.PUBLISH_STATUS_ERRORED, false],
-      [PublishStatuses.PUBLISH_STATUS_ABORTED, false],
-      [PublishStatuses.PUBLISH_STATUS_PENDING, true],
-      [PublishStatuses.PUBLISH_STATUS_NOT_STARTED, true]
+      [PublishStatus.Success, false],
+      [PublishStatus.Errored, false],
+      [PublishStatus.Aborted, false],
+      [PublishStatus.Pending, true],
+      [PublishStatus.NotStarted, true]
     ].forEach(([status, shouldUpdate]) => {
       [
         ["draft_publish_status", "draft_publish_status_updated_on"],
@@ -140,8 +140,8 @@ describe("Header", () => {
           beforeEach(() => {
             website = {
               ...website,
-              live_publish_status:             PublishStatuses.PUBLISH_STATUS_ABORTED,
-              draft_publish_status:            PublishStatuses.PUBLISH_STATUS_ABORTED,
+              live_publish_status:             PublishStatus.Aborted,
+              draft_publish_status:            PublishStatus.Aborted,
               live_publish_status_updated_on:  "2020-01-01",
               draft_publish_status_updated_on: "2020-01-01",
               [statusField]:                   status,

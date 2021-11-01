@@ -13,6 +13,7 @@ import { PUBLISH_STATUS_PROCESSING_STATES } from "../constants"
 import PublishStatusIndicator from "./PublishStatusIndicator"
 
 import { Website } from "../types/websites"
+import { latestPublishStatus } from "../lib/website"
 
 export interface HeaderProps {
   website?: Website | null
@@ -50,13 +51,6 @@ export default function Header(props: HeaderProps): JSX.Element {
     website ? 5000 : null
   )
 
-  const latestPublishStatus = website ?
-    (website.draft_publish_status_updated_on ?? "") <
-      (website.live_publish_status_updated_on ?? "") ?
-      website.live_publish_status :
-      website.draft_publish_status :
-    null
-
   return (
     <header className="p-3">
       <div className="d-flex justify-content-between">
@@ -93,7 +87,7 @@ export default function Header(props: HeaderProps): JSX.Element {
             >
               <i className="material-icons mr-1">publish</i> Publish
             </button>
-            <PublishStatusIndicator status={latestPublishStatus} />
+            <PublishStatusIndicator status={latestPublishStatus(website)} />
             <PublishDrawer
               website={website}
               visibility={drawerOpen}

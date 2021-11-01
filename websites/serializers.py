@@ -291,7 +291,7 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WebsiteContent
-        read_only_fields = ["text_id", "title", "type"]
+        read_only_fields = ["text_id", "title", "type", "updated_on"]
         # See WebsiteContentCreateSerializer below for creating new WebsiteContent objects
         fields = read_only_fields
 
@@ -392,6 +392,7 @@ class WebsiteContentDetailSerializer(
             "markdown",
             "metadata",
             "file",
+            "updated_on",
         ]
 
 

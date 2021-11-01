@@ -118,3 +118,8 @@ $modal-sidebar-width-wide: 80%;
   --ck-z-default: 10000 !important;
   --ck-z-modal: calc(var(--ck-z-default) + 999);
 }
+
+.dropdown-menu.right {
+  left: initial;
+  right: 0;
+}

@@ -1,5 +1,5 @@
 import {
-  PublishStatuses,
+  PublishStatus,
   ROLE_ADMIN,
   ROLE_EDITOR,
   ROLE_GLOBAL,
@@ -210,13 +210,15 @@ export interface NewWebsitePayload {
 export interface WebsiteStatus {
   uuid: string
   name: string
+  /** ISO 8601 datetime string or null */
   publish_date: string | null // eslint-disable-line
+  /** ISO 8601 datetime string or null */
   draft_publish_date: string | null // eslint-disable-line
   has_unpublished_draft: boolean // eslint-disable-line
   has_unpublished_live: boolean // eslint-disable-line
-  live_publish_status: PublishStatuses | null // eslint-disable-line
+  live_publish_status: PublishStatus | null // eslint-disable-line
   live_publish_status_updated_on: string | null // eslint-disable-line
-  draft_publish_status: PublishStatuses | null // eslint-disable-line
+  draft_publish_status: PublishStatus | null // eslint-disable-line
   draft_publish_status_updated_on: string | null // eslint-disable-line
   sync_status: string | null // eslint-disable-line
   synced_on: string | null // eslint-disable-line
@@ -260,6 +262,8 @@ export interface WebsiteContentListItem {
   text_id: string // eslint-disable-line
   title: string | null
   type: string
+  /** ISO 8601 formatted datetime string */
+  updated_on: string // eslint-disable-line camelcase
 }
 
 export interface WebsiteContent extends WebsiteContentListItem {

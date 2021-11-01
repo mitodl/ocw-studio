@@ -8,11 +8,11 @@ import { useMutation, useRequest } from "redux-query-react"
 import { useSelector, useStore } from "react-redux"
 import { requestAsync } from "redux-query"
 import useInterval from "@use-it/interval"
+import { DateTime } from "luxon"
 
 import DriveSyncStatusIndicator from "./DriveSyncStatusIndicator"
 import SiteContentEditor from "./SiteContentEditor"
 import PaginationControls from "./PaginationControls"
-import Card from "./Card"
 import BasicModal from "./BasicModal"
 import { useWebsite } from "../context/Website"
 
@@ -37,6 +37,7 @@ import {
   WebsiteContentModalState
 } from "../types/websites"
 import { createModalState } from "../types/modal_state"
+import { StudioList, StudioListItem } from "./StudioList"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -201,21 +202,18 @@ export default function RepeatableContentListing(props: {
           )}
         </div>
       </div>
-      <Card>
-        <ul className="ruled-list">
-          {listing.results.map((item: WebsiteContentListItem) => (
-            <li
-              key={item.text_id}
-              className="py-3 listing-result"
-              onClick={startAddOrEdit(item.text_id)}
-            >
-              <div className="d-flex flex-direction-row align-items-center justify-content-between">
-                <span>{item.title}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <StudioList>
+        {listing.results.map((item: WebsiteContentListItem) => (
+          <StudioListItem
+            key={item.text_id}
+            onClick={startAddOrEdit(item.text_id)}
+            title={item.title ?? ""}
+            subtitle={`Updated ${DateTime.fromISO(
+              item.updated_on
+            ).toRelative()}`}
+          />
+        ))}
+      </StudioList>
       <PaginationControls
         listing={listing}
         previous={siteContentListingUrl

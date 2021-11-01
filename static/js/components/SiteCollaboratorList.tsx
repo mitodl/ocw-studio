@@ -4,7 +4,6 @@ import { QueryConfig } from "redux-query"
 import { useMutation, useRequest } from "redux-query-react"
 
 import Dialog from "./Dialog"
-import Card from "./Card"
 import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
 
 import { EDITABLE_ROLES, ROLE_LABELS } from "../constants"
@@ -17,6 +16,7 @@ import { getWebsiteCollaboratorsCursor } from "../selectors/websites"
 
 import { WebsiteCollaborator } from "../types/websites"
 import DocumentTitle, { formatTitle } from "./DocumentTitle"
+import { StudioList, StudioListItem } from "./StudioList"
 
 export default function SiteCollaboratorList(): JSX.Element | null {
   const { name, title } = useWebsite()
@@ -35,7 +35,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   const toggleEditVisibility = () => setEditVisibility(!editVisibility)
 
   const startEdit = (collaborator: WebsiteCollaborator | null) => (
-    event: ReactMouseEvent<HTMLButtonElement, MouseEvent>
+    event: ReactMouseEvent<HTMLButtonElement>
   ) => {
     event.preventDefault()
     setSelectedCollaborator(collaborator)
@@ -43,7 +43,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   }
 
   const startDelete = (collaborator: WebsiteCollaborator) => (
-    event: ReactMouseEvent<HTMLButtonElement, MouseEvent>
+    event: ReactMouseEvent<HTMLButtonElement>
   ) => {
     event.preventDefault()
     setSelectedCollaborator(collaborator)
@@ -92,36 +92,23 @@ export default function SiteCollaboratorList(): JSX.Element | null {
           Add collaborator
         </button>
       </div>
-      <Card>
-        <ul className="ruled-list">
-          {collaborators.map((collaborator: WebsiteCollaborator, i: number) => (
-            <li className="py-3" key={i}>
-              <div className="d-flex flex-direction-row align-items-center justify-content-between">
-                <span className="flex-grow-0 d-inline-flex font-weight-bold">
-                  {collaborator.name || collaborator.email}
-                </span>
-                {EDITABLE_ROLES.includes(collaborator.role) && (
-                  <span className="flex-grow-0 d-inline-flex">
-                    <button
-                      className="material-icons mr-2 item-action-button"
-                      onClick={startEdit(collaborator)}
-                    >
-                      settings
-                    </button>
-                    <button
-                      className="material-icons item-action-button"
-                      onClick={startDelete(collaborator)}
-                    >
-                      delete
-                    </button>
-                  </span>
-                )}
-              </div>
-              <div>{ROLE_LABELS[collaborator.role]}</div>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <StudioList>
+        {collaborators.map((collaborator: WebsiteCollaborator, i: number) => (
+          <StudioListItem
+            key={i}
+            title={collaborator.name || collaborator.email}
+            subtitle={ROLE_LABELS[collaborator.role]}
+            menuOptions={
+              EDITABLE_ROLES.includes(collaborator.role) ?
+                [
+                  ["Settings", startEdit(collaborator)],
+                  ["Delete", startDelete(collaborator)]
+                ] :
+                []
+            }
+          />
+        ))}
+      </StudioList>
       <Dialog
         open={deleteModal}
         toggleModal={toggleDeleteModal}

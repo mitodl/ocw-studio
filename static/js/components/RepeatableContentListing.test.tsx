@@ -304,7 +304,9 @@ describe("RepeatableContentListing", () => {
         helper.browserHistory.push({ search: `offset=${startingOffset}` })
 
         const { wrapper } = await render()
-        const titles = wrapper.find(".ruled-list li").map(item => item.text())
+        const titles = wrapper
+          .find("StudioListItem")
+          .map(item => item.prop("title"))
         expect(titles).toStrictEqual(nextPageItems.map(item => item.title))
 
         const prevWrapper = wrapper.find(".pagination Link.previous")

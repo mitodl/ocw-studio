@@ -1,34 +1,34 @@
 import * as React from "react"
 
-import { PublishStatuses } from "../constants"
+import { PublishStatus } from "../constants"
 
-const publishStatusMessage = (status: PublishStatuses): string => {
+const publishStatusMessage = (status: PublishStatus): string => {
   switch (status) {
-  case PublishStatuses.PUBLISH_STATUS_NOT_STARTED:
+  case PublishStatus.NotStarted:
     return "Not started"
-  case PublishStatuses.PUBLISH_STATUS_PENDING:
+  case PublishStatus.Pending:
     return "In progress..."
-  case PublishStatuses.PUBLISH_STATUS_ABORTED:
+  case PublishStatus.Aborted:
     return "Aborted"
-  case PublishStatuses.PUBLISH_STATUS_ERRORED:
+  case PublishStatus.Errored:
     return "Failed"
-  case PublishStatuses.PUBLISH_STATUS_SUCCEEDED:
+  case PublishStatus.Success:
     return "Succeeded"
   default:
     return ""
   }
 }
 
-const publishStatusIndicatorClass = (status: PublishStatuses): string => {
+const publishStatusIndicatorClass = (status: PublishStatus): string => {
   switch (status) {
-  case PublishStatuses.PUBLISH_STATUS_NOT_STARTED:
+  case PublishStatus.NotStarted:
     return "bg-secondary"
-  case PublishStatuses.PUBLISH_STATUS_PENDING:
+  case PublishStatus.Pending:
     return "bg-warning"
-  case PublishStatuses.PUBLISH_STATUS_ABORTED:
-  case PublishStatuses.PUBLISH_STATUS_ERRORED:
+  case PublishStatus.Aborted:
+  case PublishStatus.Errored:
     return "bg-danger"
-  case PublishStatuses.PUBLISH_STATUS_SUCCEEDED:
+  case PublishStatus.Success:
     return "bg-success"
   default:
     return ""
@@ -36,7 +36,7 @@ const publishStatusIndicatorClass = (status: PublishStatuses): string => {
 }
 
 interface Props {
-  status: PublishStatuses | null
+  status: PublishStatus | null
 }
 export default function PublishStatusIndicator(
   props: Props

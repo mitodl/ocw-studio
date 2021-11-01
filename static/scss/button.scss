@@ -1,5 +1,10 @@
 $standard-border-radius: 2px;
 
+.transparent-button {
+  background: initial;
+  border: none;
+}
+
 .cyan-button,
 .cyan-button-outline {
   font-size: 16px;

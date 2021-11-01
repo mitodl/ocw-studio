@@ -181,6 +181,7 @@ def test_website_content_serializer():
     assert serialized_data["text_id"] == str(content.text_id)
     assert serialized_data["title"] == content.title
     assert serialized_data["type"] == content.type
+    assert serialized_data["updated_on"] == content.updated_on.isoformat()[:-6] + "Z"
     assert "markdown" not in serialized_data
     assert "metadata" not in serialized_data
 
@@ -192,6 +193,7 @@ def test_website_content_detail_serializer():
     assert serialized_data["text_id"] == str(content.text_id)
     assert serialized_data["title"] == content.title
     assert serialized_data["type"] == content.type
+    assert serialized_data["updated_on"] == content.updated_on.isoformat()[:-6] + "Z"
     assert serialized_data["markdown"] == content.markdown
     assert serialized_data["metadata"] == content.metadata
 

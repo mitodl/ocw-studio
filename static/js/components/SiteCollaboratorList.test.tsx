@@ -69,23 +69,27 @@ describe("SiteCollaboratorList", () => {
   it("renders the collaborators list with expected number of items", async () => {
     const { wrapper } = await render()
     const numCollaborators = concat(collaborators, permanentAdmins).length
-    const items = wrapper.find("li")
+    const items = wrapper.find("StudioListItem")
     expect(items.length).toBe(numCollaborators)
     // First collaborator in list should be editable
-    expect(items.at(0).find("button.item-action-button").length).toBe(2)
+    expect(items.at(0).prop("menuOptions")).toHaveLength(2)
     // Last collaborator in list should not be editable
-    expect(
-      items.at(numCollaborators - 1).find("button.item-action-button").length
-    ).toBe(0)
+    expect(items.at(numCollaborators - 1).prop("menuOptions")).toHaveLength(0)
   })
 
   it("the edit collaborator icon sets correct state and opens the modal", async () => {
     const { wrapper } = await render()
-    const editLink = wrapper.find("button.item-action-button").at(0)
+    wrapper
+      .find(".transparent-button")
+      .at(0)
+      .simulate("click")
 
     act(() => {
       // @ts-ignore
-      editLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+      wrapper
+        .find("button.dropdown-item")
+        .at(0)
+        .simulate("click")
     })
     wrapper.update()
     const component = wrapper.find("SiteCollaboratorDrawer")
@@ -115,9 +119,16 @@ describe("SiteCollaboratorList", () => {
       {}
     )
     const { wrapper } = await render()
-    const deleteIcon = wrapper.find("button.item-action-button").at(1)
+    wrapper
+      .find(".transparent-button")
+      .at(0)
+      .simulate("click")
+    wrapper.update()
     act(() => {
-      deleteIcon.simulate("click")
+      wrapper
+        .find("button.dropdown-item")
+        .at(1)
+        .simulate("click")
     })
     wrapper.update()
     const dialog = wrapper.find("Dialog")

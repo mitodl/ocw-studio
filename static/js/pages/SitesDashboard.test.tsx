@@ -73,15 +73,12 @@ describe("SitesDashboard", () => {
     const { wrapper } = await render()
     let idx = 0
     for (const website of websites) {
-      const li = wrapper
-        .find("ul.listing")
-        .find("li")
-        .at(idx)
-      expect(li.find("Link").prop("to")).toBe(
+      const li = wrapper.find("StudioListItem").at(idx)
+      expect(li.prop("to")).toBe(
         siteDetailUrl.param({ name: website.name }).toString()
       )
       expect(li.find("Link").text()).toBe(website.title)
-      expect(li.find(".site-description").text()).toBe(siteDescription(website))
+      expect(li.prop("subtitle")).toBe(siteDescription(website))
       idx++
     }
   })

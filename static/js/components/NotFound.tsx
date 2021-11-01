@@ -7,7 +7,7 @@ interface Props {
 /**
  * Our 404 component.
  */
-export default function NotFound(props: Props) {
+export default function NotFound(props: Props): JSX.Element {
   const { children } = props
 
   return (
