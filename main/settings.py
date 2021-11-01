@@ -978,7 +978,7 @@ MAX_WEBSITE_POLL_SECONDS = get_int(
     description="Maximum number of seconds to poll after a website deploy",
 )  # 2700 is 45 minutes
 WEBSITE_POLL_FREQUENCY = get_int(
-    name="CONCOURSE_POLL_FREQUENCY",
+    name="WEBSITE_POLL_FREQUENCY",
     default=5,
     description="Concourse poll frequency in seconds",
 )
