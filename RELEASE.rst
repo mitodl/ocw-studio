@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.32.1
+Version 0.32.1 (Released November 01, 2021)
 --------------
 
 - Change ContentDisposition for videos
