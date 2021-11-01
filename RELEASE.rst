@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.32.2
+--------------
+
+- add ocw-www site dependency to readme
+- fix image alignment issue
+- Filter resourcetype on backend for website content (#742)
+- add support for editing table shortcodes to the markdown editor
+- Track sync status backend, w/fixed migration (#751)
+
 Version 0.32.1 (Released November 01, 2021)
 --------------
 
