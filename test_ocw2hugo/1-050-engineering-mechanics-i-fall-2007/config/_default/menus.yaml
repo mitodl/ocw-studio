@@ -19,5 +19,3 @@ leftnav:
     name: Related Resources
     url: /pages/related-resources
     weight: 50
-  - name: Open Learning
-    url: https://openlearning.mit.edu/
