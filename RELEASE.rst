@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.32.1 (Released November 01, 2021)
+--------------
+
+- Change ContentDisposition for videos
+- Revert "Track website sync status - backend (#734)" (#750)
+- Track website sync status - backend (#734)
+- Upgrade sentry (#697)
+- Fix flaky test (#739)
+- Privacy policy page and home page tweaks (#737)
+- Implement publish status UI (#705)
+- switching over a bunch of test files to use the new mockRequest functions
+
 Version 0.32.0 (Released October 28, 2021)
 --------------
 
