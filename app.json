@@ -207,6 +207,10 @@
       "description": "Max retry attempts to get an S3 object",
       "required": false
     },
+    "MAX_WEBSITE_POLL_SECONDS": {
+      "description": "Maximum number of seconds to poll after a website deploy",
+      "required": false
+    },
     "MEDIA_ROOT": {
       "description": "The root directory for locally stored media. Typically not used.",
       "required": false
@@ -467,6 +471,10 @@
     },
     "VIDEO_S3_TRANSCODE_PREFIX": {
       "description": "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert",
+      "required": false
+    },
+    "WEBSITE_POLL_FREQUENCY": {
+      "description": "Concourse poll frequency in seconds",
       "required": false
     },
     "YT_ACCESS_TOKEN": {
