@@ -339,7 +339,9 @@ def test_delete_s3_objects(settings):
         is not None
     )
     assert (
-        client.get_object(Bucket=MOCK_BUCKET_NAME, Key="biology/content/_index.md")
+        client.get_object(
+            Bucket=MOCK_BUCKET_NAME, Key="biology/content/resources/biology.md"
+        )
         is not None
     )
     delete_s3_objects(key="biology/config/_default/menus.yaml")
@@ -348,17 +350,23 @@ def test_delete_s3_objects(settings):
             Bucket=MOCK_BUCKET_NAME, Key="biology/config/_default/menus.yaml"
         )
     assert (
-        client.get_object(Bucket=MOCK_BUCKET_NAME, Key="biology/content/_index.md")
+        client.get_object(
+            Bucket=MOCK_BUCKET_NAME, Key="biology/content/resources/biology.md"
+        )
         is not None
     )
     delete_s3_objects(key="biology/content")
     assert (
-        client.get_object(Bucket=MOCK_BUCKET_NAME, Key="biology/content/_index.md")
+        client.get_object(
+            Bucket=MOCK_BUCKET_NAME, Key="biology/content/resources/biology.md"
+        )
         is not None
     )
     delete_s3_objects(key="biology/content", as_filter=True)
     with pytest.raises(client.exceptions.NoSuchKey):
-        client.get_object(Bucket=MOCK_BUCKET_NAME, Key="biology/content/_index.md")
+        client.get_object(
+            Bucket=MOCK_BUCKET_NAME, Key="biology/content/resources/biology.md"
+        )
 
 
 @pytest.mark.parametrize("update_transcript_return_value", [True, False])

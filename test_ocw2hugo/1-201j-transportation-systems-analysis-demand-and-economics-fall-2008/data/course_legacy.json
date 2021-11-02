@@ -56,11 +56,11 @@
     "11.545J",
     "ESD.210J"
   ],
-  "term": "Fall 2008",
-  "level": {
-    "level": "Graduate",
-    "url": "/search/?l=Graduate"
-  },
+  "term": "Fall",
+  "year": "2008",
+  "level": [
+    "Graduate"
+  ],
   "other_versions": [
     "[1.201J INTRODUCTION TO TRANSPORTATION SYSTEMS](/courses/1-201j-introduction-to-transportation-systems-fall-2006) |  FALL 2006"
   ],

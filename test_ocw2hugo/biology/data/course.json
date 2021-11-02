@@ -9,22 +9,19 @@
     "content": "",
     "website": "biology"
   },
-  "instructors": [],
+  "instructors": {
+    "content": [],
+    "website": "ocw-www"
+  },
+  "department_numbers": [],
   "learning_resource_types": [],
   "topics": [],
   "primary_course_number": ".",
-  "extra_course_numbers": [],
+  "extra_course_numbers": "",
   "term": null,
   "year": null,
   "level": [],
   "other_versions": [],
   "archived_versions": [],
-  "open_learning_library_versions": [],
-  "course_image_url": "",
-  "course_thumbnail_image_url": "",
-  "course_image_alternate_text": "",
-  "course_image_caption_text": "",
-  "publishdate": "2012-01-12T14:12:55-05:00",
-  "departments": [],
-  "course_features": []
+  "open_learning_library_versions": []
 }
