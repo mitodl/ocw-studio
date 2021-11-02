@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.32.2
+Version 0.32.2 (Released November 02, 2021)
 --------------
 
 - add ocw-www site dependency to readme
