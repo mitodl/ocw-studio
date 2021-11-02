@@ -4,7 +4,7 @@ import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
 import { makeWebsiteDetail } from "../util/factories/websites"
-import { siteApiCollaboratorsUrl } from "../lib/urls"
+import { siteApiCollaboratorsUrl, siteDetailUrl } from "../lib/urls"
 import SitePage from "./SitePage"
 import WebsiteContext from "../context/Website"
 
@@ -33,6 +33,16 @@ describe("SitePage", () => {
 
   afterEach(() => {
     helper.cleanup()
+  })
+
+  it("sets the document title", async () => {
+    helper.browserHistory.push(
+      siteDetailUrl.param("name", website.name).toString()
+    )
+    const { wrapper } = await render()
+    expect(wrapper.find("DocumentTitle").prop("title")).toBe(
+      `OCW Studio | ${website.title}`
+    )
   })
 
   it("renders a loading message", async () => {

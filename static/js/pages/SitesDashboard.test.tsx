@@ -86,6 +86,13 @@ describe("SitesDashboard", () => {
     }
   })
 
+  it("sets the page title", async () => {
+    const { wrapper } = await render()
+    expect(wrapper.find("DocumentTitle").prop("title")).toBe(
+      "OCW Studio | Sites"
+    )
+  })
+
   it("has an add link to the new site page", async () => {
     const { wrapper } = await render()
     expect(wrapper.find(`Link.add-new`).prop("to")).toBe(newSiteUrl.toString())

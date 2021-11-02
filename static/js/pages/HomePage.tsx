@@ -1,8 +1,10 @@
 import React from "react"
+import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 
 export default function HomePage(): JSX.Element | null {
   return (
     <div className="container home-page">
+      <DocumentTitle title={formatTitle()} />
       <div className="row pt-5 home-page-div">
         <div className="home-page-background">
           {!SETTINGS.user ? (

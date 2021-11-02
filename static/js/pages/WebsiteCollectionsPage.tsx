@@ -20,6 +20,7 @@ import {
 } from "../types/website_collections"
 import { collectionsBaseUrl } from "../lib/urls"
 import { createModalState } from "../types/modal_state"
+import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 
 export default function WebsiteCollectionsPage(): JSX.Element {
   const { search } = useLocation()
@@ -73,6 +74,7 @@ export default function WebsiteCollectionsPage(): JSX.Element {
           </div>
         )}
       </BasicModal>
+      <DocumentTitle title={formatTitle("Collections")} />
       <div className="px-4 dashboard">
         <div className="content">
           <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">

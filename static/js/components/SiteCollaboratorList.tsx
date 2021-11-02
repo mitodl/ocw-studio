@@ -16,9 +16,10 @@ import { useWebsite } from "../context/Website"
 import { getWebsiteCollaboratorsCursor } from "../selectors/websites"
 
 import { WebsiteCollaborator } from "../types/websites"
+import DocumentTitle, { formatTitle } from "./DocumentTitle"
 
 export default function SiteCollaboratorList(): JSX.Element | null {
-  const { name } = useWebsite()
+  const { name, title } = useWebsite()
 
   const [{ isPending }] = useRequest(websiteCollaboratorsRequest(name))
   const collaborators = useSelector(getWebsiteCollaboratorsCursor)(name)
@@ -78,6 +79,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
 
   return (
     <>
+      <DocumentTitle title={formatTitle(title, "Collaborators")} />
       <SiteCollaboratorDrawer
         siteName={name}
         collaborator={selectedCollaborator}

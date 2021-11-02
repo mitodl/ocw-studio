@@ -16,6 +16,7 @@ import { startersSelector } from "../selectors/websites"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import { siteDetailUrl } from "../lib/urls"
 import { NewWebsitePayload } from "../types/websites"
+import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 
 type Props = RouteComponentProps<Record<string, never>>
 
@@ -80,6 +81,7 @@ export default function SiteCreationPage({
 
   return (
     <div className="new-site narrow-page-body container mt-5">
+      <DocumentTitle title={formatTitle("New Site")} />
       <Card>
         <div className="p-2">
           <h3 className="font-weight-bold mb-4">Add Site</h3>

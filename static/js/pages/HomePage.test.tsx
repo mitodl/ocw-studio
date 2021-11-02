@@ -12,6 +12,11 @@ describe("HomePage", () => {
     expect(link.text()).toBe("Login with MIT Touchstone")
   })
 
+  it("should set the title", () => {
+    const wrapper = shallow(<HomePage />)
+    expect(wrapper.find("DocumentTitle").prop("title")).toBe("OCW Studio")
+  })
+
   it("hides the Touchstone login button if the user is logged in", () => {
     const wrapper = shallow(<HomePage />)
     const link = wrapper.find("a[href='/login/saml/?idp=default']")

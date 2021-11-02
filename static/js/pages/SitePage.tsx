@@ -8,6 +8,7 @@ import Card from "../components/Card"
 import { siteCollaboratorsUrl, siteDetailUrl } from "../lib/urls"
 
 import { useWebsite } from "../context/Website"
+import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 
 interface SitePageProps {
   isLoading: boolean
@@ -46,6 +47,11 @@ export default function SitePage(props: SitePageProps): JSX.Element | null {
               )}type/:contenttype`}
             >
               <SiteContentListing />
+            </Route>
+            <Route
+              path={siteDetailUrl.param({ name: website.name }).toString()}
+            >
+              <DocumentTitle title={formatTitle(website.title)} />
             </Route>
           </Switch>
         </div>

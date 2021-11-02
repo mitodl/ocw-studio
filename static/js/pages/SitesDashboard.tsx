@@ -14,6 +14,7 @@ import { getWebsiteListingCursor } from "../selectors/websites"
 import { newSiteUrl, siteDetailUrl, sitesBaseUrl } from "../lib/urls"
 import { WEBSITES_PAGE_SIZE } from "../constants"
 import { Website } from "../types/websites"
+import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 
 export function siteDescription(site: Website): string | null {
   const courseNumber = (site.metadata?.course_numbers ?? [])[0]
@@ -43,6 +44,7 @@ export default function SitesDashboard(
 
   return (
     <div className="px-4 dashboard">
+      <DocumentTitle title={formatTitle("Sites")} />
       <div className="content">
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
           <h2 className="my-2 p-0">Sites</h2>

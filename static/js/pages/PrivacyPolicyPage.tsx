@@ -1,8 +1,10 @@
 import React from "react"
+import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 
 export default function PrivacyPolicyPage(): JSX.Element | null {
   return (
     <div className="privacy-policy-page m-5">
+      <DocumentTitle title={formatTitle("Privacy Policy")} />
       <h1>OCW Studio Privacy Policy</h1>
       <p>&nbsp;</p>
       <h3>Introduction</h3>

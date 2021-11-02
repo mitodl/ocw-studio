@@ -47,6 +47,13 @@ describe("CollectionsPage", () => {
     helper.cleanup()
   })
 
+  it("should set the document title", async () => {
+    const { wrapper } = await render()
+    expect(wrapper.find("DocumentTitle").prop("title")).toBe(
+      "OCW Studio | Collections"
+    )
+  })
+
   it("should render WebsiteCollection records in a list format", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("li").length).toBe(10)

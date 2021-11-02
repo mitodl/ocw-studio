@@ -59,6 +59,13 @@ describe("SiteCollaboratorList", () => {
     helper.cleanup()
   })
 
+  it("sets the document title", async () => {
+    const { wrapper } = await render()
+    expect(wrapper.find("DocumentTitle").prop("title")).toBe(
+      `OCW Studio | ${website.title} | Collaborators`
+    )
+  })
+
   it("renders the collaborators list with expected number of items", async () => {
     const { wrapper } = await render()
     const numCollaborators = concat(collaborators, permanentAdmins).length

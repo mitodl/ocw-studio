@@ -2,7 +2,10 @@ const mockUseRouteMatch = jest.fn()
 
 import React from "react"
 
-import SiteContentListing from "./SiteContentListing"
+import SiteContentListing, {
+  repeatableTitle,
+  singletonTitle
+} from "./SiteContentListing"
 
 import IntegrationTestHelper, {
   TestRenderer
@@ -49,8 +52,8 @@ describe("SiteContentListing", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    repeatableConfigItem = makeRepeatableConfigItem("repeatable")
-    singletonsConfigItem = makeSingletonsConfigItem("singletons")
+    repeatableConfigItem = makeRepeatableConfigItem("repeatable_test_content")
+    singletonsConfigItem = makeSingletonsConfigItem("singleton_test_content")
     website = makeWebsiteDetail()
     // @ts-ignore
     website.starter = {
@@ -77,6 +80,17 @@ describe("SiteContentListing", () => {
     helper.cleanup()
   })
 
+  it("title funcs should be reasonable", () => {
+    [
+      ["input", "Input", "Inputs"],
+      ["video_gallery", "Video Gallery", "Video Galleries"],
+      ["sad_cat_house", "Sad Cat House", "Sad Cat Houses"]
+    ].forEach(([contentType, singleExp, repeatExp]) => {
+      expect(singletonTitle(contentType)).toBe(singleExp)
+      expect(repeatableTitle(contentType)).toBe(repeatExp)
+    })
+  })
+
   //
   ;[
     ["repeatable", MockRepeatable],
@@ -98,6 +112,23 @@ describe("SiteContentListing", () => {
       expect(listing.props()).toEqual({
         configItem
       })
+    })
+
+    it("sets an appropriate title", async () => {
+      const configItem =
+        child === MockRepeatable ? repeatableConfigItem : singletonsConfigItem
+
+      // @ts-ignore
+      const params = { name: website.name, contenttype: configItem.name }
+      mockUseRouteMatch.mockImplementation(() => ({
+        params
+      }))
+      const { wrapper } = await render()
+      expect(wrapper.find("DocumentTitle").prop("title")).toBe(
+        name === "repeatable" ?
+          `OCW Studio | ${website.title} | Repeatable Test Contents` :
+          `OCW Studio | ${website.title} | Singleton Test Content`
+      )
     })
   })
 

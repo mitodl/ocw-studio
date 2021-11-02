@@ -51,6 +51,13 @@ describe("SiteCreationPage", () => {
     expect(form.prop("websiteStarters")).toBe(starters)
   })
 
+  it("sets the page title", async () => {
+    const { wrapper } = await render()
+    expect(wrapper.find("DocumentTitle").prop("title")).toBe(
+      "OCW Studio | New Site"
+    )
+  })
+
   describe("passes a form submit function", () => {
     const errorMsg = "Error"
     let formikStubs: { [key: string]: SinonStub }, createWebsiteStub: SinonStub
