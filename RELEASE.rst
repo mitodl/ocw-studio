@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.33.0
+Version 0.33.0 (Released November 02, 2021)
 --------------
 
 - add error handling to the Relation field request
