@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.33.0
+--------------
+
+- add error handling to the Relation field request
+- Fix poll_build_status_until_complete to use celery countdown instead of sleep (#763)
+
 Version 0.32.2 (Released November 02, 2021)
 --------------
 
