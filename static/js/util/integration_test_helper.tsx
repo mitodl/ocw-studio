@@ -94,8 +94,8 @@ export default class IntegrationTestHelper {
    * pass the API url you want to mock and the object which should be
    * returned as the request body!
    */
-  mockGetRequest(url: string, body: unknown): sinon.SinonStub {
-    return this.mockRequest(url, "GET", body, 200)
+  mockGetRequest(url: string, body: unknown, code = 200): sinon.SinonStub {
+    return this.mockRequest(url, "GET", body, code)
   }
 
   /**

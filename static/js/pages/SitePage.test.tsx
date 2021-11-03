@@ -24,11 +24,14 @@ describe("SitePage", () => {
       siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
       { results: [] }
     )
-    render = helper.configureRenderer(props => (
-      <WebsiteContext.Provider value={website}>
-        <SitePage {...props} />
-      </WebsiteContext.Provider>
-    ))
+    render = helper.configureRenderer(
+      (props = {}) => (
+        <WebsiteContext.Provider value={website}>
+          <SitePage {...props} />
+        </WebsiteContext.Provider>
+      ),
+      { siteName: website.name }
+    )
   })
 
   afterEach(() => {

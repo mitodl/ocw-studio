@@ -22,6 +22,7 @@ export default function SitePage(props: SitePageProps): JSX.Element | null {
   if (isLoading) {
     return <div className="site-page std-page-body container">Loading...</div>
   }
+
   if (!website) {
     return null
   }

@@ -1,7 +1,7 @@
 import React from "react"
 import { useSelector } from "react-redux"
 import { Route, Switch } from "react-router"
-import { useRouteMatch } from "react-router-dom"
+import { Link, useRouteMatch } from "react-router-dom"
 import { useRequest } from "redux-query-react"
 
 import SitePage from "./SitePage"
@@ -17,6 +17,8 @@ import { websiteDetailRequest } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
 import WebsiteContext from "../context/Website"
 import PrivacyPolicyPage from "./PrivacyPolicyPage"
+import NotFound from "../components/NotFound"
+import { sitesBaseUrl } from "../lib/urls"
 
 interface SiteMatchParams {
   name: string
@@ -31,7 +33,7 @@ export default function App(): JSX.Element {
     siteName = siteDetailMatch.params.name
   }
 
-  const [{ isPending: isSiteLoading }] = useRequest(
+  const [{ isPending: isSiteLoading, status }] = useRequest(
     siteName ? websiteDetailRequest(siteName) : null
   )
   const website = useSelector(getWebsiteDetailCursor)(siteName || "")
@@ -46,14 +48,30 @@ export default function App(): JSX.Element {
             <Route exact path="/new-site" component={SiteCreationPage} />
             <Route exact path="/sites" component={SitesDashboard} />
             <Route path="/sites/:name">
-              <WebsiteContext.Provider value={website}>
-                <SitePage isLoading={isSiteLoading} />
-              </WebsiteContext.Provider>
+              {status === 404 ? (
+                <NotFound>
+                  <div>
+                    We couldn't locate a site named "{siteName}". Try returning
+                    to the{" "}
+                    <Link to={sitesBaseUrl.toString()} className="underline">
+                      site index
+                    </Link>
+                    . Sorry!
+                  </div>
+                </NotFound>
+              ) : (
+                <WebsiteContext.Provider value={website}>
+                  <SitePage isLoading={isSiteLoading} />
+                </WebsiteContext.Provider>
+              )}
             </Route>
             <Route path="/collections" component={WebsiteCollectionsPage} />
             <Route path="/privacy-policy" component={PrivacyPolicyPage} />
             <Route path="/markdown-editor">
               <MarkdownEditorTestPage />
+            </Route>
+            <Route path="*">
+              <NotFound />
             </Route>
           </Switch>
         </div>

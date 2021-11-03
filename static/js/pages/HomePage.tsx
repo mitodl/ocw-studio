@@ -24,7 +24,7 @@ export default function HomePage(): JSX.Element | null {
           OCW Studio integrates with Google Drive and YouTube via their
           respective APIs. The app can import static files saved in a MIT shared
           Google Drive and also publishes videos to{" "}
-          <a href="https://www.youtube.com/mitocw">
+          <a href="https://www.youtube.com/mitocw" className="underline">
             the MIT OCW channel on YouTube.
           </a>
         </div>
