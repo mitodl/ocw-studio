@@ -1,7 +1,13 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
+import useInterval from "@use-it/interval"
+import sinon from "sinon"
 
 import RepeatableContentListing from "./RepeatableContentListing"
+import {
+  GoogleDriveSyncStatuses,
+  WEBSITE_CONTENT_PAGE_SIZE
+} from "../constants"
 import WebsiteContext from "../context/Website"
 
 import { isIf, shouldIf } from "../test_util"
@@ -9,6 +15,7 @@ import {
   siteApiContentDetailUrl,
   siteContentListingUrl,
   siteApiContentListingUrl,
+  siteApiDetailUrl,
   siteApiContentSyncGDriveUrl
 } from "../lib/urls"
 import {
@@ -30,7 +37,6 @@ import {
   Website,
   WebsiteContentListItem
 } from "../types/websites"
-import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 import { createModalState } from "../types/modal_state"
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
@@ -41,6 +47,11 @@ function mocko() {
 jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
   default:    mocko
+}))
+
+jest.mock("@use-it/interval", () => ({
+  __esModule: true,
+  default:    jest.fn()
 }))
 
 describe("RepeatableContentListing", () => {
@@ -119,6 +130,8 @@ describe("RepeatableContentListing", () => {
 
   afterEach(() => {
     helper.cleanup()
+    // @ts-ignore
+    useInterval.mockClear()
   })
   ;[true, false].forEach(isGdriveEnabled => {
     [true, false].forEach(isResource => {
@@ -146,32 +159,33 @@ describe("RepeatableContentListing", () => {
       })
     })
   })
-  ;[
-    [200, "Resources are being synced with Google Drive"],
-    [500, "Something went wrong syncing with Google Drive"]
-  ].forEach(([status, message]) => {
-    it("Clicking the gdrive sync button should open a feedback modal", async () => {
-      helper.mockPostRequest(
-        siteApiContentSyncGDriveUrl
-          .param({
-            name: website.name
-          })
-          .toString(),
-        {},
-        status as number
-      )
-      SETTINGS.gdrive_enabled = true
-      const { wrapper } = await render()
-      const syncLink = wrapper.find("button.sync")
-      await act(async () => {
-        // @ts-ignore
-        syncLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
-      })
-      wrapper.update()
-      const syncFeedbackModal = wrapper.find("BasicModal").at(1)
-      expect(syncFeedbackModal.prop("isVisible")).toBe(true)
-      expect(syncFeedbackModal.text().includes(message.toString()))
+
+  it("Clicking the gdrive sync button should trigger a sync request", async () => {
+    const postSyncStub = helper.mockPostRequest(
+      siteApiContentSyncGDriveUrl
+        .param({
+          name: website.name
+        })
+        .toString(),
+      {},
+      200
+    )
+    const getStatusStub = helper.mockGetRequest(
+      siteApiDetailUrl
+        .param({ name: website.name })
+        .query({ only_status: true })
+        .toString(),
+      { sync_status: "Complete" }
+    )
+    SETTINGS.gdrive_enabled = true
+    const { wrapper } = await render()
+    const syncLink = wrapper.find("button.sync")
+    await act(async () => {
+      // @ts-ignore
+      syncLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
     })
+    expect(postSyncStub.called).toBeTruthy()
+    expect(getStatusStub.called).toBeTruthy()
   })
 
   it("should render a button to open the content editor", async () => {
@@ -352,6 +366,62 @@ describe("RepeatableContentListing", () => {
           .at(0)
           .prop("title")
       ).toBe(`Add ${expectedLabel}`)
+    })
+  })
+
+  it("shows the sync status indicator", async () => {
+    const { wrapper } = await render({ website })
+    expect(wrapper.find("DriveSyncStatusIndicator").exists())
+  })
+  //
+  ;[
+    [GoogleDriveSyncStatuses.SYNC_STATUS_PENDING, true],
+    [GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING, true],
+    ["Failed", false]
+  ].forEach(([status, shouldUpdate]) => {
+    describe("sync status polling", () => {
+      beforeEach(() => {
+        website = {
+          ...website,
+          //@ts-ignore
+          sync_status: status,
+          synced_on:   "2021-01-01"
+        }
+      })
+
+      it(`${
+        shouldUpdate ? "polls" : "doesn't poll"
+      } the website sync status when sync_status=${status}`, async () => {
+        const getStatusStub = helper.mockGetRequest(
+          siteApiDetailUrl
+            .param({ name: website.name })
+            .query({ only_status: true })
+            .toString(),
+          { sync_status: "Complete" }
+        )
+        const getResourcesStub = helper.mockGetRequest(
+          siteApiContentListingUrl
+            .param({
+              name: website.name
+            })
+            .query({ offset: 0, type: configItem.name })
+            .toString(),
+          apiResponse
+        )
+        await render({ website })
+        // @ts-ignore
+        expect(useInterval).toBeCalledTimes(2)
+        // @ts-ignore
+        await useInterval.mock.calls[0][0]()
+
+        if (shouldUpdate) {
+          sinon.assert.calledOnce(getStatusStub)
+          sinon.assert.calledTwice(getResourcesStub)
+        } else {
+          sinon.assert.notCalled(getStatusStub)
+          sinon.assert.calledOnce(getResourcesStub)
+        }
+      })
     })
   })
 })

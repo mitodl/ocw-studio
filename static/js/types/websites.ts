@@ -218,6 +218,9 @@ export interface WebsiteStatus {
   live_publish_status_updated_on: string | null // eslint-disable-line
   draft_publish_status: PublishStatuses | null // eslint-disable-line
   draft_publish_status_updated_on: string | null // eslint-disable-line
+  sync_status: string | null // eslint-disable-line
+  synced_on: string | null // eslint-disable-line
+  sync_errors: Array<string> | null // eslint-disable-line
 }
 
 export type Website = WebsiteStatus & {

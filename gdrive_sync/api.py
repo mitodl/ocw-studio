@@ -184,17 +184,19 @@ def streaming_download(drive_file: DriveFile) -> requests.Response:
 
 def stream_to_s3(drive_file: DriveFile):
     """ Stream a Google Drive file to S3 """
-    service = get_drive_service()
-    permission = (
-        service.permissions()
-        .create(
-            supportsAllDrives=True,
-            body={"role": "reader", "type": "anyone"},
-            fileId=drive_file.file_id,
-        )
-        .execute()
-    )
+    service = None
+    permission = None
     try:
+        service = get_drive_service()
+        permission = (
+            service.permissions()
+            .create(
+                supportsAllDrives=True,
+                body={"role": "reader", "type": "anyone"},
+                fileId=drive_file.file_id,
+            )
+            .execute()
+        )
         s3 = boto3.resource("s3")
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
         bucket = s3.Bucket(bucket_name)
@@ -219,11 +221,12 @@ def stream_to_s3(drive_file: DriveFile):
         drive_file.update_status(DriveFileStatus.UPLOAD_FAILED)
         raise
     finally:
-        service.permissions().delete(
-            supportsAllDrives=True,
-            permissionId=permission["id"],
-            fileId=drive_file.file_id,
-        ).execute()
+        if service and permission:
+            service.permissions().delete(
+                supportsAllDrives=True,
+                permissionId=permission["id"],
+                fileId=drive_file.file_id,
+            ).execute()
 
 
 def create_gdrive_folders(website_short_id: str) -> bool:
@@ -397,6 +400,7 @@ def transcode_gdrive_video(drive_file: DriveFile):
             video.save()
             drive_file.sync_error = f"Error transcoding video {drive_file.name}, please contact us for assistance"
             drive_file.update_status(DriveFileStatus.TRANSCODE_FAILED)
+            raise
 
 
 def update_sync_status(website: Website, sync_datetime: datetime):

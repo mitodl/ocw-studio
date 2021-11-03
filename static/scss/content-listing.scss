@@ -2,3 +2,36 @@
   font-size: 36px;
   vertical-align: middle;
 }
+
+.sync-status {
+  font-size: 0.75em;
+  line-height: 1.8em;
+  cursor: pointer;
+}
+
+.status-indicator {
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  display: inline-block;
+
+  &.complete {
+    background-color: $studio-green;
+  }
+
+  &.failed {
+    background-color: $studio-red;
+  }
+
+  &.errors {
+    background-color: $studio-orange;
+  }
+
+  &.processing {
+    background-color: $studio-yellow;
+  }
+
+  &.pending {
+    background-color: $studio-gray;
+  }
+}

@@ -130,6 +130,9 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
             "live_publish_status_updated_on",
             "draft_publish_status",
             "draft_publish_status_updated_on",
+            "sync_status",
+            "synced_on",
+            "sync_errors",
         ]
         read_only_fields = [
             "uuid",
@@ -145,6 +148,9 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
             "live_publish_status_updated_on",
             "draft_publish_status",
             "draft_publish_status_updated_on",
+            "sync_status",
+            "synced_on",
+            "sync_errors",
         ]
 
 
@@ -164,6 +170,9 @@ class WebsiteStatusSerializer(serializers.ModelSerializer):
             "live_publish_status_updated_on",
             "draft_publish_status",
             "draft_publish_status_updated_on",
+            "sync_status",
+            "synced_on",
+            "sync_errors",
         ]
         read_only_fields = fields
 

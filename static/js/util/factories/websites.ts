@@ -192,6 +192,9 @@ export const makeWebsiteDetail = (): Website => ({
   live_publish_status:             null,
   draft_publish_status_updated_on: null,
   live_publish_status_updated_on:  null,
+  sync_status:                     null,
+  synced_on:                       null,
+  sync_errors:                     null,
   is_admin:                        casual.boolean
 })
 
@@ -210,7 +213,10 @@ export const makeWebsiteStatus = (website?: Website): WebsiteStatus => {
     live_publish_status:             website.live_publish_status,
     draft_publish_status:            website.draft_publish_status,
     live_publish_status_updated_on:  website.live_publish_status_updated_on,
-    draft_publish_status_updated_on: website.draft_publish_status_updated_on
+    draft_publish_status_updated_on: website.draft_publish_status_updated_on,
+    sync_status:                     null,
+    synced_on:                       null,
+    sync_errors:                     null
   }
 }
 
