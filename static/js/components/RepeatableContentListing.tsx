@@ -5,21 +5,28 @@ import React, {
 } from "react"
 import { useLocation } from "react-router-dom"
 import { useMutation, useRequest } from "redux-query-react"
-import { useSelector } from "react-redux"
+import { useSelector, useStore } from "react-redux"
+import { requestAsync } from "redux-query"
+import useInterval from "@use-it/interval"
 
+import DriveSyncStatusIndicator from "./DriveSyncStatusIndicator"
 import SiteContentEditor from "./SiteContentEditor"
 import PaginationControls from "./PaginationControls"
 import Card from "./Card"
 import BasicModal from "./BasicModal"
 import { useWebsite } from "../context/Website"
 
-import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
+import {
+  GOOGLE_DRIVE_SYNC_PROCESSING_STATES,
+  WEBSITE_CONTENT_PAGE_SIZE
+} from "../constants"
 import { siteContentListingUrl } from "../lib/urls"
 import { hasMainContentField } from "../lib/site_content"
 import {
   syncWebsiteContentMutation,
   websiteContentListingRequest,
-  WebsiteContentListingResponse
+  WebsiteContentListingResponse,
+  websiteStatusRequest
 } from "../query-configs/websites"
 import { getWebsiteContentListingCursor } from "../selectors/websites"
 
@@ -34,6 +41,7 @@ import { createModalState } from "../types/modal_state"
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
 }): JSX.Element | null {
+  const store = useStore()
   const { configItem } = props
 
   const website = useWebsite()
@@ -60,19 +68,42 @@ export default function RepeatableContentListing(props: {
   const [drawerState, setDrawerState] = useState<WebsiteContentModalState>(
     createModalState("closed")
   )
-  const [syncModalState, setSyncModalState] = useState({
-    message:   "",
-    isVisible: false
-  })
-  const toggleSyncModal = (message: string) =>
-    setSyncModalState({
-      message:   message,
-      isVisible: !syncModalState.isVisible
-    })
 
   const closeContentDrawer = useCallback(() => {
     setDrawerState(createModalState("closed"))
   }, [setDrawerState])
+
+  useInterval(
+    async () => {
+      if (
+        website &&
+        website.sync_status &&
+        GOOGLE_DRIVE_SYNC_PROCESSING_STATES.includes(
+          // @ts-ignore
+          website.sync_status
+        )
+      ) {
+        const response = await store.dispatch(
+          // This will update the DriveSyncStatusIndicator
+          requestAsync(websiteStatusRequest(website.name))
+        )
+        if (
+          response.body.sync_status &&
+          !GOOGLE_DRIVE_SYNC_PROCESSING_STATES.includes(
+            response.body.sync_status
+          )
+        ) {
+          // This will update the content listing
+          await store.dispatch(
+            requestAsync(
+              websiteContentListingRequest(listingParams, false, false)
+            )
+          )
+        }
+      }
+    },
+    website ? 5000 : null
+  )
 
   if (contentListingPending) {
     return <div className="site-page container">Loading...</div>
@@ -108,14 +139,11 @@ export default function RepeatableContentListing(props: {
     if (syncIsPending) {
       return
     }
-    const response = await syncWebsiteContent()
-    const successMsg =
-      "Resources are being synced with Google Drive. Please revisit this page in a few minutes."
-    const failMsg =
-      "Something went wrong syncing with Google Drive.  Please try again or contact support."
-    toggleSyncModal(!response || response.status !== 200 ? failMsg : successMsg)
+    await syncWebsiteContent()
+    await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
   }
 
+  // @ts-ignore
   return (
     <>
       <BasicModal
@@ -138,38 +166,29 @@ export default function RepeatableContentListing(props: {
           ) : null
         }
       </BasicModal>
-      <BasicModal
-        isVisible={syncModalState.isVisible}
-        hideModal={() => toggleSyncModal("")}
-        title="Syncing with Google Drive"
-        className={null}
-      >
-        {_ =>
-          syncModalState ? (
-            <div className="m-2">{syncModalState.message}</div>
-          ) : null
-        }
-      </BasicModal>
       <div className="d-flex flex-direction-row align-items-right justify-content-between py-3">
         <h2 className="m-0 p-0">{configItem.label}</h2>
         <div className="noflex">
           {SETTINGS.gdrive_enabled && configItem.name === "resource" ? (
             website.gdrive_url ? (
               <>
-                <button
-                  className="btn cyan-button sync ml-2"
-                  onClick={onSubmitContentSync}
-                >
-                  Sync w/Google Drive
-                </button>
-                <a
-                  className="view"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href={website.gdrive_url}
-                >
-                  <i className="material-icons gdrive-link">open_in_new</i>
-                </a>
+                <div>
+                  <button
+                    className="btn cyan-button sync ml-2"
+                    onClick={onSubmitContentSync}
+                  >
+                    Sync w/Google Drive
+                  </button>
+                  <a
+                    className="view"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href={website.gdrive_url}
+                  >
+                    <i className="material-icons gdrive-link">open_in_new</i>
+                  </a>
+                </div>
+                <DriveSyncStatusIndicator website={website} />
               </>
             ) : null
           ) : (

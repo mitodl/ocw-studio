@@ -18,10 +18,9 @@ from gdrive_sync.constants import (
 from gdrive_sync.factories import DriveApiQueryTrackerFactory, DriveFileFactory
 from gdrive_sync.models import DriveFile
 from gdrive_sync.tasks import (
-    create_resource_from_gdrive,
     import_recent_files,
     import_website_files,
-    transcode_drive_file_video,
+    process_drive_file,
     update_website_status,
 )
 from websites.factories import WebsiteFactory
@@ -36,7 +35,7 @@ pytestmark = pytest.mark.django_db
 def mock_gdrive_files(mocker):
     """Return mock results from a google drive api request"""
     mocker.patch(
-        "gdrive_sync.tasks.query_files",
+        "gdrive_sync.tasks.api.query_files",
         side_effect=[
             [
                 {
@@ -53,21 +52,9 @@ def mock_gdrive_files(mocker):
         ],
     )
     mocker.patch(
-        "gdrive_sync.tasks.walk_gdrive_folder",
+        "gdrive_sync.tasks.api.walk_gdrive_folder",
         side_effect=[[], LIST_FILE_RESPONSES[0]["files"]],
     )
-
-
-@pytest.mark.parametrize("shared_id", [None, "testDrive"])
-@pytest.mark.parametrize("drive_creds", [None, '{"key": "value"}'])
-def test_stream_drive_file_to_s3(settings, mocker, shared_id, drive_creds):
-    """ File should be streamed only if required settings are present"""
-    settings.DRIVE_SHARED_ID = shared_id
-    settings.DRIVE_SERVICE_ACCOUNT_CREDS = drive_creds
-    mock_stream = mocker.patch("gdrive_sync.tasks.api.stream_to_s3")
-    drive_file = DriveFileFactory.create()
-    tasks.stream_drive_file_to_s3.delay(drive_file.file_id)
-    assert mock_stream.call_count == (1 if shared_id and drive_creds else 0)
 
 
 @pytest.mark.parametrize("shared_id", [None, "testDrive"])
@@ -79,14 +66,6 @@ def test_create_gdrive_folders(settings, mocker, shared_id, drive_creds):
     mock_create_folder = mocker.patch("gdrive_sync.tasks.api.create_gdrive_folders")
     tasks.create_gdrive_folders.delay("test")
     assert mock_create_folder.call_count == (1 if shared_id and drive_creds else 0)
-
-
-def test_transcode_drive_file_video(mocker):
-    """ transcode_drive_file_video should create Video object and call create_media_convert_job"""
-    mock_transcode_call = mocker.patch("gdrive_sync.tasks.transcode_gdrive_video")
-    drive_file = DriveFileFactory.create()
-    transcode_drive_file_video.delay(drive_file.file_id)
-    mock_transcode_call.assert_called_once_with(drive_file)
 
 
 # pylint:disable=too-many-arguments, too-many-locals
@@ -114,7 +93,7 @@ def test_import_recent_files_videos(
     same_checksum,
 ):
     """import_recent_files should created expected video objects and call s3 tasks"""
-    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
+    mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     settings.DRIVE_SHARED_ID = "test_drive"
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = parent_folder
     website = WebsiteFactory.create()
@@ -172,14 +151,11 @@ def test_import_recent_files_videos(
     mocker.patch("gdrive_sync.api.get_parent_tree", side_effect=parent_tree_responses)
 
     mock_list_files = mocker.patch(
-        "gdrive_sync.tasks.query_files",
+        "gdrive_sync.tasks.api.query_files",
         return_value=LIST_VIDEO_RESPONSES[0]["files"]
         + LIST_VIDEO_RESPONSES[1]["files"],
     )
-    mock_upload_task = mocker.patch("gdrive_sync.tasks.stream_drive_file_to_s3.s")
-    mock_transcode_task = mocker.patch(
-        "gdrive_sync.tasks.transcode_drive_file_video.si"
-    )
+    mock_process_func = mocker.patch("gdrive_sync.tasks.process_drive_file.s")
     mock_sync_content_task = mocker.patch("gdrive_sync.tasks.sync_website_content.si")
 
     tracker = DriveApiQueryTrackerFactory.create(
@@ -210,24 +186,17 @@ def test_import_recent_files_videos(
             parent_folder and not parent_folder_in_ancestors
         ):  # chained tasks should not be run (wrong folder, or same checksum & name)
             with pytest.raises(AssertionError):
-                mock_upload_task.assert_any_call(
-                    LIST_VIDEO_RESPONSES[i]["files"][0]["id"]
-                )
-            with pytest.raises(AssertionError):
-                mock_transcode_task.assert_any_call(
+                assert mock_process_func.assert_any_call(
                     LIST_VIDEO_RESPONSES[i]["files"][0]["id"]
                 )
         else:  # chained tasks should be run
-            mock_upload_task.assert_any_call(LIST_VIDEO_RESPONSES[i]["files"][0]["id"])
+            mock_process_func.assert_any_call(LIST_VIDEO_RESPONSES[i]["files"][0]["id"])
             assert (
                 tracker.last_dt
                 == datetime.strptime(
                     LIST_VIDEO_RESPONSES[0]["files"][0]["modifiedTime"],
                     "%Y-%m-%dT%H:%M:%S.%fZ",
                 ).replace(tzinfo=pytz.utc)
-            )
-            mock_transcode_task.assert_any_call(
-                LIST_VIDEO_RESPONSES[i]["files"][0]["id"]
             )
             mock_sync_content_task.assert_any_call(website.name)
         if (
@@ -244,11 +213,14 @@ def test_import_recent_files_videos(
         )
 
 
-def test_import_recent_files_nonvideos(settings, mocker, mocked_celery):
+@pytest.mark.parametrize("raises_exception", [True, False])
+def test_import_recent_files_nonvideos(
+    settings, mocker, mocked_celery, raises_exception
+):
     """
     import_recent_files should import non-video files
     """
-    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
+    mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     settings.DRIVE_SHARED_ID = "test_drive"
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
     website = WebsiteFactory.create()
@@ -270,63 +242,76 @@ def test_import_recent_files_nonvideos(settings, mocker, mocked_celery):
     mocker.patch("gdrive_sync.api.get_parent_tree", side_effect=parent_tree_responses)
 
     mocker.patch(
-        "gdrive_sync.tasks.query_files", return_value=LIST_FILE_RESPONSES[0]["files"]
-    )
-    mock_upload_task = mocker.patch("gdrive_sync.tasks.stream_drive_file_to_s3.s")
-    mock_resource_task = mocker.patch(
-        "gdrive_sync.tasks.create_resource_from_gdrive.si"
+        "gdrive_sync.tasks.api.query_files",
+        return_value=LIST_FILE_RESPONSES[0]["files"],
     )
 
-    with pytest.raises(mocked_celery.replace_exception_class):
+    side_effect = (
+        [Exception(), Exception()]
+        if raises_exception
+        else [
+            DriveFileFactory.create(file_id=LIST_FILE_RESPONSES[0]["files"][0]["id"]),
+            None,
+        ]
+    )
+    mocker.patch("gdrive_sync.tasks.api.process_file_result", side_effect=side_effect)
+    mock_process_drive_file_task = mocker.patch(
+        "gdrive_sync.tasks.process_drive_file.s"
+    )
+    mock_log = mocker.patch("gdrive_sync.tasks.log.exception")
+
+    if not raises_exception:
+        with pytest.raises(mocked_celery.replace_exception_class):
+            import_recent_files.delay(
+                last_dt=datetime.strptime("2021-01-01", "%Y-%m-%d").replace(
+                    tzinfo=pytz.UTC
+                ),
+            )
+    else:
         import_recent_files.delay(
             last_dt=datetime.strptime("2021-01-01", "%Y-%m-%d").replace(
                 tzinfo=pytz.UTC
             ),
         )
-        with pytest.raises(AssertionError):
-            mock_upload_task.assert_any_call(LIST_FILE_RESPONSES[1]["files"][0]["id"])
-        mock_upload_task.assert_any_call(
-            LIST_VIDEO_RESPONSES[0]["files"][0]["id"],
-            prefix=website.starter.config["root-url-path"],
+    with pytest.raises(AssertionError):
+        mock_process_drive_file_task.assert_any_call(
+            LIST_VIDEO_RESPONSES[1]["files"][0]["id"]
         )
-        mock_resource_task.assert_any_call(LIST_VIDEO_RESPONSES[0]["files"][0]["id"])
+    if not raises_exception:
+        mock_process_drive_file_task.assert_any_call(
+            LIST_FILE_RESPONSES[0]["files"][0]["id"]
+        )
+    assert mock_log.call_count == (
+        len(LIST_FILE_RESPONSES[0]["files"]) if raises_exception else 0
+    )
 
 
-def test_create_resource_from_gdrive(mocker):
-    """create_resource_from_gdrive should call create_gdrive_resource_content"""
-    mocker.patch(
-        "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
-    )
-    mock_create_content = mocker.patch(
-        "gdrive_sync.tasks.create_gdrive_resource_content"
-    )
-    drive_file = DriveFileFactory.create()
-    create_resource_from_gdrive.delay(drive_file.file_id)
-    mock_create_content.assert_called_once_with(drive_file)
+def test_import_recent_files_disabled(mocker, settings):
+    """import_recent_files should do nothing if google drive integration is disabled"""
+    settings.DRIVE_SHARED_ID = None
+    mock_query = mocker.patch("gdrive_sync.tasks.api.query_files")
+    import_recent_files.delay()
+    mock_query.assert_not_called()
 
 
 def test_import_website_files(
     mocker, mocked_celery, mock_gdrive_files
 ):  # pylint:disable=unused-argument
     """import_website_files should run process_file_result for each drive file and trigger tasks"""
-    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
+    mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     website = WebsiteFactory.create()
     drive_files = DriveFileFactory.create_batch(2, website=website)
     mock_process_file_result = mocker.patch(
-        "gdrive_sync.tasks.process_file_result", side_effect=drive_files
+        "gdrive_sync.tasks.api.process_file_result", side_effect=drive_files
     )
-    mock_stream_task = mocker.patch("gdrive_sync.tasks.stream_drive_file_to_s3.s")
-    mock_create_resource = mocker.patch(
-        "gdrive_sync.tasks.create_resource_from_gdrive.si"
-    )
+    mock_process_gdrive_file = mocker.patch("gdrive_sync.tasks.process_drive_file.s")
     mock_sync_content = mocker.patch("gdrive_sync.tasks.sync_website_content.si")
     mock_update_status = mocker.patch("gdrive_sync.tasks.update_website_status.si")
     with pytest.raises(mocked_celery.replace_exception_class):
         import_website_files.delay(website.short_id)
     assert mock_process_file_result.call_count == 2
     for drive_file in drive_files:
-        mock_stream_task.assert_any_call(drive_file.file_id)
-        mock_create_resource.assert_any_call(drive_file.file_id)
+        mock_process_gdrive_file.assert_any_call(drive_file.file_id)
     mock_sync_content.assert_called_once_with(website.name)
     website.refresh_from_db()
     mock_update_status.assert_called_once_with(website.pk, website.synced_on)
@@ -334,11 +319,11 @@ def test_import_website_files(
 
 def test_import_website_files_missing_folder(mocker):
     """import_website_files should run process_file_result for each drive file and trigger tasks"""
-    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
+    mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     website = WebsiteFactory.create()
     mock_log = mocker.patch("gdrive_sync.tasks.log.error")
     mocker.patch(
-        "gdrive_sync.tasks.query_files",
+        "gdrive_sync.tasks.api.query_files",
         side_effect=[
             [],
             [],
@@ -361,10 +346,10 @@ def test_import_website_files_missing_folder(mocker):
 
 def test_import_website_files_query_error(mocker):
     """import_website_files should run process_file_result for each drive file and trigger tasks"""
-    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
+    mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     mock_log = mocker.patch("gdrive_sync.tasks.log.exception")
     mocker.patch(
-        "gdrive_sync.tasks.query_files",
+        "gdrive_sync.tasks.api.query_files",
         side_effect=Exception("Error querying google drive"),
     )
     website = WebsiteFactory.create()
@@ -385,10 +370,10 @@ def test_import_website_files_processing_error(
     mocker, mock_gdrive_files
 ):  # pylint:disable=unused-argument
     """import_website_files should log exceptions raised by process_file_result and update website status"""
-    mocker.patch("gdrive_sync.tasks.is_gdrive_enabled", return_value=True)
+    mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     mock_log = mocker.patch("gdrive_sync.tasks.log.exception")
     mocker.patch(
-        "gdrive_sync.tasks.process_file_result",
+        "gdrive_sync.tasks.api.process_file_result",
         side_effect=Exception("Error processing the file"),
     )
     website = WebsiteFactory.create()
@@ -410,8 +395,31 @@ def test_update_website_status(mocker):
     """Calling the update_website_status task should call api.update_sync_status with args"""
     website = WebsiteFactory.create()
     now = now_in_utc()
-    mock_update_sync_status = mocker.patch("gdrive_sync.tasks.update_sync_status")
+    mock_update_sync_status = mocker.patch("gdrive_sync.tasks.api.update_sync_status")
     update_website_status.delay(website.pk, now)
     mock_update_sync_status.assert_called_once_with(
         website, now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
     )
+
+
+@pytest.mark.parametrize("has_error", [True, False])
+@pytest.mark.parametrize("is_video", [True, False])
+def test_process_drive_file(mocker, is_video, has_error):
+    """The necessary steps should be run to process a google drive file"""
+    drive_file = DriveFileFactory.create(
+        drive_path=(DRIVE_FOLDER_VIDEOS_FINAL if is_video else DRIVE_FOLDER_FILES_FINAL)
+    )
+    mock_stream_s3 = mocker.patch(
+        "gdrive_sync.tasks.api.stream_to_s3",
+        side_effect=[(Exception("No bucket") if has_error else None)],
+    )
+    mock_transcode = mocker.patch("gdrive_sync.tasks.api.transcode_gdrive_video")
+    mock_create_resource = mocker.patch(
+        "gdrive_sync.tasks.api.create_gdrive_resource_content"
+    )
+    mock_log = mocker.patch("gdrive_sync.tasks.log.exception")
+    process_drive_file.delay(drive_file.file_id)
+    assert mock_stream_s3.call_count == 1
+    assert mock_transcode.call_count == (1 if is_video and not has_error else 0)
+    assert mock_create_resource.call_count == (0 if has_error else 1)
+    assert mock_log.call_count == (1 if has_error else 0)

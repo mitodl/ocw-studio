@@ -6,20 +6,10 @@ import celery
 import pytz
 from celery import chain, chord
 from dateutil.parser import parse
-from django.conf import settings
 from mitol.common.utils import now_in_utc
 
 from content_sync.tasks import sync_website_content
 from gdrive_sync import api
-from gdrive_sync.api import (
-    create_gdrive_resource_content,
-    is_gdrive_enabled,
-    process_file_result,
-    query_files,
-    transcode_gdrive_video,
-    update_sync_status,
-    walk_gdrive_folder,
-)
 from gdrive_sync.constants import (
     DRIVE_API_FILES,
     DRIVE_FILE_FIELDS,
@@ -40,24 +30,17 @@ from websites.models import Website
 log = logging.getLogger(__name__)
 
 
-@app.task(bind=True)
-def stream_drive_file_to_s3(self, drive_file_id: str):
-    """ Stream a Google Drive file to S3 """
-    if settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS:
-        drive_file = DriveFile.objects.get(file_id=drive_file_id)
+@app.task()
+def process_drive_file(drive_file_id: str):
+    """Run the necessary functions for processing a drive file"""
+    drive_file = DriveFile.objects.get(file_id=drive_file_id)
+    try:
         api.stream_to_s3(drive_file)
-
-
-@app.task(bind=True)
-def transcode_drive_file_video(self, drive_file_id: str):
-    """Create a MediaConvert transcode job and Video object for the given drive file id"""
-    transcode_gdrive_video(DriveFile.objects.get(file_id=drive_file_id))
-
-
-@app.task(bind=True)
-def create_resource_from_gdrive(self, drive_file_id: str):
-    """Create a WebsiteContent resource from a Google Drive file for an OCW site"""
-    create_gdrive_resource_content(DriveFile.objects.get(file_id=drive_file_id))
+        if drive_file.is_video():
+            api.transcode_gdrive_video(drive_file)
+        api.create_gdrive_resource_content(drive_file)
+    except:  # pylint:disable=bare-except
+        log.exception("Error processing DriveFile %s", drive_file_id)
 
 
 @app.task(bind=True)
@@ -66,7 +49,7 @@ def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-
     Query the Drive API for recently uploaded or modified files and process them
     if they are in folders that match Website short_ids or names.
     """
-    if not is_gdrive_enabled():
+    if not api.is_gdrive_enabled():
         return
     if last_dt and isinstance(last_dt, str):
         # Dates get serialized into strings when passed to celery tasks
@@ -80,36 +63,29 @@ def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-
         dt_str = last_checked.strftime("%Y-%m-%dT%H:%M:%S.%f")
         query += f" and (modifiedTime > '{dt_str}' or createdTime > '{dt_str}')"
 
-    chains = []
+    tasks = []
     website_names = set()
-    for gdfile in query_files(query=query, fields=DRIVE_FILE_FIELDS):
+    for gdfile in api.query_files(query=query, fields=DRIVE_FILE_FIELDS):
         try:
-            drive_file = process_file_result(gdfile)
+            drive_file = api.process_file_result(gdfile)
+            if drive_file:
+                maxLastTime = datetime.strptime(
+                    max(gdfile.get("createdTime"), gdfile.get("modifiedTime")),
+                    "%Y-%m-%dT%H:%M:%S.%fZ",
+                ).replace(tzinfo=pytz.utc)
+                if not last_checked or maxLastTime > last_checked:
+                    last_checked = maxLastTime
+                tasks.append(process_drive_file.s(drive_file.file_id))
+                website_names.add(drive_file.website.name)
         except:  # pylint:disable=bare-except
             log.exception("Error processing google drive file %s", gdfile.get("id"))
-        if drive_file:
-            maxLastTime = datetime.strptime(
-                max(gdfile.get("createdTime"), gdfile.get("modifiedTime")),
-                "%Y-%m-%dT%H:%M:%S.%fZ",
-            ).replace(tzinfo=pytz.utc)
-            if not last_checked or maxLastTime > last_checked:
-                last_checked = maxLastTime
-            task_list = [
-                stream_drive_file_to_s3.s(drive_file.file_id),
-                transcode_drive_file_video.si(drive_file.file_id)
-                if drive_file.is_video()
-                else None,
-                create_resource_from_gdrive.si(drive_file.file_id),
-            ]
-            chains.append(chain(*[task for task in task_list if task]))
-            website_names.add(drive_file.website.name)
 
     file_token_obj.last_dt = last_checked
     file_token_obj.save()
 
-    if chains:
+    if tasks:
         # Import the files first, then sync the websites for those files in git
-        file_steps = chord(celery.group(*chains), chord_finisher.si())
+        file_steps = chord(celery.group(*tasks), chord_finisher.si())
         website_steps = [
             sync_website_content.si(website_name) for website_name in website_names
         ]
@@ -120,40 +96,35 @@ def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-
 @app.task(bind=True)
 def import_website_files(self, short_id: str):
     """Query the Drive API for all children of a website folder and import the files"""
-    if not is_gdrive_enabled():
+    if not api.is_gdrive_enabled():
         return
     website = Website.objects.get(short_id=short_id)
     website.sync_status = WebsiteSyncStatus.PROCESSING
     website.synced_on = now_in_utc()
     website.sync_errors = []
     errors = []
-    chains = []
+    tasks = []
     for subfolder in [DRIVE_FOLDER_FILES_FINAL, DRIVE_FOLDER_VIDEOS_FINAL]:
         try:
             query = f'parents = "{website.gdrive_folder}" and name="{subfolder}" and mimeType = "{DRIVE_MIMETYPE_FOLDER}" and not trashed'
-            subfolder_list = list(query_files(query=query, fields=DRIVE_FILE_FIELDS))
+            subfolder_list = list(
+                api.query_files(query=query, fields=DRIVE_FILE_FIELDS)
+            )
             if not subfolder_list:
                 error_msg = f"Could not find drive subfolder {subfolder}"
                 log.error("%s for %s", error_msg, website.short_id)
                 errors.append(error_msg)
                 continue
-            for gdfile in walk_gdrive_folder(
+            for gdfile in api.walk_gdrive_folder(
                 subfolder_list[0]["id"],
                 DRIVE_FILE_FIELDS,
             ):
                 try:
-                    drive_file = process_file_result(
+                    drive_file = api.process_file_result(
                         gdfile, sync_date=website.synced_on
                     )
                     if drive_file:
-                        task_list = [
-                            stream_drive_file_to_s3.s(drive_file.file_id),
-                            transcode_drive_file_video.si(drive_file.file_id)
-                            if drive_file.is_video()
-                            else None,
-                            create_resource_from_gdrive.si(drive_file.file_id),
-                        ]
-                        chains.append(chain(*[task for task in task_list if task]))
+                        tasks.append(process_drive_file.s(drive_file.file_id))
                 except:  # pylint:disable=bare-except
                     errors.append(f"Error processing gdrive file {gdfile.get('name')}")
                     log.exception(
@@ -168,10 +139,10 @@ def import_website_files(self, short_id: str):
     website.sync_errors = errors
     website.save()
 
-    if chains:
+    if tasks:
         # Import the files first, then sync the website for those files in git
         file_steps = chord(
-            celery.group(*chains),
+            celery.group(*tasks),
             update_website_status.si(website.pk, website.synced_on),
         )
         website_step = sync_website_content.si(
@@ -185,7 +156,7 @@ def import_website_files(self, short_id: str):
 @app.task()
 def create_gdrive_folders(website_short_id: str):
     """Create gdrive folder for website if it doesn't already exist"""
-    if is_gdrive_enabled():
+    if api.is_gdrive_enabled():
         api.create_gdrive_folders(website_short_id)
 
 
@@ -194,4 +165,4 @@ def update_website_status(website_pk: str, sync_dt: datetime):
     """
     Update the website gdrive sync status
     """
-    update_sync_status(Website.objects.get(pk=website_pk), sync_dt)
+    api.update_sync_status(Website.objects.get(pk=website_pk), sync_dt)

@@ -171,3 +171,16 @@ export const PUBLISH_STATUS_PROCESSING_STATES = [
   PublishStatuses.PUBLISH_STATUS_PENDING,
   PublishStatuses.PUBLISH_STATUS_NOT_STARTED
 ]
+
+export enum GoogleDriveSyncStatuses {
+  SYNC_STATUS_PROCESSING = "Processing",
+  SYNC_STATUS_PENDING = "Pending",
+  SYNC_STATUS_COMPLETE = "Complete",
+  SYNC_STATUS_FAILED = "Failed",
+  SYNC_STATUS_ERRORS = "Errors"
+}
+
+export const GOOGLE_DRIVE_SYNC_PROCESSING_STATES = [
+  GoogleDriveSyncStatuses.SYNC_STATUS_PENDING,
+  GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING
+]

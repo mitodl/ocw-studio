@@ -60,6 +60,7 @@ class DriveFileStatus:
 class WebsiteSyncStatus:
     """Simple class for possible Website sync statuses"""
 
+    PENDING = "Pending"
     PROCESSING = "Processing"
     COMPLETE = "Complete"
     FAILED = "Failed"

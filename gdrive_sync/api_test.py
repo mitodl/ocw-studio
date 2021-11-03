@@ -489,7 +489,8 @@ def test_transcode_gdrive_video_error(settings, mocker):
     )
     mock_log = mocker.patch("gdrive_sync.api.log.exception")
     drive_file = DriveFileFactory.create()
-    transcode_gdrive_video(drive_file)
+    with pytest.raises(ClientError):
+        transcode_gdrive_video(drive_file)
     drive_file.refresh_from_db()
     mock_log.assert_called_once_with(
         "Error creating transcode job for %s", drive_file.video.source_key
