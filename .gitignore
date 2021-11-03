@@ -109,3 +109,11 @@ celerybeat-schedule
 /localdev/starters/**
 !/localdev/starters/example-starter
 !/localdev/starters/README.md
+
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

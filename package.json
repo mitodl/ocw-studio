@@ -136,8 +136,7 @@
     "yup": "^0.32.9"
   },
   "engines": {
-    "node": "15.14.0",
-    "yarn": "1.22.5"
+    "node": "15.14.0"
   },
   "scripts": {
     "lint": "eslint static/js --ext .js,.jsx,.ts,.tsx",
@@ -159,5 +158,6 @@
   ],
   "resolutions": {
     "turndown": "7.0.0"
-  }
+  },
+  "packageManager": "yarn@3.1.0"
 }
