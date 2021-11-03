@@ -267,7 +267,9 @@ class HasWebsiteContentPermission(BasePermission):
             Website, name=view.kwargs.get("parent_lookup_website", None)
         )
         if request.method in SAFE_METHODS:
-            return check_perm(request.user, constants.PERMISSION_VIEW, website)
+            # Give permission to any logged in user, to facilitate content relations between different sites.
+            # In particular, to allow instructor relations from ocw-www in site metadata.
+            return bool(request.user and request.user.is_authenticated)
         if request.data and request.data.get("type") in ADMIN_ONLY_CONTENT:
             return is_site_admin(request.user, website)
         return check_perm(request.user, constants.PERMISSION_EDIT_CONTENT, website)
