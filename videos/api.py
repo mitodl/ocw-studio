@@ -81,7 +81,6 @@ def update_video_job(video_job: VideoJob, results: dict):
     status = results.get("status")
     video = video_job.video
     if status == "COMPLETE":
-        video.status = VideoStatus.COMPLETE
         process_video_outputs(video, results.get("outputGroupDetails"))
         # future PR: upload to youtube & internet archive, create WebsiteContent for video
     elif status == "ERROR":

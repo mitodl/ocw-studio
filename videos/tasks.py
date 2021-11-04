@@ -2,6 +2,7 @@
 import logging
 
 import boto3
+import celery
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
@@ -11,7 +12,12 @@ from gdrive_sync.models import DriveFile
 from main.celery import app
 from main.constants import STATUS_CREATED
 from videos import threeplay_api
-from videos.constants import DESTINATION_YOUTUBE, VideoFileStatus, YouTubeStatus
+from videos.constants import (
+    DESTINATION_YOUTUBE,
+    VideoFileStatus,
+    VideoStatus,
+    YouTubeStatus,
+)
 from videos.models import Video, VideoFile
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
@@ -22,15 +28,15 @@ from videos.youtube import (
 )
 from websites.api import is_ocw_site
 from websites.constants import RESOURCE_TYPE_VIDEO
-from websites.models import Website
+from websites.models import Website, WebsiteContent
 from websites.utils import get_dict_query_field, set_dict_field
 
 
 log = logging.getLogger()
 
 
-@app.task
-def upload_youtube_videos():
+@app.task(bind=True)
+def upload_youtube_videos(self):
     """
     Upload public videos one at a time to YouTube (if not already there) until the daily maximum is reached.
     """
@@ -44,6 +50,8 @@ def upload_youtube_videos():
     if yt_queue.count() == 0:
         return
     youtube = YouTubeApi()
+    group_tasks = []
+
     for video_file in yt_queue:
         error_msg = None
         try:
@@ -51,6 +59,7 @@ def upload_youtube_videos():
             video_file.destination_id = response["id"]
             video_file.destination_status = response["status"]["uploadStatus"]
             video_file.status = VideoFileStatus.UPLOADED
+            group_tasks.append(start_transcript_job.s(video_file.video.id))
         except HttpError as error:
             error_msg = error.content.decode("utf-8")
             if API_QUOTA_ERROR_MSG in error_msg:
@@ -63,6 +72,44 @@ def upload_youtube_videos():
         video_file.save()
         if error_msg:
             mail_youtube_upload_failure(video_file)
+
+    if group_tasks:
+        raise self.replace(celery.group(group_tasks))
+
+
+@app.task
+def start_transcript_job(video_id: int):
+    """
+    Use threeplay api to order a transcript for video
+    """
+
+    video = Video.objects.filter(pk=video_id).last()
+    folder_name = video.website.short_id
+    youtube_id = video.youtube_id()
+
+    query_youtube_id_field = get_dict_query_field("metadata", settings.YT_FIELD_ID)
+
+    video_resource = (
+        WebsiteContent.objects.filter(website=video.website)
+        .filter(Q(**{query_youtube_id_field: youtube_id}))
+        .first()
+    )
+
+    if video_resource:
+        title = video_resource.title
+    else:
+        title = video.source_key.split("/")[-1]
+
+    response = threeplay_api.threeplay_upload_video_request(
+        folder_name, youtube_id, title
+    )
+
+    threeplay_file_id = response.get("data").get("id")
+
+    if threeplay_file_id:
+        threeplay_api.threeplay_order_transcript_request(video.id, threeplay_file_id)
+        video.status = VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
+        video.save()
 
 
 @app.task
@@ -160,6 +207,9 @@ def update_transcripts_for_video(video_id: int):
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
     if threeplay_api.update_transcripts_for_video(video):
+        video.status = VideoStatus.COMPLETE
+        video.save()
+
         website = video.website
         if is_ocw_site(website):
             search_fields = {}

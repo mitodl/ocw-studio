@@ -26,6 +26,7 @@ from videos.tasks import (
     attempt_to_update_missing_transcripts,
     delete_s3_objects,
     remove_youtube_video,
+    start_transcript_job,
     update_transcripts_for_updated_videos,
     update_transcripts_for_video,
     update_transcripts_for_website,
@@ -102,7 +103,7 @@ def youtube_video_files_processing():
 @pytest.mark.parametrize("is_enabled", [True, False])
 @pytest.mark.parametrize("max_uploads", [2, 4])
 def test_upload_youtube_videos(
-    mocker, youtube_video_files_new, max_uploads, is_enabled
+    mocker, youtube_video_files_new, max_uploads, is_enabled, mocked_celery
 ):
     """
     Test that the upload_youtube_videos task calls YouTubeApi.upload_video
@@ -117,7 +118,13 @@ def test_upload_youtube_videos(
         "id": "".join([choice(string.ascii_lowercase) for n in range(8)]),
         "status": {"uploadStatus": "uploaded"},
     }
-    upload_youtube_videos()
+    mock_transcript_job = mocker.patch("videos.tasks.start_transcript_job.s")
+
+    if is_enabled:
+        with pytest.raises(mocked_celery.replace_exception_class):
+            upload_youtube_videos.delay()
+    else:
+        upload_youtube_videos.delay()
     assert mock_uploader.call_count == (min(3, max_uploads) if is_enabled else 0)
     assert mock_youtube.call_count == (1 if is_enabled else 0)
     if is_enabled:
@@ -127,6 +134,7 @@ def test_upload_youtube_videos(
             assert video_file.destination_id is not None
             assert video_file.destination_status == YouTubeStatus.UPLOADED
             assert video_file.status == VideoFileStatus.UPLOADED
+            mock_transcript_job.assert_any_call(video_file.video.id)
 
 
 def test_upload_youtube_videos_error(mocker, youtube_video_files_new):
@@ -136,7 +144,7 @@ def test_upload_youtube_videos_error(mocker, youtube_video_files_new):
     mock_uploader = mocker.patch(
         "videos.tasks.YouTubeApi.upload_video", side_effect=OSError
     )
-    upload_youtube_videos()
+    upload_youtube_videos.delay()
     assert mock_uploader.call_count == 3
     for video_file in youtube_video_files_new:
         video_file.refresh_from_db()
@@ -146,7 +154,8 @@ def test_upload_youtube_videos_error(mocker, youtube_video_files_new):
 def test_upload_youtube_videos_no_videos(mocker):
     """YouTube API shoould not be instantiated if there are no videos to upload"""
     mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
-    upload_youtube_videos()
+
+    upload_youtube_videos.delay()
     mock_youtube.assert_not_called()
 
 
@@ -168,13 +177,57 @@ def test_upload_youtube_quota_exceeded(mocker, youtube_video_files_new, msg, sta
             MockHttpErrorResponse(403), str.encode(msg, "utf-8")
         ),
     )
-    upload_youtube_videos()
+    upload_youtube_videos.delay()
     assert mock_uploader.call_count == (1 if msg == API_QUOTA_ERROR_MSG else 3)
     for video_file in youtube_video_files_new:
         video_file.refresh_from_db()
         assert video_file.status == status
         assert video_file.destination_status is None
         assert video_file.destination_id is None
+
+
+@pytest.mark.parametrize("video_resource", [True, False])
+def test_start_transcript_job(mocker, settings, video_resource):
+    """test start_transcript_job"""
+    youtube_id = "test"
+    threeplay_file_id = 1
+    settings.YT_FIELD_ID = "youtube_id"
+
+    video_file = VideoFileFactory.create(
+        status=VideoStatus.CREATED,
+        destination=DESTINATION_YOUTUBE,
+        destination_id=youtube_id,
+    )
+
+    video = video_file.video
+    video.source_key = "the/file"
+    video.save()
+
+    mock_threeplay_upload_video_request = mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_upload_video_request",
+        return_value={"data": {"id": threeplay_file_id}},
+    )
+
+    mock_order_transcript_request_request = mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_order_transcript_request"
+    )
+
+    if video_resource:
+        title = "title"
+        WebsiteContentFactory.create(
+            website=video.website, metadata={"youtube_id": youtube_id}, title=title
+        )
+    else:
+        title = "file"
+
+    start_transcript_job(video.id)
+
+    mock_threeplay_upload_video_request.assert_called_once_with(
+        video.website.short_id, youtube_id, title
+    )
+    mock_order_transcript_request_request.assert_called_once_with(
+        video.id, threeplay_file_id
+    )
 
 
 @pytest.mark.parametrize("is_enabled", [True, False])

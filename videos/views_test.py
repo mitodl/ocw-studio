@@ -61,7 +61,6 @@ def test_transcode_jobs_success(settings, drf_client, video_group):
     video_job.refresh_from_db()
     assert video.videofiles.count() == 3
     assert video.videofiles.filter(destination=DESTINATION_YOUTUBE).count() == 1
-    assert video.status == VideoStatus.COMPLETE
     assert video_job.status == data["detail"]["status"]
 
 
@@ -121,3 +120,37 @@ def test_transcode_jobs_subscribe_denied(settings, mocker, drf_client):
     response = drf_client.post(reverse("transcode_jobs"), data=data)
     assert response.status_code == 403
     mock_get.assert_not_called()
+
+
+@pytest.mark.parametrize("callback_key", [None, "callback_key", "different_key"])
+@pytest.mark.parametrize("video_status", ["submitted_for_transcription", "complete"])
+def test_transcript_job(mocker, video_status, callback_key, drf_client, settings):
+    """TranscriptJobView should confirm a request and start update_transcripts_for_video job"""
+    settings.THREEPLAY_CALLBACK_KEY = "callback_key"
+
+    video = VideoFactory.create(status=video_status)
+    update_transcripts_for_video_call = mocker.patch(
+        "videos.views.update_transcripts_for_video.delay"
+    )
+
+    if callback_key:
+        response = drf_client.post(
+            reverse("transcript_jobs")
+            + "?video_id="
+            + str(video.id)
+            + "&callback_key="
+            + callback_key
+        )
+    else:
+        response = drf_client.post(
+            reverse("transcript_jobs") + "?video_id=" + str(video.id)
+        )
+
+    assert response.status_code == 200
+
+    if video_status == "submitted_for_transcription" and (
+        callback_key == "callback_key"
+    ):
+        update_transcripts_for_video_call.assert_called_once_with(video.id)
+    else:
+        update_transcripts_for_video_call.assert_not_called()

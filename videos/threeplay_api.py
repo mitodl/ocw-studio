@@ -13,11 +13,90 @@ from videos.models import Video
 log = logging.getLogger(__name__)
 
 
+def get_folder(name: str) -> dict:
+    """3play data request to get folders by name"""
+    payload = {"name": name, "api_key": settings.THREEPLAY_API_KEY}
+    url = "https://api.3playmedia.com/v3/batches/"
+    response = requests.get(url, payload)
+    if response:
+        return response.json()
+    else:
+        return {}
+
+
+def create_folder(name: str) -> dict:
+    """3play data request to create folder"""
+    payload = {"name": name, "api_key": settings.THREEPLAY_API_KEY}
+    url = "https://api.3playmedia.com/v3/batches/"
+    response = requests.post(url, payload)
+    if response:
+        return response.json()
+    else:
+        return {}
+
+
+def get_or_create_folder(name: str) -> int:
+    """3play data request to either get or create a folder by name"""
+
+    folder_response = get_folder(name)
+    if folder_response.get("data") and len(folder_response.get("data")) > 0:
+        folder_id = folder_response.get("data")[0].get("id")
+    else:
+        folder_response = create_folder(name)
+        folder_id = folder_response.get("data").get("id")
+
+    return folder_id
+
+
 def threeplay_updated_media_file_request() -> dict:
     """3play data request to get files with 'updated' tag"""
     payload = {"label": "updated", "api_key": settings.THREEPLAY_API_KEY}
     url = "https://api.3playmedia.com/v3/files"
     response = requests.get(url, payload)
+    if response:
+        return response.json()
+    else:
+        return {}
+
+
+def threeplay_upload_video_request(
+    folder_name: str, youtube_id: str, title: str
+) -> dict:
+    """3play data request to upload a video from youtube"""
+    youtube_url = "https://www.youtube.com/watch?v=" + youtube_id
+    folder_id = get_or_create_folder(folder_name)
+
+    payload = {
+        "source_url": youtube_url,
+        "reference_id": youtube_id,
+        "api_key": settings.THREEPLAY_API_KEY,
+        "language_id": [1],
+        "name": title,
+        "batch_id": folder_id,
+    }
+    url = "https://api.3playmedia.com/v3/files/"
+    response = requests.post(url, payload)
+    if response:
+        return response.json()
+    else:
+        return {}
+
+
+def threeplay_order_transcript_request(video_id: int, threeplay_video_id: int) -> dict:
+    """3play request to order a transcript"""
+
+    payload = {
+        "turnaround_level_id": 5,
+        "media_file_id": threeplay_video_id,
+        "api_key": settings.THREEPLAY_API_KEY,
+    }
+    url = "https://api.3playmedia.com/v3/transcripts/order/transcription"
+
+    if settings.THREEPLAY_CALLBACK_KEY:
+        callback_url = f"{settings.SITE_BASE_URL}/api/api/transcription-jobs/?video_id={str(video_id)}&callback_key={settings.THREEPLAY_CALLBACK_KEY}"
+        payload["callback"] = callback_url
+
+    response = requests.post(url, payload)
     if response:
         return response.json()
     else:
