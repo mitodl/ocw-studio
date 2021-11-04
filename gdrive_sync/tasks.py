@@ -8,6 +8,7 @@ from celery import chain, chord
 from dateutil.parser import parse
 from mitol.common.utils import now_in_utc
 
+from content_sync.decorators import single_website_task
 from content_sync.tasks import sync_website_content
 from gdrive_sync import api
 from gdrive_sync.constants import (
@@ -93,12 +94,13 @@ def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-
         raise self.replace(celery.group(workflow))
 
 
-@app.task(bind=True)
-def import_website_files(self, short_id: str):
+@app.task(bind=True, acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=30)
+@single_website_task(30)
+def import_website_files(self, name: str):
     """Query the Drive API for all children of a website folder and import the files"""
     if not api.is_gdrive_enabled():
         return
-    website = Website.objects.get(short_id=short_id)
+    website = Website.objects.get(name=name)
     website.sync_status = WebsiteSyncStatus.PROCESSING
     website.synced_on = now_in_utc()
     website.sync_errors = []
@@ -145,9 +147,7 @@ def import_website_files(self, short_id: str):
             celery.group(*tasks),
             update_website_status.si(website.pk, website.synced_on),
         )
-        website_step = sync_website_content.si(
-            Website.objects.get(short_id=short_id).name
-        )
+        website_step = sync_website_content.si(name)
         workflow = chain(file_steps, website_step)
         raise self.replace(celery.group(workflow))
     update_website_status(website.pk, website.synced_on)

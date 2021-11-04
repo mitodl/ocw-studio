@@ -98,7 +98,7 @@ def single_website_task(timeout: int) -> Callable:
                 else:
                     raise BlockingIOError()
             finally:
-                if has_lock:
+                if has_lock and lock.locked():
                     lock.release()
             return return_value
 

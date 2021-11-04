@@ -528,7 +528,7 @@ class WebsiteContentViewSet(
         website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
         website.sync_status = WebsiteSyncStatus.PENDING
         website.save()
-        import_website_files.delay(website.short_id)
+        import_website_files.delay(website.name)
         return Response(status=200)
 
 
