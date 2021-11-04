@@ -308,7 +308,7 @@ def test_import_website_files(
     mock_sync_content = mocker.patch("gdrive_sync.tasks.sync_website_content.si")
     mock_update_status = mocker.patch("gdrive_sync.tasks.update_website_status.si")
     with pytest.raises(mocked_celery.replace_exception_class):
-        import_website_files.delay(website.short_id)
+        import_website_files.delay(website.name)
     assert mock_process_file_result.call_count == 2
     for drive_file in drive_files:
         mock_process_gdrive_file.assert_any_call(drive_file.file_id)
@@ -329,7 +329,7 @@ def test_import_website_files_missing_folder(mocker):
             [],
         ],
     )
-    import_website_files.delay(website.short_id)
+    import_website_files.delay(website.name)
     for folder in [DRIVE_FOLDER_VIDEOS_FINAL, DRIVE_FOLDER_FILES_FINAL]:
         mock_log.assert_any_call(
             "%s for %s", f"Could not find drive subfolder {folder}", website.short_id
@@ -353,7 +353,7 @@ def test_import_website_files_query_error(mocker):
         side_effect=Exception("Error querying google drive"),
     )
     website = WebsiteFactory.create()
-    import_website_files.delay(website.short_id)
+    import_website_files.delay(website.name)
     sync_errors = []
     for folder in [DRIVE_FOLDER_VIDEOS_FINAL, DRIVE_FOLDER_FILES_FINAL]:
         sync_error = (
@@ -377,7 +377,7 @@ def test_import_website_files_processing_error(
         side_effect=Exception("Error processing the file"),
     )
     website = WebsiteFactory.create()
-    import_website_files.delay(website.short_id)
+    import_website_files.delay(website.name)
     sync_errors = []
     for gdfile in LIST_FILE_RESPONSES[0]["files"]:
         sync_errors.append(f"Error processing gdrive file {gdfile.get('name')}")
