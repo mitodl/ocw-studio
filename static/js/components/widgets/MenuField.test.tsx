@@ -11,23 +11,23 @@ const dummyHugoItems: HugoItem[] = [
     identifier: "external-12345",
     name:       "External Link #1",
     url:        "http://example.com",
-    weight:     10
+    weight:     20
   },
   {
     identifier: "32629a02-3dc5-4128-8e43-0392b51e7b61",
     name:       "Unit 1",
-    weight:     0
+    weight:     10
   },
   {
     identifier: "32629a02-3dc5-4128-8e43-0392b51e7b62",
     name:       "Unit 1 - Subunit 1",
-    weight:     0,
+    weight:     10,
     parent:     "32629a02-3dc5-4128-8e43-0392b51e7b61"
   },
   {
     identifier: "32629a02-3dc5-4128-8e43-0392b51e7b63",
     name:       "Unit 1 - Sub-subunit 1",
-    weight:     0,
+    weight:     10,
     parent:     "32629a02-3dc5-4128-8e43-0392b51e7b62"
   }
 ]
@@ -225,12 +225,12 @@ describe("MenuField", () => {
       const matchingMenuItem = useExistingItem ?
         {
           ...expectedMenuItem,
-          weight: 0,
+          weight: 10,
           parent: "32629a02-3dc5-4128-8e43-0392b51e7b61"
         } :
         {
           ...expectedMenuItem,
-          weight: 20
+          weight: 30
         }
       const updatedHugoMenuItems = onChangeStub.mock.calls[0][0].target.value
       const updatedHugoMenuItem = updatedHugoMenuItems.find(
