@@ -4,19 +4,21 @@ from django.db import migrations
 from websites.models import WebsiteContent
 from websites.constants import WEBSITE_SOURCE_STUDIO
 
+
 def add_ten_to_weights(apps, schema_editor):
-    navmenus = WebsiteContent.objects.filter(type="navmenu", website__source=WEBSITE_SOURCE_STUDIO)
+    navmenus = WebsiteContent.objects.filter(
+        type="navmenu", website__source=WEBSITE_SOURCE_STUDIO
+    )
     for navmenu in navmenus:
         for menuitem in navmenu.metadata["leftnav"]:
             menuitem["weight"] += 10
         navmenu.save()
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('websites', '0039_gdrive_sync_progress'),
+        ("websites", "0039_gdrive_sync_progress"),
     ]
 
-    operations = [
-        migrations.RunPython(add_ten_to_weights)
-    ]
+    operations = [migrations.RunPython(add_ten_to_weights)]
