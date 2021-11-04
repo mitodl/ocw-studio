@@ -13,6 +13,7 @@ from pytest import fixture
 from content_sync import tasks
 from content_sync.factories import ContentSyncStateFactory
 from content_sync.pipelines.base import BaseSyncPipeline
+from users.factories import UserFactory
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
@@ -223,25 +224,15 @@ def test_publish_website_backend(
         import_string_mock.return_value.assert_any_call(website)
 
 
-@pytest.mark.parametrize(
-    "func, version",
-    [
-        ["preview_website_backend", "draft"],
-        ["publish_website_backend", "live"],
-    ],
-)
-def test_preview_publish_backend_error(api_mock, mocker, settings, func, version):
+@pytest.mark.parametrize("func", ["preview_website_backend", "publish_website_backend"])
+def test_preview_publish_backend_error(api_mock, mocker, settings, func):
     """Verify that the appropriate error handling occurs if preview/publish_website_backend throws an exception"""
     settings.PREPUBLISH_ACTIONS = [["some.Action"]]
     mocker.patch("content_sync.tasks.import_string", side_effect=Exception("error"))
-    mock_email_admins = mocker.patch(
-        "content_sync.tasks.mail_website_admins_on_publish"
-    )
     website = WebsiteFactory.create()
     method_call = getattr(tasks, func)
     method_call(website.name, website.draft_publish_date)
     api_mock.get_sync_backend.assert_not_called()
-    mock_email_admins.assert_called_once_with(website, version, False)
 
 
 def test_sync_github_site_configs(mocker):
@@ -284,6 +275,7 @@ def test_poll_build_status_until_complete(mocker, api_mock, final_status, versio
     website = WebsiteFactory.create(
         has_unpublished_live=False, has_unpublished_draft=False
     )
+    user = UserFactory.create()
     now_dates = [
         datetime.datetime(2020, 1, 1, tzinfo=pytz.utc),
         datetime.datetime(2020, 2, 1, tzinfo=pytz.utc),
@@ -298,7 +290,7 @@ def test_poll_build_status_until_complete(mocker, api_mock, final_status, versio
     ]
     final_now_date = now_dates[2]
     tasks.poll_build_status_until_complete.delay(
-        website.name, version, final_now_date.isoformat()
+        website.name, version, final_now_date.isoformat(), user.id
     )
     website.refresh_from_db()
     if version == "draft":

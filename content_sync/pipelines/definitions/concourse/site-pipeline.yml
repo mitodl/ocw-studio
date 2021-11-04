@@ -22,18 +22,6 @@ resources:
     source:
       uri: ((ocw-hugo-projects-uri))
       branch: ((ocw-hugo-projects-branch))
-  - name: ocw-studio-webhook
-    type: http-api
-    source:
-        uri: ((ocw-studio-url))/api/websites/((site-name))/pipeline_complete/
-        method: POST
-        headers:
-            Authorization: "Bearer {bearer_token}"
-        json:
-            version: ((version))
-            site: ((base-url))
-            success: "{succeeded}"
-        bearer_token: ((api-token))
 jobs:
   - name: build-ocw-site
     serial: true
@@ -71,11 +59,6 @@ jobs:
               mkdir ../ocw-hugo-themes/theme
               tar -xvzf ../ocw-hugo-themes/ocw-hugo-themes-*.tgz -C ../ocw-hugo-themes/theme
               hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/theme
-        on_failure:
-          try:
-            put: ocw-studio-webhook
-            params:
-                succeeded: false
       - task: copy-s3-buckets
         config:
           inputs:
@@ -95,11 +78,6 @@ jobs:
               aws s3 sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
               aws s3 sync s3://((ocw-studio-bucket))/((site-url)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))
               if [[ "((base-url))" == "" ]]; then aws s3 sync ocw-hugo-themes/theme/base-theme/dist s3://((ocw-bucket)) --metadata site-id=((site-name)); fi
-        on_failure:
-          try:
-            put: ocw-studio-webhook
-            params:
-                succeeded: false
       - task: clear-cdn-cache
         config:
           platform: linux
@@ -115,13 +93,3 @@ jobs:
               - -H
               - 'Fastly-Key: ((fastly.api_token))'((purge_header))
               - https://api.fastly.com/service/((fastly.service_id))/((purge-url))
-        on_success:
-          try:
-            put: ocw-studio-webhook
-            params:
-                succeeded: true
-        on_failure:
-          try:
-            put: ocw-studio-webhook
-            params:
-                succeeded: false

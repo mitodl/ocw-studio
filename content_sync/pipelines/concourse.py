@@ -195,7 +195,6 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     .replace("((purge-url))", f"purge/{self.website.name}")
                     .replace("((purge_header))", purge_header)
                     .replace("((version))", version)
-                    .replace("((api-token))", settings.API_BEARER_TOKEN)
                 )
             config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
             log.debug(config)

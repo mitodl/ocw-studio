@@ -101,7 +101,6 @@ def test_upsert_website_pipelines(  # pylint: disable=too-many-arguments
     """The correct concourse API args should be made for a website"""
     settings.CONCOURSE_HARD_PURGE = hard_purge
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
-    settings.API_BEARER_TOKEN = "top-secret-token"
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
     settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
     settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
@@ -156,7 +155,6 @@ def test_upsert_website_pipelines(  # pylint: disable=too-many-arguments
     assert f"{hugo_projects_path}.git" in config_str
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
     assert api_url in config_str
-    assert settings.API_BEARER_TOKEN in config_str
     if home_page:
         assert (
             f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/{website.name} s3://{bucket}/{website.name}"

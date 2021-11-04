@@ -11,6 +11,7 @@ from magic import Magic
 from mitol.common.utils import max_or_none
 from mitol.mail.api import get_message_sender
 
+from users.models import User
 from websites.constants import CONTENT_FILENAME_MAX_LEN, RESOURCE_TYPE_VIDEO
 from websites.messages import (
     PreviewOrPublishFailureMessage,
@@ -199,26 +200,23 @@ def unassigned_youtube_ids(website: Website) -> List[WebsiteContent]:
     )
 
 
-def mail_website_admins_on_publish(website: Website, version: str, success: bool):
-    """Send a success or failure message to site admins on publishing failure"""
-    site_admins = list(website.admin_group.user_set.all()) + [website.owner]
-    if not success:
-        log.error("%s version build failed for site %s", version, website.name)
+def mail_on_publish(website_name: str, version: str, success: bool, user_id: int):
+    """Send a publishing success or failure message to the requesting user"""
     message = (
         PreviewOrPublishSuccessMessage if success else PreviewOrPublishFailureMessage
     )
+    website = Website.objects.get(name=website_name)
     with get_message_sender(message) as sender:
-        for user in site_admins:
-            sender.build_and_send_message(
-                user,
-                {
-                    "site": {
-                        "title": website.title,
-                        "url": website.get_url(version),
-                    },
-                    "version": version,
+        sender.build_and_send_message(
+            User.objects.get(id=user_id),
+            {
+                "site": {
+                    "title": website.title,
+                    "url": website.get_url(version),
                 },
-            )
+                "version": version,
+            },
+        )
 
 
 def detect_mime_type(uploaded_file: UploadedFile) -> str:
