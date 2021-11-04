@@ -692,6 +692,12 @@ THREEPLAY_API_KEY = get_string(
     description="3play api key",
 )
 
+THREEPLAY_CALLBACK_KEY = get_string(
+    name="THREEPLAY_CALLBACK_KEY",
+    default=None,
+    description="3play callback key",
+)
+
 THREEPLAY_PROJECT_ID = get_int(
     name="THREEPLAY_PROJECT_ID",
     default=2,

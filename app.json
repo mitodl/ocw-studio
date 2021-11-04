@@ -449,6 +449,10 @@
       "description": "3play api key",
       "required": false
     },
+    "THREEPLAY_CALLBACK_KEY": {
+      "description": "3play callback key",
+      "required": false
+    },
     "THREEPLAY_PROJECT_ID": {
       "description": "3play project id",
       "required": false

@@ -7,10 +7,15 @@ import pytest
 from videos.constants import DESTINATION_YOUTUBE
 from videos.factories import VideoFileFactory
 from videos.threeplay_api import (
+    create_folder,
     fetch_file,
+    get_folder,
+    get_or_create_folder,
+    threeplay_order_transcript_request,
     threeplay_remove_tags,
     threeplay_transcript_api_request,
     threeplay_updated_media_file_request,
+    threeplay_upload_video_request,
     update_transcripts_for_video,
 )
 from websites.site_config_api import SiteConfig
@@ -150,3 +155,109 @@ def test_update_transcripts_for_video(
         )
     else:
         assert video_file.video.webvtt_transcript_file == ""
+
+
+def test_get_folder_request(mocker, settings):
+    """test get_folder"""
+    settings.THREEPLAY_API_KEY = "key"
+    mock_get_call = mocker.patch("videos.threeplay_api.requests.get")
+
+    response = get_folder("short_id")
+
+    mock_get_call.assert_called_once_with(
+        "https://api.3playmedia.com/v3/batches/", {"name": "short_id", "api_key": "key"}
+    )
+    assert response == mock_get_call.return_value.json()
+
+
+def test_create_folder_request(mocker, settings):
+    """test create_folder"""
+    settings.THREEPLAY_API_KEY = "key"
+    mock_post_call = mocker.patch("videos.threeplay_api.requests.post")
+
+    response = create_folder("short_id")
+
+    mock_post_call.assert_called_once_with(
+        "https://api.3playmedia.com/v3/batches/", {"name": "short_id", "api_key": "key"}
+    )
+    assert response == mock_post_call.return_value.json()
+
+
+@pytest.mark.parametrize(
+    "get_folder_response", [{}, {"data": []}, {"data": [{"id": 1}]}]
+)
+def test_get_or_create_folder(mocker, settings, get_folder_response):
+    """test get_or_create_folder"""
+
+    settings.THREEPLAY_API_KEY = "key"
+
+    mock_get_call = mocker.patch("videos.threeplay_api.requests.get")
+    mock_post_call = mocker.patch("videos.threeplay_api.requests.post")
+
+    mock_get_call.return_value.json.return_value = get_folder_response
+    mock_post_call.return_value.json.return_value = {"data": {"id": 2}}
+
+    response = get_or_create_folder("name")
+
+    if get_folder_response == {"data": [{"id": 1}]}:
+        mock_post_call.assert_not_called()
+
+        assert response == 1
+    else:
+        mock_post_call.assert_called_once_with(
+            "https://api.3playmedia.com/v3/batches/", {"name": "name", "api_key": "key"}
+        )
+        assert response == 2
+
+
+def test_threeplay_upload_video_request(mocker, settings):
+    """test threeplay_upload_video_request"""
+
+    settings.THREEPLAY_API_KEY = "key"
+    mocker.patch("videos.threeplay_api.get_or_create_folder", return_value=123)
+    mock_post_call = mocker.patch("videos.threeplay_api.requests.post")
+
+    payload = {
+        "source_url": "https://www.youtube.com/watch?v=youtube_id",
+        "reference_id": "youtube_id",
+        "api_key": "key",
+        "language_id": [1],
+        "name": "title",
+        "batch_id": 123,
+    }
+
+    result = threeplay_upload_video_request("website_short_id", "youtube_id", "title")
+
+    assert result == mock_post_call.return_value.json()
+    mock_post_call.assert_called_once_with(
+        "https://api.3playmedia.com/v3/files/", payload
+    )
+
+
+@pytest.mark.parametrize("threeplay_callback_key", [None, "threeplay_callback_key"])
+def test_threeplay_order_transcript_request(mocker, settings, threeplay_callback_key):
+    """test threeplay_order_transcript_request"""
+
+    settings.SITE_BASE_URL = "url"
+    settings.THREEPLAY_API_KEY = "key"
+    settings.THREEPLAY_CALLBACK_KEY = threeplay_callback_key
+
+    mock_post_call = mocker.patch("videos.threeplay_api.requests.post")
+
+    payload = {
+        "turnaround_level_id": 5,
+        "media_file_id": 456,
+        "api_key": "key",
+    }
+
+    if threeplay_callback_key:
+        payload[
+            "callback"
+        ] = "url/api/api/transcription-jobs/?video_id=123&callback_key=threeplay_callback_key"
+
+    result = threeplay_order_transcript_request(123, 456)
+
+    assert result == mock_post_call.return_value.json()
+    mock_post_call.assert_called_once_with(
+        "https://api.3playmedia.com/v3/transcripts/order/transcription", payload
+    )
