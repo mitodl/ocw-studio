@@ -2,9 +2,10 @@
 
 from django.db import migrations
 from websites.models import WebsiteContent
+from websites.constants import WEBSITE_SOURCE_STUDIO
 
 def add_ten_to_weights(apps, schema_editor):
-    navmenus = WebsiteContent.objects.filter(type="navmenu")
+    navmenus = WebsiteContent.objects.filter(type="navmenu", website__source=WEBSITE_SOURCE_STUDIO)
     for navmenu in navmenus:
         for menuitem in navmenu.metadata["leftnav"]:
             menuitem["weight"] += 10
