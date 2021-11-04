@@ -32,11 +32,7 @@ from main.utils import uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
 from websites import constants
-from websites.api import (
-    get_valid_new_filename,
-    mail_website_admins_on_publish,
-    unassigned_youtube_ids,
-)
+from websites.api import get_valid_new_filename, unassigned_youtube_ids
 from websites.constants import (
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
@@ -51,7 +47,6 @@ from websites.models import (
     WebsiteStarter,
 )
 from websites.permissions import (
-    BearerTokenPermission,
     HasWebsiteCollaborationPermission,
     HasWebsiteCollectionItemPermission,
     HasWebsiteCollectionPermission,
@@ -187,6 +182,7 @@ class WebsiteViewSet(
                 (
                     timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS) + now_in_utc()
                 ).isoformat(),
+                request.user.id,
             )
             return Response(
                 status=200,
@@ -224,6 +220,7 @@ class WebsiteViewSet(
                 (
                     timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS) + now_in_utc()
                 ).isoformat(),
+                request.user.id,
             )
             return Response(
                 status=200,
@@ -232,18 +229,6 @@ class WebsiteViewSet(
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error publishing %s", name)
             return Response(status=500, data={"details": str(exc)})
-
-    @action(detail=True, methods=["post"], permission_classes=[BearerTokenPermission])
-    def pipeline_complete(self, request, name=None):
-        """Process webhook requests from completed preview/publish pipeline runs"""
-        data = request.data
-        version = data["version"]
-        # success value will come back as a string
-        succeeded = data.get("success", "false").lower() == "true"
-        mail_website_admins_on_publish(
-            Website.objects.get(name=name), version, succeeded
-        )
-        return Response(status=200)
 
 
 class WebsiteStarterViewSet(

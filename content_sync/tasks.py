@@ -16,7 +16,7 @@ from content_sync.decorators import single_website_task
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
 from main.celery import app
-from websites.api import mail_website_admins_on_publish
+from websites.api import mail_on_publish
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
@@ -153,7 +153,6 @@ def preview_website_backend(website_name: str, preview_date: str):
             api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_DRAFT)
     except:  # pylint:disable=bare-except
         log.exception("Error previewing site %s", website.name)
-        mail_website_admins_on_publish(website, BaseSyncPipeline.VERSION_DRAFT, False)
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
@@ -173,7 +172,6 @@ def publish_website_backend(website_name: str, publish_date: str):
             api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_LIVE)
     except:  # pylint:disable=bare-except
         log.exception("Error publishing site %s", website.name)
-        mail_website_admins_on_publish(website, BaseSyncPipeline.VERSION_LIVE, False)
 
 
 @app.task(acks_late=True)
@@ -186,7 +184,7 @@ def sync_github_site_configs(url: str, files: List[str], commit: Optional[str] =
 
 @app.task(acks_late=True)
 def poll_build_status_until_complete(
-    website_name: str, version: str, datetime_to_expire: str
+    website_name: str, version: str, datetime_to_expire: str, user_id: int
 ):
     """
     Poll concourses REST API repeatedly until the build completes
@@ -232,11 +230,17 @@ def poll_build_status_until_complete(
         PUBLISH_STATUS_ERRORED,
         PUBLISH_STATUS_ABORTED,
     ]:
+        mail_on_publish(
+            website_name, version, status == PUBLISH_STATUS_SUCCEEDED, user_id
+        )
         return
 
     if now < parse(datetime_to_expire):
         # if not past expiration date, check again in 10 seconds
         poll_build_status_until_complete.apply_async(
-            args=[website_name, version, datetime_to_expire],
+            args=[website_name, version, datetime_to_expire, user_id],
             countdown=settings.WEBSITE_POLL_FREQUENCY,
         )
+    else:
+        # if past the expiration date, assume something went wrong
+        mail_on_publish(website_name, version, False, user_id)

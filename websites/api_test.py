@@ -4,13 +4,14 @@ from uuid import UUID
 import factory
 import pytest
 
+from users.factories import UserFactory
 from websites.api import (
     detect_mime_type,
     fetch_website,
     get_valid_new_filename,
     get_valid_new_slug,
     is_ocw_site,
-    mail_website_admins_on_publish,
+    mail_on_publish,
     unassigned_youtube_ids,
     update_youtube_thumbnail,
 )
@@ -255,37 +256,29 @@ def test_unassigned_youtube_ids(mocker, is_ocw):
 
 @pytest.mark.parametrize("success", [True, False])
 @pytest.mark.parametrize("version", ["live", "draft"])
-def test_mail_website_admins_on_publish(
-    settings, mocker, success, version, permission_groups
-):
-    """mail_website_admins_on_publish should send correct email to correct users"""
+def test_mail_on_publish(settings, mocker, success, version, permission_groups):
+    """mail_on_publish should send correct email to correct users"""
     settings.OCW_STUDIO_LIVE_URL = "http://test.live.edu/"
     settings.OCW_STUDIO_DRAFT_URL = "http://test.draft.edu"
-    mock_log = mocker.patch("websites.api.log.error")
     mock_get_message_sender = mocker.patch("websites.api.get_message_sender")
     mock_sender = mock_get_message_sender.return_value.__enter__.return_value
     message = (
         PreviewOrPublishSuccessMessage if success else PreviewOrPublishFailureMessage
     )
     website = permission_groups.websites[0]
-    mail_website_admins_on_publish(website, version, success)
+    user = UserFactory.create()
+    mail_on_publish(website.name, version, success, user.id)
     mock_get_message_sender.assert_called_once_with(message)
-    if not success:
-        mock_log.assert_called_once_with(
-            "%s version build failed for site %s", version, website.name
-        )
-    assert mock_sender.build_and_send_message.call_count == 2
-    for user in [website.owner]:
-        mock_sender.build_and_send_message.assert_any_call(
-            user,
-            {
-                "site": {
-                    "title": website.title,
-                    "url": f"http://test.{version}.edu/{website.starter.config['root-url-path']}/{website.name}",
-                },
-                "version": version,
+    mock_sender.build_and_send_message.assert_any_call(
+        user,
+        {
+            "site": {
+                "title": website.title,
+                "url": f"http://test.{version}.edu/{website.starter.config['root-url-path']}/{website.name}",
             },
-        )
+            "version": version,
+        },
+    )
 
 
 def test_detect_mime_type(mocker):

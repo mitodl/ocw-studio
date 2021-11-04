@@ -267,6 +267,7 @@ def test_websites_endpoint_preview(settings, mocker, drf_client, has_missing_ids
         (
             now + datetime.timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS)
         ).isoformat(),
+        editor.id,
     )
     website.refresh_from_db()
     assert website.has_unpublished_draft is False
@@ -328,6 +329,7 @@ def test_websites_endpoint_publish(settings, mocker, drf_client, has_missing_ids
             (
                 now + datetime.timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS)
             ).isoformat(),
+            admin.id,
         )
     assert resp.data["details"] == expected_msg
 
@@ -363,41 +365,6 @@ def test_websites_endpoint_publish_error(mocker, drf_client):
     )
     assert resp.status_code == 500
     assert resp.data == {"details": "422 {}"}
-
-
-@pytest.mark.parametrize("success", [True, False])
-@pytest.mark.parametrize("version", ["live", "draft"])
-def test_websites_endpoint_pipeline_complete(
-    settings, mocker, drf_client, permission_groups, version, success
-):
-    """The pipeline_complete endpoint should send notifications to site owner/admins"""
-    mock_mail_website_admins = mocker.patch(
-        "websites.views.mail_website_admins_on_publish"
-    )
-    settings.API_BEARER_TOKEN = "abc123"
-    website = permission_groups.websites[0]
-    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
-    resp = drf_client.post(
-        reverse("websites_api-pipeline-complete", kwargs={"name": website.name}),
-        data={"version": version, "success": f"{success}"},
-    )
-    mock_mail_website_admins.assert_called_once_with(website, version, success)
-    assert resp.status_code == 200
-
-
-@pytest.mark.parametrize("token", ["abc123", None])
-def test_websites_endpoint_pipeline_complete_denied(
-    settings, drf_client, permission_groups, token
-):
-    """The pipeline_complete endpoint should raise a permission error without a valid token"""
-    settings.API_BEARER_TOKEN = token
-    website = permission_groups.websites[0]
-    drf_client.credentials(HTTP_AUTHORIZATION="Bearer wrong-token")
-    resp = drf_client.post(
-        reverse("websites_api-pipeline-complete", kwargs={"name": website.name}),
-        json={"version": "live", "success": True},
-    )
-    assert resp.status_code == 403
 
 
 def test_websites_endpoint_detail_update_denied(drf_client):
