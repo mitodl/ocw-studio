@@ -286,6 +286,7 @@ def test_can_view_edit_website_content(
     for [user, safe_perm, unsafe_perm] in [
         [permission_groups.global_admin, True, True],
         [permission_groups.global_author, False, False],
+        [AnonymousUser(), False, False],
         [permission_groups.site_admin, True, True],
         [permission_groups.site_editor, True, (True and not is_admin_only_content)],
         [website.owner, True, True],
@@ -294,12 +295,9 @@ def test_can_view_edit_website_content(
             "type": (ADMIN_ONLY_CONTENT[0] if is_admin_only_content else "resource")
         }
         for method, method_perm in [("GET", safe_perm), ("POST", unsafe_perm)]:
-            assert (
-                permissions.HasWebsiteContentPermission().has_permission(
-                    mocker.Mock(user=user, method=method, data=data), view
-                )
-                is method_perm
-            )
+            assert permissions.HasWebsiteContentPermission().has_permission(
+                mocker.Mock(user=user, method=method, data=data), view
+            ) is (True if (method == "GET" and user.is_authenticated) else method_perm)
 
         for method, method_perm in [("GET", safe_perm), ("PATCH", unsafe_perm)]:
             for content in [
