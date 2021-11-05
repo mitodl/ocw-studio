@@ -81,7 +81,7 @@ const internalItemToHugo = (
   return {
     identifier: item.id,
     name:       item.text,
-    weight:     siblingIdx * 10,
+    weight:     (siblingIdx + 1) * 10,
     ...(item.targetUrl ? { url: item.targetUrl } : {}),
     ...(parent ? { parent: parent } : {})
   }
