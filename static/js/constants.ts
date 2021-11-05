@@ -164,11 +164,13 @@ export enum PublishStatus {
   Pending = "pending",
   Errored = "errored",
   Aborted = "aborted",
+  Started = "started",
   NotStarted = "not-started"
 }
 
 export const PUBLISH_STATUS_PROCESSING_STATES = [
   PublishStatus.Pending,
+  PublishStatus.Started,
   PublishStatus.NotStarted
 ]
 

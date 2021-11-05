@@ -149,6 +149,11 @@ def preview_website_backend(website_name: str, preview_date: str):
         backend = api.get_sync_backend(website)
         backend.sync_all_content_to_backend()
         backend.create_backend_preview()
+
+        pipeline = api.get_sync_pipeline(website)
+        build_id = pipeline.trigger_pipeline_build(BaseSyncPipeline.VERSION_DRAFT)
+        Website.objects.filter(pk=website.pk).update(latest_build_id_draft=build_id)
+
         if preview_date is None:
             api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_DRAFT)
     except:  # pylint:disable=bare-except
@@ -168,6 +173,11 @@ def publish_website_backend(website_name: str, publish_date: str):
         backend = api.get_sync_backend(website)
         backend.sync_all_content_to_backend()
         backend.create_backend_release()
+
+        pipeline = api.get_sync_pipeline(website)
+        build_id = pipeline.trigger_pipeline_build(BaseSyncPipeline.VERSION_LIVE)
+        Website.objects.filter(pk=website.pk).update(latest_build_id_live=build_id)
+
         if publish_date is None:
             api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_LIVE)
     except:  # pylint:disable=bare-except
@@ -189,51 +199,58 @@ def poll_build_status_until_complete(
     """
     Poll concourses REST API repeatedly until the build completes
     """
-    pipeline = api.get_sync_pipeline(Website.objects.get(name=website_name))
-    status = pipeline.get_latest_build_status(version)
+    website = Website.objects.get(name=website_name)
+    build_id = (
+        website.latest_build_id_draft
+        if version == "draft"
+        else website.latest_build_id_live
+    )
     now = now_in_utc()
-    if version == "draft":
-        update_kwargs = {
-            "draft_publish_status": status,
-            "draft_publish_status_updated_on": now,
-        }
+    if build_id is not None:
+        pipeline = api.get_sync_pipeline(website)
+        status = pipeline.get_build_status(build_id)
+        if version == "draft":
+            update_kwargs = {
+                "draft_publish_status": status,
+                "draft_publish_status_updated_on": now,
+            }
+            if status in [
+                PUBLISH_STATUS_SUCCEEDED,
+                PUBLISH_STATUS_ERRORED,
+                PUBLISH_STATUS_ABORTED,
+            ]:
+                update_kwargs["draft_publish_date"] = now
+
+                if status != PUBLISH_STATUS_SUCCEEDED:
+                    # Allow user to retry
+                    update_kwargs["has_unpublished_draft"] = True
+        else:
+            update_kwargs = {
+                "live_publish_status": status,
+                "live_publish_status_updated_on": now,
+            }
+            if status in [
+                PUBLISH_STATUS_SUCCEEDED,
+                PUBLISH_STATUS_ERRORED,
+                PUBLISH_STATUS_ABORTED,
+            ]:
+                update_kwargs["publish_date"] = now
+
+                if status != PUBLISH_STATUS_SUCCEEDED:
+                    # Allow user to retry
+                    update_kwargs["has_unpublished_live"] = True
+
+        Website.objects.filter(name=website_name).update(**update_kwargs)
+
         if status in [
             PUBLISH_STATUS_SUCCEEDED,
             PUBLISH_STATUS_ERRORED,
             PUBLISH_STATUS_ABORTED,
         ]:
-            update_kwargs["draft_publish_date"] = now
-
-            if status != PUBLISH_STATUS_SUCCEEDED:
-                # Allow user to retry
-                update_kwargs["has_unpublished_draft"] = True
-    else:
-        update_kwargs = {
-            "live_publish_status": status,
-            "live_publish_status_updated_on": now,
-        }
-        if status in [
-            PUBLISH_STATUS_SUCCEEDED,
-            PUBLISH_STATUS_ERRORED,
-            PUBLISH_STATUS_ABORTED,
-        ]:
-            update_kwargs["publish_date"] = now
-
-            if status != PUBLISH_STATUS_SUCCEEDED:
-                # Allow user to retry
-                update_kwargs["has_unpublished_live"] = True
-
-    Website.objects.filter(name=website_name).update(**update_kwargs)
-
-    if status in [
-        PUBLISH_STATUS_SUCCEEDED,
-        PUBLISH_STATUS_ERRORED,
-        PUBLISH_STATUS_ABORTED,
-    ]:
-        mail_on_publish(
-            website_name, version, status == PUBLISH_STATUS_SUCCEEDED, user_id
-        )
-        return
+            mail_on_publish(
+                website_name, version, status == PUBLISH_STATUS_SUCCEEDED, user_id
+            )
+            return
 
     if now < parse(datetime_to_expire):
         # if not past expiration date, check again in 10 seconds

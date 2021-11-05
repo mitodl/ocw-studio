@@ -171,11 +171,13 @@ class WebsiteViewSet(
             message = ""
             if len(incomplete_videos) > 0:
                 message = f"WARNING: The following videos have missing YouTube IDs: {','.join(incomplete_videos)}"
+            Website.objects.filter(pk=website.pk).update(
+                has_unpublished_draft=False,
+                draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
+                draft_publish_status_updated_on=now_in_utc(),
+                latest_build_id_draft=None,
+            )
             preview_website(website)
-            website.has_unpublished_draft = False
-            website.draft_publish_status = constants.PUBLISH_STATUS_NOT_STARTED
-            website.draft_publish_status_updated_on = now_in_utc()
-            website.save()
             poll_build_status_until_complete.delay(
                 website.name,
                 "draft",
@@ -209,11 +211,13 @@ class WebsiteViewSet(
                         "details": f"The following video resources require YouTube ID's: {','.join(incomplete_videos)}"
                     },
                 )
+            Website.objects.filter(pk=website.pk).update(
+                has_unpublished_live=False,
+                live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
+                live_publish_status_updated_on=now_in_utc(),
+                latest_build_id_live=None,
+            )
             publish_website(website)
-            website.has_unpublished_live = False
-            website.live_publish_status = constants.PUBLISH_STATUS_NOT_STARTED
-            website.live_publish_status_updated_on = now_in_utc()
-            website.save()
             poll_build_status_until_complete.delay(
                 website.name,
                 "live",

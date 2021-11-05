@@ -62,7 +62,14 @@ class Command(BaseCommand):
         for website in website_qset.iterator():
             pipeline = get_sync_pipeline(website)
             try:
-                pipeline.trigger_pipeline_build(version)
+                build_id = pipeline.trigger_pipeline_build(version)
+                Website.objects.filter(pk=website.pk).update(
+                    **{
+                        "latest_build_id_draft"
+                        if version == "draft"
+                        else "latest_build_id_live": build_id
+                    }
+                )
                 total_pipelines += 1
                 if is_verbose:
                     self.stdout.write(f"{website.name} pipeline triggered")

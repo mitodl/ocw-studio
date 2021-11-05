@@ -71,7 +71,9 @@ class Website(TimestampedModel):
     publish_date = models.DateTimeField(null=True, blank=True)
     draft_publish_date = models.DateTimeField(null=True, blank=True)
     has_unpublished_live = models.BooleanField(default=True)
+    latest_build_id_live = models.IntegerField(null=True)
     has_unpublished_draft = models.BooleanField(default=True)
+    latest_build_id_draft = models.IntegerField(null=True)
     live_publish_status = models.CharField(
         max_length=20,
         null=True,

@@ -1,6 +1,5 @@
 """ concourse tests """
 import json
-from unittest.mock import Mock
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -207,14 +206,19 @@ def test_trigger_pipeline_build(settings, mocker, version):
         "content_sync.pipelines.concourse.ConcourseApi.get",
         return_value={"config": {"jobs": [{"name": job_name}]}},
     )
-    mock_post = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.post")
+    expected_build_id = 123456
+    mock_post = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseApi.post",
+        return_value={"id": expected_build_id},
+    )
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(
             source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
         )
     )
     pipeline = ConcourseGithubPipeline(website)
-    pipeline.trigger_pipeline_build(version)
+    build_id = pipeline.trigger_pipeline_build(version)
+    assert build_id == expected_build_id
     mock_get.assert_called_once_with(
         f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={pipeline.instance_vars}"
     )
@@ -240,25 +244,13 @@ def test_unpause_pipeline(settings, mocker, version):
     )
 
 
-@pytest.mark.parametrize(
-    "response, expected_status",
-    [
-        [{}, "not-started"],
-        [{"next_build": {"status": "pending"}}, "pending"],
-        [{"finished_build": {"status": "succeeded"}}, "succeeded"],
-        [{"finished_build": {"status": "errored"}}, "errored"],
-        [{"finished_build": {"status": "aborted"}}, "aborted"],
-        [{"finished_build": {}}, "not-started"],
-        [HTTPError(response=Mock(status_code=404)), "not-started"],
-    ],
-)
-@pytest.mark.parametrize("version", ["live", "draft"])
-def test_get_latest_build_status(settings, mocker, response, expected_status, version):
+def test_get_build_status(mocker):
     """Get the status of the build for the site"""
-    job_name = "build-ocw-sites"
+    build_id = 123456
+    status = "status"
     mock_get = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.get",
-        side_effect=[{"config": {"jobs": [{"name": job_name}]}}, response],
+        "content_sync.pipelines.concourse.ConcourseApi.get_build",
+        return_value={"status": status},
     )
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(
@@ -266,10 +258,5 @@ def test_get_latest_build_status(settings, mocker, response, expected_status, ve
         )
     )
     pipeline = ConcourseGithubPipeline(website)
-    assert pipeline.get_latest_build_status(version) == expected_status
-    mock_get.assert_any_call(
-        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={pipeline.instance_vars}"
-    )
-    mock_get.assert_any_call(
-        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/jobs/{job_name}?vars={pipeline.instance_vars}"
-    )
+    assert pipeline.get_build_status(build_id) == status
+    mock_get.assert_called_once_with(build_id)
