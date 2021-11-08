@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.34.1
+--------------
+
+- Poll for gdrive folder if blank on resources page (#781)
+- Update various pages to use new, Card-based designs
+- make sure menu items never have zero weight (#775)
+- Tweak WebsiteContent permissions (#772)
+- Send publish email within polling task and only to the publish requester (#766)
+- upgrade to yarn 3
+- Fix several celery task bugs (#774)
+- add a 404 page for a missing site
+- add page titles
+
 Version 0.34.0 (Released November 08, 2021)
 --------------
 
