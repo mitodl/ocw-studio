@@ -1,8 +1,9 @@
 """Website email messages"""
 from types import SimpleNamespace
 
-from content_sync.constants import VERSION_LIVE
 from mitol.mail.messages import TemplatedMessage
+
+from content_sync.constants import VERSION_LIVE
 
 
 class PreviewOrPublishSuccessMessage(TemplatedMessage):

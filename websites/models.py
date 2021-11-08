@@ -21,7 +21,7 @@ from safedelete.managers import (
 from safedelete.models import SafeDeleteModel
 from safedelete.queryset import SafeDeleteQueryset
 
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import VERSION_LIVE
 from main.utils import uuid_string
 from users.models import User
 from websites import constants

@@ -12,7 +12,7 @@ from mitol.common.utils import now_in_utc, pytz
 
 from content_sync import api
 from content_sync.apis import github
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import single_website_task
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
