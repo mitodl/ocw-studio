@@ -5,7 +5,7 @@ collections: list(include('content_item'))
 content_item:
     name: str()
     label: str()
-    label_singular: str(required=True)
+    label_singular: str(required=False)
     category: str()
     fields: list(include('field'), required=False)
     folder: str(required=False)
@@ -25,33 +25,26 @@ config_field_base_props: &config_field_base_props
     help: str(required=False)
     default: any(required=False)
     condition: include('field_condition', required=False)
-
 markdown_config_field: &markdown_config_field
     << : *config_field_base_props
     widget: str(equals='markdown')
     minimal: bool(required=False)
     attach: str(required=False)
-
 file_config_field: &file_config_field
     << : *config_field_base_props
     widget: str(equals='file')
-
 boolean_config_field: &boolean_config_field
     << : *config_field_base_props
     widget: str(equals='boolean')
-
 text_config_field: &text_config_field
     << : *config_field_base_props
     widget: str(equals='text')
-
 string_config_field: &string_config_field
     << : *config_field_base_props
     widget: str(equals='string')
-
 hidden_config_field: &hidden_config_field
     << : *config_field_base_props
     widget: str(equals='hidden')
-
 select_config_field: &select_config_field
     << : *config_field_base_props
     widget: str(equals='select')
@@ -59,59 +52,56 @@ select_config_field: &select_config_field
     multiple: bool(required=False)
     min: int(required=False)
     max: int(required=False)
-
 object_config_field: &object_config_field
     << : *config_field_base_props
     widget: str(equals='object')
     fields: list(any(
-      *markdown_config_field,
-      *file_config_field,
-      *boolean_config_field,
-      *text_config_field,
-      *string_config_field,
-      *hidden_config_field,
-      *select_config_field,
-      *hierarchical_select_config_field,
-      *relation_config_field,
+      include('markdown_config_field'),
+      include('file_config_field'),
+      include('boolean_config_field'),
+      include('text_config_field'),
+      include('string_config_field'),
+      include('hidden_config_field'),
+      include('select_config_field'),
+      include('hierarchical_select_config_field'),
+      include('relation_config_field'),
       )
       )
     collapsed: bool(required=False)
-
 hierarchical_select_config_field: &hierarchical_select_config_field
     << : *config_field_base_props
     widget: str(equals='hierarchical-select')
     options_map: map(required=False)
+    levels: list(include('level'), required=False)
     min: int(required=False)
     max: int(required=False)
-
 relation_config_field: &relation_config_field
     << : *config_field_base_props
     widget: str(equals='relation')
     display_field: str(required=False)
+    collection: str()
     multiple: bool(required=False)
     min: int(required=False)
     max: int(required=False)
     filter: include('relation_filter', required=False)
     website: str(required=False)
     sortable: bool(required=False)
-
 menu_config_field: &menu_config_field
     << : *config_field_base_props
     widget: str(equals='menu')
     collections: list(str(), required=False)
-
 field: any(
-  *markdown_config_field,
-  *file_config_field,
-  *boolean_config_field,
-  *text_config_field,
-  *string_config_field,
-  *hidden_config_field,
-  *select_config_field,
-  *object_config_field,
-  *hierarchical_select_config_field,
-  *relation_config_field,
-  *menu_config_field,
+  include('markdown_config_field'),
+  include('file_config_field'),
+  include('boolean_config_field'),
+  include('text_config_field'),
+  include('string_config_field'),
+  include('hidden_config_field'),
+  include('select_config_field'),
+  include('object_config_field'),
+  include('hierarchical_select_config_field'),
+  include('relation_config_field'),
+  include('menu_config_field'),
   )
 ---
 field_condition:
