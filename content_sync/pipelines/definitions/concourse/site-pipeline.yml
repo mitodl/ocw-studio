@@ -30,6 +30,8 @@ jobs:
         trigger: true
       - get: ocw-hugo-projects
         trigger: true
+      - get: course-markdown
+        trigger: false
       - task: build-course-task
         params:
           OCW_STUDIO_BASE_URL: ((ocw-studio-url))
