@@ -23,6 +23,7 @@ collections:
     fields:
       - label: Title
         name: title
+        attach: "Resource"
         required: true
         widget: string
       - label: Description
