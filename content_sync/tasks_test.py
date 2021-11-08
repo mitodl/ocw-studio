@@ -292,8 +292,9 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
 )
 @pytest.mark.parametrize("version", ["draft", "live"])
 @pytest.mark.parametrize("has_build_number", [True, False])
-def test_poll_build_status_until_complete(
-    mocker, api_mock, final_status, version, has_build_number
+@pytest.mark.parametrize("errored", [True, False])
+def test_poll_build_status_until_complete(  # pylint: disable=too-many-arguments
+    mocker, api_mock, final_status, version, has_build_number, errored
 ):
     """poll_build_status_until_complete should repeatedly poll until a finished state is reached"""
     build_id = 123456
@@ -313,7 +314,7 @@ def test_poll_build_status_until_complete(
         datetime.datetime(2020, 4, 1, tzinfo=pytz.utc),
     ]
     mocker.patch("content_sync.tasks.now_in_utc", side_effect=now_dates)
-    publish_mock = mocker.patch("content_sync.tasks.mail_on_publish")
+    mail_mock = mocker.patch("content_sync.tasks.mail_on_publish")
     get_build_status_mock = api_mock.get_sync_pipeline.return_value.get_build_status
     get_build_status_mock.side_effect = [
         PUBLISH_STATUS_NOT_STARTED,
@@ -321,43 +322,43 @@ def test_poll_build_status_until_complete(
         PUBLISH_STATUS_PENDING,
         final_status,
     ]
+    if errored:
+        api_mock.get_sync_pipeline.side_effect = ZeroDivisionError
     final_now_date = now_dates[-1]
     expiration_datetime = final_now_date - datetime.timedelta(days=5)
     tasks.poll_build_status_until_complete.delay(
         website.name, version, expiration_datetime.isoformat(), user.id
     )
     website.refresh_from_db()
-    if not has_build_number:
-        assert website.draft_publish_status is None
-        assert website.has_unpublished_draft is False
-        assert website.live_publish_status is None
-        assert website.has_unpublished_live is False
-    elif version == "draft":
-        assert website.draft_publish_status == final_status
+    expected_final_status = (
+        PUBLISH_STATUS_ERRORED if errored or not has_build_number else final_status
+    )
+    if version == "draft":
+        assert website.draft_publish_status == expected_final_status
         assert website.draft_publish_status_updated_on == final_now_date
         assert website.draft_publish_date == final_now_date
         assert website.has_unpublished_draft == (
-            final_status != PUBLISH_STATUS_SUCCEEDED
+            expected_final_status != PUBLISH_STATUS_SUCCEEDED
         )
     else:
-        assert website.live_publish_status == final_status
+        assert website.live_publish_status == expected_final_status
         assert website.live_publish_status_updated_on == final_now_date
         assert website.publish_date == final_now_date
         assert website.has_unpublished_live == (
-            final_status != PUBLISH_STATUS_SUCCEEDED
+            expected_final_status != PUBLISH_STATUS_SUCCEEDED
         )
 
-    if has_build_number:
+    if has_build_number and not errored:
         assert get_build_status_mock.call_count == 4
         get_build_status_mock.assert_any_call(build_id)
         api_mock.get_sync_pipeline.assert_any_call(website)
         assert api_mock.get_sync_pipeline.call_count == len(now_dates)
     else:
         assert get_build_status_mock.called is False
-        assert api_mock.get_sync_pipeline.called is False
-    publish_mock.assert_called_once_with(
+        assert api_mock.get_sync_pipeline.called is has_build_number
+    mail_mock.assert_called_once_with(
         website.name,
         version,
-        has_build_number and final_status == PUBLISH_STATUS_SUCCEEDED,
+        has_build_number and not errored and final_status == PUBLISH_STATUS_SUCCEEDED,
         user.id,
     )
