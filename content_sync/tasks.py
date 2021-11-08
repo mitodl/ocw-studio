@@ -151,14 +151,14 @@ def preview_website_backend(website_name: str, preview_date: str):
         backend.sync_all_content_to_backend()
         backend.create_backend_preview()
 
+        if preview_date is None:
+            api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_DRAFT)
+
         pipeline = api.get_sync_pipeline(website)
         build_id = pipeline.trigger_pipeline_build(BaseSyncPipeline.VERSION_DRAFT)
         Website.objects.filter(pk=website.pk).update(latest_build_id_draft=build_id)
-
-        if preview_date is None:
-            api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_DRAFT)
     except:  # pylint:disable=bare-except
-        log.exception("Error previewing site %s", website.name)
+        log.exception("Error previewing site %s", website_name)
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
@@ -175,14 +175,14 @@ def publish_website_backend(website_name: str, publish_date: str):
         backend.sync_all_content_to_backend()
         backend.create_backend_release()
 
+        if publish_date is None:
+            api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_LIVE)
+
         pipeline = api.get_sync_pipeline(website)
         build_id = pipeline.trigger_pipeline_build(BaseSyncPipeline.VERSION_LIVE)
         Website.objects.filter(pk=website.pk).update(latest_build_id_live=build_id)
-
-        if publish_date is None:
-            api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_LIVE)
     except:  # pylint:disable=bare-except
-        log.exception("Error publishing site %s", website.name)
+        log.exception("Error publishing site %s", website_name)
 
 
 @app.task(acks_late=True)
