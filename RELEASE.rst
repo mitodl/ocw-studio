@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.34.0
+Version 0.34.0 (Released November 08, 2021)
 --------------
 
 - Sync status frontend (#758)
