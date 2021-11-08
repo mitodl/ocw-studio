@@ -55,6 +55,18 @@ class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
         fields = WebsiteStarterSerializer.Meta.fields + ["config"]
 
 
+class WebsiteGoogleDriveMixin(serializers.Serializer):
+    """ Serializer for website google drive details"""
+
+    gdrive_url = serializers.SerializerMethodField()
+
+    def get_gdrive_url(self, instance):
+        """ Get the Google Drive folder URL for the site"""
+        if is_gdrive_enabled() and instance.gdrive_folder:
+            return urljoin(gdrive_root_url(), instance.gdrive_folder)
+        return None
+
+
 class WebsiteSerializer(serializers.ModelSerializer):
     """ Serializer for websites """
 
@@ -79,14 +91,15 @@ class WebsiteSerializer(serializers.ModelSerializer):
         extra_kwargs = {"owner": {"write_only": True}}
 
 
-class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializerMixin):
+class WebsiteDetailSerializer(
+    serializers.ModelSerializer, WebsiteGoogleDriveMixin, RequestUserSerializerMixin
+):
     """ Serializer for websites with serialized config """
 
     starter = WebsiteStarterDetailSerializer(read_only=True)
     is_admin = serializers.SerializerMethodField(read_only=True)
     live_url = serializers.SerializerMethodField()
     draft_url = serializers.SerializerMethodField()
-    gdrive_url = serializers.SerializerMethodField()
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
@@ -102,12 +115,6 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
     def get_draft_url(self, instance):
         """Get the draft url for the site"""
         return instance.get_url(version="draft")
-
-    def get_gdrive_url(self, instance):
-        """ Get the Google Drive folder URL for the site"""
-        if is_gdrive_enabled():
-            return urljoin(gdrive_root_url(), instance.gdrive_folder)
-        return None
 
     def update(self, instance, validated_data):
         """ Remove owner attribute if present, it should not be changed"""
@@ -130,9 +137,10 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
             "live_publish_status_updated_on",
             "draft_publish_status",
             "draft_publish_status_updated_on",
+            "gdrive_url",
             "sync_status",
-            "synced_on",
             "sync_errors",
+            "synced_on",
         ]
         read_only_fields = [
             "uuid",
@@ -148,13 +156,14 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
             "live_publish_status_updated_on",
             "draft_publish_status",
             "draft_publish_status_updated_on",
+            "gdrive_url",
             "sync_status",
-            "synced_on",
             "sync_errors",
+            "synced_on",
         ]
 
 
-class WebsiteStatusSerializer(serializers.ModelSerializer):
+class WebsiteStatusSerializer(serializers.ModelSerializer, WebsiteGoogleDriveMixin):
     """Serializer for website status fields"""
 
     class Meta:
@@ -170,9 +179,10 @@ class WebsiteStatusSerializer(serializers.ModelSerializer):
             "live_publish_status_updated_on",
             "draft_publish_status",
             "draft_publish_status_updated_on",
+            "gdrive_url",
             "sync_status",
-            "synced_on",
             "sync_errors",
+            "synced_on",
         ]
         read_only_fields = fields
 

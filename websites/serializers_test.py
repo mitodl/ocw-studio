@@ -31,6 +31,7 @@ from websites.serializers import (
     WebsiteSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
+    WebsiteStatusSerializer,
 )
 
 
@@ -107,15 +108,49 @@ def test_website_serializer(has_starter):
     assert "config" not in serialized_data
 
 
+@pytest.mark.parametrize("drive_folder", [None, "abc123"])
+def test_website_status_serializer(settings, drive_folder):
+    """WebsiteStatusSerializer should serialize a Website object with the correct status fields"""
+    settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "dfg789"
+    settings.DRIVE_SERVICE_ACCOUNT_CREDS = {"key": "value"}
+    settings.DRIVE_SHARED_ID = "abc123"
+    values = {
+        "publish_date": "2021-11-01T00:00:00Z",
+        "draft_publish_date": "2021-11-02T00:00:00Z",
+        "has_unpublished_live": True,
+        "has_unpublished_draft": False,
+        "live_publish_status": "succeeded",
+        "live_publish_status_updated_on": "2021-11-03T00:00:00Z",
+        "draft_publish_status": "errored",
+        "draft_publish_status_updated_on": "2021-11-04T00:00:00Z",
+        "sync_status": "Complete",
+        "sync_errors": ["error1"],
+        "synced_on": "2021-11-05T00:00:00Z",
+    }
+    website = WebsiteFactory.build(gdrive_folder=drive_folder, **values)
+    serialized_data = WebsiteStatusSerializer(instance=website).data
+    assert serialized_data["gdrive_url"] == (
+        f"https://drive.google.com/drive/folders/{settings.DRIVE_UPLOADS_PARENT_FOLDER_ID}/{website.gdrive_folder}"
+        if drive_folder is not None
+        else None
+    )
+    for (key, value) in values.items():
+        assert serialized_data.get(key) == value
+
+
 @pytest.mark.parametrize("has_starter", [True, False])
+@pytest.mark.parametrize("drive_folder", [None, "abc123"])
 @pytest.mark.parametrize("drive_credentials", [None, {"creds: True"}])
-def test_website_detail_serializer(settings, has_starter, drive_credentials):
+def test_website_detail_serializer(
+    settings, has_starter, drive_folder, drive_credentials
+):
     """WebsiteDetailSerializer should serialize a Website object with the correct fields, including config"""
     settings.DRIVE_SERVICE_ACCOUNT_CREDS = drive_credentials
     settings.DRIVE_SHARED_ID = "abc123"
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = None
-    website = (
-        WebsiteFactory.build() if has_starter else WebsiteFactory.build(starter=None)
+    website = WebsiteFactory.build(
+        gdrive_folder=drive_folder,
+        starter=(WebsiteStarterFactory.create() if has_starter else None),
     )
     serialized_data = WebsiteDetailSerializer(instance=website).data
     assert serialized_data["name"] == website.name
@@ -137,7 +172,7 @@ def test_website_detail_serializer(settings, has_starter, drive_credentials):
     assert serialized_data["has_unpublished_draft"] == website.has_unpublished_draft
     assert serialized_data["gdrive_url"] == (
         f"https://drive.google.com/drive/folders/abc123/{website.gdrive_folder}"
-        if drive_credentials is not None
+        if drive_credentials is not None and drive_folder is not None
         else None
     )
 
