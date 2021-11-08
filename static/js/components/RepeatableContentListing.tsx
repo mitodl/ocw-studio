@@ -38,13 +38,14 @@ import {
 } from "../types/websites"
 import { createModalState } from "../types/modal_state"
 import { StudioList, StudioListItem } from "./StudioList"
+import { isNil } from "ramda"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
 }): JSX.Element | null {
   const store = useStore()
   const { configItem } = props
-
+  const isResource = configItem.name === "resource"
   const website = useWebsite()
 
   const { search } = useLocation()
@@ -77,12 +78,15 @@ export default function RepeatableContentListing(props: {
   useInterval(
     async () => {
       if (
+        SETTINGS.gdrive_enabled &&
+        isResource &&
         website &&
-        website.sync_status &&
-        GOOGLE_DRIVE_SYNC_PROCESSING_STATES.includes(
-          // @ts-ignore
-          website.sync_status
-        )
+        (isNil(website.gdrive_url) ||
+          (website.sync_status &&
+            GOOGLE_DRIVE_SYNC_PROCESSING_STATES.includes(
+              // @ts-ignore
+              website.sync_status
+            )))
       ) {
         const response = await store.dispatch(
           // This will update the DriveSyncStatusIndicator
@@ -170,7 +174,7 @@ export default function RepeatableContentListing(props: {
       <div className="d-flex flex-direction-row align-items-right justify-content-between py-3">
         <h2 className="m-0 p-0">{configItem.label}</h2>
         <div className="noflex">
-          {SETTINGS.gdrive_enabled && configItem.name === "resource" ? (
+          {SETTINGS.gdrive_enabled && isResource ? (
             website.gdrive_url ? (
               <>
                 <div>

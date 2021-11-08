@@ -370,10 +370,15 @@ describe("RepeatableContentListing", () => {
       ).toBe(`Add ${expectedLabel}`)
     })
   })
-
-  it("shows the sync status indicator", async () => {
-    const { wrapper } = await render({ website })
-    expect(wrapper.find("DriveSyncStatusIndicator").exists())
+  //
+  ;[true, false].forEach(gdriveEnabled => {
+    it("shows the sync status indicator", async () => {
+      SETTINGS.gdrive_enabled = gdriveEnabled
+      const { wrapper } = await render({ website })
+      expect(wrapper.find("DriveSyncStatusIndicator").exists()).toBe(
+        gdriveEnabled
+      )
+    })
   })
   //
   ;[
@@ -394,6 +399,7 @@ describe("RepeatableContentListing", () => {
       it(`${
         shouldUpdate ? "polls" : "doesn't poll"
       } the website sync status when sync_status=${status}`, async () => {
+        SETTINGS.gdrive_enabled = true
         const getStatusStub = helper.mockGetRequest(
           siteApiDetailUrl
             .param({ name: website.name })
