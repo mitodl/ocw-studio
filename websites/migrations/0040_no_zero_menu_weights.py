@@ -17,7 +17,9 @@ def increment_decement_weights(apps, forward):
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     weight_change = 10 if forward else -10
     navmenus = WebsiteContent.objects.filter(
-        type="navmenu", website__source=WEBSITE_SOURCE_STUDIO
+        type="navmenu",
+        website__source=WEBSITE_SOURCE_STUDIO,
+        metadata__leftnav__isnull=False,
     )
     for navmenu in navmenus:
         for menuitem in navmenu.metadata["leftnav"]:
