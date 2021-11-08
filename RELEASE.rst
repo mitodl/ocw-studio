@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.34.0 (Released November 08, 2021)
+--------------
+
+- Sync status frontend (#758)
+- Handle level import, add term and year to metadata (#757)
+
 Version 0.33.0 (Released November 02, 2021)
 --------------
 
