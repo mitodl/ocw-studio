@@ -1,6 +1,7 @@
 """Website email messages"""
 from types import SimpleNamespace
 
+from content_sync.constants import VERSION_LIVE
 from mitol.mail.messages import TemplatedMessage
 
 
@@ -20,7 +21,7 @@ class PreviewOrPublishSuccessMessage(TemplatedMessage):
                 title="Intro to Computer Science",
                 full_url="https://ocwtest.edu/courses/1-1-computer-science-fall-2024",
             ),
-            "version": "live",
+            "version": VERSION_LIVE,
         }
 
 
@@ -40,5 +41,5 @@ class PreviewOrPublishFailureMessage(TemplatedMessage):
                 title="Intro to Computer Science",
                 full_url="https://ocwtest.edu/courses/1-1-computer-science-fall-2024",
             ),
-            "version": "live",
+            "version": VERSION_LIVE,
         }

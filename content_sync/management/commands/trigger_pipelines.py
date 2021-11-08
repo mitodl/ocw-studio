@@ -6,6 +6,7 @@ from mitol.common.utils.datetime import now_in_utc
 from requests import HTTPError
 
 from content_sync.api import get_sync_pipeline
+from content_sync.constants import VERSION_DRAFT
 from websites.constants import STARTER_SOURCE_GITHUB
 from websites.models import Website
 
@@ -66,7 +67,7 @@ class Command(BaseCommand):
                 Website.objects.filter(pk=website.pk).update(
                     **{
                         "latest_build_id_draft"
-                        if version == "draft"
+                        if version == VERSION_DRAFT
                         else "latest_build_id_live": build_id
                     }
                 )

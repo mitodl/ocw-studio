@@ -21,6 +21,7 @@ from safedelete.managers import (
 from safedelete.models import SafeDeleteModel
 from safedelete.queryset import SafeDeleteQueryset
 
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from main.utils import uuid_string
 from users.models import User
 from websites import constants
@@ -115,7 +116,7 @@ class Website(TimestampedModel):
             + list(self.editor_group.user_set.all())
         )
 
-    def get_url(self, version="live"):
+    def get_url(self, version=VERSION_LIVE):
         """Get the home page (live or draft) of the website"""
         if self.starter is None:
             # if there is no starter, there is no ability to publish
@@ -123,7 +124,7 @@ class Website(TimestampedModel):
 
         base_url = (
             settings.OCW_STUDIO_LIVE_URL
-            if version == "live"
+            if version == VERSION_LIVE
             else settings.OCW_STUDIO_DRAFT_URL
         )
         site_config = SiteConfig(self.starter.config)

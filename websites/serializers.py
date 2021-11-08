@@ -15,6 +15,7 @@ from content_sync.api import (
     create_website_publishing_pipeline,
     update_website_backend,
 )
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from gdrive_sync.api import gdrive_root_url, is_gdrive_enabled
 from gdrive_sync.tasks import create_gdrive_folders
 from main.serializers import RequestUserSerializerMixin
@@ -97,11 +98,11 @@ class WebsiteDetailSerializer(serializers.ModelSerializer, RequestUserSerializer
 
     def get_live_url(self, instance):
         """Get the live url for the site"""
-        return instance.get_url(version="live")
+        return instance.get_url(version=VERSION_LIVE)
 
     def get_draft_url(self, instance):
         """Get the draft url for the site"""
-        return instance.get_url(version="draft")
+        return instance.get_url(version=VERSION_DRAFT)
 
     def get_gdrive_url(self, instance):
         """ Get the Google Drive folder URL for the site"""

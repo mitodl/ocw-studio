@@ -23,6 +23,7 @@ from content_sync.api import (
     sync_github_website_starters,
     update_website_backend,
 )
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.tasks import poll_build_status_until_complete
 from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
@@ -180,7 +181,7 @@ class WebsiteViewSet(
             preview_website(website)
             poll_build_status_until_complete.delay(
                 website.name,
-                "draft",
+                VERSION_DRAFT,
                 (
                     timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS) + now_in_utc()
                 ).isoformat(),
@@ -220,7 +221,7 @@ class WebsiteViewSet(
             publish_website(website)
             poll_build_status_until_complete.delay(
                 website.name,
-                "live",
+                VERSION_LIVE,
                 (
                     timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS) + now_in_utc()
                 ).isoformat(),
