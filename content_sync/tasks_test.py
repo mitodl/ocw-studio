@@ -19,6 +19,7 @@ from websites.constants import (
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_PENDING,
+    PUBLISH_STATUS_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
@@ -179,10 +180,20 @@ def test_preview_website_backend(
     if not has_date:
         website.draft_publish_date = None
         website.save()
+    build_id = 123456
+    backend = api_mock.get_sync_backend.return_value
+    pipeline = api_mock.get_sync_pipeline.return_value
+    pipeline.trigger_pipeline_build.return_value = build_id
     tasks.preview_website_backend(website.name, website.draft_publish_date)
     api_mock.get_sync_backend.assert_called_once_with(website)
-    api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_called_once()
-    api_mock.get_sync_backend.return_value.create_backend_preview.assert_called_once()
+    api_mock.get_sync_pipeline.assert_called_once_with(website)
+    backend.sync_all_content_to_backend.assert_called_once()
+    backend.create_backend_preview.assert_called_once()
+    pipeline.trigger_pipeline_build.assert_called_once_with(
+        BaseSyncPipeline.VERSION_DRAFT
+    )
+    website.refresh_from_db()
+    assert website.latest_build_id_draft == build_id
     if has_date:
         api_mock.unpause_publishing_pipeline.assert_not_called()
     else:
@@ -208,10 +219,20 @@ def test_publish_website_backend(
     if not has_date:
         website.publish_date = None
         website.save()
+    build_id = 123456
+    backend = api_mock.get_sync_backend.return_value
+    pipeline = api_mock.get_sync_pipeline.return_value
+    pipeline.trigger_pipeline_build.return_value = build_id
     tasks.publish_website_backend(website.name, website.publish_date)
     api_mock.get_sync_backend.assert_called_once_with(website)
-    api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_called_once()
-    api_mock.get_sync_backend.return_value.create_backend_release.assert_called_once()
+    api_mock.get_sync_pipeline.assert_called_once_with(website)
+    backend.sync_all_content_to_backend.assert_called_once()
+    backend.create_backend_release.assert_called_once()
+    pipeline.trigger_pipeline_build.assert_called_once_with(
+        BaseSyncPipeline.VERSION_LIVE
+    )
+    website.refresh_from_db()
+    assert website.latest_build_id_live == build_id
     if has_date:
         api_mock.unpause_publishing_pipeline.assert_not_called()
     else:
@@ -270,45 +291,74 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
     ],
 )
 @pytest.mark.parametrize("version", ["draft", "live"])
-def test_poll_build_status_until_complete(mocker, api_mock, final_status, version):
+@pytest.mark.parametrize("has_build_number", [True, False])
+@pytest.mark.parametrize("errored", [True, False])
+def test_poll_build_status_until_complete(  # pylint: disable=too-many-arguments
+    mocker, api_mock, final_status, version, has_build_number, errored
+):
     """poll_build_status_until_complete should repeatedly poll until a finished state is reached"""
+    build_id = 123456
     website = WebsiteFactory.create(
-        has_unpublished_live=False, has_unpublished_draft=False
+        has_unpublished_live=False,
+        has_unpublished_draft=False,
+        latest_build_id_live=build_id if has_build_number else None,
+        latest_build_id_draft=build_id if has_build_number else None,
+        draft_publish_status=None,
+        live_publish_status=None,
     )
     user = UserFactory.create()
     now_dates = [
         datetime.datetime(2020, 1, 1, tzinfo=pytz.utc),
         datetime.datetime(2020, 2, 1, tzinfo=pytz.utc),
         datetime.datetime(2020, 3, 1, tzinfo=pytz.utc),
+        datetime.datetime(2020, 4, 1, tzinfo=pytz.utc),
     ]
     mocker.patch("content_sync.tasks.now_in_utc", side_effect=now_dates)
-    latest_status_mock = api_mock.get_sync_pipeline.return_value.get_latest_build_status
-    latest_status_mock.side_effect = [
+    mail_mock = mocker.patch("content_sync.tasks.mail_on_publish")
+    get_build_status_mock = api_mock.get_sync_pipeline.return_value.get_build_status
+    get_build_status_mock.side_effect = [
         PUBLISH_STATUS_NOT_STARTED,
+        PUBLISH_STATUS_STARTED,
         PUBLISH_STATUS_PENDING,
         final_status,
     ]
-    final_now_date = now_dates[2]
+    if errored:
+        api_mock.get_sync_pipeline.side_effect = ZeroDivisionError
+    final_now_date = now_dates[-1]
+    expiration_datetime = final_now_date - datetime.timedelta(days=5)
     tasks.poll_build_status_until_complete.delay(
-        website.name, version, final_now_date.isoformat(), user.id
+        website.name, version, expiration_datetime.isoformat(), user.id
     )
     website.refresh_from_db()
+    expected_final_status = (
+        PUBLISH_STATUS_ERRORED if errored or not has_build_number else final_status
+    )
     if version == "draft":
-        assert website.draft_publish_status == final_status
+        assert website.draft_publish_status == expected_final_status
         assert website.draft_publish_status_updated_on == final_now_date
         assert website.draft_publish_date == final_now_date
         assert website.has_unpublished_draft == (
-            final_status != PUBLISH_STATUS_SUCCEEDED
+            expected_final_status != PUBLISH_STATUS_SUCCEEDED
         )
     else:
-        assert website.live_publish_status == final_status
+        assert website.live_publish_status == expected_final_status
         assert website.live_publish_status_updated_on == final_now_date
         assert website.publish_date == final_now_date
         assert website.has_unpublished_live == (
-            final_status != PUBLISH_STATUS_SUCCEEDED
+            expected_final_status != PUBLISH_STATUS_SUCCEEDED
         )
 
-    assert latest_status_mock.call_count == 3
-    latest_status_mock.assert_any_call(version)
-    api_mock.get_sync_pipeline.assert_any_call(website)
-    assert api_mock.get_sync_pipeline.call_count == len(now_dates)
+    if has_build_number and not errored:
+        assert get_build_status_mock.call_count == 4
+        get_build_status_mock.assert_any_call(build_id)
+        api_mock.get_sync_pipeline.assert_any_call(website)
+        assert api_mock.get_sync_pipeline.call_count == len(now_dates)
+    else:
+        assert get_build_status_mock.called is False
+        assert api_mock.get_sync_pipeline.called is has_build_number
+    mail_mock.assert_called_once_with(
+        website.name,
+        version,
+        has_build_number and not errored and final_status == PUBLISH_STATUS_SUCCEEDED,
+        user.id,
+    )

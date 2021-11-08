@@ -7,6 +7,7 @@ const publishStatusMessage = (status: PublishStatus): string => {
   case PublishStatus.NotStarted:
     return "Not started"
   case PublishStatus.Pending:
+  case PublishStatus.Started:
     return "In progress..."
   case PublishStatus.Aborted:
     return "Aborted"
@@ -24,6 +25,7 @@ const publishStatusIndicatorClass = (status: PublishStatus): string => {
   case PublishStatus.NotStarted:
     return "bg-secondary"
   case PublishStatus.Pending:
+  case PublishStatus.Started:
     return "bg-warning"
   case PublishStatus.Aborted:
   case PublishStatus.Errored:

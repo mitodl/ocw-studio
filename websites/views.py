@@ -23,6 +23,7 @@ from content_sync.api import (
     sync_github_website_starters,
     update_website_backend,
 )
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.tasks import poll_build_status_until_complete
 from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
@@ -171,14 +172,16 @@ class WebsiteViewSet(
             message = ""
             if len(incomplete_videos) > 0:
                 message = f"WARNING: The following videos have missing YouTube IDs: {','.join(incomplete_videos)}"
+            Website.objects.filter(pk=website.pk).update(
+                has_unpublished_draft=False,
+                draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
+                draft_publish_status_updated_on=now_in_utc(),
+                latest_build_id_draft=None,
+            )
             preview_website(website)
-            website.has_unpublished_draft = False
-            website.draft_publish_status = constants.PUBLISH_STATUS_NOT_STARTED
-            website.draft_publish_status_updated_on = now_in_utc()
-            website.save()
             poll_build_status_until_complete.delay(
                 website.name,
-                "draft",
+                VERSION_DRAFT,
                 (
                     timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS) + now_in_utc()
                 ).isoformat(),
@@ -209,14 +212,16 @@ class WebsiteViewSet(
                         "details": f"The following video resources require YouTube ID's: {','.join(incomplete_videos)}"
                     },
                 )
+            Website.objects.filter(pk=website.pk).update(
+                has_unpublished_live=False,
+                live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
+                live_publish_status_updated_on=now_in_utc(),
+                latest_build_id_live=None,
+            )
             publish_website(website)
-            website.has_unpublished_live = False
-            website.live_publish_status = constants.PUBLISH_STATUS_NOT_STARTED
-            website.live_publish_status_updated_on = now_in_utc()
-            website.save()
             poll_build_status_until_complete.delay(
                 website.name,
-                "live",
+                VERSION_LIVE,
                 (
                     timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS) + now_in_utc()
                 ).isoformat(),

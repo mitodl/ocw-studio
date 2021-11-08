@@ -12,6 +12,7 @@ from mitol.common.utils import now_in_utc, pytz
 
 from content_sync import api
 from content_sync.apis import github
+from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import single_website_task
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
@@ -149,10 +150,15 @@ def preview_website_backend(website_name: str, preview_date: str):
         backend = api.get_sync_backend(website)
         backend.sync_all_content_to_backend()
         backend.create_backend_preview()
+
         if preview_date is None:
             api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_DRAFT)
+
+        pipeline = api.get_sync_pipeline(website)
+        build_id = pipeline.trigger_pipeline_build(BaseSyncPipeline.VERSION_DRAFT)
+        Website.objects.filter(pk=website.pk).update(latest_build_id_draft=build_id)
     except:  # pylint:disable=bare-except
-        log.exception("Error previewing site %s", website.name)
+        log.exception("Error previewing site %s", website_name)
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
@@ -168,10 +174,15 @@ def publish_website_backend(website_name: str, publish_date: str):
         backend = api.get_sync_backend(website)
         backend.sync_all_content_to_backend()
         backend.create_backend_release()
+
         if publish_date is None:
             api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_LIVE)
+
+        pipeline = api.get_sync_pipeline(website)
+        build_id = pipeline.trigger_pipeline_build(BaseSyncPipeline.VERSION_LIVE)
+        Website.objects.filter(pk=website.pk).update(latest_build_id_live=build_id)
     except:  # pylint:disable=bare-except
-        log.exception("Error publishing site %s", website.name)
+        log.exception("Error publishing site %s", website_name)
 
 
 @app.task(acks_late=True)
@@ -182,27 +193,19 @@ def sync_github_site_configs(url: str, files: List[str], commit: Optional[str] =
     github.sync_starter_configs(url, files, commit=commit)
 
 
-@app.task(acks_late=True)
-def poll_build_status_until_complete(
-    website_name: str, version: str, datetime_to_expire: str, user_id: int
-):
-    """
-    Poll concourses REST API repeatedly until the build completes
-    """
-    pipeline = api.get_sync_pipeline(Website.objects.get(name=website_name))
-    status = pipeline.get_latest_build_status(version)
-    now = now_in_utc()
-    if version == "draft":
+def _update_website_status(website_name, version, status, update_time):
+    """Update some status fields in Website"""
+    if version == VERSION_DRAFT:
         update_kwargs = {
             "draft_publish_status": status,
-            "draft_publish_status_updated_on": now,
+            "draft_publish_status_updated_on": update_time,
         }
         if status in [
             PUBLISH_STATUS_SUCCEEDED,
             PUBLISH_STATUS_ERRORED,
             PUBLISH_STATUS_ABORTED,
         ]:
-            update_kwargs["draft_publish_date"] = now
+            update_kwargs["draft_publish_date"] = update_time
 
             if status != PUBLISH_STATUS_SUCCEEDED:
                 # Allow user to retry
@@ -210,14 +213,14 @@ def poll_build_status_until_complete(
     else:
         update_kwargs = {
             "live_publish_status": status,
-            "live_publish_status_updated_on": now,
+            "live_publish_status_updated_on": update_time,
         }
         if status in [
             PUBLISH_STATUS_SUCCEEDED,
             PUBLISH_STATUS_ERRORED,
             PUBLISH_STATUS_ABORTED,
         ]:
-            update_kwargs["publish_date"] = now
+            update_kwargs["publish_date"] = update_time
 
             if status != PUBLISH_STATUS_SUCCEEDED:
                 # Allow user to retry
@@ -225,15 +228,42 @@ def poll_build_status_until_complete(
 
     Website.objects.filter(name=website_name).update(**update_kwargs)
 
-    if status in [
-        PUBLISH_STATUS_SUCCEEDED,
-        PUBLISH_STATUS_ERRORED,
-        PUBLISH_STATUS_ABORTED,
-    ]:
-        mail_on_publish(
-            website_name, version, status == PUBLISH_STATUS_SUCCEEDED, user_id
+
+@app.task(acks_late=True)
+def poll_build_status_until_complete(
+    website_name: str, version: str, datetime_to_expire: str, user_id: int
+):
+    """
+    Poll concourses REST API repeatedly until the build completes
+    """
+    now = now_in_utc()
+    try:
+        website = Website.objects.get(name=website_name)
+        build_id = (
+            website.latest_build_id_draft
+            if version == VERSION_DRAFT
+            else website.latest_build_id_live
         )
-        return
+        if build_id is not None:
+            pipeline = api.get_sync_pipeline(website)
+            status = pipeline.get_build_status(build_id)
+            _update_website_status(website_name, version, status, now)
+
+            if status in [
+                PUBLISH_STATUS_SUCCEEDED,
+                PUBLISH_STATUS_ERRORED,
+                PUBLISH_STATUS_ABORTED,
+            ]:
+                mail_on_publish(
+                    website_name, version, status == PUBLISH_STATUS_SUCCEEDED, user_id
+                )
+                return
+    except:  # pylint: disable=bare-except
+        log.exception(
+            "Error running poll_build_status_until_complete for website %s, version %s",
+            website_name,
+            version,
+        )
 
     if now < parse(datetime_to_expire):
         # if not past expiration date, check again in 10 seconds
@@ -244,3 +274,4 @@ def poll_build_status_until_complete(
     else:
         # if past the expiration date, assume something went wrong
         mail_on_publish(website_name, version, False, user_id)
+        _update_website_status(website_name, version, PUBLISH_STATUS_ERRORED, now)

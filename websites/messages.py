@@ -3,6 +3,8 @@ from types import SimpleNamespace
 
 from mitol.mail.messages import TemplatedMessage
 
+from content_sync.constants import VERSION_LIVE
+
 
 class PreviewOrPublishSuccessMessage(TemplatedMessage):
     """Email message for publish/preview pipeline success"""
@@ -20,7 +22,7 @@ class PreviewOrPublishSuccessMessage(TemplatedMessage):
                 title="Intro to Computer Science",
                 full_url="https://ocwtest.edu/courses/1-1-computer-science-fall-2024",
             ),
-            "version": "live",
+            "version": VERSION_LIVE,
         }
 
 
@@ -40,5 +42,5 @@ class PreviewOrPublishFailureMessage(TemplatedMessage):
                 title="Intro to Computer Science",
                 full_url="https://ocwtest.edu/courses/1-1-computer-science-fall-2024",
             ),
-            "version": "live",
+            "version": VERSION_LIVE,
         }

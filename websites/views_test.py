@@ -271,6 +271,9 @@ def test_websites_endpoint_preview(settings, mocker, drf_client, has_missing_ids
     )
     website.refresh_from_db()
     assert website.has_unpublished_draft is False
+    assert website.draft_publish_status == constants.PUBLISH_STATUS_NOT_STARTED
+    assert website.draft_publish_status_updated_on == now
+    assert website.latest_build_id_draft is None
 
 
 def test_websites_endpoint_preview_error(mocker, drf_client):
@@ -323,6 +326,9 @@ def test_websites_endpoint_publish(settings, mocker, drf_client, has_missing_ids
         expected_msg = ""
         mock_publish_website.assert_called_once_with(website)
         assert website.has_unpublished_live is False
+        assert website.live_publish_status == constants.PUBLISH_STATUS_NOT_STARTED
+        assert website.live_publish_status_updated_on == now
+        assert website.latest_build_id_live is None
         mock_poll.delay.assert_called_once_with(
             website.name,
             "live",

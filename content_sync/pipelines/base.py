@@ -4,6 +4,7 @@ import abc
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from websites.models import Website
 
 
@@ -11,8 +12,8 @@ class BaseSyncPipeline(abc.ABC):
     """ Base class for preview/publish pipelines """
 
     MANDATORY_SETTINGS = []
-    VERSION_LIVE = "live"
-    VERSION_DRAFT = "draft"
+    VERSION_LIVE = VERSION_LIVE
+    VERSION_DRAFT = VERSION_DRAFT
 
     def __init__(self, website: Website):
         """Make sure all required settings are present"""
@@ -39,7 +40,7 @@ class BaseSyncPipeline(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def trigger_pipeline_build(self, version: str):
+    def trigger_pipeline_build(self, version: str) -> int:
         """
         Called to trigger the website pipeline.
         """
@@ -53,14 +54,5 @@ class BaseSyncPipeline(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def get_latest_build_status(self, version: str):
-        """
-        Get the status of a build for a site on a pipeline
-
-        Args:
-            version (str): Either draft or live
-
-        Returns:
-            str:
-                The status of the currently running or most recently finished build.
-        """
+    def get_build_status(self, build_id: int):
+        """Retrieve the status of the build"""
