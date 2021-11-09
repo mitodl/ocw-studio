@@ -169,7 +169,7 @@ def test_get_sync_pipeline(settings, mocker, pipeline_api):
         "content_sync.pipelines.concourse.ConcourseGithubPipeline"
     )
     website = WebsiteFactory.create()
-    api.get_sync_pipeline(website)
+    api.get_sync_pipeline(website, api=pipeline_api)
     import_string_mock.assert_any_call(website, api=pipeline_api)
 
 

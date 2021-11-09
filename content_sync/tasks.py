@@ -126,7 +126,7 @@ def upsert_website_publishing_pipeline(website_name: str):
 def upsert_website_pipeline_batch(
     website_names: List[str], create_backend=False, unpause=False
 ):
-    """ Create/update a pipeline for previewing & publishing a website """
+    """ Create/update publishing pipelines for multiple websites"""
     api_instance = None
     for website_name in website_names:
         website = Website.objects.get(name=website_name)
@@ -152,7 +152,7 @@ def upsert_website_pipeline_batch(
 def upsert_pipelines(
     self, website_names: List[str], chunk_size=500, create_backend=False, unpause=False
 ):
-    """ Upsert pipelines"""
+    """ Chunk and group batches of pipeline upserts for a specified list of websites"""
     tasks = []
     for website_subset in chunks(
         sorted(website_names),

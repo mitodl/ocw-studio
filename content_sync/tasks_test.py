@@ -286,7 +286,7 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
 @pytest.mark.parametrize("create_backend", [True, False])
 @pytest.mark.parametrize("unpause", [True, False])
 @pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
-def test_upsert_pipelines(
+def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
     mocker, mocked_celery, create_backend, unpause, chunk_size, chunks
 ):
     """upsert_pipelines calls upsert_pipeline_batch with correct arguments"""
