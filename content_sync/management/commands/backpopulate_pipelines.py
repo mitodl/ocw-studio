@@ -40,7 +40,7 @@ class Command(BaseCommand):
             "--create_backend",
             dest="create_backend",
             action="store_true",
-            help="Create backends if they do not exist (and sync them too)",
+            help="Create website backend if it does not exist (and sync it too)",
         )
         parser.add_argument(
             "-ch",
