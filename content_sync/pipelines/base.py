@@ -1,5 +1,6 @@
 """ Sync abstract base """
 import abc
+from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -15,7 +16,7 @@ class BaseSyncPipeline(abc.ABC):
     VERSION_LIVE = VERSION_LIVE
     VERSION_DRAFT = VERSION_DRAFT
 
-    def __init__(self, website: Website):
+    def __init__(self, website: Website, api: Optional[object] = None):
         """Make sure all required settings are present"""
         missing_settings = []
         for setting_name in self.MANDATORY_SETTINGS:
@@ -31,6 +32,7 @@ class BaseSyncPipeline(abc.ABC):
                 )
             )
         self.website = website
+        self.api = api
 
     @abc.abstractmethod
     def upsert_website_pipeline(self):  # pragma: no cover

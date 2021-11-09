@@ -2,7 +2,7 @@
 import json
 import logging
 import os
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 from urllib.parse import quote, urljoin, urlparse
 
 import requests
@@ -26,6 +26,12 @@ class ConcourseApi(BaseConcourseApi):
     Customized version of concoursepy.api.Api that allows for getting/setting headers
     """
 
+    @retry_on_failure
+    def auth(self):
+        """ Same as the base class but with retries"""
+        return super().auth()
+
+    @retry_on_failure
     def get_with_headers(
         self, path: str, stream: bool = False, iterator: bool = False
     ) -> Tuple[Dict, Dict]:
@@ -100,11 +106,11 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
         "GITHUB_WEBHOOK_BRANCH",
     ]
 
-    def __init__(self, website: Website):
+    def __init__(self, website: Website, api: Optional[ConcourseApi] = None):
         """Initialize the pipeline API instance"""
         super().__init__(website)
         self.instance_vars = quote(json.dumps({"site": self.website.name}))
-        self.ci = ConcourseApi(
+        self.api = api or ConcourseApi(
             settings.CONCOURSE_URL,
             settings.CONCOURSE_USERNAME,
             settings.CONCOURSE_PASSWORD,
@@ -198,24 +204,24 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
             # necessary to update an existing pipeline.
             url_path = self._make_pipeline_config_url(version)
             try:
-                _, headers = self.ci.get_with_headers(url_path)
+                _, headers = self.api.get_with_headers(url_path)
                 version_headers = {
                     "X-Concourse-Config-Version": headers["X-Concourse-Config-Version"]
                 }
             except HTTPError:
                 version_headers = None
-            self.ci.put_with_headers(url_path, data=config, headers=version_headers)
+            self.api.put_with_headers(url_path, data=config, headers=version_headers)
 
     def trigger_pipeline_build(self, version: str) -> int:
         """Trigger a pipeline build"""
-        pipeline_info = self.ci.get(self._make_pipeline_config_url(version))
+        pipeline_info = self.api.get(self._make_pipeline_config_url(version))
         job_name = pipeline_info["config"]["jobs"][0]["name"]
-        return self.ci.post(self._make_builds_url(version, job_name))["id"]
+        return self.api.post(self._make_builds_url(version, job_name))["id"]
 
     def unpause_pipeline(self, version):
         """Unpause the pipeline"""
-        self.ci.put(self._make_pipeline_unpause_url(version))
+        self.api.put(self._make_pipeline_unpause_url(version))
 
     def get_build_status(self, build_id: int):
         """Retrieve the status of the build"""
-        return self.ci.get_build(build_id)["status"]
+        return self.api.get_build(build_id)["status"]

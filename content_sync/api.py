@@ -28,9 +28,11 @@ def get_sync_backend(website: Website) -> BaseSyncBackend:
     return import_string(settings.CONTENT_SYNC_BACKEND)(website)
 
 
-def get_sync_pipeline(website: Website) -> BaseSyncPipeline:
+def get_sync_pipeline(
+    website: Website, api: Optional[object] = None
+) -> BaseSyncPipeline:
     """ Get the configured sync publishing pipeline """
-    return import_string(settings.CONTENT_SYNC_PIPELINE)(website)
+    return import_string(settings.CONTENT_SYNC_PIPELINE)(website, api=api)
 
 
 @is_sync_enabled
