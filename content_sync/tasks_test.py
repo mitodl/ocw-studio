@@ -11,6 +11,7 @@ from mitol.common.utils import now_in_utc
 from pytest import fixture
 
 from content_sync import tasks
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.factories import ContentSyncStateFactory
 from content_sync.pipelines.base import BaseSyncPipeline
 from users.factories import UserFactory
@@ -280,6 +281,62 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
         "fake",
     )
     api_mock.get_sync_pipeline.assert_not_called()
+
+
+@pytest.mark.parametrize("create_backend", [True, False])
+@pytest.mark.parametrize("unpause", [True, False])
+@pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
+def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
+    mocker, mocked_celery, create_backend, unpause, chunk_size, chunks
+):
+    """upsert_pipelines calls upsert_pipeline_batch with correct arguments"""
+    websites = WebsiteFactory.create_batch(3)
+    website_names = sorted([website.name for website in websites])
+    mock_batch = mocker.patch("content_sync.tasks.upsert_website_pipeline_batch.s")
+    with pytest.raises(TabError):
+        tasks.upsert_pipelines.delay(
+            website_names,
+            create_backend=create_backend,
+            unpause=unpause,
+            chunk_size=chunk_size,
+        )
+    mock_batch.assert_any_call(
+        website_names[0:chunk_size], create_backend=create_backend, unpause=unpause
+    )
+    if chunks > 1:
+        mock_batch.assert_any_call(
+            website_names[chunk_size:], create_backend=create_backend, unpause=unpause
+        )
+
+
+@pytest.mark.parametrize("create_backend", [True, False])
+@pytest.mark.parametrize("unpause", [True, False])
+def test_upsert_website_pipeline_batch(mocker, create_backend, unpause):
+    """upsert_website_pipeline_batch should make the expected function calls"""
+    mock_get_backend = mocker.patch("content_sync.tasks.api.get_sync_backend")
+    mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_sync_pipeline")
+    websites = WebsiteFactory.create_batch(2)
+    website_names = sorted([website.name for website in websites])
+    tasks.upsert_website_pipeline_batch(
+        website_names, create_backend=create_backend, unpause=unpause
+    )
+    mock_get_pipeline.assert_any_call(websites[0], api=None)
+    mock_get_pipeline.assert_any_call(websites[1], api=mocker.ANY)
+    if create_backend:
+        for website in websites:
+            mock_get_backend.assert_any_call(website)
+        mock_backend = mock_get_backend.return_value
+        assert mock_backend.create_website_in_backend.call_count == 2
+        assert mock_backend.sync_all_content_to_backend.call_count == 2
+    else:
+        mock_get_backend.assert_not_called()
+    mock_pipeline = mock_get_pipeline.return_value
+    assert mock_pipeline.upsert_website_pipeline.call_count == 2
+    if unpause:
+        mock_pipeline.unpause_pipeline.assert_any_call(VERSION_DRAFT)
+        mock_pipeline.unpause_pipeline.assert_any_call(VERSION_LIVE)
+    else:
+        mock_pipeline.unpause_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize(

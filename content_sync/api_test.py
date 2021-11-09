@@ -159,7 +159,8 @@ def test_sync_github_website_starters(mocker):
     mock_task.assert_called_once_with(*args, **kwargs)
 
 
-def test_get_sync_pipeline(settings, mocker):
+@pytest.mark.parametrize("pipeline_api", [None, {}])
+def test_get_sync_pipeline(settings, mocker, pipeline_api):
     """ Verify that get_sync_pipeline() imports the pipeline class based on settings.py """
     settings.CONTENT_SYNC_PIPELINE = (
         "content_sync.pipelines.concourse.ConcourseGithubPipeline"
@@ -168,8 +169,8 @@ def test_get_sync_pipeline(settings, mocker):
         "content_sync.pipelines.concourse.ConcourseGithubPipeline"
     )
     website = WebsiteFactory.create()
-    api.get_sync_pipeline(website)
-    import_string_mock.assert_any_call(website)
+    api.get_sync_pipeline(website, api=pipeline_api)
+    import_string_mock.assert_any_call(website, api=pipeline_api)
 
 
 def test_create_website_publishing_pipeline(settings, mocker):

@@ -1,11 +1,10 @@
 """ Backpopulate website pipelines"""
 from django.conf import settings
-from django.core.management import BaseCommand
+from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.api import get_sync_backend, get_sync_pipeline
-from content_sync.pipelines.base import BaseSyncPipeline
+from content_sync.tasks import upsert_pipelines
 from websites.models import Website
 
 
@@ -38,10 +37,17 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "-c",
-            "--create_backends",
-            dest="create_backends",
+            "--create_backend",
+            dest="create_backend",
             action="store_true",
-            help="Create backends if they do not exist (and sync them too)",
+            help="Create website backend if it does not exist (and sync it too)",
+        )
+        parser.add_argument(
+            "-ch",
+            "--chunks",
+            dest="chunk_size",
+            default=500,
+            help="Set chunk size for task processing",
         )
         parser.add_argument(
             "-u",
@@ -58,20 +64,18 @@ class Command(BaseCommand):
             return
 
         self.stdout.write("Creating website pipelines")
-        start = now_in_utc()
 
         filter_str = options["filter"].lower()
         starter_str = options["starter"]
         source_str = options["source"]
+        chunk_size = int(options["chunk_size"])
+        create_backend = options["create_backend"]
         is_verbose = options["verbosity"] > 1
-        create_backends = options["create_backends"]
         unpause = options["unpause"]
-
-        total_websites = 0
 
         if filter_str:
             website_qset = Website.objects.filter(
-                Q(name__icontains=filter_str) | Q(title__icontains=filter_str)
+                Q(name__startswith=filter_str) | Q(title__startswith=filter_str)
             )
         else:
             website_qset = Website.objects.all()
@@ -82,29 +86,32 @@ class Command(BaseCommand):
         if source_str:
             website_qset = website_qset.filter(source=source_str)
 
-        for website in website_qset.iterator():
-            backend = get_sync_backend(website)
-            if create_backends:
-                backend.create_website_in_backend()
-                backend.sync_all_content_to_backend()
-            if backend.backend_exists():
-                pipeline = get_sync_pipeline(website)
-                pipeline.upsert_website_pipeline()
-                if unpause:
-                    for version in [
-                        BaseSyncPipeline.VERSION_LIVE,
-                        BaseSyncPipeline.VERSION_DRAFT,
-                    ]:
-                        pipeline.unpause_pipeline(version)
-                total_websites += 1
+        website_names = list(website_qset.values_list("name", flat=True))
 
-            if is_verbose:
-                self.stdout.write(f"{website.name} pipeline created or updated")
+        if is_verbose:
+            self.stdout.write(
+                f"Upserting pipelines for the following sites: {','.join(website_names)}"
+            )
+
+        start = now_in_utc()
+        task = upsert_pipelines.delay(
+            website_names,
+            chunk_size=chunk_size,
+            create_backend=create_backend,
+            unpause=unpause,
+        )
+
+        self.stdout.write(
+            f"Started celery task {task} to upsert pipelines for {len(website_names)} sites"
+        )
+
+        self.stdout.write("Waiting on task...")
+
+        result = task.get()
+        if set(result) != {True}:
+            raise CommandError(f"Some errors occurred: {result}")
 
         total_seconds = (now_in_utc() - start).total_seconds()
         self.stdout.write(
-            "Creation of website pipelines finished, took {} seconds".format(
-                total_seconds
-            )
+            "Pipeline upserts finished, took {} seconds".format(total_seconds)
         )
-        self.stdout.write(f"{total_websites} websites processed")
