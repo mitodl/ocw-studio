@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.35.0
+Version 0.35.0 (Released November 09, 2021)
 --------------
 
 - fix an issue with the migration to deal with bad data (#787)
