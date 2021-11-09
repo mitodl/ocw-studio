@@ -5,6 +5,7 @@ from factory.django import mute_signals
 
 from content_sync import api
 from content_sync.api import unpause_publishing_pipeline
+from mitol.common.utils import now_in_utc
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
@@ -132,22 +133,26 @@ def test_update_website_backend_disabled(settings, mocker):
     mock_task.delay.assert_not_called()
 
 
-def test_preview_website(settings, mocker):
+@pytest.mark.parametrize("has_date", [True, False])
+def test_preview_website(settings, mocker, has_date):
     """Verify preview_website calls the appropriate task"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
     mock_task = mocker.patch("content_sync.tasks.preview_website_backend")
-    website = WebsiteFactory.create()
+    website = WebsiteFactory.create(
+        draft_publish_date=now_in_utc() if has_date else None
+    )
     api.preview_website(website)
-    mock_task.delay.assert_called_once_with(website.name, website.draft_publish_date)
+    mock_task.delay.assert_called_once_with(website.name, has_date)
 
 
-def test_publish_website(settings, mocker):
+@pytest.mark.parametrize("has_date", [True, False])
+def test_publish_website(settings, mocker, has_date):
     """Verify publish_website calls the appropriate task"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
     mock_task = mocker.patch("content_sync.tasks.publish_website_backend")
-    website = WebsiteFactory.create()
+    website = WebsiteFactory.create(publish_date=now_in_utc() if has_date else None)
     api.publish_website(website)
-    mock_task.delay.assert_called_once_with(website.name, website.publish_date)
+    mock_task.delay.assert_called_once_with(website.name, has_date)
 
 
 def test_sync_github_website_starters(mocker):

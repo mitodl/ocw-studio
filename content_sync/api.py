@@ -1,4 +1,5 @@
 """ Syncing API """
+import datetime
 import logging
 from typing import List, Optional
 
@@ -7,9 +8,15 @@ from django.utils.module_loading import import_string
 
 from content_sync import tasks
 from content_sync.backends.base import BaseSyncBackend
+from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
+from websites.constants import (
+    PUBLISH_STATUS_ABORTED,
+    PUBLISH_STATUS_ERRORED,
+    PUBLISH_STATUS_SUCCEEDED,
+)
 from websites.models import Website, WebsiteContent
 
 
@@ -68,13 +75,15 @@ def update_website_backend(website: Website):
 @is_sync_enabled
 def preview_website(website: Website):
     """ Create a preview for the website on the backend"""
-    tasks.preview_website_backend.delay(website.name, website.draft_publish_date)
+    tasks.preview_website_backend.delay(
+        website.name, website.draft_publish_date is not None
+    )
 
 
 @is_sync_enabled
 def publish_website(website: Website):
     """ Publish the website on the backend"""
-    tasks.publish_website_backend.delay(website.name, website.publish_date)
+    tasks.publish_website_backend.delay(website.name, website.publish_date is not None)
 
 
 def sync_github_website_starters(

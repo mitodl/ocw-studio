@@ -21,6 +21,7 @@ from websites.api import mail_on_publish
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
+    PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
 )
 from websites.models import Website
@@ -139,7 +140,7 @@ def sync_website_content(website_name: str):
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_website_task(10)
-def preview_website_backend(website_name: str, preview_date: str):
+def preview_website_backend(website_name: str, unpause_pipeline: bool):
     """
     Create a new backend preview for the website.
     """
@@ -147,11 +148,17 @@ def preview_website_backend(website_name: str, preview_date: str):
         website = Website.objects.get(name=website_name)
         for action in settings.PREPUBLISH_ACTIONS:
             import_string(action)(website)
+        Website.objects.filter(pk=website.pk).update(
+            has_unpublished_draft=False,
+            draft_publish_status=PUBLISH_STATUS_NOT_STARTED,
+            draft_publish_status_updated_on=now_in_utc(),
+            latest_build_id_draft=None,
+        )
         backend = api.get_sync_backend(website)
         backend.sync_all_content_to_backend()
         backend.create_backend_preview()
 
-        if preview_date is None:
+        if unpause_pipeline:
             api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_DRAFT)
 
         pipeline = api.get_sync_pipeline(website)
@@ -163,7 +170,7 @@ def preview_website_backend(website_name: str, preview_date: str):
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_website_task(10)
-def publish_website_backend(website_name: str, publish_date: str):
+def publish_website_backend(website_name: str, unpause_pipeline: bool):
     """
     Create a new backend release for the website.
     """
@@ -175,7 +182,7 @@ def publish_website_backend(website_name: str, publish_date: str):
         backend.sync_all_content_to_backend()
         backend.create_backend_release()
 
-        if publish_date is None:
+        if unpause_pipeline:
             api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_LIVE)
 
         pipeline = api.get_sync_pipeline(website)
