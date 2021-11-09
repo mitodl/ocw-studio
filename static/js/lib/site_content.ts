@@ -68,7 +68,8 @@ const RELATION_EXTRA_PROPS = [
   "multiple",
   "filter",
   "website",
-  "sortable"
+  "sortable",
+  "cross_site"
 ]
 const MENU_EXTRA_PROPS = ["collections"]
 const HIERARCHICAL_SELECT_EXTRA_PROPS = ["options_map", "levels"]
@@ -273,7 +274,7 @@ const defaultForField = (
   case WidgetVariant.Relation:
     return {
       website: website.name,
-      content: field.multiple ? [] : ""
+      content: field.multiple || field.sortable ? [] : ""
     }
   case WidgetVariant.Select:
     return field.multiple ? [] : ""
@@ -361,6 +362,14 @@ export const renameNestedFields = (fields: ConfigField[]): ConfigField[] =>
     }
   })
 
+/**
+ * Add default fields in to a site config item
+ *
+ * In particular, we ensure here that all repeatable content has a `title`
+ * by inserting a `title` field in if it is not present. If the config is
+ * for singleton content or there is already a title field present we pass
+ * the config through unchanged.
+ */
 export function addDefaultFields(
   configItem: RepeatableConfigItem
 ): RepeatableConfigItem

@@ -1,55 +1,21 @@
-import React, { useCallback, useState } from "react"
+import React, { useCallback } from "react"
 import { Form, Formik, Field, FormikHelpers, FormikProps } from "formik"
-import { uniqBy } from "ramda"
 
-import SelectField, { Option } from "../widgets/SelectField"
+import SelectField from "../widgets/SelectField"
 import { WCItemCreateFormFields } from "../../types/forms"
-import { Website } from "../../types/websites"
 import { useMutation } from "redux-query-react"
-import { siteApiListingUrl } from "../../lib/urls"
-import { debouncedFetch } from "../../lib/api/util"
-import { WebsiteListingResponse } from "../../query-configs/websites"
 import { WebsiteCollection } from "../../types/website_collections"
 import { createWebsiteCollectionItemMutation } from "../../query-configs/website_collections"
+import { useWebsiteSelectOptions } from "../../hooks/websites"
 
 interface Props {
   websiteCollection: WebsiteCollection
 }
 
-const formatOptions = (websites: Website[]): Option[] =>
-  websites.map(website => ({ label: website.title, value: website.uuid }))
-
 export default function WebsiteCollectionItemForm(props: Props): JSX.Element {
   const { websiteCollection } = props
-  const [options, setOptions] = useState<Option[]>([])
 
-  const loadOptions = useCallback(
-    async (inputValue: string, callback: (options: Option[]) => void) => {
-      const url = siteApiListingUrl
-        .query({ offset: 0 })
-        .param({ search: inputValue })
-        .toString()
-
-      // using plain fetch rather than redux-query here because this
-      // use-case doesn't exactly jibe with redux-query: we need to issue
-      // a request programmatically on user input.
-      const response = await debouncedFetch("website-collection", 300, url, {
-        credentials: "include"
-      })
-      if (!response) {
-        // this happens if this fetch was ignored in favor of a later fetch
-        return
-      }
-      const json: WebsiteListingResponse = await response.json()
-      const { results } = json
-      const options = formatOptions(results)
-      setOptions(current =>
-        uniqBy(option => option.value, [...current, ...options])
-      )
-      callback(options)
-    },
-    [setOptions]
-  )
+  const { options, loadOptions } = useWebsiteSelectOptions()
 
   const [
     { isPending: itemCreatePending },

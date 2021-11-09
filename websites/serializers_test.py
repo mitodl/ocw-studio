@@ -287,17 +287,19 @@ def test_website_content_detail_with_file_serializer():
 
 @pytest.mark.parametrize("content_context", [True, False])
 @pytest.mark.parametrize("multiple", [True, False])
+@pytest.mark.parametrize("cross_site", [True, False])
 @pytest.mark.parametrize("invalid_data", [True, False])
 @pytest.mark.parametrize("nested", [True, False])
 @pytest.mark.parametrize("field_order_reversed", [True, False])
-def test_website_content_detail_serializer_content_context(
-    content_context, multiple, invalid_data, nested, field_order_reversed
+def test_website_content_detail_serializer_content_context(  # pylint:disable=too-many-arguments,too-many-locals
+    content_context, multiple, cross_site, invalid_data, nested, field_order_reversed
 ):
     """WebsiteContentDetailSerializer should serialize content_context for relation and menu fields"""
     relation_field = {
         "name": "relation_field_name",
         "label": "Relation field label",
         "multiple": multiple,
+        "global": cross_site,
         "widget": "relation",
     }
     menu_field = {
@@ -327,11 +329,18 @@ def test_website_content_detail_serializer_content_context(
     for content in referenced_list:
         # These have the same text_id but a different website so it should not match and therefore be ignored
         WebsiteContentFactory.create(text_id=content.text_id)
+
+    relation_content = relation_referenced.text_id
+    if multiple:
+        relation_content = [relation_referenced.text_id]
+    elif cross_site:
+        relation_content = [
+            [relation_referenced.text_id, relation_referenced.website.name]
+        ]
+
     metadata = {
         relation_field["name"]: {
-            "content": [relation_referenced.text_id]
-            if multiple
-            else relation_referenced.text_id,
+            "content": relation_content,
             "website": relation_referenced.website.name,
         },
         menu_field["name"]: [

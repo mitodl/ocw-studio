@@ -17,6 +17,26 @@ collections:
         attach: resource
 
   - category: Content
+    folder: content/video_galleries
+    label: "Video Gallery"
+    name: video_gallery
+    fields:
+      - label: "Description"
+        name: "description"
+        widget: "markdown"
+      - label: Videos
+        name: videos
+        widget: relation
+        multiple: true
+        collection: resource
+        display_field: title
+        sortable: true
+        filter:
+          field: "resourcetype"
+          filter_type: "equals"
+          value: "Video"
+
+  - category: Content
     folder: content/resources
     label: Resources
     name: resource
@@ -239,12 +259,23 @@ collections:
             widget: "select"
           - label: "Level"
             name: "level"
+            multiple: true
             options:
               - 'Undergraduate'
               - 'Graduate'
-              - 'Both'
               - 'Non Credit'
             widget: "select"
+          - label: "Term"
+            name: "term"
+            widget: "select"
+            options:
+              - "Spring"
+              - "Summer"
+              - "Fall"
+              - "January IAP"
+          - label: "Year"
+            name: "year"
+            widget: "string"
           - label: "Learning Resource Types"
             name: "learning_resource_types"
             widget: select

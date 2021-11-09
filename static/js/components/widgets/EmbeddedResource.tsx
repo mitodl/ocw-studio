@@ -2,7 +2,7 @@ import React from "react"
 import { createPortal } from "react-dom"
 
 import { RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO } from "../../constants"
-import { useWebsiteContent } from "../../hooks/websiteContent"
+import { useWebsiteContent } from "../../hooks/websites"
 import { SiteFormValue } from "../../types/forms"
 
 interface Props {

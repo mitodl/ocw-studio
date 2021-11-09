@@ -26,6 +26,10 @@ const _createSettings = (): SETTINGS => ({
 global.SETTINGS = _createSettings()
 global._testing = true
 
+beforeEach(() => {
+  global.fetch = jest.fn()
+})
+
 // cleanup after each test run
 // eslint-disable-next-line mocha/no-top-level-hooks
 afterEach(function() {

@@ -14,7 +14,8 @@ import IntegrationTestHelper, {
 
 import {
   makeWebsiteContentDetail,
-  makeWebsiteDetail
+  makeWebsiteDetail,
+  makeWebsiteListing
 } from "../../util/factories/websites"
 import { siteApiContentListingUrl } from "../../lib/urls"
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../../constants"
@@ -27,12 +28,18 @@ import {
 import { ReactWrapper } from "enzyme"
 import { DndContext } from "@dnd-kit/core"
 import { FormError } from "../forms/FormError"
+import { formatOptions, useWebsiteSelectOptions } from "../../hooks/websites"
 
 jest.mock("../../lib/api/util", () => ({
   ...jest.requireActual("../../lib/api/util"),
   debouncedFetch: jest.fn()
 }))
 global.fetch = jest.fn()
+
+jest.mock("../../hooks/websites", () => ({
+  ...jest.requireActual("../../hooks/websites"),
+  useWebsiteSelectOptions: jest.fn()
+}))
 
 describe("RelationField", () => {
   let website: Website,
@@ -41,7 +48,8 @@ describe("RelationField", () => {
     helper: IntegrationTestHelper,
     onChange: SinonStub,
     contentListingItems: WebsiteContent[],
-    fakeResponse: any
+    fakeResponse: any,
+    websites: Website[]
 
   beforeEach(() => {
     website = makeWebsiteDetail()
@@ -102,6 +110,13 @@ describe("RelationField", () => {
     global.fetch.mockResolvedValue({ json: async () => fakeResponse })
     // @ts-ignore
     debouncedFetch.mockResolvedValue({ json: async () => fakeResponse })
+
+    websites = makeWebsiteListing()
+    // @ts-ignore
+    useWebsiteSelectOptions.mockReturnValue({
+      options:     formatOptions(websites, "name"),
+      loadOptions: jest.fn()
+    })
   })
 
   afterEach(() => {
@@ -111,6 +126,8 @@ describe("RelationField", () => {
     debouncedFetch.mockClear()
     // @ts-ignore
     global.fetch.mockClear()
+    // @ts-ignore
+    useWebsiteSelectOptions.mockReset()
   })
 
   const asOption = (item: WebsiteContent) => ({
@@ -178,6 +195,63 @@ describe("RelationField", () => {
           })
         })
       })
+    })
+  })
+
+  describe("cross_site option", () => {
+    it("should present default options for websites", async () => {
+      const { wrapper } = await render({ cross_site: true, value: [] })
+      expect(
+        wrapper
+          .find("SelectField")
+          .at(0)
+          .prop("defaultOptions")
+      ).toEqual(formatOptions(websites, "name"))
+    })
+
+    it("should let the user pick a website and then content within that website", async () => {
+      const { wrapper } = await render({ cross_site: true, value: [] })
+      await act(async () => {
+        // @ts-ignore
+        wrapper
+          .find("SelectField")
+          .at(0)
+          .prop("onChange")({
+          // @ts-ignore
+            target: { value: "new-uuid" }
+          })
+        wrapper.update()
+      })
+
+      // website is now set, so a request is issued for content within
+      // that website
+      expect(global.fetch).toHaveBeenCalledWith(
+        siteApiContentListingUrl
+          .query({
+            detailed_list:   true,
+            content_context: true,
+            type:            "page"
+          })
+          .param({
+            name: "new-uuid"
+          })
+          .toString(),
+        { credentials: "include" }
+      )
+
+      // UI now shows content
+      expect(
+        // @ts-ignore
+        wrapper
+          .find("SelectField")
+          .at(1)
+          .prop("options")
+      ).toEqual(
+        contentListingItems.map(item => ({
+          value: item.text_id,
+          label: item.title
+        }))
+      )
     })
   })
 

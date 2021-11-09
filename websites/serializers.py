@@ -332,7 +332,7 @@ class WebsiteContentDetailSerializer(
         update_website_backend(instance.website)
         return instance
 
-    def get_content_context(self, instance):
+    def get_content_context(self, instance):  # pylint:disable=too-many-branches
         """
         Create mapping of uuid to a display name for any values in the metadata
         """
@@ -342,7 +342,7 @@ class WebsiteContentDetailSerializer(
         lookup = defaultdict(list)  # website name -> list of text_id
         metadata = instance.metadata or {}
         site_config = SiteConfig(instance.website.starter.config)
-        for field in site_config.iter_fields():
+        for field in site_config.iter_fields():  # pylint:disable=too-many-nested-blocks
             widget = field.field.get("widget")
             if widget in ("relation", "menu"):
                 try:
@@ -358,7 +358,20 @@ class WebsiteContentDetailSerializer(
                         website_name = value["website"]
                         if isinstance(content, str):
                             content = [content]
-                        lookup[website_name].extend(content)
+
+                        if (
+                            isinstance(content, list)
+                            and len(content) > 0
+                            and isinstance(content[0], list)
+                        ):
+                            # this is the data from a 'global' relation widget,
+                            # which is a list of [content_uuid, website_name]
+                            # tuples
+                            for [content_uuid, website_name] in content:
+                                lookup[website_name].extend([content_uuid])
+                        else:
+                            lookup[website_name].extend(content)
+
                     elif widget == "menu":
                         website_name = instance.website.name
                         lookup[website_name].extend(

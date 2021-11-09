@@ -69,9 +69,13 @@ export const debouncedFetch = async (
   latestDebouncedFetchArgs[key] = [info, init]
   await sharedWait(key, delayMillis)
   const latestArgs = latestDebouncedFetchArgs[key]
-  if (latestArgs[0] !== info) {
+  if (latestArgs && latestArgs[0] !== info) {
     return null
   }
   delete latestDebouncedFetchArgs[key]
-  return await fetch(...latestArgs)
+  if (latestArgs) {
+    return await fetch(...latestArgs)
+  } else {
+    return null
+  }
 }

@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 
 from websites.config_schema.api import validate_parsed_site_config
-from websites.constants import OMNIBUS_STARTER_SLUG
+from websites.constants import OCW_WWW_STARTER_SLUG, OMNIBUS_STARTER_SLUG
 from websites.models import WebsiteStarter
 
 
@@ -27,6 +27,7 @@ class Command(BaseCommand):
                 settings.OCW_IMPORT_STARTER_SLUG,
             ),
             ("localdev/configs/omnibus-site-config.yml", OMNIBUS_STARTER_SLUG),
+            ("localdev/configs/ocw-www.yml", OCW_WWW_STARTER_SLUG),
         )
 
     def _get_config_paths(self):

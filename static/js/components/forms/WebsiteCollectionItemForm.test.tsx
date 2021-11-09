@@ -36,6 +36,8 @@ describe("WebsiteCollectionItemForm", () => {
 
   afterEach(() => {
     helper.cleanup()
+    // @ts-ignore
+    debouncedFetch.mockReset()
   })
 
   it("should pass initialValues to Formik", async () => {

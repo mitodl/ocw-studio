@@ -24,19 +24,25 @@ import SortableItem from "../SortableItem"
 import SortWrapper from "../SortWrapper"
 import { FormError } from "../forms/FormError"
 import { FetchStatus } from "../../lib/api/FetchStatus"
+import { useWebsiteSelectOptions } from "../../hooks/websites"
+
+// This is how we store the data when dealing with a cross-site relation
+// the first string is the content UUID, and the second is the website UUID
+type CrossSitePair = [string, string]
 
 interface Props {
   name: string
   collection?: string | string[]
   display_field: string // eslint-disable-line camelcase
   multiple: boolean
-  value: string | string[]
+  value: string | string[] | CrossSitePair[]
   filter?: RelationFilter
   website?: string
   valuesToOmit?: Set<string>
   sortable?: boolean
   contentContext: WebsiteContent[] | null
   onChange: (event: any) => void
+  cross_site?: boolean // eslint-disable-line camelcase
 }
 
 /**
@@ -63,7 +69,8 @@ export default function RelationField(props: Props): JSX.Element {
     filter,
     valuesToOmit,
     onChange,
-    sortable
+    sortable,
+    cross_site: crossSite // eslint-disable-line camelcase
   } = props
 
   const [options, setOptions] = useState<Option[]>(
@@ -71,12 +78,59 @@ export default function RelationField(props: Props): JSX.Element {
   )
   const [defaultOptions, setDefaultOptions] = useState<Option[]>([])
   const [contentMap, setContentMap] = useState<Map<string, WebsiteContent>>(
-    new Map()
+    new Map(
+      contentContext ?
+        contentContext.map(content => [content.text_id, content]) :
+        []
+    )
   )
   const [fetchStatus, setFetchStatus] = useState<FetchStatus>(FetchStatus.Ok)
 
   const [focusedContent, setFocusedContent] = useState<string | undefined>(
     undefined
+  )
+
+  // When we're using the crossSite option we store the value
+  // in an array that looks like `[[uuid, website_name]]` (i.e.
+  // of type `CrossSitePair[]`
+  //
+  // Because in a few places we need to operate on `string[]` (i.e.
+  // for reordering in the drag-and-drop UI, removing items, etc)
+  // we do something like `value.map(entry => entry[0])` to get an array
+  // of just content item UUIDs to operate on. Then later we need to
+  // 'rehydrate' this back to `CrossSitePair[]`, so we need to keep
+  // around some record of the content UUID <-> website name relationship.
+  //
+  // This `contentToWebsite: Map<string, string>` allows us to do just that.
+  // We can 'rehydrate' from `string[]` to `CrossSitePair[]` by doing
+  // something like `value.map(uuid => [uuid, contentToWebsite.get(uuid)])`.
+  //
+  // We can `useEffect` so we can be sure that whenever the `value` prop
+  // changes we update the `Map`.
+  const [contentToWebsite, setContentToWebsite] = useState<Map<string, string>>(
+    new Map()
+  )
+  useEffect(() => {
+    if (crossSite) {
+      setContentToWebsite(
+        old => new Map([...old.entries(), ...(value as CrossSitePair[])])
+      )
+    }
+  }, [setContentToWebsite, value, crossSite])
+
+  // In order to support the crossSite option we need to be able to fetch
+  // websites (to show as options in the select field) and we need to store
+  // a currently-selected website.
+  const {
+    options: websiteOptions,
+    loadOptions: loadWebsiteOptions
+  } = useWebsiteSelectOptions("name", crossSite ?? false)
+  const [focusedWebsite, setFocusedWebsite] = useState<string | null>(null)
+  const setFocusedWebsiteCB = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      setFocusedWebsite(event.target.value)
+    },
+    [setFocusedWebsite]
   )
 
   const contextWebsite = useWebsite()
@@ -87,7 +141,7 @@ export default function RelationField(props: Props): JSX.Element {
 
   const filterContentListing = useCallback(
     (results: WebsiteContent[]) => {
-      const valueAsSet = new Set(Array.isArray(value) ? value : [value])
+      const valueAsSet = new Set(Array.isArray(value) ? value.flat() : [value])
 
       return results
         .map(entry => ({
@@ -136,7 +190,9 @@ export default function RelationField(props: Props): JSX.Element {
             {}),
           ...params
         })
-        .param({ name: websiteName })
+        .param({
+          name: crossSite && focusedWebsite ? focusedWebsite : websiteName
+        })
         .toString()
 
       const response = debounce ?
@@ -175,7 +231,9 @@ export default function RelationField(props: Props): JSX.Element {
       // eslint-disable-next-line camelcase
       display_field,
       collection,
-      filter
+      filter,
+      focusedWebsite,
+      crossSite
     ]
   )
 
@@ -213,7 +271,9 @@ export default function RelationField(props: Props): JSX.Element {
     return () => {
       mounted = false
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    // we re-fetch default options whenever the focused website changes
+    // (this is relevant only for the cross_site use-case)
+  }, [focusedWebsite]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * A shim which takes a string or array of strings (the value) and then
@@ -223,7 +283,7 @@ export default function RelationField(props: Props): JSX.Element {
    * it per se.
    */
   const onChangeShim = useCallback(
-    (value: string | string[]) => {
+    (value: string | string[] | CrossSitePair[]) => {
       // When we run renameNestedFields we add a '.content' suffix to the name
       // of the field for RelationField because the data structure looks like
       // this: { content, website } where 'content' is either a string or a
@@ -271,16 +331,29 @@ export default function RelationField(props: Props): JSX.Element {
       const { active, over } = event
 
       if (over && active.id !== over.id) {
+        const valueToUse: string[] = crossSite ?
+          (value as CrossSitePair[]).map(
+            ([contentUUID]: CrossSitePair) => contentUUID
+          ) :
+          (value as string[])
+
+        const movedArray = arrayMove(
+          valueToUse,
+          valueToUse.indexOf(active.id),
+          valueToUse.indexOf(over.id)
+        )
+
         onChangeShim(
-          arrayMove(
-            value as string[],
-            value.indexOf(active.id),
-            value.indexOf(over.id)
-          )
+          crossSite ?
+            (movedArray.map(contentUUID => [
+              contentUUID,
+                contentToWebsite.get(contentUUID) as string
+            ]) as CrossSitePair[]) :
+            movedArray
         )
       }
     },
-    [onChangeShim, value]
+    [onChangeShim, contentToWebsite, value, crossSite]
   )
 
   /**
@@ -288,9 +361,15 @@ export default function RelationField(props: Props): JSX.Element {
    */
   const deleteItem = useCallback(
     (item: string) => {
-      onChangeShim(without([item], value as string[]))
+      onChangeShim(
+        crossSite ?
+          (value as CrossSitePair[]).filter(
+            valuePair => valuePair[0] !== item
+          ) :
+          without([item], value as string[])
+      )
     },
-    [onChangeShim, value]
+    [onChangeShim, value, crossSite]
   )
 
   /**
@@ -304,16 +383,41 @@ export default function RelationField(props: Props): JSX.Element {
       event.preventDefault()
 
       if (focusedContent) {
-        onChangeShim(value.concat(focusedContent))
+        if (crossSite) {
+          onChangeShim([
+            ...(value as CrossSitePair[]),
+            [focusedContent, focusedWebsite as string]
+          ])
+        } else {
+          onChangeShim((value as string[]).concat(focusedContent))
+        }
         setFocusedContent(undefined)
       }
     },
-    [focusedContent, setFocusedContent, onChangeShim, value]
+    [
+      focusedContent,
+      setFocusedContent,
+      onChangeShim,
+      focusedWebsite,
+      value,
+      crossSite
+    ]
   )
 
   return (
     <>
-      {sortable && multiple ? (
+      {crossSite ? (
+        <SelectField
+          name="Website"
+          value={focusedWebsite}
+          onChange={setFocusedWebsiteCB}
+          options={websiteOptions}
+          loadOptions={loadWebsiteOptions}
+          placeholder="Pick a website to search within"
+          defaultOptions={websiteOptions}
+        />
+      ) : null}
+      {sortable || crossSite ? (
         <>
           <div className="d-flex">
             <SelectField
@@ -334,22 +438,35 @@ export default function RelationField(props: Props): JSX.Element {
           </div>
           <SortWrapper
             handleDragEnd={handleDragEnd}
-            items={(value as string[]) ?? []}
+            items={
+              crossSite ?
+                ((value as CrossSitePair[]) ?? []).map(entry => entry[0]) :
+                (value as string[]) ?? []
+            }
             generateItemUUID={x => x}
           >
-            {((value as string[]) ?? []).map(textId => {
-              const content = contentMap.get(textId)
+            {Array.isArray(value) ?
+              value.map(entry => {
+                // entry will be `string[]` if `crossSite === true`
+                const textId = Array.isArray(entry) ? entry[0] : entry
+                const content = contentMap.get(textId)
+                const title = content ? content.title ?? textId : textId
 
-              return (
-                <SortableItem
-                  key={textId}
-                  title={content ? (content.title as string) : textId}
-                  id={textId}
-                  item={textId}
-                  deleteItem={deleteItem}
-                />
-              )
-            })}
+                return (
+                  <SortableItem
+                    key={textId}
+                    title={
+                      crossSite ?
+                        `${title} (${contentToWebsite.get(textId)})` :
+                        title
+                    }
+                    id={textId}
+                    item={textId}
+                    deleteItem={deleteItem}
+                  />
+                )
+              }) :
+              null}
           </SortWrapper>
         </>
       ) : (

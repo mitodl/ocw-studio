@@ -63,7 +63,7 @@ export const getFieldSchema = (
 
   switch (field.widget) {
   case WidgetVariant.Relation: {
-    if (field.multiple) {
+    if (field.multiple || field.sortable) {
       schema = yup.object().shape({
         content: minMax(yup.array(), field)
       })

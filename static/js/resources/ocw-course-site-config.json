@@ -24,6 +24,33 @@
       "category": "Content",
       "fields": [
         {
+          "label": "Description",
+          "name": "description",
+          "widget": "markdown"
+        },
+        {
+          "collection": "resource",
+          "display_field": "title",
+          "filter": {
+            "field": "resourcetype",
+            "filter_type": "equals",
+            "value": "Video"
+          },
+          "label": "Videos",
+          "multiple": true,
+          "name": "videos",
+          "sortable": true,
+          "widget": "relation"
+        }
+      ],
+      "folder": "content/video_galleries",
+      "label": "Video Gallery",
+      "name": "video_gallery"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
           "label": "Title",
           "name": "title",
           "required": true,
@@ -317,14 +344,30 @@
             },
             {
               "label": "Level",
+              "multiple": true,
               "name": "level",
               "options": [
                 "Undergraduate",
                 "Graduate",
-                "Both",
                 "Non Credit"
               ],
               "widget": "select"
+            },
+            {
+              "label": "Term",
+              "name": "term",
+              "options": [
+                "Spring",
+                "Summer",
+                "Fall",
+                "January IAP"
+              ],
+              "widget": "select"
+            },
+            {
+              "label": "Year",
+              "name": "year",
+              "widget": "string"
             },
             {
               "label": "Learning Resource Types",

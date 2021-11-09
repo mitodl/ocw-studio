@@ -123,6 +123,7 @@ export interface RelationConfigField extends ConfigFieldBaseProps {
   filter?: RelationFilter
   website?: string
   sortable?: boolean
+  cross_site?: boolean // eslint-disable-line camelcase
 }
 
 export interface MenuConfigField extends ConfigFieldBaseProps {

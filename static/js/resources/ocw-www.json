@@ -1,0 +1,286 @@
+{
+  "collections": [
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Body",
+          "name": "body",
+          "widget": "markdown"
+        }
+      ],
+      "folder": "content/pages",
+      "label": "Page",
+      "name": "pages"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "collection": "resource",
+          "cross_site": true,
+          "display_field": "title",
+          "label": "Resources",
+          "name": "resources",
+          "sortable": true,
+          "widget": "relation"
+        }
+      ],
+      "folder": "content/resource_collections",
+      "label": "Resource Collections",
+      "name": "resource_collections"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Subtitle",
+          "name": "subtitle",
+          "widget": "string"
+        },
+        {
+          "label": "Link Title",
+          "name": "link_title",
+          "widget": "string"
+        },
+        {
+          "label": "Url",
+          "name": "link_url",
+          "widget": "string"
+        },
+        {
+          "collection": "resource",
+          "display_field": "title",
+          "filter": {
+            "field": "filetype",
+            "filter_type": "equals",
+            "value": "Image"
+          },
+          "label": "Image",
+          "max": 1,
+          "min": 1,
+          "multiple": false,
+          "name": "image",
+          "widget": "relation"
+        }
+      ],
+      "folder": "content/promos",
+      "label": "Promo",
+      "name": "promos"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Body",
+          "minimal": true,
+          "name": "body",
+          "widget": "markdown"
+        },
+        {
+          "default": true,
+          "label": "Headless",
+          "name": "headless",
+          "widget": "hidden"
+        }
+      ],
+      "folder": "content/notifications",
+      "label": "Notification",
+      "name": "notifications"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Name",
+          "name": "name",
+          "widget": "string"
+        },
+        {
+          "label": "Location",
+          "name": "location",
+          "widget": "string"
+        },
+        {
+          "label": "Occupation",
+          "name": "occupation",
+          "widget": "string"
+        },
+        {
+          "collection": "resource",
+          "display_field": "title",
+          "filter": {
+            "field": "filetype",
+            "filter_type": "equals",
+            "value": "Image"
+          },
+          "label": "Image",
+          "max": 1,
+          "min": 1,
+          "multiple": false,
+          "name": "image",
+          "widget": "relation"
+        },
+        {
+          "label": "Lead Quote",
+          "name": "leadquote",
+          "widget": "string"
+        },
+        {
+          "label": "Body",
+          "name": "body",
+          "widget": "markdown"
+        }
+      ],
+      "folder": "content/testimonials",
+      "label": "Testimonial",
+      "name": "testimonials"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Description",
+          "minimal": true,
+          "name": "description",
+          "widget": "markdown"
+        },
+        {
+          "label": "File Type",
+          "name": "filetype",
+          "options": [
+            "Image",
+            "Video",
+            "Document",
+            "Other"
+          ],
+          "required": true,
+          "widget": "select"
+        },
+        {
+          "label": "File",
+          "name": "file",
+          "widget": "file"
+        },
+        {
+          "condition": {
+            "equals": "Image",
+            "field": "filetype"
+          },
+          "fields": [
+            {
+              "label": "ALT text",
+              "name": "image_alt",
+              "widget": "string"
+            },
+            {
+              "label": "Caption",
+              "name": "caption",
+              "widget": "string"
+            },
+            {
+              "label": "Credit",
+              "name": "credit",
+              "widget": "text"
+            }
+          ],
+          "label": "Image Metadata",
+          "name": "metadata",
+          "widget": "object"
+        }
+      ],
+      "folder": "content/resources",
+      "label": "Resources",
+      "name": "resource"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "First name",
+          "name": "first_name",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Middle initial",
+          "name": "middle_initial",
+          "required": false,
+          "widget": "string"
+        },
+        {
+          "label": "Last name",
+          "name": "last_name",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Salutation",
+          "name": "salutation",
+          "required": false,
+          "widget": "string"
+        },
+        {
+          "default": true,
+          "label": "Headless",
+          "name": "headless",
+          "widget": "hidden"
+        }
+      ],
+      "folder": "content/instructors",
+      "label": "Instructor",
+      "name": "instructor",
+      "slug": "text_id"
+    },
+    {
+      "category": "Settings",
+      "files": [
+        {
+          "fields": [
+            {
+              "label": "Menu",
+              "name": "mainmenu",
+              "widget": "menu"
+            }
+          ],
+          "file": "config/_default/menus.yaml",
+          "label": "Navigation Menu",
+          "name": "navmenu"
+        }
+      ],
+      "label": "Menu",
+      "name": "menu"
+    }
+  ],
+  "root-url-path": ""
+}

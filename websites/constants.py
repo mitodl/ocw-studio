@@ -29,6 +29,7 @@ WEBSITE_CONTENT_FILETYPE = "md"
 CONTENT_MENU_FIELD = "menu"
 
 OMNIBUS_STARTER_SLUG = "omnibus-starter"
+OCW_WWW_STARTER_SLUG = "ocw-www"
 
 GLOBAL_ADMIN = "global_admin"
 GLOBAL_AUTHOR = "global_author"

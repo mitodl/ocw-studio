@@ -401,6 +401,25 @@ describe("form validation utils", () => {
         )
       })
 
+      it("should validate for a required cross_site relation field", () => {
+        const [configItem, name] = makeRelationConfigItem({
+          cross_site: true,
+          required:   true
+        })
+        const schema = getContentSchema(configItem, {})
+        expect(() =>
+          schema.validateSync({
+            ...defaultFormValues,
+            [name]: {
+              website: "UUUIIIIIIDIDIDIDID",
+              content: []
+            }
+          })
+        ).toThrow(
+          new yup.ValidationError(`${name}.content is a required field.`)
+        )
+      })
+
       it("should pass validation for valid multiple relation values", async () => {
         const [configItem, name] = makeRelationConfigItem({ multiple: true })
         const schema = getContentSchema(configItem, {})
