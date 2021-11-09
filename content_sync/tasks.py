@@ -163,7 +163,7 @@ def upsert_pipelines(
                 website_subset, create_backend=create_backend, unpause=unpause
             )
         )
-    raise self.replace((celery.group(tasks)))
+    raise self.replace(celery.group(tasks))
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
