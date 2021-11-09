@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.35.1
+--------------
+
+- automate transcript upload
+- Trigger concourse build via API (#783)
+
 Version 0.35.0 (Released November 09, 2021)
 --------------
 
