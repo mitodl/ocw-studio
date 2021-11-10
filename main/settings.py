@@ -945,6 +945,7 @@ MITOL_MAIL_MESSAGE_CLASSES = [
     "videos.messages.YouTubeUploadFailureMessage",
     "websites.messages.PreviewOrPublishSuccessMessage",
     "websites.messages.PreviewOrPublishFailureMessage",
+    "websites.messages.videoTranscriptingCompleteMessage",
 ]
 MITOL_MAIL_RECIPIENT_OVERRIDE = get_string(
     name="MITOL_MAIL_RECIPIENT_OVERRIDE",

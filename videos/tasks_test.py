@@ -2,6 +2,7 @@
 import string
 from datetime import datetime
 from random import choice
+from urllib.parse import urljoin
 
 import boto3
 import pytest
@@ -13,6 +14,7 @@ from moto import mock_s3
 from gdrive_sync.api import create_gdrive_resource_content
 from gdrive_sync.factories import DriveFileFactory
 from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
+from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
 from videos.constants import (
     DESTINATION_YOUTUBE,
@@ -25,6 +27,7 @@ from videos.models import VideoFile
 from videos.tasks import (
     attempt_to_update_missing_transcripts,
     delete_s3_objects,
+    mail_transcripts_complete_notification,
     remove_youtube_video,
     start_transcript_job,
     update_transcripts_for_updated_videos,
@@ -36,6 +39,7 @@ from videos.tasks import (
 from videos.youtube import API_QUOTA_ERROR_MSG
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.messages import VideoTranscriptingCompleteMessage
 from websites.utils import get_dict_field
 
 
@@ -424,12 +428,27 @@ def test_delete_s3_objects(settings):
 
 @pytest.mark.parametrize("update_transcript_return_value", [True, False])
 @pytest.mark.parametrize("is_ocw", [True, False])
+@pytest.mark.parametrize(
+    "initial_status", [VideoStatus.SUBMITTED_FOR_TRANSCRIPTION, VideoStatus.COMPLETE]
+)
+@pytest.mark.parametrize(
+    "other_incomplete_video", [True, False]
+)  # pylint: disable=too-many-arguments
 def test_update_transcripts_for_video(
-    settings, mocker, update_transcript_return_value, is_ocw
+    settings,
+    mocker,
+    update_transcript_return_value,
+    is_ocw,
+    initial_status,
+    other_incomplete_video,
 ):
     """Test update_transcripts_for_video"""
-
     mocker.patch("videos.tasks.is_ocw_site", return_value=is_ocw)
+    mocker.patch("websites.api.is_ocw_site", return_value=is_ocw)
+
+    transcripts_notification_mock = mocker.patch(
+        "videos.tasks.mail_transcripts_complete_notification"
+    )
 
     videofile = VideoFileFactory.create(
         destination=DESTINATION_YOUTUBE, destination_id="expected_id"
@@ -437,6 +456,7 @@ def test_update_transcripts_for_video(
     video = videofile.video
     video.pdf_transcript_file = "pdf_transcript"
     video.webvtt_transcript_file = "webvtt_transcript"
+    video.status = initial_status
     video.save()
 
     resource = WebsiteContentFactory.create(website=video.website, metadata={})
@@ -449,12 +469,22 @@ def test_update_transcripts_for_video(
 
     resource.save()
 
+    if other_incomplete_video:
+        other_resource = WebsiteContentFactory.create(
+            website=video.website, metadata={}
+        )
+        metadata = other_resource.metadata
+        set_nested_dicts(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
+        set_nested_dicts(metadata, settings.YT_FIELD_CAPTIONS, None)
+        other_resource.save()
+
     update_transcript_mock = mocker.patch(
         "videos.tasks.threeplay_api.update_transcripts_for_video",
         return_value=update_transcript_return_value,
     )
+
     update_transcripts_for_video(video.id)
-    update_transcript_mock.assert_called_once_with(video)
+    update_transcript_mock.assert_called_with(video)
 
     resource.refresh_from_db()
 
@@ -467,6 +497,14 @@ def test_update_transcripts_for_video(
             get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT)
             == "pdf_transcript"
         )
+
+        if initial_status == VideoStatus.SUBMITTED_FOR_TRANSCRIPTION and (
+            not other_incomplete_video
+        ):
+            transcripts_notification_mock.assert_called_once()
+        else:
+            transcripts_notification_mock.assert_not_called()
+
     else:
         assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) is None
         assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) is None
@@ -522,3 +560,31 @@ def test_update_transcripts_for_website(mocker):
 
     for video in videos:
         update_video_transcript.assert_any_call(video.id)
+
+
+def test_mail_transcripts_complete_notification(settings, mocker):
+    """mail_transcripts_complete_notification should send correct email to correct users"""
+    website = WebsiteFactory.create()
+    users = UserFactory.create_batch(4)
+    for user in users[:2]:
+        user.groups.add(website.admin_group)
+    for user in users[2:]:
+        user.groups.add(website.editor_group)
+
+    mock_get_message_sender = mocker.patch("videos.tasks.get_message_sender")
+    mock_sender = mock_get_message_sender.return_value.__enter__.return_value
+
+    mail_transcripts_complete_notification(website)
+
+    mock_get_message_sender.assert_called_once_with(VideoTranscriptingCompleteMessage)
+    assert mock_sender.build_and_send_message.call_count == len(users) + 1
+    for user in users:
+        mock_sender.build_and_send_message.assert_any_call(
+            user,
+            {
+                "site": {
+                    "title": website.title,
+                    "url": urljoin(settings.SITE_BASE_URL, f"/sites/{website.name}"),
+                },
+            },
+        )

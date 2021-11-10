@@ -14,6 +14,7 @@ from websites.api import (
     mail_on_publish,
     unassigned_youtube_ids,
     update_youtube_thumbnail,
+    videos_missing_captions,
 )
 from websites.constants import RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO
 from websites.factories import (
@@ -249,6 +250,48 @@ def test_unassigned_youtube_ids(mocker, is_ocw):
     if is_ocw:
         assert len(unassigned_content) == 2
         for content in videos_without_ids:
+            assert content in unassigned_content
+    else:
+        assert len(unassigned_content) == 0
+
+
+@pytest.mark.parametrize("is_ocw", [True, False])
+def test_videos_missing_captions(mocker, is_ocw):
+    """videos_missing_captions should return WebsiteContent objects for videos with no captions"""
+    mocker.patch("websites.api.is_ocw_site", return_value=is_ocw)
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create_batch(
+        3,
+        website=website,
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_files": {"video_captions_file": "abc123"},
+        },
+    )
+    videos_without_captions = []
+
+    for captions in [None, ""]:
+        videos_without_captions.append(
+            WebsiteContentFactory.create(
+                website=website,
+                metadata={
+                    "resourcetype": RESOURCE_TYPE_VIDEO,
+                    "video_files": {"video_captions_file": captions},
+                },
+            )
+        )
+    WebsiteContentFactory.create(
+        website=website,
+        metadata={
+            "resourcetype": RESOURCE_TYPE_IMAGE,
+            "video_files": {"video_captions_file": "bad_data"},
+        },
+    )
+
+    unassigned_content = videos_missing_captions(website)
+    if is_ocw:
+        assert len(unassigned_content) == 2
+        for content in videos_without_captions:
             assert content in unassigned_content
     else:
         assert len(unassigned_content) == 0
