@@ -14,6 +14,7 @@ interface Props {
   field: ObjectConfigField
   contentContext: WebsiteContent[] | null
   values: SiteFormValues
+  onChange?: (e: React.ChangeEvent<any>) => void
 }
 
 /**
@@ -21,7 +22,7 @@ interface Props {
  * to be edited.
  **/
 export default function ObjectField(props: Props): JSX.Element {
-  const { field, contentContext, values } = props
+  const { field, contentContext, values, onChange } = props
 
   const [collapsed, setCollapsed] = useState(field.collapsed ?? false)
   const toggleCollapse = useCallback(
@@ -57,6 +58,7 @@ export default function ObjectField(props: Props): JSX.Element {
                 field={innerField}
                 key={innerField.name}
                 contentContext={contentContext}
+                onChange={onChange}
               />
             ))}
         </div>

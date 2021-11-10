@@ -9,6 +9,7 @@ import { ConfigField, WebsiteContent } from "../../types/websites"
 interface Props {
   field: ConfigField
   contentContext: WebsiteContent[] | null
+  onChange?: (e: React.ChangeEvent<any>) => void
 }
 
 /**
@@ -16,7 +17,8 @@ interface Props {
  */
 export default function SiteContentField({
   field,
-  contentContext
+  contentContext,
+  onChange
 }: Props): JSX.Element {
   const extraProps = widgetExtraProps(field)
   const component = componentFromWidget(field)
@@ -32,6 +34,7 @@ export default function SiteContentField({
         as={component}
         name={field.name}
         className="form-control"
+        onChange={onChange}
         {...extraProps}
       />
       {field.help && <span className="help-text">{field.help}</span>}

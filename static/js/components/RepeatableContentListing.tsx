@@ -1,6 +1,7 @@
 import React, {
   MouseEvent as ReactMouseEvent,
   useCallback,
+  useEffect,
   useState
 } from "react"
 import { useLocation } from "react-router-dom"
@@ -9,12 +10,14 @@ import { useSelector, useStore } from "react-redux"
 import { requestAsync } from "redux-query"
 import useInterval from "@use-it/interval"
 import { DateTime } from "luxon"
+import { isNil } from "ramda"
 
 import DriveSyncStatusIndicator from "./DriveSyncStatusIndicator"
 import SiteContentEditor from "./SiteContentEditor"
 import PaginationControls from "./PaginationControls"
 import BasicModal from "./BasicModal"
 import { useWebsite } from "../context/Website"
+import useConfirmation from "../hooks/confirmation"
 
 import {
   GOOGLE_DRIVE_SYNC_PROCESSING_STATES,
@@ -38,7 +41,7 @@ import {
 } from "../types/websites"
 import { createModalState } from "../types/modal_state"
 import { StudioList, StudioListItem } from "./StudioList"
-import { isNil } from "ramda"
+import ConfirmationModal from "./ConfirmationModal"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -48,8 +51,13 @@ export default function RepeatableContentListing(props: {
   const isResource = configItem.name === "resource"
   const website = useWebsite()
 
-  const { search } = useLocation()
+  const { search, pathname } = useLocation()
   const offset = Number(new URLSearchParams(search).get("offset") ?? 0)
+  const [dirty, setDirty] = useState<boolean>(false)
+  useEffect(() => {
+    // make sure we clear state if we switch pages
+    setDirty(false)
+  }, [pathname])
 
   const listingParams: ContentListingParams = {
     name: website.name,
@@ -74,6 +82,11 @@ export default function RepeatableContentListing(props: {
   const closeContentDrawer = useCallback(() => {
     setDrawerState(createModalState("closed"))
   }, [setDrawerState])
+  const {
+    confirmationModalVisible,
+    setConfirmationModalVisible,
+    conditionalClose
+  } = useConfirmation({ dirty, setDirty, close: closeContentDrawer })
 
   useInterval(
     async () => {
@@ -151,21 +164,28 @@ export default function RepeatableContentListing(props: {
   // @ts-ignore
   return (
     <>
+      <ConfirmationModal
+        dirty={dirty}
+        confirmationModalVisible={confirmationModalVisible}
+        setConfirmationModalVisible={setConfirmationModalVisible}
+        dismiss={() => conditionalClose(true)}
+      />
       <BasicModal
         isVisible={drawerState.open()}
-        hideModal={closeContentDrawer}
+        hideModal={() => conditionalClose(false)}
         title={modalTitle}
         className={modalClassName}
       >
-        {modalProps =>
+        {() =>
           drawerState.open() ? (
             <div className="m-2">
               <SiteContentEditor
                 loadContent={true}
                 configItem={configItem}
                 editorState={drawerState}
-                hideModal={modalProps.hideModal}
+                dismiss={() => conditionalClose(true)}
                 fetchWebsiteContentListing={fetchWebsiteContentListing}
+                setDirty={setDirty}
               />
             </div>
           ) : null

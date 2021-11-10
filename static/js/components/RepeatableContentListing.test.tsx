@@ -2,6 +2,7 @@ import React from "react"
 import { act } from "react-dom/test-utils"
 import useInterval from "@use-it/interval"
 import sinon from "sinon"
+import { useLocation } from "react-router-dom"
 
 import RepeatableContentListing from "./RepeatableContentListing"
 import {
@@ -10,6 +11,7 @@ import {
 } from "../constants"
 import WebsiteContext from "../context/Website"
 
+import useConfirmation from "../hooks/confirmation"
 import { isIf, shouldIf } from "../test_util"
 import {
   siteApiContentDetailUrl,
@@ -38,6 +40,7 @@ import {
   WebsiteContentListItem
 } from "../types/websites"
 import { createModalState } from "../types/modal_state"
+import configureStore from "../store/configureStore"
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
@@ -48,10 +51,18 @@ jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
   default:    mocko
 }))
-
 jest.mock("@use-it/interval", () => ({
   __esModule: true,
   default:    jest.fn()
+}))
+jest.mock("../hooks/confirmation", () => ({
+  __esModule: true,
+  default:    jest.fn()
+}))
+jest.mock("react-router-dom", () => ({
+  __esModule:  true,
+  ...jest.requireActual("react-router-dom"),
+  useLocation: jest.fn()
 }))
 
 describe("RepeatableContentListing", () => {
@@ -61,7 +72,9 @@ describe("RepeatableContentListing", () => {
     configItem: RepeatableConfigItem,
     contentListingItems: WebsiteContentListItem[],
     apiResponse: WebsiteContentListingResponse,
-    websiteContentDetailsLookup: Record<string, WebsiteContentListItem>
+    websiteContentDetailsLookup: Record<string, WebsiteContentListItem>,
+    setConfirmationModalVisible: any,
+    conditionalClose: any
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -77,6 +90,22 @@ describe("RepeatableContentListing", () => {
         contentDetailKey({ name: website.name, textId: item.text_id })
       ] = item
     }
+    setConfirmationModalVisible = jest.fn()
+    conditionalClose = jest.fn()
+    // @ts-ignore
+    useConfirmation.mockClear()
+    // @ts-ignore
+    useConfirmation.mockReturnValue({
+      confirmationModalVisible: false,
+      setConfirmationModalVisible,
+      conditionalClose
+    })
+    // @ts-ignore
+    useLocation.mockClear()
+    // @ts-ignore
+    useLocation.mockReturnValue({
+      pathname: "/path/to/pages"
+    })
 
     const listingParams = {
       name:   website.name,
@@ -133,6 +162,8 @@ describe("RepeatableContentListing", () => {
     // @ts-ignore
     useInterval.mockClear()
   })
+
+  //
   ;[true, false].forEach(isGdriveEnabled => {
     [true, false].forEach(isResource => {
       it(`${shouldIf(
@@ -193,7 +224,7 @@ describe("RepeatableContentListing", () => {
     expect(
       wrapper
         .find("BasicModal")
-        .at(0)
+        .at(1)
         .prop("isVisible")
     ).toBe(false)
     const link = wrapper.find("button.add")
@@ -203,7 +234,7 @@ describe("RepeatableContentListing", () => {
       link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
     })
     wrapper.update()
-    const editorModal = wrapper.find("BasicModal").at(0)
+    const editorModal = wrapper.find("BasicModal").at(1)
     const siteContentEditor = editorModal.find("SiteContentEditor")
     expect(siteContentEditor.prop("editorState")).toEqual(
       createModalState("adding")
@@ -212,7 +243,7 @@ describe("RepeatableContentListing", () => {
 
     act(() => {
       // @ts-ignore
-      siteContentEditor.prop("hideModal")()
+      siteContentEditor.prop("dismiss")()
     })
     wrapper.update()
     expect(
@@ -239,7 +270,7 @@ describe("RepeatableContentListing", () => {
     expect(
       wrapper
         .find("BasicModal")
-        .at(0)
+        .at(1)
         .prop("isVisible")
     ).toBe(false)
 
@@ -252,7 +283,7 @@ describe("RepeatableContentListing", () => {
         li.prop("onClick")({ preventDefault: helper.sandbox.stub() })
       })
       wrapper.update()
-      const editorModal = wrapper.find("BasicModal").at(0)
+      const editorModal = wrapper.find("BasicModal").at(1)
       const siteContentEditor = editorModal.find("SiteContentEditor")
       expect(siteContentEditor.prop("editorState")).toEqual(
         createModalState("editing", item.text_id)
@@ -261,15 +292,9 @@ describe("RepeatableContentListing", () => {
 
       act(() => {
         // @ts-ignore
-        siteContentEditor.prop("hideModal")()
+        siteContentEditor.prop("dismiss")()
       })
-      wrapper.update()
-      expect(
-        wrapper
-          .find("BasicModal")
-          .at(0)
-          .prop("isVisible")
-      ).toBe(false)
+      expect(conditionalClose).toBeCalledWith(true)
 
       idx++
     }
@@ -301,7 +326,10 @@ describe("RepeatableContentListing", () => {
           }
         )
 
-        helper.browserHistory.push({ search: `offset=${startingOffset}` })
+        // @ts-ignore
+        useLocation.mockClear()
+        // @ts-ignore
+        useLocation.mockReturnValue({ search: `offset=${startingOffset}` })
 
         const { wrapper } = await render()
         const titles = wrapper
@@ -365,11 +393,165 @@ describe("RepeatableContentListing", () => {
       expect(
         wrapper
           .find("BasicModal")
-          .at(0)
+          .at(1)
           .prop("title")
       ).toBe(`Add ${expectedLabel}`)
     })
   })
+
+  it("sets a dirty flag", async () => {
+    const { wrapper } = await render({ website })
+    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeFalsy()
+    const setDirty =
+      // @ts-ignore
+      useConfirmation.mock.calls[useConfirmation.mock.calls.length - 1][0]
+        .setDirty
+    act(() => setDirty(true))
+    wrapper.update()
+    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeTruthy()
+  })
+
+  it("clears a dirty flag when the path changes", async () => {
+    const { wrapper } = await render({ website })
+    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeFalsy()
+    const setDirty =
+      // @ts-ignore
+      useConfirmation.mock.calls[useConfirmation.mock.calls.length - 1][0]
+        .setDirty
+    act(() => setDirty(true))
+    // @ts-ignore
+    useLocation.mockReturnValue({
+      pathname: "/resources"
+    })
+
+    // force a rerender so it picks up the changed location
+    await wrapper.setProps({
+      store: configureStore({ entities: {}, queries: {} })
+    })
+
+    // @ts-ignore
+    wrapper.update()
+    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeFalsy()
+  })
+
+  it("uses visibility from useConfirmation", async () => {
+    // @ts-ignore
+    useConfirmation.mockReturnValue({
+      confirmationModalVisible: true,
+      setConfirmationModalVisible,
+      conditionalClose
+    })
+    const { wrapper } = await render({ website })
+    expect(
+      wrapper.find("ConfirmationModal").prop("confirmationModalVisible")
+    ).toBeTruthy()
+  })
+
+  it("passes closeContentDrawer to useConfirmation", async () => {
+    const { wrapper } = await render()
+    expect(
+      wrapper
+        .find("BasicModal")
+        .at(1)
+        .prop("isVisible")
+    ).toBe(false)
+    const link = wrapper.find("button.add")
+    act(() => {
+      // @ts-ignore
+      link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+    })
+    wrapper.update()
+    expect(
+      wrapper
+        .find("BasicModal")
+        .at(1)
+        .prop("isVisible")
+    ).toBe(true)
+
+    act(() => {
+      // @ts-ignore
+      useConfirmation.mock.calls[0][0].close()
+    })
+    wrapper.update()
+    expect(
+      wrapper
+        .find("BasicModal")
+        .at(1)
+        .prop("isVisible")
+    ).toBe(false)
+  })
+
+  it("sets visibility on the confirmation modal", async () => {
+    const { wrapper } = await render({ website })
+    const setVisible = wrapper
+      .find("ConfirmationModal")
+      .prop("setConfirmationModalVisible")
+    // @ts-ignore
+    act(() => setVisible(true))
+    expect(setConfirmationModalVisible).toBeCalledWith(true)
+  })
+
+  it("dismisses a modal", async () => {
+    const { wrapper } = await render({ website })
+    act(() => {
+      // @ts-ignore
+      wrapper.find("ConfirmationModal").prop("dismiss")()
+    })
+    expect(conditionalClose).toBeCalledWith(true)
+  })
+
+  it("hides the drawer, maybe with a confirmation dialog first", async () => {
+    const { wrapper } = await render({ website })
+    act(() => {
+      // @ts-ignore
+      wrapper
+        .find("BasicModal")
+        .at(1)
+        .prop("hideModal")()
+    })
+    expect(conditionalClose).toBeCalledWith(false)
+  })
+
+  it("dismisses a modal from the editor", async () => {
+    const { wrapper } = await render()
+    const link = wrapper.find("button.add")
+    act(() => {
+      // @ts-ignore
+      link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+    })
+    wrapper.update()
+    // @ts-ignore
+    const editorModal = wrapper.find("BasicModal").at(1)
+    wrapper.update()
+    const siteContentEditor = editorModal.find("SiteContentEditor")
+    // @ts-ignore
+    act(() => {
+      // @ts-ignore
+      siteContentEditor.prop("dismiss")()
+    })
+
+    expect(conditionalClose).toBeCalledWith(true)
+  })
+
+  it("passes setDirty to SiteContentEditor", async () => {
+    const { wrapper } = await render()
+    const link = wrapper.find("button.add")
+    act(() => {
+      // @ts-ignore
+      link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+    })
+    wrapper.update()
+    // @ts-ignore
+    const editorModal = wrapper.find("BasicModal").at(1)
+    wrapper.update()
+    const siteContentEditor = editorModal.find("SiteContentEditor")
+    const setDirty =
+      // @ts-ignore
+      useConfirmation.mock.calls[useConfirmation.mock.calls.length - 1][0]
+        .setDirty
+    expect(siteContentEditor.prop("setDirty")).toBe(setDirty)
+  })
+
   //
   ;[true, false].forEach(gdriveEnabled => {
     it("shows the sync status indicator", async () => {
@@ -380,6 +562,7 @@ describe("RepeatableContentListing", () => {
       )
     })
   })
+
   //
   ;[
     [GoogleDriveSyncStatuses.SYNC_STATUS_PENDING, true],

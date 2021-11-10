@@ -1,4 +1,4 @@
-import React, { useMemo } from "react"
+import React, { useCallback, useMemo } from "react"
 import {
   Form,
   Formik,
@@ -37,13 +37,15 @@ interface Props {
   configItem: EditableConfigItem
   content: WebsiteContent | null
   editorState: WebsiteContentModalState
+  setDirty: (dirty: boolean) => void
 }
 
 export default function SiteContentForm({
   onSubmit,
   configItem,
   content,
-  editorState
+  editorState,
+  setDirty
 }: Props): JSX.Element {
   const website = useWebsite()
   const initialValues: SiteFormValues = useMemo(
@@ -64,6 +66,16 @@ export default function SiteContentForm({
     [configItem]
   )
 
+  const markDirtyAndHandleChange = useCallback(
+    (handleChange: (event: React.ChangeEvent<any>) => void) => (
+      event: React.ChangeEvent<any>
+    ) => {
+      handleChange(event)
+      setDirty(true)
+    },
+    [setDirty]
+  )
+
   const validate = async (values: FormikValues) => {
     const schema = getContentSchema(configItem, values)
     try {
@@ -81,7 +93,7 @@ export default function SiteContentForm({
       initialValues={initialValues}
       enableReinitialize={true}
     >
-      {({ isSubmitting, status, values }) => (
+      {({ isSubmitting, status, values, handleChange }) => (
         <Form>
           <div>
             {renamedFields
@@ -93,6 +105,7 @@ export default function SiteContentForm({
                     key={field.name}
                     contentContext={contentContext}
                     values={values}
+                    onChange={markDirtyAndHandleChange(handleChange)}
                   />
                 ) : SETTINGS.gdrive_enabled &&
                   content?.type === "resource" &&
@@ -101,6 +114,7 @@ export default function SiteContentForm({
                       field={field}
                       key={field.name}
                       contentContext={contentContext}
+                      onChange={markDirtyAndHandleChange(handleChange)}
                     />
                   )
               )}
