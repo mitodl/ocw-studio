@@ -18,7 +18,7 @@ from websites.messages import (
     PreviewOrPublishSuccessMessage,
 )
 from websites.models import Website, WebsiteContent, WebsiteStarter
-from websites.utils import get_dict_field, set_dict_field
+from websites.utils import get_dict_field, get_dict_query_field, set_dict_field
 
 
 log = logging.getLogger(__name__)
@@ -192,11 +192,29 @@ def unassigned_youtube_ids(website: Website) -> List[WebsiteContent]:
     """Return a list of WebsiteContent objects for videos with unassigned youtube ids"""
     if not is_ocw_site(website):
         return []
+    query_resource_type_field = get_dict_query_field(
+        "metadata", settings.FIELD_RESOURCETYPE
+    )
     query_id_field = f"metadata__{'__'.join(settings.YT_FIELD_ID.split('.'))}"
     return WebsiteContent.objects.filter(
         Q(website=website)
-        & Q(metadata__resourcetype=RESOURCE_TYPE_VIDEO)
+        & Q(**{query_resource_type_field: RESOURCE_TYPE_VIDEO})
         & (Q(**{query_id_field: None}) | Q(**{query_id_field: ""}))
+    )
+
+
+def videos_missing_captions(website: Website) -> List[WebsiteContent]:
+    """Return a list of WebsiteContent objects for videos with unassigned captions"""
+    if not is_ocw_site(website):
+        return []
+    query_resource_type_field = get_dict_query_field(
+        "metadata", settings.FIELD_RESOURCETYPE
+    )
+    query_caption_field = get_dict_query_field("metadata", settings.YT_FIELD_CAPTIONS)
+    return WebsiteContent.objects.filter(
+        Q(website=website)
+        & Q(**{query_resource_type_field: RESOURCE_TYPE_VIDEO})
+        & (Q(**{query_caption_field: None}) | Q(**{query_caption_field: ""}))
     )
 
 

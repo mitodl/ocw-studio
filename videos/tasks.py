@@ -1,5 +1,6 @@
 """Video tasks"""
 import logging
+from urllib.parse import urljoin
 
 import boto3
 import celery
@@ -7,6 +8,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from googleapiclient.errors import HttpError
+from mitol.mail.api import get_message_sender
 
 from gdrive_sync.models import DriveFile
 from main.celery import app
@@ -26,8 +28,9 @@ from videos.youtube import (
     mail_youtube_upload_failure,
     mail_youtube_upload_success,
 )
-from websites.api import is_ocw_site
+from websites.api import is_ocw_site, videos_missing_captions
 from websites.constants import RESOURCE_TYPE_VIDEO
+from websites.messages import VideoTranscriptingCompleteMessage
 from websites.models import Website, WebsiteContent
 from websites.utils import get_dict_query_field, set_dict_field
 
@@ -207,8 +210,12 @@ def update_transcripts_for_video(video_id: int):
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
     if threeplay_api.update_transcripts_for_video(video):
-        video.status = VideoStatus.COMPLETE
-        video.save()
+        first_transcript_download = False
+
+        if video.status != VideoStatus.COMPLETE:
+            video.status = VideoStatus.COMPLETE
+            video.save()
+            first_transcript_download = True
 
         website = video.website
         if is_ocw_site(website):
@@ -233,6 +240,12 @@ def update_transcripts_for_video(video_id: int):
                     video.webvtt_transcript_file.name,
                 )
                 video_resource.save()
+
+                if (
+                    first_transcript_download
+                    and len(videos_missing_captions(website)) == 0
+                ):
+                    mail_transcripts_complete_notification(website)
 
 
 @app.task(acks_late=True)
@@ -283,3 +296,21 @@ def update_transcripts_for_website(website: Website):
 
     for video in website.videos.all():
         update_transcripts_for_video(video.id)
+
+
+def mail_transcripts_complete_notification(website: Website):
+    """Notify collaborators that 3play completed video transcripts"""
+    with get_message_sender(VideoTranscriptingCompleteMessage) as sender:
+        for collaborator in website.collaborators:
+            sender.build_and_send_message(
+                collaborator,
+                {
+                    "site": {
+                        "title": website.title,
+                        "url": urljoin(
+                            settings.SITE_BASE_URL,
+                            f"sites/{website.name}",
+                        ),
+                    },
+                },
+            )

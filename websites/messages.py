@@ -6,6 +6,25 @@ from mitol.mail.messages import TemplatedMessage
 from content_sync.constants import VERSION_LIVE
 
 
+class VideoTranscriptingCompleteMessage(TemplatedMessage):
+    """Email message for 3play transcription complete"""
+
+    name = "3play transcription complete"
+    template_name = "mail/transcription_complete"
+
+    @staticmethod
+    def get_debug_template_context() -> dict:
+        """Returns the extra context for the email debugger"""
+        return {
+            "user": SimpleNamespace(name="Test User"),
+            "site": SimpleNamespace(
+                name="1-1-computer-science-fall-2024",
+                title="Intro to Computer Science",
+                full_url="https://ocwtest.edu/courses/1-1-computer-science-fall-2024",
+            ),
+        }
+
+
 class PreviewOrPublishSuccessMessage(TemplatedMessage):
     """Email message for publish/preview pipeline success"""
 

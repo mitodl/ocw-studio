@@ -234,17 +234,24 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
 
 
 @pytest.mark.parametrize("has_missing_ids", [True, False])
-def test_websites_endpoint_preview(settings, mocker, drf_client, has_missing_ids):
+@pytest.mark.parametrize("has_missing_captions", [True, False])
+def test_websites_endpoint_preview(
+    settings, mocker, drf_client, has_missing_ids, has_missing_captions
+):
     """A user with admin/edit permissions should be able to request a website preview"""
     mock_preview_website = mocker.patch("websites.views.preview_website")
     mock_poll = mocker.patch("websites.views.poll_build_status_until_complete")
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create()
-    video_content = WebsiteContentFactory.create_batch(2, website=website)
+    video_content = WebsiteContentFactory.create_batch(3, website=website)
     mocker.patch(
         "websites.views.unassigned_youtube_ids",
-        return_value=video_content if has_missing_ids else [],
+        return_value=video_content[0:2] if has_missing_ids else [],
+    )
+    mocker.patch(
+        "websites.views.videos_missing_captions",
+        return_value=video_content[1:3] if has_missing_captions else [],
     )
     editor = UserFactory.create()
     editor.groups.add(website.editor_group)
@@ -253,13 +260,29 @@ def test_websites_endpoint_preview(settings, mocker, drf_client, has_missing_ids
         reverse("websites_api-preview", kwargs={"name": website.name})
     )
     assert resp.status_code == 200
-    expected_msg = ""
+    expected_msgs = []
+
+    titles = [content.title for content in video_content]
+
     if has_missing_ids:
-        missing_titles = ",".join([content.title for content in video_content])
-        expected_msg += (
-            f"WARNING: The following videos have missing YouTube IDs: {missing_titles}"
+        expected_msgs.append(
+            f"WARNING: The following video resources require YouTube IDs: {', '.join(titles[0:2])}"
         )
-    assert resp.data["details"] == expected_msg
+
+    if has_missing_captions:
+        if has_missing_ids:
+            missing_titles = titles[2]
+        else:
+            missing_titles = ", ".join(titles[1:3])
+        expected_msgs.append(
+            f"WARNING: The following videos have missing captions: {missing_titles}"
+        )
+
+    if expected_msgs:
+        assert resp.data["details"] == "\n".join(expected_msgs)
+    else:
+        assert resp.data["details"] == ""
+
     mock_preview_website.assert_called_once_with(website)
     mock_poll.delay.assert_called_once_with(
         website.name,
@@ -294,17 +317,24 @@ def test_websites_endpoint_preview_error(mocker, drf_client):
 
 
 @pytest.mark.parametrize("has_missing_ids", [True, False])
-def test_websites_endpoint_publish(settings, mocker, drf_client, has_missing_ids):
+@pytest.mark.parametrize("has_missing_captions", [True, False])
+def test_websites_endpoint_publish(  # pylint: disable=too-many-locals
+    settings, mocker, drf_client, has_missing_ids, has_missing_captions
+):
     """A user with admin permissions should be able to request a website publish"""
     mock_publish_website = mocker.patch("websites.views.publish_website")
     mock_poll = mocker.patch("websites.views.poll_build_status_until_complete")
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create()
-    video_content = WebsiteContentFactory.create_batch(2, website=website)
+    video_content = WebsiteContentFactory.create_batch(3, website=website)
     mocker.patch(
         "websites.views.unassigned_youtube_ids",
-        return_value=video_content if has_missing_ids else [],
+        return_value=video_content[0:2] if has_missing_ids else [],
+    )
+    mocker.patch(
+        "websites.views.videos_missing_captions",
+        return_value=video_content[1:3] if has_missing_captions else [],
     )
     last_published = website.publish_date
     admin = UserFactory.create()
@@ -315,14 +345,31 @@ def test_websites_endpoint_publish(settings, mocker, drf_client, has_missing_ids
     )
     assert resp.status_code == 400 if has_missing_ids else 200
     website.refresh_from_db()
+    expected_msgs = []
+
+    titles = [content.title for content in video_content]
+
     if has_missing_ids:
-        missing_titles = ",".join([content.title for content in video_content])
-        expected_msg = (
-            f"The following video resources require YouTube ID's: {missing_titles}"
+        expected_msgs.append(
+            f"The following video resources require YouTube IDs: {', '.join(titles[0:2])}"
         )
         assert website.publish_date == last_published
         mock_publish_website.assert_not_called()
-    else:
+
+    if has_missing_captions:
+        if has_missing_ids:
+            missing_titles = titles[2]
+        else:
+            missing_titles = ", ".join(titles[1:3])
+        expected_msgs.append(
+            f"The following videos have missing captions: {missing_titles}"
+        )
+        assert website.publish_date == last_published
+        mock_publish_website.assert_not_called()
+
+    expected_msg = "\n".join(expected_msgs)
+
+    if not has_missing_ids and not has_missing_captions:
         expected_msg = ""
         mock_publish_website.assert_called_once_with(website)
         assert website.has_unpublished_live is False
@@ -337,6 +384,7 @@ def test_websites_endpoint_publish(settings, mocker, drf_client, has_missing_ids
             ).isoformat(),
             admin.id,
         )
+
     assert resp.data["details"] == expected_msg
 
 

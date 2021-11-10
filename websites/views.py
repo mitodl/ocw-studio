@@ -33,7 +33,11 @@ from main.utils import uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
 from websites import constants
-from websites.api import get_valid_new_filename, unassigned_youtube_ids
+from websites.api import (
+    get_valid_new_filename,
+    unassigned_youtube_ids,
+    videos_missing_captions,
+)
 from websites.constants import (
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
@@ -166,18 +170,23 @@ class WebsiteViewSet(
         """Trigger a preview task for the website"""
         try:
             website = self.get_object()
-            incomplete_videos = [
-                video.title for video in unassigned_youtube_ids(website)
+
+            messages = [
+                "WARNING: " + message for message in incomplete_videos_messages(website)
             ]
-            message = ""
-            if len(incomplete_videos) > 0:
-                message = f"WARNING: The following videos have missing YouTube IDs: {','.join(incomplete_videos)}"
+
+            if messages:
+                message = "\n".join(messages)
+            else:
+                message = ""
+
             Website.objects.filter(pk=website.pk).update(
                 has_unpublished_draft=False,
                 draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
                 draft_publish_status_updated_on=now_in_utc(),
                 latest_build_id_draft=None,
             )
+
             preview_website(website)
             poll_build_status_until_complete.delay(
                 website.name,
@@ -202,23 +211,21 @@ class WebsiteViewSet(
         """Trigger a publish task for the website"""
         try:
             website = self.get_object()
-            incomplete_videos = [
-                video.title for video in unassigned_youtube_ids(website)
-            ]
-            if len(incomplete_videos) > 0:
-                return Response(
-                    status=400,
-                    data={
-                        "details": f"The following video resources require YouTube ID's: {','.join(incomplete_videos)}"
-                    },
-                )
+
+            messages = incomplete_videos_messages(website)
+
+            if messages:
+                return Response(status=400, data={"details": "\n".join(messages)})
+
             Website.objects.filter(pk=website.pk).update(
                 has_unpublished_live=False,
                 live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
                 live_publish_status_updated_on=now_in_utc(),
                 latest_build_id_live=None,
             )
+
             publish_website(website)
+
             poll_build_status_until_complete.delay(
                 website.name,
                 VERSION_LIVE,
@@ -554,3 +561,29 @@ class WebsiteCollectionItemViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
             website_collection__id=parent_lookup_collection
         ).select_related("website")
         return queryset.order_by("position")
+
+
+def incomplete_videos_messages(website):
+    "Return array with error/warning messages if there are videos missing youtube ids or captions"
+    missing_youtube_ids = unassigned_youtube_ids(website)
+
+    missing_youtube_ids_titles = [video.title for video in missing_youtube_ids]
+
+    missing_captions_titles = [
+        video.title
+        for video in videos_missing_captions(website)
+        if video not in missing_youtube_ids
+    ]
+
+    messages = []
+
+    if len(missing_youtube_ids_titles) > 0:
+        messages.append(
+            f"The following video resources require YouTube IDs: {', '.join(missing_youtube_ids_titles)}"
+        )
+    if len(missing_captions_titles) > 0:
+        messages.append(
+            f"The following videos have missing captions: {', '.join(missing_captions_titles)}"
+        )
+
+    return messages
