@@ -9,6 +9,7 @@ import dateutil
 import yaml
 from django.conf import settings
 
+from gdrive_sync.api import create_gdrive_folders, is_gdrive_enabled
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
 from main.utils import get_dirpath_and_filename, is_valid_uuid
 from websites.api import find_available_name, get_valid_new_filename
@@ -375,5 +376,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         import_ocw2hugo_sitemetadata(course_data, website)
         import_ocw2hugo_menu(menu_data, website)
         import_ocw2hugo_content(bucket, prefix, website)
+        if is_gdrive_enabled() and website.gdrive_folder is None:
+            create_gdrive_folders(website.short_id)
     except:  # pylint:disable=bare-except
         log.exception("Error saving website %s", path)

@@ -1,12 +1,13 @@
 """gdrive_sync tasks"""
 import logging
 from datetime import datetime
+from typing import List
 
 import celery
 import pytz
 from celery import chain, chord
 from dateutil.parser import parse
-from mitol.common.utils import now_in_utc
+from mitol.common.utils import chunks, now_in_utc
 
 from content_sync.decorators import single_website_task
 from content_sync.tasks import sync_website_content
@@ -158,6 +159,31 @@ def create_gdrive_folders(website_short_id: str):
     """Create gdrive folder for website if it doesn't already exist"""
     if api.is_gdrive_enabled():
         api.create_gdrive_folders(website_short_id)
+
+
+@app.task()
+def create_gdrive_folders_batch(short_ids: List[str]):
+    """Create Google Drive folders for a batch of websites"""
+    errors = []
+    for short_id in short_ids:
+        try:
+            api.create_gdrive_folders(short_id)
+        except:  # pylint:disable=bare-except
+            log.exception("Could not create google drive folders for %s", short_id)
+            errors.append(short_id)
+    return errors or True
+
+
+@app.task(bind=True)
+def create_gdrive_folders_chunked(self, short_ids: List[str], chunk_size=500):
+    """ Chunk and group batches of calls to create google drive folders for sites """
+    tasks = []
+    for website_subset in chunks(
+        sorted(short_ids),
+        chunk_size=chunk_size,
+    ):
+        tasks.append(create_gdrive_folders_batch.s(website_subset))
+    raise self.replace(celery.group(tasks))
 
 
 @app.task

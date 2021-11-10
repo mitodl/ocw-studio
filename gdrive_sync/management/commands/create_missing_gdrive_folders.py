@@ -1,8 +1,9 @@
 from django.conf import settings
-from django.core.management import BaseCommand
+from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
+from mitol.common.utils import now_in_utc
 
-from gdrive_sync import api
+from gdrive_sync.tasks import create_gdrive_folders_chunked
 from websites.models import Website
 
 
@@ -13,11 +14,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "-w",
-            "--website",
-            dest="website",
+            "-f",
+            "--filter",
+            dest="filter",
             default="",
-            help="If specified, only process websites that have this short_id or name",
+            help="If specified, only process websites whose name/short_id starts with this",
         )
         parser.add_argument(
             "-c",
@@ -33,38 +34,53 @@ class Command(BaseCommand):
             default="",
             help="If specified, only process websites that have this type",
         )
+        parser.add_argument(
+            "-ch",
+            "--chunks",
+            dest="chunk_size",
+            default=500,
+            help="Set chunk size for task processing",
+        )
 
     def handle(self, *args, **options):
         if settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS:
-            websites = Website.objects.filter(owner_id__isnull=False)
-            website_filter = options["website"].lower()
+            websites = Website.objects.all()
+            website_filter = options["filter"].lower()
             starter_filter = options["starter"].lower()
             source_filter = options["source"].lower()
+            chunk_size = int(options["chunk_size"])
+            is_verbose = options["verbosity"] > 1
+
             if website_filter:
                 websites = websites.filter(
-                    Q(name__icontains=website_filter)
-                    | Q(short_id__icontains=website_filter)
+                    Q(name__startswith=website_filter)
+                    | Q(short_id__startswith=website_filter)
                 )
             if starter_filter:
                 websites = websites.filter(starter__slug=starter_filter)
             if source_filter:
                 websites = websites.filter(source=source_filter)
 
+            short_ids = list(websites.values_list("short_id", flat=True))
+
+            start = now_in_utc()
+            task = create_gdrive_folders_chunked.delay(short_ids, chunk_size=chunk_size)
+
             self.stdout.write(
-                self.style.WARNING(
-                    f"Creating gdrive folders for {websites.count()} websites if they do not already exist..."
+                f"Started celery task {task} to upsert pipelines for {len(short_ids)} sites."
+            )
+            if is_verbose:
+                self.stdout.write(f"{','.join(short_ids)}")
+
+            self.stdout.write("Waiting on task...")
+
+            result = task.get()
+            if set(result) != {True}:
+                raise CommandError(f"Some errors occurred: {result}")
+
+            total_seconds = (now_in_utc() - start).total_seconds()
+            self.stdout.write(
+                "Google drive folder creation finished, took {} seconds".format(
+                    total_seconds
                 )
             )
-
-            count = 0
-            for website in websites:
-                new_drive_created = api.create_gdrive_folders(website.short_id)
-                if new_drive_created:
-                    count += 1
-
-            self.stdout.write(
-                "Finished, gdrive folders for {} websites created".format(count)
-            )
-
-        else:
-            self.stdout.write(self.style.WARNING(f"Google drive credentials not set."))
