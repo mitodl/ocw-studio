@@ -211,6 +211,25 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
 
 
 @mock_s3
+@pytest.mark.parametrize("gdrive_enabled", [True, False])
+def test_import_ocw2hugo_course_gdrive(mocker, settings, gdrive_enabled):
+    """Google drive folders should be created if integration is enabled"""
+    mocker.patch("ocw_import.api.is_gdrive_enabled", return_value=gdrive_enabled)
+    mock_sync_gdrive = mocker.patch(
+        "ocw_import.api.create_gdrive_folders",
+    )
+    setup_s3(settings)
+    name = "1-050-engineering-mechanics-i-fall-2007"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
+    import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
+    website = Website.objects.get(name=name)
+    if gdrive_enabled:
+        mock_sync_gdrive.assert_called_once_with(website.short_id)
+    else:
+        mock_sync_gdrive.assert_not_called()
+
+
+@mock_s3
 def test_import_ocw2hugo_course_bad_date(mocker, settings):
     """ Website publish date should be null if the JSON date can't be parsed """
     setup_s3(settings)

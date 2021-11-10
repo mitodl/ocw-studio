@@ -18,6 +18,7 @@ from gdrive_sync.constants import (
 from gdrive_sync.factories import DriveApiQueryTrackerFactory, DriveFileFactory
 from gdrive_sync.models import DriveFile
 from gdrive_sync.tasks import (
+    create_gdrive_folders_batch,
     import_recent_files,
     import_website_files,
     process_drive_file,
@@ -66,6 +67,48 @@ def test_create_gdrive_folders(settings, mocker, shared_id, drive_creds):
     mock_create_folder = mocker.patch("gdrive_sync.tasks.api.create_gdrive_folders")
     tasks.create_gdrive_folders.delay("test")
     assert mock_create_folder.call_count == (1 if shared_id and drive_creds else 0)
+
+
+@pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
+def test_create_gdrive_folders_chunked(  # pylint:disable=unused-argument
+    mocker, mocked_celery, chunk_size, chunks
+):
+    """create_gdrive_folders_chunked calls create_gdrive_folders_batch with correct arguments"""
+    websites = WebsiteFactory.create_batch(3)
+    short_ids = sorted([website.short_id for website in websites])
+    mock_batch = mocker.patch("gdrive_sync.tasks.create_gdrive_folders_batch.s")
+    with pytest.raises(TabError):
+        tasks.create_gdrive_folders_chunked.delay(
+            short_ids,
+            chunk_size=chunk_size,
+        )
+    mock_batch.assert_any_call(short_ids[0:chunk_size])
+    if chunks > 1:
+        mock_batch.assert_any_call(short_ids[chunk_size:])
+
+
+def test_create_gdrive_folders_batch(mocker):
+    """create_gdrive_folders should make the expected function calls"""
+    mock_create_gdrive_folders = mocker.patch(
+        "gdrive_sync.tasks.api.create_gdrive_folders"
+    )
+    websites = WebsiteFactory.create_batch(2)
+    short_ids = sorted([website.short_id for website in websites])
+    tasks.create_gdrive_folders_batch.delay(short_ids)
+    for short_id in short_ids:
+        mock_create_gdrive_folders.assert_any_call(short_id)
+
+
+@pytest.mark.parametrize("has_error", [True, False])
+def test_create_gdrive_folders_batch_errors(mocker, has_error):
+    """create_gdrive_folders_batch should return a list of short_ids that errored, or True if no errors"""
+    short_ids = sorted([website.short_id for website in WebsiteFactory.create_batch(2)])
+    side_effects = [None, Exception("api error")] if has_error else [None, None]
+    mocker.patch(
+        "gdrive_sync.tasks.api.create_gdrive_folders", side_effect=side_effects
+    )
+    result = create_gdrive_folders_batch(sorted(short_ids))
+    assert result == ([short_ids[1]] if has_error else True)
 
 
 # pylint:disable=too-many-arguments, too-many-locals
