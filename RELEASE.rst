@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.35.1
+Version 0.35.1 (Released November 12, 2021)
 --------------
 
 - automate transcript upload
