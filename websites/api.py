@@ -199,7 +199,11 @@ def unassigned_youtube_ids(website: Website) -> List[WebsiteContent]:
     return WebsiteContent.objects.filter(
         Q(website=website)
         & Q(**{query_resource_type_field: RESOURCE_TYPE_VIDEO})
-        & (Q(**{query_id_field: None}) | Q(**{query_id_field: ""}))
+        & (
+            Q(**{f"{query_id_field}__isnull": True})
+            | Q(**{f"{query_id_field}": None})
+            | Q(**{query_id_field: ""})
+        )
     )
 
 

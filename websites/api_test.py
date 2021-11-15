@@ -221,7 +221,7 @@ def test_unassigned_youtube_ids(mocker, is_ocw):
     mocker.patch("websites.api.is_ocw_site", return_value=is_ocw)
     website = WebsiteFactory.create()
     WebsiteContentFactory.create_batch(
-        3,
+        4,
         website=website,
         metadata={
             "resourcetype": RESOURCE_TYPE_VIDEO,
@@ -229,6 +229,15 @@ def test_unassigned_youtube_ids(mocker, is_ocw):
         },
     )
     videos_without_ids = []
+    videos_without_ids.append(
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {},
+            },
+        )
+    )
     for yt_id in [None, ""]:
         videos_without_ids.append(
             WebsiteContentFactory.create(
@@ -248,7 +257,7 @@ def test_unassigned_youtube_ids(mocker, is_ocw):
     )
     unassigned_content = unassigned_youtube_ids(website)
     if is_ocw:
-        assert len(unassigned_content) == 2
+        assert len(unassigned_content) == 3
         for content in videos_without_ids:
             assert content in unassigned_content
     else:
