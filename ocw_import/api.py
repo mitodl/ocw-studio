@@ -155,7 +155,7 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
             "parent": parent,
             "title": content_json.get("title"),
             "type": content_type,
-            "dirpath": dirpath,
+            "dirpath": dirpath.replace("pages", "testpages"),
             # Replace dots with dashes to simplify file name/extension parsing, and limit length
             "filename": filename.replace(".", "-")[0:CONTENT_FILENAME_MAX_LEN],
         }

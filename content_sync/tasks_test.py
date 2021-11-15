@@ -107,12 +107,19 @@ def test_sync_website_content_not_exists(api_mock, log_mock):
 
 @pytest.mark.parametrize("backend_exists", [True, False])
 @pytest.mark.parametrize("create_backend", [True, False])
-def test_sync_all_websites(api_mock, backend_exists, create_backend):
+def test_sync_unsynced_websites(api_mock, backend_exists, create_backend):
     """
     Test that sync_all_content_to_backend is run on all websites needing a sync
     """
     api_mock.get_sync_backend.return_value.backend_exists.return_value = backend_exists
-    website_synced = WebsiteFactory.create()
+    website_synced = WebsiteFactory.create(
+        has_unpublished_live=False,
+        has_unpublished_draft=False,
+        live_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        draft_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        latest_build_id_live=1,
+        latest_build_id_draft=2,
+    )
     websites_unsynced = WebsiteFactory.create_batch(2)
     with mute_signals(post_save):
         ContentSyncStateFactory.create(
@@ -130,6 +137,12 @@ def test_sync_all_websites(api_mock, backend_exists, create_backend):
     tasks.sync_unsynced_websites.delay(create_backends=create_backend)
     for website in websites_unsynced:
         api_mock.get_sync_backend.assert_any_call(website)
+        website.refresh_from_db()
+        assert website.has_unpublished_live is True
+        assert website.has_unpublished_draft is True
+        assert website.live_publish_status == website.draft_publish_status == PUBLISH_STATUS_NOT_STARTED
+        assert website.latest_build_id_live is None
+        assert website.latest_build_id_draft is None
     with pytest.raises(AssertionError):
         api_mock.get_sync_backend.assert_any_call(website_synced)
     assert (
@@ -145,7 +158,7 @@ def test_sync_all_websites_rate_limit_low(mocker, settings, check_limit):
     mock_git_wrapper = mocker.patch("content_sync.backends.github.GithubApiWrapper")
     sleep_mock = mocker.patch("content_sync.tasks.sleep")
     mock_dt_now = mocker.patch(
-        "content_sync.tasks.now_in_utc", now=mocker.Mock(return_value=now_in_utc())
+        "content_sync.tasks.now_in_utc", return_value=now_in_utc()
     )
     mock_core = mocker.MagicMock(
         remaining=5, reset=mock_dt_now + timedelta(seconds=1000)
