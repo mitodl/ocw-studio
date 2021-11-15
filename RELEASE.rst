@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.36.0
+Version 0.36.0 (Released November 15, 2021)
 --------------
 
 - Create gdrive folders for imported sites if unassigned (#798)
