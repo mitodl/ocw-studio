@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.36.0 (Released November 15, 2021)
+--------------
+
+- Create gdrive folders for imported sites if unassigned (#798)
+- Fix some issues with upserting multiple site pipelines (#794)
+
 Version 0.35.1 (Released November 12, 2021)
 --------------
 
