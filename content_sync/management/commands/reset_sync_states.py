@@ -82,7 +82,7 @@ class Command(BaseCommand):
                 content__website__starter__slug=starter_str
             )
         if source_str:
-            content_qset = content_qset.filter(content__website_source=source_str)
+            content_qset = content_qset.filter(content__website__source=source_str)
 
         content_qset.update(synced_checksum=None)
 

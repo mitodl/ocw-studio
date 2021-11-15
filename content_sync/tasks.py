@@ -22,7 +22,8 @@ from websites.api import mail_on_publish
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
-    PUBLISH_STATUS_SUCCEEDED, PUBLISH_STATUS_NOT_STARTED,
+    PUBLISH_STATUS_NOT_STARTED,
+    PUBLISH_STATUS_SUCCEEDED,
 )
 from websites.models import Website
 
