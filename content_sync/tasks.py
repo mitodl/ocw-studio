@@ -45,7 +45,7 @@ def sync_content(content_sync_id: str):
 
 
 @app.task(acks_late=True)
-def sync_all_websites(create_backends: bool = False, check_limit: bool = False):
+def sync_unsynced_websites(create_backends: bool = False, check_limit: bool = False):
     """
     Sync all websites with unsynced content if they have existing repos.
     This should be rarely called, and only in a management command.

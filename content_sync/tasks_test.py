@@ -127,7 +127,7 @@ def test_sync_all_websites(api_mock, backend_exists, create_backend):
         2, content=WebsiteContentFactory.create(website=websites_unsynced[1])
     )
 
-    tasks.sync_all_websites.delay(create_backends=create_backend)
+    tasks.sync_unsynced_websites.delay(create_backends=create_backend)
     for website in websites_unsynced:
         api_mock.get_sync_backend.assert_any_call(website)
     with pytest.raises(AssertionError):
@@ -140,7 +140,7 @@ def test_sync_all_websites(api_mock, backend_exists, create_backend):
 
 @pytest.mark.parametrize("check_limit", [True, False])
 def test_sync_all_websites_rate_limit_low(mocker, settings, check_limit):
-    """Test that sync_all_websites pauses if the GithubBackend is close to exceeding rate limit"""
+    """Test that sync_unsynced_websites pauses if the GithubBackend is close to exceeding rate limit"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
     mock_git_wrapper = mocker.patch("content_sync.backends.github.GithubApiWrapper")
     sleep_mock = mocker.patch("content_sync.tasks.sleep")
@@ -152,18 +152,18 @@ def test_sync_all_websites_rate_limit_low(mocker, settings, check_limit):
     )
     mock_git_wrapper.return_value.git.get_rate_limit.return_value.core = mock_core
     ContentSyncStateFactory.create_batch(2)
-    tasks.sync_all_websites.delay(check_limit=check_limit)
+    tasks.sync_unsynced_websites.delay(check_limit=check_limit)
     assert sleep_mock.call_count == (2 if check_limit else 0)
 
 
 def test_sync_all_websites_rate_limit_exceeded(api_mock):
-    """Test that sync_all_websites halts if instantiating a GithubBackend exceeds the rate limit"""
+    """Test that sync_unsynced_websites halts if instantiating a GithubBackend exceeds the rate limit"""
     api_mock.get_sync_backend.side_effect = RateLimitExceededException(
         status=403, data={}, headers={}
     )
     ContentSyncStateFactory.create_batch(2)
     with pytest.raises(RateLimitExceededException):
-        tasks.sync_all_websites.delay()
+        tasks.sync_unsynced_websites.delay()
     api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_not_called()
 
 

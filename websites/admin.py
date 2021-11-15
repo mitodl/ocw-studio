@@ -25,7 +25,7 @@ class WebsiteAdmin(TimestampedModelAdmin, GuardedModelAdmin):
 
     include_created_on_in_list = True
     formfield_overrides = {JSONField: {"widget": PrettyJSONWidget}}
-    search_fields = ("title", "name", "uuid")
+    search_fields = ("title", "name", "uuid", "short_id")
     list_display = (
         "name",
         "title",
@@ -46,6 +46,7 @@ class WebsiteContentAdmin(TimestampedModelAdmin, SafeDeleteAdmin):
         "website__title",
         "website__name",
         "website__uuid",
+        "website__short_id",
         "text_id",
         "parent__text_id",
     )

@@ -15,7 +15,7 @@ def backpopulate_short_id(apps, schema_editor):
         short_id = None
         if website_dict["metadata"]:
             try:
-                short_id = get_short_id(website_dict["metadata"])
+                short_id = get_short_id(website_dict["name"], website_dict["metadata"])
             except:
                 pass
         if not short_id:
