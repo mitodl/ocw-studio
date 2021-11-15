@@ -2,7 +2,8 @@
 from django.core.management import BaseCommand
 
 from content_sync.api import get_sync_backend
-from websites.api import fetch_website
+from websites.api import fetch_website, reset_publishing_fields
+from websites.models import Website
 
 
 class Command(BaseCommand):
@@ -25,3 +26,5 @@ class Command(BaseCommand):
             f"Syncing content from backend to database for '{website.title}'..."
         )
         backend.sync_all_content_to_db()
+        reset_publishing_fields(website.name)
+        self.stdout.write(f"Completed syncing from backend to database")

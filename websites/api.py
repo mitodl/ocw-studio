@@ -8,11 +8,15 @@ from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from django.db.models import Q, QuerySet
 from magic import Magic
-from mitol.common.utils import max_or_none
+from mitol.common.utils import max_or_none, now_in_utc
 from mitol.mail.api import get_message_sender
 
 from users.models import User
-from websites.constants import CONTENT_FILENAME_MAX_LEN, RESOURCE_TYPE_VIDEO
+from websites.constants import (
+    CONTENT_FILENAME_MAX_LEN,
+    PUBLISH_STATUS_NOT_STARTED,
+    RESOURCE_TYPE_VIDEO,
+)
 from websites.messages import (
     PreviewOrPublishFailureMessage,
     PreviewOrPublishSuccessMessage,
@@ -242,3 +246,18 @@ def detect_mime_type(uploaded_file: UploadedFile) -> str:
     magic = Magic(mime=True)
     chunk = next(uploaded_file.chunks(chunk_size=2048))
     return magic.from_buffer(chunk)
+
+
+def reset_publishing_fields(website_name: str):
+    """Reset all publishing fields to allow a fresh publish request"""
+    now = now_in_utc()
+    Website.objects.filter(name=website_name).update(
+        has_unpublished_live=True,
+        has_unpublished_draft=True,
+        live_publish_status=PUBLISH_STATUS_NOT_STARTED,
+        draft_publish_status=PUBLISH_STATUS_NOT_STARTED,
+        live_publish_status_updated_on=now,
+        draft_publish_status_updated_on=now,
+        latest_build_id_live=None,
+        latest_build_id_draft=None,
+    )

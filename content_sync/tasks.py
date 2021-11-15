@@ -18,11 +18,10 @@ from content_sync.decorators import single_website_task
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
 from main.celery import app
-from websites.api import mail_on_publish
+from websites.api import mail_on_publish, reset_publishing_fields
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
-    PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
 )
 from websites.models import Website
@@ -67,17 +66,7 @@ def sync_unsynced_websites(create_backends: bool = False, check_limit: bool = Fa
         if website_name:
             log.debug("Syncing website %s to backend", website_name)
             try:
-                now = now_in_utc()
-                Website.objects.filter(name=website_name).update(
-                    has_unpublished_live=True,
-                    has_unpublished_draft=True,
-                    live_publish_status=PUBLISH_STATUS_NOT_STARTED,
-                    draft_publish_status=PUBLISH_STATUS_NOT_STARTED,
-                    live_publish_status_updated_on=now,
-                    draft_publish_status_updated_on=now,
-                    latest_build_id_live=None,
-                    latest_build_id_draft=None,
-                )
+                reset_publishing_fields(website_name)
                 backend = api.get_sync_backend(Website.objects.get(name=website_name))
                 if isinstance(backend, GithubBackend):
                     if check_limit:
