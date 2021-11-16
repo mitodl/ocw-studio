@@ -13,7 +13,7 @@ from mitol.common.utils import chunks, now_in_utc, pytz
 
 from content_sync import api
 from content_sync.apis import github
-from content_sync.constants import VERSION_DRAFT
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import single_website_task
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
@@ -184,7 +184,7 @@ def sync_website_content(website_name: str):
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_website_task(10)
-def preview_website_backend(website_name: str, preview_date: str):
+def preview_website_backend(website_name: str):
     """
     Create a new backend preview for the website.
     """
@@ -196,11 +196,10 @@ def preview_website_backend(website_name: str, preview_date: str):
         backend.sync_all_content_to_backend()
         backend.create_backend_preview()
 
-        if preview_date is None:
-            api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_DRAFT)
-
+        version = VERSION_DRAFT
         pipeline = api.get_sync_pipeline(website)
-        build_id = pipeline.trigger_pipeline_build(BaseSyncPipeline.VERSION_DRAFT)
+        pipeline.unpause_pipeline(version)
+        build_id = pipeline.trigger_pipeline_build(version)
         Website.objects.filter(pk=website.pk).update(latest_build_id_draft=build_id)
     except:  # pylint:disable=bare-except
         log.exception("Error previewing site %s", website_name)
@@ -208,7 +207,7 @@ def preview_website_backend(website_name: str, preview_date: str):
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_website_task(10)
-def publish_website_backend(website_name: str, publish_date: str):
+def publish_website_backend(website_name: str):
     """
     Create a new backend release for the website.
     """
@@ -220,11 +219,10 @@ def publish_website_backend(website_name: str, publish_date: str):
         backend.sync_all_content_to_backend()
         backend.create_backend_release()
 
-        if publish_date is None:
-            api.unpause_publishing_pipeline(website, BaseSyncPipeline.VERSION_LIVE)
-
+        version = VERSION_LIVE
         pipeline = api.get_sync_pipeline(website)
-        build_id = pipeline.trigger_pipeline_build(BaseSyncPipeline.VERSION_LIVE)
+        pipeline.unpause_pipeline(version)
+        build_id = pipeline.trigger_pipeline_build(version)
         Website.objects.filter(pk=website.pk).update(latest_build_id_live=build_id)
     except:  # pylint:disable=bare-except
         log.exception("Error publishing site %s", website_name)

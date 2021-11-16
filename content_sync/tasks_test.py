@@ -13,7 +13,6 @@ from pytest import fixture
 from content_sync import tasks
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.factories import ContentSyncStateFactory
-from content_sync.pipelines.base import BaseSyncPipeline
 from users.factories import UserFactory
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
@@ -169,38 +168,25 @@ def test_sync_all_websites_rate_limit_exceeded(api_mock):
 
 
 @pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
-@pytest.mark.parametrize("has_date", [True, False])
-def test_preview_website_backend(
-    api_mock, mocker, settings, prepublish_actions, has_date
-):
+def test_preview_website_backend(api_mock, mocker, settings, prepublish_actions):
     """Verify that the appropriate backend calls are made by the preview_website_backend task """
     settings.PREPUBLISH_ACTIONS = prepublish_actions
     import_string_mock = mocker.patch("content_sync.tasks.import_string")
 
     website = WebsiteFactory.create()
-    if not has_date:
-        website.draft_publish_date = None
-        website.save()
     build_id = 123456
     backend = api_mock.get_sync_backend.return_value
     pipeline = api_mock.get_sync_pipeline.return_value
     pipeline.trigger_pipeline_build.return_value = build_id
-    tasks.preview_website_backend(website.name, website.draft_publish_date)
+    tasks.preview_website_backend(website.name)
     api_mock.get_sync_backend.assert_called_once_with(website)
     api_mock.get_sync_pipeline.assert_called_once_with(website)
     backend.sync_all_content_to_backend.assert_called_once()
     backend.create_backend_preview.assert_called_once()
-    pipeline.trigger_pipeline_build.assert_called_once_with(
-        BaseSyncPipeline.VERSION_DRAFT
-    )
+    pipeline.unpause_pipeline.assert_called_once_with(VERSION_DRAFT)
+    pipeline.trigger_pipeline_build.assert_called_once_with(VERSION_DRAFT)
     website.refresh_from_db()
     assert website.latest_build_id_draft == build_id
-    if has_date:
-        api_mock.unpause_publishing_pipeline.assert_not_called()
-    else:
-        api_mock.unpause_publishing_pipeline.called_once_with(
-            website, BaseSyncPipeline.VERSION_DRAFT
-        )
 
     if len(prepublish_actions) > 0:
         import_string_mock.assert_any_call("some.Action")
@@ -208,38 +194,25 @@ def test_preview_website_backend(
 
 
 @pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
-@pytest.mark.parametrize("has_date", [True, False])
-def test_publish_website_backend(
-    api_mock, mocker, settings, prepublish_actions, has_date
-):
+def test_publish_website_backend(api_mock, mocker, settings, prepublish_actions):
     """Verify that the appropriate backend calls are made by the publish_website_backend task"""
     settings.PREPUBLISH_ACTIONS = prepublish_actions
     import_string_mock = mocker.patch("content_sync.tasks.import_string")
 
     website = WebsiteFactory.create()
-    if not has_date:
-        website.publish_date = None
-        website.save()
     build_id = 123456
     backend = api_mock.get_sync_backend.return_value
     pipeline = api_mock.get_sync_pipeline.return_value
     pipeline.trigger_pipeline_build.return_value = build_id
-    tasks.publish_website_backend(website.name, website.publish_date)
+    tasks.publish_website_backend(website.name)
     api_mock.get_sync_backend.assert_called_once_with(website)
     api_mock.get_sync_pipeline.assert_called_once_with(website)
     backend.sync_all_content_to_backend.assert_called_once()
     backend.create_backend_release.assert_called_once()
-    pipeline.trigger_pipeline_build.assert_called_once_with(
-        BaseSyncPipeline.VERSION_LIVE
-    )
+    pipeline.unpause_pipeline.assert_called_once_with(VERSION_LIVE)
+    pipeline.trigger_pipeline_build.assert_called_once_with(VERSION_LIVE)
     website.refresh_from_db()
     assert website.latest_build_id_live == build_id
-    if has_date:
-        api_mock.unpause_publishing_pipeline.assert_not_called()
-    else:
-        api_mock.unpause_publishing_pipeline.called_once_with(
-            website, BaseSyncPipeline.VERSION_LIVE
-        )
 
     if len(prepublish_actions) > 0:
         import_string_mock.assert_any_call("some.Action")
@@ -253,7 +226,7 @@ def test_preview_publish_backend_error(api_mock, mocker, settings, func):
     mocker.patch("content_sync.tasks.import_string", side_effect=Exception("error"))
     website = WebsiteFactory.create()
     method_call = getattr(tasks, func)
-    method_call(website.name, website.draft_publish_date)
+    method_call(website.name)
     api_mock.get_sync_backend.assert_not_called()
 
 
