@@ -14,7 +14,6 @@ from mitol.mail.api import get_message_sender
 from users.models import User
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
-    PUBLISH_STATUS_NOT_STARTED,
     RESOURCE_TYPE_VIDEO,
 )
 from websites.messages import (
@@ -254,8 +253,8 @@ def reset_publishing_fields(website_name: str):
     Website.objects.filter(name=website_name).update(
         has_unpublished_live=True,
         has_unpublished_draft=True,
-        live_publish_status=PUBLISH_STATUS_NOT_STARTED,
-        draft_publish_status=PUBLISH_STATUS_NOT_STARTED,
+        live_publish_status=None,
+        draft_publish_status=None,
         live_publish_status_updated_on=now,
         draft_publish_status_updated_on=now,
         latest_build_id_live=None,

@@ -140,11 +140,8 @@ def test_sync_unsynced_websites(api_mock, backend_exists, create_backend):
         website.refresh_from_db()
         assert website.has_unpublished_live is True
         assert website.has_unpublished_draft is True
-        assert (
-            website.live_publish_status
-            == website.draft_publish_status
-            == PUBLISH_STATUS_NOT_STARTED
-        )
+        assert website.live_publish_status is None
+        assert website.draft_publish_status is None
         assert website.latest_build_id_live is None
         assert website.latest_build_id_draft is None
     with pytest.raises(AssertionError):
