@@ -21,7 +21,7 @@ from videos.constants import DESTINATION_YOUTUBE
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
 from websites.api import is_ocw_site
-from websites.constants import RESOURCE_TYPE_VIDEO
+from websites.constants import RESOURCE_TYPE_VIDEO, WEBSITE_SOURCE_OCW_IMPORT
 from websites.models import Website, WebsiteContent
 from websites.utils import get_dict_field, get_dict_query_field
 
@@ -337,4 +337,13 @@ def update_youtube_metadata(website: Website, privacy=None):
         return
     youtube = YouTubeApi()
     for video_resource in video_resources:
-        youtube.update_video(video_resource, privacy=privacy)
+        youtube_id = get_dict_field(video_resource.metadata, settings.YT_FIELD_ID)
+        if (
+            website.source != WEBSITE_SOURCE_OCW_IMPORT
+            or VideoFile.objects.filter(
+                video__website=website, destination_id=youtube_id
+            ).exists()
+            or settings.ENVIRONMENT in ["prod", "production"]
+        ):
+            # do not run this for imported OCW site videos on RC
+            youtube.update_video(video_resource, privacy=privacy)

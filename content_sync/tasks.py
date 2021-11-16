@@ -185,48 +185,73 @@ def sync_website_content(website_name: str):
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_website_task(10)
-def preview_website_backend(website_name: str):
+def publish_website_backend_draft(website_name: str):
     """
     Create a new backend preview for the website.
     """
     try:
-        website = Website.objects.get(name=website_name)
-        for action in settings.PREPUBLISH_ACTIONS:
-            import_string(action)(website)
-        backend = api.get_sync_backend(website)
-        backend.sync_all_content_to_backend()
-        backend.create_backend_preview()
-
-        version = VERSION_DRAFT
-        pipeline = api.get_sync_pipeline(website)
-        pipeline.unpause_pipeline(version)
-        build_id = pipeline.trigger_pipeline_build(version)
-        Website.objects.filter(pk=website.pk).update(latest_build_id_draft=build_id)
+        api.publish_website(Website.objects.get(name=website_name), VERSION_DRAFT)
+        return True
     except:  # pylint:disable=bare-except
-        log.exception("Error previewing site %s", website_name)
+        log.exception("Error publishing draft site %s", website_name)
+        return website_name
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_website_task(10)
-def publish_website_backend(website_name: str):
+def publish_website_backend_live(website_name: str):
     """
     Create a new backend release for the website.
     """
     try:
-        website = Website.objects.get(name=website_name)
-        for action in settings.PREPUBLISH_ACTIONS:
-            import_string(action)(website)
-        backend = api.get_sync_backend(website)
-        backend.sync_all_content_to_backend()
-        backend.create_backend_release()
-
-        version = VERSION_LIVE
-        pipeline = api.get_sync_pipeline(website)
-        pipeline.unpause_pipeline(version)
-        build_id = pipeline.trigger_pipeline_build(version)
-        Website.objects.filter(pk=website.pk).update(latest_build_id_live=build_id)
+        api.publish_website(
+            Website.objects.get(name=website_name),
+            VERSION_LIVE,
+        )
+        return True
     except:  # pylint:disable=bare-except
-        log.exception("Error publishing site %s", website_name)
+        log.exception("Error publishing live site %s", website_name)
+        return website_name
+
+
+@app.task()
+def publish_website_batch(
+    website_names: List[str], version: str, prepublish: Optional[bool] = False
+) -> bool:
+    """ Call api.publish_website for a batch of websites"""
+    result = True
+    pipeline_api = import_string(settings.CONTENT_SYNC_PIPELINE).get_api()
+    for name in website_names:
+        try:
+            api.publish_website(
+                name,
+                version,
+                pipeline_api=pipeline_api,
+                prepublish=prepublish,
+            )
+        except:  # pylint:disable=bare-except
+            log.exception("Error publishing %s website %s", version, name)
+            result = False
+    return result
+
+
+@app.task(bind=True, acks_late=True)
+def publish_websites(
+    self,
+    website_names: List[str],
+    version: str,
+    chunk_size: Optional[int] = 500,
+    prepublish: Optional[bool] = False,
+):
+    """Publish live or draft versions of multiple websites in parallel batches"""
+    if not settings.CONTENT_SYNC_BACKEND or not settings.CONTENT_SYNC_PIPELINE:
+        return
+
+    tasks = [
+        publish_website_batch.s(name_subset, version, prepublish=prepublish)
+        for name_subset in chunks(sorted(website_names), chunk_size=chunk_size)
+    ]
+    raise self.replace(celery.group(tasks))
 
 
 @app.task(acks_late=True)

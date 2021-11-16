@@ -181,67 +181,38 @@ def test_sync_all_websites_rate_limit_exceeded(api_mock):
     api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_not_called()
 
 
-@pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
-def test_preview_website_backend(api_mock, mocker, settings, prepublish_actions):
-    """Verify that the appropriate backend calls are made by the preview_website_backend task """
-    settings.PREPUBLISH_ACTIONS = prepublish_actions
-    import_string_mock = mocker.patch("content_sync.tasks.import_string")
-
+def test_publish_website_backend_draft(api_mock):
+    """Verify that the appropriate backend calls are made by the publish_website_backend_draft task """
     website = WebsiteFactory.create()
-    build_id = 123456
-    backend = api_mock.get_sync_backend.return_value
-    pipeline = api_mock.get_sync_pipeline.return_value
-    pipeline.trigger_pipeline_build.return_value = build_id
-    tasks.preview_website_backend(website.name)
-    api_mock.get_sync_backend.assert_called_once_with(website)
-    api_mock.get_sync_pipeline.assert_called_once_with(website)
-    backend.sync_all_content_to_backend.assert_called_once()
-    backend.create_backend_preview.assert_called_once()
-    pipeline.unpause_pipeline.assert_called_once_with(VERSION_DRAFT)
-    pipeline.trigger_pipeline_build.assert_called_once_with(VERSION_DRAFT)
-    website.refresh_from_db()
-    assert website.latest_build_id_draft == build_id
-
-    if len(prepublish_actions) > 0:
-        import_string_mock.assert_any_call("some.Action")
-        import_string_mock.return_value.assert_any_call(website)
+    tasks.publish_website_backend_draft(website.name)
+    api_mock.publish_website.assert_called_once_with(website, VERSION_DRAFT)
 
 
-@pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
-def test_publish_website_backend(api_mock, mocker, settings, prepublish_actions):
-    """Verify that the appropriate backend calls are made by the publish_website_backend task"""
-    settings.PREPUBLISH_ACTIONS = prepublish_actions
-    import_string_mock = mocker.patch("content_sync.tasks.import_string")
-
+def test_publish_website_backend_draft_error(mocker, api_mock):
+    """Verify that the expected logging statement and return value are made if an error occurs"""
+    api_mock.publish_website.side_effect = Exception()
+    mock_log = mocker.patch("content_sync.tasks.log.exception")
     website = WebsiteFactory.create()
-    build_id = 123456
-    backend = api_mock.get_sync_backend.return_value
-    pipeline = api_mock.get_sync_pipeline.return_value
-    pipeline.trigger_pipeline_build.return_value = build_id
-    tasks.publish_website_backend(website.name)
-    api_mock.get_sync_backend.assert_called_once_with(website)
-    api_mock.get_sync_pipeline.assert_called_once_with(website)
-    backend.sync_all_content_to_backend.assert_called_once()
-    backend.create_backend_release.assert_called_once()
-    pipeline.unpause_pipeline.assert_called_once_with(VERSION_LIVE)
-    pipeline.trigger_pipeline_build.assert_called_once_with(VERSION_LIVE)
-    website.refresh_from_db()
-    assert website.latest_build_id_live == build_id
-
-    if len(prepublish_actions) > 0:
-        import_string_mock.assert_any_call("some.Action")
-        import_string_mock.return_value.assert_any_call(website)
+    result = tasks.publish_website_backend_draft(website.name)
+    mock_log.assert_called_once_with("Error publishing draft site %s", website.name)
+    assert result == website.name
 
 
-@pytest.mark.parametrize("func", ["preview_website_backend", "publish_website_backend"])
-def test_preview_publish_backend_error(api_mock, mocker, settings, func):
-    """Verify that the appropriate error handling occurs if preview/publish_website_backend throws an exception"""
-    settings.PREPUBLISH_ACTIONS = [["some.Action"]]
-    mocker.patch("content_sync.tasks.import_string", side_effect=Exception("error"))
+def test_publish_website_backend_live(api_mock):
+    """Verify that the appropriate backend calls are made by the publish_website_backend_live task"""
     website = WebsiteFactory.create()
-    method_call = getattr(tasks, func)
-    method_call(website.name)
-    api_mock.get_sync_backend.assert_not_called()
+    tasks.publish_website_backend_live(website.name)
+    api_mock.publish_website.assert_called_once_with(website, VERSION_LIVE)
+
+
+def test_publish_website_backend_live_error(mocker, api_mock):
+    """Verify that the expected logging statement and return value are made if an error occurs"""
+    api_mock.publish_website.side_effect = Exception()
+    mock_log = mocker.patch("content_sync.tasks.log.exception")
+    website = WebsiteFactory.create()
+    result = tasks.publish_website_backend_live(website.name)
+    mock_log.assert_called_once_with("Error publishing live site %s", website.name)
+    assert result == website.name
 
 
 def test_sync_github_site_configs(mocker):
@@ -324,6 +295,46 @@ def test_upsert_website_pipeline_batch(mocker, create_backend, unpause):
         mock_pipeline.unpause_pipeline.assert_any_call(VERSION_LIVE)
     else:
         mock_pipeline.unpause_pipeline.assert_not_called()
+
+
+@pytest.mark.parametrize("prepublish", [True, False])
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+@pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
+def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments
+    mocker, mocked_celery, api_mock, version, chunk_size, chunks, prepublish
+):
+    """publish_websites calls upsert_pipeline_batch with correct arguments"""
+    websites = WebsiteFactory.create_batch(3)
+    website_names = sorted([website.name for website in websites])
+    mock_batch = mocker.patch("content_sync.tasks.publish_website_batch.s")
+    with pytest.raises(TabError):
+        tasks.publish_websites.delay(
+            website_names, version, chunk_size=chunk_size, prepublish=prepublish
+        )
+    mock_batch.assert_any_call(
+        website_names[0:chunk_size], version, prepublish=prepublish
+    )
+    if chunks > 1:
+        mock_batch.assert_any_call(
+            website_names[chunk_size:], version, prepublish=prepublish
+        )
+
+
+@pytest.mark.parametrize("prepublish", [True, False])
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_publish_website_batch(mocker, version, prepublish):
+    """publish_website_batch should make the expected function calls"""
+    mock_import_string = mocker.patch("content_sync.tasks.import_string")
+    mock_publish_website = mocker.patch("content_sync.api.publish_website")
+    website_names = sorted([website.name for website in WebsiteFactory.create_batch(3)])
+    tasks.publish_website_batch(website_names, version, prepublish=prepublish)
+    for name in website_names:
+        mock_publish_website.assert_any_call(
+            name,
+            version,
+            pipeline_api=mock_import_string.return_value.get_api.return_value,
+            prepublish=prepublish,
+        )
 
 
 @pytest.mark.parametrize(

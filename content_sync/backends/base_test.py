@@ -18,10 +18,10 @@ class _ImplementedBackend(BaseSyncBackend):
     def create_website_in_backend(self):
         ...
 
-    def create_backend_preview(self):
+    def merge_backend_draft(self):
         ...
 
-    def create_backend_release(self):
+    def merge_backend_live(self):
         ...
 
     def create_content_in_backend(self, sync_state: ContentSyncState):
