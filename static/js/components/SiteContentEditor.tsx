@@ -34,18 +34,20 @@ interface Props {
   content?: WebsiteContent | null
   loadContent: boolean
   configItem: EditableConfigItem
-  hideModal?: () => void
+  dismiss?: () => void
   fetchWebsiteContentListing?: () => void
   editorState: WebsiteContentModalState
+  setDirty: (dirty: boolean) => void
 }
 
 export default function SiteContentEditor(props: Props): JSX.Element | null {
   const {
-    hideModal,
+    dismiss,
     configItem,
     loadContent,
     fetchWebsiteContentListing,
-    editorState
+    editorState,
+    setDirty
   } = props
 
   const site = useWebsite()
@@ -149,10 +151,11 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     // update the publish status
     refreshWebsiteStatus()
 
-    if (hideModal) {
+    if (dismiss) {
       // turn off modal on success
-      hideModal()
+      dismiss()
     }
+    setDirty(false)
   }
 
   return (
@@ -161,6 +164,7 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
       configItem={configItem}
       content={content}
       editorState={editorState}
+      setDirty={setDirty}
     />
   )
 }

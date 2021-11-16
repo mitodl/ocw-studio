@@ -41,7 +41,8 @@ describe("SiteContentForm", () => {
     configItem: EditableConfigItem,
     content: WebsiteContent,
     mockValidationSchema: FormSchema,
-    website: Website
+    website: Website,
+    setDirtyStub: SinonStub
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
@@ -53,6 +54,8 @@ describe("SiteContentForm", () => {
     website = makeWebsiteDetail()
     // @ts-ignore
     useWebsite.mockReturnValue(website)
+    onSubmitStub = sandbox.stub()
+    setDirtyStub = sandbox.stub()
   })
 
   afterEach(() => {
@@ -66,6 +69,7 @@ describe("SiteContentForm", () => {
         content={content}
         onSubmit={onSubmitStub}
         editorState={createModalState("adding")}
+        setDirty={setDirtyStub}
         {...props}
       />
     )
@@ -154,6 +158,8 @@ describe("SiteContentForm", () => {
         )
         expect(objectWrapper.prop("values")).toStrictEqual(values)
       })
+
+      //
       ;[true, false].forEach(isGdriveEnabled => {
         [true, false].forEach(isResourceFileField => {
           it(`${shouldIf(
@@ -199,6 +205,34 @@ describe("SiteContentForm", () => {
             website
           )
         }
+      })
+
+      //
+      ;[true, false].forEach(isObjectField => {
+        it(`passes an onChange prop for an ${
+          isObjectField ? "object" : "non-object"
+        } field which sets the dirty flag and calls handleChange for formik`, () => {
+          const field = makeWebsiteConfigField({
+            widget: isObjectField ? WidgetVariant.Object : WidgetVariant.String
+          })
+          configItem.fields = [field]
+          // @ts-ignore
+          fieldIsVisible.mockImplementation(() => true)
+          // @ts-ignore
+          renameNestedFields.mockImplementation(() => configItem.fields)
+          const handleChangeStub = sandbox.stub()
+          const form = renderInnerForm(editorState, {
+            handleChange: handleChangeStub
+          })
+          const onChange = form
+            .find(isObjectField ? "ObjectField" : "SiteContentField")
+            .prop("onChange")
+          const event: any = { preventDefault: sandbox.stub() }
+          // @ts-ignore
+          onChange(event)
+          sinon.assert.calledOnceWithExactly(handleChangeStub, event)
+          sinon.assert.calledOnceWithExactly(setDirtyStub, true)
+        })
       })
     })
   })

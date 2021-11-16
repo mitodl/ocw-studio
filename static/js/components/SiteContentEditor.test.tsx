@@ -59,10 +59,11 @@ describe("SiteContent", () => {
     historyPushStub: SinonStub,
     formikStubs: { [key: string]: SinonStub },
     content: WebsiteContent,
-    hideModalStub: SinonStub,
+    dismissStub: SinonStub,
     fetchWebsiteListingStub: SinonStub,
     successStubs: Record<string, SinonStub>,
-    mockContentSchema: FormSchema
+    mockContentSchema: FormSchema,
+    setDirtyStub: SinonStub
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -74,10 +75,10 @@ describe("SiteContent", () => {
     // @ts-ignore
     getContentSchema.mockImplementation(() => mockContentSchema)
     historyPushStub = helper.sandbox.stub()
-    hideModalStub = helper.sandbox.stub()
+    dismissStub = helper.sandbox.stub()
     fetchWebsiteListingStub = helper.sandbox.stub()
     successStubs = {
-      hideModal:                  hideModalStub,
+      dismiss:                    dismissStub,
       fetchWebsiteContentListing: fetchWebsiteListingStub
     }
     formikStubs = {
@@ -85,6 +86,7 @@ describe("SiteContent", () => {
       setSubmitting: helper.sandbox.stub(),
       setStatus:     helper.sandbox.stub()
     }
+    setDirtyStub = helper.sandbox.stub()
 
     helper.mockGetRequest(
       siteApiContentDetailUrl
@@ -123,7 +125,8 @@ describe("SiteContent", () => {
         history:     { push: historyPushStub },
         configItem:  configItem,
         loadContent: true,
-        editorState: createModalState("adding")
+        editorState: createModalState("adding"),
+        setDirty:    setDirtyStub
       },
       {
         entities: {
@@ -151,6 +154,7 @@ describe("SiteContent", () => {
     const form = wrapper.find("SiteContentForm")
     expect(form.exists()).toBe(true)
     expect(form.prop("configItem")).toStrictEqual(configItem)
+    expect(form.prop("setDirty")).toStrictEqual(setDirtyStub)
   })
 
   describe("validates using the content schema", () => {
@@ -274,7 +278,7 @@ describe("SiteContent", () => {
       )
 
       sinon.assert.called(fetchWebsiteListingStub)
-      sinon.assert.called(hideModalStub)
+      sinon.assert.called(dismissStub)
       const key = contentDetailKey({
         textId: content.text_id,
         name:   website.name
@@ -343,7 +347,8 @@ describe("SiteContent", () => {
       }
     )
     sinon.assert.calledWith(fetchWebsiteListingStub)
-    sinon.assert.calledWith(hideModalStub)
+    sinon.assert.calledWith(dismissStub)
+    sinon.assert.calledWith(setDirtyStub, false)
     // @ts-ignore
     expect(store.getState().entities.websiteContentDetails).toStrictEqual({
       [contentDetailKey({
@@ -492,6 +497,6 @@ describe("SiteContent", () => {
     )
 
     sinon.assert.notCalled(fetchWebsiteListingStub)
-    sinon.assert.notCalled(hideModalStub)
+    sinon.assert.notCalled(dismissStub)
   })
 })

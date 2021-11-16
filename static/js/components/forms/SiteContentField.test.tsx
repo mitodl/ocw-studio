@@ -1,6 +1,6 @@
 import React from "react"
 import { shallow } from "enzyme"
-import sinon, { SinonSandbox } from "sinon"
+import sinon, { SinonSandbox, SinonStub } from "sinon"
 
 import SiteContentField from "./SiteContentField"
 import { componentFromWidget } from "../../lib/site_content"
@@ -10,12 +10,15 @@ import { WebsiteContent, WidgetVariant } from "../../types/websites"
 import { makeWebsiteContentDetail } from "../../util/factories/websites"
 
 describe("SiteContentField", () => {
-  let sandbox: SinonSandbox, contentContext: WebsiteContent[]
+  let sandbox: SinonSandbox,
+    contentContext: WebsiteContent[],
+    onChangeStub: SinonStub
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     const content = makeWebsiteContentDetail()
     contentContext = [content]
+    onChangeStub = sandbox.stub()
   })
 
   afterEach(() => {
@@ -25,13 +28,18 @@ describe("SiteContentField", () => {
   it("renders a form group for a config field", () => {
     for (const field of exampleSiteConfigFields) {
       const wrapper = shallow(
-        <SiteContentField field={field} contentContext={contentContext} />
+        <SiteContentField
+          field={field}
+          contentContext={contentContext}
+          onChange={onChangeStub}
+        />
       )
 
       expect(wrapper.find("label").text()).toBe(field.label)
       const props = wrapper.find("Field").props()
       expect(props["as"]).toBe(componentFromWidget(field))
       expect(props["name"]).toBe(field.name)
+      expect(props["onChange"]).toBe(onChangeStub)
       if (
         field.widget === WidgetVariant.Menu ||
         field.widget === WidgetVariant.Relation

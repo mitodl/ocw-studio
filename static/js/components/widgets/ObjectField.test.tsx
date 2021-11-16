@@ -21,7 +21,8 @@ describe("ObjectField", () => {
   let render: any,
     field: ObjectConfigField,
     contentContext: WebsiteContent[],
-    values: SiteFormValues
+    values: SiteFormValues,
+    onChangeStub: any
 
   beforeEach(() => {
     field = makeWebsiteConfigField({
@@ -46,6 +47,7 @@ describe("ObjectField", () => {
     const otherContent = makeWebsiteContentDetail()
     contentContext = [otherContent]
     values = { some: "values" }
+    onChangeStub = jest.fn()
 
     render = (props = {}) =>
       shallow(
@@ -53,6 +55,7 @@ describe("ObjectField", () => {
           field={field}
           contentContext={contentContext}
           values={values}
+          onChange={onChangeStub}
           {...props}
         />
       )
@@ -62,6 +65,7 @@ describe("ObjectField", () => {
     const wrapper = render()
     wrapper.find("SiteContentField").forEach((field: any) => {
       expect(field.prop("contentContext")).toStrictEqual(contentContext)
+      expect(field.prop("onChange")).toStrictEqual(onChangeStub)
     })
     expect(
       wrapper.find("SiteContentField").map((field: any) => field.prop("field"))
