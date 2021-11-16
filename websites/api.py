@@ -12,10 +12,7 @@ from mitol.common.utils import max_or_none, now_in_utc
 from mitol.mail.api import get_message_sender
 
 from users.models import User
-from websites.constants import (
-    CONTENT_FILENAME_MAX_LEN,
-    RESOURCE_TYPE_VIDEO,
-)
+from websites.constants import CONTENT_FILENAME_MAX_LEN, RESOURCE_TYPE_VIDEO
 from websites.messages import (
     PreviewOrPublishFailureMessage,
     PreviewOrPublishSuccessMessage,
