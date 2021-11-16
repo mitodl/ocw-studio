@@ -4,6 +4,7 @@ import logging
 import re
 import uuid
 from copy import deepcopy
+from typing import Dict
 
 import dateutil
 import yaml
@@ -165,7 +166,7 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
         return content
 
 
-def get_short_id(metadata):
+def get_short_id(name: str, metadata: Dict) -> str:
     """ Get a short_id from the metadata"""
     course_num = metadata.get("primary_course_number")
     if not course_num:
@@ -187,7 +188,9 @@ def get_short_id(metadata):
         .lower()
         .replace(" ", "-")
     )
-    short_id_exists = Website.objects.filter(short_id=short_id).exists()
+    short_id_exists = (
+        Website.objects.exclude(name=name).filter(short_id=short_id).exists()
+    )
     if short_id_exists:
         short_id_prefix = f"{short_id}-"
         short_id = find_available_name(
@@ -368,7 +371,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
                 "title": course_data.get("course_title", f"Course Site ({name})"),
                 "publish_date": publish_date,
                 "metadata": course_data,
-                "short_id": get_short_id(course_data),
+                "short_id": get_short_id(name, course_data),
                 "starter_id": starter_id,
                 "source": WEBSITE_SOURCE_OCW_IMPORT,
             },

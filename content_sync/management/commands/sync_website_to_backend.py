@@ -3,7 +3,7 @@ from django.core.management import BaseCommand
 
 from content_sync.api import get_sync_backend
 from content_sync.models import ContentSyncState
-from websites.api import fetch_website
+from websites.api import fetch_website, reset_publishing_fields
 
 
 class Command(BaseCommand):
@@ -43,3 +43,4 @@ class Command(BaseCommand):
             f"Updating website content in backend for '{website.title}'..."
         )
         backend.sync_all_content_to_backend()
+        reset_publishing_fields(website.name)

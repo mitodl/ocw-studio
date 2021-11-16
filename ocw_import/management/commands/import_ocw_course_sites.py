@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.management import BaseCommand
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.tasks import sync_all_websites
+from content_sync.tasks import sync_unsynced_websites
 from ocw_import.api import fetch_ocw2hugo_course_paths
 from ocw_import.tasks import import_ocw2hugo_courses
 
@@ -128,7 +128,7 @@ class Command(BaseCommand):
         if options["sync"] is True and settings.CONTENT_SYNC_BACKEND:
             self.stdout.write("Syncing all unsynced courses to the designated backend")
             start = now_in_utc()
-            task = sync_all_websites.delay(
+            task = sync_unsynced_websites.delay(
                 create_backends=options["create_backend"],
                 check_limit=options["rate_limit"],
             )

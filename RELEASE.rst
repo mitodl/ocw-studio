@@ -71,7 +71,7 @@ Version 0.32.0 (Released October 28, 2021)
 Version 0.31.0 (Released October 22, 2021)
 --------------
 
-- Make check for rate limits optional in sync_all_websites task (#721)
+- Make check for rate limits optional in sync_unsynced_websites task (#721)
 - Slugify s3 keys and make sure they're still unique (#710)
 - Hide production publish btn, prohibit metadata editing for non-admin editors (#702)
 - Hide the file upload field on resource form if google drive integration is enabled (#712)

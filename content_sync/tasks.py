@@ -18,7 +18,7 @@ from content_sync.decorators import single_website_task
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
 from main.celery import app
-from websites.api import mail_on_publish
+from websites.api import mail_on_publish, reset_publishing_fields
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
@@ -45,7 +45,7 @@ def sync_content(content_sync_id: str):
 
 
 @app.task(acks_late=True)
-def sync_all_websites(create_backends: bool = False, check_limit: bool = False):
+def sync_unsynced_websites(create_backends: bool = False, check_limit: bool = False):
     """
     Sync all websites with unsynced content if they have existing repos.
     This should be rarely called, and only in a management command.
@@ -66,6 +66,7 @@ def sync_all_websites(create_backends: bool = False, check_limit: bool = False):
         if website_name:
             log.debug("Syncing website %s to backend", website_name)
             try:
+                reset_publishing_fields(website_name)
                 backend = api.get_sync_backend(Website.objects.get(name=website_name))
                 if isinstance(backend, GithubBackend):
                     if check_limit:

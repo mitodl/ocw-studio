@@ -293,15 +293,18 @@ def test_get_short_id(course_num, term, year, expected_id):
     """ get_short_id should return expected values, or raise an error if no course number"""
     metadata = {"primary_course_number": course_num, "term": term, "year": year}
     if expected_id:
-        short_id = get_short_id(metadata)
+        website = WebsiteFactory.create(short_id=expected_id)
+        short_id = get_short_id(website.name, metadata)
         assert short_id == expected_id
-        for i in range(1, 4):
-            WebsiteFactory.create(short_id=short_id)
-            short_id = get_short_id(metadata)
-            assert short_id == f"{expected_id}-{i+1}"
+        for i in range(2, 5):
+            name = f"site_name_{i}"
+            website = WebsiteFactory.create(
+                name=name, short_id=get_short_id(name, metadata)
+            )
+            assert website.short_id == f"{expected_id}-{i}"
     else:
         with pytest.raises(ValueError):
-            get_short_id(metadata)
+            get_short_id("random-name", metadata)
 
 
 @mock_s3
