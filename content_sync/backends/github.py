@@ -41,7 +41,7 @@ class GithubBackend(BaseSyncBackend):
         """
         return self.api.create_repo()
 
-    def create_backend_preview(self) -> PullRequest:
+    def merge_backend_draft(self) -> PullRequest:
         """
         Sync all content to main branch then merge main branch to preview branch
         """
@@ -50,11 +50,11 @@ class GithubBackend(BaseSyncBackend):
             settings.GIT_BRANCH_MAIN, settings.GIT_BRANCH_PREVIEW
         )
 
-    def create_backend_release(self) -> PullRequest:
+    def merge_backend_live(self) -> PullRequest:
         """
         Merge main branch to preview and release branches
         """
-        self.create_backend_preview()
+        self.merge_backend_draft()
         return self.api.merge_branches(
             settings.GIT_BRANCH_MAIN,
             settings.GIT_BRANCH_RELEASE,

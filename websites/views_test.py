@@ -12,6 +12,7 @@ from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
 from rest_framework import status
 
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from main import features
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
@@ -239,7 +240,7 @@ def test_websites_endpoint_preview(
     settings, mocker, drf_client, has_missing_ids, has_missing_captions
 ):
     """A user with admin/edit permissions should be able to request a website preview"""
-    mock_preview_website = mocker.patch("websites.views.preview_website")
+    mock_trigger_publish = mocker.patch("websites.views.trigger_publish")
     mock_poll = mocker.patch("websites.views.poll_build_status_until_complete")
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
@@ -283,10 +284,10 @@ def test_websites_endpoint_preview(
     else:
         assert resp.data["details"] == ""
 
-    mock_preview_website.assert_called_once_with(website)
+    mock_trigger_publish.assert_called_once_with(website, VERSION_DRAFT)
     mock_poll.delay.assert_called_once_with(
         website.name,
-        "draft",
+        VERSION_DRAFT,
         (
             now + datetime.timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS)
         ).isoformat(),
@@ -302,7 +303,7 @@ def test_websites_endpoint_preview(
 def test_websites_endpoint_preview_error(mocker, drf_client):
     """ An exception raised by the api preview call should be handled gracefully """
     mocker.patch(
-        "websites.views.preview_website",
+        "websites.views.trigger_publish",
         side_effect=[GithubException(status=422, data={}, headers={})],
     )
     website = WebsiteFactory.create()
@@ -322,7 +323,7 @@ def test_websites_endpoint_publish(  # pylint: disable=too-many-locals
     settings, mocker, drf_client, has_missing_ids, has_missing_captions
 ):
     """A user with admin permissions should be able to request a website publish"""
-    mock_publish_website = mocker.patch("websites.views.publish_website")
+    mock_publish_website = mocker.patch("websites.views.trigger_publish")
     mock_poll = mocker.patch("websites.views.poll_build_status_until_complete")
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
@@ -371,14 +372,14 @@ def test_websites_endpoint_publish(  # pylint: disable=too-many-locals
 
     if not has_missing_ids and not has_missing_captions:
         expected_msg = ""
-        mock_publish_website.assert_called_once_with(website)
+        mock_publish_website.assert_called_once_with(website, VERSION_LIVE)
         assert website.has_unpublished_live is False
         assert website.live_publish_status == constants.PUBLISH_STATUS_NOT_STARTED
         assert website.live_publish_status_updated_on == now
         assert website.latest_build_id_live is None
         mock_poll.delay.assert_called_once_with(
             website.name,
-            "live",
+            VERSION_LIVE,
             (
                 now + datetime.timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS)
             ).isoformat(),
@@ -390,7 +391,7 @@ def test_websites_endpoint_publish(  # pylint: disable=too-many-locals
 
 def test_websites_endpoint_publish_denied(mocker, drf_client):
     """A user with edit permissions should not be able to request a website publish"""
-    mocker.patch("websites.views.publish_website")
+    mocker.patch("websites.views.trigger_publish")
     website = WebsiteFactory.create()
     editor = UserFactory.create()
     editor.groups.add(website.editor_group)
@@ -407,7 +408,7 @@ def test_websites_endpoint_publish_denied(mocker, drf_client):
 def test_websites_endpoint_publish_error(mocker, drf_client):
     """ An exception raised by the api publish call should be handled gracefully """
     mocker.patch(
-        "websites.views.publish_website",
+        "websites.views.trigger_publish",
         side_effect=[GithubException(status=422, data={}, headers={})],
     )
     website = WebsiteFactory.create()

@@ -103,18 +103,18 @@ def test_sync_all_content_to_backend(github):
     github.api.upsert_content_files.assert_called_once()
 
 
-def test_create_backend_preview(settings, github):
-    """Test that create_backend_preview makes the appropriate api merge call"""
-    github.backend.create_backend_preview()
+def test_create_backend_draft(settings, github):
+    """Test that merge_backend_draft makes the appropriate api merge call"""
+    github.backend.merge_backend_draft()
     github.api.upsert_content_files.assert_called_once()
     github.api.merge_branches.assert_called_once_with(
         settings.GIT_BRANCH_MAIN, settings.GIT_BRANCH_PREVIEW
     )
 
 
-def test_create_backend_release(settings, github):
-    """Test that create_backend_release makes the appropriate api merge calls"""
-    github.backend.create_backend_release()
+def test_create_backend_live(settings, github):
+    """Test that merge_backend_live makes the appropriate api merge calls"""
+    github.backend.merge_backend_live()
     github.api.merge_branches.assert_any_call(
         settings.GIT_BRANCH_MAIN, settings.GIT_BRANCH_PREVIEW
     )

@@ -12,7 +12,7 @@ from googleapiclient.errors import HttpError
 from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
 from videos.constants import DESTINATION_YOUTUBE
-from videos.factories import VideoFileFactory
+from videos.factories import VideoFactory, VideoFileFactory
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.youtube import (
     CAPTION_UPLOAD_NAME,
@@ -27,6 +27,7 @@ from websites.constants import (
     CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_VIDEO,
+    WEBSITE_SOURCE_OCW_IMPORT,
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
@@ -294,15 +295,21 @@ def test_mail_youtube_upload_success(settings, mock_mail):
         )
 
 
+@pytest.mark.parametrize("source", [WEBSITE_SOURCE_OCW_IMPORT, "other"])
+@pytest.mark.parametrize("environment", ["dev", "prod"])
+@pytest.mark.parametrize("video_file_exists", [True, False])
 @pytest.mark.parametrize("youtube_enabled", [True, False])
 @pytest.mark.parametrize("is_ocw", [True, False])
-def test_update_youtube_metadata(mocker, youtube_enabled, is_ocw):
+def test_update_youtube_metadata(  # pylint:disable=too-many-arguments
+    mocker, settings, source, environment, video_file_exists, youtube_enabled, is_ocw
+):
     """ Check that youtube.update_video is called for appropriate resources and not others"""
+    settings.ENVIRONMENT = environment
     mock_youtube = mocker.patch("videos.youtube.YouTubeApi")
     mock_update_video = mock_youtube.return_value.update_video
     mocker.patch("videos.youtube.is_ocw_site", return_value=is_ocw)
     mocker.patch("videos.youtube.is_youtube_enabled", return_value=youtube_enabled)
-    website = WebsiteFactory.create()
+    website = WebsiteFactory.create(source=source)
     WebsiteContentFactory.create(
         type=CONTENT_TYPE_RESOURCE,
         metadata={
@@ -319,17 +326,31 @@ def test_update_youtube_metadata(mocker, youtube_enabled, is_ocw):
                 "video_metadata": {"youtube_id": youtube_id},
             },
         )
+        if video_file_exists:
+            VideoFileFactory.create(
+                video=VideoFactory.create(website=website),
+                destination=DESTINATION_YOUTUBE,
+                destination_id=youtube_id,
+            )
     update_youtube_metadata(website, privacy="public")
     if youtube_enabled and is_ocw:
         mock_youtube.assert_called_once()
-        assert mock_update_video.call_count == 2
-        for youtube_id in ["abc123", "def456"]:
-            mock_update_video.assert_any_call(
-                WebsiteContent.objects.get(
-                    website=website, metadata__video_metadata__youtube_id=youtube_id
-                ),
-                privacy="public",
-            )
+        # Don't update metadata for imported ocw course videos except on production
+        if (
+            source != WEBSITE_SOURCE_OCW_IMPORT
+            or video_file_exists
+            or environment == "prod"
+        ):
+            assert mock_update_video.call_count == 2
+            for youtube_id in ["abc123", "def456"]:
+                mock_update_video.assert_any_call(
+                    WebsiteContent.objects.get(
+                        website=website, metadata__video_metadata__youtube_id=youtube_id
+                    ),
+                    privacy="public",
+                )
+        else:
+            mock_update_video.assert_not_called()
     else:
         mock_update_video.assert_not_called()
 

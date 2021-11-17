@@ -1,13 +1,29 @@
 """ Content sync api tests """
+from types import SimpleNamespace
+
 import pytest
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 
 from content_sync import api
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
 pytestmark = pytest.mark.django_db
+# pylint:disable=redefined-outer-name
+
+
+@pytest.fixture()
+def mock_api_funcs(settings, mocker):
+    """Mock functions used in publish_websites"""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
+    settings.CONTENT_SYNC_PIPELINE = "content_sync.pipelines.TestPipeline"
+    return SimpleNamespace(
+        mock_get_backend=mocker.patch("content_sync.api.get_sync_backend"),
+        mock_get_pipeline=mocker.patch("content_sync.api.get_sync_pipeline"),
+        mock_import_string=mocker.patch("content_sync.api.import_string"),
+    )
 
 
 def test_upsert_content_sync_state_create():
@@ -131,21 +147,21 @@ def test_update_website_backend_disabled(settings, mocker):
     mock_task.delay.assert_not_called()
 
 
-def test_preview_website(settings, mocker):
+def test_trigger_publish_draft(settings, mocker):
     """Verify preview_website calls the appropriate task"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
-    mock_task = mocker.patch("content_sync.tasks.preview_website_backend")
+    mock_task = mocker.patch("content_sync.tasks.publish_website_backend_draft")
     website = WebsiteFactory.create()
-    api.preview_website(website)
+    api.trigger_publish(website, VERSION_DRAFT)
     mock_task.delay.assert_called_once_with(website.name)
 
 
-def test_publish_website(settings, mocker):
+def test_trigger_publish_live(settings, mocker):
     """Verify publish_website calls the appropriate task"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
-    mock_task = mocker.patch("content_sync.tasks.publish_website_backend")
+    mock_task = mocker.patch("content_sync.tasks.publish_website_backend_live")
     website = WebsiteFactory.create()
-    api.publish_website(website)
+    api.trigger_publish(website, VERSION_LIVE)
     mock_task.delay.assert_called_once_with(website.name)
 
 
@@ -194,3 +210,53 @@ def test_create_website_publishing_pipeline_disabled(settings, mocker):
     website = WebsiteFactory.create()
     api.create_website_publishing_pipeline(website)
     mock_task.assert_not_called()
+
+
+@pytest.mark.parametrize("prepublish", [True, False])
+@pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
+@pytest.mark.parametrize("has_api", [True, False])
+@pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
+def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-arguments
+    settings,
+    mocker,
+    mock_api_funcs,
+    prepublish,
+    prepublish_actions,
+    has_api,
+    version,
+):
+    """Verify that the appropriate backend calls are made by the publish_website function"""
+    settings.PREPUBLISH_ACTIONS = prepublish_actions
+    website = WebsiteFactory.create()
+    build_id = 123456
+    pipeline_api = mocker.Mock() if has_api else None
+    backend = mock_api_funcs.mock_get_backend.return_value
+    pipeline = mock_api_funcs.mock_get_pipeline.return_value
+    pipeline.trigger_pipeline_build.return_value = build_id
+    api.publish_website(
+        website.name, version, pipeline_api=pipeline_api, prepublish=prepublish
+    )
+    mock_api_funcs.mock_get_backend.assert_called_once_with(website)
+    mock_api_funcs.mock_get_pipeline.assert_called_once_with(website, api=pipeline_api)
+    backend.sync_all_content_to_backend.assert_called_once()
+    if version == VERSION_DRAFT:
+        backend.merge_backend_draft.assert_called_once()
+    else:
+        backend.merge_backend_live.assert_called_once()
+    pipeline.trigger_pipeline_build.assert_called_once_with(version)
+    pipeline.unpause_pipeline.assert_called_once_with(version)
+    website.refresh_from_db()
+    assert getattr(website, f"latest_build_id_{version}") == build_id
+    if len(prepublish_actions) > 0 and prepublish:
+        mock_api_funcs.mock_import_string.assert_any_call("some.Action")
+        mock_api_funcs.mock_import_string.return_value.assert_any_call(website)
+
+
+def test_publish_website_error(mock_api_funcs, settings):
+    """Verify that the appropriate error handling occurs if publish_website throws an exception"""
+    settings.PREPUBLISH_ACTIONS = [["some.Action"]]
+    mock_api_funcs.mock_import_string.side_effect = Exception("error")
+    website = WebsiteFactory.create()
+    with pytest.raises(Exception):
+        api.publish_website(website.name, VERSION_LIVE)
+    mock_api_funcs.mock_get_backend.assert_not_called()

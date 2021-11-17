@@ -16,6 +16,12 @@ class BaseSyncPipeline(abc.ABC):
     VERSION_LIVE = VERSION_LIVE
     VERSION_DRAFT = VERSION_DRAFT
 
+    @staticmethod
+    @abc.abstractmethod
+    def get_api():
+        """Get a pipeline API instance"""
+        ...
+
     def __init__(self, website: Website, api: Optional[object] = None):
         """Make sure all required settings are present"""
         missing_settings = []
@@ -32,7 +38,7 @@ class BaseSyncPipeline(abc.ABC):
                 )
             )
         self.website = website
-        self.api = api
+        self.api = api or self.__class__.get_api()
 
     @abc.abstractmethod
     def upsert_website_pipeline(self):  # pragma: no cover

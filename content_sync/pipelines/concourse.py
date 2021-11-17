@@ -32,7 +32,7 @@ class ConcourseApi(BaseConcourseApi):
         return super().auth()
 
     @retry_on_failure
-    def get_with_headers(
+    def get_with_headers(  # pylint:disable=too-many-branches
         self, path: str, stream: bool = False, iterator: bool = False
     ) -> Tuple[Dict, Dict]:
         """Customized base get method, returning response data and headers"""
@@ -106,16 +106,20 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
         "GITHUB_WEBHOOK_BRANCH",
     ]
 
-    def __init__(self, website: Website, api: Optional[ConcourseApi] = None):
-        """Initialize the pipeline API instance"""
-        super().__init__(website)
-        self.instance_vars = quote(json.dumps({"site": self.website.name}))
-        self.api = api or ConcourseApi(
+    @staticmethod
+    def get_api():
+        """Get a Concourse API instance"""
+        return ConcourseApi(
             settings.CONCOURSE_URL,
             settings.CONCOURSE_USERNAME,
             settings.CONCOURSE_PASSWORD,
             settings.CONCOURSE_TEAM,
         )
+
+    def __init__(self, website: Website, api: Optional[ConcourseApi] = None):
+        """Initialize the pipeline API instance"""
+        super().__init__(website, api=api)
+        self.instance_vars = quote(json.dumps({"site": self.website.name}))
 
     def _make_builds_url(self, version: str, job_name: str):
         """Make URL for fetching builds information"""

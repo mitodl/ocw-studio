@@ -88,7 +88,7 @@ def single_website_task(timeout: int) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             has_lock = False
-            lock_id = f"website-{args[0]}"
+            lock_id = f"{func.__name__}-website-{args[0]}"
             lock = app.backend.client.lock(lock_id, timeout=timeout)
 
             try:

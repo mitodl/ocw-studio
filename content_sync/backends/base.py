@@ -33,18 +33,18 @@ class BaseSyncBackend(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def create_backend_preview(self):  # pragma: no cover
+    def merge_backend_draft(self):  # pragma: no cover
         """
-        Called to create a site preview in the backend.
+        Called to create a draft site in the backend.
 
         An example would be merging the latest commits into a VCS' preview branch.
         """
         ...
 
     @abc.abstractmethod
-    def create_backend_release(self):  # pragma: no cover
+    def merge_backend_live(self):  # pragma: no cover
         """
-        Called to create a site release in the backend.
+        Called to create a live site in the backend.
 
         An example would be merging the latest commits into a VCS' release branch.
         """

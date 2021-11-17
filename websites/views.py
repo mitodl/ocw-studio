@@ -18,9 +18,8 @@ from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
 from content_sync.api import (
-    preview_website,
-    publish_website,
     sync_github_website_starters,
+    trigger_publish,
     update_website_backend,
 )
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
@@ -186,8 +185,7 @@ class WebsiteViewSet(
                 draft_publish_status_updated_on=now_in_utc(),
                 latest_build_id_draft=None,
             )
-
-            preview_website(website)
+            trigger_publish(website, VERSION_DRAFT)
             poll_build_status_until_complete.delay(
                 website.name,
                 VERSION_DRAFT,
@@ -223,9 +221,7 @@ class WebsiteViewSet(
                 live_publish_status_updated_on=now_in_utc(),
                 latest_build_id_live=None,
             )
-
-            publish_website(website)
-
+            trigger_publish(website, VERSION_LIVE)
             poll_build_status_until_complete.delay(
                 website.name,
                 VERSION_LIVE,

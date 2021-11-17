@@ -7,6 +7,7 @@ from django.utils.module_loading import import_string
 
 from content_sync import tasks
 from content_sync.backends.base import BaseSyncBackend
+from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
@@ -61,15 +62,12 @@ def update_website_backend(website: Website):
 
 
 @is_sync_enabled
-def preview_website(website: Website):
-    """ Create a preview for the website on the backend"""
-    tasks.preview_website_backend.delay(website.name)
-
-
-@is_sync_enabled
-def publish_website(website: Website):
+def trigger_publish(website: Website, version: str):
     """ Publish the website on the backend"""
-    tasks.publish_website_backend.delay(website.name)
+    if version == VERSION_DRAFT:
+        tasks.publish_website_backend_draft.delay(website.name)
+    else:
+        tasks.publish_website_backend_live.delay(website.name)
 
 
 def sync_github_website_starters(
@@ -77,3 +75,28 @@ def sync_github_website_starters(
 ):
     """ Sync website starters from github """
     tasks.sync_github_site_configs.delay(url, files, commit=commit)
+
+
+def publish_website(  # pylint: disable=too-many-arguments
+    name: str,
+    version: str,
+    pipeline_api: Optional[object] = None,
+    prepublish: Optional[bool] = True,
+):
+    """Publish a live or draft version of a website"""
+    website = Website.objects.get(name=name)
+    if prepublish:
+        for action in settings.PREPUBLISH_ACTIONS:
+            import_string(action)(website)
+    backend = get_sync_backend(website)
+    backend.sync_all_content_to_backend()
+    if version == VERSION_DRAFT:
+        backend.merge_backend_draft()
+    else:
+        backend.merge_backend_live()
+
+    pipeline = get_sync_pipeline(website, api=pipeline_api)
+    pipeline.unpause_pipeline(version)
+    build_id = pipeline.trigger_pipeline_build(version)
+    update_kwargs = {f"latest_build_id_{version}": build_id}
+    Website.objects.filter(pk=website.pk).update(**update_kwargs)
