@@ -8,6 +8,14 @@ import { EXTERNAL_LINK_PREFIX } from "../../constants"
 import { generateHashCode, isExternalLinkId } from "../../lib/util"
 
 import { LinkType, WebsiteContent } from "../../types/websites"
+import { ModalState, createModalState } from "../../types/modal_state"
+
+interface IMenuModalState {
+  item: InternalSortableMenuItem
+  path: ItemPath
+}
+
+type MenuModalState = ModalState<IMenuModalState>
 
 interface MenuFieldProps {
   name: string
@@ -214,10 +222,12 @@ const hugoItemsToInternal = (
   return results
 }
 
+type ItemPath = Array<string | number>
+
 const getItemPath = (
   items: InternalSortableMenuItem[],
   itemIdToFind: string
-): Array<string | number> => {
+): ItemPath => {
   let itemsToSearch: InternalSortableMenuItem[][] = [[...items]]
   const parentPaths: Array<string | number>[] = [[]]
   while (itemsToSearch.length > 0) {
@@ -259,26 +269,20 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     })
   }, [value])
 
-  const [panelState, setPanelState] = useState<{
-    activeItemPath: Array<string | number>
-    activeItem: InternalSortableMenuItem | null
-    isVisible: boolean
-  }>({ activeItemPath: [], activeItem: null, isVisible: false })
+  const [modalState, setModalState] = useState<MenuModalState>(
+    createModalState("closed")
+  )
 
-  const closeContentPanel = useCallback(() => {
-    setPanelState({ activeItemPath: [], activeItem: null, isVisible: false })
-  }, [setPanelState])
+  const closeContentModal = useCallback(() => {
+    setModalState(createModalState("closed"))
+  }, [setModalState])
 
   const openNewContentPanel = useCallback(
     (e: SyntheticEvent<HTMLButtonElement>) => {
       e.preventDefault()
-      setPanelState({
-        activeItemPath: [],
-        activeItem:     null,
-        isVisible:      true
-      })
+      setModalState(createModalState("adding"))
     },
-    [setPanelState]
+    [setModalState]
   )
 
   const [
@@ -301,11 +305,12 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
   }
 
   const startEditMenuItem = (menuItem: InternalSortableMenuItem) => {
-    setPanelState({
-      activeItemPath: getItemPath(menuData.internalItems, menuItem.id),
-      activeItem:     menuItem,
-      isVisible:      true
-    })
+    setModalState(
+      createModalState("editing", {
+        path: getItemPath(menuData.internalItems, menuItem.id),
+        item: menuItem
+      })
+    )
   }
 
   const removeMenuItem = () => {
@@ -373,8 +378,8 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
           targetContentId: values.internalLink
         })
     }
-    if (panelState.activeItem) {
-      const activeItemLens = R.lensPath(panelState.activeItemPath)
+    if (modalState.editing()) {
+      const activeItemLens = R.lensPath(modalState.wrapped.path)
       const currentItem = R.view(activeItemLens, menuData.internalItems)
       updatedItems = R.set(
         activeItemLens,
@@ -404,15 +409,17 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
   return (
     <>
       <BasicModal
-        isVisible={panelState.isVisible}
-        hideModal={closeContentPanel}
-        title="Add Navigation Item"
+        isVisible={modalState.open()}
+        hideModal={closeContentModal}
+        title={
+          modalState.adding() ? "Add Navigation Item" : "Edit Navigation Item"
+        }
         className="right"
       >
         {modalProps => (
           <div className="m-3">
             <MenuItemForm
-              activeItem={panelState.activeItem}
+              activeItem={modalState.editing() ? modalState.wrapped.item : null}
               existingMenuIds={existingMenuIds}
               onSubmit={values => {
                 onSubmitMenuItem({ values, hideModal: modalProps.hideModal })

@@ -167,6 +167,32 @@ describe("MenuField", () => {
     )
   })
 
+  it("should put an appropriate title on the modal", () => {
+    ["edit", "add"].forEach(action => {
+      const menuItem = action === "edit" ? dummyInternalMenuItems[0] : null
+      const wrapper = render()
+      expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
+      const nestable = wrapper.find("Nestable")
+      let formShowBtn
+      if (menuItem) {
+        const renderedMenuItem = shallow(
+          nestable.prop("renderItem")({ item: menuItem })
+        )
+        formShowBtn = renderedMenuItem.find("button").at(0)
+      } else {
+        formShowBtn = wrapper.find("button.cyan-button")
+      }
+      const preventDefaultStub = jest.fn()
+      formShowBtn.prop("onClick")({ preventDefault: preventDefaultStub })
+      wrapper.update()
+      const modal = wrapper.find("BasicModal")
+      expect(modal.prop("isVisible")).toBe(true)
+      expect(modal.prop("title")).toBe(
+        action === "edit" ? "Edit Navigation Item" : "Add Navigation Item"
+      )
+    })
+  })
+
   it("should show a form to edit existing menu items", () => {
     const menuItem = dummyInternalMenuItems[0]
     const menuItemForm = renderMenuItemForm(menuItem)
