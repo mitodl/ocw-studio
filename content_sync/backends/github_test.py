@@ -4,10 +4,13 @@ from types import SimpleNamespace
 
 import pytest
 
+from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.backends.github import GithubBackend
 from content_sync.models import ContentSyncState
+from content_sync.utils import get_destination_filepath
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
+from websites.site_config_api import SiteConfig
 
 
 pytestmark = pytest.mark.django_db
@@ -97,9 +100,11 @@ def test_delete_content_in_backend(github):
     assert WebsiteContent.objects.filter(id=content.id).first() is None
 
 
-def test_sync_all_content_to_backend(github):
+@pytest.mark.parametrize("delete", [True, False])
+def test_sync_all_content_to_backend(github, delete):
     """Test that sync_all_content_to_backend makes the appropriate api call"""
-    github.backend.sync_all_content_to_backend()
+    github.backend.sync_all_content_to_backend(delete=delete)
+    assert github.api.batch_delete_files.call_count == (1 if delete else 0)
     github.api.upsert_content_files.assert_called_once()
 
 
@@ -192,3 +197,25 @@ def test_sync_all_content_to_db(mocker, github, patched_file_serialize):
             )
         ]
     )
+
+
+def test_delete_orphaned_content_in_backend(github):
+    """ delete_orphaned_content_in_backend should call batch_delete_files with correct paths"""
+    prior_path = "content/old/pages/1.md"
+    content = github.backend.website.websitecontent_set.all()
+    ContentSyncState.objects.filter(content=content[2]).update(
+        data={GIT_DATA_FILEPATH: prior_path}
+    )
+    paths_to_delete = ["content/nomatch/1.md", "content/nomatch/2.md"]
+    github.api.site_config = SiteConfig(github.backend.website.starter.config)
+    github.api.get_all_file_paths.return_value = iter(
+        [
+            get_destination_filepath(content[0], github.backend.api.site_config),
+            get_destination_filepath(content[1], github.backend.api.site_config),
+            prior_path,
+            *paths_to_delete,
+        ]
+    )
+    github.backend.delete_orphaned_content_in_backend()
+    github.api.get_all_file_paths.assert_called_once()
+    github.api.batch_delete_files.assert_called_once_with([*paths_to_delete])

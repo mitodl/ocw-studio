@@ -27,11 +27,21 @@ class Command(BaseCommand):
                 "of whether or not our db records say that it has been synced before."
             ),
         )
+        parser.add_argument(
+            "--delete",
+            dest="git_delete",
+            action="store_true",
+            help=(
+                "If this flag is added, this command will attempt to delete any files in the git repo that do not"
+                "match any WebsiteContent filepaths"
+            ),
+        )
 
     def handle(self, *args, **options):
         website = fetch_website(options["website"])
         backend = get_sync_backend(website)
         should_create = options["force_create"]
+        should_delete = options["git_delete"]
         if not should_create:
             should_create = not ContentSyncState.objects.filter(
                 content__website=website
@@ -42,5 +52,5 @@ class Command(BaseCommand):
         self.stdout.write(
             f"Updating website content in backend for '{website.title}'..."
         )
-        backend.sync_all_content_to_backend()
+        backend.sync_all_content_to_backend(delete=should_delete)
         reset_publishing_fields(website.name)
