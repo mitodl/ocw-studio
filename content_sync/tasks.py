@@ -190,7 +190,7 @@ def publish_website_backend_draft(website_name: str):
     Create a new backend preview for the website.
     """
     try:
-        api.publish_website(Website.objects.get(name=website_name), VERSION_DRAFT)
+        api.publish_website(website_name, VERSION_DRAFT)
         return True
     except:  # pylint:disable=bare-except
         log.exception("Error publishing draft site %s", website_name)
@@ -205,7 +205,7 @@ def publish_website_backend_live(website_name: str):
     """
     try:
         api.publish_website(
-            Website.objects.get(name=website_name),
+            website_name,
             VERSION_LIVE,
         )
         return True

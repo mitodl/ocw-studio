@@ -185,7 +185,7 @@ def test_publish_website_backend_draft(api_mock):
     """Verify that the appropriate backend calls are made by the publish_website_backend_draft task """
     website = WebsiteFactory.create()
     tasks.publish_website_backend_draft(website.name)
-    api_mock.publish_website.assert_called_once_with(website, VERSION_DRAFT)
+    api_mock.publish_website.assert_called_once_with(website.name, VERSION_DRAFT)
 
 
 def test_publish_website_backend_draft_error(mocker, api_mock):
@@ -202,7 +202,7 @@ def test_publish_website_backend_live(api_mock):
     """Verify that the appropriate backend calls are made by the publish_website_backend_live task"""
     website = WebsiteFactory.create()
     tasks.publish_website_backend_live(website.name)
-    api_mock.publish_website.assert_called_once_with(website, VERSION_LIVE)
+    api_mock.publish_website.assert_called_once_with(website.name, VERSION_LIVE)
 
 
 def test_publish_website_backend_live_error(mocker, api_mock):
