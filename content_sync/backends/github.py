@@ -8,11 +8,16 @@ from github.PullRequest import PullRequest
 from github.Repository import Repository
 from safedelete.models import HARD_DELETE
 
-from content_sync.apis.github import GithubApiWrapper, decode_file_contents
+from content_sync.apis.github import (
+    GIT_DATA_FILEPATH,
+    GithubApiWrapper,
+    decode_file_contents,
+)
 from content_sync.backends.base import BaseSyncBackend
 from content_sync.decorators import check_sync_state
 from content_sync.models import ContentSyncState
 from content_sync.serializers import deserialize_file_to_website_content
+from content_sync.utils import get_destination_filepath
 from websites.models import Website, WebsiteContent
 
 
@@ -76,10 +81,26 @@ class GithubBackend(BaseSyncBackend):
         content = sync_state.content
         return self.api.upsert_content_file(content)
 
-    def sync_all_content_to_backend(self) -> Commit:
+    def delete_orphaned_content_in_backend(self):
+        """ Delete any git repo files without corresponding WebsiteContent objects"""
+        sitepaths = []
+        for content in self.website.websitecontent_set.iterator():
+            sitepaths.append(get_destination_filepath(content, self.site_config))
+            # Include ContentSyncState paths, these should not be deleted if present
+            if content.content_sync_state.data and content.content_sync_state.data.get(
+                GIT_DATA_FILEPATH, None
+            ):
+                sitepaths.append(content.content_sync_state.data[GIT_DATA_FILEPATH])
+        self.api.batch_delete_files(
+            [path for path in self.api.get_all_file_paths("/") if path not in sitepaths]
+        )
+
+    def sync_all_content_to_backend(self, delete=False) -> Commit:
         """
-        Sync all the website's files to Github in one commit
+        Sync all the website's files to Github in one commit, and optionally delete unmatched git repo files
         """
+        if delete:
+            self.delete_orphaned_content_in_backend()
         return self.api.upsert_content_files()
 
     def delete_content_in_backend(self, sync_state: ContentSyncState) -> Commit:

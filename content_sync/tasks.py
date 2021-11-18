@@ -45,7 +45,11 @@ def sync_content(content_sync_id: str):
 
 
 @app.task(acks_late=True)
-def sync_unsynced_websites(create_backends: bool = False, check_limit: bool = False):
+def sync_unsynced_websites(
+    create_backends: bool = False,
+    check_limit: bool = False,
+    delete: Optional[bool] = False,
+):
     """
     Sync all websites with unsynced content if they have existing repos.
     This should be rarely called, and only in a management command.
@@ -85,7 +89,7 @@ def sync_unsynced_websites(create_backends: bool = False, check_limit: bool = Fa
                             sleep(5)
                 if create_backends or backend.backend_exists():
                     backend.create_website_in_backend()
-                    backend.sync_all_content_to_backend()
+                    backend.sync_all_content_to_backend(delete=delete)
             except RateLimitExceededException:
                 # Too late, can't even check rate limit reset time now so bail
                 raise

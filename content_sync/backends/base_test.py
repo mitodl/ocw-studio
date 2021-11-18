@@ -45,6 +45,9 @@ class _ImplementedBackend(BaseSyncBackend):
     def sync_all_content_to_db(self):
         ...
 
+    def delete_orphaned_content_in_backend(self):
+        ...
+
 
 class _NotImplementedBackend(BaseSyncBackend):
     """ Not implemented """
@@ -103,16 +106,21 @@ def test_sync_content_to_backend_delete(mocker):
     mock_delete_content_in_backend.assert_called_once_with(state)
 
 
+@pytest.mark.parametrize("delete", [True, False])
 @pytest.mark.django_db
-def test_sync_all_content_to_backend(mocker):
+def test_sync_all_content_to_backend(mocker, delete):
     """ Verify that sync_all_content_to_backend calls sync_content_to_backend for each piece of content """
     mock_sync_content_to_backend = mocker.patch.object(
         _ImplementedBackend, "sync_content_to_backend", return_value=None
     )
+    mock_delete = mocker.patch.object(
+        _ImplementedBackend, "delete_orphaned_content_in_backend"
+    )
     website = WebsiteFactory.create()
     states = ContentSyncStateFactory.create_batch(5, content__website=website)
     backend = _ImplementedBackend(website)
-    backend.sync_all_content_to_backend()
+    backend.sync_all_content_to_backend(delete=delete)
     assert mock_sync_content_to_backend.call_count == len(states)
+    assert mock_delete.call_count == (1 if delete else 0)
     for state in states:
         mock_sync_content_to_backend.assert_any_call(state)

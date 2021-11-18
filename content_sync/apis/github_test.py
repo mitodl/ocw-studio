@@ -698,3 +698,80 @@ def test_sync_starter_configs_webhook_branch_hash_match(mocker, mock_github):
         mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.assert_any_call(
             config_file, fake_commit
         )
+
+
+def test_get_all_file_paths(mocker, mock_api_wrapper):
+    """get_all_file_paths should yield all file paths in the repo"""
+    mock_api_wrapper.org.get_repo.return_value.get_contents.side_effect = [
+        [
+            mocker.Mock(path="README.md", type="file"),
+            mocker.Mock(path="content", type="dir"),
+            mocker.Mock(path="data", type="dir"),
+        ],
+        [
+            mocker.Mock(path="content/pages", type="dir"),
+            mocker.Mock(path="content/resources", type="dir"),
+        ],
+        [
+            mocker.Mock(path="content/pages/page1.md", type="file"),
+            mocker.Mock(path="content/pages/page2.md", type="file"),
+        ],
+        [
+            mocker.Mock(path="content/resources/image1.md", type="file"),
+            mocker.Mock(path="content/resources/video1.md", type="file"),
+        ],
+        [
+            mocker.Mock(path="content/data/course.json", type="file"),
+        ],
+    ]
+    assert sorted(mock_api_wrapper.get_all_file_paths("/")) == [
+        "content/data/course.json",
+        "content/pages/page1.md",
+        "content/pages/page2.md",
+        "content/resources/image1.md",
+        "content/resources/video1.md",
+    ]
+
+
+@pytest.mark.parametrize("has_user", [True, False])
+def test_batch_delete_files(mocker, mock_api_wrapper, has_user):
+    """Batch delete multiple git files in a single commit"""
+    user = UserFactory.create() if has_user else None
+    mock_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
+    mock_git_user = mocker.patch("content_sync.apis.github.InputGitAuthor")
+    paths = [
+        "content/testpages/page1.md",
+        "content/testresources/video1.md",
+        "content/testresources/video2.md",
+    ]
+    mock_api_wrapper.batch_delete_files(paths, user=user)
+    tree_args = mock_api_wrapper.org.get_repo.return_value.create_git_tree.call_args[0][
+        0
+    ]
+    assert len(tree_args) == len(paths)
+    for path in paths:
+        mock_element.assert_any_call(
+            path,
+            "100644",
+            "blob",
+            sha=None,
+        )
+    mock_api_wrapper.org.get_repo.return_value.create_git_commit.assert_called_once_with(
+        "Sync all content",
+        mock_api_wrapper.org.get_repo.return_value.create_git_tree.return_value,
+        mocker.ANY,
+        committer=mocker.ANY,
+        author=mocker.ANY,
+    )
+    if has_user:
+        mock_git_user.assert_called_once_with(user.name, user.email)
+    else:
+        mock_git_user.assert_called_once_with(
+            settings.GIT_DEFAULT_USER_NAME, settings.GIT_DEFAULT_USER_EMAIL
+        )
+
+
+def test_batch_delete_files_none(mock_api_wrapper):
+    """batch_delete_files shouldn't call commit_tree for an empty path list"""
+    mock_api_wrapper.batch_delete_files([])
+    mock_api_wrapper.org.get_repo.assert_not_called()

@@ -2,7 +2,7 @@
 import logging
 from base64 import b64decode
 from dataclasses import dataclass
-from typing import Iterator, List, Optional
+from typing import Iterable, Iterator, List, Optional
 from urllib.parse import urlparse
 
 import yaml
@@ -399,3 +399,25 @@ class GithubApiWrapper:
         )
         main_ref.edit(commit.sha)
         return commit
+
+    def get_all_file_paths(self, path: str) -> Iterable[str]:
+        """Yield all file paths in the repo"""
+        for content in self.get_repo().get_contents(path):
+            if content.type == "file" and content.path != "README.md":
+                yield content.path
+            elif content.type == "dir":
+                yield from self.get_all_file_paths(content.path)
+
+    def batch_delete_files(self, paths: List[str], user: Optional[User] = None):
+        """Batch delete multiple git files in a single commit"""
+        tree_elements = [
+            InputGitTreeElement(
+                path,
+                "100644",
+                "blob",
+                sha=None,
+            )
+            for path in paths
+        ]
+        if tree_elements:
+            self.commit_tree(tree_elements, user)

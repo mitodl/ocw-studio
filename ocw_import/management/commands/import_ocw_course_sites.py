@@ -87,6 +87,12 @@ class Command(BaseCommand):
             type=bool,
             help="If True, delete all courses that have been unpublished in the source data",
         )
+        parser.add_argument(
+            "--git_delete",
+            dest="delete_from_git",
+            action="store_true",
+            help="If included, delete any git repo files that don't match WebsiteContent filepaths",
+        )
         super().add_arguments(parser)
 
     def handle(self, *args, **options):
@@ -98,6 +104,7 @@ class Command(BaseCommand):
         filter_str = options["filter"]
         limit = options["limit"]
         delete_unpublished = options["delete_unpublished"]
+        delete_from_git = options["delete_from_git"]
 
         if options["list"] is True:
             course_paths = list(
@@ -131,6 +138,7 @@ class Command(BaseCommand):
             task = sync_unsynced_websites.delay(
                 create_backends=options["create_backend"],
                 check_limit=options["rate_limit"],
+                delete=delete_from_git,
             )
             self.stdout.write(f"Starting task {task}...")
             task.get()
