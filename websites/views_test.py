@@ -284,7 +284,7 @@ def test_websites_endpoint_preview(
     else:
         assert resp.data["details"] == ""
 
-    mock_trigger_publish.assert_called_once_with(website, VERSION_DRAFT)
+    mock_trigger_publish.assert_called_once_with(website.name, VERSION_DRAFT)
     mock_poll.delay.assert_called_once_with(
         website.name,
         VERSION_DRAFT,
@@ -372,7 +372,7 @@ def test_websites_endpoint_publish(  # pylint: disable=too-many-locals
 
     if not has_missing_ids and not has_missing_captions:
         expected_msg = ""
-        mock_publish_website.assert_called_once_with(website, VERSION_LIVE)
+        mock_publish_website.assert_called_once_with(website.name, VERSION_LIVE)
         assert website.has_unpublished_live is False
         assert website.live_publish_status == constants.PUBLISH_STATUS_NOT_STARTED
         assert website.live_publish_status_updated_on == now

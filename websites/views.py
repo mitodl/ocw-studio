@@ -185,7 +185,7 @@ class WebsiteViewSet(
                 draft_publish_status_updated_on=now_in_utc(),
                 latest_build_id_draft=None,
             )
-            trigger_publish(website, VERSION_DRAFT)
+            trigger_publish(website.name, VERSION_DRAFT)
             poll_build_status_until_complete.delay(
                 website.name,
                 VERSION_DRAFT,
@@ -221,7 +221,7 @@ class WebsiteViewSet(
                 live_publish_status_updated_on=now_in_utc(),
                 latest_build_id_live=None,
             )
-            trigger_publish(website, VERSION_LIVE)
+            trigger_publish(website.name, VERSION_LIVE)
             poll_build_status_until_complete.delay(
                 website.name,
                 VERSION_LIVE,

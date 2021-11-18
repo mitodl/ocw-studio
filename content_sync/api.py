@@ -62,12 +62,12 @@ def update_website_backend(website: Website):
 
 
 @is_sync_enabled
-def trigger_publish(website: Website, version: str):
+def trigger_publish(website_name: str, version: str):
     """ Publish the website on the backend"""
     if version == VERSION_DRAFT:
-        tasks.publish_website_backend_draft.delay(website.name)
+        tasks.publish_website_backend_draft.delay(website_name)
     else:
-        tasks.publish_website_backend_live.delay(website.name)
+        tasks.publish_website_backend_live.delay(website_name)
 
 
 def sync_github_website_starters(

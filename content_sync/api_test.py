@@ -152,7 +152,7 @@ def test_trigger_publish_draft(settings, mocker):
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
     mock_task = mocker.patch("content_sync.tasks.publish_website_backend_draft")
     website = WebsiteFactory.create()
-    api.trigger_publish(website, VERSION_DRAFT)
+    api.trigger_publish(website.name, VERSION_DRAFT)
     mock_task.delay.assert_called_once_with(website.name)
 
 
@@ -161,7 +161,7 @@ def test_trigger_publish_live(settings, mocker):
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
     mock_task = mocker.patch("content_sync.tasks.publish_website_backend_live")
     website = WebsiteFactory.create()
-    api.trigger_publish(website, VERSION_LIVE)
+    api.trigger_publish(website.name, VERSION_LIVE)
     mock_task.delay.assert_called_once_with(website.name)
 
 
