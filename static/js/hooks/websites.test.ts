@@ -21,7 +21,6 @@ describe("website hooks", () => {
       debouncedFetch.mockReturnValue({
         json: () => ({ results: websites })
       })
-      global.fetch = jest.fn()
       // @ts-ignore
       global.fetch.mockReturnValue({
         json: () => ({ results: websites })

@@ -34,7 +34,6 @@ jest.mock("../../lib/api/util", () => ({
   ...jest.requireActual("../../lib/api/util"),
   debouncedFetch: jest.fn()
 }))
-global.fetch = jest.fn()
 
 jest.mock("../../hooks/websites", () => ({
   ...jest.requireActual("../../hooks/websites"),

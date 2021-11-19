@@ -4,10 +4,6 @@ jest.mock("waait")
 import { debouncedFetch, sharedWait } from "./util"
 
 describe("api utility functions", () => {
-  beforeEach(() => {
-    global.fetch = jest.fn()
-  })
-
   it("waits", async () => {
     await Promise.all([
       sharedWait("key", 30),
