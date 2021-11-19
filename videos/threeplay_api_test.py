@@ -238,7 +238,7 @@ def test_threeplay_upload_video_request(mocker, settings):
 def test_threeplay_order_transcript_request(mocker, settings, threeplay_callback_key):
     """test threeplay_order_transcript_request"""
 
-    settings.SITE_BASE_URL = "url"
+    settings.SITE_BASE_URL = "http://url.edu/"
     settings.THREEPLAY_API_KEY = "key"
     settings.THREEPLAY_CALLBACK_KEY = threeplay_callback_key
 
@@ -253,7 +253,7 @@ def test_threeplay_order_transcript_request(mocker, settings, threeplay_callback
     if threeplay_callback_key:
         payload[
             "callback"
-        ] = "url/api/api/transcription-jobs/?video_id=123&callback_key=threeplay_callback_key"
+        ] = "http://url.edu/api/transcription-jobs/?video_id=123&callback_key=threeplay_callback_key"
 
     result = threeplay_order_transcript_request(123, 456)
 

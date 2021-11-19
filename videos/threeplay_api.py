@@ -1,6 +1,7 @@
 """3play api requests"""
 import logging
 from io import BytesIO
+from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
@@ -93,7 +94,11 @@ def threeplay_order_transcript_request(video_id: int, threeplay_video_id: int) -
     url = "https://api.3playmedia.com/v3/transcripts/order/transcription"
 
     if settings.THREEPLAY_CALLBACK_KEY:
-        callback_url = f"{settings.SITE_BASE_URL}/api/api/transcription-jobs/?video_id={str(video_id)}&callback_key={settings.THREEPLAY_CALLBACK_KEY}"
+        callback_url = urljoin(
+            settings.SITE_BASE_URL,
+            f"api/transcription-jobs/?video_id={str(video_id)}&callback_key={settings.THREEPLAY_CALLBACK_KEY}",
+        )
+
         payload["callback"] = callback_url
 
     response = requests.post(url, payload)
