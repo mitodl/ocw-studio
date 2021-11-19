@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.37.1
+--------------
+
+- add cross_site option to the Relation field
+- Fix publish bug (#821)
+- Add option to delete git files not matching WebsiteContent in db (#812)
+- Handle all cases of youtube_id being null (#816)
+- Mass publish sites management command (trigger_pipelines -> mass_publish) (#801)
+- Fix changing short_id on ocw reimport, reset publish fields as part of `reset_sync_state` command (#809)
+- Show confirmation dialog when data would be lost (#799)
+- Always unpause pipelines before triggering (#811)
+
 Version 0.37.0 (Released November 19, 2021)
 --------------
 
