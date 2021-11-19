@@ -122,9 +122,6 @@ jobs:
         with:
           node-version: "15.14.0"
 
-      - name: Setup environment
-        run: sudo apt-get install libelf1
-
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn config get cacheFolder)"
