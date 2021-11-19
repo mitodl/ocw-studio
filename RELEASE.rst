@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.37.0 (Released November 19, 2021)
+--------------
+
+- transcript notifications
+
 Version 0.36.0 (Released November 15, 2021)
 --------------
 
