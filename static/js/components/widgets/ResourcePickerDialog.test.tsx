@@ -36,9 +36,7 @@ jest.mock("./ResourcePickerListing", () => ({
 const focusResource = (wrapper: ReactWrapper, resource: WebsiteContent) => {
   act(() => {
     // @ts-ignore
-    wrapper.find("ResourcePickerListing").prop("focusResource")(
-      resource.text_id
-    )
+    wrapper.find("ResourcePickerListing").prop("focusResource")(resource)
   })
   wrapper.update()
 }
@@ -109,6 +107,7 @@ describe("ResourcePickerDialog", () => {
 
     expect(insertEmbedStub.args[0]).toStrictEqual([
       resource.text_id,
+      resource.title,
       RESOURCE_LINK
     ])
   })
@@ -132,6 +131,7 @@ describe("ResourcePickerDialog", () => {
 
     expect(insertEmbedStub.args[0]).toStrictEqual([
       resource.text_id,
+      resource.title,
       RESOURCE_EMBED
     ])
   })
@@ -143,7 +143,7 @@ describe("ResourcePickerDialog", () => {
     )
     focusResource(wrapper, resource)
     expect(wrapper.find("ResourcePickerListing").prop("focusedResource")).toBe(
-      resource.text_id
+      resource
     )
   })
 

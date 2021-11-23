@@ -14,11 +14,12 @@ import {
   ResourceDialogState,
   RESOURCE_EMBED
 } from "../../lib/ckeditor/plugins/constants"
+import { WebsiteContent } from "../../types/websites"
 
 interface Props {
   state: ResourceDialogState
   closeDialog: () => void
-  insertEmbed: (id: string, variant: CKEResourceNodeType) => void
+  insertEmbed: (id: string, title: string, variant: CKEResourceNodeType) => void
   attach: string
 }
 
@@ -58,11 +59,17 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     [setFilterDebounced]
   )
 
-  const [focusedResource, setFocusedResource] = useState<string | null>(null)
+  const [focusedResource, setFocusedResource] = useState<WebsiteContent | null>(
+    null
+  )
 
   const addResource = useCallback(() => {
     if (focusedResource && state !== "closed") {
-      insertEmbed(focusedResource, state)
+      insertEmbed(
+        focusedResource.text_id,
+        focusedResource.title ?? focusedResource.text_id,
+        state
+      )
       closeDialog()
     }
   }, [insertEmbed, focusedResource, closeDialog, state])

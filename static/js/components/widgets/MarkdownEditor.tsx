@@ -47,9 +47,17 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   >("closed")
 
   const addResourceEmbed = useCallback(
-    (uuid: string, variant: CKEResourceNodeType) => {
+    (uuid: string, title: string, variant: CKEResourceNodeType) => {
       if (editor.current) {
-        editor.current.execute(ResourceCommandMap[variant], uuid)
+        if (variant === "resourceLink") {
+          // we pass the title down because we want to set that as the
+          // default text in the link, in the case where we're not adding
+          // the link attribute to existing text.
+          editor.current.execute(ResourceCommandMap[variant], uuid, title)
+        } else {
+          editor.current.execute(ResourceCommandMap[variant], uuid)
+        }
+
         // @ts-ignore
         editor.current.editing.view.focus()
       }

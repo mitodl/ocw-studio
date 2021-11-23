@@ -107,15 +107,13 @@ describe("ResourcePickerListing", () => {
       .find(".resource-picker-listing .resource-item")
       .at(0)
       .simulate("click")
-    expect(
-      focusResourceStub.calledWith(contentListingItems[0][0].text_id)
-    ).toBeTruthy()
+    expect(focusResourceStub.calledWith(contentListingItems[0][0])).toBeTruthy()
     wrapper.update()
   })
 
   it("should put a class on if a resource is focused", async () => {
     const { wrapper } = await render({
-      focusedResource: contentListingItems[0][0].text_id
+      focusedResource: contentListingItems[0][0]
     })
 
     expect(

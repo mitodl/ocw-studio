@@ -34,7 +34,7 @@
     "@ckeditor/ckeditor5-widget": "^29.2.0",
     "@dnd-kit/core": "^3.1.1",
     "@dnd-kit/sortable": "^4.0.0",
-    "@mitodl/ckeditor5-resource-link": "29.2.0",
+    "@mitodl/ckeditor5-resource-link": "^29.2.1",
     "@sentry/browser": "^6.10.0",
     "@testing-library/react-hooks": "^7.0.1",
     "@types/ckeditor__ckeditor5-core": "^11.0.3",

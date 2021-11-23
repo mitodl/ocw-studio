@@ -2021,14 +2021,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mitodl/ckeditor5-resource-link@npm:29.2.0":
-  version: 29.2.0
-  resolution: "@mitodl/ckeditor5-resource-link@npm:29.2.0"
+"@mitodl/ckeditor5-resource-link@npm:^29.2.1":
+  version: 29.2.1
+  resolution: "@mitodl/ckeditor5-resource-link@npm:29.2.1"
   dependencies:
     "@ckeditor/ckeditor5-ui": ^29.2.0
     ckeditor5: ^29.2.0
     lodash-es: ^4.17.15
-  checksum: cd9bef6e335a947fc015d492fa7917a36c34f9ecec29282893ab72dbb38f4ae7d816ad592ac711099a5f5e77bf2d5b3edd09bceba8a16e466dc2a2311884d728
+  checksum: dbcbf7342a5d75d2036485185ef1ec20f965b373e080be9dd134c9d2de3263347c88b9417efe1a155e2f2d01961813a2f990e2f19e9a475f8f0a81c34fbe954f
   languageName: node
   linkType: hard
 
@@ -10020,7 +10020,7 @@ __metadata:
     "@ckeditor/ckeditor5-widget": ^29.2.0
     "@dnd-kit/core": ^3.1.1
     "@dnd-kit/sortable": ^4.0.0
-    "@mitodl/ckeditor5-resource-link": 29.2.0
+    "@mitodl/ckeditor5-resource-link": ^29.2.1
     "@sentry/browser": ^6.10.0
     "@testing-library/react-hooks": ^7.0.1
     "@types/ckeditor__ckeditor5-core": ^11.0.3

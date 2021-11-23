@@ -9,7 +9,7 @@ import {
   RESOURCE_TYPE_VIDEO
 } from "../../constants"
 import { useWebsite } from "../../context/Website"
-import { ContentListingParams } from "../../types/websites"
+import { ContentListingParams, WebsiteContent } from "../../types/websites"
 import { websiteContentListingRequest } from "../../query-configs/websites"
 import {
   getWebsiteContentListingCursor,
@@ -17,11 +17,11 @@ import {
 } from "../../selectors/websites"
 
 interface Props {
-  focusResource: (id: string) => void
+  focusResource: (item: WebsiteContent) => void
   attach: string
   filter: string | null
   resourcetype: string
-  focusedResource: string | null
+  focusedResource: WebsiteContent | null
 }
 
 export default function ResourcePickerListing(
@@ -63,7 +63,9 @@ export default function ResourcePickerListing(
     <div className={className}>
       {listing.results.map((item, idx) => {
         const className = `resource-item${
-          focusedResource && focusedResource === item.text_id ? " focused" : ""
+          focusedResource && focusedResource.text_id === item.text_id ?
+            " focused" :
+            ""
         }`
 
         let imageSrc: string | undefined
@@ -85,7 +87,7 @@ export default function ResourcePickerListing(
             key={`${item.text_id}_${idx}`}
             onClick={(event: SyntheticEvent<HTMLDivElement>) => {
               event.preventDefault()
-              focusResource(item.text_id)
+              focusResource(item)
             }}
           >
             {imageSrc ? (
