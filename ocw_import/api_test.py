@@ -286,6 +286,7 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
         ["5.3", "Spring", "2022", "5.3-spring-2022"],
         ["5.3", "Spring 2022", None, "5.3-spring-2022"],
         ["5.3", "January IAP", "2011", "5.3-january-iap-2011"],
+        ["18.650 (formerly 18.443) ", "Spring", "2015", "18.650-spring-2015"],
         [None, "January IAP", "2011", None],
     ],
 )

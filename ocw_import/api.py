@@ -177,7 +177,7 @@ def get_short_id(name: str, metadata: Dict) -> str:
                 [
                     piece
                     for piece in [
-                        course_num,
+                        re.sub(r"\(.+\)", "", course_num).strip(),
                         metadata.get("term", ""),
                         metadata.get("year", ""),
                     ]
