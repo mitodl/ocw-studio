@@ -38,7 +38,7 @@ async function main() {
   if (options.upgrade) {
     console.log("running full upgrade of all @ckeditor/ packages to @latest...")
     try {
-      await promiseExec(`yarn --ignore-engines add ${ckeditorDependencies}`)
+      await promiseExec(`yarn add ${ckeditorDependencies}`)
       console.log("upgrade done!")
     } catch (e) {
       console.error(e)
@@ -46,7 +46,7 @@ async function main() {
   } else {
     console.log("running update of all @ckeditor/ packages...")
     try {
-      await promiseExec(`yarn --ignore-engines upgrade ${ckeditorDependencies}`)
+      await promiseExec(`yarn upgrade ${ckeditorDependencies}`)
       console.log("update done!")
     } catch (e) {
       console.error(e)
