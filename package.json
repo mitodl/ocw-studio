@@ -68,7 +68,7 @@
     "autoprefixer": "9",
     "babel-jest": "^27.2.1",
     "bootstrap": "4",
-    "casual-browserify": "^1.5.19-2",
+    "casual": "^1.6.2",
     "core-js": "^3.16.0",
     "css-loader": "^4.2.1",
     "enzyme": "^3.11.0",

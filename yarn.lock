@@ -4067,13 +4067,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"casual-browserify@npm:^1.5.19-2":
-  version: 1.5.19-2
-  resolution: "casual-browserify@npm:1.5.19-2"
+"casual@npm:^1.6.2":
+  version: 1.6.2
+  resolution: "casual@npm:1.6.2"
   dependencies:
     mersenne-twister: ^1.0.1
     moment: ^2.15.2
-  checksum: a16351c4a82c6045048044a34981786003af00c98ab119398201be4904d55b6426caa2fd2a541d52db3522ee57cf9fbb30f7db6b8e37febe98d82bb973944700
+  checksum: e9df662950412735ca0622d7891463805239943fe76db50ec8a8fb3abaefb0bc1bbd08a48bcd6faf20a4227c9cd3ef8dc1c743fa21af0917ac9e820d89feb838
   languageName: node
   linkType: hard
 
@@ -10078,7 +10078,7 @@ __metadata:
     autoprefixer: 9
     babel-jest: ^27.2.1
     bootstrap: 4
-    casual-browserify: ^1.5.19-2
+    casual: ^1.6.2
     core-js: ^3.16.0
     css-loader: ^4.2.1
     enzyme: ^3.11.0

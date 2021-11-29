@@ -1,4 +1,4 @@
-import casual from "casual-browserify"
+import casual from "casual"
 import { cloneDeep, times } from "lodash"
 
 import incrementer from "../incrementer"

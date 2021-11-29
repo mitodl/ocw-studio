@@ -2,7 +2,7 @@ import {
   WebsiteCollection,
   WebsiteCollectionItem
 } from "../../types/website_collections"
-import casual from "casual-browserify"
+import casual from "casual"
 import incrementer from "../incrementer"
 
 const incr = incrementer()

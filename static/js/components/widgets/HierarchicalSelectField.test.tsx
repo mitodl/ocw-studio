@@ -2,7 +2,7 @@ import React from "react"
 import { act } from "react-dom/test-utils"
 import { sortBy, times } from "lodash"
 import { shallow, ShallowWrapper } from "enzyme"
-import casual from "casual-browserify"
+import casual from "casual"
 
 import HierarchicalSelectField, * as namedExports from "./HierarchicalSelectField"
 import { Level } from "./HierarchicalSelectField"
