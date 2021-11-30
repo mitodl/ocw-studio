@@ -69,17 +69,29 @@ class Website(TimestampedModel):
         null=True,
         blank=True,
     )
+    metadata = models.JSONField(null=True, blank=True)
+
+    # Live publish fields
     publish_date = models.DateTimeField(null=True, blank=True)
-    draft_publish_date = models.DateTimeField(null=True, blank=True)
     has_unpublished_live = models.BooleanField(default=True)
     latest_build_id_live = models.IntegerField(null=True)
-    has_unpublished_draft = models.BooleanField(default=True)
-    latest_build_id_draft = models.IntegerField(null=True)
     live_publish_status = models.CharField(
         max_length=20,
         null=True,
         choices=zip(constants.PUBLISH_STATUSES, constants.PUBLISH_STATUSES),
     )
+    live_last_published_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="live_publisher",
+    )
+
+    # Draft publish fields
+    draft_publish_date = models.DateTimeField(null=True, blank=True)
+    has_unpublished_draft = models.BooleanField(default=True)
+    latest_build_id_draft = models.IntegerField(null=True)
     live_publish_status_updated_on = models.DateTimeField(null=True, blank=True)
     draft_publish_status = models.CharField(
         max_length=20,
@@ -87,7 +99,15 @@ class Website(TimestampedModel):
         choices=zip(constants.PUBLISH_STATUSES, constants.PUBLISH_STATUSES),
     )
     draft_publish_status_updated_on = models.DateTimeField(null=True, blank=True)
-    metadata = models.JSONField(null=True, blank=True)
+    draft_last_published_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="draft_publisher",
+    )
+
+    # Google Drive fields
     gdrive_folder = models.CharField(null=True, blank=True, max_length=64)
     sync_status = models.CharField(null=True, blank=True, max_length=12)
     synced_on = models.DateTimeField(null=True, blank=True)

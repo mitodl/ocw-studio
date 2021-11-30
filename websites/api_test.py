@@ -3,7 +3,9 @@ from uuid import UUID
 
 import factory
 import pytest
+from mitol.common.utils import now_in_utc
 
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from users.factories import UserFactory
 from websites.api import (
     detect_mime_type,
@@ -13,10 +15,16 @@ from websites.api import (
     is_ocw_site,
     mail_on_publish,
     unassigned_youtube_ids,
+    update_website_status,
     update_youtube_thumbnail,
     videos_missing_captions,
 )
-from websites.constants import RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO
+from websites.constants import (
+    PUBLISH_STATUS_STARTED,
+    PUBLISH_STATUS_SUCCEEDED,
+    RESOURCE_TYPE_IMAGE,
+    RESOURCE_TYPE_VIDEO,
+)
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
@@ -347,3 +355,21 @@ def test_detect_mime_type(mocker):
     from_buffer_mock.assert_called_once_with(chunk)
     chunks_mock.assert_called_once_with(chunk_size=2048)
     magic_mock.assert_called_once_with(mime=True)
+
+
+@pytest.mark.parametrize("status", [PUBLISH_STATUS_STARTED, PUBLISH_STATUS_SUCCEEDED])
+@pytest.mark.parametrize("has_user", [True, False])
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_update_website_status_draft(mocker, status, has_user, version):
+    """update_website_status should update the appropriate website publishing fields"""
+    mock_mail = mocker.patch("websites.api.mail_on_publish")
+    user = UserFactory.create() if has_user else None
+    website = WebsiteFactory.create(**{f"{version}_last_published_by": user})
+    now = now_in_utc()
+    update_website_status(website, version, status, now)
+    website.refresh_from_db()
+    assert getattr(website, f"{version}_publish_status") == status
+    assert getattr(website, f"{version}_publish_status_updated_on") == now
+    assert mock_mail.call_count == (
+        1 if has_user and status == PUBLISH_STATUS_SUCCEEDED else 0
+    )

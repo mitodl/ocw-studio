@@ -64,3 +64,9 @@ class BaseSyncPipeline(abc.ABC):
     @abc.abstractmethod
     def get_build_status(self, build_id: int):
         """Retrieve the status of the build"""
+        ...
+
+    @abc.abstractmethod
+    def abort_build(self, build_id: int):
+        """Abort a build"""
+        ...

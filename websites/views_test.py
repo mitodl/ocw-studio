@@ -17,6 +17,7 @@ from main import features
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from websites import constants
+from websites.constants import PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_STARTED
 from websites.factories import (
     WebsiteCollectionFactory,
     WebsiteCollectionItemFactory,
@@ -237,11 +238,10 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
 @pytest.mark.parametrize("has_missing_ids", [True, False])
 @pytest.mark.parametrize("has_missing_captions", [True, False])
 def test_websites_endpoint_preview(
-    settings, mocker, drf_client, has_missing_ids, has_missing_captions
+    mocker, drf_client, has_missing_ids, has_missing_captions
 ):
     """A user with admin/edit permissions should be able to request a website preview"""
     mock_trigger_publish = mocker.patch("websites.views.trigger_publish")
-    mock_poll = mocker.patch("websites.views.poll_build_status_until_complete")
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create()
@@ -283,16 +283,7 @@ def test_websites_endpoint_preview(
         assert resp.data["details"] == "\n".join(expected_msgs)
     else:
         assert resp.data["details"] == ""
-
     mock_trigger_publish.assert_called_once_with(website.name, VERSION_DRAFT)
-    mock_poll.delay.assert_called_once_with(
-        website.name,
-        VERSION_DRAFT,
-        (
-            now + datetime.timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS)
-        ).isoformat(),
-        editor.id,
-    )
     website.refresh_from_db()
     assert website.has_unpublished_draft is False
     assert website.draft_publish_status == constants.PUBLISH_STATUS_NOT_STARTED
@@ -320,11 +311,10 @@ def test_websites_endpoint_preview_error(mocker, drf_client):
 @pytest.mark.parametrize("has_missing_ids", [True, False])
 @pytest.mark.parametrize("has_missing_captions", [True, False])
 def test_websites_endpoint_publish(  # pylint: disable=too-many-locals
-    settings, mocker, drf_client, has_missing_ids, has_missing_captions
+    mocker, drf_client, has_missing_ids, has_missing_captions
 ):
     """A user with admin permissions should be able to request a website publish"""
     mock_publish_website = mocker.patch("websites.views.trigger_publish")
-    mock_poll = mocker.patch("websites.views.poll_build_status_until_complete")
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create()
@@ -377,14 +367,6 @@ def test_websites_endpoint_publish(  # pylint: disable=too-many-locals
         assert website.live_publish_status == constants.PUBLISH_STATUS_NOT_STARTED
         assert website.live_publish_status_updated_on == now
         assert website.latest_build_id_live is None
-        mock_poll.delay.assert_called_once_with(
-            website.name,
-            VERSION_LIVE,
-            (
-                now + datetime.timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS)
-            ).isoformat(),
-            admin.id,
-        )
 
     assert resp.data["details"] == expected_msg
 
@@ -1295,3 +1277,36 @@ def test_website_collection_items_get(drf_client):
         resp.data
         == WebsiteCollectionItemSerializer([one, two, three, four], many=True).data
     )
+
+
+@pytest.mark.parametrize("status", [PUBLISH_STATUS_STARTED, PUBLISH_STATUS_ERRORED])
+@pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
+def test_websites_endpoint_pipeline_status(
+    settings, mocker, drf_client, permission_groups, version, status
+):
+    """The pipeline_complete endpoint should send notifications to site owner/admins"""
+    mock_update_status = mocker.patch("websites.views.update_website_status")
+    settings.API_BEARER_TOKEN = "abc123"
+    website = permission_groups.websites[0]
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.post(
+        reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
+        data={"version": version, "status": f"{status}"},
+    )
+    mock_update_status.assert_called_once_with(website, version, status, mocker.ANY)
+    assert resp.status_code == 200
+
+
+@pytest.mark.parametrize("token", ["abc123", None])
+def test_websites_endpoint_pipeline_status_denied(
+    settings, drf_client, permission_groups, token
+):
+    """The pipeline_complete endpoint should raise a permission error without a valid token"""
+    settings.API_BEARER_TOKEN = token
+    website = permission_groups.websites[0]
+    drf_client.credentials(HTTP_AUTHORIZATION="Bearer wrong-token")
+    resp = drf_client.post(
+        reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
+        json={"version": VERSION_LIVE, "status": PUBLISH_STATUS_STARTED},
+    )
+    assert resp.status_code == 403

@@ -172,6 +172,12 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                 version = self.VERSION_LIVE
                 destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
                 static_api_url = settings.OCW_STUDIO_LIVE_URL
+            if settings.CONCOURSE_IS_PRIVATE_REPO:
+                markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.website.short_id}.git"
+                private_key_var = "\n      private_key: ((git-private-key))"
+            else:
+                markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.website.short_id}.git"
+                private_key_var = ""
             with open(
                 os.path.join(
                     os.path.dirname(__file__), "definitions/concourse/site-pipeline.yml"
@@ -179,8 +185,8 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
             ) as pipeline_config_file:
                 config_str = (
                     pipeline_config_file.read()
-                    .replace("((git-domain))", settings.GIT_DOMAIN)
-                    .replace("((github-org))", settings.GIT_ORGANIZATION)
+                    .replace("((markdown-uri))", markdown_uri)
+                    .replace("((git-private-key-var))", private_key_var)
                     .replace("((ocw-bucket))", destination_bucket)
                     .replace(
                         "((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH
@@ -201,6 +207,7 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     .replace("((purge-url))", f"purge/{self.website.name}")
                     .replace("((purge_header))", purge_header)
                     .replace("((version))", version)
+                    .replace("((api-token))", settings.API_BEARER_TOKEN or "")
                 )
             config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
             log.debug(config)
@@ -229,3 +236,7 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
     def get_build_status(self, build_id: int):
         """Retrieve the status of the build"""
         return self.api.get_build(build_id)["status"]
+
+    def abort_build(self, build_id: int):
+        """Abort a build"""
+        return self.api.abort_build(build_id)
