@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Version 0.37.2
+--------------
+
+- update typescript a little bit
+- upgrade ckeditor packages to the latest version
+- Use concourse webhooks plus periodic task to update publish status (#820)
+- make title the default text inside of a resource link
+- Ignore anything in parentheses for short_id (#830)
+- remove Dockerfile-node
+- remove an unnecessary step from our CI setup
+- fix callback url
+- conditionally set the modal titlee on menu page for editing, adding
+- Remove some unnecessary mocks of `global.fetch`
+
 Version 0.37.1 (Released November 30, 2021)
 --------------
 
