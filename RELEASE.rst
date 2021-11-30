@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.37.1
+Version 0.37.1 (Released November 30, 2021)
 --------------
 
 - add cross_site option to the Relation field
