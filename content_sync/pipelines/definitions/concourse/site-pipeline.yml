@@ -14,25 +14,58 @@ resources:
   - name: course-markdown
     type: git
     source:
-      uri: git@((git-domain)):((github-org))/((ocw-site-repo)).git
+      uri: ((markdown-uri))((git-private-key-var))
       branch: ((ocw-site-repo-branch))
-      private_key: ((git-private-key))
   - name: ocw-hugo-projects
     type: git
     source:
       uri: ((ocw-hugo-projects-uri))
       branch: ((ocw-hugo-projects-branch))
+  - name: ocw-studio-webhook
+    type: http-api
+    source:
+        uri: ((ocw-studio-url))/api/websites/((site-name))/pipeline_status/
+        method: POST
+        headers:
+            Authorization: "Bearer {bearer_token}"
+        json:
+            version: ((version))
+            status: "{status}"
+        bearer_token: ((api-token))
 jobs:
   - name: build-ocw-site
     serial: true
     plan:
+      - try:
+          put: ocw-studio-webhook
+          params:
+            status: "started"
       - get: ocw-hugo-themes
         trigger: true
+        timeout: 5m
+        on_failure:
+          try:
+            put: ocw-studio-webhook
+            params:
+                status: "errored"
       - get: ocw-hugo-projects
         trigger: true
+        timeout: 5m
+        on_failure:
+          try:
+            put: ocw-studio-webhook
+            params:
+                status: "errored"
       - get: course-markdown
         trigger: false
+        timeout: 5m
+        on_failure:
+          try:
+            put: ocw-studio-webhook
+            params:
+                status: "errored"
       - task: build-course-task
+        timeout: 20m
         params:
           OCW_STUDIO_BASE_URL: ((ocw-studio-url))
           STATIC_API_BASE_URL: ((static-api-base-url))
@@ -47,7 +80,6 @@ jobs:
             - name: course-markdown
             - name: ocw-hugo-projects
           outputs:
-            - name: ocw-studio-hook
             - name: course-markdown
             - name: ocw-hugo-themes
           run:
@@ -59,13 +91,17 @@ jobs:
               mkdir ../ocw-hugo-themes/theme
               tar -xvzf ../ocw-hugo-themes/ocw-hugo-themes-*.tgz -C ../ocw-hugo-themes/theme
               hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/theme
+        on_failure:
+          try:
+            put: ocw-studio-webhook
+            params:
+                status: "errored"
       - task: copy-s3-buckets
+        timeout: 20m
         config:
           inputs:
             - name: ocw-hugo-themes
             - name: course-markdown
-          outputs:
-            - name: ocw-studio-webhook
           platform: linux
           image_resource:
             type: docker-image
@@ -78,7 +114,13 @@ jobs:
               aws s3 sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
               aws s3 sync s3://((ocw-studio-bucket))/((site-url)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))
               if [[ "((base-url))" == "" ]]; then aws s3 sync ocw-hugo-themes/theme/base-theme/dist s3://((ocw-bucket)) --metadata site-id=((site-name)); fi
+        on_failure:
+          try:
+            put: ocw-studio-webhook
+            params:
+                status: "errored"
       - task: clear-cdn-cache
+        timeout: 5m
         config:
           platform: linux
           image_resource:
@@ -93,3 +135,13 @@ jobs:
               - -H
               - 'Fastly-Key: ((fastly.api_token))'((purge_header))
               - https://api.fastly.com/service/((fastly.service_id))/((purge-url))
+        on_success:
+          try:
+            put: ocw-studio-webhook
+            params:
+                status: "succeeded"
+        on_failure:
+          try:
+            put: ocw-studio-webhook
+            params:
+                status: "errored"

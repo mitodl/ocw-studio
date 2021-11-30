@@ -1,6 +1,7 @@
 """API functionality for websites"""
 import logging
 import os
+from datetime import datetime
 from typing import Dict, List, Optional
 from uuid import UUID
 
@@ -11,8 +12,14 @@ from magic import Magic
 from mitol.common.utils import max_or_none, now_in_utc
 from mitol.mail.api import get_message_sender
 
+from content_sync.constants import VERSION_DRAFT
 from users.models import User
-from websites.constants import CONTENT_FILENAME_MAX_LEN, RESOURCE_TYPE_VIDEO
+from websites.constants import (
+    CONTENT_FILENAME_MAX_LEN,
+    PUBLISH_STATUS_SUCCEEDED,
+    PUBLISH_STATUSES_FINAL,
+    RESOURCE_TYPE_VIDEO,
+)
 from websites.messages import (
     PreviewOrPublishFailureMessage,
     PreviewOrPublishSuccessMessage,
@@ -261,3 +268,38 @@ def reset_publishing_fields(website_name: str):
         latest_build_id_live=None,
         latest_build_id_draft=None,
     )
+
+
+def update_website_status(
+    website: Website, version: str, status: str, update_time: datetime
+):
+    """Update some status fields in Website"""
+    if version == VERSION_DRAFT:
+        user = website.draft_last_published_by
+        update_kwargs = {
+            "draft_publish_status": status,
+            "draft_publish_status_updated_on": update_time,
+        }
+        if status in PUBLISH_STATUSES_FINAL:
+            update_kwargs["draft_publish_date"] = update_time
+            update_kwargs["draft_last_published_by"] = None
+            if status != PUBLISH_STATUS_SUCCEEDED:
+                # Allow user to retry
+                update_kwargs["has_unpublished_draft"] = True
+    else:
+        user = website.live_last_published_by
+        update_kwargs = {
+            "live_publish_status": status,
+            "live_publish_status_updated_on": update_time,
+        }
+        if status in PUBLISH_STATUSES_FINAL:
+            update_kwargs["publish_date"] = update_time
+            update_kwargs["live_last_published_by"] = None
+            if status != PUBLISH_STATUS_SUCCEEDED:
+                # Allow user to retry
+                update_kwargs["has_unpublished_live"] = True
+    Website.objects.filter(name=website.name).update(**update_kwargs)
+    if status in PUBLISH_STATUSES_FINAL and user:
+        mail_on_publish(
+            website.name, version, status == PUBLISH_STATUS_SUCCEEDED, user.id
+        )

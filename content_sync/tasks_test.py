@@ -1,24 +1,21 @@
 """ Content sync task tests """
-import datetime
 from datetime import timedelta
 
 import pytest
-import pytz
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 from github.GithubException import RateLimitExceededException
 from mitol.common.utils import now_in_utc
 from pytest import fixture
+from requests import HTTPError
 
 from content_sync import tasks
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.factories import ContentSyncStateFactory
-from users.factories import UserFactory
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUS_NOT_STARTED,
-    PUBLISH_STATUS_PENDING,
     PUBLISH_STATUS_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
 )
@@ -338,82 +335,132 @@ def test_publish_website_batch(mocker, version, prepublish):
 
 
 @pytest.mark.parametrize(
-    "final_status",
+    "old_status, new_status, should_check, should_update",
     [
-        PUBLISH_STATUS_SUCCEEDED,
-        PUBLISH_STATUS_ERRORED,
-        PUBLISH_STATUS_ABORTED,
+        [PUBLISH_STATUS_SUCCEEDED, None, False, False],
+        [PUBLISH_STATUS_NOT_STARTED, PUBLISH_STATUS_STARTED, True, True],
+        [PUBLISH_STATUS_NOT_STARTED, PUBLISH_STATUS_NOT_STARTED, True, False],
     ],
 )
-@pytest.mark.parametrize("version", ["draft", "live"])
-@pytest.mark.parametrize("has_build_number", [True, False])
-@pytest.mark.parametrize("errored", [True, False])
-def test_poll_build_status_until_complete(  # pylint: disable=too-many-arguments
-    mocker, api_mock, final_status, version, has_build_number, errored
-):
-    """poll_build_status_until_complete should repeatedly poll until a finished state is reached"""
-    build_id = 123456
-    website = WebsiteFactory.create(
-        has_unpublished_live=False,
-        has_unpublished_draft=False,
-        latest_build_id_live=build_id if has_build_number else None,
-        latest_build_id_draft=build_id if has_build_number else None,
-        draft_publish_status=None,
-        live_publish_status=None,
+def test_check_incomplete_publish_build_statuses(
+    settings, mocker, api_mock, old_status, new_status, should_check, should_update
+):  # pylint:disable=too-many-arguments
+    """check_incomplete_publish_build_statuses should update statuses of pipeline builds"""
+    mock_update_status = mocker.patch("content_sync.tasks.update_website_status")
+    now = now_in_utc()
+    draft_site_in_query = WebsiteFactory.create(
+        draft_publish_status_updated_on=now
+        - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME + 5),
+        draft_publish_status=old_status,
+        latest_build_id_draft=1,
     )
-    user = UserFactory.create()
-    now_dates = [
-        datetime.datetime(2020, 1, 1, tzinfo=pytz.utc),
-        datetime.datetime(2020, 2, 1, tzinfo=pytz.utc),
-        datetime.datetime(2020, 3, 1, tzinfo=pytz.utc),
-        datetime.datetime(2020, 4, 1, tzinfo=pytz.utc),
-    ]
-    mocker.patch("content_sync.tasks.now_in_utc", side_effect=now_dates)
-    mail_mock = mocker.patch("content_sync.tasks.mail_on_publish")
-    get_build_status_mock = api_mock.get_sync_pipeline.return_value.get_build_status
-    get_build_status_mock.side_effect = [
-        PUBLISH_STATUS_NOT_STARTED,
-        PUBLISH_STATUS_STARTED,
-        PUBLISH_STATUS_PENDING,
-        final_status,
-    ]
-    if errored:
-        api_mock.get_sync_pipeline.side_effect = ZeroDivisionError
-    final_now_date = now_dates[-1]
-    expiration_datetime = final_now_date - datetime.timedelta(days=5)
-    tasks.poll_build_status_until_complete.delay(
-        website.name, version, expiration_datetime.isoformat(), user.id
+    draft_site_to_exclude = WebsiteFactory.create(
+        draft_publish_status_updated_on=now
+        - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME - 5),
+        draft_publish_status=old_status,
+        latest_build_id_draft=2,
+    )
+    live_site_in_query = WebsiteFactory.create(
+        live_publish_status_updated_on=now
+        - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME + 5),
+        live_publish_status=old_status,
+        latest_build_id_live=3,
+    )
+    live_site_excluded = WebsiteFactory.create(
+        live_publish_status_updated_on=now
+        - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME - 5),
+        live_publish_status=old_status,
+        latest_build_id_live=4,
+    )
+    api_mock.get_sync_pipeline.return_value.get_build_status.return_value = new_status
+    tasks.check_incomplete_publish_build_statuses.delay()
+    for website, version in [
+        (draft_site_in_query, VERSION_DRAFT),
+        (live_site_in_query, VERSION_LIVE),
+    ]:
+        if should_check:
+            api_mock.get_sync_pipeline.assert_any_call(website)
+            api_mock.get_sync_pipeline.return_value.get_build_status.assert_any_call(
+                getattr(website, f"latest_build_id_{version}")
+            )
+            if should_update:
+                mock_update_status.assert_any_call(
+                    website, version, new_status, mocker.ANY
+                )
+        else:
+            with pytest.raises(AssertionError):
+                api_mock.get_sync_pipeline.assert_any_call(website)
+            with pytest.raises(AssertionError):
+                mock_update_status.assert_any_call(
+                    website, version, new_status, mocker.ANY
+                )
+    for website, version in [
+        (draft_site_to_exclude, VERSION_DRAFT),
+        (live_site_excluded, VERSION_LIVE),
+    ]:
+        with pytest.raises(AssertionError):
+            api_mock.get_sync_pipeline.assert_any_call(website)
+        with pytest.raises(AssertionError):
+            mock_update_status.assert_any_call(website, version, new_status, mocker.ANY)
+
+
+def test_check_incomplete_publish_build_statuses_abort(settings, api_mock):
+    """A website whose publish status has not changed after the cutoff time should be aborted"""
+    stuck_website = WebsiteFactory.create(
+        draft_publish_status_updated_on=now_in_utc()
+        - timedelta(seconds=settings.PUBLISH_STATUS_CUTOFF + 5),
+        draft_publish_status=PUBLISH_STATUS_NOT_STARTED,
+        latest_build_id_draft=1,
+    )
+    api_mock.get_sync_pipeline.return_value.get_build_status.return_value = (
+        PUBLISH_STATUS_NOT_STARTED
+    )
+    tasks.check_incomplete_publish_build_statuses.delay()
+    api_mock.get_sync_pipeline.return_value.abort_build.assert_called_once_with(
+        stuck_website.latest_build_id_draft
+    )
+    stuck_website.refresh_from_db()
+    assert stuck_website.draft_publish_status == PUBLISH_STATUS_ABORTED
+
+
+def test_check_incomplete_publish_build_statuses_404(settings, mocker, api_mock):
+    """A website with a non-existent pipeline/build should have publishing status set to errored"""
+    mock_log = mocker.patch("content_sync.tasks.log.error")
+    bad_build_website = WebsiteFactory.create(
+        draft_publish_status_updated_on=now_in_utc()
+        - timedelta(seconds=settings.PUBLISH_STATUS_CUTOFF + 5),
+        draft_publish_status=PUBLISH_STATUS_NOT_STARTED,
+        latest_build_id_draft=1,
+    )
+    api_mock.get_sync_pipeline.return_value.get_build_status.side_effect = HTTPError(
+        response=mocker.Mock(status_code=404)
+    )
+    tasks.check_incomplete_publish_build_statuses.delay()
+    mock_log.assert_called_once_with(
+        "Could not find %s build %s for %s",
+        VERSION_DRAFT,
+        bad_build_website.latest_build_id_draft,
+        bad_build_website.name,
+    )
+    bad_build_website.refresh_from_db()
+    assert bad_build_website.draft_publish_status == PUBLISH_STATUS_ERRORED
+
+
+def test_check_incomplete_publish_build_statuses_500(settings, mocker, api_mock):
+    """An error should be logged and status not updated if querying for the build status returns a non-404 error"""
+    mock_log = mocker.patch("content_sync.tasks.log.exception")
+    website = WebsiteFactory.create(
+        live_publish_status_updated_on=now_in_utc()
+        - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME + 5),
+        live_publish_status=PUBLISH_STATUS_NOT_STARTED,
+        latest_build_id_live=1,
+    )
+    api_mock.get_sync_pipeline.return_value.get_build_status.side_effect = HTTPError(
+        response=mocker.Mock(status_code=500)
+    )
+    tasks.check_incomplete_publish_build_statuses.delay()
+    mock_log.assert_called_once_with(
+        "Error updating publishing status for website %s", website.name
     )
     website.refresh_from_db()
-    expected_final_status = (
-        PUBLISH_STATUS_ERRORED if errored or not has_build_number else final_status
-    )
-    if version == "draft":
-        assert website.draft_publish_status == expected_final_status
-        assert website.draft_publish_status_updated_on == final_now_date
-        assert website.draft_publish_date == final_now_date
-        assert website.has_unpublished_draft == (
-            expected_final_status != PUBLISH_STATUS_SUCCEEDED
-        )
-    else:
-        assert website.live_publish_status == expected_final_status
-        assert website.live_publish_status_updated_on == final_now_date
-        assert website.publish_date == final_now_date
-        assert website.has_unpublished_live == (
-            expected_final_status != PUBLISH_STATUS_SUCCEEDED
-        )
-
-    if has_build_number and not errored:
-        assert get_build_status_mock.call_count == 4
-        get_build_status_mock.assert_any_call(build_id)
-        api_mock.get_sync_pipeline.assert_any_call(website)
-        assert api_mock.get_sync_pipeline.call_count == len(now_dates)
-    else:
-        assert get_build_status_mock.called is False
-        assert api_mock.get_sync_pipeline.called is has_build_number
-    mail_mock.assert_called_once_with(
-        website.name,
-        version,
-        has_build_number and not errored and final_status == PUBLISH_STATUS_SUCCEEDED,
-        user.id,
-    )
+    assert website.live_publish_status == PUBLISH_STATUS_NOT_STARTED

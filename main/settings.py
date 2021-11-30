@@ -22,6 +22,8 @@ from mitol.common.envs import (
 from main.sentry import init_sentry
 
 
+# pylint: disable=too-many-lines
+
 VERSION = "0.37.0"
 
 SITE_ID = get_int(
@@ -580,6 +582,26 @@ UPDATE_MISSING_TRANSCRIPT_FREQUENCY = get_int(
     description="The frequency to check for transcripts for published videos with blank transcripts",
 )
 
+# Publish status settings
+PUBLISH_STATUS_WAIT_TIME = get_int(
+    name="PUBLISH_STATUS_WAIT_TIME",
+    default=600,
+    description="Number of seconds to wait for a publish status update before querying for it via api",
+    required=False,
+)
+PUBLISH_STATUS_CUTOFF = get_int(
+    name="PUBLISH_STATUS_CUTOFF",
+    default=1800,
+    description="Number of seconds to wait for a publish build to fail/succeed before assuming it's stuck",
+    required=False,
+)
+PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY = get_int(
+    name="PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY",
+    default=1800,
+    description="Frequency (in seconds) to run a check on potentially stalled publish builds",
+    required=False,
+)
+
 
 # Celery
 REDISCLOUD_URL = get_string(
@@ -639,6 +661,10 @@ CELERY_BEAT_SCHEDULE = {
     "attempt-to-update-missing-transcripts": {
         "task": "videos.tasks.attempt_to_update_missing_transcripts",
         "schedule": UPDATE_MISSING_TRANSCRIPT_FREQUENCY,
+    },
+    "check_incomplete_publish_build_statuses": {
+        "task": "content_sync.tasks.check_incomplete_publish_build_statuses",
+        "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,
     },
 }
 
@@ -817,7 +843,12 @@ CONCOURSE_HARD_PURGE = get_bool(
     description="Perform a hard purge of the fastly cache",
     required=False,
 )
-
+CONCOURSE_IS_PRIVATE_REPO = get_bool(
+    name="CONCOURSE_IS_PRIVATE_REPO",
+    default=True,
+    description="True if a git repo requires authentication to retrieve",
+    required=False,
+)
 # Git backend settings
 GIT_TOKEN = get_string(
     name="GIT_TOKEN",
@@ -978,14 +1009,4 @@ PREPUBLISH_ACTIONS = get_delimited_list(
     name="PREPUBLISH_ACTIONS",
     default=[],
     description="Actions to perform before publish",
-)
-MAX_WEBSITE_POLL_SECONDS = get_int(
-    name="MAX_WEBSITE_POLL_SECONDS",
-    default=2700,
-    description="Maximum number of seconds to poll after a website deploy",
-)  # 2700 is 45 minutes
-WEBSITE_POLL_FREQUENCY = get_int(
-    name="WEBSITE_POLL_FREQUENCY",
-    default=5,
-    description="Concourse poll frequency in seconds",
 )

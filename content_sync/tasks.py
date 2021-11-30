@@ -1,15 +1,16 @@
 """ Content sync tasks """
 import logging
+from datetime import timedelta
 from time import sleep
 from typing import List, Optional
 
 import celery
-from dateutil.parser import parse
 from django.conf import settings
 from django.db.models import F, Q
 from django.utils.module_loading import import_string
 from github.GithubException import RateLimitExceededException
 from mitol.common.utils import chunks, now_in_utc, pytz
+from requests import HTTPError
 
 from content_sync import api
 from content_sync.apis import github
@@ -18,11 +19,11 @@ from content_sync.decorators import single_website_task
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
 from main.celery import app
-from websites.api import mail_on_publish, reset_publishing_fields
+from websites.api import reset_publishing_fields, update_website_status
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
-    PUBLISH_STATUS_SUCCEEDED,
+    PUBLISH_STATUSES_FINAL,
 )
 from websites.models import Website
 
@@ -266,85 +267,81 @@ def sync_github_site_configs(url: str, files: List[str], commit: Optional[str] =
     github.sync_starter_configs(url, files, commit=commit)
 
 
-def _update_website_status(website_name, version, status, update_time):
-    """Update some status fields in Website"""
-    if version == VERSION_DRAFT:
-        update_kwargs = {
-            "draft_publish_status": status,
-            "draft_publish_status_updated_on": update_time,
-        }
-        if status in [
-            PUBLISH_STATUS_SUCCEEDED,
-            PUBLISH_STATUS_ERRORED,
-            PUBLISH_STATUS_ABORTED,
-        ]:
-            update_kwargs["draft_publish_date"] = update_time
-
-            if status != PUBLISH_STATUS_SUCCEEDED:
-                # Allow user to retry
-                update_kwargs["has_unpublished_draft"] = True
-    else:
-        update_kwargs = {
-            "live_publish_status": status,
-            "live_publish_status_updated_on": update_time,
-        }
-        if status in [
-            PUBLISH_STATUS_SUCCEEDED,
-            PUBLISH_STATUS_ERRORED,
-            PUBLISH_STATUS_ABORTED,
-        ]:
-            update_kwargs["publish_date"] = update_time
-
-            if status != PUBLISH_STATUS_SUCCEEDED:
-                # Allow user to retry
-                update_kwargs["has_unpublished_live"] = True
-
-    Website.objects.filter(name=website_name).update(**update_kwargs)
-
-
 @app.task(acks_late=True)
-def poll_build_status_until_complete(
-    website_name: str, version: str, datetime_to_expire: str, user_id: int
-):
+def check_incomplete_publish_build_statuses():
     """
-    Poll concourses REST API repeatedly until the build completes
+    Check statuses of concourse builds that have not been updated in a reasonable amount of time
     """
     now = now_in_utc()
-    try:
-        website = Website.objects.get(name=website_name)
-        build_id = (
-            website.latest_build_id_draft
-            if version == VERSION_DRAFT
-            else website.latest_build_id_live
+    wait_dt = now - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME)
+    cutoff_dt = now - timedelta(seconds=settings.PUBLISH_STATUS_CUTOFF)
+    for website in (
+        Website.objects.exclude(
+            (
+                Q(draft_publish_status__isnull=True)
+                | Q(draft_publish_status__contains=PUBLISH_STATUSES_FINAL)
+            )
+            & (
+                Q(live_publish_status__isnull=True)
+                | Q(live_publish_status__contains=PUBLISH_STATUSES_FINAL)
+            )
         )
-        if build_id is not None:
-            pipeline = api.get_sync_pipeline(website)
-            status = pipeline.get_build_status(build_id)
-            _update_website_status(website_name, version, status, now)
-
-            if status in [
-                PUBLISH_STATUS_SUCCEEDED,
-                PUBLISH_STATUS_ERRORED,
-                PUBLISH_STATUS_ABORTED,
-            ]:
-                mail_on_publish(
-                    website_name, version, status == PUBLISH_STATUS_SUCCEEDED, user_id
+        .filter(
+            Q(draft_publish_status_updated_on__lte=wait_dt)
+            | Q(live_publish_status_updated_on__lte=wait_dt)
+        )
+        .iterator()
+    ):
+        try:
+            versions_to_check = []
+            if (
+                website.draft_publish_status not in PUBLISH_STATUSES_FINAL
+                and website.draft_publish_status_updated_on
+                and website.draft_publish_status_updated_on <= wait_dt
+            ):
+                versions_to_check.append(
+                    (
+                        VERSION_DRAFT,
+                        website.draft_publish_status_updated_on,
+                        website.draft_publish_status,
+                    )
                 )
-                return
-    except:  # pylint: disable=bare-except
-        log.exception(
-            "Error running poll_build_status_until_complete for website %s, version %s",
-            website_name,
-            version,
-        )
-
-    if now < parse(datetime_to_expire):
-        # if not past expiration date, check again in 10 seconds
-        poll_build_status_until_complete.apply_async(
-            args=[website_name, version, datetime_to_expire, user_id],
-            countdown=settings.WEBSITE_POLL_FREQUENCY,
-        )
-    else:
-        # if past the expiration date, assume something went wrong
-        mail_on_publish(website_name, version, False, user_id)
-        _update_website_status(website_name, version, PUBLISH_STATUS_ERRORED, now)
+            if (
+                website.live_publish_status not in PUBLISH_STATUSES_FINAL
+                and website.live_publish_status_updated_on
+                and website.live_publish_status_updated_on <= wait_dt
+            ):
+                versions_to_check.append(
+                    (
+                        VERSION_LIVE,
+                        website.live_publish_status_updated_on,
+                        website.live_publish_status,
+                    )
+                )
+            for version, update_dt, last_status in versions_to_check:
+                build_id = getattr(website, f"latest_build_id_{version}")
+                if build_id is not None:
+                    pipeline = api.get_sync_pipeline(website)
+                    try:
+                        status = pipeline.get_build_status(build_id)
+                    except HTTPError as err:
+                        if err.response.status_code == 404:
+                            log.error(
+                                "Could not find %s build %s for %s",
+                                version,
+                                build_id,
+                                website.name,
+                            )
+                            status = PUBLISH_STATUS_ERRORED
+                        else:
+                            raise
+                    if status not in PUBLISH_STATUSES_FINAL and update_dt <= cutoff_dt:
+                        # Abort so another attempt can be made
+                        pipeline.abort_build(build_id)
+                        status = PUBLISH_STATUS_ABORTED
+                    if status != last_status:
+                        update_website_status(website, version, status, now)
+        except:  # pylint: disable=bare-except
+            log.exception(
+                "Error updating publishing status for website %s", website.name
+            )

@@ -2,7 +2,6 @@
 import json
 import logging
 import os
-from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -23,7 +22,6 @@ from content_sync.api import (
     update_website_backend,
 )
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from content_sync.tasks import poll_build_status_until_complete
 from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
 from main import features
@@ -35,6 +33,7 @@ from websites import constants
 from websites.api import (
     get_valid_new_filename,
     unassigned_youtube_ids,
+    update_website_status,
     videos_missing_captions,
 )
 from websites.constants import (
@@ -51,6 +50,7 @@ from websites.models import (
     WebsiteStarter,
 )
 from websites.permissions import (
+    BearerTokenPermission,
     HasWebsiteCollaborationPermission,
     HasWebsiteCollectionItemPermission,
     HasWebsiteCollectionPermission,
@@ -184,16 +184,9 @@ class WebsiteViewSet(
                 draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
                 draft_publish_status_updated_on=now_in_utc(),
                 latest_build_id_draft=None,
+                draft_last_published_by=request.user,
             )
             trigger_publish(website.name, VERSION_DRAFT)
-            poll_build_status_until_complete.delay(
-                website.name,
-                VERSION_DRAFT,
-                (
-                    timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS) + now_in_utc()
-                ).isoformat(),
-                request.user.id,
-            )
             return Response(
                 status=200,
                 data={"details": message},
@@ -220,16 +213,9 @@ class WebsiteViewSet(
                 live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
                 live_publish_status_updated_on=now_in_utc(),
                 latest_build_id_live=None,
+                live_last_published_by=request.user,
             )
             trigger_publish(website.name, VERSION_LIVE)
-            poll_build_status_until_complete.delay(
-                website.name,
-                VERSION_LIVE,
-                (
-                    timedelta(seconds=settings.MAX_WEBSITE_POLL_SECONDS) + now_in_utc()
-                ).isoformat(),
-                request.user.id,
-            )
             return Response(
                 status=200,
                 data={"details": ""},
@@ -237,6 +223,16 @@ class WebsiteViewSet(
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error publishing %s", name)
             return Response(status=500, data={"details": str(exc)})
+
+    @action(detail=True, methods=["post"], permission_classes=[BearerTokenPermission])
+    def pipeline_status(self, request, name=None):
+        """Process webhook requests from concourse pipeline runs"""
+        website = get_object_or_404(Website, name=name)
+        data = request.data
+        version = data["version"]
+        publish_status = data.get("status")
+        update_website_status(website, version, publish_status, now_in_utc())
+        return Response(status=200)
 
 
 class WebsiteStarterViewSet(

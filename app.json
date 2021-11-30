@@ -79,6 +79,10 @@
       "description": "Perform a hard purge of the fastly cache",
       "required": false
     },
+    "CONCOURSE_IS_PRIVATE_REPO": {
+      "description": "True if a git repo requires authentication to retrieve",
+      "required": false
+    },
     "CONCOURSE_PASSWORD": {
       "description": "The concourse-ci login password",
       "required": false
@@ -205,10 +209,6 @@
     },
     "MAX_S3_GET_ITERATIONS": {
       "description": "Max retry attempts to get an S3 object",
-      "required": false
-    },
-    "MAX_WEBSITE_POLL_SECONDS": {
-      "description": "Maximum number of seconds to poll after a website deploy",
       "required": false
     },
     "MEDIA_ROOT": {
@@ -352,6 +352,18 @@
       "description": "Actions to perform before publish",
       "required": false
     },
+    "PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY": {
+      "description": "Frequency (in seconds) to run a check on potentially stalled publish builds",
+      "required": false
+    },
+    "PUBLISH_STATUS_CUTOFF": {
+      "description": "Number of seconds to wait for a publish build to fail/succeed before assuming it's stuck",
+      "required": false
+    },
+    "PUBLISH_STATUS_WAIT_TIME": {
+      "description": "Number of seconds to wait for a publish status update before querying for it via api",
+      "required": false
+    },
     "REDISCLOUD_URL": {
       "description": "RedisCloud connection url",
       "required": false
@@ -475,10 +487,6 @@
     },
     "VIDEO_S3_TRANSCODE_PREFIX": {
       "description": "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert",
-      "required": false
-    },
-    "WEBSITE_POLL_FREQUENCY": {
-      "description": "Concourse poll frequency in seconds",
       "required": false
     },
     "YT_ACCESS_TOKEN": {
