@@ -4,9 +4,11 @@ from types import SimpleNamespace
 import pytest
 from django.db.models.signals import post_save
 from factory.django import mute_signals
+from mitol.common.utils import now_in_utc
 
 from content_sync import api
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from websites.constants import PUBLISH_STATUS_NOT_STARTED
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
@@ -216,6 +218,7 @@ def test_create_website_publishing_pipeline_disabled(settings, mocker):
 @pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
 @pytest.mark.parametrize("has_api", [True, False])
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
+@pytest.mark.parametrize("status", [None, PUBLISH_STATUS_NOT_STARTED])
 def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-arguments
     settings,
     mocker,
@@ -224,10 +227,15 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     prepublish_actions,
     has_api,
     version,
+    status,
 ):
     """Verify that the appropriate backend calls are made by the publish_website function"""
     settings.PREPUBLISH_ACTIONS = prepublish_actions
     website = WebsiteFactory.create()
+    setattr(website, f"{version}_publish_status", status)
+    if status:
+        setattr(website, f"{version}_publish_status_updated_on", now_in_utc())
+    website.save()
     build_id = 123456
     pipeline_api = mocker.Mock() if has_api else None
     backend = mock_api_funcs.mock_get_backend.return_value
@@ -247,6 +255,12 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     pipeline.unpause_pipeline.assert_called_once_with(version)
     website.refresh_from_db()
     assert getattr(website, f"latest_build_id_{version}") == build_id
+    assert getattr(website, f"{version}_publish_status") == PUBLISH_STATUS_NOT_STARTED
+    assert getattr(website, f"has_unpublished_{version}") is (
+        status == PUBLISH_STATUS_NOT_STARTED
+    )
+    assert getattr(website, f"{version}_last_published_by") is None
+    assert getattr(website, f"{version}_publish_status_updated_on") is not None
     if len(prepublish_actions) > 0 and prepublish:
         mock_api_funcs.mock_import_string.assert_any_call("some.Action")
         mock_api_funcs.mock_import_string.return_value.assert_any_call(website)

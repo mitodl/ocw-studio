@@ -288,6 +288,7 @@ def test_websites_endpoint_preview(
     assert website.has_unpublished_draft is False
     assert website.draft_publish_status == constants.PUBLISH_STATUS_NOT_STARTED
     assert website.draft_publish_status_updated_on == now
+    assert website.draft_last_published_by == editor
     assert website.latest_build_id_draft is None
 
 
@@ -364,6 +365,7 @@ def test_websites_endpoint_publish(  # pylint: disable=too-many-locals
         expected_msg = ""
         mock_publish_website.assert_called_once_with(website.name, VERSION_LIVE)
         assert website.has_unpublished_live is False
+        assert website.live_last_published_by == admin
         assert website.live_publish_status == constants.PUBLISH_STATUS_NOT_STARTED
         assert website.live_publish_status_updated_on == now
         assert website.latest_build_id_live is None
