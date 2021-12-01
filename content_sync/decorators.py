@@ -2,7 +2,7 @@
 import functools
 import logging
 from time import sleep
-from typing import Callable
+from typing import Callable, Optional
 
 from django.conf import settings
 from github.GithubException import RateLimitExceededException
@@ -77,10 +77,10 @@ def check_sync_state(func: Callable) -> Callable:
     return wrapper
 
 
-def single_website_task(timeout: int) -> Callable:
+def single_task(timeout: int, raise_block: Optional[bool] = True) -> Callable:
     """
-    Only allow one instance of a website task to run concurrently.
-    Assumes first arg is the website name.
+    Only allow one instance of a task to run concurrently, based on the task name
+    and a first arg, if supplied (like Website.name).
     Based on https://bit.ly/2RO2aav
     """
 
@@ -88,15 +88,16 @@ def single_website_task(timeout: int) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             has_lock = False
-            lock_id = f"{func.__name__}-website-{args[0]}"
+            lock_id = f"{func.__name__}-id-{args[0] if args else 'single'}"
             lock = app.backend.client.lock(lock_id, timeout=timeout)
-
             try:
                 has_lock = lock.acquire(blocking=False)
                 if has_lock:
                     return_value = func(*args, **kwargs)
                 else:
-                    raise BlockingIOError()
+                    if raise_block:
+                        raise BlockingIOError()
+                    return_value = None
             finally:
                 if has_lock and lock.locked():
                     lock.release()

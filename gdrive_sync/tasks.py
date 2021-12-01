@@ -7,9 +7,10 @@ import celery
 import pytz
 from celery import chain, chord
 from dateutil.parser import parse
+from django.conf import settings
 from mitol.common.utils import chunks, now_in_utc
 
-from content_sync.decorators import single_website_task
+from content_sync.decorators import single_task
 from content_sync.tasks import sync_website_content
 from gdrive_sync import api
 from gdrive_sync.constants import (
@@ -46,6 +47,7 @@ def process_drive_file(drive_file_id: str):
 
 
 @app.task(bind=True)
+@single_task(timeout=settings.DRIVE_IMPORT_RECENT_FILES_SECONDS, raise_block=False)
 def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-locals
     """
     Query the Drive API for recently uploaded or modified files and process them
@@ -96,7 +98,7 @@ def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-
 
 
 @app.task(bind=True, acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=30)
-@single_website_task(30)
+@single_task(30)
 def import_website_files(self, name: str):
     """Query the Drive API for all children of a website folder and import the files"""
     if not api.is_gdrive_enabled():

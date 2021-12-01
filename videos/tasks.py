@@ -10,6 +10,7 @@ from django.db.models import Q
 from googleapiclient.errors import HttpError
 from mitol.mail.api import get_message_sender
 
+from content_sync.decorators import single_task
 from gdrive_sync.models import DriveFile
 from main.celery import app
 from main.constants import STATUS_CREATED
@@ -39,6 +40,7 @@ log = logging.getLogger()
 
 
 @app.task(bind=True)
+@single_task(timeout=settings.YT_UPLOAD_FREQUENCY, raise_block=False)
 def upload_youtube_videos(self):
     """
     Upload public videos one at a time to YouTube (if not already there) until the daily maximum is reached.
@@ -116,6 +118,7 @@ def start_transcript_job(video_id: int):
 
 
 @app.task
+@single_task(timeout=settings.YT_STATUS_UPDATE_FREQUENCY, raise_block=False)
 def update_youtube_statuses():
     """
     Update the status of recently uploaded YouTube videos if complete
@@ -206,6 +209,9 @@ def delete_s3_objects(
 
 
 @app.task(acks_late=True)
+@single_task(
+    timeout=settings.UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY, raise_block=False
+)
 def update_transcripts_for_video(video_id: int):
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
@@ -249,6 +255,9 @@ def update_transcripts_for_video(video_id: int):
 
 
 @app.task(acks_late=True)
+@single_task(
+    timeout=settings.UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY, raise_block=False
+)
 def update_transcripts_for_updated_videos():
     """Check 3play for transcripts with 'updated' tag and update their transcripts"""
     updated_files_response = threeplay_api.threeplay_updated_media_file_request()
@@ -269,6 +278,7 @@ def update_transcripts_for_updated_videos():
 
 
 @app.task(acks_late=True)
+@single_task(timeout=settings.UPDATE_MISSING_TRANSCRIPT_FREQUENCY, raise_block=False)
 def attempt_to_update_missing_transcripts():
     """Check 3play for transcripts for published videos without transcripts"""
     videos = Video.objects.filter(
