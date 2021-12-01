@@ -15,7 +15,7 @@ from requests import HTTPError
 from content_sync import api
 from content_sync.apis import github
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from content_sync.decorators import single_website_task
+from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
 from main.celery import app
@@ -173,7 +173,7 @@ def upsert_pipelines(
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
-@single_website_task(10)
+@single_task(10)
 def sync_website_content(website_name: str):
     """ Commit any unsynced files to the backend for a website """
     try:
@@ -189,7 +189,7 @@ def sync_website_content(website_name: str):
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
-@single_website_task(10)
+@single_task(10)
 def publish_website_backend_draft(website_name: str):
     """
     Create a new backend preview for the website.
@@ -203,7 +203,7 @@ def publish_website_backend_draft(website_name: str):
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
-@single_website_task(10)
+@single_task(10)
 def publish_website_backend_live(website_name: str):
     """
     Create a new backend release for the website.
