@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from django.conf import settings
 from django.utils.module_loading import import_string
+from mitol.common.utils import now_in_utc
 
 from content_sync import tasks
 from content_sync.backends.base import BaseSyncBackend
@@ -11,6 +12,7 @@ from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
+from websites.constants import PUBLISH_STATUS_NOT_STARTED
 from websites.models import Website, WebsiteContent
 
 
@@ -98,5 +100,19 @@ def publish_website(  # pylint: disable=too-many-arguments
     pipeline = get_sync_pipeline(website, api=pipeline_api)
     pipeline.unpause_pipeline(version)
     build_id = pipeline.trigger_pipeline_build(version)
-    update_kwargs = {f"latest_build_id_{version}": build_id}
+    update_kwargs = {
+        f"latest_build_id_{version}": build_id,
+    }
+    if (
+        getattr(website, f"{version}_publish_status") != PUBLISH_STATUS_NOT_STARTED
+        or getattr(website, f"{version}_publish_status_updated_on") is None
+    ):
+        # Need to update additional fields
+        update_kwargs = {
+            f"{version}_publish_status": PUBLISH_STATUS_NOT_STARTED,
+            f"{version}_publish_status_updated_on": now_in_utc(),
+            f"{version}_last_published_by": None,
+            f"has_unpublished_{version}": False,
+            **update_kwargs,
+        }
     Website.objects.filter(pk=website.pk).update(**update_kwargs)
