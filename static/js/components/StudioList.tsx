@@ -78,7 +78,7 @@ export function StudioListItem(props: ListItemProps): JSX.Element {
           </div>
           <div>
             {children}
-            {menuOptions ? (
+            {menuOptions && menuOptions.length > 0 ? (
               <div className="dropdown">
                 <button
                   className="transparent-button"
