@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.37.2
+Version 0.37.2 (Released December 02, 2021)
 --------------
 
 - update typescript a little bit
