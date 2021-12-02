@@ -75,6 +75,11 @@ describe("SiteCollaboratorList", () => {
     expect(items.at(0).prop("menuOptions")).toHaveLength(2)
     // Last collaborator in list should not be editable
     expect(items.at(numCollaborators - 1).prop("menuOptions")).toHaveLength(0)
+    // Should be 6 StudioListItems but only 5 menu buttons (none for the permanent admin)
+    expect(items.length).toBe(6)
+    expect(wrapper.find(".transparent-button").length).toBe(
+      collaborators.length
+    )
   })
 
   it("the edit collaborator icon sets correct state and opens the modal", async () => {
