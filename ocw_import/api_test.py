@@ -23,7 +23,11 @@ from websites.constants import (
     CONTENT_TYPE_RESOURCE,
     WEBSITE_SOURCE_OCW_IMPORT,
 )
-from websites.factories import WebsiteFactory, WebsiteStarterFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.models import Website, WebsiteContent
 
 
@@ -102,6 +106,17 @@ def test_import_ocw2hugo_course_content(mocker, settings):
         "lec1",
         lecture_pdf.text_id,
     )
+
+    # Any existing content not imported should be deleted
+    obsolete_id = "testing123"
+    WebsiteContentFactory.create(website=website, text_id=obsolete_id)
+    assert WebsiteContent.objects.filter(website=website, text_id=obsolete_id).exists()
+    import_ocw2hugo_course(
+        MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key, starter_id=website_starter.id
+    )
+    assert not WebsiteContent.objects.filter(
+        website=website, text_id=obsolete_id
+    ).exists()
 
 
 @mock_s3
