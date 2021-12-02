@@ -82,13 +82,18 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_str=""):
 
 def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many-locals
     """
-    Import all content files for an ocw course from hugo2ocw output
+    Import all content files for an ocw course from hugo2ocw output,
+    and delete any obsolete content from prior imports
 
     Args:
         bucket (s3.Bucket): S3 bucket
         prefix (str): S3 prefix for filtering by course
         website (Website): Website to import content for
     """
+    prior_content = website.websitecontent_set.exclude(
+        type__in=[CONTENT_TYPE_NAVMENU, CONTENT_TYPE_METADATA, CONTENT_TYPE_INSTRUCTOR]
+    ).values_list("text_id", flat=True)
+    current_content = []
     site_prefix = f"{prefix}{website.name}"
     for resp in bucket.meta.client.get_paginator("list_objects").paginate(
         Bucket=bucket.name, Prefix=f"{site_prefix}/content"
@@ -101,9 +106,13 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
             else:
                 filepath = obj["Key"]
             try:
-                convert_data_to_content(filepath, s3_content, website)
+                content = convert_data_to_content(filepath, s3_content, website)
+                if content:
+                    current_content.append(content.text_id)
             except:  # pylint:disable=bare-except
                 log.exception("Error saving WebsiteContent for %s", s3_key)
+    obsolete_content = list(set(prior_content) - set(current_content))
+    WebsiteContent.objects.filter(text_id__in=obsolete_content).delete()
 
 
 def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many-locals
