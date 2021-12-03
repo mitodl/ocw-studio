@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.37.3 (Released December 03, 2021)
+--------------
+
+- use task decorator to prevent multiple instances of recurring scheduled tasks from running at once (#832)
+- Populate additional fields when publishing via mass_publish (#840)
+- move from casual-browserify to the normal package
+
 Version 0.37.2 (Released December 02, 2021)
 --------------
 
