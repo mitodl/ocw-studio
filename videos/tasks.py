@@ -22,6 +22,7 @@ from videos.constants import (
     YouTubeStatus,
 )
 from videos.models import Video, VideoFile
+from videos.threeplay_api import is_threeplay_enabled
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
     YouTubeApi,
@@ -261,7 +262,7 @@ def update_transcripts_for_video(video_id: int):
 def update_transcripts_for_updated_videos():
     """Check 3play for transcripts with 'updated' tag and update their transcripts"""
     updated_files_response = threeplay_api.threeplay_updated_media_file_request()
-    updated_video_data = updated_files_response.get("data")
+    updated_video_data = updated_files_response.get("data") if updated_files_response else None
     if not updated_video_data:
         return
 
@@ -303,7 +304,6 @@ def attempt_to_update_missing_transcripts():
 @app.task(acks_late=True)
 def update_transcripts_for_website(website: Website):
     """Update transcripts from 3play for every video for a website"""
-
     for video in website.videos.all():
         update_transcripts_for_video(video.id)
 

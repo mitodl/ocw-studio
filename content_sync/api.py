@@ -5,10 +5,13 @@ from typing import List, Optional
 from django.conf import settings
 from django.utils.module_loading import import_string
 from mitol.common.utils import now_in_utc
+from videos.youtube import update_youtube_metadata
+
+from videos.tasks import update_transcripts_for_website
 
 from content_sync import tasks
 from content_sync.backends.base import BaseSyncBackend
-from content_sync.constants import VERSION_DRAFT
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
@@ -88,8 +91,8 @@ def publish_website(  # pylint: disable=too-many-arguments
     """Publish a live or draft version of a website"""
     website = Website.objects.get(name=name)
     if prepublish:
-        for action in settings.PREPUBLISH_ACTIONS:
-            import_string(action)(website)
+        update_transcripts_for_website(website)
+        update_youtube_metadata(website, privacy=("public" if version == VERSION_LIVE else None))
     backend = get_sync_backend(website)
     backend.sync_all_content_to_backend()
     if version == VERSION_DRAFT:
