@@ -63,7 +63,8 @@ def sync_unsynced_websites(
         return
     for website_name in (  # pylint:disable=too-many-nested-blocks
         ContentSyncState.objects.exclude(
-            Q(current_checksum=F("synced_checksum")) & Q(synced_checksum__isnull=False)
+            Q(current_checksum=F("synced_checksum"), content__deleted__isnull=True)
+            & Q(synced_checksum__isnull=False)
         )
         .values_list("content__website__name", flat=True)
         .distinct()
@@ -90,7 +91,9 @@ def sync_unsynced_websites(
                             sleep(5)
                 if create_backends or backend.backend_exists():
                     backend.create_website_in_backend()
-                    backend.sync_all_content_to_backend(delete=delete)
+                    backend.sync_all_content_to_backend()
+                    if delete:
+                        backend.delete_orphaned_content_in_backend()
             except RateLimitExceededException:
                 # Too late, can't even check rate limit reset time now so bail
                 raise
