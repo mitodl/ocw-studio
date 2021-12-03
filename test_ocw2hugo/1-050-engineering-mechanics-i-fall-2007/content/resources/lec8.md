@@ -8,5 +8,5 @@ uid: 68ebacfa-8ae3-6eeb-8d8b-4e2fb6ef0ad7
 resourcetype: Document
 file_type: application/pdf
 file: >-
-  https://open-learning-course-data-production.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/68ebacfa8ae36eeb8d8b4e2fb6ef0ad7_lec8.pdf
+  https://open-learning-course-data-rc.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/68ebacfa8ae36eeb8d8b4e2fb6ef0ad7_lec8.pdf
 ---

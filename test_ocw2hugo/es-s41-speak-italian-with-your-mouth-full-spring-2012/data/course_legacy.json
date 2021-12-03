@@ -1,0 +1,78 @@
+{
+  "course_title": "Speak Italian With Your Mouth Full",
+  "course_description": "The participants in this seminar will dive into learning basic conversational Italian, Italian culture, and the Mediterranean diet. Each class is based on the preparation of a delicious dish and on the bite-sized acquisition of parts of the Italian language and culture.  A good diet is not based on recipes only, it is also rooted in healthy habits and in culture. At the end of the seminar the participants will be able to cook some healthy and tasty recipes  and to understand and speak basic Italian.\n",
+  "course_image": {
+    "content": "d0dde848-2e07-9ce6-2101-32b295d34fa3",
+    "website": "es-s41-speak-italian-with-your-mouth-full-spring-2012"
+  },
+  "course_image_thumbnail": {
+    "content": "317de1a2-1f8f-f859-9c54-8edb446eae6a",
+    "website": "es-s41-speak-italian-with-your-mouth-full-spring-2012"
+  },
+  "instructors": [
+    {
+      "instructor": "Dr. Paola Rebusco",
+      "url": "/search/?q=%22Dr.%20Paola%20Rebusco%22",
+      "first_name": "Paola",
+      "last_name": "Rebusco",
+      "middle_initial": "",
+      "salutation": "Dr.",
+      "uid": "4dbd4e12-512c-cc50-a432-cdcad687f462"
+    },
+    {
+      "instructor": "Graham Ramsay",
+      "url": "/search/?q=%22Graham%20Ramsay%22",
+      "first_name": "Graham",
+      "last_name": "Ramsay",
+      "middle_initial": "Gordon",
+      "salutation": "",
+      "uid": "efe03f06-390b-ff9a-dae7-b85b7656b950"
+    }
+  ],
+  "learning_resource_types": [
+    "Lecture Videos",
+    "Activity Assignments"
+  ],
+  "topics": [
+    [
+      "Humanities",
+      "Language",
+      "Italian"
+    ],
+    [
+      "Society",
+      "European and Russian Studies"
+    ]
+  ],
+  "primary_course_number": "ES.S41",
+  "extra_course_numbers": [],
+  "term": "Spring",
+  "year": "2012",
+  "level": [
+    "Undergraduate"
+  ],
+  "other_versions": [],
+  "archived_versions": [],
+  "open_learning_library_versions": [],
+  "course_image_url": "https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/d0dde8482e079ce6210132b295d34fa3_es-s41s12.jpg",
+  "course_thumbnail_image_url": "https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/317de1a21f8ff8599c548edb446eae6a_es-s41s12-th.jpg",
+  "course_image_alternate_text": "A woman poses in a kitchen with various items like olive oil, garlic and onions.",
+  "course_image_caption_text": "Instructor Dr. Paola Rebusco used cooking to help her students learn to speak Italian. (Image courtesy of Graham Gordon Ramsay. Used with permission.)",
+  "publishdate": "2013-08-06T11:57:40-04:00",
+  "departments": [
+    {
+      "department": "Experimental Study Group",
+      "url": "/search/?d=Experimental%20Study%20Group"
+    }
+  ],
+  "course_features": [
+    {
+      "feature": "Lecture Videos",
+      "url": "video_galleries/video-lectures"
+    },
+    {
+      "feature": "Activity Assignments",
+      "url": "pages/lesson-1/language-instruction"
+    }
+  ]
+}
