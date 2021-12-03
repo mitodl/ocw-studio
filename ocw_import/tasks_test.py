@@ -26,6 +26,7 @@ ALL_COURSES_PATHS = [
     "1-050-engineering-mechanics-i-fall-2007/data/course_legacy.json",
     "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/data/course_legacy.json",
     "biology/data/course_legacy.json",
+    "es-s41-speak-italian-with-your-mouth-full-spring-2012/data/course_legacy.json",
 ]
 SINGLE_COURSE_PATHS = [
     "1-050-engineering-mechanics-i-fall-2007/data/course_legacy.json"
@@ -55,7 +56,7 @@ def test_import_ocw2hugo_course_paths(mocker, paths, course_starter, settings):
 @mock_s3
 @pytest.mark.parametrize(
     "chunk_size, filter_str, limit, call_count",
-    [[1, None, None, 3], [1, "1-050", None, 1], [2, None, None, 2], [1, None, 1, 1]],
+    [[1, None, None, 4], [1, "1-050", None, 1], [2, None, None, 2], [1, None, 1, 1]],
 )
 @pytest.mark.parametrize("delete_unpublished", [True, False])
 def test_import_ocw2hugo_courses(
@@ -109,9 +110,9 @@ def test_delete_unpublished_courses(settings, course_starter):
             course_path,
             starter_id=course_starter.id,
         )
-    assert Website.objects.all().count() == 3
+    assert Website.objects.all().count() == 4
     delete_unpublished_courses(paths=ALL_COURSES_PATHS)
-    assert Website.objects.all().count() == 3
+    assert Website.objects.all().count() == 4
     delete_unpublished_courses(paths=SINGLE_COURSE_PATHS)
     assert Website.objects.all().count() == 2
 
