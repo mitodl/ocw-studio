@@ -55,40 +55,53 @@ export const getTransformedWebsiteName = (
   return transformedWebsiteKeys[0]
 }
 
+export type WebsiteListingParams = {
+  offset: number,
+  search?: string | null | undefined
+}
+
 export type WebsiteListingResponse = PaginatedResponse<Website>
 
 export type WebsitesListing = Record<string, PaginatedResponse<string>>
 
-export const websiteListingRequest = (offset: number): QueryConfig => ({
-  url:       siteApiListingUrl.query({ offset }).toString(),
-  transform: (body: WebsiteListingResponse) => {
-    const details = {}
-    for (const site of body.results) {
-      details[site.name] = site
-    }
+export const websiteListingRequest = (params: WebsiteListingParams): QueryConfig => {
+  const qsParams: Record<string, string | number> = { offset: params.offset }
+  let listingKey: string = params.offset.toString()
+  if (params.search) {
+    qsParams.search = params.search
+    // listingKey = `${listingKey}|${params.search}`
+  }
+  return {
+    url:       siteApiListingUrl.query(qsParams).toString(),
+    transform: (body: WebsiteListingResponse) => {
+      const details = {}
+      for (const site of body.results) {
+        details[site.name] = site
+      }
 
-    return {
-      websitesListing: {
-        [`${offset}`]: {
-          ...body,
-          results: body.results.map(result => result.name)
-        }
-      },
-      websiteDetails: details
-    }
-  },
-  update: {
-    websitesListing: (prev: WebsitesListing, next: WebsitesListing) => ({
-      ...prev,
-      ...next
-    }),
-    websiteDetails: (prev: WebsiteDetails, next: WebsiteDetails) => ({
-      ...prev,
-      ...next
-    })
-  },
-  force: true // try to prevent stale information
-})
+      return {
+        websitesListing: {
+          [listingKey]: {
+            ...body,
+            results: body.results.map(result => result.name)
+          }
+        },
+        websiteDetails: details
+      }
+    },
+    update: {
+      websitesListing: (prev: WebsitesListing, next: WebsitesListing) => ({
+        ...prev,
+        ...next
+      }),
+      websiteDetails: (prev: WebsiteDetails, next: WebsiteDetails) => ({
+        ...prev,
+        ...next
+      })
+    },
+    force: true // try to prevent stale information
+  }
+}
 
 export const websiteDetailRequest = (name: string): QueryConfig => ({
   url:       siteApiDetailUrl.param({ name }).toString(),

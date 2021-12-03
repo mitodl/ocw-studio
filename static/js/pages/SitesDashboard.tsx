@@ -6,6 +6,7 @@ import { Link, RouteComponentProps } from "react-router-dom"
 import PaginationControls from "../components/PaginationControls"
 
 import {
+  WebsiteListingParams,
   websiteListingRequest,
   WebsiteListingResponse
 } from "../query-configs/websites"
@@ -32,8 +33,16 @@ export default function SitesDashboard(
   const {
     location: { search }
   } = props
-  const offset = Number(new URLSearchParams(search).get("offset") ?? 0)
-  const [{ isPending }] = useRequest(websiteListingRequest(offset))
+  const qsParams = new URLSearchParams(search)
+  const offset = Number(qsParams.get("offset") ?? 0)
+  const listingParams: WebsiteListingParams = {
+    offset: offset
+  }
+  const searchString = qsParams.get("search")
+  if (searchString) {
+    listingParams.search = searchString
+  }
+  const [{ isPending }] = useRequest(websiteListingRequest(listingParams))
   const listing: WebsiteListingResponse = useSelector(getWebsiteListingCursor)(
     offset
   )
@@ -74,10 +83,10 @@ export default function SitesDashboard(
         <PaginationControls
           listing={listing}
           previous={sitesBaseUrl
-            .query({ offset: offset - WEBSITES_PAGE_SIZE })
+            .query({ ...listingParams, offset: offset - WEBSITES_PAGE_SIZE })
             .toString()}
           next={sitesBaseUrl
-            .query({ offset: offset + WEBSITES_PAGE_SIZE })
+            .query({ ...listingParams, offset: offset + WEBSITES_PAGE_SIZE })
             .toString()}
         />
       </div>
