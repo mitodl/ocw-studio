@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.37.4
+--------------
+
+- Do not show menu dropdown for global admins or site owner (#844)
+- Remove old pages and content (#843)
+
 Version 0.37.3 (Released December 03, 2021)
 --------------
 
