@@ -1,6 +1,7 @@
 """ Constants for websites """
 
 CONTENT_TYPE_PAGE = "page"
+CONTENT_TYPE_VIDEO_GALLERY = "video_gallery"
 CONTENT_TYPE_RESOURCE = "resource"
 CONTENT_TYPE_INSTRUCTOR = "instructor"
 CONTENT_TYPE_METADATA = "sitemetadata"
