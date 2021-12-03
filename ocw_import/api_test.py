@@ -374,6 +374,7 @@ def test_import_ocw2hugo_menu(settings, mocker):
         ]
     }
 
+
 @mock_s3
 def test_import_ocw2hugo_video_gallery(mocker, settings):
     """ Website publish date should be null if the JSON date can't be parsed """
@@ -382,5 +383,7 @@ def test_import_ocw2hugo_video_gallery(mocker, settings):
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
     mocker.patch("ocw_import.api.parse_date", side_effect=ValueError())
     import_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key)
-    video_lectures = WebsiteContent.objects.get(text_id="383b8d1c-30df-d781-cc05-c1c648453997")
+    video_lectures = WebsiteContent.objects.get(
+        text_id="383b8d1c-30df-d781-cc05-c1c648453997"
+    )
     assert video_lectures.type == "video_gallery"
