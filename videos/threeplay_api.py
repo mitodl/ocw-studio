@@ -8,7 +8,6 @@ from django.conf import settings
 from django.core.files import File
 
 from videos.constants import DESTINATION_YOUTUBE
-from videos.decorators import is_threeplay_enabled
 from videos.models import Video
 
 
@@ -50,7 +49,6 @@ def get_or_create_folder(name: str) -> int:
     return folder_id
 
 
-@is_threeplay_enabled
 def threeplay_updated_media_file_request() -> dict:
     """3play data request to get files with 'updated' tag"""
     payload = {"label": "updated", "api_key": settings.THREEPLAY_API_KEY}
@@ -62,7 +60,6 @@ def threeplay_updated_media_file_request() -> dict:
         return {}
 
 
-@is_threeplay_enabled
 def threeplay_upload_video_request(
     folder_name: str, youtube_id: str, title: str
 ) -> dict:
@@ -86,7 +83,6 @@ def threeplay_upload_video_request(
         return {}
 
 
-@is_threeplay_enabled
 def threeplay_order_transcript_request(video_id: int, threeplay_video_id: int) -> dict:
     """3play request to order a transcript"""
 
@@ -112,7 +108,6 @@ def threeplay_order_transcript_request(video_id: int, threeplay_video_id: int) -
         return {}
 
 
-@is_threeplay_enabled
 def threeplay_remove_tags(threeplay_video_id: int):
     """3play patch to remove tag from video file"""
     payload = {"label": "", "api_key": settings.THREEPLAY_API_KEY}
@@ -120,7 +115,6 @@ def threeplay_remove_tags(threeplay_video_id: int):
     requests.patch(url, payload)
 
 
-@is_threeplay_enabled
 def threeplay_transcript_api_request(youtube_id: str) -> dict:
     """3play data requst to get transcripts by youtube_id"""
     payload = {
@@ -156,9 +150,9 @@ def fetch_file(source_url: str) -> BytesIO:
     return file
 
 
-@is_threeplay_enabled
 def update_transcripts_for_video(video: Video) -> bool:
     """Download transcripts from 3play, upload them to s3 and update the Video file"""
+
     youtube_video_file = video.videofiles.filter(
         destination=DESTINATION_YOUTUBE
     ).first()

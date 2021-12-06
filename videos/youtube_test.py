@@ -9,6 +9,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from googleapiclient.errors import HttpError
 
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
 from videos.constants import DESTINATION_YOUTUBE
@@ -300,8 +301,19 @@ def test_mail_youtube_upload_success(settings, mock_mail):
 @pytest.mark.parametrize("video_file_exists", [True, False])
 @pytest.mark.parametrize("youtube_enabled", [True, False])
 @pytest.mark.parametrize("is_ocw", [True, False])
+@pytest.mark.parametrize(
+    "version, privacy", [[VERSION_DRAFT, None], [VERSION_LIVE, "public"]]
+)
 def test_update_youtube_metadata(  # pylint:disable=too-many-arguments
-    mocker, settings, source, environment, video_file_exists, youtube_enabled, is_ocw
+    mocker,
+    settings,
+    source,
+    environment,
+    video_file_exists,
+    youtube_enabled,
+    is_ocw,
+    version,
+    privacy,
 ):
     """ Check that youtube.update_video is called for appropriate resources and not others"""
     settings.ENVIRONMENT = environment
@@ -332,7 +344,7 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments
                 destination=DESTINATION_YOUTUBE,
                 destination_id=youtube_id,
             )
-    update_youtube_metadata(website, privacy="public")
+    update_youtube_metadata(website, version=version)
     if youtube_enabled and is_ocw:
         mock_youtube.assert_called_once()
         # Don't update metadata for imported ocw course videos except on production
@@ -347,7 +359,7 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments
                     WebsiteContent.objects.get(
                         website=website, metadata__video_metadata__youtube_id=youtube_id
                     ),
-                    privacy="public",
+                    privacy=privacy,
                 )
         else:
             mock_update_video.assert_not_called()

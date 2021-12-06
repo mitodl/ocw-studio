@@ -263,7 +263,9 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     assert getattr(website, f"{version}_publish_status_updated_on") is not None
     if len(prepublish_actions) > 0 and prepublish:
         mock_api_funcs.mock_import_string.assert_any_call("some.Action")
-        mock_api_funcs.mock_import_string.return_value.assert_any_call(website)
+        mock_api_funcs.mock_import_string.return_value.assert_any_call(
+            website, version=version
+        )
 
 
 def test_publish_website_error(mock_api_funcs, settings):
