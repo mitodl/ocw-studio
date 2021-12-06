@@ -354,7 +354,7 @@ def test_check_incomplete_publish_build_statuses(
     should_check,
     should_update,
     pipeline,
-):  # pylint:disable=too-many-arguments
+):  # pylint:disable=too-many-arguments,too-many-locals
     """check_incomplete_publish_build_statuses should update statuses of pipeline builds"""
     settings.CONTENT_SYNC_PIPELINE = pipeline
     mock_update_status = mocker.patch("content_sync.tasks.update_website_status")
