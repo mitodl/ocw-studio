@@ -1,11 +1,12 @@
 import React from "react"
 import { useSelector } from "react-redux"
 import { useRequest } from "redux-query-react"
-import { Link, RouteComponentProps } from "react-router-dom"
+import { Link, useHistory, useLocation } from "react-router-dom"
 
 import PaginationControls from "../components/PaginationControls"
 
 import {
+  WebsiteListingParams,
   websiteListingRequest,
   WebsiteListingResponse
 } from "../query-configs/websites"
@@ -15,6 +16,8 @@ import { WEBSITES_PAGE_SIZE } from "../constants"
 import { Website } from "../types/websites"
 import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 import { StudioList, StudioListItem } from "../components/StudioList"
+import { useTextInputState } from "../hooks/state"
+import { useDebouncedEffect } from "../hooks/effect"
 
 export function siteDescription(site: Website): string | null {
   const courseNumber = (site.metadata?.course_numbers ?? [])[0]
@@ -26,16 +29,46 @@ export function siteDescription(site: Website): string | null {
   return null
 }
 
-export default function SitesDashboard(
-  props: RouteComponentProps<Record<string, never>>
-): JSX.Element {
-  const {
-    location: { search }
-  } = props
-  const offset = Number(new URLSearchParams(search).get("offset") ?? 0)
-  const [{ isPending }] = useRequest(websiteListingRequest(offset))
+export default function SitesDashboard(): JSX.Element {
+  const { search, pathname } = useLocation()
+  const history = useHistory()
+  const qsParams = new URLSearchParams(search)
+
+  const offset = Number(qsParams.get("offset") ?? 0)
+  const searchString = qsParams.get("q")
+
+  const listingParams: WebsiteListingParams = searchString ?
+    {
+      offset,
+      search: searchString
+    } :
+    {
+      offset
+    }
+
+  const [{ isPending }] = useRequest(websiteListingRequest(listingParams))
+
   const listing: WebsiteListingResponse = useSelector(getWebsiteListingCursor)(
     offset
+  )
+
+  const [searchInput, setSearchInput] = useTextInputState()
+
+  useDebouncedEffect(
+    () => {
+      const currentSeach = searchString ?? ""
+      if (searchInput !== currentSeach) {
+        const newParams = new URLSearchParams()
+        newParams.set("offset", String(offset))
+        newParams.set("q", searchInput)
+        history.replace({
+          pathname,
+          search: newParams.toString()
+        })
+      }
+    },
+    [searchInput, pathname, searchString, offset],
+    600
   )
 
   if (isPending || !listing) {
@@ -47,13 +80,23 @@ export default function SitesDashboard(
       <DocumentTitle title={formatTitle("Sites")} />
       <div className="content">
         <div className="d-flex flex-direction-row align-items-center justify-content-between pb-3">
-          <h2 className="my-2 p-0">Sites</h2>
-          <Link
-            className="btn cyan-button larger add-new"
-            to={newSiteUrl.toString()}
-          >
-            Add Site
-          </Link>
+          <div>
+            <h2 className="my-2 p-0">Sites</h2>
+          </div>
+          <div className="d-flex align-items-center">
+            <input
+              placeholder="Search for a site"
+              className="site-search-input mr-5 form-control"
+              value={searchInput}
+              onChange={setSearchInput}
+            />
+            <Link
+              className="btn cyan-button larger add-new"
+              to={newSiteUrl.toString()}
+            >
+              Add Site
+            </Link>
+          </div>
         </div>
         <StudioList>
           {listing.results.map((site: Website) => (
@@ -74,10 +117,10 @@ export default function SitesDashboard(
         <PaginationControls
           listing={listing}
           previous={sitesBaseUrl
-            .query({ offset: offset - WEBSITES_PAGE_SIZE })
+            .query({ ...listingParams, offset: offset - WEBSITES_PAGE_SIZE })
             .toString()}
           next={sitesBaseUrl
-            .query({ offset: offset + WEBSITES_PAGE_SIZE })
+            .query({ ...listingParams, offset: offset + WEBSITES_PAGE_SIZE })
             .toString()}
         />
       </div>

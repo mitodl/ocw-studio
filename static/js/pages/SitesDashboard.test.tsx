@@ -8,7 +8,7 @@ import {
   sitesBaseUrl
 } from "../lib/urls"
 import { WebsiteListingResponse } from "../query-configs/websites"
-import { isIf } from "../test_util"
+import { isIf, wait } from "../test_util"
 import {
   makeWebsiteListing,
   makeWebsiteDetail
@@ -43,13 +43,10 @@ describe("SitesDashboard", () => {
       siteApiListingUrl.param({ offset: 0 }).toString(),
       response
     )
+
     render = helper.configureRenderer(
       SitesDashboard,
-      {
-        location: {
-          search: ""
-        }
-      },
+      {},
       {
         entities: {
           websitesListing: {
@@ -83,6 +80,46 @@ describe("SitesDashboard", () => {
     }
   })
 
+  it("lets the user filter the sites", async () => {
+    const { wrapper } = await render()
+    const filterInput = wrapper.find(".site-search-input")
+    const event = {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      preventDefault() {},
+      target: { value: "my-search-string" }
+    } as React.ChangeEvent<HTMLInputElement>
+    filterInput.simulate("change", event)
+    await wait(800)
+    expect(helper.browserHistory.location.search).toBe(
+      "offset=0&q=my-search-string"
+    )
+  })
+
+  it("should issue a request based on the 'q' param", async () => {
+    helper.browserHistory.replace({
+      pathname: "/",
+      search:   "q=searchfilter"
+    })
+    helper.mockGetRequest(
+      siteApiListingUrl
+        .param({ offset: 0 })
+        .query({ search: "searchfilter" })
+        .toString(),
+      response
+    )
+    await render()
+    expect(helper.handleRequestStub.args).toStrictEqual([
+      [
+        siteApiListingUrl
+          .param({ offset: 0 })
+          .query({ search: "searchfilter" })
+          .toString(),
+        "GET",
+        { body: undefined, credentials: undefined, headers: undefined }
+      ]
+    ])
+  })
+
   it("sets the page title", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("DocumentTitle").prop("title")).toBe(
@@ -108,11 +145,11 @@ describe("SitesDashboard", () => {
           siteApiListingUrl.query({ offset: startingOffset }).toString(),
           response
         )
-        const { wrapper } = await render({
-          location: {
-            search: `offset=${startingOffset}`
-          }
+        helper.browserHistory.replace({
+          pathname: "/path/to/page",
+          search:   `offset=${startingOffset}`
         })
+        const { wrapper } = await render()
 
         const prevWrapper = wrapper.find(".pagination Link.previous")
         expect(prevWrapper.exists()).toBe(hasPrevLink)

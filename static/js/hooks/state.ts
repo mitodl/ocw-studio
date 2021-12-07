@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, ChangeEvent } from "react"
 import { debounce, DebouncedFunc } from "lodash"
 
 /**
@@ -33,4 +33,24 @@ export function useDebouncedState<T>(
   )
 
   return [state, setStateDebounced]
+}
+
+type TextInputRetProps = [string, (e: ChangeEvent<HTMLInputElement>) => void]
+
+/**
+ * A little utility hook for the boilerplate you need to hold the state
+ * for a single text input.
+ */
+export function useTextInputState(initialValue = ""): TextInputRetProps {
+  const [inputState, setInputState] = useState<string>(initialValue)
+
+  const setSearchInputCB = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      e.preventDefault()
+      setInputState(e.target.value)
+    },
+    [setInputState]
+  )
+
+  return [inputState, setSearchInputCB]
 }

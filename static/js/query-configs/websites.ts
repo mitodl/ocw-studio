@@ -55,12 +55,19 @@ export const getTransformedWebsiteName = (
   return transformedWebsiteKeys[0]
 }
 
+export type WebsiteListingParams = {
+  offset: number
+  search?: string | null | undefined
+}
+
 export type WebsiteListingResponse = PaginatedResponse<Website>
 
 export type WebsitesListing = Record<string, PaginatedResponse<string>>
 
-export const websiteListingRequest = (offset: number): QueryConfig => ({
-  url:       siteApiListingUrl.query({ offset }).toString(),
+export const websiteListingRequest = (
+  params: WebsiteListingParams
+): QueryConfig => ({
+  url:       siteApiListingUrl.query(params).toString(),
   transform: (body: WebsiteListingResponse) => {
     const details = {}
     for (const site of body.results) {
@@ -69,7 +76,7 @@ export const websiteListingRequest = (offset: number): QueryConfig => ({
 
     return {
       websitesListing: {
-        [`${offset}`]: {
+        [params.offset]: {
           ...body,
           results: body.results.map(result => result.name)
         }
