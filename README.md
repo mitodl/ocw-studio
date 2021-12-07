@@ -227,7 +227,7 @@ You can enable Concourse-CI integration to create and trigger publishing pipelin
 ### Running a Local Concourse Docker Container
   You can run a local concourse instance in a docker container for some light testing:
 
-    `docker-compose --profiles concourse up`
+    `docker-compose --profile concourse up`
   
 
 The concourse UI will be available for login at http://host.docker.internal:8080 (You should  add `127.0.0.1 host.docker.internal` to your hosts file.)
@@ -246,12 +246,6 @@ CONCOURSE_TEAM=main
 OCW_STUDIO_BASE_URL=<ngrok URL if testing webhooks>
 
 ```
-
-
-  
-  
-
-
   
 # Enabling YouTube integration
 - Create a new project at https://console.cloud.google.com/apis/dashboard
