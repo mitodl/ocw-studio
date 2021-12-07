@@ -20,6 +20,7 @@ from websites.api import (
     videos_missing_captions,
 )
 from websites.constants import (
+    PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUS_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
     RESOURCE_TYPE_IMAGE,
@@ -357,12 +358,20 @@ def test_detect_mime_type(mocker):
     magic_mock.assert_called_once_with(mime=True)
 
 
-@pytest.mark.parametrize("status", [PUBLISH_STATUS_STARTED, PUBLISH_STATUS_SUCCEEDED])
+@pytest.mark.parametrize(
+    "status, notify",
+    [
+        [PUBLISH_STATUS_STARTED, False],
+        [PUBLISH_STATUS_SUCCEEDED, True],
+        [PUBLISH_STATUS_ERRORED, True],
+    ],
+)
 @pytest.mark.parametrize("has_user", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-def test_update_website_status_draft(mocker, status, has_user, version):
+def test_update_website_status_draft(mocker, status, notify, has_user, version):
     """update_website_status should update the appropriate website publishing fields"""
     mock_mail = mocker.patch("websites.api.mail_on_publish")
+    mock_log = mocker.patch("websites.api.log.error")
     user = UserFactory.create() if has_user else None
     website = WebsiteFactory.create(**{f"{version}_last_published_by": user})
     now = now_in_utc()
@@ -370,6 +379,5 @@ def test_update_website_status_draft(mocker, status, has_user, version):
     website.refresh_from_db()
     assert getattr(website, f"{version}_publish_status") == status
     assert getattr(website, f"{version}_publish_status_updated_on") == now
-    assert mock_mail.call_count == (
-        1 if has_user and status == PUBLISH_STATUS_SUCCEEDED else 0
-    )
+    assert mock_mail.call_count == (1 if has_user and notify else 0)
+    assert mock_log.call_count == (1 if status == PUBLISH_STATUS_ERRORED else 0)
