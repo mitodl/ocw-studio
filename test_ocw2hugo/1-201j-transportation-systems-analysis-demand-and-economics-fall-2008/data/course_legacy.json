@@ -61,15 +61,13 @@
   "level": [
     "Graduate"
   ],
-  "other_versions": [
-    "[1.201J INTRODUCTION TO TRANSPORTATION SYSTEMS](/courses/1-201j-introduction-to-transportation-systems-fall-2006) |  FALL 2006"
-  ],
+  "other_versions": [],
   "archived_versions": [],
   "open_learning_library_versions": [],
-  "course_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/0c62366c41d2af0b8e1ec4b9dc3748d7_1-201jf08.jpg",
-  "course_thumbnail_image_url": "https://open-learning-course-data-production.s3.amazonaws.com/1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/6d7b103f7ee8600b369f8b7ed69c1519_1-201jf08-th.jpg",
+  "course_image_url": "https://open-learning-course-data-rc.s3.amazonaws.com/1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/0c62366c41d2af0b8e1ec4b9dc3748d7_1-201jf08.jpg",
+  "course_thumbnail_image_url": "https://open-learning-course-data-rc.s3.amazonaws.com/1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/6d7b103f7ee8600b369f8b7ed69c1519_1-201jf08-th.jpg",
   "course_image_alternate_text": "Passengers boarding a subway in Madrid.",
-  "course_image_caption_text": "\n<p>This course discusses urban transportation issues, such as the importance of passenger waiting time. (Image by <a href=\"http://www.flickr.com/photos/caravinagre/1397350778/\">caravinagre</a> on Flickr.)</p>",
+  "course_image_caption_text": "This course discusses urban transportation issues, such as the importance of passenger waiting time. (Image by [caravinagre](http://www.flickr.com/photos/caravinagre/1397350778/) on Flickr.)",
   "publishdate": "2009-09-15T10:51:12-04:00",
   "departments": [
     {

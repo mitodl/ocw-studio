@@ -21,6 +21,7 @@ from websites.constants import (
     CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
+    CONTENT_TYPE_VIDEO_GALLERY,
     EXTERNAL_IDENTIFIER_PREFIX,
     INSTRUCTORS_FIELD_NAME,
     WEBSITE_SOURCE_OCW_IMPORT,
@@ -139,6 +140,9 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
         if dirpath == "content/resources":
             # This is a file
             content_type = CONTENT_TYPE_RESOURCE
+        elif dirpath == "content/video_galleries":
+            # This is a video gallery
+            content_type = CONTENT_TYPE_VIDEO_GALLERY
         else:
             # This is a page
             content_type = CONTENT_TYPE_PAGE
