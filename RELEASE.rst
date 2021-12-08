@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.37.4
+--------------
+
+- refactor fix for deleting orphaned git files (#849)
+- import video galleries (#848)
+- Do not show menu dropdown for global admins or site owner (#844)
+- Remove old pages and content (#843)
+
 Version 0.37.3 (Released December 03, 2021)
 --------------
 
