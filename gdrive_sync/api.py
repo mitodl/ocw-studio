@@ -31,6 +31,7 @@ from videos.constants import VideoStatus
 from videos.models import Video
 from websites.api import get_valid_new_filename
 from websites.constants import (
+    CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -364,6 +365,9 @@ def create_gdrive_resource_content(drive_file: DriveFile):
                 dirpath=dirpath,
                 filename=filename,
                 metadata={
+                    **SiteConfig(
+                        drive_file.website.starter.config
+                    ).generate_item_config(CONTENT_TYPE_RESOURCE, cls=WebsiteContent),
                     "resourcetype": resource_type,
                     "file_type": drive_file.mime_type,
                 },

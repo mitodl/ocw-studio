@@ -99,11 +99,15 @@ class SiteConfig:
     def iter_fields(self) -> Iterator[ConfigField]:
         """Yield all fields in the configuration"""
         for item in self.iter_items():
-            for field in item.fields:
-                yield ConfigField(field=field, parent_field=None)
+            yield from self.iter_item_fields(item)
 
-                for inner_field in field.get("fields", []):
-                    yield ConfigField(field=inner_field, parent_field=field)
+    def iter_item_fields(self, item: ConfigItem) -> Iterator[ConfigField]:
+        """Yield all fields in the configuration"""
+        for field in item.fields:
+            yield ConfigField(field=field, parent_field=None)
+
+            for inner_field in field.get("fields", []):
+                yield ConfigField(field=inner_field, parent_field=field)
 
     def find_item_by_name(self, name: str) -> Optional[ConfigItem]:
         """Finds a config item in the site config with a matching 'name' value"""
@@ -111,6 +115,27 @@ class SiteConfig:
             if config_item.item.get("name") == name:
                 return config_item
         return None
+
+    def generate_item_config(self, name: str, cls: object = None) -> Dict:
+        """Generate a dict with blank keys for the specified item"""
+        item_dict = {}
+        item = self.find_item_by_name(name)
+        if not item:
+            return item_dict
+        for config_field in self.iter_item_fields(item):
+            key = config_field.field["name"]
+            subfields = config_field.field.get("fields")
+            if subfields:
+                item_dict[key] = {}
+            else:
+                value = [] if config_field.field.get("multiple", False) is True else ""
+                if config_field.parent_field is None:
+                    # add the key if it is not a class attribute or no class was supplied
+                    if not cls or not hasattr(cls, key):
+                        item_dict[key] = value
+                else:
+                    item_dict[config_field.parent_field["name"]][key] = value
+        return item_dict
 
     def find_item_by_filepath(self, filepath: str) -> Optional[ConfigItem]:
         """Finds a config item in the site config with a matching 'file' value"""
