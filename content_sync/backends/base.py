@@ -101,10 +101,8 @@ class BaseSyncBackend(abc.ABC):
         """ Delete any git repo files without corresponding WebsiteContent objects"""
         ...
 
-    def sync_all_content_to_backend(self, delete=False):
+    def sync_all_content_to_backend(self):
         """ Sync all content for the website """
-        if delete:
-            self.delete_orphaned_content_in_backend()
         for sync_state in ContentSyncState.objects.filter(
             content__website=self.website
         ):

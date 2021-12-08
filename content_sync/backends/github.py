@@ -95,12 +95,10 @@ class GithubBackend(BaseSyncBackend):
             [path for path in self.api.get_all_file_paths("/") if path not in sitepaths]
         )
 
-    def sync_all_content_to_backend(self, delete=False) -> Commit:
+    def sync_all_content_to_backend(self) -> Commit:
         """
-        Sync all the website's files to Github in one commit, and optionally delete unmatched git repo files
+        Sync all the website's files to Github in one commit
         """
-        if delete:
-            self.delete_orphaned_content_in_backend()
         return self.api.upsert_content_files()
 
     def delete_content_in_backend(self, sync_state: ContentSyncState) -> Commit:

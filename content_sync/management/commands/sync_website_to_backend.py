@@ -52,5 +52,7 @@ class Command(BaseCommand):
         self.stdout.write(
             f"Updating website content in backend for '{website.title}'..."
         )
-        backend.sync_all_content_to_backend(delete=should_delete)
+        backend.sync_all_content_to_backend()
+        if should_delete:
+            backend.delete_orphaned_content_in_backend()
         reset_publishing_fields(website.name)

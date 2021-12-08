@@ -100,11 +100,9 @@ def test_delete_content_in_backend(github):
     assert WebsiteContent.objects.filter(id=content.id).first() is None
 
 
-@pytest.mark.parametrize("delete", [True, False])
-def test_sync_all_content_to_backend(github, delete):
+def test_sync_all_content_to_backend(github):
     """Test that sync_all_content_to_backend makes the appropriate api call"""
-    github.backend.sync_all_content_to_backend(delete=delete)
-    assert github.api.batch_delete_files.call_count == (1 if delete else 0)
+    github.backend.sync_all_content_to_backend()
     github.api.upsert_content_files.assert_called_once()
 
 

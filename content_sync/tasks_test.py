@@ -104,7 +104,8 @@ def test_sync_website_content_not_exists(api_mock, log_mock):
 
 @pytest.mark.parametrize("backend_exists", [True, False])
 @pytest.mark.parametrize("create_backend", [True, False])
-def test_sync_unsynced_websites(api_mock, backend_exists, create_backend):
+@pytest.mark.parametrize("delete", [True, False])
+def test_sync_unsynced_websites(api_mock, backend_exists, create_backend, delete):
     """
     Test that sync_all_content_to_backend is run on all websites needing a sync
     """
@@ -131,7 +132,7 @@ def test_sync_unsynced_websites(api_mock, backend_exists, create_backend):
         2, content=WebsiteContentFactory.create(website=websites_unsynced[1])
     )
 
-    tasks.sync_unsynced_websites.delay(create_backends=create_backend)
+    tasks.sync_unsynced_websites.delay(create_backends=create_backend, delete=delete)
     for website in websites_unsynced:
         api_mock.get_sync_backend.assert_any_call(website)
         website.refresh_from_db()
@@ -146,6 +147,10 @@ def test_sync_unsynced_websites(api_mock, backend_exists, create_backend):
     assert (
         api_mock.get_sync_backend.return_value.sync_all_content_to_backend.call_count
         == (2 if (create_backend or backend_exists) else 0)
+    )
+    assert (
+        api_mock.get_sync_backend.return_value.delete_orphaned_content_in_backend.call_count
+        == (2 if delete and (create_backend or backend_exists) else 0)
     )
 
 
