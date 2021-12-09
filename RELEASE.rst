@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.37.4
+Version 0.37.4 (Released December 09, 2021)
 --------------
 
 - refactor fix for deleting orphaned git files (#849)
