@@ -2,8 +2,9 @@
 from django.core.management import BaseCommand
 from django.db import transaction
 from django.db.models import Q
-from websites.site_config_api import SiteConfig
+
 from websites.models import WebsiteContent, WebsiteStarter
+from websites.site_config_api import SiteConfig
 
 
 class Command(BaseCommand):
