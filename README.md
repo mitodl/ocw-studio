@@ -225,12 +225,12 @@ You can enable Concourse-CI integration to create and trigger publishing pipelin
   - `trigger_pipelines <version>`: to manually trigger the draft or live pipeline for all or some existing `Websites` (filters available)
   
 ### Running a Local Concourse Docker Container
-  You can run a local concourse instance in a docker container for some light testing:
+  You can run a local concourse instance in a docker container for some light testing.  You will need docker-compose version 1.28.0 or above:
 
     `docker-compose --profile concourse up`
   
 
-The concourse UI will be available for login at http://host.docker.internal:8080 (You should  add `127.0.0.1 host.docker.internal` to your hosts file.)
+The concourse UI will be available for login at http://concourse:8080 (You should  add `127.0.0.1 concourse` to your hosts file.)
   
 However, this comes with some limitations.  The pipeline will never succeed as currently configured because of how AWS credentials and fastly variables are 
 passed to concourse.  But it will be enough to create and trigger pipelines.  You can also get the webhook working via ngrok.
@@ -238,7 +238,7 @@ passed to concourse.  But it will be enough to create and trigger pipelines.  Yo
 You will need to set the following .env variables for the concourse docker container:
  
 ```python
-CONCOURSE_URL=http://host.docker.internal:8080
+CONCOURSE_URL=http://concourse:8080
 CONCOURSE_PASSWORD=test
 CONCOURSE_USERNAME=test
 CONCOURSE_TEAM=main

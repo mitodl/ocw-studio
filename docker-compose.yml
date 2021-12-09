@@ -87,7 +87,6 @@ services:
     links:
       - db
       - redis
-      - concourse-db
 
   concourse-db:
     image: postgres:11.6
@@ -109,7 +108,7 @@ services:
       CONCOURSE_POSTGRES_HOST: concourse-db
       CONCOURSE_POSTGRES_USER: postgres
       CONCOURSE_POSTGRES_DATABASE: concourse
-      CONCOURSE_EXTERNAL_URL: http://host.docker.internal:8080
+      CONCOURSE_EXTERNAL_URL: ${CONCOURSE_URL:-http://concourse:8080}
       CONCOURSE_ADD_LOCAL_USER: ${CONCOURSE_USER_NAME:-test}:${CONCOURSE_PASSWORD:-test}  # pragma: allowlist secret
       CONCOURSE_MAIN_TEAM_LOCAL_USER: ${CONCOURSE_USER_NAME:-test}
       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
