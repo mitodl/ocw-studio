@@ -271,6 +271,7 @@ def test_update_youtube_statuses(
                     "video_thumbnail_file": f"https://img.youtube.com/vi/{video_file.destination_id}/0.jpg"
                 },
                 "video_metadata": {"youtube_id": video_file.destination_id},
+                "image": "",
             }
     else:
         mock_youtube.assert_not_called()

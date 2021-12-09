@@ -1,4 +1,5 @@
 """Test config for websites app"""
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -15,6 +16,8 @@ from websites.permissions import create_global_groups
 # pylint:disable=redefined-outer-name
 
 FACTORY_SITE_CONFIG_PATH = "localdev/configs/basic-site-config.yml"
+SCHEMA_RESOURCES_DIR = "localdev/configs/"
+SCHEMA_CONFIG_FILE = "ocw-course-site-config.yml"
 
 
 @pytest.fixture()
@@ -64,6 +67,21 @@ def basic_site_config(settings):
         (Path(settings.BASE_DIR) / FACTORY_SITE_CONFIG_PATH).read_text(),
         Loader=yaml.SafeLoader,
     )
+
+
+@pytest.fixture()
+def site_config_yml(settings):
+    """Fixture that returns the contents of the example site config YAML file in the resource directory"""
+    with open(
+        os.path.join(settings.BASE_DIR, SCHEMA_RESOURCES_DIR, SCHEMA_CONFIG_FILE)
+    ) as f:
+        return f.read().strip()
+
+
+@pytest.fixture()
+def parsed_site_config(site_config_yml):
+    """Fixture that returns the parsed contents of the example site config YAML file in the resource directory"""
+    return yaml.load(site_config_yml, Loader=yaml.SafeLoader)
 
 
 @pytest.fixture()

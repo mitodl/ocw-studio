@@ -5,6 +5,7 @@ from websites.constants import (
     WEBSITE_CONFIG_CONTENT_DIR_KEY,
     WEBSITE_CONFIG_DEFAULT_CONTENT_DIR,
 )
+from websites.models import WebsiteContent
 from websites.site_config_api import ConfigItem, SiteConfig
 
 
@@ -160,3 +161,26 @@ def test_find_file_field(basic_site_config, content_type, field_name):
         assert file_field["name"] == "image"
     else:
         assert file_field is None
+
+
+@pytest.mark.parametrize("cls", [None, WebsiteContent])
+def test_generate_item_metadata(parsed_site_config, cls):
+    """generate_item_metadata should return the expected dict"""
+    class_data = {} if cls else {"title": "", "file": ""}
+    expected_data = {
+        "description": "",
+        "resourcetype": "",
+        "file_type": "",
+        "learning_resource_types": [],
+        "license": "",
+        "image_metadata": {"image-alt": "", "caption": "", "credit": ""},
+        "video_metadata": {"youtube_id": "", "video_speakers": "", "video_tags": ""},
+        "video_files": {
+            "video_thumbnail_file": "",
+            "video_captions_file": "",
+            "video_transcript_file": "",
+        },
+        **class_data,
+    }
+    site_config = SiteConfig(parsed_site_config)
+    assert site_config.generate_item_metadata("resource", cls) == expected_data
