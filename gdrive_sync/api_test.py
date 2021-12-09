@@ -412,11 +412,13 @@ def test_create_gdrive_resource_content(mocker, mime_type):
             title=filename,
             type="resource",
             is_page_content=True,
-            metadata={"resourcetype": RESOURCE_TYPE_DOCUMENT, "file_type": mime_type},
         ).first()
         assert content is not None
         assert content.dirpath == "content/resource"
         assert content.filename == deduped_name
+        assert content.metadata["resourcetype"] == RESOURCE_TYPE_DOCUMENT
+        assert content.metadata["file_type"] == mime_type
+        assert content.metadata["image"] == ""
         drive_file.refresh_from_db()
         assert drive_file.resource == content
 

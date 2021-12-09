@@ -116,25 +116,27 @@ class SiteConfig:
                 return config_item
         return None
 
-    def generate_item_config(self, name: str, cls: object = None) -> Dict:
-        """Generate a dict with blank keys for the specified item"""
+    def generate_item_metadata(self, name: str, cls: object = None) -> Dict:
+        """Generate a metadata dict with blank keys for the specified item"""
         item_dict = {}
         item = self.find_item_by_name(name)
         if not item:
             return item_dict
         for config_field in self.iter_item_fields(item):
             key = config_field.field["name"]
-            subfields = config_field.field.get("fields")
-            if subfields:
-                item_dict[key] = {}
-            else:
-                value = [] if config_field.field.get("multiple", False) is True else ""
-                if config_field.parent_field is None:
-                    # add the key if it is not a class attribute or no class was supplied
-                    if not cls or not hasattr(cls, key):
-                        item_dict[key] = value
+            # Do not add class/object attributes to the metadata (ex: WebsiteContent.title)
+            if not cls or not hasattr(cls, key):
+                subfields = config_field.field.get("fields")
+                if subfields:
+                    item_dict[key] = {}
                 else:
-                    item_dict[config_field.parent_field["name"]][key] = value
+                    value = (
+                        [] if config_field.field.get("multiple", False) is True else ""
+                    )
+                    if config_field.parent_field is None:
+                        item_dict[key] = value
+                    else:
+                        item_dict[config_field.parent_field["name"]][key] = value
         return item_dict
 
     def find_item_by_filepath(self, filepath: str) -> Optional[ConfigItem]:

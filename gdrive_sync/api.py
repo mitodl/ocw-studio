@@ -367,7 +367,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
                 metadata={
                     **SiteConfig(
                         drive_file.website.starter.config
-                    ).generate_item_config(CONTENT_TYPE_RESOURCE, cls=WebsiteContent),
+                    ).generate_item_metadata(CONTENT_TYPE_RESOURCE, cls=WebsiteContent),
                     "resourcetype": resource_type,
                     "file_type": drive_file.mime_type,
                 },

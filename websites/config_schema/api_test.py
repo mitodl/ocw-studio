@@ -1,6 +1,4 @@
 """Tests for site config schema and validation"""
-import os
-
 import pytest
 import yaml
 
@@ -12,30 +10,12 @@ from websites.config_schema.api import (
 
 # pylint:disable=redefined-outer-name
 
-
-SCHEMA_RESOURCES_DIR = "localdev/configs/"
-SCHEMA_CONFIG_FILE = "ocw-course-site-config.yml"
 VALID_TITLE_FIELD = {
     "name": "title",
     "label": "Title",
     "required": True,
     "widget": "string",
 }
-
-
-@pytest.fixture()
-def site_config_yml(settings):
-    """Fixture that returns the contents of the example site config YAML file in the resource directory"""
-    with open(
-        os.path.join(settings.BASE_DIR, SCHEMA_RESOURCES_DIR, SCHEMA_CONFIG_FILE)
-    ) as f:
-        return f.read().strip()
-
-
-@pytest.fixture()
-def parsed_site_config(site_config_yml):
-    """Fixture that returns the parsed contents of the example site config YAML file in the resource directory"""
-    return yaml.load(site_config_yml, Loader=yaml.SafeLoader)
 
 
 def test_valid_config(site_config_yml):
