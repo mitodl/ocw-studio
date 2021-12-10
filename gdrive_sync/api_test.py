@@ -32,6 +32,7 @@ from gdrive_sync.models import DriveFile
 from main.s3_utils import get_s3_resource
 from videos.constants import VideoStatus
 from websites.constants import (
+    CONTENT_FILENAMES_FORBIDDEN,
     CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
@@ -43,13 +44,21 @@ from websites.models import WebsiteContent
 
 
 pytestmark = pytest.mark.django_db
-# pylint:disable=redefined-outer-name, too-many-arguments
+# pylint:disable=redefined-outer-name, too-many-arguments, unused-argument
 
 
 @pytest.fixture
 def mock_service(mocker):
     """Mock google drive service """
     return mocker.patch("gdrive_sync.api.get_drive_service")
+
+
+@pytest.fixture
+def mock_get_s3_content_type(mocker):
+    """Mock gdrive_sync.api.get_s3_content_type """
+    mocker.patch(
+        "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
+    )
 
 
 def test_get_drive_service(settings, mocker):
@@ -391,11 +400,8 @@ def test_walk_gdrive_folder(mocker):
 @pytest.mark.parametrize(
     "mime_type", ["application/pdf", "application/vnd.ms-powerpoint"]
 )
-def test_create_gdrive_resource_content(mocker, mime_type):
+def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
     """create_resource_from_gdrive should create a WebsiteContent object linked to a DriveFile object"""
-    mocker.patch(
-        "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
-    )
     filenames = ["word.docx", "word!.docx", "(word?).docx"]
     deduped_names = ["word", "word2", "word3"]
     website = WebsiteFactory.create()
@@ -423,11 +429,23 @@ def test_create_gdrive_resource_content(mocker, mime_type):
         assert drive_file.resource == content
 
 
-def test_create_gdrive_resource_content_update(mocker):
-    """create_resource_from_gdrive should update a WebsiteContent object linked to a DriveFile object"""
-    mocker.patch(
-        "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
+def test_create_gdrive_resource_content_forbidden_name(mock_get_s3_content_type):
+    """content for a google drive file with a forbidden name should have its filename attribute modified"""
+    drive_file = DriveFileFactory.create(
+        name=f"{CONTENT_FILENAMES_FORBIDDEN[0]}.pdf",
+        s3_key=f"test/path/{CONTENT_FILENAMES_FORBIDDEN[0]}.pdf",
+        mime_type="application/pdf",
     )
+    create_gdrive_resource_content(drive_file)
+    drive_file.refresh_from_db()
+    assert (
+        drive_file.resource.filename
+        == f"{CONTENT_FILENAMES_FORBIDDEN[0]}-{CONTENT_TYPE_RESOURCE}"
+    )
+
+
+def test_create_gdrive_resource_content_update(mock_get_s3_content_type):
+    """create_resource_from_gdrive should update a WebsiteContent object linked to a DriveFile object"""
     content = WebsiteContentFactory.create(file="test/path/old.doc")
     drive_file = DriveFileFactory.create(
         website=content.website, s3_key="test/path/word.docx", resource=content

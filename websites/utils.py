@@ -40,3 +40,10 @@ def set_dict_field(obj: Dict, field_path: str, value: Any):
 def get_dict_query_field(dict_field_name: str, sub_field: str):
     """Generate django query key for searching a nested json feild"""
     return dict_field_name + "__" + sub_field.replace(".", "__")
+
+
+def get_valid_base_filename(filename: str, content_type: str) -> str:
+    """Avoid forbidden filenames that could confuse hugo"""
+    if filename in constants.CONTENT_FILENAMES_FORBIDDEN:
+        return f"{filename}-{content_type}"
+    return filename
