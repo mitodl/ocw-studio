@@ -113,7 +113,6 @@
     "react-test-renderer": "^16.13.1",
     "reactstrap": "^8.9.0",
     "redux": "^4.0.5",
-    "redux-actions": "^2.6.5",
     "redux-logger": "^3.0.6",
     "redux-query": "^3.4.2",
     "redux-query-interface-superagent": "^3.4.2",
