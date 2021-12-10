@@ -17,7 +17,6 @@ from main import features
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from websites import constants
-from websites.constants import PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_STARTED
 from websites.factories import (
     WebsiteCollectionFactory,
     WebsiteCollectionItemFactory,
@@ -948,26 +947,36 @@ def test_content_create_page_content(
     )
 
 
-def test_content_create_page_added_context(mocker, drf_client, global_admin_user):
+@pytest.mark.parametrize(
+    "title, expected_filename_base",
+    [
+        ["My Title", "my-title"],
+        [
+            constants.CONTENT_FILENAMES_FORBIDDEN[0],
+            f"{constants.CONTENT_FILENAMES_FORBIDDEN[0]}-{constants.CONTENT_TYPE_RESOURCE}",
+        ],
+    ],
+)
+def test_content_create_page_added_context(
+    mocker, drf_client, global_admin_user, title, expected_filename_base
+):
     """
     POSTing to the WebsiteContent list view without a filename should add a generated filename
     """
     patched_get_filename = mocker.patch(
         "websites.views.get_valid_new_filename",
-        return_value="my-title-100",
+        return_value=f"{expected_filename_base}-100",
     )
     drf_client.force_login(global_admin_user)
-    title = "My Title"
     website = WebsiteFactory.create()
     payload = {
         "title": title,
         "markdown": "some markdown",
-        "type": "blog",
+        "type": constants.CONTENT_TYPE_RESOURCE,
     }
     # "folder" path for the config item with type="blog" in basic-site-config.yml
-    expected_dirpath = "content/blog"
-    expected_filename_base = "my-title"
-    expected_filename = "my-title-100"
+    expected_dirpath = "content/resource"
+    expected_filename = f"{expected_filename_base}-100"
     resp = drf_client.post(
         reverse(
             "websites_content_api-list",
@@ -1281,7 +1290,9 @@ def test_website_collection_items_get(drf_client):
     )
 
 
-@pytest.mark.parametrize("status", [PUBLISH_STATUS_STARTED, PUBLISH_STATUS_ERRORED])
+@pytest.mark.parametrize(
+    "status", [constants.PUBLISH_STATUS_STARTED, constants.PUBLISH_STATUS_ERRORED]
+)
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
 def test_websites_endpoint_pipeline_status(
     settings, mocker, drf_client, permission_groups, version, status
@@ -1309,6 +1320,6 @@ def test_websites_endpoint_pipeline_status_denied(
     drf_client.credentials(HTTP_AUTHORIZATION="Bearer wrong-token")
     resp = drf_client.post(
         reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
-        json={"version": VERSION_LIVE, "status": PUBLISH_STATUS_STARTED},
+        json={"version": VERSION_LIVE, "status": constants.PUBLISH_STATUS_STARTED},
     )
     assert resp.status_code == 403

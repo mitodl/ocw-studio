@@ -11,6 +11,7 @@ COURSE_PAGE_LAYOUTS = ["instructor_insights"]
 COURSE_RESOURCE_LAYOUTS = ["pdf", "video"]
 
 CONTENT_FILENAME_MAX_LEN = 125
+CONTENT_FILENAMES_FORBIDDEN = ("index", "_index")
 CONTENT_DIRPATH_MAX_LEN = 300
 CONTENT_FILEPATH_UNIQUE_CONSTRAINT = "unique_page_content_destination"
 

@@ -75,7 +75,7 @@ from websites.serializers import (
     WebsiteWriteSerializer,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role
+from websites.utils import get_valid_base_filename, permissions_group_name_for_role
 
 
 log = logging.getLogger(__name__)
@@ -394,7 +394,7 @@ def _get_derived_website_content_data(
         added_data["filename"] = get_valid_new_filename(
             website_pk=website_pk,
             dirpath=dirpath,
-            filename_base=slugify(slug),
+            filename_base=slugify(get_valid_base_filename(slug, content_type)),
         )
     return added_data
 

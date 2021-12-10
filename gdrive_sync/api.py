@@ -31,6 +31,7 @@ from videos.constants import VideoStatus
 from videos.models import Video
 from websites.api import get_valid_new_filename
 from websites.constants import (
+    CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -38,6 +39,7 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
+from websites.utils import get_valid_base_filename
 
 
 log = logging.getLogger(__name__)
@@ -347,19 +349,22 @@ def create_gdrive_resource_content(drive_file: DriveFile):
         resource = drive_file.resource
         if not resource:
             site_config = SiteConfig(drive_file.website.starter.config)
-            config_item = site_config.find_item_by_name(name="resource")
+            config_item = site_config.find_item_by_name(name=CONTENT_TYPE_RESOURCE)
             dirpath = config_item.file_target if config_item else None
             basename, _ = os.path.splitext(drive_file.name)
+
             filename = get_valid_new_filename(
                 website_pk=drive_file.website.pk,
                 dirpath=dirpath,
-                filename_base=slugify(basename),
+                filename_base=slugify(
+                    get_valid_base_filename(basename, CONTENT_TYPE_RESOURCE)
+                ),
             )
             resource = WebsiteContent.objects.create(
                 website=drive_file.website,
                 title=drive_file.name,
                 file=drive_file.s3_key,
-                type="resource",
+                type=CONTENT_TYPE_RESOURCE,
                 is_page_content=True,
                 dirpath=dirpath,
                 filename=filename,
