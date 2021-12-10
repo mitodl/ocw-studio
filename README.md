@@ -217,12 +217,35 @@ You can enable Concourse-CI integration to create and trigger publishing pipelin
     CONCOURSE_TEAM=<Concourse-CI team, defaults to "ocw">
     CONCOURSE_USERNAME=<Concourse-CI username>
     CONCOURSE_PASSWORD=<Concourse-CI password>
+    CONCOURSE_IS_PRIVATE_REPO=<True if repo is private, False otherwise>
     ```
 - Draft and live pipelines should then be created for every new `Website` based on a `WebsiteStarter` with `source=github` and a valid github `path`.
 - There are also several management commands for Concourse-CI pipelines:
   - `backpopulate_pipelines`: to create/update pipelines for all or some existing `Websites` (filters available)
   - `trigger_pipelines <version>`: to manually trigger the draft or live pipeline for all or some existing `Websites` (filters available)
   
+### Running a Local Concourse Docker Container
+  You can run a local concourse instance in a docker container for some light testing.  You will need docker-compose version 1.28.0 or above:
+
+    `docker-compose --profile concourse up`
+  
+
+The concourse UI will be available for login at http://concourse:8080 (You should  add `127.0.0.1 concourse` to your hosts file.)
+  
+However, this comes with some limitations.  The pipeline will never succeed as currently configured because of how AWS credentials and fastly variables are 
+passed to concourse.  But it will be enough to create and trigger pipelines.  You can also get the webhook working via ngrok.
+
+You will need to set the following .env variables for the concourse docker container:
+ 
+```python
+CONCOURSE_URL=http://concourse:8080
+CONCOURSE_PASSWORD=test
+CONCOURSE_USERNAME=test
+CONCOURSE_TEAM=main
+
+OCW_STUDIO_BASE_URL=<ngrok URL if testing webhooks>
+
+```
   
 # Enabling YouTube integration
 - Create a new project at https://console.cloud.google.com/apis/dashboard
