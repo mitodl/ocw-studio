@@ -1,0 +1,44 @@
+{
+  "collections": [
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Content",
+          "name": "content",
+          "widget": "markdown"
+        }
+      ],
+      "folder": "content/pages",
+      "label": "Page",
+      "name": "page"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Description",
+          "name": "description",
+          "widget": "markdown"
+        }
+      ],
+      "folder": "content/resources",
+      "label": "Resource",
+      "name": "resource"
+    }
+  ],
+  "content-dir": "content",
+  "root-url-path": "sites"
+}

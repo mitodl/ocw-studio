@@ -28,6 +28,7 @@ class Command(BaseCommand):
             ),
             ("localdev/configs/omnibus-site-config.yml", OMNIBUS_STARTER_SLUG),
             ("localdev/configs/ocw-www.yml", OCW_WWW_STARTER_SLUG),
+            ("localdev/configs/default-course-config.yml", "course"),
         )
 
     def _get_config_paths(self):

@@ -16,6 +16,11 @@ Run through those steps **including the addition of `/etc/hosts` aliases and the
 
 In addition, you should create a starter with `slug=ocw-www` through the admin interface with config data taken from the `ocw-www` starter on RC or production. Then, you should go to the `/sites` UI and create a new site with `name=ocw-www` using the `ocw-www` starter.
 
+Finally, create/update additional starters with the following command:
+
+    ```
+    docker-compose run web python manage.py override_site_config
+    ```
 
 ### Testing Touchstone login with SAML via SSOCircle
 
@@ -181,8 +186,6 @@ manage.py import_ocw_course_sites -b <bucket_name>
 This project includes some tools that simplify development with starter projects and site configs. These tools allow you to do the following:
 - Define entire starter projects within this repo and load them into your database
 - Override the site config for starters with a particular `slug` value
-
-See the [README in localdev/starters](localdev/starters/) for instructions.
 
 
 # Enabling GitHub integration

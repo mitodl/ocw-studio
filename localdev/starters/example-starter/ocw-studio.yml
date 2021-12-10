@@ -1,7 +1,9 @@
 root-url-path: "courses"
+content-dir: content
 collections:
   - label: "Page"
     name: "page"
+    folder: content/pages
     fields:
-      - {label: "Title", name: "title", widget: "string"}
+      - {label: "Title", name: "title", widget: "string", required: true}
       - {label: "Body", name: "body", widget: "markdown"}
