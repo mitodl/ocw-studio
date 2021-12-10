@@ -1,7 +1,7 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
 import R from "ramda"
-import sinon, { SinonStub } from "sinon"
+import { SinonStub } from "sinon"
 
 import RelationField from "./RelationField"
 import { debouncedFetch } from "../../lib/api/util"
@@ -26,7 +26,6 @@ import {
   WebsiteContent
 } from "../../types/websites"
 import { ReactWrapper } from "enzyme"
-import { DndContext } from "@dnd-kit/core"
 import { FormError } from "../forms/FormError"
 import { formatOptions, useWebsiteSelectOptions } from "../../hooks/websites"
 
@@ -436,61 +435,14 @@ describe("RelationField", () => {
         sortable: true,
         value
       })
-      expect(wrapper.find("SortableContext").exists()).toBeTruthy()
-      expect(
-        wrapper
-          .find("SortableContext SortableItem")
-          .map(item => item.prop("id"))
-      ).toStrictEqual(value)
-    })
-
-    it("should allow adding another element", async () => {
-      const { wrapper } = await render({
-        multiple: true,
-        sortable: true,
-        value:    []
-      })
-      await act(async () => {
-        // @ts-ignore
-        wrapper.find("SelectField").prop("onChange")({
-          // @ts-ignore
-          target: { value: "new-uuid" }
-        })
-      })
-      wrapper.update()
-      wrapper.find(".cyan-button").simulate("click")
-      sinon.assert.calledWith(onChange, {
-        target: {
-          name:  "relation_field",
-          value: { website: website.name, content: ["new-uuid"] }
-        }
-      })
-      expect(wrapper.find("SelectField").prop("value")).toBeUndefined()
-    })
-
-    it("should let you drag and drop items to reorder", async () => {
-      const value = ["uuid-1", "uuid-2", "uuid-3"]
-      const { wrapper } = await render({
-        multiple: true,
-        sortable: true,
-        value
-      })
-
-      act(() => {
-        wrapper.find(DndContext)!.prop("onDragEnd")!({
-          active: { id: "uuid-3" },
-          over:   { id: "uuid-1" }
-        } as any)
-      })
-      sinon.assert.calledWith(onChange, {
-        target: {
-          name:  "relation_field",
-          value: {
-            website: website.name,
-            content: ["uuid-3", "uuid-1", "uuid-2"]
-          }
-        }
-      })
+      const sortableSelect = wrapper.find("SortableSelect")
+      expect(sortableSelect.exists()).toBeTruthy()
+      expect(sortableSelect.prop("value")).toStrictEqual(
+        value.map(id => ({
+          id,
+          title: id
+        }))
+      )
     })
   })
 })

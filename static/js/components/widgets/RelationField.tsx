@@ -1,11 +1,5 @@
-import React, {
-  ChangeEvent,
-  SyntheticEvent,
-  useCallback,
-  useEffect,
-  useState
-} from "react"
-import { equals, without } from "ramda"
+import React, { ChangeEvent, useCallback, useEffect, useState } from "react"
+import { equals } from "ramda"
 import { uniqBy } from "lodash"
 
 import SelectField, { Option } from "./SelectField"
@@ -18,13 +12,10 @@ import {
 } from "../../types/websites"
 import { siteApiContentListingUrl } from "../../lib/urls"
 import { PaginatedResponse } from "../../query-configs/utils"
-import { DragEndEvent } from "@dnd-kit/core"
-import { arrayMove } from "@dnd-kit/sortable"
-import SortableItem from "../SortableItem"
-import SortWrapper from "../SortWrapper"
 import { FormError } from "../forms/FormError"
 import { FetchStatus } from "../../lib/api/FetchStatus"
 import { useWebsiteSelectOptions } from "../../hooks/websites"
+import SortableSelect from "./SortableSelect"
 
 // This is how we store the data when dealing with a cross-site relation
 // the first string is the content UUID, and the second is the website UUID
@@ -85,10 +76,6 @@ export default function RelationField(props: Props): JSX.Element {
     )
   )
   const [fetchStatus, setFetchStatus] = useState<FetchStatus>(FetchStatus.Ok)
-
-  const [focusedContent, setFocusedContent] = useState<string | undefined>(
-    undefined
-  )
 
   // When we're using the crossSite option we store the value
   // in an array that looks like `[[uuid, website_name]]` (i.e.
@@ -283,7 +270,7 @@ export default function RelationField(props: Props): JSX.Element {
    * it per se.
    */
   const onChangeShim = useCallback(
-    (value: string | string[] | CrossSitePair[]) => {
+    (value: string | string[]) => {
       // When we run renameNestedFields we add a '.content' suffix to the name
       // of the field for RelationField because the data structure looks like
       // this: { content, website } where 'content' is either a string or a
@@ -298,13 +285,15 @@ export default function RelationField(props: Props): JSX.Element {
           name:  name.replace(/\.content$/, ""),
           value: {
             website: websiteName,
-            content: value
+            content: crossSite ?
+              (value as string[]).map(id => [id, contentToWebsite.get(id)]) :
+              value
           }
         }
       }
       onChange(updatedEvent)
     },
-    [onChange, name, websiteName]
+    [onChange, name, crossSite, contentToWebsite, websiteName]
   )
 
   const handleChange = useCallback(
@@ -312,96 +301,6 @@ export default function RelationField(props: Props): JSX.Element {
       onChangeShim(event.target.value)
     },
     [onChangeShim]
-  )
-
-  /**
-   * This callback is only used for the SelectField that
-   * we present as an 'add' interface when this component
-   * is displayin the sortable mode.
-   */
-  const handleAddSortableItem = useCallback(
-    (event: ChangeEvent<HTMLSelectElement>) => {
-      setFocusedContent(event.target.value)
-    },
-    [setFocusedContent]
-  )
-
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event
-
-      if (over && active.id !== over.id) {
-        const valueToUse: string[] = crossSite ?
-          (value as CrossSitePair[]).map(
-            ([contentUUID]: CrossSitePair) => contentUUID
-          ) :
-          (value as string[])
-
-        const movedArray = arrayMove(
-          valueToUse,
-          valueToUse.indexOf(active.id),
-          valueToUse.indexOf(over.id)
-        )
-
-        onChangeShim(
-          crossSite ?
-            (movedArray.map(contentUUID => [
-              contentUUID,
-                contentToWebsite.get(contentUUID) as string
-            ]) as CrossSitePair[]) :
-            movedArray
-        )
-      }
-    },
-    [onChangeShim, contentToWebsite, value, crossSite]
-  )
-
-  /**
-   * For removing an item in the sortable UI
-   */
-  const deleteItem = useCallback(
-    (item: string) => {
-      onChangeShim(
-        crossSite ?
-          (value as CrossSitePair[]).filter(
-            valuePair => valuePair[0] !== item
-          ) :
-          without([item], value as string[])
-      )
-    },
-    [onChangeShim, value, crossSite]
-  )
-
-  /**
-   * Callback for adding a new item to the field value in the sortable UI. If
-   * there is an item 'focused' in the UI (i.e. the user has selected it in the
-   * SelectField) then we add that to the current value and call the change
-   * shim.
-   */
-  const addFocusedItem = useCallback(
-    (event: SyntheticEvent<HTMLButtonElement>) => {
-      event.preventDefault()
-
-      if (focusedContent) {
-        if (crossSite) {
-          onChangeShim([
-            ...(value as CrossSitePair[]),
-            [focusedContent, focusedWebsite as string]
-          ])
-        } else {
-          onChangeShim((value as string[]).concat(focusedContent))
-        }
-        setFocusedContent(undefined)
-      }
-    },
-    [
-      focusedContent,
-      setFocusedContent,
-      onChangeShim,
-      focusedWebsite,
-      value,
-      crossSite
-    ]
   )
 
   return (
@@ -418,57 +317,25 @@ export default function RelationField(props: Props): JSX.Element {
         />
       ) : null}
       {sortable || crossSite ? (
-        <>
-          <div className="d-flex">
-            <SelectField
-              name={name}
-              value={focusedContent}
-              onChange={handleAddSortableItem}
-              options={options}
-              loadOptions={loadOptions}
-              defaultOptions={defaultOptions}
-            />
-            <button
-              className="px-4 ml-3 btn cyan-button"
-              disabled={focusedContent === undefined}
-              onClick={addFocusedItem}
-            >
-              Add
-            </button>
-          </div>
-          <SortWrapper
-            handleDragEnd={handleDragEnd}
-            items={
-              crossSite ?
-                ((value as CrossSitePair[]) ?? []).map(entry => entry[0]) :
-                (value as string[]) ?? []
-            }
-            generateItemUUID={x => x}
-          >
-            {Array.isArray(value) ?
-              value.map(entry => {
-                // entry will be `string[]` if `crossSite === true`
-                const textId = Array.isArray(entry) ? entry[0] : entry
-                const content = contentMap.get(textId)
-                const title = content ? content.title ?? textId : textId
+        <SortableSelect
+          name={name}
+          onChange={onChangeShim}
+          options={options}
+          loadOptions={loadOptions}
+          defaultOptions={defaultOptions}
+          value={(crossSite ?
+            (value as CrossSitePair[]).map(pair => pair[0]) :
+            (value as string[])
+          ).map(id => {
+            const content = contentMap.get(id)
+            const title = content ? content.title ?? id : id
 
-                return (
-                  <SortableItem
-                    key={textId}
-                    title={
-                      crossSite ?
-                        `${title} (${contentToWebsite.get(textId)})` :
-                        title
-                    }
-                    id={textId}
-                    item={textId}
-                    deleteItem={deleteItem}
-                  />
-                )
-              }) :
-              null}
-          </SortWrapper>
-        </>
+            return {
+              id,
+              title
+            }
+          })}
+        />
       ) : (
         <SelectField
           name={name}

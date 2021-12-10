@@ -119,6 +119,9 @@ export default class IntegrationTestHelper {
     return this.mockRequest(url, "DELETE", body, code)
   }
 
+  /**
+   * Clean up after yourself!
+   */
   cleanup(unmount = true): void {
     this.actions = []
     this.sandbox.restore()
