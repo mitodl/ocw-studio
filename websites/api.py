@@ -16,6 +16,8 @@ from content_sync.constants import VERSION_DRAFT
 from users.models import User
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
+    PUBLISH_STATUS_ABORTED,
+    PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUS_SUCCEEDED,
     PUBLISH_STATUSES_FINAL,
     RESOURCE_TYPE_VIDEO,
@@ -299,6 +301,8 @@ def update_website_status(
                 # Allow user to retry
                 update_kwargs["has_unpublished_live"] = True
     Website.objects.filter(name=website.name).update(**update_kwargs)
+    if status in (PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_ABORTED):
+        log.error("A %s pipeline build failed for %s", version, website.name)
     if status in PUBLISH_STATUSES_FINAL and user:
         mail_on_publish(
             website.name, version, status == PUBLISH_STATUS_SUCCEEDED, user.id
