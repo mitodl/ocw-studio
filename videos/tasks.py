@@ -301,7 +301,9 @@ def attempt_to_update_missing_transcripts():
 
 
 @app.task(acks_late=True)
-def update_transcripts_for_website(website: Website):
+def update_transcripts_for_website(
+    website: Website, **kwargs
+):  # pylint:disable=unused-argument
     """Update transcripts from 3play for every video for a website"""
 
     for video in website.videos.all():

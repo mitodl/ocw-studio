@@ -17,6 +17,7 @@ from googleapiclient.http import MediaIoBaseUpload
 from mitol.mail.api import get_message_sender
 from smart_open.s3 import Reader
 
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from videos.constants import DESTINATION_YOUTUBE
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
@@ -325,7 +326,7 @@ class YouTubeApi:
         return self.client.videos().delete(id=video_id).execute()
 
 
-def update_youtube_metadata(website: Website, privacy=None):
+def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
     """ Update YouTube video metadata via the API """
     if not is_youtube_enabled() or not is_ocw_site(website):
         return
@@ -346,4 +347,6 @@ def update_youtube_metadata(website: Website, privacy=None):
             or settings.ENVIRONMENT in ["prod", "production"]
         ):
             # do not run this for imported OCW site videos on RC
-            youtube.update_video(video_resource, privacy=privacy)
+            youtube.update_video(
+                video_resource, privacy=("public" if version == VERSION_LIVE else None)
+            )

@@ -89,7 +89,7 @@ def publish_website(  # pylint: disable=too-many-arguments
     website = Website.objects.get(name=name)
     if prepublish:
         for action in settings.PREPUBLISH_ACTIONS:
-            import_string(action)(website)
+            import_string(action)(website, version=version)
     backend = get_sync_backend(website)
     backend.sync_all_content_to_backend()
     if version == VERSION_DRAFT:
