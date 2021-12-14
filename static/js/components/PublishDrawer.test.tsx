@@ -1,16 +1,17 @@
 import moment from "moment"
 import sinon, { SinonStub } from "sinon"
 import { act } from "react-dom/test-utils"
+import { isEmpty } from "ramda"
 
 import { siteApiActionUrl, siteApiDetailUrl } from "../lib/urls"
+import { shouldIf } from "../test_util"
+import { makeWebsiteDetail } from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
-import { makeWebsiteDetail } from "../util/factories/websites"
 import PublishDrawer from "./PublishDrawer"
+
 import { Website } from "../types/websites"
-import { shouldIf } from "../test_util"
-import { isEmpty } from "ramda"
 
 describe("PublishDrawer", () => {
   let helper: IntegrationTestHelper,
