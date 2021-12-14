@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.37.5 (Released December 14, 2021)
+--------------
+
+- Add all metadata keys w/blank values for imported google drive content (#860)
+
 Version 0.37.4 (Released December 09, 2021)
 --------------
 
