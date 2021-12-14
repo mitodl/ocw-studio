@@ -15,7 +15,7 @@ from requests import HTTPError
 from content_sync import api
 from content_sync.apis import github
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from content_sync.decorators import single_task
+from content_sync.decorators import is_publish_pipeline_enabled, single_task
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BaseSyncPipeline
 from main.celery import app
@@ -271,6 +271,7 @@ def sync_github_site_configs(url: str, files: List[str], commit: Optional[str] =
 
 
 @app.task(acks_late=True)
+@is_publish_pipeline_enabled
 def check_incomplete_publish_build_statuses():
     """
     Check statuses of concourse builds that have not been updated in a reasonable amount of time

@@ -347,10 +347,21 @@ def test_publish_website_batch(mocker, version, prepublish):
         [PUBLISH_STATUS_NOT_STARTED, PUBLISH_STATUS_NOT_STARTED, True, False],
     ],
 )
+@pytest.mark.parametrize(
+    "pipeline", [None, "content_sync.pipelines.concourse.ConcourseGithubPipeline"]
+)
 def test_check_incomplete_publish_build_statuses(
-    settings, mocker, api_mock, old_status, new_status, should_check, should_update
-):  # pylint:disable=too-many-arguments
+    settings,
+    mocker,
+    api_mock,
+    old_status,
+    new_status,
+    should_check,
+    should_update,
+    pipeline,
+):  # pylint:disable=too-many-arguments,too-many-locals
     """check_incomplete_publish_build_statuses should update statuses of pipeline builds"""
+    settings.CONTENT_SYNC_PIPELINE = pipeline
     mock_update_status = mocker.patch("content_sync.tasks.update_website_status")
     now = now_in_utc()
     draft_site_in_query = WebsiteFactory.create(
@@ -383,7 +394,7 @@ def test_check_incomplete_publish_build_statuses(
         (draft_site_in_query, VERSION_DRAFT),
         (live_site_in_query, VERSION_LIVE),
     ]:
-        if should_check:
+        if should_check and pipeline is not None:
             api_mock.get_sync_pipeline.assert_any_call(website)
             api_mock.get_sync_pipeline.return_value.get_build_status.assert_any_call(
                 getattr(website, f"latest_build_id_{version}")
