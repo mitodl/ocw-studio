@@ -195,7 +195,8 @@ export const makeWebsiteDetail = (): Website => ({
   sync_status:                     null,
   synced_on:                       null,
   sync_errors:                     null,
-  is_admin:                        casual.boolean
+  is_admin:                        casual.boolean,
+  content_warnings:                []
 })
 
 export const makeWebsiteStatus = (website?: Website): WebsiteStatus => {

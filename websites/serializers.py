@@ -21,7 +21,11 @@ from gdrive_sync.tasks import create_gdrive_folders
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
 from websites import constants
-from websites.api import detect_mime_type, update_youtube_thumbnail
+from websites.api import (
+    detect_mime_type,
+    incomplete_content_warnings,
+    update_youtube_thumbnail,
+)
 from websites.models import (
     Website,
     WebsiteCollection,
@@ -68,6 +72,16 @@ class WebsiteGoogleDriveMixin(serializers.Serializer):
         return None
 
 
+class WebsiteValidationMixin(serializers.Serializer):
+    """Serializer for website publishing content validation"""
+
+    content_warnings = serializers.SerializerMethodField(read_only=True)
+
+    def get_content_warnings(self, instance):
+        """Return any missing content data warnings"""
+        return incomplete_content_warnings(instance)
+
+
 class WebsiteSerializer(serializers.ModelSerializer):
     """ Serializer for websites """
 
@@ -93,14 +107,17 @@ class WebsiteSerializer(serializers.ModelSerializer):
 
 
 class WebsiteDetailSerializer(
-    serializers.ModelSerializer, WebsiteGoogleDriveMixin, RequestUserSerializerMixin
+    serializers.ModelSerializer,
+    WebsiteGoogleDriveMixin,
+    WebsiteValidationMixin,
+    RequestUserSerializerMixin,
 ):
     """ Serializer for websites with serialized config """
 
     starter = WebsiteStarterDetailSerializer(read_only=True)
     is_admin = serializers.SerializerMethodField(read_only=True)
-    live_url = serializers.SerializerMethodField()
-    draft_url = serializers.SerializerMethodField()
+    live_url = serializers.SerializerMethodField(read_only=True)
+    draft_url = serializers.SerializerMethodField(read_only=True)
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
@@ -142,6 +159,7 @@ class WebsiteDetailSerializer(
             "sync_status",
             "sync_errors",
             "synced_on",
+            "content_warnings",
         ]
         read_only_fields = [
             "uuid",
@@ -161,10 +179,13 @@ class WebsiteDetailSerializer(
             "sync_status",
             "sync_errors",
             "synced_on",
+            "content_warnings",
         ]
 
 
-class WebsiteStatusSerializer(serializers.ModelSerializer, WebsiteGoogleDriveMixin):
+class WebsiteStatusSerializer(
+    serializers.ModelSerializer, WebsiteGoogleDriveMixin, WebsiteValidationMixin
+):
     """Serializer for website status fields"""
 
     class Meta:
@@ -184,6 +205,7 @@ class WebsiteStatusSerializer(serializers.ModelSerializer, WebsiteGoogleDriveMix
             "sync_status",
             "sync_errors",
             "synced_on",
+            "content_warnings",
         ]
         read_only_fields = fields
 

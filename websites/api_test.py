@@ -12,6 +12,7 @@ from websites.api import (
     fetch_website,
     get_valid_new_filename,
     get_valid_new_slug,
+    incomplete_content_warnings,
     is_ocw_site,
     mail_on_publish,
     unassigned_youtube_ids,
@@ -381,3 +382,30 @@ def test_update_website_status_draft(mocker, status, notify, has_user, version):
     assert getattr(website, f"{version}_publish_status_updated_on") == now
     assert mock_mail.call_count == (1 if has_user and notify else 0)
     assert mock_log.call_count == (1 if status == PUBLISH_STATUS_ERRORED else 0)
+
+
+@pytest.mark.parametrize("has_missing_ids", [True, False])
+@pytest.mark.parametrize("has_missing_captions", [True, False])
+def test_incomplete_content_warnings(mocker, has_missing_ids, has_missing_captions):
+    """incomplete_content_warnings should return expected warning messages"""
+    website = WebsiteFactory.create()
+    video_content = WebsiteContentFactory.create_batch(3, website=website)
+    no_yt_ids = video_content[0:2] if has_missing_ids else []
+    no_caps = video_content[1:3] if has_missing_captions else []
+    mocker.patch(
+        "websites.api.unassigned_youtube_ids",
+        return_value=no_yt_ids,
+    )
+    mocker.patch(
+        "websites.api.videos_missing_captions",
+        return_value=no_caps,
+    )
+    warnings = incomplete_content_warnings(website)
+    if has_missing_ids:
+        for content in no_yt_ids:
+            assert content.title in warnings[0]
+    if has_missing_captions:
+        for content in no_caps:
+            assert content.title in warnings[1 if has_missing_ids else 0]
+    if not has_missing_ids and not has_missing_captions:
+        assert warnings == []

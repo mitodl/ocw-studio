@@ -179,7 +179,7 @@ def fetch_website(filter_value: str) -> Website:
 
 def is_ocw_site(website: Website) -> bool:
     """Return true if the site is an OCW site"""
-    return website.starter.slug == settings.OCW_IMPORT_STARTER_SLUG
+    return website.starter and website.starter.slug == settings.OCW_IMPORT_STARTER_SLUG
 
 
 def update_youtube_thumbnail(website_id: str, metadata: Dict, overwrite=False):
@@ -307,3 +307,30 @@ def update_website_status(
         mail_on_publish(
             website.name, version, status == PUBLISH_STATUS_SUCCEEDED, user.id
         )
+
+
+def incomplete_content_warnings(website):
+    """
+    Return array with error/warning messages for any website content missing expected data
+    (currently: video youtube ids and captions).
+    """
+    missing_youtube_ids = unassigned_youtube_ids(website)
+
+    missing_youtube_ids_titles = [video.title for video in missing_youtube_ids]
+
+    missing_captions_titles = [
+        video.title for video in videos_missing_captions(website)
+    ]
+
+    messages = []
+
+    if len(missing_youtube_ids_titles) > 0:
+        messages.append(
+            f"The following video resources require YouTube IDs: {', '.join(missing_youtube_ids_titles)}"
+        )
+    if len(missing_captions_titles) > 0:
+        messages.append(
+            f"The following videos have missing captions: {', '.join(missing_captions_titles)}"
+        )
+
+    return messages

@@ -9,6 +9,8 @@ import IntegrationTestHelper, {
 import { makeWebsiteDetail } from "../util/factories/websites"
 import PublishDrawer from "./PublishDrawer"
 import { Website } from "../types/websites"
+import { shouldIf } from "../test_util"
+import { isEmpty } from "ramda"
 
 describe("PublishDrawer", () => {
   let helper: IntegrationTestHelper,
@@ -223,6 +225,19 @@ describe("PublishDrawer", () => {
           expect(wrapper.find(".publish-option-description").text()).toContain(
             "You have unpublished changes."
           )
+        })
+        ;[[], ["error 1", "error2"]].forEach(warnings => {
+          it(`${shouldIf(
+            warnings && !isEmpty(warnings)
+          )} render a warning about missing content`, async () => {
+            website["content_warnings"] = warnings
+            const { wrapper } = await render()
+            const warningText = wrapper.find(".publish-warnings")
+            expect(warningText.exists()).toBe(!isEmpty(warnings))
+            warnings.forEach(warning =>
+              expect(warningText.text()).toContain(warning)
+            )
+          })
         })
 
         it("renders an error message if the publish didn't work", async () => {
