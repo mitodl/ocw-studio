@@ -167,7 +167,7 @@ kombu==4.6.11
     # via
     #   celery
     #   django-server-status
-lxml==4.6.3
+lxml==4.6.5
     # via
     #   premailer
     #   python3-saml
