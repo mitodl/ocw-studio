@@ -284,11 +284,11 @@ def check_incomplete_publish_build_statuses():
         Website.objects.exclude(
             (
                 Q(draft_publish_status__isnull=True)
-                | Q(draft_publish_status__contains=PUBLISH_STATUSES_FINAL)
+                | Q(draft_publish_status__in=PUBLISH_STATUSES_FINAL)
             )
             & (
                 Q(live_publish_status__isnull=True)
-                | Q(live_publish_status__contains=PUBLISH_STATUSES_FINAL)
+                | Q(live_publish_status__in=PUBLISH_STATUSES_FINAL)
             )
         )
         .filter(

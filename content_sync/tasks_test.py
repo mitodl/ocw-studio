@@ -370,10 +370,16 @@ def test_check_incomplete_publish_build_statuses(
         draft_publish_status=old_status,
         latest_build_id_draft=1,
     )
-    draft_site_to_exclude = WebsiteFactory.create(
+    draft_site_to_exclude_time = WebsiteFactory.create(
         draft_publish_status_updated_on=now
         - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME - 5),
         draft_publish_status=old_status,
+        latest_build_id_draft=2,
+    )
+    draft_site_to_exclude_status = WebsiteFactory.create(
+        draft_publish_status_updated_on=now
+        - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME + 5),
+        draft_publish_status=PUBLISH_STATUS_SUCCEEDED,
         latest_build_id_draft=2,
     )
     live_site_in_query = WebsiteFactory.create(
@@ -382,10 +388,16 @@ def test_check_incomplete_publish_build_statuses(
         live_publish_status=old_status,
         latest_build_id_live=3,
     )
-    live_site_excluded = WebsiteFactory.create(
+    live_site_excluded_time = WebsiteFactory.create(
         live_publish_status_updated_on=now
         - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME - 5),
         live_publish_status=old_status,
+        latest_build_id_live=4,
+    )
+    live_site_excluded_status = WebsiteFactory.create(
+        live_publish_status_updated_on=now
+        - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME + 5),
+        live_publish_status=None,
         latest_build_id_live=4,
     )
     api_mock.get_sync_pipeline.return_value.get_build_status.return_value = new_status
@@ -411,8 +423,10 @@ def test_check_incomplete_publish_build_statuses(
                     website, version, new_status, mocker.ANY
                 )
     for website, version in [
-        (draft_site_to_exclude, VERSION_DRAFT),
-        (live_site_excluded, VERSION_LIVE),
+        (draft_site_to_exclude_time, VERSION_DRAFT),
+        (draft_site_to_exclude_status, VERSION_DRAFT),
+        (live_site_excluded_time, VERSION_LIVE),
+        (live_site_excluded_status, VERSION_LIVE),
     ]:
         with pytest.raises(AssertionError):
             api_mock.get_sync_pipeline.assert_any_call(website)
