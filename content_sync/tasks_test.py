@@ -420,6 +420,24 @@ def test_check_incomplete_publish_build_statuses(
             mock_update_status.assert_any_call(website, version, new_status, mocker.ANY)
 
 
+def test_check_incomplete_publish_build_statuses_no_setting(settings, api_mock):
+    """Pipeline apis should not be called if settings.CONTENT_SYNC_PIPELINE is not set"""
+    settings.CONTENT_SYNC_PIPELINE = None
+    stuck_website = WebsiteFactory.create(
+        draft_publish_status_updated_on=now_in_utc()
+        - timedelta(seconds=settings.PUBLISH_STATUS_CUTOFF + 5),
+        draft_publish_status=PUBLISH_STATUS_NOT_STARTED,
+        latest_build_id_draft=1,
+    )
+    api_mock.get_sync_pipeline.return_value.get_build_status.return_value = (
+        PUBLISH_STATUS_NOT_STARTED
+    )
+    tasks.check_incomplete_publish_build_statuses.delay()
+    api_mock.get_sync_pipeline.assert_not_called()
+    stuck_website.refresh_from_db()
+    assert stuck_website.draft_publish_status == PUBLISH_STATUS_NOT_STARTED
+
+
 def test_check_incomplete_publish_build_statuses_abort(settings, api_mock):
     """A website whose publish status has not changed after the cutoff time should be aborted"""
     stuck_website = WebsiteFactory.create(
