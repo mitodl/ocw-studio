@@ -200,7 +200,7 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
     )
     if privacy is not None:
         youtube_mocker().videos.return_value.update.assert_any_call(
-            part="status", body={"id": youtube_id, "privacyStatus": privacy}
+            part="status", body={"id": youtube_id, "status": {"privacyStatus": privacy}}
         )
 
     mock_update_caption.assert_called_once_with(content, youtube_id)
