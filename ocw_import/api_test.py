@@ -222,6 +222,7 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
         "learning_resource_types": ["Problem Sets", "Lecture Notes"],
         "term": "Fall",
         "year": "2007",
+        "legacy_uid": "943e2a4c-3a7f-0e9f-f872-95c7a0cafac6",
     }
 
 

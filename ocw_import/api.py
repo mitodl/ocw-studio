@@ -238,6 +238,8 @@ def import_ocw2hugo_sitemetadata(
     metadata["extra_course_numbers"] = ",".join(course_data["extra_course_numbers"])
     metadata["course_image"] = course_data["course_image"]
     metadata["course_image_thumbnail"] = course_data["course_image_thumbnail"]
+    metadata["legacy_uid"] = course_data["legacy_uid"]
+
     with open("static/js/resources/departments.json", "r") as departments_json_file:
         departments_json = json.load(departments_json_file)
         metadata["department_numbers"] = list(

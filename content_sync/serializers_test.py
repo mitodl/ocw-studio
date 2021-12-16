@@ -54,7 +54,8 @@ EXAMPLE_JSON = """{
     "Design"
   ],
   "description": "**This** is the description",
-  "title": "Content Title"
+  "title": "Content Title",
+  "site_uid": "site_uid"
 }
 """
 
@@ -280,6 +281,27 @@ def test_data_file_serialize(serializer_cls):
         else yaml.load(file_content, Loader=yaml.SafeLoader)
     )
     assert parsed_file_content == {**metadata, "title": "Content Title"}
+
+
+@pytest.mark.django_db
+def test_metadata_file_serialize():
+    """JsonFileSerializer should create the expected data file contents for sitemetadata files"""
+    metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
+    content = WebsiteContentFactory.create(
+        text_id="abcdefg",
+        title="Content Title",
+        type="sitemetadata",
+        metadata=metadata,
+    )
+    site_config = SiteConfig(content.website.starter.config)
+    file_content = JsonFileSerializer(site_config).serialize(website_content=content)
+    parsed_file_content = json.loads(file_content)
+
+    assert parsed_file_content == {
+        **metadata,
+        "site_uid": str(content.website.uuid),
+        "title": "Content Title",
+    }
 
 
 @pytest.mark.django_db
