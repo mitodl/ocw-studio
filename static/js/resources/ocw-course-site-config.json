@@ -825,6 +825,11 @@
                 }
               },
               "widget": "hierarchical-select"
+            },
+            {
+              "label": "Legacy UID",
+              "name": "legacy_uid",
+              "widget": "string"
             }
           ],
           "file": "data/course.json",

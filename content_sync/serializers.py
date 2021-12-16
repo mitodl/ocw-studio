@@ -14,7 +14,7 @@ from main.utils import (
     is_valid_uuid,
     remove_trailing_slashes,
 )
-from websites.constants import CONTENT_MENU_FIELD
+from websites.constants import CONTENT_MENU_FIELD, CONTENT_TYPE_METADATA
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import ConfigItem, SiteConfig
 
@@ -133,8 +133,12 @@ class JsonFileSerializer(BaseContentFileSerializer):
     """Serializer/deserializer class for pure JSON content and files"""
 
     def serialize(self, website_content: WebsiteContent) -> str:
+        metadata = website_content.metadata
+        if website_content.type == CONTENT_TYPE_METADATA:
+            metadata["site_uid"] = str(website_content.website.uuid)
+
         return json.dumps(
-            self.serialize_contents(website_content.metadata, website_content.title),
+            self.serialize_contents(metadata, website_content.title),
             indent=2,
         )
 
@@ -145,7 +149,7 @@ class JsonFileSerializer(BaseContentFileSerializer):
         return self.deserialize_data_file(
             website=website,
             filepath=filepath,
-            parsed_file_data=parsed_file_data,
+            parsed_file_data=dict_without_keys(parsed_file_data, "site_uid"),
         )
 
 
