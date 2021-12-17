@@ -108,9 +108,13 @@ def test_website_serializer(has_starter):
     assert "config" not in serialized_data
 
 
+@pytest.mark.parametrize("warnings", [[], ["error1", "error2"]])
 @pytest.mark.parametrize("drive_folder", [None, "abc123"])
-def test_website_status_serializer(settings, drive_folder):
+def test_website_status_serializer(mocker, settings, drive_folder, warnings):
     """WebsiteStatusSerializer should serialize a Website object with the correct status fields"""
+    mocker.patch(
+        "websites.serializers.incomplete_content_warnings", return_value=warnings
+    )
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "dfg789"
     settings.DRIVE_SERVICE_ACCOUNT_CREDS = {"key": "value"}
     settings.DRIVE_SHARED_ID = "abc123"
@@ -134,6 +138,7 @@ def test_website_status_serializer(settings, drive_folder):
         if drive_folder is not None
         else None
     )
+    assert sorted(serialized_data["content_warnings"]) == sorted(warnings)
     for (key, value) in values.items():
         assert serialized_data.get(key) == value
 

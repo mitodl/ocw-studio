@@ -1,13 +1,16 @@
 import moment from "moment"
 import sinon, { SinonStub } from "sinon"
 import { act } from "react-dom/test-utils"
+import { isEmpty } from "ramda"
 
 import { siteApiActionUrl, siteApiDetailUrl } from "../lib/urls"
+import { shouldIf } from "../test_util"
+import { makeWebsiteDetail } from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
-import { makeWebsiteDetail } from "../util/factories/websites"
 import PublishDrawer from "./PublishDrawer"
+
 import { Website } from "../types/websites"
 
 describe("PublishDrawer", () => {
@@ -223,6 +226,19 @@ describe("PublishDrawer", () => {
           expect(wrapper.find(".publish-option-description").text()).toContain(
             "You have unpublished changes."
           )
+        })
+        ;[[], ["error 1", "error2"]].forEach(warnings => {
+          it(`${shouldIf(
+            warnings && !isEmpty(warnings)
+          )} render a warning about missing content`, async () => {
+            website["content_warnings"] = warnings
+            const { wrapper } = await render()
+            const warningText = wrapper.find(".publish-warnings")
+            expect(warningText.exists()).toBe(!isEmpty(warnings))
+            warnings.forEach(warning =>
+              expect(warningText.text()).toContain(warning)
+            )
+          })
         })
 
         it("renders an error message if the publish didn't work", async () => {

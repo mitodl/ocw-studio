@@ -1,14 +1,16 @@
 import React, { useState } from "react"
 import { Modal, ModalBody, ModalHeader } from "reactstrap"
+import { useStore } from "react-redux"
 import { useMutation } from "redux-query-react"
-import moment from "moment"
 import { requestAsync } from "redux-query"
+import moment from "moment"
+import { isEmpty } from "ramda"
 
 import { websiteAction, websiteDetailRequest } from "../query-configs/websites"
-import { Website } from "../types/websites"
 import { isErrorStatusCode } from "../lib/util"
-import { useStore } from "react-redux"
 import PublishStatusIndicator from "./PublishStatusIndicator"
+
+import { Website } from "../types/websites"
 
 const STAGING = "staging"
 const PRODUCTION = "production"
@@ -144,6 +146,19 @@ export default function PublishDrawer(props: Props): JSX.Element {
       <ModalBody>
         {renderOption(STAGING)}
         {website.is_admin ? renderOption(PRODUCTION) : null}
+        {website.content_warnings && !isEmpty(website.content_warnings) ? (
+          <div className="publish-warnings pt-2">
+            <strong className="text-danger">
+              This site is missing information that could affect publishing
+              output.
+            </strong>
+            <ul className="text-danger">
+              {website.content_warnings.map((warning: string, idx: number) => (
+                <li key={idx}>{warning}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </ModalBody>
     </Modal>
   )

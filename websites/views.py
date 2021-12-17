@@ -30,12 +30,7 @@ from main.utils import uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
 from websites import constants
-from websites.api import (
-    get_valid_new_filename,
-    unassigned_youtube_ids,
-    update_website_status,
-    videos_missing_captions,
-)
+from websites.api import get_valid_new_filename, update_website_status
 from websites.constants import (
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
@@ -170,15 +165,6 @@ class WebsiteViewSet(
         try:
             website = self.get_object()
 
-            messages = [
-                "WARNING: " + message for message in incomplete_videos_messages(website)
-            ]
-
-            if messages:
-                message = "\n".join(messages)
-            else:
-                message = ""
-
             Website.objects.filter(pk=website.pk).update(
                 has_unpublished_draft=False,
                 draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
@@ -187,10 +173,7 @@ class WebsiteViewSet(
                 draft_last_published_by=request.user,
             )
             trigger_publish(website.name, VERSION_DRAFT)
-            return Response(
-                status=200,
-                data={"details": message},
-            )
+            return Response(status=200)
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error previewing %s", name)
             return Response(status=500, data={"details": str(exc)})
@@ -203,11 +186,6 @@ class WebsiteViewSet(
         try:
             website = self.get_object()
 
-            messages = incomplete_videos_messages(website)
-
-            if messages:
-                return Response(status=400, data={"details": "\n".join(messages)})
-
             Website.objects.filter(pk=website.pk).update(
                 has_unpublished_live=False,
                 live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
@@ -216,10 +194,7 @@ class WebsiteViewSet(
                 live_last_published_by=request.user,
             )
             trigger_publish(website.name, VERSION_LIVE)
-            return Response(
-                status=200,
-                data={"details": ""},
-            )
+            return Response(status=200)
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error publishing %s", name)
             return Response(status=500, data={"details": str(exc)})
@@ -553,29 +528,3 @@ class WebsiteCollectionItemViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
             website_collection__id=parent_lookup_collection
         ).select_related("website")
         return queryset.order_by("position")
-
-
-def incomplete_videos_messages(website):
-    "Return array with error/warning messages if there are videos missing youtube ids or captions"
-    missing_youtube_ids = unassigned_youtube_ids(website)
-
-    missing_youtube_ids_titles = [video.title for video in missing_youtube_ids]
-
-    missing_captions_titles = [
-        video.title
-        for video in videos_missing_captions(website)
-        if video not in missing_youtube_ids
-    ]
-
-    messages = []
-
-    if len(missing_youtube_ids_titles) > 0:
-        messages.append(
-            f"The following video resources require YouTube IDs: {', '.join(missing_youtube_ids_titles)}"
-        )
-    if len(missing_captions_titles) > 0:
-        messages.append(
-            f"The following videos have missing captions: {', '.join(missing_captions_titles)}"
-        )
-
-    return messages

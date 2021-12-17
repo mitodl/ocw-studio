@@ -242,6 +242,7 @@ export type Website = WebsiteStatus & {
   gdrive_url: string | null // eslint-disable-line
   has_unpublished_draft: boolean // eslint-disable-line
   has_unpublished_live: boolean // eslint-disable-line
+  content_warnings?: Array<string> // eslint-disable-line
 }
 
 type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR
