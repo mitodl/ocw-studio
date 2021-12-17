@@ -38,11 +38,14 @@ jobs:
     plan:
       - try:
           put: ocw-studio-webhook
+          timeout: 5m
+          attempts: 3
           params:
             status: "started"
       - get: ocw-hugo-themes
         trigger: true
         timeout: 5m
+        attempts: 3
         on_failure:
           try:
             put: ocw-studio-webhook
@@ -51,6 +54,7 @@ jobs:
       - get: ocw-hugo-projects
         trigger: true
         timeout: 5m
+        attempts: 3
         on_failure:
           try:
             put: ocw-studio-webhook
@@ -59,6 +63,7 @@ jobs:
       - get: course-markdown
         trigger: false
         timeout: 5m
+        attempts: 3
         on_failure:
           try:
             put: ocw-studio-webhook
@@ -66,6 +71,7 @@ jobs:
                 status: "errored"
       - task: build-course-task
         timeout: 20m
+        attempts: 3
         params:
           OCW_STUDIO_BASE_URL: ((ocw-studio-url))
           STATIC_API_BASE_URL: ((static-api-base-url))
@@ -94,10 +100,12 @@ jobs:
         on_failure:
           try:
             put: ocw-studio-webhook
+            attempts: 3
             params:
                 status: "errored"
       - task: copy-s3-buckets
         timeout: 20m
+        attempts: 3
         config:
           inputs:
             - name: ocw-hugo-themes
@@ -117,10 +125,12 @@ jobs:
         on_failure:
           try:
             put: ocw-studio-webhook
+            attempts: 3
             params:
                 status: "errored"
       - task: clear-cdn-cache
         timeout: 5m
+        attempts: 3
         config:
           platform: linux
           image_resource:
@@ -138,10 +148,12 @@ jobs:
         on_success:
           try:
             put: ocw-studio-webhook
+            attempts: 3
             params:
                 status: "succeeded"
         on_failure:
           try:
             put: ocw-studio-webhook
+            attempts: 3
             params:
                 status: "errored"
