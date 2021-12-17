@@ -8,6 +8,7 @@ import BooleanField from "../components/widgets/BooleanField"
 import RelationField from "../components/widgets/RelationField"
 import MenuField from "../components/widgets/MenuField"
 import HierarchicalSelectField from "../components/widgets/HierarchicalSelectField"
+import WebsiteCollectionField from "../components/widgets/WebsiteCollectionField"
 
 import { objectToFormData } from "./util"
 import {
@@ -46,6 +47,8 @@ export const componentFromWidget = (
     return BooleanField
   case WidgetVariant.Text:
     return "textarea"
+  case WidgetVariant.String:
+    return "input"
   case WidgetVariant.Hidden:
     return null
   case WidgetVariant.Relation:
@@ -54,6 +57,8 @@ export const componentFromWidget = (
     return MenuField
   case WidgetVariant.HierarchicalSelect:
     return HierarchicalSelectField
+  case WidgetVariant.WebsiteCollection:
+    return WebsiteCollectionField
   default:
     return "input"
   }
@@ -295,6 +300,8 @@ const defaultForField = (
   case WidgetVariant.HierarchicalSelect:
     return []
   case WidgetVariant.Menu:
+    return []
+  case WidgetVariant.WebsiteCollection:
     return []
   default:
     return ""

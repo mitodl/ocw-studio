@@ -29,6 +29,24 @@ collections:
         sortable: true
 
   - category: Content
+    folder: content/course_collections
+    label: "Course Collections"
+    name: "course_collections"
+    fields:
+      - label: Title
+        name: title
+        widget: string
+        required: true
+
+      - label: Description
+        name: description
+        widget: markdown
+
+      - label: Courses
+        name: courses
+        widget: website-collection
+
+  - category: Content
     folder: content/promos
     label: Promo
     name: promos

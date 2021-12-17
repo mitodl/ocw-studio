@@ -46,6 +46,30 @@
           "widget": "string"
         },
         {
+          "label": "Description",
+          "name": "description",
+          "widget": "markdown"
+        },
+        {
+          "label": "Courses",
+          "name": "courses",
+          "widget": "website-collection"
+        }
+      ],
+      "folder": "content/course_collections",
+      "label": "Course Collections",
+      "name": "course_collections"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
           "label": "Subtitle",
           "name": "subtitle",
           "widget": "string"

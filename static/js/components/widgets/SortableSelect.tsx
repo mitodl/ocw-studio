@@ -23,8 +23,11 @@ interface Props {
   onChange: (update: string[]) => void
   options: Option[]
   defaultOptions?: Option[]
-  loadOptions: (inputValue: string) => Promise<Option[] | undefined>
   name: string
+  loadOptions: (
+    inputValue: string,
+    callback: (options: Option[]) => void
+  ) => void
 }
 
 export default function SortableSelect(props: Props) {
@@ -52,12 +55,7 @@ export default function SortableSelect(props: Props) {
     [focusedContent, setFocusedContent, onChange, value]
   )
 
-  /**
-   * This callback is only used for the SelectField that
-   * we present as an 'add' interface when this component
-   * is displayin the sortable mode.
-   */
-  const handleAddSortableItem = useCallback(
+  const setFocusedContentCB = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
       setFocusedContent(event.target.value)
     },
@@ -99,7 +97,7 @@ export default function SortableSelect(props: Props) {
         <SelectField
           name={name}
           value={focusedContent}
-          onChange={handleAddSortableItem}
+          onChange={setFocusedContentCB}
           options={options}
           loadOptions={loadOptions}
           defaultOptions={defaultOptions}

@@ -102,6 +102,10 @@ export const getFieldSchema = (
     schema = yup.array()
     break
   }
+  case WidgetVariant.WebsiteCollection: {
+    schema = yup.array()
+    break
+  }
   case WidgetVariant.HierarchicalSelect: {
     schema = minMax(yup.array(), field)
     break

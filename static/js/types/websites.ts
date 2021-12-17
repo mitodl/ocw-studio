@@ -22,7 +22,8 @@ export enum WidgetVariant {
   Object = "object",
   Relation = "relation",
   Menu = "menu",
-  HierarchicalSelect = "hierarchical-select"
+  HierarchicalSelect = "hierarchical-select",
+  WebsiteCollection = "website-collection"
 }
 
 export interface FieldValueCondition {
@@ -68,6 +69,10 @@ export interface StringConfigField extends ConfigFieldBaseProps {
 
 export interface HiddenConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.Hidden
+}
+
+export interface WebsiteCollectionConfigField extends ConfigFieldBaseProps {
+  widget: WidgetVariant.WebsiteCollection
 }
 
 export interface SelectConfigField extends ConfigFieldBaseProps {
@@ -148,6 +153,7 @@ export type ConfigField =
   | RelationConfigField
   | MenuConfigField
   | HierarchicalSelectConfigField
+  | WebsiteCollectionConfigField
 
 export interface BaseConfigItem {
   name: string

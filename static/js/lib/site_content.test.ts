@@ -6,6 +6,7 @@ import SelectField from "../components/widgets/SelectField"
 import BooleanField from "../components/widgets/BooleanField"
 import RelationField from "../components/widgets/RelationField"
 import MenuField from "../components/widgets/MenuField"
+import WebsiteCollectionField from "../components/widgets/WebsiteCollectionField"
 
 import {
   makeWebsiteDetail,
@@ -406,6 +407,7 @@ describe("site_content", () => {
         [WidgetVariant.Relation, RelationField],
         [WidgetVariant.Menu, MenuField],
         [WidgetVariant.HierarchicalSelect, HierarchicalSelectField],
+        [WidgetVariant.WebsiteCollection, WebsiteCollectionField],
         ["unexpected_type", "input"]
       ].forEach(([widget, expected]) => {
         const field = makeWebsiteConfigField({

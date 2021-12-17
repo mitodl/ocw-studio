@@ -10,6 +10,7 @@ import SortableSelect, { SortableItem } from "./SortableSelect"
 import { Option } from "./SelectField"
 import { zip } from "ramda"
 import { default as SortableItemComponent } from "../SortableItem"
+import { triggerSortableSelect } from "./test_util"
 
 const createFakeOptions = (times: number): Option[] =>
   Array(times)
@@ -72,15 +73,7 @@ describe("SortableSelect", () => {
 
   it("should allow adding another element", async () => {
     const { wrapper } = await render()
-    await act(async () => {
-      // @ts-ignore
-      wrapper.find("SelectField").prop("onChange")({
-        // @ts-ignore
-        target: { value: newOptions[0].label }
-      })
-    })
-    wrapper.update()
-    wrapper.find(".cyan-button").simulate("click")
+    await triggerSortableSelect(wrapper, newOptions[0].label)
     sinon.assert.calledWith(onChange, [newOptions[0].label])
     expect(wrapper.find("SelectField").prop("value")).toBeUndefined()
   })
