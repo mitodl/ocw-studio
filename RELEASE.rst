@@ -1,6 +1,24 @@
 Release Notes
 =============
 
+Version 0.38.0 (Released December 20, 2021)
+--------------
+
+- Fix task bug caused by decorator (#873)
+- Fix Youtube API status update call (#875)
+- Bump lxml from 4.6.3 to 4.6.5 (#868)
+- Split sortable UI off from RelationWidget into SortableSelect component
+- Run incomplete_publish_build_statuses task only if a pipeline backend is set (#851)
+- set up swc for jest, webpack
+- Bump django from 3.1.13 to 3.1.14 (#866)
+- Log an error when a pipeline fails (#854)
+- Make youtube videos public for live publishing (#850)
+- remove an unused dependency
+- Fix outdated starter configs, add README instructions to update them via mgmt command (#858)
+- Avoid certain WebsiteContent filenames (#855)
+- Concourse in a docker container (#852)
+- add site search
+
 Version 0.37.5 (Released December 14, 2021)
 --------------
 
