@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.38.0
+Version 0.38.0 (Released December 20, 2021)
 --------------
 
 - Fix task bug caused by decorator (#873)
