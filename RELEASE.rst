@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.39.0
+--------------
+
+- Retry all pipeline steps up to 3x (#864)
+- Descriptive message on front end for publishing warnings (#867)
+- add uids to metadata output
+- Fix a bad query (#877)
+
 Version 0.38.0 (Released December 20, 2021)
 --------------
 
