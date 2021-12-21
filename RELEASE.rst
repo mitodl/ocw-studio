@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.39.0
+Version 0.39.0 (Released December 21, 2021)
 --------------
 
 - Retry all pipeline steps up to 3x (#864)
