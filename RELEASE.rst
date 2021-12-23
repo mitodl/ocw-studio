@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.39.1
+Version 0.39.1 (Released December 23, 2021)
 --------------
 
 - Revert "use static version file as trigger for sites other than ocw-www (#881)" (#883)
