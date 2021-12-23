@@ -152,14 +152,7 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
 
         site_config = SiteConfig(self.website.starter.config)
         site_url = f"{site_config.root_url_path}/{self.website.name}".strip("/")
-        if self.website.name == settings.ROOT_WEBSITE_NAME:
-            base_url = ""
-            themes_trigger = "true"
-            js_trigger = "false"
-        else:
-            base_url = site_url
-            themes_trigger = "false"
-            js_trigger = "true"
+        base_url = "" if self.website.name == settings.ROOT_WEBSITE_NAME else site_url
         purge_header = (
             ""
             if settings.CONCOURSE_HARD_PURGE
@@ -215,8 +208,6 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     .replace("((purge_header))", purge_header)
                     .replace("((version))", version)
                     .replace("((api-token))", settings.API_BEARER_TOKEN or "")
-                    .replace("((js-trigger))", js_trigger)
-                    .replace("((themes-trigger))", themes_trigger)
                 )
             config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
             log.debug(config)

@@ -11,12 +11,6 @@ resources:
     source:
       bucket: ol-eng-artifacts
       regexp: ocw-hugo-themes/release-candidate/ocw-hugo-themes-(.*).tgz
-  - name: ocw-static-version
-    type: s3
-    source:
-      bucket: ((ocw-bucket))
-      regexp: static/version\.(.*).txt
-      initial_path: static/version.0.txt
   - name: course-markdown
     type: git
     source:
@@ -49,15 +43,7 @@ jobs:
           params:
             status: "started"
       - get: ocw-hugo-themes
-        trigger: ((themes-trigger))
-        timeout: 5m
-        on_failure:
-          try:
-            put: ocw-studio-webhook
-            params:
-                status: "errored"
-      - get: ocw-static-version
-        trigger: ((js-trigger))
+        trigger: true
         timeout: 5m
         attempts: 3
         on_failure:
