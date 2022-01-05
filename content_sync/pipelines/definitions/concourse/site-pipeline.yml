@@ -10,12 +10,12 @@ resources:
     type: s3
     source:
       bucket: ol-eng-artifacts
-      regexp: ocw-hugo-themes/release-candidate/ocw-hugo-themes-(.*).tgz
+      regexp: ocw-hugo-themes\/release-candidate\/ocw-hugo-themes-(.*).tgz
   - name: ocw-static-version
     type: s3
     source:
       bucket: ((ocw-bucket))
-      regexp: static/version\.(.*).txt
+      regexp: static\/version\.(.*)\.txt
       initial_path: static/version.0.txt
   - name: course-markdown
     type: git
@@ -49,7 +49,7 @@ jobs:
           params:
             status: "started"
       - get: ocw-hugo-themes
-        trigger: ((themes-trigger))
+        trigger: ((theme-created-trigger))
         timeout: 5m
         on_failure:
           try:
@@ -57,7 +57,7 @@ jobs:
             params:
                 status: "errored"
       - get: ocw-static-version
-        trigger: ((js-trigger))
+        trigger: ((theme-deployed-trigger))
         timeout: 5m
         attempts: 3
         on_failure:
