@@ -48,22 +48,6 @@ PERMISSION_PUBLISH = "websites.publish_website"
 PERMISSION_EDIT_CONTENT = "websites.edit_content_website"
 PERMISSION_COLLABORATE = "websites.add_collaborators_website"
 
-PERMISSION_CREATE_COLLECTION = "websites.add_websitecollection"
-PERMISSION_DELETE_COLLECTION = "websites.delete_websitecollection"
-PERMISSION_EDIT_COLLECTION = "websites.change_websitecollection"
-PERMISSION_CREATE_COLLECTION_ITEM = "websites.add_websitecollectionitem"
-PERMISSION_DELETE_COLLECTION_ITEM = "websites.delete_websitecollectionitem"
-PERMISSION_EDIT_COLLECTION_ITEM = "websites.change_websitecollectionitem"
-
-COLLECTION_PERMISSIONS = [
-    PERMISSION_CREATE_COLLECTION,
-    PERMISSION_DELETE_COLLECTION,
-    PERMISSION_EDIT_COLLECTION,
-    PERMISSION_CREATE_COLLECTION_ITEM,
-    PERMISSION_EDIT_COLLECTION_ITEM,
-    PERMISSION_DELETE_COLLECTION_ITEM,
-]
-
 ROLE_ADMINISTRATOR = "admin"
 ROLE_EDITOR = "editor"
 ROLE_GLOBAL = "global_admin"

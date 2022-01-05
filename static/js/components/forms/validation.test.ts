@@ -1,5 +1,5 @@
 import * as yup from "yup"
-import { getContentSchema, WebsiteCollectionFormSchema } from "./validation"
+import { getContentSchema } from "./validation"
 import * as siteContentFuncs from "../../lib/site_content"
 import sinon, { SinonSandbox } from "sinon"
 
@@ -582,21 +582,6 @@ describe("form validation utils", () => {
           values
         )
       })
-    })
-  })
-
-  describe("Website collection validation", () => {
-    it("should require a title", async () => {
-      for (const titleVal of [undefined, null, ""]) {
-        await WebsiteCollectionFormSchema.validate({ title: titleVal }).catch(
-          err => {
-            expect(err.errors[0]).toMatch("Title is a required field")
-          }
-        )
-      }
-      expect(
-        WebsiteCollectionFormSchema.isValid({ title: "My Title" })
-      ).toBeTruthy()
     })
   })
 })

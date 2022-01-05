@@ -37,18 +37,10 @@ from websites.constants import (
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
 )
-from websites.models import (
-    Website,
-    WebsiteCollection,
-    WebsiteCollectionItem,
-    WebsiteContent,
-    WebsiteStarter,
-)
+from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import (
     BearerTokenPermission,
     HasWebsiteCollaborationPermission,
-    HasWebsiteCollectionItemPermission,
-    HasWebsiteCollectionPermission,
     HasWebsiteContentPermission,
     HasWebsitePermission,
     HasWebsitePreviewPermission,
@@ -57,8 +49,6 @@ from websites.permissions import (
 )
 from websites.serializers import (
     WebsiteCollaboratorSerializer,
-    WebsiteCollectionItemSerializer,
-    WebsiteCollectionSerializer,
     WebsiteContentCreateSerializer,
     WebsiteContentDetailSerializer,
     WebsiteContentSerializer,
@@ -494,37 +484,3 @@ class WebsiteContentViewSet(
         website.save()
         import_website_files.delay(website.name)
         return Response(status=200)
-
-
-class WebsiteCollectionViewSet(
-    viewsets.ModelViewSet,
-):
-    """Viewset for WebsiteCollections"""
-
-    permission_classes = (HasWebsiteCollectionPermission,)
-    pagination_class = DefaultPagination
-    serializer_class = WebsiteCollectionSerializer
-    lookup_field = "id"
-
-    def get_queryset(self):
-        return WebsiteCollection.objects.all()
-
-
-class WebsiteCollectionItemViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
-    """Viewset for WebsiteCollectionItems"""
-
-    permission_classes = (HasWebsiteCollectionItemPermission,)
-    serializer_class = WebsiteCollectionItemSerializer
-
-    def get_serializer_context(self):
-        added_context = {
-            "website_collection_id": self.kwargs.get("parent_lookup_collection")
-        }
-        return {**super().get_serializer_context(), **added_context}
-
-    def get_queryset(self):
-        parent_lookup_collection = self.kwargs.get("parent_lookup_collection")
-        queryset = WebsiteCollectionItem.objects.filter(
-            website_collection__id=parent_lookup_collection
-        ).select_related("website")
-        return queryset.order_by("position")

@@ -343,33 +343,3 @@ class WebsiteStarter(TimestampedModel):
 
     def __str__(self):
         return f"name='{self.name}', source={self.source}, commit={self.commit}"
-
-
-class WebsiteCollection(TimestampedModel):
-    """An ordered list of websites"""
-
-    title = models.CharField(
-        max_length=200, null=False, help_text="A title for the WebsiteCollection"
-    )
-    description = models.TextField(
-        null=True, blank=True, help_text="A description for the WebsiteCollection"
-    )
-    owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
-
-    def __str__(self):
-        return f"WebsiteCollection '{self.title}'"
-
-
-class WebsiteCollectionItem(TimestampedModel):
-    """An entry in a WebsiteCollection"""
-
-    website_collection = models.ForeignKey(
-        WebsiteCollection, null=False, blank=False, on_delete=models.CASCADE
-    )
-    website = models.ForeignKey(
-        Website, null=False, blank=False, on_delete=models.CASCADE
-    )
-    position = models.PositiveIntegerField()
-
-    def __str__(self):
-        return f"{self.website_collection.title}[{self.position}]: {self.website.title}"

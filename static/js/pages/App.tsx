@@ -11,7 +11,6 @@ import Header from "../components/Header"
 import Footer from "../components/Footer"
 import HomePage from "./HomePage"
 import MarkdownEditorTestPage from "./MarkdownEditorTestPage"
-import WebsiteCollectionsPage from "./WebsiteCollectionsPage"
 import useTracker from "../hooks/tracker"
 import { websiteDetailRequest } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
@@ -65,7 +64,6 @@ export default function App(): JSX.Element {
                 </WebsiteContext.Provider>
               )}
             </Route>
-            <Route path="/collections" component={WebsiteCollectionsPage} />
             <Route path="/privacy-policy" component={PrivacyPolicyPage} />
             <Route path="/markdown-editor">
               <MarkdownEditorTestPage />

@@ -2,24 +2,21 @@ import React from "react"
 import { shallow } from "enzyme"
 
 import SortableItem from "./SortableItem"
-import { WebsiteCollectionItem } from "../types/website_collections"
-import { makeWebsiteCollectionItem } from "../util/factories/website_collections"
 
 describe("SortableItem", () => {
-  let item: WebsiteCollectionItem, deleteStub: jest.Mock<any, any>
+  let deleteStub: jest.Mock<any, any>
 
   const renderItem = () =>
     shallow(
       <SortableItem
         deleteItem={deleteStub}
-        item={item}
+        item="item-id"
         id="item-id"
         title="A TITLE"
       />
     )
 
   beforeEach(() => {
-    item = makeWebsiteCollectionItem()
     deleteStub = jest.fn()
   })
 
@@ -39,6 +36,6 @@ describe("SortableItem", () => {
     const deleteButton = wrapper.find(".material-icons").at(1)
     expect(deleteButton.text()).toBe("remove_circle_outline")
     deleteButton.simulate("click")
-    expect(deleteStub).toBeCalledWith(item)
+    expect(deleteStub).toBeCalledWith("item-id")
   })
 })

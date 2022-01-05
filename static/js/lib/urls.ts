@@ -16,8 +16,6 @@ export const siteCollaboratorsDetailUrl = siteCollaboratorsUrl.segment(
   ":userId/"
 )
 
-export const collectionsBaseUrl = UrlAssembler.prefix("/collections/")
-
 // API URLS
 const api = UrlAssembler.prefix("/api/")
 
@@ -45,48 +43,3 @@ export const siteApiListingUrl = siteApi.query({
 export const siteApiContentSyncGDriveUrl = siteApiContentUrl.segment(
   "gdrive_sync/"
 )
-
-// WEBSITE COLLECTIONS API
-
-/**
- * Listing API URL for WebsiteCollection records
- **/
-export const collectionsApiUrl = api.segment("collections/")
-
-/**
- * Detail API URL for WebsiteCollection records
- *
- * Returns only a single WebsiteCollection record, but does
- * not include its items.
- **/
-export const collectionsApiDetailUrl = collectionsApiUrl.segment(
-  ":collectionId/"
-)
-
-/**
- * Listing API for WebsiteCollectionItems
- *
- * This looks like:
- *
- * /api/collections/:collectionId/items/
- *
- * It returns the items contained in a WebsiteCollection.
- **/
-export const wcItemsApiUrl = collectionsApiDetailUrl.segment("items/")
-
-/**
- * Detail API for WebsiteCollectionItems
- *
- * Detail view for a single WebsiteCollectionItem record.
- * this looks like:
- *
- * /api/collections/:collectionId/items/:itemId/
- *
- * It's mainly of use for changing the order of items in the
- * WebsiteCollection by editing the `position` attribute.
- * Note that if a single `WebsiteCollectionItem` has its position
- * changed the backend takes care of reconciling all the other items
- * in the list w/ that position change, so only one request is needed
- * to change an item's position.
- **/
-export const wcItemsApiDetailUrl = wcItemsApiUrl.segment(":itemId/")

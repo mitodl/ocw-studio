@@ -143,14 +143,3 @@ export const getContentSchema = (
   }
   return yup.object().shape(yupObjectShape)
 }
-
-/**
- * Validation for the basic WebsiteCollection form
- **/
-export const WebsiteCollectionFormSchema = yup.object({
-  title: yup
-    .string()
-    .required()
-    .label("Title"),
-  description: yup.string().label("Description")
-})

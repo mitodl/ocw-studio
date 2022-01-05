@@ -5,7 +5,7 @@ import React, {
   useState
 } from "react"
 import SelectField, { Option } from "./SelectField"
-import SortableItem from "../SortableItem"
+import { default as SortableItemComponent } from "../SortableItem"
 import SortWrapper from "../SortWrapper"
 import { DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
@@ -116,7 +116,7 @@ export default function SortableSelect(props: Props) {
         generateItemUUID={x => x}
       >
         {value.map(item => (
-          <SortableItem
+          <SortableItemComponent
             key={item.id}
             title={item.title}
             id={item.id}

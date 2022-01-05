@@ -69,8 +69,7 @@ class Closed<T> extends ModalStateVariant<T> {
 }
 
 /**
- * Represent the three possible states for the WebsiteCollection
- * adding / editing drawer.
+ * Represent the three possible states for an adding / editing drawer.
  *
  * Use the `createModalState` helper function to simplify creating
  * instances of these types.
@@ -83,8 +82,6 @@ export type ModalState<T> = Editing<T> | Adding<T> | Closed<T>
 
 /**
  * Helper function for creating ModalState objects
- * (these are used by the WebsiteCollection editing/
- * creation UI to represent possible drawer states).
  */
 export function createModalState<T>(state: "adding"): Adding<T>
 export function createModalState<T>(state: "closed"): Closed<T>
