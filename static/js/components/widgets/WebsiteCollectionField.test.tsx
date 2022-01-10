@@ -30,7 +30,7 @@ describe("WebsiteCollectionField", () => {
       value: []
     })
     websites = makeWebsiteListing()
-    websiteOptions = formatOptions(websites, "uuid")
+    websiteOptions = formatOptions(websites, "name")
     // @ts-ignore
     useWebsiteSelectOptions.mockReturnValue({
       options:     websiteOptions,
@@ -44,7 +44,7 @@ describe("WebsiteCollectionField", () => {
 
   it("should pass things down to SortableSelect", async () => {
     const value = websites.map(website => ({
-      id:    website.uuid,
+      id:    website.name,
       title: website.title
     }))
 
@@ -60,13 +60,13 @@ describe("WebsiteCollectionField", () => {
   it("should let the user add a website, with UUID and title", async () => {
     const { wrapper } = await render()
     wrapper.update()
-    await triggerSortableSelect(wrapper, [websites[0].uuid])
+    await triggerSortableSelect(wrapper, [websites[0].name])
     expect(onChange).toBeCalledWith({
       target: {
         name:  "test-site-collection",
         value: [
           {
-            id:    websites[0].uuid,
+            id:    websites[0].name,
             title: websites[0].title
           }
         ]

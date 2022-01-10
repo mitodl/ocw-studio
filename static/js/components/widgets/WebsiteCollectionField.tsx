@@ -35,7 +35,7 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
     [onChange, websiteMap, name]
   )
 
-  const { options, loadOptions } = useWebsiteSelectOptions()
+  const { options, loadOptions } = useWebsiteSelectOptions("name")
 
   useEffect(() => {
     setWebsiteMap(cur => {
