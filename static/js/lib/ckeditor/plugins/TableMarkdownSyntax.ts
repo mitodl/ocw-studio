@@ -16,13 +16,15 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
   get showdownExtension() {
     return function resourceExtension(): Showdown.ShowdownExtension[] {
       return TABLE_ELS.map(el => {
-        const shortcodeRegex = new RegExp(`{{< ${el}(open|close) >}}`, "g")
+        const shortcodeRegex = new RegExp(`{{< ${el}(open|close)(.*) >}}`, "g")
 
         return {
           type:    "lang",
           regex:   shortcodeRegex,
           replace: (_s: string, position: Position) => {
-            return position === "open" ? `<${el}>` : `</${el}>`
+            const attrs = _s.split(" ").filter(part => part.includes("="))
+            const attrsString = attrs.length > 0 ? attrs.map(arg => ` ${arg}`) : ""
+            return position === "open" ? `<${el}${attrsString}>` : `</${el}>`
           }
         }
       })
@@ -37,7 +39,12 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
         replacement: (content: string, node: Turndown.Node): string => {
           const name = node.nodeName.toLowerCase()
           const normalizedContent = content.replace("\n\n", "\n")
-          return `{{< ${name}open >}}${normalizedContent}{{< ${name}close >}}`
+          const attributes = node.hasAttributes() ?
+            Array.from(node.attributes)
+              .map(attr => ` ${attr.name}="${attr.value}"`)
+              .join("") :
+            ""
+          return `{{< ${name}open${attributes} >}}${normalizedContent}{{< ${name}close >}}`
         }
       }
     }
