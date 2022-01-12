@@ -55,3 +55,7 @@ export const TABLE_ELS: TurndownService.TagName[] = [
   "thead",
   "tfoot"
 ]
+
+export const TABLE_ALLOWED_ATTRS: string[] = ["colspan", "rowspan"]
+
+export const ATTRIBUTE_REGEX = /(\S+)=["']?((?:.(?!["']?\s+(?:\S+)=|\s*\/?[>"']))+.)["']?/g
