@@ -119,8 +119,6 @@ export default class Markdown extends MarkdownConfigPlugin {
     }
 
     function html2md(html: string): string {
-      console.log(html)
-      console.log(turndownService.turndown(html))
       return turndownService.turndown(html)
     }
 
