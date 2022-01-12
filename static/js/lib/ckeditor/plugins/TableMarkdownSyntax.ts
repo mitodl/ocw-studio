@@ -42,8 +42,14 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
           const name = node.nodeName.toLowerCase()
           const normalizedContent = content.replace("\n\n", "\n")
           //@ts-ignore
-          const attributes = node.hasAttributes()            ? //@ts-ignore
-            buildAttrsString(Array.from(node.attributes)) :
+          const attributes = node.hasAttributes() ?
+            buildAttrsString(
+              //@ts-ignore
+              Array.from(node.attributes).map(
+                //@ts-ignore
+                attr => `${attr.name}="${attr.value}"`
+              )
+            ) :
             ""
           return `{{< ${name}open${attributes} >}}${normalizedContent}{{< ${name}close >}}`
         }
