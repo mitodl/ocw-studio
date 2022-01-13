@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.40.0
+Version 0.40.0 (Released January 13, 2022)
 --------------
 
 - "waterfall" triggering scheme for ocw-hugo-themes changes (#891)
