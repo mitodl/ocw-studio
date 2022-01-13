@@ -108,7 +108,7 @@ jobs:
             args:
             - -exc
             - |
-              mkdir ../ocw-hugo-themes/theme
+              mkdir -p ../ocw-hugo-themes/theme
               tar -xvzf ../ocw-hugo-themes/ocw-hugo-themes-*.tgz -C ../ocw-hugo-themes/theme
               hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/theme
         on_failure:
