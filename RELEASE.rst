@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.40.0 (Released January 13, 2022)
+--------------
+
+- "waterfall" triggering scheme for ocw-hugo-themes changes (#891)
+- switch from storing website UUID to the website name property
+- add support for 'website-collection' field
+
 Version 0.39.1 (Released December 23, 2021)
 --------------
 
