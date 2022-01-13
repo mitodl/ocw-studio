@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.40.1
+--------------
+
+- add -p to mkdir command before theme asset extraction (#900)
+
 Version 0.40.0 (Released January 13, 2022)
 --------------
 
