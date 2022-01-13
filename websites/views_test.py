@@ -360,6 +360,27 @@ def test_websites_endpoint_sorting(drf_client, websites, settings):
         assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
 
 
+@pytest.mark.parametrize("published", [True, False])
+def test_websites_endpoint_publish_sorting(
+    drf_client, published, websites
+):  # pylint: disable=unused-argument
+    """should be able to filter to just published or not"""
+    superuser = UserFactory.create(is_superuser=True)
+    drf_client.force_login(superuser)
+    resp = drf_client.get(reverse("websites_api-list"), {"published": published})
+    expected_uuids = sorted(
+        [
+            site.uuid.__str__()
+            for site in Website.objects.filter(publish_date__isnull=not published)
+        ]
+    )
+    if published:
+        assert resp.data.get("count") == 7
+    else:
+        assert resp.data.get("count") == 1
+    assert expected_uuids == sorted([site["uuid"] for site in resp.data["results"]])
+
+
 def test_website_endpoint_search(drf_client):
     """ should limit the queryset based on the search param """
     superuser = UserFactory.create(is_superuser=True)

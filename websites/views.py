@@ -90,6 +90,7 @@ class WebsiteViewSet(
         website_type = self.request.query_params.get("type", None)
         search = self.request.query_params.get("search", None)
         resourcetype = self.request.query_params.get("resourcetype", None)
+        published = self.request.query_params.get("published", None)
 
         user = self.request.user
         if self.request.user.is_anonymous:
@@ -116,6 +117,11 @@ class WebsiteViewSet(
 
         if website_type is not None:
             queryset = queryset.filter(starter__slug=website_type)
+
+        if published is not None:
+            published = _parse_bool(published)
+            queryset = queryset.filter(publish_date__isnull=not published)
+
         return queryset.select_related("starter").order_by(ordering)
 
     def get_serializer_class(self):

@@ -52,6 +52,28 @@ describe("website hooks", () => {
       expect(debouncedFetch).toBeCalledTimes(0)
     })
 
+    //
+    ;[true, false].forEach(published => {
+      it(`should set published=${String(
+        published
+      )} if you pass the option`, async () => {
+        const { waitForNextUpdate } = renderHook(() =>
+          useWebsiteSelectOptions("uuid", true, published)
+        )
+        await act(async () => {
+          await waitForNextUpdate()
+        })
+        expect(global.fetch).toBeCalledWith(
+          siteApiListingUrl
+            .query({ offset: 0 })
+            .param({ search: "" })
+            .param({ published })
+            .toString(),
+          { credentials: "include" }
+        )
+      })
+    })
+
     it("should let you issue a debounced request with a search param if you pass a callback", async () => {
       const { result, waitForNextUpdate } = renderHook(useWebsiteSelectOptions)
       const cb = jest.fn()

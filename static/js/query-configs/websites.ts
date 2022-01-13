@@ -58,6 +58,7 @@ export const getTransformedWebsiteName = (
 export type WebsiteListingParams = {
   offset: number
   search?: string | null | undefined
+  published?: boolean
 }
 
 export type WebsiteListingResponse = PaginatedResponse<Website>

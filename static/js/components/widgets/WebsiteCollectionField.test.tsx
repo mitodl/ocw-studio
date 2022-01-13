@@ -42,6 +42,11 @@ describe("WebsiteCollectionField", () => {
     helper.cleanup()
   })
 
+  it("should pass published=true to the useWebsiteSelectOptions", async () => {
+    await render()
+    expect(useWebsiteSelectOptions).toBeCalledWith("name", true, true)
+  })
+
   it("should pass things down to SortableSelect", async () => {
     const value = websites.map(website => ({
       id:    website.name,

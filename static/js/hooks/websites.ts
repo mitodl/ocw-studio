@@ -72,7 +72,8 @@ interface ReturnProps {
  */
 export function useWebsiteSelectOptions(
   valueField = "uuid",
-  fetchOnStartup = true
+  fetchOnStartup = true,
+  published: boolean | undefined = undefined
 ): ReturnProps {
   const [options, setOptions] = useState<Option[]>([])
 
@@ -81,6 +82,7 @@ export function useWebsiteSelectOptions(
       const url = siteApiListingUrl
         .query({ offset: 0 })
         .param({ search: inputValue })
+        .param(published !== undefined ? { published } : {})
         .toString()
 
       // using plain fetch rather than redux-query here because this
@@ -110,7 +112,7 @@ export function useWebsiteSelectOptions(
         callback(options)
       }
     },
-    [setOptions, valueField]
+    [setOptions, valueField, published]
   )
 
   // on startup we want to fetch options initially so defaultOptions can
