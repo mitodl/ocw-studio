@@ -56,6 +56,14 @@ export const TABLE_ELS: TurndownService.TagName[] = [
   "tfoot"
 ]
 
+// A whitelist of attributes that can be assigned to table cells
 export const TABLE_ALLOWED_ATTRS: string[] = ["colspan", "rowspan"]
 
+/**
+ * A regex designed to extract attributes from html tags or shortcodes
+ *
+ * It starts with matching 1 or more of anything but whitespace, then
+ * an equals sign followed by a single or double quote. The regex ends
+ * with a double quote and captures anything in between the quotes.
+ */
 export const ATTRIBUTE_REGEX = /(\S+)=["']?((?:.(?!["']?\s+(?:\S+)=|\s*\/?[>"']))+.)["']?/g
