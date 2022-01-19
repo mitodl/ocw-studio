@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.41.0
+--------------
+
+- remove 'legacy' implementation of WebsiteCollections
+
 Version 0.40.1 (Released January 18, 2022)
 --------------
 
