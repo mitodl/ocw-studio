@@ -1,5 +1,10 @@
+import sinon from "sinon"
 import { siteApiContentListingUrl } from "../../lib/urls"
-import { Website, WebsiteContentListItem } from "../../types/websites"
+import {
+  Website,
+  WebsiteContentListItem,
+  WebsiteContent
+} from "../../types/websites"
 import {
   makeWebsiteContentDetail,
   makeWebsiteDetail
@@ -30,7 +35,7 @@ describe("ResourcePickerListing", () => {
     focusResourceStub: any,
     setOpenStub: any,
     website: Website,
-    contentListingItems: WebsiteContentListItem[][]
+    contentListingItems: WebsiteContent[][]
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -41,7 +46,7 @@ describe("ResourcePickerListing", () => {
     render = helper.configureRenderer(ResourcePickerListing, {
       focusResource: focusResourceStub,
       setOpen:       setOpenStub,
-      attach:        "resource",
+      contentType:   "resource",
       filter:        null,
       resourcetype:  RESOURCE_TYPE_VIDEO
     })
@@ -51,6 +56,7 @@ describe("ResourcePickerListing", () => {
     useWebsite.mockReturnValue(website)
 
     contentListingItems = [
+      [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
       [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
       [makeWebsiteContentDetail(), makeWebsiteContentDetail()]
     ]
@@ -84,6 +90,20 @@ describe("ResourcePickerListing", () => {
         })
         .toString(),
       apiResponse(contentListingItems[1])
+    )
+
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .param({
+          name: website.name
+        })
+        .query({
+          offset:        0,
+          type:          "page",
+          detailed_list: true
+        })
+        .toString(),
+      apiResponse(contentListingItems[2])
     )
   })
 
@@ -154,6 +174,40 @@ describe("ResourcePickerListing", () => {
         .find("img")
         .prop("src")
     ).toBe("/path/to/image.jpg")
+  })
+
+  it("should fetch and display pages", async () => {
+    const { wrapper } = await render({
+      contentType:  "page",
+      resourcetype: null
+    })
+    expect(
+      wrapper
+        .find(".resource-picker-listing .resource-item")
+        .map(el => el.find("h4").text())
+    ).toEqual(contentListingItems[2].map(item => item.title))
+
+    sinon.assert.calledWith(
+      helper.handleRequestStub,
+      siteApiContentListingUrl
+        .param({ name: website.name })
+        .query({
+          offset:        0,
+          type:          "page",
+          detailed_list: true
+        })
+        .toString()
+    )
+  })
+
+  it("should display pages in column view", async () => {
+    const { wrapper } = await render({
+      contentType:  "page",
+      resourcetype: null
+    })
+    expect(
+      wrapper.find(".resource-picker-listing").hasClass("column-view")
+    ).toBe(true)
   })
 
   it("should allow the user to filter, sort resourcetype", async () => {

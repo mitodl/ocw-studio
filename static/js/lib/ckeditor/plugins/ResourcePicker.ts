@@ -28,7 +28,7 @@ export default class ResourcePicker extends Plugin {
       const view = new ButtonView(locale)
 
       view.set({
-        label:    "Link resource",
+        label:    "Add link",
         withText: true
       })
 

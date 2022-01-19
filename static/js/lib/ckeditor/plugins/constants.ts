@@ -41,10 +41,7 @@ export interface RenderResourceFunc {
   (uuid: string, el: HTMLElement): void
 }
 
-export type ResourceDialogState =
-  | typeof RESOURCE_LINK
-  | typeof RESOURCE_EMBED
-  | "closed"
+export type ResourceDialogMode = typeof RESOURCE_LINK | typeof RESOURCE_EMBED
 
 export const TABLE_ELS: TurndownService.TagName[] = [
   "table",
