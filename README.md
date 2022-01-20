@@ -198,10 +198,35 @@ You can enable git integration so that website content will be synced with GitHu
     ```
     CONTENT_SYNC_BACKEND=content_sync.backends.github.GithubBackend
     GIT_ORGANIZATION=<your_organization>
-    GIT_TOKEN=<your_token>
     ```
 - If you need to use a custom git domain, add `GIT_API_URL=<your_domain>/api/v3`
 - If you would like git commits to be anonymized, add `FEATURE_GIT_ANONYMOUS_COMMITS=True`
+
+You will also need authenticate using either a personal access token or via a github app.
+Both options have a base rate limit of 5K/hour, but a github app will allow for an additional
+50/hr for each repo in your organization if you have at least 20 repos.
+
+If you wish to authenticate using a personal access token, create one in Github then set the following
+in your .env file:
+   ```
+   GIT_TOKEN=<your_token>
+   ```
+
+If you wish to use a github app, 
+[create one for your organization](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app):
+ - The homepage url can be anything
+ - You do not need a callback url or webhook url (disable webhooks)
+ - For Repository Permissions, choose "read/write" permission for "Administration", "Contents", "Pull Requests", "Commit Statuses"
+ - After it is created, add the "App ID" to your .env file:
+   ```
+   GITHUB_APP_ID=<app id>
+   ```
+ - Generate a private key.  A pem file will download.  You need to use the content of this file in your .env file:
+   ```
+   GITHUB_APP_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\nMIIEpQ......\n-----END RSA PRIVATE KEY-----
+   ```
+ - Install the app (follow instructions in link above) to your organization for "All repositories"   
+   
 
 
 # Enabling Concourse-CI integration

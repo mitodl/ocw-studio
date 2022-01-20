@@ -1,15 +1,22 @@
 """ Github API tests """
 import hashlib
+import json
 from types import SimpleNamespace
 
 import factory
 import pytest
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from django.conf import settings
-from github import GithubException
+from django.core.exceptions import ImproperlyConfigured
+from github import GithubException, GithubIntegration
 
 from content_sync.apis.github import (
     GIT_DATA_FILEPATH,
     GithubApiWrapper,
+    get_app_installation_id,
+    get_token,
     sync_starter_configs,
 )
 from main import features
@@ -28,6 +35,44 @@ pytestmark = pytest.mark.django_db
 
 # pylint:disable=redefined-outer-name,protected-access,too-many-arguments,unused-argument
 
+GITHUB_APP_INSTALLATIONS = """[
+  {
+    "id": 376434012,
+    "account": {
+      "login": "testrepo",
+      "id": 654321
+    },
+    "app_id": 123456,
+    "app_slug": "testapp1",
+    "target_id": 654321,
+    "target_type": "Organization",
+    "events": [
+    ],
+    "created_at": "2022-01-19T17:49:09.000Z",
+    "updated_at": "2022-01-19T19:11:17.000Z",
+    "single_file_name": null,
+    "has_multiple_single_files": false
+  },
+  {
+    "id": 276434013,
+    "account": {
+      "login": "testrepo",
+      "id": 654321
+    },
+    "app_id": 100100,
+    "app_slug": "testapp2",
+    "target_id": 543216,
+    "target_type": "Organization",
+    "events": [
+    ],
+    "created_at": "2022-01-19T17:49:09.000Z",
+    "updated_at": "2022-01-19T19:11:17.000Z",
+    "single_file_name": null,
+    "has_multiple_single_files": false
+  }
+]
+"""
+
 
 @pytest.fixture
 def db_data():
@@ -41,6 +86,19 @@ def db_data():
     )
     return SimpleNamespace(
         users=users, website=website, website_contents=website_contents
+    )
+
+
+@pytest.fixture
+def mock_rsa_key():
+    """Generate a test key"""
+    private_key = rsa.generate_private_key(
+        backend=default_backend(), public_exponent=65537, key_size=2048
+    )
+    return private_key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
     )
 
 
@@ -453,6 +511,49 @@ def test_merge_branches(mock_api_wrapper):
     )
 
 
+@pytest.mark.parametrize("use_app", [True, False])
+def test_get_token(settings, mocker, mock_rsa_key, use_app):
+    """Should return either a hardcoded token or github app token, based on settings"""
+    settings.GIT_TOKEN = "abc123"
+    settings.GITHUB_APP_ID = 123456 if use_app else None
+    settings.GITHUB_APP_PRIVATE_KEY = mock_rsa_key
+    github_app_token = "gh_token"
+    mock_get_app_installation_id = mocker.patch(
+        "content_sync.apis.github.get_app_installation_id", return_value="123"
+    )
+    mock_integration = mocker.patch("content_sync.apis.github.GithubIntegration")
+    mock_integration.return_value.get_access_token.return_value.token = github_app_token
+    token = get_token()
+    assert mock_get_app_installation_id.call_count == (1 if use_app else 0)
+    assert mock_integration.call_count == (1 if use_app else 0)
+    assert token == (github_app_token if use_app else settings.GIT_TOKEN)
+
+
+def test_get_token_misconfigured(settings):
+    """Should raise ImproperlyConfigured if both GIT_TOKEN and GITHUB_APP_ID are None"""
+    settings.GIT_TOKEN = None
+    settings.GITHUB_APP_ID = None
+    settings.GITHUB_APP_PRIVATE_KEY = "fake_key"
+    with pytest.raises(ImproperlyConfigured):
+        get_token()
+
+
+@pytest.mark.parametrize(
+    "app_id,install_id",
+    [[789012, None], [None, None], [100100, 276434013], [123456, 376434012]],
+)
+def test_get_app_installation_id(settings, mocker, mock_rsa_key, app_id, install_id):
+    """Should return the installation id based on matching app id returned in a response from Github"""
+    settings.GITHUB_APP_ID = app_id
+    settings.GITHUB_APP_PRIVATE_KEY = mock_rsa_key
+    mock_get = mocker.patch("content_sync.apis.github.requests.get")
+    mock_get.return_value.json.return_value = json.loads(GITHUB_APP_INSTALLATIONS)
+    installation_id = get_app_installation_id(
+        GithubIntegration(settings.GITHUB_APP_ID, mock_rsa_key)
+    )
+    assert installation_id == install_id
+
+
 @pytest.mark.parametrize("is_anonymous", [True, False])
 def test_git_user(settings, mock_api_wrapper, is_anonymous):
     """git_user should return an InputGitAuthor with expected name and email"""
@@ -476,24 +577,20 @@ def test_git_user(settings, mock_api_wrapper, is_anonymous):
     }
 
 
-def test_custom_github_url(mocker, settings):
-    """The github api wrapper should use the GIT_API_URL specified in settings"""
-    settings.GIT_API_URL = "http://github.example.edu/api/v3"
+@pytest.mark.parametrize("git_url", ["http://github.example.edu/api/v3", None])
+def test_custom_github_url(mocker, settings, git_url):
+    """The github api wrapper should use the GIT_API_URL specified in settings or a default"""
+    settings.GITHUB_APP_ID = None
+    settings.GIT_API_URL = git_url
     settings.GIT_TOKEN = "abcdef"
     mock_github = mocker.patch("content_sync.apis.github.Github", autospec=True)
     GithubApiWrapper(website=mocker.Mock(), site_config=mocker.Mock())
-    mock_github.assert_called_once_with(
-        login_or_token=settings.GIT_TOKEN, base_url=settings.GIT_API_URL
-    )
-
-
-def test_custom_default_url(mocker, settings):
-    """The github api wrapper should use the default Github url and not pass a base_url kwarg"""
-    settings.GIT_API_URL = None
-    settings.GIT_TOKEN = "abcdef"
-    mock_github = mocker.patch("content_sync.apis.github.Github", autospec=True)
-    GithubApiWrapper(website=mocker.Mock(), site_config=mocker.Mock())
-    mock_github.assert_called_once_with(login_or_token=settings.GIT_TOKEN)
+    if git_url:
+        mock_github.assert_called_once_with(
+            login_or_token=settings.GIT_TOKEN, base_url=settings.GIT_API_URL
+        )
+    else:
+        mock_github.assert_called_once_with(login_or_token=settings.GIT_TOKEN)
 
 
 def test_create_repo_new(mocker, mock_api_wrapper, mock_branches):

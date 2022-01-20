@@ -147,6 +147,14 @@
       "description": "Google analytics tracking ID",
       "required": false
     },
+    "GITHUB_APP_ID": {
+      "description": "A github app id to use for Github API authentication",
+      "required": false
+    },
+    "GITHUB_APP_PRIVATE_KEY": {
+      "description": "A github app private key for authentication",
+      "required": false
+    },
     "GITHUB_RATE_LIMIT_CHECK": {
       "description": "True if the github domain has API rate limits",
       "required": false
@@ -196,7 +204,7 @@
       "required": false
     },
     "GIT_TOKEN": {
-      "description": "The authentication token for git commands",
+      "description": "An authentication token for git commands",
       "required": false
     },
     "HEROKU_APP_NAME": {

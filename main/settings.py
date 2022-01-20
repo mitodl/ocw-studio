@@ -853,8 +853,25 @@ CONCOURSE_IS_PRIVATE_REPO = get_bool(
 GIT_TOKEN = get_string(
     name="GIT_TOKEN",
     default=None,
-    description="The authentication token for git commands",
+    description="An authentication token for git commands",
     required=False,
+)
+GITHUB_APP_ID = get_int(
+    name="GITHUB_APP_ID",
+    default=None,
+    description="A github app id to use for Github API authentication",
+    required=False,
+)
+GITHUB_APP_PRIVATE_KEY = (
+    get_string(
+        name="GITHUB_APP_PRIVATE_KEY",
+        default="",
+        description="A github app private key for authentication",
+        required=False,
+    )
+    .encode()
+    .decode("unicode_escape")
+    .encode()
 )
 GIT_ORGANIZATION = get_string(
     name="GIT_ORGANIZATION",
