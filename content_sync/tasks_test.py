@@ -158,22 +158,24 @@ def test_sync_unsynced_websites(api_mock, backend_exists, create_backend, delete
 def test_sync_all_websites_rate_limit_low(mocker, settings, check_limit):
     """Test that sync_unsynced_websites pauses if the GithubBackend is close to exceeding rate limit"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    settings.GITHUB_RATE_LIMIT_CHECK = check_limit
+    sleep_mock = mocker.patch("content_sync.api.sleep")
     mock_git_wrapper = mocker.patch("content_sync.backends.github.GithubApiWrapper")
-    sleep_mock = mocker.patch("content_sync.tasks.sleep")
     mock_dt_now = mocker.patch(
         "content_sync.tasks.now_in_utc", return_value=now_in_utc()
     )
-    mock_core = mocker.MagicMock(
-        remaining=5, reset=mock_dt_now + timedelta(seconds=1000)
+    mock_git_wrapper.return_value.git.rate_limiting = (
+        5,
+        mock_dt_now + timedelta(seconds=1000),
     )
-    mock_git_wrapper.return_value.git.get_rate_limit.return_value.core = mock_core
     ContentSyncStateFactory.create_batch(2)
-    tasks.sync_unsynced_websites.delay(check_limit=check_limit)
+    tasks.sync_unsynced_websites.delay()
     assert sleep_mock.call_count == (2 if check_limit else 0)
 
 
-def test_sync_all_websites_rate_limit_exceeded(api_mock):
+def test_sync_all_websites_rate_limit_exceeded(settings, api_mock):
     """Test that sync_unsynced_websites halts if instantiating a GithubBackend exceeds the rate limit"""
+    settings.GITHUB_RATE_LIMIT_CHECK = True
     api_mock.get_sync_backend.side_effect = RateLimitExceededException(
         status=403, data={}, headers={}
     )
@@ -271,10 +273,15 @@ def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
 
 @pytest.mark.parametrize("create_backend", [True, False])
 @pytest.mark.parametrize("unpause", [True, False])
-def test_upsert_website_pipeline_batch(mocker, create_backend, unpause):
+@pytest.mark.parametrize("check_limit", [True, False])
+def test_upsert_website_pipeline_batch(
+    mocker, settings, create_backend, unpause, check_limit
+):
     """upsert_website_pipeline_batch should make the expected function calls"""
+    settings.GITHUB_RATE_LIMIT_CHECK = check_limit
     mock_get_backend = mocker.patch("content_sync.tasks.api.get_sync_backend")
     mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_sync_pipeline")
+    mock_throttle = mocker.patch("content_sync.tasks.api.throttle_git_backend_calls")
     websites = WebsiteFactory.create_batch(2)
     website_names = sorted([website.name for website in websites])
     tasks.upsert_website_pipeline_batch(
@@ -285,6 +292,7 @@ def test_upsert_website_pipeline_batch(mocker, create_backend, unpause):
     if create_backend:
         for website in websites:
             mock_get_backend.assert_any_call(website)
+        mock_throttle.assert_any_call(mock_get_backend.return_value)
         mock_backend = mock_get_backend.return_value
         assert mock_backend.create_website_in_backend.call_count == 2
         assert mock_backend.sync_all_content_to_backend.call_count == 2
@@ -328,6 +336,7 @@ def test_publish_website_batch(mocker, version, prepublish):
     """publish_website_batch should make the expected function calls"""
     mock_import_string = mocker.patch("content_sync.tasks.import_string")
     mock_publish_website = mocker.patch("content_sync.api.publish_website")
+    mock_throttle = mocker.patch("content_sync.tasks.api.throttle_git_backend_calls")
     website_names = sorted([website.name for website in WebsiteFactory.create_batch(3)])
     tasks.publish_website_batch(website_names, version, prepublish=prepublish)
     for name in website_names:
@@ -337,6 +346,7 @@ def test_publish_website_batch(mocker, version, prepublish):
             pipeline_api=mock_import_string.return_value.get_api.return_value,
             prepublish=prepublish,
         )
+    assert mock_throttle.call_count == len(website_names)
 
 
 @pytest.mark.parametrize(

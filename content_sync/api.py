@@ -1,13 +1,17 @@
 """ Syncing API """
 import logging
+from datetime import datetime
+from time import sleep
 from typing import List, Optional
 
+import pytz
 from django.conf import settings
 from django.utils.module_loading import import_string
 from mitol.common.utils import now_in_utc
 
 from content_sync import tasks
 from content_sync.backends.base import BaseSyncBackend
+from content_sync.backends.github import GithubBackend
 from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
@@ -116,3 +120,23 @@ def publish_website(  # pylint: disable=too-many-arguments
             **update_kwargs,
         }
     Website.objects.filter(pk=website.pk).update(**update_kwargs)
+
+
+def throttle_git_backend_calls(backend: object, min_delay: int = 1):
+    """If the current git api limit is too low, sleep until it is reset"""
+    if settings.GITHUB_RATE_LIMIT_CHECK and isinstance(backend, GithubBackend):
+        requests_remaining, limit = backend.api.git.rate_limiting
+        reset_time = datetime.fromtimestamp(
+            backend.api.git.rate_limiting_resettime, tz=pytz.utc
+        )
+        log.debug(
+            "Remaining github calls : %d/%d, reset: %s",
+            requests_remaining,
+            limit,
+            reset_time.isoformat(),
+        )
+        if requests_remaining <= settings.GITHUB_RATE_LIMIT_CUTOFF:
+            sleep((reset_time - now_in_utc()).seconds)
+        else:
+            # Always wait x seconds between git backend calls
+            sleep(min_delay)

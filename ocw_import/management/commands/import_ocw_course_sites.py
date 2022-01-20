@@ -73,13 +73,6 @@ class Command(BaseCommand):
             help="Create backends if they don't exist",
         )
         parser.add_argument(
-            "-r",
-            "--rate_limit",
-            dest="rate_limit",
-            action="store_true",
-            help="Check the rate limit when making git api requests",
-        )
-        parser.add_argument(
             "-d",
             "--delete_unpublished",
             dest="delete_unpublished",
@@ -137,7 +130,6 @@ class Command(BaseCommand):
             start = now_in_utc()
             task = sync_unsynced_websites.delay(
                 create_backends=options["create_backend"],
-                check_limit=options["rate_limit"],
                 delete=delete_from_git,
             )
             self.stdout.write(f"Starting task {task}...")

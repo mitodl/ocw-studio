@@ -147,6 +147,14 @@
       "description": "Google analytics tracking ID",
       "required": false
     },
+    "GITHUB_RATE_LIMIT_CHECK": {
+      "description": "True if the github domain has API rate limits",
+      "required": false
+    },
+    "GITHUB_RATE_LIMIT_CUTOFF": {
+      "description": "Number of remaining Github API calls that triggers throttling",
+      "required": false
+    },
     "GITHUB_WEBHOOK_BRANCH": {
       "description": "Github branch to filter webhook requests against",
       "required": false

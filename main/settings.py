@@ -916,6 +916,18 @@ GITHUB_WEBHOOK_BRANCH = get_string(
     description="Github branch to filter webhook requests against",
     required=False,
 )
+GITHUB_RATE_LIMIT_CHECK = get_bool(
+    name="GITHUB_RATE_LIMIT_CHECK",
+    default=False,
+    description="True if the github domain has API rate limits",
+    required=False,
+)
+GITHUB_RATE_LIMIT_CUTOFF = get_int(
+    name="GITHUB_RATE_LIMIT_CUTOFF",
+    default=100,
+    description="Number of remaining Github API calls that triggers throttling",
+    required=False,
+)
 OCW_IMPORT_STARTER_SLUG = get_string(
     name="OCW_IMPORT_STARTER_SLUG",
     default="course",

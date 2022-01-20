@@ -1,7 +1,6 @@
 """ Content sync tasks """
 import logging
 from datetime import timedelta
-from time import sleep
 from typing import List, Optional
 
 import celery
@@ -9,7 +8,7 @@ from django.conf import settings
 from django.db.models import F, Q
 from django.utils.module_loading import import_string
 from github.GithubException import RateLimitExceededException
-from mitol.common.utils import chunks, now_in_utc, pytz
+from mitol.common.utils import chunks, now_in_utc
 from requests import HTTPError
 
 from content_sync import api
@@ -48,17 +47,12 @@ def sync_content(content_sync_id: str):
 @app.task(acks_late=True)
 def sync_unsynced_websites(
     create_backends: bool = False,
-    check_limit: bool = False,
     delete: Optional[bool] = False,
 ):
     """
     Sync all websites with unsynced content if they have existing repos.
     This should be rarely called, and only in a management command.
     """
-    from content_sync.backends.github import (  # pylint:disable=import-outside-toplevel
-        GithubBackend,
-    )
-
     if not settings.CONTENT_SYNC_BACKEND:
         return
     for website_name in (  # pylint:disable=too-many-nested-blocks
@@ -74,21 +68,7 @@ def sync_unsynced_websites(
             try:
                 reset_publishing_fields(website_name)
                 backend = api.get_sync_backend(Website.objects.get(name=website_name))
-                if isinstance(backend, GithubBackend):
-                    if check_limit:
-                        # Check the remaining api calls available; if low, wait til the rate limit resets
-                        rate_limit = backend.api.git.get_rate_limit().core
-                        log.debug("Remaining github calls %d:", rate_limit.remaining)
-                        if rate_limit.remaining <= 100:
-                            sleep(
-                                (
-                                    rate_limit.reset.replace(tzinfo=pytz.utc)
-                                    - now_in_utc()
-                                ).seconds
-                            )
-                        else:
-                            # wait a bit between websites to avoid using up the hourly API rate limit
-                            sleep(5)
+                api.throttle_git_backend_calls(backend)
                 if create_backends or backend.backend_exists():
                     backend.create_website_in_backend()
                     backend.sync_all_content_to_backend()
@@ -141,6 +121,7 @@ def upsert_website_pipeline_batch(
         website = Website.objects.get(name=website_name)
         if create_backend:
             backend = api.get_sync_backend(website)
+            api.throttle_git_backend_calls(backend)
             backend.create_website_in_backend()
             backend.sync_all_content_to_backend()
         pipeline = api.get_sync_pipeline(website, api=api_instance)
@@ -231,6 +212,10 @@ def publish_website_batch(
     pipeline_api = import_string(settings.CONTENT_SYNC_PIPELINE).get_api()
     for name in website_names:
         try:
+            backend = import_string(settings.CONTENT_SYNC_BACKEND)(
+                Website.objects.get(name=name)
+            )
+            api.throttle_git_backend_calls(backend)
             api.publish_website(
                 name,
                 version,
