@@ -1,7 +1,6 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
 import R from "ramda"
-import { SinonStub } from "sinon"
 
 import RelationField from "./RelationField"
 import { debouncedFetch } from "../../lib/api/util"
@@ -44,7 +43,7 @@ describe("RelationField", () => {
     render: TestRenderer,
     _render: TestRenderer,
     helper: IntegrationTestHelper,
-    onChange: SinonStub,
+    onChange: jest.Mock,
     contentListingItems: WebsiteContent[],
     fakeResponse: any,
     websites: Website[]
@@ -52,7 +51,7 @@ describe("RelationField", () => {
   beforeEach(() => {
     website = makeWebsiteDetail()
     helper = new IntegrationTestHelper()
-    onChange = helper.sandbox.stub()
+    onChange = jest.fn()
     _render = helper.configureRenderer(
       props => (
         <WebsiteContext.Provider value={website}>

@@ -242,9 +242,9 @@ describe("SiteContent", () => {
 
       await act(async () => {
         // @ts-ignore
-        await onSubmit(values, formikStubs)
+        onSubmit(values, formikStubs)
       })
-      await wrapper.update()
+      wrapper.update()
       sinon.assert.calledWith(
         helper.handleRequestStub,
         siteApiContentUrl.param({ name: website.name }).toString(),

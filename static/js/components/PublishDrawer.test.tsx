@@ -116,7 +116,7 @@ describe("PublishDrawer", () => {
               // @ts-ignore
               .prop("onChange")()
           })
-          await wrapper.update()
+          wrapper.update()
           expect(wrapper.find(".publish-option-description").text()).toContain(
             `Last updated: ${moment(website[publishDateField]).format(
               "dddd, MMMM D h:mma ZZ"
@@ -144,7 +144,7 @@ describe("PublishDrawer", () => {
               // @ts-ignore
               .prop("onChange")()
           })
-          await wrapper.update()
+          wrapper.update()
           expect(wrapper.find("PublishStatusIndicator").prop("status")).toBe(
             website[publishStatusField]
           )
@@ -168,7 +168,7 @@ describe("PublishDrawer", () => {
               // @ts-ignore
               .prop("onChange")()
           })
-          await wrapper.update()
+          wrapper.update()
           expect(wrapper.find(".publish-option-description").text()).toContain(
             "Last updated: never published"
           )
@@ -185,7 +185,7 @@ describe("PublishDrawer", () => {
               // @ts-ignore
               .prop("onChange")()
           })
-          await wrapper.update()
+          wrapper.update()
           // @ts-ignore
           expect(
             wrapper
@@ -203,7 +203,7 @@ describe("PublishDrawer", () => {
             // @ts-ignore
             wrapper.find(`#publish-${action}`).prop("onChange")()
           })
-          await wrapper.update()
+          wrapper.update()
           expect(wrapper.find(".btn-publish").prop("disabled")).toBe(true)
         })
 
@@ -222,7 +222,7 @@ describe("PublishDrawer", () => {
             // @ts-ignore
             wrapper.find(`#publish-${action}`).prop("onChange")()
           })
-          await wrapper.update()
+          wrapper.update()
           expect(wrapper.find(".publish-option-description").text()).toContain(
             "You have unpublished changes."
           )
@@ -257,12 +257,12 @@ describe("PublishDrawer", () => {
             // @ts-ignore
             wrapper.find(`#publish-${action}`).prop("onChange")()
           })
-          await wrapper.update()
+          wrapper.update()
           await act(async () => {
             // @ts-ignore
             wrapper.find(".btn-publish").prop("onClick")()
           })
-          await wrapper.update()
+          wrapper.update()
           expect(wrapper.find(".publish-option-description").text()).toContain(
             "We apologize, there was an error publishing the site. Please try again in a few minutes."
           )
@@ -295,7 +295,7 @@ describe("PublishDrawer", () => {
             // @ts-ignore
             wrapper.find(`#publish-${action}`).prop("onChange")()
           })
-          await wrapper.update()
+          wrapper.update()
           expect(wrapper.find(".btn-publish").prop("disabled")).toBeFalsy()
           await act(async () => {
             // @ts-ignore

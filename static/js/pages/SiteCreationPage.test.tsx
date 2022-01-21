@@ -18,13 +18,13 @@ describe("SiteCreationPage", () => {
     render: TestRenderer,
     starters: Array<WebsiteStarter>,
     website: Website,
-    historyPushStub: SinonStub
+    historyPushStub: jest.Mock
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     starters = [makeWebsiteStarter(), makeWebsiteStarter()]
     website = makeWebsiteDetail()
-    historyPushStub = sinon.stub()
+    historyPushStub = jest.fn()
     render = helper.configureRenderer(
       // @ts-ignore
       SiteCreationPage,
@@ -60,13 +60,13 @@ describe("SiteCreationPage", () => {
 
   describe("passes a form submit function", () => {
     const errorMsg = "Error"
-    let formikStubs: { [key: string]: SinonStub }, createWebsiteStub: SinonStub
+    let formikStubs: { [key: string]: jest.Mock }, createWebsiteStub: SinonStub
 
     beforeEach(() => {
       formikStubs = {
-        setErrors:     sinon.stub(),
-        setSubmitting: sinon.stub(),
-        setStatus:     sinon.stub()
+        setErrors:     jest.fn(),
+        setSubmitting: jest.fn(),
+        setStatus:     jest.fn()
       }
     })
 
@@ -88,9 +88,10 @@ describe("SiteCreationPage", () => {
         )
       })
       sinon.assert.calledOnce(createWebsiteStub)
-      sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
-      sinon.assert.calledOnceWithExactly(
-        historyPushStub,
+      expect(formikStubs.setSubmitting).toHaveBeenCalledTimes(1)
+      expect(formikStubs.setSubmitting).toHaveBeenCalledWith(false)
+      expect(historyPushStub).toBeCalledTimes(1)
+      expect(historyPushStub).toBeCalledWith(
         siteDetailUrl.param({ name: website.name }).toString()
       )
     })
@@ -122,12 +123,13 @@ describe("SiteCreationPage", () => {
         )
       })
       sinon.assert.calledOnce(createWebsiteStub)
-      sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
+      expect(formikStubs.setErrors).toHaveBeenCalledTimes(1)
+      expect(formikStubs.setErrors).toHaveBeenCalledWith({
         ...errorResp.errors,
         short_id: undefined,
         starter:  undefined
       })
-      sinon.assert.notCalled(historyPushStub)
+      expect(historyPushStub).not.toBeCalled()
     })
 
     it("that sets a status if the API request fails with a string error message", async () => {
@@ -155,8 +157,9 @@ describe("SiteCreationPage", () => {
         )
       })
       sinon.assert.calledOnce(createWebsiteStub)
-      sinon.assert.calledOnceWithExactly(formikStubs.setStatus, errorMsg)
-      sinon.assert.notCalled(historyPushStub)
+      expect(formikStubs.setStatus).toHaveBeenCalledTimes(1)
+      expect(formikStubs.setStatus).toHaveBeenCalledWith(errorMsg)
+      expect(historyPushStub).not.toHaveBeenCalled()
     })
   })
 })

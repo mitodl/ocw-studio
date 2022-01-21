@@ -81,25 +81,15 @@ describe("Header", () => {
         }
       )
 
-      helper.handleRequestStub
-        .withArgs(
-          siteApiDetailUrl
-            .param({
-              name: website.name
-            })
-            .query({ only_status: true })
-            .toString(),
-          "GET",
-          {
-            body:        undefined,
-            headers:     undefined,
-            credentials: undefined
-          }
-        )
-        .returns({
-          status: 200,
-          body:   website
-        })
+      helper.mockGetRequest(
+        siteApiDetailUrl
+          .param({
+            name: website.name
+          })
+          .query({ only_status: true })
+          .toString(),
+        website
+      )
     })
 
     it("shows the website title", async () => {

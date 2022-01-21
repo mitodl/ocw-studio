@@ -1,5 +1,4 @@
 import { act } from "react-dom/test-utils"
-import sinon, { SinonStub } from "sinon"
 import { DndContext } from "@dnd-kit/core"
 import casual from "casual"
 
@@ -24,16 +23,16 @@ describe("SortableSelect", () => {
   let render: TestRenderer,
     helper: IntegrationTestHelper,
     options: Option[],
-    onChange: SinonStub,
+    onChange: jest.Mock,
     newOptions: Option[],
-    loadOptions: SinonStub
+    loadOptions: jest.Mock
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     options = createFakeOptions(10)
     newOptions = createFakeOptions(10)
-    onChange = helper.sandbox.stub()
-    loadOptions = helper.sandbox.stub().resolves(newOptions)
+    onChange = jest.fn()
+    loadOptions = jest.fn().mockResolvedValue(newOptions)
     render = helper.configureRenderer(SortableSelect, {
       options,
       onChange,
@@ -74,7 +73,7 @@ describe("SortableSelect", () => {
   it("should allow adding another element", async () => {
     const { wrapper } = await render()
     await triggerSortableSelect(wrapper, newOptions[0].label)
-    sinon.assert.calledWith(onChange, [newOptions[0].label])
+    expect(onChange).toBeCalledWith([newOptions[0].label])
     expect(wrapper.find("SelectField").prop("value")).toBeUndefined()
   })
 
@@ -94,6 +93,6 @@ describe("SortableSelect", () => {
         over:   { id: value[0].id }
       } as any)
     })
-    sinon.assert.calledWith(onChange, [value[2].id, value[0].id, value[1].id])
+    expect(onChange).toBeCalledWith([value[2].id, value[0].id, value[1].id])
   })
 })
