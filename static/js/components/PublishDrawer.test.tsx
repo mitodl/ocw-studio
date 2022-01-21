@@ -4,7 +4,7 @@ import { act } from "react-dom/test-utils"
 import { isEmpty } from "ramda"
 
 import { siteApiActionUrl, siteApiDetailUrl } from "../lib/urls"
-import { shouldIf } from "../test_util"
+import { expectToBeCalledTimesWith, shouldIf } from "../test_util"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer
@@ -29,7 +29,7 @@ describe("PublishDrawer", () => {
       has_unpublished_live:  true,
       is_admin:              true
     }
-    refreshWebsiteStub = helper.mockGetRequest(
+    helper.mockGetRequest(
       siteApiDetailUrl.param({ name: website.name }).toString(),
       website
     )
@@ -266,8 +266,9 @@ describe("PublishDrawer", () => {
           expect(wrapper.find(".publish-option-description").text()).toContain(
             "We apologize, there was an error publishing the site. Please try again in a few minutes."
           )
-          sinon.assert.calledOnceWithExactly(
-            actionStub,
+          expectToBeCalledTimesWith(
+            helper.handleRequestStub,
+            [
             `/api/websites/${website.name}/${api}/`,
             "POST",
             {
@@ -275,13 +276,15 @@ describe("PublishDrawer", () => {
               headers:     { "X-CSRFTOKEN": "" },
               credentials: undefined
             }
+            ],
+            1
           )
           sinon.assert.notCalled(refreshWebsiteStub)
           sinon.assert.notCalled(toggleVisibilityStub)
         })
 
         it("publish button sends the expected request", async () => {
-          const actionStub = helper.mockPostRequest(
+          helper.mockPostRequest(
             siteApiActionUrl
               .param({
                 name:   website.name,
@@ -301,8 +304,9 @@ describe("PublishDrawer", () => {
             // @ts-ignore
             wrapper.find(".btn-publish").prop("onClick")()
           })
-          sinon.assert.calledOnceWithExactly(
-            actionStub,
+          expectToBeCalledTimesWith(
+            helper.handleRequestStub,
+            [
             `/api/websites/${website.name}/${api}/`,
             "POST",
             {
@@ -310,6 +314,8 @@ describe("PublishDrawer", () => {
               headers:     { "X-CSRFTOKEN": "" },
               credentials: undefined
             }
+            ],
+            1
           )
           sinon.assert.calledOnceWithExactly(
             refreshWebsiteStub,

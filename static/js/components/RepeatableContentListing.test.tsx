@@ -1,7 +1,6 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
 import useInterval from "@use-it/interval"
-import sinon from "sinon"
 import { useLocation } from "react-router-dom"
 
 import RepeatableContentListing from "./RepeatableContentListing"
@@ -12,7 +11,7 @@ import {
 import WebsiteContext from "../context/Website"
 
 import useConfirmation from "../hooks/confirmation"
-import { isIf, shouldIf } from "../test_util"
+import { expectToBeCalledTimesWith, isIf, shouldIf } from "../test_util"
 import {
   siteApiContentDetailUrl,
   siteContentListingUrl,
@@ -192,20 +191,25 @@ describe("RepeatableContentListing", () => {
   })
 
   it("Clicking the gdrive sync button should trigger a sync request", async () => {
-    const postSyncStub = helper.mockPostRequest(
-      siteApiContentSyncGDriveUrl
+    const postSyncURL =       siteApiContentSyncGDriveUrl
         .param({
           name: website.name
         })
-        .toString(),
-      {},
-      200
+        .toString()
+
+      helper.mockPostRequest(
+        postSyncURL,
+        {},
+        200
     )
-    const getStatusStub = helper.mockGetRequest(
-      siteApiDetailUrl
+    const getStatusURL  =       siteApiDetailUrl
         .param({ name: website.name })
         .query({ only_status: true })
-        .toString(),
+        .toString()
+
+      helper.mockGetRequest(
+        getStatusURL
+,
       { sync_status: "Complete" }
     )
     SETTINGS.gdrive_enabled = true
@@ -215,8 +219,9 @@ describe("RepeatableContentListing", () => {
       // @ts-ignore
       syncLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
     })
-    expect(postSyncStub.called).toBeTruthy()
-    expect(getStatusStub.called).toBeTruthy()
+    expect(helper.handleRequestStub)
+    .toBeCalledWith(postSyncURL, 'POST')
+    expect(helper.handleRequestStub).toBeCalledWith(getStatusURL, 'POST')
   })
 
   it("should render a button to open the content editor", async () => {
@@ -583,20 +588,24 @@ describe("RepeatableContentListing", () => {
         shouldUpdate ? "polls" : "doesn't poll"
       } the website sync status when sync_status=${status}`, async () => {
         SETTINGS.gdrive_enabled = true
-        const getStatusStub = helper.mockGetRequest(
-          siteApiDetailUrl
+        const getStatusURL =          siteApiDetailUrl
             .param({ name: website.name })
             .query({ only_status: true })
-            .toString(),
+            .toString()
+
+          helper.mockGetRequest(
+            getStatusURL,
           { sync_status: "Complete" }
         )
-        const getResourcesStub = helper.mockGetRequest(
-          siteApiContentListingUrl
+        const getResourcesURL =          siteApiContentListingUrl
             .param({
               name: website.name
             })
             .query({ offset: 0, type: configItem.name })
-            .toString(),
+            .toString()
+
+          helper.mockGetRequest(
+            getResourcesURL,
           apiResponse
         )
         await render({ website })
@@ -606,11 +615,25 @@ describe("RepeatableContentListing", () => {
         await useInterval.mock.calls[0][0]()
 
         if (shouldUpdate) {
-          sinon.assert.calledOnce(getStatusStub)
-          sinon.assert.calledTwice(getResourcesStub)
+          expectToBeCalledTimesWith(helper.handleRequestStub,
+                                    [getStatusURL, 'GET'],
+                                    1
+                                   )
+          expectToBeCalledTimesWith(helper.handleRequestStub,
+                                    [getResourcesURL, 'GET'],
+                                    2
+                                   )
         } else {
-          sinon.assert.notCalled(getStatusStub)
-          sinon.assert.calledOnce(getResourcesStub)
+          expectToBeCalledTimesWith(
+            helper.handleRequestStub,
+            [getStatusURL, 'GET'],
+            0)
+
+            expectToBeCalledTimesWith(
+              helper.handleRequestStub,
+              [getResourcesURL, 'GET'],
+              0
+            )
         }
       })
     })

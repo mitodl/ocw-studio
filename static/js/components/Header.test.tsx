@@ -15,6 +15,7 @@ import { logoutUrl, siteApiDetailUrl } from "../lib/urls"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { Website } from "../types/websites"
 import { PublishStatus } from "../constants"
+import {expectToBeCalledTimesWith} from "../test_util"
 
 describe("Header", () => {
   let helper: IntegrationTestHelper, render: TestRenderer
@@ -81,25 +82,15 @@ describe("Header", () => {
         }
       )
 
-      helper.handleRequestStub
-        .withArgs(
-          siteApiDetailUrl
-            .param({
-              name: website.name
-            })
-            .query({ only_status: true })
-            .toString(),
-          "GET",
-          {
-            body:        undefined,
-            headers:     undefined,
-            credentials: undefined
-          }
-        )
-        .returns({
-          status: 200,
-          body:   website
+      helper.mockGetRequest(
+        siteApiDetailUrl
+        .param({
+          name: website.name
         })
+        .query({ only_status: true })
+        .toString(),
+        website
+      )
     })
 
     it("shows the website title", async () => {
@@ -164,8 +155,9 @@ describe("Header", () => {
               .toString()
             // @ts-ignore
             if (shouldUpdate) {
-              sinon.assert.calledOnceWithExactly(
+              expectToBeCalledTimesWith(
                 helper.handleRequestStub,
+                [
                 statusUrl,
                 "GET",
                 {
@@ -173,9 +165,11 @@ describe("Header", () => {
                   headers:     undefined,
                   credentials: undefined
                 }
+                ],
+                1
               )
             } else {
-              sinon.assert.notCalled(helper.handleRequestStub)
+              expect(helper.handleRequestStub).not.toHaveBeenCalled()
             }
           })
 

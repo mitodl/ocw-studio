@@ -1,4 +1,5 @@
 import { FormikState } from "formik"
+import {isEqual} from "lodash"
 
 export const defaultFormikChildProps: FormikState<any> = {
   values:       {},
@@ -24,4 +25,14 @@ export const wait = async (ms: number): Promise<undefined> => {
       resolve(undefined)
     }, ms)
   })
+}
+
+export const expectToBeCalledTimesWith = (
+  mock: jest.Mock,
+  args: any[],
+  times: number
+): void => {
+  const matchingCalls = mock.mock.calls.filter(callArgs =>
+  isEqual(args, callArgs))
+  expect(matchingCalls.length).toBe(times)
 }
