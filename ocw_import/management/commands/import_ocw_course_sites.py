@@ -59,18 +59,11 @@ class Command(BaseCommand):
             help="If specified, limits the overall number of course sites imported",
         )
         parser.add_argument(
-            "-s",
-            "--sync_backend",
-            dest="sync",
+            "-ss",
+            "--skip_sync",
+            dest="skip_sync",
             action="store_true",
-            help="Sync all unsynced courses to the backend",
-        )
-        parser.add_argument(
-            "-cb",
-            "--create_backend",
-            dest="create_backend",
-            action="store_true",
-            help="Create backends if they don't exist",
+            help="Do NOT sync all unsynced courses to the backend",
         )
         parser.add_argument(
             "-d",
@@ -125,11 +118,11 @@ class Command(BaseCommand):
             "OCW course import finished, took {} seconds".format(total_seconds)
         )
 
-        if options["sync"] is True and settings.CONTENT_SYNC_BACKEND:
+        if settings.CONTENT_SYNC_BACKEND and not options["skip_sync"]:
             self.stdout.write("Syncing all unsynced courses to the designated backend")
             start = now_in_utc()
             task = sync_unsynced_websites.delay(
-                create_backends=options["create_backend"],
+                create_backends=True,
                 delete=delete_from_git,
             )
             self.stdout.write(f"Starting task {task}...")
