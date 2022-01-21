@@ -50,14 +50,14 @@ describe("App", () => {
 
   it("should not make a request for website detail", async () => {
     await render()
-    sinon.assert.notCalled(helper.handleRequestStub)
+    expect(helper.handleRequestStub).toHaveBeenCalledTimes(0)
   })
 
   describe("when on a website detail URL", () => {
     it("should load website from the API and render the SitePage component", async () => {
       helper.browserHistory.push(siteDetailUrl)
       const { wrapper } = await render()
-      sinon.assert.calledWith(helper.handleRequestStub, siteDetailApiUrl, "GET")
+      expect(helper.handleRequestStub).toHaveBeenCalledWith(siteDetailApiUrl, "GET")
       const sitePageComponent = wrapper.find("SitePage")
       expect(sitePageComponent.exists()).toBe(true)
     })

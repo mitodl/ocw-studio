@@ -108,7 +108,7 @@ describe("SitesDashboard", () => {
       response
     )
     await render()
-    expect(helper.handleRequestStub.args).toStrictEqual([
+    expect(helper.handleRequestStub.mock.calls[0]).toStrictEqual([
       [
         siteApiListingUrl
           .param({ offset: 0 })

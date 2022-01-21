@@ -37,6 +37,7 @@ import {
 } from "../types/websites"
 import { contentDetailKey } from "../query-configs/websites"
 import { createModalState } from "../types/modal_state"
+import {when} from "jest-when"
 
 jest.mock("./forms/validation")
 
@@ -245,8 +246,9 @@ describe("SiteContent", () => {
         await onSubmit(values, formikStubs)
       })
       await wrapper.update()
-      sinon.assert.calledWith(
+      expect(
         helper.handleRequestStub,
+      ).toBeCalledWith(
         siteApiContentUrl.param({ name: website.name }).toString(),
         "POST",
         {
@@ -263,8 +265,9 @@ describe("SiteContent", () => {
         }
       )
 
-      sinon.assert.calledWith(
+      expect(
         helper.handleRequestStub,
+      ).toBeCalledWith(
         siteApiDetailUrl
           .param({ name: website.name })
           .query({ only_status: true })
@@ -290,17 +293,12 @@ describe("SiteContent", () => {
   })
 
   it("updates content via the form when editing existing content", async () => {
-    helper.handleRequestStub
-      .withArgs(
+    helper.mockPatchRequest(
         siteApiContentDetailUrl
           .param({ name: website.name, textId: content.text_id })
           .toString(),
-        "PATCH"
-      )
-      .returns({
-        body:   content,
-        status: 200
-      })
+        content,
+    )
     const { wrapper, store } = await render({
       editorState: createModalState("editing", content.text_id),
       ...successStubs
@@ -315,8 +313,9 @@ describe("SiteContent", () => {
       // @ts-ignore
       await onSubmit(values, formikStubs)
     })
-    sinon.assert.calledWith(
+    expect(
       helper.handleRequestStub,
+    ).toBeCalledWith(
       siteApiContentDetailUrl
         .param({ name: website.name, textId: content.text_id })
         .toString(),
@@ -333,8 +332,9 @@ describe("SiteContent", () => {
       }
     )
 
-    sinon.assert.calledWith(
+    expect(
       helper.handleRequestStub,
+    ).toBeCalledWith(
       siteApiDetailUrl
         .param({ name: website.name })
         .query({ only_status: true })
@@ -381,10 +381,7 @@ describe("SiteContent", () => {
 
       it("handles field errors", async () => {
         const errorObj = { title: "uh oh" }
-        helper.handleRequestStub.withArgs(url, method).returns({
-          body:   errorObj,
-          status: 500
-        })
+        helper.mockGetRequest(url, errorObj, 500)
 
         const { wrapper } = await render({
           editorState,
@@ -401,10 +398,7 @@ describe("SiteContent", () => {
 
       it("handles non-field errors", async () => {
         const errorMessage = "uh oh"
-        helper.handleRequestStub.withArgs(url, method).returns({
-          body:   errorMessage,
-          status: 500
-        })
+        helper.mockGetRequest(url, errorMessage, 500)
         const { wrapper } = await render({ editorState, ...successStubs })
 
         const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
@@ -436,18 +430,14 @@ describe("SiteContent", () => {
           const needsContentContextStub = helper.sandbox
             .stub(siteContentFuncs, "needsContentContext")
             .returns(contentContext)
-          const contentDetailStub = helper.handleRequestStub
-            .withArgs(
-              siteApiContentDetailUrl
+const url =              siteApiContentDetailUrl
                 .param({ name: website.name, textId: content.text_id })
                 .query(contentContext ? { content_context: true } : {})
-                .toString(),
-              "GET"
+                .toString()
+          helper.mockGetRequest(
+            url,
+                content
             )
-            .returns({
-              body:   content,
-              status: 200
-            })
 
           const { wrapper } = await render({
             editorState: createModalState("editing", content.text_id),
@@ -455,7 +445,14 @@ describe("SiteContent", () => {
             ...(hasContentProp ? { content: content } : {})
           })
 
-          sinon.assert.callCount(contentDetailStub, shouldLoad ? 1 : 0)
+          if (shouldLoad) {
+            expect(helper.handleRequestStub).toHaveBeenCalledWith(
+              url
+            )
+          } else {
+            expect(helper.handleRequestStub).toHaveBeenCalledTimes(0)
+          }
+
           const form = wrapper.find("SiteContentForm")
           expect(form.exists()).toBe(true)
           expect(form.prop("content")).toStrictEqual(content)
@@ -479,8 +476,9 @@ describe("SiteContent", () => {
       // @ts-ignore
       await onSubmit(values, formikStubs)
     })
-    sinon.assert.calledWith(
+    expect(
       helper.handleRequestStub,
+    ).toBeCalledWith(
       siteApiContentUrl.param({ name: website.name }).toString(),
       "POST",
       {

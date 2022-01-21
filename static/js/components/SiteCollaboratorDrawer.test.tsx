@@ -22,8 +22,6 @@ describe("SiteCollaboratorDrawerTest", () => {
     render: TestRenderer,
     website: Website,
     formikStubs: { [key: string]: SinonStub },
-    editCollaboratorStub: SinonStub,
-    addCollaboratorStub: SinonStub,
     toggleVisibilityStub: SinonStub,
     collaborator: WebsiteCollaborator
 
@@ -57,7 +55,6 @@ describe("SiteCollaboratorDrawerTest", () => {
         queries: {}
       }
     )
-    helper.handleRequestStub.returns({})
   })
 
   afterEach(() => {
@@ -79,13 +76,15 @@ describe("SiteCollaboratorDrawerTest", () => {
     })
 
     it("edits a collaborator role and closes the dialog on success", async () => {
-      editCollaboratorStub = helper.mockPatchRequest(
-        siteApiCollaboratorsDetailUrl
+let url =         siteApiCollaboratorsDetailUrl
           .param({
             name:   website.name,
             userId: collaborator.user_id
           })
-          .toString(),
+          .toString()
+
+helper.mockPatchRequest(
+  url,
         collaborator,
         201
       )
@@ -102,7 +101,11 @@ describe("SiteCollaboratorDrawerTest", () => {
           formikStubs
         )
       })
-      sinon.assert.calledOnce(editCollaboratorStub)
+      expect(helper.handleRequestStub).toHaveBeenCalledWith(
+        url,
+        'PATCH',
+        collaborator,
+      )
       sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
       sinon.assert.calledOnce(toggleVisibilityStub)
     })
@@ -113,13 +116,15 @@ describe("SiteCollaboratorDrawerTest", () => {
           role: errorMsg
         }
       }
-      editCollaboratorStub = helper.mockPatchRequest(
-        siteApiCollaboratorsDetailUrl
+const url =        siteApiCollaboratorsDetailUrl
           .param({
             name:   website.name,
             userId: collaborator.user_id
           })
-          .toString(),
+          .toString()
+
+helper.mockPatchRequest(
+  url,
         errorResp,
         400
       )
@@ -136,7 +141,9 @@ describe("SiteCollaboratorDrawerTest", () => {
           formikStubs
         )
       })
-      sinon.assert.calledOnce(editCollaboratorStub)
+      expect(helper.handleRequestStub).toHaveBeenCalledWith(
+        url
+      )
       sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
         ...errorResp.errors
       })
@@ -147,13 +154,14 @@ describe("SiteCollaboratorDrawerTest", () => {
       const errorResp = {
         errors: errorMsg
       }
-      editCollaboratorStub = helper.mockPatchRequest(
-        siteApiCollaboratorsDetailUrl
+        const url = siteApiCollaboratorsDetailUrl
           .param({
             name:   website.name,
             userId: collaborator.user_id
           })
-          .toString(),
+          .toString()
+      helper.mockPatchRequest(
+        url,
         errorResp,
         400
       )
@@ -170,7 +178,7 @@ describe("SiteCollaboratorDrawerTest", () => {
           formikStubs
         )
       })
-      sinon.assert.calledOnce(editCollaboratorStub)
+      expect(helper.handleRequestStub).toHaveBeenCalledWith(url)
       sinon.assert.calledOnceWithExactly(formikStubs.setStatus, errorMsg)
       sinon.assert.notCalled(toggleVisibilityStub)
     })
@@ -184,8 +192,9 @@ describe("SiteCollaboratorDrawerTest", () => {
     })
 
     it("creates a new collaborator", async () => {
-      addCollaboratorStub = helper.mockPostRequest(
-        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+        const url = siteApiCollaboratorsUrl.param({ name: website.name }).toString()
+      helper.mockPostRequest(
+        url,
         makeWebsiteCollaborator()
       )
       const { wrapper } = await render()
@@ -202,7 +211,7 @@ describe("SiteCollaboratorDrawerTest", () => {
           formikStubs
         )
       })
-      sinon.assert.calledOnce(addCollaboratorStub)
+      expect(helper.handleRequestStub).toHaveBeenCalledWith(url)
       sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
       sinon.assert.calledOnce(toggleVisibilityStub)
     })
@@ -214,7 +223,7 @@ describe("SiteCollaboratorDrawerTest", () => {
           role:  errorMsg
         }
       }
-      addCollaboratorStub = helper.mockPostRequest(
+      helper.mockPostRequest(
         siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
         errorResp,
         400
@@ -233,7 +242,6 @@ describe("SiteCollaboratorDrawerTest", () => {
           formikStubs
         )
       })
-      sinon.assert.calledOnce(addCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
         ...errorResp.errors
       })
@@ -244,7 +252,7 @@ describe("SiteCollaboratorDrawerTest", () => {
       const errorResp = {
         errors: errorMsg
       }
-      addCollaboratorStub = helper.mockPostRequest(
+      helper.mockPostRequest(
         siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
         errorResp,
         400
@@ -263,7 +271,6 @@ describe("SiteCollaboratorDrawerTest", () => {
           formikStubs
         )
       })
-      sinon.assert.calledOnce(addCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setStatus, errorMsg)
       sinon.assert.notCalled(toggleVisibilityStub)
     })

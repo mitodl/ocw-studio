@@ -114,14 +114,13 @@ describe("SiteCollaboratorList", () => {
   it("the delete collaborator dialog works as expected", async () => {
     const collaborator = collaborators[0]
     const numCollaborators = concat(collaborators, permanentAdmins).length
-    deleteCollaboratorStub = helper.mockDeleteRequest(
-      siteApiCollaboratorsDetailUrl
+    const url =      siteApiCollaboratorsDetailUrl
         .param({
           name:   website.name,
           userId: collaborator.user_id
-        })
-        .toString(),
-      {}
+        }).toString()
+    helper.mockDeleteRequest(
+      url, {}
     )
     const { wrapper } = await render()
     wrapper
@@ -148,6 +147,7 @@ describe("SiteCollaboratorList", () => {
     })
     wrapper.update()
     sinon.assert.calledOnce(deleteCollaboratorStub)
+    expect(helper.handleRequestStub).toHaveBeenCalledWith(url)
     expect(wrapper.find("li").length).toBe(numCollaborators - 1)
   })
 

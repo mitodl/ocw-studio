@@ -12,12 +12,13 @@ import configureStore, { Store } from "../store/configureStore"
 import { getQueries } from "../lib/redux_query"
 
 import * as networkInterfaceFuncs from "../store/network_interface"
+import {when} from "jest-when"
 
 export default class IntegrationTestHelper {
   browserHistory: MemoryHistory
   sandbox: SinonSandbox
   actions: Array<Action>
-  handleRequestStub: SinonStub
+  handleRequestStub: jest.Mock
   currentLocation: Update<State> | null
   scrollIntoViewStub: SinonStub
   wrapper?: ReactWrapper | null
@@ -42,7 +43,11 @@ export default class IntegrationTestHelper {
     // basically, if this is returned it's an indication that mocks
     // weren't set up correctly for the URL and HTTP verb which
     // handleRequestStub is being called with.
-    this.handleRequestStub = this.sandbox.stub().returns("no match")
+    // this.handleRequestStub = this.sandbox.stub().returns("no match")
+    this.handleRequestStub = jest.fn().mockReturnValue(
+      "no match"
+    )
+
     this.sandbox
       .stub(networkInterfaceFuncs, "makeRequest")
       .callsFake((url, method, options) => ({
@@ -81,11 +86,16 @@ export default class IntegrationTestHelper {
     method: "GET" | "POST" | "PATCH" | "DELETE",
     responseBody: unknown,
     code: number
-  ): sinon.SinonStub {
-    return this.handleRequestStub.withArgs(url, method).returns({
+  ): jest.Mock {
+    when(this.handleRequestStub).calledWith(
+      url,
+      method
+    ).mockReturnValue(
+    {
       body:   responseBody,
       status: code
     })
+    return this.handleRequestStub
   }
 
   /**
@@ -94,28 +104,28 @@ export default class IntegrationTestHelper {
    * pass the API url you want to mock and the object which should be
    * returned as the request body!
    */
-  mockGetRequest(url: string, body: unknown, code = 200): sinon.SinonStub {
-    return this.mockRequest(url, "GET", body, code)
+  mockGetRequest(url: string, body: unknown, code = 200): jest.Mock {
+   return  this.mockRequest(url, "GET", body, code)
   }
 
   /**
    * Convenience method for mocking out a POST request
    */
-  mockPostRequest(url: string, body: unknown, code = 201): sinon.SinonStub {
+  mockPostRequest(url: string, body: unknown, code = 201): jest.Mock {
     return this.mockRequest(url, "POST", body, code)
   }
 
   /**
    * Convenience method for mocking out a PATCH request
    */
-  mockPatchRequest(url: string, body: unknown, code = 200): sinon.SinonStub {
+  mockPatchRequest(url: string, body: unknown, code = 200): jest.Mock {
     return this.mockRequest(url, "PATCH", body, code)
   }
 
   /**
    * Convenience method for mocking out a DELETE request
    */
-  mockDeleteRequest(url: string, body: unknown, code = 204): sinon.SinonStub {
+  mockDeleteRequest(url: string, body: unknown, code = 204): jest.Mock {
     return this.mockRequest(url, "DELETE", body, code)
   }
 

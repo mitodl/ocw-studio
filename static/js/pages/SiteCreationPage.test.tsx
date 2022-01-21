@@ -60,7 +60,7 @@ describe("SiteCreationPage", () => {
 
   describe("passes a form submit function", () => {
     const errorMsg = "Error"
-    let formikStubs: { [key: string]: SinonStub }, createWebsiteStub: SinonStub
+    let formikStubs: { [key: string]: SinonStub }, createWebsiteStub: jest.Mock
 
     beforeEach(() => {
       formikStubs = {
@@ -87,8 +87,7 @@ describe("SiteCreationPage", () => {
           formikStubs
         )
       })
-      sinon.assert.calledOnce(createWebsiteStub)
-      sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
+      expect(createWebsiteStub).toHaveBeenLastCalledWith(formikStubs.setSubmitting, false)
       sinon.assert.calledOnceWithExactly(
         historyPushStub,
         siteDetailUrl.param({ name: website.name }).toString()
@@ -121,8 +120,7 @@ describe("SiteCreationPage", () => {
           formikStubs
         )
       })
-      sinon.assert.calledOnce(createWebsiteStub)
-      sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
+      expect(createWebsiteStub).toHaveBeenLastCalledWith(formikStubs.setErrors, {
         ...errorResp.errors,
         short_id: undefined,
         starter:  undefined
@@ -154,8 +152,9 @@ describe("SiteCreationPage", () => {
           formikStubs
         )
       })
-      sinon.assert.calledOnce(createWebsiteStub)
-      sinon.assert.calledOnceWithExactly(formikStubs.setStatus, errorMsg)
+      expect(createWebsiteStub).toHaveBeenLastCalledWith(
+        formikStubs.setStatus, errorMsg
+      )
       sinon.assert.notCalled(historyPushStub)
     })
   })

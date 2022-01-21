@@ -7879,12 +7879,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-when@npm:^3.4.1":
-  version: 3.4.2
-  resolution: "jest-when@npm:3.4.2"
+"jest-when@npm:^3.5.0":
+  version: 3.5.0
+  resolution: "jest-when@npm:3.5.0"
   peerDependencies:
     jest: ">= 25"
-  checksum: 5902628133c3fb1b2e7b89cdf95a2e28388e143fdd30fd30b4e5164b68c14692b29d6d30d8757fd47e8c5c5bf719dcc7001964deb451b386e43eaf36247e7410
+  checksum: bb674e353a123246296c950f262e056570a1e2fe1e3954cafaf0b69327bb4a223b2cd189486fd38e4d0fd5d259de479ec63207484912bc1f5faefc4c8971bfd7
   languageName: node
   linkType: hard
 
@@ -9416,7 +9416,7 @@ __metadata:
     isomorphic-fetch: ^3.0.0
     jest: ^27.2.5
     jest-fail-on-console: ^2.0.4
-    jest-when: ^3.4.1
+    jest-when: ^3.5.0
     js-beautify: ^1.14.0
     lodash: ^4.17.21
     luxon: ^2.0.2

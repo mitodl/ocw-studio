@@ -55,17 +55,12 @@ describe("SingletonsContentListing", () => {
     singletonConfigItems: SingletonConfigItem[],
     websiteContentDetails: Record<string, WebsiteContent>,
     content: WebsiteContent,
-    contentDetailStub: SinonStub,
     setConfirmationModalVisible: any,
     conditionalClose: any
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     content = makeWebsiteContentDetail()
-    contentDetailStub = helper.handleRequestStub.returns({
-      body:   content,
-      status: 200
-    })
     website = makeWebsiteDetail()
     singletonConfigItems = [
       makeSingletonConfigItem(),
@@ -177,8 +172,7 @@ describe("SingletonsContentListing", () => {
         .returns(contentContext)
       const tabIndexToSelect = 1
       const newContent = makeWebsiteContentDetail()
-      contentDetailStub = helper.handleRequestStub
-        .withArgs(
+      helper.mockGetRequest(
           siteApiContentDetailUrl
             .param({
               name:   website.name,
@@ -186,23 +180,19 @@ describe("SingletonsContentListing", () => {
             })
             .query(contentContext ? { content_context: true } : {})
             .toString(),
-          "GET"
+          newContent,
         )
-        .returns({
-          body:   newContent,
-          status: 200
-        })
       const { wrapper } = await render()
       // API should not initially be called since we already have the first item in our websiteContentDetails
       // entities state
-      sinon.assert.notCalled(contentDetailStub)
+      expect(helper.handleRequestStub).toHaveBeenCalledTimes(0)
       const tabLink = wrapper.find("NavLink").at(tabIndexToSelect)
       act(() => {
         // @ts-ignore
         tabLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
       })
       wrapper.update()
-      sinon.assert.calledOnce(contentDetailStub)
+      expect(helper.handleRequestStub).toHaveBeenCalled()
       sinon.assert.calledWith(
         needsContentContextStub,
         singletonConfigItems[tabIndexToSelect].fields
