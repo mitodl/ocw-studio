@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.41.1
+--------------
+
+- Limit git api rate for all current batch functions that use it at high volume (#909)
+
 Version 0.41.0 (Released January 20, 2022)
 --------------
 
