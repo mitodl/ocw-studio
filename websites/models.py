@@ -71,6 +71,8 @@ class Website(TimestampedModel):
     )
     metadata = models.JSONField(null=True, blank=True)
 
+    first_published_to_production = models.DateTimeField(null=True, blank=True)
+
     # Live publish fields
     publish_date = models.DateTimeField(null=True, blank=True)
     has_unpublished_live = models.BooleanField(default=True)

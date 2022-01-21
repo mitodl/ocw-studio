@@ -369,7 +369,7 @@ def test_detect_mime_type(mocker):
 )
 @pytest.mark.parametrize("has_user", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-def test_update_website_status_draft(mocker, status, notify, has_user, version):
+def test_update_website_status(mocker, status, notify, has_user, version):
     """update_website_status should update the appropriate website publishing fields"""
     mock_mail = mocker.patch("websites.api.mail_on_publish")
     mock_log = mocker.patch("websites.api.log.error")
@@ -382,6 +382,35 @@ def test_update_website_status_draft(mocker, status, notify, has_user, version):
     assert getattr(website, f"{version}_publish_status_updated_on") == now
     assert mock_mail.call_count == (1 if has_user and notify else 0)
     assert mock_log.call_count == (1 if status == PUBLISH_STATUS_ERRORED else 0)
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        PUBLISH_STATUS_STARTED,
+        PUBLISH_STATUS_SUCCEEDED,
+        PUBLISH_STATUS_ERRORED,
+    ],
+)
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_update_unpublished_website_status(status, version):
+    """update_website_status should update an unpublished site appropriately"""
+    website = WebsiteFactory.create(unpublished=True, draft_publish_date=None)
+    now = now_in_utc()
+    update_website_status(website, version, status, now)
+    website.refresh_from_db()
+    assert getattr(website, f"{version}_publish_status") == status
+    assert getattr(website, f"{version}_publish_status_updated_on") == now
+
+    publish_date_field = (
+        "publish_date" if version == VERSION_LIVE else "draft_publish_date"
+    )
+    if status == PUBLISH_STATUS_SUCCEEDED:
+        assert getattr(website, publish_date_field) == now
+        if version == VERSION_LIVE:
+            assert getattr(website, "first_published_to_production") == now
+    else:
+        assert getattr(website, publish_date_field) is None
 
 
 @pytest.mark.parametrize("has_missing_ids", [True, False])

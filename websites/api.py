@@ -283,9 +283,10 @@ def update_website_status(
             "draft_publish_status_updated_on": update_time,
         }
         if status in PUBLISH_STATUSES_FINAL:
-            update_kwargs["draft_publish_date"] = update_time
-            update_kwargs["draft_last_published_by"] = None
-            if status != PUBLISH_STATUS_SUCCEEDED:
+            if status == PUBLISH_STATUS_SUCCEEDED:
+                update_kwargs["draft_publish_date"] = update_time
+                update_kwargs["draft_last_published_by"] = None
+            else:
                 # Allow user to retry
                 update_kwargs["has_unpublished_draft"] = True
     else:
@@ -295,9 +296,12 @@ def update_website_status(
             "live_publish_status_updated_on": update_time,
         }
         if status in PUBLISH_STATUSES_FINAL:
-            update_kwargs["publish_date"] = update_time
-            update_kwargs["live_last_published_by"] = None
-            if status != PUBLISH_STATUS_SUCCEEDED:
+            if status == PUBLISH_STATUS_SUCCEEDED:
+                if website.first_published_to_production is None:
+                    update_kwargs["first_published_to_production"] = update_time
+                update_kwargs["publish_date"] = update_time
+                update_kwargs["live_last_published_by"] = None
+            else:
                 # Allow user to retry
                 update_kwargs["has_unpublished_live"] = True
     Website.objects.filter(name=website.name).update(**update_kwargs)

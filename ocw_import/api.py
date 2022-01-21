@@ -375,16 +375,16 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
     if name in NON_ID_COURSE_NAMES:
         return
     try:
-        publish_date = parse_date(course_data.get("publishdate", None))
+        first_published_to_production = parse_date(course_data.get("publishdate", None))
     except (ValueError, TypeError):
-        publish_date = None
+        first_published_to_production = None
         course_data["publishdate"] = None
     try:
         website, _ = Website.objects.update_or_create(
             name=name,
             defaults={
                 "title": course_data.get("course_title", f"Course Site ({name})"),
-                "publish_date": publish_date,
+                "first_published_to_production": first_published_to_production,
                 "metadata": course_data,
                 "short_id": get_short_id(name, course_data),
                 "starter_id": starter_id,
