@@ -5,42 +5,82 @@ import Dialog from "../Dialog"
 import {
   RESOURCE_TYPE_DOCUMENT,
   RESOURCE_TYPE_IMAGE,
-  RESOURCE_TYPE_VIDEO
+  RESOURCE_TYPE_VIDEO,
+  CONTENT_TYPE_RESOURCE,
+  CONTENT_TYPE_PAGE
 } from "../../constants"
 import ResourcePickerListing from "./ResourcePickerListing"
 import { useDebouncedState } from "../../hooks/state"
 import {
   CKEResourceNodeType,
-  ResourceDialogState,
-  RESOURCE_EMBED
+  ResourceDialogMode,
+  RESOURCE_EMBED,
+  RESOURCE_LINK
 } from "../../lib/ckeditor/plugins/constants"
 import { WebsiteContent } from "../../types/websites"
 
 interface Props {
-  state: ResourceDialogState
+  mode: ResourceDialogMode
+  isOpen: boolean
   closeDialog: () => void
   insertEmbed: (id: string, title: string, variant: CKEResourceNodeType) => void
-  attach: string
 }
 
-const RESOURCE_PICKER_TABS = [
+interface ResourceTabSettings {
+  title: string
+  id: string
+  contentType: "resource" | "page"
+  resourcetype: string | null
+  embeddable: boolean
+}
+const RESOURCE_PICKER_TABS: ResourceTabSettings[] = [
   {
     title:        "Documents",
-    resourcetype: RESOURCE_TYPE_DOCUMENT
+    id:           RESOURCE_TYPE_DOCUMENT,
+    contentType:  CONTENT_TYPE_RESOURCE,
+    resourcetype: RESOURCE_TYPE_DOCUMENT,
+    embeddable:   true
   },
   {
     title:        "Videos",
-    resourcetype: RESOURCE_TYPE_VIDEO
+    id:           RESOURCE_TYPE_VIDEO,
+    contentType:  CONTENT_TYPE_RESOURCE,
+    resourcetype: RESOURCE_TYPE_VIDEO,
+    embeddable:   true
   },
   {
     title:        "Images",
-    resourcetype: RESOURCE_TYPE_IMAGE
+    id:           RESOURCE_TYPE_IMAGE,
+    contentType:  CONTENT_TYPE_RESOURCE,
+    resourcetype: RESOURCE_TYPE_IMAGE,
+    embeddable:   true
+  },
+  {
+    title:        "Pages",
+    id:           CONTENT_TYPE_PAGE,
+    contentType:  CONTENT_TYPE_PAGE,
+    resourcetype: null,
+    embeddable:   false
   }
 ]
 
-export default function ResourcePickerDialog(props: Props): JSX.Element {
-  const { state, closeDialog, insertEmbed, attach } = props
+const modeText = {
+  [RESOURCE_EMBED]: {
+    headerText: "Resources",
+    acceptText: "Embed resource"
+  },
+  [RESOURCE_LINK]: {
+    headerText: "Resources & Pages",
+    acceptText: "Add link"
+  }
+}
 
+export default function ResourcePickerDialog(props: Props): JSX.Element {
+  const { mode, isOpen, closeDialog, insertEmbed } = props
+
+  const currentTabs = RESOURCE_PICKER_TABS.filter(
+    tab => mode !== RESOURCE_EMBED || tab.embeddable
+  )
   const [activeTab, setActiveTab] = useState(RESOURCE_TYPE_IMAGE)
 
   // filterInput is to store user input and is updated synchronously
@@ -64,36 +104,35 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
   )
 
   const addResource = useCallback(() => {
-    if (focusedResource && state !== "closed") {
+    if (focusedResource && isOpen) {
       insertEmbed(
         focusedResource.text_id,
         focusedResource.title ?? focusedResource.text_id,
-        state
+        mode
       )
       closeDialog()
     }
-  }, [insertEmbed, focusedResource, closeDialog, state])
+  }, [insertEmbed, focusedResource, closeDialog, isOpen, mode])
 
-  const acceptText =
-    state === RESOURCE_EMBED ? "Embed resource" : "Link resource"
+  const { acceptText, headerText } = modeText[mode]
 
   return (
     <Dialog
-      open={state !== "closed"}
+      open={isOpen}
       toggleModal={closeDialog}
       wrapClassName="resource-picker-dialog"
-      headerContent="Resources"
+      headerContent={headerText}
       onAccept={focusedResource ? addResource : undefined}
       acceptText={focusedResource ? acceptText : undefined}
       bodyContent={
         <>
           <Nav tabs>
-            {RESOURCE_PICKER_TABS.map(tab => (
-              <NavItem key={tab.resourcetype}>
+            {currentTabs.map(tab => (
+              <NavItem key={tab.id}>
                 <NavLink
-                  className={activeTab === tab.resourcetype ? "active" : ""}
+                  className={activeTab === tab.id ? "active" : ""}
                   onClick={() => {
-                    setActiveTab(tab.resourcetype)
+                    setActiveTab(tab.id)
                   }}
                 >
                   {tab.title}
@@ -109,15 +148,15 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
             className="form-control filter-input my-2"
           />
           <TabContent activeTab={activeTab}>
-            {RESOURCE_PICKER_TABS.map(tab => (
-              <TabPane tabId={tab.resourcetype} key={tab.resourcetype}>
-                {activeTab === tab.resourcetype ? (
+            {currentTabs.map(tab => (
+              <TabPane tabId={tab.id} key={tab.id}>
+                {activeTab === tab.id ? (
                   <ResourcePickerListing
                     resourcetype={tab.resourcetype}
+                    contentType={tab.contentType}
                     filter={filter ?? null}
                     focusResource={setFocusedResource}
                     focusedResource={focusedResource}
-                    attach={attach}
                   />
                 ) : null}
               </TabPane>

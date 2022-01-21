@@ -61,9 +61,16 @@ describe("MarkdownEditor", () => {
     })
   })
 
-  it("should pass attach down to a ResourceEmbedField", () => {
-    const wrapper = render({ attach: "resource" })
-    expect(wrapper.find("ResourcePickerDialog").prop("attach")).toBe("resource")
+  it("should render ResourceEmbedField if attach is provided", () => {
+    const wrapper = render({ attach: "foo" })
+    const diaglogWrapper = wrapper.find("ResourcePickerDialog")
+    expect(diaglogWrapper.length).toBe(1)
+  })
+
+  it("should not render ResourceEmbedField if attach is missing", () => {
+    const wrapper = render()
+    const diaglogWrapper = wrapper.find("ResourcePickerDialog")
+    expect(diaglogWrapper.length).toBe(0)
   })
 
   it("should render resources with using EmbeddedResource", () => {
@@ -113,7 +120,7 @@ describe("MarkdownEditor", () => {
         wrapper
           .find("ResourcePickerDialog")
           .at(0)
-          .prop("state")
+          .prop("mode")
       ).toBe(resourceNodeType)
     })
   })

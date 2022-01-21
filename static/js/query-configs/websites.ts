@@ -300,6 +300,8 @@ export const contentListingKey = (
   JSON.stringify([
     listingParams.name,
     listingParams.type,
+    listingParams.search,
+    listingParams.pageContent,
     listingParams.offset,
     listingParams.resourcetype
   ])

@@ -18,7 +18,8 @@ import {
 import {
   RESOURCE_TYPE_IMAGE,
   RESOURCE_TYPE_DOCUMENT,
-  RESOURCE_TYPE_VIDEO
+  RESOURCE_TYPE_VIDEO,
+  CONTENT_TYPE_PAGE
 } from "../../constants"
 
 jest.mock("../../hooks/state")
@@ -44,9 +45,9 @@ const focusResource = (wrapper: ReactWrapper, resource: WebsiteContent) => {
 describe("ResourcePickerDialog", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
-    insertEmbedStub: any,
-    closeDialogStub: any,
-    setStub: any,
+    insertEmbedStub: sinon.SinonStub,
+    closeDialogStub: sinon.SinonStub,
+    setStub: sinon.SinonStub,
     resource: WebsiteContent
 
   beforeEach(() => {
@@ -61,10 +62,10 @@ describe("ResourcePickerDialog", () => {
     useDebouncedState.mockReturnValue(["", setStub])
 
     render = helper.configureRenderer(ResourcePickerDialog, {
-      state:       RESOURCE_EMBED,
+      mode:        RESOURCE_EMBED,
+      isOpen:      true,
       closeDialog: closeDialogStub,
-      insertEmbed: insertEmbedStub,
-      attach:      "resource"
+      insertEmbed: insertEmbedStub
     })
   })
 
@@ -72,12 +73,22 @@ describe("ResourcePickerDialog", () => {
     helper.cleanup()
   })
 
-  it("should render tabs", async () => {
-    const { wrapper } = await render()
+  it("should render 3 tabs when embedding", async () => {
+    const { wrapper } = await render({ mode: RESOURCE_EMBED })
     expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual([
       RESOURCE_TYPE_DOCUMENT,
       RESOURCE_TYPE_VIDEO,
       RESOURCE_TYPE_IMAGE
+    ])
+  })
+
+  it("should render 4 tabs when linking", async () => {
+    const { wrapper } = await render({ mode: RESOURCE_LINK })
+    expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual([
+      RESOURCE_TYPE_DOCUMENT,
+      RESOURCE_TYPE_VIDEO,
+      RESOURCE_TYPE_IMAGE,
+      CONTENT_TYPE_PAGE
     ])
   })
 
@@ -88,15 +99,15 @@ describe("ResourcePickerDialog", () => {
     expect(dialog.prop("wrapClassName")).toBe("resource-picker-dialog")
   })
 
-  it("should allow focusing and linking a resource", async () => {
+  it("should allow focusing and linking a resource, then close the dialog", async () => {
     const { wrapper } = await render({
-      state: RESOURCE_LINK
+      mode: RESOURCE_LINK
     })
     // callback should be 'undefined' before resource is focused
     expect(wrapper.find("Dialog").prop("onAccept")).toBeUndefined()
     focusResource(wrapper, resource)
 
-    expect(wrapper.find("Dialog").prop("acceptText")).toBe("Link resource")
+    expect(wrapper.find("Dialog").prop("acceptText")).toBe("Add link")
 
     act(() => {
       // @ts-ignore
@@ -110,11 +121,12 @@ describe("ResourcePickerDialog", () => {
       resource.title,
       RESOURCE_LINK
     ])
+    expect(closeDialogStub.callCount).toBe(1)
   })
 
   it("should focusing and embedding a resource", async () => {
     const { wrapper } = await render({
-      state: RESOURCE_EMBED
+      mode: RESOURCE_EMBED
     })
     // callback should be 'undefined' before resource is focused
     expect(wrapper.find("Dialog").prop("onAccept")).toBeUndefined()
@@ -138,7 +150,7 @@ describe("ResourcePickerDialog", () => {
 
   it("should pass basic props to ResourcePickerListing", async () => {
     const { wrapper } = await render()
-    expect(wrapper.find("ResourcePickerListing").prop("attach")).toEqual(
+    expect(wrapper.find("ResourcePickerListing").prop("contentType")).toEqual(
       "resource"
     )
     focusResource(wrapper, resource)
@@ -147,24 +159,31 @@ describe("ResourcePickerDialog", () => {
     )
   })
 
-  it("should pass correct resourcetype to active tab", async () => {
-    const { wrapper } = await render()
+  it("should pass correct resourcetype and contentType to active tab", async () => {
+    const { wrapper } = await render({ mode: RESOURCE_LINK })
 
-    //
-    ;[RESOURCE_TYPE_DOCUMENT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_IMAGE].forEach(
-      (resourcetype, idx) => {
-        act(() => {
-          wrapper
-            .find("NavLink")
-            .at(idx)
-            .simulate("click")
-        })
-        wrapper.update()
-        expect(
-          wrapper.find("ResourcePickerListing").prop("resourcetype")
-        ).toEqual(resourcetype)
-      }
-    )
+    const cases = [
+      { resourcetype: RESOURCE_TYPE_DOCUMENT, contentType: "resource" },
+      { resourcetype: RESOURCE_TYPE_VIDEO, contentType: "resource" },
+      { resourcetype: RESOURCE_TYPE_IMAGE, contentType: "resource" },
+      { resourcetype: null, contentType: "page" }
+    ]
+    cases.forEach(({ resourcetype, contentType }, idx) => {
+      act(() => {
+        wrapper
+          .find("NavLink")
+          .at(idx)
+          .simulate("click")
+      })
+      wrapper.update()
+      expect(
+        wrapper.find("ResourcePickerListing").prop("resourcetype")
+      ).toEqual(resourcetype)
+
+      expect(wrapper.find("ResourcePickerListing").prop("contentType")).toBe(
+        contentType
+      )
+    })
   })
 
   it("should pass filter string to picker, when filter is set", async () => {

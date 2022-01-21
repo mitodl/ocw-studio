@@ -14,8 +14,9 @@ import {
   CKEDITOR_RESOURCE_UTILS,
   RenderResourceFunc,
   ResourceCommandMap,
-  ResourceDialogState,
-  ADD_RESOURCE_EMBED
+  ResourceDialogMode,
+  ADD_RESOURCE_EMBED,
+  RESOURCE_LINK
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 
@@ -42,9 +43,11 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const setEditorRef = useCallback(editorInstance => {
     editor.current = editorInstance
   }, [])
-  const [resourcePickerState, setResourcePickerState] = useState<
-    ResourceDialogState
-  >("closed")
+
+  const [resourcePickerMode, setResourcePickerMode] = useState<
+    ResourceDialogMode
+  >(RESOURCE_LINK)
+  const [isResourcePickerOpen, setIsResourcePickerOpen] = useState(false)
 
   const addResourceEmbed = useCallback(
     (uuid: string, title: string, variant: CKEResourceNodeType) => {
@@ -76,9 +79,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
 
   const openResourcePicker = useCallback(
     (resourceDialogType: CKEResourceNodeType) => {
-      setResourcePickerState(resourceDialogType)
+      setResourcePickerMode(resourceDialogType)
+      setIsResourcePickerOpen(true)
     },
-    [setResourcePickerState]
+    [setResourcePickerMode, setIsResourcePickerOpen]
   )
 
   const hasAttach = attach && attach.length > 0
@@ -129,8 +133,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   )
 
   const closeResourcePicker = useCallback(() => {
-    setResourcePickerState("closed")
-  }, [setResourcePickerState])
+    setIsResourcePickerOpen(false)
+  }, [setIsResourcePickerOpen])
 
   return (
     <>
@@ -143,10 +147,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       />
       {hasAttach ? (
         <ResourcePickerDialog
-          state={resourcePickerState}
+          isOpen={isResourcePickerOpen}
+          mode={resourcePickerMode}
           closeDialog={closeResourcePicker}
           insertEmbed={addResourceEmbed}
-          attach={attach as string}
         />
       ) : null}
       {renderQueue.map(([uuid, el], idx) => (

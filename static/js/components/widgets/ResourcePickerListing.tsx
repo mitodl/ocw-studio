@@ -18,16 +18,22 @@ import {
 
 interface Props {
   focusResource: (item: WebsiteContent) => void
-  attach: string
   filter: string | null
-  resourcetype: string
+  resourcetype: string | null
+  contentType: string
   focusedResource: WebsiteContent | null
 }
 
 export default function ResourcePickerListing(
   props: Props
 ): JSX.Element | null {
-  const { focusResource, focusedResource, attach, filter, resourcetype } = props
+  const {
+    focusResource,
+    focusedResource,
+    filter,
+    resourcetype,
+    contentType
+  } = props
   const website = useWebsite()
 
   const listingParams: ContentListingParams = useMemo(
@@ -35,13 +41,13 @@ export default function ResourcePickerListing(
       Object.assign(
         {
           name:   website.name,
-          type:   attach,
+          type:   contentType,
           offset: 0
         },
         resourcetype ? { resourcetype } : null,
         filter ? { search: filter } : null
       ),
-    [website, attach, filter, resourcetype]
+    [website, filter, resourcetype, contentType]
   )
 
   useRequest(websiteContentListingRequest(listingParams, true, false))
@@ -54,10 +60,11 @@ export default function ResourcePickerListing(
     return null
   }
 
-  const className =
-    resourcetype === RESOURCE_TYPE_DOCUMENT ?
-      "resource-picker-listing column-view" :
-      "resource-picker-listing"
+  const useColumnView =
+    contentType === "page" || resourcetype === RESOURCE_TYPE_DOCUMENT
+  const className = useColumnView ?
+    "resource-picker-listing column-view" :
+    "resource-picker-listing"
 
   return (
     <div className={className}>
