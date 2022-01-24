@@ -1,7 +1,7 @@
 jest.mock("@ckeditor/ckeditor5-utils/src/version")
 
 import ResourceLink from "@mitodl/ckeditor5-resource-link/src/link"
-import Markdown from "./Markdown"
+import Markdown, { MarkdownDataProcessor } from "./Markdown"
 import { createTestEditor, markdownTest } from "./test_util"
 import { turndownService } from "../turndown"
 
@@ -44,6 +44,25 @@ describe("ResourceLink plugin", () => {
       editor,
       '{{< resource_link asdfasdfasdfasdf "text here" >}}',
       '<p><a class="resource-link" data-uuid="asdfasdfasdfasdf">text here</a></p>'
+    )
+  })
+
+  it("should serialize multiple links to and from markdown", async () => {
+    const editor = await getEditor("")
+    markdownTest(
+      editor,
+      'dogs {{< resource_link uuid1 "woof" >}} cats {{< resource_link uuid2 "meow" >}}, cool',
+      '<p>dogs <a class="resource-link" data-uuid="uuid1">woof</a> cats <a class="resource-link" data-uuid="uuid2">meow</a>, cool</p>'
+    )
+  })
+
+  it("[BUG] does not behave well if link title ends in backslash", async () => {
+    const editor = await getEditor("")
+    const { md2html } = (editor.data
+      .processor as unknown) as MarkdownDataProcessor
+    expect(md2html('{{< resource_link uuid123 "bad \\" >}}')).toBe(
+      // This is wrong. Should not end in &lt;/a&gt;
+      '<p><a class="resource-link" data-uuid="uuid123">bad &lt;/a&gt;</p>'
     )
   })
 })

@@ -5,12 +5,20 @@ import { editor } from "@ckeditor/ckeditor5-core"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 
-export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.+)" >}}/g
-
 import {
   RESOURCE_LINK_CKEDITOR_CLASS,
   RESOURCE_LINK
 } from "@mitodl/ckeditor5-resource-link/src/constants"
+
+/**
+ * (\S+) to match and capture the UUID
+ * "(.*?)" to match and capture the label text
+ *
+ * Limitations:
+ *   - gets fooled by label texts that include literal `" >}}` values. For
+ *     example, < resource_link uuid123 "silly " >}} link" >}}.
+ */
+export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)" >}}/g
 
 /**
  * Class for defining Markdown conversion rules for Resource links
