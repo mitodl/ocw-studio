@@ -10,7 +10,6 @@ import {
   RESOURCE_LINK
 } from "@mitodl/ckeditor5-resource-link/src/constants"
 
-export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)" >}}/g
 /**
  * (\S+) to match and capture the UUID
  * "(.*?)" to match and capture the label text
@@ -19,6 +18,7 @@ export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)" >}
  *   - gets fooled by label texts that include literal `" >}}` values. For
  *     example, < resource_link uuid123 "silly " >}} link" >}}.
  */
+export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)" >}}/g
 
 /**
  * Class for defining Markdown conversion rules for Resource links
