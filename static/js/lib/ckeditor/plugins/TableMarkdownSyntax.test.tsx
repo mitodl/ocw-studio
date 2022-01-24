@@ -3,6 +3,8 @@ jest.mock("@ckeditor/ckeditor5-utils/src/version")
 import { equals } from "ramda"
 import Markdown from "./Markdown"
 import { createTestEditor, markdownTest } from "./test_util"
+import { html_beautify as htmlBeautify } from "js-beautify"
+import { MarkdownDataProcessor } from "./Markdown"
 import { turndownService } from "../turndown"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
@@ -80,5 +82,77 @@ describe("table shortcodes", () => {
         </tbody>
       </table>`
     )
+  })
+
+  it("should transform a table with colspan and rowspan attributes", async () => {
+    const editor = await getEditor("")
+    markdownTest(
+      editor,
+      `{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen colspan="2" >}}\n**A title row**\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen rowspan="2" >}}\nrowspan test\n{{< tdclose >}}{{< tdopen >}}\nrowspan 1\n{{< tdclose >}}{{< trclose >}}{{< tropen >}}{{< tdopen >}}\nrowspan 2\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}`,
+      `<table>
+        <thead>
+          <tr>
+            <th colspan="2">
+              <p><strong>A title row</strong></p>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td rowspan="2">
+              <p>rowspan test</p>
+            </td>
+            <td>
+              <p>rowspan 1</p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p>rowspan 2</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>`
+    )
+  })
+
+  it("ignores attributes on table cells that are not in the whitelist", async () => {
+    const editor = await getEditor("")
+    const { md2html, html2md } = (editor.data
+      .processor as unknown) as MarkdownDataProcessor
+    let html = `<table>
+      <thead>
+        <tr>
+          <th colspan="2">
+            <p><strong>A title row</strong></p>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="sneaky-css-class"><p>data</p></td>
+          <td><p>data</p></td>
+        </tr>
+      </tbody>
+    </table>`
+    let md = `{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen colspan="2" >}}\n**A title row**\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\ndata\n{{< tdclose >}}{{< tdopen >}}\ndata\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}`
+    expect(html2md(html)).toBe(md)
+    md = `{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen colspan="2" >}}\n**A title row**\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen class="sneaky-css-class" >}}\ndata\n{{< tdclose >}}{{< tdopen >}}\ndata\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}`
+    html = `<table>
+      <thead>
+        <tr>
+          <th colspan="2">
+            <p><strong>A title row</strong></p>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><p>data</p></td>
+          <td><p>data</p></td>
+        </tr>
+      </tbody>
+    </table>`
+    expect(htmlBeautify(md2html(md))).toBe(htmlBeautify(html))
   })
 })

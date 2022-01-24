@@ -4,8 +4,10 @@ import GFMDataProcessor from "@ckeditor/ckeditor5-markdown-gfm/src/gfmdataproces
 import { editor } from "@ckeditor/ckeditor5-core"
 
 import MarkdownConfigPlugin from "./MarkdownConfigPlugin"
+import { ATTRIBUTE_REGEX } from "./constants"
 
 import { turndownService } from "../turndown"
+import { buildAttrsString } from "./util"
 
 /**
  * Data processor for CKEditor which implements conversion to / from Markdown
@@ -63,8 +65,8 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
   }
 }
 
-const TD_CONTENT_REGEX = /<td>([\S\s]*?)<\/td>/g
-const TH_CONTENT_REGEX = /<th>([\S\s]*?)<\/th>/g
+const TD_CONTENT_REGEX = /<td.*?>([\S\s]*?)<\/td>/g
+const TH_CONTENT_REGEX = /<th(?!ead).*?>([\S\s]*?)<\/th>/g
 
 /**
  * Plugin implementing Markdown for CKEditor
@@ -94,16 +96,25 @@ export default class Markdown extends MarkdownConfigPlugin {
       turndownService._customRulesSet = true
     }
 
+    function formatTableCell(
+      el: string,
+      html: string,
+      contents: string
+    ): string {
+      const attrs = html.match(ATTRIBUTE_REGEX)
+      return `<${el}${buildAttrsString(attrs)}>${converter.makeHtml(
+        contents
+      )}</${el}>`
+    }
+
     function md2html(md: string): string {
       return converter
         .makeHtml(md)
-        .replace(
-          TD_CONTENT_REGEX,
-          (_match, contents) => `<td>${converter.makeHtml(contents)}</td>`
+        .replace(TD_CONTENT_REGEX, (_match, contents) =>
+          formatTableCell("td", _match, contents)
         )
-        .replace(
-          TH_CONTENT_REGEX,
-          (_match, contents) => `<th>${converter.makeHtml(contents)}</th>`
+        .replace(TH_CONTENT_REGEX, (_match, contents) =>
+          formatTableCell("th", _match, contents)
         )
     }
 
