@@ -5,8 +5,6 @@ import { editor } from "@ckeditor/ckeditor5-core"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 
-export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.+)" >}}/g
-
 import {
   RESOURCE_LINK_CKEDITOR_CLASS,
   RESOURCE_LINK
@@ -27,6 +25,17 @@ import {
  * The ResourceEmbed plugin itself is provided via our fork of CKEditor's
  * 'link' plugin.
  */
+
+export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)" >}}/g
+/**
+ * (\S+) to match and capture the UUID
+ * "(.*?)" to match and capture the label text
+ *
+ * Limitations:
+ *   - gets fooled by label texts that include literal `" >}}` values. For
+ *     example, < resource_link uuid123 "silly " >}} link" >}}.
+ */
+
 export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
   constructor(editor: editor.Editor) {
     super(editor)
