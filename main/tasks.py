@@ -1,8 +1,8 @@
 """main tasks"""
-import celery
+from main.celery import app
 
 
-@celery.task
+@app.task
 def chord_finisher(*args, **kwargs):  # pylint:disable=unused-argument
     """
     Dummy task to indicate a chord has finished processing, so the next step(s) can proceed
