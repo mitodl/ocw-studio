@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.42.0 (Released January 25, 2022)
+--------------
+
+- ocw_import_course_sites - sync to github by default (#921)
+- some test cleanup
+- enable linking to pages within a course
+
 Version 0.41.1 (Released January 21, 2022)
 --------------
 
