@@ -945,6 +945,12 @@ GITHUB_RATE_LIMIT_CUTOFF = get_int(
     description="Number of remaining Github API calls that triggers throttling",
     required=False,
 )
+GITHUB_RATE_LIMIT_MIN_SLEEP = get_int(
+    name="GITHUB_RATE_LIMIT_MIN_SLEEP",
+    default=5,
+    description="Minimum time to sleep between when throttling github calls",
+    required=False,
+)
 OCW_IMPORT_STARTER_SLUG = get_string(
     name="OCW_IMPORT_STARTER_SLUG",
     default="course",
