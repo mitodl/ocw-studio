@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.42.1 (Released January 26, 2022)
+--------------
+
+- Upgrade celery (#919)
+- move comment above declaration
+- move regex back up
+- support merging of table cells (#899)
+- fix resource_link regex, make non-greedy
+- update handling of publish_date field on the Website model
+
 Version 0.42.0 (Released January 25, 2022)
 --------------
 
