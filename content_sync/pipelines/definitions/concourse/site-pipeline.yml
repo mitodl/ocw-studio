@@ -35,7 +35,6 @@ resources:
         headers:
             Content-Type: "application/json"
             Authorization: "Bearer ((api-token))"
-        text: "{json}"
         out_only: true
 jobs:
   - name: build-ocw-site
@@ -46,7 +45,7 @@ jobs:
           timeout: 5m
           attempts: 3
           params:
-            json: |
+            text: |
               {
                 "version": "((version))",
                 "status": "started"
@@ -58,7 +57,7 @@ jobs:
           try:
             put: ocw-studio-webhook
             params:
-                json: |
+                text: |
                   {
                     "version": "((version))",
                     "status": "errored"
@@ -71,7 +70,7 @@ jobs:
           try:
             put: ocw-studio-webhook
             params:
-                json: |
+                text: |
                   {
                     "version": "((version))",
                     "status": "errored"
@@ -84,7 +83,7 @@ jobs:
           try:
             put: ocw-studio-webhook
             params:
-                json: |
+                text: |
                   {
                     "version": "((version))",
                     "status": "errored"
@@ -97,7 +96,7 @@ jobs:
           try:
             put: ocw-studio-webhook
             params:
-                json: |
+                text: |
                   {
                     "version": "((version))",
                     "status": "errored"
@@ -135,7 +134,7 @@ jobs:
             put: ocw-studio-webhook
             attempts: 3
             params:
-                json: |
+                text: |
                   {
                     "version": "((version))",
                     "status": "errored"
@@ -164,7 +163,7 @@ jobs:
             put: ocw-studio-webhook
             attempts: 3
             params:
-                json: |
+                text: |
                   {
                     "version": "((version))",
                     "status": "errored"
@@ -191,7 +190,7 @@ jobs:
             put: ocw-studio-webhook
             attempts: 3
             params:
-                json: |
+                text: |
                   {
                     "version": "((version))",
                     "status": "succeeded"
@@ -201,7 +200,7 @@ jobs:
             put: ocw-studio-webhook
             attempts: 3
             params:
-                json: |
+                text: |
                   {
                     "version": "((version))",
                     "status": "errored"
