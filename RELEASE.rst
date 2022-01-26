@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.42.2
+--------------
+
+- Add option of github authentication via app (#914)
+
 Version 0.42.1 (Released January 26, 2022)
 --------------
 
