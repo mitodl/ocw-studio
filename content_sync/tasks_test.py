@@ -173,6 +173,31 @@ def test_sync_all_websites_rate_limit_low(mocker, settings, check_limit):
     assert sleep_mock.call_count == (2 if check_limit else 0)
 
 
+@pytest.mark.parametrize("calls_left, use_default_sleep", [[5, False], [5000, True]])
+def test_sync_all_websites_rate_limit_sleep_length(
+    mocker, settings, calls_left, use_default_sleep
+):
+    """Test that sync_unsynced_websites pauses if the GithubBackend is close to exceeding rate limit"""
+    settings.GITHUB_RATE_LIMIT_MIN_SLEEP = 12
+    settings.GITHUB_RATE_LIMIT_CHECK = True
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    sleep_mock = mocker.patch("content_sync.api.sleep")
+    mock_git_wrapper = mocker.patch("content_sync.backends.github.GithubApiWrapper")
+    mock_dt_now = mocker.patch(
+        "content_sync.tasks.now_in_utc", return_value=now_in_utc()
+    )
+    mock_git_wrapper.return_value.git.rate_limiting = (
+        calls_left,
+        mock_dt_now + timedelta(seconds=1000),
+    )
+    ContentSyncStateFactory.create_batch(2)
+    tasks.sync_unsynced_websites.delay()
+    if use_default_sleep:
+        sleep_mock.assert_any_call(12)
+    else:
+        assert sleep_mock.call_args_list[0][0][0] > 12
+
+
 def test_sync_all_websites_rate_limit_exceeded(settings, api_mock):
     """Test that sync_unsynced_websites halts if instantiating a GithubBackend exceeds the rate limit"""
     settings.GITHUB_RATE_LIMIT_CHECK = True

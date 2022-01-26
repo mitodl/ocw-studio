@@ -5,10 +5,20 @@ from dataclasses import dataclass
 from typing import Iterable, Iterator, List, Optional
 from urllib.parse import urlparse
 
+import requests
 import yaml
+from cryptography.hazmat.backends import default_backend
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db.models import F, Q
-from github import ContentFile, Github, GithubException, InputGitTreeElement
+from github import (
+    Consts,
+    ContentFile,
+    Github,
+    GithubException,
+    GithubIntegration,
+    InputGitTreeElement,
+)
 from github.Branch import Branch
 from github.Commit import Commit
 from github.InputGitAuthor import InputGitAuthor
@@ -104,6 +114,49 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
             continue
 
 
+def get_app_installation_id(app: GithubIntegration) -> Optional[str]:
+    """
+    Get the app installation id for the organization
+    """
+    headers = {
+        "Authorization": f"Bearer {app.create_jwt(expiration=600)}",
+        "Accept": Consts.mediaTypeIntegrationPreview,
+        "User-Agent": "PyGithub/Python",
+    }
+
+    response_dict = requests.get(
+        f"{app.base_url}/app/installations",
+        headers=headers,
+    ).json()
+    if response_dict:
+        for git_app in response_dict:
+            if git_app["app_id"] == settings.GITHUB_APP_ID:
+                return git_app["id"]
+
+
+def get_token():
+    """ Get a github token for requests """
+    if settings.GITHUB_APP_ID and settings.GITHUB_APP_PRIVATE_KEY:
+        app = GithubIntegration(
+            settings.GITHUB_APP_ID,
+            default_backend().load_pem_private_key(
+                settings.GITHUB_APP_PRIVATE_KEY, None
+            ),
+            **(
+                {"base_url": settings.GIT_API_URL}
+                if settings.GIT_API_URL is not None
+                else {}
+            ),
+        )
+        return app.get_access_token(get_app_installation_id(app)).token
+    elif settings.GIT_TOKEN:
+        return settings.GIT_TOKEN
+    else:
+        raise ImproperlyConfigured(
+            "Missing Github settings, a token or app id and private key are required"
+        )
+
+
 class GithubApiWrapper:
     """
     Github API wrapper class
@@ -111,8 +164,11 @@ class GithubApiWrapper:
 
     def __init__(self, website: Website, site_config: Optional[SiteConfig]):
         """ Initialize the Github API backend for a specific website"""
+        self.website = website
+        self.site_config = site_config or SiteConfig(self.website.starter.config)
+        self.repo = None
         self.git = Github(
-            login_or_token=settings.GIT_TOKEN,
+            login_or_token=get_token(),
             **(
                 {"base_url": settings.GIT_API_URL}
                 if settings.GIT_API_URL is not None
@@ -120,9 +176,6 @@ class GithubApiWrapper:
             ),
         )
         self.org = self.git.get_organization(settings.GIT_ORGANIZATION)
-        self.website = website
-        self.site_config = site_config or SiteConfig(self.website.starter.config)
-        self.repo = None
 
     @retry_on_failure
     def get_repo(self) -> Repository:

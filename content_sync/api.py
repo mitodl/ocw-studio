@@ -122,8 +122,9 @@ def publish_website(  # pylint: disable=too-many-arguments
     Website.objects.filter(pk=website.pk).update(**update_kwargs)
 
 
-def throttle_git_backend_calls(backend: object, min_delay: int = 1):
+def throttle_git_backend_calls(backend: object, min_delay: Optional[int] = None):
     """If the current git api limit is too low, sleep until it is reset"""
+    min_delay = min_delay or settings.GITHUB_RATE_LIMIT_MIN_SLEEP
     if settings.GITHUB_RATE_LIMIT_CHECK and isinstance(backend, GithubBackend):
         requests_remaining, limit = backend.api.git.rate_limiting
         reset_time = datetime.fromtimestamp(
