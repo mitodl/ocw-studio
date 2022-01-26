@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.42.1
+Version 0.42.1 (Released January 26, 2022)
 --------------
 
 - Upgrade celery (#919)
