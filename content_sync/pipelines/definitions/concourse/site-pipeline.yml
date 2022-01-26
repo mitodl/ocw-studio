@@ -1,9 +1,9 @@
 ---
 resource_types:
-  - name: http-api
+  - name: http-resource
     type: docker-image
     source:
-      repository: aequitas/http-api-resource
+      repository: jgriff/http-resource
       tag: latest
 resources:
   - name: ocw-hugo-themes
@@ -28,16 +28,15 @@ resources:
       uri: ((ocw-hugo-projects-uri))
       branch: ((ocw-hugo-projects-branch))
   - name: ocw-studio-webhook
-    type: http-api
+    type: http-resource
     source:
-        uri: ((ocw-studio-url))/api/websites/((site-name))/pipeline_status/
+        url: ((ocw-studio-url))/api/websites/((site-name))/pipeline_status/
         method: POST
         headers:
-            Authorization: "Bearer {bearer_token}"
-        json:
-            version: ((version))
-            status: "{status}"
-        bearer_token: ((api-token))
+            Content-Type: "application/json"
+            Authorization: "Bearer ((api-token))"
+        text: "{json}"
+        out_only: true
 jobs:
   - name: build-ocw-site
     serial: true
@@ -47,7 +46,11 @@ jobs:
           timeout: 5m
           attempts: 3
           params:
-            status: "started"
+            json: |
+              {
+                "version": "((version))",
+                "status": "started"
+              }
       - get: ocw-hugo-themes
         trigger: ((theme-created-trigger))
         timeout: 5m
@@ -55,7 +58,11 @@ jobs:
           try:
             put: ocw-studio-webhook
             params:
-                status: "errored"
+                json: |
+                  {
+                    "version": "((version))",
+                    "status": "errored"
+                  }
       - get: ocw-static-version
         trigger: ((theme-deployed-trigger))
         timeout: 5m
@@ -64,7 +71,11 @@ jobs:
           try:
             put: ocw-studio-webhook
             params:
-                status: "errored"
+                json: |
+                  {
+                    "version": "((version))",
+                    "status": "errored"
+                  }
       - get: ocw-hugo-projects
         trigger: true
         timeout: 5m
@@ -73,7 +84,11 @@ jobs:
           try:
             put: ocw-studio-webhook
             params:
-                status: "errored"
+                json: |
+                  {
+                    "version": "((version))",
+                    "status": "errored"
+                  }
       - get: course-markdown
         trigger: false
         timeout: 5m
@@ -82,7 +97,11 @@ jobs:
           try:
             put: ocw-studio-webhook
             params:
-                status: "errored"
+                json: |
+                  {
+                    "version": "((version))",
+                    "status": "errored"
+                  }
       - task: build-course-task
         timeout: 20m
         attempts: 3
@@ -116,7 +135,11 @@ jobs:
             put: ocw-studio-webhook
             attempts: 3
             params:
-                status: "errored"
+                json: |
+                  {
+                    "version": "((version))",
+                    "status": "errored"
+                  }
       - task: copy-s3-buckets
         timeout: 20m
         attempts: 3
@@ -141,7 +164,11 @@ jobs:
             put: ocw-studio-webhook
             attempts: 3
             params:
-                status: "errored"
+                json: |
+                  {
+                    "version": "((version))",
+                    "status": "errored"
+                  }
       - task: clear-cdn-cache
         timeout: 5m
         attempts: 3
@@ -164,10 +191,18 @@ jobs:
             put: ocw-studio-webhook
             attempts: 3
             params:
-                status: "succeeded"
+                json: |
+                  {
+                    "version": "((version))",
+                    "status": "succeeded"
+                  }
         on_failure:
           try:
             put: ocw-studio-webhook
             attempts: 3
             params:
-                status: "errored"
+                json: |
+                  {
+                    "version": "((version))",
+                    "status": "errored"
+                  }
