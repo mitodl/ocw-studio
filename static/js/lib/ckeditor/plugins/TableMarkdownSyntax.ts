@@ -33,27 +33,29 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
     }
   }
 
-  get turndownRule(): TurndownRule {
-    return {
-      name: "TableMarkdownSyntax",
-      rule: {
-        filter:      TABLE_ELS,
-        replacement: (content: string, node: Turndown.Node): string => {
-          const name = node.nodeName.toLowerCase()
-          const normalizedContent = content.replace("\n\n", "\n")
-          //@ts-ignore
-          const attributes = node.hasAttributes() ?
-            buildAttrsString(
-              //@ts-ignore
-              Array.from(node.attributes).map(
+  get turndownRules(): TurndownRule[] {
+    return [
+      {
+        name: "TableMarkdownSyntax",
+        rule: {
+          filter:      TABLE_ELS,
+          replacement: (content: string, node: Turndown.Node): string => {
+            const name = node.nodeName.toLowerCase()
+            const normalizedContent = content.replace("\n\n", "\n")
+            //@ts-ignore
+            const attributes = node.hasAttributes() ?
+              buildAttrsString(
                 //@ts-ignore
-                attr => `${attr.name}="${attr.value}"`
-              )
-            ) :
-            ""
-          return `{{< ${name}open${attributes} >}}${normalizedContent}{{< ${name}close >}}`
+                Array.from(node.attributes).map(
+                  //@ts-ignore
+                  attr => `${attr.name}="${attr.value}"`
+                )
+              ) :
+              ""
+            return `{{< ${name}open${attributes} >}}${normalizedContent}{{< ${name}close >}}`
+          }
         }
       }
-    }
+    ]
   }
 }

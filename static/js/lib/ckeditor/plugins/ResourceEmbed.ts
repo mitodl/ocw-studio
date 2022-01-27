@@ -38,18 +38,20 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
     }
   }
 
-  get turndownRule(): TurndownRule {
-    return {
-      name: "resourceEmbed",
-      rule: {
-        filter:      "section",
-        replacement: (_content: string, node: Turndown.Node): string => {
-          // @ts-ignore
-          const uuid = node.getAttribute("data-uuid")
-          return `{{< resource ${uuid} >}}\n`
+  get turndownRules(): TurndownRule[] {
+    return [
+      {
+        name: "resourceEmbed",
+        rule: {
+          filter:      "section",
+          replacement: (_content: string, node: Turndown.Node): string => {
+            // @ts-ignore
+            const uuid = node.getAttribute("data-uuid")
+            return `{{< resource ${uuid} >}}\n`
+          }
         }
       }
-    }
+    ]
   }
 }
 
