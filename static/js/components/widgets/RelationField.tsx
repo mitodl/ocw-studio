@@ -165,6 +165,7 @@ export default function RelationField(props: Props): JSX.Element {
   const fetchOptions = useCallback(
     async (search: string | null, debounce: boolean) => {
       const params = collection ? { type: collection } : { page_content: true }
+      const name = crossSite && focusedWebsite ? focusedWebsite : websiteName
       const url = siteApiContentListingUrl
         .query({
           detailed_list:   true,
@@ -178,7 +179,7 @@ export default function RelationField(props: Props): JSX.Element {
           ...params
         })
         .param({
-          name: crossSite && focusedWebsite ? focusedWebsite : websiteName
+          name
         })
         .toString()
 
@@ -203,6 +204,16 @@ export default function RelationField(props: Props): JSX.Element {
           })
           return newMap
         })
+
+        if (crossSite) {
+          setContentToWebsite(cur => {
+            const update = new Map(cur)
+            results.forEach(websiteContent => {
+              update.set(websiteContent.text_id, name)
+            })
+            return update
+          })
+        }
         setFetchStatus(FetchStatus.Ok)
         return formatOptions(filterContentListing(results), display_field)
       } else {
@@ -220,6 +231,7 @@ export default function RelationField(props: Props): JSX.Element {
       collection,
       filter,
       focusedWebsite,
+      setContentToWebsite,
       crossSite
     ]
   )

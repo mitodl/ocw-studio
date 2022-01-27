@@ -27,6 +27,7 @@ import {
 import { ReactWrapper } from "enzyme"
 import { FormError } from "../forms/FormError"
 import { formatOptions, useWebsiteSelectOptions } from "../../hooks/websites"
+import SortableSelect from "./SortableSelect"
 
 jest.mock("../../lib/api/util", () => ({
   ...jest.requireActual("../../lib/api/util"),
@@ -249,6 +250,25 @@ describe("RelationField", () => {
           label: item.title
         }))
       )
+
+      await act(async () => {
+        wrapper.find(SortableSelect).prop("onChange")([
+          contentListingItems[0].text_id
+        ])
+        wrapper.update()
+      })
+
+      // this expect call is a regression test for the fix for
+      // https://github.com/mitodl/ocw-studio/issues/940
+      expect(onChange.mock.calls[0][0]).toEqual({
+        target: {
+          name:  "relation_field",
+          value: {
+            website: website.name,
+            content: [[contentListingItems[0].text_id, website.name]]
+          }
+        }
+      })
     })
   })
 
