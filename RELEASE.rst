@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.42.3
+Version 0.42.3 (Released January 28, 2022)
 --------------
 
 - move pipeline api callbacks to jgriff/http-resource (#937)
