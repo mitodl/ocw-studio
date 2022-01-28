@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.42.3 (Released January 28, 2022)
+--------------
+
+- move pipeline api callbacks to jgriff/http-resource (#937)
+- update postgres to 12.8 to match prod
+
 Version 0.42.2 (Released January 27, 2022)
 --------------
 
