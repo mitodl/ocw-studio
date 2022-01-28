@@ -63,7 +63,7 @@ export function StudioListItem(props: ListItemProps): JSX.Element {
   )
 
   return (
-    <li className="py-2" onClick={onClick}>
+    <li className="my-3" onClick={onClick}>
       <Card>
         <div className="d-flex flex-row align-items-center justify-content-between">
           <div className="d-flex flex-column">
