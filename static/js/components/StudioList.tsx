@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from "react"
 import { Link } from "react-router-dom"
 import OutsideClickHandler from "react-outside-click-handler"
+import classNames from "classnames"
 
 import Card from "./Card"
 
@@ -63,10 +64,16 @@ export function StudioListItem(props: ListItemProps): JSX.Element {
   )
 
   return (
-    <li className="my-3" onClick={onClick}>
+    <li
+      className={classNames({
+        "my-3":          true,
+        "hover-pointer": Boolean(onClick)
+      })}
+      onClick={onClick}
+    >
       <Card>
         <div className="d-flex flex-row align-items-center justify-content-between">
-          <div className="d-flex flex-column">
+          <div className="d-flex flex-column flex-grow-1">
             {to ? (
               <Link className="title" to={to}>
                 {title}

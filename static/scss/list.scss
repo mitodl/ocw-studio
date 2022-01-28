@@ -31,8 +31,6 @@ ul.studio-list {
   @include unstyled-list;
 
   li {
-    cursor: pointer;
-
     .title {
       font-size: 18px;
       font-weight: 500;
