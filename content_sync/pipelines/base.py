@@ -9,42 +9,17 @@ from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from websites.models import Website
 
 
-class BaseSyncPipeline(abc.ABC):
-    """ Base class for preview/publish pipelines """
+class BasePipeline(abc.ABC):
+    """ Base class for a pipeline """
 
-    MANDATORY_SETTINGS = []
-    VERSION_LIVE = VERSION_LIVE
-    VERSION_DRAFT = VERSION_DRAFT
+    def __init__(self, api: Optional[object] = None):
+        """Make sure all required settings are present"""
+        self.api = api or self.__class__.get_api()
 
     @staticmethod
     @abc.abstractmethod
     def get_api():
         """Get a pipeline API instance"""
-        ...
-
-    def __init__(self, website: Website, api: Optional[object] = None):
-        """Make sure all required settings are present"""
-        missing_settings = []
-        for setting_name in self.MANDATORY_SETTINGS:
-            if getattr(settings, setting_name, None) in (
-                None,
-                "",
-            ):
-                missing_settings.append(setting_name)
-        if missing_settings:
-            raise ImproperlyConfigured(
-                "The following settings are missing: {}".format(
-                    ", ".join(missing_settings)
-                )
-            )
-        self.website = website
-        self.api = api or self.__class__.get_api()
-
-    @abc.abstractmethod
-    def upsert_website_pipeline(self):  # pragma: no cover
-        """
-        Called to create/update the website pipeline.
-        """
         ...
 
     @abc.abstractmethod
@@ -69,4 +44,37 @@ class BaseSyncPipeline(abc.ABC):
     @abc.abstractmethod
     def abort_build(self, build_id: int):
         """Abort a build"""
+        ...
+
+
+class BaseSyncPipeline(BasePipeline):
+    """ Base class for preview/publish pipelines """
+
+    MANDATORY_SETTINGS = []
+    VERSION_LIVE = VERSION_LIVE
+    VERSION_DRAFT = VERSION_DRAFT
+
+    def __init__(self, website: Website, api: Optional[object] = None):
+        """Make sure all required settings are present"""
+        missing_settings = []
+        for setting_name in self.MANDATORY_SETTINGS:
+            if getattr(settings, setting_name, None) in (
+                None,
+                "",
+            ):
+                missing_settings.append(setting_name)
+        if missing_settings:
+            raise ImproperlyConfigured(
+                "The following settings are missing: {}".format(
+                    ", ".join(missing_settings)
+                )
+            )
+        self.website = website
+        self.api = api or self.__class__.get_api()
+
+    @abc.abstractmethod
+    def upsert_website_pipeline(self):  # pragma: no cover
+        """
+        Called to create/update the website pipeline.
+        """
         ...

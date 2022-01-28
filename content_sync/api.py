@@ -42,6 +42,11 @@ def get_sync_pipeline(
     return import_string(settings.CONTENT_SYNC_PIPELINE)(website, api=api)
 
 
+def get_theme_assets_pipeline(api: Optional[object] = None):
+    """ Get the configured theme asset pipeline """
+    return import_string(settings.THEME_ASSETS_PIPELINE)(api=api)
+
+
 @is_sync_enabled
 def sync_content(sync_state: ContentSyncState):
     """ Sync a piece of content based on its sync state """

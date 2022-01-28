@@ -156,6 +156,16 @@ def upsert_pipelines(
     raise self.replace(celery.group(tasks))
 
 
+@app.task(acks_late=True)
+def upsert_theme_assets_pipeline(unpause=False):
+    """ Upsert the theme assets pipeline """
+    pipeline = api.get_theme_assets_pipeline(api=None)
+    pipeline.upsert_theme_assets_pipeline()
+    if unpause:
+        pipeline.unpause_pipeline()
+    return True
+
+
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_task(10)
 def sync_website_content(website_name: str):

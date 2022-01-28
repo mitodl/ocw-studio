@@ -12,7 +12,7 @@ from django.conf import settings
 from requests import HTTPError
 
 from content_sync.decorators import retry_on_failure
-from content_sync.pipelines.base import BaseSyncPipeline
+from content_sync.pipelines.base import BasePipeline, BaseSyncPipeline
 from websites.constants import STARTER_SOURCE_GITHUB
 from websites.models import Website
 from websites.site_config_api import SiteConfig
@@ -241,6 +241,95 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
     def unpause_pipeline(self, version):
         """Unpause the pipeline"""
         self.api.put(self._make_pipeline_unpause_url(version))
+
+    def get_build_status(self, build_id: int):
+        """Retrieve the status of the build"""
+        return self.api.get_build(build_id)["status"]
+
+    def abort_build(self, build_id: int):
+        """Abort a build"""
+        return self.api.abort_build(build_id)
+
+
+class ThemeAssetsPipeline(BasePipeline):
+
+    MANDATORY_SETTINGS = [
+        "CONCOURSE_URL",
+        "CONCOURSE_USERNAME",
+        "CONCOURSE_PASSWORD",
+        "GITHUB_WEBHOOK_BRANCH",
+        "SEARCH_API_URL",
+    ]
+
+    @staticmethod
+    def get_api():
+        """Get a Concourse API instance"""
+        return ConcourseApi(
+            settings.CONCOURSE_URL,
+            settings.CONCOURSE_USERNAME,
+            settings.CONCOURSE_PASSWORD,
+            settings.CONCOURSE_TEAM,
+        )
+
+    def __init__(self, api: Optional[ConcourseApi] = None):
+        """Initialize the pipeline API instance"""
+        super().__init__(api=api)
+        self.instance_vars = quote(
+            json.dumps({"branch": settings.GITHUB_WEBHOOK_BRANCH})
+        )
+
+    def _make_builds_url(self, job_name: str):
+        """Make URL for fetching builds information"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/jobs/{job_name}/builds?vars={self.instance_vars}"
+
+    def _make_pipeline_config_url(self):
+        """Make URL for fetching pipeline info"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={self.instance_vars}"
+
+    def _make_job_url(self, job_name: str):
+        """Make URL for fetching job info"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/jobs/{job_name}?vars={self.instance_vars}"
+
+    def _make_pipeline_unpause_url(self):
+        """Make URL for unpausing a pipeline"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/unpause?vars={self.instance_vars}"
+
+    def upsert_theme_assets_pipeline(self):
+        """"""
+        with open(
+            os.path.join(
+                os.path.dirname(__file__),
+                "definitions/concourse/theme-assets-pipeline.yml",
+            )
+        ) as pipeline_config_file:
+            config_str = (
+                pipeline_config_file.read()
+                .replace("((hugo-theme-branch))", settings.GITHUB_WEBHOOK_BRANCH)
+                .replace("((search-api-url))", settings.SEARCH_API_URL)
+            )
+            config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
+            log.debug(config)
+            # Try to get the version of the pipeline if it already exists, because it will be
+            # necessary to update an existing pipeline.
+            url_path = self._make_pipeline_config_url()
+            try:
+                _, headers = self.api.get_with_headers(url_path)
+                version_headers = {
+                    "X-Concourse-Config-Version": headers["X-Concourse-Config-Version"]
+                }
+            except HTTPError:
+                version_headers = None
+            self.api.put_with_headers(url_path, data=config, headers=version_headers)
+
+    def trigger_pipeline_build(self) -> int:
+        """Trigger a pipeline build"""
+        pipeline_info = self.api.get(self._make_pipeline_config_url())
+        job_name = pipeline_info["config"]["jobs"][0]["name"]
+        return self.api.post(self._make_builds_url(job_name))["id"]
+
+    def unpause_pipeline(self):
+        """Unpause the pipeline"""
+        self.api.put(self._make_pipeline_unpause_url())
 
     def get_build_status(self, build_id: int):
         """Retrieve the status of the build"""
