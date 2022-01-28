@@ -811,6 +811,12 @@ CONTENT_SYNC_PIPELINE = get_string(
     description="The pipeline to preview/publish websites with",
     required=False,
 )
+THEME_ASSETS_PIPELINE = get_string(
+    name="THEME_ASSETS_PIPELINE",
+    default=None,
+    description="The pipeline to publish theme assets",
+    required=False,
+)
 
 # Concourse-CI settings
 CONCOURSE_URL = get_string(
@@ -1044,4 +1050,9 @@ PREPUBLISH_ACTIONS = get_delimited_list(
     name="PREPUBLISH_ACTIONS",
     default=[],
     description="Actions to perform before publish",
+)
+SEARCH_API_URL = get_string(
+    name="SEARCH_API_URL",
+    default=None,
+    description="The URL to open discussions search to inject into the theme assets build",
 )
