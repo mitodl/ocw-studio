@@ -29,12 +29,12 @@ export default abstract class MarkdownSyntaxPlugin extends MarkdownConfigPlugin 
         ...currentConfig.showdownExtensions,
         this.showdownExtension
       ],
-      turndownRules: [...currentConfig.turndownRules, this.turndownRule]
+      turndownRules: [...currentConfig.turndownRules, ...this.turndownRules]
     }
     this.setMarkdownConfig(newConfig)
   }
 
   abstract get showdownExtension(): () => Showdown.ShowdownExtension[]
 
-  abstract get turndownRule(): TurndownRule
+  abstract get turndownRules(): TurndownRule[]
 }

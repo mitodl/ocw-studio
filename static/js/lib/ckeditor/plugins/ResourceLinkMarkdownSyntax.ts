@@ -58,22 +58,24 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
     }
   }
 
-  get turndownRule(): TurndownRule {
-    return {
-      name: RESOURCE_LINK,
-      rule: {
-        filter: function(node) {
-          return (
-            node.nodeName === "A" &&
-            node.className === RESOURCE_LINK_CKEDITOR_CLASS
-          )
-        },
-        replacement: (_content: string, node: Turndown.Node): string => {
-          // @ts-ignore
-          const uuid = node.getAttribute("data-uuid")
-          return `{{< resource_link ${uuid} "${node.textContent}" >}}`
+  get turndownRules(): TurndownRule[] {
+    return [
+      {
+        name: RESOURCE_LINK,
+        rule: {
+          filter: function(node) {
+            return (
+              node.nodeName === "A" &&
+              node.className === RESOURCE_LINK_CKEDITOR_CLASS
+            )
+          },
+          replacement: (_content: string, node: Turndown.Node): string => {
+            // @ts-ignore
+            const uuid = node.getAttribute("data-uuid")
+            return `{{< resource_link ${uuid} "${node.textContent}" >}}`
+          }
         }
       }
-    }
+    ]
   }
 }

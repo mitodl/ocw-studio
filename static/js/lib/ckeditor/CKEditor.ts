@@ -23,6 +23,7 @@ import ResourceLink from "@mitodl/ckeditor5-resource-link/src/link"
 import ResourceLinkMarkdownSyntax from "./plugins/ResourceLinkMarkdownSyntax"
 import DisallowNestedTables from "./plugins/DisallowNestedTables"
 import TableMarkdownSyntax from "./plugins/TableMarkdownSyntax"
+import MarkdownListSyntax from "./plugins/MarkdownListSyntax"
 
 export const FullEditorConfig = {
   plugins: [
@@ -47,6 +48,7 @@ export const FullEditorConfig = {
     ResourceLink,
     ResourceLinkMarkdownSyntax,
     TableMarkdownSyntax,
+    MarkdownListSyntax,
     Markdown,
     DisallowNestedTables
   ],
@@ -89,6 +91,7 @@ export const MinimalEditorConfig = {
     LinkPlugin,
     ListPlugin,
     ParagraphPlugin,
+    MarkdownListSyntax,
     Markdown
   ],
   toolbar: {
