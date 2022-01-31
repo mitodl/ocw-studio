@@ -1,4 +1,5 @@
 """ concourse tests """
+from distutils.command.config import config
 import json
 
 import pytest
@@ -6,7 +7,11 @@ from django.core.exceptions import ImproperlyConfigured
 from requests import HTTPError
 
 from content_sync.pipelines.base import BaseSyncPipeline
-from content_sync.pipelines.concourse import ConcourseApi, ConcourseGithubPipeline
+from content_sync.pipelines.concourse import (
+    ConcourseApi,
+    ConcourseGithubPipeline,
+    ThemeAssetsPipeline,
+)
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
@@ -296,3 +301,42 @@ def test_get_build_status(mocker):
     pipeline = ConcourseGithubPipeline(website)
     assert pipeline.get_build_status(build_id) == status
     mock_get.assert_called_once_with(build_id)
+
+
+@pytest.mark.parametrize("pipeline_exists", [True, False])
+def test_upsert_theme_assets_pipeline(mocker, settings, pipeline_exists):
+    """ Test upserting the theme assets pipeline """
+    instance_vars = f"%7B%22branch%22%3A%20%22{settings.GITHUB_WEBHOOK_BRANCH}%22%7D"
+    url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={instance_vars}"
+
+    if not pipeline_exists:
+        mock_get = mocker.patch(
+            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            side_effect=HTTPError(),
+        )
+    else:
+        mock_get = mocker.patch(
+            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            return_value=({}, {"X-Concourse-Config-Version": "3"}),
+        )
+    mock_put_headers = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
+    )
+    api = ConcourseApi("http://test.edu", "test", "test", "myteam")
+    pipeline = ThemeAssetsPipeline(api)
+    pipeline.upsert_theme_assets_pipeline()
+    mock_get.assert_any_call(url_path)
+    mock_put_headers.assert_any_call(
+        url_path,
+        data=mocker.ANY,
+        headers=({"X-Concourse-Config-Version": "3"} if pipeline_exists else None),
+    )
+    _, kwargs = mock_put_headers.call_args_list[0]
+    config_str = json.dumps(kwargs)
+    assert settings.SEARCH_API_URL in config_str
+    assert settings.AWS_PREVIEW_BUCKET_NAME in config_str
+    assert settings.AWS_PUBLISH_BUCKET_NAME in config_str
+    assert (
+        f"s3-remote:ol-eng-artifacts/ocw-hugo-themes/{settings.GITHUB_WEBHOOK_BRANCH}"
+        in config_str
+    )
