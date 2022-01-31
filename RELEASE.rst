@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.43.0
+--------------
+
+- add yarn.lock
+- only make clickable list items have cursor pointer
+- remove unused css class card-content
+- use margins to separate list items, not padding
+- fix issue with website name not being saved in resource collection
+- reconcile ckedidtor, showdown multiline list items
+- add an optional filter to the website listing API for publish status
+
 Version 0.42.3 (Released January 28, 2022)
 --------------
 
