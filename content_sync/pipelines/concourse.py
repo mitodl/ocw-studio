@@ -252,6 +252,9 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
 
 
 class ThemeAssetsPipeline(BasePipeline):
+    """
+    Concourse-CI pipeline for publishing theme assets
+    """
 
     MANDATORY_SETTINGS = [
         "CONCOURSE_URL",
