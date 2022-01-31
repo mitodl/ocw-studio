@@ -12,7 +12,11 @@ from django.conf import settings
 from requests import HTTPError
 
 from content_sync.decorators import retry_on_failure
-from content_sync.pipelines.base import BasePipeline, BaseSyncPipeline
+from content_sync.pipelines.base import (
+    BasePipeline,
+    BaseSyncPipeline,
+    BaseThemeAssetsPipeline,
+)
 from websites.constants import STARTER_SOURCE_GITHUB
 from websites.models import Website
 from websites.site_config_api import SiteConfig
@@ -251,7 +255,7 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
         return self.api.abort_build(build_id)
 
 
-class ThemeAssetsPipeline(BasePipeline):
+class ThemeAssetsPipeline(BaseThemeAssetsPipeline):
     """
     Concourse-CI pipeline for publishing theme assets
     """

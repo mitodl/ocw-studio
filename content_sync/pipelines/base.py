@@ -78,3 +78,21 @@ class BaseSyncPipeline(BasePipeline):
         Called to create/update the website pipeline.
         """
         ...
+
+
+class BaseThemeAssetsPipeline(BasePipeline):
+    """ Base class for preview/publish pipelines """
+
+    @abc.abstractmethod
+    def trigger_pipeline_build(self) -> int:
+        """
+        Called to trigger the website pipeline.
+        """
+        ...
+
+    @abc.abstractmethod
+    def unpause_pipeline(self):
+        """
+        Called to unpause a website pipeline.
+        """
+        ...
