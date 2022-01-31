@@ -107,8 +107,7 @@ describe("RelationField", () => {
       previous: null
     }
 
-    // @ts-ignore
-    global.fetch.mockResolvedValue({ json: async () => fakeResponse })
+    global.mockFetch.mockResolvedValue({ json: async () => fakeResponse })
     // @ts-ignore
     debouncedFetch.mockResolvedValue({ json: async () => fakeResponse })
 
@@ -125,8 +124,7 @@ describe("RelationField", () => {
 
     // @ts-ignore
     debouncedFetch.mockClear()
-    // @ts-ignore
-    global.fetch.mockClear()
+    global.mockFetch.mockClear()
     // @ts-ignore
     useWebsiteSelectOptions.mockReset()
   })
@@ -433,16 +431,14 @@ describe("RelationField", () => {
   })
 
   it("should display an error message ", async () => {
-    // @ts-ignore
-    global.fetch.mockClear()
+    global.mockFetch.mockClear()
     const fakeResponse = {
       results:  undefined,
       count:    0,
       next:     null,
       previous: null
     }
-    // @ts-ignore
-    global.fetch.mockResolvedValue({ json: async () => fakeResponse })
+    global.mockFetch.mockResolvedValue({ json: async () => fakeResponse })
     const { wrapper } = await render()
     wrapper.update()
     const error = wrapper.find(FormError)
@@ -465,6 +461,26 @@ describe("RelationField", () => {
           title: id
         }))
       )
+    })
+
+    it("should disable already-selected options", async () => {
+      const value = contentListingItems.slice(3).map(item => item.text_id)
+      const options = contentListingItems.map(item => ({
+        value: item.text_id,
+        label: item.title ?? "title"
+      }))
+      const { wrapper } = await render({
+        multiple: true,
+        sortable: true,
+        value
+      })
+
+      const isOptionEnabled = wrapper
+        .find(SortableSelect)
+        .prop("isOptionDisabled")!
+      expect(isOptionEnabled).toBeDefined()
+      const expected = [false, false, false, ...Array(7).fill(true)]
+      expect(options.map(isOptionEnabled)).toEqual(expected)
     })
   })
 })

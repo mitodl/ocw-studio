@@ -32,7 +32,7 @@ describe("SelectField", () => {
     sandbox.restore()
   })
 
-  const render = (props: any) =>
+  const render = (props: any = {}) =>
     mount(
       <SelectField
         onChange={onChangeStub}
@@ -59,6 +59,20 @@ describe("SelectField", () => {
       loadOptions:    () => null
     })
     expect(wrapper.find(AsyncSelect).prop("defaultOptions")).toBe("options")
+  })
+
+  it("should pass isOptionDisabled down to the Select", async () => {
+    const isOptionDisabled = jest.fn()
+    const wrapper = await render({ isOptionDisabled })
+    expect(wrapper.find(Select).prop("isOptionDisabled")).toBe(isOptionDisabled)
+  })
+
+  it("should pass isOptionDisabled down to the Async Select", async () => {
+    const isOptionDisabled = jest.fn()
+    const wrapper = await render({ isOptionDisabled, loadOptions: jest.fn() })
+    expect(wrapper.find(AsyncSelect).prop("isOptionDisabled")).toBe(
+      isOptionDisabled
+    )
   })
 
   it("should use AsyncSelect if a loadOptions callback is supplied", () => {

@@ -28,10 +28,19 @@ interface Props {
     inputValue: string,
     callback: (options: Option[]) => void
   ) => void
+  isOptionDisabled?: (option: Option) => boolean
 }
 
 export default function SortableSelect(props: Props) {
-  const { options, loadOptions, defaultOptions, value, onChange, name } = props
+  const {
+    options,
+    loadOptions,
+    defaultOptions,
+    value,
+    onChange,
+    name,
+    isOptionDisabled
+  } = props
 
   const [focusedContent, setFocusedContent] = useState<string | undefined>(
     undefined
@@ -101,6 +110,7 @@ export default function SortableSelect(props: Props) {
           options={options}
           loadOptions={loadOptions}
           defaultOptions={defaultOptions}
+          isOptionDisabled={isOptionDisabled}
         />
         <button
           className="px-4 ml-3 btn cyan-button"

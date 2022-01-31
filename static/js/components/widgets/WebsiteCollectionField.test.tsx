@@ -11,6 +11,7 @@ import { Website } from "../../types/websites"
 import { makeWebsiteListing } from "../../util/factories/websites"
 import { triggerSortableSelect } from "./test_util"
 import { Option } from "./SelectField"
+import SortableSelect from "./SortableSelect"
 
 jest.mock("../../hooks/websites", () => ({
   ...jest.requireActual("../../hooks/websites"),
@@ -47,7 +48,7 @@ describe("WebsiteCollectionField", () => {
 
   it("should pass published=true to the useWebsiteSelectOptions", async () => {
     await render()
-    expect(useWebsiteSelectOptions).toBeCalledWith("name", true, true)
+    expect(useWebsiteSelectOptions).toBeCalledWith("name", true)
   })
 
   it("should pass things down to SortableSelect", async () => {
@@ -59,7 +60,7 @@ describe("WebsiteCollectionField", () => {
     const { wrapper } = await render({
       value
     })
-    const sortableSelect = wrapper.find("SortableSelect")
+    const sortableSelect = wrapper.find(SortableSelect)
     expect(sortableSelect.prop("value")).toStrictEqual(value)
     expect(sortableSelect.prop("options")).toStrictEqual(websiteOptions)
     expect(sortableSelect.prop("defaultOptions")).toStrictEqual(websiteOptions)
@@ -68,7 +69,7 @@ describe("WebsiteCollectionField", () => {
   it("should let the user add a website, with UUID and title", async () => {
     const { wrapper } = await render()
     wrapper.update()
-    await triggerSortableSelect(wrapper, [websites[0].name])
+    await triggerSortableSelect(wrapper, websites[0].name)
     expect(onChange).toBeCalledWith({
       target: {
         name:  "test-site-collection",
@@ -80,5 +81,20 @@ describe("WebsiteCollectionField", () => {
         ]
       }
     })
+  })
+
+  it("should disable website options that have already been selected", async () => {
+    expect(websites.length).toBeGreaterThan(2)
+    const value = websites.slice(2).map(website => ({
+      id:    website.name,
+      title: website.title
+    }))
+    const { wrapper } = await render({ value })
+    const isOptionEnabled = wrapper
+      .find(SortableSelect)
+      .prop("isOptionDisabled")!
+    expect(isOptionEnabled).toBeDefined()
+    const expected = [false, false, ...Array(8).fill(true)]
+    expect(websiteOptions.map(isOptionEnabled)).toEqual(expected)
   })
 })

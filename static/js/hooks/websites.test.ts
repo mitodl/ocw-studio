@@ -21,8 +21,7 @@ describe("website hooks", () => {
       debouncedFetch.mockReturnValue({
         json: () => ({ results: websites })
       })
-      // @ts-ignore
-      global.fetch.mockReturnValue({
+      global.mockFetch.mockReturnValue({
         json: () => ({ results: websites })
       })
     })
@@ -49,18 +48,13 @@ describe("website hooks", () => {
       )
     })
 
-    it("should skip fetching options on startup if argument set", async () => {
-      renderHook(() => useWebsiteSelectOptions("uuid", false))
-      expect(debouncedFetch).toBeCalledTimes(0)
-    })
-
     //
     ;[true, false].forEach(published => {
       it(`should set published=${String(
         published
       )} if you pass the option`, async () => {
         const { waitForNextUpdate } = renderHook(() =>
-          useWebsiteSelectOptions("uuid", true, published)
+          useWebsiteSelectOptions("uuid", published)
         )
         await act(async () => {
           await waitForNextUpdate()

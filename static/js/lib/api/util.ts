@@ -66,10 +66,11 @@ export const debouncedFetch = async (
   init: RequestInit
 ): Promise<Response | null> => {
   // if the function gets called multiple times, store the latest version of the args
-  latestDebouncedFetchArgs[key] = [info, init]
+  const args: [RequestInfo, RequestInit] = [info, init]
+  latestDebouncedFetchArgs[key] = args
   await sharedWait(key, delayMillis)
   const latestArgs = latestDebouncedFetchArgs[key]
-  if (latestArgs && latestArgs[0] !== info) {
+  if (latestArgs && latestArgs !== args) {
     return null
   }
   delete latestDebouncedFetchArgs[key]

@@ -27,8 +27,19 @@ global.SETTINGS = _createSettings()
 global._testing = true
 
 beforeEach(() => {
-  global.fetch = jest.fn()
+  /**
+   * We can't make ts aware that global.fetch is always a mock (the best we
+   * could do is merge the mock + native declarations). So instead add a
+   * separate mockFetch property and tell ts that it is always a mock.
+   */
+  global.mockFetch = jest.fn()
+  global.fetch = global.mockFetch
 })
+
+declare global {
+  // eslint-disable-next-line no-var
+  var mockFetch: jest.Mock<any, Parameters<typeof fetch>>
+}
 
 // cleanup after each test run
 // eslint-disable-next-line mocha/no-top-level-hooks
