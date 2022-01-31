@@ -9399,6 +9399,7 @@ __metadata:
     autoprefixer: 9
     bootstrap: 4
     casual: ^1.6.2
+    classnames: ^2.3.1
     core-js: ^3.16.0
     css-loader: ^4.2.1
     enzyme: ^3.11.0

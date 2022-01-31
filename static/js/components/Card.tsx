@@ -9,7 +9,7 @@ export default function Card(props: Props): JSX.Element {
 
   return (
     <div className="studio-card">
-      <div className="card-contents p-4">{children}</div>
+      <div className="p-4">{children}</div>
     </div>
   )
 }
