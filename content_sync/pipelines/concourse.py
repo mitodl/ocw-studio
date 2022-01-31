@@ -306,6 +306,8 @@ class ThemeAssetsPipeline(BasePipeline):
                 pipeline_config_file.read()
                 .replace("((hugo-theme-branch))", settings.GITHUB_WEBHOOK_BRANCH)
                 .replace("((search-api-url))", settings.SEARCH_API_URL)
+                .replace("((ocw-bucket-draft))", settings.AWS_PREVIEW_BUCKET_NAME)
+                .replace("((ocw-bucket-live))", settings.AWS_PUBLISH_BUCKET_NAME)
             )
             config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
             log.debug(config)

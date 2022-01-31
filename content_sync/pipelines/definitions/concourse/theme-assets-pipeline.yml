@@ -26,7 +26,7 @@ jobs:
   plan:
   - get: ocw-hugo-themes
     trigger: true
-  - task: build-ocw-www-hugo-theme
+  - task: build-ocw-hugo-themes
     config:
       platform: linux
       image_resource:
@@ -47,10 +47,27 @@ jobs:
           yarn install --pure-lockfile
           npm run build:webpack
           npm run build:githash
-          cp base-theme/data/webpack.json dist
   - put: ocw-artifacts
     params:
-      source: ocw-hugo-themes/dist
+      source: ocw-hugo-themes/base-theme/dist
+      destination:
+      - dir: s3-remote:((ocw-bucket-draft))
+        command: copy
+        args:
+        - --ignore-size
+        - --checksum
+  - put: ocw-artifacts
+    params:
+      source: ocw-hugo-themes/base-theme/dist
+      destination:
+      - dir: s3-remote:((ocw-bucket-live))
+        command: copy
+        args:
+        - --ignore-size
+        - --checksum
+  - put: ocw-artifacts
+    params:
+      source: ocw-hugo-themes/base-theme/data/webpack.json
       destination:
       - dir: s3-remote:ol-eng-artifacts/ocw-hugo-themes/((hugo-theme-branch))
         command: copy
