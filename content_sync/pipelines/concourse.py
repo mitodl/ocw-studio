@@ -12,10 +12,7 @@ from django.conf import settings
 from requests import HTTPError
 
 from content_sync.decorators import retry_on_failure
-from content_sync.pipelines.base import (
-    BaseSyncPipeline,
-    BaseThemeAssetsPipeline,
-)
+from content_sync.pipelines.base import BaseSyncPipeline, BaseThemeAssetsPipeline
 from websites.constants import STARTER_SOURCE_GITHUB
 from websites.models import Website
 from websites.site_config_api import SiteConfig
