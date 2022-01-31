@@ -295,7 +295,7 @@ class ThemeAssetsPipeline(BasePipeline):
         return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/unpause?vars={self.instance_vars}"
 
     def upsert_theme_assets_pipeline(self):
-        """"""
+        """Upsert the theme assets pipeline"""
         with open(
             os.path.join(
                 os.path.dirname(__file__),
