@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.43.0
+Version 0.43.0 (Released January 31, 2022)
 --------------
 
 - add yarn.lock
