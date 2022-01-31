@@ -13,7 +13,6 @@ from requests import HTTPError
 
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
-    BasePipeline,
     BaseSyncPipeline,
     BaseThemeAssetsPipeline,
 )
