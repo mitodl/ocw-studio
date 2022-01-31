@@ -259,12 +259,27 @@ def test_trigger_pipeline_build(settings, mocker, version):
     pipeline = ConcourseGithubPipeline(website)
     build_id = pipeline.trigger_pipeline_build(version)
     assert build_id == expected_build_id
-    mock_get.assert_called_once_with(
+    mock_get.assert_any_call(
         f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={pipeline.instance_vars}"
     )
-    mock_post.assert_called_once_with(
+    mock_post.assert_any_call(
         f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/jobs/{job_name}/builds?vars={pipeline.instance_vars}"
     )
+    assert build_id == expected_build_id
+    job_name = "build-theme-assets"
+    mock_get = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseApi.get",
+        return_value={"config": {"jobs": [{"name": job_name}]}},
+    )
+    pipeline = ThemeAssetsPipeline()
+    build_id = pipeline.trigger_pipeline_build()
+    mock_get.assert_any_call(
+        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={pipeline.instance_vars}"
+    )
+    mock_post.assert_any_call(
+        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/jobs/{job_name}/builds?vars={pipeline.instance_vars}"
+    )
+    assert build_id == expected_build_id
 
 
 @pytest.mark.parametrize("version", ["live", "draft"])
@@ -279,8 +294,13 @@ def test_unpause_pipeline(settings, mocker, version):
     )
     pipeline = ConcourseGithubPipeline(website)
     pipeline.unpause_pipeline(version)
-    mock_put.assert_called_once_with(
+    mock_put.assert_any_call(
         f"/api/v1/teams/myteam/pipelines/{version}/unpause?vars={pipeline.instance_vars}"
+    )
+    pipeline = ThemeAssetsPipeline()
+    pipeline.unpause_pipeline()
+    mock_put.assert_any_call(
+        f"/api/v1/teams/myteam/pipelines/ocw-theme-assets/unpause?vars={pipeline.instance_vars}"
     )
 
 
@@ -299,6 +319,8 @@ def test_get_build_status(mocker):
     )
     pipeline = ConcourseGithubPipeline(website)
     assert pipeline.get_build_status(build_id) == status
+    mock_get.assert_called_once_with(build_id)
+    pipeline = ConcourseGithubPipeline(website)
     mock_get.assert_called_once_with(build_id)
 
 
