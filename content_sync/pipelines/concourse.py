@@ -13,7 +13,7 @@ from requests import HTTPError
 
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import BaseSyncPipeline, BaseThemeAssetsPipeline
-from websites.constants import STARTER_SOURCE_GITHUB
+from websites.constants import STARTER_SOURCE_GITHUB, OCW_HUGO_THEMES_GIT
 from websites.models import Website
 from websites.site_config_api import SiteConfig
 
@@ -196,6 +196,10 @@ class ConcourseGithubPipeline(BaseSyncPipeline):
                     .replace("((git-private-key-var))", private_key_var)
                     .replace("((ocw-bucket))", destination_bucket)
                     .replace(
+                        "((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH
+                    )
+                    .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
+                    .replace(
                         "((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH
                     )
                     .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
@@ -307,7 +311,8 @@ class ThemeAssetsPipeline(BaseThemeAssetsPipeline):
         ) as pipeline_config_file:
             config_str = (
                 pipeline_config_file.read()
-                .replace("((hugo-theme-branch))", settings.GITHUB_WEBHOOK_BRANCH)
+                .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
+                .replace("((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH)
                 .replace("((search-api-url))", settings.SEARCH_API_URL)
                 .replace("((ocw-bucket-draft))", settings.AWS_PREVIEW_BUCKET_NAME)
                 .replace("((ocw-bucket-live))", settings.AWS_PUBLISH_BUCKET_NAME)

@@ -9,8 +9,8 @@ resources:
 - name: ocw-hugo-themes
   type: git
   source:
-    uri: https://github.com/mitodl/ocw-hugo-themes.git
-    branch: ((hugo-theme-branch))
+    uri: ((ocw-hugo-themes-uri))
+    branch: ((ocw-hugo-themes-branch))
 - name: ocw-artifacts
   type: rclone
   source:
@@ -69,7 +69,7 @@ jobs:
     params:
       source: ocw-hugo-themes/base-theme/data/webpack.json
       destination:
-      - dir: s3-remote:ol-eng-artifacts/ocw-hugo-themes/((hugo-theme-branch))
+      - dir: s3-remote:ol-eng-artifacts/ocw-hugo-themes/((ocw-hugo-themes-branch))
         command: copy
         args:
         - --ignore-size
