@@ -1,4 +1,4 @@
-""" Backpopulate website pipelines"""
+""" Management command for backpopulating the theme pipeline """
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
@@ -8,7 +8,7 @@ from content_sync.tasks import upsert_theme_assets_pipeline
 
 
 class Command(BaseCommand):
-    """ Backpopulate website pipelines """
+    """ Backpopulate the theme pipeline """
 
     help = __doc__
 
