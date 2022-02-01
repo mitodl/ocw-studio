@@ -29,7 +29,7 @@ class BasePipeline(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def unpause_pipeline(self, pipeline_name: str):
+    def unpause_pipeline(self, team: str, pipeline_name: str):
         """
         Called to unpause a website pipeline.
         """

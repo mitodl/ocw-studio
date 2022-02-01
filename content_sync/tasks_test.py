@@ -296,6 +296,17 @@ def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
         )
 
 
+@pytest.mark.parametrize("unpause", [True, False])
+def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
+    mocker, mocked_celery, unpause
+):
+    """calls upsert_theme_assets_pipeline and unpauses if asked"""
+    mock_task = mocker.patch("content_sync.tasks.upsert_theme_assets_pipeline.s")
+    with pytest.raises(TabError):
+        tasks.upsert_theme_assets_pipeline.delay(unpause=unpause)
+    mock_task.assert_any_call(unpause=unpause)
+
+
 @pytest.mark.parametrize("create_backend", [True, False])
 @pytest.mark.parametrize("unpause", [True, False])
 @pytest.mark.parametrize("check_limit", [True, False])

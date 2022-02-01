@@ -8,7 +8,6 @@ from requests import HTTPError
 from content_sync.pipelines.concourse import (
     ConcourseApi,
     ConcourseGithubPipeline,
-    ConcoursePipeline,
     ThemeAssetsPipeline,
 )
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
