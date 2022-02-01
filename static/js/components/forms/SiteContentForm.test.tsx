@@ -1,5 +1,6 @@
 import { times } from "ramda"
 import React from "react"
+import { Formik, Form } from "formik"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { shallow } from "enzyme"
 
@@ -12,13 +13,7 @@ import {
   makeWebsiteContentDetail,
   makeWebsiteDetail
 } from "../../util/factories/websites"
-import {
-  componentFromWidget,
-  contentInitialValues,
-  fieldIsVisible,
-  newInitialValues,
-  renameNestedFields
-} from "../../lib/site_content"
+import * as siteContent from "../../lib/site_content"
 import { useWebsite } from "../../context/Website"
 
 import {
@@ -30,10 +25,21 @@ import {
 } from "../../types/websites"
 import { FormSchema } from "../../types/forms"
 import { createModalState } from "../../types/modal_state"
+import * as domUtil from "../../util/dom"
 
 jest.mock("../../lib/site_content")
-jest.mock("./validation")
 jest.mock("../../context/Website")
+jest.mock("../../util/dom")
+
+const {
+  componentFromWidget,
+  contentInitialValues,
+  fieldIsVisible,
+  newInitialValues,
+  renameNestedFields
+} = siteContent as jest.Mocked<typeof siteContent>
+
+const { scrollToElement } = domUtil as jest.Mocked<typeof domUtil>
 
 describe("SiteContentForm", () => {
   let sandbox: SinonSandbox,
@@ -81,7 +87,7 @@ describe("SiteContentForm", () => {
     const wrapper = renderForm({ editorState })
     return (
       wrapper
-        .find("Formik")
+        .find(Formik)
       // @ts-ignore
         .renderProp("children")({
           ...defaultFormikChildProps,
@@ -98,11 +104,8 @@ describe("SiteContentForm", () => {
     describe(editorState.state, () => {
       it("renders a form", () => {
         const widget = "fakeWidgetComponent"
-        // @ts-ignore
         componentFromWidget.mockImplementation(() => widget)
-        // @ts-ignore
         renameNestedFields.mockImplementation(() => configItem.fields)
-        // @ts-ignore
         fieldIsVisible.mockImplementation(() => true)
 
         const form = renderInnerForm(editorState)
@@ -233,6 +236,37 @@ describe("SiteContentForm", () => {
           sinon.assert.calledOnceWithExactly(handleChangeStub, event)
           sinon.assert.calledOnceWithExactly(setDirtyStub, true)
         })
+      })
+
+      it("it scrolls to .form-error field", async () => {
+        fieldIsVisible.mockImplementation(() => true)
+
+        configItem = makeEditableConfigItem(content.type)
+        configItem.fields.forEach(field => {
+          field.required = true
+        })
+
+        expect(configItem.fields.map(f => f.name)).toEqual([
+          "title",
+          "description",
+          "body"
+        ])
+
+        const wrapper = renderInnerForm(editorState, {
+          values:       { title: "meow" },
+          handleSubmit: jest.fn
+        })
+        const onSubmit = wrapper.find(Form).prop("onSubmit")!
+
+        const formElement = document.createElement("form")
+
+        const submitEvent = ({
+          target: formElement
+        } as unknown) as React.FormEvent<HTMLFormElement>
+        await onSubmit(submitEvent)
+
+        expect(scrollToElement).toHaveBeenCalledTimes(1)
+        expect(scrollToElement).toHaveBeenCalledWith(formElement, ".form-error")
       })
     })
   })
