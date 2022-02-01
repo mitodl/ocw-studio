@@ -3,7 +3,10 @@ import IntegrationTestHelper, {
 } from "../../util/integration_test_helper"
 import WebsiteCollectionField from "./WebsiteCollectionField"
 
-import { formatOptions, useWebsiteSelectOptions } from "../../hooks/websites"
+import {
+  formatWebsiteOptions,
+  useWebsiteSelectOptions
+} from "../../hooks/websites"
 import { Website } from "../../types/websites"
 import { makeWebsiteListing } from "../../util/factories/websites"
 import { triggerSortableSelect } from "./test_util"
@@ -30,7 +33,7 @@ describe("WebsiteCollectionField", () => {
       value: []
     })
     websites = makeWebsiteListing()
-    websiteOptions = formatOptions(websites, "name")
+    websiteOptions = formatWebsiteOptions(websites, "name")
     // @ts-ignore
     useWebsiteSelectOptions.mockReturnValue({
       options:     websiteOptions,

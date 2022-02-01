@@ -40,7 +40,7 @@ interface Props {
  * Turn a list of WebsiteContent objects into a list of Options, suitable
  * for use in a SelectField.
  */
-const formatOptions = (
+const formatContentOptions = (
   listing: WebsiteContent[],
   display_field: string // eslint-disable-line camelcase
 ): Option[] =>
@@ -65,7 +65,7 @@ export default function RelationField(props: Props): JSX.Element {
   } = props
 
   const [options, setOptions] = useState<Option[]>(
-    contentContext ? formatOptions(contentContext, display_field) : []
+    contentContext ? formatContentOptions(contentContext, display_field) : []
   )
   const [defaultOptions, setDefaultOptions] = useState<Option[]>([])
   const [contentMap, setContentMap] = useState<Map<string, WebsiteContent>>(
@@ -215,7 +215,10 @@ export default function RelationField(props: Props): JSX.Element {
           })
         }
         setFetchStatus(FetchStatus.Ok)
-        return formatOptions(filterContentListing(results), display_field)
+        return formatContentOptions(
+          filterContentListing(results),
+          display_field
+        )
       } else {
         // there was some error fetching the results
         setFetchStatus(FetchStatus.Error)

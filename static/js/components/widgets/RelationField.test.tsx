@@ -26,7 +26,10 @@ import {
 } from "../../types/websites"
 import { ReactWrapper } from "enzyme"
 import { FormError } from "../forms/FormError"
-import { formatOptions, useWebsiteSelectOptions } from "../../hooks/websites"
+import {
+  formatWebsiteOptions,
+  useWebsiteSelectOptions
+} from "../../hooks/websites"
 import SortableSelect from "./SortableSelect"
 
 jest.mock("../../lib/api/util", () => ({
@@ -112,7 +115,7 @@ describe("RelationField", () => {
     websites = makeWebsiteListing()
     // @ts-ignore
     useWebsiteSelectOptions.mockReturnValue({
-      options:     formatOptions(websites, "name"),
+      options:     formatWebsiteOptions(websites, "name"),
       loadOptions: jest.fn()
     })
   })
@@ -204,7 +207,7 @@ describe("RelationField", () => {
           .find("SelectField")
           .at(0)
           .prop("defaultOptions")
-      ).toEqual(formatOptions(websites, "name"))
+      ).toEqual(formatWebsiteOptions(websites, "name"))
     })
 
     it("should let the user pick a website and then content within that website", async () => {

@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react-hooks"
 
 import { Website } from "../types/websites"
 import { makeWebsiteListing } from "../util/factories/websites"
-import { formatOptions, useWebsiteSelectOptions } from "./websites"
+import { formatWebsiteOptions, useWebsiteSelectOptions } from "./websites"
 import { debouncedFetch } from "../lib/api/util"
 import { siteApiListingUrl } from "../lib/urls"
 
@@ -44,7 +44,9 @@ describe("website hooks", () => {
           .toString(),
         { credentials: "include" }
       )
-      expect(result.current.options).toEqual(formatOptions(websites, "uuid"))
+      expect(result.current.options).toEqual(
+        formatWebsiteOptions(websites, "uuid")
+      )
     })
 
     it("should skip fetching options on startup if argument set", async () => {
@@ -90,7 +92,7 @@ describe("website hooks", () => {
           .toString(),
         { credentials: "include" }
       )
-      expect(cb).toBeCalledWith(formatOptions(websites, "uuid"))
+      expect(cb).toBeCalledWith(formatWebsiteOptions(websites, "uuid"))
     })
   })
 })

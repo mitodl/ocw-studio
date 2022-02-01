@@ -44,7 +44,14 @@ export function useWebsiteContent(uuid: string): WebsiteContent | null {
   return resource
 }
 
-export const formatOptions = (
+/**
+ * Format an array of Website objects into an array of Option
+ * objects, which can be passed to a Select field.
+ *
+ * The `valueField` argument indicates what field on the Website
+ * you'd like to use for a user-readable label.
+ */
+export const formatWebsiteOptions = (
   websites: Website[],
   valueField: string
 ): Option[] =>
@@ -104,7 +111,7 @@ export function useWebsiteSelectOptions(
       }
       const json: WebsiteListingResponse = await response.json()
       const { results } = json
-      const options = formatOptions(results, valueField)
+      const options = formatWebsiteOptions(results, valueField)
       setOptions(current =>
         uniqBy(option => option.value, [...current, ...options])
       )
