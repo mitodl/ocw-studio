@@ -15,7 +15,7 @@ from content_sync.backends.github import GithubBackend
 from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
-from content_sync.pipelines.base import BaseSyncPipeline
+from content_sync.pipelines.concourse import ConcoursePipeline
 from websites.constants import PUBLISH_STATUS_NOT_STARTED
 from websites.models import Website, WebsiteContent
 
@@ -37,7 +37,7 @@ def get_sync_backend(website: Website) -> BaseSyncBackend:
 
 def get_sync_pipeline(
     website: Website, api: Optional[object] = None
-) -> BaseSyncPipeline:
+) -> ConcoursePipeline:
     """ Get the configured sync publishing pipeline """
     return import_string(settings.CONTENT_SYNC_PIPELINE)(website, api=api)
 
@@ -108,7 +108,7 @@ def publish_website(  # pylint: disable=too-many-arguments
 
     pipeline = get_sync_pipeline(website, api=pipeline_api)
     pipeline.unpause_pipeline(version)
-    build_id = pipeline.trigger_pipeline_build(version)
+    build_id = pipeline.trigger_pipeline_build(settings.CONCOURSE_TEAM, version)
     update_kwargs = {
         f"latest_build_id_{version}": build_id,
     }

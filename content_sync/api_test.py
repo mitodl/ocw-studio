@@ -251,7 +251,9 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
         backend.merge_backend_draft.assert_called_once()
     else:
         backend.merge_backend_live.assert_called_once()
-    pipeline.trigger_pipeline_build.assert_called_once_with(version)
+    pipeline.trigger_pipeline_build.assert_called_once_with(
+        settings.CONCOURSE_TEAM, version
+    )
     pipeline.unpause_pipeline.assert_called_once_with(version)
     website.refresh_from_db()
     assert getattr(website, f"latest_build_id_{version}") == build_id

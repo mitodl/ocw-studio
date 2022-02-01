@@ -16,7 +16,7 @@ from content_sync.apis import github
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
-from content_sync.pipelines.base import BaseSyncPipeline
+from content_sync.pipelines.concourse import ConcoursePipeline
 from main.celery import app
 from websites.api import reset_publishing_fields, update_website_status
 from websites.constants import (
@@ -131,8 +131,8 @@ def upsert_website_pipeline_batch(
         pipeline.upsert_website_pipeline()
         if unpause:
             for version in [
-                BaseSyncPipeline.VERSION_LIVE,
-                BaseSyncPipeline.VERSION_DRAFT,
+                ConcoursePipeline.VERSION_LIVE,
+                ConcoursePipeline.VERSION_DRAFT,
             ]:
                 pipeline.unpause_pipeline(version)
     return True
