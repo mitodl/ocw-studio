@@ -1,7 +1,7 @@
-""" 
+"""
 Concourse-CI preview/publish pipeline generator
 The pylint no-name-in-module is disabled here because of a weird issue
-that occurred after adding the OCW_HUGO_THEMES_GIT constant, which 
+that occurred after adding the OCW_HUGO_THEMES_GIT constant, which
 clearly exists but pylint thinks it doesn't
 """
 # pylint: disable=no-name-in-module
