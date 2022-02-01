@@ -1,8 +1,8 @@
 """ 
 Concourse-CI preview/publish pipeline generator
-
-There seems to be a weird issue with pylint here, adding new constants
-causes a no-name-in-module error for some reason
+The pylint no-name-in-module is disabled here because of a weird issue
+that occurred after adding the OCW_HUGO_THEMES_GIT constant, which 
+clearly exists but pylint thinks it doesn't
 """
 # pylint: disable=no-name-in-module
 import json
