@@ -811,8 +811,8 @@ CONTENT_SYNC_PIPELINE = get_string(
     description="The pipeline to preview/publish websites with",
     required=False,
 )
-THEME_ASSETS_PIPELINE = get_string(
-    name="THEME_ASSETS_PIPELINE",
+CONTENT_SYNC_THEME_PIPELINE = get_string(
+    name="CONTENT_SYNC_THEME_PIPELINE",
     default=None,
     description="The pipeline to publish theme assets",
     required=False,

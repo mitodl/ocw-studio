@@ -107,7 +107,7 @@
       "description": "The pipeline to preview/publish websites with",
       "required": false
     },
-    "THEME_ASSETS_PIPELINE": {
+    "CONTENT_SYNC_THEME_PIPELINE": {
       "description": "The pipeline to publish theme assets",
       "required": false
     },

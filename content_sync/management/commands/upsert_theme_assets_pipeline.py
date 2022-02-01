@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        if not settings.THEME_ASSETS_PIPELINE:
+        if not settings.CONTENT_SYNC_THEME_PIPELINE:
             self.stderr.write("Pipeline backend is not configured")
             return
 
