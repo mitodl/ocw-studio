@@ -1,4 +1,10 @@
-""" Concourse-CI preview/publish pipeline generator"""
+""" 
+Concourse-CI preview/publish pipeline generator
+
+There seems to be a weird issue with pylint here, adding new constants
+causes a no-name-in-module error for some reason
+"""
+# pylint: disable=no-name-in-module
 import json
 import logging
 import os
@@ -13,10 +19,7 @@ from requests import HTTPError
 
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import BaseSyncPipeline, BaseThemeAssetsPipeline
-# There seems to be a weird issue with pylint here, adding new constants
-# causes a no-name-in-module error for some reason
-# pylint: disable=no-name-in-module
-from websites.constants import STARTER_SOURCE_GITHUB, OCW_HUGO_THEMES_GIT
+from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.models import Website
 from websites.site_config_api import SiteConfig
 
