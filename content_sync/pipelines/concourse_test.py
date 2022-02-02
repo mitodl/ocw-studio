@@ -258,7 +258,7 @@ def test_trigger_pipeline_build(settings, mocker, version):
     )
     team = settings.CONCOURSE_TEAM
     pipeline = ConcourseGithubPipeline(website)
-    build_id = pipeline.trigger_pipeline_build(team, version)
+    build_id = pipeline.trigger_pipeline_build(version)
     assert build_id == expected_build_id
     mock_get.assert_any_call(
         f"/api/v1/teams/{team}/pipelines/{version}/config?vars={pipeline.instance_vars}"
@@ -273,7 +273,7 @@ def test_trigger_pipeline_build(settings, mocker, version):
         return_value={"config": {"jobs": [{"name": job_name}]}},
     )
     pipeline = ThemeAssetsPipeline()
-    build_id = pipeline.trigger_pipeline_build(team, ThemeAssetsPipeline.PIPELINE_NAME)
+    build_id = pipeline.trigger_pipeline_build(ThemeAssetsPipeline.PIPELINE_NAME)
     mock_get.assert_any_call(
         f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/config?vars={pipeline.instance_vars}"
     )
