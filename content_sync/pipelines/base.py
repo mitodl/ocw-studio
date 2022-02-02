@@ -22,14 +22,14 @@ class BasePipeline(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def trigger_pipeline_build(self, team: str, pipeline_name: str) -> int:
+    def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """
         Called to trigger the website pipeline.
         """
         ...
 
     @abc.abstractmethod
-    def unpause_pipeline(self, team: str, pipeline_name: str):
+    def unpause_pipeline(self, pipeline_name: str):
         """
         Called to unpause a website pipeline.
         """

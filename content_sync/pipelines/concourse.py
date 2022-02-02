@@ -123,33 +123,37 @@ class ConcoursePipeline(BasePipeline):
             settings.CONCOURSE_TEAM,
         )
 
-    def _make_builds_url(self, team: str, pipeline_name: str, job_name: str):
+    def _make_builds_url(self, pipeline_name: str, job_name: str):
         """Make URL for fetching builds information"""
-        return f"/api/v1/teams/{team}/pipelines/{pipeline_name}/jobs/{job_name}/builds?vars={self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}/builds?vars={self.instance_vars}"
 
     def _make_pipeline_config_url(self, team: str, pipeline_name: str):
         """Make URL for fetching pipeline info"""
-        return f"/api/v1/teams/{team}/pipelines/{pipeline_name}/config?vars={self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/config?vars={self.instance_vars}"
 
-    def _make_job_url(self, team: str, pipeline_name: str, job_name: str):
+    def _make_job_url(self, pipeline_name: str, job_name: str):
         """Make URL for fetching job info"""
-        return f"/api/v1/teams/{team}/pipelines/{pipeline_name}/jobs/{job_name}?vars={self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}?vars={self.instance_vars}"
 
     def _make_pipeline_unpause_url(self, team: str, pipeline_name: str):
         """Make URL for unpausing a pipeline"""
-        return f"/api/v1/teams/{team}/pipelines/{pipeline_name}/unpause?vars={self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/unpause?vars={self.instance_vars}"
 
-    def trigger_pipeline_build(self, team: str, pipeline_name: str) -> int:
+    def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """Trigger a pipeline build"""
         pipeline_info = self.api.get(
-            self._make_pipeline_config_url(team, pipeline_name)
+            self._make_pipeline_config_url(settings.CONCOURSE_TEAM, pipeline_name)
         )
         job_name = pipeline_info["config"]["jobs"][0]["name"]
-        return self.api.post(self._make_builds_url(team, pipeline_name, job_name))["id"]
+        return self.api.post(
+            self._make_builds_url(settings.CONCOURSE_TEAM, pipeline_name, job_name)
+        )["id"]
 
-    def unpause_pipeline(self, team: str, pipeline_name: str):
+    def unpause_pipeline(self, pipeline_name: str):
         """Unpause the pipeline"""
-        self.api.put(self._make_pipeline_unpause_url(team, pipeline_name))
+        self.api.put(
+            self._make_pipeline_unpause_url(settings.CONCOURSE_TEAM, pipeline_name)
+        )
 
     def get_build_status(self, build_id: int):
         """Retrieve the status of the build"""

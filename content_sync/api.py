@@ -42,7 +42,7 @@ def get_sync_pipeline(
     return import_string(settings.CONTENT_SYNC_PIPELINE)(website, api=api)
 
 
-def get_theme_assets_pipeline(api: Optional[object] = None):
+def get_theme_assets_pipeline(api: Optional[object] = None) -> ConcoursePipeline:
     """ Get the configured theme asset pipeline """
     return import_string(settings.CONTENT_SYNC_THEME_PIPELINE)(api=api)
 
@@ -108,7 +108,7 @@ def publish_website(  # pylint: disable=too-many-arguments
 
     pipeline = get_sync_pipeline(website, api=pipeline_api)
     pipeline.unpause_pipeline(version)
-    build_id = pipeline.trigger_pipeline_build(settings.CONCOURSE_TEAM, version)
+    build_id = pipeline.trigger_pipeline_build(version)
     update_kwargs = {
         f"latest_build_id_{version}": build_id,
     }

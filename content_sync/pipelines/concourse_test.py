@@ -294,14 +294,12 @@ def test_unpause_pipeline(settings, mocker, version):
         )
     )
     pipeline = ConcourseGithubPipeline(website)
-    pipeline.unpause_pipeline(settings.CONCOURSE_TEAM, version)
+    pipeline.unpause_pipeline(version)
     mock_put.assert_any_call(
         f"/api/v1/teams/myteam/pipelines/{version}/unpause?vars={pipeline.instance_vars}"
     )
     pipeline = ThemeAssetsPipeline()
-    pipeline.unpause_pipeline(
-        settings.CONCOURSE_TEAM, ThemeAssetsPipeline.PIPELINE_NAME
-    )
+    pipeline.unpause_pipeline(ThemeAssetsPipeline.PIPELINE_NAME)
     mock_put.assert_any_call(
         f"/api/v1/teams/myteam/pipelines/ocw-theme-assets/unpause?vars={pipeline.instance_vars}"
     )
