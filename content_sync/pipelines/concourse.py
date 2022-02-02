@@ -141,19 +141,13 @@ class ConcoursePipeline(BasePipeline):
 
     def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """Trigger a pipeline build"""
-        pipeline_info = self.api.get(
-            self._make_pipeline_config_url(settings.CONCOURSE_TEAM, pipeline_name)
-        )
+        pipeline_info = self.api.get(self._make_pipeline_config_url(pipeline_name))
         job_name = pipeline_info["config"]["jobs"][0]["name"]
-        return self.api.post(
-            self._make_builds_url(settings.CONCOURSE_TEAM, pipeline_name, job_name)
-        )["id"]
+        return self.api.post(self._make_builds_url(pipeline_name, job_name))["id"]
 
     def unpause_pipeline(self, pipeline_name: str):
         """Unpause the pipeline"""
-        self.api.put(
-            self._make_pipeline_unpause_url(settings.CONCOURSE_TEAM, pipeline_name)
-        )
+        self.api.put(self._make_pipeline_unpause_url(pipeline_name))
 
     def get_build_status(self, build_id: int):
         """Retrieve the status of the build"""
@@ -276,9 +270,7 @@ class ConcourseGithubPipeline(ConcoursePipeline):
             log.debug(config)
             # Try to get the pipeline_name of the pipeline if it already exists, because it will be
             # necessary to update an existing pipeline.
-            url_path = self._make_pipeline_config_url(
-                settings.CONCOURSE_TEAM, pipeline_name
-            )
+            url_path = self._make_pipeline_config_url(pipeline_name)
             try:
                 _, headers = self.api.get_with_headers(url_path)
                 version_headers = {
@@ -327,9 +319,7 @@ class ThemeAssetsPipeline(ConcoursePipeline):
             log.debug(config)
             # Try to get the pipeline_name of the pipeline if it already exists, because it will be
             # necessary to update an existing pipeline.
-            url_path = self._make_pipeline_config_url(
-                settings.CONCOURSE_TEAM, self.PIPELINE_NAME
-            )
+            url_path = self._make_pipeline_config_url(self.PIPELINE_NAME)
             try:
                 _, headers = self.api.get_with_headers(url_path)
                 version_headers = {
