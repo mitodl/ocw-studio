@@ -27,10 +27,11 @@ import SortableSelect from "./SortableSelect"
 // the first string is the content UUID, and the second is the website UUID
 type CrossSitePair = [string, string]
 
+/* eslint-disable camelcase */
 interface Props {
   name: string
   collection?: string | string[]
-  display_field: string // eslint-disable-line camelcase
+  display_field: string
   multiple: boolean
   value: string | string[] | CrossSitePair[]
   filter?: RelationFilter
@@ -39,8 +40,9 @@ interface Props {
   sortable?: boolean
   contentContext: WebsiteContent[] | null
   onChange: (event: any) => void
-  cross_site?: boolean // eslint-disable-line camelcase
+  cross_site?: boolean
 }
+/* eslint-enable camelcase */
 
 /**
  * Turn a list of WebsiteContent objects into a list of Options, suitable
@@ -48,10 +50,10 @@ interface Props {
  */
 const formatContentOptions = (
   listing: WebsiteContent[],
-  display_field: string // eslint-disable-line camelcase
+  displayField: string
 ): Option[] =>
   listing.map(entry => ({
-    label: entry[display_field],
+    label: entry[displayField],
     value: entry.text_id
   }))
 
@@ -59,7 +61,7 @@ export default function RelationField(props: Props): JSX.Element {
   const {
     collection,
     contentContext,
-    display_field, // eslint-disable-line camelcase
+    display_field: displayField,
     name,
     multiple,
     value,
@@ -67,11 +69,11 @@ export default function RelationField(props: Props): JSX.Element {
     valuesToOmit,
     onChange,
     sortable,
-    cross_site: crossSite // eslint-disable-line camelcase
+    cross_site: crossSite
   } = props
 
   const [options, setOptions] = useState<Option[]>(
-    contentContext ? formatContentOptions(contentContext, display_field) : []
+    contentContext ? formatContentOptions(contentContext, displayField) : []
   )
   const [defaultOptions, setDefaultOptions] = useState<Option[]>([])
   const [contentMap, setContentMap] = useState<Map<string, WebsiteContent>>(
@@ -221,10 +223,7 @@ export default function RelationField(props: Props): JSX.Element {
           })
         }
         setFetchStatus(FetchStatus.Ok)
-        return formatContentOptions(
-          filterContentListing(results),
-          display_field
-        )
+        return formatContentOptions(filterContentListing(results), displayField)
       } else {
         // there was some error fetching the results
         setFetchStatus(FetchStatus.Error)
@@ -235,8 +234,7 @@ export default function RelationField(props: Props): JSX.Element {
       setFetchStatus,
       filterContentListing,
       websiteName,
-      // eslint-disable-next-line camelcase
-      display_field,
+      displayField,
       collection,
       filter,
       focusedWebsite,

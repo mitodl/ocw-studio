@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import {
   GoogleDriveSyncStatuses,
   PublishStatus,
@@ -92,7 +93,7 @@ export interface ObjectConfigField extends ConfigFieldBaseProps {
 
 export interface HierarchicalSelectConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.HierarchicalSelect
-  options_map: Record<string, any> // eslint-disable-line camelcase
+  options_map: Record<string, any>
   min?: number
   max?: number
 }
@@ -115,21 +116,21 @@ export enum RelationFilterVariant {
  **/
 export interface RelationFilter {
   field: string
-  filter_type: RelationFilterVariant // eslint-disable-line camelcase
+  filter_type: RelationFilterVariant
   value: SiteFormValue
 }
 
 export interface RelationConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.Relation
   collection: string
-  display_field: string // eslint-disable-line camelcase
+  display_field: string
   multiple?: boolean
   min?: number
   max?: number
   filter?: RelationFilter
   website?: string
   sortable?: boolean
-  cross_site?: boolean // eslint-disable-line camelcase
+  cross_site?: boolean
 }
 
 export interface MenuConfigField extends ConfigFieldBaseProps {
@@ -159,7 +160,6 @@ export type ConfigField =
 export interface BaseConfigItem {
   name: string
   label: string
-  // eslint-disable-next-line camelcase
   label_singular?: string
 }
 
@@ -186,7 +186,6 @@ export type EditableConfigItem = RepeatableConfigItem | SingletonConfigItem
 export interface ConfigItem {
   name: string
   label: string
-  // eslint-disable-next-line
   label_singular?: string
   category: string
   fields: ConfigField[]
@@ -211,7 +210,7 @@ export interface WebsiteStarter {
 
 export interface NewWebsitePayload {
   title: string
-  short_id: string // eslint-disable-line
+  short_id: string
   starter: number
 }
 
@@ -219,44 +218,44 @@ export interface WebsiteStatus {
   uuid: string
   name: string
   /** ISO 8601 datetime string or null */
-  publish_date: string | null // eslint-disable-line
+  publish_date: string | null
   /** ISO 8601 datetime string or null */
-  draft_publish_date: string | null // eslint-disable-line
-  has_unpublished_draft: boolean // eslint-disable-line
-  has_unpublished_live: boolean // eslint-disable-line
-  live_publish_status: PublishStatus | null // eslint-disable-line
-  live_publish_status_updated_on: string | null // eslint-disable-line
-  draft_publish_status: PublishStatus | null // eslint-disable-line
-  draft_publish_status_updated_on: string | null // eslint-disable-line
-  sync_status: GoogleDriveSyncStatuses | null // eslint-disable-line
-  synced_on: string | null // eslint-disable-line
-  sync_errors: Array<string> | null // eslint-disable-line
+  draft_publish_date: string | null
+  has_unpublished_draft: boolean
+  has_unpublished_live: boolean
+  live_publish_status: PublishStatus | null
+  live_publish_status_updated_on: string | null
+  draft_publish_status: PublishStatus | null
+  draft_publish_status_updated_on: string | null
+  sync_status: GoogleDriveSyncStatuses | null
+  synced_on: string | null
+  sync_errors: Array<string> | null
 }
 
 export type Website = WebsiteStatus & {
   uuid: string
-  created_on: string // eslint-disable-line
-  updated_on: string // eslint-disable-line
+  created_on: string
+  updated_on: string
   name: string
   title: string
-  short_id: string // eslint-disable-line
+  short_id: string
   source: string | null
   starter: WebsiteStarter | null
   metadata?: any
-  is_admin?: boolean // eslint-disable-line
-  draft_url: string // eslint-disable-line
-  live_url: string // eslint-disable-line
-  gdrive_url: string | null // eslint-disable-line
-  has_unpublished_draft: boolean // eslint-disable-line
-  has_unpublished_live: boolean // eslint-disable-line
-  content_warnings?: Array<string> // eslint-disable-line
+  is_admin?: boolean
+  draft_url: string
+  live_url: string
+  gdrive_url: string | null
+  has_unpublished_draft: boolean
+  has_unpublished_live: boolean
+  content_warnings?: Array<string>
 }
 
 type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR
 type WebsiteRole = typeof ROLE_GLOBAL | typeof ROLE_OWNER | WebsiteRoleEditable
 
 export interface WebsiteCollaborator {
-  user_id: number // eslint-disable-line
+  user_id: number
   role: WebsiteRole
   email: string
   name: string
@@ -268,17 +267,17 @@ export interface WebsiteCollaboratorFormData {
 }
 
 export interface WebsiteContentListItem {
-  text_id: string // eslint-disable-line
+  text_id: string
   title: string | null
   type: string
   /** ISO 8601 formatted datetime string */
-  updated_on: string // eslint-disable-line camelcase
+  updated_on: string
 }
 
 export interface WebsiteContent extends WebsiteContentListItem {
   markdown: string | null
   metadata: null | Record<string, SiteFormValue>
-  content_context: WebsiteContent[] | null // eslint-disable-line camelcase
+  content_context: WebsiteContent[] | null
   file?: string
 }
 

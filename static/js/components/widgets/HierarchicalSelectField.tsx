@@ -14,7 +14,7 @@ type HierarchicalSelection = Array<string | null>
 
 type Props = {
   name: string
-  levels: Level[] // eslint-disable-line camelcase
+  levels: Level[]
   value: HierarchicalSelection[] | null
   onChange: (event: any) => void
   options_map: OptionsMap // eslint-disable-line camelcase

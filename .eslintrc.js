@@ -20,6 +20,12 @@ module.exports = {
       "error",
       { argsIgnorePattern: "_" }
     ],
-    "mocha/no-top-level-hooks": "off"
+    "mocha/no-top-level-hooks": "off",
+    "camelcase": [
+      "error",
+      {
+        "properties": "never"
+      }
+    ]
   }
 }

@@ -1,5 +1,5 @@
 /* eslint-disable */
-//
+
 interface SETTINGS {
   reactGaDebug: string;
   gaTrackingID: string;
