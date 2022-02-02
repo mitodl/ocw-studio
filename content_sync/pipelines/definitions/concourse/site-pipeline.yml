@@ -26,6 +26,8 @@ resources:
     source:
       uri: ((ocw-hugo-projects-uri))
       branch: ((ocw-hugo-projects-branch))
+      paths:
+        - ((ocw-import-starter-slug))/config.yaml
   - name: ocw-studio-webhook
     type: http-resource
     source:
@@ -118,6 +120,7 @@ jobs:
             - name: ocw-hugo-themes
             - name: course-markdown
             - name: ocw-hugo-projects
+            - name: webpack-json
           outputs:
             - name: course-markdown
             - name: ocw-hugo-themes
