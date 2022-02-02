@@ -96,10 +96,7 @@ export default function RepeatableContentListing(props: {
         website &&
         (isNil(website.gdrive_url) ||
           (website.sync_status &&
-            GOOGLE_DRIVE_SYNC_PROCESSING_STATES.includes(
-              // @ts-ignore
-              website.sync_status
-            )))
+            GOOGLE_DRIVE_SYNC_PROCESSING_STATES.includes(website.sync_status)))
       ) {
         const response = await store.dispatch(
           // This will update the DriveSyncStatusIndicator

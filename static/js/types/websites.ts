@@ -1,4 +1,5 @@
 import {
+  GoogleDriveSyncStatuses,
   PublishStatus,
   ROLE_ADMIN,
   ROLE_EDITOR,
@@ -227,7 +228,7 @@ export interface WebsiteStatus {
   live_publish_status_updated_on: string | null // eslint-disable-line
   draft_publish_status: PublishStatus | null // eslint-disable-line
   draft_publish_status_updated_on: string | null // eslint-disable-line
-  sync_status: string | null // eslint-disable-line
+  sync_status: GoogleDriveSyncStatuses | null // eslint-disable-line
   synced_on: string | null // eslint-disable-line
   sync_errors: Array<string> | null // eslint-disable-line
 }
