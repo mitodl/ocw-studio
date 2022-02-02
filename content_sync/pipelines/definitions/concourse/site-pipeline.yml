@@ -118,6 +118,7 @@ jobs:
             - name: ocw-hugo-themes
             - name: course-markdown
             - name: ocw-hugo-projects
+            - name: webpack-json
           outputs:
             - name: course-markdown
             - name: ocw-hugo-themes
@@ -127,7 +128,7 @@ jobs:
             args:
             - -exc
             - |
-              cp ../webpack-json/webpack.json data
+              cp ../webpack-json/ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json data
               hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/
         on_failure:
           try:
