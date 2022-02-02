@@ -127,7 +127,7 @@ class ConcoursePipeline(BasePipeline):
         """Make URL for fetching builds information"""
         return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}/builds?vars={self.instance_vars}"
 
-    def _make_pipeline_config_url(self, team: str, pipeline_name: str):
+    def _make_pipeline_config_url(self, pipeline_name: str):
         """Make URL for fetching pipeline info"""
         return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/config?vars={self.instance_vars}"
 
@@ -135,7 +135,7 @@ class ConcoursePipeline(BasePipeline):
         """Make URL for fetching job info"""
         return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}?vars={self.instance_vars}"
 
-    def _make_pipeline_unpause_url(self, team: str, pipeline_name: str):
+    def _make_pipeline_unpause_url(self, pipeline_name: str):
         """Make URL for unpausing a pipeline"""
         return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/unpause?vars={self.instance_vars}"
 
