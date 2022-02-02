@@ -45,19 +45,18 @@ def get_sync_pipeline(website: Website, api: Optional[object] = None) -> BasePip
 
 def get_theme_assets_pipeline(api: Optional[object] = None) -> BasePipeline:
     """ Get the configured theme asset pipeline """
-    return import_string(
-        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.ThemeAssetsPipeline"
-    )(api=api)
+    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
+        return import_string(
+            f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.ThemeAssetsPipeline"
+        )(api=api)
 
 
 def get_mass_publish_pipeline(version: str, api: Optional[object] = None) -> object:
     """Get a mass publishing pipeline if the backend has one"""
-    try:
+    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
         return import_string(
             f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.MassPublishPipeline"
         )(version, api=api)
-    except ModuleNotFoundError:
-        return None
 
 
 @is_sync_enabled

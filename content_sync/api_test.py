@@ -272,7 +272,19 @@ def test_publish_website_error(mock_api_funcs, settings):
     mock_api_funcs.mock_get_backend.assert_not_called()
 
 
-def test_get_mass_publish_pipeline(settings):
+def test_get_mass_publish_pipeline_no_backend(settings):
     """get_mass_publish_pipeline should return None if no backend is specified"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = None
     assert api.get_mass_publish_pipeline(VERSION_DRAFT) is None
+
+
+def test_get_theme_assets_pipeline_no_backend(settings):
+    """get_theme_assets_pipeline should return None if no backend is specified"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
+    assert api.get_theme_assets_pipeline() is None
+
+
+def test_get_sync_pipeline_no_backend(settings):
+    """get_sync_pipeline should return None if no backend is specified"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
+    assert api.get_sync_pipeline(WebsiteFactory.create()) is None
