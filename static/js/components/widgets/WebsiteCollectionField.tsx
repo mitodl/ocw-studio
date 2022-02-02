@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react"
 
 import SortableSelect, { SortableItem } from "./SortableSelect"
+import { Option } from "./SelectField"
 import { useWebsiteSelectOptions } from "../../hooks/websites"
 
 interface Props {
@@ -35,7 +36,7 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
     [onChange, websiteMap, name]
   )
 
-  const { options, loadOptions } = useWebsiteSelectOptions("name", true, true)
+  const { options, loadOptions } = useWebsiteSelectOptions("name", true)
 
   useEffect(() => {
     setWebsiteMap(cur => {
@@ -47,6 +48,13 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
     })
   }, [options, setWebsiteMap])
 
+  const isOptionDisabled = useCallback(
+    (option: Option) => {
+      return value.some(v => v.id === option.value)
+    },
+    [value]
+  )
+
   return (
     <SortableSelect
       name={name}
@@ -55,6 +63,7 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
       options={options}
       defaultOptions={options}
       loadOptions={loadOptions}
+      isOptionDisabled={isOptionDisabled}
     />
   )
 }

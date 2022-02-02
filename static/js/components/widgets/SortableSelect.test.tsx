@@ -10,6 +10,7 @@ import { Option } from "./SelectField"
 import { zip } from "ramda"
 import { default as SortableItemComponent } from "../SortableItem"
 import { triggerSortableSelect } from "./test_util"
+import SelectField from "./SelectField"
 
 const createFakeOptions = (times: number): Option[] =>
   Array(times)
@@ -49,6 +50,14 @@ describe("SortableSelect", () => {
   it("should pass options down to the SelectField", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("SelectField").prop("options")).toStrictEqual(options)
+  })
+
+  it("should pass isOptionDisabled down to the SelectField", async () => {
+    const isOptionDisabled = jest.fn()
+    const { wrapper } = await render({ isOptionDisabled })
+    expect(wrapper.find(SelectField).prop("isOptionDisabled")).toBe(
+      isOptionDisabled
+    )
   })
 
   it("should render sortable items for the current value", async () => {

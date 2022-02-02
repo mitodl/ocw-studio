@@ -79,7 +79,6 @@ interface ReturnProps {
  */
 export function useWebsiteSelectOptions(
   valueField = "uuid",
-  fetchOnStartup = true,
   published: boolean | undefined = undefined
 ): ReturnProps {
   const [options, setOptions] = useState<Option[]>([])
@@ -126,7 +125,7 @@ export function useWebsiteSelectOptions(
   // be set on SelectField components which consume the output from this hook
   useEffect(() => {
     let mounted = true
-    if (mounted && fetchOnStartup) {
+    if (mounted) {
       loadOptions("")
     }
     return () => {

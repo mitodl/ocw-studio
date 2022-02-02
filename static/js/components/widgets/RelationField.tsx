@@ -1,4 +1,10 @@
-import React, { ChangeEvent, useCallback, useEffect, useState } from "react"
+import React, {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useState,
+  useMemo
+} from "react"
 import { equals } from "ramda"
 import { uniqBy } from "lodash"
 
@@ -111,7 +117,7 @@ export default function RelationField(props: Props): JSX.Element {
   const {
     options: websiteOptions,
     loadOptions: loadWebsiteOptions
-  } = useWebsiteSelectOptions("name", crossSite ?? false)
+  } = useWebsiteSelectOptions("name")
   const [focusedWebsite, setFocusedWebsite] = useState<string | null>(null)
   const setFocusedWebsiteCB = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
@@ -318,6 +324,23 @@ export default function RelationField(props: Props): JSX.Element {
     [onChangeShim]
   )
 
+  const selectedIds = useMemo(
+    () =>
+      crossSite ?
+        (value as CrossSitePair[]).map(pair => pair[0]) :
+        multiple ?
+          (value as string[]) :
+          [value as string],
+    [multiple, value, crossSite]
+  )
+
+  const isOptionDisabled = useCallback(
+    (option: Option) => {
+      return selectedIds.includes(option.value)
+    },
+    [selectedIds]
+  )
+
   return (
     <>
       {crossSite ? (
@@ -338,10 +361,8 @@ export default function RelationField(props: Props): JSX.Element {
           options={options}
           loadOptions={loadOptions}
           defaultOptions={defaultOptions}
-          value={(crossSite ?
-            (value as CrossSitePair[]).map(pair => pair[0]) :
-            (value as string[])
-          ).map(id => {
+          isOptionDisabled={isOptionDisabled}
+          value={selectedIds.map(id => {
             const content = contentMap.get(id)
             const title = content ? content.title ?? id : id
 
@@ -354,7 +375,7 @@ export default function RelationField(props: Props): JSX.Element {
       ) : (
         <SelectField
           name={name}
-          value={value}
+          value={value as string | string[]}
           onChange={handleChange}
           options={options}
           loadOptions={loadOptions}

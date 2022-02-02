@@ -1,7 +1,7 @@
 import React, { useCallback, ChangeEvent } from "react"
 import Select from "react-select"
 import AsyncSelect from "react-select/async"
-import { is, isNil } from "ramda"
+import { isNil } from "ramda"
 
 export interface Option {
   label: string
@@ -10,13 +10,14 @@ export interface Option {
 
 interface Props {
   name: string
-  value: any
+  value: null | undefined | string | string[]
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void
   multiple?: boolean
   options: Array<string | Option>
   loadOptions?: (s: string, cb: (options: Option[]) => void) => void
   placeholder?: string
   defaultOptions?: Option[]
+  isOptionDisabled?: (option: Option) => boolean
 }
 
 export default function SelectField(props: Props): JSX.Element {
@@ -27,11 +28,12 @@ export default function SelectField(props: Props): JSX.Element {
     options,
     loadOptions,
     defaultOptions,
-    placeholder
+    placeholder,
+    isOptionDisabled
   } = props
   const multiple = props.multiple ?? false
-  const selectOptions = options.map((option: any) =>
-    is(String, option) ? { label: option, value: option } : option
+  const selectOptions = options.map(option =>
+    typeof option === "string" ? { label: option, value: option } : option
   )
 
   const changeHandler = useCallback(
@@ -66,6 +68,9 @@ export default function SelectField(props: Props): JSX.Element {
       selected = value.map(option => getSelectOption(option))
     }
   } else {
+    if (Array.isArray(value)) {
+      throw new Error("Array values should specify multiple=true")
+    }
     selected = isNil(value) ? null : getSelectOption(value)
   }
 
@@ -82,7 +87,8 @@ export default function SelectField(props: Props): JSX.Element {
         border:    0,
         boxShadow: "none"
       })
-    }
+    },
+    isOptionDisabled
   }
 
   return loadOptions ? (

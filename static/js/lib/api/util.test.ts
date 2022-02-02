@@ -22,16 +22,32 @@ describe("api utility functions", () => {
   })
 
   it("debounces and fetches", async () => {
+    global.fetch = jest.fn()
+
     await Promise.all([
       debouncedFetch("key", 30, "url1", { credentials: "include" }),
       debouncedFetch("key", 30, "url2", { credentials: "omit" }),
-      debouncedFetch("key", 30, "url3", { credentials: "same-origin" })
+      debouncedFetch("key", 30, "url3", { credentials: "same-origin" }),
+      debouncedFetch("key", 30, "url3", { credentials: "omit" })
     ])
 
     expect(global.fetch).toBeCalledTimes(1)
     // only the last set of arguments should be passed to fetch
     expect(global.fetch).toHaveBeenCalledWith("url3", {
-      credentials: "same-origin"
+      credentials: "omit"
     })
+  })
+
+  it("resolves the most recent call to fetch result", async () => {
+    global.mockFetch.mockResolvedValue("meow")
+
+    const results = await Promise.all([
+      debouncedFetch("key", 30, "url1", { credentials: "include" }),
+      debouncedFetch("key", 30, "url2", { credentials: "omit" }),
+      debouncedFetch("key", 30, "url3", { credentials: "same-origin" }),
+      debouncedFetch("key", 30, "url3", { credentials: "omit" })
+    ])
+
+    expect(results).toEqual([null, null, null, "meow"])
   })
 })
