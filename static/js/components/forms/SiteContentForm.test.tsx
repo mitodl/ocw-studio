@@ -1,12 +1,14 @@
 import { times } from "ramda"
 import React from "react"
-import { Formik, Form } from "formik"
-import sinon, { SinonSandbox, SinonStub } from "sinon"
-import { shallow } from "enzyme"
+import { Formik } from "formik"
+import { mount } from "enzyme"
+import { act } from "react-dom/test-utils"
 
-import SiteContentForm from "./SiteContentForm"
-
-import { defaultFormikChildProps, shouldIf } from "../../test_util"
+import SiteContentForm, {
+  FormFields,
+  InnerFormProps,
+  FormProps
+} from "./SiteContentForm"
 import {
   makeEditableConfigItem,
   makeWebsiteConfigField,
@@ -14,260 +16,256 @@ import {
   makeWebsiteDetail
 } from "../../util/factories/websites"
 import * as siteContent from "../../lib/site_content"
-import { useWebsite } from "../../context/Website"
-
-import {
-  EditableConfigItem,
-  Website,
-  WebsiteContent,
-  WebsiteContentModalState,
-  WidgetVariant
-} from "../../types/websites"
-import { FormSchema } from "../../types/forms"
+import { WebsiteContentModalState, WidgetVariant } from "../../types/websites"
 import { createModalState } from "../../types/modal_state"
 import * as domUtil from "../../util/dom"
+import ObjectField from "../widgets/ObjectField"
 
-jest.mock("../../lib/site_content")
+import * as Website from "../../context/Website"
+const { useWebsite: mockUseWebsite } = Website as jest.Mocked<typeof Website>
+
+// ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
+function mocko() {
+  return <div>mock</div>
+}
+
+jest.mock("../widgets/MarkdownEditor", () => ({
+  __esModule: true,
+  default:    mocko
+}))
+
+jest.mock("../widgets/SelectField", () => ({
+  __esModule: true,
+  default:    mocko
+}))
+
 jest.mock("../../context/Website")
 jest.mock("../../util/dom")
 
-const {
-  componentFromWidget,
-  contentInitialValues,
-  fieldIsVisible,
-  newInitialValues,
-  renameNestedFields
-} = siteContent as jest.Mocked<typeof siteContent>
+const { contentInitialValues, renameNestedFields } = siteContent as jest.Mocked<
+  typeof siteContent
+>
 
 const { scrollToElement } = domUtil as jest.Mocked<typeof domUtil>
 
-describe("SiteContentForm", () => {
-  let sandbox: SinonSandbox,
-    onSubmitStub: SinonStub,
-    configItem: EditableConfigItem,
-    content: WebsiteContent,
-    mockValidationSchema: FormSchema,
-    website: Website,
-    setDirtyStub: SinonStub
+function setupData() {
+  const content = makeWebsiteContentDetail()
+  content.content_context = times(() => makeWebsiteContentDetail(), 3)
+  const configItem = makeEditableConfigItem(content.type)
+  const website = makeWebsiteDetail()
+  mockUseWebsite.mockReturnValue(website)
+  const onSubmit = jest.fn()
+  const setDirty = jest.fn()
+  const editorState: WebsiteContentModalState = createModalState("adding")
 
-  beforeEach(() => {
-    sandbox = sinon.createSandbox()
-    content = makeWebsiteContentDetail()
-    content.content_context = times(() => makeWebsiteContentDetail(), 3)
-    configItem = makeEditableConfigItem(content.type)
-    // @ts-ignore
-    renameNestedFields.mockImplementation(() => [])
-    website = makeWebsiteDetail()
-    // @ts-ignore
-    useWebsite.mockReturnValue(website)
-    onSubmitStub = sandbox.stub()
-    setDirtyStub = sandbox.stub()
-  })
+  return {
+    content,
+    configItem,
+    onSubmit,
+    setDirty,
+    editorState,
+    website
+  }
+}
 
-  afterEach(() => {
-    sandbox.restore()
-  })
+function setup(props: Partial<FormProps> = {}) {
+  const data = setupData()
 
-  const renderForm = (props = {}) =>
-    shallow(
-      <SiteContentForm
-        configItem={configItem}
-        content={content}
-        onSubmit={onSubmitStub}
-        editorState={createModalState("adding")}
-        setDirty={setDirtyStub}
-        {...props}
-      />
-    )
+  const form = mount(<SiteContentForm {...data} {...props} />)
 
-  const renderInnerForm = (
-    editorState: WebsiteContentModalState,
-    formikChildProps: { [key: string]: any } = {}
-  ) => {
-    const wrapper = renderForm({ editorState })
-    return (
-      wrapper
-        .find(Formik)
-      // @ts-ignore
-        .renderProp("children")({
-          ...defaultFormikChildProps,
-          ...formikChildProps
+  return {
+    form,
+    ...data
+  }
+}
+
+/**
+ * A separate setup function for inserting specific test values
+ * into the inner form component
+ */
+function setupInnerForm(props: Partial<InnerFormProps> = {}) {
+  const data = setupData()
+  const validate = jest.fn()
+
+  const form = mount(
+    <Formik
+      onSubmit={data.onSubmit}
+      validate={validate}
+      initialValues={{}}
+      enableReinitialize={true}
+    >
+      {formikProps => (
+        <FormFields validate={validate} {...formikProps} {...data} {...props} />
+      )}
+    </Formik>
+  )
+
+  return { form, ...data }
+}
+
+const EDITOR_STATES: WebsiteContentModalState[] = [
+  createModalState("adding"),
+  createModalState("editing", "id")
+]
+
+type ESBoolMatrix = [WebsiteContentModalState, boolean][]
+
+const EDITOR_STATE_BOOLEAN_MATRIX = EDITOR_STATES.map(editorState => [
+  [editorState, true],
+  [editorState, false]
+]).flat() as ESBoolMatrix
+
+test.each(EDITOR_STATE_BOOLEAN_MATRIX)(
+  "the SiteContentField should set the dirty flag when touched when %p and isObjectField is %p",
+  async (editorState, isObjectField) => {
+    const configItem = makeEditableConfigItem()
+    const configField = makeWebsiteConfigField({
+      widget: isObjectField ? WidgetVariant.Object : WidgetVariant.String
+    })
+    configItem.fields = [configField]
+    const { form, setDirty } = setup({
+      configItem,
+      editorState
+    })
+
+    const fieldName =
+      configField.widget === WidgetVariant.Object ?
+        configField.fields[0].name :
+        configItem.fields[0].name
+
+    await act(async () => {
+      form
+        .find("Field")
+        .at(0)
+        .simulate("change", {
+          target: {
+            name:  fieldName,
+            value: "test"
+          }
         })
+      form.update()
+    })
+    expect(setDirty).toHaveBeenCalledWith(true)
+  }
+)
+
+test.each(EDITOR_STATES)("SiteContentForm renders", editorState => {
+  const { form, configItem, content } = setup({ editorState })
+
+  configItem.fields.forEach((field, idx) => {
+    const fieldWrapper = form.find("SiteContentField").at(idx)
+    expect(fieldWrapper.prop("field")).toBe(field)
+    expect(fieldWrapper.prop("contentContext")).toBe(content.content_context)
+  })
+})
+
+test("SiteContentForm displays a status", () => {
+  const status = "testing status"
+  const { form } = setupInnerForm({ status })
+  expect(form.find(".form-error").text()).toBe(status)
+})
+
+test.each([true, false])(
+  "SiteContentForm shows a button with disabled=%p",
+  isSubmitting => {
+    const { form } = setupInnerForm({ isSubmitting })
+    expect(form.find("button[type='submit']").prop("disabled")).toBe(
+      isSubmitting
     )
   }
+)
 
-  //
-  ;[
-    createModalState("adding") as WebsiteContentModalState,
-    createModalState("editing", "id")
-  ].forEach(editorState => {
-    describe(editorState.state, () => {
-      it("renders a form", () => {
-        const widget = "fakeWidgetComponent"
-        componentFromWidget.mockImplementation(() => widget)
-        renameNestedFields.mockImplementation(() => configItem.fields)
-        fieldIsVisible.mockImplementation(() => true)
+test("it should use an ObjectField when dealing with an Object", () => {
+  const configItem = makeEditableConfigItem()
+  const configField = makeWebsiteConfigField({
+    widget: WidgetVariant.Object
+  })
+  configItem.fields = [configField]
+  const { form } = setup({
+    configItem
+  })
+  const objectField = form.find(ObjectField)
+  expect(objectField.exists()).toBeTruthy()
+  const renamedField = renameNestedFields([configField])[0]
+  expect(objectField.prop("field")).toEqual(renamedField)
+})
 
-        const form = renderInnerForm(editorState)
-        let idx = 0
-        for (const field of configItem.fields) {
-          const fieldWrapper = form.find("SiteContentField").at(idx)
-          expect(fieldWrapper.prop("field")).toBe(field)
-          expect(fieldWrapper.prop("contentContext")).toBe(
-            content.content_context
-          )
-          idx++
-        }
-      })
+test("it scrolls to .form-error field", async () => {
+  const data = setupData()
+  data.configItem = makeEditableConfigItem(data.content.type)
+  data.configItem.fields.forEach(field => {
+    field.required = true
+  })
 
-      it("displays a status", () => {
-        const status = "testing status"
-        const form = renderInnerForm(editorState, { status })
-        expect(form.find(".form-error").text()).toBe(status)
-      })
+  expect(data.configItem.fields.map(f => f.name)).toEqual([
+    "title",
+    "description",
+    "body"
+  ])
 
-      //
-      ;[true, false].forEach(isSubmitting => {
-        it(`shows a button with disabled=${isSubmitting}`, () => {
-          const form = renderInnerForm(editorState, { isSubmitting })
-          expect(form.find("button[type='submit']").prop("disabled")).toBe(
-            isSubmitting
-          )
-        })
-      })
-
-      it("has the correct Formik props", () => {
-        // @ts-ignore
-        const formik = renderForm({ editorState }).find("Formik")
-        const validationSchema = formik.prop("validationSchema")
-        expect(validationSchema).toStrictEqual(mockValidationSchema)
-        expect(formik.prop("enableReinitialize")).toBe(true)
-      })
-
-      it("should pass an 'object' field to the ObjectField component", () => {
-        const field = makeWebsiteConfigField({ widget: WidgetVariant.Object })
-        configItem.fields = [field]
-        // @ts-ignore
-        fieldIsVisible.mockImplementation(() => true)
-        // @ts-ignore
-        renameNestedFields.mockImplementation(() => configItem.fields)
-        const values = { some: "values" }
-        const wrapper = renderInnerForm(editorState, { values })
-        const objectWrapper = wrapper.find("ObjectField")
-        expect(objectWrapper.exists()).toBeTruthy()
-        expect(objectWrapper.prop("field")).toEqual(field)
-        expect(objectWrapper.prop("contentContext")).toBe(
-          content.content_context
-        )
-        expect(objectWrapper.prop("values")).toStrictEqual(values)
-      })
-
-      //
-      ;[true, false].forEach(isGdriveEnabled => {
-        [true, false].forEach(isResourceFileField => {
-          it(`${shouldIf(
-            !isResourceFileField || !isGdriveEnabled
-          )} render file field if isResourceFileField=${String(
-            isResourceFileField
-          )} and isGdriveEnabled=${String(isGdriveEnabled)}`, () => {
-            SETTINGS.gdrive_enabled = isGdriveEnabled
-            content.type = isResourceFileField ? "resource" : "page"
-            configItem = makeEditableConfigItem(content.type)
-            const field = makeWebsiteConfigField({ widget: WidgetVariant.File })
-            configItem.fields = [field]
-            // @ts-ignore
-            fieldIsVisible.mockImplementation(() => true)
-            // @ts-ignore
-            renameNestedFields.mockImplementation(() => configItem.fields)
-            const values = { file: "courses/file.pdf" }
-            const wrapper = renderInnerForm(editorState, { values })
-            expect(wrapper.find("SiteContentField").exists()).toBe(
-              !isResourceFileField || !isGdriveEnabled
-            )
-          })
-        })
-      })
-
-      it("creates initialValues", () => {
-        const newData = "new data",
-          oldData = "old data"
-        // @ts-ignore
-        newInitialValues.mockReturnValue(newData)
-        // @ts-ignore
-        contentInitialValues.mockReturnValue(oldData)
-        const wrapper = renderForm({ editorState })
-        const initialValues = wrapper.find("Formik").prop("initialValues")
-        if (editorState.adding()) {
-          expect(initialValues).toBe(newData)
-          expect(newInitialValues).toBeCalledWith(configItem.fields, website)
-        } else {
-          expect(initialValues).toBe(oldData)
-          expect(contentInitialValues).toBeCalledWith(
-            content,
-            configItem.fields,
-            website
-          )
-        }
-      })
-
-      //
-      ;[true, false].forEach(isObjectField => {
-        it(`passes an onChange prop for an ${
-          isObjectField ? "object" : "non-object"
-        } field which sets the dirty flag and calls handleChange for formik`, () => {
-          const field = makeWebsiteConfigField({
-            widget: isObjectField ? WidgetVariant.Object : WidgetVariant.String
-          })
-          configItem.fields = [field]
-          // @ts-ignore
-          fieldIsVisible.mockImplementation(() => true)
-          // @ts-ignore
-          renameNestedFields.mockImplementation(() => configItem.fields)
-          const handleChangeStub = sandbox.stub()
-          const form = renderInnerForm(editorState, {
-            handleChange: handleChangeStub
-          })
-          const onChange = form
-            .find(isObjectField ? "ObjectField" : "SiteContentField")
-            .prop("onChange")
-          const event: any = { preventDefault: sandbox.stub() }
-          // @ts-ignore
-          onChange(event)
-          sinon.assert.calledOnceWithExactly(handleChangeStub, event)
-          sinon.assert.calledOnceWithExactly(setDirtyStub, true)
-        })
-      })
-
-      it("it scrolls to .form-error field", async () => {
-        fieldIsVisible.mockImplementation(() => true)
-
-        configItem = makeEditableConfigItem(content.type)
-        configItem.fields.forEach(field => {
-          field.required = true
-        })
-
-        expect(configItem.fields.map(f => f.name)).toEqual([
-          "title",
-          "description",
-          "body"
-        ])
-
-        const wrapper = renderInnerForm(editorState, {
-          values:       { title: "meow" },
-          handleSubmit: jest.fn
-        })
-        const onSubmit = wrapper.find(Form).prop("onSubmit")!
-
-        const formElement = document.createElement("form")
-
-        const submitEvent = ({
-          target: formElement
-        } as unknown) as React.FormEvent<HTMLFormElement>
-        await onSubmit(submitEvent)
-
-        expect(scrollToElement).toHaveBeenCalledTimes(1)
-        expect(scrollToElement).toHaveBeenCalledWith(formElement, ".form-error")
-      })
+  const { form } = setupInnerForm({
+    values:   { title: "meow" },
+    validate: jest.fn().mockResolvedValue({
+      title: "NO"
     })
   })
+
+  await act(async () => {
+    await form.find("form").simulate("submit")
+  })
+
+  const formElement = form.find("form").getDOMNode()
+  expect(scrollToElement).toHaveBeenCalledTimes(1)
+  expect(scrollToElement).toHaveBeenCalledWith(formElement, ".form-error")
+})
+
+test.each`
+  isGdriveEnabled | isResource | willRender
+  ${true}         | ${true}    | ${false}
+  ${false}        | ${true}    | ${true}
+  ${true}         | ${false}   | ${true}
+  ${false}        | ${false}   | ${true}
+`(
+  "file field render:$willRender when gdrive:$isGdriveEnabled and resource:$isResource",
+  ({ isGdriveEnabled, isResource, willRender }) => {
+    const data = setupData()
+    SETTINGS.gdrive_enabled = isGdriveEnabled
+    data.content.type = isResource ? "resource" : "page"
+    const configItem = makeEditableConfigItem(data.content.type)
+    const field = makeWebsiteConfigField({ widget: WidgetVariant.File })
+    configItem.fields = [field]
+    const values = { file: "courses/file.pdf" }
+    const { form } = setupInnerForm({
+      ...data,
+      configItem,
+      values
+    })
+    expect(form.find("SiteContentField").exists()).toBe(willRender)
+  }
+)
+
+test("SiteContentField creates new values", () => {
+  const data = setupData()
+  data.configItem.fields = [
+    makeWebsiteConfigField({
+      widget:  WidgetVariant.String,
+      name:    "test-name",
+      default: "test-default"
+    })
+  ]
+  const { form } = setup(data)
+  expect(form.find(FormFields).prop("values")).toEqual({
+    "test-name": "test-default"
+  })
+})
+
+test("SiteContentField uses existing values when editing", () => {
+  const data = setupData()
+  const { form } = setup({
+    ...data,
+    editorState: createModalState("editing", "id")
+  })
+  expect(form.find(FormFields).prop("values")).toEqual(
+    contentInitialValues(data.content, data.configItem.fields, data.website)
+  )
 })

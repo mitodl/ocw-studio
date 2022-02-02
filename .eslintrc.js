@@ -21,6 +21,8 @@ module.exports = {
       { argsIgnorePattern: "_" }
     ],
     "mocha/no-top-level-hooks": "off",
+    "mocha/no-sibling-hooks": "off",
+    "mocha/no-global-tests": "off",
     "camelcase": [
       "error",
       {

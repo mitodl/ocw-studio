@@ -46,6 +46,20 @@ export const makeWebsiteConfigField = (
 ): ConfigField => {
   const label = props.label ?? casual.word
 
+  if (props.widget && props.widget === WidgetVariant.Object && !props.fields) {
+    props.fields = [
+      makeWebsiteConfigField({
+        widget: WidgetVariant.String,
+        label:  "mystring"
+      }),
+      makeWebsiteConfigField({
+        widget:   WidgetVariant.Select,
+        multiple: true,
+        label:    "myselect"
+      })
+    ]
+  }
+
   return {
     label,
     name:   label.toLowerCase(),

@@ -26,19 +26,7 @@ describe("ObjectField", () => {
 
   beforeEach(() => {
     field = makeWebsiteConfigField({
-      widget: WidgetVariant.Object,
-      label:  "myobject",
-      fields: [
-        makeWebsiteConfigField({
-          widget: WidgetVariant.String,
-          label:  "mystring"
-        }),
-        makeWebsiteConfigField({
-          widget:   WidgetVariant.Select,
-          multiple: true,
-          label:    "myselect"
-        })
-      ]
+      widget: WidgetVariant.Object
     }) as ObjectConfigField
 
     // @ts-ignore
