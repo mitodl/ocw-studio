@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.43.1
+--------------
+
+- [UI] prevent duplicate items in collections (#951)
+- theme assets pipeline (#945)
+- remove a @ts-ignore
+- small rename of two functions for clarity
+
 Version 0.43.0 (Released January 31, 2022)
 --------------
 
