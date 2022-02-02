@@ -16,7 +16,10 @@ from content_sync.apis import github
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
-from content_sync.pipelines.base import BaseSyncPipeline
+from content_sync.pipelines.concourse import (
+    ConcourseGithubPipeline,
+    ThemeAssetsPipeline,
+)
 from main.celery import app
 from websites.api import reset_publishing_fields, update_website_status
 from websites.constants import (
@@ -131,8 +134,8 @@ def upsert_website_pipeline_batch(
         pipeline.upsert_website_pipeline()
         if unpause:
             for version in [
-                BaseSyncPipeline.VERSION_LIVE,
-                BaseSyncPipeline.VERSION_DRAFT,
+                ConcourseGithubPipeline.VERSION_LIVE,
+                ConcourseGithubPipeline.VERSION_DRAFT,
             ]:
                 pipeline.unpause_pipeline(version)
     return True
@@ -154,6 +157,16 @@ def upsert_pipelines(
             )
         )
     raise self.replace(celery.group(tasks))
+
+
+@app.task(acks_late=True)
+def upsert_theme_assets_pipeline(unpause=False):
+    """ Upsert the theme assets pipeline """
+    pipeline = api.get_theme_assets_pipeline()
+    pipeline.upsert_theme_assets_pipeline()
+    if unpause:
+        pipeline.unpause_pipeline(ThemeAssetsPipeline.PIPELINE_NAME)
+    return True
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)

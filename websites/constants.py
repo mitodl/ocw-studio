@@ -101,3 +101,5 @@ PUBLISH_STATUSES_FINAL = [
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUS_ABORTED,
 ]
+
+OCW_HUGO_THEMES_GIT = "https://github.com/mitodl/ocw-hugo-themes.git"

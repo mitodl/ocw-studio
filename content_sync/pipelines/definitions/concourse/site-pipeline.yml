@@ -6,22 +6,21 @@ resource_types:
       repository: jgriff/http-resource
       tag: latest
 resources:
-  - name: ocw-hugo-themes
+  - name: webpack-json
     type: s3
     source:
       bucket: ol-eng-artifacts
-      regexp: ocw-hugo-themes\/release-candidate\/ocw-hugo-themes-(.*).tgz
-  - name: ocw-static-version
-    type: s3
-    source:
-      bucket: ((ocw-bucket))
-      regexp: static\/version\.(.*)\.txt
-      initial_path: static/version.0.txt
+      versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
   - name: course-markdown
     type: git
     source:
       uri: ((markdown-uri))((git-private-key-var))
       branch: ((ocw-site-repo-branch))
+  - name: ocw-hugo-themes
+    type: git
+    source:
+      uri: ((ocw-hugo-themes-uri))
+      branch: ((ocw-hugo-themes-branch))
   - name: ocw-hugo-projects
     type: git
     source:
@@ -50,9 +49,8 @@ jobs:
                 "version": "((version))",
                 "status": "started"
               }
-      - get: ocw-hugo-themes
-        trigger: ((theme-created-trigger))
-        timeout: 5m
+      - get: webpack-json
+        trigger: true
         on_failure:
           try:
             put: ocw-studio-webhook
@@ -63,10 +61,9 @@ jobs:
                     "version": "((version))",
                     "status": "errored"
                   }
-      - get: ocw-static-version
-        trigger: ((theme-deployed-trigger))
+      - get: ocw-hugo-themes
+        trigger: false
         timeout: 5m
-        attempts: 3
         on_failure:
           try:
             put: ocw-studio-webhook
@@ -130,9 +127,8 @@ jobs:
             args:
             - -exc
             - |
-              mkdir -p ../ocw-hugo-themes/theme
-              tar -xvzf ../ocw-hugo-themes/ocw-hugo-themes-*.tgz -C ../ocw-hugo-themes/theme
-              hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/theme
+              cp ../webpack-json/webpack.json data
+              hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/
         on_failure:
           try:
             put: ocw-studio-webhook
@@ -149,7 +145,6 @@ jobs:
         attempts: 3
         config:
           inputs:
-            - name: ocw-hugo-themes
             - name: course-markdown
           platform: linux
           image_resource:
@@ -162,7 +157,6 @@ jobs:
             - |
               aws s3 sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
               aws s3 sync s3://((ocw-studio-bucket))/((site-url)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))
-              if [[ "((base-url))" == "" ]]; then aws s3 sync ocw-hugo-themes/theme/base-theme/dist s3://((ocw-bucket)) --metadata site-id=((site-name)); fi
         on_failure:
           try:
             put: ocw-studio-webhook

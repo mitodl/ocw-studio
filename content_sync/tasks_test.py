@@ -12,6 +12,7 @@ from requests import HTTPError
 from content_sync import tasks
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.factories import ContentSyncStateFactory
+from content_sync.pipelines.concourse import ThemeAssetsPipeline
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
@@ -294,6 +295,24 @@ def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
         mock_batch.assert_any_call(
             website_names[chunk_size:], create_backend=create_backend, unpause=unpause
         )
+
+
+@pytest.mark.parametrize("unpause", [True, False])
+def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
+    mocker, mocked_celery, unpause
+):
+    """calls upsert_theme_assets_pipeline and unpauses if asked"""
+    mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_theme_assets_pipeline")
+    tasks.upsert_theme_assets_pipeline(unpause=unpause)
+    mock_get_pipeline.assert_called_once()
+    mock_pipeline = mock_get_pipeline.return_value
+    mock_pipeline.upsert_theme_assets_pipeline.assert_called_once()
+    if unpause:
+        mock_pipeline.unpause_pipeline.assert_called_once_with(
+            ThemeAssetsPipeline.PIPELINE_NAME
+        )
+    else:
+        mock_pipeline.unpause_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize("create_backend", [True, False])

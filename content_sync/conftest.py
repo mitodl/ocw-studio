@@ -51,3 +51,4 @@ def required_concourse_settings(settings):
     settings.GITHUB_WEBHOOK_BRANCH = "release"
     settings.SITE_BASE_URL = "http://test.edu"
     settings.API_BEARER_TOKEN = "abc123"
+    settings.SEARCH_API_URL = "http://test.edu/api/v0/search"

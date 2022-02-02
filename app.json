@@ -107,6 +107,10 @@
       "description": "The pipeline to preview/publish websites with",
       "required": false
     },
+    "CONTENT_SYNC_THEME_PIPELINE": {
+      "description": "The pipeline to publish theme assets",
+      "required": false
+    },
     "CONTENT_SYNC_RETRIES": {
       "description": "Number of times to retry backend sync attempts",
       "required": false
@@ -571,6 +575,10 @@
     },
     "YT_UPLOAD_LIMIT": {
       "description": "Max Youtube uploads allowed per day",
+      "required": false
+    },
+    "SEARCH_API_URL": {
+      "description": "The URL to open discussions search to inject into the theme assets build",
       "required": false
     }
   },

@@ -15,7 +15,7 @@ from content_sync.backends.github import GithubBackend
 from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
-from content_sync.pipelines.base import BaseSyncPipeline
+from content_sync.pipelines.base import BasePipeline
 from websites.constants import PUBLISH_STATUS_NOT_STARTED
 from websites.models import Website, WebsiteContent
 
@@ -35,11 +35,14 @@ def get_sync_backend(website: Website) -> BaseSyncBackend:
     return import_string(settings.CONTENT_SYNC_BACKEND)(website)
 
 
-def get_sync_pipeline(
-    website: Website, api: Optional[object] = None
-) -> BaseSyncPipeline:
+def get_sync_pipeline(website: Website, api: Optional[object] = None) -> BasePipeline:
     """ Get the configured sync publishing pipeline """
     return import_string(settings.CONTENT_SYNC_PIPELINE)(website, api=api)
+
+
+def get_theme_assets_pipeline(api: Optional[object] = None) -> BasePipeline:
+    """ Get the configured theme asset pipeline """
+    return import_string(settings.CONTENT_SYNC_THEME_PIPELINE)(api=api)
 
 
 @is_sync_enabled

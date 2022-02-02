@@ -3,6 +3,9 @@ import logging
 import os
 from typing import Optional
 
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+
 from websites.constants import WEBSITE_CONTENT_FILETYPE
 from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
@@ -56,3 +59,18 @@ def get_destination_url(
         (content.id, content.text_id),
     )
     return None
+
+
+def check_mandatory_settings(mandatory_settings):
+    """Make sure all mandatory settings are present"""
+    missing_settings = []
+    for setting_name in mandatory_settings:
+        if getattr(settings, setting_name, None) in (
+            None,
+            "",
+        ):
+            missing_settings.append(setting_name)
+    if missing_settings:
+        raise ImproperlyConfigured(
+            "The following settings are missing: {}".format(", ".join(missing_settings))
+        )
