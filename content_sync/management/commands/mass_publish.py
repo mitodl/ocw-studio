@@ -58,7 +58,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        if not settings.CONTENT_SYNC_PIPELINE:
+        if not settings.CONTENT_SYNC_PIPELINE_BACKEND:
             self.stderr.write("Pipeline backend is not configured for publishing")
             return
 
@@ -86,9 +86,13 @@ class Command(BaseCommand):
             if source_str != WEBSITE_SOURCE_OCW_IMPORT:
                 # do not publish any unpublished sites
                 if version == VERSION_DRAFT:
-                    website_qset = website_qset.exclude(draft_publish_date__isnull=True)
+                    website_qset = website_qset.exclude(
+                        draft_publish_status__isnull=True
+                    )
                 else:
-                    website_qset = website_qset.exclude(publish_date__isnull=True)
+                    website_qset = website_qset.exclude(
+                        live_publish_status__isnull=True
+                    )
 
         website_names = list(website_qset.values_list("name", flat=True))
 

@@ -1,14 +1,14 @@
-""" Management command for backpopulating the theme pipeline """
+""" Management command for upserting the mass publish pipeline """
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
-from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.tasks import upsert_theme_assets_pipeline
+from content_sync.api import get_mass_publish_pipeline
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 
 
 class Command(BaseCommand):
-    """ Backpopulate the theme pipeline """
+    """ Management command for upserting the mass publish pipeline """
 
     help = __doc__
 
@@ -27,24 +27,18 @@ class Command(BaseCommand):
             self.stderr.write("Pipeline backend is not configured")
             return
 
-        self.stdout.write("Creating theme asset pipeline")
+        self.stdout.write("Creating mass publish pipelines")
 
-        is_verbose = options["verbosity"] > 1
         unpause = options["unpause"]
 
-        if is_verbose:
-            self.stdout.write(f"Upserting theme assets pipeline")
-
         start = now_in_utc()
-        task = upsert_theme_assets_pipeline.delay(unpause=unpause)
-
-        self.stdout.write(f"Started celery task {task} to upsert theme assets pipeline")
-
-        self.stdout.write("Waiting on task...")
-
-        result = task.get()
-        if result != True:
-            raise CommandError(f"Some errors occurred: {result}")
+        for version in (VERSION_DRAFT, VERSION_LIVE):
+            pipeline = get_mass_publish_pipeline(version)
+            pipeline.upsert_pipeline()
+            self.stdout.write(f"Created {version} mass publish pipeline")
+            if unpause:
+                pipeline.unpause()
+                self.stdout.write(f"Unpaused {version} mass publish pipeline")
 
         total_seconds = (now_in_utc() - start).total_seconds()
         self.stdout.write(

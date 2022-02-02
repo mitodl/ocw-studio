@@ -20,7 +20,7 @@ pytestmark = pytest.mark.django_db
 def mock_api_funcs(settings, mocker):
     """Mock functions used in publish_websites"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
-    settings.CONTENT_SYNC_PIPELINE = "content_sync.pipelines.TestPipeline"
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     return SimpleNamespace(
         mock_get_backend=mocker.patch("content_sync.api.get_sync_backend"),
         mock_get_pipeline=mocker.patch("content_sync.api.get_sync_pipeline"),
@@ -179,12 +179,8 @@ def test_sync_github_website_starters(mocker):
 @pytest.mark.parametrize("pipeline_api", [None, {}])
 def test_get_sync_pipeline(settings, mocker, pipeline_api):
     """ Verify that get_sync_pipeline() imports the pipeline class based on settings.py """
-    settings.CONTENT_SYNC_PIPELINE = (
-        "content_sync.pipelines.concourse.ConcourseGithubPipeline"
-    )
-    import_string_mock = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseGithubPipeline"
-    )
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    import_string_mock = mocker.patch("content_sync.pipelines.concourse.SitePipeline")
     website = WebsiteFactory.create()
     api.get_sync_pipeline(website, api=pipeline_api)
     import_string_mock.assert_any_call(website, api=pipeline_api)
@@ -192,9 +188,7 @@ def test_get_sync_pipeline(settings, mocker, pipeline_api):
 
 def test_create_website_publishing_pipeline(settings, mocker):
     """upsert_website_publishing_pipeline task should be called if pipelines are enabled"""
-    settings.CONTENT_SYNC_PIPELINE = (
-        "content_sync.pipelines.concourse.ConcourseGithubPipeline"
-    )
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     mock_task = mocker.patch(
         "content_sync.api.tasks.upsert_website_publishing_pipeline.delay"
     )
@@ -205,7 +199,7 @@ def test_create_website_publishing_pipeline(settings, mocker):
 
 def test_create_website_publishing_pipeline_disabled(settings, mocker):
     """upsert_website_publishing_pipeline task should not be called if pipelines are disabled"""
-    settings.CONTENT_SYNC_PIPELINE = None
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
     mock_task = mocker.patch(
         "content_sync.api.tasks.upsert_website_publishing_pipeline.delay"
     )

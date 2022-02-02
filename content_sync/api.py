@@ -37,12 +37,27 @@ def get_sync_backend(website: Website) -> BaseSyncBackend:
 
 def get_sync_pipeline(website: Website, api: Optional[object] = None) -> BasePipeline:
     """ Get the configured sync publishing pipeline """
-    return import_string(settings.CONTENT_SYNC_PIPELINE)(website, api=api)
+    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
+        return import_string(
+            f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"
+        )(website, api=api)
 
 
 def get_theme_assets_pipeline(api: Optional[object] = None) -> BasePipeline:
     """ Get the configured theme asset pipeline """
-    return import_string(settings.CONTENT_SYNC_THEME_PIPELINE)(api=api)
+    return import_string(
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.ThemeAssetsPipeline"
+    )(api=api)
+
+
+def get_mass_publish_pipeline(version: str, api: Optional[object] = None) -> object:
+    """Get a mass publishing pipeline if the backend has one"""
+    try:
+        return import_string(
+            f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.MassPublishPipeline"
+        )(version, api=api)
+    except AttributeError:
+        return None
 
 
 @is_sync_enabled
@@ -91,6 +106,7 @@ def publish_website(  # pylint: disable=too-many-arguments
     version: str,
     pipeline_api: Optional[object] = None,
     prepublish: Optional[bool] = True,
+    trigger_pipeline: Optional[bool] = True,
 ):
     """Publish a live or draft version of a website"""
     website = Website.objects.get(name=name)
@@ -104,12 +120,15 @@ def publish_website(  # pylint: disable=too-many-arguments
     else:
         backend.merge_backend_live()
 
-    pipeline = get_sync_pipeline(website, api=pipeline_api)
-    pipeline.unpause_pipeline(version)
-    build_id = pipeline.trigger_pipeline_build(version)
-    update_kwargs = {
-        f"latest_build_id_{version}": build_id,
-    }
+    if trigger_pipeline:
+        pipeline = get_sync_pipeline(website, api=pipeline_api)
+        pipeline.unpause_pipeline(version)
+        build_id = pipeline.trigger_pipeline_build(version)
+        update_kwargs = {
+            f"latest_build_id_{version}": build_id,
+        }
+    else:
+        update_kwargs = {}
     if (
         getattr(website, f"{version}_publish_status") != PUBLISH_STATUS_NOT_STARTED
         or getattr(website, f"{version}_publish_status_updated_on") is None

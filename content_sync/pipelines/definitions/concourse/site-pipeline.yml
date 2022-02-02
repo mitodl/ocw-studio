@@ -55,7 +55,7 @@ jobs:
                 "status": "started"
               }
       - get: webpack-json
-        trigger: true
+        trigger: false
         on_failure:
           try:
             put: ocw-studio-webhook
@@ -80,7 +80,7 @@ jobs:
                     "status": "errored"
                   }
       - get: ocw-hugo-projects
-        trigger: true
+        trigger: false
         timeout: 5m
         attempts: 3
         on_failure:

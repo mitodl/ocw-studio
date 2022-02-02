@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from urllib.parse import urljoin
 
+from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import transaction
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
@@ -97,6 +98,40 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "owner",
         ]
         extra_kwargs = {"owner": {"write_only": True}}
+
+
+class WebsitePublishSerializer(serializers.ModelSerializer):
+    """ Serializer for websites """
+
+    starter_slug = serializers.SerializerMethodField(read_only=True)
+    base_url = serializers.SerializerMethodField(read_only=True)
+    site_url = serializers.SerializerMethodField(read_only=True)
+
+    def get_starter_slug(self, instance):
+        """Get the website starter slug"""
+        return instance.starter.slug
+
+    def get_site_url(self, instance):
+        """Get the website relative url"""
+        site_config = SiteConfig(instance.starter.config)
+        return f"{site_config.root_url_path}/{instance.name}".strip("/")
+
+    def get_base_url(self, instance):
+        """Get the base url (should be same as site_url except for the root site)"""
+        if instance.name == settings.ROOT_WEBSITE_NAME:
+            return ""
+        return self.get_site_url(instance)
+
+    class Meta:
+        model = Website
+        fields = [
+            "name",
+            "short_id",
+            "starter_slug",
+            "site_url",
+            "base_url",
+        ]
+        read_only_fields = fields
 
 
 class WebsiteDetailSerializer(
