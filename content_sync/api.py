@@ -56,7 +56,7 @@ def get_mass_publish_pipeline(version: str, api: Optional[object] = None) -> obj
         return import_string(
             f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.MassPublishPipeline"
         )(version, api=api)
-    except AttributeError:
+    except ModuleNotFoundError:
         return None
 
 

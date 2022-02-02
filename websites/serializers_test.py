@@ -24,11 +24,13 @@ from websites.serializers import (
     WebsiteContentDetailSerializer,
     WebsiteContentSerializer,
     WebsiteDetailSerializer,
+    WebsitePublishSerializer,
     WebsiteSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
     WebsiteStatusSerializer,
 )
+from websites.site_config_api import SiteConfig
 
 
 pytestmark = pytest.mark.django_db
@@ -483,4 +485,16 @@ def test_website_content_create_serializer(mocker, add_context_data):
     )
     assert content.filename == (
         "myfile" if not add_context_data else override_context_data["filename"]
+    )
+
+
+@pytest.mark.parametrize("is_root_site", [True, False])
+def test_website_publish_serializer_base_url(settings, is_root_site):
+    """ The WebsitePublishSerializer should return the correct base_url value """
+    site = WebsiteFactory.create()
+    site_config = SiteConfig(site.starter.config)
+    settings.ROOT_WEBSITE_NAME = site.name if is_root_site else "some_other_root_name"
+    serializer = WebsitePublishSerializer(site)
+    assert serializer.data["base_url"] == (
+        "" if is_root_site else f"{site_config.root_url_path}/{site.name}".strip("/")
     )

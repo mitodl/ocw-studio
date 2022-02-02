@@ -270,3 +270,9 @@ def test_publish_website_error(mock_api_funcs, settings):
     with pytest.raises(Exception):
         api.publish_website(website.name, VERSION_LIVE)
     mock_api_funcs.mock_get_backend.assert_not_called()
+
+
+def test_get_mass_publish_pipeline(settings):
+    """get_mass_publish_pipeline should return None if no backend is specified"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
+    assert api.get_mass_publish_pipeline(VERSION_DRAFT) is None

@@ -128,8 +128,6 @@ class WebsiteViewSet(
 
     def get_serializer_class(self):
         if self.action == "list":
-            if self.request.query_params.get("pipeline", None):
-                return WebsitePublishSerializer
             return WebsiteSerializer
         elif self.action == "create":
             return WebsiteWriteSerializer
