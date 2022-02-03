@@ -246,6 +246,7 @@ will need to follow some additional steps before it is fully functional.
     CONCOURSE_USERNAME=<Concourse-CI username>
     CONCOURSE_PASSWORD=<Concourse-CI password>
     CONCOURSE_IS_PRIVATE_REPO=<True if repo is private, False otherwise>
+    API_BEARER_TOKEN=<some hard to guess string>
     ```
 - Draft and live pipelines should then be created for every new `Website` based on a `WebsiteStarter` with `source=github` and a valid github `path`.
 - There are also several management commands for Concourse-CI pipelines:
