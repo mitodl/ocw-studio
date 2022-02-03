@@ -213,6 +213,7 @@ def test_create_website_publishing_pipeline_disabled(settings, mocker):
 @pytest.mark.parametrize("has_api", [True, False])
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
 @pytest.mark.parametrize("status", [None, PUBLISH_STATUS_NOT_STARTED])
+@pytest.mark.parametrize("trigger", [True, False])
 def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-arguments
     settings,
     mocker,
@@ -222,6 +223,7 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     has_api,
     version,
     status,
+    trigger,
 ):
     """Verify that the appropriate backend calls are made by the publish_website function"""
     settings.PREPUBLISH_ACTIONS = prepublish_actions
@@ -236,19 +238,31 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     pipeline = mock_api_funcs.mock_get_pipeline.return_value
     pipeline.trigger_pipeline_build.return_value = build_id
     api.publish_website(
-        website.name, version, pipeline_api=pipeline_api, prepublish=prepublish
+        website.name,
+        version,
+        pipeline_api=pipeline_api,
+        prepublish=prepublish,
+        trigger_pipeline=trigger,
     )
     mock_api_funcs.mock_get_backend.assert_called_once_with(website)
-    mock_api_funcs.mock_get_pipeline.assert_called_once_with(website, api=pipeline_api)
     backend.sync_all_content_to_backend.assert_called_once()
     if version == VERSION_DRAFT:
         backend.merge_backend_draft.assert_called_once()
     else:
         backend.merge_backend_live.assert_called_once()
-    pipeline.trigger_pipeline_build.assert_called_once_with(version)
-    pipeline.unpause_pipeline.assert_called_once_with(version)
     website.refresh_from_db()
-    assert getattr(website, f"latest_build_id_{version}") == build_id
+    if trigger:
+        mock_api_funcs.mock_get_pipeline.assert_called_once_with(
+            website, api=pipeline_api
+        )
+        pipeline.trigger_pipeline_build.assert_called_once_with(version)
+        pipeline.unpause_pipeline.assert_called_once_with(version)
+        assert getattr(website, f"latest_build_id_{version}") == build_id
+    else:
+        mock_api_funcs.mock_get_pipeline.assert_not_called()
+        pipeline.trigger_pipeline_build.assert_not_called()
+        pipeline.unpause_pipeline.assert_not_called()
+        assert getattr(website, f"latest_build_id_{version}") is None
     assert getattr(website, f"{version}_publish_status") == PUBLISH_STATUS_NOT_STARTED
     assert getattr(website, f"has_unpublished_{version}") is (
         status == PUBLISH_STATUS_NOT_STARTED
