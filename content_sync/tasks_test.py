@@ -411,6 +411,9 @@ def test_publish_website_batch(mocker, version, prepublish, trigger):
     mock_publish_website = mocker.patch("content_sync.api.publish_website")
     mock_throttle = mocker.patch("content_sync.tasks.api.throttle_git_backend_calls")
     website_names = sorted([website.name for website in WebsiteFactory.create_batch(3)])
+    expected_api = (
+        mock_import_string.return_value.get_api.return_value if trigger else None
+    )
     tasks.publish_website_batch(
         website_names, version, prepublish=prepublish, trigger_pipeline=trigger
     )
@@ -418,11 +421,14 @@ def test_publish_website_batch(mocker, version, prepublish, trigger):
         mock_publish_website.assert_any_call(
             name,
             version,
-            pipeline_api=mock_import_string.return_value.get_api.return_value,
+            pipeline_api=expected_api,
             prepublish=prepublish,
             trigger_pipeline=trigger,
         )
     assert mock_throttle.call_count == len(website_names)
+    assert mock_import_string.call_count == (
+        len(website_names) + 1 if trigger else len(website_names)
+    )
 
 
 @pytest.mark.parametrize(

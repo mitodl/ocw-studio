@@ -232,9 +232,12 @@ def publish_website_batch(
 ) -> bool:
     """ Call api.publish_website for a batch of websites"""
     result = True
-    pipeline_api = import_string(
-        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"
-    ).get_api()
+    if trigger_pipeline and settings.CONTENT_SYNC_PIPELINE_BACKEND:
+        pipeline_api = import_string(
+            f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"
+        ).get_api()
+    else:
+        pipeline_api = None
     for name in website_names:
         try:
             backend = import_string(settings.CONTENT_SYNC_BACKEND)(
