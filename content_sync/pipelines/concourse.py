@@ -112,12 +112,14 @@ class ConcoursePipeline(BasePipeline):
     MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS
     PIPELINE_NAME = None
 
-    def __init__(self, *args, **kwargs):  # pylint:disable=unused-argument
+    def __init__(
+        self, *args, api: Optional[object] = None, **kwargs
+    ):  # pylint:disable=unused-argument
         """Initialize the pipeline API instance"""
         if self.MANDATORY_SETTINGS:
             check_mandatory_settings(self.MANDATORY_SETTINGS)
         self.instance_vars = ""
-        self.api = kwargs.get("api", None) or self.get_api()
+        self.api = api or self.get_api()
 
     @staticmethod
     def get_api():
