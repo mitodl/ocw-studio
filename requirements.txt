@@ -163,7 +163,7 @@ idna==2.10
     # via requests
 iniconfig==1.1.1
     # via pytest
-ipython==7.19.0
+ipython==7.31.1
     # via -r requirements.in
 ipython-genutils==0.2.0
     # via traitlets
@@ -184,6 +184,8 @@ lxml==4.6.5
     #   premailer
     #   python3-saml
     #   xmlsec
+matplotlib-inline==0.1.3
+    # via ipython
 mitol-django-authentication==1.2.0
     # via -r requirements.in
 mitol-django-common==1.2.0
@@ -352,7 +354,9 @@ toml==0.10.2
 toolz==0.11.1
     # via mitol-django-mail
 traitlets==4.3.3
-    # via ipython
+    # via
+    #   ipython
+    #   matplotlib-inline
 uritemplate==3.0.1
     # via google-api-python-client
 urllib3==1.25.10
