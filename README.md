@@ -230,12 +230,12 @@ If you wish to use a github app,
 
 
 # Enabling Concourse-CI integration
-You can enable Concourse-CI integration to create and trigger publishing pipelines.
+Concourse-CI integration is enabled by default to create and trigger publishing pipelines, but you
+will need to follow some additional steps before it is fully functional.
 - Set up github integration as described above
 - Set up a Concourse-CI instance with a team, username, and password
 - Add the following to your .env file:
     ``` 
-    CONTENT_SYNC_PIPELINE=content_sync.pipelines.concourse.ConcourseGithubPipeline
     AWS_PREVIEW_BUCKET_NAME=<S3 bucket for draft content>
     AWS_PUBLISH_BUCKET_NAME=<S3 bucket for live content>
     GIT_DOMAIN=<root domain for github repos, ie github.com>
@@ -251,7 +251,8 @@ You can enable Concourse-CI integration to create and trigger publishing pipelin
 - There are also several management commands for Concourse-CI pipelines:
   - `backpopulate_pipelines`: to create/update pipelines for all or some existing `Websites` (filters available)
   - `trigger_pipelines <version>`: to manually trigger the draft or live pipeline for all or some existing `Websites` (filters available)
-  
+- If you wish to disable concourse integration, set `CONTENT_SYNC_PIPELINE_BACKEND=` in your .env file.  
+
 ### Running a Local Concourse Docker Container
   You can run a local concourse instance in a docker container for some light testing.  You will need docker-compose version 1.28.0 or above:
 
