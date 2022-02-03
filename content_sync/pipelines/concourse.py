@@ -166,14 +166,14 @@ class ConcoursePipeline(BasePipeline):
         return self.api.abort_build(build_id)
 
     def unpause(self):
-        """ Use self.pipeline_name as input to the parent function"""
+        """ Use self.PIPELINE_NAME as input to the unpause_pipeline function"""
         if self.PIPELINE_NAME:
             self.unpause_pipeline(self.PIPELINE_NAME)
         else:
             raise ValueError("No default name specified for this pipeline")
 
     def trigger(self) -> int:
-        """ Use self.pipeline_name as input to the parent function"""
+        """ Use self.PIPELINE_NAME as input to the trigger_pipeline_build function"""
         if self.PIPELINE_NAME:
             return self.trigger_pipeline_build(self.PIPELINE_NAME)
         else:
