@@ -35,28 +35,28 @@ def get_sync_backend(website: Website) -> BaseSyncBackend:
     return import_string(settings.CONTENT_SYNC_BACKEND)(website)
 
 
+@is_publish_pipeline_enabled
 def get_sync_pipeline(website: Website, api: Optional[object] = None) -> BasePipeline:
     """ Get the configured sync publishing pipeline """
-    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        return import_string(
-            f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"
-        )(website, api=api)
+    return import_string(
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"
+    )(website, api=api)
 
 
+@is_publish_pipeline_enabled
 def get_theme_assets_pipeline(api: Optional[object] = None) -> BasePipeline:
     """ Get the configured theme asset pipeline """
-    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        return import_string(
-            f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.ThemeAssetsPipeline"
-        )(api=api)
+    return import_string(
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.ThemeAssetsPipeline"
+    )(api=api)
 
 
+@is_publish_pipeline_enabled
 def get_mass_publish_pipeline(version: str, api: Optional[object] = None) -> object:
     """Get a mass publishing pipeline if the backend has one"""
-    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        return import_string(
-            f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.MassPublishPipeline"
-        )(version, api=api)
+    return import_string(
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.MassPublishPipeline"
+    )(version, api=api)
 
 
 @is_sync_enabled
