@@ -119,7 +119,7 @@ def publish_website(  # pylint: disable=too-many-arguments
     else:
         backend.merge_backend_live()
 
-    if trigger_pipeline:
+    if trigger_pipeline and settings.CONTENT_SYNC_PIPELINE_BACKEND:
         pipeline = get_sync_pipeline(website, api=pipeline_api)
         pipeline.unpause_pipeline(version)
         build_id = pipeline.trigger_pipeline_build(version)
