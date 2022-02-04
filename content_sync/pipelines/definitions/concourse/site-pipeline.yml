@@ -51,7 +51,7 @@ jobs:
           params:
             text: |
               {
-                "version": "((version))",
+                "version": "((pipeline_name))",
                 "status": "started"
               }
       - get: webpack-json
@@ -63,7 +63,7 @@ jobs:
             params:
                 text: |
                   {
-                    "version": "((version))",
+                    "version": "((pipeline_name))",
                     "status": "errored"
                   }
       - get: ocw-hugo-themes
@@ -76,7 +76,7 @@ jobs:
             params:
                 text: |
                   {
-                    "version": "((version))",
+                    "version": "((pipeline_name))",
                     "status": "errored"
                   }
       - get: ocw-hugo-projects
@@ -90,7 +90,7 @@ jobs:
             params:
                 text: |
                   {
-                    "version": "((version))",
+                    "version": "((pipeline_name))",
                     "status": "errored"
                   }
       - get: course-markdown
@@ -104,7 +104,7 @@ jobs:
             params:
                 text: |
                   {
-                    "version": "((version))",
+                    "version": "((pipeline_name))",
                     "status": "errored"
                   }
       - task: build-course-task
@@ -143,7 +143,7 @@ jobs:
             params:
                 text: |
                   {
-                    "version": "((version))",
+                    "version": "((pipeline_name))",
                     "status": "errored"
                   }
       - task: copy-s3-buckets
@@ -171,7 +171,7 @@ jobs:
             params:
                 text: |
                   {
-                    "version": "((version))",
+                    "version": "((pipeline_name))",
                     "status": "errored"
                   }
       - task: clear-cdn-cache
@@ -199,7 +199,7 @@ jobs:
             params:
                 text: |
                   {
-                    "version": "((version))",
+                    "version": "((pipeline_name))",
                     "status": "succeeded"
                   }
         on_failure:
@@ -210,6 +210,6 @@ jobs:
             params:
                 text: |
                   {
-                    "version": "((version))",
+                    "version": "((pipeline_name))",
                     "status": "errored"
                   }
