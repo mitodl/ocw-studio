@@ -25,3 +25,19 @@ export const wait = async (ms: number): Promise<undefined> => {
     }, ms)
   })
 }
+
+export const mockMatchMedia = () => {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value:    jest.fn().mockImplementation(query => ({
+      matches:             false,
+      media:               query,
+      onchange:            null,
+      addEventListener:    jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent:       jest.fn()
+    }))
+  })
+
+  return window.matchMedia as jest.Mock<any, [string]>
+}

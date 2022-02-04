@@ -17,6 +17,7 @@ import {
   newInitialValues,
   renameNestedFields
 } from "../../lib/site_content"
+import { scrollToElement } from "../../util/dom"
 
 import {
   ConfigField,
@@ -93,8 +94,17 @@ export default function SiteContentForm({
       initialValues={initialValues}
       enableReinitialize={true}
     >
-      {({ isSubmitting, status, values, handleChange }) => (
-        <Form>
+      {({ isSubmitting, status, values, handleChange, handleSubmit }) => (
+        <Form
+          onSubmit={async event => {
+            handleSubmit(event)
+            const { target } = event // get target before the await; https://reactjs.org/docs/legacy-event-pooling.html
+            const errors = await validate(values)
+            if (Object.keys(errors).length > 0) {
+              scrollToElement(target as HTMLElement, ".form-error")
+            }
+          }}
+        >
           <div>
             {renamedFields
               .filter(field => fieldIsVisible(field, values))
