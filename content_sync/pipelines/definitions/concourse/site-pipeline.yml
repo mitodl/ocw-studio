@@ -5,9 +5,14 @@ resource_types:
     source:
       repository: jgriff/http-resource
       tag: latest
+  - name: s3-resource-iam
+    type: docker-image
+    source:
+      repository: governmentpaas/s3-resource
+      tag: latest
 resources:
   - name: webpack-json
-    type: s3
+    type: s3-resource-iam
     source:
       bucket: ol-eng-artifacts
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
