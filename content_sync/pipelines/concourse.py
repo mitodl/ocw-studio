@@ -19,7 +19,12 @@ from requests import HTTPError
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
-from content_sync.pipelines.base import BasePipeline
+from content_sync.pipelines.base import (
+    BaseMassPublishPipeline,
+    BasePipeline,
+    BaseSitePipeline,
+    BaseThemeAssetsPipeline,
+)
 from content_sync.utils import check_mandatory_settings
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.models import Website
@@ -104,13 +109,16 @@ class ConcourseApi(BaseConcourseApi):
 class ConcoursePipeline(BasePipeline):
     """ Base class for a Concourse pipeline """
 
-    MANDATORY_SETTINGS = []
+    MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS
+    PIPELINE_NAME = None
 
-    def __init__(self, api: Optional[object] = None, website: Optional[Website] = None):
+    def __init__(
+        self, *args, api: Optional[object] = None, **kwargs
+    ):  # pylint:disable=unused-argument
+        """Initialize the pipeline API instance"""
         if self.MANDATORY_SETTINGS:
             check_mandatory_settings(self.MANDATORY_SETTINGS)
-        if website:
-            self.website = website
+        self.instance_vars = ""
         self.api = api or self.get_api()
 
     @staticmethod
@@ -125,19 +133,19 @@ class ConcoursePipeline(BasePipeline):
 
     def _make_builds_url(self, pipeline_name: str, job_name: str):
         """Make URL for fetching builds information"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}/builds?vars={self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}/builds{self.instance_vars}"
 
     def _make_pipeline_config_url(self, pipeline_name: str):
         """Make URL for fetching pipeline info"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/config?vars={self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/config{self.instance_vars}"
 
     def _make_job_url(self, pipeline_name: str, job_name: str):
         """Make URL for fetching job info"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}?vars={self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}{self.instance_vars}"
 
     def _make_pipeline_unpause_url(self, pipeline_name: str):
         """Make URL for unpausing a pipeline"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/unpause?vars={self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/unpause{self.instance_vars}"
 
     def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """Trigger a pipeline build"""
@@ -157,10 +165,24 @@ class ConcoursePipeline(BasePipeline):
         """Abort a build"""
         return self.api.abort_build(build_id)
 
+    def unpause(self):
+        """ Use self.PIPELINE_NAME as input to the unpause_pipeline function"""
+        if self.PIPELINE_NAME:
+            self.unpause_pipeline(self.PIPELINE_NAME)
+        else:
+            raise ValueError("No default name specified for this pipeline")
 
-class ConcourseGithubPipeline(ConcoursePipeline):
+    def trigger(self) -> int:
+        """ Use self.PIPELINE_NAME as input to the trigger_pipeline_build function"""
+        if self.PIPELINE_NAME:
+            return self.trigger_pipeline_build(self.PIPELINE_NAME)
+        else:
+            raise ValueError("No default name specified for this pipeline")
+
+
+class SitePipeline(BaseSitePipeline, ConcoursePipeline):
     """
-    Concourse-CI publishing pipeline, dependent on a Github backend
+    Concourse-CI publishing pipeline, dependent on a Github backend, for individual sites
     """
 
     MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
@@ -173,15 +195,14 @@ class ConcourseGithubPipeline(ConcoursePipeline):
         "GIT_ORGANIZATION",
         "GITHUB_WEBHOOK_BRANCH",
     ]
-    VERSION_LIVE = VERSION_LIVE
-    VERSION_DRAFT = VERSION_DRAFT
 
     def __init__(self, website: Website, api: Optional[ConcourseApi] = None):
         """Initialize the pipeline API instance"""
-        super().__init__(website=website, api=api)
-        self.instance_vars = quote(json.dumps({"site": self.website.name}))
+        super().__init__(api=api)
+        self.website = website
+        self.instance_vars = f'?vars={quote(json.dumps({"site": self.website.name}))}'
 
-    def upsert_website_pipeline(self):  # pylint:disable=too-many-locals
+    def upsert_pipeline(self):  # pylint:disable=too-many-locals
         """
         Create or update a concourse pipeline for the given Website
         """
@@ -216,11 +237,11 @@ class ConcourseGithubPipeline(ConcoursePipeline):
 
         for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
             if branch == settings.GIT_BRANCH_PREVIEW:
-                pipeline_name = self.VERSION_DRAFT
+                pipeline_name = VERSION_DRAFT
                 destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
                 static_api_url = settings.OCW_STUDIO_DRAFT_URL
             else:
-                pipeline_name = self.VERSION_LIVE
+                pipeline_name = VERSION_LIVE
                 destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
                 static_api_url = settings.OCW_STUDIO_LIVE_URL
             if settings.CONCOURSE_IS_PRIVATE_REPO:
@@ -281,12 +302,13 @@ class ConcourseGithubPipeline(ConcoursePipeline):
             self.api.put_with_headers(url_path, data=config, headers=version_headers)
 
 
-class ThemeAssetsPipeline(ConcoursePipeline):
+class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
     """
     Concourse-CI pipeline for publishing theme assets
     """
 
-    PIPELINE_NAME = "ocw-theme-assets"
+    PIPELINE_NAME = BaseThemeAssetsPipeline.PIPELINE_NAME
+
     MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
         "GITHUB_WEBHOOK_BRANCH",
         "SEARCH_API_URL",
@@ -295,11 +317,11 @@ class ThemeAssetsPipeline(ConcoursePipeline):
     def __init__(self, api: Optional[ConcourseApi] = None):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
-        self.instance_vars = quote(
-            json.dumps({"branch": settings.GITHUB_WEBHOOK_BRANCH})
+        self.instance_vars = (
+            f'?vars={quote(json.dumps({"branch": settings.GITHUB_WEBHOOK_BRANCH}))}'
         )
 
-    def upsert_theme_assets_pipeline(self):
+    def upsert_pipeline(self):
         """Upsert the theme assets pipeline"""
         with open(
             os.path.join(
@@ -328,3 +350,88 @@ class ThemeAssetsPipeline(ConcoursePipeline):
             except HTTPError:
                 version_headers = None
             self.api.put_with_headers(url_path, data=config, headers=version_headers)
+
+
+class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
+    """Specialized concourse pipeline for mass publishing multiple sites"""
+
+    PIPELINE_NAME = BaseMassPublishPipeline.PIPELINE_NAME
+
+    def __init__(self, version, api: Optional[ConcourseApi] = None):
+        """Initialize the pipeline instance"""
+        self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
+            "AWS_PREVIEW_BUCKET_NAME",
+            "AWS_PUBLISH_BUCKET_NAME",
+            "AWS_STORAGE_BUCKET_NAME",
+            "GIT_BRANCH_PREVIEW",
+            "GIT_BRANCH_RELEASE",
+            "GIT_DOMAIN",
+            "GIT_ORGANIZATION",
+            "GITHUB_WEBHOOK_BRANCH",
+        ]
+        super().__init__(api=api)
+        self.pipeline_name = "mass_publish"
+        self.version = version
+        self.instance_vars = f'?vars={quote(json.dumps({"version": version}))}'
+
+    def upsert_pipeline(self):  # pylint:disable=too-many-locals
+        """
+        Create or update the concourse pipeline
+        """
+        starter = Website.objects.get(name=settings.ROOT_WEBSITE_NAME).starter
+        starter_path_url = urlparse(starter.path)
+        hugo_projects_url = urljoin(
+            f"{starter_path_url.scheme}://{starter_path_url.netloc}",
+            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
+        )
+        if settings.CONCOURSE_IS_PRIVATE_REPO:
+            markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}"
+            private_key_var = "((git-private-key))"
+        else:
+            markdown_uri = f"git://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}"
+            private_key_var = ""
+
+        if self.version == VERSION_DRAFT:
+            branch = settings.GIT_BRANCH_PREVIEW
+            destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
+            static_api_url = settings.OCW_STUDIO_DRAFT_URL
+        else:
+            branch = settings.GIT_BRANCH_RELEASE
+            destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
+            static_api_url = settings.OCW_STUDIO_LIVE_URL
+
+        with open(
+            os.path.join(
+                os.path.dirname(__file__),
+                "definitions/concourse/mass-publish.yml",
+            )
+        ) as pipeline_config_file:
+            config_str = (
+                pipeline_config_file.read()
+                .replace("((markdown-uri))", markdown_uri)
+                .replace("((git-private-key-var))", private_key_var)
+                .replace("((ocw-bucket))", destination_bucket)
+                .replace("((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH)
+                .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
+                .replace("((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH)
+                .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
+                .replace("((ocw-studio-url))", settings.SITE_BASE_URL)
+                .replace("((static-api-base-url))", static_api_url)
+                .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME)
+                .replace("((ocw-site-repo-branch))", branch)
+                .replace("((version))", self.version)
+                .replace("((api-token))", settings.API_BEARER_TOKEN or "")
+            )
+        log.debug(config_str)
+        config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
+        # Try to get the version of the pipeline if it already exists, because it will be
+        # necessary to update an existing pipeline.
+        url_path = self._make_pipeline_config_url(self.PIPELINE_NAME)
+        try:
+            _, headers = self.api.get_with_headers(url_path)
+            version_headers = {
+                "X-Concourse-Config-Version": headers["X-Concourse-Config-Version"]
+            }
+        except HTTPError:
+            version_headers = None
+        self.api.put_with_headers(url_path, data=config, headers=version_headers)

@@ -51,7 +51,7 @@ def is_publish_pipeline_enabled(func: Callable) -> Callable:
     """ Returns True if the publishing pipeline is enabled """
 
     def wrapper(*args, **kwargs):
-        if settings.CONTENT_SYNC_PIPELINE:
+        if settings.CONTENT_SYNC_PIPELINE_BACKEND:
             return func(*args, **kwargs)
         return None
 

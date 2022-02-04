@@ -1022,3 +1022,54 @@ def test_websites_endpoint_pipeline_status_denied(
         json={"version": VERSION_LIVE, "status": constants.PUBLISH_STATUS_STARTED},
     )
     assert resp.status_code == 403
+
+
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_publish_endpoint_list(settings, drf_client, version):
+    """The WebsitePublishView endpoint should return the appropriate info for correctly filtered sites"""
+    ocw_sites = WebsiteFactory.create_batch(
+        2, source=constants.WEBSITE_SOURCE_OCW_IMPORT
+    )
+    draft_published = WebsiteFactory.create_batch(
+        2,
+        source=constants.WEBSITE_SOURCE_STUDIO,
+        draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
+        live_publish_status=None,
+    )
+    live_published = WebsiteFactory.create_batch(
+        2,
+        source=constants.WEBSITE_SOURCE_STUDIO,
+        draft_publish_status=None,
+        live_publish_status=constants.PUBLISH_STATUS_SUCCEEDED,
+    )
+    expected_sites = ocw_sites + (
+        draft_published if version == VERSION_DRAFT else live_published
+    )
+    settings.API_BEARER_TOKEN = "abc123"
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.get(f'{reverse("publish_api-list")}?version={version}')
+    assert resp.status_code == 200
+    site_dict = {site["name"]: site for site in resp.data["sites"]}
+    assert len(site_dict.keys()) == 4
+    for expected_site in expected_sites:
+        publish_site = site_dict.get(expected_site.name, None)
+        assert publish_site is not None
+        assert publish_site["short_id"] == expected_site.short_id
+
+
+def test_publish_endpoint_list_bad_version(settings, drf_client):
+    """The WebsitePublishView endpoint should return a 400 if the version parameter is invalid"""
+    settings.API_BEARER_TOKEN = "abc123"
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.get(f'{reverse("publish_api-list")}?version=null')
+    assert resp.status_code == 400
+
+
+@pytest.mark.parametrize("bad_token", ["wrongtoken", None])
+def test_publish_endpoint_list_bad_token(settings, drf_client, bad_token):
+    """The WebsitePublishView endpoint should return a 403 if the token is invalid or missing"""
+    settings.API_BEARER_TOKEN = "abc123"
+    if bad_token:
+        drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
+    resp = drf_client.get(f'{reverse("publish_api-list")}?version={VERSION_LIVE}')
+    assert resp.status_code == 403

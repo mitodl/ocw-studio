@@ -12,6 +12,7 @@ from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
 from mitol.common.utils.datetime import now_in_utc
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
@@ -53,6 +54,7 @@ from websites.serializers import (
     WebsiteContentDetailSerializer,
     WebsiteContentSerializer,
     WebsiteDetailSerializer,
+    WebsitePublishSerializer,
     WebsiteSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
@@ -204,6 +206,31 @@ class WebsiteViewSet(
         publish_status = data.get("status")
         update_website_status(website, version, publish_status, now_in_utc())
         return Response(status=200)
+
+
+class WebsitePublishViewSet(viewsets.ViewSet):
+    """Return a list of sites that should be published, with the info required by the pipeline"""
+
+    serializer_class = WebsitePublishSerializer
+    permission_classes = (BearerTokenPermission,)
+
+    def list(self, request):
+        """Return a list of websites that should be published, per version"""
+        version = self.request.query_params.get("version")
+        if version not in (VERSION_LIVE, VERSION_DRAFT):
+            raise ValidationError("Invalid version")
+
+        # Get all sites, minus any never-published sites created in studio (for specified version)
+        sites = (
+            Website.objects.exclude(
+                Q(**{f"{version}_publish_status": None})
+                & Q(**{"source": constants.WEBSITE_SOURCE_STUDIO})
+            )
+            .prefetch_related("starter")
+            .order_by("name")
+        )
+        serializer = WebsitePublishSerializer(instance=sites, many=True)
+        return Response({"sites": serializer.data})
 
 
 class WebsiteStarterViewSet(

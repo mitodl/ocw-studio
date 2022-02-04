@@ -20,7 +20,7 @@ pytestmark = pytest.mark.django_db
 def mock_api_funcs(settings, mocker):
     """Mock functions used in publish_websites"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
-    settings.CONTENT_SYNC_PIPELINE = "content_sync.pipelines.TestPipeline"
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     return SimpleNamespace(
         mock_get_backend=mocker.patch("content_sync.api.get_sync_backend"),
         mock_get_pipeline=mocker.patch("content_sync.api.get_sync_pipeline"),
@@ -179,12 +179,8 @@ def test_sync_github_website_starters(mocker):
 @pytest.mark.parametrize("pipeline_api", [None, {}])
 def test_get_sync_pipeline(settings, mocker, pipeline_api):
     """ Verify that get_sync_pipeline() imports the pipeline class based on settings.py """
-    settings.CONTENT_SYNC_PIPELINE = (
-        "content_sync.pipelines.concourse.ConcourseGithubPipeline"
-    )
-    import_string_mock = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseGithubPipeline"
-    )
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    import_string_mock = mocker.patch("content_sync.pipelines.concourse.SitePipeline")
     website = WebsiteFactory.create()
     api.get_sync_pipeline(website, api=pipeline_api)
     import_string_mock.assert_any_call(website, api=pipeline_api)
@@ -192,9 +188,7 @@ def test_get_sync_pipeline(settings, mocker, pipeline_api):
 
 def test_create_website_publishing_pipeline(settings, mocker):
     """upsert_website_publishing_pipeline task should be called if pipelines are enabled"""
-    settings.CONTENT_SYNC_PIPELINE = (
-        "content_sync.pipelines.concourse.ConcourseGithubPipeline"
-    )
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     mock_task = mocker.patch(
         "content_sync.api.tasks.upsert_website_publishing_pipeline.delay"
     )
@@ -205,7 +199,7 @@ def test_create_website_publishing_pipeline(settings, mocker):
 
 def test_create_website_publishing_pipeline_disabled(settings, mocker):
     """upsert_website_publishing_pipeline task should not be called if pipelines are disabled"""
-    settings.CONTENT_SYNC_PIPELINE = None
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
     mock_task = mocker.patch(
         "content_sync.api.tasks.upsert_website_publishing_pipeline.delay"
     )
@@ -219,6 +213,7 @@ def test_create_website_publishing_pipeline_disabled(settings, mocker):
 @pytest.mark.parametrize("has_api", [True, False])
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
 @pytest.mark.parametrize("status", [None, PUBLISH_STATUS_NOT_STARTED])
+@pytest.mark.parametrize("trigger", [True, False])
 def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-arguments
     settings,
     mocker,
@@ -228,6 +223,7 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     has_api,
     version,
     status,
+    trigger,
 ):
     """Verify that the appropriate backend calls are made by the publish_website function"""
     settings.PREPUBLISH_ACTIONS = prepublish_actions
@@ -242,19 +238,31 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     pipeline = mock_api_funcs.mock_get_pipeline.return_value
     pipeline.trigger_pipeline_build.return_value = build_id
     api.publish_website(
-        website.name, version, pipeline_api=pipeline_api, prepublish=prepublish
+        website.name,
+        version,
+        pipeline_api=pipeline_api,
+        prepublish=prepublish,
+        trigger_pipeline=trigger,
     )
     mock_api_funcs.mock_get_backend.assert_called_once_with(website)
-    mock_api_funcs.mock_get_pipeline.assert_called_once_with(website, api=pipeline_api)
     backend.sync_all_content_to_backend.assert_called_once()
     if version == VERSION_DRAFT:
         backend.merge_backend_draft.assert_called_once()
     else:
         backend.merge_backend_live.assert_called_once()
-    pipeline.trigger_pipeline_build.assert_called_once_with(version)
-    pipeline.unpause_pipeline.assert_called_once_with(version)
     website.refresh_from_db()
-    assert getattr(website, f"latest_build_id_{version}") == build_id
+    if trigger:
+        mock_api_funcs.mock_get_pipeline.assert_called_once_with(
+            website, api=pipeline_api
+        )
+        pipeline.trigger_pipeline_build.assert_called_once_with(version)
+        pipeline.unpause_pipeline.assert_called_once_with(version)
+        assert getattr(website, f"latest_build_id_{version}") == build_id
+    else:
+        mock_api_funcs.mock_get_pipeline.assert_not_called()
+        pipeline.trigger_pipeline_build.assert_not_called()
+        pipeline.unpause_pipeline.assert_not_called()
+        assert getattr(website, f"latest_build_id_{version}") is None
     assert getattr(website, f"{version}_publish_status") == PUBLISH_STATUS_NOT_STARTED
     assert getattr(website, f"has_unpublished_{version}") is (
         status == PUBLISH_STATUS_NOT_STARTED
@@ -276,3 +284,21 @@ def test_publish_website_error(mock_api_funcs, settings):
     with pytest.raises(Exception):
         api.publish_website(website.name, VERSION_LIVE)
     mock_api_funcs.mock_get_backend.assert_not_called()
+
+
+def test_get_mass_publish_pipeline_no_backend(settings):
+    """get_mass_publish_pipeline should return None if no backend is specified"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
+    assert api.get_mass_publish_pipeline(VERSION_DRAFT) is None
+
+
+def test_get_theme_assets_pipeline_no_backend(settings):
+    """get_theme_assets_pipeline should return None if no backend is specified"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
+    assert api.get_theme_assets_pipeline() is None
+
+
+def test_get_sync_pipeline_no_backend(settings):
+    """get_sync_pipeline should return None if no backend is specified"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
+    assert api.get_sync_pipeline(WebsiteFactory.create()) is None

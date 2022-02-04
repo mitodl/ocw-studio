@@ -22,6 +22,13 @@ class BasePipeline(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def upsert_pipeline(self):  # pragma: no cover
+        """
+        Called to create/update the pipeline.
+        """
+        ...
+
+    @abc.abstractmethod
     def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """
         Called to trigger the website pipeline.
@@ -34,3 +41,19 @@ class BasePipeline(abc.ABC):
         Called to unpause a website pipeline.
         """
         ...
+
+
+class BaseSitePipeline(BasePipeline):
+    """ Base class for site-specific publishing """
+
+
+class BaseMassPublishPipeline(BasePipeline):
+    """ Base class for mass publishing """
+
+    PIPELINE_NAME = "mass-publish"
+
+
+class BaseThemeAssetsPipeline(BasePipeline):
+    """ Base class for theme asset publishing """
+
+    PIPELINE_NAME = "ocw-theme-assets"

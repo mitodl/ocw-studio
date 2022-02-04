@@ -16,11 +16,8 @@ from content_sync.apis import github
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
-from content_sync.pipelines.concourse import (
-    ConcourseGithubPipeline,
-    ThemeAssetsPipeline,
-)
 from main.celery import app
+from main.tasks import chord_finisher
 from websites.api import reset_publishing_fields, update_website_status
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
@@ -111,7 +108,7 @@ def upsert_website_publishing_pipeline(website_name: str):
         )
     else:
         pipeline = api.get_sync_pipeline(website)
-        pipeline.upsert_website_pipeline()
+        pipeline.upsert_pipeline()
 
 
 @app.task(acks_late=True)
@@ -131,11 +128,11 @@ def upsert_website_pipeline_batch(
         if not api_instance:
             # Keep using the same api instance to minimize multiple authentication calls
             api_instance = pipeline.api
-        pipeline.upsert_website_pipeline()
+        pipeline.upsert_pipeline()
         if unpause:
             for version in [
-                ConcourseGithubPipeline.VERSION_LIVE,
-                ConcourseGithubPipeline.VERSION_DRAFT,
+                VERSION_LIVE,
+                VERSION_DRAFT,
             ]:
                 pipeline.unpause_pipeline(version)
     return True
@@ -160,12 +157,22 @@ def upsert_pipelines(
 
 
 @app.task(acks_late=True)
-def upsert_theme_assets_pipeline(unpause=False):
+def upsert_theme_assets_pipeline(unpause=False) -> bool:
     """ Upsert the theme assets pipeline """
     pipeline = api.get_theme_assets_pipeline()
-    pipeline.upsert_theme_assets_pipeline()
+    pipeline.upsert_pipeline()
     if unpause:
-        pipeline.unpause_pipeline(ThemeAssetsPipeline.PIPELINE_NAME)
+        pipeline.unpause()
+    return True
+
+
+@app.task(acks_late=True)
+def trigger_mass_publish(version: str) -> bool:
+    """Trigger the mass publish pipeline for the specified version"""
+    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
+        pipeline = api.get_mass_publish_pipeline(version)
+        pipeline.unpause()
+        pipeline.trigger()
     return True
 
 
@@ -218,11 +225,19 @@ def publish_website_backend_live(website_name: str):
 
 @app.task()
 def publish_website_batch(
-    website_names: List[str], version: str, prepublish: Optional[bool] = False
+    website_names: List[str],
+    version: str,
+    prepublish: Optional[bool] = False,
+    trigger_pipeline: Optional[bool] = True,
 ) -> bool:
     """ Call api.publish_website for a batch of websites"""
     result = True
-    pipeline_api = import_string(settings.CONTENT_SYNC_PIPELINE).get_api()
+    if trigger_pipeline and settings.CONTENT_SYNC_PIPELINE_BACKEND:
+        pipeline_api = import_string(
+            f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"
+        ).get_api()
+    else:
+        pipeline_api = None
     for name in website_names:
         try:
             backend = import_string(settings.CONTENT_SYNC_BACKEND)(
@@ -234,6 +249,7 @@ def publish_website_batch(
                 version,
                 pipeline_api=pipeline_api,
                 prepublish=prepublish,
+                trigger_pipeline=trigger_pipeline,
             )
         except:  # pylint:disable=bare-except
             log.exception("Error publishing %s website %s", version, name)
@@ -250,14 +266,24 @@ def publish_websites(
     prepublish: Optional[bool] = False,
 ):
     """Publish live or draft versions of multiple websites in parallel batches"""
-    if not settings.CONTENT_SYNC_BACKEND or not settings.CONTENT_SYNC_PIPELINE:
+    if not settings.CONTENT_SYNC_BACKEND or not settings.CONTENT_SYNC_PIPELINE_BACKEND:
         return
-
-    tasks = [
-        publish_website_batch.s(name_subset, version, prepublish=prepublish)
+    no_mass_publish = api.get_mass_publish_pipeline(version) is None
+    site_tasks = [
+        publish_website_batch.s(
+            name_subset,
+            version,
+            prepublish=prepublish,
+            trigger_pipeline=no_mass_publish,
+        )
         for name_subset in chunks(sorted(website_names), chunk_size=chunk_size)
     ]
-    raise self.replace(celery.group(tasks))
+    site_steps = celery.chord(celery.group(site_tasks), chord_finisher.si())
+    pipeline_step = celery.group(
+        [] if no_mass_publish else [trigger_mass_publish.si(version)]
+    )
+    workflow = celery.chain(site_steps, pipeline_step)
+    raise self.replace(celery.group(workflow))
 
 
 @app.task(acks_late=True)
@@ -273,7 +299,7 @@ def check_incomplete_publish_build_statuses():
     """
     Check statuses of concourse builds that have not been updated in a reasonable amount of time
     """
-    if not settings.CONTENT_SYNC_PIPELINE:
+    if not settings.CONTENT_SYNC_PIPELINE_BACKEND:
         return
     now = now_in_utc()
     wait_dt = now - timedelta(seconds=settings.PUBLISH_STATUS_WAIT_TIME)

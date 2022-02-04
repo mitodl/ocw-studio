@@ -12,7 +12,7 @@ from requests import HTTPError
 from content_sync import tasks
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.factories import ContentSyncStateFactory
-from content_sync.pipelines.concourse import ThemeAssetsPipeline
+from content_sync.pipelines.base import BaseMassPublishPipeline, BaseThemeAssetsPipeline
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
@@ -32,7 +32,7 @@ pytestmark = pytest.mark.django_db
 def api_mock(mocker, settings):
     """Return a mocked content_sync.tasks.api, and set the backend"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
-    settings.CONTENT_SYNC_PIPELINE = "content_sync.pipelines.TestPipeline"
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     return mocker.patch("content_sync.tasks.api")
 
 
@@ -299,20 +299,25 @@ def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
 
 @pytest.mark.parametrize("unpause", [True, False])
 def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
-    mocker, mocked_celery, unpause
+    settings, mocker, mocked_celery, unpause
 ):
     """calls upsert_theme_assets_pipeline and unpauses if asked"""
-    mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_theme_assets_pipeline")
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
+    mock_pipeline_unpause = mocker.patch(
+        "content_sync.pipelines.concourse.ThemeAssetsPipeline.unpause_pipeline"
+    )
+    mock_upsert_pipeline = mocker.patch(
+        "content_sync.pipelines.concourse.ThemeAssetsPipeline.upsert_pipeline",
+    )
     tasks.upsert_theme_assets_pipeline(unpause=unpause)
-    mock_get_pipeline.assert_called_once()
-    mock_pipeline = mock_get_pipeline.return_value
-    mock_pipeline.upsert_theme_assets_pipeline.assert_called_once()
+    mock_upsert_pipeline.assert_called_once()
     if unpause:
-        mock_pipeline.unpause_pipeline.assert_called_once_with(
-            ThemeAssetsPipeline.PIPELINE_NAME
+        mock_pipeline_unpause.assert_called_once_with(
+            BaseThemeAssetsPipeline.PIPELINE_NAME
         )
     else:
-        mock_pipeline.unpause_pipeline.assert_not_called()
+        mock_pipeline_unpause.assert_not_called()
 
 
 @pytest.mark.parametrize("create_backend", [True, False])
@@ -343,7 +348,7 @@ def test_upsert_website_pipeline_batch(
     else:
         mock_get_backend.assert_not_called()
     mock_pipeline = mock_get_pipeline.return_value
-    assert mock_pipeline.upsert_website_pipeline.call_count == 2
+    assert mock_pipeline.upsert_pipeline.call_count == 2
     if unpause:
         mock_pipeline.unpause_pipeline.assert_any_call(VERSION_DRAFT)
         mock_pipeline.unpause_pipeline.assert_any_call(VERSION_LIVE)
@@ -354,43 +359,76 @@ def test_upsert_website_pipeline_batch(
 @pytest.mark.parametrize("prepublish", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 @pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
+@pytest.mark.parametrize("has_mass_publish", [True, False])
 def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments
-    mocker, mocked_celery, api_mock, version, chunk_size, chunks, prepublish
+    mocker,
+    mocked_celery,
+    api_mock,
+    version,
+    chunk_size,
+    chunks,
+    prepublish,
+    has_mass_publish,
 ):
     """publish_websites calls upsert_pipeline_batch with correct arguments"""
     websites = WebsiteFactory.create_batch(3)
     website_names = sorted([website.name for website in websites])
     mock_batch = mocker.patch("content_sync.tasks.publish_website_batch.s")
+    mocker.patch(
+        "content_sync.tasks.api.get_mass_publish_pipeline",
+        return_value=(mocker.Mock() if has_mass_publish else None),
+    )
+    mock_mass_pub = mocker.patch("content_sync.tasks.trigger_mass_publish.si")
     with pytest.raises(TabError):
         tasks.publish_websites.delay(
             website_names, version, chunk_size=chunk_size, prepublish=prepublish
         )
     mock_batch.assert_any_call(
-        website_names[0:chunk_size], version, prepublish=prepublish
+        website_names[0:chunk_size],
+        version,
+        prepublish=prepublish,
+        trigger_pipeline=not has_mass_publish,
     )
     if chunks > 1:
         mock_batch.assert_any_call(
-            website_names[chunk_size:], version, prepublish=prepublish
+            website_names[chunk_size:],
+            version,
+            prepublish=prepublish,
+            trigger_pipeline=not has_mass_publish,
         )
+    if has_mass_publish:
+        mock_mass_pub.assert_called_once_with(version)
+    else:
+        mock_mass_pub.assert_not_called()
 
 
 @pytest.mark.parametrize("prepublish", [True, False])
+@pytest.mark.parametrize("trigger", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-def test_publish_website_batch(mocker, version, prepublish):
+def test_publish_website_batch(mocker, version, prepublish, trigger):
     """publish_website_batch should make the expected function calls"""
     mock_import_string = mocker.patch("content_sync.tasks.import_string")
     mock_publish_website = mocker.patch("content_sync.api.publish_website")
     mock_throttle = mocker.patch("content_sync.tasks.api.throttle_git_backend_calls")
     website_names = sorted([website.name for website in WebsiteFactory.create_batch(3)])
-    tasks.publish_website_batch(website_names, version, prepublish=prepublish)
+    expected_api = (
+        mock_import_string.return_value.get_api.return_value if trigger else None
+    )
+    tasks.publish_website_batch(
+        website_names, version, prepublish=prepublish, trigger_pipeline=trigger
+    )
     for name in website_names:
         mock_publish_website.assert_any_call(
             name,
             version,
-            pipeline_api=mock_import_string.return_value.get_api.return_value,
+            pipeline_api=expected_api,
             prepublish=prepublish,
+            trigger_pipeline=trigger,
         )
     assert mock_throttle.call_count == len(website_names)
+    assert mock_import_string.call_count == (
+        len(website_names) + 1 if trigger else len(website_names)
+    )
 
 
 @pytest.mark.parametrize(
@@ -401,9 +439,7 @@ def test_publish_website_batch(mocker, version, prepublish):
         [PUBLISH_STATUS_NOT_STARTED, PUBLISH_STATUS_NOT_STARTED, True, False],
     ],
 )
-@pytest.mark.parametrize(
-    "pipeline", [None, "content_sync.pipelines.concourse.ConcourseGithubPipeline"]
-)
+@pytest.mark.parametrize("pipeline", [None, "concourse"])
 def test_check_incomplete_publish_build_statuses(
     settings,
     mocker,
@@ -415,7 +451,7 @@ def test_check_incomplete_publish_build_statuses(
     pipeline,
 ):  # pylint:disable=too-many-arguments,too-many-locals
     """check_incomplete_publish_build_statuses should update statuses of pipeline builds"""
-    settings.CONTENT_SYNC_PIPELINE = pipeline
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = pipeline
     mock_update_status = mocker.patch("content_sync.tasks.update_website_status")
     now = now_in_utc()
     draft_site_in_query = WebsiteFactory.create(
@@ -489,8 +525,8 @@ def test_check_incomplete_publish_build_statuses(
 
 
 def test_check_incomplete_publish_build_statuses_no_setting(settings, api_mock):
-    """Pipeline apis should not be called if settings.CONTENT_SYNC_PIPELINE is not set"""
-    settings.CONTENT_SYNC_PIPELINE = None
+    """Pipeline apis should not be called if settings.CONTENT_SYNC_PIPELINE_BACKEND is not set"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
     stuck_website = WebsiteFactory.create(
         draft_publish_status_updated_on=now_in_utc()
         - timedelta(seconds=settings.PUBLISH_STATUS_CUTOFF + 5),
@@ -566,3 +602,25 @@ def test_check_incomplete_publish_build_statuses_500(settings, mocker, api_mock)
     )
     website.refresh_from_db()
     assert website.live_publish_status == PUBLISH_STATUS_NOT_STARTED
+
+
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+@pytest.mark.parametrize("backend", ["concourse", None])
+def test_trigger_mass_publish(settings, mocker, backend, version):
+    """trigger_mass_publish should call if enabled"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
+    mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
+    mock_pipeline_unpause = mocker.patch(
+        "content_sync.pipelines.concourse.ConcoursePipeline.unpause_pipeline"
+    )
+    mock_pipeline_trigger = mocker.patch(
+        "content_sync.pipelines.concourse.ConcoursePipeline.trigger_pipeline_build"
+    )
+    pipeline_name = BaseMassPublishPipeline.PIPELINE_NAME
+    tasks.trigger_mass_publish.delay(version)
+    if backend == "concourse":
+        mock_pipeline_unpause.assert_called_once_with(pipeline_name)
+        mock_pipeline_trigger.assert_called_once_with(pipeline_name)
+    else:
+        mock_pipeline_trigger.assert_not_called()
+        mock_pipeline_unpause.assert_not_called()

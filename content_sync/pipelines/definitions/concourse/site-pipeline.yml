@@ -55,7 +55,7 @@ jobs:
                 "status": "started"
               }
       - get: webpack-json
-        trigger: true
+        trigger: false
         on_failure:
           try:
             put: ocw-studio-webhook
@@ -80,7 +80,7 @@ jobs:
                     "status": "errored"
                   }
       - get: ocw-hugo-projects
-        trigger: true
+        trigger: false
         timeout: 5m
         attempts: 3
         on_failure:
@@ -133,7 +133,7 @@ jobs:
             args:
             - -exc
             - |
-              cp ../webpack-json/ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json data
+              cp ../webpack-json/webpack.json data
               hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/
         on_failure:
           try:
@@ -161,8 +161,8 @@ jobs:
             args:
             - -exc
             - |
+              aws s3 sync s3://((ocw-studio-bucket))/((site-url)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))              
               aws s3 sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
-              aws s3 sync s3://((ocw-studio-bucket))/((site-url)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))
         on_failure:
           try:
             put: ocw-studio-webhook

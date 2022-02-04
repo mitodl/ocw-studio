@@ -805,16 +805,10 @@ CONTENT_SYNC_RETRIES = get_int(
     description="Number of times to retry backend sync attempts",
     required=False,
 )
-CONTENT_SYNC_PIPELINE = get_string(
-    name="CONTENT_SYNC_PIPELINE",
-    default=None,
-    description="The pipeline to preview/publish websites with",
-    required=False,
-)
-CONTENT_SYNC_THEME_PIPELINE = get_string(
-    name="CONTENT_SYNC_THEME_PIPELINE",
-    default=None,
-    description="The pipeline to publish theme assets",
+CONTENT_SYNC_PIPELINE_BACKEND = get_string(
+    name="CONTENT_SYNC_PIPELINE_BACKEND",
+    default="concourse",
+    description="The pipeline backend name to preview/publish websites with",
     required=False,
 )
 

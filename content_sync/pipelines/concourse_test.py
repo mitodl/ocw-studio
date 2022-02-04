@@ -1,13 +1,17 @@
 """ concourse tests """
 import json
+from urllib.parse import quote
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 from requests import HTTPError
 
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.pipelines.base import BaseMassPublishPipeline
 from content_sync.pipelines.concourse import (
     ConcourseApi,
-    ConcourseGithubPipeline,
+    MassPublishPipeline,
+    SitePipeline,
     ThemeAssetsPipeline,
 )
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
@@ -22,6 +26,15 @@ pytestmark = pytest.mark.django_db
 def mock_concoursepy_auth(mocker):
     """Mock the concourse api auth method"""
     mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
+
+
+@pytest.fixture
+def pipeline_settings(settings):
+    """ Default settings for pipelines"""
+    settings.ROOT_WEBSITE_NAME = "ocw-www-course"
+    settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
+    settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
+    settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
 
 
 @pytest.mark.parametrize("stream", [True, False])
@@ -88,26 +101,26 @@ def test_upsert_website_pipeline_missing_settings(settings):
     settings.AWS_PREVIEW_BUCKET_NAME = None
     website = WebsiteFactory.create()
     with pytest.raises(ImproperlyConfigured):
-        ConcourseGithubPipeline(website)
+        SitePipeline(website)
 
 
-@pytest.mark.parametrize(
-    "version",
-    [ConcourseGithubPipeline.VERSION_LIVE, ConcourseGithubPipeline.VERSION_DRAFT],
-)
+@pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
 @pytest.mark.parametrize("home_page", [True, False])
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("hard_purge", [True, False])
 @pytest.mark.parametrize("with_api", [True, False])
-def test_upsert_website_pipelines(  # pylint: disable=too-many-arguments, too-many-branches
-    mocker, settings, version, home_page, pipeline_exists, hard_purge, with_api
-):  # pylint:disable=too-many-locals
+def test_upsert_website_pipelines(
+    mocker,
+    settings,
+    pipeline_settings,
+    version,
+    home_page,
+    pipeline_exists,
+    hard_purge,
+    with_api,
+):  # pylint:disable=too-many-locals,too-many-arguments,too-many-branches,unused-argument
     """The correct concourse API args should be made for a website"""
     settings.CONCOURSE_HARD_PURGE = hard_purge
-    settings.ROOT_WEBSITE_NAME = "ocw-www-course"
-    settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
-    settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
-    settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
 
     hugo_projects_path = "https://github.com/org/repo"
     starter = WebsiteStarterFactory.create(
@@ -138,9 +151,9 @@ def test_upsert_website_pipelines(  # pylint: disable=too-many-arguments, too-ma
         "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
     )
     existing_api = ConcourseApi("a", "b", "c", "d") if with_api else None
-    pipeline = ConcourseGithubPipeline(website, api=existing_api)
+    pipeline = SitePipeline(website, api=existing_api)
     assert (pipeline.api == existing_api) is with_api
-    pipeline.upsert_website_pipeline()
+    pipeline.upsert_pipeline()
 
     mock_get.assert_any_call(url_path)
     mock_put_headers.assert_any_call(
@@ -148,7 +161,7 @@ def test_upsert_website_pipelines(  # pylint: disable=too-many-arguments, too-ma
         data=mocker.ANY,
         headers=({"X-Concourse-Config-Version": "3"} if pipeline_exists else None),
     )
-    if version == ConcourseGithubPipeline.VERSION_DRAFT:
+    if version == VERSION_DRAFT:
         _, kwargs = mock_put_headers.call_args_list[0]
         bucket = settings.AWS_PREVIEW_BUCKET_NAME
         api_url = settings.OCW_STUDIO_DRAFT_URL
@@ -207,8 +220,8 @@ def test_upsert_pipeline_public_vs_private(settings, mocker, is_private_repo):
         repo_url_str = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{website.short_id}.git"
     else:
         repo_url_str = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{website.short_id}.git"
-    pipeline = ConcourseGithubPipeline(website)
-    pipeline.upsert_website_pipeline()
+    pipeline = SitePipeline(website)
+    pipeline.upsert_pipeline()
     _, kwargs = mock_put_headers.call_args_list[0]
     config_str = json.dumps(kwargs)
     assert repo_url_str in config_str
@@ -231,8 +244,8 @@ def test_upsert_website_pipelines_invalid_starter(mocker, source, path):
     )
     starter = WebsiteStarterFactory.create(source=source, path=path)
     website = WebsiteFactory.create(starter=starter)
-    pipeline = ConcourseGithubPipeline(website)
-    pipeline.upsert_website_pipeline()
+    pipeline = SitePipeline(website)
+    pipeline.upsert_pipeline()
     mock_get.assert_not_called()
     mock_put.assert_not_called()
     mock_put_headers.assert_not_called()
@@ -257,16 +270,15 @@ def test_trigger_pipeline_build(settings, mocker, version):
         )
     )
     team = settings.CONCOURSE_TEAM
-    pipeline = ConcourseGithubPipeline(website)
+    pipeline = SitePipeline(website)
     build_id = pipeline.trigger_pipeline_build(version)
     assert build_id == expected_build_id
-    mock_get.assert_any_call(
-        f"/api/v1/teams/{team}/pipelines/{version}/config?vars={pipeline.instance_vars}"
+    mock_get.assert_called_once_with(
+        f"/api/v1/teams/{team}/pipelines/{version}/config{pipeline.instance_vars}"
     )
-    mock_post.assert_any_call(
-        f"/api/v1/teams/{team}/pipelines/{version}/jobs/{job_name}/builds?vars={pipeline.instance_vars}"
+    mock_post.assert_called_once_with(
+        f"/api/v1/teams/{team}/pipelines/{version}/jobs/{job_name}/builds{pipeline.instance_vars}"
     )
-    assert build_id == expected_build_id
     job_name = "build-theme-assets"
     mock_get = mocker.patch(
         "content_sync.pipelines.concourse.ConcourseApi.get",
@@ -275,10 +287,10 @@ def test_trigger_pipeline_build(settings, mocker, version):
     pipeline = ThemeAssetsPipeline()
     build_id = pipeline.trigger_pipeline_build(ThemeAssetsPipeline.PIPELINE_NAME)
     mock_get.assert_any_call(
-        f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/config?vars={pipeline.instance_vars}"
+        f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/config{pipeline.instance_vars}"
     )
     mock_post.assert_any_call(
-        f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/jobs/{job_name}/builds?vars={pipeline.instance_vars}"
+        f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/jobs/{job_name}/builds{pipeline.instance_vars}"
     )
     assert build_id == expected_build_id
 
@@ -293,15 +305,15 @@ def test_unpause_pipeline(settings, mocker, version):
             source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
         )
     )
-    pipeline = ConcourseGithubPipeline(website)
+    pipeline = SitePipeline(website)
     pipeline.unpause_pipeline(version)
     mock_put.assert_any_call(
-        f"/api/v1/teams/myteam/pipelines/{version}/unpause?vars={pipeline.instance_vars}"
+        f"/api/v1/teams/myteam/pipelines/{version}/unpause{pipeline.instance_vars}"
     )
     pipeline = ThemeAssetsPipeline()
     pipeline.unpause_pipeline(ThemeAssetsPipeline.PIPELINE_NAME)
     mock_put.assert_any_call(
-        f"/api/v1/teams/myteam/pipelines/ocw-theme-assets/unpause?vars={pipeline.instance_vars}"
+        f"/api/v1/teams/myteam/pipelines/ocw-theme-assets/unpause{pipeline.instance_vars}"
     )
 
 
@@ -318,15 +330,13 @@ def test_get_build_status(mocker):
             source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
         )
     )
-    pipeline = ConcourseGithubPipeline(website)
+    pipeline = SitePipeline(website)
     assert pipeline.get_build_status(build_id) == status
-    mock_get.assert_called_once_with(build_id)
-    pipeline = ConcourseGithubPipeline(website)
     mock_get.assert_called_once_with(build_id)
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
-def test_upsert_theme_assets_pipeline(mocker, settings, pipeline_exists):
+def test_upsert_pipeline(mocker, settings, pipeline_exists):
     """ Test upserting the theme assets pipeline """
     instance_vars = f"%7B%22branch%22%3A%20%22{settings.GITHUB_WEBHOOK_BRANCH}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={instance_vars}"
@@ -346,7 +356,7 @@ def test_upsert_theme_assets_pipeline(mocker, settings, pipeline_exists):
     )
     api = ConcourseApi("http://test.edu", "test", "test", "myteam")
     pipeline = ThemeAssetsPipeline(api)
-    pipeline.upsert_theme_assets_pipeline()
+    pipeline.upsert_pipeline()
     mock_get.assert_any_call(url_path)
     mock_put_headers.assert_any_call(
         url_path,
@@ -362,3 +372,55 @@ def test_upsert_theme_assets_pipeline(mocker, settings, pipeline_exists):
         f"s3-remote:ol-eng-artifacts/ocw-hugo-themes/{settings.GITHUB_WEBHOOK_BRANCH}"
         in config_str
     )
+
+
+@pytest.mark.parametrize("pipeline_exists", [True, False])
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_upsert_mass_publish_pipeline(
+    settings, pipeline_settings, mocker, pipeline_exists, version
+):  # pylint:disable=too-many-locals,unused-argument
+    """The mass publish pipeline should have expected configuration"""
+    hugo_projects_path = "https://github.com/org/repo"
+    WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
+        ),
+        name=settings.ROOT_WEBSITE_NAME,
+    )
+    instance_vars = f'?vars={quote(json.dumps({"version": version}))}'
+    url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseMassPublishPipeline.PIPELINE_NAME}/config{instance_vars}"
+
+    if not pipeline_exists:
+        mock_get = mocker.patch(
+            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            side_effect=HTTPError(),
+        )
+    else:
+        mock_get = mocker.patch(
+            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            return_value=({}, {"X-Concourse-Config-Version": "3"}),
+        )
+    mock_put_headers = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
+    )
+    pipeline = MassPublishPipeline(version)
+    pipeline.upsert_pipeline()
+
+    mock_get.assert_any_call(url_path)
+    mock_put_headers.assert_any_call(
+        url_path,
+        data=mocker.ANY,
+        headers=({"X-Concourse-Config-Version": "3"} if pipeline_exists else None),
+    )
+    _, kwargs = mock_put_headers.call_args_list[0]
+    if version == VERSION_DRAFT:
+        bucket = settings.AWS_PREVIEW_BUCKET_NAME
+        api_url = settings.OCW_STUDIO_DRAFT_URL
+    else:
+        bucket = settings.AWS_PUBLISH_BUCKET_NAME
+        api_url = settings.OCW_STUDIO_LIVE_URL
+    config_str = json.dumps(kwargs)
+    assert bucket in config_str
+    assert version in config_str
+    assert f"{hugo_projects_path}.git" in config_str
+    assert api_url in config_str
