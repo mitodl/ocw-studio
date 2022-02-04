@@ -102,7 +102,7 @@ jobs:
                 STARTER_SLUG=$(echo $1| jq -c '.starter_slug' | tr -d '"')
                 SITE_URL=$(echo $1 | jq -c '.site_url' | tr -d '"')
                 BASE_URL=$(echo $1 | jq -c '.base_url' | tr -d '"')
-                git -c core.sshCommand="ssh $GITKEYSSH -o StrictHostKeyChecking=no" clone -b ((version)) ((markdown-uri))/$SHORT_ID.git || return 1
+                git -c core.sshCommand="ssh $GITKEYSSH -o StrictHostKeyChecking=no" clone -b ((ocw-site-repo-branch)) ((markdown-uri))/$SHORT_ID.git || return 1
                 cd $CURDIR/$SHORT_ID
                 cp ../webpack-json/ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json data
                 hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl /$BASE_URL --themesDir ../ocw-hugo-themes/  || return 1
