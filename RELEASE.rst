@@ -1,6 +1,22 @@
 Release Notes
 =============
 
+Version 0.43.1
+--------------
+
+- refactor logic for indicating the site content form has been touched
+- Fix pipeline webhook (#970)
+- Codify new mass publish pipeline and api endpoint (#950)
+- scroll to form errors on submission (#962)
+- use governmentpaas/s3-resource for the webpack-json resource to be compatible with using versioned_file with IAM authentication (#966)
+- Bump ipython from 7.19.0 to 7.31.1 (#920)
+- fix up our handling of the camelcase eslint rule a little bit
+- add webpack-json as an input to the build-course-task pipeline step (#961)
+- [UI] prevent duplicate items in collections (#951)
+- theme assets pipeline (#945)
+- remove a @ts-ignore
+- small rename of two functions for clarity
+
 Version 0.43.0 (Released January 31, 2022)
 --------------
 
