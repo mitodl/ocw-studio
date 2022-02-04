@@ -1,3 +1,15 @@
+---
+resource_types:
+  - name: http-resource
+    type: docker-image
+    source:
+      repository: jgriff/http-resource
+      tag: latest
+  - name: s3-resource-iam
+    type: docker-image
+    source:
+      repository: governmentpaas/s3-resource
+      tag: latest
 resources:
   - name: ocw-hugo-themes
     type: git
@@ -10,7 +22,7 @@ resources:
       uri: ((ocw-hugo-projects-uri))
       branch: ((ocw-hugo-projects-branch))
   - name: webpack-json
-    type: s3
+    type: s3-resource-iam
     source:
       bucket: ol-eng-artifacts
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
@@ -95,8 +107,8 @@ jobs:
                 cp ../webpack-json/ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json data
                 hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl /$BASE_URL --themesDir ../ocw-hugo-themes/  || return 1
                 cd $CURDIR
+                aws s3 sync s3://((ocw-studio-bucket))/$SITE_URL s3://((ocw-bucket))/$SITE_URL --metadata site-id=$NAME || return 1            
                 aws s3 sync $SHORT_ID/public s3://((ocw-bucket))/$BASE_URL --metadata site-id=$NAME || return 1
-                aws s3 sync s3://((ocw-studio-bucket))/$SITE_URL s3://((ocw-bucket))/$SITE_URL --metadata site-id=$NAME || return 1
                 curl -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"((version))","status":"succeeded"}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/
                 rm -rf $SHORT_ID
                 return 0

@@ -161,8 +161,8 @@ jobs:
             args:
             - -exc
             - |
+              aws s3 sync s3://((ocw-studio-bucket))/((site-url)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))              
               aws s3 sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
-              aws s3 sync s3://((ocw-studio-bucket))/((site-url)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))
         on_failure:
           try:
             put: ocw-studio-webhook
