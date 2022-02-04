@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.43.1
+Version 0.43.1 (Released February 04, 2022)
 --------------
 
 - refactor logic for indicating the site content form has been touched
