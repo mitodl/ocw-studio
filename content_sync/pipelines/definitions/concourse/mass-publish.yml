@@ -104,7 +104,7 @@ jobs:
                 BASE_URL=$(echo $1 | jq -c '.base_url' | tr -d '"')
                 git -c core.sshCommand="ssh $GITKEYSSH -o StrictHostKeyChecking=no" clone -b ((ocw-site-repo-branch)) ((markdown-uri))/$SHORT_ID.git || return 1
                 cd $CURDIR/$SHORT_ID
-                cp ../webpack-json/ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json data
+                cp ../webpack-json/webpack.json data
                 hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl /$BASE_URL --themesDir ../ocw-hugo-themes/  || return 1
                 cd $CURDIR
                 aws s3 sync s3://((ocw-studio-bucket))/$SITE_URL s3://((ocw-bucket))/$SITE_URL --metadata site-id=$NAME || return 1            
