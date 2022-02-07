@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.44.0
+--------------
+
+- copy webpack.json into base-theme instead of into the site's data folder (#977)
+
 Version 0.43.1 (Released February 04, 2022)
 --------------
 
