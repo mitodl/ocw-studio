@@ -133,7 +133,7 @@ jobs:
             args:
             - -exc
             - |
-              cp ../webpack-json/webpack.json data
+              cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
               hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/
         on_failure:
           try:
