@@ -415,6 +415,9 @@ class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
                 .replace("((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH)
                 .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
+                .replace(
+                    "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
+                )
                 .replace("((ocw-studio-url))", settings.SITE_BASE_URL)
                 .replace("((static-api-base-url))", static_api_url)
                 .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME)
