@@ -1,12 +1,78 @@
 ---
 uid: 9fcb7d0d-8cfe-f1b0-2f1d-7a69f645464a
 title: Assignments
+type: CourseSection
 ---
 
-| ASSIGNMENTS | FILES |
-| --- | --- |
-| Homework 1 | ([PDF]({{< baseurl >}}/resources/mit1_201jf08_hw_1)) |
-| Homework 2 | ([PDF]({{< baseurl >}}/resources/mit1_201jf08_hw_2)) |
-| Homework 3 | ([PDF]({{< baseurl >}}/resources/mit1_201jf08_hw_3)) |
-| Homework 4 | ([PDF]({{< baseurl >}}/resources/mit1_201jf08_hw_4)) |
-|  {{< br >}}{{< br >}} Homework 5 {{< br >}}{{< br >}} Worksheet {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/mit1_201jf08_hw_5)) {{< br >}}{{< br >}} ([XLS]({{< baseurl >}}/resources/hw_5)) {{< br >}}{{< br >}}
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ASSIGNMENTS
+{{< thclose >}}
+{{< thopen >}}
+FILES
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Homework 1
+{{< tdclose >}}
+{{< tdopen >}}
+([PDF]({{< baseurl >}}/resources/mit1_201jf08_hw_1))
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Homework 2
+{{< tdclose >}}
+{{< tdopen >}}
+([PDF]({{< baseurl >}}/resources/mit1_201jf08_hw_2))
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Homework 3
+{{< tdclose >}}
+{{< tdopen >}}
+([PDF]({{< baseurl >}}/resources/mit1_201jf08_hw_3))
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Homework 4
+{{< tdclose >}}
+{{< tdopen >}}
+([PDF]({{< baseurl >}}/resources/mit1_201jf08_hw_4))
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+
+
+Homework 5
+
+Worksheet
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/mit1_201jf08_hw_5))
+
+([XLS]({{< baseurl >}}/resources/hw_5))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}

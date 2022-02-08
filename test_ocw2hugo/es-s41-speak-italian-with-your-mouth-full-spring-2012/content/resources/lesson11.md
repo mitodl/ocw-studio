@@ -6,6 +6,9 @@ resourcetype: Image
 file_type: image/jpeg
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/8ddb59bc97d2d2e915cc548370390ed6_Lesson11.jpg
+type: OCWImage
+parent_type: CourseSection
+parent_title: Lesson 11
 image_metadata:
   image-alt: Long thin cookies with nuts.
   caption: The students learned to make biscotti.

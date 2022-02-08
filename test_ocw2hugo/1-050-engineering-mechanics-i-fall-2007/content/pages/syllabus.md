@@ -1,6 +1,7 @@
 ---
 uid: 96c31e82-69f0-6d67-daee-8272526ac56a
 title: Syllabus
+type: CourseSection
 ---
 
 Course Meeting Times
@@ -52,11 +53,48 @@ Grade
 
 The grade will be based on:
 
-| ACTIVITIES | PERCENTAGES |
-| --- | --- |
-| Homework | 50% |
-| In-class exams | 25% |
-| Final | 25% 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ACTIVITIES
+{{< thclose >}}
+{{< thopen >}}
+PERCENTAGES
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Homework
+{{< tdclose >}}
+{{< tdopen >}}
+50%
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+In-class exams
+{{< tdclose >}}
+{{< tdopen >}}
+25%
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Final
+{{< tdclose >}}
+{{< tdopen >}}
+25%
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
   
 

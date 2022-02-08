@@ -3,6 +3,8 @@ uid: e6b24301-b6fc-c670-dfc7-5ca70ae764b4
 title: Language Instruction
 parent_uid: 16b38273-3d02-fca8-e488-1b3e810b1572
 parent_title: Lesson 3
+parent_type: CourseSection
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-3) | [Next]({{< baseurl >}}/pages/lesson-3/cooking-instruction) »
@@ -22,21 +24,108 @@ Come State?/How Are You?
 
 You may be wondering whether am I talking to you as a single person, or to you as a group. In English you would know it from the context. In Italian you would know it from the structure of the sentence itself, because I would use a different form of the verb _stare_.
 
-| ITALIAN | ENGLISH FORM OF "YOU" |
-| --- | --- |
-| _(voi) come state?_ | You-plural |
-| _(tu) come stai?_ | You-singular |
-| _(lei) come sta?_ | You-singular, formal (like Usted in Spanish) 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH FORM OF "YOU"
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_(voi) come state?_
+{{< tdclose >}}
+{{< tdopen >}}
+You-plural
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_(tu) come stai?_
+{{< tdclose >}}
+{{< tdopen >}}
+You-singular
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_(lei) come sta?_
+{{< tdclose >}}
+{{< tdopen >}}
+You-singular, formal (like Usted in Spanish)
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 Here is how you can answer:
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _Bene._ Or _benissimo/molto bene_. | Very well. |
-| _Non c'è male, grazie._ | Not bad, thank you. (Literally "There isn't bad.") |
-| _Cosi cosi._ | So so. |
-| _Male_ | Bad. |
-| {{< td-colspan 2 >}}Note: If we are in a formal relationship, you should say _E Lei_? instead of _E tu_?{{< /td-colspan >}} |
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Bene._ Or _benissimo/molto bene_.
+{{< tdclose >}}
+{{< tdopen >}}
+Very well.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Non c'è male, grazie._
+{{< tdclose >}}
+{{< tdopen >}}
+Not bad, thank you. (Literally "There isn't bad.")
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Cosi cosi._
+{{< tdclose >}}
+{{< tdopen >}}
+So so.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Male_
+{{< tdclose >}}
+{{< tdopen >}}
+Bad.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen colspan="2" >}}
+Note: If we are in a formal relationship, you should say _E Lei_? instead of _E tu_?
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 Listen to Dialogue: Come Stai?
 
@@ -52,27 +141,139 @@ _Essere O Stare? Questo è il Dilemma!_/Using the Verbs Essere or Stare? That is
 
 _Stare_ followed by the gerundive expresses the continuous tenses:
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _Sto cucinando._ | (I) am cooking. |
-| _Stavo leggendo._ | (I) was reading. 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Sto cucinando._
+{{< tdclose >}}
+{{< tdopen >}}
+(I) am cooking.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Stavo leggendo._
+{{< tdclose >}}
+{{< tdopen >}}
+(I) was reading.
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 _Essere_ is used in general to indicate more permanent aspects of people or things.
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _Sono Daria._ | I am Daria. |
-| _Sono di New York._ | I am from New York. |
-| _Mike è Americano._ | Mike is American. |
-| _Mia mamma è bionda._ | My mom is blond. (Used with identity, origin, nationality, aspect, religion, etc.) 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Sono Daria._
+{{< tdclose >}}
+{{< tdopen >}}
+I am Daria.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Sono di New York._
+{{< tdclose >}}
+{{< tdopen >}}
+I am from New York.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Mike è Americano._
+{{< tdclose >}}
+{{< tdopen >}}
+Mike is American.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Mia mamma è bionda._
+{{< tdclose >}}
+{{< tdopen >}}
+My mom is blond. (Used with identity, origin, nationality, aspect, religion, etc.)
+{{< tdclose >}}
+
+{{< trclose >}}
+
+
+{{< tableclose >}}
 
 Sometimes it's also for transitory conditions/emotions.
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _Giovanni è ammalato_. (not sta ammalato) | John is sick. |
-| _Alice è innamorata._ | Alice is enamored (in love). |
-| _Sei felice?_ | Are you happy? 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Giovanni è ammalato_. (not sta ammalato)
+{{< tdclose >}}
+{{< tdopen >}}
+John is sick.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Alice è innamorata._
+{{< tdclose >}}
+{{< tdopen >}}
+Alice is enamored (in love).
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Sei felice?_
+{{< tdclose >}}
+{{< tdopen >}}
+Are you happy?
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 _Essere_ is also used as a _verbo ausiliare_ (auxiliary verb, or helper) in the passive form:
 
@@ -94,26 +295,148 @@ _Ascolta come si coniuga l'indicativo presente dei verbi essere e stare./_Listen
  _Il Verbo "Essere"_ / The Verb "To Be"
 ---------------------------------------
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _(io) sono._ | (I) am. |
-| _(tu) sei_ (informal)_/ (Lei) è_ (formal). | (you) are. |
-| _(lei/lui) è._ | (she/he) is. (We don't have the neutral pronoun "it".) |
-| _(noi) siamo._ | (we) are. |
-| _(voi) siete._ | (you) are. |
-| _(loro) sono._ | (they) are. 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_(io) sono._
+{{< tdclose >}}
+{{< tdopen >}}
+(I) am.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_(tu) sei_ (informal)_/ (Lei) è_ (formal).
+{{< tdclose >}}
+{{< tdopen >}}
+(you) are.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_(lei/lui) è._
+{{< tdclose >}}
+{{< tdopen >}}
+(she/he) is. (We don't have the neutral pronoun "it".)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_(noi) siamo._
+{{< tdclose >}}
+{{< tdopen >}}
+(we) are.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_(voi) siete._
+{{< tdclose >}}
+{{< tdopen >}}
+(you) are.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_(loro) sono._
+{{< tdclose >}}
+{{< tdopen >}}
+(they) are.
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 _Il Verbo "Stare"_/The Verb "To Stay"
 -------------------------------------
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _Sto._ | (I) stay. |
-| _stai_ (informal) _sta_ (formal). | (you) stay. |
-| _sta._ | (she/he) stays. |
-| _stiamo._ | (we) are. |
-| _state._ | (you) stay. |
-| _stanno._ | (they) stay. 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Sto._
+{{< tdclose >}}
+{{< tdopen >}}
+(I) stay.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_stai_ (informal) _sta_ (formal).
+{{< tdclose >}}
+{{< tdopen >}}
+(you) stay.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_sta._
+{{< tdclose >}}
+{{< tdopen >}}
+(she/he) stays.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_stiamo._
+{{< tdclose >}}
+{{< tdopen >}}
+(we) are.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_state._
+{{< tdclose >}}
+{{< tdopen >}}
+(you) stay.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_stanno._
+{{< tdclose >}}
+{{< tdopen >}}
+(they) stay.
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 If you want to talk about something you enjoy doing, you use the verb _piacere_ followed by the infinitive:
 
@@ -121,11 +444,48 @@ _A Giorgio piace cucinare._/George likes cooking. (Literally "cooking is pleasin
 
 As we started planning what to cook next, we made the list of what toppings we like on pizza.
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _Cosa ti (= a te) piace sulla pizza?_ | What do you like on your pizza? (Literally "What is pleasing to you on pizza?") |
-| _Mi (=a me) piace la mozzarella._ | I like mozzarella. (Literally "Mozzarella is pleasing to me.") |
-| _Mi piacciono le melanzane e i peperoni,_ | I like eggplant and peppers. (Literally "Eggplants and peppers are pleasing to me.") 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Cosa ti (= a te) piace sulla pizza?_
+{{< tdclose >}}
+{{< tdopen >}}
+What do you like on your pizza? (Literally "What is pleasing to you on pizza?")
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Mi (=a me) piace la mozzarella._
+{{< tdclose >}}
+{{< tdopen >}}
+I like mozzarella. (Literally "Mozzarella is pleasing to me.")
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Mi piacciono le melanzane e i peperoni,_
+{{< tdclose >}}
+{{< tdopen >}}
+I like eggplant and peppers. (Literally "Eggplants and peppers are pleasing to me.")
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 Compiti/Assignments
 -------------------

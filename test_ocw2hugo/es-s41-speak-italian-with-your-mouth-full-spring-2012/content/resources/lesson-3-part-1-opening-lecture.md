@@ -11,6 +11,8 @@ video_files:
   video_transcript_file: null
   archive_url: >-
     http://www.archive.org/download/MITES.S41S12/MITES_S41S12_Lesson3_Part1_300k.mp4
+parent_type: CourseSection
+parent_title: Video Lectures
 ---
 
 **Description:** Students learn the basics of Italian language and culture, including the conjugation of regular verbs.

@@ -8,6 +8,7 @@ resourcetype: Image
 file_type: image/jpeg
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/317de1a21f8ff8599c548edb446eae6a_es-s41s12-th.jpg
+type: OCWImage
 image_metadata:
   image-alt: >-
     A woman poses in a kitchen with various items like olive oil, garlic and

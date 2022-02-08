@@ -11,6 +11,8 @@ video_files:
   video_transcript_file: null
   archive_url: >-
     http://www.archive.org/download/MITES.S41S12/MITES_S41S12_Teaching09_300k.mp4
+parent_type: CourseSection
+parent_title: Learning From Challenges
 ---
 
 **Description:** Paola Rebusco discusses the difficulties in fitting activities into a two hour block and the students' energy during the class.

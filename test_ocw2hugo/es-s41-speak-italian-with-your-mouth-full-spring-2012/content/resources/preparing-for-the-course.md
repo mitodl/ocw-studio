@@ -11,6 +11,8 @@ video_files:
   video_transcript_file: null
   archive_url: >-
     http://www.archive.org/download/MITES.S41S12/MITES_S41S12_Teaching03_300k.mp4
+parent_type: CourseSection
+parent_title: Developing the Course
 ---
 
 **Description:** Paola Rebusco talks about the ways in which she prepared for each class session.

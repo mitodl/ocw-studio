@@ -3,7 +3,9 @@ uid: 9e26092b-fcbb-33cd-067b-59031da5bbec
 title: Learning From Challenges
 parent_uid: a6e7d634-7a40-6faa-23d0-020703ee7044
 parent_title: Instructor Insights
+parent_type: ThisCourseAtMITSection
 layout: instructor_insights
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/instructor-insights/using-technology-to-expand-reach) | [Next]({{< baseurl >}}/pages/calendar) »

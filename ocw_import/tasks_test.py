@@ -15,6 +15,8 @@ from ocw_import.tasks import (
     delete_unpublished_courses,
     import_ocw2hugo_course_paths,
     import_ocw2hugo_courses,
+    update_ocw2hugo_course_paths,
+    update_ocw_resource_data,
 )
 from websites.models import Website
 
@@ -50,6 +52,27 @@ def test_import_ocw2hugo_course_paths(mocker, paths, course_starter, settings):
                 TEST_OCW2HUGO_PREFIX,
                 path,
                 starter_id=course_starter.id,
+            )
+
+
+@pytest.mark.parametrize(
+    "paths", [["1-050-mechanical-engineering", "3-34-transportation-systems"], [], None]
+)
+def test_update_ocw2hugo_course_paths(mocker, paths):
+    """ update_ocw2hugo_course should be called from task with correct kwargs """
+    mock_update_course = mocker.patch("ocw_import.tasks.update_ocw2hugo_course")
+    update_ocw2hugo_course_paths.delay(
+        paths, MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, "title"
+    )
+    if not paths:
+        mock_update_course.assert_not_called()
+    else:
+        for path in paths:
+            mock_update_course.assert_any_call(
+                MOCK_BUCKET_NAME,
+                TEST_OCW2HUGO_PREFIX,
+                path,
+                "title",
             )
 
 
@@ -159,3 +182,50 @@ def test_import_ocw2hugo_courses_delete_unpublished_false(
             delete_unpublished=False,
         )
     mock_delete_unpublished_courses.assert_not_called()
+
+
+@mock_s3
+@pytest.mark.parametrize(
+    "chunk_size, filter_str, limit, call_count",
+    [[1, None, None, 4], [1, "1-050", None, 1], [2, None, None, 2], [1, None, 1, 1]],
+)
+def test_update_ocw_resource_data(
+    settings, mocked_celery, mocker, filter_str, chunk_size, limit, call_count
+):
+    """
+    update_ocw2hugo_course_paths should be called correct # times for given chunk size, limit, filter, and # of paths
+    """
+    setup_s3(settings)
+    mock_update_paths = mocker.patch("ocw_import.tasks.update_ocw2hugo_course_paths.si")
+    with pytest.raises(mocked_celery.replace_exception_class):
+        update_ocw_resource_data.delay(
+            bucket_name=MOCK_BUCKET_NAME,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            chunk_size=chunk_size,
+            filter_str=filter_str,
+            limit=limit,
+            content_field="title",
+        )
+    assert mock_update_paths.call_count == call_count
+
+
+def test_import_ocw2hugo_courses_missing_required_fields(mocker):
+    """ update_ocw2hugo_course_paths should be called zero times if required fields are missing """
+    mock_update_paths = mocker.patch("ocw_import.tasks.update_ocw2hugo_course_paths.si")
+    with pytest.raises(TypeError):
+        update_ocw_resource_data.delay(  # pylint:disable=no-value-for-parameter
+            bucket_name=None,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            chunk_size=100,
+            content_field="title",
+        )
+    assert mock_update_paths.call_count == 0
+
+    with pytest.raises(TypeError):
+        update_ocw_resource_data.delay(  # pylint:disable=no-value-for-parameter
+            bucket_name=MOCK_BUCKET_NAME,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            chunk_size=100,
+            content_field=None,
+        )
+    assert mock_update_paths.call_count == 0

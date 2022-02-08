@@ -9,6 +9,9 @@ resourcetype: Image
 file_type: image/jpeg
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/ab951a3b4ad4f406f5f4eb1738269ed3_bialetti.jpg
+type: OCWImage
+parent_type: CourseSection
+parent_title: Language Instruction
 image_metadata:
   image-alt: A silver metallic pitcher sits on top of the burner of a stove.
   caption: >-

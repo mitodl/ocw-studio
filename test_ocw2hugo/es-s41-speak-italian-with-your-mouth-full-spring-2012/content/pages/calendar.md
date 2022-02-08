@@ -1,23 +1,372 @@
 ---
 uid: 7aa9e941-aeaf-6118-7b6b-140bd04f00c3
 title: Calendar
+type: CourseSection
 ---
 
-| Lesson/Lezione # | Conversation/Conversazione | Food/Cibo |
-| --- | --- | --- |
-| {{< td-colspan 3 >}}**PRIMI (FIRST COURSES)**{{< /td-colspan >}} |||
-| 1 |  {{< br >}}{{< br >}} Greetings and introductions {{< br >}}{{< br >}} Numbers 1–10 {{< br >}}{{< br >}} The verb _cucinare (to cook)_ {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} **English:** {{< br >}}{{< br >}} Pasta all'amatriciana {{< br >}}{{< br >}} Pasta with broccoli (vegetarian) {{< br >}}{{< br >}} **Italiano**: {{< br >}}{{< br >}} Pasta all'amatriciana {{< br >}}{{< br >}} Pasta con i broccoli (piatto vegetariano) {{< br >}}{{< br >}}  |
-| 2 |  {{< br >}}{{< br >}} Expressing preference, demonstrative adjectives {{< br >}}{{< br >}} II Carnevale {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} **English:** {{< br >}}{{< br >}} Risotto with mushrooms and saffron {{< br >}}{{< br >}} Risotto with radicchio and sausage {{< br >}}{{< br >}} Risotto with asparagus (vegetarian) {{< br >}}{{< br >}} **Italiano:** {{< br >}}{{< br >}} Risotto al funghi e zafferano {{< br >}}{{< br >}} Risotto al radicchio e salsiccia {{< br >}}{{< br >}} Risotto con asparagi (piatto vegetariano) {{< br >}}{{< br >}}  |
-| 3 | Conjugation of regular verbs-present tense: are-ere-ire-essere-stare-avere | Pizza |
-| 4 | Asking and giving information |  {{< br >}}{{< br >}} **English:** {{< br >}}{{< br >}} Gnocchi (potato dumplings) with tomato sauce (vegetarian) {{< br >}}{{< br >}} **Italiano:** {{< br >}}{{< br >}} Gnocchi al pomodoro (piatto vegetariano) {{< br >}}{{< br >}}  |
-| {{< td-colspan 3 >}}**SECONDI & CONTORNI (MAIN COURSES & SIDE DISHES)**{{< /td-colspan >}} |||
-| 5 |  {{< br >}}{{< br >}} Meals structure—talking about one's daily life/routine {{< br >}}{{< br >}} La festa della Donna {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} **English:** {{< br >}}{{< br >}} Meatballs {{< br >}}{{< br >}} Tuna balls {{< br >}}{{< br >}} Zucchini balls (vegetarian) {{< br >}}{{< br >}} Salad with tomatoes (vegetarian) {{< br >}}{{< br >}} **Italiano:** {{< br >}}{{< br >}} Polpettine di carne {{< br >}}{{< br >}} Polpettine di tonno {{< br >}}{{< br >}} Polpettine di zucchine (piatto vegetariano)  {{< br >}}{{< br >}} Insalata con pomodorini (piatto vegetariano) {{< br >}}{{< br >}}  |
-| 6 |  {{< br >}}{{< br >}} Asking and giving directions (bus, cartina) {{< br >}}{{< br >}} La festa del Papà {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} **English:** {{< br >}}{{< br >}} Eggplant parmesan (vegetarian) {{< br >}}{{< br >}} Beef stew {{< br >}}{{< br >}} Bruschetta (vegetarian) {{< br >}}{{< br >}} **Italiano:** {{< br >}}{{< br >}} Melanzane alla parmigiana (piatto vegetariano) {{< br >}}{{< br >}} Spezzatino di manzo {{< br >}}{{< br >}} Bruschette (piatto vegetariano) {{< br >}}{{< br >}}  |
-| 7 | Talking about profession/hobbies |  {{< br >}}{{< br >}} **English:** {{< br >}}{{< br >}} Spinach crepes (vegetarian) {{< br >}}{{< br >}} **Italiano:** {{< br >}}{{< br >}} Crespelle di spinaci (piatto vegetariano) {{< br >}}{{< br >}}  |
-| 8 | Special guest: Anna Jasonides R. D., L. D., Nutritionist |  {{< br >}}{{< br >}} **English:** {{< br >}}{{< br >}} Baked potatoes with fennel (vegetarian) {{< br >}}{{< br >}} Chicken roll-ups {{< br >}}{{< br >}} **Italiano:** {{< br >}}{{< br >}} Patate e finocchi al forno (piatto vegetariano) {{< br >}}{{< br >}} Involtini di pollo {{< br >}}{{< br >}}  |
-| {{< td-colspan 3 >}}**DOLCI (DESSERTS)**{{< /td-colspan >}} |||
-| 9 | Coffee/il caffè | il tiramisù |
-| 10 |  {{< br >}}{{< br >}} diminutive/augmentative/pejorative  {{< br >}}{{< br >}} Describing a place/a person {{< br >}}{{< br >}}  | la sbrisolona (traditional crunchy tart) |
-| 11 |  {{< br >}}{{< br >}} Making a reservation on the phone {{< br >}}{{< br >}} La festa del lavoro {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} **English:** {{< br >}}{{< br >}} Biscotti {{< br >}}{{< br >}} **Italiano:** {{< br >}}{{< br >}} i cantucci {{< br >}}{{< br >}}  |
-| 12 | At the grocery store |  {{< br >}}{{< br >}} **English:** {{< br >}}{{< br >}} Pie and fruit tarts {{< br >}}{{< br >}} **Italiano:** {{< br >}}{{< br >}} Crostata e torta di frutta {{< br >}}{{< br >}}  |
-| 13 | Dinner with some Italians at MIT |  {{< br >}}{{< br >}} **English:** {{< br >}}{{< br >}} Fresh pasta {{< br >}}{{< br >}} **Italiano:** {{< br >}}{{< br >}} Pasta fresca {{< br >}}{{< br >}}
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+Lesson/Lezione #
+{{< thclose >}}
+{{< thopen >}}
+Conversation/Conversazione
+{{< thclose >}}
+{{< thopen >}}
+Food/Cibo
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen colspan="3" >}}
+**PRIMI (FIRST COURSES)**
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+1
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+Greetings and introductions
+
+Numbers 1–10
+
+The verb _cucinare (to cook)_
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+**English:**
+
+Pasta all'amatriciana
+
+Pasta with broccoli (vegetarian)
+
+**Italiano**:
+
+Pasta all'amatriciana
+
+Pasta con i broccoli (piatto vegetariano)
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+2
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+Expressing preference, demonstrative adjectives
+
+II Carnevale
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+**English:**
+
+Risotto with mushrooms and saffron
+
+Risotto with radicchio and sausage
+
+Risotto with asparagus (vegetarian)
+
+**Italiano:**
+
+Risotto al funghi e zafferano
+
+Risotto al radicchio e salsiccia
+
+Risotto con asparagi (piatto vegetariano)
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+3
+{{< tdclose >}}
+{{< tdopen >}}
+Conjugation of regular verbs-present tense: are-ere-ire-essere-stare-avere
+{{< tdclose >}}
+{{< tdopen >}}
+Pizza
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+4
+{{< tdclose >}}
+{{< tdopen >}}
+Asking and giving information
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+**English:**
+
+Gnocchi (potato dumplings) with tomato sauce (vegetarian)
+
+**Italiano:**
+
+Gnocchi al pomodoro (piatto vegetariano)
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen colspan="3" >}}
+**SECONDI & CONTORNI (MAIN COURSES & SIDE DISHES)**
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+5
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+Meals structure—talking about one's daily life/routine
+
+La festa della Donna
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+**English:**
+
+Meatballs
+
+Tuna balls
+
+Zucchini balls (vegetarian)
+
+Salad with tomatoes (vegetarian)
+
+**Italiano:**
+
+Polpettine di carne
+
+Polpettine di tonno
+
+Polpettine di zucchine (piatto vegetariano) 
+
+Insalata con pomodorini (piatto vegetariano)
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+6
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+Asking and giving directions (bus, cartina)
+
+La festa del Papà
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+**English:**
+
+Eggplant parmesan (vegetarian)
+
+Beef stew
+
+Bruschetta (vegetarian)
+
+**Italiano:**
+
+Melanzane alla parmigiana (piatto vegetariano)
+
+Spezzatino di manzo
+
+Bruschette (piatto vegetariano)
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+7
+{{< tdclose >}}
+{{< tdopen >}}
+Talking about profession/hobbies
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+**English:**
+
+Spinach crepes (vegetarian)
+
+**Italiano:**
+
+Crespelle di spinaci (piatto vegetariano)
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+8
+{{< tdclose >}}
+{{< tdopen >}}
+Special guest: Anna Jasonides R. D., L. D., Nutritionist
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+**English:**
+
+Baked potatoes with fennel (vegetarian)
+
+Chicken roll-ups
+
+**Italiano:**
+
+Patate e finocchi al forno (piatto vegetariano)
+
+Involtini di pollo
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen colspan="3" >}}
+**DOLCI (DESSERTS)**
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+9
+{{< tdclose >}}
+{{< tdopen >}}
+Coffee/il caffè
+{{< tdclose >}}
+{{< tdopen >}}
+il tiramisù
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+10
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+diminutive/augmentative/pejorative 
+
+Describing a place/a person
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+la sbrisolona (traditional crunchy tart)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+11
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+Making a reservation on the phone
+
+La festa del lavoro
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+**English:**
+
+Biscotti
+
+**Italiano:**
+
+i cantucci
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+12
+{{< tdclose >}}
+{{< tdopen >}}
+At the grocery store
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+**English:**
+
+Pie and fruit tarts
+
+**Italiano:**
+
+Crostata e torta di frutta
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+13
+{{< tdclose >}}
+{{< tdopen >}}
+Dinner with some Italians at MIT
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+**English:**
+
+Fresh pasta
+
+**Italiano:**
+
+Pasta fresca
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}

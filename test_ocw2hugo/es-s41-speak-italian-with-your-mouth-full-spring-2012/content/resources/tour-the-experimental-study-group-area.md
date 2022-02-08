@@ -10,4 +10,6 @@ video_files:
   video_captions_file: null
   video_transcript_file: null
   archive_url: 'http://archive.org/download/MITES.S41S12/MITES_S41S12_Teaching12_300k.mp4'
+parent_type: ThisCourseAtMITSection
+parent_title: Instructor Insights
 ---

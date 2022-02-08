@@ -11,6 +11,8 @@ video_files:
   video_transcript_file: null
   archive_url: >-
     http://www.archive.org/download/MITES.S41S12/MITES_S41S12_Lesson12_Part1_300k.mp4
+parent_type: CourseSection
+parent_title: Video Lectures
 ---
 
 **Description:** The students learn Italian by identifying the ingredients for pie and fruit tart.

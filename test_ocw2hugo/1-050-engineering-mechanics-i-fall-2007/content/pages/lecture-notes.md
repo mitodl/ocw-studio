@@ -1,51 +1,781 @@
 ---
 uid: dec40ff4-e8ca-636f-c6db-d88880914a96
 title: Lecture Notes
+type: CourseSection
 ---
 
 A significant portion of this course was taught at the blackboard, so the following lecture notes are not intended to fully capture the content of the course. The lecture notes tend to be more detailed in the second half of the course. Lecture summaries are also available for the first half of the course.
 
 This section also contains handouts summarizing important [variables and concepts](#Variables_and_Concepts).
 
-| SES # | TOPICS | LECTURE NOTES | SUMMARIES |
-| --- | --- | --- | --- |
-| 1 | Introduction and Galileo's problem |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec1)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary1)) {{< br >}}{{< br >}}  |
-| 2 | Dimensional analysis and atomic explosion |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec2)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary2)) {{< br >}}{{< br >}}  |
-| 3 | Dimensional analysis and application to engineering structures |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec3)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary3)) {{< br >}}{{< br >}}  |
-| 4 | Newton's laws of motion: the fall of the World Trade Center towers |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec4)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary4)) {{< br >}}{{< br >}}  |
-| 5 | Stress vector and stress tensor |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec5)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary5)) {{< br >}}{{< br >}}  |
-| 6 | Continuum model: hydrostatics example |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec6)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary6)) {{< br >}}{{< br >}}  |
-| 7 | Continuum model: geostatics example |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec7)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary7)) {{< br >}}{{< br >}}  |
-| 8 | Beam stress model |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec8)) {{< br >}}{{< br >}}  | &nbsp; |
-| 9 | Beam model II and summary |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec9)) {{< br >}}{{< br >}}  | &nbsp; |
-| 10 | Strength models |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec10)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary10)) {{< br >}}{{< br >}}  |
-| 11 | Mohr stress plane and strength criteria |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec11)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary10)) {{< br >}}{{< br >}}  |
-| 12 | Soil mechanics example |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec12)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary12)) {{< br >}}{{< br >}}  |
-| 13 | Beam section strength model (M/N interactions) |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec13)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary13)) {{< br >}}{{< br >}}  |
-| 14 | Strength of beam structures |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec14)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary14)) {{< br >}}{{< br >}}  |
-| 15 | Review of stresses and strength |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec15)) {{< br >}}{{< br >}}  | &nbsp; |
-| 16 | Deformation and strain tensor |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec16)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary16)) {{< br >}}{{< br >}}  |
-| 17 | Strain tensor (cont.) |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec17)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary17)) {{< br >}}{{< br >}}  |
-| 18 | Mohr circle in strain space | &nbsp; |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary18)) {{< br >}}{{< br >}}  |
-| 19 | Beam deformation |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec19)) {{< br >}}{{< br >}}  |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/summary19)) {{< br >}}{{< br >}}  |
-| 20 | Elasticity: energy approach | &nbsp; |
-| 21 | Continuum elasticity | &nbsp; |
-| 22 | Elasticity: properties |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec22)) {{< br >}}{{< br >}}  | &nbsp; |
-| 23 | Elasticity solving methods |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec23)) {{< br >}}{{< br >}}  | &nbsp; |
-| 24 | Beam elasticity I |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec24)) {{< br >}}{{< br >}}  | &nbsp; |
-| 25 | Beam elasticity II |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec25)) {{< br >}}{{< br >}}  | &nbsp; |
-| 26 | Beam elasticity III |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec26)) {{< br >}}{{< br >}}  | &nbsp; |
-| 27 | Energy bounds: 1D system (minimum potential energy) |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec27)) {{< br >}}{{< br >}}  | &nbsp; |
-| 28 | Energy bounds: 1D system (minimum complementary energy) |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec28)) {{< br >}}{{< br >}}  | &nbsp; |
-| 29 | 1D energy methods: examples and applications |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec29)) {{< br >}}{{< br >}}  | &nbsp; |
-| 30 | Generalization to 3D |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec30)) {{< br >}}{{< br >}}  | &nbsp; |
-| 31 | Stress method for beam structures |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec31)) {{< br >}}{{< br >}}  | &nbsp; |
-| 32 | Energy methods for beam structures, example |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec32)) {{< br >}}{{< br >}} Clapeyron's formulas for 1D ([PDF]({{< baseurl >}}/resources/lec32_clapeyron)) {{< br >}}{{< br >}}  | &nbsp; |
-| 33 | How stuff fails: stability (Euler buckling) |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec33)) {{< br >}}{{< br >}}  | &nbsp; |
-| 34 | Fracture mechanics I |  {{< br >}}{{< br >}} ([PDF]({{< baseurl >}}/resources/lec34)) {{< br >}}{{< br >}} Demonstration of buckling ([PDF]({{< baseurl >}}/resources/lec34_buckling)) {{< br >}}{{< br >}}  | &nbsp; |
-| 35 | Fracture mechanics II | &nbsp; |
-| 36 | Plastic collapse | &nbsp; |
-| 37 | Last lecture: review and summary | ([PDF]({{< baseurl >}}/resources/lec37_review)) |   
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+SES #
+{{< thclose >}}
+{{< thopen >}}
+TOPICS
+{{< thclose >}}
+{{< thopen >}}
+LECTURE NOTES
+{{< thclose >}}
+{{< thopen >}}
+SUMMARIES
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+1
+{{< tdclose >}}
+{{< tdopen >}}
+Introduction and Galileo's problem
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec1))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary1))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+2
+{{< tdclose >}}
+{{< tdopen >}}
+Dimensional analysis and atomic explosion
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec2))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary2))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+3
+{{< tdclose >}}
+{{< tdopen >}}
+Dimensional analysis and application to engineering structures
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec3))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary3))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+4
+{{< tdclose >}}
+{{< tdopen >}}
+Newton's laws of motion: the fall of the World Trade Center towers
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec4))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary4))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+5
+{{< tdclose >}}
+{{< tdopen >}}
+Stress vector and stress tensor
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec5))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary5))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+6
+{{< tdclose >}}
+{{< tdopen >}}
+Continuum model: hydrostatics example
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec6))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary6))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+7
+{{< tdclose >}}
+{{< tdopen >}}
+Continuum model: geostatics example
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec7))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary7))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+8
+{{< tdclose >}}
+{{< tdopen >}}
+Beam stress model
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec8))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+9
+{{< tdclose >}}
+{{< tdopen >}}
+Beam model II and summary
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec9))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+10
+{{< tdclose >}}
+{{< tdopen >}}
+Strength models
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec10))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary10))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+11
+{{< tdclose >}}
+{{< tdopen >}}
+Mohr stress plane and strength criteria
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec11))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary10))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+12
+{{< tdclose >}}
+{{< tdopen >}}
+Soil mechanics example
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec12))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary12))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+13
+{{< tdclose >}}
+{{< tdopen >}}
+Beam section strength model (M/N interactions)
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec13))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary13))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+14
+{{< tdclose >}}
+{{< tdopen >}}
+Strength of beam structures
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec14))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary14))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+15
+{{< tdclose >}}
+{{< tdopen >}}
+Review of stresses and strength
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec15))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+16
+{{< tdclose >}}
+{{< tdopen >}}
+Deformation and strain tensor
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec16))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary16))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+17
+{{< tdclose >}}
+{{< tdopen >}}
+Strain tensor (cont.)
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec17))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary17))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+18
+{{< tdclose >}}
+{{< tdopen >}}
+Mohr circle in strain space
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary18))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+19
+{{< tdclose >}}
+{{< tdopen >}}
+Beam deformation
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec19))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/summary19))
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+20
+{{< tdclose >}}
+{{< tdopen >}}
+Elasticity: energy approach
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+21
+{{< tdclose >}}
+{{< tdopen >}}
+Continuum elasticity
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+22
+{{< tdclose >}}
+{{< tdopen >}}
+Elasticity: properties
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec22))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+23
+{{< tdclose >}}
+{{< tdopen >}}
+Elasticity solving methods
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec23))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+24
+{{< tdclose >}}
+{{< tdopen >}}
+Beam elasticity I
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec24))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+25
+{{< tdclose >}}
+{{< tdopen >}}
+Beam elasticity II
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec25))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+26
+{{< tdclose >}}
+{{< tdopen >}}
+Beam elasticity III
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec26))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+27
+{{< tdclose >}}
+{{< tdopen >}}
+Energy bounds: 1D system (minimum potential energy)
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec27))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+28
+{{< tdclose >}}
+{{< tdopen >}}
+Energy bounds: 1D system (minimum complementary energy)
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec28))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+29
+{{< tdclose >}}
+{{< tdopen >}}
+1D energy methods: examples and applications
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec29))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+30
+{{< tdclose >}}
+{{< tdopen >}}
+Generalization to 3D
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec30))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+31
+{{< tdclose >}}
+{{< tdopen >}}
+Stress method for beam structures
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec31))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+32
+{{< tdclose >}}
+{{< tdopen >}}
+Energy methods for beam structures, example
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec32))
+
+Clapeyron's formulas for 1D ([PDF]({{< baseurl >}}/resources/lec32_clapeyron))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+33
+{{< tdclose >}}
+{{< tdopen >}}
+How stuff fails: stability (Euler buckling)
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec33))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+34
+{{< tdclose >}}
+{{< tdopen >}}
+Fracture mechanics I
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+([PDF]({{< baseurl >}}/resources/lec34))
+
+Demonstration of buckling ([PDF]({{< baseurl >}}/resources/lec34_buckling))
+
+
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+35
+{{< tdclose >}}
+{{< tdopen >}}
+Fracture mechanics II
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+36
+{{< tdclose >}}
+{{< tdopen >}}
+Plastic collapse
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+37
+{{< tdclose >}}
+{{< tdopen >}}
+Last lecture: review and summary
+{{< tdclose >}}
+{{< tdopen >}}
+([PDF]({{< baseurl >}}/resources/lec37_review))
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 {{< anchor "Variables_and_Concepts" >}}{{< /anchor >}}Variables and Concepts
 ----------------------------------------------------------------------------

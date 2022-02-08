@@ -6,4 +6,7 @@ resourcetype: Other
 file_type: application/msword
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/abbd17c15ff53ba0f81910b66afd6522_hw_5.xls
+type: OCWFile
+parent_type: CourseSection
+parent_title: Assignments
 ---

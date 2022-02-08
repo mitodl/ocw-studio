@@ -1,6 +1,7 @@
 ---
 uid: 4c9be39e-2e49-82ff-1487-c3a92220fd54
 title: Syllabus
+type: CourseSection
 ---
 
 Course Meeting Times
