@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.44.1
+--------------
+
+- import for learning_resource_types (#980)
+
 Version 0.44.0 (Released February 08, 2022)
 --------------
 
