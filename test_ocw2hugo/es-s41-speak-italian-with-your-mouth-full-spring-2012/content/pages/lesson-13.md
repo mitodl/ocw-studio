@@ -1,6 +1,7 @@
 ---
 uid: 47f6cbac-8f7a-d956-625b-ba782046ba03
 title: Lesson 13
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-12/cooking-instruction)

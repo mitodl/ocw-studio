@@ -3,6 +3,8 @@ uid: 8c884d0f-0658-45e9-a1eb-f0f9bb923451
 title: Language Instruction
 parent_uid: 463b4c8e-dc1e-e06b-6353-693de4b36524
 parent_title: Lesson 2
+parent_type: CourseSection
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-2) | [Next]({{< baseurl >}}/pages/lesson-2/cooking-instruction) »
@@ -32,11 +34,48 @@ Listen to the instructor speak about determinative articles:
 
 _Where Do You Come From_
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| (Tu) Da dove vieni? | Where do you come from? |
-| (Io) Vengo da Salò, in Italia | I come from Salò, in Italy |
-| Io Vengo da Boston, negli Stati Uniti | I come from Boston, United States 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+(Tu) Da dove vieni?
+{{< tdclose >}}
+{{< tdopen >}}
+Where do you come from?
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+(Io) Vengo da Salò, in Italia
+{{< tdclose >}}
+{{< tdopen >}}
+I come from Salò, in Italy
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Io Vengo da Boston, negli Stati Uniti
+{{< tdclose >}}
+{{< tdopen >}}
+I come from Boston, United States
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 Listen to the instructor speak about how to express where you come from.
 
@@ -44,20 +83,129 @@ Listen to the instructor speak about how to express where you come from.
 
 ### _This, That, These, Those_
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| Questo (masc. sing.) | This, close to the speaker |
-| Codesto (masc. sing.) | That, close to the listener, mostly in disuse |
-| Quello (masc. sing.) | That, from the both the speaker and the listener |
-| &nbsp; |
-| Questo, Questa | This |
-| Questi, Queste | These |
-| Quello, Quella | That |
-| Quelli, Quelle | Those |
-| &nbsp; |
-| Questa sera-> Stasera cuciniamo | Tonight-> Tonight we cook |
-| Questa cipolla è più grande di quella. | This onion is larger than that. |
-| Queste cipolle sono più piccole di quelle. | These onions are smaller than those. 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Questo (masc. sing.)
+{{< tdclose >}}
+{{< tdopen >}}
+This, close to the speaker
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Codesto (masc. sing.)
+{{< tdclose >}}
+{{< tdopen >}}
+That, close to the listener, mostly in disuse
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Quello (masc. sing.)
+{{< tdclose >}}
+{{< tdopen >}}
+That, from the both the speaker and the listener
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Questo, Questa
+{{< tdclose >}}
+{{< tdopen >}}
+This
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Questi, Queste
+{{< tdclose >}}
+{{< tdopen >}}
+These
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Quello, Quella
+{{< tdclose >}}
+{{< tdopen >}}
+That
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Quelli, Quelle
+{{< tdclose >}}
+{{< tdopen >}}
+Those
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+{{< tdopen >}}
+ 
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Questa sera-> Stasera cuciniamo
+{{< tdclose >}}
+{{< tdopen >}}
+Tonight-> Tonight we cook
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Questa cipolla è più grande di quella.
+{{< tdclose >}}
+{{< tdopen >}}
+This onion is larger than that.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Queste cipolle sono più piccole di quelle.
+{{< tdclose >}}
+{{< tdopen >}}
+These onions are smaller than those.
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 Listen to the instructor speak about how to say "this", "that", "these", and "those".
 

@@ -3,7 +3,9 @@ uid: 25064ffd-df3d-0c75-eddb-15ab516ecacd
 title: Using Technology to Expand Reach
 parent_uid: a6e7d634-7a40-6faa-23d0-020703ee7044
 parent_title: Instructor Insights
+parent_type: ThisCourseAtMITSection
 layout: instructor_insights
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/instructor-insights/teaching-italian-and-cooking-together) | [Next]({{< baseurl >}}/pages/instructor-insights/learning-from-challenges) »

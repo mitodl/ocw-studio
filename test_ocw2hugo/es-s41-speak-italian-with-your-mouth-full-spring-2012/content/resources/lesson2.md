@@ -8,6 +8,9 @@ resourcetype: Image
 file_type: image/jpeg
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/35e81c71eb7a8eee6aa284b3e38ef095_Lesson2.jpg
+type: OCWImage
+parent_type: CourseSection
+parent_title: Lesson 2
 image_metadata:
   image-alt: >-
     A mound of rice sits on top of a white plate.  A large leafy green vegetable

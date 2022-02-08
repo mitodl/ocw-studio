@@ -3,6 +3,8 @@ uid: 425a4a45-11b8-0530-d983-4220c685da31
 title: Language Instruction
 parent_uid: af3c6f3d-fbcc-b159-a0f9-93ffeb5ccf38
 parent_title: Lesson 9
+parent_type: CourseSection
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-9) | [Next]({{< baseurl >}}/pages/lesson-9/cooking-instruction) »

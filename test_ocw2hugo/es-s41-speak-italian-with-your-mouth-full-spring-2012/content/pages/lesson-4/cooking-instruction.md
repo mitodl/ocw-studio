@@ -3,6 +3,8 @@ uid: 75c33a4f-4256-7111-8501-8efa0dbe55ea
 title: 'Cooking Instruction '
 parent_uid: 45ae6e3b-7bcf-ebdb-0480-f2b9be5a75b7
 parent_title: Lesson 4
+parent_type: CourseSection
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-4/language-instruction) | [Next]({{< baseurl >}}/pages/lesson-5) »

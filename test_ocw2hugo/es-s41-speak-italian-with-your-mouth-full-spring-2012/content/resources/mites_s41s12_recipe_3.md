@@ -6,4 +6,7 @@ resourcetype: Document
 file_type: application/pdf
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/a8c84c75ea23f774acfdd14397db2426_MITES_S41S12_recipe_3.pdf
+type: OCWFile
+parent_type: CourseSection
+parent_title: Recipes
 ---

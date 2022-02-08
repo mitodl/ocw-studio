@@ -3,6 +3,8 @@ uid: b99e329e-5a82-aaa7-e124-7955370dab77
 title: Language Instruction
 parent_uid: 56e06732-1e88-3c54-5df6-9d03d3daeb8b
 parent_title: Lesson 5
+parent_type: CourseSection
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-5) | [Next]({{< baseurl >}}/pages/lesson-5/cooking-instruction) »
@@ -62,33 +64,236 @@ _Com'è la tua_ (your) _giornata tipica?_
 
 These are some of the answers we came up with _durante la lezione_ (during (the) class):
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _Mi sveglio_. |  {{< br >}}{{< br >}} I wake up. (Literally, "I wake myself up.") {{< br >}}{{< br >}} (_Mi sveglio is the 1st person sing. of the reflexive verb_ svegliarsi) {{< br >}}{{< br >}}  |
-| _(Mi) faccio la doccia_. | I shower. (faccio _is the 1st person sing. of the irr_. _verb_ fare) |
-| _Faccio colazione_. | I have breakfast. |
-| _Vado al lavoro_. | I go to work. (vado _is the 1st person sing. of the irr_. _verb_ andare= _to go_) |
-| _Vado a scuola_. |  {{< br >}}{{< br >}} I go to school. {{< br >}}{{< br >}} _In Italy we say I go to school to refer to elementary, middle and highschool. If you are going to college you would say ..._ ) {{< br >}}{{< br >}}  |
-| _Vado all'università._ | I go to university. |
-| _Come vai al lavoro?_ | How do you go to work? (Vai _is the 2nd person sing. of the irr. verb andare_) |
-| _Vado a piedi/in bicicletta/in auto or in macchina/in bus._ | On foot/on bicycle/by car/on a bus. |
-| _Pranzo._ | I have lunch. (_1st person sing. of_ pranzare). |
-| _Dopo avere mangiato bevo il caffè_ | After drinking coffee (Literally, "After having eaten, I drink coffee.") |
-| _Faccio i compiti_. | I do the assignments. |
-| _Vado in palestra_. | I go to the gym. |
-| _Cucino e mangio la cena_. | I cook and eat dinner. |
-| _Mi lavo i denti_. | I brush my teeth. (Literally, "I wash myself the teeth.") |
-| _Dormo_. | I sleep. 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Mi sveglio_.
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+I wake up. (Literally, "I wake myself up.")
+
+(_Mi sveglio is the 1st person sing. of the reflexive verb_ svegliarsi)
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_(Mi) faccio la doccia_.
+{{< tdclose >}}
+{{< tdopen >}}
+I shower. (faccio _is the 1st person sing. of the irr_. _verb_ fare)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Faccio colazione_.
+{{< tdclose >}}
+{{< tdopen >}}
+I have breakfast.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Vado al lavoro_.
+{{< tdclose >}}
+{{< tdopen >}}
+I go to work. (vado _is the 1st person sing. of the irr_. _verb_ andare= _to go_)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Vado a scuola_.
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+I go to school.
+
+_In Italy we say I go to school to refer to elementary, middle and highschool. If you are going to college you would say ..._ )
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Vado all'università._
+{{< tdclose >}}
+{{< tdopen >}}
+I go to university.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Come vai al lavoro?_
+{{< tdclose >}}
+{{< tdopen >}}
+How do you go to work? (Vai _is the 2nd person sing. of the irr. verb andare_)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Vado a piedi/in bicicletta/in auto or in macchina/in bus._
+{{< tdclose >}}
+{{< tdopen >}}
+On foot/on bicycle/by car/on a bus.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Pranzo._
+{{< tdclose >}}
+{{< tdopen >}}
+I have lunch. (_1st person sing. of_ pranzare).
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Dopo avere mangiato bevo il caffè_
+{{< tdclose >}}
+{{< tdopen >}}
+After drinking coffee (Literally, "After having eaten, I drink coffee.")
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Faccio i compiti_.
+{{< tdclose >}}
+{{< tdopen >}}
+I do the assignments.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Vado in palestra_.
+{{< tdclose >}}
+{{< tdopen >}}
+I go to the gym.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Cucino e mangio la cena_.
+{{< tdclose >}}
+{{< tdopen >}}
+I cook and eat dinner.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Mi lavo i denti_.
+{{< tdclose >}}
+{{< tdopen >}}
+I brush my teeth. (Literally, "I wash myself the teeth.")
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Dormo_.
+{{< tdclose >}}
+{{< tdopen >}}
+I sleep.
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 _Durante il fine settimana/_During the weekend _…_
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _Dormo tanto._ | I sleep a lot. |
-| _Leggo._ | I read. |
-| _Ascolto musica._ | I listen to music. |
-| _Faccio la lavatrice._ | I do laundry. (Literally, "I do the washing machine.") |
-| _Esco con gli amici._ |  {{< br >}}{{< br >}} I go out with friends.  {{< br >}}(esco, _1st person singular of the irr. verb uscire_, to go out) {{< br >}}{{< br >}}  
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Dormo tanto._
+{{< tdclose >}}
+{{< tdopen >}}
+I sleep a lot.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Leggo._
+{{< tdclose >}}
+{{< tdopen >}}
+I read.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Ascolto musica._
+{{< tdclose >}}
+{{< tdopen >}}
+I listen to music.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Faccio la lavatrice._
+{{< tdclose >}}
+{{< tdopen >}}
+I do laundry. (Literally, "I do the washing machine.")
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Esco con gli amici._
+{{< tdclose >}}
+{{< tdopen >}}
+
+
+I go out with friends.  
+(esco, _1st person singular of the irr. verb uscire_, to go out)
+
+
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 Dialogue
 --------

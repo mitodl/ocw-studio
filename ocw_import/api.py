@@ -13,6 +13,7 @@ from django.conf import settings
 from gdrive_sync.api import create_gdrive_folders, is_gdrive_enabled
 from main.s3_utils import get_s3_object_and_read, get_s3_resource
 from main.utils import get_dirpath_and_filename, is_valid_uuid
+from ocw_import.constants import OCW_SECTION_TYPE_MAPPING, OCW_TYPE_ASSIGNMENTS
 from websites.api import find_available_name, get_valid_new_filename
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
@@ -116,14 +117,96 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
     WebsiteContent.objects.filter(text_id__in=obsolete_content).delete()
 
 
-def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many-locals
+def update_ocw2hugo_content(
+    bucket, prefix, website, update_field
+):  # pylint:disable=too-many-locals
     """
-    Convert file data into a WebsiteContent object
+    update the update_field of all content files for an ocw course from hugo2ocw output
 
     Args:
-        filepath(str): The path of the file (from S3 or git)
-        data(str): The file data to be converted
-        website (Website): The website to which the content belongs
+        bucket (s3.Bucket): S3 bucket
+        prefix (str): S3 prefix for filtering by course
+        website (Website): Website to import content for
+    """
+    site_prefix = f"{prefix}{website.name}"
+
+    is_metadata_field = False
+
+    if update_field.startswith("metadata."):
+        is_metadata_field = True
+        update_field = update_field.replace("metadata.", "")
+
+    for resp in bucket.meta.client.get_paginator("list_objects").paginate(
+        Bucket=bucket.name, Prefix=f"{site_prefix}/content"
+    ):
+        for obj in resp["Contents"]:
+            s3_key = obj["Key"]
+            s3_content = get_s3_object_and_read(bucket.Object(s3_key)).decode()
+            if obj["Key"].startswith(site_prefix):
+                filepath = obj["Key"].replace(site_prefix, "", 1)
+            else:
+                filepath = obj["Key"]
+            try:
+                text_id, content_data = get_content_data(filepath, s3_content, website)
+
+                content_file = WebsiteContent.objects.filter(
+                    website=website, text_id=text_id
+                ).first()
+
+                if content_file:
+                    if is_metadata_field:
+                        content_file.metadata[update_field] = content_data.get(
+                            "metadata", {}
+                        ).get(update_field, "")
+                    else:
+                        setattr(
+                            content_file,
+                            update_field,
+                            content_data.get(update_field, ""),
+                        )
+                    content_file.save()
+
+            except:  # pylint:disable=bare-except
+                log.exception("Error saving WebsiteContent for %s", s3_key)
+
+
+def get_learning_resource_types(content_json):
+    """
+    Get learning_resource_types for imported courses
+
+    content_json(dict): json representation of other WebsiteContent data
+
+    Returns:
+    array[str]: the learning_resource_types for the content object
+    """
+
+    if "Section" in content_json.get("parent_type", ""):
+        section_title = content_json.get("parent_title")
+    elif "Section" in content_json.get("type", ""):
+        section_title = content_json.get("title")
+    else:
+        return []
+
+    if re.search(r"Assignment($|\s)", section_title):
+        return [OCW_TYPE_ASSIGNMENTS]
+
+    if OCW_SECTION_TYPE_MAPPING.get(section_title):
+        return [OCW_SECTION_TYPE_MAPPING.get(section_title)]
+
+    return []
+
+
+def get_content_data(filepath, data, website):  # pylint:disable=too-many-locals
+    """
+    Get json data for WebsiteContent object from hugo data
+
+    filepath(str): The path of the file (from S3 or git)
+    data(str): The file data to be converted
+    website (Website): The website to which the content belongs
+
+    Returns:
+    text_id (str): the uuid of the WebsiteContent objecet
+    content_data (dict): json representation of the WebsiteContent contents
     """
     s3_content_parts = [
         part for part in re.split(re.compile(r"^---\n", re.MULTILINE), data) if part
@@ -150,8 +233,12 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
             parent, _ = WebsiteContent.objects.get_or_create(
                 website=website, text_id=str(uuid.UUID(parent_uid))
             )
-        # Assumes that s3 objects will be independently synced to the ocw-studio bucket via devops
         file = content_json.get("file", None)
+
+        content_json["learning_resource_types"] = get_learning_resource_types(
+            content_json
+        )
+
         if file:
             ocw_prefix = (
                 website.starter.config.get("root-url-path", "courses")
@@ -160,7 +247,7 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
             )
             file = re.sub(r"^/?coursemedia", ocw_prefix, file)
 
-        base_defaults = {
+        content_data = {
             "is_page_content": True,
             "file": file,
             "metadata": content_json,
@@ -173,10 +260,24 @@ def convert_data_to_content(filepath, data, website):  # pylint:disable=too-many
             "filename": filename.replace(".", "-")[0:CONTENT_FILENAME_MAX_LEN],
         }
 
-        content, _ = WebsiteContent.objects.update_or_create(
-            website=website, text_id=text_id, defaults=base_defaults
-        )
-        return content
+        return text_id, content_data
+
+
+def convert_data_to_content(filepath, data, website):
+    """
+    Convert file data into a WebsiteContent object
+
+    Args:
+        filepath(str): The path of the file (from S3 or git)
+        data(str): The file data to be converted
+        website (Website): The website to which the content belongs
+    """
+    text_id, base_defaults = get_content_data(filepath, data, website)
+
+    content, _ = WebsiteContent.objects.update_or_create(
+        website=website, text_id=text_id, defaults=base_defaults
+    )
+    return content
 
 
 def get_short_id(name: str, metadata: Dict) -> str:
@@ -398,3 +499,23 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
             create_gdrive_folders(website.short_id)
     except:  # pylint:disable=bare-except
         log.exception("Error saving website %s", path)
+
+
+def update_ocw2hugo_course(bucket_name, prefix, path, content_update_field):
+    """
+    Extract OCW course content for a course
+
+    Args:
+        bucket_name (str): An s3 bucket name
+        prefix (str): S3 prefix before start of course_id path
+        path (str): The course URL path
+        content_update_field (string): Website content field that should be overwritten
+    """
+    s3 = get_s3_resource()
+    bucket = s3.Bucket(bucket_name)
+    name = path.replace("/data/course_legacy.json", "", 1)
+
+    website = Website.objects.filter(name=name).first()
+
+    if website:
+        update_ocw2hugo_content(bucket, prefix, website, content_update_field)

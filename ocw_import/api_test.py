@@ -6,9 +6,11 @@ import pytest
 from moto import mock_s3
 
 from ocw_import.api import (
+    get_learning_resource_types,
     get_short_id,
     import_ocw2hugo_course,
     import_ocw2hugo_sitemetadata,
+    update_ocw2hugo_course,
 )
 from ocw_import.conftest import (
     MOCK_BUCKET_NAME,
@@ -16,6 +18,7 @@ from ocw_import.conftest import (
     get_ocw2hugo_path,
     setup_s3,
 )
+from ocw_import.constants import OCW_TYPE_ASSIGNMENTS, OCW_TYPE_LECTURE_NOTES
 from websites.constants import (
     CONTENT_TYPE_INSTRUCTOR,
     CONTENT_TYPE_METADATA,
@@ -100,6 +103,8 @@ def test_import_ocw2hugo_course_content(mocker, settings):
     assert lecture_pdf.file == re.sub(
         r"^/?coursemedia", "courses", lecture_pdf.metadata.get("file")
     )
+    assert lecture_pdf.metadata.get("learning_resource_types") == ["Lecture Notes"]
+
     get_valid_new_filename_mock.assert_any_call(
         website.pk,
         lecture_pdf.dirpath,
@@ -222,7 +227,7 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
         "learning_resource_types": ["Problem Sets", "Lecture Notes"],
         "term": "Fall",
         "year": "2007",
-        "legacy_uid": "943e2a4c-3a7f-0e9f-f872-95c7a0cafac6",
+        "legacy_uid": "95f204a1-7715-8120-c7c9-66014bee40dd",
     }
 
 
@@ -388,3 +393,129 @@ def test_import_ocw2hugo_video_gallery(mocker, settings):
         text_id="383b8d1c-30df-d781-cc05-c1c648453997"
     )
     assert video_lectures.type == "video_gallery"
+
+
+@mock_s3
+@pytest.mark.parametrize("website_exists", [True, False])
+def test_update_ocw2hugo_course(mocker, website_exists):
+    """test update_ocw2hugo_course"""
+    name = "1-050-engineering-mechanics-i-fall-2007"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
+    content_field = "title"
+
+    mock_update_ocw2hugo_content = mocker.patch(
+        "ocw_import.api.update_ocw2hugo_content"
+    )
+
+    if website_exists:
+        WebsiteFactory.create(name=name)
+
+    update_ocw2hugo_course(
+        MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key, content_field
+    )
+
+    if website_exists:
+        mock_update_ocw2hugo_content.assert_called_once()
+    else:
+        mock_update_ocw2hugo_content.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "content_json,resource_types",
+    [
+        [
+            {
+                "type": "CourseSection",
+                "parent_type": "CourseSection",
+                "title": "First Paper Assignment",
+                "parent_title": "Lecture Summaries",
+            },
+            [OCW_TYPE_LECTURE_NOTES],
+        ],
+        [
+            {
+                "type": "CourseSection",
+                "title": "First Paper Assignment",
+            },
+            [OCW_TYPE_ASSIGNMENTS],
+        ],
+        [
+            {
+                "type": "CourseSection",
+                "parent_type": "CourseSection",
+                "title": "First Paper Assignment",
+                "parent_title": "Assignments and Exams",
+            },
+            [],
+        ],
+        [
+            {
+                "type": "CourseSection",
+                "parent_type": "CourseSection",
+                "title": "First Paper Assignment",
+                "parent_title": OCW_TYPE_LECTURE_NOTES,
+            },
+            [OCW_TYPE_LECTURE_NOTES],
+        ],
+        [
+            {
+                "type": "CourseSection",
+                "title": "Exercises",
+            },
+            [],
+        ],
+    ],
+)
+def test_get_learning_resource_types(content_json, resource_types):
+    """ Test get_learning_resource_types """
+    result = get_learning_resource_types(content_json)
+    assert result == resource_types
+
+
+@mock_s3
+@pytest.mark.parametrize("content_exists", [True, False])
+@pytest.mark.parametrize("update_field", ["title", "metadata.description"])
+def test_update_ocw2hugo_course_content(mocker, settings, content_exists, update_field):
+    """update_ocw2hugo_course_content should update website content"""
+    setup_s3(settings)
+    name = "1-050-engineering-mechanics-i-fall-2007"
+    s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
+    filenames = [f"file-{i}" for i in range(100)]
+    mocker.patch("ocw_import.api.get_valid_new_filename", side_effect=filenames)
+
+    website = WebsiteFactory.create(name=name)
+
+    if content_exists:
+        WebsiteContentFactory.create(
+            website=website,
+            text_id="35806cc1-1f73-e1dd-f902-580c83d1566f",
+            title="original title",
+            metadata={"description": "original description"},
+        )
+
+    update_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key, update_field)
+
+    if content_exists:
+        resource = WebsiteContent.objects.get(
+            website=website,
+            text_id="35806cc1-1f73-e1dd-f902-580c83d1566f",
+        )
+
+        if update_field == "title":
+            assert resource.title == "variables3.pdf"
+            assert resource.metadata["description"] == "original description"
+        else:
+            assert resource.title == "original title"
+            assert (
+                resource.metadata["description"]
+                == "Summary of variables and concepts for lectures 27 through 37."
+            )
+
+    else:
+        assert (
+            WebsiteContent.objects.filter(
+                website=website,
+                text_id="35806cc1-1f73-e1dd-f902-580c83d1566f",
+            ).count()
+            == 0
+        )

@@ -6,6 +6,9 @@ resourcetype: Image
 file_type: image/png
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/b9f0393a4bf681d44061a196a29739a7_ES-S41_classroom-1.png
+type: OCWImage
+parent_type: ThisCourseAtMITSection
+parent_title: Instructor Insights
 image_metadata:
   image-alt: ''
   caption: ''

@@ -3,6 +3,8 @@ uid: fa33c08e-4657-c62c-37eb-e7a3c8d11ac2
 title: Language Instruction
 parent_uid: 4295e758-bff2-5514-bf94-945586ed328d
 parent_title: Lesson 6
+parent_type: CourseSection
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-6) | [Next]({{< baseurl >}}/pages/lesson-6/cooking-instruction) »
@@ -30,15 +32,84 @@ _Leggi, ascolta e ripeti._/ Read, listen, and repeat.
 
 [Lesson 6 audio (MP3 - 2.6MB)]({{< baseurl >}}/resources/incucina)
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _Ecco qui!_ | Here it is! (Literally, "here here".) |
-| _Grazie (mille)._ | Thank you (a thousand.) |
-| _Prego._ | You're welcome. (Literally "I pray".) |
-| _Di niente._ | You're welcome. (Literally, "of nothing".) |
-| _Posso usare il coltello?_ | Can I use the knife? |
-| _Prego._ | In this context, it means "Please do." |
-| _Scusa, non ho capito. Puoi ripetere per favore?_ | Sorry, I did not understand. Can you repeat please? 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Ecco qui!_
+{{< tdclose >}}
+{{< tdopen >}}
+Here it is! (Literally, "here here".)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Grazie (mille)._
+{{< tdclose >}}
+{{< tdopen >}}
+Thank you (a thousand.)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Prego._
+{{< tdclose >}}
+{{< tdopen >}}
+You're welcome. (Literally "I pray".)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Di niente._
+{{< tdclose >}}
+{{< tdopen >}}
+You're welcome. (Literally, "of nothing".)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Posso usare il coltello?_
+{{< tdclose >}}
+{{< tdopen >}}
+Can I use the knife?
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Prego._
+{{< tdclose >}}
+{{< tdopen >}}
+In this context, it means "Please do."
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Scusa, non ho capito. Puoi ripetere per favore?_
+{{< tdclose >}}
+{{< tdopen >}}
+Sorry, I did not understand. Can you repeat please?
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 *   Scusa stands for "_tu scusami=scusa me_"= 2nd person singular exhortative present of the reg. verb _scusare_, to excuse, forgive=excuse me. _Scusa_ also means sorry (e.g. if you accidentally bump into someone; to get someone's attention; you didn't hear what someone said; you said something inappropriate)
 *   _Mi scusi_ (=_lei mi scusi_ formal for _scusa_, excuse me)
@@ -82,32 +153,246 @@ Person 2: Di niente, arrivederci!
 
 Vocabulary:
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| _Non capisco_. | I do not understand. |
-| _Può_ | Can you? (formal) |
-| _Più_ | More |
-| _Lentamente_ | Slowly |
-| _Certo_ | Of course |
-| _Piazza_ | Place |
-| _Prenda_ | Take (2nd person singular, formal) |
-| _A sinistra_ | On the left |
-| _A destra_ | On the right |
-| _Deve_ | (You) have to (formal) |
-| _Girare_ | To turn |
-| _Via_ | Street |
-| _Da_ | From |
-| _Qui_ | Here (qui or qua are both correct) |
-| _Vada_ | Go (2nd person singular, formal) Andare= To go |
-| _Sempre dritto_ | Straight ahead (Literally, always straight) |
-| _Diventare_ | To become |
-| _Incrocio_ | Crossing (m) _passare_ or better _attraversare un  {{< br >}}incrocio_ = cross a crossing |
-| _Molti_ | Many (masculine plural, referred to incroci) |
-| _Dopo_ | After |
-| _Ed=e_ | And |
-| _È arrivato/a_ | You arrived, literally have arrived |
-| _Lontano/a_ | Far |
-| _Vicino/a_ | Near |
-| _A piedi_ | On foot (piede = foot) 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Non capisco_.
+{{< tdclose >}}
+{{< tdopen >}}
+I do not understand.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Può_
+{{< tdclose >}}
+{{< tdopen >}}
+Can you? (formal)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Più_
+{{< tdclose >}}
+{{< tdopen >}}
+More
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Lentamente_
+{{< tdclose >}}
+{{< tdopen >}}
+Slowly
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Certo_
+{{< tdclose >}}
+{{< tdopen >}}
+Of course
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Piazza_
+{{< tdclose >}}
+{{< tdopen >}}
+Place
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Prenda_
+{{< tdclose >}}
+{{< tdopen >}}
+Take (2nd person singular, formal)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_A sinistra_
+{{< tdclose >}}
+{{< tdopen >}}
+On the left
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_A destra_
+{{< tdclose >}}
+{{< tdopen >}}
+On the right
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Deve_
+{{< tdclose >}}
+{{< tdopen >}}
+(You) have to (formal)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Girare_
+{{< tdclose >}}
+{{< tdopen >}}
+To turn
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Via_
+{{< tdclose >}}
+{{< tdopen >}}
+Street
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Da_
+{{< tdclose >}}
+{{< tdopen >}}
+From
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Qui_
+{{< tdclose >}}
+{{< tdopen >}}
+Here (qui or qua are both correct)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Vada_
+{{< tdclose >}}
+{{< tdopen >}}
+Go (2nd person singular, formal) Andare= To go
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Sempre dritto_
+{{< tdclose >}}
+{{< tdopen >}}
+Straight ahead (Literally, always straight)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Diventare_
+{{< tdclose >}}
+{{< tdopen >}}
+To become
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Incrocio_
+{{< tdclose >}}
+{{< tdopen >}}
+Crossing (m) _passare_ or better _attraversare un  
+incrocio_ = cross a crossing
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Molti_
+{{< tdclose >}}
+{{< tdopen >}}
+Many (masculine plural, referred to incroci)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Dopo_
+{{< tdclose >}}
+{{< tdopen >}}
+After
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Ed=e_
+{{< tdclose >}}
+{{< tdopen >}}
+And
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_È arrivato/a_
+{{< tdclose >}}
+{{< tdopen >}}
+You arrived, literally have arrived
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Lontano/a_
+{{< tdclose >}}
+{{< tdopen >}}
+Far
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_Vicino/a_
+{{< tdclose >}}
+{{< tdopen >}}
+Near
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+_A piedi_
+{{< tdclose >}}
+{{< tdopen >}}
+On foot (piede = foot)
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 « [Previous]({{< baseurl >}}/pages/lesson-6) | [Next]({{< baseurl >}}/pages/lesson-6/cooking-instruction) »

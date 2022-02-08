@@ -3,6 +3,8 @@ uid: b59ef236-b43e-fef0-05df-4148e5fd08ca
 title: Language Instruction
 parent_uid: c4c7fba0-2305-e785-952c-8d8e6bf26fc3
 parent_title: Lesson 1
+parent_type: CourseSection
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-1) | [Next]({{< baseurl >}}/pages/lesson-1/cooking-instruction) »
@@ -16,13 +18,63 @@ Watch a video:
 
 ### Short Dialogue
 
-| ITALIAN | ENGLISH |
-| --- | --- |
-| Ciao, (io) mi chiamo Paola. | Hello, I am called (literally "I call myself") Paola |
-| (Tu) come ti chiami (informal)? | What's your name (literally "How do you call yourself")? |
-| Piacere! | Nice to meet you! (Literally "pleasure") |
-| Ciao! | Informal hello and goodbye. |
-| {{< td-colspan 3 >}}Notice that in Italian in most contexts you can omit the subject to a sentence (io, tu above).{{< /td-colspan >}} ||
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+ITALIAN
+{{< thclose >}}
+{{< thopen >}}
+ENGLISH
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Ciao, (io) mi chiamo Paola.
+{{< tdclose >}}
+{{< tdopen >}}
+Hello, I am called (literally "I call myself") Paola
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+(Tu) come ti chiami (informal)?
+{{< tdclose >}}
+{{< tdopen >}}
+What's your name (literally "How do you call yourself")?
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Piacere!
+{{< tdclose >}}
+{{< tdopen >}}
+Nice to meet you! (Literally "pleasure")
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Ciao!
+{{< tdclose >}}
+{{< tdopen >}}
+Informal hello and goodbye.
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen colspan="3" >}}
+Notice that in Italian in most contexts you can omit the subject to a sentence (io, tu above).
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 Listen to this short dialogue:
 
@@ -55,13 +107,66 @@ _Consonanti_/Consonants
 
 Concerning consonants, in Italian we have single and double consonants (doppie).
 
-| SINGLE CONSONANT | DOUBLE CONSONANTs |
-| --- | --- |
-| Rosa (pink/rose) | Rossa (red) |
-| Tono (tone) | Tonno (tuna) |
-| Belo (bleat) | Bello (beautiful) |
-| Il Papa (m) (Pope)  | La Pappa (f) (a cute way to say food, e.g. when talking to babies. Expression also used to deplore pureed food that doesn't look very tasty.) |
-| La nona (f) (the ninth) | La nonna (the grandma) 
+{{< tableopen >}}
+{{< theadopen >}}
+{{< tropen >}}
+{{< thopen >}}
+SINGLE CONSONANT
+{{< thclose >}}
+{{< thopen >}}
+DOUBLE CONSONANTs
+{{< thclose >}}
+
+{{< trclose >}}
+
+{{< theadclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Rosa (pink/rose)
+{{< tdclose >}}
+{{< tdopen >}}
+Rossa (red)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Tono (tone)
+{{< tdclose >}}
+{{< tdopen >}}
+Tonno (tuna)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Belo (bleat)
+{{< tdclose >}}
+{{< tdopen >}}
+Bello (beautiful)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+Il Papa (m) (Pope) 
+{{< tdclose >}}
+{{< tdopen >}}
+La Pappa (f) (a cute way to say food, e.g. when talking to babies. Expression also used to deplore pureed food that doesn't look very tasty.)
+{{< tdclose >}}
+
+{{< trclose >}}
+{{< tropen >}}
+{{< tdopen >}}
+La nona (f) (the ninth)
+{{< tdclose >}}
+{{< tdopen >}}
+La nonna (the grandma)
+{{< tdclose >}}
+
+{{< trclose >}}
+
+{{< tableclose >}}
 
 Listen to the vowels, accents, and consonants:
 

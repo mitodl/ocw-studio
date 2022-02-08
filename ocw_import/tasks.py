@@ -7,7 +7,11 @@ from mitol.common.utils.collections import chunks
 
 from main.celery import app
 from main.tasks import chord_finisher
-from ocw_import.api import fetch_ocw2hugo_course_paths, import_ocw2hugo_course
+from ocw_import.api import (
+    fetch_ocw2hugo_course_paths,
+    import_ocw2hugo_course,
+    update_ocw2hugo_course,
+)
 from websites.constants import WEBSITE_SOURCE_OCW_IMPORT
 from websites.models import Website, WebsiteStarter
 
@@ -37,6 +41,24 @@ def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
         import_ocw2hugo_course(
             bucket_name, prefix, path, starter_id=course_site_starter_id
         )
+
+
+@app.task()
+def update_ocw2hugo_course_paths(paths, bucket_name, prefix, content_field):
+    """
+    Import all ocw2hugo courses & content
+
+    Args:
+        paths (list of str): list of course data template paths
+        bucket_name (str): S3 bucket name
+        prefix (str): S3 prefix before start of course_id path
+    """
+    if not paths:
+        return
+
+    for path in paths:
+        log.info("Importing course: '%s'", path)
+        update_ocw2hugo_course(bucket_name, prefix, path, content_field)
 
 
 @app.task()
@@ -112,3 +134,47 @@ def import_ocw2hugo_courses(
     )
     workflow = celery.chain(import_steps, delete_steps)
     raise self.replace(celery.group(workflow))
+
+
+@app.task(bind=True)
+def update_ocw_resource_data(
+    self,
+    bucket_name=None,
+    prefix=None,
+    filter_str=None,
+    limit=None,
+    chunk_size=100,
+    content_field=None,
+):  # pylint:disable=too-many-arguments
+    """
+    Import all ocw2hugo courses & content
+
+    Args:
+        bucket_name (str): S3 bucket name
+        prefix (str): (Optional) S3 prefix before start of course_id path
+        filter_str (str): (Optional) If specified, only yield course paths containing this string
+        limit (int or None): (Optional) If specified, limits the number of courses imported
+        chunk_size (int): Number of courses to process per task
+        content_field(str): WebsiteContent field that should be updated
+    """
+    if not bucket_name:
+        raise TypeError("Bucket name must be specified")
+
+    if not content_field:
+        raise TypeError("Update field must be specified")
+    course_paths = list(fetch_ocw2hugo_course_paths(bucket_name, prefix=prefix))
+    if filter_str is not None:
+        course_paths = [path for path in course_paths if filter_str in path]
+    if limit is not None:
+        course_paths = course_paths[:limit]
+    course_tasks = [
+        update_ocw2hugo_course_paths.si(
+            paths=paths,
+            bucket_name=bucket_name,
+            prefix=prefix,
+            content_field=content_field,
+        )
+        for paths in chunks(course_paths, chunk_size=chunk_size)
+    ]
+
+    raise self.replace(celery.group(course_tasks))

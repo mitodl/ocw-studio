@@ -3,7 +3,9 @@ uid: 678f8764-d5c0-9e75-a398-e0971425b752
 title: Teaching Italian and Cooking Together
 parent_uid: a6e7d634-7a40-6faa-23d0-020703ee7044
 parent_title: Instructor Insights
+parent_type: ThisCourseAtMITSection
 layout: instructor_insights
+type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/instructor-insights/developing-the-course) | [Next]({{< baseurl >}}/pages/instructor-insights/using-technology-to-expand-reach) »
