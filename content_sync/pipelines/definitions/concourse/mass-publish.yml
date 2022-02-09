@@ -33,6 +33,7 @@ task-config: &webhook-config
     source: {repository: curlimages/curl}
 jobs:
 - name: mass-publish
+  serial: true
   plan:
   - get: ocw-hugo-themes
     timeout: 1m
