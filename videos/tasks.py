@@ -151,7 +151,7 @@ def update_youtube_statuses():
                     set_dict_field(
                         resource.metadata,
                         settings.YT_FIELD_THUMBNAIL,
-                        f"https://img.youtube.com/vi/{video_file.destination_id}/0.jpg",
+                        f"https://img.youtube.com/vi/{video_file.destination_id}/default.jpg",
                     )
                     resource.save()
             mail_youtube_upload_success(video_file)

@@ -268,7 +268,7 @@ def test_update_youtube_statuses(
                 "resourcetype": "Video",
                 "file_type": video_file.video.drivefile_set.first().mime_type,
                 "video_files": {
-                    "video_thumbnail_file": f"https://img.youtube.com/vi/{video_file.destination_id}/0.jpg"
+                    "video_thumbnail_file": f"https://img.youtube.com/vi/{video_file.destination_id}/default.jpg"
                 },
                 "video_metadata": {"youtube_id": video_file.destination_id},
                 "image": "",

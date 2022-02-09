@@ -191,23 +191,23 @@ def test_is_ocw_site(settings):
     [
         [
             None,
-            "https://img.youtube.com/fake/0.jpg",
+            "https://img.youtube.com/fake/default.jpg",
             True,
-            "https://img.youtube.com/fake/0.jpg",
+            "https://img.youtube.com/fake/default.jpg",
         ],
         [
             "abc123",
-            "https://img.youtube.com/def456/0.jpg",
+            "https://img.youtube.com/def456/default.jpg",
             False,
-            "https://img.youtube.com/def456/0.jpg",
+            "https://img.youtube.com/def456/default.jpg",
         ],
-        ["abc123", "", False, "https://img.youtube.com/vi/abc123/0.jpg"],
-        ["abc123", None, False, "https://img.youtube.com/vi/abc123/0.jpg"],
+        ["abc123", "", False, "https://img.youtube.com/vi/abc123/default.jpg"],
+        ["abc123", None, False, "https://img.youtube.com/vi/abc123/default.jpg"],
         [
             "abc123",
-            "https://img.youtube.com/def456/0.jpg",
+            "https://img.youtube.com/def456/default.jpg",
             True,
-            "https://img.youtube.com/vi/abc123/0.jpg",
+            "https://img.youtube.com/vi/abc123/default.jpg",
         ],
     ],
 )

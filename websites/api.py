@@ -193,7 +193,7 @@ def update_youtube_thumbnail(website_id: str, metadata: Dict, overwrite=False):
             set_dict_field(
                 metadata,
                 settings.YT_FIELD_THUMBNAIL,
-                f"https://img.youtube.com/vi/{youtube_id}/0.jpg",
+                f"https://img.youtube.com/vi/{youtube_id}/default.jpg",
             )
 
 

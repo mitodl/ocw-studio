@@ -272,7 +272,7 @@ def test_website_content_detail_serializer_youtube_ocw(settings, is_resource):
             assert content.metadata["video_metadata"]["youtube_id"] == youtube_id
             assert (
                 content.metadata["video_files"]["video_thumbnail_file"]
-                == f"https://img.youtube.com/vi/{youtube_id}/0.jpg"
+                == f"https://img.youtube.com/vi/{youtube_id}/default.jpg"
             )
         else:
             assert content.metadata["body"] == "text"
