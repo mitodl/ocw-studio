@@ -13,26 +13,31 @@ resource_types:
 resources:
   - name: webpack-json
     type: s3-resource-iam
+    check_every: never
     source:
       bucket: ol-eng-artifacts
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
   - name: course-markdown
     type: git
+    check_every: never
     source:
       uri: ((markdown-uri))((git-private-key-var))
       branch: ((ocw-site-repo-branch))
   - name: ocw-hugo-themes
     type: git
+    check_every: never
     source:
       uri: ((ocw-hugo-themes-uri))
       branch: ((ocw-hugo-themes-branch))
   - name: ocw-hugo-projects
     type: git
+    check_every: never
     source:
       uri: ((ocw-hugo-projects-uri))
       branch: ((ocw-hugo-projects-branch))
   - name: ocw-studio-webhook
     type: http-resource
+    check_every: never
     source:
         url: ((ocw-studio-url))/api/websites/((site-name))/pipeline_status/
         method: POST
