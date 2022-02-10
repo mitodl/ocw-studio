@@ -19,6 +19,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.views import LogoutView
 from django.urls import path, re_path
+from rest_framework.schemas import get_schema_view
 
 from main.views import public_index, restricted_index
 
@@ -43,6 +44,13 @@ urlpatterns = [
     path("", include("mitol.authentication.urls.saml")),
     path("", include("mitol.mail.urls")),
     path("", include("videos.urls")),
+    path('api/openapi_schema', get_schema_view(
+        title="Your Project",
+        description="OCW-Studio Website + Website Content API schema",
+        patterns=[
+            path('api/', include('websites.urls')),
+        ]
+    )),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
