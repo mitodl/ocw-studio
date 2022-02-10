@@ -84,7 +84,7 @@ class Command(BaseCommand):
         if source_str:
             content_qset = content_qset.filter(content__website__source=source_str)
 
-        content_qset.update(synced_checksum=None)
+        content_qset.update(synced_checksum=None, data=None)
 
         total_seconds = (now_in_utc() - start).total_seconds()
         self.stdout.write(
