@@ -14,6 +14,7 @@ from mitol.mail.api import get_message_sender
 
 from content_sync.constants import VERSION_DRAFT
 from users.models import User
+from videos.constants import YT_THUMBNAIL_IMG
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     PUBLISH_STATUS_ABORTED,
@@ -193,7 +194,7 @@ def update_youtube_thumbnail(website_id: str, metadata: Dict, overwrite=False):
             set_dict_field(
                 metadata,
                 settings.YT_FIELD_THUMBNAIL,
-                f"https://img.youtube.com/vi/{youtube_id}/0.jpg",
+                YT_THUMBNAIL_IMG.format(video_id=youtube_id),
             )
 
 

@@ -18,6 +18,7 @@ from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
 from videos.constants import (
     DESTINATION_YOUTUBE,
+    YT_THUMBNAIL_IMG,
     VideoFileStatus,
     VideoStatus,
     YouTubeStatus,
@@ -268,7 +269,9 @@ def test_update_youtube_statuses(
                 "resourcetype": "Video",
                 "file_type": video_file.video.drivefile_set.first().mime_type,
                 "video_files": {
-                    "video_thumbnail_file": f"https://img.youtube.com/vi/{video_file.destination_id}/0.jpg"
+                    "video_thumbnail_file": YT_THUMBNAIL_IMG.format(
+                        video_id=video_file.destination_id
+                    )
                 },
                 "video_metadata": {"youtube_id": video_file.destination_id},
                 "image": "",

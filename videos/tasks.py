@@ -17,6 +17,7 @@ from main.constants import STATUS_CREATED
 from videos import threeplay_api
 from videos.constants import (
     DESTINATION_YOUTUBE,
+    YT_THUMBNAIL_IMG,
     VideoFileStatus,
     VideoStatus,
     YouTubeStatus,
@@ -151,7 +152,7 @@ def update_youtube_statuses():
                     set_dict_field(
                         resource.metadata,
                         settings.YT_FIELD_THUMBNAIL,
-                        f"https://img.youtube.com/vi/{video_file.destination_id}/0.jpg",
+                        YT_THUMBNAIL_IMG.format(video_id=video_file.destination_id),
                     )
                     resource.save()
             mail_youtube_upload_success(video_file)

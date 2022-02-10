@@ -7,6 +7,7 @@ from django.db.models import CharField, Value
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
+from videos.constants import YT_THUMBNAIL_IMG
 from websites.constants import (
     CONTENT_TYPE_RESOURCE,
     ROLE_EDITOR,
@@ -270,10 +271,9 @@ def test_website_content_detail_serializer_youtube_ocw(settings, is_resource):
     for content in [existing_content, new_content]:
         if is_resource:
             assert content.metadata["video_metadata"]["youtube_id"] == youtube_id
-            assert (
-                content.metadata["video_files"]["video_thumbnail_file"]
-                == f"https://img.youtube.com/vi/{youtube_id}/0.jpg"
-            )
+            assert content.metadata["video_files"][
+                "video_thumbnail_file"
+            ] == YT_THUMBNAIL_IMG.format(video_id=youtube_id)
         else:
             assert content.metadata["body"] == "text"
 

@@ -7,6 +7,7 @@ from mitol.common.utils import now_in_utc
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from users.factories import UserFactory
+from videos.constants import YT_THUMBNAIL_IMG
 from websites.api import (
     detect_mime_type,
     fetch_website,
@@ -191,23 +192,23 @@ def test_is_ocw_site(settings):
     [
         [
             None,
-            "https://img.youtube.com/fake/0.jpg",
+            YT_THUMBNAIL_IMG.format(video_id="fake"),
             True,
-            "https://img.youtube.com/fake/0.jpg",
+            YT_THUMBNAIL_IMG.format(video_id="fake"),
         ],
         [
             "abc123",
-            "https://img.youtube.com/def456/0.jpg",
+            YT_THUMBNAIL_IMG.format(video_id="def456"),
             False,
-            "https://img.youtube.com/def456/0.jpg",
+            YT_THUMBNAIL_IMG.format(video_id="def456"),
         ],
-        ["abc123", "", False, "https://img.youtube.com/vi/abc123/0.jpg"],
-        ["abc123", None, False, "https://img.youtube.com/vi/abc123/0.jpg"],
+        ["abc123", "", False, YT_THUMBNAIL_IMG.format(video_id="abc123")],
+        ["abc123", None, False, YT_THUMBNAIL_IMG.format(video_id="abc123")],
         [
             "abc123",
-            "https://img.youtube.com/def456/0.jpg",
+            YT_THUMBNAIL_IMG.format(video_id="def456"),
             True,
-            "https://img.youtube.com/vi/abc123/0.jpg",
+            YT_THUMBNAIL_IMG.format(video_id="abc123"),
         ],
     ],
 )
