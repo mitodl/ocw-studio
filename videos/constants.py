@@ -7,6 +7,8 @@ DESTINATION_ARCHIVE = "archive"
 
 ALL_DESTINATIONS = [DESTINATION_YOUTUBE, DESTINATION_ARCHIVE]
 
+YT_THUMBNAIL_IMG = "https://img.youtube.com/vi/{video_id}/default.jpg"
+
 
 class VideoStatus:
     """Simple class for possible VideoFile statuses"""
