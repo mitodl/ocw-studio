@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.45.0
+--------------
+
+- fix: youtube video thumbnail 0.jpg replaced with default.jpg (120x90) (#985)
+- set serial: true on the mass publish job (#987)
+- remove italicization of text within blockquote tags in CKEditor
+- Setting the resources for the individual sites to `check_every: never`. See https://concourse-ci.org/resources.html. This makes sense because the individual pipelines will now only ever be triggered by webhooks (`trigger: false` is set on all of them). (#982)
+- add OCW_IMPORT_STARTER_SLUG to the mass publish pipeline definition code (#984)
+
 Version 0.44.1 (Released February 10, 2022)
 --------------
 
