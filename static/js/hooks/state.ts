@@ -41,7 +41,9 @@ type TextInputRetProps = [string, (e: ChangeEvent<HTMLInputElement>) => void]
  * A little utility hook for the boilerplate you need to hold the state
  * for a single text input.
  */
-export function useTextInputState(initialValue = ""): TextInputRetProps {
+export function useTextInputState(
+  initialValue: string | (() => string) = ""
+): TextInputRetProps {
   const [inputState, setInputState] = useState<string>(initialValue)
 
   const setSearchInputCB = useCallback(
