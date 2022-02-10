@@ -33,6 +33,7 @@ from websites.serializers import (
 )
 from websites.site_config_api import SiteConfig
 
+
 pytestmark = pytest.mark.django_db
 
 
