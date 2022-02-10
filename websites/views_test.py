@@ -386,10 +386,16 @@ def test_website_endpoint_search(drf_client):
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
 
-    WebsiteFactory.create(title="BEST")
-    WebsiteFactory.create(title="WORST")
-    resp = drf_client.get(reverse("websites_api-list"), {"search": "BEST"})
-    assert [website["title"] for website in resp.data.get("results")] == ["BEST"]
+    WebsiteFactory.create(title="Apple", name="Bacon", short_id="Cheese").save()
+    WebsiteFactory.create(title="Xylophone", name="Yellow", short_id="Zebra").save()
+    for word in ["Apple", "Bacon", "Cheese"]:
+        resp = drf_client.get(reverse("websites_api-list"), {"search": word})
+        assert [website["title"] for website in resp.data.get("results")] == ["Apple"]
+    for word in ["Xylophone", "Yellow", "Zebra"]:
+        resp = drf_client.get(reverse("websites_api-list"), {"search": word})
+        assert [website["title"] for website in resp.data.get("results")] == [
+            "Xylophone"
+        ]
 
 
 def test_websites_autogenerate_name(mocker, drf_client):

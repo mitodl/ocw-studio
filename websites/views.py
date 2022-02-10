@@ -5,6 +5,7 @@ import os
 
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.db.models import Case, CharField, OuterRef, Q, Value, When
 from django.utils.functional import cached_property
 from django.utils.text import slugify
@@ -111,8 +112,15 @@ class WebsiteViewSet(
             queryset = get_objects_for_user(user, constants.PERMISSION_VIEW)
 
         if search is not None:
-            # search query param is used in react-select typeahead, and should match on the title
-            queryset = queryset.filter(title__icontains=search)
+            # search query param is used in react-select typeahead, and should
+            # match on the title, name, and short_id
+            queryset = queryset.annotate(
+                search=SearchVector(
+                    "name",
+                    "title",
+                    "short_id",
+                )
+            ).filter(search=SearchQuery(search))
 
         if resourcetype is not None:
             queryset = queryset.filter(metadata__resourcetype=resourcetype)
