@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.45.0
+Version 0.45.0 (Released February 11, 2022)
 --------------
 
 - fix: youtube video thumbnail 0.jpg replaced with default.jpg (120x90) (#985)
