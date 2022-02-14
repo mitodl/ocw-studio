@@ -19,6 +19,9 @@ import PrivacyPolicyPage from "./PrivacyPolicyPage"
 import NotFound from "../components/NotFound"
 import { siteDetailUrl, sitesBaseUrl } from "../lib/urls"
 
+
+import { ApiService } from '../lib/openapi-codegen'
+
 interface SiteMatchParams {
   name: string
 }
@@ -36,6 +39,8 @@ export default function App(): JSX.Element {
     siteName ? websiteDetailRequest(siteName) : null
   )
   const website = useSelector(getWebsiteDetailCursor)(siteName || "")
+
+  const website
 
   return (
     <div className="app">
