@@ -1,0 +1,900 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Your Project",
+    "version": "",
+    "description": "OCW-Studio Website + Website Content API schema"
+  },
+  "paths": {
+    "/api/api/websites/": {
+      "get": {
+        "operationId": "listWebsites",
+        "description": "Viewset for Websites",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of results to return per page.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "The initial index from which to return the results.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "example": 123
+                    },
+                    "next": {
+                      "type": "string",
+                      "nullable": true,
+                      "format": "uri",
+                      "example": "http://api.example.org/accounts/?offset=400&limit=100"
+                    },
+                    "previous": {
+                      "type": "string",
+                      "nullable": true,
+                      "format": "uri",
+                      "example": "http://api.example.org/accounts/?offset=200&limit=100"
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Website"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "api"
+        ]
+      },
+      "post": {
+        "operationId": "createWebsiteWrite",
+        "description": "Viewset for Websites",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteWrite"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteWrite"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteWrite"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "api"
+        ]
+      }
+    },
+    "/api/api/websites/{name}/": {
+      "get": {
+        "operationId": "retrieveWebsiteDetail",
+        "description": "Viewset for Websites",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteDetail"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "api"
+        ]
+      },
+      "put": {
+        "operationId": "updateWebsiteDetail",
+        "description": "Viewset for Websites",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteDetail"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "api"
+        ]
+      },
+      "patch": {
+        "operationId": "partialUpdateWebsiteDetail",
+        "description": "Viewset for Websites",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteDetail"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "api"
+        ]
+      }
+    },
+    "/api/api/starters/": {
+      "get": {
+        "operationId": "listWebsiteStarters",
+        "description": "Viewset for WebsiteStarters",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebsiteStarter"
+                  }
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "api"
+        ]
+      }
+    },
+    "/api/api/starters/{id}/": {
+      "get": {
+        "operationId": "retrieveWebsiteStarterDetail",
+        "description": "Viewset for WebsiteStarters",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteStarterDetail"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "api"
+        ]
+      }
+    },
+    "/api/api/websites/{name}/preview/": {
+      "post": {
+        "operationId": "previewWebsiteDetail",
+        "description": "Trigger a preview task for the website",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteDetail"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "api"
+        ]
+      }
+    },
+    "/api/api/websites/{name}/publish/": {
+      "post": {
+        "operationId": "publishWebsiteDetail",
+        "description": "Trigger a publish task for the website",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "description": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteDetail"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteDetail"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "api"
+        ]
+      }
+    },
+    "/api/api/starters/site_configs/": {
+      "post": {
+        "operationId": "siteConfigsWebsiteStarterDetail",
+        "description": "Process webhook requests for WebsiteStarter site configs",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteStarterDetail"
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteStarterDetail"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/WebsiteStarterDetail"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteStarterDetail"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "api"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Website": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_on": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_on": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "short_id": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "source": {
+            "enum": [
+              "studio",
+              "ocw-import"
+            ],
+            "type": "string",
+            "nullable": true
+          },
+          "draft_publish_date": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "publish_date": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true
+          },
+          "starter": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "readOnly": true
+              },
+              "name": {
+                "type": "string",
+                "description": "Human-friendly name of the starter project.",
+                "maxLength": 100
+              },
+              "path": {
+                "type": "string",
+                "description": "Github repo path or local file path of the starter project.",
+                "maxLength": 256
+              },
+              "source": {
+                "enum": [
+                  "github",
+                  "local"
+                ],
+                "type": "string"
+              },
+              "commit": {
+                "type": "string",
+                "nullable": true,
+                "description": "Commit hash for the repo (if this commit came from a Github starter repo).",
+                "maxLength": 40
+              },
+              "slug": {
+                "type": "string",
+                "description": "Short string that can be used to identify this starter.",
+                "maxLength": 30
+              }
+            },
+            "required": [
+              "name",
+              "path",
+              "source",
+              "slug"
+            ],
+            "readOnly": true
+          },
+          "owner": {
+            "type": "integer",
+            "writeOnly": true,
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "short_id",
+          "title"
+        ]
+      },
+      "WebsiteDetail": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true
+          },
+          "created_on": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_on": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "short_id": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "source": {
+            "enum": [
+              "studio",
+              "ocw-import"
+            ],
+            "type": "string",
+            "nullable": true
+          },
+          "draft_publish_date": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "publish_date": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true
+          },
+          "starter": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "readOnly": true
+              },
+              "name": {
+                "type": "string",
+                "description": "Human-friendly name of the starter project.",
+                "maxLength": 100
+              },
+              "path": {
+                "type": "string",
+                "description": "Github repo path or local file path of the starter project.",
+                "maxLength": 256
+              },
+              "source": {
+                "enum": [
+                  "github",
+                  "local"
+                ],
+                "type": "string"
+              },
+              "commit": {
+                "type": "string",
+                "nullable": true,
+                "description": "Commit hash for the repo (if this commit came from a Github starter repo).",
+                "maxLength": 40
+              },
+              "slug": {
+                "type": "string",
+                "description": "Short string that can be used to identify this starter.",
+                "maxLength": 30
+              },
+              "config": {
+                "type": "object",
+                "description": "Site config describing content types, widgets, etc."
+              }
+            },
+            "required": [
+              "name",
+              "path",
+              "source",
+              "slug",
+              "config"
+            ],
+            "readOnly": true
+          },
+          "owner": {
+            "type": "string",
+            "readOnly": true
+          },
+          "is_admin": {
+            "type": "string",
+            "readOnly": true
+          },
+          "draft_url": {
+            "type": "string",
+            "readOnly": true
+          },
+          "live_url": {
+            "type": "string",
+            "readOnly": true
+          },
+          "has_unpublished_live": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "has_unpublished_draft": {
+            "type": "boolean",
+            "readOnly": true
+          },
+          "gdrive_url": {
+            "type": "string",
+            "readOnly": true
+          },
+          "live_publish_status": {
+            "enum": [
+              "succeeded",
+              "pending",
+              "started",
+              "errored",
+              "aborted",
+              "not-started"
+            ],
+            "type": "string",
+            "readOnly": true
+          },
+          "live_publish_status_updated_on": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "draft_publish_status": {
+            "enum": [
+              "succeeded",
+              "pending",
+              "started",
+              "errored",
+              "aborted",
+              "not-started"
+            ],
+            "type": "string",
+            "readOnly": true
+          },
+          "draft_publish_status_updated_on": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "sync_status": {
+            "type": "string",
+            "readOnly": true
+          },
+          "sync_errors": {
+            "type": "object",
+            "readOnly": true
+          },
+          "synced_on": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "content_warnings": {
+            "type": "string",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "name",
+          "short_id",
+          "title"
+        ]
+      },
+      "WebsiteStarter": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-friendly name of the starter project.",
+            "maxLength": 100
+          },
+          "path": {
+            "type": "string",
+            "description": "Github repo path or local file path of the starter project.",
+            "maxLength": 256
+          },
+          "source": {
+            "enum": [
+              "github",
+              "local"
+            ],
+            "type": "string"
+          },
+          "commit": {
+            "type": "string",
+            "nullable": true,
+            "description": "Commit hash for the repo (if this commit came from a Github starter repo).",
+            "maxLength": 40
+          },
+          "slug": {
+            "type": "string",
+            "description": "Short string that can be used to identify this starter.",
+            "maxLength": 30
+          }
+        },
+        "required": [
+          "name",
+          "path",
+          "source",
+          "slug"
+        ]
+      },
+      "WebsiteStarterDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-friendly name of the starter project.",
+            "maxLength": 100
+          },
+          "path": {
+            "type": "string",
+            "description": "Github repo path or local file path of the starter project.",
+            "maxLength": 256
+          },
+          "source": {
+            "enum": [
+              "github",
+              "local"
+            ],
+            "type": "string"
+          },
+          "commit": {
+            "type": "string",
+            "nullable": true,
+            "description": "Commit hash for the repo (if this commit came from a Github starter repo).",
+            "maxLength": 40
+          },
+          "slug": {
+            "type": "string",
+            "description": "Short string that can be used to identify this starter.",
+            "maxLength": 30
+          },
+          "config": {
+            "type": "object",
+            "description": "Site config describing content types, widgets, etc."
+          }
+        },
+        "required": [
+          "name",
+          "path",
+          "source",
+          "slug",
+          "config"
+        ]
+      },
+      "WebsiteWrite": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_on": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_on": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "short_id": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "source": {
+            "enum": [
+              "studio",
+              "ocw-import"
+            ],
+            "type": "string",
+            "nullable": true
+          },
+          "draft_publish_date": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "publish_date": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true
+          },
+          "starter": {
+            "type": "integer",
+            "writeOnly": true
+          },
+          "owner": {
+            "type": "integer",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "short_id",
+          "title",
+          "starter"
+        ]
+      }
+    }
+  }
+}
