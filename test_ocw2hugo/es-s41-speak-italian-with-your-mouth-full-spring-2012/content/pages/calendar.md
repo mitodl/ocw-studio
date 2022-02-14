@@ -1,7 +1,7 @@
 ---
 uid: 7aa9e941-aeaf-6118-7b6b-140bd04f00c3
 title: Calendar
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 {{< tableopen >}}

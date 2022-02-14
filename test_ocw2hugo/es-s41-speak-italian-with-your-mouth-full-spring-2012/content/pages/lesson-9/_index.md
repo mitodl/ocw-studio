@@ -1,7 +1,7 @@
 ---
 uid: af3c6f3d-fbcc-b159-a0f9-93ffeb5ccf38
 title: Lesson 9
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-8/cooking-instruction) | [Next]({{< baseurl >}}/pages/lesson-9/language-instruction) »

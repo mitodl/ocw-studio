@@ -1,7 +1,7 @@
 ---
 uid: aa2443c8-8a36-13c0-d31a-fda4e1664e48
 title: Recipes
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 {{< tableopen >}}

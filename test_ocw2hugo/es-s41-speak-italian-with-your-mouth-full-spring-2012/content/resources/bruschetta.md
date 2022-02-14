@@ -6,7 +6,7 @@ resourcetype: Other
 file_type: audio/mpeg
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/654ca452e91e7c7319010bad8936b0e6_bruschetta.mp3
-type: OCWFile
+ocw_type: OCWFile
 parent_type: CourseSection
 parent_title: Cooking Instruction
 ---

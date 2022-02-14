@@ -1,7 +1,7 @@
 ---
 uid: d07e7cf7-851b-fa90-9694-67a43405b492
 title: Exams
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 {{< tableopen >}}

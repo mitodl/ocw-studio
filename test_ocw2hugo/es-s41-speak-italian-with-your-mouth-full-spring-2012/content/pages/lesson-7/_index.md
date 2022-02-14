@@ -1,7 +1,7 @@
 ---
 uid: 5c721348-1ad2-e19c-b11f-3f348f64d7e5
 title: Lesson 7
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-6/cooking-instruction) | [Next]({{< baseurl >}}/pages/lesson-7/language-instruction) »

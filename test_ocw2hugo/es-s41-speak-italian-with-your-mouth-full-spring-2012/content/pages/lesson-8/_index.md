@@ -1,7 +1,7 @@
 ---
 uid: 31012ed4-66e8-2d99-ed4d-314823b03f20
 title: Lesson 8
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-7/cooking-instruction) | [Next]({{< baseurl >}}/pages/lesson-8/language-instruction) »

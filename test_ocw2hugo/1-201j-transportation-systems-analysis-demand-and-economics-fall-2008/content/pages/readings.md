@@ -1,7 +1,7 @@
 ---
 uid: 306bf4e0-7394-1c59-852a-235dc8dd97d7
 title: Readings
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 The course draws on three primary textbooks, which are listed in the table below with the following abbreviations:

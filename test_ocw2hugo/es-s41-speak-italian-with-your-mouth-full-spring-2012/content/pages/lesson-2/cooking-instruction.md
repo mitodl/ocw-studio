@@ -4,7 +4,7 @@ title: Cooking Instruction
 parent_uid: 463b4c8e-dc1e-e06b-6353-693de4b36524
 parent_title: Lesson 2
 parent_type: CourseSection
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-2/language-instruction) | [Next]({{< baseurl >}}/pages/lesson-3) »

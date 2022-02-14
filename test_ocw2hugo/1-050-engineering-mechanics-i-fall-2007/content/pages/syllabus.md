@@ -1,7 +1,7 @@
 ---
 uid: 96c31e82-69f0-6d67-daee-8272526ac56a
 title: Syllabus
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 Course Meeting Times

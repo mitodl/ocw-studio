@@ -1,7 +1,7 @@
 ---
 uid: 4f5c3926-e4d5-6974-7f16-131a6f692568
 title: Related Resources
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 MATLAB® Tutorials

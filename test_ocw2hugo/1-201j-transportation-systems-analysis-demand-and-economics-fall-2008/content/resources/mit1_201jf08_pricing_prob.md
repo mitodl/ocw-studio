@@ -6,7 +6,7 @@ resourcetype: Document
 file_type: application/pdf
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/b9e57716c8c766dc2ccc0f76e2fefc1a_MIT1_201JF08_pricing_prob.pdf
-type: OCWFile
+ocw_type: OCWFile
 parent_type: CourseSection
 parent_title: Exams
 ---

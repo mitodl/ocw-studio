@@ -182,7 +182,7 @@ def get_learning_resource_types(content_json):
 
     if "Section" in content_json.get("parent_type", ""):
         section_title = content_json.get("parent_title")
-    elif "Section" in content_json.get("type", ""):
+    elif "Section" in content_json.get("ocw_type", ""):
         section_title = content_json.get("title")
     else:
         return []
