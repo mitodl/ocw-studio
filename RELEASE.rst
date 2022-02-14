@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.47.0
+--------------
+
+- Prevent endlessly incrementing short-ids on imported sites, new command to fix affected sites (#988)
+
 Version 0.46.0 (Released February 14, 2022)
 --------------
 
