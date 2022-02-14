@@ -1,26 +1,20 @@
 import React, { useEffect, useState } from "react"
-import { useSelector } from "react-redux"
 import { Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
-import { useRequest } from "redux-query-react"
 import { useLocation } from "react-router-dom"
 
 import Card from "./Card"
-import { useWebsite } from "../context/Website"
-
-import { websiteContentDetailRequest } from "../query-configs/websites"
 import { SingletonsConfigItem } from "../types/websites"
-import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import SiteContentEditor from "./SiteContentEditor"
 import { needsContentContext } from "../lib/site_content"
 import { createModalState } from "../types/modal_state"
 import useConfirmation from "../hooks/confirmation"
 import ConfirmationModal from "./ConfirmationModal"
+import { useWebsiteContent } from "../hooks/websites"
 
 export default function SingletonsContentListing(props: {
   configItem: SingletonsConfigItem
 }): JSX.Element | null {
   const { configItem } = props
-  const website = useWebsite()
   const { pathname } = useLocation()
 
   const [activeTab, setActiveTab] = useState(0)
@@ -40,21 +34,10 @@ export default function SingletonsContentListing(props: {
   } = useConfirmation({ dirty, setDirty })
 
   const activeFileConfigItem = configItem.files[activeTab]
-  const contentDetailParams = {
-    name:   website.name,
-    textId: activeFileConfigItem.name
-  }
-  const content = useSelector(getWebsiteContentDetailCursor)(
-    contentDetailParams
-  )
 
-  const [{ isPending }] = useRequest(
-    content ?
-      null :
-      websiteContentDetailRequest(
-        contentDetailParams,
-        needsContentContext(activeFileConfigItem.fields)
-      )
+  const [content, { isPending }] = useWebsiteContent(
+    activeFileConfigItem.name,
+    needsContentContext(activeFileConfigItem.fields)
   )
   if (isPending) {
     return null

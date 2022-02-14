@@ -21,7 +21,7 @@ interface Props {
 export default function EmbeddedResource(props: Props): JSX.Element | null {
   const { uuid, el } = props
 
-  const resource = useWebsiteContent(uuid)
+  const [resource] = useWebsiteContent(uuid)
 
   if (!resource) {
     return null

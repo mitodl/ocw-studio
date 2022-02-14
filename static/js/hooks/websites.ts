@@ -13,6 +13,7 @@ import { Website, WebsiteContent } from "../types/websites"
 import { useCallback, useEffect, useState } from "react"
 import { siteApiListingUrl } from "../lib/urls"
 import { debouncedFetch } from "../lib/api/util"
+import { QueryState } from "redux-query"
 
 /**
  * Hook for fetching and accessing a WebsiteContent object
@@ -25,7 +26,10 @@ import { debouncedFetch } from "../lib/api/util"
  * Note that this hook depends on `useWebsite`, so it must be
  * called inside of `WebsiteContext.Provider`.
  */
-export function useWebsiteContent(uuid: string): WebsiteContent | null {
+export function useWebsiteContent(
+  uuid: string,
+  requestContentContext = false
+): [WebsiteContent | null, QueryState] {
   const website = useWebsite()
 
   const contentParams = {
@@ -33,7 +37,9 @@ export function useWebsiteContent(uuid: string): WebsiteContent | null {
     textId: uuid
   }
 
-  useRequest(websiteContentDetailRequest(contentParams, false))
+  const [request] = useRequest(
+    websiteContentDetailRequest(contentParams, requestContentContext)
+  )
 
   const websiteContentDetailSelector = useSelector(
     getWebsiteContentDetailCursor
@@ -41,7 +47,7 @@ export function useWebsiteContent(uuid: string): WebsiteContent | null {
 
   const resource = websiteContentDetailSelector(contentParams)
 
-  return resource
+  return [resource, request]
 }
 
 /**
