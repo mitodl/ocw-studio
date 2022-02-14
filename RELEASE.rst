@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.46.0
+Version 0.46.0 (Released February 14, 2022)
 --------------
 
 - When resetting sync state, the data field should also be set to None (#946)
