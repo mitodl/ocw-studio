@@ -282,6 +282,9 @@ def convert_data_to_content(filepath, data, website):
 
 def get_short_id(name: str, metadata: Dict) -> str:
     """ Get a short_id from the metadata"""
+    existing_site = Website.objects.filter(name=name).first()
+    if existing_site and existing_site.short_id:
+        return existing_site.short_id
     course_num = metadata.get("primary_course_number")
     if not course_num:
         raise ValueError("Primary course number is missing")

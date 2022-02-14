@@ -320,10 +320,12 @@ def test_get_short_id(course_num, term, year, expected_id):
         assert short_id == expected_id
         for i in range(2, 5):
             name = f"site_name_{i}"
-            website = WebsiteFactory.create(
+            website.short_id = get_short_id(website.name, metadata)
+            new_site = WebsiteFactory.create(
                 name=name, short_id=get_short_id(name, metadata)
             )
-            assert website.short_id == f"{expected_id}-{i}"
+            assert new_site.short_id == f"{expected_id}-{i}"
+            assert website.short_id == expected_id
     else:
         with pytest.raises(ValueError):
             get_short_id("random-name", metadata)
