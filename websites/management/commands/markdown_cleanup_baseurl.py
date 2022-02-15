@@ -133,7 +133,7 @@ class Command(BaseCommand):
     @staticmethod
     def do_handle(commit=False, out=None):
         """Replace baseurl with resource_link"""
-        print(WebsiteContent.all_objects)
+
         with ExitStack() as stack:
             wc_list = WebsiteContent.all_objects.all().only(
                 "dirpath", "filename", "markdown", "website_id"
