@@ -1,7 +1,7 @@
 ---
 uid: 0b61d31d-8bf7-43a0-6195-1c787115299e
 title: Lesson 11
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-10/cooking-instruction) | [Next]({{< baseurl >}}/pages/lesson-11/language-instruction) »

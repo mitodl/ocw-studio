@@ -1,7 +1,7 @@
 ---
 uid: 9fcb7d0d-8cfe-f1b0-2f1d-7a69f645464a
 title: Assignments
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 {{< tableopen >}}

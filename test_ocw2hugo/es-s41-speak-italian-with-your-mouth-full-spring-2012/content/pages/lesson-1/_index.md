@@ -1,7 +1,7 @@
 ---
 uid: c4c7fba0-2305-e785-952c-8d8e6bf26fc3
 title: Lesson 1
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 [Next]({{< baseurl >}}/pages/lesson-1/language-instruction) »

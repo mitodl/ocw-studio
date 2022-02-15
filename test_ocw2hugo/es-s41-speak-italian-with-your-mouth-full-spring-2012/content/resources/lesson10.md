@@ -8,7 +8,7 @@ resourcetype: Image
 file_type: image/jpeg
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/28bae3a747f7b30910596aa0afeb7534_Lesson10.jpg
-type: OCWImage
+ocw_type: OCWImage
 parent_type: CourseSection
 parent_title: Lesson 10
 image_metadata:

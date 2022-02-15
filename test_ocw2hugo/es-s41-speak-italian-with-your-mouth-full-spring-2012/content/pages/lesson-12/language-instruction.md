@@ -4,7 +4,7 @@ title: Language Instruction
 parent_uid: f0ae6f59-4c9a-13c9-9b83-75ccf8b3c6ee
 parent_title: Lesson 12
 parent_type: CourseSection
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-12) | [Next]({{< baseurl >}}/pages/lesson-12/cooking-instruction) »

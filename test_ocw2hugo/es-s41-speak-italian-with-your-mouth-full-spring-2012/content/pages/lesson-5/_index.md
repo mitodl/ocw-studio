@@ -1,7 +1,7 @@
 ---
 uid: 56e06732-1e88-3c54-5df6-9d03d3daeb8b
 title: Lesson 5
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/lesson-4/cooking-instruction) | [Next]({{< baseurl >}}/pages/lesson-5/language-instruction) »

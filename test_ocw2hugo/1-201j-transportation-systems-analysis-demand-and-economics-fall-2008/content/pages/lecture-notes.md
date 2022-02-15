@@ -1,7 +1,7 @@
 ---
 uid: 94c094b7-b01d-868e-f112-82cef13859cc
 title: Lecture Notes
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 Selected lectures are available below. All guest lectures are courtesy of the person named, and are used with permission.

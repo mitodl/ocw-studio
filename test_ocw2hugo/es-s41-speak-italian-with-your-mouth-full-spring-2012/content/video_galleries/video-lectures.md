@@ -44,7 +44,7 @@ videos:
     - 5cdffd62-b8e6-2842-7da1-4bb5fa6254e2
     - 51caf3d5-a138-cd61-69e1-89ef35dbd4f0
   website: es-s41-speak-italian-with-your-mouth-full-spring-2012
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 

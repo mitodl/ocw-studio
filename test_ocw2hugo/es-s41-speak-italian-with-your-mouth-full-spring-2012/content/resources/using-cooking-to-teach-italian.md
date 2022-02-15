@@ -11,7 +11,7 @@ video_files:
   video_transcript_file: null
   archive_url: >-
     http://www.archive.org/download/MITES.S41S12/MITES_S41S12_Teaching08_300k.mp4
-parent_type: CourseSection
+parent_ocw_type: CourseSection
 parent_title: Teaching Italian and Cooking Together
 ---
 

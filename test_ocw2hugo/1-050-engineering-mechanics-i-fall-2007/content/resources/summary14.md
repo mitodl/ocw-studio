@@ -8,7 +8,7 @@ resourcetype: Document
 file_type: application/pdf
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/1-050-engineering-mechanics-i-fall-2007/b5a6a34526b92337938d68aa4976c5dd_summary14.pdf
-type: OCWFile
+ocw_type: OCWFile
 parent_type: CourseSection
 parent_title: Lecture Notes
 ---

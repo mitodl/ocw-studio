@@ -6,7 +6,7 @@ resourcetype: Other
 file_type: audio/mpeg
 file: >-
   https://open-learning-course-data-rc.s3.amazonaws.com/es-s41-speak-italian-with-your-mouth-full-spring-2012/5f8fb78fd36b1ab3b105e34d386a3967_ingredienti4.mp3
-type: OCWFile
+ocw_type: OCWFile
 parent_type: CourseSection
 parent_title: Language Instruction
 ---

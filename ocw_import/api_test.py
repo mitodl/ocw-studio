@@ -427,7 +427,7 @@ def test_update_ocw2hugo_course(mocker, website_exists):
     [
         [
             {
-                "type": "CourseSection",
+                "ocw_type": "CourseSection",
                 "parent_type": "CourseSection",
                 "title": "First Paper Assignment",
                 "parent_title": "Lecture Summaries",
@@ -436,14 +436,14 @@ def test_update_ocw2hugo_course(mocker, website_exists):
         ],
         [
             {
-                "type": "CourseSection",
+                "ocw_type": "CourseSection",
                 "title": "First Paper Assignment",
             },
             [OCW_TYPE_ASSIGNMENTS],
         ],
         [
             {
-                "type": "CourseSection",
+                "ocw_type": "CourseSection",
                 "parent_type": "CourseSection",
                 "title": "First Paper Assignment",
                 "parent_title": "Assignments and Exams",
@@ -452,7 +452,7 @@ def test_update_ocw2hugo_course(mocker, website_exists):
         ],
         [
             {
-                "type": "CourseSection",
+                "ocw_type": "CourseSection",
                 "parent_type": "CourseSection",
                 "title": "First Paper Assignment",
                 "parent_title": OCW_TYPE_LECTURE_NOTES,
@@ -461,7 +461,7 @@ def test_update_ocw2hugo_course(mocker, website_exists):
         ],
         [
             {
-                "type": "CourseSection",
+                "ocw_type": "CourseSection",
                 "title": "Exercises",
             },
             [],

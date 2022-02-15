@@ -1,7 +1,7 @@
 ---
 title: No UID
 course_id: 1-201j-transportation-systems-analysis-demand-and-economics-fall-2008
-type: course
+ocw_type: course
 layout: course_section
 ---
 

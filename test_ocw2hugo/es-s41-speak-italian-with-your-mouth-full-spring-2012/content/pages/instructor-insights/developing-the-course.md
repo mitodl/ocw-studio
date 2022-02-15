@@ -5,7 +5,7 @@ parent_uid: a6e7d634-7a40-6faa-23d0-020703ee7044
 parent_title: Instructor Insights
 parent_type: ThisCourseAtMITSection
 layout: instructor_insights
-type: CourseSection
+ocw_type: CourseSection
 ---
 
 « [Previous]({{< baseurl >}}/pages/instructor-insights) | [Next]({{< baseurl >}}/pages/instructor-insights/teaching-italian-and-cooking-together) »
