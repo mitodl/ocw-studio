@@ -185,6 +185,7 @@ describe("RelationField", () => {
               detailed_list:   true,
               content_context: true,
               type:            "page",
+              published:       true,
               ...(withResourcetypeFilter ? { resourcetype: "Image" } : {})
             })
             .toString()
@@ -229,7 +230,8 @@ describe("RelationField", () => {
           .query({
             detailed_list:   true,
             content_context: true,
-            type:            "page"
+            type:            "page",
+            published:       true
           })
           .param({
             name: "new-uuid"
@@ -370,6 +372,7 @@ describe("RelationField", () => {
             content_context: true,
             search:          search,
             type:            "page",
+            published:       true,
             ...(withResourcetypeFilter ? { resourcetype: "Image" } : {})
           })
           .param({ name: website.name })

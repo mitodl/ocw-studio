@@ -642,6 +642,43 @@ def test_websites_content_list_page_content(drf_client, global_admin_user):
     assert results[0]["type"] == "type1"
 
 
+@pytest.mark.parametrize("published", [True, False])
+def test_websites_content_publish_sorting(
+    drf_client, global_admin_user, published
+):  # pylint: disable=unused-argument
+    """should be able to filter to just published or not"""
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create(published=True)
+    unpublished = WebsiteContentFactory.create_batch(
+        3,
+        website=website,
+        # they were created after the publish date
+        created_on=website.publish_date + datetime.timedelta(days=2),
+    )
+
+    published = WebsiteContentFactory.create_batch(
+        3,
+        website=website,
+    )
+
+    for content in published:
+        content.created_on = website.publish_date - datetime.timedelta(days=2)
+        content.save()
+
+    api_url = reverse(
+        "websites_content_api-list",
+        kwargs={
+            "parent_lookup_website": website.name,
+        },
+    )
+    resp = drf_client.get(api_url, {"published": published})
+    content = published if published else unpublished
+    expected_ids = sorted([c.text_id for c in content])
+
+    assert resp.data["count"] == 3
+    assert expected_ids == sorted([c["text_id"] for c in resp.data["results"]])
+
+
 def test_websites_content_gdrive_sync(mocker, drf_client, permission_groups):
     """The endpoint should kick off a task to sync Google Drive files for the website"""
     mock_sync = mocker.patch("websites.views.import_website_files.delay")

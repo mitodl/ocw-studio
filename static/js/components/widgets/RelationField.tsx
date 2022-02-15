@@ -177,6 +177,7 @@ export default function RelationField(props: Props): JSX.Element {
       const url = siteApiContentListingUrl
         .query({
           detailed_list:   true,
+          published:       true,
           content_context: true,
           ...(search ? { search } : {}),
           ...(filter &&

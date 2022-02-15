@@ -9,10 +9,11 @@ describe("contentListingKey", () => {
       type:         "2",
       search:       "3",
       resourcetype: "4",
-      pageContent:  true
+      pageContent:  true,
+      published:    true
     }
     expect(contentListingKey(contentListingParams)).toBe(
-      '["0","2","3",true,1,"4"]'
+      '["0","2","3",true,1,"4",true]'
     )
   })
 })

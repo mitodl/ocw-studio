@@ -304,7 +304,8 @@ export const contentListingKey = (
     listingParams.search,
     listingParams.pageContent,
     listingParams.offset,
-    listingParams.resourcetype
+    listingParams.resourcetype,
+    listingParams.published
   ])
 
 export const contentDetailKey = (params: ContentDetailParams): string =>
@@ -330,19 +331,21 @@ export const websiteContentListingRequest = (
     resourcetype,
     offset,
     pageContent,
-    search
+    search,
+    published
   } = listingParams
   const url = siteApiContentListingUrl
     .param({ name })
     .query(
       Object.assign(
         { offset },
-        type && { type: type },
+        type && { type },
         pageContent && { page_content: pageContent },
         requestDetailedList && { detailed_list: true },
         requestContentContext && { content_context: true },
         search && { search },
-        resourcetype && { resourcetype }
+        resourcetype && { resourcetype },
+        published && { published }
       )
     )
     .toString()

@@ -288,6 +288,7 @@ export interface ContentListingParams {
   offset: number
   search?: string
   resourcetype?: string
+  published?: boolean
 }
 
 export interface ContentDetailParams {

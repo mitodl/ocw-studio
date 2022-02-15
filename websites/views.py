@@ -6,7 +6,7 @@ import os
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.postgres.search import SearchQuery, SearchVector
-from django.db.models import Case, CharField, OuterRef, Q, Value, When
+from django.db.models import Case, CharField, F, OuterRef, Q, Value, When
 from django.utils.functional import cached_property
 from django.utils.text import slugify
 from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
@@ -441,6 +441,7 @@ class WebsiteContentViewSet(
         search = self.request.query_params.get("search")
         resourcetype = self.request.query_params.get("resourcetype")
         types = _get_value_list_from_query_params(self.request.query_params, "type")
+        published = self.request.query_params.get("published", None)
 
         queryset = WebsiteContent.objects.filter(
             website__name=parent_lookup_website
@@ -460,7 +461,24 @@ class WebsiteContentViewSet(
                 )
             else:
                 queryset = queryset.filter(metadata__resourcetype=resourcetype)
-
+        if published:
+            published = _parse_bool(published)
+            if published is True:
+                queryset = queryset.filter(
+                    website__publish_date__isnull=False,
+                    # if the associated website has been published after
+                    # the content record was created, then it has been published
+                    # at least once
+                    website__publish_date__gt=F("created_on"),
+                )
+            else:
+                # unpublished content is any content where the associated
+                # website has never been published or where the website was
+                # most recently published before it was created
+                queryset = queryset.filter(
+                    Q(website__publish_date__isnull=True)
+                    | Q(website__publish_date__lt=F("created_on"))
+                )
         if "page_content" in self.request.query_params:
             queryset = queryset.filter(
                 is_page_content=(_parse_bool(self.request.query_params["page_content"]))
