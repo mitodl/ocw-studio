@@ -7,8 +7,8 @@ from main.utils import (
     get_file_extension,
     is_valid_uuid,
     remove_trailing_slashes,
-    valid_key,
     truncate_words,
+    valid_key,
 )
 
 

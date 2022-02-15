@@ -4,7 +4,7 @@ import hmac
 import re
 from enum import Flag, auto
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 from uuid import UUID, uuid4
 
 from django.http import HttpRequest
