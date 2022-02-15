@@ -3,6 +3,7 @@ import pytest
 
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleanup_baseurl import (
+    CONTENT_FILENAME_MAX_LEN,
     BaseurlReplacer,
     ContentLookup,
     WebsiteContentMarkdownCleaner,
@@ -17,7 +18,7 @@ def get_markdown_cleaner(website_contents):
 
 
 @pytest.mark.parametrize(
-    "markdown, expected_markdown",
+    ["markdown", "expected_markdown"],
     [
         (
             # standard link on same line as baseurl link
@@ -48,26 +49,87 @@ def get_markdown_cleaner(website_contents):
         ),
     ],
 )
-def test_baseurl_replacer_specific_replacements(markdown, expected_markdown):
+def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdown):
     """Test specific replacements"""
     website_uuid = "website-uuid"
     target_content = WebsiteContentFactory.build(
         markdown=markdown, website_id=website_uuid
     )
 
-    linkables = [
-        WebsiteContentFactory.build(
-            website_id=website_uuid,
-            dirpath="content/resources/path/to",
-            filename=f"file{x}",
-            text_id=f"content-uuid-{x}",
-        )
-        for x in range(3)
-    ]
+    linkable = WebsiteContentFactory.build(
+        website_id=website_uuid,
+        dirpath="content/resources/path/to",
+        filename="file1",
+        text_id="content-uuid-1",
+    )
 
-    cleaner = get_markdown_cleaner(linkables)
+    cleaner = get_markdown_cleaner([linkable])
     cleaner.update_website_content_markdown(target_content)
 
+    assert target_content.markdown == expected_markdown
+
+
+@pytest.mark.parametrize(
+    ["url", "content_relative_dirpath", "filename"],
+    [
+        (
+            # url is to an index file, not to dirpath/filename
+            "/pages/pets",
+            "/pages/pets",
+            "_index",
+        ),
+        ("/pages/pets/c.a.t", "/pages/pets", "c-a-t"),
+        (
+            "/pages/pets/" + "z" * CONTENT_FILENAME_MAX_LEN + "meowmeow",
+            "/pages/pets",
+            "z" * CONTENT_FILENAME_MAX_LEN,
+        ),
+    ],
+)
+def test_baseurl_replacer_handle_specific_url_replacements(
+    url, content_relative_dirpath, filename
+):
+    """Test specific replacements"""
+    website_uuid = "website-uuid"
+    markdown = f"my [pets]({{{{< baseurl >}}}}{url}) are legion"
+    expected_markdown = 'my {{< resource_link content-uuid "pets" >}} are legion'
+    target_content = WebsiteContentFactory.build(
+        markdown=markdown, website_id=website_uuid
+    )
+
+    linkable = WebsiteContentFactory.build(
+        website_id=website_uuid,
+        dirpath=f"content{content_relative_dirpath}",
+        filename=filename,
+        text_id="content-uuid",
+    )
+
+    cleaner = get_markdown_cleaner([linkable])
+    cleaner.update_website_content_markdown(target_content)
+
+    assert target_content.markdown == expected_markdown
+
+
+def test_baseurl_replacer_handles_index_files():
+    """Test specific replacements"""
+    website_uuid = "website-uuid"
+    markdown = R"my [pets]({{< baseurl >}}/pages/cute/pets) are legion"
+    expected_markdown = R'my {{< resource_link content-uuid "pets" >}} are legion'
+    target_content = WebsiteContentFactory.build(
+        markdown=markdown, website_id=website_uuid
+    )
+
+    linkable = WebsiteContentFactory.build(
+        website_id=website_uuid,
+        dirpath="content/pages/cute/pets",
+        filename="_index",
+        text_id="content-uuid",
+    )
+
+    cleaner = get_markdown_cleaner([linkable])
+    cleaner.update_website_content_markdown(target_content)
+
+    assert linkable.filename not in target_content.markdown
     assert target_content.markdown == expected_markdown
 
 

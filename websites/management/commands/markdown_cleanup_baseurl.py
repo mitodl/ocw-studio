@@ -1,4 +1,5 @@
 """Replace baseurl-based links with resource_link shortcodes."""
+import importlib
 import os
 import re
 from contextlib import ExitStack
@@ -15,6 +16,13 @@ from websites.management.commands.util import (
 from websites.models import WebsiteContent
 
 
+filepath_migration = importlib.import_module(
+    "websites.migrations.0023_website_content_filepath"
+)
+CONTENT_FILENAME_MAX_LEN = filepath_migration.CONTENT_FILENAME_MAX_LEN
+CONTENT_DIRPATH_MAX_LEN = filepath_migration.CONTENT_DIRPATH_MAX_LEN
+
+
 class ContentLookup:
     """
     Thin wrapper around a dictionary to facilitate looking up WebsiteContent
@@ -29,6 +37,16 @@ class ContentLookup:
     def __str__(self):
         return self.website_contents.__str__()
 
+    @staticmethod
+    def standardize_dirpath(content_relative_dirpath):
+        """Get dirpath in our database format (see migration 0023)"""
+        return "content" + content_relative_dirpath[0:CONTENT_DIRPATH_MAX_LEN]
+
+    @staticmethod
+    def standardize_filename(filename):
+        """Get filename in our database format (see migration 0023)"""
+        return filename[0:CONTENT_FILENAME_MAX_LEN].replace(".", "-")
+
     def get_content_by_url(self, website_id, content_relative_url: str):
         """Lookup content by its website_id and content-relative URL.
 
@@ -36,12 +54,17 @@ class ContentLookup:
         =======
         content_lookup.get_content_by_url('some-uuid', '/resources/graphs/cos')
         """
-
-        content_relative_dirpath, filename = os.path.split(content_relative_url)
-
-        dirpath = f"content{content_relative_dirpath}"
-
-        return self.website_contents[(website_id, dirpath, filename)]
+        try:
+            content_relative_dirpath, content_filename = os.path.split(
+                content_relative_url
+            )
+            dirpath = self.standardize_dirpath(content_relative_dirpath)
+            filename = self.standardize_filename(content_filename)
+            return self.website_contents[(website_id, dirpath, filename)]
+        except KeyError:
+            dirpath = self.standardize_dirpath(content_relative_url)
+            filename = "_index"
+            return self.website_contents[(website_id, dirpath, filename)]
 
 
 class BaseurlReplacer:
@@ -86,12 +109,14 @@ class Command(BaseCommand):
             "-o",
             "--out",
             dest="out",
+            default=None,
             help="If provided, a CSV file of baseurl-based links and their replacements will be written to this path.",
         )
         parser.add_argument(
             "-c",
             "--commit",
             dest="commit",
+            default=False,
             help="Whether the changes to markdown should be commited. The default, False, is useful for QA and testing when combined with --out parameter.",
         )
         super().add_arguments(parser)
@@ -103,8 +128,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.validate_options(options)
-        commit = options["commit"]
+        self.do_handle(**options)
 
+    @staticmethod
+    def do_handle(commit=False, out=None):
+        """Replace baseurl with resource_link"""
+        print(WebsiteContent.all_objects)
         with ExitStack() as stack:
             wc_list = WebsiteContent.all_objects.all().only(
                 "dirpath", "filename", "markdown", "website_id"
@@ -115,17 +144,17 @@ class Command(BaseCommand):
 
             content_lookup = ContentLookup(wc_list)
             replacer = BaseurlReplacer(content_lookup)
-            surgeon = WebsiteContentMarkdownCleaner(
+            clear = WebsiteContentMarkdownCleaner(
                 BaseurlReplacer.baseurl_regex, replacer
             )
 
             wc: WebsiteContent
             for wc in progress_bar(wc_list):
-                surgeon.update_website_content_markdown(wc)
+                clear.update_website_content_markdown(wc)
 
             if commit:
-                wc_list.bulk_update(surgeon.updated_website_contents, ["markdown"])
+                wc_list.bulk_update(clear.updated_website_contents, ["markdown"])
 
-        if "out" in options:
-            outpath = os.path.normpath(os.path.join(os.getcwd(), options["out"]))
-            surgeon.write_matches_to_csv(outpath)
+        if out is not None:
+            outpath = os.path.normpath(os.path.join(os.getcwd(), out))
+            clear.write_matches_to_csv(outpath)
