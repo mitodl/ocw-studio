@@ -347,6 +347,13 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
         if VideoFile.objects.filter(
             video__website=website, destination_id=youtube_id
         ).exists():
-            youtube.update_video(
-                video_resource, privacy=("public" if version == VERSION_LIVE else None)
-            )
+            try:
+                youtube.update_video(
+                    video_resource,
+                    privacy=("public" if version == VERSION_LIVE else None),
+                )
+            except:  # pylint:disable=bare-except
+                log.exception(
+                    "Unexpected error updating metadata for video resource %d",
+                    video_resource.id,
+                )

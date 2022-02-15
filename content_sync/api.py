@@ -16,7 +16,7 @@ from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BasePipeline
-from websites.constants import PUBLISH_STATUS_NOT_STARTED
+from websites.constants import PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED
 from websites.models import Website, WebsiteContent
 
 
@@ -108,39 +108,48 @@ def publish_website(  # pylint: disable=too-many-arguments
     trigger_pipeline: Optional[bool] = True,
 ):
     """Publish a live or draft version of a website"""
-    website = Website.objects.get(name=name)
-    if prepublish:
-        for action in settings.PREPUBLISH_ACTIONS:
-            import_string(action)(website, version=version)
-    backend = get_sync_backend(website)
-    backend.sync_all_content_to_backend()
-    if version == VERSION_DRAFT:
-        backend.merge_backend_draft()
-    else:
-        backend.merge_backend_live()
+    try:
+        website = Website.objects.get(name=name)
+        if prepublish:
+            for action in settings.PREPUBLISH_ACTIONS:
+                import_string(action)(website, version=version)
+        backend = get_sync_backend(website)
+        backend.sync_all_content_to_backend()
+        if version == VERSION_DRAFT:
+            backend.merge_backend_draft()
+        else:
+            backend.merge_backend_live()
 
-    if trigger_pipeline and settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        pipeline = get_sync_pipeline(website, api=pipeline_api)
-        pipeline.unpause_pipeline(version)
-        build_id = pipeline.trigger_pipeline_build(version)
+        if trigger_pipeline and settings.CONTENT_SYNC_PIPELINE_BACKEND:
+            pipeline = get_sync_pipeline(website, api=pipeline_api)
+            pipeline.unpause_pipeline(version)
+            build_id = pipeline.trigger_pipeline_build(version)
+            update_kwargs = {
+                f"latest_build_id_{version}": build_id,
+            }
+        else:
+            update_kwargs = {}
+        if (
+            getattr(website, f"{version}_publish_status") != PUBLISH_STATUS_NOT_STARTED
+            or getattr(website, f"{version}_publish_status_updated_on") is None
+        ):
+            # Need to update additional fields
+            update_kwargs = {
+                f"{version}_publish_status": PUBLISH_STATUS_NOT_STARTED,
+                f"{version}_publish_status_updated_on": now_in_utc(),
+                f"{version}_last_published_by": None,
+                f"has_unpublished_{version}": False,
+                **update_kwargs,
+            }
+    except:  # pylint:disable=bare-except
         update_kwargs = {
-            f"latest_build_id_{version}": build_id,
-        }
-    else:
-        update_kwargs = {}
-    if (
-        getattr(website, f"{version}_publish_status") != PUBLISH_STATUS_NOT_STARTED
-        or getattr(website, f"{version}_publish_status_updated_on") is None
-    ):
-        # Need to update additional fields
-        update_kwargs = {
-            f"{version}_publish_status": PUBLISH_STATUS_NOT_STARTED,
+            f"{version}_publish_status": PUBLISH_STATUS_ERRORED,
             f"{version}_publish_status_updated_on": now_in_utc(),
-            f"{version}_last_published_by": None,
-            f"has_unpublished_{version}": False,
-            **update_kwargs,
+            f"has_unpublished_{version}": True,
         }
-    Website.objects.filter(pk=website.pk).update(**update_kwargs)
+        raise
+    finally:
+        Website.objects.filter(name=name).update(**update_kwargs)
 
 
 def throttle_git_backend_calls(backend: object, min_delay: Optional[int] = None):

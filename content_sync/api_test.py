@@ -8,7 +8,7 @@ from mitol.common.utils import now_in_utc
 
 from content_sync import api
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from websites.constants import PUBLISH_STATUS_NOT_STARTED
+from websites.constants import PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
@@ -283,7 +283,9 @@ def test_publish_website_error(mock_api_funcs, settings):
     website = WebsiteFactory.create()
     with pytest.raises(Exception):
         api.publish_website(website.name, VERSION_LIVE)
+    website.refresh_from_db()
     mock_api_funcs.mock_get_backend.assert_not_called()
+    assert website.live_publish_status == PUBLISH_STATUS_ERRORED
 
 
 def test_get_mass_publish_pipeline_no_backend(settings):
