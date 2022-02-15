@@ -212,7 +212,7 @@ class YouTubeApi:
         original_name = videofile.video.source_key.split("/")[-1]
         request_body = dict(
             snippet=dict(
-                title=truncate_words(strip_bad_chars(original_name), 100),
+                title=truncate_words(strip_bad_chars(original_name), MAX_LENGTH_TITLE),
                 description="",
                 categoryId=settings.YT_CATEGORY_ID,
             ),
