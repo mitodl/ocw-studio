@@ -8,6 +8,7 @@ from main.utils import (
     is_valid_uuid,
     remove_trailing_slashes,
     valid_key,
+    truncate_words,
 )
 
 
@@ -95,3 +96,11 @@ def test_valid_key(mocker, key, is_valid):
         headers={"X-Hub-Signature": "sha1=6a4e7673fa9c3afbb2860ae03ac2082958313a9c"},
     )
     assert valid_key(key, mock_request) is is_valid
+
+
+@pytest.mark.parametrize(
+    "text, truncated", [["Hello world", "Hello___"], ["HelloWorld", "HelloW___"]]
+)
+def test_truncate_words(text, truncated):
+    """ truncate_words returns expected result"""
+    assert truncate_words(text, 9, suffix="___") == truncated

@@ -4,7 +4,7 @@ import hmac
 import re
 from enum import Flag, auto
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 from uuid import UUID, uuid4
 
 from django.http import HttpRequest
@@ -109,3 +109,11 @@ def valid_key(key: str, request: HttpRequest) -> bool:
     digest = hmac.new(key.encode("utf-8"), request.body, hashlib.sha1).hexdigest()
     sig_parts = request.headers["X-Hub-Signature"].split("=", 1)
     return hmac.compare_digest(sig_parts[1], digest)
+
+
+def truncate_words(content: str, length: int, suffix: Optional[str] = "...") -> str:
+    """Truncate text to < length chars, keeping words intact"""
+    if len(content) <= length:
+        return content
+    else:
+        return content[: (length - len(suffix))].rsplit(" ", 1)[0] + suffix
