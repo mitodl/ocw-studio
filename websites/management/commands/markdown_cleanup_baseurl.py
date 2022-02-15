@@ -128,11 +128,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.validate_options(options)
-        self.do_handle(**options)
-
-    @staticmethod
-    def do_handle(commit=False, out=None):
-        """Replace baseurl with resource_link"""
+        commit = options['commit']
+        out = options['out']
 
         with ExitStack() as stack:
             wc_list = WebsiteContent.all_objects.all().only(
