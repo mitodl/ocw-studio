@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.47.1 (Released February 15, 2022)
+--------------
+
+- type -> ocw_type (#1004)
+- improvements to search handling on the Website listing API
+- Blank _logo.html to remove default logo image (#997)
+
 Version 0.47.0 (Released February 14, 2022)
 --------------
 
