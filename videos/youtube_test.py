@@ -10,7 +10,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from googleapiclient.errors import HttpError
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from main.utils import truncate_words
 from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
 from videos.constants import DESTINATION_YOUTUBE
