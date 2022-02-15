@@ -144,17 +144,17 @@ class Command(BaseCommand):
 
             content_lookup = ContentLookup(wc_list)
             replacer = BaseurlReplacer(content_lookup)
-            clear = WebsiteContentMarkdownCleaner(
+            cleaner = WebsiteContentMarkdownCleaner(
                 BaseurlReplacer.baseurl_regex, replacer
             )
 
             wc: WebsiteContent
             for wc in progress_bar(wc_list):
-                clear.update_website_content_markdown(wc)
+                cleaner.update_website_content_markdown(wc)
 
             if commit:
-                wc_list.bulk_update(clear.updated_website_contents, ["markdown"])
+                wc_list.bulk_update(cleaner.updated_website_contents, ["markdown"])
 
         if out is not None:
             outpath = os.path.normpath(os.path.join(os.getcwd(), out))
-            clear.write_matches_to_csv(outpath)
+            cleaner.write_matches_to_csv(outpath)
