@@ -21,7 +21,7 @@ from websites.models import WebsiteContent
 
 class Command(BaseCommand):
     """
-    Replaces baseurl-based links in markdown with < resource_link > shortcodes.
+    Performs regex replacements on markdown.
     """
 
     help = __doc__

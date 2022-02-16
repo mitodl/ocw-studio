@@ -13,17 +13,20 @@ class WebsiteContentMarkdownCleaner:
     """Facilitates regex-based replacements on WebsiteContent markdown.
 
     Args:
-        pattern (str)       : The pattern to match for when making replacements.
-            If the pattern uses named capturing groups, these groups will be
-            included as csv columns by `write_to_csv()` method.
-        replacer (callable) : A function called for every non-overlapping match
-            of `pattern` and returning the replacement string. This is similar
-            to the `repl` argument of `re.sub`, but is invoked with two
-            arguments: `(match, website_content)`, where `website_content` is
-            `website_content` object whose markdown is currently being edited.
+        rule: A MarkdownCleanupRule instance.
+
+    The given rule specifies a regex and is callable as a replacer function. The
+    rule will be called for every non-overlapping match of the regex and should
+    return the replacement string. This is similar to the `repl` argument of
+    `re.sub`, but is invoked with two arguments `(match, website_content)`,
+    instead of just `match`. Here `website_content` is a partial website_content
+    object.
+
+    If the pattern uses named capturing groups, these groups will be included as
+    csv columns by `write_to_csv()` method.
 
     Note: Internally records all matches and replacement results for subsequent
-    writing to csv
+    writing to csv.
     """
 
     ReplacementMatch = namedtuple(

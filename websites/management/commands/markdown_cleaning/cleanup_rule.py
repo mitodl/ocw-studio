@@ -13,13 +13,19 @@ class MarkdownCleanupRule(abc.ABC):
     @property
     @abc.abstractclassmethod
     def alias(cls) -> str:
-        """Name of the rule"""
+        """Alias of the rule to be used in CLI"""
 
     @property
     @abc.abstractclassmethod
     def regex(cls) -> str:
-        """Name of the rule"""
+        """
+        The pattern to match for when making replacements.
+        """
 
     @abc.abstractmethod
     def __call__(self, match: Match, website_cosntent: WebsiteContent):
-        pass
+        """
+        Invoked for each match to the rule's regex and returns the replacement
+        string. Similar to re.sub, but invoked with website_content argument
+        also.
+        """
