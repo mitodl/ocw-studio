@@ -19,7 +19,11 @@ from smart_open.s3 import Reader
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from main.utils import truncate_words
-from videos.constants import DESTINATION_YOUTUBE
+from videos.constants import (
+    DESTINATION_YOUTUBE,
+    YT_MAX_LENGTH_DESCRIPTION,
+    YT_MAX_LENGTH_TITLE,
+)
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
 from websites.api import is_ocw_site
@@ -33,8 +37,6 @@ log = logging.getLogger(__name__)
 # Quota errors should contain the following
 API_QUOTA_ERROR_MSG = "quota"
 CAPTION_UPLOAD_NAME = "ocw_captions_upload"
-MAX_LENGTH_TITLE = 100
-MAX_LENGTH_DESCRIPTION = 5000
 
 
 class YouTubeUploadException(Exception):
@@ -212,7 +214,9 @@ class YouTubeApi:
         original_name = videofile.video.source_key.split("/")[-1]
         request_body = dict(
             snippet=dict(
-                title=truncate_words(strip_bad_chars(original_name), MAX_LENGTH_TITLE),
+                title=truncate_words(
+                    strip_bad_chars(original_name), YT_MAX_LENGTH_TITLE
+                ),
                 description="",
                 categoryId=settings.YT_CATEGORY_ID,
             ),
@@ -308,10 +312,10 @@ class YouTubeApi:
                 "id": youtube_id,
                 "snippet": {
                     "title": truncate_words(
-                        strip_bad_chars(resource.title), MAX_LENGTH_TITLE
+                        strip_bad_chars(resource.title), YT_MAX_LENGTH_TITLE
                     ),
                     "description": truncate_words(
-                        strip_bad_chars(description), MAX_LENGTH_DESCRIPTION
+                        strip_bad_chars(description), YT_MAX_LENGTH_DESCRIPTION
                     ),
                     "tags": get_dict_field(metadata, settings.YT_FIELD_TAGS),
                     "categoryId": settings.YT_CATEGORY_ID,

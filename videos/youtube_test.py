@@ -12,13 +12,15 @@ from googleapiclient.errors import HttpError
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
-from videos.constants import DESTINATION_YOUTUBE
+from videos.constants import (
+    DESTINATION_YOUTUBE,
+    YT_MAX_LENGTH_DESCRIPTION,
+    YT_MAX_LENGTH_TITLE,
+)
 from videos.factories import VideoFactory, VideoFileFactory
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.youtube import (
     CAPTION_UPLOAD_NAME,
-    MAX_LENGTH_DESCRIPTION,
-    MAX_LENGTH_TITLE,
     YouTubeApi,
     YouTubeUploadException,
     mail_youtube_upload_failure,
@@ -212,10 +214,10 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
     expected_title = f'{" ".join([title.replace(">", "") for _ in range(9)])}...'
     expected_desc = f'{" ".join([description.replace(">", "") for _ in range(499)])}...'
 
-    assert len(content.title) > MAX_LENGTH_TITLE
-    assert len(content.metadata["description"]) > MAX_LENGTH_DESCRIPTION
-    assert len(expected_title) <= MAX_LENGTH_TITLE
-    assert len(expected_desc) <= MAX_LENGTH_DESCRIPTION
+    assert len(content.title) > YT_MAX_LENGTH_TITLE
+    assert len(content.metadata["description"]) > YT_MAX_LENGTH_DESCRIPTION
+    assert len(expected_title) <= YT_MAX_LENGTH_TITLE
+    assert len(expected_desc) <= YT_MAX_LENGTH_DESCRIPTION
 
     mock_update_caption = mocker.patch("videos.youtube.YouTubeApi.update_captions")
 

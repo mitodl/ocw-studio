@@ -8,6 +8,8 @@ DESTINATION_ARCHIVE = "archive"
 ALL_DESTINATIONS = [DESTINATION_YOUTUBE, DESTINATION_ARCHIVE]
 
 YT_THUMBNAIL_IMG = "https://img.youtube.com/vi/{video_id}/default.jpg"
+YT_MAX_LENGTH_TITLE = 100
+YT_MAX_LENGTH_DESCRIPTION = 5000
 
 
 class VideoStatus:

@@ -149,8 +149,7 @@ export default function PublishDrawer(props: Props): JSX.Element {
         {website.content_warnings && !isEmpty(website.content_warnings) ? (
           <div className="publish-warnings pt-2">
             <strong className="text-danger">
-              This site is missing information that could affect publishing
-              output.
+              This site has issues that could affect publishing output.
             </strong>
             <ul className="text-danger">
               {website.content_warnings.map((warning: string, idx: number) => (
