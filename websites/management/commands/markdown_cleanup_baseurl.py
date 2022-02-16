@@ -128,8 +128,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.validate_options(options)
-        commit = options['commit']
-        out = options['out']
+        commit = options["commit"]
+        out = options["out"]
 
         with ExitStack() as stack:
             wc_list = WebsiteContent.all_objects.all().only(
