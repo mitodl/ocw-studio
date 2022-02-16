@@ -64,3 +64,26 @@ export const TABLE_ALLOWED_ATTRS: string[] = ["colspan", "rowspan"]
  * with a double quote and captures anything in between the quotes.
  */
 export const ATTRIBUTE_REGEX = /(\S+)=["']?((?:.(?!["']?\s+(?:\S+)=|\s*\/?[>"']))+.)["']?/g
+
+export const LEGACY_SHORTCODES = [
+  "quiz_choice",
+  "quiz_choices",
+  "quiz_multiple_choice",
+  "quiz_solution",
+  "resource_file",
+  "video-gallery",
+  "youtube",
+  "anchor",
+  "approx-students",
+  "br",
+  "div-with-class",
+  "fullwidth-cell",
+  "h",
+  "image-gallery-item",
+  "image-gallery",
+  "quote",
+  "simplecast",
+  "sub",
+  "sup",
+  "baseurl"
+]

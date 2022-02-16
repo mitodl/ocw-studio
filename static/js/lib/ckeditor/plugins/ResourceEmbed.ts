@@ -150,7 +150,6 @@ class ResourceEmbedEditing extends Plugin {
     /**
      * editingDowncast converts a view element to HTML which is actually shown
      * in the editor for WYSIWYG purposes
-     * (for the youtube embed this is an iframe)
      */
     conversion.for("editingDowncast").elementToElement({
       model: RESOURCE_EMBED,

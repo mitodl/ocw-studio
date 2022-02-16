@@ -24,6 +24,7 @@ import ResourceLinkMarkdownSyntax from "./plugins/ResourceLinkMarkdownSyntax"
 import DisallowNestedTables from "./plugins/DisallowNestedTables"
 import TableMarkdownSyntax from "./plugins/TableMarkdownSyntax"
 import MarkdownListSyntax from "./plugins/MarkdownListSyntax"
+import LegacyShortcodes from "./plugins/LegacyShortcodes"
 
 export const FullEditorConfig = {
   plugins: [
@@ -49,6 +50,7 @@ export const FullEditorConfig = {
     ResourceLinkMarkdownSyntax,
     TableMarkdownSyntax,
     MarkdownListSyntax,
+    LegacyShortcodes,
     Markdown,
     DisallowNestedTables
   ],

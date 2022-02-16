@@ -15,7 +15,7 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
   }
 
   get showdownExtension() {
-    return function resourceExtension(): Showdown.ShowdownExtension[] {
+    return function tableExtension(): Showdown.ShowdownExtension[] {
       return TABLE_ELS.map(el => {
         const shortcodeRegex = new RegExp(`{{< ${el}(open|close).*? >}}`, "g")
 
