@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.47.3
+Version 0.47.3 (Released February 17, 2022)
 --------------
 
 - add support for nondestructive editing w/ legacy shortcodes
