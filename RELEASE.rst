@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.47.2
+Version 0.47.2 (Released February 17, 2022)
 --------------
 
 - Only update metadata for youtube videos with associated VideoFile objects (#1014)
