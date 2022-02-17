@@ -490,6 +490,11 @@ VIDEO_S3_TRANSCODE_PREFIX = get_string(
         "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert"
     ),
 )
+VIDEO_TRANSCODE_QUEUE = get_string(
+    name="VIDEO_TRANSCODE_QUEUE",
+    default="Default",
+    description=("Name of MediaConvert queue to use for transcoding"),
+)
 YT_ACCESS_TOKEN = get_string(
     name="YT_ACCESS_TOKEN", default="", description="Youtube access token"
 )
