@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.47.4
+Version 0.47.4 (Released February 17, 2022)
 --------------
 
 - add markdown cleanup rule for legacy data fix (#1024)
