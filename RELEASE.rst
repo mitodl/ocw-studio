@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.47.2 (Released February 17, 2022)
+--------------
+
+- Only update metadata for youtube videos with associated VideoFile objects (#1014)
+- add management command markdown_cleanup_baseurl (#1002)
+- small tech debt thing
+- improvements to the site search
+
 Version 0.47.1 (Released February 15, 2022)
 --------------
 
