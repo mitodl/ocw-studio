@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.47.4
+--------------
+
+- add markdown cleanup rule for legacy data fix (#1024)
+- Make embeddable=True explicit when updating youtube metadata status (#1022)
+- convert resource_file to resource shortcodes (#1016)
+
 Version 0.47.3 (Released February 17, 2022)
 --------------
 
