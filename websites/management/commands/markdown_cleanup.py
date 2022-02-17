@@ -13,6 +13,10 @@ from websites.management.commands.markdown_cleaning.baseurl_rule import (
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
+from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix import (
+    LegacyShortcodeFixOne,
+    LegacyShortcodeFixTwo,
+)
 from websites.management.commands.markdown_cleaning.resource_file_rule import (
     ResourceFileReplacementRule,
 )
@@ -26,7 +30,12 @@ class Command(BaseCommand):
 
     help = __doc__
 
-    Rules = [BaseurlReplacementRule, ResourceFileReplacementRule]
+    Rules = [
+        BaseurlReplacementRule,
+        ResourceFileReplacementRule,
+        LegacyShortcodeFixOne,
+        LegacyShortcodeFixTwo,
+    ]
 
     def add_arguments(self, parser: CommandParser) -> None:
         aliases = [R.alias for R in self.Rules]
