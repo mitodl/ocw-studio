@@ -194,7 +194,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
         "GIT_DOMAIN",
         "GIT_ORGANIZATION",
         "GITHUB_WEBHOOK_BRANCH",
-        "OCW_GTM_ACCOUNT_ID"
+        "OCW_GTM_ACCOUNT_ID",
     ]
 
     def __init__(self, website: Website, api: Optional[ConcourseApi] = None):
@@ -313,7 +313,7 @@ class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
 
     MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
         "GITHUB_WEBHOOK_BRANCH",
-        "SEARCH_API_URL"
+        "SEARCH_API_URL",
     ]
 
     def __init__(self, api: Optional[ConcourseApi] = None):
@@ -370,7 +370,7 @@ class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
             "GIT_DOMAIN",
             "GIT_ORGANIZATION",
             "GITHUB_WEBHOOK_BRANCH",
-            "OCW_GTM_ACCOUNT_ID"
+            "OCW_GTM_ACCOUNT_ID",
         ]
         super().__init__(api=api)
         self.pipeline_name = "mass_publish"
