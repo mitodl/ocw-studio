@@ -957,6 +957,11 @@ OCW_IMPORT_STARTER_SLUG = get_string(
     description="The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
     required=False,
 )
+OCW_GTM_ACCOUNT_ID = get_string(
+    name="OCW_GTM_ACCOUNT_ID",
+    default=None,
+    description="The Google Tag Manager account ID to use in OCW site build pipelines",
+)
 OCW_STUDIO_SITE_CONFIG_FILE = get_string(
     name="OCW_STUDIO_SITE_CONFIG_FILE",
     default="ocw-studio.yaml",
