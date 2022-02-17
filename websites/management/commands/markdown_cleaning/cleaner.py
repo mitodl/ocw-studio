@@ -1,72 +1,32 @@
+"""Facilitates regex-based replacements on WebsiteContentMarkdown."""
 import csv
 import re
 from collections import namedtuple
-from typing import Callable, Iterable, Match
 
+from websites.management.commands.markdown_cleaning.cleanup_rule import (
+    MarkdownCleanupRule,
+)
 from websites.models import WebsiteContent
-
-
-def progress_bar(
-    iterable: Iterable,
-    prefix="",
-    suffix="",
-    decimals=1,
-    char_length=100,
-    fill="█",
-    printEnd="\r",
-):
-    """Call in a loop to create a terminal progress bar.
-
-    Args:
-        iterable (iterable): must implement __len__
-        prefix   (str): prefix string
-        suffix   (str): suffix string
-        decimals (int): positive number of decimals in percent complete
-        length   (int): character length of bar
-        fill     (str): bar fill character
-        printEnd (str): end character (e.g. "\r", "\r\n")
-
-    Yields:
-        The same items as `iterable`
-
-    From https://stackoverflow.com/a/34325723/2747370
-    """
-    total = len(iterable)
-    # Progress Bar Printing Function
-
-    def print_progress_bar(iteration):
-        percent = ("{0:." + str(decimals) + "f}").format(
-            100 * (iteration / float(total))
-        )
-        filledLength = int(char_length * iteration // total)
-        progress = fill * filledLength + "-" * (char_length - filledLength)
-        print(f"\r{prefix} |{progress}| {percent}% {suffix}", end=printEnd)
-
-    # Initial Call
-    print_progress_bar(0)
-    # Update Progress Bar
-    for i, item in enumerate(iterable):
-        yield item
-        print_progress_bar(i + 1)
-    # Print New Line on Complete
-    print()
 
 
 class WebsiteContentMarkdownCleaner:
     """Facilitates regex-based replacements on WebsiteContent markdown.
 
     Args:
-        pattern (str)       : The pattern to match for when making replacements.
-            If the pattern uses named capturing groups, these groups will be
-            included as csv columns by `write_to_csv()` method.
-        replacer (callable) : A function called for every non-overlapping match
-            of `pattern` and returning the replacement string. This is similar
-            to the `repl` argument of `re.sub`, but is invoked with two
-            arguments: `(match, website_content)`, where `website_content` is
-            `website_content` object whose markdown is currently being edited.
+        rule: A MarkdownCleanupRule instance.
+
+    The given rule specifies a regex and is callable as a replacer function. The
+    rule will be called for every non-overlapping match of the regex and should
+    return the replacement string. This is similar to the `repl` argument of
+    `re.sub`, but is invoked with two arguments `(match, website_content)`,
+    instead of just `match`. Here `website_content` is a partial website_content
+    object.
+
+    If the pattern uses named capturing groups, these groups will be included as
+    csv columns by `write_to_csv()` method.
 
     Note: Internally records all matches and replacement results for subsequent
-    writing to csv
+    writing to csv.
     """
 
     ReplacementMatch = namedtuple(
@@ -80,14 +40,14 @@ class WebsiteContentMarkdownCleaner:
         "website_uuid",
     ]
 
-    def __init__(self, pattern: str, replacer: Callable[[Match, WebsiteContent], str]):
-        self.regex = self.compile_regex(pattern)
+    def __init__(self, rule: MarkdownCleanupRule):
+        self.regex = self.compile_regex(rule.regex)
 
         self.text_changes: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = []
         self.updated_website_contents: "list[WebsiteContent]" = []
 
-        def _replacer(match: Match, website_content: WebsiteContent):
-            replacement = replacer(match, website_content)
+        def _replacer(match: re.Match, website_content: WebsiteContent):
+            replacement = rule(match, website_content)
             self.text_changes.append(
                 self.ReplacementMatch(
                     match,
@@ -131,7 +91,6 @@ class WebsiteContentMarkdownCleaner:
     def write_matches_to_csv(self, path: str):
         """Write matches and replacements to csv."""
 
-        fieldnames = self.text_changes[0].match
         with open(path, "w", newline="") as csvfile:
             fieldnames = [*self.csv_metadata_fieldnames, *self.regex.groupindex]
             writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)

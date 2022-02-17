@@ -1,20 +1,26 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
+from unittest.mock import Mock, patch
+
 import pytest
 
 from websites.factories import WebsiteContentFactory, WebsiteFactory
-from websites.management.commands.markdown_cleanup_baseurl import (
+from websites.management.commands.markdown_cleaning.baseurl_rule import (
     CONTENT_FILENAME_MAX_LEN,
-    BaseurlReplacer,
-    ContentLookup,
+    BaseurlReplacementRule,
+)
+from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
 
 
 def get_markdown_cleaner(website_contents):
-    """Convenience to get baseurl-replacing markdown cleaner"""
-    content_lookup = ContentLookup(website_contents)
-    replacer = BaseurlReplacer(content_lookup)
-    return WebsiteContentMarkdownCleaner(BaseurlReplacer.baseurl_regex, replacer)
+    """Convenience to get rule-specific cleaner"""
+    with patch(
+        "websites.management.commands.markdown_cleaning.baseurl_rule.get_all_website_content"
+    ) as mock:
+        mock.return_value = website_contents
+        rule = BaseurlReplacementRule()
+        return WebsiteContentMarkdownCleaner(rule)
 
 
 @pytest.mark.parametrize(
