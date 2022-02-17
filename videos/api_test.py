@@ -27,6 +27,9 @@ def test_create_media_convert_job(settings, mocker):
     assert call_kwargs["Role"] == (
         f"arn:aws:iam::{settings.AWS_ACCOUNT_ID}:role/{settings.AWS_ROLE_NAME}"
     )
+    assert call_kwargs["Queue"] == (
+        f"arn:aws:mediaconvert:{settings.AWS_REGION}:{settings.AWS_ACCOUNT_ID}:queues/test_queue"
+    )
     assert call_kwargs["UserMetadata"]["filter"] == "test_queue"
     destination = call_kwargs["Settings"]["OutputGroups"][0]["OutputGroupSettings"][
         "FileGroupSettings"
