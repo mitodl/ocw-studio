@@ -5,6 +5,7 @@ from contextlib import ExitStack
 from django.core.management import BaseCommand
 from django.core.management.base import CommandParser
 from django.db import transaction
+from tqdm import tqdm
 
 from websites.management.commands.markdown_cleaning.baseurl_rule import (
     BaseurlReplacementRule,
@@ -15,7 +16,6 @@ from websites.management.commands.markdown_cleaning.cleaner import (
 from websites.management.commands.markdown_cleaning.resource_file_rule import (
     ResourceFileReplacementRule,
 )
-from websites.management.commands.util import progress_bar
 from websites.models import WebsiteContent
 
 
@@ -86,7 +86,7 @@ class Command(BaseCommand):
             cleaner = WebsiteContentMarkdownCleaner(rule)
 
             wc: WebsiteContent
-            for wc in progress_bar(all_wc):
+            for wc in tqdm(all_wc):
                 cleaner.update_website_content_markdown(wc)
 
             if commit:

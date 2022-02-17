@@ -91,7 +91,6 @@ class WebsiteContentMarkdownCleaner:
     def write_matches_to_csv(self, path: str):
         """Write matches and replacements to csv."""
 
-        fieldnames = self.text_changes[0].match
         with open(path, "w", newline="") as csvfile:
             fieldnames = [*self.csv_metadata_fieldnames, *self.regex.groupindex]
             writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)

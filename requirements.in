@@ -37,6 +37,7 @@ social-auth-core[saml]>=4
 social-auth-app-django>=4
 uwsgi
 pyyaml
+tqdm
 yamale
 
 google-api-python-client
