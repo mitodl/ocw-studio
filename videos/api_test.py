@@ -16,7 +16,8 @@ pytestmark = pytest.mark.django_db
 
 def test_create_media_convert_job(settings, mocker):
     """create_media_convert_job should send a request to MediaConvert, create a VideoJob object"""
-    settings.VIDEO_TRANSCODE_QUEUE = "test_queue"
+    queue_name = "test_queue"
+    settings.VIDEO_TRANSCODE_QUEUE = queue_name
     mock_boto = mocker.patch("videos.api.boto3")
     job_id = "abcd123-gh564"
     mock_boto.client.return_value.create_job.return_value = {"Job": {"Id": job_id}}
@@ -28,9 +29,9 @@ def test_create_media_convert_job(settings, mocker):
         f"arn:aws:iam::{settings.AWS_ACCOUNT_ID}:role/{settings.AWS_ROLE_NAME}"
     )
     assert call_kwargs["Queue"] == (
-        f"arn:aws:mediaconvert:{settings.AWS_REGION}:{settings.AWS_ACCOUNT_ID}:queues/test_queue"
+        f"arn:aws:mediaconvert:{settings.AWS_REGION}:{settings.AWS_ACCOUNT_ID}:queues/{queue_name}"
     )
-    assert call_kwargs["UserMetadata"]["filter"] == "test_queue"
+    assert call_kwargs["UserMetadata"]["filter"] == queue_name
     destination = call_kwargs["Settings"]["OutputGroups"][0]["OutputGroupSettings"][
         "FileGroupSettings"
     ]["Destination"]
