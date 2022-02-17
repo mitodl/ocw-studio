@@ -6,6 +6,19 @@ like {{< baseurl >}} would become corrupted in studio during editing. The editor
     - then escaped special characters like "[" and "<" when saving (only if edits were made)
 
 This rule selectively unescapes content.
+
+### Strategy
+In general, there there are two data corruptions we're trying to fix. Consider
+the texts
+
+    blah \[Some Tile\]{{\< resource\_file uuid >}} blah
+    blah blah {{\< sup 2 >}} blah
+
+We will make two rules:
+1. Fix the stuff BEFORE the shortcode, namely link/image title (line 1)
+2. Fix the shortcode itself and its contents
+
+The `\<` in the first line will be caught by the second rule.
 """
 import re
 
@@ -30,6 +43,7 @@ class LegacyShortcodeFixOne(MarkdownCleanupRule):
 
     def __call__(self, match: re.Match, _website_content):
         original_text = match[0]
+        # Intentially not converting {{\< to {{< ... that will be fixed by Rule Two
         fixed = (
             original_text.replace("\\[", "[").replace("\\]", "]").replace("\\_", "_")
         )
