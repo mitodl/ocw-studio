@@ -13,12 +13,13 @@ import {
 /**
  * (\S+) to match and capture the UUID
  * "(.*?)" to match and capture the label text
+ * (?: "(.*?)")? to match the optional anchor ID param
  *
  * Limitations:
  *   - gets fooled by label texts that include literal `" >}}` values. For
  *     example, < resource_link uuid123 "silly " >}} link" >}}.
  */
-export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)" >}}/g
+export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)"(?: "(.*?)")? >}}/g
 
 /**
  * Class for defining Markdown conversion rules for Resource links
@@ -50,8 +51,16 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
         {
           type:    "lang",
           regex:   RESOURCE_LINK_SHORTCODE_REGEX,
-          replace: (_s: string, uuid: string, linkText: string) => {
-            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${uuid}">${linkText}</a>`
+          replace: (
+            _s: string,
+            uuid: string,
+            linkText: string,
+            fragment?: string
+          ) => {
+            const formattedUUID = fragment ? `${uuid}#${fragment}` : uuid
+            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${encodeURIComponent(
+              formattedUUID
+            )}">${linkText}</a>`
           }
         }
       ]
@@ -70,9 +79,15 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             )
           },
           replacement: (_content: string, node: Turndown.Node): string => {
-            // @ts-ignore
-            const uuid = node.getAttribute("data-uuid")
-            return `{{< resource_link ${uuid} "${node.textContent}" >}}`
+            const [uuid, anchor] = decodeURIComponent(
+              (node as any).getAttribute("data-uuid") as string
+            ).split("#")
+
+            if (anchor) {
+              return `{{< resource_link ${uuid} "${node.textContent}" "${anchor}" >}}`
+            } else {
+              return `{{< resource_link ${uuid} "${node.textContent}" >}}`
+            }
           }
         }
       }

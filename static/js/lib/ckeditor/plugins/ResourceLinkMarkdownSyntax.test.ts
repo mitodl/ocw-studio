@@ -28,13 +28,26 @@ describe("ResourceLink plugin", () => {
   })
 
   it("should take in and return 'resource' shortcode", async () => {
-    const editor = await getEditor(
-      '{{< resource_link 1234567890 "link text" >}}'
-    )
+    const md = '{{< resource_link 1234567890 "link text" >}}'
+    const editor = await getEditor(md)
 
     // @ts-ignore
-    expect(editor.getData()).toBe(
-      '{{< resource_link 1234567890 "link text" >}}'
+    expect(editor.getData()).toBe(md)
+  })
+
+  it("should not mash an anchor hash thingy", async () => {
+    const md =
+      '{{< resource_link 1234-5678 "link text" "some-header-id" >}}{{< resource_link link-this-here-uuid "Title of the Link" "some-heading-id" >}}'
+    const editor = await getEditor(md)
+    // @ts-ignore
+    expect(editor.getData()).toBe(md)
+
+    markdownTest(
+      editor,
+      '{{< resource_link 1234-5678 "link text" "some-header-id" >}}',
+      `<p><a class="resource-link" data-uuid="${encodeURIComponent(
+        "1234-5678#some-header-id"
+      )}">link text</a></p>`
     )
   })
 
