@@ -45,6 +45,15 @@ resources:
             Content-Type: "application/json"
             Authorization: "Bearer ((api-token))"
         out_only: true
+  - name: open-discussions-webhook
+    type: http-resource
+    check_every: never
+    source:
+        url: ((open-discussions-url))/api/v0/ocw_next_webhook/
+        method: POST
+        headers:
+          Content-Type: "application/json"
+        out_only: true
 jobs:
   - name: build-ocw-site
     serial: true
@@ -199,15 +208,26 @@ jobs:
               - https://api.fastly.com/service/((fastly.service_id))/((purge-url))
         on_success:
           try:
-            put: ocw-studio-webhook
-            timeout: 1m
-            attempts: 3
-            params:
-                text: |
-                  {
-                    "version": "((pipeline_name))",
-                    "status": "succeeded"
-                  }
+            do:
+              - put: open-discussions-webhook
+                timeout: 1m
+                attempts: 3
+                params:
+                  text: |
+                    {
+                      "webhook_key": "((open-webhook-key))",
+                      "prefix": "((site-url))/",
+                      "version": "((pipeline_name))"
+                    }
+              - put: ocw-studio-webhook
+                timeout: 1m
+                attempts: 3
+                params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "succeeded"
+                    }
         on_failure:
           try:
             put: ocw-studio-webhook

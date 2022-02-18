@@ -276,6 +276,10 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
                         "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
                     )
                     .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME)
+                    .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
+                    .replace(
+                        "((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
+                    )
                     .replace("((ocw-site-repo))", self.website.short_id)
                     .replace("((ocw-site-repo-branch))", branch)
                     .replace("((config-slug))", self.website.starter.slug)
@@ -428,6 +432,8 @@ class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
                 .replace("((ocw-site-repo-branch))", branch)
                 .replace("((version))", self.version)
                 .replace("((api-token))", settings.API_BEARER_TOKEN or "")
+                .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
+                .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
             )
         log.debug(config_str)
         config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
