@@ -56,6 +56,15 @@ describe("ResourceLink plugin", () => {
     )
   })
 
+  it("should serialize fragment arg to and from markdown", async () => {
+    const editor = await getEditor("")
+    markdownTest(
+      editor,
+      '{{< resource_link asdfasdfasdfasdf "text here" "some-fragment-id" >}}',
+      '<p><a class="resource-link" data-uuid="asdfasdfasdfasdf" data-fragment="some-fragment-id">text here</a></p>'
+    )
+  })
+
   it("[BUG] does not behave well if link title ends in backslash", async () => {
     const editor = await getEditor("")
     const { md2html } = (editor.data

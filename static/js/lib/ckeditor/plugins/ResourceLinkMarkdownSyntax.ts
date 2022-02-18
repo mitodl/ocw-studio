@@ -18,7 +18,7 @@ import {
  *   - gets fooled by label texts that include literal `" >}}` values. For
  *     example, < resource_link uuid123 "silly " >}} link" >}}.
  */
-export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)" >}}/g
+export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)"(?: "(.*?)")? >}}/g
 
 /**
  * Class for defining Markdown conversion rules for Resource links
@@ -50,8 +50,14 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
         {
           type:    "lang",
           regex:   RESOURCE_LINK_SHORTCODE_REGEX,
-          replace: (_s: string, uuid: string, linkText: string) => {
-            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${uuid}">${linkText}</a>`
+          replace: (
+            _s: string,
+            uuid: string,
+            linkText: string,
+            fragment?: string
+          ) => {
+            const fragmentText = fragment ? ` data-fragment="${fragment}"` : ""
+            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${uuid}"${fragmentText}>${linkText}</a>`
           }
         }
       ]
@@ -72,7 +78,10 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
           replacement: (_content: string, node: Turndown.Node): string => {
             // @ts-ignore
             const uuid = node.getAttribute("data-uuid")
-            return `{{< resource_link ${uuid} "${node.textContent}" >}}`
+            // @ts-ignore
+            const fragment = node.getAttribute("data-fragment")
+            const framgmentText = fragment ? `"${fragment}" ` : ""
+            return `{{< resource_link ${uuid} "${node.textContent}" ${framgmentText}>}}`
           }
         }
       }
