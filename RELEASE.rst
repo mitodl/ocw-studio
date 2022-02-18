@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.47.6
+Version 0.47.6 (Released February 18, 2022)
 --------------
 
 - baseurl replacement improvements (#1034)
