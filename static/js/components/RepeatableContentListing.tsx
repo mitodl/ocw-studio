@@ -42,6 +42,8 @@ import {
 import { createModalState } from "../types/modal_state"
 import { StudioList, StudioListItem } from "./StudioList"
 import ConfirmationModal from "./ConfirmationModal"
+import { useURLParamFilter } from "../hooks/search"
+import { singular } from "pluralize"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -51,26 +53,44 @@ export default function RepeatableContentListing(props: {
   const isResource = configItem.name === "resource"
   const website = useWebsite()
 
-  const { search, pathname } = useLocation()
-  const offset = Number(new URLSearchParams(search).get("offset") ?? 0)
+  const { pathname } = useLocation()
   const [dirty, setDirty] = useState<boolean>(false)
   useEffect(() => {
     // make sure we clear state if we switch pages
     setDirty(false)
   }, [pathname])
 
-  const listingParams: ContentListingParams = {
-    name: website.name,
-    type: configItem.name,
-    offset
-  }
-  const [
-    { isPending: contentListingPending },
-    fetchWebsiteContentListing
-  ] = useRequest(websiteContentListingRequest(listingParams, false, false))
+  const getListingParams = useCallback(
+    (search: string): ContentListingParams => {
+      const qsParams = new URLSearchParams(search)
+      const offset = Number(qsParams.get("offset") ?? 0)
+      const searchString = qsParams.get("q")
+
+      const params: ContentListingParams = {
+        name: website.name,
+        type: configItem.name,
+        offset
+      }
+      if (searchString) {
+        params.search = searchString
+      }
+      return params
+    },
+    [website, configItem]
+  )
+
+  const { listingParams, searchInput, setSearchInput } = useURLParamFilter(
+    getListingParams
+  )
+
+  const [, fetchWebsiteContentListing] = useRequest(
+    websiteContentListingRequest(listingParams, false, false)
+  )
+
   const listing: WebsiteContentListingResponse = useSelector(
     getWebsiteContentListingCursor
   )(listingParams)
+
   const [{ isPending: syncIsPending }, syncWebsiteContent] = useMutation(() =>
     syncWebsiteContentMutation(website.name)
   )
@@ -82,6 +102,7 @@ export default function RepeatableContentListing(props: {
   const closeContentDrawer = useCallback(() => {
     setDrawerState(createModalState("closed"))
   }, [setDrawerState])
+
   const {
     confirmationModalVisible,
     setConfirmationModalVisible,
@@ -120,9 +141,6 @@ export default function RepeatableContentListing(props: {
     website ? 5000 : null
   )
 
-  if (contentListingPending) {
-    return <div className="site-page container">Loading...</div>
-  }
   if (!listing) {
     return null
   }
@@ -137,7 +155,7 @@ export default function RepeatableContentListing(props: {
     )
   }
 
-  const labelSingular = configItem.label_singular ?? configItem.label
+  const labelSingular = configItem.label_singular ?? singular(configItem.label)
 
   const modalTitle = `${
     drawerState.editing() ? "Edit" : "Add"
@@ -158,7 +176,6 @@ export default function RepeatableContentListing(props: {
     await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
   }
 
-  // @ts-ignore
   return (
     <>
       <ConfirmationModal
@@ -188,15 +205,21 @@ export default function RepeatableContentListing(props: {
           ) : null
         }
       </BasicModal>
-      <div className="d-flex flex-direction-row align-items-right justify-content-between py-3">
+      <div className="d-flex flex-direction-row align-items-center justify-content-between py-3">
         <h2 className="m-0 p-0">{configItem.label}</h2>
-        <div className="noflex">
+        <div className="d-flex flex-direction-row align-items-top">
+          <input
+            placeholder={`Search for a ${labelSingular}`}
+            className="site-search-input mr-3 form-control"
+            value={searchInput}
+            onChange={setSearchInput}
+          />
           {SETTINGS.gdrive_enabled && isResource ? (
             website.gdrive_url ? (
-              <>
-                <div>
+              <div className="d-flex flex-column">
+                <div className="d-flex">
                   <button
-                    className="btn cyan-button sync ml-2"
+                    className="btn cyan-button sync ml-2 text-nowrap"
                     onClick={onSubmitContentSync}
                   >
                     Sync w/Google Drive
@@ -211,11 +234,11 @@ export default function RepeatableContentListing(props: {
                   </a>
                 </div>
                 <DriveSyncStatusIndicator website={website} />
-              </>
+              </div>
             ) : null
           ) : (
             <button
-              className="btn cyan-button add"
+              className="btn cyan-button add flex-shrink-0"
               onClick={startAddOrEdit(null)}
             >
               Add {labelSingular}
@@ -242,14 +265,14 @@ export default function RepeatableContentListing(props: {
             name:        website.name,
             contentType: configItem.name
           })
-          .query({ offset: offset - WEBSITE_CONTENT_PAGE_SIZE })
+          .query({ offset: listingParams.offset - WEBSITE_CONTENT_PAGE_SIZE })
           .toString()}
         next={siteContentListingUrl
           .param({
             name:        website.name,
             contentType: configItem.name
           })
-          .query({ offset: offset + WEBSITE_CONTENT_PAGE_SIZE })
+          .query({ offset: listingParams.offset + WEBSITE_CONTENT_PAGE_SIZE })
           .toString()}
       />
     </>

@@ -1,8 +1,8 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
-import useInterval from "@use-it/interval"
+import { default as useIt } from "@use-it/interval"
 import sinon from "sinon"
-import { useLocation } from "react-router-dom"
+import * as rrDOM from "react-router-dom"
 
 import RepeatableContentListing from "./RepeatableContentListing"
 import {
@@ -12,7 +12,7 @@ import {
 import WebsiteContext from "../context/Website"
 
 import useConfirmation from "../hooks/confirmation"
-import { isIf, shouldIf } from "../test_util"
+import { twoBooleanTestMatrix } from "../test_util"
 import {
   siteApiContentDetailUrl,
   siteContentListingUrl,
@@ -41,6 +41,10 @@ import {
 } from "../types/websites"
 import { createModalState } from "../types/modal_state"
 import configureStore from "../store/configureStore"
+import { singular } from "pluralize"
+
+const { useLocation } = rrDOM as jest.Mocked<typeof rrDOM>
+const useInterval = useIt as jest.Mocked<typeof useIt>
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
@@ -100,12 +104,9 @@ describe("RepeatableContentListing", () => {
       setConfirmationModalVisible,
       conditionalClose
     })
-    // @ts-ignore
     useLocation.mockClear()
     // @ts-ignore
-    useLocation.mockReturnValue({
-      pathname: "/path/to/pages"
-    })
+    useLocation.mockReturnValue({ pathname: "/path/to/pages" })
 
     const listingParams = {
       name:   website.name,
@@ -133,6 +134,15 @@ describe("RepeatableContentListing", () => {
         .toString(),
       apiResponse
     )
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .param({
+          name: website.name
+        })
+        .query({ search: "search", offset: 0, type: configItem.name })
+        .toString(),
+      apiResponse
+    )
 
     render = helper.configureRenderer(
       props => (
@@ -140,12 +150,7 @@ describe("RepeatableContentListing", () => {
           <RepeatableContentListing {...props} />
         </WebsiteContext.Provider>
       ),
-      {
-        configItem: configItem,
-        location:   {
-          search: ""
-        }
-      },
+      { configItem },
       {
         entities: {
           websiteDetails:        { [website.name]: website },
@@ -155,41 +160,39 @@ describe("RepeatableContentListing", () => {
         queries: {}
       }
     )
+    jest.useFakeTimers()
   })
 
   afterEach(() => {
     helper.cleanup()
     // @ts-ignore
     useInterval.mockClear()
+    jest.useRealTimers()
   })
 
-  //
-  ;[true, false].forEach(isGdriveEnabled => {
-    [true, false].forEach(isResource => {
-      it(`${shouldIf(
-        isGdriveEnabled && isResource
-      )} show the gdrive links when gdriveis ${isGdriveEnabled} and isResource is ${isResource}`, async () => {
-        SETTINGS.gdrive_enabled = isGdriveEnabled
-        configItem = makeRepeatableConfigItem(isResource ? "resource" : "page")
-        helper.mockGetRequest(
-          siteApiContentListingUrl
-            .param({
-              name: website.name
-            })
-            .query({ offset: 0, type: configItem.name })
-            .toString(),
-          apiResponse
-        )
-        const { wrapper } = await render({ configItem })
-        const driveLink = wrapper.find("a.view")
-        const syncLink = wrapper.find("button.sync")
-        const addLink = wrapper.find("button.add")
-        expect(driveLink.exists()).toBe(isGdriveEnabled && isResource)
-        expect(syncLink.exists()).toBe(isGdriveEnabled && isResource)
-        expect(addLink.exists()).toBe(!isGdriveEnabled || !isResource)
-      })
-    })
-  })
+  test.each(twoBooleanTestMatrix)(
+    "showing gdrive links when gdriveis=%p and isResource=%p",
+    async (isGdriveEnabled, isResource) => {
+      SETTINGS.gdrive_enabled = isGdriveEnabled
+      configItem = makeRepeatableConfigItem(isResource ? "resource" : "page")
+      helper.mockGetRequest(
+        siteApiContentListingUrl
+          .param({
+            name: website.name
+          })
+          .query({ offset: 0, type: configItem.name })
+          .toString(),
+        apiResponse
+      )
+      const { wrapper } = await render({ configItem })
+      const driveLink = wrapper.find("a.view")
+      const syncLink = wrapper.find("button.sync")
+      const addLink = wrapper.find("button.add")
+      expect(driveLink.exists()).toBe(isGdriveEnabled && isResource)
+      expect(syncLink.exists()).toBe(isGdriveEnabled && isResource)
+      expect(addLink.exists()).toBe(!isGdriveEnabled || !isResource)
+    }
+  )
 
   it("Clicking the gdrive sync button should trigger a sync request", async () => {
     const postSyncStub = helper.mockPostRequest(
@@ -254,6 +257,30 @@ describe("RepeatableContentListing", () => {
     ).toBe(false)
   })
 
+  test("should filter based on query param", async () => {
+    helper.browserHistory.push("/?q=search")
+    const { wrapper } = await render()
+    contentListingItems.forEach((item, idx) => {
+      const li = wrapper.find("li").at(idx)
+      expect(li.text()).toContain(item.title)
+    })
+  })
+
+  test("should let the user filter via text input", async () => {
+    const spy = jest.spyOn(helper.browserHistory, "push")
+    const { wrapper } = await render()
+    const filterInput = wrapper.find(".site-search-input")
+    const event = {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      preventDefault() {},
+      target: { value: "my-search-string" }
+    } as React.ChangeEvent<HTMLInputElement>
+    filterInput.simulate("change", event)
+    jest.runAllTimers()
+    wrapper.update()
+    expect(spy).toBeCalledWith("?q=my-search-string")
+  })
+
   it("should show each content item with edit links", async () => {
     for (const item of contentListingItems) {
       // when the edit button is tapped the detail view is requested, so mock each one out
@@ -300,85 +327,80 @@ describe("RepeatableContentListing", () => {
     }
   })
 
-  //
-  ;[true, false].forEach(hasPrevLink => {
-    [true, false].forEach(hasNextLink => {
-      it(`shows the right links when there ${isIf(
-        hasPrevLink
-      )} a previous link and ${isIf(hasNextLink)} a next link`, async () => {
-        apiResponse.next = hasNextLink ? "next" : null
-        apiResponse.previous = hasPrevLink ? "prev" : null
-        const startingOffset = 20
-        const nextPageItems = [
-          makeWebsiteContentListItem(),
-          makeWebsiteContentListItem()
-        ]
-        helper.mockGetRequest(
-          siteApiContentListingUrl
-            .param({ name: website.name })
-            .query({ offset: startingOffset, type: configItem.name })
-            .toString(),
-          {
-            next:     hasNextLink ? "next" : null,
-            previous: hasPrevLink ? "prev" : null,
-            count:    2,
-            results:  nextPageItems
-          }
+  test.each(twoBooleanTestMatrix)(
+    "shows the right links when there hasPrevLink=%p and hasNextLink=%p",
+    async (hasNextLink, hasPrevLink) => {
+      apiResponse.next = hasNextLink ? "next" : null
+      apiResponse.previous = hasPrevLink ? "prev" : null
+      const startingOffset = 20
+      const nextPageItems = [
+        makeWebsiteContentListItem(),
+        makeWebsiteContentListItem()
+      ]
+
+      helper.browserHistory.push(`/?offset=${startingOffset}`)
+      helper.mockGetRequest(
+        siteApiContentListingUrl
+          .param({ name: website.name })
+          .query({ offset: startingOffset, type: configItem.name })
+          .toString(),
+        {
+          next:     hasNextLink ? "next" : null,
+          previous: hasPrevLink ? "prev" : null,
+          count:    2,
+          results:  nextPageItems
+        }
+      )
+
+      const { wrapper } = await render()
+      const titles = wrapper
+        .find("StudioListItem")
+        .map(item => item.prop("title"))
+      expect(titles).toStrictEqual(nextPageItems.map(item => item.title))
+
+      const prevWrapper = wrapper.find(".pagination Link.previous")
+      expect(prevWrapper.exists()).toBe(hasPrevLink)
+      if (hasPrevLink) {
+        expect(prevWrapper.prop("to")).toBe(
+          siteContentListingUrl
+            .param({
+              name:        website.name,
+              contentType: configItem.name
+            })
+            .query({
+              offset: startingOffset - WEBSITE_CONTENT_PAGE_SIZE
+            })
+            .toString()
         )
+      }
 
-        // @ts-ignore
-        useLocation.mockClear()
-        // @ts-ignore
-        useLocation.mockReturnValue({ search: `offset=${startingOffset}` })
+      const nextWrapper = wrapper.find(".pagination Link.next")
+      expect(nextWrapper.exists()).toBe(hasNextLink)
+      if (hasNextLink) {
+        expect(nextWrapper.prop("to")).toBe(
+          siteContentListingUrl
+            .param({
+              name:        website.name,
+              contentType: configItem.name
+            })
+            .query({ offset: startingOffset + WEBSITE_CONTENT_PAGE_SIZE })
+            .toString()
+        )
+      }
+    }
+  )
 
-        const { wrapper } = await render()
-        const titles = wrapper
-          .find("StudioListItem")
-          .map(item => item.prop("title"))
-        expect(titles).toStrictEqual(nextPageItems.map(item => item.title))
-
-        const prevWrapper = wrapper.find(".pagination Link.previous")
-        expect(prevWrapper.exists()).toBe(hasPrevLink)
-        if (hasPrevLink) {
-          expect(prevWrapper.prop("to")).toBe(
-            siteContentListingUrl
-              .param({
-                name:        website.name,
-                contentType: configItem.name
-              })
-              .query({
-                offset: startingOffset - WEBSITE_CONTENT_PAGE_SIZE
-              })
-              .toString()
-          )
-        }
-
-        const nextWrapper = wrapper.find(".pagination Link.next")
-        expect(nextWrapper.exists()).toBe(hasNextLink)
-        if (hasNextLink) {
-          expect(nextWrapper.prop("to")).toBe(
-            siteContentListingUrl
-              .param({
-                name:        website.name,
-                contentType: configItem.name
-              })
-              .query({ offset: startingOffset + WEBSITE_CONTENT_PAGE_SIZE })
-              .toString()
-          )
-        }
-      })
-    })
-  })
-
-  //
-  ;[true, false].forEach(isSingular => {
-    it("should use the singular label where appropriate", async () => {
+  test.each([true, false])(
+    "should use the singular label when appropriate (isSingular=%p)",
+    async isSingular => {
       let expectedLabel
       if (!isSingular) {
         configItem.label_singular = undefined
-        expectedLabel = configItem.label
+        expectedLabel = singular(configItem.label)
       } else {
-        expectedLabel = configItem.label_singular
+        configItem.label_singular = expectedLabel = singular(
+          configItem.label_singular as string
+        )
       }
       const { wrapper } = await render()
       expect(wrapper.find("h2").text()).toBe(configItem.label)
@@ -396,8 +418,8 @@ describe("RepeatableContentListing", () => {
           .at(1)
           .prop("title")
       ).toBe(`Add ${expectedLabel}`)
-    })
-  })
+    }
+  )
 
   it("sets a dirty flag", async () => {
     const { wrapper } = await render({ website })
@@ -552,16 +574,16 @@ describe("RepeatableContentListing", () => {
     expect(siteContentEditor.prop("setDirty")).toBe(setDirty)
   })
 
-  //
-  ;[true, false].forEach(gdriveEnabled => {
-    it("shows the sync status indicator", async () => {
+  test.each([true, false])(
+    "shows the sync status indicator",
+    async gdriveEnabled => {
       SETTINGS.gdrive_enabled = gdriveEnabled
       const { wrapper } = await render({ website })
       expect(wrapper.find("DriveSyncStatusIndicator").exists()).toBe(
         gdriveEnabled
       )
-    })
-  })
+    }
+  )
 
   //
   ;[

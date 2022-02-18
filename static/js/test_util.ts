@@ -41,3 +41,10 @@ export const mockMatchMedia = () => {
 
   return window.matchMedia as jest.Mock<any, [string]>
 }
+
+export const twoBooleanTestMatrix = [
+  [true, true],
+  [true, false],
+  [false, true],
+  [false, false]
+]
