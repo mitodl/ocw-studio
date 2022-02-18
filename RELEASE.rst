@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.47.6
+--------------
+
+- baseurl replacement improvements (#1034)
+- Separate celery queues for publish tasks, batch tasks (#1031)
+- Handle youtube 403s and update website publish status immediately on errors (#1007)
+
 Version 0.47.5 (Released February 18, 2022)
 --------------
 
