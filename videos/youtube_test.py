@@ -45,6 +45,29 @@ def youtube_mocker(mocker):
 
 
 @pytest.fixture
+def youtube_website(mocker):
+    """Return a website with youtube resources"""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": RESOURCE_TYPE_IMAGE,
+            "video_metadata": {"youtube_id": "fakeid"},
+        },
+    )
+    for youtube_id in ["", None, "abc123", "def456"]:
+        WebsiteContentFactory.create(
+            website=website,
+            type=CONTENT_TYPE_RESOURCE,
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {"youtube_id": youtube_id},
+            },
+        )
+    return website
+
+
+@pytest.fixture
 def mock_mail(mocker):
     """ Objects and mocked functions for mail tests"""
     mock_get_message_sender = mocker.patch("videos.youtube.get_message_sender")
@@ -308,6 +331,7 @@ def test_mail_youtube_upload_success(settings, mock_mail):
 def test_update_youtube_metadata(  # pylint:disable=too-many-arguments
     mocker,
     settings,
+    youtube_website,
     video_file_exists,
     youtube_enabled,
     is_ocw,
@@ -319,30 +343,14 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments
     mock_update_video = mock_youtube.return_value.update_video
     mocker.patch("videos.youtube.is_ocw_site", return_value=is_ocw)
     mocker.patch("videos.youtube.is_youtube_enabled", return_value=youtube_enabled)
-    website = WebsiteFactory.create()
-    WebsiteContentFactory.create(
-        type=CONTENT_TYPE_RESOURCE,
-        metadata={
-            "resourcetype": RESOURCE_TYPE_IMAGE,
-            "video_metadata": {"youtube_id": "fakeid"},
-        },
-    )
     for youtube_id in ["", None, "abc123", "def456"]:
-        WebsiteContentFactory.create(
-            website=website,
-            type=CONTENT_TYPE_RESOURCE,
-            metadata={
-                "resourcetype": RESOURCE_TYPE_VIDEO,
-                "video_metadata": {"youtube_id": youtube_id},
-            },
-        )
         if video_file_exists:
             VideoFileFactory.create(
-                video=VideoFactory.create(website=website),
+                video=VideoFactory.create(website=youtube_website),
                 destination=DESTINATION_YOUTUBE,
                 destination_id=youtube_id,
             )
-    update_youtube_metadata(website, version=version)
+    update_youtube_metadata(youtube_website, version=version)
     if youtube_enabled and is_ocw:
         mock_youtube.assert_called_once()
         # Don't update metadata for imported ocw course videos except on production
@@ -351,7 +359,8 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments
             for youtube_id in ["abc123", "def456"]:
                 mock_update_video.assert_any_call(
                     WebsiteContent.objects.get(
-                        website=website, metadata__video_metadata__youtube_id=youtube_id
+                        website=youtube_website,
+                        metadata__video_metadata__youtube_id=youtube_id,
                     ),
                     privacy=privacy,
                 )
@@ -359,6 +368,26 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments
             mock_update_video.assert_not_called()
     else:
         mock_update_video.assert_not_called()
+
+
+def test_update_youtube_metadata_error(mocker, youtube_website):
+    """Log any error and move on"""
+    mock_log = mocker.patch("videos.youtube.log.exception")
+    mock_youtube = mocker.patch("videos.youtube.YouTubeApi")
+    mock_youtube.return_value.update_video = mocker.Mock(
+        side_effect=Exception("generic exception")
+    )
+    mocker.patch("videos.youtube.is_ocw_site", return_value=True)
+    mocker.patch("videos.youtube.is_youtube_enabled", return_value=True)
+    VideoFileFactory.create(
+        video=VideoFactory.create(website=youtube_website),
+        destination=DESTINATION_YOUTUBE,
+        destination_id="abc123",
+    )
+    update_youtube_metadata(youtube_website, version=VERSION_DRAFT)
+    mock_log.assert_any_call(
+        "Unexpected error updating metadata for video resource %d", mocker.ANY
+    )
 
 
 def test_update_youtube_metadata_no_videos(mocker):
