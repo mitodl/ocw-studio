@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.47.5
+Version 0.47.5 (Released February 18, 2022)
 --------------
 
 - add GTM_ACCOUNT_ID to OCW site builds (#1027)
