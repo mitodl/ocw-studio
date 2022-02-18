@@ -270,6 +270,10 @@
       "description": "The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
       "required": false
     },
+    "OCW_GTM_ACCOUNT_ID": {
+      "description": "The Google Tag Manager account ID to use in OCW site build pipelines",
+      "required": false
+    },
     "OCW_STUDIO_ADMIN_EMAIL": {
       "description": "E-mail to send 500 reports to.",
       "required": false

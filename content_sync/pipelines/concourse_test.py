@@ -173,6 +173,7 @@ def test_upsert_website_pipelines(
     config_str = json.dumps(kwargs)
 
     assert f"{hugo_projects_path}.git" in config_str
+    assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
     assert api_url in config_str
     if home_page:
@@ -420,6 +421,7 @@ def test_upsert_mass_publish_pipeline(
         bucket = settings.AWS_PUBLISH_BUCKET_NAME
         api_url = settings.OCW_STUDIO_LIVE_URL
     config_str = json.dumps(kwargs)
+    assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert bucket in config_str
     assert version in config_str
     assert f"{hugo_projects_path}.git" in config_str

@@ -194,6 +194,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
         "GIT_DOMAIN",
         "GIT_ORGANIZATION",
         "GITHUB_WEBHOOK_BRANCH",
+        "OCW_GTM_ACCOUNT_ID",
     ]
 
     def __init__(self, website: Website, api: Optional[ConcourseApi] = None):
@@ -259,6 +260,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
                     pipeline_config_file.read()
                     .replace("((markdown-uri))", markdown_uri)
                     .replace("((git-private-key-var))", private_key_var)
+                    .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
                     .replace("((ocw-bucket))", destination_bucket)
                     .replace(
                         "((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH
@@ -368,6 +370,7 @@ class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
             "GIT_DOMAIN",
             "GIT_ORGANIZATION",
             "GITHUB_WEBHOOK_BRANCH",
+            "OCW_GTM_ACCOUNT_ID",
         ]
         super().__init__(api=api)
         self.pipeline_name = "mass_publish"
@@ -410,6 +413,7 @@ class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
                 pipeline_config_file.read()
                 .replace("((markdown-uri))", markdown_uri)
                 .replace("((git-private-key-var))", private_key_var)
+                .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
                 .replace("((ocw-bucket))", destination_bucket)
                 .replace("((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH)
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
