@@ -35,14 +35,31 @@ def get_markdown_cleaner(website_contents):
             R'This is a link with quote in title: [Cats say "meow"]({{< baseurl >}}/resources/path/to/file1).',
             R'This is a link with quote in title: {{< resource_link content-uuid-1 "Cats say \"meow\"" >}}.',
         ),
+        (  # Ignores backslashes around the title brackets
+            R'This is a link with quote in title: \[Cats say "meow"\]({{< baseurl >}}/resources/path/to/file1).',
+            R'This is a link with quote in title: {{< resource_link content-uuid-1 "Cats say \"meow\"" >}}.',
+        ),
         (
             R"This link should change [text title]({{< baseurl >}}/resources/path/to/file1) cool",
             R'This link should change {{< resource_link content-uuid-1 "text title" >}} cool',
+        ),
+        (  # should not touch fragments
+            R"This link includes a fragment [text title]({{< baseurl >}}/resources/path/to/file1#some-fragment) cool",
+            R"This link includes a fragment [text title]({{< baseurl >}}/resources/path/to/file1#some-fragment) cool",
+        ),
+        (  # should not touch fragments with / before #
+            R"This link includes a fragment with slash first [text title]({{< baseurl >}}/resources/path/to/file1/#some-fragment) cool",
+            R"This link includes a fragment with slash first [text title]({{< baseurl >}}/resources/path/to/file1/#some-fragment) cool",
         ),
         (
             # < resource_link > short code is only for textual titles
             "This link should not change: [![image](cat.com)]({{< baseurl >}}/resources/path/to/file1) for now",
             "This link should not change: [![image](cat.com)]({{< baseurl >}}/resources/path/to/file1) for now",
+        ),
+        (
+            # < resource_link > short code is only for textual titles
+            R"This should not change [{{< resource uuid1 >}}]({{< baseurl >}}/resources/mit18_02sc_l20brds_5)",
+            R"This should not change [{{< resource uuid1 >}}]({{< baseurl >}}/resources/mit18_02sc_l20brds_5)",
         ),
         (
             # Titles with nested brackets may not be feasible with a regex approach, but they're very rare anyway.
