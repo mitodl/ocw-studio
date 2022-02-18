@@ -85,7 +85,7 @@ services:
     command: >
       /bin/bash -c '
       sleep 3;
-      celery -A main.celery:app worker -B -l ${OCW_STUDIO_LOG_LEVEL:-INFO}'
+      celery -A main.celery:app worker -Q publish,batch,default, -B -l ${OCW_STUDIO_LOG_LEVEL:-INFO}'
     links:
       - db
       - redis
