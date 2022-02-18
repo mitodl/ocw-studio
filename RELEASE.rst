@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.47.5
+--------------
+
+- add GTM_ACCOUNT_ID to OCW site builds (#1027)
+- add 'published' param to content listing API
+
 Version 0.47.4 (Released February 17, 2022)
 --------------
 
