@@ -43,13 +43,13 @@ def get_markdown_cleaner(website_contents):
             R"This link should change [text title]({{< baseurl >}}/resources/path/to/file1) cool",
             R'This link should change {{< resource_link content-uuid-1 "text title" >}} cool',
         ),
-        (  # should not touch fragments
+        (
             R"This link includes a fragment [text title]({{< baseurl >}}/resources/path/to/file1#some-fragment) cool",
-            R"This link includes a fragment [text title]({{< baseurl >}}/resources/path/to/file1#some-fragment) cool",
+            R'This link includes a fragment {{< resource_link content-uuid-1 "text title" "some-fragment" >}} cool',
         ),
-        (  # should not touch fragments with / before #
+        (
             R"This link includes a fragment with slash first [text title]({{< baseurl >}}/resources/path/to/file1/#some-fragment) cool",
-            R"This link includes a fragment with slash first [text title]({{< baseurl >}}/resources/path/to/file1/#some-fragment) cool",
+            R'This link includes a fragment with slash first {{< resource_link content-uuid-1 "text title" "some-fragment" >}} cool',
         ),
         (
             # < resource_link > short code is only for textual titles
