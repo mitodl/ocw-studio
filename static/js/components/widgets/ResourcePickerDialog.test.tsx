@@ -1,6 +1,6 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
-import { TabPane } from "reactstrap"
+import { TabPane, Dropdown, DropdownItem } from "reactstrap"
 import { ReactWrapper } from "enzyme"
 
 import ResourcePickerDialog from "./ResourcePickerDialog"
@@ -19,7 +19,9 @@ import {
   RESOURCE_TYPE_IMAGE,
   RESOURCE_TYPE_DOCUMENT,
   RESOURCE_TYPE_VIDEO,
-  CONTENT_TYPE_PAGE
+  CONTENT_TYPE_PAGE,
+  CONTENT_TYPE_COURSE_COLLECTION,
+  CONTENT_TYPE_RESOURCE_COLLECTION
 } from "../../constants"
 
 jest.mock("../../hooks/state")
@@ -82,14 +84,25 @@ describe("ResourcePickerDialog", () => {
     ])
   })
 
-  it("should render 4 tabs when linking", async () => {
+  it("should render 6 tabs when linking", async () => {
     const { wrapper } = await render({ mode: RESOURCE_LINK })
     expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual([
       RESOURCE_TYPE_DOCUMENT,
       RESOURCE_TYPE_VIDEO,
       RESOURCE_TYPE_IMAGE,
-      CONTENT_TYPE_PAGE
+      CONTENT_TYPE_PAGE,
+      CONTENT_TYPE_COURSE_COLLECTION,
+      CONTENT_TYPE_RESOURCE_COLLECTION
     ])
+  })
+
+  it.each([
+    { mode: RESOURCE_LINK, dropdownExists: true, should: 'should' },
+    { mode: RESOURCE_EMBED, dropdownExists: false, should: 'should not' }
+  ])('when in mode "$mode", $should show the "more" dropdown', async ({mode, dropdownExists}) => {
+    const { wrapper } = await render({ mode })
+    const dropdown = wrapper.find(Dropdown)
+    expect(dropdown.exists()).toBe(dropdownExists)
   })
 
   it("should pass some basic props down to the dialog", async () => {
@@ -159,31 +172,29 @@ describe("ResourcePickerDialog", () => {
     )
   })
 
-  it("should pass correct resourcetype and contentType to active tab", async () => {
-    const { wrapper } = await render({ mode: RESOURCE_LINK })
-
-    const cases = [
-      { resourcetype: RESOURCE_TYPE_DOCUMENT, contentType: "resource" },
-      { resourcetype: RESOURCE_TYPE_VIDEO, contentType: "resource" },
-      { resourcetype: RESOURCE_TYPE_IMAGE, contentType: "resource" },
-      { resourcetype: null, contentType: "page" }
+  it.each(
+    [
+      { index: 1, resourcetype: RESOURCE_TYPE_VIDEO, contentType: "resource" },
+      { index: 0, resourcetype: RESOURCE_TYPE_DOCUMENT, contentType: "resource" },
+      { index: 2, resourcetype: RESOURCE_TYPE_IMAGE, contentType: "resource" },
+      { index: 3, resourcetype: null, contentType: "page" }
     ]
-    cases.forEach(({ resourcetype, contentType }, idx) => {
-      act(() => {
-        wrapper
-          .find("NavLink")
-          .at(idx)
-          .simulate("click")
-      })
-      wrapper.update()
-      expect(
-        wrapper.find("ResourcePickerListing").prop("resourcetype")
-      ).toEqual(resourcetype)
-
-      expect(wrapper.find("ResourcePickerListing").prop("contentType")).toBe(
-        contentType
-      )
+  )("should pass correct resourcetype and contentType to active tab", async ({ resourcetype, contentType, index }) => {
+    const { wrapper } = await render({ mode: RESOURCE_LINK })
+    act(() => {
+      wrapper
+        .find("NavLink")
+        .at(index)
+        .simulate("click")
     })
+    wrapper.update()
+    expect(
+      wrapper.find("ResourcePickerListing").prop("resourcetype")
+    ).toEqual(resourcetype)
+
+    expect(wrapper.find("ResourcePickerListing").prop("contentType")).toBe(
+      contentType
+    )
   })
 
   it("should pass filter string to picker, when filter is set", async () => {

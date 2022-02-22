@@ -155,6 +155,8 @@ export const exampleSiteConfigFields: ConfigField[] = uniq(
 
 export const CONTENT_TYPE_RESOURCE = "resource"
 export const CONTENT_TYPE_PAGE = "page"
+export const CONTENT_TYPE_COURSE_COLLECTION = "course_collections"
+export const CONTENT_TYPE_RESOURCE_COLLECTION = "resource_collections"
 
 // these should match with the values in the ocw-course schema
 export const RESOURCE_TYPE_IMAGE = "Image"

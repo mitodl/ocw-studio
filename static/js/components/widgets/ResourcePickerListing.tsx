@@ -4,7 +4,6 @@ import { path } from "ramda"
 import { useSelector } from "react-redux"
 
 import {
-  RESOURCE_TYPE_DOCUMENT,
   RESOURCE_TYPE_IMAGE,
   RESOURCE_TYPE_VIDEO
 } from "../../constants"
@@ -22,6 +21,8 @@ interface Props {
   resourcetype: string | null
   contentType: string
   focusedResource: WebsiteContent | null
+  sourceWebsiteName?: string
+  thumbnails: boolean
 }
 
 export default function ResourcePickerListing(
@@ -32,7 +33,9 @@ export default function ResourcePickerListing(
     focusedResource,
     filter,
     resourcetype,
-    contentType
+    contentType,
+    sourceWebsiteName,
+    thumbnails
   } = props
   const website = useWebsite()
 
@@ -40,14 +43,14 @@ export default function ResourcePickerListing(
     () =>
       Object.assign(
         {
-          name:   website.name,
+          name:   sourceWebsiteName ?? website.name,
           type:   contentType,
           offset: 0
         },
         resourcetype ? { resourcetype } : null,
         filter ? { search: filter } : null
       ),
-    [website, filter, resourcetype, contentType]
+    [website, filter, resourcetype, contentType, sourceWebsiteName]
   )
 
   useRequest(websiteContentListingRequest(listingParams, true, false))
@@ -60,11 +63,9 @@ export default function ResourcePickerListing(
     return null
   }
 
-  const useColumnView =
-    contentType === "page" || resourcetype === RESOURCE_TYPE_DOCUMENT
-  const className = useColumnView ?
-    "resource-picker-listing column-view" :
-    "resource-picker-listing"
+  const className = thumbnails ?
+    "resource-picker-listing" :
+    "resource-picker-listing column-view"
 
   return (
     <div className={className}>
