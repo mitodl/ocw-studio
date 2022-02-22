@@ -58,6 +58,7 @@ describe("ResourcePickerListing", () => {
     contentListingItems = [
       [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
       [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
+      [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
       [makeWebsiteContentDetail(), makeWebsiteContentDetail()]
     ]
 
@@ -104,6 +105,20 @@ describe("ResourcePickerListing", () => {
         })
         .toString(),
       apiResponse(contentListingItems[2])
+    )
+
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .param({
+          name: "ocw-www"
+        })
+        .query({
+          offset:        0,
+          type:          "course_collections",
+          detailed_list: true
+        })
+        .toString(),
+      apiResponse(contentListingItems[3])
     )
   })
 
@@ -200,15 +215,40 @@ describe("ResourcePickerListing", () => {
     )
   })
 
-  it("should display pages in column view", async () => {
+  it("should fetch and display content collections", async () => {
     const { wrapper } = await render({
-      contentType:  "page",
-      resourcetype: null
+      contentType:       "course_collections",
+      resourcetype:      null,
+      sourceWebsiteName: "ocw-www"
     })
     expect(
-      wrapper.find(".resource-picker-listing").hasClass("column-view")
-    ).toBe(true)
+      wrapper
+        .find(".resource-picker-listing .resource-item")
+        .map(el => el.find("h4").text())
+    ).toEqual(contentListingItems[3].map(item => item.title))
+
+    sinon.assert.calledWith(
+      helper.handleRequestStub,
+      siteApiContentListingUrl
+        .param({ name: "ocw-www" })
+        .query({
+          offset:        0,
+          type:          "course_collections",
+          detailed_list: true
+        })
+        .toString()
+    )
   })
+
+  it.each([false, true])(
+    "displays pages in a single column iff singleColumn: true (case: %s)",
+    async singleColumn => {
+      const { wrapper } = await render({ singleColumn })
+      expect(
+        wrapper.find(".resource-picker-listing").hasClass("column-view")
+      ).toBe(singleColumn)
+    }
+  )
 
   it("should allow the user to filter, sort resourcetype", async () => {
     const { wrapper } = await render({

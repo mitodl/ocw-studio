@@ -1,5 +1,15 @@
 import React, { SyntheticEvent, useCallback, useState } from "react"
-import { Nav, NavItem, NavLink, TabContent, TabPane, Dropdown, DropdownItem, DropdownToggle, DropdownMenu } from "reactstrap"
+import {
+  Nav,
+  NavItem,
+  NavLink,
+  TabContent,
+  TabPane,
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
+  DropdownMenu
+} from "reactstrap"
 
 import Dialog from "../Dialog"
 import {
@@ -31,14 +41,14 @@ interface Props {
 interface ResourceTabSettings {
   title: string
   id: string
-  contentType: |
-    typeof CONTENT_TYPE_RESOURCE |
-    typeof CONTENT_TYPE_PAGE |
-    typeof CONTENT_TYPE_COURSE_COLLECTION |
-    typeof CONTENT_TYPE_RESOURCE_COLLECTION
+  contentType:
+    | typeof CONTENT_TYPE_RESOURCE
+    | typeof CONTENT_TYPE_PAGE
+    | typeof CONTENT_TYPE_COURSE_COLLECTION
+    | typeof CONTENT_TYPE_RESOURCE_COLLECTION
   resourcetype: string | null
   embeddable: boolean
-  thumbnails: boolean
+  singleColumn: boolean
   sourceWebsiteName?: string
 }
 
@@ -49,7 +59,7 @@ const RESOURCE_PICKER_TABS_MAIN: ResourceTabSettings[] = [
     contentType:  CONTENT_TYPE_RESOURCE,
     resourcetype: RESOURCE_TYPE_DOCUMENT,
     embeddable:   true,
-    thumbnails:   false
+    singleColumn: true
   },
   {
     title:        "Videos",
@@ -57,7 +67,7 @@ const RESOURCE_PICKER_TABS_MAIN: ResourceTabSettings[] = [
     contentType:  CONTENT_TYPE_RESOURCE,
     resourcetype: RESOURCE_TYPE_VIDEO,
     embeddable:   true,
-    thumbnails:   true
+    singleColumn: false
   },
   {
     title:        "Images",
@@ -65,7 +75,7 @@ const RESOURCE_PICKER_TABS_MAIN: ResourceTabSettings[] = [
     contentType:  CONTENT_TYPE_RESOURCE,
     resourcetype: RESOURCE_TYPE_IMAGE,
     embeddable:   true,
-    thumbnails:   true
+    singleColumn: false
   },
   {
     title:        "Pages",
@@ -73,8 +83,8 @@ const RESOURCE_PICKER_TABS_MAIN: ResourceTabSettings[] = [
     contentType:  CONTENT_TYPE_PAGE,
     resourcetype: null,
     embeddable:   false,
-    thumbnails:   false
-  },
+    singleColumn: true
+  }
 ]
 const RESOURCE_PICKER_TABS_MORE: ResourceTabSettings[] = [
   {
@@ -83,8 +93,8 @@ const RESOURCE_PICKER_TABS_MORE: ResourceTabSettings[] = [
     contentType:       CONTENT_TYPE_COURSE_COLLECTION,
     resourcetype:      null,
     embeddable:        false,
-    thumbnails:        false,
-    sourceWebsiteName:  'ocw-www'
+    singleColumn:      true,
+    sourceWebsiteName: "ocw-www"
   },
   {
     title:             "Resource Collections",
@@ -92,11 +102,14 @@ const RESOURCE_PICKER_TABS_MORE: ResourceTabSettings[] = [
     contentType:       CONTENT_TYPE_RESOURCE_COLLECTION,
     resourcetype:      null,
     embeddable:        false,
-    thumbnails:        false,
-    sourceWebsiteName:  'ocw-www'
+    singleColumn:      true,
+    sourceWebsiteName: "ocw-www"
   }
 ]
-const RESOURCE_PICKER_TABS = [...RESOURCE_PICKER_TABS_MAIN, ...RESOURCE_PICKER_TABS_MORE]
+const RESOURCE_PICKER_TABS = [
+  ...RESOURCE_PICKER_TABS_MAIN,
+  ...RESOURCE_PICKER_TABS_MORE
+]
 
 const modeText = {
   [RESOURCE_EMBED]: {
@@ -179,29 +192,32 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                 </NavLink>
               </NavItem>
             ))}
-            {tabsMore.length > 0 && <Dropdown
-              nav
-              active={RESOURCE_PICKER_TABS_MORE.some(t => t.id === activeTabId)}
-              isOpen={isDropdownOpen}
-              toggle={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              <DropdownToggle
-                caret
+            {tabsMore.length > 0 && (
+              <Dropdown
                 nav
+                active={RESOURCE_PICKER_TABS_MORE.some(
+                  t => t.id === activeTabId
+                )}
+                isOpen={isDropdownOpen}
+                toggle={() => setIsDropdownOpen(!isDropdownOpen)}
               >
-                More
-              </DropdownToggle>
-              <DropdownMenu>
-                {tabsMore.map(tab => (
-                  <DropdownItem key={tab.id} onClick={() => {
-                    setActiveTabId(tab.id)
-                  }}>
-                    {tab.title}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            }
+                <DropdownToggle caret nav>
+                  More
+                </DropdownToggle>
+                <DropdownMenu>
+                  {tabsMore.map(tab => (
+                    <DropdownItem
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTabId(tab.id)
+                      }}
+                    >
+                      {tab.title}
+                    </DropdownItem>
+                  ))}
+                </DropdownMenu>
+              </Dropdown>
+            )}
           </Nav>
           <input
             placeholder="filter"
@@ -220,7 +236,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                     filter={filter ?? null}
                     focusResource={setFocusedResource}
                     focusedResource={focusedResource}
-                    thumbnails={tab.thumbnails}
+                    thumbnails={tab.singleColumn}
                     sourceWebsiteName={tab.sourceWebsiteName}
                   />
                 ) : null}

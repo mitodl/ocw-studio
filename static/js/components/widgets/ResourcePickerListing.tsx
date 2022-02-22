@@ -1,12 +1,10 @@
 import React, { SyntheticEvent, useMemo } from "react"
+import classNames from "classnames"
 import { useRequest } from "redux-query-react"
 import { path } from "ramda"
 import { useSelector } from "react-redux"
 
-import {
-  RESOURCE_TYPE_IMAGE,
-  RESOURCE_TYPE_VIDEO
-} from "../../constants"
+import { RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO } from "../../constants"
 import { useWebsite } from "../../context/Website"
 import { ContentListingParams, WebsiteContent } from "../../types/websites"
 import { websiteContentListingRequest } from "../../query-configs/websites"
@@ -22,7 +20,7 @@ interface Props {
   contentType: string
   focusedResource: WebsiteContent | null
   sourceWebsiteName?: string
-  thumbnails: boolean
+  singleColumn: boolean
 }
 
 export default function ResourcePickerListing(
@@ -35,7 +33,7 @@ export default function ResourcePickerListing(
     resourcetype,
     contentType,
     sourceWebsiteName,
-    thumbnails
+    singleColumn
   } = props
   const website = useWebsite()
 
@@ -63,12 +61,12 @@ export default function ResourcePickerListing(
     return null
   }
 
-  const className = thumbnails ?
-    "resource-picker-listing" :
-    "resource-picker-listing column-view"
-
   return (
-    <div className={className}>
+    <div
+      className={classNames("resource-picker-listing", {
+        "column-view": singleColumn
+      })}
+    >
       {listing.results.map((item, idx) => {
         const className = `resource-item${
           focusedResource && focusedResource.text_id === item.text_id ?
