@@ -176,13 +176,13 @@ describe("ResourcePickerDialog", () => {
   })
 
   it.each([
-    { index: 0, resourcetype: RESOURCE_TYPE_DOCUMENT, contentType: "resource" },
-    { index: 1, resourcetype: RESOURCE_TYPE_VIDEO, contentType: "resource" },
-    { index: 2, resourcetype: RESOURCE_TYPE_IMAGE, contentType: "resource" },
-    { index: 3, resourcetype: null, contentType: "page" }
+    { index: 0, resourcetype: RESOURCE_TYPE_DOCUMENT, contentType: "resource", singleColumn: true },
+    { index: 1, resourcetype: RESOURCE_TYPE_VIDEO, contentType: "resource", singleColumn: false },
+    { index: 2, resourcetype: RESOURCE_TYPE_IMAGE, contentType: "resource", singleColumn: false},
+    { index: 3, resourcetype: null, contentType: "page", singleColumn: true }
   ])(
-    "passes the correct resourcetype and contentType when main tab $index is clicked",
-    async ({ resourcetype, contentType, index }) => {
+    "passes the correct props to ResourcePickerListing when main tab $index is clicked",
+    async ({ resourcetype, contentType, singleColumn, index }) => {
       const { wrapper } = await render({ mode: RESOURCE_LINK })
       act(() => {
         wrapper
@@ -194,6 +194,7 @@ describe("ResourcePickerDialog", () => {
       const listing = wrapper.find(ResourcePickerListing)
       expect(listing.prop("resourcetype")).toEqual(resourcetype)
       expect(listing.prop("contentType")).toBe(contentType)
+      expect(listing.prop("singleColumn")).toBe(singleColumn)
     }
   )
 

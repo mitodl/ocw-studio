@@ -236,7 +236,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                     filter={filter ?? null}
                     focusResource={setFocusedResource}
                     focusedResource={focusedResource}
-                    thumbnails={tab.singleColumn}
+                    singleColumn={tab.singleColumn}
                     sourceWebsiteName={tab.sourceWebsiteName}
                   />
                 ) : null}
