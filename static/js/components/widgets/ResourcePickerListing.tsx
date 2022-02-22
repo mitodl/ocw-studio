@@ -13,8 +13,6 @@ import {
   WebsiteContentSelection
 } from "../../selectors/websites"
 
-window.classnames = classNames
-
 interface Props {
   focusResource: (item: WebsiteContent) => void
   filter: string | null
