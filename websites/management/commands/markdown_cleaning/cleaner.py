@@ -45,6 +45,7 @@ class WebsiteContentMarkdownCleaner:
 
         self.text_changes: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = []
         self.updated_website_contents: "list[WebsiteContent]" = []
+        self.updated_sync_states: "list[ContentSyncState]" = []
 
         def _replacer(match: re.Match, website_content: WebsiteContent):
             replacement = rule(match, website_content)
@@ -75,6 +76,19 @@ class WebsiteContentMarkdownCleaner:
         if new_markdown != website_content.markdown:
             website_content.markdown = new_markdown
             self.updated_website_contents.append(website_content)
+
+    def update_website_content_checksum(self, website_content: WebsiteContent):
+        """
+        Updates website_content's sync state checksum in-place. Does not commit to database.
+        """
+        sync_state = website_content.content_sync_state
+        if not sync_state:
+            return
+
+        new_checksum = website_content.calculate_checksum()
+        if new_checksum != sync_state.current_checksum:
+            sync_state.current_checksum = new_checksum
+            self.updated_sync_states.append(sync_state)
 
     @classmethod
     def compile_regex(cls, pattern):

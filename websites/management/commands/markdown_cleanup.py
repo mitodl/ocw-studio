@@ -7,6 +7,7 @@ from django.core.management.base import CommandParser
 from django.db import transaction
 from tqdm import tqdm
 
+from content_sync.models import ContentSyncState
 from websites.management.commands.markdown_cleaning.baseurl_rule import (
     BaseurlReplacementRule,
 )
@@ -25,7 +26,7 @@ from websites.models import WebsiteContent
 
 class Command(BaseCommand):
     """
-    Performs regex replacements on markdown.
+    Performs regex replacements on markdown and updates checksums.
     """
 
     help = __doc__
@@ -85,7 +86,7 @@ class Command(BaseCommand):
         with ExitStack() as stack:
             Rule = next(R for R in cls.Rules if R.alias == alias)
             all_wc = WebsiteContent.all_objects.all().only(
-                "markdown", "website_id", "text_id"
+                "markdown", "website_id", "text_id", "content_sync_state"
             )
             if commit:
                 stack.enter_context(transaction.atomic())
@@ -97,9 +98,13 @@ class Command(BaseCommand):
             wc: WebsiteContent
             for wc in tqdm(all_wc):
                 cleaner.update_website_content_markdown(wc)
+                cleaner.update_website_content_checksum(wc)
 
             if commit:
                 all_wc.bulk_update(cleaner.updated_website_contents, ["markdown"])
+                ContentSyncState.objects.all().only(
+                    "id", "current_checksum"
+                ).bulk_update(cleaner.updated_sync_states, ["current_checksum"])
 
         if out is not None:
             outpath = os.path.normpath(os.path.join(os.getcwd(), out))
