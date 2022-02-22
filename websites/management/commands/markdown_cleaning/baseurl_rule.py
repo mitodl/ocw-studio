@@ -79,7 +79,7 @@ class BaseurlReplacementRule(MarkdownCleanupRule):
     regex = (
         r"\\?\[(?P<title>[^\[\]\n]*?)\\?\]"
         + r"\({{< baseurl >}}(?P<url>.*?)"
-        + r"(/?#(?P<fragment>.*?))?"
+        + r"(/?(?P<fragment>#.*?))?"
         + r"\)"
     )
 
