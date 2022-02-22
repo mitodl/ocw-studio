@@ -176,9 +176,24 @@ describe("ResourcePickerDialog", () => {
   })
 
   it.each([
-    { index: 0, resourcetype: RESOURCE_TYPE_DOCUMENT, contentType: "resource", singleColumn: true },
-    { index: 1, resourcetype: RESOURCE_TYPE_VIDEO, contentType: "resource", singleColumn: false },
-    { index: 2, resourcetype: RESOURCE_TYPE_IMAGE, contentType: "resource", singleColumn: false},
+    {
+      index:        0,
+      resourcetype: RESOURCE_TYPE_DOCUMENT,
+      contentType:  "resource",
+      singleColumn: true
+    },
+    {
+      index:        1,
+      resourcetype: RESOURCE_TYPE_VIDEO,
+      contentType:  "resource",
+      singleColumn: false
+    },
+    {
+      index:        2,
+      resourcetype: RESOURCE_TYPE_IMAGE,
+      contentType:  "resource",
+      singleColumn: false
+    },
     { index: 3, resourcetype: null, contentType: "page", singleColumn: true }
   ])(
     "passes the correct props to ResourcePickerListing when main tab $index is clicked",
