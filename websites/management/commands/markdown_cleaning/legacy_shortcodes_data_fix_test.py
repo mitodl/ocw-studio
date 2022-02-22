@@ -33,10 +33,12 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
     target_content = WebsiteContentFactory.build(
         markdown=markdown, website_id=website_uuid
     )
+    target_sync_state = ContentSyncStateFactory.build(content=target_content)
 
     cleaner = Cleaner(LegacyShortcodeFixOne())
     cleaner.update_website_content_markdown(target_content)
     assert target_content.markdown == expected_markdown
+    assert target_sync_state.current_checksum == target_content.calculate_checksum()
 
 
 @pytest.mark.parametrize(
@@ -64,28 +66,12 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
     target_content = WebsiteContentFactory.build(
         markdown=markdown, website_id=website_uuid
     )
+    ContentSyncStateFactory.build(content=target_content)
 
     cleaner = Cleaner(LegacyShortcodeFixTwo())
     cleaner.update_website_content_markdown(target_content)
 
     assert target_content.markdown == expected_markdown
-
-
-def test_update_checksums():
-    """ContentSyncState.current_checksum should be updated"""
-    website_uuid = "website-uuid"
-    target_content = WebsiteContentFactory.build(
-        markdown="test_markdown", website_id=website_uuid
-    )
-    ContentSyncStateFactory.build(content=target_content)
-    assert (
-        target_content.content_sync_state.current_checksum
-        != target_content.calculate_checksum()
-    )
-
-    cleaner = Cleaner(LegacyShortcodeFixTwo())
-    cleaner.update_website_content_checksum(target_content)
-
     assert (
         target_content.content_sync_state.current_checksum
         == target_content.calculate_checksum()

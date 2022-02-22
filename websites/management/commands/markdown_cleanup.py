@@ -98,13 +98,12 @@ class Command(BaseCommand):
             wc: WebsiteContent
             for wc in tqdm(all_wc):
                 cleaner.update_website_content_markdown(wc)
-                cleaner.update_website_content_checksum(wc)
 
             if commit:
                 all_wc.bulk_update(cleaner.updated_website_contents, ["markdown"])
-                ContentSyncState.objects.all().only(
-                    "id", "current_checksum"
-                ).bulk_update(cleaner.updated_sync_states, ["current_checksum"])
+                ContentSyncState.objects.bulk_update(
+                    cleaner.updated_sync_states, ["current_checksum"]
+                )
 
         if out is not None:
             outpath = os.path.normpath(os.path.join(os.getcwd(), out))

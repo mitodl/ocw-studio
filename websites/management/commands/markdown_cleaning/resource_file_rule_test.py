@@ -1,5 +1,5 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
-
+from content_sync.factories import ContentSyncStateFactory
 from websites.factories import WebsiteContentFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
@@ -20,14 +20,14 @@ def test_resource_file_replacer():
     website_uuid = "website-uuid"
     markdown = R"""
     Look an image ![Some alt text here]({{< resource_file uuid-1 >}}) cool.
-    
+
     And here is another one: ![more alt text]({{< resource_file uuid-2 >}})
 
     nice.
     """
     expected_markdown = R"""
     Look an image {{< resource uuid-1 >}} cool.
-    
+
     And here is another one: {{< resource uuid-2 >}}
 
     nice.
@@ -35,8 +35,13 @@ def test_resource_file_replacer():
     target_content = WebsiteContentFactory.build(
         markdown=markdown, website_id=website_uuid
     )
+    ContentSyncStateFactory.build(content=target_content)
 
     cleaner = get_markdown_cleaner()
     cleaner.update_website_content_markdown(target_content)
 
     assert target_content.markdown == expected_markdown
+    assert (
+        target_content.content_sync_state.current_checksum
+        == target_content.calculate_checksum()
+    )

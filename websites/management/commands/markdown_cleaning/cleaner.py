@@ -63,7 +63,7 @@ class WebsiteContentMarkdownCleaner:
 
     def update_website_content_markdown(self, website_content: WebsiteContent):
         """
-        Updates website_content's markdown in-place. Does not commit to
+        Updates website_content's markdown and checksums in-place. Does not commit to
         database.
         """
         if not website_content.markdown:
@@ -77,18 +77,14 @@ class WebsiteContentMarkdownCleaner:
             website_content.markdown = new_markdown
             self.updated_website_contents.append(website_content)
 
-    def update_website_content_checksum(self, website_content: WebsiteContent):
-        """
-        Updates website_content's sync state checksum in-place. Does not commit to database.
-        """
-        sync_state = website_content.content_sync_state
-        if not sync_state:
-            return
+            sync_state = website_content.content_sync_state
+            if not sync_state:
+                return
 
-        new_checksum = website_content.calculate_checksum()
-        if new_checksum != sync_state.current_checksum:
-            sync_state.current_checksum = new_checksum
-            self.updated_sync_states.append(sync_state)
+            new_checksum = website_content.calculate_checksum()
+            if new_checksum != sync_state.current_checksum:
+                sync_state.current_checksum = new_checksum
+                self.updated_sync_states.append(sync_state)
 
     @classmethod
     def compile_regex(cls, pattern):
