@@ -57,9 +57,8 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             linkText: string,
             fragment?: string
           ) => {
-            const formattedUUID = fragment ? `${uuid}#${fragment}` : uuid
             return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${encodeURIComponent(
-              formattedUUID
+              JSON.stringify([uuid, fragment])
             )}">${linkText}</a>`
           }
         }
@@ -79,9 +78,11 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             )
           },
           replacement: (_content: string, node: Turndown.Node): string => {
-            const [uuid, anchor] = decodeURIComponent(
-              (node as any).getAttribute("data-uuid") as string
-            ).split("#")
+            const [uuid, anchor] = JSON.parse(
+              decodeURIComponent(
+                (node as any).getAttribute("data-uuid") as string
+              )
+            )
 
             if (anchor) {
               return `{{< resource_link ${uuid} "${node.textContent}" "${anchor}" >}}`

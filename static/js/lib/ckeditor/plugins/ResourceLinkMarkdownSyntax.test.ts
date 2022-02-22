@@ -44,9 +44,9 @@ describe("ResourceLink plugin", () => {
 
     markdownTest(
       editor,
-      '{{< resource_link 1234-5678 "link text" "some-header-id" >}}',
+      '{{< resource_link 1234-5678 "link text" "#some-header-id" >}}',
       `<p><a class="resource-link" data-uuid="${encodeURIComponent(
-        "1234-5678#some-header-id"
+        JSON.stringify(["1234-5678", "#some-header-id"])
       )}">link text</a></p>`
     )
   })
