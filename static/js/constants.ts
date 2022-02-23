@@ -153,6 +153,7 @@ export const exampleSiteConfigFields: ConfigField[] = uniq(
   ])
 )
 
+// these should match with the values in the ocw-course schema
 export enum ContentType {
   Resource = "resource",
   Page = "page",
