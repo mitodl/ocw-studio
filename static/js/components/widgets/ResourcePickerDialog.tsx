@@ -28,6 +28,7 @@ interface Props {
   isOpen: boolean
   closeDialog: () => void
   insertEmbed: (id: string, title: string, variant: CKEResourceNodeType) => void
+  collectionsWebsite?: string
 }
 
 interface ResourceTabSettings {
@@ -37,7 +38,7 @@ interface ResourceTabSettings {
   resourcetype: string | null
   embeddable: boolean
   singleColumn: boolean
-  sourceWebsiteName?: string
+  isCollections: boolean
 }
 
 export enum TabIds {
@@ -51,56 +52,60 @@ export enum TabIds {
 
 const RESOURCE_PICKER_FULL_TABS: ResourceTabSettings[] = [
   {
-    title:        "Documents",
-    id:           TabIds.Documents,
-    contentType:  ContentType.Resource,
-    resourcetype: ResourceType.Document,
-    embeddable:   true,
-    singleColumn: true
+    title:         "Documents",
+    id:            TabIds.Documents,
+    contentType:   ContentType.Resource,
+    resourcetype:  ResourceType.Document,
+    embeddable:    true,
+    singleColumn:  true,
+    isCollections: false
   },
   {
-    title:        "Videos",
-    id:           TabIds.Videos,
-    contentType:  ContentType.Resource,
-    resourcetype: ResourceType.Video,
-    embeddable:   true,
-    singleColumn: false
+    title:         "Videos",
+    id:            TabIds.Videos,
+    contentType:   ContentType.Resource,
+    resourcetype:  ResourceType.Video,
+    embeddable:    true,
+    singleColumn:  false,
+    isCollections: false
   },
   {
-    title:        "Images",
-    id:           TabIds.Images,
-    contentType:  ContentType.Resource,
-    resourcetype: ResourceType.Image,
-    embeddable:   true,
-    singleColumn: false
+    title:         "Images",
+    id:            TabIds.Images,
+    contentType:   ContentType.Resource,
+    resourcetype:  ResourceType.Image,
+    embeddable:    true,
+    singleColumn:  false,
+    isCollections: false
   },
   {
-    title:        "Pages",
-    id:           TabIds.Pages,
-    contentType:  ContentType.Page,
-    resourcetype: null,
-    embeddable:   false,
-    singleColumn: true
+    title:         "Pages",
+    id:            TabIds.Pages,
+    contentType:   ContentType.Page,
+    resourcetype:  null,
+    embeddable:    false,
+    singleColumn:  true,
+    isCollections: false
   }
 ]
 const RESOURCE_PICKER_DROPDOWN_TABS: ResourceTabSettings[] = [
   {
-    title:             "Course Collections",
-    id:                TabIds.CourseCollections,
-    contentType:       ContentType.CourseCollections,
-    resourcetype:      null,
-    embeddable:        false,
-    singleColumn:      true,
-    sourceWebsiteName: "ocw-www"
+    title:         "Course Collections",
+    id:            TabIds.CourseCollections,
+    contentType:   ContentType.CourseCollections,
+    resourcetype:  null,
+    embeddable:    false,
+    singleColumn:  true,
+    isCollections: true
   },
   {
-    title:             "Resource Collections",
-    id:                TabIds.ResourceCollections,
-    contentType:       ContentType.ResourceCollections,
-    resourcetype:      null,
-    embeddable:        false,
-    singleColumn:      true,
-    sourceWebsiteName: "ocw-www"
+    title:         "Resource Collections",
+    id:            TabIds.ResourceCollections,
+    contentType:   ContentType.ResourceCollections,
+    resourcetype:  null,
+    embeddable:    false,
+    singleColumn:  true,
+    isCollections: true
   }
 ]
 const RESOURCE_PICKER_ALL_TABS = [
@@ -123,7 +128,7 @@ const isTabEnabled = (mode: ResourceDialogMode) => (tab: ResourceTabSettings) =>
   mode !== RESOURCE_EMBED || tab.embeddable
 
 export default function ResourcePickerDialog(props: Props): JSX.Element {
-  const { mode, isOpen, closeDialog, insertEmbed } = props
+  const { mode, isOpen, closeDialog, insertEmbed, collectionsWebsite } = props
 
   const [activeTabId, setActiveTabId] = useState(TabIds.Images)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -232,7 +237,9 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                     focusResource={setFocusedResource}
                     focusedResource={focusedResource}
                     singleColumn={tab.singleColumn}
-                    sourceWebsiteName={tab.sourceWebsiteName}
+                    sourceWebsiteName={
+                      tab.isCollections ? collectionsWebsite : undefined
+                    }
                   />
                 ) : null}
               </TabPane>

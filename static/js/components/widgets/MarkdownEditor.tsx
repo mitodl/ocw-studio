@@ -27,6 +27,7 @@ export interface Props {
   children?: React.ReactNode
   minimal?: boolean
   attach?: string
+  collectionsWebsite?: string
 }
 
 type RenderQueueEntry = [string, HTMLElement]
@@ -37,7 +38,7 @@ type RenderQueueEntry = [string, HTMLElement]
  * pass minimal: true to get a minimal version.
  */
 export default function MarkdownEditor(props: Props): JSX.Element {
-  const { attach, value, name, onChange, minimal } = props
+  const { attach, value, name, onChange, minimal, collectionsWebsite } = props
 
   const editor = useRef<editor.Editor>()
   const setEditorRef = useCallback(editorInstance => {
@@ -151,6 +152,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           mode={resourcePickerMode}
           closeDialog={closeResourcePicker}
           insertEmbed={addResourceEmbed}
+          collectionsWebsite={collectionsWebsite}
         />
       ) : null}
       {renderQueue.map(([uuid, el], idx) => (

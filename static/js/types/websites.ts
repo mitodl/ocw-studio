@@ -51,6 +51,7 @@ export interface MarkdownConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.Markdown
   minimal?: boolean
   attach?: string
+  collections_website?: string
 }
 
 export interface FileConfigField extends ConfigFieldBaseProps {

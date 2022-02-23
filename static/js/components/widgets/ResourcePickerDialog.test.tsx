@@ -9,7 +9,10 @@ import IntegrationTestHelper, {
 } from "../../util/integration_test_helper"
 import { useDebouncedState } from "../../hooks/state"
 import { useState } from "react"
-import { makeWebsiteContentDetail } from "../../util/factories/websites"
+import {
+  makeWebsiteContentDetail,
+  makeWebsiteDetail
+} from "../../util/factories/websites"
 import { WebsiteContent } from "../../types/websites"
 import {
   RESOURCE_EMBED,
@@ -43,7 +46,8 @@ describe("ResourcePickerDialog", () => {
     insertEmbedStub: sinon.SinonStub,
     closeDialogStub: sinon.SinonStub,
     setStub: sinon.SinonStub,
-    resource: WebsiteContent
+    resource: WebsiteContent,
+    collectionsWebsite: string
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -51,6 +55,7 @@ describe("ResourcePickerDialog", () => {
     insertEmbedStub = helper.sandbox.stub()
     closeDialogStub = helper.sandbox.stub()
     resource = makeWebsiteContentDetail()
+    collectionsWebsite = makeWebsiteDetail().name
 
     setStub = helper.sandbox.stub()
     // @ts-ignore
@@ -60,7 +65,8 @@ describe("ResourcePickerDialog", () => {
       mode:        RESOURCE_EMBED,
       isOpen:      true,
       closeDialog: closeDialogStub,
-      insertEmbed: insertEmbedStub
+      insertEmbed: insertEmbedStub,
+      collectionsWebsite
     })
   })
 
@@ -213,20 +219,18 @@ describe("ResourcePickerDialog", () => {
 
   it.each([
     {
-      index:             0,
-      resourcetype:      null,
-      contentType:       "course_collections",
-      sourceWebsiteName: "ocw-www"
+      index:        0,
+      resourcetype: null,
+      contentType:  "course_collections"
     },
     {
-      index:             1,
-      resourcetype:      null,
-      contentType:       "resource_collections",
-      sourceWebsiteName: "ocw-www"
+      index:        1,
+      resourcetype: null,
+      contentType:  "resource_collections"
     }
   ])(
     "passes the correct resourcetype and contentType when dropdown tab $index is clicked",
-    async ({ resourcetype, contentType, sourceWebsiteName, index }) => {
+    async ({ resourcetype, contentType, index }) => {
       const { wrapper } = await render({ mode: RESOURCE_LINK })
       act(() => {
         wrapper
@@ -238,7 +242,7 @@ describe("ResourcePickerDialog", () => {
       const listing = wrapper.find(ResourcePickerListing)
       expect(listing.prop("resourcetype")).toEqual(resourcetype)
       expect(listing.prop("contentType")).toBe(contentType)
-      expect(listing.prop("sourceWebsiteName")).toBe(sourceWebsiteName)
+      expect(listing.prop("sourceWebsiteName")).toBe(collectionsWebsite)
     }
   )
 
