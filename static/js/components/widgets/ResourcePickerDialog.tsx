@@ -12,15 +12,7 @@ import {
 } from "reactstrap"
 
 import Dialog from "../Dialog"
-import {
-  RESOURCE_TYPE_DOCUMENT,
-  RESOURCE_TYPE_IMAGE,
-  RESOURCE_TYPE_VIDEO,
-  CONTENT_TYPE_RESOURCE,
-  CONTENT_TYPE_PAGE,
-  CONTENT_TYPE_COURSE_COLLECTION,
-  CONTENT_TYPE_RESOURCE_COLLECTION
-} from "../../constants"
+import { ResourceType, ContentType } from "../../constants"
 import ResourcePickerListing from "./ResourcePickerListing"
 import { useDebouncedState } from "../../hooks/state"
 import {
@@ -40,47 +32,52 @@ interface Props {
 
 interface ResourceTabSettings {
   title: string
-  id: string
-  contentType:
-    | typeof CONTENT_TYPE_RESOURCE
-    | typeof CONTENT_TYPE_PAGE
-    | typeof CONTENT_TYPE_COURSE_COLLECTION
-    | typeof CONTENT_TYPE_RESOURCE_COLLECTION
+  id: TabIds
+  contentType: ContentType
   resourcetype: string | null
   embeddable: boolean
   singleColumn: boolean
   sourceWebsiteName?: string
 }
 
+export enum TabIds {
+  Documents = "documents",
+  Images = "images",
+  Videos = "videos",
+  Pages = "pages",
+  CourseCollections = "course_collections",
+  ResourceCollections = "resource_collections"
+}
+
 const RESOURCE_PICKER_FULL_TABS: ResourceTabSettings[] = [
   {
     title:        "Documents",
-    id:           RESOURCE_TYPE_DOCUMENT,
-    contentType:  CONTENT_TYPE_RESOURCE,
-    resourcetype: RESOURCE_TYPE_DOCUMENT,
+    id:           TabIds.Documents,
+    contentType:  ContentType.Resource,
+    resourcetype: ResourceType.Document,
     embeddable:   true,
     singleColumn: true
   },
   {
     title:        "Videos",
-    id:           RESOURCE_TYPE_VIDEO,
-    contentType:  CONTENT_TYPE_RESOURCE,
-    resourcetype: RESOURCE_TYPE_VIDEO,
+    id:           TabIds.Videos,
+    contentType:  ContentType.Resource,
+    resourcetype: ResourceType.Video,
     embeddable:   true,
     singleColumn: false
   },
   {
     title:        "Images",
-    id:           RESOURCE_TYPE_IMAGE,
-    contentType:  CONTENT_TYPE_RESOURCE,
-    resourcetype: RESOURCE_TYPE_IMAGE,
+    id:           TabIds.Images,
+    contentType:  ContentType.Resource,
+    resourcetype: ResourceType.Image,
     embeddable:   true,
     singleColumn: false
   },
   {
     title:        "Pages",
-    id:           CONTENT_TYPE_PAGE,
-    contentType:  CONTENT_TYPE_PAGE,
+    id:           TabIds.Pages,
+    contentType:  ContentType.Page,
     resourcetype: null,
     embeddable:   false,
     singleColumn: true
@@ -89,8 +86,8 @@ const RESOURCE_PICKER_FULL_TABS: ResourceTabSettings[] = [
 const RESOURCE_PICKER_DROPDOWN_TABS: ResourceTabSettings[] = [
   {
     title:             "Course Collections",
-    id:                CONTENT_TYPE_COURSE_COLLECTION,
-    contentType:       CONTENT_TYPE_COURSE_COLLECTION,
+    id:                TabIds.CourseCollections,
+    contentType:       ContentType.CourseCollections,
     resourcetype:      null,
     embeddable:        false,
     singleColumn:      true,
@@ -98,8 +95,8 @@ const RESOURCE_PICKER_DROPDOWN_TABS: ResourceTabSettings[] = [
   },
   {
     title:             "Resource Collections",
-    id:                CONTENT_TYPE_RESOURCE_COLLECTION,
-    contentType:       CONTENT_TYPE_RESOURCE_COLLECTION,
+    id:                TabIds.ResourceCollections,
+    contentType:       ContentType.ResourceCollections,
     resourcetype:      null,
     embeddable:        false,
     singleColumn:      true,
@@ -122,12 +119,13 @@ const modeText = {
   }
 }
 
-const isTabEnabled = (mode: ResourceDialogMode) => (tab: ResourceTabSettings) => mode !== RESOURCE_EMBED || tab.embeddable
+const isTabEnabled = (mode: ResourceDialogMode) => (tab: ResourceTabSettings) =>
+  mode !== RESOURCE_EMBED || tab.embeddable
 
 export default function ResourcePickerDialog(props: Props): JSX.Element {
   const { mode, isOpen, closeDialog, insertEmbed } = props
 
-  const [activeTabId, setActiveTabId] = useState(RESOURCE_TYPE_IMAGE)
+  const [activeTabId, setActiveTabId] = useState(TabIds.Images)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   // filterInput is to store user input and is updated synchronously
@@ -161,9 +159,9 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     }
   }, [insertEmbed, focusedResource, closeDialog, isOpen, mode])
 
-  const allTabs = RESOURCE_PICKER_ALL_TABS.filter(isTabEnabled(mode));
-  const fullTabs = RESOURCE_PICKER_FULL_TABS.filter(isTabEnabled(mode));
-  const dropdownTabs = RESOURCE_PICKER_DROPDOWN_TABS.filter(isTabEnabled(mode));
+  const allTabs = RESOURCE_PICKER_ALL_TABS.filter(isTabEnabled(mode))
+  const fullTabs = RESOURCE_PICKER_FULL_TABS.filter(isTabEnabled(mode))
+  const dropdownTabs = RESOURCE_PICKER_DROPDOWN_TABS.filter(isTabEnabled(mode))
   const { acceptText, title } = modeText[mode]
   const activeTab = allTabs.find(t => t.id === activeTabId)
   const headerText = `${title}: ${activeTab?.title}`
@@ -194,9 +192,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
             {dropdownTabs.length > 0 && (
               <Dropdown
                 nav
-                active={dropdownTabs.some(
-                  t => t.id === activeTabId
-                )}
+                active={dropdownTabs.some(t => t.id === activeTabId)}
                 isOpen={isDropdownOpen}
                 toggle={() => setIsDropdownOpen(!isDropdownOpen)}
               >

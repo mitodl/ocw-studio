@@ -3,7 +3,7 @@ import { act } from "react-dom/test-utils"
 import { TabPane, NavLink, Dropdown, DropdownItem } from "reactstrap"
 import { ReactWrapper } from "enzyme"
 
-import ResourcePickerDialog from "./ResourcePickerDialog"
+import ResourcePickerDialog, { TabIds } from "./ResourcePickerDialog"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../../util/integration_test_helper"
@@ -15,14 +15,7 @@ import {
   RESOURCE_EMBED,
   RESOURCE_LINK
 } from "../../lib/ckeditor/plugins/constants"
-import {
-  RESOURCE_TYPE_IMAGE,
-  RESOURCE_TYPE_DOCUMENT,
-  RESOURCE_TYPE_VIDEO,
-  CONTENT_TYPE_PAGE,
-  CONTENT_TYPE_COURSE_COLLECTION,
-  CONTENT_TYPE_RESOURCE_COLLECTION
-} from "../../constants"
+import { ResourceType } from "../../constants"
 
 jest.mock("../../hooks/state")
 
@@ -78,22 +71,27 @@ describe("ResourcePickerDialog", () => {
   it("should render 3 tabs when embedding", async () => {
     const { wrapper } = await render({ mode: RESOURCE_EMBED })
     expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual([
-      RESOURCE_TYPE_DOCUMENT,
-      RESOURCE_TYPE_VIDEO,
-      RESOURCE_TYPE_IMAGE
+      TabIds.Documents,
+      TabIds.Videos,
+      TabIds.Images
     ])
   })
 
   it("should render 6 tabs when linking", async () => {
     const { wrapper } = await render({ mode: RESOURCE_LINK })
     expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual([
-      RESOURCE_TYPE_DOCUMENT,
-      RESOURCE_TYPE_VIDEO,
-      RESOURCE_TYPE_IMAGE,
-      CONTENT_TYPE_PAGE,
-      CONTENT_TYPE_COURSE_COLLECTION,
-      CONTENT_TYPE_RESOURCE_COLLECTION
+      TabIds.Documents,
+      TabIds.Videos,
+      TabIds.Images,
+      TabIds.Pages,
+      TabIds.CourseCollections,
+      TabIds.ResourceCollections
     ])
+  })
+
+  test("TabIds values are unique", () => {
+    const uniqueTabIds = new Set(Object.values(TabIds))
+    expect(Object.values(TabIds).length).toBe(uniqueTabIds.size)
   })
 
   it.each([
@@ -178,19 +176,19 @@ describe("ResourcePickerDialog", () => {
   it.each([
     {
       index:        0,
-      resourcetype: RESOURCE_TYPE_DOCUMENT,
+      resourcetype: ResourceType.Document,
       contentType:  "resource",
       singleColumn: true
     },
     {
       index:        1,
-      resourcetype: RESOURCE_TYPE_VIDEO,
+      resourcetype: ResourceType.Video,
       contentType:  "resource",
       singleColumn: false
     },
     {
       index:        2,
-      resourcetype: RESOURCE_TYPE_IMAGE,
+      resourcetype: ResourceType.Image,
       contentType:  "resource",
       singleColumn: false
     },

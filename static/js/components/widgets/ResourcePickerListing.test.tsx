@@ -14,11 +14,7 @@ import IntegrationTestHelper, {
 } from "../../util/integration_test_helper"
 import { useWebsite } from "../../context/Website"
 import ResourcePickerListing from "./ResourcePickerListing"
-import {
-  RESOURCE_TYPE_DOCUMENT,
-  RESOURCE_TYPE_IMAGE,
-  RESOURCE_TYPE_VIDEO
-} from "../../constants"
+import { ResourceType } from "../../constants"
 
 jest.mock("../../context/Website")
 
@@ -48,7 +44,7 @@ describe("ResourcePickerListing", () => {
       setOpen:       setOpenStub,
       contentType:   "resource",
       filter:        null,
-      resourcetype:  RESOURCE_TYPE_VIDEO
+      resourcetype:  ResourceType.Video
     })
 
     website = makeWebsiteDetail()
@@ -71,7 +67,7 @@ describe("ResourcePickerListing", () => {
           offset:        0,
           type:          "resource",
           detailed_list: true,
-          resourcetype:  RESOURCE_TYPE_VIDEO
+          resourcetype:  ResourceType.Video
         })
         .toString(),
       apiResponse(contentListingItems[0])
@@ -87,7 +83,7 @@ describe("ResourcePickerListing", () => {
           type:          "resource",
           search:        "newfilter",
           detailed_list: true,
-          resourcetype:  RESOURCE_TYPE_DOCUMENT
+          resourcetype:  ResourceType.Document
         })
         .toString(),
       apiResponse(contentListingItems[1])
@@ -161,7 +157,7 @@ describe("ResourcePickerListing", () => {
 
   it("should display an image for images", async () => {
     // @ts-ignore
-    contentListingItems[0][0].metadata.resourcetype = RESOURCE_TYPE_IMAGE
+    contentListingItems[0][0].metadata.resourcetype = ResourceType.Image
     // @ts-ignore
     contentListingItems[0][0].file = "/path/to/image.jpg"
     const { wrapper } = await render()
@@ -176,7 +172,7 @@ describe("ResourcePickerListing", () => {
 
   it("should display a thumbnail for videos", async () => {
     // @ts-ignore
-    contentListingItems[0][0].metadata.resourcetype = RESOURCE_TYPE_VIDEO
+    contentListingItems[0][0].metadata.resourcetype = ResourceType.Video
     // @ts-ignore
     contentListingItems[0][0].metadata.video_files = {
       video_thumbnail_file: "/path/to/image.jpg"
@@ -253,7 +249,7 @@ describe("ResourcePickerListing", () => {
   it("should allow the user to filter, sort resourcetype", async () => {
     const { wrapper } = await render({
       filter:       "newfilter",
-      resourcetype: RESOURCE_TYPE_DOCUMENT
+      resourcetype: ResourceType.Document
     })
 
     expect(

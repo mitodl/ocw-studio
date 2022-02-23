@@ -4,7 +4,7 @@ import { useRequest } from "redux-query-react"
 import { path } from "ramda"
 import { useSelector } from "react-redux"
 
-import { RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO } from "../../constants"
+import { ResourceType } from "../../constants"
 import { useWebsite } from "../../context/Website"
 import { ContentListingParams, WebsiteContent } from "../../types/websites"
 import { websiteContentListingRequest } from "../../query-configs/websites"
@@ -77,9 +77,9 @@ export default function ResourcePickerListing(
         let imageSrc: string | undefined
 
         if (item.metadata) {
-          if (item.metadata.resourcetype === RESOURCE_TYPE_IMAGE) {
+          if (item.metadata.resourcetype === ResourceType.Image) {
             imageSrc = path(["file"], item)
-          } else if (item.metadata.resourcetype === RESOURCE_TYPE_VIDEO) {
+          } else if (item.metadata.resourcetype === ResourceType.Video) {
             imageSrc = path(
               ["metadata", "video_files", "video_thumbnail_file"],
               item
