@@ -52,7 +52,7 @@ interface ResourceTabSettings {
   sourceWebsiteName?: string
 }
 
-const RESOURCE_PICKER_TABS_MAIN: ResourceTabSettings[] = [
+const RESOURCE_PICKER_FULL_TABS: ResourceTabSettings[] = [
   {
     title:        "Documents",
     id:           RESOURCE_TYPE_DOCUMENT,
@@ -86,7 +86,7 @@ const RESOURCE_PICKER_TABS_MAIN: ResourceTabSettings[] = [
     singleColumn: true
   }
 ]
-const RESOURCE_PICKER_TABS_MORE: ResourceTabSettings[] = [
+const RESOURCE_PICKER_DROPDOWN_TABS: ResourceTabSettings[] = [
   {
     title:             "Course Collections",
     id:                CONTENT_TYPE_COURSE_COLLECTION,
@@ -106,9 +106,9 @@ const RESOURCE_PICKER_TABS_MORE: ResourceTabSettings[] = [
     sourceWebsiteName: "ocw-www"
   }
 ]
-const RESOURCE_PICKER_TABS = [
-  ...RESOURCE_PICKER_TABS_MAIN,
-  ...RESOURCE_PICKER_TABS_MORE
+const RESOURCE_PICKER_ALL_TABS = [
+  ...RESOURCE_PICKER_FULL_TABS,
+  ...RESOURCE_PICKER_DROPDOWN_TABS
 ]
 
 const modeText = {
@@ -122,16 +122,11 @@ const modeText = {
   }
 }
 
+const isTabEnabled = (mode: ResourceDialogMode) => (tab: ResourceTabSettings) => mode !== RESOURCE_EMBED || tab.embeddable
+
 export default function ResourcePickerDialog(props: Props): JSX.Element {
   const { mode, isOpen, closeDialog, insertEmbed } = props
 
-  const tabsMain = RESOURCE_PICKER_TABS_MAIN.filter(
-    tab => mode !== RESOURCE_EMBED || tab.embeddable
-  )
-  const tabsMore = RESOURCE_PICKER_TABS_MORE.filter(
-    tab => mode !== RESOURCE_EMBED || tab.embeddable
-  )
-  const tabs = [...tabsMain, ...tabsMore]
   const [activeTabId, setActiveTabId] = useState(RESOURCE_TYPE_IMAGE)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
@@ -166,9 +161,13 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     }
   }, [insertEmbed, focusedResource, closeDialog, isOpen, mode])
 
+  const allTabs = RESOURCE_PICKER_ALL_TABS.filter(isTabEnabled(mode));
+  const fullTabs = RESOURCE_PICKER_FULL_TABS.filter(isTabEnabled(mode));
+  const dropdownTabs = RESOURCE_PICKER_DROPDOWN_TABS.filter(isTabEnabled(mode));
   const { acceptText, title } = modeText[mode]
-  const activeTab = RESOURCE_PICKER_TABS.find(t => t.id === activeTabId)
+  const activeTab = allTabs.find(t => t.id === activeTabId)
   const headerText = `${title}: ${activeTab?.title}`
+
   return (
     <Dialog
       open={isOpen}
@@ -180,7 +179,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
       bodyContent={
         <>
           <Nav tabs>
-            {tabsMain.map(tab => (
+            {fullTabs.map(tab => (
               <NavItem key={tab.id}>
                 <NavLink
                   active={activeTabId === tab.id}
@@ -192,10 +191,10 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                 </NavLink>
               </NavItem>
             ))}
-            {tabsMore.length > 0 && (
+            {dropdownTabs.length > 0 && (
               <Dropdown
                 nav
-                active={RESOURCE_PICKER_TABS_MORE.some(
+                active={dropdownTabs.some(
                   t => t.id === activeTabId
                 )}
                 isOpen={isDropdownOpen}
@@ -205,7 +204,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                   More
                 </DropdownToggle>
                 <DropdownMenu>
-                  {tabsMore.map(tab => (
+                  {dropdownTabs.map(tab => (
                     <DropdownItem
                       key={tab.id}
                       onClick={() => {
@@ -227,7 +226,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
             className="form-control filter-input my-2"
           />
           <TabContent activeTab={activeTabId}>
-            {tabs.map(tab => (
+            {allTabs.map(tab => (
               <TabPane tabId={tab.id} key={tab.id}>
                 {activeTabId === tab.id ? (
                   <ResourcePickerListing
