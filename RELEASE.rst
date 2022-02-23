@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.47.7 (Released February 23, 2022)
+--------------
+
+- support resource link anchor IDs
+
 Version 0.47.6 (Released February 18, 2022)
 --------------
 
