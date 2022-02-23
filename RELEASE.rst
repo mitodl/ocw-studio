@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.47.8
+--------------
+
+- Enable linking to resource and course collections
+- add content filtering to the website content listing page
+
 Version 0.47.7 (Released February 23, 2022)
 --------------
 
