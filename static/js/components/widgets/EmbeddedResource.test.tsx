@@ -9,11 +9,7 @@ import {
 } from "../../util/factories/websites"
 import { Website, WebsiteContent } from "../../types/websites"
 import { siteApiContentDetailUrl } from "../../lib/urls"
-import {
-  RESOURCE_TYPE_DOCUMENT,
-  RESOURCE_TYPE_IMAGE,
-  RESOURCE_TYPE_VIDEO
-} from "../../constants"
+import { ResourceType } from "../../constants"
 
 jest.mock("../../context/Website")
 jest.mock("../../hooks/state")
@@ -56,13 +52,13 @@ describe("EmbeddedResource", () => {
   })
 
   it("should render a resourcetype if it's there in the metadata", async () => {
-    content.metadata!.resourcetype = RESOURCE_TYPE_DOCUMENT
+    content.metadata!.resourcetype = ResourceType.Document
     const { wrapper } = await render()
     expect(wrapper.find(".resource-info").text()).toBe("Resourcetype: Document")
   })
 
   it("should render an image", async () => {
-    content.metadata!.resourcetype = RESOURCE_TYPE_IMAGE
+    content.metadata!.resourcetype = ResourceType.Image
     content.file = "https://example.com/foo/bar/baz.png"
     const { wrapper } = await render()
     expect(wrapper.find(".resource-info").text()).toBe("baz.png")
@@ -71,7 +67,7 @@ describe("EmbeddedResource", () => {
   })
 
   it("should render a video", async () => {
-    content.metadata!.resourcetype = RESOURCE_TYPE_VIDEO
+    content.metadata!.resourcetype = ResourceType.Video
     content.metadata!.description = "My Video!!!"
     content.metadata!.video_metadata = { youtube_id: "2XID_W4neJo" }
     const { wrapper } = await render()

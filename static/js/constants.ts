@@ -153,14 +153,20 @@ export const exampleSiteConfigFields: ConfigField[] = uniq(
   ])
 )
 
-export const CONTENT_TYPE_RESOURCE = "resource"
-export const CONTENT_TYPE_PAGE = "page"
-
 // these should match with the values in the ocw-course schema
-export const RESOURCE_TYPE_IMAGE = "Image"
-export const RESOURCE_TYPE_VIDEO = "Video"
-export const RESOURCE_TYPE_DOCUMENT = "Document"
-export const RESOURCE_TYPE_OTHER = "Other"
+export enum ContentType {
+  Resource = "resource",
+  Page = "page",
+  CourseCollections = "course_collections",
+  ResourceCollections = "resource_collections"
+}
+
+export enum ResourceType {
+  Image = "Image",
+  Video = "Video",
+  Document = "Document",
+  Other = "Other"
+}
 
 export enum PublishStatus {
   Success = "succeeded",

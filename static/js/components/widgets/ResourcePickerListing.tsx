@@ -1,13 +1,10 @@
 import React, { SyntheticEvent, useMemo } from "react"
+import classNames from "classnames"
 import { useRequest } from "redux-query-react"
 import { path } from "ramda"
 import { useSelector } from "react-redux"
 
-import {
-  RESOURCE_TYPE_DOCUMENT,
-  RESOURCE_TYPE_IMAGE,
-  RESOURCE_TYPE_VIDEO
-} from "../../constants"
+import { ResourceType } from "../../constants"
 import { useWebsite } from "../../context/Website"
 import { ContentListingParams, WebsiteContent } from "../../types/websites"
 import { websiteContentListingRequest } from "../../query-configs/websites"
@@ -22,6 +19,8 @@ interface Props {
   resourcetype: string | null
   contentType: string
   focusedResource: WebsiteContent | null
+  sourceWebsiteName?: string
+  singleColumn: boolean
 }
 
 export default function ResourcePickerListing(
@@ -32,7 +31,9 @@ export default function ResourcePickerListing(
     focusedResource,
     filter,
     resourcetype,
-    contentType
+    contentType,
+    sourceWebsiteName,
+    singleColumn
   } = props
   const website = useWebsite()
 
@@ -40,14 +41,14 @@ export default function ResourcePickerListing(
     () =>
       Object.assign(
         {
-          name:   website.name,
+          name:   sourceWebsiteName ?? website.name,
           type:   contentType,
           offset: 0
         },
         resourcetype ? { resourcetype } : null,
         filter ? { search: filter } : null
       ),
-    [website, filter, resourcetype, contentType]
+    [website, filter, resourcetype, contentType, sourceWebsiteName]
   )
 
   useRequest(websiteContentListingRequest(listingParams, true, false))
@@ -60,14 +61,12 @@ export default function ResourcePickerListing(
     return null
   }
 
-  const useColumnView =
-    contentType === "page" || resourcetype === RESOURCE_TYPE_DOCUMENT
-  const className = useColumnView ?
-    "resource-picker-listing column-view" :
-    "resource-picker-listing"
-
   return (
-    <div className={className}>
+    <div
+      className={classNames("resource-picker-listing", {
+        "column-view": singleColumn
+      })}
+    >
       {listing.results.map((item, idx) => {
         const className = `resource-item${
           focusedResource && focusedResource.text_id === item.text_id ?
@@ -78,9 +77,9 @@ export default function ResourcePickerListing(
         let imageSrc: string | undefined
 
         if (item.metadata) {
-          if (item.metadata.resourcetype === RESOURCE_TYPE_IMAGE) {
+          if (item.metadata.resourcetype === ResourceType.Image) {
             imageSrc = path(["file"], item)
-          } else if (item.metadata.resourcetype === RESOURCE_TYPE_VIDEO) {
+          } else if (item.metadata.resourcetype === ResourceType.Video) {
             imageSrc = path(
               ["metadata", "video_files", "video_thumbnail_file"],
               item

@@ -1,7 +1,7 @@
 import React from "react"
 import { createPortal } from "react-dom"
 
-import { RESOURCE_TYPE_IMAGE, RESOURCE_TYPE_VIDEO } from "../../constants"
+import { ResourceType } from "../../constants"
 import { useWebsiteContent } from "../../hooks/websites"
 import { SiteFormValue } from "../../types/forms"
 
@@ -29,7 +29,7 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
     const resourcetype = resource.metadata?.resourcetype ?? "..."
     const title = resource.title ?? resource.text_id
 
-    if (resourcetype === RESOURCE_TYPE_IMAGE) {
+    if (resourcetype === ResourceType.Image) {
       const filename = (resource.file ?? "").split("/").slice(-1)[0]
 
       return createPortal(
@@ -46,7 +46,7 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
       )
     }
 
-    if (resourcetype === RESOURCE_TYPE_VIDEO) {
+    if (resourcetype === ResourceType.Video) {
       const videoMetadata = (resource.metadata?.video_metadata ?? {}) as Record<
         string,
         SiteFormValue
