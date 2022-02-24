@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.47.9
+--------------
+
+- Add open webhook to pipelines (#1028)
+- Update ContentSyncState checksums when bulk updating WebsiteContent (#1047)
+- convert baseurl links w/ fragments (#1036)
+- Enforce youtube length limits when uploading/updating title, description (#1009)
+
 Version 0.47.8 (Released February 24, 2022)
 --------------
 
