@@ -42,7 +42,7 @@ EXAMPLE_HUGO_MARKDOWN_WITH_FILE = """---
 title: Example File
 content_type: resource
 uid: abcdefg
-image: https://test.edu/image.png
+image: https://test.edu/courses/website_name/image.png
 ---
 # My markdown
 - abc
@@ -227,7 +227,7 @@ def test_hugo_file_deserialize_with_file():
         file_contents=EXAMPLE_HUGO_MARKDOWN_WITH_FILE,
     )
     assert "image" not in website_content.metadata.keys()
-    assert website_content.file == "https://test.edu/image.png"
+    assert website_content.file == "courses/website_name/image.png"
 
 
 @pytest.mark.django_db
@@ -259,6 +259,7 @@ def test_hugo_file_deserialize_dirpath(
         file_contents=EXAMPLE_HUGO_MARKDOWN,
     )
     assert website_content.dirpath == exp_content_dirpath
+    assert bool(website_content.file) is False
     patched_find_item.assert_any_call("page")
 
 
