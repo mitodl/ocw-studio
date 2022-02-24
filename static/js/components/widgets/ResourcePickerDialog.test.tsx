@@ -1,6 +1,6 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
-import { TabPane, NavLink, Dropdown, DropdownItem } from "reactstrap"
+import { TabPane, NavLink } from "reactstrap"
 import { ReactWrapper } from "enzyme"
 
 import ResourcePickerDialog, { TabIds } from "./ResourcePickerDialog"
@@ -16,6 +16,7 @@ import {
   RESOURCE_LINK
 } from "../../lib/ckeditor/plugins/constants"
 import { ResourceType } from "../../constants"
+import Dialog from "../Dialog"
 
 jest.mock("../../hooks/state")
 
@@ -57,10 +58,11 @@ describe("ResourcePickerDialog", () => {
     useDebouncedState.mockReturnValue(["", setStub])
 
     render = helper.configureRenderer(ResourcePickerDialog, {
-      mode:        RESOURCE_EMBED,
-      isOpen:      true,
-      closeDialog: closeDialogStub,
-      insertEmbed: insertEmbedStub
+      mode:         RESOURCE_EMBED,
+      contentNames: ["resource", "page"],
+      isOpen:       true,
+      closeDialog:  closeDialogStub,
+      insertEmbed:  insertEmbedStub
     })
   })
 
@@ -68,43 +70,44 @@ describe("ResourcePickerDialog", () => {
     helper.cleanup()
   })
 
-  it("should render 3 tabs when embedding", async () => {
-    const { wrapper } = await render({ mode: RESOURCE_EMBED })
-    expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual([
-      TabIds.Documents,
-      TabIds.Videos,
-      TabIds.Images
-    ])
-  })
-
-  it("should render 6 tabs when linking", async () => {
-    const { wrapper } = await render({ mode: RESOURCE_LINK })
-    expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual([
-      TabIds.Documents,
-      TabIds.Videos,
-      TabIds.Images,
-      TabIds.Pages,
-      TabIds.CourseCollections,
-      TabIds.ResourceCollections
-    ])
-  })
+  it.each([
+    {
+      contentNames: ["resource"],
+      expectedTabs: [TabIds.Documents, TabIds.Videos, TabIds.Images]
+    },
+    { contentNames: ["page"], expectedTabs: [TabIds.Pages] },
+    {
+      contentNames: ["course_collections"],
+      expectedTabs: [TabIds.CourseCollections]
+    },
+    {
+      contentNames: ["resource_collections"],
+      expectedTabs: [TabIds.ResourceCollections]
+    },
+    {
+      contentNames: ["resource", "page", "course_collections"],
+      expectedTabs: [
+        TabIds.Documents,
+        TabIds.Videos,
+        TabIds.Images,
+        TabIds.Pages,
+        TabIds.CourseCollections
+      ]
+    }
+  ])(
+    "should render tabs based on contentNames. Case: $contentNames",
+    async ({ contentNames, expectedTabs }) => {
+      const { wrapper } = await render({ contentNames, expectedTabs })
+      expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual(
+        expectedTabs
+      )
+    }
+  )
 
   test("TabIds values are unique", () => {
     const uniqueTabIds = new Set(Object.values(TabIds))
     expect(Object.values(TabIds).length).toBe(uniqueTabIds.size)
   })
-
-  it.each([
-    { mode: RESOURCE_LINK, dropdownExists: true, should: "should" },
-    { mode: RESOURCE_EMBED, dropdownExists: false, should: "should not" }
-  ])(
-    'when in mode "$mode", $should show the "more" dropdown',
-    async ({ mode, dropdownExists }) => {
-      const { wrapper } = await render({ mode })
-      const dropdown = wrapper.find(Dropdown)
-      expect(dropdown.exists()).toBe(dropdownExists)
-    }
-  )
 
   it("should pass some basic props down to the dialog", async () => {
     const { wrapper } = await render()
@@ -113,65 +116,37 @@ describe("ResourcePickerDialog", () => {
     expect(dialog.prop("wrapClassName")).toBe("resource-picker-dialog")
   })
 
-  it("should allow focusing and linking a resource, then close the dialog", async () => {
-    const { wrapper } = await render({
-      mode: RESOURCE_LINK
-    })
-    // callback should be 'undefined' before resource is focused
-    expect(wrapper.find("Dialog").prop("onAccept")).toBeUndefined()
-    focusResource(wrapper, resource)
+  it.each([
+    { mode: RESOURCE_LINK, attaching: "linking", acceptText: "Add link" },
+    {
+      mode:       RESOURCE_EMBED,
+      attaching:  "embedding",
+      acceptText: "Embed resource"
+    }
+  ])(
+    "should allow focusing and $attaching a resource, then close the dialog",
+    async ({ mode, acceptText }) => {
+      const { wrapper } = await render({ mode })
+      // callback should be 'undefined' before resource is focused
+      expect(wrapper.find(Dialog).prop("onAccept")).toBeUndefined()
+      focusResource(wrapper, resource)
 
-    expect(wrapper.find("Dialog").prop("acceptText")).toBe("Add link")
+      expect(wrapper.find(Dialog).prop("acceptText")).toBe(acceptText)
 
-    act(() => {
-      // @ts-ignore
-      wrapper.find("Dialog").prop("onAccept")()
-    })
+      act(() => {
+        wrapper.find(Dialog).prop("onAccept")?.()
+      })
 
-    wrapper.update()
+      wrapper.update()
 
-    expect(insertEmbedStub.args[0]).toStrictEqual([
-      resource.text_id,
-      resource.title,
-      RESOURCE_LINK
-    ])
-    expect(closeDialogStub.callCount).toBe(1)
-  })
-
-  it("should focusing and embedding a resource", async () => {
-    const { wrapper } = await render({
-      mode: RESOURCE_EMBED
-    })
-    // callback should be 'undefined' before resource is focused
-    expect(wrapper.find("Dialog").prop("onAccept")).toBeUndefined()
-    focusResource(wrapper, resource)
-
-    expect(wrapper.find("Dialog").prop("acceptText")).toBe("Embed resource")
-
-    act(() => {
-      // @ts-ignore
-      wrapper.find("Dialog").prop("onAccept")()
-    })
-
-    wrapper.update()
-
-    expect(insertEmbedStub.args[0]).toStrictEqual([
-      resource.text_id,
-      resource.title,
-      RESOURCE_EMBED
-    ])
-  })
-
-  it("should pass basic props to ResourcePickerListing", async () => {
-    const { wrapper } = await render()
-    expect(wrapper.find("ResourcePickerListing").prop("contentType")).toEqual(
-      "resource"
-    )
-    focusResource(wrapper, resource)
-    expect(wrapper.find("ResourcePickerListing").prop("focusedResource")).toBe(
-      resource
-    )
-  })
+      expect(insertEmbedStub.args[0]).toStrictEqual([
+        resource.text_id,
+        resource.title,
+        mode
+      ])
+      expect(closeDialogStub.callCount).toBe(1)
+    }
+  )
 
   it.each([
     {
@@ -208,37 +183,6 @@ describe("ResourcePickerDialog", () => {
       expect(listing.prop("resourcetype")).toEqual(resourcetype)
       expect(listing.prop("contentType")).toBe(contentType)
       expect(listing.prop("singleColumn")).toBe(singleColumn)
-    }
-  )
-
-  it.each([
-    {
-      index:             0,
-      resourcetype:      null,
-      contentType:       "course_collections",
-      sourceWebsiteName: "ocw-www"
-    },
-    {
-      index:             1,
-      resourcetype:      null,
-      contentType:       "resource_collections",
-      sourceWebsiteName: "ocw-www"
-    }
-  ])(
-    "passes the correct resourcetype and contentType when dropdown tab $index is clicked",
-    async ({ resourcetype, contentType, sourceWebsiteName, index }) => {
-      const { wrapper } = await render({ mode: RESOURCE_LINK })
-      act(() => {
-        wrapper
-          .find(DropdownItem)
-          .at(index)
-          .simulate("click")
-      })
-      wrapper.update()
-      const listing = wrapper.find(ResourcePickerListing)
-      expect(listing.prop("resourcetype")).toEqual(resourcetype)
-      expect(listing.prop("contentType")).toBe(contentType)
-      expect(listing.prop("sourceWebsiteName")).toBe(sourceWebsiteName)
     }
   )
 

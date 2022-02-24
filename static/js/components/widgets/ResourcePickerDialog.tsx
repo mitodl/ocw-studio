@@ -1,15 +1,5 @@
 import React, { SyntheticEvent, useCallback, useState } from "react"
-import {
-  Nav,
-  NavItem,
-  NavLink,
-  TabContent,
-  TabPane,
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
-  DropdownMenu
-} from "reactstrap"
+import { Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 
 import Dialog from "../Dialog"
 import { ResourceType, ContentType } from "../../constants"
@@ -28,9 +18,10 @@ interface Props {
   isOpen: boolean
   closeDialog: () => void
   insertEmbed: (id: string, title: string, variant: CKEResourceNodeType) => void
+  contentNames: string[]
 }
 
-interface ResourceTabSettings {
+interface TabSettings {
   title: string
   id: TabIds
   contentType: ContentType
@@ -49,64 +40,67 @@ export enum TabIds {
   ResourceCollections = "resource_collections"
 }
 
-const RESOURCE_PICKER_FULL_TABS: ResourceTabSettings[] = [
-  {
-    title:        "Documents",
-    id:           TabIds.Documents,
-    contentType:  ContentType.Resource,
-    resourcetype: ResourceType.Document,
-    embeddable:   true,
-    singleColumn: true
-  },
-  {
-    title:        "Videos",
-    id:           TabIds.Videos,
-    contentType:  ContentType.Resource,
-    resourcetype: ResourceType.Video,
-    embeddable:   true,
-    singleColumn: false
-  },
-  {
-    title:        "Images",
-    id:           TabIds.Images,
-    contentType:  ContentType.Resource,
-    resourcetype: ResourceType.Image,
-    embeddable:   true,
-    singleColumn: false
-  },
-  {
-    title:        "Pages",
-    id:           TabIds.Pages,
-    contentType:  ContentType.Page,
-    resourcetype: null,
-    embeddable:   false,
-    singleColumn: true
-  }
-]
-const RESOURCE_PICKER_DROPDOWN_TABS: ResourceTabSettings[] = [
-  {
-    title:             "Course Collections",
-    id:                TabIds.CourseCollections,
-    contentType:       ContentType.CourseCollections,
-    resourcetype:      null,
-    embeddable:        false,
-    singleColumn:      true,
-    sourceWebsiteName: "ocw-www"
-  },
-  {
-    title:             "Resource Collections",
-    id:                TabIds.ResourceCollections,
-    contentType:       ContentType.ResourceCollections,
-    resourcetype:      null,
-    embeddable:        false,
-    singleColumn:      true,
-    sourceWebsiteName: "ocw-www"
-  }
-]
-const RESOURCE_PICKER_ALL_TABS = [
-  ...RESOURCE_PICKER_FULL_TABS,
-  ...RESOURCE_PICKER_DROPDOWN_TABS
-]
+const documentTab: TabSettings = {
+  title:        "Documents",
+  id:           TabIds.Documents,
+  contentType:  ContentType.Resource,
+  resourcetype: ResourceType.Document,
+  embeddable:   true,
+  singleColumn: true
+}
+const videoTab: TabSettings = {
+  title:        "Videos",
+  id:           TabIds.Videos,
+  contentType:  ContentType.Resource,
+  resourcetype: ResourceType.Video,
+  embeddable:   true,
+  singleColumn: false
+}
+const imageTab: TabSettings = {
+  title:        "Images",
+  id:           TabIds.Images,
+  contentType:  ContentType.Resource,
+  resourcetype: ResourceType.Image,
+  embeddable:   true,
+  singleColumn: false
+}
+const pageTab: TabSettings = {
+  title:        "Pages",
+  id:           TabIds.Pages,
+  contentType:  ContentType.Page,
+  resourcetype: null,
+  embeddable:   false,
+  singleColumn: true
+}
+const courseCollectionTab: TabSettings = {
+  title:             "Course Collections",
+  id:                TabIds.CourseCollections,
+  contentType:       ContentType.CourseCollections,
+  resourcetype:      null,
+  embeddable:        false,
+  singleColumn:      true,
+  sourceWebsiteName: "ocw-www"
+}
+const resourcCollectionTab: TabSettings = {
+  title:        "Resource Collections",
+  id:           TabIds.ResourceCollections,
+  contentType:  ContentType.ResourceCollections,
+  resourcetype: null,
+  embeddable:   false,
+  singleColumn: true
+}
+
+/**
+ * Maps a content name from our config schemas to a group of tabs.
+ * Slightly awkward because most content types correspond to a single tab,
+ * except resources, which have separate tabs according to resourcetype
+ */
+const TABS: Record<string, TabSettings[]> = {
+  resource:             [documentTab, videoTab, imageTab],
+  page:                 [pageTab],
+  course_collections:   [courseCollectionTab],
+  resource_collections: [resourcCollectionTab]
+}
 
 const modeText = {
   [RESOURCE_EMBED]: {
@@ -119,14 +113,11 @@ const modeText = {
   }
 }
 
-const isTabEnabled = (mode: ResourceDialogMode) => (tab: ResourceTabSettings) =>
-  mode !== RESOURCE_EMBED || tab.embeddable
-
 export default function ResourcePickerDialog(props: Props): JSX.Element {
-  const { mode, isOpen, closeDialog, insertEmbed } = props
+  const { mode, isOpen, closeDialog, insertEmbed, contentNames } = props
 
-  const [activeTabId, setActiveTabId] = useState(TabIds.Images)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const tabs = contentNames.flatMap(name => TABS[name])
+  const [activeTabId, setActiveTabId] = useState(tabs[0].id)
 
   // filterInput is to store user input and is updated synchronously
   // so that the UI stays responsive
@@ -159,25 +150,20 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     }
   }, [insertEmbed, focusedResource, closeDialog, isOpen, mode])
 
-  const allTabs = RESOURCE_PICKER_ALL_TABS.filter(isTabEnabled(mode))
-  const fullTabs = RESOURCE_PICKER_FULL_TABS.filter(isTabEnabled(mode))
-  const dropdownTabs = RESOURCE_PICKER_DROPDOWN_TABS.filter(isTabEnabled(mode))
   const { acceptText, title } = modeText[mode]
-  const activeTab = allTabs.find(t => t.id === activeTabId)
-  const headerText = `${title}: ${activeTab?.title}`
 
   return (
     <Dialog
       open={isOpen}
       toggleModal={closeDialog}
       wrapClassName="resource-picker-dialog"
-      headerContent={headerText}
+      headerContent={title}
       onAccept={focusedResource ? addResource : undefined}
       acceptText={focusedResource ? acceptText : undefined}
       bodyContent={
         <>
           <Nav tabs>
-            {fullTabs.map(tab => (
+            {tabs.map(tab => (
               <NavItem key={tab.id}>
                 <NavLink
                   active={activeTabId === tab.id}
@@ -189,30 +175,6 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                 </NavLink>
               </NavItem>
             ))}
-            {dropdownTabs.length > 0 && (
-              <Dropdown
-                nav
-                active={dropdownTabs.some(t => t.id === activeTabId)}
-                isOpen={isDropdownOpen}
-                toggle={() => setIsDropdownOpen(!isDropdownOpen)}
-              >
-                <DropdownToggle caret nav>
-                  More
-                </DropdownToggle>
-                <DropdownMenu>
-                  {dropdownTabs.map(tab => (
-                    <DropdownItem
-                      key={tab.id}
-                      onClick={() => {
-                        setActiveTabId(tab.id)
-                      }}
-                    >
-                      {tab.title}
-                    </DropdownItem>
-                  ))}
-                </DropdownMenu>
-              </Dropdown>
-            )}
           </Nav>
           <input
             placeholder="filter"
@@ -222,7 +184,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
             className="form-control filter-input my-2"
           />
           <TabContent activeTab={activeTabId}>
-            {allTabs.map(tab => (
+            {tabs.map(tab => (
               <TabPane tabId={tab.id} key={tab.id}>
                 {activeTabId === tab.id ? (
                   <ResourcePickerListing

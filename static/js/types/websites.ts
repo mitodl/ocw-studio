@@ -50,7 +50,8 @@ interface ConfigFieldBaseProps {
 export interface MarkdownConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.Markdown
   minimal?: boolean
-  attach?: string
+  link?: string[]
+  embed?: string[]
 }
 
 export interface FileConfigField extends ConfigFieldBaseProps {

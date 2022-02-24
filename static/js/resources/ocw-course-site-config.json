@@ -10,8 +10,14 @@
           "widget": "string"
         },
         {
-          "attach": "resource",
+          "embed": [
+            "resource"
+          ],
           "label": "Body",
+          "link": [
+            "resource",
+            "page"
+          ],
           "name": "body",
           "widget": "markdown"
         }
