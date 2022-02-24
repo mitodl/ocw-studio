@@ -10,6 +10,12 @@ import {
   RESOURCE_LINK
 } from "@mitodl/ckeditor5-resource-link/src/constants"
 
+export const encodeShortcodeArgs = (...args: (string | undefined)[]) =>
+  encodeURIComponent(JSON.stringify(args))
+
+const decodeShortcodeArgs = (encoded: string) =>
+  JSON.parse(decodeURIComponent(encoded))
+
 /**
  * (\S+) to match and capture the UUID
  * "(.*?)" to match and capture the label text
@@ -57,10 +63,10 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             linkText: string,
             fragment?: string
           ) => {
-            const formattedUUID = fragment ? `${uuid}#${fragment}` : uuid
-            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${encodeURIComponent(
-              formattedUUID
-            )}">${linkText}</a>`
+            const encoded = fragment ?
+              encodeShortcodeArgs(uuid, fragment) :
+              encodeShortcodeArgs(uuid)
+            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${encoded}">${linkText}</a>`
           }
         }
       ]
@@ -79,9 +85,9 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             )
           },
           replacement: (_content: string, node: Turndown.Node): string => {
-            const [uuid, anchor] = decodeURIComponent(
+            const [uuid, anchor] = decodeShortcodeArgs(
               (node as any).getAttribute("data-uuid") as string
-            ).split("#")
+            )
 
             if (anchor) {
               return `{{< resource_link ${uuid} "${node.textContent}" "${anchor}" >}}`

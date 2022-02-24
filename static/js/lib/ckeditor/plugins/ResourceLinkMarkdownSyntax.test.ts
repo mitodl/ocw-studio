@@ -6,7 +6,9 @@ import { createTestEditor, markdownTest } from "./test_util"
 import { turndownService } from "../turndown"
 
 import { RESOURCE_LINK } from "@mitodl/ckeditor5-resource-link/src/constants"
-import ResourceLinkMarkdownSyntax from "./ResourceLinkMarkdownSyntax"
+import ResourceLinkMarkdownSyntax, {
+  encodeShortcodeArgs as encode
+} from "./ResourceLinkMarkdownSyntax"
 import Paragraph from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 const getEditor = createTestEditor([
@@ -44,9 +46,10 @@ describe("ResourceLink plugin", () => {
 
     markdownTest(
       editor,
-      '{{< resource_link 1234-5678 "link text" "some-header-id" >}}',
-      `<p><a class="resource-link" data-uuid="${encodeURIComponent(
-        "1234-5678#some-header-id"
+      '{{< resource_link 1234-5678 "link text" "#some-header-id" >}}',
+      `<p><a class="resource-link" data-uuid="${encode(
+        "1234-5678",
+        "#some-header-id"
       )}">link text</a></p>`
     )
   })
@@ -56,7 +59,9 @@ describe("ResourceLink plugin", () => {
     markdownTest(
       editor,
       '{{< resource_link asdfasdfasdfasdf "text here" >}}',
-      '<p><a class="resource-link" data-uuid="asdfasdfasdfasdf">text here</a></p>'
+      `<p><a class="resource-link" data-uuid="${encode(
+        "asdfasdfasdfasdf"
+      )}">text here</a></p>`
     )
   })
 
@@ -65,7 +70,11 @@ describe("ResourceLink plugin", () => {
     markdownTest(
       editor,
       'dogs {{< resource_link uuid1 "woof" >}} cats {{< resource_link uuid2 "meow" >}}, cool',
-      '<p>dogs <a class="resource-link" data-uuid="uuid1">woof</a> cats <a class="resource-link" data-uuid="uuid2">meow</a>, cool</p>'
+      `<p>dogs <a class="resource-link" data-uuid="${encode(
+        "uuid1"
+      )}">woof</a> cats <a class="resource-link" data-uuid="${encode(
+        "uuid2"
+      )}">meow</a>, cool</p>`
     )
   })
 
@@ -75,7 +84,9 @@ describe("ResourceLink plugin", () => {
       .processor as unknown) as MarkdownDataProcessor
     expect(md2html('{{< resource_link uuid123 "bad \\" >}}')).toBe(
       // This is wrong. Should not end in &lt;/a&gt;
-      '<p><a class="resource-link" data-uuid="uuid123">bad &lt;/a&gt;</p>'
+      `<p><a class="resource-link" data-uuid="${encode(
+        "uuid123"
+      )}">bad &lt;/a&gt;</p>`
     )
   })
 })

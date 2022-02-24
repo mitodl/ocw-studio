@@ -79,7 +79,7 @@ class BaseurlReplacementRule(MarkdownCleanupRule):
     regex = (
         r"\\?\[(?P<title>[^\[\]\n]*?)\\?\]"
         + r"\({{< baseurl >}}(?P<url>.*?)"
-        + r"(/?#(?P<fragment>.*?))?"
+        + r"(/?(?P<fragment>#.*?))?"
         + r"\)"
     )
 
@@ -94,8 +94,6 @@ class BaseurlReplacementRule(MarkdownCleanupRule):
         escaped_title = match.group("title").replace('"', '\\"')
         url = match.group("url")
         fragment = match.group("fragment")
-        if fragment is not None:
-            return original_text
 
         # This is probably a link with image as title, where the image is a < resource >
         if R"{{<" in match.group("title"):
@@ -105,8 +103,7 @@ class BaseurlReplacementRule(MarkdownCleanupRule):
             linked_content = self.content_lookup.get_content_by_url(
                 website_content.website_id, url
             )
-            return (
-                f'{{{{< resource_link {linked_content.text_id} "{escaped_title}" >}}}}'
-            )
+            fragment_arg = f' "{fragment}"' if fragment is not None else ""
+            return f'{{{{< resource_link {linked_content.text_id} "{escaped_title}"{fragment_arg} >}}}}'
         except KeyError:
             return original_text
