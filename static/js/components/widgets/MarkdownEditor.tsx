@@ -26,8 +26,8 @@ export interface Props {
   onChange?: (event: { target: { value: string; name: string } }) => void
   children?: React.ReactNode
   minimal?: boolean
-  embed: string[]
-  link: string[]
+  embed?: string[]
+  link?: string[]
 }
 
 type RenderQueueEntry = [string, HTMLElement]
@@ -38,7 +38,7 @@ type RenderQueueEntry = [string, HTMLElement]
  * pass minimal: true to get a minimal version.
  */
 export default function MarkdownEditor(props: Props): JSX.Element {
-  const { link, embed, value, name, onChange, minimal } = props
+  const { link = [], embed = [], value, name, onChange, minimal } = props
 
   const editor = useRef<editor.Editor>()
   const setEditorRef = useCallback(editorInstance => {
