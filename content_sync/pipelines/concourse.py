@@ -251,6 +251,8 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
             else:
                 markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.website.short_id}.git"
                 private_key_var = ""
+            build_drafts = "--buildDrafts" if pipeline_name == VERSION_DRAFT else ""
+
             with open(
                 os.path.join(
                     os.path.dirname(__file__), "definitions/concourse/site-pipeline.yml"
@@ -292,6 +294,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
                     .replace("((api-token))", settings.API_BEARER_TOKEN or "")
                     .replace("((theme-deployed-trigger))", theme_deployed_trigger)
                     .replace("((theme-created-trigger))", theme_created_trigger)
+                    .replace("((build-drafts))", build_drafts)
                 )
             config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
             log.debug(config)
@@ -406,6 +409,7 @@ class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
             branch = settings.GIT_BRANCH_RELEASE
             destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
             static_api_url = settings.OCW_STUDIO_LIVE_URL
+        build_drafts = "--buildDrafts" if self.version == VERSION_DRAFT else ""
 
         with open(
             os.path.join(
@@ -434,6 +438,7 @@ class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
                 .replace("((api-token))", settings.API_BEARER_TOKEN or "")
                 .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
                 .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
+                .replace("((build-drafts))", build_drafts)
             )
         log.debug(config_str)
         config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))

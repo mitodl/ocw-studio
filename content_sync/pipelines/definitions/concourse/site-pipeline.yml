@@ -149,7 +149,7 @@ jobs:
             - -exc
             - |
               cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
-              hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/
+              hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/ ((build-drafts))
         on_failure:
           try:
             put: ocw-studio-webhook
