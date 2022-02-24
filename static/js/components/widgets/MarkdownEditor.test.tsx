@@ -49,8 +49,8 @@ describe("MarkdownEditor", () => {
         const wrapper = render({
           minimal,
           value,
-          embed: ['resource'],
-          link:  ['page']
+          embed: ["resource"],
+          link:  ["page"]
         })
         const ckWrapper = wrapper.find("CKEditor")
         expect(ckWrapper.prop("editor")).toBe(ClassicEditor)
@@ -62,18 +62,20 @@ describe("MarkdownEditor", () => {
     })
   })
 
-
   it.each([
     { shouldExist: false },
     { link: [], embed: [], shouldExist: false },
-    { link: ['page'], embed: [], shouldExist: true },
-    { link: [], embed: ['resource'], shouldExist: true },
-    { link: ['page'], embed: ['resource'], shouldExist: true }
-  ])("should render ResourcePickerDialog iff link or embed are nonempty", ({ link, embed, shouldExist }) => {
-    const wrapper = render({ link, embed })
-    const resourcePicker = wrapper.find("ResourcePickerDialog")
-    expect(resourcePicker.exists()).toBe(shouldExist)
-  })
+    { link: ["page"], embed: [], shouldExist: true },
+    { link: [], embed: ["resource"], shouldExist: true },
+    { link: ["page"], embed: ["resource"], shouldExist: true }
+  ])(
+    "should render ResourcePickerDialog iff link or embed are nonempty",
+    ({ link, embed, shouldExist }) => {
+      const wrapper = render({ link, embed })
+      const resourcePicker = wrapper.find("ResourcePickerDialog")
+      expect(resourcePicker.exists()).toBe(shouldExist)
+    }
+  )
 
   it("should render resources with using EmbeddedResource", () => {
     const wrapper = render()
@@ -93,33 +95,42 @@ describe("MarkdownEditor", () => {
   it.each([
     { embed: undefined, hasTool: false },
     { embed: [], hasTool: false },
-    { embed: ['resource'], hasTool: true }
-  ])('should show "add resource" iff embed is nonempty. Case: $embed', ({ embed, hasTool }) => {
-    const wrapper = render({ embed })
-    const editorConfig = wrapper.find("CKEditor").prop("config")
-    // @ts-ignore
-    expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_EMBED)).toBe(
-      hasTool
-    )
-  })
+    { embed: ["resource"], hasTool: true }
+  ])(
+    'should show "add resource" iff embed is nonempty. Case: $embed',
+    ({ embed, hasTool }) => {
+      const wrapper = render({ embed })
+      const editorConfig = wrapper.find("CKEditor").prop("config")
+      // @ts-ignore
+      expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_EMBED)).toBe(
+        hasTool
+      )
+    }
+  )
 
   it.each([
     { link: undefined, hasTool: false },
     { link: [], hasTool: false },
-    { link: ['page'], hasTool: true }
-  ])('should show "add link" iff link is nonempty. Case: $link', ({ link, hasTool }) => {
-    const wrapper = render({ link })
-    const editorConfig = wrapper.find("CKEditor").prop("config")
-    // @ts-ignore
-    expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_LINK)).toBe(
-      hasTool
-    )
-  })
+    { link: ["page"], hasTool: true }
+  ])(
+    'should show "add link" iff link is nonempty. Case: $link',
+    ({ link, hasTool }) => {
+      const wrapper = render({ link })
+      const editorConfig = wrapper.find("CKEditor").prop("config")
+      // @ts-ignore
+      expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_LINK)).toBe(
+        hasTool
+      )
+    }
+  )
 
   //
   ;[RESOURCE_EMBED, RESOURCE_LINK].forEach(resourceNodeType => {
     it(`should open the resource picker for ${resourceNodeType}`, () => {
-      const wrapper = render({ embed: ['resource'], link: ['resource', 'page'] })
+      const wrapper = render({
+        embed: ["resource"],
+        link:  ["resource", "page"]
+      })
       const editor = wrapper.find("CKEditor").prop("config")
       // @ts-ignore
       editor[CKEDITOR_RESOURCE_UTILS].openResourcePicker(resourceNodeType)

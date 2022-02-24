@@ -82,12 +82,12 @@ const courseCollectionTab: TabSettings = {
   sourceWebsiteName: "ocw-www"
 }
 const resourcCollectionTab: TabSettings = {
-  title:             "Resource Collections",
-  id:                TabIds.ResourceCollections,
-  contentType:       ContentType.ResourceCollections,
-  resourcetype:      null,
-  embeddable:        false,
-  singleColumn:      true,
+  title:        "Resource Collections",
+  id:           TabIds.ResourceCollections,
+  contentType:  ContentType.ResourceCollections,
+  resourcetype: null,
+  embeddable:   false,
+  singleColumn: true
 }
 
 /**

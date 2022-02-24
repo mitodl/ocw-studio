@@ -98,7 +98,7 @@ export function widgetExtraProps(field: ConfigField): Record<string, any> {
     return {
       minimal: field.minimal ?? false,
       link:    field.link ?? [],
-      embed:   field.embed ?? [],
+      embed:   field.embed ?? []
     }
   case WidgetVariant.Relation:
     return pick(RELATION_EXTRA_PROPS, field)

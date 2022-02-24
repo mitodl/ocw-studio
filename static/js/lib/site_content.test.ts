@@ -424,12 +424,12 @@ describe("site_content", () => {
         widget:  WidgetVariant.Markdown,
         minimal: true,
         link:    ["resource", "page"],
-        embed:   ["resource"],
+        embed:   ["resource"]
       })
       expect(widgetExtraProps(field)).toStrictEqual({
         minimal: true,
         link:    ["resource", "page"],
-        embed:   ["resource"],
+        embed:   ["resource"]
       })
     })
 
