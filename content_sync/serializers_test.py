@@ -217,8 +217,9 @@ def test_hugo_menu_yaml_deserialize(omnibus_config):
 
 
 @pytest.mark.django_db
-def test_hugo_file_deserialize_with_file():
+def test_hugo_file_deserialize_with_file(settings):
     """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
+    settings.DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     website = WebsiteFactory.create()
     site_config = SiteConfig(website.starter.config)
     website_content = HugoMarkdownFileSerializer(site_config).deserialize(
@@ -226,8 +227,13 @@ def test_hugo_file_deserialize_with_file():
         filepath="/test/file.md",
         file_contents=EXAMPLE_HUGO_MARKDOWN_WITH_FILE,
     )
+    path = "courses/website_name/image.png"
     assert "image" not in website_content.metadata.keys()
-    assert website_content.file == "courses/website_name/image.png"
+    assert website_content.file == path
+    assert (
+        website_content.file.url
+        == f"https://s3.amazonaws.com/{settings.AWS_STORAGE_BUCKET_NAME}/{path}"
+    )
 
 
 @pytest.mark.django_db
