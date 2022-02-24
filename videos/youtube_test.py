@@ -12,7 +12,11 @@ from googleapiclient.errors import HttpError
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
-from videos.constants import DESTINATION_YOUTUBE
+from videos.constants import (
+    DESTINATION_YOUTUBE,
+    YT_MAX_LENGTH_DESCRIPTION,
+    YT_MAX_LENGTH_TITLE,
+)
 from videos.factories import VideoFactory, VideoFileFactory
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.youtube import (
@@ -174,7 +178,7 @@ def test_upload_video_long_fields(mocker, youtube_mocker):
     mock_upload = youtube_mocker().videos.return_value.insert
     YouTubeApi().upload_video(video_file)
     called_args, called_kwargs = mock_upload.call_args
-    assert called_kwargs["body"]["snippet"]["title"] == name[:100]
+    assert called_kwargs["body"]["snippet"]["title"] == f"{name[:97]}..."
 
 
 def test_delete_video(youtube_mocker):
@@ -191,19 +195,29 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
     """update_video should send the correct data in a request to update youtube metadata"""
     speakers = "speaker1, speaker2"
     tags = "tag1, tag2"
-    youtube_id = "abc123"
-    description = "video test description"
+    youtube_id = "test video description"
+    title = "TitleLngt>"
+    description = "DescLngth>"
     content = WebsiteContentFactory.create(
+        title=" ".join([title for i in range(11)]),
         metadata={
             "resourcetype": RESOURCE_TYPE_VIDEO,
-            "description": description,
+            "description": " ".join([description for _ in range(501)]),
             "video_metadata": {
                 "youtube_id": youtube_id,
                 "video_tags": tags,
                 "video_speakers": speakers,
             },
-        }
+        },
     )
+
+    expected_title = f'{" ".join([title.replace(">", "") for _ in range(9)])}...'
+    expected_desc = f'{" ".join([description.replace(">", "") for _ in range(499)])}...'
+
+    assert len(content.title) > YT_MAX_LENGTH_TITLE
+    assert len(content.metadata["description"]) > YT_MAX_LENGTH_DESCRIPTION
+    assert len(expected_title) <= YT_MAX_LENGTH_TITLE
+    assert len(expected_desc) <= YT_MAX_LENGTH_DESCRIPTION
 
     mock_update_caption = mocker.patch("videos.youtube.YouTubeApi.update_captions")
 
@@ -213,8 +227,8 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
         body={
             "id": youtube_id,
             "snippet": {
-                "title": content.title,
-                "description": f"{description}\n\nSpeakers: {speakers}",
+                "title": expected_title,
+                "description": expected_desc,
                 "tags": tags,
                 "categoryId": settings.YT_CATEGORY_ID,
             },

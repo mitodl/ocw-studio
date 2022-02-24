@@ -16,10 +16,11 @@ from websites.api import (
     incomplete_content_warnings,
     is_ocw_site,
     mail_on_publish,
-    unassigned_youtube_ids,
     update_website_status,
     update_youtube_thumbnail,
     videos_missing_captions,
+    videos_with_truncatable_text,
+    videos_with_unassigned_youtube_ids,
 )
 from websites.constants import (
     PUBLISH_STATUS_ERRORED,
@@ -228,7 +229,7 @@ def test_update_youtube_thumbnail(
 
 @pytest.mark.parametrize("is_ocw", [True, False])
 def test_unassigned_youtube_ids(mocker, is_ocw):
-    """unassigned_youtube_ids should return WebsiteContent objects for videos with no youtube ids"""
+    """videos_with_unassigned_youtube_ids should return WebsiteContent objects for videos with no youtube ids"""
     mocker.patch("websites.api.is_ocw_site", return_value=is_ocw)
     website = WebsiteFactory.create()
     WebsiteContentFactory.create_batch(
@@ -266,7 +267,7 @@ def test_unassigned_youtube_ids(mocker, is_ocw):
             "video_metadata": {"youtube_id": "bad_data"},
         },
     )
-    unassigned_content = unassigned_youtube_ids(website)
+    unassigned_content = videos_with_unassigned_youtube_ids(website)
     if is_ocw:
         assert len(unassigned_content) == 3
         for content in videos_without_ids:
@@ -315,6 +316,40 @@ def test_videos_missing_captions(mocker, is_ocw):
             assert content in unassigned_content
     else:
         assert len(unassigned_content) == 0
+
+
+@pytest.mark.parametrize("is_ocw", [True, False])
+def test_videos_with_truncatable_text(mocker, is_ocw):
+    """Videos with titles or descriptions that are too long should be returned"""
+    mocker.patch("websites.api.is_ocw_site", return_value=is_ocw)
+    website = WebsiteFactory.create()
+    title_descs = (
+        (" ".join(["TooLongTitle" for _ in range(10)]), "desc"),
+        ("title", " ".join(["TooLongDescription" for _ in range(500)])),
+        ("title", "desc"),
+    )
+    resources = []
+    for title, desc in title_descs:
+        resources.append(
+            WebsiteContentFactory.create(
+                website=website,
+                title=title,
+                metadata={
+                    "description": desc,
+                    "resourcetype": RESOURCE_TYPE_VIDEO,
+                    "video_files": {"video_captions_file": "abc123"},
+                },
+            )
+        )
+    truncatable_content = videos_with_truncatable_text(website)
+    assert len(resources[1].metadata["description"]) > 5000
+
+    if is_ocw:
+        assert len(truncatable_content) == 2
+        for content in resources[0:2]:
+            assert content in truncatable_content
+    else:
+        assert truncatable_content == []
 
 
 @pytest.mark.parametrize("success", [True, False])
@@ -416,14 +451,21 @@ def test_update_unpublished_website_status(status, version):
 
 @pytest.mark.parametrize("has_missing_ids", [True, False])
 @pytest.mark.parametrize("has_missing_captions", [True, False])
-def test_incomplete_content_warnings(mocker, has_missing_ids, has_missing_captions):
+@pytest.mark.parametrize("has_truncatable_text", [True, False])
+def test_incomplete_content_warnings(
+    mocker, has_missing_ids, has_missing_captions, has_truncatable_text
+):
     """incomplete_content_warnings should return expected warning messages"""
     website = WebsiteFactory.create()
     video_content = WebsiteContentFactory.create_batch(3, website=website)
     no_yt_ids = video_content[0:2] if has_missing_ids else []
     no_caps = video_content[1:3] if has_missing_captions else []
+    truncatable_vids = [video_content[2]] if has_truncatable_text else []
     mocker.patch(
-        "websites.api.unassigned_youtube_ids",
+        "websites.api.videos_with_truncatable_text", return_value=truncatable_vids
+    )
+    mocker.patch(
+        "websites.api.videos_with_unassigned_youtube_ids",
         return_value=no_yt_ids,
     )
     mocker.patch(
@@ -431,11 +473,18 @@ def test_incomplete_content_warnings(mocker, has_missing_ids, has_missing_captio
         return_value=no_caps,
     )
     warnings = incomplete_content_warnings(website)
+    warnings_len = 0
     if has_missing_ids:
+        warnings_len += 1
         for content in no_yt_ids:
             assert content.title in warnings[0]
     if has_missing_captions:
+        warnings_len += 1
         for content in no_caps:
             assert content.title in warnings[1 if has_missing_ids else 0]
-    if not has_missing_ids and not has_missing_captions:
+    if has_truncatable_text:
+        warnings_len += 1
+        assert len(warnings) == warnings_len
+        assert video_content[2].title in warnings[warnings_len - 1]
+    if not has_missing_ids and not has_missing_captions and not has_truncatable_text:
         assert warnings == []

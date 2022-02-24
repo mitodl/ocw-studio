@@ -7,14 +7,20 @@ from uuid import UUID
 
 from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
-from django.db.models import Q, QuerySet
+from django.db.models import CharField, Q, QuerySet
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast, Length
 from magic import Magic
 from mitol.common.utils import max_or_none, now_in_utc
 from mitol.mail.api import get_message_sender
 
 from content_sync.constants import VERSION_DRAFT
 from users.models import User
-from videos.constants import YT_THUMBNAIL_IMG
+from videos.constants import (
+    YT_MAX_LENGTH_DESCRIPTION,
+    YT_MAX_LENGTH_TITLE,
+    YT_THUMBNAIL_IMG,
+)
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     PUBLISH_STATUS_ABORTED,
@@ -198,7 +204,7 @@ def update_youtube_thumbnail(website_id: str, metadata: Dict, overwrite=False):
             )
 
 
-def unassigned_youtube_ids(website: Website) -> List[WebsiteContent]:
+def videos_with_unassigned_youtube_ids(website: Website) -> List[WebsiteContent]:
     """Return a list of WebsiteContent objects for videos with unassigned youtube ids"""
     if not is_ocw_site(website):
         return []
@@ -213,6 +219,34 @@ def unassigned_youtube_ids(website: Website) -> List[WebsiteContent]:
             Q(**{f"{query_id_field}__isnull": True})
             | Q(**{f"{query_id_field}": None})
             | Q(**{query_id_field: ""})
+        )
+    )
+
+
+def videos_with_truncatable_text(website: Website) -> List[WebsiteContent]:
+    """Return a list of WebsiteContent objects with text fields that will be truncated in YouTube"""
+    if not is_ocw_site(website):
+        return []
+    query_resource_type_field = get_dict_query_field(
+        "metadata", settings.FIELD_RESOURCETYPE
+    )
+    return (
+        WebsiteContent.objects.annotate(
+            desc_len=Length(
+                Cast(
+                    KeyTextTransform(settings.YT_FIELD_DESCRIPTION, "metadata"),
+                    CharField(),
+                )
+            )
+        )
+        .annotate(title_len=Length("title"))
+        .filter(
+            Q(website=website)
+            & Q(**{query_resource_type_field: RESOURCE_TYPE_VIDEO})
+            & (
+                Q(desc_len__gt=YT_MAX_LENGTH_DESCRIPTION)
+                | Q(title_len__gt=YT_MAX_LENGTH_TITLE)
+            )
         )
     )
 
@@ -319,12 +353,16 @@ def incomplete_content_warnings(website):
     Return array with error/warning messages for any website content missing expected data
     (currently: video youtube ids and captions).
     """
-    missing_youtube_ids = unassigned_youtube_ids(website)
+    missing_youtube_ids = videos_with_unassigned_youtube_ids(website)
 
     missing_youtube_ids_titles = [video.title for video in missing_youtube_ids]
 
     missing_captions_titles = [
         video.title for video in videos_missing_captions(website)
+    ]
+
+    truncatable_video_titles = [
+        video.title for video in videos_with_truncatable_text(website)
     ]
 
     messages = []
@@ -336,6 +374,10 @@ def incomplete_content_warnings(website):
     if len(missing_captions_titles) > 0:
         messages.append(
             f"The following videos have missing captions: {', '.join(missing_captions_titles)}"
+        )
+    if len(truncatable_video_titles) > 0:
+        messages.append(
+            f"The following videos have titles or descriptions that will be truncated on YouTube: {', '.join(truncatable_video_titles)}"
         )
 
     return messages

@@ -18,7 +18,12 @@ from mitol.mail.api import get_message_sender
 from smart_open.s3 import Reader
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from videos.constants import DESTINATION_YOUTUBE
+from main.utils import truncate_words
+from videos.constants import (
+    DESTINATION_YOUTUBE,
+    YT_MAX_LENGTH_DESCRIPTION,
+    YT_MAX_LENGTH_TITLE,
+)
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
 from websites.api import is_ocw_site
@@ -209,7 +214,9 @@ class YouTubeApi:
         original_name = videofile.video.source_key.split("/")[-1]
         request_body = dict(
             snippet=dict(
-                title=strip_bad_chars(original_name)[:100],
+                title=truncate_words(
+                    strip_bad_chars(original_name), YT_MAX_LENGTH_TITLE
+                ),
                 description="",
                 categoryId=settings.YT_CATEGORY_ID,
             ),
@@ -304,8 +311,12 @@ class YouTubeApi:
             body={
                 "id": youtube_id,
                 "snippet": {
-                    "title": resource.title,
-                    "description": description,
+                    "title": truncate_words(
+                        strip_bad_chars(resource.title), YT_MAX_LENGTH_TITLE
+                    ),
+                    "description": truncate_words(
+                        strip_bad_chars(description), YT_MAX_LENGTH_DESCRIPTION
+                    ),
                     "tags": get_dict_field(metadata, settings.YT_FIELD_TAGS),
                     "categoryId": settings.YT_CATEGORY_ID,
                 },
