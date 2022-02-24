@@ -62,6 +62,8 @@ function MarkdownEditorTestWrapper(props: Props) {
           name="markdown"
           onChange={(event: any) => setData(event.target.value)}
           minimal={minimal}
+          embed={[]}
+          link={[]}
         />
       </div>
       <div className="w-75 m-auto">
