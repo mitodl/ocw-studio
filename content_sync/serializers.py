@@ -1,7 +1,6 @@
 """Serialization/deserialization logic for transforming database content into file content and vice versa"""
 import abc
 import json
-import logging
 import re
 from typing import Dict, Optional
 from urllib.parse import urlparse
