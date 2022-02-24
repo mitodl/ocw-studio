@@ -21,7 +21,8 @@ jest.mock("@ckeditor/ckeditor5-react", () => ({
   CKEditor: () => <div />
 }))
 
-const render = (props = {}) => shallow(<MarkdownEditor {...props} />)
+const render = (props = {}) =>
+  shallow(<MarkdownEditor link={[]} embed={[]} {...props} />)
 
 describe("MarkdownEditor", () => {
   let sandbox: SinonSandbox
@@ -63,7 +64,6 @@ describe("MarkdownEditor", () => {
   })
 
   it.each([
-    { shouldExist: false },
     { link: [], embed: [], shouldExist: false },
     { link: ["page"], embed: [], shouldExist: true },
     { link: [], embed: ["resource"], shouldExist: true },
@@ -93,7 +93,6 @@ describe("MarkdownEditor", () => {
   })
 
   it.each([
-    { embed: undefined, hasTool: false },
     { embed: [], hasTool: false },
     { embed: ["resource"], hasTool: true }
   ])(
@@ -109,7 +108,6 @@ describe("MarkdownEditor", () => {
   )
 
   it.each([
-    { link: undefined, hasTool: false },
     { link: [], hasTool: false },
     { link: ["page"], hasTool: true }
   ])(

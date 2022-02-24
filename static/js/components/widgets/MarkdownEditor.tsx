@@ -26,8 +26,8 @@ export interface Props {
   onChange?: (event: { target: { value: string; name: string } }) => void
   children?: React.ReactNode
   minimal?: boolean
-  embed?: string[]
-  link?: string[]
+  embed: string[]
+  link: string[]
 }
 
 type RenderQueueEntry = [string, HTMLElement]
@@ -38,7 +38,7 @@ type RenderQueueEntry = [string, HTMLElement]
  * pass minimal: true to get a minimal version.
  */
 export default function MarkdownEditor(props: Props): JSX.Element {
-  const { link = [], embed = [], value, name, onChange, minimal } = props
+  const { link, embed, value, name, onChange, minimal } = props
 
   const editor = useRef<editor.Editor>()
   const setEditorRef = useCallback(editorInstance => {
@@ -101,9 +101,15 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         },
         toolbar: {
           ...FullEditorConfig.toolbar,
-          items: FullEditorConfig.toolbar.items
-            .filter(item => link.length !== 0 || item !== ADD_RESOURCE_LINK)
-            .filter(item => embed.length !== 0 || item !== ADD_RESOURCE_EMBED)
+          items: FullEditorConfig.toolbar.items.filter(item => {
+            if (item === ADD_RESOURCE_LINK) {
+              return link.length > 0
+            }
+            if (item === ADD_RESOURCE_EMBED) {
+              return embed.length > 0
+            }
+            return true
+          })
         }
       }
     }
