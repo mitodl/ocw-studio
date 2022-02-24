@@ -48,3 +48,11 @@ export const twoBooleanTestMatrix = [
   [false, true],
   [false, false]
 ]
+
+export const getMockEditor = () => ({
+  editing: {
+    view: {
+      focus: jest.fn()
+    }
+  }
+})

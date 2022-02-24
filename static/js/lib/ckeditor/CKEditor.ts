@@ -15,12 +15,17 @@ import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import TablePlugin from "@ckeditor/ckeditor5-table/src/table"
 import TableToolbarPlugin from "@ckeditor/ckeditor5-table/src/tabletoolbar"
 
+import { editor } from "@ckeditor/ckeditor5-core"
+
 import Markdown from "./plugins/Markdown"
 import ResourceEmbed from "./plugins/ResourceEmbed"
 import ResourcePicker from "./plugins/ResourcePicker"
 import { ADD_RESOURCE_EMBED, ADD_RESOURCE_LINK } from "./plugins/constants"
 import ResourceLink from "@mitodl/ckeditor5-resource-link/src/link"
-import ResourceLinkMarkdownSyntax from "./plugins/ResourceLinkMarkdownSyntax"
+import { RESOURCE_LINK_COMMAND } from "@mitodl/ckeditor5-resource-link/src/constants"
+import ResourceLinkMarkdownSyntax, {
+  encodeShortcodeArgs
+} from "./plugins/ResourceLinkMarkdownSyntax"
 import DisallowNestedTables from "./plugins/DisallowNestedTables"
 import TableMarkdownSyntax from "./plugins/TableMarkdownSyntax"
 import MarkdownListSyntax from "./plugins/MarkdownListSyntax"
@@ -110,4 +115,13 @@ export const MinimalEditorConfig = {
     ]
   },
   language: "en"
+}
+
+export const insertResourceLink = (
+  editor: editor.Editor,
+  uuid: string,
+  title: string
+) => {
+  const encoded = encodeShortcodeArgs(uuid)
+  editor.execute(RESOURCE_LINK_COMMAND, encoded, title)
 }

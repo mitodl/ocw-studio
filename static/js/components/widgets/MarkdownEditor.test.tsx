@@ -1,13 +1,15 @@
 import React from "react"
 import { shallow } from "enzyme"
 import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
+import { CKEditor } from "@ckeditor/ckeditor5-react"
 import sinon, { SinonSandbox } from "sinon"
 import { omit } from "ramda"
 
 import MarkdownEditor from "./MarkdownEditor"
 import {
   FullEditorConfig,
-  MinimalEditorConfig
+  MinimalEditorConfig,
+  insertResourceLink
 } from "../../lib/ckeditor/CKEditor"
 import {
   ADD_RESOURCE_EMBED,
@@ -16,6 +18,18 @@ import {
   RESOURCE_EMBED,
   RESOURCE_LINK
 } from "../../lib/ckeditor/plugins/constants"
+import ResourcePickerDialog from "../../components/widgets/ResourcePickerDialog"
+import { getMockEditor } from "../../test_util"
+
+jest.mock("../../lib/ckeditor/CKEditor", () => {
+  const originalModule = jest.requireActual("../../lib/ckeditor/CKEditor")
+
+  return {
+    __esModule:         true,
+    ...originalModule,
+    insertResourceLink: jest.fn()
+  }
+})
 
 jest.mock("@ckeditor/ckeditor5-react", () => ({
   CKEditor: () => <div />
@@ -61,6 +75,22 @@ describe("MarkdownEditor", () => {
         expect(ckWrapper.prop("data")).toBe(expectedPropValue)
       })
     })
+  })
+
+  it("should delegate to addResourceLink when inserting a link", async () => {
+    const wrapper = render({ link: ["page"] })
+    const editorComponent = wrapper.find<{ onReady:(e: unknown) => void }>(
+      CKEditor
+    )
+    const editor = getMockEditor()
+    editorComponent.prop("onReady")(editor)
+    const picker = wrapper.find(ResourcePickerDialog)
+    picker.prop("insertEmbed")("best-uuid-ever", "some title", "resourceLink")
+    expect(insertResourceLink).toHaveBeenCalledWith(
+      editor,
+      "best-uuid-ever",
+      "some title"
+    )
   })
 
   it.each([
