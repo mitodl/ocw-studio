@@ -483,6 +483,18 @@ DRIVE_UPLOADS_PARENT_FOLDER_ID = get_string(
     description="Gdrive folder for video uploads",
     required=False,
 )
+OCW_NEXT_SEARCH_WEBHOOK_KEY = get_string(
+    name="OCW_NEXT_SEARCH_WEBHOOK_KEY",
+    default="",
+    description="Open discussions webhook key",
+    required=False,
+)
+OPEN_DISCUSSIONS_URL = get_string(
+    name="OPEN_DISCUSSIONS_URL",
+    default="",
+    description="Open discussions url",
+    required=False,
+)
 VIDEO_S3_TRANSCODE_PREFIX = get_string(
     name="VIDEO_S3_TRANSCODE_PREFIX",
     default="aws_mediaconvert_transcodes",

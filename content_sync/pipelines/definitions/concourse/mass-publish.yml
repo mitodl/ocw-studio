@@ -112,6 +112,7 @@ jobs:
                 cd $CURDIR
                 aws s3 sync s3://((ocw-studio-bucket))/$SITE_URL s3://((ocw-bucket))/$SITE_URL --metadata site-id=$NAME || return 1            
                 aws s3 sync $SHORT_ID/public s3://((ocw-bucket))/$BASE_URL --metadata site-id=$NAME || return 1
+                curl -X POST -H 'Content-Type: application/json' --data '{"webhook_key":"((open-webhook-key))","prefix":"'"$SITE_URL"/'","version":"((version))"}' ((open-discussions-url))/api/v0/ocw_next_webhook/
                 curl -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"((version))","status":"succeeded"}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/
                 rm -rf $SHORT_ID
                 return 0

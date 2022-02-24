@@ -274,6 +274,10 @@
       "description": "The Google Tag Manager account ID to use in OCW site build pipelines",
       "required": false
     },
+    "OCW_NEXT_SEARCH_WEBHOOK_KEY": {
+      "description": "Open discussions webhook key",
+      "required": false
+    },
     "OCW_STUDIO_ADMIN_EMAIL": {
       "description": "E-mail to send 500 reports to.",
       "required": false
@@ -364,6 +368,10 @@
     },
     "OCW_STUDIO_USE_S3": {
       "description": "Use S3 for storage backend (required on Heroku)",
+      "required": false
+    },
+    "OPEN_DISCUSSIONS_URL": {
+      "description": "Open discussions url",
       "required": false
     },
     "PGBOUNCER_DEFAULT_POOL_SIZE": {
