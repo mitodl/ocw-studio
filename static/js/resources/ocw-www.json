@@ -12,7 +12,8 @@
         {
           "label": "Body",
           "name": "body",
-          "widget": "markdown"
+          "widget": "markdown",
+          "link": ["course_collections", "resource_collections"]
         }
       ],
       "folder": "content/pages",

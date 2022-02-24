@@ -10,10 +10,11 @@
           "widget": "string"
         },
         {
-          "attach": "resource",
           "label": "Body",
           "name": "body",
-          "widget": "markdown"
+          "widget": "markdown",
+          "link": ["resource", "page"],
+          "embed": ["resource"]
         }
       ],
       "folder": "content/pages",
