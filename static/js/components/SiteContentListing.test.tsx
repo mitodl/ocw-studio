@@ -96,7 +96,7 @@ describe("SiteContentListing", () => {
         child === MockRepeatable ? repeatableConfigItem : singletonsConfigItem
 
       // @ts-ignore
-      const params = { name: website.name, contenttype: configItem.name }
+      const params = { name: website.name, contentType: configItem.name }
       mockUseRouteMatch.mockImplementation(() => ({
         params
       }))
@@ -114,7 +114,7 @@ describe("SiteContentListing", () => {
         child === MockRepeatable ? repeatableConfigItem : singletonsConfigItem
 
       // @ts-ignore
-      const params = { name: website.name, contenttype: configItem.name }
+      const params = { name: website.name, contentType: configItem.name }
       mockUseRouteMatch.mockImplementation(() => ({
         params
       }))
@@ -130,7 +130,7 @@ describe("SiteContentListing", () => {
   it("modifies config item fields before passing them on RepeatableContentListing", async () => {
     const params = {
       name:        website.name,
-      contenttype: repeatableConfigItem.name
+      contentType: repeatableConfigItem.name
     }
     mockUseRouteMatch.mockImplementation(() => ({
       params

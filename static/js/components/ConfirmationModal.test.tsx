@@ -68,21 +68,6 @@ describe("ConfirmationModal", () => {
   })
 
   //
-  ;[
-    [
-      true,
-      "You have unsaved changes. Are you sure you want to discard your changes?"
-    ],
-    [false, true]
-  ].forEach(([dirty, expected]) => {
-    it(`renders a Prompt when dirty=${String(dirty)}`, () => {
-      const wrapper = render({ dirty })
-      // @ts-ignore
-      expect(wrapper.find("Prompt").prop("message")()).toBe(expected)
-    })
-  })
-
-  //
   ;[true, false].forEach(visible => {
     it(`${visible ? "is" : "is not"} visible`, () => {
       const wrapper = render({ confirmationModalVisible: visible })

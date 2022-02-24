@@ -2,7 +2,7 @@ import React from "react"
 import { act } from "react-dom/test-utils"
 import { default as useIt } from "@use-it/interval"
 import sinon from "sinon"
-import * as rrDOM from "react-router-dom"
+import { Route } from "react-router-dom"
 
 import RepeatableContentListing from "./RepeatableContentListing"
 import {
@@ -11,14 +11,14 @@ import {
 } from "../constants"
 import WebsiteContext from "../context/Website"
 
-import useConfirmation from "../hooks/confirmation"
 import { twoBooleanTestMatrix } from "../test_util"
 import {
-  siteApiContentDetailUrl,
   siteContentListingUrl,
   siteApiContentListingUrl,
   siteApiDetailUrl,
-  siteApiContentSyncGDriveUrl
+  siteApiContentSyncGDriveUrl,
+  siteContentNewUrl,
+  siteContentDetailUrl
 } from "../lib/urls"
 import {
   contentDetailKey,
@@ -39,11 +39,9 @@ import {
   Website,
   WebsiteContentListItem
 } from "../types/websites"
-import { createModalState } from "../types/modal_state"
-import configureStore from "../store/configureStore"
 import { singular } from "pluralize"
+import { StudioListItem } from "./StudioList"
 
-const { useLocation } = rrDOM as jest.Mocked<typeof rrDOM>
 const useInterval = useIt as jest.Mocked<typeof useIt>
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
@@ -59,15 +57,6 @@ jest.mock("@use-it/interval", () => ({
   __esModule: true,
   default:    jest.fn()
 }))
-jest.mock("../hooks/confirmation", () => ({
-  __esModule: true,
-  default:    jest.fn()
-}))
-jest.mock("react-router-dom", () => ({
-  __esModule:  true,
-  ...jest.requireActual("react-router-dom"),
-  useLocation: jest.fn()
-}))
 
 describe("RepeatableContentListing", () => {
   let helper: IntegrationTestHelper,
@@ -76,9 +65,7 @@ describe("RepeatableContentListing", () => {
     configItem: RepeatableConfigItem,
     contentListingItems: WebsiteContentListItem[],
     apiResponse: WebsiteContentListingResponse,
-    websiteContentDetailsLookup: Record<string, WebsiteContentListItem>,
-    setConfirmationModalVisible: any,
-    conditionalClose: any
+    websiteContentDetailsLookup: Record<string, WebsiteContentListItem>
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -94,20 +81,6 @@ describe("RepeatableContentListing", () => {
         contentDetailKey({ name: website.name, textId: item.text_id })
       ] = item
     }
-    setConfirmationModalVisible = jest.fn()
-    conditionalClose = jest.fn()
-    // @ts-ignore
-    useConfirmation.mockClear()
-    // @ts-ignore
-    useConfirmation.mockReturnValue({
-      confirmationModalVisible: false,
-      setConfirmationModalVisible,
-      conditionalClose
-    })
-    useLocation.mockClear()
-    // @ts-ignore
-    useLocation.mockReturnValue({ pathname: "/path/to/pages" })
-
     const listingParams = {
       name:   website.name,
       type:   configItem.name,
@@ -187,7 +160,7 @@ describe("RepeatableContentListing", () => {
       const { wrapper } = await render({ configItem })
       const driveLink = wrapper.find("a.view")
       const syncLink = wrapper.find("button.sync")
-      const addLink = wrapper.find("button.add")
+      const addLink = wrapper.find("a.add")
       expect(driveLink.exists()).toBe(isGdriveEnabled && isResource)
       expect(syncLink.exists()).toBe(isGdriveEnabled && isResource)
       expect(addLink.exists()).toBe(!isGdriveEnabled || !isResource)
@@ -222,41 +195,6 @@ describe("RepeatableContentListing", () => {
     expect(getStatusStub.called).toBeTruthy()
   })
 
-  it("should render a button to open the content editor", async () => {
-    const { wrapper } = await render()
-    expect(
-      wrapper
-        .find("BasicModal")
-        .at(1)
-        .prop("isVisible")
-    ).toBe(false)
-    const link = wrapper.find("button.add")
-    expect(link.text()).toBe(`Add ${configItem.label_singular}`)
-    act(() => {
-      // @ts-ignore
-      link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
-    })
-    wrapper.update()
-    const editorModal = wrapper.find("BasicModal").at(1)
-    const siteContentEditor = editorModal.find("SiteContentEditor")
-    expect(siteContentEditor.prop("editorState")).toEqual(
-      createModalState("adding")
-    )
-    expect(editorModal.prop("isVisible")).toBe(true)
-
-    act(() => {
-      // @ts-ignore
-      siteContentEditor.prop("dismiss")()
-    })
-    wrapper.update()
-    expect(
-      wrapper
-        .find("BasicModal")
-        .at(0)
-        .prop("isVisible")
-    ).toBe(false)
-  })
-
   test("should filter based on query param", async () => {
     helper.browserHistory.push("/?q=search")
     const { wrapper } = await render()
@@ -282,47 +220,21 @@ describe("RepeatableContentListing", () => {
   })
 
   it("should show each content item with edit links", async () => {
-    for (const item of contentListingItems) {
-      // when the edit button is tapped the detail view is requested, so mock each one out
-      helper.mockGetRequest(
-        siteApiContentDetailUrl
-          .param({ name: website.name, textId: item.text_id })
-          .toString(),
-        item
-      )
-    }
-
     const { wrapper } = await render()
-
-    expect(
-      wrapper
-        .find("BasicModal")
-        .at(1)
-        .prop("isVisible")
-    ).toBe(false)
 
     let idx = 0
     for (const item of contentListingItems) {
-      const li = wrapper.find("li").at(idx)
-      expect(li.text()).toContain(item.title)
-      act(() => {
-        // @ts-ignore
-        li.prop("onClick")({ preventDefault: helper.sandbox.stub() })
-      })
-      wrapper.update()
-      const editorModal = wrapper.find("BasicModal").at(1)
-      const siteContentEditor = editorModal.find("SiteContentEditor")
-      expect(siteContentEditor.prop("editorState")).toEqual(
-        createModalState("editing", item.text_id)
+      const listItem = wrapper.find(StudioListItem).at(idx)
+      expect(listItem.prop("title")).toBe(item.title)
+      expect(listItem.prop("to")).toBe(
+        siteContentDetailUrl
+          .param({
+            name:        website.name,
+            contentType: configItem.name,
+            uuid:        item.text_id
+          })
+          .toString()
       )
-      expect(editorModal.prop("isVisible")).toBe(true)
-
-      act(() => {
-        // @ts-ignore
-        siteContentEditor.prop("dismiss")()
-      })
-      expect(conditionalClose).toBeCalledWith(true)
-
       idx++
     }
   })
@@ -391,7 +303,7 @@ describe("RepeatableContentListing", () => {
   )
 
   test.each([true, false])(
-    "should use the singular label when appropriate (isSingular=%p)",
+    "should render a link to open the content editor with right label (isSingular=%p)",
     async isSingular => {
       let expectedLabel
       if (!isSingular) {
@@ -404,175 +316,18 @@ describe("RepeatableContentListing", () => {
       }
       const { wrapper } = await render()
       expect(wrapper.find("h2").text()).toBe(configItem.label)
-      expect(wrapper.find("button.add").text()).toBe(`Add ${expectedLabel}`)
-      act(() => {
-        const event: any = { preventDefault: jest.fn() }
-        const button = wrapper.find("button.add")
-        // @ts-ignore
-        button.prop("onClick")(event)
-      })
-      wrapper.update()
-      expect(
-        wrapper
-          .find("BasicModal")
-          .at(1)
-          .prop("title")
-      ).toBe(`Add ${expectedLabel}`)
+      const link = wrapper.find(".cyan-button .add").at(1)
+      expect(link.text()).toBe(`Add ${expectedLabel}`)
+      expect(link.prop("href")).toBe(
+        siteContentNewUrl
+          .param({
+            name:        website.name,
+            contentType: configItem.name
+          })
+          .toString()
+      )
     }
   )
-
-  it("sets a dirty flag", async () => {
-    const { wrapper } = await render({ website })
-    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeFalsy()
-    const setDirty =
-      // @ts-ignore
-      useConfirmation.mock.calls[useConfirmation.mock.calls.length - 1][0]
-        .setDirty
-    act(() => setDirty(true))
-    wrapper.update()
-    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeTruthy()
-  })
-
-  it("clears a dirty flag when the path changes", async () => {
-    const { wrapper } = await render({ website })
-    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeFalsy()
-    const setDirty =
-      // @ts-ignore
-      useConfirmation.mock.calls[useConfirmation.mock.calls.length - 1][0]
-        .setDirty
-    act(() => setDirty(true))
-    // @ts-ignore
-    useLocation.mockReturnValue({
-      pathname: "/resources"
-    })
-
-    // force a rerender so it picks up the changed location
-    await wrapper.setProps({
-      store: configureStore({ entities: {}, queries: {} })
-    })
-
-    // @ts-ignore
-    wrapper.update()
-    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeFalsy()
-  })
-
-  it("uses visibility from useConfirmation", async () => {
-    // @ts-ignore
-    useConfirmation.mockReturnValue({
-      confirmationModalVisible: true,
-      setConfirmationModalVisible,
-      conditionalClose
-    })
-    const { wrapper } = await render({ website })
-    expect(
-      wrapper.find("ConfirmationModal").prop("confirmationModalVisible")
-    ).toBeTruthy()
-  })
-
-  it("passes closeContentDrawer to useConfirmation", async () => {
-    const { wrapper } = await render()
-    expect(
-      wrapper
-        .find("BasicModal")
-        .at(1)
-        .prop("isVisible")
-    ).toBe(false)
-    const link = wrapper.find("button.add")
-    act(() => {
-      // @ts-ignore
-      link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
-    })
-    wrapper.update()
-    expect(
-      wrapper
-        .find("BasicModal")
-        .at(1)
-        .prop("isVisible")
-    ).toBe(true)
-
-    act(() => {
-      // @ts-ignore
-      useConfirmation.mock.calls[0][0].close()
-    })
-    wrapper.update()
-    expect(
-      wrapper
-        .find("BasicModal")
-        .at(1)
-        .prop("isVisible")
-    ).toBe(false)
-  })
-
-  it("sets visibility on the confirmation modal", async () => {
-    const { wrapper } = await render({ website })
-    const setVisible = wrapper
-      .find("ConfirmationModal")
-      .prop("setConfirmationModalVisible")
-    // @ts-ignore
-    act(() => setVisible(true))
-    expect(setConfirmationModalVisible).toBeCalledWith(true)
-  })
-
-  it("dismisses a modal", async () => {
-    const { wrapper } = await render({ website })
-    act(() => {
-      // @ts-ignore
-      wrapper.find("ConfirmationModal").prop("dismiss")()
-    })
-    expect(conditionalClose).toBeCalledWith(true)
-  })
-
-  it("hides the drawer, maybe with a confirmation dialog first", async () => {
-    const { wrapper } = await render({ website })
-    act(() => {
-      // @ts-ignore
-      wrapper
-        .find("BasicModal")
-        .at(1)
-        .prop("hideModal")()
-    })
-    expect(conditionalClose).toBeCalledWith(false)
-  })
-
-  it("dismisses a modal from the editor", async () => {
-    const { wrapper } = await render()
-    const link = wrapper.find("button.add")
-    act(() => {
-      // @ts-ignore
-      link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
-    })
-    wrapper.update()
-    // @ts-ignore
-    const editorModal = wrapper.find("BasicModal").at(1)
-    wrapper.update()
-    const siteContentEditor = editorModal.find("SiteContentEditor")
-    // @ts-ignore
-    act(() => {
-      // @ts-ignore
-      siteContentEditor.prop("dismiss")()
-    })
-
-    expect(conditionalClose).toBeCalledWith(true)
-  })
-
-  it("passes setDirty to SiteContentEditor", async () => {
-    const { wrapper } = await render()
-    const link = wrapper.find("button.add")
-    act(() => {
-      // @ts-ignore
-      link.prop("onClick")({ preventDefault: helper.sandbox.stub() })
-    })
-    wrapper.update()
-    // @ts-ignore
-    const editorModal = wrapper.find("BasicModal").at(1)
-    wrapper.update()
-    const siteContentEditor = editorModal.find("SiteContentEditor")
-    const setDirty =
-      // @ts-ignore
-      useConfirmation.mock.calls[useConfirmation.mock.calls.length - 1][0]
-        .setDirty
-    expect(siteContentEditor.prop("setDirty")).toBe(setDirty)
-  })
 
   test.each([true, false])(
     "shows the sync status indicator",
@@ -636,5 +391,18 @@ describe("RepeatableContentListing", () => {
         }
       })
     })
+  })
+
+  test("should have a route for the EditorDrawer component ", async () => {
+    const { wrapper } = await render()
+    const route = wrapper.find(Route)
+    expect(route.prop("path")).toEqual([
+      siteContentDetailUrl.param({
+        name: website.name
+      }).pathname,
+      siteContentNewUrl.param({
+        name: website.name
+      }).pathname
+    ])
   })
 })

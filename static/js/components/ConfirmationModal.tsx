@@ -1,5 +1,4 @@
 import React from "react"
-import { Prompt } from "react-router"
 import { useBeforeunload } from "react-beforeunload"
 
 import BasicModal from "./BasicModal"
@@ -27,13 +26,6 @@ export default function ConfirmationModal(props: Props): JSX.Element {
 
   return (
     <>
-      <Prompt
-        message={() =>
-          dirty ?
-            "You have unsaved changes. Are you sure you want to discard your changes?" :
-            true
-        }
-      />
       <BasicModal
         isVisible={confirmationModalVisible}
         hideModal={() => setConfirmationModalVisible(false)}

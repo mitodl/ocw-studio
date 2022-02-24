@@ -1,10 +1,5 @@
-import React, {
-  MouseEvent as ReactMouseEvent,
-  useCallback,
-  useEffect,
-  useState
-} from "react"
-import { useLocation } from "react-router-dom"
+import React, { MouseEvent as ReactMouseEvent, useCallback } from "react"
+import { Link, Route, useLocation } from "react-router-dom"
 import { useMutation, useRequest } from "redux-query-react"
 import { useSelector, useStore } from "react-redux"
 import { requestAsync } from "redux-query"
@@ -13,18 +8,18 @@ import { DateTime } from "luxon"
 import { isNil } from "ramda"
 
 import DriveSyncStatusIndicator from "./DriveSyncStatusIndicator"
-import SiteContentEditor from "./SiteContentEditor"
 import PaginationControls from "./PaginationControls"
-import BasicModal from "./BasicModal"
-import { useWebsite } from "../context/Website"
-import useConfirmation from "../hooks/confirmation"
 
 import {
   GOOGLE_DRIVE_SYNC_PROCESSING_STATES,
   WEBSITE_CONTENT_PAGE_SIZE
 } from "../constants"
-import { siteContentListingUrl } from "../lib/urls"
-import { hasMainContentField } from "../lib/site_content"
+import {
+  siteContentDetailUrl,
+  siteContentListingUrl,
+  siteContentNewUrl
+} from "../lib/urls"
+import { addDefaultFields } from "../lib/site_content"
 import {
   syncWebsiteContentMutation,
   websiteContentListingRequest,
@@ -36,14 +31,13 @@ import { getWebsiteContentListingCursor } from "../selectors/websites"
 import {
   ContentListingParams,
   RepeatableConfigItem,
-  WebsiteContentListItem,
-  WebsiteContentModalState
+  WebsiteContentListItem
 } from "../types/websites"
-import { createModalState } from "../types/modal_state"
 import { StudioList, StudioListItem } from "./StudioList"
-import ConfirmationModal from "./ConfirmationModal"
 import { useURLParamFilter } from "../hooks/search"
 import { singular } from "pluralize"
+import SiteContentEditorDrawer from "./SiteContentEditorDrawer"
+import { useWebsite } from "../context/Website"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -52,13 +46,6 @@ export default function RepeatableContentListing(props: {
   const { configItem } = props
   const isResource = configItem.name === "resource"
   const website = useWebsite()
-
-  const { pathname } = useLocation()
-  const [dirty, setDirty] = useState<boolean>(false)
-  useEffect(() => {
-    // make sure we clear state if we switch pages
-    setDirty(false)
-  }, [pathname])
 
   const getListingParams = useCallback(
     (search: string): ContentListingParams => {
@@ -95,20 +82,6 @@ export default function RepeatableContentListing(props: {
     syncWebsiteContentMutation(website.name)
   )
 
-  const [drawerState, setDrawerState] = useState<WebsiteContentModalState>(
-    createModalState("closed")
-  )
-
-  const closeContentDrawer = useCallback(() => {
-    setDrawerState(createModalState("closed"))
-  }, [setDrawerState])
-
-  const {
-    confirmationModalVisible,
-    setConfirmationModalVisible,
-    conditionalClose
-  } = useConfirmation({ dirty, setDirty, close: closeContentDrawer })
-
   useInterval(
     async () => {
       if (
@@ -141,29 +114,7 @@ export default function RepeatableContentListing(props: {
     website ? 5000 : null
   )
 
-  if (!listing) {
-    return null
-  }
-
-  const startAddOrEdit = (textId: string | null) => (
-    event: ReactMouseEvent<HTMLLIElement | HTMLButtonElement, MouseEvent>
-  ) => {
-    event.preventDefault()
-
-    setDrawerState(
-      textId ? createModalState("editing", textId) : createModalState("adding")
-    )
-  }
-
   const labelSingular = configItem.label_singular ?? singular(configItem.label)
-
-  const modalTitle = `${
-    drawerState.editing() ? "Edit" : "Add"
-  } ${labelSingular}`
-
-  const modalClassName = `right ${
-    hasMainContentField(configItem.fields) ? "wide" : ""
-  }`
 
   const onSubmitContentSync = async (
     event: ReactMouseEvent<HTMLLIElement | HTMLButtonElement, MouseEvent>
@@ -176,35 +127,15 @@ export default function RepeatableContentListing(props: {
     await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
   }
 
+  const { search } = useLocation()
+  const searchParams = new URLSearchParams(search)
+
+  if (!listing) {
+    return null
+  }
+
   return (
     <>
-      <ConfirmationModal
-        dirty={dirty}
-        confirmationModalVisible={confirmationModalVisible}
-        setConfirmationModalVisible={setConfirmationModalVisible}
-        dismiss={() => conditionalClose(true)}
-      />
-      <BasicModal
-        isVisible={drawerState.open()}
-        hideModal={() => conditionalClose(false)}
-        title={modalTitle}
-        className={modalClassName}
-      >
-        {() =>
-          drawerState.open() ? (
-            <div className="m-2">
-              <SiteContentEditor
-                loadContent={true}
-                configItem={configItem}
-                editorState={drawerState}
-                dismiss={() => conditionalClose(true)}
-                fetchWebsiteContentListing={fetchWebsiteContentListing}
-                setDirty={setDirty}
-              />
-            </div>
-          ) : null
-        }
-      </BasicModal>
       <div className="d-flex flex-direction-row align-items-center justify-content-between py-3">
         <h2 className="m-0 p-0">{configItem.label}</h2>
         <div className="d-flex flex-direction-row align-items-top">
@@ -237,12 +168,18 @@ export default function RepeatableContentListing(props: {
               </div>
             ) : null
           ) : (
-            <button
+            <Link
               className="btn cyan-button add flex-shrink-0"
-              onClick={startAddOrEdit(null)}
+              to={siteContentNewUrl
+                .param({
+                  name:        website.name,
+                  contentType: configItem.name
+                })
+                .query(searchParams)
+                .toString()}
             >
               Add {labelSingular}
-            </button>
+            </Link>
           )}
         </div>
       </div>
@@ -250,7 +187,13 @@ export default function RepeatableContentListing(props: {
         {listing.results.map((item: WebsiteContentListItem) => (
           <StudioListItem
             key={item.text_id}
-            onClick={startAddOrEdit(item.text_id)}
+            to={siteContentDetailUrl
+              .param({
+                name:        website.name,
+                contentType: configItem.name,
+                uuid:        item.text_id
+              })
+              .toString()}
             title={item.title ?? ""}
             subtitle={`Updated ${DateTime.fromISO(
               item.updated_on
@@ -275,6 +218,21 @@ export default function RepeatableContentListing(props: {
           .query({ offset: listingParams.offset + WEBSITE_CONTENT_PAGE_SIZE })
           .toString()}
       />
+      <Route
+        path={[
+          siteContentDetailUrl.param({
+            name: website.name
+          }).pathname,
+          siteContentNewUrl.param({
+            name: website.name
+          }).pathname
+        ]}
+      >
+        <SiteContentEditorDrawer
+          configItem={addDefaultFields(configItem)}
+          fetchWebsiteContentListing={fetchWebsiteContentListing}
+        />
+      </Route>
     </>
   )
 }

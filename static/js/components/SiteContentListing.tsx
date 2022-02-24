@@ -16,7 +16,7 @@ import { TopLevelConfigItem } from "../types/websites"
 import DocumentTitle, { formatTitle } from "./DocumentTitle"
 
 interface MatchParams {
-  contenttype: string
+  contentType: string
   name: string
 }
 
@@ -32,10 +32,10 @@ export default function SiteContentListing(): JSX.Element | null {
   const website = useWebsite()
 
   const match = useRouteMatch<MatchParams>()
-  const { contenttype } = match.params
+  const { contentType } = match.params
 
   const configItem = website?.starter?.config?.collections.find(
-    (config: TopLevelConfigItem) => config.name === contenttype
+    (config: TopLevelConfigItem) => config.name === contentType
   )
   if (!configItem) {
     return null
@@ -45,14 +45,14 @@ export default function SiteContentListing(): JSX.Element | null {
     <>
       <RepeatableContentListing configItem={addDefaultFields(configItem)} />
       <DocumentTitle
-        title={formatTitle(website.title, repeatableTitle(contenttype))}
+        title={formatTitle(website.title, repeatableTitle(contentType))}
       />
     </>
   ) : (
     <>
       <SingletonsContentListing configItem={configItem} />
       <DocumentTitle
-        title={formatTitle(website.title, singletonTitle(contenttype))}
+        title={formatTitle(website.title, singletonTitle(contentType))}
       />
     </>
   )

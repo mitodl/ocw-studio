@@ -5,6 +5,7 @@ interface Args {
   setDirty: (dirty: boolean) => void
   close?: () => void
 }
+
 interface ReturnValue {
   confirmationModalVisible: boolean
   setConfirmationModalVisible: (visible: boolean) => void

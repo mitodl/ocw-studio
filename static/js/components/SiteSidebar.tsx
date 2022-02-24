@@ -54,7 +54,6 @@ function SidebarSection(props: SectionProps): JSX.Element {
       {configItems.map((item: TopLevelConfigItem) => (
         <NavLink
           key={item.name}
-          exact
           className="my-2"
           to={
             item.name === collaboratorsConfigName ?

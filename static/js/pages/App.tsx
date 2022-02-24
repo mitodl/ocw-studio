@@ -17,7 +17,7 @@ import { getWebsiteDetailCursor } from "../selectors/websites"
 import WebsiteContext from "../context/Website"
 import PrivacyPolicyPage from "./PrivacyPolicyPage"
 import NotFound from "../components/NotFound"
-import { sitesBaseUrl } from "../lib/urls"
+import { siteDetailUrl, sitesBaseUrl } from "../lib/urls"
 
 interface SiteMatchParams {
   name: string
@@ -46,7 +46,7 @@ export default function App(): JSX.Element {
             <Route exact path="/" component={HomePage} />
             <Route exact path="/new-site" component={SiteCreationPage} />
             <Route exact path="/sites" component={SitesDashboard} />
-            <Route path="/sites/:name">
+            <Route path={siteDetailUrl.pathname}>
               {status === 404 ? (
                 <NotFound>
                   <div>

@@ -42,7 +42,7 @@ abstract class ModalStateVariant<T> {
  * An Editing state, which provides for wrapping a value
  * related to the content being edited.
  */
-class Editing<T> extends ModalStateVariant<T> {
+export class Editing<T> extends ModalStateVariant<T> {
   state: "editing" = "editing"
   /**
    * The value wrapped in the Editing state

@@ -2065,12 +2065,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/url-assembler@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "@types/url-assembler@npm:2.1.0"
+"@types/url-assembler@npm:^2.1.1":
+  version: 2.1.1
+  resolution: "@types/url-assembler@npm:2.1.1"
   dependencies:
     "@types/qs": "*"
-  checksum: 3ce2dbb7f8b6508555fc6472d41579b28cec8c732179807fcd30eaec7f66e0dbe822d9d65316df780f928d4d975b48ea85227f8086af772f1f27da680cb50a65
+  checksum: c2361a6b5161049a338738e9da81f9a0e325e02548b180bf2230fd5b9e600e6fc6428e97416a7fba588c80f8d2d509a68b70e459bfd27dc9272da86074b99703
   languageName: node
   linkType: hard
 
@@ -9392,7 +9392,7 @@ __metadata:
     "@types/showdown": ^1.9.4
     "@types/sinon": ^10.0.2
     "@types/turndown": ^5.0.1
-    "@types/url-assembler": ^2.1.0
+    "@types/url-assembler": ^2.1.1
     "@typescript-eslint/eslint-plugin": ^5.4.0
     "@typescript-eslint/parser": ^5.4.0
     "@use-it/interval": ^1.0.0
