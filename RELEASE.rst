@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.47.8
+Version 0.47.8 (Released February 24, 2022)
 --------------
 
 - Enable linking to resource and course collections
