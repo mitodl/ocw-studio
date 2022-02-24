@@ -10,11 +10,16 @@
           "widget": "string"
         },
         {
+          "embed": [
+            "resource"
+          ],
           "label": "Body",
+          "link": [
+            "resource",
+            "page"
+          ],
           "name": "body",
-          "widget": "markdown",
-          "link": ["resource", "page"],
-          "embed": ["resource"]
+          "widget": "markdown"
         }
       ],
       "folder": "content/pages",

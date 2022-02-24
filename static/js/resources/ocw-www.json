@@ -11,9 +11,12 @@
         },
         {
           "label": "Body",
+          "link": [
+            "course_collections",
+            "resource_collections"
+          ],
           "name": "body",
-          "widget": "markdown",
-          "link": ["course_collections", "resource_collections"]
+          "widget": "markdown"
         }
       ],
       "folder": "content/pages",
