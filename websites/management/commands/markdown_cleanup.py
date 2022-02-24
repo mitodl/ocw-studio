@@ -2,11 +2,15 @@
 import os
 from contextlib import ExitStack
 
+from django.conf import settings
 from django.core.management import BaseCommand
 from django.core.management.base import CommandParser
 from django.db import transaction
+from mitol.common.utils import now_in_utc
 from tqdm import tqdm
 
+from content_sync.models import ContentSyncState
+from content_sync.tasks import sync_unsynced_websites
 from websites.management.commands.markdown_cleaning.baseurl_rule import (
     BaseurlReplacementRule,
 )
@@ -25,7 +29,7 @@ from websites.models import WebsiteContent
 
 class Command(BaseCommand):
     """
-    Performs regex replacements on markdown.
+    Performs regex replacements on markdown and updates checksums.
     """
 
     help = __doc__
@@ -58,6 +62,14 @@ class Command(BaseCommand):
             default=False,
             help="Whether the changes to markdown should be commited. The default, False, is useful for QA and testing when combined with --out parameter.",
         )
+        parser.add_argument(
+            "-ss",
+            "--skip-sync",
+            dest="skip_sync",
+            action="store_true",
+            default=False,
+            help="Whether to skip running the sync_unsynced_websites task",
+        )
 
     @classmethod
     def validate_options(cls, options):
@@ -78,6 +90,21 @@ class Command(BaseCommand):
             commit=options["commit"], alias=options["alias"], out=options["out"]
         )
 
+        if (
+            settings.CONTENT_SYNC_BACKEND
+            and options["commit"]
+            and not options["skip_sync"]
+        ):
+            self.stdout.write("Syncing all unsynced websites to the designated backend")
+            start = now_in_utc()
+            task = sync_unsynced_websites.delay(create_backends=True)
+            self.stdout.write(f"Starting task {task}...")
+            task.get()
+            total_seconds = (now_in_utc() - start).total_seconds()
+            self.stdout.write(
+                "Backend sync finished, took {} seconds".format(total_seconds)
+            )
+
     @classmethod
     def do_handle(cls, alias, commit, out):
         """Replace baseurl with resource_link"""
@@ -85,7 +112,7 @@ class Command(BaseCommand):
         with ExitStack() as stack:
             Rule = next(R for R in cls.Rules if R.alias == alias)
             all_wc = WebsiteContent.all_objects.all().only(
-                "markdown", "website_id", "text_id"
+                "markdown", "website_id", "text_id", "content_sync_state"
             )
             if commit:
                 stack.enter_context(transaction.atomic())
@@ -100,6 +127,9 @@ class Command(BaseCommand):
 
             if commit:
                 all_wc.bulk_update(cleaner.updated_website_contents, ["markdown"])
+                ContentSyncState.objects.bulk_update(
+                    cleaner.updated_sync_states, ["current_checksum"]
+                )
 
         if out is not None:
             outpath = os.path.normpath(os.path.join(os.getcwd(), out))

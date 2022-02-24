@@ -1,6 +1,7 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
 import pytest
 
+from content_sync.factories import ContentSyncStateFactory
 from websites.factories import WebsiteContentFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner as Cleaner,
@@ -32,10 +33,12 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
     target_content = WebsiteContentFactory.build(
         markdown=markdown, website_id=website_uuid
     )
+    target_sync_state = ContentSyncStateFactory.build(content=target_content)
 
     cleaner = Cleaner(LegacyShortcodeFixOne())
     cleaner.update_website_content_markdown(target_content)
     assert target_content.markdown == expected_markdown
+    assert target_sync_state.current_checksum == target_content.calculate_checksum()
 
 
 @pytest.mark.parametrize(
@@ -63,8 +66,13 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
     target_content = WebsiteContentFactory.build(
         markdown=markdown, website_id=website_uuid
     )
+    ContentSyncStateFactory.build(content=target_content)
 
     cleaner = Cleaner(LegacyShortcodeFixTwo())
     cleaner.update_website_content_markdown(target_content)
 
     assert target_content.markdown == expected_markdown
+    assert (
+        target_content.content_sync_state.current_checksum
+        == target_content.calculate_checksum()
+    )
