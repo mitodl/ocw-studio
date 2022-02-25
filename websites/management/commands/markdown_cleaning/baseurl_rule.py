@@ -69,7 +69,7 @@ def get_all_website_content():
 
 class BaseurlReplacementRule(MarkdownCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner. Replaces
-    baseurl links with < resource_link > shortcodes.
+    baseurl links with % resource_link % shortcodes.
 
     This is intentially limited in scope for now. Some baseurl links, such as
     those whose titles are images or include square brackets, are excluded from
@@ -104,6 +104,6 @@ class BaseurlReplacementRule(MarkdownCleanupRule):
                 website_content.website_id, url
             )
             fragment_arg = f' "{fragment}"' if fragment is not None else ""
-            return f'{{{{< resource_link {linked_content.text_id} "{escaped_title}"{fragment_arg} >}}}}'
+            return f'{{{{% resource_link {linked_content.text_id} "{escaped_title}"{fragment_arg} %}}}}'
         except KeyError:
             return original_text

@@ -30,35 +30,35 @@ def get_markdown_cleaner(website_contents):
         (
             # standard link on same line as baseurl link
             R"Cats are on [wikipedia](https://en.wikipedia.org/wiki/Cat). I also have a cat [meow]({{< baseurl >}}/resources/path/to/file1).",
-            R'Cats are on [wikipedia](https://en.wikipedia.org/wiki/Cat). I also have a cat {{< resource_link content-uuid-1 "meow" >}}.',
+            R'Cats are on [wikipedia](https://en.wikipedia.org/wiki/Cat). I also have a cat {{% resource_link content-uuid-1 "meow" %}}.',
         ),
         (
             R'This is a link with quote in title: [Cats say "meow"]({{< baseurl >}}/resources/path/to/file1).',
-            R'This is a link with quote in title: {{< resource_link content-uuid-1 "Cats say \"meow\"" >}}.',
+            R'This is a link with quote in title: {{% resource_link content-uuid-1 "Cats say \"meow\"" %}}.',
         ),
         (  # Ignores backslashes around the title brackets
             R'This is a link with quote in title: \[Cats say "meow"\]({{< baseurl >}}/resources/path/to/file1).',
-            R'This is a link with quote in title: {{< resource_link content-uuid-1 "Cats say \"meow\"" >}}.',
+            R'This is a link with quote in title: {{% resource_link content-uuid-1 "Cats say \"meow\"" %}}.',
         ),
         (
             R"This link should change [text title]({{< baseurl >}}/resources/path/to/file1) cool",
-            R'This link should change {{< resource_link content-uuid-1 "text title" >}} cool',
+            R'This link should change {{% resource_link content-uuid-1 "text title" %}} cool',
         ),
         (
             R"This link includes a fragment [text title]({{< baseurl >}}/resources/path/to/file1#some-fragment) cool",
-            R'This link includes a fragment {{< resource_link content-uuid-1 "text title" "#some-fragment" >}} cool',
+            R'This link includes a fragment {{% resource_link content-uuid-1 "text title" "#some-fragment" %}} cool',
         ),
         (
             R"This link includes a fragment with slash first [text title]({{< baseurl >}}/resources/path/to/file1/#some-fragment) cool",
-            R'This link includes a fragment with slash first {{< resource_link content-uuid-1 "text title" "#some-fragment" >}} cool',
+            R'This link includes a fragment with slash first {{% resource_link content-uuid-1 "text title" "#some-fragment" %}} cool',
         ),
         (
-            # < resource_link > short code is only for textual titles
+            # % resource_link % short code is only for textual titles
             "This link should not change: [![image](cat.com)]({{< baseurl >}}/resources/path/to/file1) for now",
             "This link should not change: [![image](cat.com)]({{< baseurl >}}/resources/path/to/file1) for now",
         ),
         (
-            # < resource_link > short code is only for textual titles
+            # % resource_link % short code is only for textual titles
             R"This should not change [{{< resource uuid1 >}}]({{< baseurl >}}/resources/mit18_02sc_l20brds_5)",
             R"This should not change [{{< resource uuid1 >}}]({{< baseurl >}}/resources/mit18_02sc_l20brds_5)",
         ),
@@ -117,7 +117,7 @@ def test_baseurl_replacer_handle_specific_url_replacements(
     """Test specific replacements"""
     website_uuid = "website-uuid"
     markdown = f"my [pets]({{{{< baseurl >}}}}{url}) are legion"
-    expected_markdown = 'my {{< resource_link content-uuid "pets" >}} are legion'
+    expected_markdown = 'my {{% resource_link content-uuid "pets" %}} are legion'
     target_content = WebsiteContentFactory.build(
         markdown=markdown, website_id=website_uuid
     )
@@ -141,7 +141,7 @@ def test_baseurl_replacer_handles_index_files():
     """Test specific replacements"""
     website_uuid = "website-uuid"
     markdown = R"my [pets]({{< baseurl >}}/pages/cute/pets) are legion"
-    expected_markdown = R'my {{< resource_link content-uuid "pets" >}} are legion'
+    expected_markdown = R'my {{% resource_link content-uuid "pets" %}} are legion'
     target_content = WebsiteContentFactory.build(
         markdown=markdown, website_id=website_uuid
     )
@@ -179,16 +179,16 @@ def test_baseurl_replacer_replaces_baseurl_links():
     """
 
     expected = R"""
-    « {{< resource_link uuid-111 "Previous" >}} | {{< resource_link uuid-222 "Next" >}} »
+    « {{% resource_link uuid-111 "Previous" >}} | {{% resource_link uuid-222 "Next" %}} »
 
     ### Lecture Videos
 
-    *   Watch {{< resource_link uuid-333 "Lecture 21: Vibration Isolation" >}}
+    *   Watch {{% resource_link uuid-333 "Lecture 21: Vibration Isolation" %}}
         *   Video Chapters
-            *   {{< resource_link uuid-444 "Demonstration of a vibration isolation system-strobe light and vibrating beam" >}}
+            *   {{% resource_link uuid-444 "Demonstration of a vibration isolation system-strobe light and vibrating beam" %}}
             * Euler's formula
 
-    Wasn't {{< resource_link uuid-333 "the video" >}} fun? Yes it was!
+    Wasn't {{% resource_link uuid-333 "the video" %}} fun? Yes it was!
     """
 
     website = WebsiteFactory.build()
