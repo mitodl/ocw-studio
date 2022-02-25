@@ -179,7 +179,7 @@ def test_baseurl_replacer_replaces_baseurl_links():
     """
 
     expected = R"""
-    « {{% resource_link uuid-111 "Previous" >}} | {{% resource_link uuid-222 "Next" %}} »
+    « {{% resource_link uuid-111 "Previous" %}} | {{% resource_link uuid-222 "Next" %}} »
 
     ### Lecture Videos
 
