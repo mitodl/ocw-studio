@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.47.9
+Version 0.47.9 (Released February 25, 2022)
 --------------
 
 - encode data-uuid passed to CKEditor (#1063)
