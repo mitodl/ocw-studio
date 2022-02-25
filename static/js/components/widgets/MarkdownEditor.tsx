@@ -5,7 +5,8 @@ import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
 
 import {
   FullEditorConfig,
-  MinimalEditorConfig
+  MinimalEditorConfig,
+  insertResourceLink
 } from "../../lib/ckeditor/CKEditor"
 import EmbeddedResource from "./EmbeddedResource"
 import {
@@ -57,7 +58,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           // we pass the title down because we want to set that as the
           // default text in the link, in the case where we're not adding
           // the link attribute to existing text.
-          editor.current.execute(ResourceCommandMap[variant], uuid, title)
+          insertResourceLink(editor.current, uuid, title)
         } else {
           editor.current.execute(ResourceCommandMap[variant], uuid)
         }

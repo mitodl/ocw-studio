@@ -117,7 +117,11 @@ describe("ResourcePickerDialog", () => {
   })
 
   it.each([
-    { mode: RESOURCE_LINK, attaching: "linking", acceptText: "Add link" },
+    {
+      mode:       RESOURCE_LINK,
+      attaching:  "linking",
+      acceptText: "Add link"
+    },
     {
       mode:       RESOURCE_EMBED,
       attaching:  "embedding",
