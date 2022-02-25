@@ -38,6 +38,8 @@ export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)"(?:
  *
  * The first argument is the uuid of the resource to which we're linking, and
  * the second argument is that text that should be rendered inside of the link.
+ * A third optional argument specifies text to append to the url, e.g., a
+ * document fragment ('#some-anchor').
  *
  * The ResourceEmbed plugin itself is provided via our fork of CKEditor's
  * 'link' plugin.
@@ -66,7 +68,7 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             const encoded = fragment ?
               encodeShortcodeArgs(uuid, fragment) :
               encodeShortcodeArgs(uuid)
-            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${encoded}">${linkText}</a>`
+            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-link-attrs="${encoded}">${linkText}</a>`
           }
         }
       ]
@@ -86,7 +88,7 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
           },
           replacement: (_content: string, node: Turndown.Node): string => {
             const [uuid, anchor] = decodeShortcodeArgs(
-              (node as any).getAttribute("data-uuid") as string
+              (node as any).getAttribute("data-link-attrs") as string
             )
 
             if (anchor) {
