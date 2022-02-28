@@ -3,6 +3,7 @@ import abc
 import json
 import re
 from typing import Dict, Optional
+from urllib.parse import urlparse
 
 import yaml
 from mitol.common.utils import dict_without_keys
@@ -111,6 +112,8 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
             if file_field:
                 omitted_keys.append(file_field["name"])
                 file_url = front_matter_data.get(file_field["name"], None)
+                if file_url is not None:
+                    file_url = urlparse(file_url).path.lstrip("/")
 
         base_defaults = {
             "metadata": dict_without_keys(front_matter_data, *omitted_keys),
@@ -296,7 +299,7 @@ class ContentFileSerializerFactory:
     @staticmethod
     def for_file(site_config: SiteConfig, filepath: str) -> BaseContentFileSerializer:
         """
-        Given the path of a file in a storage backend, returns the a serializer object of the correct type for
+        Given the path of a file in a storage backend, returns a serializer object of the correct type for
         deserializing the file as a WebsiteContent object.
         """
         file_ext = get_file_extension(filepath)
