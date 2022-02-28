@@ -1,13 +1,15 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from content_sync.factories import ContentSyncStateFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.baseurl_rule import (
-    CONTENT_FILENAME_MAX_LEN,
     BaseurlReplacementRule,
+)
+from websites.management.commands.markdown_cleaning.utils import (
+    CONTENT_FILENAME_MAX_LEN,
 )
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
@@ -16,9 +18,7 @@ from websites.management.commands.markdown_cleaning.cleaner import (
 
 def get_markdown_cleaner(website_contents):
     """Convenience to get rule-specific cleaner"""
-    with patch(
-        "websites.management.commands.markdown_cleaning.baseurl_rule.get_all_website_content"
-    ) as mock:
+    with patch("websites.models.WebsiteContent.all_objects.all") as mock:
         mock.return_value = website_contents
         rule = BaseurlReplacementRule()
         return WebsiteContentMarkdownCleaner(rule)
@@ -114,7 +114,12 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
 def test_baseurl_replacer_handle_specific_url_replacements(
     url, content_relative_dirpath, filename
 ):
-    """Test specific replacements"""
+    """
+    Test specific replacements
+    
+    This test could perhaps be dropped. It was written before ContentLookup was
+    moved to a separate module, and the functionality is tested their, now, too.
+    """
     website_uuid = "website-uuid"
     markdown = f"my [pets]({{{{< baseurl >}}}}{url}) are legion"
     expected_markdown = 'my {{% resource_link content-uuid "pets" %}} are legion'

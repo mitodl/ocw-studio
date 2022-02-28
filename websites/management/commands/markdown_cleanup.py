@@ -27,6 +27,9 @@ from websites.management.commands.markdown_cleaning.resource_file_rule import (
 from websites.management.commands.markdown_cleaning.resource_link_delimiters import (
     ResourceLinkDelimitersReplacementRule,
 )
+from websites.management.commands.markdown_cleaning.rootrelative_urls import (
+    RootRelativeUrlRule,
+)
 from websites.models import WebsiteContent
 
 
@@ -43,6 +46,7 @@ class Command(BaseCommand):
         LegacyShortcodeFixOne,
         LegacyShortcodeFixTwo,
         ResourceLinkDelimitersReplacementRule,
+        RootRelativeUrlRule
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
