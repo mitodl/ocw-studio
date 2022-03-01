@@ -23,7 +23,7 @@ const decodeShortcodeArgs = (encoded: string) =>
  *
  * Limitations:
  *   - gets fooled by label texts that include literal `" %}}` values. For
- *     example, < resource_link uuid123 "silly " %}} link" %}}.
+ *     example, % resource_link uuid123 "silly " %}} link" %}}.
  */
 export const RESOURCE_LINK_SHORTCODE_REGEX = /{{% resource_link (\S+) "(.*?)"(?: "(.*?)")? %}}/g
 
