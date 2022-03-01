@@ -22,10 +22,10 @@ const decodeShortcodeArgs = (encoded: string) =>
  * (?: "(.*?)")? to match the optional anchor ID param
  *
  * Limitations:
- *   - gets fooled by label texts that include literal `" >}}` values. For
- *     example, < resource_link uuid123 "silly " >}} link" >}}.
+ *   - gets fooled by label texts that include literal `" %}}` values. For
+ *     example, % resource_link uuid123 "silly " %}} link" %}}.
  */
-export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)"(?: "(.*?)")? >}}/g
+export const RESOURCE_LINK_SHORTCODE_REGEX = /{{% resource_link (\S+) "(.*?)"(?: "(.*?)")? %}}/g
 
 /**
  * Class for defining Markdown conversion rules for Resource links
@@ -33,7 +33,7 @@ export const RESOURCE_LINK_SHORTCODE_REGEX = /{{< resource_link (\S+) "(.*?)"(?:
  * These are stored in Markdown like this:
  *
  * ```md
- * {{< resource_link AUUIDUNLIKEANYOTHER "Here's a link to my resource" >}}
+ * {{% resource_link AUUIDUNLIKEANYOTHER "Here's a link to my resource" %}}
  * ```
  *
  * The first argument is the uuid of the resource to which we're linking, and
@@ -90,9 +90,9 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             )
 
             if (anchor) {
-              return `{{< resource_link ${uuid} "${node.textContent}" "${anchor}" >}}`
+              return `{{% resource_link ${uuid} "${node.textContent}" "${anchor}" %}}`
             } else {
-              return `{{< resource_link ${uuid} "${node.textContent}" >}}`
+              return `{{% resource_link ${uuid} "${node.textContent}" %}}`
             }
           }
         }
