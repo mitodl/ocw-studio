@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.48.0
+Version 0.48.0 (Released March 01, 2022)
 --------------
 
 - When syncing from git to db, `file` value should only include the path, not domain (#1056)
