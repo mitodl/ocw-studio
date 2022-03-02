@@ -1,4 +1,5 @@
 import abc
+from dataclasses import dataclass
 from re import Match
 
 from websites.models import WebsiteContent
@@ -29,3 +30,7 @@ class MarkdownCleanupRule(abc.ABC):
         string. Similar to re.sub, but invoked with website_content argument
         also.
         """
+    
+    @dataclass
+    class ReplacementNotes:
+        pass
