@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.50.0
+Version 0.50.0 (Released March 02, 2022)
 --------------
 
 - fix line break in table cells issue
