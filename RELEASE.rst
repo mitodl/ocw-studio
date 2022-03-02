@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.49.0
+Version 0.49.0 (Released March 02, 2022)
 --------------
 
 - move website content drawer open / close / edit state to URL
