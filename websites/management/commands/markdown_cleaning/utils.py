@@ -49,6 +49,8 @@ class ContentLookup:
         """
         if course_relative_url == '/':
             return self.metadata[website_id]
+        
+        course_relative_url = course_relative_url.rstrip('/')
 
         try:
             content_relative_dirpath, content_filename = os.path.split(
@@ -102,6 +104,10 @@ class UrlSiteRelativiser:
         return site_uuid, site_relative_url
 
 class LegacyFileLookup:
+
+    class MultipleMatches(Exception):
+        pass
+
     def __init__(self):
         website_contents = WebsiteContent.all_objects.all()
         contents_by_file = defaultdict(list)
@@ -145,4 +151,4 @@ class LegacyFileLookup:
         matches = self.contents_by_file[key]
         if len(matches) == 1:
             return matches[0]
-        raise KeyError(f"Too many ({len(matches)}) matches for {key}") 
+        raise self.MultipleMatches(f"Too many ({len(matches)}) matches for {key}") 

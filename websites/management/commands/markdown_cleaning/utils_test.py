@@ -40,6 +40,18 @@ def test_content_finder_is_site_specific(mock):
     [
         (
             # url is to an index file, not to dirpath/filename
+            "/pages/pets/cat",
+            "/pages/pets",
+            "cat",
+        ),
+        (
+            # url is to an index file, not to dirpath/filename
+            "/pages/pets/cat/",
+            "/pages/pets",
+            "cat",
+        ),
+        (
+            # url is to an index file, not to dirpath/filename
             "/pages/pets",
             "/pages/pets",
             "_index",
