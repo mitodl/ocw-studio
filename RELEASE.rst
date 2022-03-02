@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.49.0 (Released March 02, 2022)
+--------------
+
+- move website content drawer open / close / edit state to URL
+- change resource_link delimiters to % instead of < > (#1067)
+- pass the --buildDrafts argument to Hugo if building a preview (#1062)
+
 Version 0.48.0 (Released March 01, 2022)
 --------------
 
