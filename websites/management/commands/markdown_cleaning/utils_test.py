@@ -70,6 +70,31 @@ def test_content_finder_specific_url_replacements(
 
     assert content_lookup.find('website_uuid', url) == content
 
+@pytest.mark.parametrize(
+    ["site_uuid", "content_index"],
+    [
+        ("website_one", 0),
+        ("website_two", 1)
+    ]
+)
+@patch("websites.models.WebsiteContent.all_objects.all")
+def test_content_finder_returns_metadata_for_site(mock, site_uuid, content_index):
+    content = [
+        WebsiteContentFactory.build(
+            website_id='website_one',
+            type='sitemetadata',
+            text_id="content-1",
+        ),
+        WebsiteContentFactory.build(
+            website_id='website_two',
+            type='sitemetadata',
+            text_id="content-2",
+        )
+    ]
+    mock.return_value = content
+    content_lookup = ContentLookup()
+    assert content_lookup.find(site_uuid, '/') == content[content_index]
+
 @patch("websites.models.WebsiteContent.all_objects.all")
 def test_content_finder_raises_keyerror(mock):
     mock.return_value = []

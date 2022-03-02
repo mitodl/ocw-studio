@@ -22,6 +22,9 @@ class ContentLookup:
         self.website_contents = {
             (wc.website_id, wc.dirpath, wc.filename): wc for wc in website_contents
         }
+        self.metadata = {
+            wc.website_id: wc for wc in website_contents if wc.type == 'sitemetadata'
+        }
 
     def __str__(self):
         return self.website_contents.__str__()
@@ -44,6 +47,9 @@ class ContentLookup:
         content_lookup = ContentLookup()
         content_lookup.find('some-uuid', '/pages/assignments/hw1')
         """
+        if course_relative_url == '/':
+            return self.metadata[website_id]
+
         try:
             content_relative_dirpath, content_filename = os.path.split(
                 course_relative_url
@@ -102,7 +108,6 @@ class LegacyFileLookup:
         for wc in website_contents:
             if wc.file:
                 legacy_filename = self.extract_legacy_filename_from_file(wc.file.name)
-                print(legacy_filename)
                 if legacy_filename is None:
                     continue
                 key = (wc.website_id, legacy_filename)
@@ -128,7 +133,6 @@ class LegacyFileLookup:
         periods replaced by dashes).
         """
         _, filename = os.path.split(file)
-        print(filename)
         try:
             UUID(filename[:32])
             old_filename = filename[32:].lstrip('_')
