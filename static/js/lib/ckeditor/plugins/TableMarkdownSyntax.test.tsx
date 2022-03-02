@@ -30,7 +30,7 @@ describe("table shortcodes", () => {
     const editor = await getEditor("")
     markdownTest(
       editor,
-      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\nmy _row_\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
+      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\n\nmy _row_\n\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
       `<table>
         <tbody>
           <tr>
@@ -45,7 +45,7 @@ describe("table shortcodes", () => {
     const editor = await getEditor("")
     markdownTest(
       editor,
-      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\n- foo\n- _bar_\n{{< tdclose >}}{{< tdopen >}}\n# Heading\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
+      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\n\n- foo\n- _bar_\n\n{{< tdclose >}}{{< tdopen >}}\n\n# Heading\n\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
       `<table>
         <tbody>
           <tr>
@@ -66,7 +66,7 @@ describe("table shortcodes", () => {
     const editor = await getEditor("")
     markdownTest(
       editor,
-      "{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen >}}\nA **column**\n{{< thclose >}}{{< thopen >}}\nAnother column\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\ndata\n{{< tdclose >}}{{< tdopen >}}\ndata\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
+      "{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen >}}\n\nA **column**\n\n{{< thclose >}}{{< thopen >}}\n\nAnother column\n\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\n\ndata\n\n{{< tdclose >}}{{< tdopen >}}\n\ndata\n\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
       `<table>
         <thead>
           <tr>
@@ -88,7 +88,7 @@ describe("table shortcodes", () => {
     const editor = await getEditor("")
     markdownTest(
       editor,
-      `{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen colspan="2" >}}\n**A title row**\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen rowspan="2" >}}\nrowspan test\n{{< tdclose >}}{{< tdopen >}}\nrowspan 1\n{{< tdclose >}}{{< trclose >}}{{< tropen >}}{{< tdopen >}}\nrowspan 2\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}`,
+      `{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen colspan="2" >}}\n\n**A title row**\n\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen rowspan="2" >}}\n\nrowspan test\n\n{{< tdclose >}}{{< tdopen >}}\n\nrowspan 1\n\n{{< tdclose >}}{{< trclose >}}{{< tropen >}}{{< tdopen >}}\n\nrowspan 2\n\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}`,
       `<table>
         <thead>
           <tr>
@@ -135,9 +135,9 @@ describe("table shortcodes", () => {
         </tr>
       </tbody>
     </table>`
-    let md = `{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen colspan="2" >}}\n**A title row**\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\ndata\n{{< tdclose >}}{{< tdopen >}}\ndata\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}`
+    let md = `{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen colspan="2" >}}\n\n**A title row**\n\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\n\ndata\n\n{{< tdclose >}}{{< tdopen >}}\n\ndata\n\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}`
     expect(html2md(html)).toBe(md)
-    md = `{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen colspan="2" >}}\n**A title row**\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen class="sneaky-css-class" >}}\ndata\n{{< tdclose >}}{{< tdopen >}}\ndata\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}`
+    md = `{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen colspan="2" >}}\n\n**A title row**\n\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen class="sneaky-css-class" >}}\n\ndata\n\n{{< tdclose >}}{{< tdopen >}}\n\ndata\n\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}`
     html = `<table>
       <thead>
         <tr>

@@ -41,9 +41,7 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
           filter:      TABLE_ELS,
           replacement: (content: string, node: Turndown.Node): string => {
             const name = node.nodeName.toLowerCase()
-            const normalizedContent = content.replace("\n\n", "\n")
-            //@ts-ignore
-            const attributes = node.hasAttributes() ?
+            const attributes = (node as HTMLElement).hasAttributes() ?
               buildAttrsString(
                 //@ts-ignore
                 Array.from(node.attributes).map(
@@ -52,7 +50,7 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
                 )
               ) :
               ""
-            return `{{< ${name}open${attributes} >}}${normalizedContent}{{< ${name}close >}}`
+            return `{{< ${name}open${attributes} >}}${content}{{< ${name}close >}}`
           }
         }
       }
