@@ -115,32 +115,37 @@ def test_content_finder_raises_keyerror(mock):
         assert content_lookup.find('website_uuid', 'url/to/thing')
 
 @pytest.mark.parametrize(
-    ['url', 'expected_relative_url', 'expected_uuid'],
+    ['url', 'expected_uuid', 'expected_relative_url'],
     [
         (
             '/courses/physics/theoretical/website_one/path/to/the/thing',
-            '/path/to/the/thing',
-            'uuid-one'
+            'uuid-one',
+            '/path/to/the/thing'
+        ),
+        (
+            '/courses/physics/theoretical/website_one/path/to/the/thing#my-fragment',
+            'uuid-one',
+            '/path/to/the/thing#my-fragment',
         ),
         (
             '/resources/website_two/a/really/cool/file.ext',
-            '/a/really/cool/file.ext',
-            'uuid-two'
+            'uuid-two',
+            '/a/really/cool/file.ext'
         ),
         (
             '/resources/website_two/',
+            'uuid-two',
             '/',
-            'uuid-two'
         ),
         (
             '/resources/website_two',
+            'uuid-two',
             '/',
-            'uuid-two'
         ),
     ]
 )
 @patch("websites.models.Website.objects.all")
-def test_url_site_relativiser(mock, url, expected_relative_url, expected_uuid):
+def test_url_site_relativiser(mock, url, expected_uuid, expected_relative_url):
     w1 = WebsiteFactory.build(name='website_one', uuid='uuid-one')
     w2 = WebsiteFactory.build(name='website_two', uuid='uuid-two')
     mock.return_value = [w1, w2]
@@ -156,15 +161,15 @@ def test_url_site_relativiser_raises_value_errors(mock):
         get_site_relative_url('courses/my-favorite-course/thing')
 
 @pytest.mark.parametrize(
-    ["site_uuid", "filename", "expected_index"],
+    ["site_uuid", "filename", "expected_indexes"],
     [
-        ('site-uuid-one', 'someFileName.jpg', 0),
-        ('site-uuid-one', 'somefilename.jpg', 1),
-        ('site-uuid-two', 'someFileName.jpg', 2)
+        ('site-uuid-one', 'someFileName.jpg', [0]),
+        ('site-uuid-one', 'somefilename.jpg', [1]),
+        ('site-uuid-two', 'someFileName.jpg', [2, 3])
     ],
 )
 @patch("websites.models.WebsiteContent.all_objects.all")
-def test_legacy_file_lookup(mock, site_uuid, filename, expected_index):
+def test_legacy_file_lookup(mock, site_uuid, filename, expected_indexes):
     uuid = lambda *args: str(uuid4()).replace('-', '')
     c1a = WebsiteContentFactory.build(
         website_id='site-uuid-one',
@@ -181,8 +186,13 @@ def test_legacy_file_lookup(mock, site_uuid, filename, expected_index):
         file=f'/courses/site_two/{uuid()}_someFileName.jpg',
         text_id="content-uuid-two",
     )
-    contents = [c1a, c1b, c2]
-    expected = contents[expected_index]
+    c3 = WebsiteContentFactory.build(
+        website_id='site-uuid-two',
+        file=f'/courses/site_two/{uuid()}_someFileName.jpg',
+        text_id="content-uuid-two",
+    )
+    contents = [c1a, c1b, c2, c3]
+    expected = [contents[i] for i in expected_indexes]
     mock.return_value = contents
     legacy_file_lookup = LegacyFileLookup()
     assert legacy_file_lookup.find(site_uuid, filename) == expected

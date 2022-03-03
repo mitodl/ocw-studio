@@ -44,7 +44,7 @@ class ContentLookup:
         """Get filename in our database format (see migration 0023)"""
         return filename[0:CONTENT_FILENAME_MAX_LEN].replace(".", "-")
 
-    def find(self, website_id, course_relative_url: str):
+    def find(self, website_id, site_relative_path: str):
         """Lookup content by its website_id and content-relative URL.
 
         Example:
@@ -52,20 +52,20 @@ class ContentLookup:
         content_lookup = ContentLookup()
         content_lookup.find('some-uuid', '/pages/assignments/hw1')
         """
-        if course_relative_url == '/':
+        if site_relative_path == '/':
             return self.metadata[website_id]
         
-        course_relative_url = course_relative_url.rstrip('/')
+        site_relative_path = site_relative_path.rstrip('/')
 
         try:
             content_relative_dirpath, content_filename = os.path.split(
-                course_relative_url
+                site_relative_path
             )
             dirpath = self.standardize_dirpath(content_relative_dirpath)
             filename = self.standardize_filename(content_filename)
             return self.website_contents[(website_id, dirpath, filename)]
         except KeyError:
-            dirpath = self.standardize_dirpath(course_relative_url)
+            dirpath = self.standardize_dirpath(site_relative_path)
             filename = "_index"
             return self.website_contents[(website_id, dirpath, filename)]
 
@@ -95,7 +95,8 @@ class UrlSiteRelativiser:
         self.website_id_lookup = { w.name: w.uuid for w in websites }
 
     def __call__(self, url: str):
-        path = urlparse(url).path
+        parsed = urlparse(url)
+        path = parsed.path
         pieces = path.split('/')
         try:
             website_index, website_name = next(
@@ -104,8 +105,12 @@ class UrlSiteRelativiser:
             )
         except StopIteration as err:
             raise ValueError(f"'{url} does not contain a website name.") from err
-        site_relative_url = '/' + '/'.join(pieces[website_index + 1:])
+        site_relative_path = '/' + '/'.join(pieces[website_index + 1:])
         site_uuid = self.website_id_lookup[website_name]
+        
+        site_relative_url = site_relative_path
+        if parsed.fragment:
+            site_relative_url += f"#{parsed.fragment}"
         return site_uuid, site_relative_url
 
 class LegacyFileLookup:
