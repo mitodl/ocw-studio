@@ -67,3 +67,5 @@ declare module '@mitodl/ckeditor5-resource-link/src/constants';
 declare module '@ckeditor/ckeditor5-table/src/tabletoolbar';
 
 declare module '@ckeditor/ckeditor5-table/src/table';
+
+declare module '@ckeditor/ckeditor5-code-block/src/codeblock';

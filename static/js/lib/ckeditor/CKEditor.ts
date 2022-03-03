@@ -14,6 +14,7 @@ import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import TablePlugin from "@ckeditor/ckeditor5-table/src/table"
 import TableToolbarPlugin from "@ckeditor/ckeditor5-table/src/tabletoolbar"
+import CodeBlock from "@ckeditor/ckeditor5-code-block/src/codeblock"
 
 import { editor } from "@ckeditor/ckeditor5-core"
 
@@ -30,6 +31,45 @@ import DisallowNestedTables from "./plugins/DisallowNestedTables"
 import TableMarkdownSyntax from "./plugins/TableMarkdownSyntax"
 import MarkdownListSyntax from "./plugins/MarkdownListSyntax"
 import LegacyShortcodes from "./plugins/LegacyShortcodes"
+
+/**
+ * Programming languages we support in CKEditor code blocks
+ *
+ * This list is based on CKEditor's default list, here:
+ *
+ * https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-code-block/src/codeblockediting.js#L60
+ *
+ * extended with a few more options.
+ */
+const SUPPORTED_PROGRAMMING_LANGUAGES = [
+  { language: "plaintext", label: "Plain text" },
+  { language: "matlab", label: "Matlab" },
+  { language: "julia", label: "Julia" },
+  { language: "c", label: "C" },
+  { language: "cs", label: "C#" },
+  { language: "cpp", label: "C++" },
+  { language: "css", label: "CSS" },
+  { language: "diff", label: "Diff" },
+  { language: "html", label: "HTML" },
+  { language: "java", label: "Java" },
+  { language: "javascript", label: "JavaScript" },
+  { language: "php", label: "PHP" },
+  { language: "python", label: "Python" },
+  { language: "ruby", label: "Ruby" },
+  { language: "typescript", label: "TypeScript" },
+  { language: "xml", label: "XML" }
+].sort((first, second) => {
+  const labelOne = first.label.toUpperCase()
+  const labelTwo = second.label.toUpperCase()
+
+  if (labelOne < labelTwo) {
+    return -1
+  }
+  if (labelOne > labelTwo) {
+    return 1
+  }
+  return 0
+})
 
 export const FullEditorConfig = {
   plugins: [
@@ -49,6 +89,7 @@ export const FullEditorConfig = {
     ParagraphPlugin,
     TablePlugin,
     TableToolbarPlugin,
+    CodeBlock,
     ResourceEmbed,
     ResourcePicker,
     ResourceLink,
@@ -70,6 +111,7 @@ export const FullEditorConfig = {
       "bulletedList",
       "numberedList",
       "blockQuote",
+      "codeBlock",
       "insertTable",
       "undo",
       "redo",
@@ -79,6 +121,9 @@ export const FullEditorConfig = {
   },
   image: {
     toolbar: ["imageStyle:full", "imageStyle:side", "|", "imageTextAlternative"]
+  },
+  codeBlock: {
+    languages: SUPPORTED_PROGRAMMING_LANGUAGES
   },
   table: {
     contentToolbar:  ["tableColumn", "tableRow", "mergeTableCells"],

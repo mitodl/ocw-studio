@@ -488,6 +488,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ckeditor/ckeditor5-code-block@npm:31.0.0":
+  version: 31.0.0
+  resolution: "@ckeditor/ckeditor5-code-block@npm:31.0.0"
+  dependencies:
+    ckeditor5: ^31.0.0
+  checksum: c3b8368d8f9e67d592fec64d0e139918a1d7b7a90844d572d152ddb1c3a4ae0403d42145f466eb4640e27f63fa92695a2d41aeac5558647ad65284b336afba37
+  languageName: node
+  linkType: hard
+
 "@ckeditor/ckeditor5-core@npm:^31.0.0":
   version: 31.0.0
   resolution: "@ckeditor/ckeditor5-core@npm:31.0.0"
@@ -9342,6 +9351,7 @@ __metadata:
     "@ckeditor/ckeditor5-autoformat": ^31.0.0
     "@ckeditor/ckeditor5-basic-styles": ^31.0.0
     "@ckeditor/ckeditor5-block-quote": ^31.0.0
+    "@ckeditor/ckeditor5-code-block": 31.0.0
     "@ckeditor/ckeditor5-core": ^31.0.0
     "@ckeditor/ckeditor5-dev-utils": ^26.1.0
     "@ckeditor/ckeditor5-dev-webpack-plugin": ^26.1.0
