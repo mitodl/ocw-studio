@@ -148,7 +148,4 @@ class LegacyFileLookup:
 
     def find(self, website_id: str, legacy_filename: str):
         key = (website_id, legacy_filename)
-        matches = self.contents_by_file[key]
-        if len(matches) == 1:
-            return matches[0]
-        raise self.MultipleMatches(f"Too many ({len(matches)}) matches for {key}") 
+        return self.contents_by_file[key]

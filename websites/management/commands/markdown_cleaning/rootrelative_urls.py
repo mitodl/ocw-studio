@@ -23,9 +23,14 @@ def remove_prefix(string: str, prefix: str):
 class RootRelativeUrlRule(MarkdownCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner."""
 
+    class NotFoundError(Exception):
+        pass
+
     @dataclass
     class ReplacementNotes:
-        replacement_type: str = ''
+        replacement_type: str
+        is_image: bool
+        same_site: bool
 
     regex = (
         r"(?P<image_prefix>!?)"             # optional leading "!" to determine if it's a link or an image
@@ -45,48 +50,39 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
         self.content_lookup = ContentLookup()
         self.legacy_file_lookup = LegacyFileLookup()
 
-    def __call__(self, match: re.Match, website_content: WebsiteContent) -> str:
-        Notes = self.ReplacementNotes
-
-        original_text = match[0]
-        url = match.group('url')
-
+    def find_linked_content(self, url: str):
         try:
-            link_site_id, site_rel_url = self.get_site_relative_url(url)
+            site_id, site_rel_url = self.get_site_relative_url(url)
         except ValueError:
-            return original_text, Notes('Site does not exist')
-        
-        use_shortcode = link_site_id == website_content.website_id
-        is_image = match.group('image_prefix') == '!'
+            raise self.NotFoundError("Could not determine site.")
 
         try:
-            self.content_lookup.find(link_site_id, site_rel_url)
-            return original_text, Notes("Exact dirpath/filename match")
+            wc = self.content_lookup.find(site_id, site_rel_url)
+            return wc , "Exact dirpath/filename match"
         except KeyError:
             pass
         
         try:
             prepend = '/pages'
-            self.content_lookup.find(link_site_id, prepend + site_rel_url)
-            return original_text, Notes("prepended '/pages'")
+            wc = self.content_lookup.find(site_id, prepend + site_rel_url)
+            return wc, "prepended '/pages'"
         except KeyError:
             pass
-
 
         try:
             prepend = '/resources'
             remove = '/pages/video-lectures'
             resource_url = prepend + remove_prefix(site_rel_url, remove)
-            self.content_lookup.find(link_site_id, resource_url)
-            return original_text, Notes(f"removed '{remove}', prepended '{prepend}'")
+            wc = self.content_lookup.find(site_id, resource_url)
+            return wc, f"removed '{remove}', prepended '{prepend}'"
         except KeyError:
             pass
         try:
             prepend = '/resources'
             remove = '/pages/video-and-audio-classes'
             resource_url = prepend + remove_prefix(site_rel_url, remove)
-            self.content_lookup.find(link_site_id, resource_url)
-            return original_text, Notes(f"removed '{remove}', prepended '{prepend}'")
+            wc = self.content_lookup.find(site_id, resource_url)
+            return wc, f"removed '{remove}', prepended '{prepend}'"
         except KeyError:
             pass
 
@@ -94,8 +90,8 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
             prepend = '/resources'
             remove = '/videos'
             resource_url = prepend + remove_prefix(site_rel_url, remove)
-            self.content_lookup.find(link_site_id, resource_url)
-            return original_text, Notes(f"removed '{remove}', prepended '{prepend}'")
+            wc = self.content_lookup.find(site_id, resource_url)
+            return wc, f"removed '{remove}', prepended '{prepend}'"
         except KeyError:
             pass
             
@@ -103,19 +99,38 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
             prepend = '/video_galleries'
             remove = '/pages'
             resource_url = prepend + remove_prefix(site_rel_url, remove)
-            self.content_lookup.find(link_site_id, resource_url)
-            return original_text, Notes(f"removed '{remove}', prepended '{prepend}'")
+            wc = self.content_lookup.find(site_id, resource_url)
+            return wc, f"removed '{remove}', prepended '{prepend}'"
         except KeyError:
             pass
 
         try:
             _, legacy_filename = os.path.split(site_rel_url)
-            self.legacy_file_lookup.find(link_site_id, legacy_filename)
-            return original_text, Notes("unique file match")
-        except LegacyFileLookup.MultipleMatches:
-            return original_text, Notes("duplicate file matches")
+            contents = self.legacy_file_lookup.find(site_id, legacy_filename)
+            if len(contents) == 1: 
+                return contents[0], "unique file match"
+            return contents[0], f"multiple file matches; took first"
         except KeyError:
             if '.' in site_rel_url[-8:]:
-                return original_text, Notes("???: Probably unmigrated file")
-            return original_text, Notes("???")
+                raise self.NotFoundError("Content not found. Perhaps unmigrated file")
+            raise self.NotFoundError("Content not found.")
 
+    def __call__(self, match: re.Match, website_content: WebsiteContent) -> str:
+        Notes = self.ReplacementNotes
+        original_text = match[0]
+        url = match.group('url')
+        is_image = match.group('image_prefix') == '!'
+        try:
+            linked_content, note = self.find_linked_content(url)
+        except self.NotFoundError as error:
+            note = str(error)
+            return original_text, Notes(note, is_image, same_site=False)
+
+        same_site = linked_content.website_id == website_content.website_id
+
+        return original_text, Notes(note, is_image, same_site)
+
+        # cross-site index sites
+        # other cross-site links
+        # same-site images
+        # same-site links
