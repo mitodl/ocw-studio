@@ -16,6 +16,13 @@ from websites.management.commands.markdown_cleaning.utils import (
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
+
+def get_rootrelative_url_from_content(site, content):
+    # TODO: remove site arg, use content.website.name ... complicates mocking in tests
+    dirpath = remove_prefix(content.dirpath, 'content/')
+    pieces = ['/courses', site.name, dirpath, content.filename]
+    return "/".join(p for p in pieces if p)
+
 class RootRelativeUrlRule(MarkdownCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner."""
 
@@ -47,6 +54,7 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
         self.legacy_file_lookup = LegacyFileLookup()
 
     def find_linked_content(self, url: str):
+
         try:
             site, site_rel_url = self.get_site_relative_url(url)
         except ValueError:
@@ -129,7 +137,7 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
 
         same_site = linked_content.website_id == website_content.website_id
         fragment = urlparse(url).fragment
-        
+
         notes = Notes(note, is_image, same_site)
         if same_site:
             uuid = linked_content.text_id
@@ -142,11 +150,8 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
                 replacement = f'{{{{% resource_link {uuid} "{title}" %}}}}'
             return replacement, notes
 
-        new_url_pieces = ['/courses', linked_site.name, linked_content.dirpath, linked_content.filename]
-        new_url = "/".join(p for p in new_url_pieces if p)
+        new_url = get_rootrelative_url_from_content(linked_site, linked_content)
 
-        if linked_content.dirpath:
-            new_url
         if fragment:
             new_url += f"#{fragment}"
         
