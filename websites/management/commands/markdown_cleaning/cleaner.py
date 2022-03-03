@@ -8,6 +8,7 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
 from websites.models import WebsiteContent
+from websites.management.commands.markdown_cleaning.utils import remove_prefix
 
 
 class WebsiteContentMarkdownCleaner:
@@ -34,15 +35,15 @@ class WebsiteContentMarkdownCleaner:
     class ReplacementMatch:
         match: re.Match
         replacement: str
-        website_content_uuid: str
-        website_uuid: str
+        replaced_on_page_uuid: str
+        replaced_on_page_url: str
         notes: Any # should be a dataclass
 
     csv_metadata_fieldnames = [
         "original_text",
         "replacement",
-        "website_content_uuid",
-        "website_uuid",
+        "replaced_on_page_uuid",
+        "replaced_on_page_url",
     ]
 
     def __init__(self, rule: MarkdownCleanupRule):
@@ -63,13 +64,17 @@ class WebsiteContentMarkdownCleaner:
             else:
                 raise ValueError('MarkdownCleanupRule instances should return strings or tuples when called')
 
+            content_url = (f"/{website_content.website.name}" +
+                 f"{remove_prefix(website_content.dirpath, 'content')}/" +
+                website_content.filename
+            )
             self.text_changes.append(
                 self.ReplacementMatch(
-                    match,
-                    replacement,
-                    website_content.text_id,
-                    website_content.website_id,
-                    notes
+                    match=match,
+                    replacement=replacement,
+                    replaced_on_page_uuid=website_content.text_id,
+                    replaced_on_page_url=content_url,
+                    notes=notes
                 )
             )
             return replacement
@@ -126,8 +131,8 @@ class WebsiteContentMarkdownCleaner:
             writer.writeheader()
             for change in self.text_changes:
                 row = {
-                    "website_content_uuid": change.website_content_uuid,
-                    "website_uuid": change.website_uuid,
+                    "replaced_on_page_uuid": change.replaced_on_page_uuid,
+                    "replaced_on_page_url": change.replaced_on_page_url,
                     "original_text": change.match[0],
                     "replacement": change.replacement,
                     **change.match.groupdict(),

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from websites.models import WebsiteContent
 from websites.management.commands.markdown_cleaning.utils import (
+    remove_prefix,
     UrlSiteRelativiser,
     ContentLookup,
     LegacyFileLookup
@@ -14,12 +15,6 @@ from websites.management.commands.markdown_cleaning.utils import (
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
-
-def remove_prefix(string: str, prefix: str):
-    if string.startswith(prefix):
-        return string[len(prefix):]
-    return string
-
 class RootRelativeUrlRule(MarkdownCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner."""
 
@@ -106,10 +101,10 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
 
         try:
             _, legacy_filename = os.path.split(site_rel_url)
-            contents = self.legacy_file_lookup.find(site_id, legacy_filename)
-            if len(contents) == 1: 
-                return contents[0], "unique file match"
-            return contents[0], f"multiple file matches; took first"
+            file_matches = self.legacy_file_lookup.find(site_id, legacy_filename)
+            if len(file_matches) == 1: 
+                return file_matches[0], "unique file match"
+            return file_matches[0], f"multiple file matches ({len(file_matches)}); took first"
         except KeyError:
             if '.' in site_rel_url[-8:]:
                 raise self.NotFoundError("Content not found. Perhaps unmigrated file")
@@ -120,6 +115,7 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
         original_text = match[0]
         url = match.group('url')
         is_image = match.group('image_prefix') == '!'
+
         try:
             linked_content, note = self.find_linked_content(url)
         except self.NotFoundError as error:

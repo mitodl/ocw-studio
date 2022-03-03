@@ -12,6 +12,11 @@ filepath_migration = importlib.import_module(
 CONTENT_FILENAME_MAX_LEN = filepath_migration.CONTENT_FILENAME_MAX_LEN
 CONTENT_DIRPATH_MAX_LEN = filepath_migration.CONTENT_DIRPATH_MAX_LEN
 
+def remove_prefix(string: str, prefix: str):
+    if string.startswith(prefix):
+        return string[len(prefix):]
+    return string
+
 class ContentLookup:
     """
     Helps find content by various properties.
