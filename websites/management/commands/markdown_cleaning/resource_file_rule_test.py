@@ -32,9 +32,7 @@ def test_resource_file_replacer():
 
     nice.
     """
-    target_content = WebsiteContentFactory.build(
-        markdown=markdown, website=website
-    )
+    target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
     ContentSyncStateFactory.build(content=target_content)
 
     cleaner = get_markdown_cleaner()

@@ -30,9 +30,7 @@ from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix i
 def test_legacy_shortcode_fix_one(markdown, expected_markdown):
     """Test specific replacements"""
     website = WebsiteFactory.build()
-    target_content = WebsiteContentFactory.build(
-        markdown=markdown, website=website
-    )
+    target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
     target_sync_state = ContentSyncStateFactory.build(content=target_content)
 
     cleaner = Cleaner(LegacyShortcodeFixOne())
@@ -63,9 +61,7 @@ def test_legacy_shortcode_fix_one(markdown, expected_markdown):
 def test_legacy_shortcode_fix_two(markdown, expected_markdown):
     """Test specific replacements"""
     website = WebsiteFactory.build()
-    target_content = WebsiteContentFactory.build(
-        markdown=markdown, website=website
-    )
+    target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
     ContentSyncStateFactory.build(content=target_content)
 
     cleaner = Cleaner(LegacyShortcodeFixTwo())
