@@ -115,43 +115,44 @@ def test_content_finder_raises_keyerror(mock):
         assert content_lookup.find('website_uuid', 'url/to/thing')
 
 @pytest.mark.parametrize(
-    ['url', 'expected_uuid', 'expected_relative_url'],
+    ['url', 'expected_index', 'expected_relative_url'],
     [
         (
-            '/courses/physics/theoretical/website_one/path/to/the/thing',
-            'uuid-one',
+            '/courses/physics/theoretical/website_zero/path/to/the/thing',
+            0,
             '/path/to/the/thing'
         ),
         (
-            '/courses/physics/theoretical/website_one/path/to/the/thing#my-fragment',
-            'uuid-one',
+            '/courses/physics/theoretical/website_zero/path/to/the/thing#my-fragment',
+            0,
             '/path/to/the/thing#my-fragment',
         ),
         (
-            '/resources/website_two/a/really/cool/file.ext',
-            'uuid-two',
+            '/resources/website_one/a/really/cool/file.ext',
+            1,
             '/a/really/cool/file.ext'
         ),
         (
-            '/resources/website_two/',
-            'uuid-two',
+            '/resources/website_one/',
+            1,
             '/',
         ),
         (
-            '/resources/website_two',
-            'uuid-two',
+            '/resources/website_one',
+            1,
             '/',
         ),
     ]
 )
 @patch("websites.models.Website.objects.all")
-def test_url_site_relativiser(mock, url, expected_uuid, expected_relative_url):
-    w1 = WebsiteFactory.build(name='website_one', uuid='uuid-one')
-    w2 = WebsiteFactory.build(name='website_two', uuid='uuid-two')
-    mock.return_value = [w1, w2]
+def test_url_site_relativiser(mock, url, expected_index, expected_relative_url):
+    w1 = WebsiteFactory.build(name='website_zero')
+    w2 = WebsiteFactory.build(name='website_one')
+    sites = [w1, w2]
+    mock.return_value = sites
     get_site_relative_url = UrlSiteRelativiser()
 
-    assert get_site_relative_url(url) == (expected_uuid, expected_relative_url)
+    assert get_site_relative_url(url) == (sites[expected_index], expected_relative_url)
 
 @patch("websites.models.Website.objects.all")
 def test_url_site_relativiser_raises_value_errors(mock):

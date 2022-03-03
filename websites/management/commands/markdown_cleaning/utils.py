@@ -71,8 +71,8 @@ class ContentLookup:
 
 class UrlSiteRelativiser:
     """
-    Given a possibly-legacy, root-relative url returns a tuple (course_name,
-    course_relative_url). The returned url has no leading '/'.
+    Given a possibly-legacy, root-relative url returns a tuple (site,
+    course_relative_url).
 
     Example 1:
         /courses/architecture/4-601-introduction-to-art-history-fall-2018/assignments/4.601-second-paper
@@ -92,26 +92,25 @@ class UrlSiteRelativiser:
 
     def __init__(self):
         websites = Website.objects.all()
-        self.website_id_lookup = { w.name: w.uuid for w in websites }
+        self.website_lookup = { w.name: w for w in websites }
 
     def __call__(self, url: str):
         parsed = urlparse(url)
         path = parsed.path
         pieces = path.split('/')
         try:
-            website_index, website_name = next(
+            site_index, site_name = next(
                 (i, name) for i, name in enumerate(pieces)
-                if name in self.website_id_lookup
+                if name in self.website_lookup
             )
         except StopIteration as err:
             raise ValueError(f"'{url} does not contain a website name.") from err
-        site_relative_path = '/' + '/'.join(pieces[website_index + 1:])
-        site_uuid = self.website_id_lookup[website_name]
+        site_relative_path = '/' + '/'.join(pieces[site_index + 1:])
         
         site_relative_url = site_relative_path
         if parsed.fragment:
             site_relative_url += f"#{parsed.fragment}"
-        return site_uuid, site_relative_url
+        return self.website_lookup[site_name], site_relative_url
 
 class LegacyFileLookup:
 
