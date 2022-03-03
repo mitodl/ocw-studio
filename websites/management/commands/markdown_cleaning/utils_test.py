@@ -14,30 +14,32 @@ from websites.management.commands.markdown_cleaning.utils import (
 
 
 def string_uuid():
-    return str(uuid4()).replace('-', '')
+    return str(uuid4()).replace("-", "")
+
 
 @patch("websites.models.WebsiteContent.all_objects.all")
 def test_content_finder_is_site_specific(mock):
     """Test that ContentLookup is site specific"""
     content_w1 = WebsiteContentFactory.build(
-            website_id='website-uuid-1',
-            dirpath="content/resources/path/to",
-            filename="file1",
-            text_id="content-uuid-1",
-        )
+        website_id="website-uuid-1",
+        dirpath="content/resources/path/to",
+        filename="file1",
+        text_id="content-uuid-1",
+    )
     content_w2 = WebsiteContentFactory.build(
-            website_id='website-uuid-2',
-            dirpath="content/resources/path/to",
-            filename="file1",
-            text_id="content-uuid-1",
-        )
+        website_id="website-uuid-2",
+        dirpath="content/resources/path/to",
+        filename="file1",
+        text_id="content-uuid-1",
+    )
     mock.return_value = [content_w1, content_w2]
-    
+
     content_lookup = ContentLookup()
 
-    url = '/resources/path/to/file1'
+    url = "/resources/path/to/file1"
     assert content_lookup.find(content_w1.website_id, url) == content_w1
     assert content_lookup.find(content_w2.website_id, url) == content_w2
+
 
 @pytest.mark.parametrize(
     ["url", "content_relative_dirpath", "filename"],
@@ -60,7 +62,7 @@ def test_content_finder_is_site_specific(mock):
             "/pages/pets",
             "_index",
         ),
-        # replaces periods with dashes 
+        # replaces periods with dashes
         ("/pages/pets/c.a.t", "/pages/pets", "c-a-t"),
         # long filenames
         (
@@ -75,119 +77,116 @@ def test_content_finder_specific_url_replacements(
     mock, url, content_relative_dirpath, filename
 ):
     content = WebsiteContentFactory.build(
-        website_id='website_uuid',
+        website_id="website_uuid",
         dirpath=f"content{content_relative_dirpath}",
         filename=filename,
         text_id="content-uuid",
     )
     mock.return_value = [content]
-    
+
     content_lookup = ContentLookup()
 
-    assert content_lookup.find('website_uuid', url) == content
+    assert content_lookup.find("website_uuid", url) == content
+
 
 @pytest.mark.parametrize(
-    ["site_uuid", "content_index"],
-    [
-        ("website_one", 0),
-        ("website_two", 1)
-    ]
+    ["site_uuid", "content_index"], [("website_one", 0), ("website_two", 1)]
 )
 @patch("websites.models.WebsiteContent.all_objects.all")
 def test_content_finder_returns_metadata_for_site(mock, site_uuid, content_index):
     content = [
         WebsiteContentFactory.build(
-            website_id='website_one',
-            type='sitemetadata',
+            website_id="website_one",
+            type="sitemetadata",
             text_id="content-1",
         ),
         WebsiteContentFactory.build(
-            website_id='website_two',
-            type='sitemetadata',
+            website_id="website_two",
+            type="sitemetadata",
             text_id="content-2",
-        )
+        ),
     ]
     mock.return_value = content
     content_lookup = ContentLookup()
-    assert content_lookup.find(site_uuid, '/') == content[content_index]
+    assert content_lookup.find(site_uuid, "/") == content[content_index]
+
 
 @patch("websites.models.WebsiteContent.all_objects.all")
 def test_content_finder_raises_keyerror(mock):
     mock.return_value = []
     content_lookup = ContentLookup()
     with pytest.raises(KeyError):
-        assert content_lookup.find('website_uuid', 'url/to/thing')
+        assert content_lookup.find("website_uuid", "url/to/thing")
+
 
 @pytest.mark.parametrize(
-    ['url', 'expected_index', 'expected_relative_url'],
+    ["url", "expected_index", "expected_relative_url"],
     [
         (
-            '/courses/physics/theoretical/website_zero/path/to/the/thing',
+            "/courses/physics/theoretical/website_zero/path/to/the/thing",
             0,
-            '/path/to/the/thing'
+            "/path/to/the/thing",
         ),
         (
-            '/courses/physics/theoretical/website_zero/path/to/the/thing#my-fragment',
+            "/courses/physics/theoretical/website_zero/path/to/the/thing#my-fragment",
             0,
-            '/path/to/the/thing#my-fragment',
+            "/path/to/the/thing#my-fragment",
+        ),
+        ("/resources/website_one/a/really/cool/file.ext", 1, "/a/really/cool/file.ext"),
+        (
+            "/resources/website_one/",
+            1,
+            "/",
         ),
         (
-            '/resources/website_one/a/really/cool/file.ext',
+            "/resources/website_one",
             1,
-            '/a/really/cool/file.ext'
+            "/",
         ),
-        (
-            '/resources/website_one/',
-            1,
-            '/',
-        ),
-        (
-            '/resources/website_one',
-            1,
-            '/',
-        ),
-    ]
+    ],
 )
 @patch("websites.models.Website.objects.all")
 def test_url_site_relativiser(mock, url, expected_index, expected_relative_url):
-    w1 = WebsiteFactory.build(name='website_zero')
-    w2 = WebsiteFactory.build(name='website_one')
+    w1 = WebsiteFactory.build(name="website_zero")
+    w2 = WebsiteFactory.build(name="website_one")
     sites = [w1, w2]
     mock.return_value = sites
     get_site_relative_url = UrlSiteRelativiser()
 
     assert get_site_relative_url(url) == (sites[expected_index], expected_relative_url)
 
+
 @patch("websites.models.Website.objects.all")
 def test_url_site_relativiser_raises_value_errors(mock):
     mock.return_value = []
     get_site_relative_url = UrlSiteRelativiser()
     with pytest.raises(ValueError, match="does not contain a website name") as e:
-        get_site_relative_url('courses/my-favorite-course/thing')
+        get_site_relative_url("courses/my-favorite-course/thing")
+
 
 @pytest.mark.parametrize(
     ["site_uuid", "filename", "expected_index"],
     [
-        ('site-uuid-one', 'someFileName.jpg', 0),
-        ('site-uuid-one', 'somefilename.jpg', 1),
-        ('site-uuid-two', 'someFileName.jpg', 2)
+        ("site-uuid-one", "someFileName.jpg", 0),
+        ("site-uuid-one", "somefilename.jpg", 1),
+        ("site-uuid-two", "someFileName.jpg", 2),
     ],
 )
 @patch("websites.models.WebsiteContent.all_objects.all")
 def test_legacy_file_lookup(mock, site_uuid, filename, expected_index):
     c1a = WebsiteContentFactory.build(
-        website_id='site-uuid-one',
-        file=f'/courses/site_one/{string_uuid()}_someFileName.jpg',
+        website_id="site-uuid-one",
+        file=f"/courses/site_one/{string_uuid()}_someFileName.jpg",
         text_id="content-uuid-1a",
     )
     c1b = WebsiteContentFactory.build(
-        website_id='site-uuid-one',
-        file=f'/courses/site_one/{string_uuid()}_somefilename.jpg',
+        website_id="site-uuid-one",
+        file=f"/courses/site_one/{string_uuid()}_somefilename.jpg",
         text_id="content-uuid-1b",
     )
     c2 = WebsiteContentFactory.build(
-        website_id='site-uuid-two',
-        file=f'/courses/site_two/{string_uuid()}_someFileName.jpg',
+        website_id="site-uuid-two",
+        file=f"/courses/site_two/{string_uuid()}_someFileName.jpg",
         text_id="content-uuid-two",
     )
     contents = [c1a, c1b, c2]
@@ -196,29 +195,30 @@ def test_legacy_file_lookup(mock, site_uuid, filename, expected_index):
     legacy_file_lookup = LegacyFileLookup()
     assert legacy_file_lookup.find(site_uuid, filename) == expected
 
+
 @patch("websites.models.WebsiteContent.all_objects.all")
 def test_legacy_file_lookup_raises_nonunique_for_multiple_matches(mock):
     c1a = WebsiteContentFactory.build(
-        website_id='site-uuid-one',
-        file=f'/courses/site_one/{string_uuid()}_some_file_name.jpg',
+        website_id="site-uuid-one",
+        file=f"/courses/site_one/{string_uuid()}_some_file_name.jpg",
         text_id="content-uuid-1",
     )
     c1b = WebsiteContentFactory.build(
-        website_id='site-uuid-one',
-        file=f'/courses/site_one/{string_uuid()}_some_file_name.jpg',
+        website_id="site-uuid-one",
+        file=f"/courses/site_one/{string_uuid()}_some_file_name.jpg",
         text_id="content-uuid-2",
     )
     contents = [c1a, c1b]
     mock.return_value = contents
     legacy_file_lookup = LegacyFileLookup()
     with pytest.raises(legacy_file_lookup.MultipleMatchError):
-        assert legacy_file_lookup.find('site-uuid-one', 'some_file_name.jpg')
+        assert legacy_file_lookup.find("site-uuid-one", "some_file_name.jpg")
 
-@patch("websites.models.WebsiteContent.all_objects.all")    
+
+@patch("websites.models.WebsiteContent.all_objects.all")
 def test_legacy_file_lookup_raises_keyerror_for_none(mock):
     contents = []
     mock.return_value = contents
     legacy_file_lookup = LegacyFileLookup()
     with pytest.raises(KeyError):
-        assert legacy_file_lookup.find('some-site-uuid', 'captain-nemo.file')
-    
+        assert legacy_file_lookup.find("some-site-uuid", "captain-nemo.file")

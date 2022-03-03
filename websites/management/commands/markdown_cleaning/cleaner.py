@@ -37,7 +37,7 @@ class WebsiteContentMarkdownCleaner:
         replacement: str
         replaced_on_page_uuid: str
         replaced_on_page_url: str
-        notes: Any # should be a dataclass
+        notes: Any  # should be a dataclass
 
     csv_metadata_fieldnames = [
         "original_text",
@@ -53,7 +53,7 @@ class WebsiteContentMarkdownCleaner:
         self.text_changes: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = []
         self.updated_website_contents: "list[WebsiteContent]" = []
         self.updated_sync_states: "list[ContentSyncState]" = []
-        
+
         def _replacer(match: re.Match, website_content: WebsiteContent):
             result = rule(match, website_content)
             if isinstance(result, str):
@@ -62,11 +62,14 @@ class WebsiteContentMarkdownCleaner:
             elif isinstance(result, tuple):
                 replacement, notes = result
             else:
-                raise ValueError('MarkdownCleanupRule instances should return strings or tuples when called')
+                raise ValueError(
+                    "MarkdownCleanupRule instances should return strings or tuples when called"
+                )
 
-            content_url = (f"/{website_content.website.name}" +
-                 f"{remove_prefix(website_content.dirpath, 'content')}/" +
-                website_content.filename
+            content_url = (
+                f"/{website_content.website.name}"
+                + f"{remove_prefix(website_content.dirpath, 'content')}/"
+                + website_content.filename
             )
             self.text_changes.append(
                 self.ReplacementMatch(
@@ -74,7 +77,7 @@ class WebsiteContentMarkdownCleaner:
                     replacement=replacement,
                     replaced_on_page_uuid=website_content.text_id,
                     replaced_on_page_url=content_url,
-                    notes=notes
+                    notes=notes,
                 )
             )
             return replacement
@@ -125,7 +128,7 @@ class WebsiteContentMarkdownCleaner:
             fieldnames = [
                 *self.csv_metadata_fieldnames,
                 *self.regex.groupindex,
-                *(f.name for f in fields(self.rule.ReplacementNotes))
+                *(f.name for f in fields(self.rule.ReplacementNotes)),
             ]
             writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)
             writer.writeheader()
@@ -136,6 +139,6 @@ class WebsiteContentMarkdownCleaner:
                     "original_text": change.match[0],
                     "replacement": change.replacement,
                     **change.match.groupdict(),
-                    **asdict(change.notes)
+                    **asdict(change.notes),
                 }
                 writer.writerow(row)

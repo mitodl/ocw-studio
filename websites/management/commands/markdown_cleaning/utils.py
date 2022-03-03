@@ -14,10 +14,12 @@ filepath_migration = importlib.import_module(
 CONTENT_FILENAME_MAX_LEN = filepath_migration.CONTENT_FILENAME_MAX_LEN
 CONTENT_DIRPATH_MAX_LEN = filepath_migration.CONTENT_DIRPATH_MAX_LEN
 
+
 def remove_prefix(string: str, prefix: str):
     if string.startswith(prefix):
-        return string[len(prefix):]
+        return string[len(prefix) :]
     return string
+
 
 class ContentLookup:
     """
@@ -30,7 +32,7 @@ class ContentLookup:
             (wc.website_id, wc.dirpath, wc.filename): wc for wc in website_contents
         }
         self.metadata = {
-            wc.website_id: wc for wc in website_contents if wc.type == 'sitemetadata'
+            wc.website_id: wc for wc in website_contents if wc.type == "sitemetadata"
         }
 
     def __str__(self):
@@ -54,10 +56,10 @@ class ContentLookup:
         content_lookup = ContentLookup()
         content_lookup.find('some-uuid', '/pages/assignments/hw1')
         """
-        if site_relative_path == '/':
+        if site_relative_path == "/":
             return self.metadata[website_id]
-        
-        site_relative_path = site_relative_path.rstrip('/')
+
+        site_relative_path = site_relative_path.rstrip("/")
 
         try:
             content_relative_dirpath, content_filename = os.path.split(
@@ -70,6 +72,7 @@ class ContentLookup:
             dirpath = self.standardize_dirpath(site_relative_path)
             filename = "_index"
             return self.website_contents[(website_id, dirpath, filename)]
+
 
 class UrlSiteRelativiser:
     """
@@ -94,28 +97,29 @@ class UrlSiteRelativiser:
 
     def __init__(self):
         websites = Website.objects.all()
-        self.website_lookup = { w.name: w for w in websites }
+        self.website_lookup = {w.name: w for w in websites}
 
     def __call__(self, url: str):
         parsed = urlparse(url)
         path = parsed.path
-        pieces = path.split('/')
+        pieces = path.split("/")
         try:
             site_index, site_name = next(
-                (i, name) for i, name in enumerate(pieces)
+                (i, name)
+                for i, name in enumerate(pieces)
                 if name in self.website_lookup
             )
         except StopIteration as err:
             raise ValueError(f"'{url} does not contain a website name.") from err
-        site_relative_path = '/' + '/'.join(pieces[site_index + 1:])
-        
+        site_relative_path = "/" + "/".join(pieces[site_index + 1 :])
+
         site_relative_url = site_relative_path
         if parsed.fragment:
             site_relative_url += f"#{parsed.fragment}"
         return self.website_lookup[site_name], site_relative_url
 
-class LegacyFileLookup:
 
+class LegacyFileLookup:
     class MultipleMatchError(Exception):
         pass
 
@@ -152,10 +156,10 @@ class LegacyFileLookup:
         _, filename = os.path.split(file)
         try:
             UUID(filename[:32])
-            old_filename = filename[32:].lstrip('_')
+            old_filename = filename[32:].lstrip("_")
             return old_filename
         except ValueError:
-            return None;
+            return None
 
     def find(self, website_id: str, legacy_filename: str):
         key = (website_id, legacy_filename)

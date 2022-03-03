@@ -20,9 +20,10 @@ from websites.models import WebsiteContent
 
 def get_rootrelative_url_from_content(site, content):
     # TODO: remove site arg, use content.website.name ... complicates mocking in tests
-    dirpath = remove_prefix(content.dirpath, 'content/')
-    pieces = ['/courses', site.name, dirpath, content.filename]
+    dirpath = remove_prefix(content.dirpath, "content/")
+    pieces = ["/courses", site.name, dirpath, content.filename]
     return "/".join(p for p in pieces if p)
+
 
 class RootRelativeUrlRule(MarkdownCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner."""
@@ -37,14 +38,14 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
         same_site: bool
 
     regex = (
-        r"(?P<image_prefix>!?)"             # optional leading "!" to determine if it's a link or an image
-        + r"\\?\["                          # match title opening "[" (or "\[" in case corrupted by studio save)
-        + r"(?P<title>[^\[\]\<\>\n]*?)"     # capture the title
-        + r"\\?\]"                          # title closing "]" (or "\]")
-        + r"\("                             # url open
-        + r"/?"                             # optional, non-captured leading "/"
+        r"(?P<image_prefix>!?)"  # optional leading "!" to determine if it's a link or an image
+        + r"\\?\["  # match title opening "[" (or "\[" in case corrupted by studio save)
+        + r"(?P<title>[^\[\]\<\>\n]*?)"  # capture the title
+        + r"\\?\]"  # title closing "]" (or "\]")
+        + r"\("  # url open
+        + r"/?"  # optional, non-captured leading "/"
         + r"(?P<url>(course|resource).*?)"  # capture the url, but only if it's course/ or resoruce/... we don't want links to wikipedia.
-        + r"\)"                             # url close
+        + r"\)"  # url close
     )
 
     alias = "rootrelative_urls"
@@ -65,28 +66,28 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
 
         try:
             wc = self.content_lookup.find(site.uuid, site_rel_path)
-            return site, wc , "Exact dirpath/filename match"
+            return site, wc, "Exact dirpath/filename match"
         except KeyError:
             pass
-        
+
         try:
-            prepend = '/pages'
+            prepend = "/pages"
             wc = self.content_lookup.find(site.uuid, prepend + site_rel_path)
             return site, wc, "prepended '/pages'"
         except KeyError:
             pass
 
         try:
-            prepend = '/resources'
-            remove = '/pages/video-lectures'
+            prepend = "/resources"
+            remove = "/pages/video-lectures"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
             wc = self.content_lookup.find(site.uuid, resource_url)
             return site, wc, f"removed '{remove}', prepended '{prepend}'"
         except KeyError:
             pass
         try:
-            prepend = '/resources'
-            remove = '/pages/video-and-audio-classes'
+            prepend = "/resources"
+            remove = "/pages/video-and-audio-classes"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
             wc = self.content_lookup.find(site.uuid, resource_url)
             return site, wc, f"removed '{remove}', prepended '{prepend}'"
@@ -94,17 +95,17 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
             pass
 
         try:
-            prepend = '/resources'
-            remove = '/videos'
+            prepend = "/resources"
+            remove = "/videos"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
             wc = self.content_lookup.find(site.uuid, resource_url)
             return site, wc, f"removed '{remove}', prepended '{prepend}'"
         except KeyError:
             pass
-            
+
         try:
-            prepend = '/video_galleries'
-            remove = '/pages'
+            prepend = "/video_galleries"
+            remove = "/pages"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
             wc = self.content_lookup.find(site.uuid, resource_url)
             return site, wc, f"removed '{remove}', prepended '{prepend}'"
@@ -118,17 +119,17 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
         except self.legacy_file_lookup.MultipleMatchError as error:
             raise self.NotFoundError(error)
         except KeyError:
-            if '.' in site_rel_path[-8:]:
+            if "." in site_rel_path[-8:]:
                 raise self.NotFoundError("Content not found. Perhaps unmigrated file")
             raise self.NotFoundError("Content not found.")
 
     def __call__(self, match: re.Match, website_content: WebsiteContent) -> str:
         Notes = self.ReplacementNotes
         original_text = match[0]
-        url = match.group('url')
-        image_prefix = match.group('image_prefix')
-        is_image = image_prefix == '!'
-        title = match.group('title')
+        url = match.group("url")
+        image_prefix = match.group("image_prefix")
+        is_image = image_prefix == "!"
+        title = match.group("title")
 
         try:
             linked_site, linked_content, note = self.find_linked_content(url)
@@ -146,7 +147,9 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
             if is_image:
                 replacement = f'{{{{< resource {uuid} "{title}" >}}}}'
             elif fragment:
-                replacement = f'{{{{% resource_link {uuid} "{title}" "#{fragment}" %}}}}'
+                replacement = (
+                    f'{{{{% resource_link {uuid} "{title}" "#{fragment}" %}}}}'
+                )
             else:
                 replacement = f'{{{{% resource_link {uuid} "{title}" %}}}}'
             return replacement, notes
@@ -155,7 +158,7 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
 
         if fragment:
             new_url += f"#{fragment}"
-        
+
         replacement = f"{image_prefix}[{title}]({new_url})"
 
         return replacement, notes

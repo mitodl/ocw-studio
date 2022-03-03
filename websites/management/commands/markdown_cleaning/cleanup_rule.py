@@ -30,7 +30,7 @@ class MarkdownCleanupRule(abc.ABC):
         string. Similar to re.sub, but invoked with website_content argument
         also.
         """
-    
+
     @dataclass
     class ReplacementNotes:
         pass

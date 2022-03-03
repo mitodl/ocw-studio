@@ -116,7 +116,7 @@ def test_baseurl_replacer_handle_specific_url_replacements(
 ):
     """
     Test specific replacements
-    
+
     This test could perhaps be dropped. It was written before ContentLookup was
     moved to a separate module, and the functionality is tested their, now, too.
     """
