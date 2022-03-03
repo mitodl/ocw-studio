@@ -12,6 +12,9 @@ from websites.management.commands.markdown_cleaning.utils import (
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
+def string_uuid():
+    return str(uuid4()).replace('-', '')
+
 @patch("websites.models.WebsiteContent.all_objects.all")
 def test_content_finder_is_site_specific(mock):
     """Test that ContentLookup is site specific"""
@@ -162,38 +165,59 @@ def test_url_site_relativiser_raises_value_errors(mock):
         get_site_relative_url('courses/my-favorite-course/thing')
 
 @pytest.mark.parametrize(
-    ["site_uuid", "filename", "expected_indexes"],
+    ["site_uuid", "filename", "expected_index"],
     [
-        ('site-uuid-one', 'someFileName.jpg', [0]),
-        ('site-uuid-one', 'somefilename.jpg', [1]),
-        ('site-uuid-two', 'someFileName.jpg', [2, 3])
+        ('site-uuid-one', 'someFileName.jpg', 0),
+        ('site-uuid-one', 'somefilename.jpg', 1),
+        ('site-uuid-two', 'someFileName.jpg', 2)
     ],
 )
 @patch("websites.models.WebsiteContent.all_objects.all")
-def test_legacy_file_lookup(mock, site_uuid, filename, expected_indexes):
-    uuid = lambda *args: str(uuid4()).replace('-', '')
+def test_legacy_file_lookup(mock, site_uuid, filename, expected_index):
     c1a = WebsiteContentFactory.build(
         website_id='site-uuid-one',
-        file=f'/courses/site_one/{uuid()}_someFileName.jpg',
+        file=f'/courses/site_one/{string_uuid()}_someFileName.jpg',
         text_id="content-uuid-1a",
     )
     c1b = WebsiteContentFactory.build(
         website_id='site-uuid-one',
-        file=f'/courses/site_one/{uuid()}_somefilename.jpg',
+        file=f'/courses/site_one/{string_uuid()}_somefilename.jpg',
         text_id="content-uuid-1b",
     )
     c2 = WebsiteContentFactory.build(
         website_id='site-uuid-two',
-        file=f'/courses/site_two/{uuid()}_someFileName.jpg',
+        file=f'/courses/site_two/{string_uuid()}_someFileName.jpg',
         text_id="content-uuid-two",
     )
-    c3 = WebsiteContentFactory.build(
-        website_id='site-uuid-two',
-        file=f'/courses/site_two/{uuid()}_someFileName.jpg',
-        text_id="content-uuid-two",
-    )
-    contents = [c1a, c1b, c2, c3]
-    expected = [contents[i] for i in expected_indexes]
+    contents = [c1a, c1b, c2]
+    expected = contents[expected_index]
     mock.return_value = contents
     legacy_file_lookup = LegacyFileLookup()
     assert legacy_file_lookup.find(site_uuid, filename) == expected
+
+@patch("websites.models.WebsiteContent.all_objects.all")
+def test_legacy_file_lookup_raises_nonunique_for_multiple_matches(mock):
+    c1a = WebsiteContentFactory.build(
+        website_id='site-uuid-one',
+        file=f'/courses/site_one/{string_uuid()}_some_file_name.jpg',
+        text_id="content-uuid-1",
+    )
+    c1b = WebsiteContentFactory.build(
+        website_id='site-uuid-one',
+        file=f'/courses/site_one/{string_uuid()}_some_file_name.jpg',
+        text_id="content-uuid-2",
+    )
+    contents = [c1a, c1b]
+    mock.return_value = contents
+    legacy_file_lookup = LegacyFileLookup()
+    with pytest.raises(legacy_file_lookup.MultipleMatchError):
+        assert legacy_file_lookup.find('site-uuid-one', 'some_file_name.jpg')
+
+@patch("websites.models.WebsiteContent.all_objects.all")    
+def test_legacy_file_lookup_raises_keyerror_for_none(mock):
+    contents = []
+    mock.return_value = contents
+    legacy_file_lookup = LegacyFileLookup()
+    with pytest.raises(KeyError):
+        assert legacy_file_lookup.find('some-site-uuid', 'captain-nemo.file')
+    

@@ -104,10 +104,10 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
 
         try:
             _, legacy_filename = os.path.split(site_rel_path)
-            file_matches = self.legacy_file_lookup.find(site.uuid, legacy_filename)
-            if len(file_matches) == 1: 
-                return site, file_matches[0], "unique file match"
-            return site, file_matches[0], f"multiple file matches ({len(file_matches)}); took first"
+            match = self.legacy_file_lookup.find(site.uuid, legacy_filename)
+            return site, match, "unique file match"
+        except self.legacy_file_lookup.MultipleMatchError as error:
+            raise self.NotFoundError(error)
         except KeyError:
             if '.' in site_rel_path[-8:]:
                 raise self.NotFoundError("Content not found. Perhaps unmigrated file")

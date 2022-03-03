@@ -114,7 +114,7 @@ class UrlSiteRelativiser:
 
 class LegacyFileLookup:
 
-    class MultipleMatches(Exception):
+    class MultipleMatchError(Exception):
         pass
 
     def __init__(self):
@@ -157,4 +157,7 @@ class LegacyFileLookup:
 
     def find(self, website_id: str, legacy_filename: str):
         key = (website_id, legacy_filename)
-        return self.contents_by_file[key]
+        matches = self.contents_by_file[key]
+        if len(matches) == 1:
+            return matches[0]
+        raise self.MultipleMatchError(f"Found {len(matches)} files with same name.")
