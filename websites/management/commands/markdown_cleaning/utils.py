@@ -4,7 +4,9 @@ import os
 from collections import defaultdict
 from urllib.parse import urlparse
 from uuid import UUID
-from websites.models import WebsiteContent, Website
+
+from websites.models import Website, WebsiteContent
+
 
 filepath_migration = importlib.import_module(
     "websites.migrations.0023_website_content_filepath"

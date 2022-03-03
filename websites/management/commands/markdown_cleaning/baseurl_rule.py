@@ -4,10 +4,9 @@ import re
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
-from websites.management.commands.markdown_cleaning.utils import (
-    ContentLookup,
-)
+from websites.management.commands.markdown_cleaning.utils import ContentLookup
 from websites.models import WebsiteContent
+
 
 class BaseurlReplacementRule(MarkdownCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner. Replaces

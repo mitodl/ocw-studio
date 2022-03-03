@@ -4,13 +4,14 @@ from uuid import uuid4
 
 import pytest
 
+from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.utils import (
+    CONTENT_FILENAME_MAX_LEN,
     ContentLookup,
     LegacyFileLookup,
-    CONTENT_FILENAME_MAX_LEN,
-    UrlSiteRelativiser
+    UrlSiteRelativiser,
 )
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+
 
 def string_uuid():
     return str(uuid4()).replace('-', '')

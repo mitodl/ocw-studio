@@ -1,21 +1,22 @@
 """
 WebsiteContentMarkdownCleaner rule to convert root-relative urls to resource_links
 """
-import re
 import os
+import re
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-from websites.models import WebsiteContent
-from websites.management.commands.markdown_cleaning.utils import (
-    remove_prefix,
-    UrlSiteRelativiser,
-    ContentLookup,
-    LegacyFileLookup
-)
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
+from websites.management.commands.markdown_cleaning.utils import (
+    ContentLookup,
+    LegacyFileLookup,
+    UrlSiteRelativiser,
+    remove_prefix,
+)
+from websites.models import WebsiteContent
+
 
 def get_rootrelative_url_from_content(site, content):
     # TODO: remove site arg, use content.website.name ... complicates mocking in tests

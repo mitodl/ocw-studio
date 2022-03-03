@@ -1,14 +1,14 @@
 """Facilitates regex-based replacements on WebsiteContentMarkdown."""
 import csv
 import re
-from dataclasses import fields, asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from typing import Any
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
-from websites.models import WebsiteContent
 from websites.management.commands.markdown_cleaning.utils import remove_prefix
+from websites.models import WebsiteContent
 
 
 class WebsiteContentMarkdownCleaner:

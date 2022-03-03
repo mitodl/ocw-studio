@@ -8,11 +8,11 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.baseurl_rule import (
     BaseurlReplacementRule,
 )
-from websites.management.commands.markdown_cleaning.utils import (
-    CONTENT_FILENAME_MAX_LEN,
-)
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
+)
+from websites.management.commands.markdown_cleaning.utils import (
+    CONTENT_FILENAME_MAX_LEN,
 )
 
 

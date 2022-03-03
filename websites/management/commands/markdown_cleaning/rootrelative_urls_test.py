@@ -3,17 +3,19 @@
 # different site
 # multiple matches
 from unittest.mock import patch
-import pytest
 from uuid import uuid4
 
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+import pytest
+
 from content_sync.factories import ContentSyncStateFactory
-from websites.management.commands.markdown_cleaning.rootrelative_urls import (
-    RootRelativeUrlRule,
-)
+from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
+from websites.management.commands.markdown_cleaning.rootrelative_urls import (
+    RootRelativeUrlRule,
+)
+
 
 def string_uuid():
     return str(uuid4()).replace('-', '')
