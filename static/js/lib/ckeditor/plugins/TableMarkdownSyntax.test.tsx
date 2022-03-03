@@ -155,4 +155,23 @@ describe("table shortcodes", () => {
     </table>`
     expect(htmlBeautify(md2html(md))).toBe(htmlBeautify(html))
   })
+
+  it.each([
+    [
+      "<table><thead><tr><th>my content</th></tr></thead></table>",
+      "{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen >}}\nmy content\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tableclose >}}"
+    ],
+    [
+      "<table><tbody><tr><td>more content</td></tr></tbody></table>",
+      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\nmore content\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}"
+    ]
+  ])(
+    "html2md should add newlines on table cell content when appropriate",
+    async (html, md) => {
+      const editor = await getEditor("")
+      const { html2md } = (editor.data
+        .processor as unknown) as MarkdownDataProcessor
+      expect(html2md(html)).toBe(md)
+    }
+  )
 })

@@ -53,6 +53,8 @@ export const TABLE_ELS: TurndownService.TagName[] = [
   "tfoot"
 ]
 
+export const CONTENT_TABLE_ELS = ["th", "td"]
+
 // A whitelist of attributes that can be assigned to table cells
 export const TABLE_ALLOWED_ATTRS: string[] = ["colspan", "rowspan"]
 

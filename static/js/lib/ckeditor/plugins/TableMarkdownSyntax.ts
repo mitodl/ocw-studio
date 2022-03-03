@@ -5,9 +5,14 @@ import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 import { buildAttrsString } from "./util"
 
-import { TABLE_ELS, ATTRIBUTE_REGEX } from "./constants"
+import { TABLE_ELS, ATTRIBUTE_REGEX, CONTENT_TABLE_ELS } from "./constants"
 
 type Position = "open" | "close"
+
+const handleContentWhitespace = (content: string) =>
+  `${content.startsWith("\n") ? "" : "\n"}${content}${
+    content.endsWith("\n") ? "" : "\n"
+  }`
 
 export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
   static get pluginName(): string {
@@ -50,7 +55,12 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
                 )
               ) :
               ""
-            return `{{< ${name}open${attributes} >}}${content}{{< ${name}close >}}`
+
+            const processedContent = CONTENT_TABLE_ELS.includes(name) ?
+              handleContentWhitespace(content) :
+              content
+
+            return `{{< ${name}open${attributes} >}}${processedContent}{{< ${name}close >}}`
           }
         }
       }
