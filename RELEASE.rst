@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.51.0
+--------------
+
+- fix spacing issue w/ single-line text inside of table cells
+
 Version 0.50.0 (Released March 02, 2022)
 --------------
 
