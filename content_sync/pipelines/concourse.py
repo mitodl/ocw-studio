@@ -39,6 +39,11 @@ MANDATORY_CONCOURSE_SETTINGS = [
     "CONCOURSE_PASSWORD",
 ]
 
+PURGE_HEADER = (
+    ""
+    if settings.CONCOURSE_HARD_PURGE
+    else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
+)
 
 class ConcourseApi(BaseConcourseApi):
     """
@@ -226,11 +231,6 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
             base_url = site_url
             theme_created_trigger = "false"
             theme_deployed_trigger = "true"
-        purge_header = (
-            ""
-            if settings.CONCOURSE_HARD_PURGE
-            else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
-        )
         hugo_projects_url = urljoin(
             f"{starter_path_url.scheme}://{starter_path_url.netloc}",
             f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
@@ -289,7 +289,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
                     .replace("((site-url))", site_url)
                     .replace("((site-name))", self.website.name)
                     .replace("((purge-url))", f"purge/{self.website.name}")
-                    .replace("((purge_header))", purge_header)
+                    .replace("((purge_header))", PURGE_HEADER)
                     .replace("((pipeline_name))", pipeline_name)
                     .replace("((api-token))", settings.API_BEARER_TOKEN or "")
                     .replace("((theme-deployed-trigger))", theme_deployed_trigger)
@@ -345,6 +345,7 @@ class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
                 .replace("((search-api-url))", settings.SEARCH_API_URL)
                 .replace("((ocw-bucket-draft))", settings.AWS_PREVIEW_BUCKET_NAME)
                 .replace("((ocw-bucket-live))", settings.AWS_PUBLISH_BUCKET_NAME)
+                .replace("((purge_header))", PURGE_HEADER)
             )
             config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
             log.debug(config)
