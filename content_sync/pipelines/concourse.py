@@ -45,6 +45,7 @@ PURGE_HEADER = (
     else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
 )
 
+
 class ConcourseApi(BaseConcourseApi):
     """
     Customized pipeline_name of concoursepy.api.Api that allows for getting/setting headers
