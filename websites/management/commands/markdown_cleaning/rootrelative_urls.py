@@ -182,6 +182,9 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
                 replacement = f'{{{{% resource_link {uuid} "{title}" %}}}}'
             return replacement, notes
 
+        if is_image:
+            return original_text, notes
+
         new_url = get_rootrelative_url_from_content(linked_content)
 
         if fragment:
