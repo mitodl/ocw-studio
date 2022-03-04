@@ -4,20 +4,21 @@ from uuid import uuid4
 import pytest
 
 from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.management.commands.markdown_cleaning.testing_utils import (
+    patch_website_all,
+    patch_website_contents_all,
+)
 from websites.management.commands.markdown_cleaning.utils import (
     CONTENT_FILENAME_MAX_LEN,
     ContentLookup,
     LegacyFileLookup,
     UrlSiteRelativiser,
 )
-from websites.management.commands.markdown_cleaning.testing_utils import (
-    patch_website_contents_all,
-    patch_website_all
-)
 
 
 def string_uuid():
     return str(uuid4()).replace("-", "")
+
 
 def test_content_finder_is_site_specific():
     """Test that ContentLookup is site specific"""
@@ -150,7 +151,10 @@ def test_url_site_relativiser(url, expected_index, expected_relative_url):
     with patch_website_all(sites):
         get_site_relative_url = UrlSiteRelativiser()
 
-        assert get_site_relative_url(url) == (sites[expected_index], expected_relative_url)
+        assert get_site_relative_url(url) == (
+            sites[expected_index],
+            expected_relative_url,
+        )
 
 
 @patch_website_all([])
@@ -189,6 +193,7 @@ def test_legacy_file_lookup(site_uuid, filename, expected_index):
     with patch_website_contents_all(contents):
         legacy_file_lookup = LegacyFileLookup()
         assert legacy_file_lookup.find(site_uuid, filename) == expected
+
 
 def test_legacy_file_lookup_raises_nonunique_for_multiple_matches():
     c1a = WebsiteContentFactory.build(

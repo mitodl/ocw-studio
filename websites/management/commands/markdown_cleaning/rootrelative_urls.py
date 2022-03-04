@@ -13,10 +13,11 @@ from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
     LegacyFileLookup,
     UrlSiteRelativiser,
-    remove_prefix,
     get_rootrelative_url_from_content,
+    remove_prefix,
 )
 from websites.models import WebsiteContent
+
 
 class RootRelativeUrlRule(MarkdownCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner."""

@@ -11,8 +11,8 @@ from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
+    patch_website_all,
     patch_website_contents_all,
-    patch_website_all
 )
 
 
@@ -26,6 +26,7 @@ def get_markdown_cleaner(websites, website_contents):
         with patch_website_all(websites):
             rule = RootRelativeUrlRule()
             return WebsiteContentMarkdownCleaner(rule)
+
 
 @pytest.mark.parametrize(
     ["site_name", "markdown", "expected_markdown"],

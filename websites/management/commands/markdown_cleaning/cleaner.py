@@ -8,9 +8,10 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
 from websites.management.commands.markdown_cleaning.utils import (
-    get_rootrelative_url_from_content
+    get_rootrelative_url_from_content,
 )
 from websites.models import WebsiteContent
+
 
 class WebsiteContentMarkdownCleaner:
     """Facilitates regex-based replacements on WebsiteContent markdown.
@@ -137,7 +138,9 @@ class WebsiteContentMarkdownCleaner:
                     "replaced_on_site_name": change.content.website.name,
                     "replaced_on_site_short_id": change.content.website.short_id,
                     "replaced_on_page_uuid": change.content.text_id,
-                    "replaced_on_page_url": get_rootrelative_url_from_content(change.content),
+                    "replaced_on_page_url": get_rootrelative_url_from_content(
+                        change.content
+                    ),
                     **change.match.groupdict(),
                     **asdict(change.notes),
                 }

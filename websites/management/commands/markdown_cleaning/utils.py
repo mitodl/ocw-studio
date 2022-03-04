@@ -20,10 +20,12 @@ def remove_prefix(string: str, prefix: str):
         return string[len(prefix) :]
     return string
 
+
 def get_rootrelative_url_from_content(content: WebsiteContent):
     dirpath = remove_prefix(content.dirpath, "content/")
     pieces = ["/courses", content.website.name, dirpath, content.filename]
     return "/".join(p for p in pieces if p)
+
 
 class ContentLookup:
     """

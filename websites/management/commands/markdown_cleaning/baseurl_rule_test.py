@@ -9,12 +9,11 @@ from websites.management.commands.markdown_cleaning.baseurl_rule import (
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
-from websites.management.commands.markdown_cleaning.utils import (
-    CONTENT_FILENAME_MAX_LEN,
-)
-
 from websites.management.commands.markdown_cleaning.testing_utils import (
     patch_website_contents_all,
+)
+from websites.management.commands.markdown_cleaning.utils import (
+    CONTENT_FILENAME_MAX_LEN,
 )
 
 
