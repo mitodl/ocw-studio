@@ -148,7 +148,7 @@ def test_rootrel_rule_handles_site_homeages_correctly(
             R"cool image ![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg) cool ",
             R'cool image {{< resource uuid-1 "alt text here" >}} cool ',
         ),
-        (   # Do not change cross-site images. They would need the AWS file...
+        (  # Do not change cross-site images. They would need the AWS file...
             "site_two",
             R"cool image ![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg) cool ",
             R"cool image ![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg) cool ",
