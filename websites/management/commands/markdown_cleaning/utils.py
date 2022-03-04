@@ -20,6 +20,11 @@ def remove_prefix(string: str, prefix: str):
         return string[len(prefix) :]
     return string
 
+def get_rootrelative_url_from_content(site, content):
+    # TODO: remove site arg, use content.website.name ... complicates mocking in tests
+    dirpath = remove_prefix(content.dirpath, "content/")
+    pieces = ["/courses", site.name, dirpath, content.filename]
+    return "/".join(p for p in pieces if p)
 
 class ContentLookup:
     """

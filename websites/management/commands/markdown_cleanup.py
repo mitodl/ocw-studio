@@ -120,16 +120,7 @@ class Command(BaseCommand):
         with ExitStack() as stack:
             Rule = next(R for R in cls.Rules if R.alias == alias)
             all_wc = (
-                WebsiteContent.all_objects.all()
-                .only(
-                    "markdown",
-                    "dirpath",
-                    "filename",
-                    "website__name",
-                    "text_id",
-                    "content_sync_state",
-                )
-                .select_related("website")
+                WebsiteContent.all_objects.all().select_related("website")
             )
             if commit:
                 stack.enter_context(transaction.atomic())

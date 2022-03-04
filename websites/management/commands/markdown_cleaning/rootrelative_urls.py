@@ -14,16 +14,9 @@ from websites.management.commands.markdown_cleaning.utils import (
     LegacyFileLookup,
     UrlSiteRelativiser,
     remove_prefix,
+    get_rootrelative_url_from_content,
 )
 from websites.models import WebsiteContent
-
-
-def get_rootrelative_url_from_content(site, content):
-    # TODO: remove site arg, use content.website.name ... complicates mocking in tests
-    dirpath = remove_prefix(content.dirpath, "content/")
-    pieces = ["/courses", site.name, dirpath, content.filename]
-    return "/".join(p for p in pieces if p)
-
 
 class RootRelativeUrlRule(MarkdownCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner."""
