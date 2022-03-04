@@ -128,7 +128,7 @@ class UrlSiteRelativiser:
 class LegacyFileLookup:
     """
     Find content by legacy filename.
-    
+
     Example: In site "21h-104j...", find:
         MIT21H_104JF10_syllf09.pdf
     Matches:
@@ -139,7 +139,7 @@ class LegacyFileLookup:
             filename="mit21h_104jf10_syllf09",
             dirpath="content/resources",
         )
-    
+
     NOTE: The match is based solely on Website and the filename at end of
     WebsiteContent.file. (The value "95e03c4c924a62a8e3876d49f51889c0_MIT21H_104JF10_syllf09.pdf"
     above).
@@ -148,15 +148,16 @@ class LegacyFileLookup:
         - includes file extension
     Disadvantages:
         - sometimes there's not a unique match (see below).
-    
+
     For example, in res-21g-01-kana-spring-2010, there are three files:
         /courses/res-21g-01-kana-spring-2010/UUID1_yokudeki.gif
         /courses/res-21g-01-kana-spring-2010/UUID2_yokudeki.gif
         /courses/res-21g-01-kana-spring-2010/UUID3_yokudeki.gif
     with different parent content.
 
-    When multiple matches are found, LegacyFileLookup.find will error. 
+    When multiple matches are found, LegacyFileLookup.find will error.
     """
+
     class MultipleMatchError(Exception):
         pass
 

@@ -30,7 +30,7 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
         [Filtration](/resources/res-5-0001-digital-lab-techniques-manual-spring-2007/videos/filtration/)
     should be:
         [Filtration](/courses/res-5-0001-digital-lab-techniques-manual-spring-2007/resources/filtration)
-    
+
     The cleanup rule
         1. Finds rootrelative links/images in markdown
         2. Attempts to find content matching that link/image
@@ -39,7 +39,7 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
         4. If content is found AND the link/image is cross-site:
             - keeps the link rootrelative, but fixes it to work in OCW (like the
                 5-0001 exmple above)
-    
+
     Changes are only ever made if matching content for the link is found!
     """
 
