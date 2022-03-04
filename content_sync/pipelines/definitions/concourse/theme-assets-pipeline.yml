@@ -1,25 +1,10 @@
 ---
-resource_types:
-- name: rclone
-  type: docker-image
-  source:
-    repository: mitodl/concourse-rclone-resource
-    tag: latest
 resources:
 - name: ocw-hugo-themes
   type: git
   source:
     uri: ((ocw-hugo-themes-uri))
     branch: ((ocw-hugo-themes-branch))
-- name: ocw-artifacts
-  type: rclone
-  source:
-    config: |
-      [s3-remote]
-      type = s3
-      provider = AWS
-      env_auth = true
-      region = us-east-1
 jobs:
 - name: build-theme-assets
   serial: true
@@ -47,30 +32,38 @@ jobs:
           yarn install --pure-lockfile
           npm run build:webpack
           npm run build:githash
-  - put: ocw-artifacts
-    params:
-      source: ocw-hugo-themes/base-theme/dist
-      destination:
-      - dir: s3-remote:((ocw-bucket-draft))
-        command: copy
+  - task: copy-s3-buckets
+    timeout: 20m
+    attempts: 3
+    config:
+      inputs:
+        - name: ocw-hugo-themes
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: amazon/aws-cli, tag: latest}
+      run:
+        path: sh
         args:
-        - --ignore-size
-        - --checksum
-  - put: ocw-artifacts
-    params:
-      source: ocw-hugo-themes/base-theme/dist
-      destination:
-      - dir: s3-remote:((ocw-bucket-live))
-        command: copy
+          - -exc
+          - |
+            aws s3 sync ocw-hugo-themes/base-theme/dist s3://((ocw-bucket-draft)) --metadata site-id=ocw-hugo-themes
+            aws s3 sync ocw-hugo-themes/base-theme/dist s3://((ocw-bucket-live)) --metadata site-id=ocw-hugo-themes
+            aws s3 cp ocw-hugo-themes/base-theme/data/webpack.json s3://ol-eng-artifacts/ocw-hugo-themes/((ocw-hugo-themes-branch)) --metadata site-id=ocw-hugo-themes
+  - task: clear-cdn-cache
+    timeout: 5m
+    attempts: 3
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: curlimages/curl}
+      run:
+        path: curl
         args:
-        - --ignore-size
-        - --checksum
-  - put: ocw-artifacts
-    params:
-      source: ocw-hugo-themes/base-theme/data/webpack.json
-      destination:
-      - dir: s3-remote:ol-eng-artifacts/ocw-hugo-themes/((ocw-hugo-themes-branch))
-        command: copy
-        args:
-        - --ignore-size
-        - --checksum
+          - -f
+          - -X
+          - POST
+          - -H
+          - 'Fastly-Key: ((fastly.api_token))'((purge_header))
+          - https://api.fastly.com/service/((fastly.service_id))/ocw-hugo-themes
