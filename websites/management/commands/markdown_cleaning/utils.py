@@ -29,7 +29,7 @@ def get_rootrelative_url_from_content(content: WebsiteContent):
 
 class ContentLookup:
     """
-    Helps find content by various properties.
+    Helps find content by website_id and a valid OCW-Next url.
     """
 
     def __init__(self):
@@ -126,6 +126,37 @@ class UrlSiteRelativiser:
 
 
 class LegacyFileLookup:
+    """
+    Find content by legacy filename.
+    
+    Example: In site "21h-104j...", find:
+        MIT21H_104JF10_syllf09.pdf
+    Matches:
+        WebsiteContent(
+            file="/courses/21h-104j-riots-strikes-and-conspiracies-in-american-history-fall-2010/95e03c4c924a62a8e3876d49f51889c0_MIT21H_104JF10_syllf09.pdf",
+            website=Website(name="21h-104j-riots-strikes-and-conspiracies-in-american-history-fall-2010"),
+            # NOT used for matching!
+            filename="mit21h_104jf10_syllf09",
+            dirpath="content/resources",
+        )
+    
+    NOTE: The match is based solely on Website and the filename at end of
+    WebsiteContent.file. (The value "95e03c4c924a62a8e3876d49f51889c0_MIT21H_104JF10_syllf09.pdf"
+    above).
+    Advantages:
+        - case sensitive
+        - includes file extension
+    Disadvantages:
+        - sometimes there's not a unique match (see below).
+    
+    For example, in res-21g-01-kana-spring-2010, there are three files:
+        /courses/res-21g-01-kana-spring-2010/UUID1_yokudeki.gif
+        /courses/res-21g-01-kana-spring-2010/UUID2_yokudeki.gif
+        /courses/res-21g-01-kana-spring-2010/UUID3_yokudeki.gif
+    with different parent content.
+
+    When multiple matches are found, LegacyFileLookup.find will error. 
+    """
     class MultipleMatchError(Exception):
         pass
 

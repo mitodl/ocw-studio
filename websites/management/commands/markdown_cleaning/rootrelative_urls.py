@@ -20,7 +20,28 @@ from websites.models import WebsiteContent
 
 
 class RootRelativeUrlRule(MarkdownCleanupRule):
-    """Replacement rule for use with WebsiteContentMarkdownCleaner."""
+    """
+    Fix rootrelative urls, converting to shortcodes where possible.
+
+    When Legacy OCW content was migrated to OCW Next, many migrated links were
+    root-relative and possibly broken. For example:
+
+    The link:
+        [Filtration](/resources/res-5-0001-digital-lab-techniques-manual-spring-2007/videos/filtration/)
+    should be:
+        [Filtration](/courses/res-5-0001-digital-lab-techniques-manual-spring-2007/resources/filtration)
+    
+    The cleanup rule
+        1. Finds rootrelative links/images in markdown
+        2. Attempts to find content matching that link/image
+        3. If content is found AND the link/image is within-site:
+            - changes links to resource_links and images to resources
+        4. If content is found AND the link/image is cross-site:
+            - keeps the link rootrelative, but fixes it to work in OCW (like the
+                5-0001 exmple above)
+    
+    Changes are only ever made if matching content for the link is found!
+    """
 
     class NotFoundError(Exception):
         pass
@@ -49,7 +70,19 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
         self.content_lookup = ContentLookup()
         self.legacy_file_lookup = LegacyFileLookup()
 
-    def find_linked_content(self, url: str):
+    def fuzzy_find_linked_content(self, url: str):
+        """
+        Given a possibly-broken, root-relative URL, find matching content.
+
+        Example:
+            /resources/res-5-0001-digital-lab-techniques-manual-spring-2007/videos/filtration/
+        Matches:
+            WebsiteContent(
+                website=Website(name="res-5-0001-digital-lab-techniques-manual-spring-2007"),
+                filename="filtration",
+                dirpath="content/resources",
+            )
+        """
 
         try:
             site, site_rel_url = self.get_site_relative_url(url)
@@ -118,6 +151,7 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
             raise self.NotFoundError("Content not found.")
 
     def __call__(self, match: re.Match, website_content: WebsiteContent) -> str:
+        """Replacer function"""
         Notes = self.ReplacementNotes
         original_text = match[0]
         url = match.group("url")
@@ -126,7 +160,7 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
         title = match.group("title")
 
         try:
-            linked_content, note = self.find_linked_content(url)
+            linked_content, note = self.fuzzy_find_linked_content(url)
         except self.NotFoundError as error:
             note = str(error)
             return original_text, Notes(note, is_image, same_site=False)
