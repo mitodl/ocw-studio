@@ -120,7 +120,7 @@ class Command(BaseCommand):
         with ExitStack() as stack:
             Rule = next(R for R in cls.Rules if R.alias == alias)
             all_wc = (
-                WebsiteContent.all_objects.all().select_related("website")
+                WebsiteContent.all_objects.all().prefetch_related("website")
             )
             if commit:
                 stack.enter_context(transaction.atomic())

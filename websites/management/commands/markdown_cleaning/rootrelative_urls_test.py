@@ -1,4 +1,3 @@
-from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -11,6 +10,10 @@ from websites.management.commands.markdown_cleaning.cleaner import (
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
+from websites.management.commands.markdown_cleaning.testing_utils import (
+    patch_website_contents_all,
+    patch_website_all
+)
 
 
 def string_uuid():
@@ -19,13 +22,10 @@ def string_uuid():
 
 def get_markdown_cleaner(websites, website_contents):
     """Convenience to get rule-specific cleaner"""
-    with patch("websites.models.WebsiteContent.all_objects.all") as wc_mock:
-        with patch("websites.models.Website.objects.all") as website_mock:
-            wc_mock.return_value = website_contents
-            website_mock.return_value = websites
+    with patch_website_contents_all(website_contents):
+        with patch_website_all(websites):
             rule = RootRelativeUrlRule()
             return WebsiteContentMarkdownCleaner(rule)
-
 
 @pytest.mark.parametrize(
     ["site_name", "markdown", "expected_markdown"],

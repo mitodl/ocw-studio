@@ -137,7 +137,7 @@ class WebsiteContentMarkdownCleaner:
                     "replaced_on_site_name": change.content.website.name,
                     "replaced_on_site_short_id": change.content.website.short_id,
                     "replaced_on_page_uuid": change.content.text_id,
-                    "replaced_on_page_url": get_rootrelative_url_from_content(change.content.website, change.content),
+                    "replaced_on_page_url": get_rootrelative_url_from_content(change.content),
                     **change.match.groupdict(),
                     **asdict(change.notes),
                 }

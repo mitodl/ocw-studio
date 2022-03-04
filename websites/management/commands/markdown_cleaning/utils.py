@@ -20,10 +20,9 @@ def remove_prefix(string: str, prefix: str):
         return string[len(prefix) :]
     return string
 
-def get_rootrelative_url_from_content(site, content):
-    # TODO: remove site arg, use content.website.name ... complicates mocking in tests
+def get_rootrelative_url_from_content(content: WebsiteContent):
     dirpath = remove_prefix(content.dirpath, "content/")
-    pieces = ["/courses", site.name, dirpath, content.filename]
+    pieces = ["/courses", content.website.name, dirpath, content.filename]
     return "/".join(p for p in pieces if p)
 
 class ContentLookup:
@@ -32,7 +31,7 @@ class ContentLookup:
     """
 
     def __init__(self):
-        website_contents = WebsiteContent.all_objects.all()
+        website_contents = WebsiteContent.all_objects.all().prefetch_related("website")
         self.website_contents = {
             (wc.website_id, wc.dirpath, wc.filename): wc for wc in website_contents
         }
@@ -129,7 +128,7 @@ class LegacyFileLookup:
         pass
 
     def __init__(self):
-        website_contents = WebsiteContent.all_objects.all()
+        website_contents = WebsiteContent.all_objects.all().prefetch_related("website")
         contents_by_file = defaultdict(list)
         for wc in website_contents:
             if wc.file:

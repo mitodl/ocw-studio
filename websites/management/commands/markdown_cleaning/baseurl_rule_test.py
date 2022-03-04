@@ -1,6 +1,4 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
-from unittest.mock import patch
-
 import pytest
 
 from content_sync.factories import ContentSyncStateFactory
@@ -15,11 +13,14 @@ from websites.management.commands.markdown_cleaning.utils import (
     CONTENT_FILENAME_MAX_LEN,
 )
 
+from websites.management.commands.markdown_cleaning.testing_utils import (
+    patch_website_contents_all,
+)
+
 
 def get_markdown_cleaner(website_contents):
     """Convenience to get rule-specific cleaner"""
-    with patch("websites.models.WebsiteContent.all_objects.all") as mock:
-        mock.return_value = website_contents
+    with patch_website_contents_all(website_contents):
         rule = BaseurlReplacementRule()
         return WebsiteContentMarkdownCleaner(rule)
 
