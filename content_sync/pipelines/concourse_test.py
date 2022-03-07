@@ -370,7 +370,7 @@ def test_upsert_pipeline(mocker, settings, pipeline_exists):
     assert settings.AWS_PREVIEW_BUCKET_NAME in config_str
     assert settings.AWS_PUBLISH_BUCKET_NAME in config_str
     assert (
-        f"s3-remote:ol-eng-artifacts/ocw-hugo-themes/{settings.GITHUB_WEBHOOK_BRANCH}"
+        f"s3://ol-eng-artifacts/ocw-hugo-themes/{settings.GITHUB_WEBHOOK_BRANCH}"
         in config_str
     )
 
