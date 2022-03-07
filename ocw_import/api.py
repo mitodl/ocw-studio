@@ -28,6 +28,7 @@ from websites.constants import (
     WEBSITE_SOURCE_OCW_IMPORT,
 )
 from websites.models import Website, WebsiteContent
+from websites.utils import get_dict_field, set_dict_field
 
 
 log = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ def parse_date(date_string):
     return dateutil.parser.parse(date_string)
 
 
-def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_str=""):
+def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_list=None):
     """
     Generator that yields the path to every course JSON document in the S3 bucket matching
     a prefix and filter (or all of them if no prefix or filter is provided)
@@ -65,7 +66,7 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_str=""):
     Args:
         bucket_name (str): S3 bucket name
         prefix (str): (Optional) S3 prefix before start of course_id path
-        filter_str (str): (Optional) If specified, only yield course paths containing this string
+        filter_list (str): (Optional) If specified, only yield course paths containing this string
 
     Yields:
         str: The path to a course JSON document in S3
@@ -77,7 +78,7 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_str=""):
         for obj in resp["Contents"]:
             key = obj["Key"]
             if key.endswith("course_legacy.json") and (
-                not filter_str or filter_str in key
+                not filter_list or key.split("/")[-3] in filter_list
             ):
                 yield key
 
@@ -118,7 +119,7 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
 
 
 def update_ocw2hugo_content(
-    bucket, prefix, website, update_field
+    bucket, prefix, website, update_field, create_new_content=False
 ):  # pylint:disable=too-many-locals
     """
     update the update_field of all content files for an ocw course from hugo2ocw output
@@ -132,9 +133,9 @@ def update_ocw2hugo_content(
 
     is_metadata_field = False
 
-    if update_field.startswith("metadata."):
+    if update_field and update_field.startswith("metadata."):
         is_metadata_field = True
-        update_field = update_field.replace("metadata.", "")
+        update_field = update_field.replace("metadata.", "", 1)
 
     for resp in bucket.meta.client.get_paginator("list_objects").paginate(
         Bucket=bucket.name, Prefix=f"{site_prefix}/content"
@@ -155,16 +156,22 @@ def update_ocw2hugo_content(
 
                 if content_file:
                     if is_metadata_field:
-                        content_file.metadata[update_field] = content_data.get(
-                            "metadata", {}
-                        ).get(update_field, "")
-                    else:
+                        set_dict_field(
+                            content_file.metadata,
+                            update_field,
+                            get_dict_field(
+                                content_data.get("metadata", {}), update_field
+                            ),
+                        )
+                    elif update_field is not None:
                         setattr(
                             content_file,
                             update_field,
                             content_data.get(update_field, ""),
                         )
                     content_file.save()
+                elif create_new_content is True:
+                    convert_data_to_content(filepath, s3_content, website)
 
             except:  # pylint:disable=bare-except
                 log.exception("Error saving WebsiteContent for %s", s3_key)
@@ -504,7 +511,9 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         log.exception("Error saving website %s", path)
 
 
-def update_ocw2hugo_course(bucket_name, prefix, path, content_update_field):
+def update_ocw2hugo_course(
+    bucket_name, prefix, path, content_update_field, create_new_content=False
+):
     """
     Extract OCW course content for a course
 
@@ -513,6 +522,7 @@ def update_ocw2hugo_course(bucket_name, prefix, path, content_update_field):
         prefix (str): S3 prefix before start of course_id path
         path (str): The course URL path
         content_update_field (string): Website content field that should be overwritten
+        create_new_content (bool): Create new content if it doesn't exist
     """
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
@@ -521,4 +531,10 @@ def update_ocw2hugo_course(bucket_name, prefix, path, content_update_field):
     website = Website.objects.filter(name=name).first()
 
     if website:
-        update_ocw2hugo_content(bucket, prefix, website, content_update_field)
+        update_ocw2hugo_content(
+            bucket,
+            prefix,
+            website,
+            content_update_field,
+            create_new_content=create_new_content,
+        )
