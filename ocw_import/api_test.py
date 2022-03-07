@@ -476,48 +476,72 @@ def test_get_learning_resource_types(content_json, resource_types):
 
 @mock_s3
 @pytest.mark.parametrize("content_exists", [True, False])
-@pytest.mark.parametrize("update_field", ["title", "metadata.description"])
-def test_update_ocw2hugo_course_content(mocker, settings, content_exists, update_field):
+@pytest.mark.parametrize(
+    "update_field",
+    ["title", "metadata.description", "metadata.image_metadata.image-alt", None],
+)
+@pytest.mark.parametrize("create_new_content", [True, False])
+def test_update_ocw2hugo_course_content(
+    settings, content_exists, update_field, create_new_content
+):
     """update_ocw2hugo_course_content should update website content"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
-    filenames = [f"file-{i}" for i in range(100)]
-    mocker.patch("ocw_import.api.get_valid_new_filename", side_effect=filenames)
 
     website = WebsiteFactory.create(name=name)
 
     if content_exists:
         WebsiteContentFactory.create(
             website=website,
-            text_id="35806cc1-1f73-e1dd-f902-580c83d1566f",
+            text_id="ba36b428-9898-8e45-81d4-2067ac439546",
             title="original title",
-            metadata={"description": "original description"},
+            metadata={
+                "description": "original description",
+                "image_metadata": {"image-alt": "original alt"},
+            },
         )
 
-    update_ocw2hugo_course(MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, s3_key, update_field)
+    update_ocw2hugo_course(
+        MOCK_BUCKET_NAME,
+        TEST_OCW2HUGO_PREFIX,
+        s3_key,
+        update_field,
+        create_new_content=create_new_content,
+    )
 
     if content_exists:
         resource = WebsiteContent.objects.get(
             website=website,
-            text_id="35806cc1-1f73-e1dd-f902-580c83d1566f",
+            text_id="ba36b428-9898-8e45-81d4-2067ac439546",
         )
 
         if update_field == "title":
-            assert resource.title == "variables3.pdf"
+            assert resource.title == "1-050f07.jpg"
             assert resource.metadata["description"] == "original description"
+        elif update_field is not None:
+            assert resource.title == "original title"
+            if update_field == "metadata.description":
+                assert resource.metadata["description"].startswith(
+                    "Lecture 4 explores the collapse of the"
+                )
+                assert (
+                    resource.metadata["image_metadata"]["image-alt"] == "original alt"
+                )
+            else:
+                assert resource.metadata["description"] == "original description"
+                assert resource.metadata["image_metadata"]["image-alt"] == (
+                    "Sketch of the World Trade Center towers and graph showing velocity profiles."
+                )
         else:
             assert resource.title == "original title"
-            assert (
-                resource.metadata["description"]
-                == "Summary of variables and concepts for lectures 27 through 37."
-            )
-
+            assert resource.metadata["description"] == "original description"
+            assert resource.metadata["image_metadata"]["image-alt"] == "original alt"
     else:
         assert (
             WebsiteContent.objects.filter(
                 website=website,
                 text_id="35806cc1-1f73-e1dd-f902-580c83d1566f",
             ).count()
-            == 0
+            == (1 if create_new_content else 0)
         )

@@ -58,11 +58,16 @@ def test_import_ocw2hugo_course_paths(mocker, paths, course_starter, settings):
 @pytest.mark.parametrize(
     "paths", [["1-050-mechanical-engineering", "3-34-transportation-systems"], [], None]
 )
-def test_update_ocw2hugo_course_paths(mocker, paths):
+@pytest.mark.parametrize("create_new_content", [True, False])
+def test_update_ocw2hugo_course_paths(mocker, paths, create_new_content):
     """ update_ocw2hugo_course should be called from task with correct kwargs """
     mock_update_course = mocker.patch("ocw_import.tasks.update_ocw2hugo_course")
     update_ocw2hugo_course_paths.delay(
-        paths, MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, "title"
+        paths,
+        MOCK_BUCKET_NAME,
+        TEST_OCW2HUGO_PREFIX,
+        "title",
+        create_new_content=create_new_content,
     )
     if not paths:
         mock_update_course.assert_not_called()
@@ -73,6 +78,7 @@ def test_update_ocw2hugo_course_paths(mocker, paths):
                 TEST_OCW2HUGO_PREFIX,
                 path,
                 "title",
+                create_new_content=create_new_content,
             )
 
 
@@ -186,11 +192,24 @@ def test_import_ocw2hugo_courses_delete_unpublished_false(
 
 @mock_s3
 @pytest.mark.parametrize(
-    "chunk_size, filter_str, limit, call_count",
-    [[1, None, None, 4], [1, "1-050", None, 1], [2, None, None, 2], [1, None, 1, 1]],
+    "chunk_size, filter_list, limit, call_count",
+    [
+        [1, None, None, 4],
+        [1, ["1-050-engineering-mechanics-i-fall-2007"], None, 1],
+        [2, None, None, 2],
+        [1, None, 1, 1],
+    ],
 )
+@pytest.mark.parametrize("create_new_content", [True, False])
 def test_update_ocw_resource_data(
-    settings, mocked_celery, mocker, filter_str, chunk_size, limit, call_count
+    settings,
+    mocked_celery,
+    mocker,
+    filter_list,
+    chunk_size,
+    limit,
+    call_count,
+    create_new_content,
 ):
     """
     update_ocw2hugo_course_paths should be called correct # times for given chunk size, limit, filter, and # of paths
@@ -202,9 +221,10 @@ def test_update_ocw_resource_data(
             bucket_name=MOCK_BUCKET_NAME,
             prefix=TEST_OCW2HUGO_PREFIX,
             chunk_size=chunk_size,
-            filter_str=filter_str,
+            filter_list=filter_list,
             limit=limit,
             content_field="title",
+            create_new_content=create_new_content,
         )
     assert mock_update_paths.call_count == call_count
 

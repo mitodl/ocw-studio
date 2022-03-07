@@ -95,7 +95,7 @@ class Command(BaseCommand):
         if options["list"] is True:
             course_paths = list(
                 fetch_ocw2hugo_course_paths(
-                    bucket_name, prefix=prefix, filter_str=filter_str
+                    bucket_name, prefix=prefix, filter_list=[filter_str]
                 )
             )
             pydoc.pager("\n".join(course_paths))
