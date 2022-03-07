@@ -17,7 +17,7 @@ from concoursepy.api import Api as BaseConcourseApi
 from django.conf import settings
 from requests import HTTPError
 
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, SOFT_PURGE_HEADER
+from content_sync.constants import SOFT_PURGE_HEADER, VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
     BaseMassPublishPipeline,
