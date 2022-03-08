@@ -391,12 +391,18 @@ def test_website_content_detail_serializer_save(mocker):
     mock_create_website_pipeline = mocker.patch(
         "websites.serializers.create_website_publishing_pipeline"
     )
-    content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
+    content = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "to_keep": "old value 1",
+            "to_update": "old value 2",
+        },
+    )
     existing_text_id = content.text_id
     new_title = f"{content.title} with some more text"
     new_type = f"{content.type}_other"
     new_markdown = "hopefully different from the previous markdown"
-    metadata = {"description": "data"}
+    metadata_patch = {"to_update": "updated value 2", "created": "brand new!"}
     user = UserFactory.create()
     # uuid value is invalid but it's ignored since it's marked readonly
     serializer = WebsiteContentDetailSerializer(
@@ -405,7 +411,7 @@ def test_website_content_detail_serializer_save(mocker):
             "text_id": "----",
             "type": new_type,
             "markdown": new_markdown,
-            "metadata": metadata,
+            "metadata": metadata_patch,
         },
         instance=content,
         context={
@@ -420,7 +426,11 @@ def test_website_content_detail_serializer_save(mocker):
     assert content.text_id == existing_text_id
     assert content.type != new_type
     assert content.markdown == new_markdown
-    assert content.metadata == metadata
+    assert content.metadata == {
+        "to_keep": "old value 1",
+        "to_update": "updated value 2",
+        "created": "brand new!",
+    }
     assert content.updated_by == user
     mock_update_website_backend.assert_called_once_with(content.website)
     mock_create_website_pipeline.assert_not_called()
