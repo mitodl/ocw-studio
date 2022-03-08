@@ -1,7 +1,6 @@
 import abc
 import re
 from dataclasses import dataclass
-from typing import Any, Union
 
 from websites.models import WebsiteContent
 
@@ -18,7 +17,7 @@ class MarkdownCleanupRule(abc.ABC):
         """Alias of the rule to be used in CLI"""
 
     @abc.abstractmethod
-    def transform_markdown(self, website_content: WebsiteContent, on_match) -> str:
+    def transform_text(self, website_content: WebsiteContent, text: str, on_match) -> str:
         """Transform markdown associated with a website_content object.
 
         Calls on_match(original_text, replacement, website_content, replacement_notes) for
@@ -30,7 +29,9 @@ class MarkdownCleanupRule(abc.ABC):
         """Used to store notes about this replacement, e.g., the values of named
         regex capturing groups.
         """
-        pass
+
+    field = 'markdown'
+    subfield = None
 
 
 class RegexpCleanupRule(MarkdownCleanupRule):
@@ -56,7 +57,7 @@ class RegexpCleanupRule(MarkdownCleanupRule):
         also.
         """
 
-    def transform_markdown(self, website_content: WebsiteContent, on_match) -> str:
+    def transform_text(self, website_content: WebsiteContent, text: str, on_match) -> str:
         def _replacer(match: re.Match):
             result = self.replace_match(match, website_content)
             if isinstance(result, str):
@@ -74,5 +75,5 @@ class RegexpCleanupRule(MarkdownCleanupRule):
 
             return replacement
 
-        new_markdown = self.compiled.sub(_replacer, website_content.markdown)
+        new_markdown = self.compiled.sub(_replacer, text)
         return new_markdown

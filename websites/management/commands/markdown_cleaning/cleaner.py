@@ -69,7 +69,30 @@ class WebsiteContentMarkdownCleaner:
         )
         return replacement
 
-    def update_website_content_markdown(self, website_content: WebsiteContent):
+    def get_field_to_change(self, website_content: WebsiteContent):
+        if self.rule.field == 'markdown':
+            return website_content.markdown
+        if self.rule.field == 'metadata':
+            if website_content.metadata is None:
+                return None
+            try:
+                return website_content.metadata[self.rule.subfield]
+            except KeyError:
+                return None
+
+        raise ValueError(f"Unexpected field value: {self.rule.field}")
+
+    def make_field_change(self, website_content: WebsiteContent, new_value: str):
+        if self.rule.field == 'markdown':
+            website_content.markdown = new_value
+            return
+        if self.rule.field == 'metadata':
+            website_content.metadata[self.rule.subfield] = new_value
+            return
+
+        raise ValueError(f"Unexpected field value: {self.rule.field}")
+
+    def update_website_content(self, website_content: WebsiteContent):
         """
         Updates website_content's markdown and checksums in-place. Does not commit to
         database.
@@ -77,11 +100,16 @@ class WebsiteContentMarkdownCleaner:
         if not website_content.markdown:
             return
 
-        new_markdown = self.rule.transform_markdown(
-            website_content, self.store_match_data
+        old_text = self.get_field_to_change(website_content)
+        if old_text is None:
+            return
+
+        new_text = self.rule.transform_text(
+            website_content, old_text, self.store_match_data
         )
-        if new_markdown != website_content.markdown:
-            website_content.markdown = new_markdown
+
+        if old_text != new_text:
+            self.make_field_change(website_content, new_text)
             self.updated_website_contents.append(website_content)
 
             sync_state = website_content.content_sync_state
@@ -103,7 +131,7 @@ class WebsiteContentMarkdownCleaner:
             ]
             writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)
             writer.writeheader()
-            for change in self.text_changes:
+            for change in self.replacement_matches:
                 row = {
                     "original_text": change.original_text,
                     "replacement": change.replacement,

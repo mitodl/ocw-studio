@@ -30,6 +30,9 @@ from websites.management.commands.markdown_cleaning.resource_link_delimiters imp
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
+from websites.management.commands.markdown_cleaning.related_resources_urls import (
+    RelatedResourcesTextRule,
+)
 from websites.models import WebsiteContent
 
 
@@ -47,6 +50,7 @@ class Command(BaseCommand):
         LegacyShortcodeFixTwo,
         ResourceLinkDelimitersReplacementRule,
         RootRelativeUrlRule,
+        RelatedResourcesTextRule,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
@@ -129,7 +133,7 @@ class Command(BaseCommand):
 
             wc: WebsiteContent
             for wc in tqdm(all_wc):
-                cleaner.update_website_content_markdown(wc)
+                cleaner.update_website_content(wc)
 
             if commit:
                 all_wc.bulk_update(cleaner.updated_website_contents, ["markdown"])

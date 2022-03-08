@@ -36,7 +36,7 @@ def test_resource_file_replacer():
     ContentSyncStateFactory.build(content=target_content)
 
     cleaner = get_markdown_cleaner()
-    cleaner.update_website_content_markdown(target_content)
+    cleaner.update_website_content(target_content)
 
     assert target_content.markdown == expected_markdown
     assert (
