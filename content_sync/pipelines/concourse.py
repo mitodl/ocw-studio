@@ -17,7 +17,7 @@ from concoursepy.api import Api as BaseConcourseApi
 from django.conf import settings
 from requests import HTTPError
 
-from content_sync.constants import SOFT_PURGE_HEADER, VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
     BaseMassPublishPipeline,
@@ -230,7 +230,11 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
             f"{starter_path_url.scheme}://{starter_path_url.netloc}",
             f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
         )
-        purge_header = "" if settings.CONCOURSE_HARD_PURGE else SOFT_PURGE_HEADER
+        purge_header = (
+            ""
+            if settings.CONCOURSE_HARD_PURGE
+            else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
+        )
 
         for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
             if branch == settings.GIT_BRANCH_PREVIEW:
@@ -334,7 +338,11 @@ class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
                 "definitions/concourse/theme-assets-pipeline.yml",
             )
         ) as pipeline_config_file:
-            purge_header = "" if settings.CONCOURSE_HARD_PURGE else SOFT_PURGE_HEADER
+            purge_header = (
+                ""
+                if settings.CONCOURSE_HARD_PURGE
+                else "\n          - -H\n          - 'Fastly-Soft-Purge: 1'"
+            )
             config_str = (
                 pipeline_config_file.read()
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
