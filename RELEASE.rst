@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.52.0
+Version 0.52.0 (Released March 08, 2022)
 --------------
 
 - adjust PR template
