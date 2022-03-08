@@ -59,7 +59,6 @@ class RegexpCleanupRule(MarkdownCleanupRule):
 
     def transform_text(self, website_content: WebsiteContent, text: str, on_match) -> str:
         def _replacer(match: re.Match):
-            print("HELLO!")
             result = self.replace_match(match, website_content)
             if isinstance(result, str):
                 replacement = result
@@ -76,5 +75,5 @@ class RegexpCleanupRule(MarkdownCleanupRule):
 
             return replacement
 
-        new_markdown = self.compiled.sub(_replacer, website_content.markdown)
+        new_markdown = self.compiled.sub(_replacer, text)
         return new_markdown
