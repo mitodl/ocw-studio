@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.52.0
+--------------
+
+- adjust PR template
+- add code block support to CKEditor
+- Add option to add new content and modify nested metadata for overwrite_ocw_course_content command (#1071)
+
 Version 0.51.0 (Released March 03, 2022)
 --------------
 
