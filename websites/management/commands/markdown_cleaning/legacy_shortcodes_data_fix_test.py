@@ -34,7 +34,7 @@ def test_legacy_shortcode_fix_one(markdown, expected_markdown):
     target_sync_state = ContentSyncStateFactory.build(content=target_content)
 
     cleaner = Cleaner(LegacyShortcodeFixOne())
-    cleaner.update_website_content_markdown(target_content)
+    cleaner.update_website_content(target_content)
     assert target_content.markdown == expected_markdown
     assert target_sync_state.current_checksum == target_content.calculate_checksum()
 
@@ -65,7 +65,7 @@ def test_legacy_shortcode_fix_two(markdown, expected_markdown):
     ContentSyncStateFactory.build(content=target_content)
 
     cleaner = Cleaner(LegacyShortcodeFixTwo())
-    cleaner.update_website_content_markdown(target_content)
+    cleaner.update_website_content(target_content)
 
     assert target_content.markdown == expected_markdown
     assert (

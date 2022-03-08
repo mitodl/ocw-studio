@@ -81,7 +81,7 @@ def test_rootrel_rule_only_uses_resource_lines_for_same_site(
     ContentSyncStateFactory.build(content=content_to_clean)
 
     cleaner = get_markdown_cleaner([w1], [c1])
-    cleaner.update_website_content_markdown(content_to_clean)
+    cleaner.update_website_content(content_to_clean)
 
     assert content_to_clean.markdown == expected_markdown
 
@@ -135,7 +135,7 @@ def test_rootrel_rule_handles_site_homeages_correctly(
     )
     ContentSyncStateFactory.build(content=content_to_clean)
     cleaner = get_markdown_cleaner([w1], [c1])
-    cleaner.update_website_content_markdown(content_to_clean)
+    cleaner.update_website_content(content_to_clean)
 
     assert content_to_clean.markdown == expected_markdown
 
@@ -173,6 +173,6 @@ def test_rootrel_rule_uses_images_for_image(markdown, site_name, expected_markdo
     )
     ContentSyncStateFactory.build(content=content_to_clean)
     cleaner = get_markdown_cleaner([w1], [c1])
-    cleaner.update_website_content_markdown(content_to_clean)
+    cleaner.update_website_content(content_to_clean)
 
     assert content_to_clean.markdown == expected_markdown
