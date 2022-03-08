@@ -2,13 +2,13 @@
 import re
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
-    MarkdownCleanupRule,
+    RegexpCleanupRule,
 )
 from websites.management.commands.markdown_cleaning.utils import ContentLookup
 from websites.models import WebsiteContent
 
 
-class BaseurlReplacementRule(MarkdownCleanupRule):
+class BaseurlReplacementRule(RegexpCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner. Replaces
     baseurl links with % resource_link % shortcodes.
 
@@ -26,10 +26,11 @@ class BaseurlReplacementRule(MarkdownCleanupRule):
 
     alias = "baseurl"
 
-    def __init__(self):
+    def __init__(self) -> None:
+        super().__init__()
         self.content_lookup = ContentLookup()
 
-    def __call__(self, match: re.Match, website_content: WebsiteContent):
+    def replace_match(self, match: re.Match, website_content: WebsiteContent):
         original_text = match[0]
         escaped_title = match.group("title").replace('"', '\\"')
         url = match.group("url")

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from urllib.parse import urlparse
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
-    MarkdownCleanupRule,
+    RegexpCleanupRule,
 )
 from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
@@ -19,7 +19,7 @@ from websites.management.commands.markdown_cleaning.utils import (
 from websites.models import WebsiteContent
 
 
-class RootRelativeUrlRule(MarkdownCleanupRule):
+class RootRelativeUrlRule(RegexpCleanupRule):
     """
     Fix rootrelative urls, converting to shortcodes where possible.
 
@@ -44,6 +44,8 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
     """
 
     class NotFoundError(Exception):
+        """Thrown when no content math for a url is found."""
+
         pass
 
     @dataclass
@@ -66,6 +68,7 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
     alias = "rootrelative_urls"
 
     def __init__(self) -> None:
+        super().__init__()
         self.get_site_relative_url = UrlSiteRelativiser()
         self.content_lookup = ContentLookup()
         self.legacy_file_lookup = LegacyFileLookup()
@@ -86,8 +89,8 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
 
         try:
             site, site_rel_url = self.get_site_relative_url(url)
-        except ValueError:
-            raise self.NotFoundError("Could not determine site.")
+        except ValueError as error:
+            raise self.NotFoundError("Could not determine site.") from error
 
         site_rel_path = urlparse(site_rel_url).path
 
@@ -145,13 +148,14 @@ class RootRelativeUrlRule(MarkdownCleanupRule):
             return match, "unique file match"
         except self.legacy_file_lookup.MultipleMatchError as error:
             raise self.NotFoundError(error)
-        except KeyError:
+        except KeyError as error:
             if "." in site_rel_path[-8:]:
-                raise self.NotFoundError("Content not found. Perhaps unmigrated file")
-            raise self.NotFoundError("Content not found.")
+                raise self.NotFoundError(
+                    "Content not found. Perhaps unmigrated file"
+                ) from error
+            raise self.NotFoundError("Content not found.") from error
 
-    def __call__(self, match: re.Match, website_content: WebsiteContent) -> str:
-        """Replacer function"""
+    def replace_match(self, match: re.Match, website_content: WebsiteContent) -> str:
         Notes = self.ReplacementNotes
         original_text = match[0]
         url = match.group("url")
