@@ -114,13 +114,19 @@ class WebsiteViewSet(
         if search is not None:
             # search query param is used in react-select typeahead, and should
             # match on the title, name, and short_id
+            search_filter = Q(search=SearchQuery(search))
+            if "." in search:
+                # postgres text search behaves oddly with periods but not dashes
+                search_filter = search_filter | Q(
+                    search=SearchQuery(search.replace(".", "-"))
+                )
             queryset = queryset.annotate(
                 search=SearchVector(
                     "name",
                     "title",
                     "short_id",
                 )
-            ).filter(search=SearchQuery(search))
+            ).filter(search_filter)
 
         if resourcetype is not None:
             queryset = queryset.filter(metadata__resourcetype=resourcetype)
