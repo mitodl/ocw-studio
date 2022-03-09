@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.52.2
+Version 0.52.2 (Released March 09, 2022)
 --------------
 
 - Improved site search for names, short_ids (#1092)
