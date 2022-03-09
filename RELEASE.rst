@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.52.1
+--------------
+
+- Revert "purge theme assets after deployment (#1090)" (#1096)
+- merge new metadata with old metadata (#1094)
+- purge theme assets after deployment (#1090)
+
 Version 0.52.0 (Released March 08, 2022)
 --------------
 
