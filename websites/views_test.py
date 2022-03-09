@@ -388,6 +388,11 @@ def test_website_endpoint_search(drf_client):
 
     WebsiteFactory.create(title="Apple", name="Bacon", short_id="Cheese").save()
     WebsiteFactory.create(title="Xylophone", name="Yellow", short_id="Zebra").save()
+    WebsiteFactory.create(
+        title="U.S. Military Power",
+        name="17-482-u-s-military-power-spring-2015",
+        short_id="17.482-Spring-2015",
+    ).save()
     for word in ["Apple", "Bacon", "Cheese"]:
         resp = drf_client.get(reverse("websites_api-list"), {"search": word})
         assert [website["title"] for website in resp.data.get("results")] == ["Apple"]
@@ -395,6 +400,11 @@ def test_website_endpoint_search(drf_client):
         resp = drf_client.get(reverse("websites_api-list"), {"search": word})
         assert [website["title"] for website in resp.data.get("results")] == [
             "Xylophone"
+        ]
+    for word in ["U.S. military", "17-482", "17.482"]:
+        resp = drf_client.get(reverse("websites_api-list"), {"search": word})
+        assert [website["title"] for website in resp.data.get("results")] == [
+            "U.S. Military Power"
         ]
 
 
