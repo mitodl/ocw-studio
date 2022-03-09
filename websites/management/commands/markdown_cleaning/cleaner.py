@@ -1,10 +1,14 @@
 """Facilitates regex-based replacements on WebsiteContentMarkdown."""
 import csv
 import re
-from collections import namedtuple
+from dataclasses import asdict, dataclass, fields
+from typing import Any
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
+)
+from websites.management.commands.markdown_cleaning.utils import (
+    get_rootrelative_url_from_content,
 )
 from websites.models import WebsiteContent
 
@@ -29,32 +33,49 @@ class WebsiteContentMarkdownCleaner:
     writing to csv.
     """
 
-    ReplacementMatch = namedtuple(
-        "ReplacementMatch",
-        ["match", "replacement", "website_content_uuid", "website_uuid"],
-    )
+    @dataclass
+    class ReplacementMatch:
+        match: re.Match
+        replacement: str
+        content: WebsiteContent
+        notes: Any  # should be a dataclass
+
     csv_metadata_fieldnames = [
         "original_text",
         "replacement",
-        "website_content_uuid",
-        "website_uuid",
+        "has_changed",
+        "replaced_on_site_name",
+        "replaced_on_site_short_id",
+        "replaced_on_page_uuid",
+        "replaced_on_page_url",
     ]
 
     def __init__(self, rule: MarkdownCleanupRule):
         self.regex = self.compile_regex(rule.regex)
+        self.rule = rule
 
         self.text_changes: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = []
         self.updated_website_contents: "list[WebsiteContent]" = []
         self.updated_sync_states: "list[ContentSyncState]" = []
 
         def _replacer(match: re.Match, website_content: WebsiteContent):
-            replacement = rule(match, website_content)
+            result = rule(match, website_content)
+            if isinstance(result, str):
+                replacement = result
+                notes = self.rule.ReplacementNotes()
+            elif isinstance(result, tuple):
+                replacement, notes = result
+            else:
+                raise ValueError(
+                    "MarkdownCleanupRule instances should return strings or tuples when called"
+                )
+
             self.text_changes.append(
                 self.ReplacementMatch(
-                    match,
-                    replacement,
-                    website_content.text_id,
-                    website_content.website_id,
+                    match=match,
+                    replacement=replacement,
+                    content=website_content,
+                    notes=notes,
                 )
             )
             return replacement
@@ -102,15 +123,25 @@ class WebsiteContentMarkdownCleaner:
         """Write matches and replacements to csv."""
 
         with open(path, "w", newline="") as csvfile:
-            fieldnames = [*self.csv_metadata_fieldnames, *self.regex.groupindex]
+            fieldnames = [
+                *self.csv_metadata_fieldnames,
+                *self.regex.groupindex,
+                *(f.name for f in fields(self.rule.ReplacementNotes)),
+            ]
             writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)
             writer.writeheader()
             for change in self.text_changes:
                 row = {
-                    "website_content_uuid": change.website_content_uuid,
-                    "website_uuid": change.website_uuid,
                     "original_text": change.match[0],
                     "replacement": change.replacement,
+                    "has_changed": change.match[0] != change.replacement,
+                    "replaced_on_site_name": change.content.website.name,
+                    "replaced_on_site_short_id": change.content.website.short_id,
+                    "replaced_on_page_uuid": change.content.text_id,
+                    "replaced_on_page_url": get_rootrelative_url_from_content(
+                        change.content
+                    ),
                     **change.match.groupdict(),
+                    **asdict(change.notes),
                 }
                 writer.writerow(row)

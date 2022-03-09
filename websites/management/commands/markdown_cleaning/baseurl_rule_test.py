@@ -1,25 +1,25 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
-from unittest.mock import Mock, patch
-
 import pytest
 
 from content_sync.factories import ContentSyncStateFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.baseurl_rule import (
-    CONTENT_FILENAME_MAX_LEN,
     BaseurlReplacementRule,
 )
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
+from websites.management.commands.markdown_cleaning.testing_utils import (
+    patch_website_contents_all,
+)
+from websites.management.commands.markdown_cleaning.utils import (
+    CONTENT_FILENAME_MAX_LEN,
+)
 
 
 def get_markdown_cleaner(website_contents):
     """Convenience to get rule-specific cleaner"""
-    with patch(
-        "websites.management.commands.markdown_cleaning.baseurl_rule.get_all_website_content"
-    ) as mock:
-        mock.return_value = website_contents
+    with patch_website_contents_all(website_contents):
         rule = BaseurlReplacementRule()
         return WebsiteContentMarkdownCleaner(rule)
 
@@ -76,13 +76,12 @@ def get_markdown_cleaner(website_contents):
 def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdown):
     """Test specific replacements"""
     website_uuid = "website-uuid"
-    target_content = WebsiteContentFactory.build(
-        markdown=markdown, website_id=website_uuid
-    )
+    website = WebsiteFactory.build(uuid=website_uuid)
+    target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
     ContentSyncStateFactory.build(content=target_content)
 
     linkable = WebsiteContentFactory.build(
-        website_id=website_uuid,
+        website=website,
         dirpath="content/resources/path/to",
         filename="file1",
         text_id="content-uuid-1",
@@ -114,17 +113,21 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
 def test_baseurl_replacer_handle_specific_url_replacements(
     url, content_relative_dirpath, filename
 ):
-    """Test specific replacements"""
+    """
+    Test specific replacements
+
+    This test could perhaps be dropped. It was written before ContentLookup was
+    moved to a separate module, and the functionality is tested their, now, too.
+    """
     website_uuid = "website-uuid"
+    website = WebsiteFactory.build(uuid=website_uuid)
     markdown = f"my [pets]({{{{< baseurl >}}}}{url}) are legion"
     expected_markdown = 'my {{% resource_link content-uuid "pets" %}} are legion'
-    target_content = WebsiteContentFactory.build(
-        markdown=markdown, website_id=website_uuid
-    )
+    target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
     target_sync_state = ContentSyncStateFactory.build(content=target_content)
 
     linkable = WebsiteContentFactory.build(
-        website_id=website_uuid,
+        website=website,
         dirpath=f"content{content_relative_dirpath}",
         filename=filename,
         text_id="content-uuid",
@@ -140,15 +143,14 @@ def test_baseurl_replacer_handle_specific_url_replacements(
 def test_baseurl_replacer_handles_index_files():
     """Test specific replacements"""
     website_uuid = "website-uuid"
+    website = WebsiteFactory.build(uuid=website_uuid)
     markdown = R"my [pets]({{< baseurl >}}/pages/cute/pets) are legion"
     expected_markdown = R'my {{% resource_link content-uuid "pets" %}} are legion'
-    target_content = WebsiteContentFactory.build(
-        markdown=markdown, website_id=website_uuid
-    )
+    target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
     target_sync_state = ContentSyncStateFactory.build(content=target_content)
 
     linkable = WebsiteContentFactory.build(
-        website_id=website_uuid,
+        website=website,
         dirpath="content/pages/cute/pets",
         filename="_index",
         text_id="content-uuid",
@@ -242,14 +244,14 @@ def test_baseurl_replacer_replaces_content_in_same_course(
     markdown = R"""
     Kittens [meow]({{< baseurl >}}/resources/pets/cat) meow.
     """
-
-    target_content = WebsiteContentFactory.build(
-        markdown=markdown, website_id="website-uuid-111"
-    )
+    w1 = WebsiteFactory.build(uuid="website-uuid-111")
+    w2 = WebsiteFactory.build(uuid="website-uuid-222")
+    websites = {w.uuid: w for w in [w1, w2]}
+    target_content = WebsiteContentFactory.build(markdown=markdown, website=w1)
     ContentSyncStateFactory.build(content=target_content)
 
     linkable = WebsiteContentFactory.build(
-        website_id=website_uuid,
+        website=websites[website_uuid],
         dirpath="content/resources/pets",
         filename="cat",
         text_id="uuid-111",
@@ -264,4 +266,4 @@ def test_baseurl_replacer_replaces_content_in_same_course(
         == target_content.calculate_checksum()
     )
     assert is_markdown_changed == should_markdown_change
-    # assert is_checksum_changed == should_markdown_change
+    assert is_checksum_changed == should_markdown_change
