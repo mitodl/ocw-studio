@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.52.1
+Version 0.52.1 (Released March 09, 2022)
 --------------
 
 - Revert "purge theme assets after deployment (#1090)" (#1096)
