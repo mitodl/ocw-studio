@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.52.2
+--------------
+
+- Improved site search for names, short_ids (#1092)
+- Fix / Convert rootrelative urls (#1086)
+
 Version 0.52.1 (Released March 09, 2022)
 --------------
 
