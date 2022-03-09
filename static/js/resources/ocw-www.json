@@ -44,6 +44,46 @@
       "category": "Content",
       "fields": [
         {
+          "label": "Description",
+          "name": "description",
+          "widget": "markdown"
+        },
+        {
+          "collection": "resource",
+          "display_field": "title",
+          "filter": {
+            "field": "filetype",
+            "filter_type": "equals",
+            "value": "Image"
+          },
+          "label": "Cover Image",
+          "multiple": false,
+          "name": "cover-image",
+          "widget": "relation"
+        },
+        {
+          "label": "Featured Courses",
+          "name": "featured-courses",
+          "widget": "website-collection"
+        },
+        {
+          "collection": "course-lists",
+          "display_field": "title",
+          "label": "Course Collections",
+          "multiple": true,
+          "name": "collections",
+          "sortable": true,
+          "widget": "relation"
+        }
+      ],
+      "folder": "content/collections",
+      "label": "Course Collections",
+      "name": "course-collection"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
           "label": "Title",
           "name": "title",
           "required": true,
@@ -60,9 +100,9 @@
           "widget": "website-collection"
         }
       ],
-      "folder": "content/course_collections",
-      "label": "Course Collections",
-      "name": "course_collections"
+      "folder": "content/course-lists",
+      "label": "Course Lists",
+      "name": "course-lists"
     },
     {
       "category": "Content",
