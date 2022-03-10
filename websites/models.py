@@ -31,7 +31,7 @@ from websites.constants import (
     CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role
+from websites.utils import permissions_group_name_for_role, set_title_salutation
 
 
 def validate_yaml(value):
@@ -279,6 +279,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
 
     def save(self, **kwargs):  # pylint: disable=arguments-differ
         """Update dirty flags on save"""
+        set_title_salutation(self)
         super().save(**kwargs)
         website = self.website
         website.has_unpublished_live = True

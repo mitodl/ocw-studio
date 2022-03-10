@@ -1,12 +1,14 @@
 """Website utils tests"""
+from curses import meta
 import pytest
 
 from websites import constants
-from websites.factories import WebsiteFactory
+from websites.factories import WebsiteFactory, WebsiteContentFactory
 from websites.utils import (
     get_dict_query_field,
     permissions_group_name_for_role,
     set_dict_field,
+    set_title_salutation,
 )
 
 
@@ -79,3 +81,35 @@ def test_set_dict_field():
             "parameter_2": "value2",
         },
     }
+
+
+def test_set_title_salutation():
+    """
+    Verifies that set_title_salutation works as expected:
+    Append salutation in title only when needed
+    """
+    data_arr = [
+        {
+            "title": "John Cena",
+            "metadata": {"salutation": "Dr."},
+            "title_with_salutation": "Dr. John Cena",
+        },
+        {
+            "title": "John Cena",
+            "metadata": {"salutation": ""},
+            "title_with_salutation": "John Cena",
+        },
+        {
+            "title": "Dr. John Cena",
+            "metadata": {"salutation": "Dr."},
+            "title_with_salutation": "Dr. John Cena",
+        },
+    ]
+    for data in data_arr:
+        website_content = WebsiteContentFactory.build(
+            title=data["title"],
+            metadata=data["metadata"],
+            type=constants.CONTENT_TYPE_INSTRUCTOR,
+        )
+        set_title_salutation(website_content)
+        assert website_content.title == data["title_with_salutation"]

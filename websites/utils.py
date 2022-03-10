@@ -47,3 +47,14 @@ def get_valid_base_filename(filename: str, content_type: str) -> str:
     if filename in constants.CONTENT_FILENAMES_FORBIDDEN:
         return f"{filename}-{content_type}"
     return filename
+
+
+def set_title_salutation(website_content):
+    """Set salutation in title if salutation found in metadata and not found in title"""
+    if (
+        website_content.type == constants.CONTENT_TYPE_INSTRUCTOR
+        and website_content.metadata.get("salutation", None)
+    ):
+        salutation = website_content.metadata["salutation"].strip()
+        if not website_content.title.startswith(salutation):
+            website_content.title = f"{salutation} {website_content.title}"
