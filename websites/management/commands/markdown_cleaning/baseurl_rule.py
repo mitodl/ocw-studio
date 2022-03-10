@@ -41,7 +41,7 @@ class BaseurlReplacementRule(RegexpCleanupRule):
             return original_text
 
         try:
-            linked_content = self.content_lookup.find(website_content.website_id, url)
+            linked_content = self.content_lookup.find_within_site(website_content.website_id, url)
             fragment_arg = f' "{fragment}"' if fragment is not None else ""
             return f'{{{{% resource_link {linked_content.text_id} "{escaped_title}"{fragment_arg} %}}}}'
         except KeyError:

@@ -41,8 +41,8 @@ def test_content_finder_is_site_specific():
         content_lookup = ContentLookup()
 
         url = "/resources/path/to/file1"
-        assert content_lookup.find(content_w1.website_id, url) == content_w1
-        assert content_lookup.find(content_w2.website_id, url) == content_w2
+        assert content_lookup.find_within_site(content_w1.website_id, url) == content_w1
+        assert content_lookup.find_within_site(content_w2.website_id, url) == content_w2
 
 
 @pytest.mark.parametrize(
@@ -89,7 +89,7 @@ def test_content_finder_specific_url_replacements(
     with patch_website_contents_all([content]):
         content_lookup = ContentLookup()
 
-        assert content_lookup.find("website_uuid", url) == content
+        assert content_lookup.find_within_site("website_uuid", url) == content
 
 
 @pytest.mark.parametrize(
@@ -110,14 +110,14 @@ def test_content_finder_returns_metadata_for_site(site_uuid, content_index):
     ]
     with patch_website_contents_all(contents):
         content_lookup = ContentLookup()
-        assert content_lookup.find(site_uuid, "/") == contents[content_index]
+        assert content_lookup.find_within_site(site_uuid, "/") == contents[content_index]
 
 
 @patch_website_contents_all([])
 def test_content_finder_raises_keyerror():
     content_lookup = ContentLookup()
     with pytest.raises(KeyError):
-        assert content_lookup.find("website_uuid", "url/to/thing")
+        assert content_lookup.find_within_site("website_uuid", "url/to/thing")
 
 
 @pytest.mark.parametrize(

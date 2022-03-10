@@ -73,7 +73,7 @@ class MetadataRelativeUrlsFix(RegexpCleanupRule):
         content_relative_path = "/" + url.path.lstrip("/")
 
         try:
-            linked_content = self.content_lookup.find(
+            linked_content = self.content_lookup.find_within_site(
                 website_content.website_id, content_relative_path
             )
         except KeyError:

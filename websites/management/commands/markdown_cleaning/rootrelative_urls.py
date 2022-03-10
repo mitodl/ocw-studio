@@ -95,14 +95,14 @@ class RootRelativeUrlRule(RegexpCleanupRule):
         site_rel_path = urlparse(site_rel_url).path
 
         try:
-            wc = self.content_lookup.find(site.uuid, site_rel_path)
+            wc = self.content_lookup.find_within_site(site.uuid, site_rel_path)
             return wc, "Exact dirpath/filename match"
         except KeyError:
             pass
 
         try:
             prepend = "/pages"
-            wc = self.content_lookup.find(site.uuid, prepend + site_rel_path)
+            wc = self.content_lookup.find_within_site(site.uuid, prepend + site_rel_path)
             return wc, "prepended '/pages'"
         except KeyError:
             pass
@@ -111,7 +111,7 @@ class RootRelativeUrlRule(RegexpCleanupRule):
             prepend = "/resources"
             remove = "/pages/video-lectures"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
-            wc = self.content_lookup.find(site.uuid, resource_url)
+            wc = self.content_lookup.find_within_site(site.uuid, resource_url)
             return wc, f"removed '{remove}', prepended '{prepend}'"
         except KeyError:
             pass
@@ -119,7 +119,7 @@ class RootRelativeUrlRule(RegexpCleanupRule):
             prepend = "/resources"
             remove = "/pages/video-and-audio-classes"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
-            wc = self.content_lookup.find(site.uuid, resource_url)
+            wc = self.content_lookup.find_within_site(site.uuid, resource_url)
             return wc, f"removed '{remove}', prepended '{prepend}'"
         except KeyError:
             pass
@@ -128,7 +128,7 @@ class RootRelativeUrlRule(RegexpCleanupRule):
             prepend = "/resources"
             remove = "/videos"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
-            wc = self.content_lookup.find(site.uuid, resource_url)
+            wc = self.content_lookup.find_within_site(site.uuid, resource_url)
             return wc, f"removed '{remove}', prepended '{prepend}'"
         except KeyError:
             pass
@@ -137,7 +137,7 @@ class RootRelativeUrlRule(RegexpCleanupRule):
             prepend = "/video_galleries"
             remove = "/pages"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
-            wc = self.content_lookup.find(site.uuid, resource_url)
+            wc = self.content_lookup.find_within_site(site.uuid, resource_url)
             return wc, f"removed '{remove}', prepended '{prepend}'"
         except KeyError:
             pass
