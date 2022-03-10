@@ -6,9 +6,7 @@ from urllib.parse import urlparse
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     RegexpCleanupRule,
 )
-from websites.management.commands.markdown_cleaning.utils import (
-    ContentLookup,
-)
+from websites.management.commands.markdown_cleaning.utils import ContentLookup
 from websites.models import WebsiteContent
 
 
@@ -17,6 +15,7 @@ class ValidateUrls(RegexpCleanupRule):
     This rule never changes anything. Its intent is to find links and validate
     that they work.
     """
+
     regex = (
         # Do not try to capture link text, else we'll miss images inside links
         # because the regex matches will overlap
@@ -43,7 +42,7 @@ class ValidateUrls(RegexpCleanupRule):
     class ReplacementNotes:
         link_type: str
         url_path: str
-        links_to_course: str = ''
+        links_to_course: str = ""
 
     def __init__(self) -> None:
         super().__init__()
@@ -56,12 +55,14 @@ class ValidateUrls(RegexpCleanupRule):
 
         if url.scheme.startswith("http"):
             return original_text, notes(link_type="global link")
-        
+
         if not url.path.startswith("/courses"):
             return original_text, notes(link_type="not course link")
 
         try:
             linked_content = self.content_lookup.find(url.path)
-            return original_text, notes(link_type='course link', links_to_course=linked_content.website.name)
+            return original_text, notes(
+                link_type="course link", links_to_course=linked_content.website.name
+            )
         except KeyError:
             return original_text, notes(link_type="content not found")

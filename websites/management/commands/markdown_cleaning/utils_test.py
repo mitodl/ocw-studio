@@ -110,7 +110,9 @@ def test_content_finder_returns_metadata_for_site(site_uuid, content_index):
     ]
     with patch_website_contents_all(contents):
         content_lookup = ContentLookup()
-        assert content_lookup.find_within_site(site_uuid, "/") == contents[content_index]
+        assert (
+            content_lookup.find_within_site(site_uuid, "/") == contents[content_index]
+        )
 
 
 @patch_website_contents_all([])

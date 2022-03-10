@@ -102,7 +102,9 @@ class RootRelativeUrlRule(RegexpCleanupRule):
 
         try:
             prepend = "/pages"
-            wc = self.content_lookup.find_within_site(site.uuid, prepend + site_rel_path)
+            wc = self.content_lookup.find_within_site(
+                site.uuid, prepend + site_rel_path
+            )
             return wc, "prepended '/pages'"
         except KeyError:
             pass

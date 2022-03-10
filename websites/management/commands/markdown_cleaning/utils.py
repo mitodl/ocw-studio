@@ -40,9 +40,7 @@ class ContentLookup:
         self.metadata = {
             wc.website_id: wc for wc in website_contents if wc.type == "sitemetadata"
         }
-        self.websites = {
-            wc.website.name: wc.website_id for wc in website_contents
-        }
+        self.websites = {wc.website.name: wc.website_id for wc in website_contents}
 
     def __str__(self):
         return self.website_contents.__str__()
@@ -57,14 +55,14 @@ class ContentLookup:
         """Get filename in our database format (see migration 0023)"""
         return filename[0:CONTENT_FILENAME_MAX_LEN].replace(".", "-")
 
-    def find(self, root_relative_path: str):     
-        root_relative_path = root_relative_path.strip('/')
-        root_relative_path += '/'
-        if not root_relative_path.startswith('courses/'):
+    def find(self, root_relative_path: str):
+        root_relative_path = root_relative_path.strip("/")
+        root_relative_path += "/"
+        if not root_relative_path.startswith("courses/"):
             raise KeyError(f"Content for '{root_relative_path}' not found")
-        site_name = root_relative_path.split('/')[1]
-        
-        relative_path = remove_prefix(root_relative_path, f'courses/{site_name}')
+        site_name = root_relative_path.split("/")[1]
+
+        relative_path = remove_prefix(root_relative_path, f"courses/{site_name}")
         site_id = self.websites[site_name]
         return self.find_within_site(site_id, relative_path)
 
