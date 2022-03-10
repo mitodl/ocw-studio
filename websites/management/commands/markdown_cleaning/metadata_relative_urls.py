@@ -1,16 +1,17 @@
-from dataclasses import dataclass
 import re
-from urllib.parse import urlparse
+from dataclasses import dataclass
 from functools import partial
+from urllib.parse import urlparse
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     RegexpCleanupRule,
 )
-from websites.models import WebsiteContent
 from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
-    get_rootrelative_url_from_content
+    get_rootrelative_url_from_content,
 )
+from websites.models import WebsiteContent
+
 
 class MetadataRelativeUrlsFix(RegexpCleanupRule):
     """
@@ -21,12 +22,12 @@ class MetadataRelativeUrlsFix(RegexpCleanupRule):
     """
 
     regex = (
-          r"\\?\["  # match title opening "[" (or "\[" in case corrupted by studio save)
+        r"\\?\["  # match title opening "[" (or "\[" in case corrupted by studio save)
         + r"(?P<text>[^\[\]\<\>\n]*?)"  # capture the title
         + r"\\?\]"  # title closing "]" (or "\]")
         + r"\("  # url open
-        + r"(?P<url>[^\s]*?)" # capture the url
-        + r"(\s(?P<title>.*?))?" # capture optional title
+        + r"(?P<url>[^\s]*?)"  # capture the url
+        + r"(\s(?P<title>.*?))?"  # capture optional title
         + r"\)"  # url close
     )
 
@@ -38,7 +39,7 @@ class MetadataRelativeUrlsFix(RegexpCleanupRule):
         "metadata.image_metadata.credit",
         "metadata.optional_text",
         "metadata.description",
-        "metadata.course_description"
+        "metadata.course_description",
     ]
 
     @dataclass
@@ -53,34 +54,36 @@ class MetadataRelativeUrlsFix(RegexpCleanupRule):
         self.content_lookup = ContentLookup()
 
     def replace_match(self, match: re.Match, website_content: WebsiteContent):
-        regex_text = match.group('text')
-        url = urlparse(match.group('url'))
-        regex_title = match.group('title')
+        regex_text = match.group("text")
+        url = urlparse(match.group("url"))
+        regex_title = match.group("title")
         original_text = match[0]
         notes = partial(
             self.ReplacementNotes,
             regex_text=regex_text,
             url_path=url.path,
-            regex_title=regex_title
+            regex_title=regex_title,
         )
 
-        if url.scheme.startswith('http'):
-            return original_text, notes(replacement_type='global link')
-        if url.path.startswith('/courses'):
-            return original_text, notes(replacement_type='course link')
+        if url.scheme.startswith("http"):
+            return original_text, notes(replacement_type="global link")
+        if url.path.startswith("/courses"):
+            return original_text, notes(replacement_type="course link")
 
-        content_relative_path = '/' + url.path.lstrip('/')
-        
+        content_relative_path = "/" + url.path.lstrip("/")
+
         try:
-            linked_content = self.content_lookup.find(website_content.website_id, content_relative_path)
+            linked_content = self.content_lookup.find(
+                website_content.website_id, content_relative_path
+            )
         except KeyError:
-            return original_text, notes(replacement_type='content not found')
+            return original_text, notes(replacement_type="content not found")
 
         link_url = get_rootrelative_url_from_content(linked_content)
         if url.fragment:
-            link_url += f'#{url.fragment}'
+            link_url += f"#{url.fragment}"
 
         # The link titles are all "Open in a new window". And they won't open in
         # a new window. So just discard the title.
         replacement = f"[{regex_text}]({link_url})"
-        return replacement, notes(replacement_type='converted')
+        return replacement, notes(replacement_type="converted")

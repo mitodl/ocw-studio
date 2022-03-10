@@ -17,7 +17,9 @@ class MarkdownCleanupRule(abc.ABC):
         """Alias of the rule to be used in CLI"""
 
     @abc.abstractmethod
-    def transform_text(self, website_content: WebsiteContent, text: str, on_match) -> str:
+    def transform_text(
+        self, website_content: WebsiteContent, text: str, on_match
+    ) -> str:
         """Transform markdown associated with a website_content object.
 
         Calls on_match(original_text, replacement, website_content, replacement_notes) for
@@ -30,7 +32,7 @@ class MarkdownCleanupRule(abc.ABC):
         regex capturing groups.
         """
 
-    fields = ['markdown']
+    fields = ["markdown"]
 
 
 class RegexpCleanupRule(MarkdownCleanupRule):
@@ -56,7 +58,9 @@ class RegexpCleanupRule(MarkdownCleanupRule):
         also.
         """
 
-    def transform_text(self, website_content: WebsiteContent, text: str, on_match) -> str:
+    def transform_text(
+        self, website_content: WebsiteContent, text: str, on_match
+    ) -> str:
         def _replacer(match: re.Match):
             result = self.replace_match(match, website_content)
             if isinstance(result, str):

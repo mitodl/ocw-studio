@@ -21,6 +21,9 @@ from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix i
     LegacyShortcodeFixOne,
     LegacyShortcodeFixTwo,
 )
+from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
+    MetadataRelativeUrlsFix,
+)
 from websites.management.commands.markdown_cleaning.resource_file_rule import (
     ResourceFileReplacementRule,
 )
@@ -29,9 +32,6 @@ from websites.management.commands.markdown_cleaning.resource_link_delimiters imp
 )
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
-)
-from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
-    MetadataRelativeUrlsFix,
 )
 from websites.models import WebsiteContent
 
