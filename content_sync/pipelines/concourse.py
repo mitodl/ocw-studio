@@ -226,14 +226,14 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
             base_url = site_url
             theme_created_trigger = "false"
             theme_deployed_trigger = "true"
+        hugo_projects_url = urljoin(
+            f"{starter_path_url.scheme}://{starter_path_url.netloc}",
+            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
+        )
         purge_header = (
             ""
             if settings.CONCOURSE_HARD_PURGE
             else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
-        )
-        hugo_projects_url = urljoin(
-            f"{starter_path_url.scheme}://{starter_path_url.netloc}",
-            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
         )
 
         for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
@@ -338,6 +338,11 @@ class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
                 "definitions/concourse/theme-assets-pipeline.yml",
             )
         ) as pipeline_config_file:
+            purge_header = (
+                ""
+                if settings.CONCOURSE_HARD_PURGE
+                else "\n          - -H\n          - 'Fastly-Soft-Purge: 1'"
+            )
             config_str = (
                 pipeline_config_file.read()
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
@@ -345,6 +350,7 @@ class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
                 .replace("((search-api-url))", settings.SEARCH_API_URL)
                 .replace("((ocw-bucket-draft))", settings.AWS_PREVIEW_BUCKET_NAME)
                 .replace("((ocw-bucket-live))", settings.AWS_PUBLISH_BUCKET_NAME)
+                .replace("((purge_header))", purge_header)
             )
             config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
             log.debug(config)
