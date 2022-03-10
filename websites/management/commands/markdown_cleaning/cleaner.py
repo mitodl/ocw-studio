@@ -1,16 +1,16 @@
 """Facilitates regex-based replacements on WebsiteContentMarkdown."""
 import csv
-from functools import partial
 from dataclasses import asdict, dataclass, fields
+from functools import partial
 from typing import Any
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
 from websites.management.commands.markdown_cleaning.utils import (
-    get_rootrelative_url_from_content,
     get_nested,
-    set_nested
+    get_rootrelative_url_from_content,
+    set_nested,
 )
 from websites.models import WebsiteContent
 
@@ -20,7 +20,7 @@ class WebsiteContentMarkdownCleaner:
 
     Args:
         rule: A MarkdownCleanupRule instance.
-    
+
     The cleaner instance will make replacements using the given rule and record
     information about each replacement. These records may be recovered via the
     `write_matches_to_csv` method.
@@ -61,7 +61,7 @@ class WebsiteContentMarkdownCleaner:
         replacement: str,
         website_content: WebsiteContent,
         notes,
-        field: str 
+        field: str,
     ):
         """Store match data for subsequent csv-generation."""
         self.replacement_matches.append(
@@ -70,17 +70,17 @@ class WebsiteContentMarkdownCleaner:
                 replacement=replacement,
                 content=website_content,
                 notes=notes,
-                field=field
+                field=field,
             )
         )
         return replacement
 
-    @staticmethod 
+    @staticmethod
     def get_field_to_change(website_content: WebsiteContent, field: str):
-        if field == 'markdown':
+        if field == "markdown":
             return website_content.markdown
-        if field.startswith('metadata.'):
-            metadata_keypath = field.split('.')[1:]
+        if field.startswith("metadata."):
+            metadata_keypath = field.split(".")[1:]
             if website_content.metadata is None:
                 return None
             return get_nested(website_content.metadata, metadata_keypath)
@@ -89,11 +89,11 @@ class WebsiteContentMarkdownCleaner:
 
     @staticmethod
     def make_field_change(website_content: WebsiteContent, field: str, new_value: str):
-        if field == 'markdown':
+        if field == "markdown":
             website_content.markdown = new_value
             return
-        if field.startswith('metadata.'):
-            metadata_keypath = field.split('.')[1:]
+        if field.startswith("metadata."):
+            metadata_keypath = field.split(".")[1:]
             set_nested(website_content.metadata, metadata_keypath, new_value)
             return
 
@@ -105,7 +105,7 @@ class WebsiteContentMarkdownCleaner:
         database.
         """
         changed = False
-        for field in self.rule.fields:       
+        for field in self.rule.fields:
             old_text = self.get_field_to_change(wc, field)
             if old_text is None:
                 continue

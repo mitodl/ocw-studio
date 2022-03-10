@@ -206,6 +206,7 @@ class LegacyFileLookup:
             return matches[0]
         raise self.MultipleMatchError(f"Found {len(matches)} files with same name.")
 
+
 def get_nested(rootdict, keypath, default=None):
     value = rootdict
     for key in keypath:
@@ -215,8 +216,9 @@ def get_nested(rootdict, keypath, default=None):
             return default
     return value
 
+
 def set_nested(rootdict, keypath, value):
     dct = rootdict
     for key in keypath[:-1]:
-        dct= dct[key]
+        dct = dct[key]
     dct[keypath[-1]] = value

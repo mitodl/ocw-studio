@@ -14,7 +14,7 @@ from websites.management.commands.markdown_cleaning.utils import (
     LegacyFileLookup,
     UrlSiteRelativiser,
     get_nested,
-    set_nested
+    set_nested,
 )
 
 
@@ -221,47 +221,42 @@ def test_legacy_file_lookup_raises_keyerror_for_none():
     with pytest.raises(KeyError):
         assert legacy_file_lookup.find("some-site-uuid", "captain-nemo.file")
 
+
 def test_get_nested():
     x = {
         "a": {
             "A": 1,
-            "B": {
-                "x": 2
-            },
-        "b": 10,
+            "B": {"x": 2},
+            "b": 10,
         }
     }
 
     assert get_nested(x, ["a", "A"]) == 1
-    assert get_nested(x, ["a", "B"]) == { "x": 2 }
+    assert get_nested(x, ["a", "B"]) == {"x": 2}
     assert get_nested(x, ["a", "B", "x"]) == 2
     assert get_nested(x, ["a", "C"]) is None
     assert get_nested(x, ["a", "C", "y"]) is None
-    assert get_nested(x, ["b"]) == 10 
-    assert get_nested(x, ["a", "C"], 'other_default') == 'other_default'
+    assert get_nested(x, ["b"]) == 10
+    assert get_nested(x, ["a", "C"], "other_default") == "other_default"
+
 
 def test_set_nested():
     x = {
         "a": {
             "A": 1,
-            "B": {
-                "x": 2
-            },
-        "b": 10,
+            "B": {"x": 2},
+            "b": 10,
         }
     }
 
-    set_nested(x, ['a', "B", "y"], 3)
+    set_nested(x, ["a", "B", "y"], 3)
     assert x == {
         "a": {
             "A": 1,
-            "B": {
-                "x": 2,
-                "y": 3
-            },
-        "b": 10,
+            "B": {"x": 2, "y": 3},
+            "b": 10,
         }
     }
 
-    with pytest.raises(KeyError, match='C'):
-        set_nested(x, ['a', "C", "y"], 3)
+    with pytest.raises(KeyError, match="C"):
+        set_nested(x, ["a", "C", "y"], 3)
