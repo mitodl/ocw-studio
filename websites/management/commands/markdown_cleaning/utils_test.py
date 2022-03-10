@@ -25,13 +25,13 @@ def string_uuid():
 def test_content_finder_is_site_specific():
     """Test that ContentLookup is site specific"""
     content_w1 = WebsiteContentFactory.build(
-        website=WebsiteFactory.build(uuid='website-uuid-1'),
+        website=WebsiteFactory.build(uuid="website-uuid-1"),
         dirpath="content/resources/path/to",
         filename="file1",
         text_id="content-uuid-1",
     )
     content_w2 = WebsiteContentFactory.build(
-        website=WebsiteFactory.build(uuid='website-uuid-2'),
+        website=WebsiteFactory.build(uuid="website-uuid-2"),
         dirpath="content/resources/path/to",
         filename="file1",
         text_id="content-uuid-1",
@@ -80,7 +80,7 @@ def test_content_finder_specific_url_replacements(
     url, content_relative_dirpath, filename
 ):
     content = WebsiteContentFactory.build(
-        website=WebsiteFactory.build(uuid='website_uuid'),
+        website=WebsiteFactory.build(uuid="website_uuid"),
         dirpath=f"content{content_relative_dirpath}",
         filename=filename,
         text_id="content-uuid",
@@ -98,12 +98,12 @@ def test_content_finder_specific_url_replacements(
 def test_content_finder_returns_metadata_for_site(site_uuid, content_index):
     contents = [
         WebsiteContentFactory.build(
-            website=WebsiteFactory.build(uuid='website_one'),
+            website=WebsiteFactory.build(uuid="website_one"),
             type="sitemetadata",
             text_id="content-1",
         ),
         WebsiteContentFactory.build(
-            website=WebsiteFactory.build(uuid='website_two'),
+            website=WebsiteFactory.build(uuid="website_two"),
             type="sitemetadata",
             text_id="content-2",
         ),
