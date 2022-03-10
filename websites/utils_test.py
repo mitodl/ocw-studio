@@ -1,5 +1,4 @@
 """Website utils tests"""
-from curses import meta
 import pytest
 
 from websites import constants
