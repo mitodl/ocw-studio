@@ -209,6 +209,21 @@ describe("RelationField", () => {
       ).toEqual(formatWebsiteOptions(websites, "name"))
     })
 
+    it("should not filter on published if cross_site is false", async () => {
+      await render({ cross_site: false, value: [] })
+      expect(global.fetch).toHaveBeenCalledWith(
+        siteApiContentListingUrl
+          .query({
+            detailed_list:   true,
+            content_context: true,
+            type:            "page",
+            published:       false
+          })
+          .toString(),
+        { credentials: "include" }
+      )
+    })
+
     it("should let the user pick a website and then content within that website", async () => {
       const { wrapper } = await render({ cross_site: true, value: [] })
       await act(async () => {
