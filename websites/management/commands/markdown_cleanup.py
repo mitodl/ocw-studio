@@ -1,6 +1,7 @@
 """Replace baseurl-based links with resource_link shortcodes."""
 import os
 from contextlib import ExitStack
+from typing import Type
 
 from django.conf import settings
 from django.core.management import BaseCommand
@@ -17,6 +18,7 @@ from websites.management.commands.markdown_cleaning.baseurl_rule import (
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
+from websites.management.commands.markdown_cleaning.cleanup_rule import MarkdownCleanupRule
 from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix import (
     LegacyShortcodeFixOne,
     LegacyShortcodeFixTwo,
@@ -33,6 +35,9 @@ from websites.management.commands.markdown_cleaning.resource_link_delimiters imp
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
+from websites.management.commands.markdown_cleaning.validate_urls import (
+    ValidateUrls,
+)
 from websites.models import WebsiteContent
 
 
@@ -43,7 +48,7 @@ class Command(BaseCommand):
 
     help = __doc__
 
-    Rules = [
+    Rules: "list[Type[MarkdownCleanupRule]]" = [
         BaseurlReplacementRule,
         ResourceFileReplacementRule,
         LegacyShortcodeFixOne,
@@ -51,6 +56,7 @@ class Command(BaseCommand):
         ResourceLinkDelimitersReplacementRule,
         RootRelativeUrlRule,
         MetadataRelativeUrlsFix,
+        ValidateUrls
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
@@ -127,7 +133,6 @@ class Command(BaseCommand):
             if commit:
                 stack.enter_context(transaction.atomic())
                 all_wc.select_for_update()
-
             rule = Rule()
             cleaner = WebsiteContentMarkdownCleaner(rule)
 
@@ -136,7 +141,7 @@ class Command(BaseCommand):
                 cleaner.update_website_content(wc)
 
             if commit:
-                all_wc.bulk_update(cleaner.updated_website_contents, ["markdown"])
+                all_wc.bulk_update(cleaner.updated_website_contents, Rule.get_root_fields())
                 ContentSyncState.objects.bulk_update(
                     cleaner.updated_sync_states, ["current_checksum"]
                 )

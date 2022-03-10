@@ -37,6 +37,9 @@ class MarkdownCleanupRule(abc.ABC):
 
     fields = ["markdown"]
 
+    @classmethod
+    def get_root_fields(cls):
+        return {f.split('.')[0] for f in cls.fields}
 
 class RegexpCleanupRule(MarkdownCleanupRule):
     """
