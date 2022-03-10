@@ -30,8 +30,7 @@ class MarkdownCleanupRule(abc.ABC):
         regex capturing groups.
         """
 
-    field = 'markdown'
-    subfield = None
+    fields = ['markdown']
 
 
 class RegexpCleanupRule(MarkdownCleanupRule):
