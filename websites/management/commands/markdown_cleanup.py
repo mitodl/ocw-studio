@@ -30,8 +30,8 @@ from websites.management.commands.markdown_cleaning.resource_link_delimiters imp
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
-from websites.management.commands.markdown_cleaning.related_resources_urls import (
-    RelatedResourcesTextRule,
+from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
+    MetadataRelativeUrlsFix,
 )
 from websites.models import WebsiteContent
 
@@ -50,7 +50,7 @@ class Command(BaseCommand):
         LegacyShortcodeFixTwo,
         ResourceLinkDelimitersReplacementRule,
         RootRelativeUrlRule,
-        RelatedResourcesTextRule,
+        MetadataRelativeUrlsFix,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:

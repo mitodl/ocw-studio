@@ -1,6 +1,6 @@
 """Facilitates regex-based replacements on WebsiteContentMarkdown."""
 import csv
-import re
+from functools import partial
 from dataclasses import asdict, dataclass, fields
 from typing import Any
 
@@ -9,6 +9,8 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import (
 )
 from websites.management.commands.markdown_cleaning.utils import (
     get_rootrelative_url_from_content,
+    get_nested,
+    set_nested
 )
 from websites.models import WebsiteContent
 
@@ -32,11 +34,13 @@ class WebsiteContentMarkdownCleaner:
         replacement: str
         content: WebsiteContent
         notes: Any  # should be a dataclass
+        field: str
 
     csv_metadata_fieldnames = [
         "original_text",
         "replacement",
         "has_changed",
+        "field",
         "replaced_on_site_name",
         "replaced_on_site_short_id",
         "replaced_on_page_uuid",
@@ -57,6 +61,7 @@ class WebsiteContentMarkdownCleaner:
         replacement: str,
         website_content: WebsiteContent,
         notes,
+        field: str 
     ):
         """Store match data for subsequent csv-generation."""
         self.replacement_matches.append(
@@ -65,58 +70,58 @@ class WebsiteContentMarkdownCleaner:
                 replacement=replacement,
                 content=website_content,
                 notes=notes,
+                field=field
             )
         )
         return replacement
 
-    def get_field_to_change(self, website_content: WebsiteContent):
-        if self.rule.field == 'markdown':
+    @staticmethod 
+    def get_field_to_change(website_content: WebsiteContent, field: str):
+        if field == 'markdown':
             return website_content.markdown
-        if self.rule.field == 'metadata':
+        if field.startswith('metadata.'):
+            metadata_keypath = field.split('.')[1:]
             if website_content.metadata is None:
                 return None
-            try:
-                return website_content.metadata[self.rule.subfield]
-            except KeyError:
-                return None
+            return get_nested(website_content.metadata, metadata_keypath)
 
-        raise ValueError(f"Unexpected field value: {self.rule.field}")
+        raise ValueError(f"Unexpected field value: {field}")
 
-    def make_field_change(self, website_content: WebsiteContent, new_value: str):
-        if self.rule.field == 'markdown':
+    @staticmethod
+    def make_field_change(website_content: WebsiteContent, field: str, new_value: str):
+        if field == 'markdown':
             website_content.markdown = new_value
             return
-        if self.rule.field == 'metadata':
-            website_content.metadata[self.rule.subfield] = new_value
+        if field.startswith('metadata.'):
+            metadata_keypath = field.split('.')[1:]
+            set_nested(website_content.metadata, metadata_keypath, new_value)
             return
 
-        raise ValueError(f"Unexpected field value: {self.rule.field}")
+        raise ValueError(f"Unexpected field value: {field}")
 
-    def update_website_content(self, website_content: WebsiteContent):
+    def update_website_content(self, wc: WebsiteContent):
         """
         Updates website_content's markdown and checksums in-place. Does not commit to
         database.
         """
-        if not website_content.markdown:
-            return
+        changed = False
+        for field in self.rule.fields:       
+            old_text = self.get_field_to_change(wc, field)
+            if old_text is None:
+                continue
+            store_match_data = partial(self.store_match_data, field=field)
+            new_text = self.rule.transform_text(wc, old_text, store_match_data)
+            if old_text != new_text:
+                self.make_field_change(wc, field, new_text)
+                changed = True
 
-        old_text = self.get_field_to_change(website_content)
-        if old_text is None:
-            return
-
-        new_text = self.rule.transform_text(
-            website_content, old_text, self.store_match_data
-        )
-
-        if old_text != new_text:
-            self.make_field_change(website_content, new_text)
-            self.updated_website_contents.append(website_content)
-
-            sync_state = website_content.content_sync_state
+        if changed:
+            self.updated_website_contents.append(wc)
+            sync_state = wc.content_sync_state
             if not sync_state:
                 return
 
-            new_checksum = website_content.calculate_checksum()
+            new_checksum = wc.calculate_checksum()
             if new_checksum != sync_state.current_checksum:
                 sync_state.current_checksum = new_checksum
                 self.updated_sync_states.append(sync_state)
@@ -136,6 +141,7 @@ class WebsiteContentMarkdownCleaner:
                     "original_text": change.original_text,
                     "replacement": change.replacement,
                     "has_changed": change.original_text != change.replacement,
+                    "field": change.field,
                     "replaced_on_site_name": change.content.website.name,
                     "replaced_on_site_short_id": change.content.website.short_id,
                     "replaced_on_page_uuid": change.content.text_id,
