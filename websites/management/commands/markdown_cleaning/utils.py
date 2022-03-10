@@ -207,9 +207,19 @@ class LegacyFileLookup:
         raise self.MultipleMatchError(f"Found {len(matches)} files with same name.")
 
 
-def get_nested(rootdict, keypath, default=None):
-    value = rootdict
-    for key in keypath:
+def get_nested(root_dict, key_path, default=None):
+    """Retrieve a value from a nested dictionary. Returns `default` if some key
+    in `key_path` does not exist.
+
+    Example
+    =======
+    >>> get_nested({ "a": {"x": { 1: 2 } } }, ["a", "x", 1])
+    2
+    >>> get_nested({ "a": {"x": { 1: 2 } } }, ["a", "y"])
+    None
+    """
+    value = root_dict
+    for key in key_path:
         try:
             value = value[key]
         except KeyError:
@@ -217,8 +227,18 @@ def get_nested(rootdict, keypath, default=None):
     return value
 
 
-def set_nested(rootdict, keypath, value):
-    dct = rootdict
-    for key in keypath[:-1]:
+def set_nested(root_dict, key_path, value):
+    """Set a value in a nested dictionary.
+
+    Note: Does not create dictionaries along the way. Every key in key_path
+    except the last should correspond to a dictionary value.
+
+    Example
+    =======
+    >>> set_nested({ "a": {"x": { 1: 2 } } }, ["a", "x", 2], 3)
+    { "a": {"x": { 1: 2, 2: 3 } } }
+    """
+    dct = root_dict
+    for key in key_path[:-1]:
         dct = dct[key]
-    dct[keypath[-1]] = value
+    dct[key_path[-1]] = value

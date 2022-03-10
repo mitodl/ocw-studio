@@ -1,4 +1,4 @@
-"""Facilitates regex-based replacements on WebsiteContentMarkdown."""
+"""Facilitates find-and-replace on WebsiteContent objects."""
 import csv
 from dataclasses import asdict, dataclass, fields
 from functools import partial
@@ -16,7 +16,7 @@ from websites.models import WebsiteContent
 
 
 class WebsiteContentMarkdownCleaner:
-    """Facilitates replacements on WebsiteContent markdown.
+    """Facilitates find-and-replace on WebsiteContent markdown fields.
 
     Args:
         rule: A MarkdownCleanupRule instance.

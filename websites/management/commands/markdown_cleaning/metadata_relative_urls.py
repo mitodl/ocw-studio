@@ -17,7 +17,7 @@ class MetadataRelativeUrlsFix(RegexpCleanupRule):
     """
     Turn relative metadata links into root-relative links. :sob:
 
-    Sadly, these cannot turn into shortcodes because our metadata is rendered
+    These cannot turn into shortcodes because our metadata is rendered
     via RenderString, which does not support shortcodes.
     """
 

@@ -9,6 +9,9 @@ class MarkdownCleanupRule(abc.ABC):
     """
     Abstract base class for markdown cleanup rules to be registered with
     MarkdownCleanup management command.
+
+    Rules should be used with WebsiteContentMarkdownCleaner. For regex-based
+    rules, inherit from RegexpCleanupRule.
     """
 
     @property
