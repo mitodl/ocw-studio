@@ -2,7 +2,7 @@
 import pytest
 
 from websites import constants
-from websites.factories import WebsiteFactory, WebsiteContentFactory
+from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.utils import (
     get_dict_query_field,
     permissions_group_name_for_role,
