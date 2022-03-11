@@ -12,7 +12,7 @@ from websites.management.commands.markdown_cleaning.utils import (
     CONTENT_FILENAME_MAX_LEN,
     ContentLookup,
     LegacyFileLookup,
-    UrlSiteRelativiser
+    UrlSiteRelativiser,
 )
 
 
