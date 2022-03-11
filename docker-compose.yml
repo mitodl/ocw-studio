@@ -99,7 +99,7 @@ services:
     profiles: ["concourse"]
 
   concourse:
-    image: concourse/concourse
+    image: concourse/concourse:7.7.0
     command: quickstart
     privileged: true
     depends_on: [concourse-db]
