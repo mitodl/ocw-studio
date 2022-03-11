@@ -8,11 +8,11 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
 from websites.management.commands.markdown_cleaning.utils import (
-    get_nested,
     get_rootrelative_url_from_content,
-    set_nested,
+    remove_prefix,
 )
 from websites.models import WebsiteContent
+from websites.utils import get_dict_field, set_dict_field
 
 
 class WebsiteContentMarkdownCleaner:
@@ -80,10 +80,10 @@ class WebsiteContentMarkdownCleaner:
         if field == "markdown":
             return website_content.markdown
         if field.startswith("metadata."):
-            metadata_keypath = field.split(".")[1:]
+            metadata_keypath = remove_prefix(field, "metadata.")
             if website_content.metadata is None:
                 return None
-            return get_nested(website_content.metadata, metadata_keypath)
+            return get_dict_field(website_content.metadata, metadata_keypath)
 
         raise ValueError(f"Unexpected field value: {field}")
 
@@ -93,8 +93,8 @@ class WebsiteContentMarkdownCleaner:
             website_content.markdown = new_value
             return
         if field.startswith("metadata."):
-            metadata_keypath = field.split(".")[1:]
-            set_nested(website_content.metadata, metadata_keypath, new_value)
+            metadata_keypath = remove_prefix(field, "metadata.")
+            set_dict_field(website_content.metadata, metadata_keypath, new_value)
             return
 
         raise ValueError(f"Unexpected field value: {field}")
