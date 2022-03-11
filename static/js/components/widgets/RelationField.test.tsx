@@ -220,6 +220,7 @@ describe("RelationField", () => {
               type:            "page",
               ...(isCrossSite ? { published: true } : {})
             })
+            .param({ name: website.name })
             .toString(),
           { credentials: "include" }
         )
