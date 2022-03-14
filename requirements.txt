@@ -4,8 +4,6 @@
 #
 #    pip-compile
 #
--e git+https://github.com/mitodl/concoursepy.git@3b84eb1#egg=concoursepy
-    # via -r requirements.in
 amqp==5.0.9
     # via kombu
 asgiref==3.2.10
@@ -59,6 +57,8 @@ click-plugins==1.1.1
     # via celery
 click-repl==0.2.0
     # via celery
+concoursepy==0.0.20
+    # via -r requirements.in
 cryptography==3.3.2
     # via
     #   pyopenssl

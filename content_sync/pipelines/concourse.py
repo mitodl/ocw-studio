@@ -48,13 +48,16 @@ class ConcourseApi(BaseConcourseApi):
 
     @retry_on_failure
     def auth(self):
-        """ Same as the base class but with retries and html unescaping for url"""
+        """ Same as the base class but with retries and support for concourse 7.7"""
         if self.has_username_and_passwd:
             self.ATC_AUTH = None
             session = self._set_new_session()
+            # Get initial sky/login response
             r = session.get(urljoin(self.url, "/sky/login"))
             if r.status_code == 200:
+                # Get second sky/login response based on the url found in the first response
                 r = session.get(unescape(urljoin(self.url, self._get_login_post_path(r.text))))
+                # Post to the final url to authenticate
                 post_path = unescape(self._get_login_post_path(r.text))
                 r = session.post(
                     urljoin(self.url, post_path),
