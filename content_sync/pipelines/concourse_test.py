@@ -1,6 +1,7 @@
 """ concourse tests """
 import json
-from urllib.parse import quote
+from html import unescape
+from urllib.parse import quote, urljoin
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -19,13 +20,19 @@ from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
 
 pytestmark = pytest.mark.django_db
-# pylint:disable=redefined-outer-name
+# pylint:disable=redefined-outer-name,unused-argument
+
+AUTH_URLS = [
+    '"/sky/issuer/auth/local?req=xtvhpv2hdsvjgownxnpowsiph&amp;foo=bar"',
+    '"/sky/issuer/auth/local?access_type=offline&client_id=concourse-web&amp;redirect_uri=https%3A%2F%2Fcicd-ci.odl.mit.edu%2Fsky%2Fcallback"',
+    '"/sky/issuer/auth/local/login?back=%2Fsky%2Fissuer%2Fauth%3Faccess_type%3Doffline%26client_id%3Dconcourse-web%26redirect_uri&amp;foo=bar%"',
+]
 
 
-@pytest.fixture(autouse=True)
-def mock_concoursepy_auth(mocker):
+@pytest.fixture
+def mock_auth(mocker):
     """Mock the concourse api auth method"""
-    mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
+    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
 
 
 @pytest.fixture
@@ -39,7 +46,7 @@ def pipeline_settings(settings):
 
 @pytest.mark.parametrize("stream", [True, False])
 @pytest.mark.parametrize("iterator", [True, False])
-def test_api_get_with_headers(mocker, stream, iterator):
+def test_api_get_with_headers(mocker, mock_auth, stream, iterator):
     """ ConcourseApi.get_with_headers function should work as expected """
     mock_text = '[{"test": "output"}]' if iterator else '{"test": "output"}'
     stream_output = ["yielded"]
@@ -66,9 +73,9 @@ def test_api_get_with_headers(mocker, stream, iterator):
 @pytest.mark.parametrize("headers", [None, {"X-Concourse-Config-Version": 101}])
 @pytest.mark.parametrize("status_code", [200, 401])
 @pytest.mark.parametrize("ok_response", [True, False])
-def test_api_put(mocker, headers, status_code, ok_response):
+def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
     """ ConcourseApi.put_with_headers function should work as expected """
-    mock_auth = mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
+    mock_auth = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
     mock_response = mocker.Mock(
         status_code=status_code, headers={"X-Test": "header_value"}
     )
@@ -110,8 +117,9 @@ def test_upsert_website_pipeline_missing_settings(settings):
 @pytest.mark.parametrize("hard_purge", [True, False])
 @pytest.mark.parametrize("with_api", [True, False])
 def test_upsert_website_pipelines(
-    mocker,
     settings,
+    mocker,
+    mock_auth,
     pipeline_settings,
     version,
     home_page,
@@ -198,7 +206,9 @@ def test_upsert_website_pipelines(
 
 
 @pytest.mark.parametrize("is_private_repo", [True, False])
-def test_upsert_pipeline_public_vs_private(settings, mocker, is_private_repo):
+def test_upsert_pipeline_public_vs_private(
+    settings, mocker, mock_auth, is_private_repo
+):
     """Pipeline config shoould have expected course-markdown git url and private git key setting if applicable"""
     settings.CONCOURSE_IS_PRIVATE_REPO = is_private_repo
     settings.GIT_DOMAIN = "github.test.edu"
@@ -236,7 +246,7 @@ def test_upsert_pipeline_public_vs_private(settings, mocker, is_private_repo):
         [STARTER_SOURCE_LOCAL, "https://github.com/testorg/testrepo/ocw-course"],
     ],
 )
-def test_upsert_website_pipelines_invalid_starter(mocker, source, path):
+def test_upsert_website_pipelines_invalid_starter(mocker, mock_auth, source, path):
     """A pipeline should not be upserted for invalid WebsiteStarters"""
     mock_get = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.get")
     mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
@@ -253,7 +263,7 @@ def test_upsert_website_pipelines_invalid_starter(mocker, source, path):
 
 
 @pytest.mark.parametrize("version", ["live", "draft"])
-def test_trigger_pipeline_build(settings, mocker, version):
+def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
     """The correct requests should be made to trigger a pipeline build"""
     job_name = "build-ocw-site"
     mock_get = mocker.patch(
@@ -297,7 +307,7 @@ def test_trigger_pipeline_build(settings, mocker, version):
 
 
 @pytest.mark.parametrize("version", ["live", "draft"])
-def test_unpause_pipeline(settings, mocker, version):
+def test_unpause_pipeline(settings, mocker, mock_auth, version):
     """unpause_pipeline should make the expected put request"""
     settings.CONCOURSE_TEAM = "myteam"
     mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
@@ -318,7 +328,7 @@ def test_unpause_pipeline(settings, mocker, version):
     )
 
 
-def test_get_build_status(mocker):
+def test_get_build_status(mocker, mock_auth):
     """Get the status of the build for the site"""
     build_id = 123456
     status = "status"
@@ -337,7 +347,7 @@ def test_get_build_status(mocker):
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
-def test_upsert_pipeline(mocker, settings, pipeline_exists):
+def test_upsert_pipeline(settings, mocker, mock_auth, pipeline_exists):
     """ Test upserting the theme assets pipeline """
     instance_vars = f"%7B%22branch%22%3A%20%22{settings.GITHUB_WEBHOOK_BRANCH}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={instance_vars}"
@@ -378,8 +388,8 @@ def test_upsert_pipeline(mocker, settings, pipeline_exists):
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 def test_upsert_mass_publish_pipeline(
-    settings, pipeline_settings, mocker, pipeline_exists, version
-):  # pylint:disable=too-many-locals,unused-argument
+    settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
+):  # pylint:disable=too-many-locals,too-many-arguments
     """The mass publish pipeline should have expected configuration"""
     hugo_projects_path = "https://github.com/org/repo"
     WebsiteFactory.create(
@@ -426,3 +436,67 @@ def test_upsert_mass_publish_pipeline(
     assert version in config_str
     assert f"{hugo_projects_path}.git" in config_str
     assert api_url in config_str
+
+
+@pytest.mark.parametrize(
+    "get_urls, post_url",
+    [
+        [[AUTH_URLS[0], AUTH_URLS[0]], AUTH_URLS[0]],
+        [AUTH_URLS[0:2], AUTH_URLS[1]],
+        [AUTH_URLS[1:], AUTH_URLS[2]],
+    ],
+)
+@pytest.mark.parametrize("auth_token", ["123abc", None])
+@pytest.mark.parametrize("password", [None, "password"])
+@pytest.mark.parametrize("get_status", [200, 500])
+@pytest.mark.parametrize("post_status", [200, 500])
+def test_api_auth(
+    mocker,
+    settings,
+    get_urls,
+    post_url,
+    auth_token,
+    password,
+    get_status,
+    post_status,
+):  # pylint:disable=too-many-arguments
+    """verify that the auth function posts to the expected url and returns the expected response"""
+    settings.CONCOURSE_PASSWORD = password
+    mock_skymarshal = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseApi._get_skymarshal_auth",
+        return_value=auth_token,
+    )
+    mock_session = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseApi._set_new_session"
+    )
+    mock_session.return_value.get.side_effect = [
+        mocker.Mock(text=url, status_code=get_status) for url in [*get_urls, *get_urls]
+    ]
+    mock_session.return_value.post.return_value = mocker.Mock(
+        text="ok", status_code=post_status
+    )
+    api = ConcourseApi(
+        settings.CONCOURSE_URL,
+        settings.CONCOURSE_USERNAME,
+        settings.CONCOURSE_PASSWORD,
+        settings.CONCOURSE_TEAM,
+    )
+    get_count = 2 if get_status == 200 else 1
+    assert mock_session.return_value.get.call_count == (get_count if password else 0)
+    if password and get_count == 2:
+        mock_session.return_value.post.assert_called_once_with(
+            unescape(urljoin(settings.CONCOURSE_URL, post_url.replace('"', ""))),
+            data={"login": "test", "password": password},
+        )
+    else:
+        mock_session.return_value.post.assert_not_called()
+    assert mock_skymarshal.call_count == (
+        1 if password and get_status == 200 and post_status == 200 else 0
+    )
+    api.ATC_AUTH = None
+    assert api.auth() is (
+        auth_token is not None
+        and password is not None
+        and get_status == 200
+        and post_status == 200
+    )
