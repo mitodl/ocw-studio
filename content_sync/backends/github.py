@@ -177,7 +177,7 @@ class GithubBackend(BaseSyncBackend):
                 sync_state.save()
                 if content.id in website_content_ids:
                     website_content_ids.remove(content.id)
-        if not ref and not path:
+        if ref is NotSet and not path:
             # This should only be done if ref and path kwargs are not specified
             # Delete any WebsiteContent ids still remaining
             # we use a hard delete because there's no need to sync a deletion to

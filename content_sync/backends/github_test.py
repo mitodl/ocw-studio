@@ -188,7 +188,10 @@ def test_sync_all_content_to_db(mocker, github, patched_file_deserialize, ref, p
     website_contents = github.backend.website.websitecontent_set.all()
     patched_file_deserialize.side_effect = website_contents
 
-    github.backend.sync_all_content_to_db(ref=ref, path=path)
+    if ref is NotSet:
+        github.backend.sync_all_content_to_db(path=path)
+    else:
+        github.backend.sync_all_content_to_db(ref=ref, path=path)
     assert patched_file_deserialize.call_count == expected_sync_count
     patched_file_deserialize.assert_any_call(
         site_config=mocker.ANY,
@@ -204,6 +207,7 @@ def test_sync_all_content_to_db(mocker, github, patched_file_deserialize, ref, p
             )
         ]
     )
+    assert github.backend.website.websitecontent_set.count() == (2 if ref is NotSet and not path else 5)
 
 
 def test_delete_orphaned_content_in_backend(github):
