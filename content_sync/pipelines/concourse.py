@@ -54,14 +54,18 @@ class ConcourseApi(BaseConcourseApi):
             session = self._set_new_session()
             r = session.get(urljoin(self.url, "/sky/login"))
             if r.status_code == 200:
+                r = session.get(unescape(urljoin(self.url, self._get_login_post_path(r.text))))
                 post_path = unescape(self._get_login_post_path(r.text))
                 r = session.post(
                     urljoin(self.url, post_path),
                     data={'login': self.username, 'password': self.password}
                 )
                 try:
+                    log.error(r.content)
                     r.raise_for_status()
                 except HTTPError:
+                    log.error("WTF?")
+                    log.error(r.reason)
                     self._close_session()
                     raise
                 else:
