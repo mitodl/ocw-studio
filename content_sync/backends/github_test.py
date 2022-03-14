@@ -207,7 +207,9 @@ def test_sync_all_content_to_db(mocker, github, patched_file_deserialize, ref, p
             )
         ]
     )
-    assert github.backend.website.websitecontent_set.count() == (2 if ref is NotSet and not path else 5)
+    assert github.backend.website.websitecontent_set.count() == (
+        2 if ref is NotSet and not path else 5
+    )
 
 
 def test_delete_orphaned_content_in_backend(github):
