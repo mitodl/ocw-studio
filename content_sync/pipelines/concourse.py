@@ -14,10 +14,10 @@ from urllib.parse import quote, urljoin, urlparse
 
 import requests
 import yaml
-from concoursepy.api import Api as BaseConcourseApi
 from django.conf import settings
 from requests import HTTPError
 
+from concoursepy.api import Api as BaseConcourseApi
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
@@ -56,19 +56,18 @@ class ConcourseApi(BaseConcourseApi):
             r = session.get(urljoin(self.url, "/sky/login"))
             if r.status_code == 200:
                 # Get second sky/login response based on the url found in the first response
-                r = session.get(unescape(urljoin(self.url, self._get_login_post_path(r.text))))
+                r = session.get(
+                    unescape(urljoin(self.url, self._get_login_post_path(r.text)))
+                )
                 # Post to the final url to authenticate
                 post_path = unescape(self._get_login_post_path(r.text))
                 r = session.post(
                     urljoin(self.url, post_path),
-                    data={'login': self.username, 'password': self.password}
+                    data={"login": self.username, "password": self.password},
                 )
                 try:
-                    log.error(r.content)
                     r.raise_for_status()
                 except HTTPError:
-                    log.error("WTF?")
-                    log.error(r.reason)
                     self._close_session()
                     raise
                 else:
