@@ -221,22 +221,39 @@ def test_legacy_file_lookup(site_uuid, filename, expected_index):
         assert legacy_file_lookup.find(site_uuid, filename) == expected
 
 
-def test_legacy_file_lookup_raises_nonunique_for_multiple_matches():
+def test_legacy_file_lookup_nonunique_filenames():
+    website = WebsiteFactory.build(uuid='site-uuid-one')
+    parent_a = WebsiteContentFactory.build(
+        website=website,
+        filename='alpha',
+        dirpath='content/pages/parent',
+    )
+    parent_b = WebsiteContentFactory.build(
+        website=website,
+        filename='beta',
+        dirpath='content/pages/parent',
+    )
     c1a = WebsiteContentFactory.build(
-        website_id="site-uuid-one",
+        website=website,
         file=f"/courses/site_one/{string_uuid()}_some_file_name.jpg",
         text_id="content-uuid-1",
+        parent=parent_a
     )
     c1b = WebsiteContentFactory.build(
-        website_id="site-uuid-one",
+        website=website,
         file=f"/courses/site_one/{string_uuid()}_some_file_name.jpg",
         text_id="content-uuid-2",
+        parent=parent_b
     )
-    contents = [c1a, c1b]
+    contents = [c1a, c1b, parent_a, parent_b]
     with patch_website_contents_all(contents):
         legacy_file_lookup = LegacyFileLookup()
+
+        unique_parent_url = 'parent/alpha/some_file_name.jpg'
+        duplicate_parent_url = 'parent/some_file_name.jpg' 
+        assert legacy_file_lookup.find(website.uuid, unique_parent_url) == c1a
         with pytest.raises(legacy_file_lookup.MultipleMatchError):
-            assert legacy_file_lookup.find("site-uuid-one", "some_file_name.jpg")
+            assert legacy_file_lookup.find(website.uuid, duplicate_parent_url)
 
 
 @patch_website_contents_all([])
