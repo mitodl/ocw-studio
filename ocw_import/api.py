@@ -165,9 +165,9 @@ def update_content_from_s3_data(website, text_id, content_data, update_field):
         text_id (str): Tthe content's text_id
         content_data (dict): Dictionary of content data from s3 bucket
         update_field (str): the field to update
-    
+
     Returns:
-        The WebsiteContent object if it existed, None otherwise. 
+        The WebsiteContent object if it existed, None otherwise.
     """
     is_metadata_field = False
 
