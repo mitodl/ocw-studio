@@ -157,6 +157,18 @@ def update_ocw2hugo_content(
 
 
 def update_content_from_s3_data(website, text_id, content_data, update_field):
+    """
+    Update the update_field of a single content file for an ocw course from hugo2ocw output
+
+    Args:
+        website (Website): The content's website
+        text_id (str): Tthe content's text_id
+        content_data (dict): Dictionary of content data from s3 bucket
+        update_field (str): the field to update
+    
+    Returns:
+        The WebsiteContent object if it existed, None otherwise. 
+    """
     is_metadata_field = False
 
     if update_field and update_field.startswith("metadata."):
@@ -185,6 +197,7 @@ def update_content_from_s3_data(website, text_id, content_data, update_field):
             content_data.get(update_field, ""),
         )
     content_file.save()
+    return content_file
 
 
 def get_learning_resource_types(content_json):
