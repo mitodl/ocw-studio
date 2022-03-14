@@ -3,6 +3,7 @@ from base64 import b64encode
 from types import SimpleNamespace
 
 import pytest
+from github.GithubObject import NotSet
 
 from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.backends.github import GithubBackend
@@ -40,7 +41,7 @@ def github(settings, mocker, mock_branches):
 
 
 @pytest.fixture
-def patched_file_serialize(mocker):
+def patched_file_deserialize(mocker):
     """Patches function that deserializes file contents to website content"""
     return mocker.patch(
         "content_sync.backends.github.deserialize_file_to_website_content"
@@ -126,10 +127,10 @@ def test_create_backend_live(settings, github):
     )
 
 
-def test_create_content_in_db(github, github_content_file, patched_file_serialize):
+def test_create_content_in_db(github, github_content_file, patched_file_deserialize):
     """Test that create_content_in_db makes the appropriate api call"""
     github.backend.create_content_in_db(github_content_file.obj)
-    patched_file_serialize.assert_called_once_with(
+    patched_file_deserialize.assert_called_once_with(
         site_config=github.backend.site_config,
         website=github.backend.website,
         filepath=github_content_file.path,
@@ -137,10 +138,10 @@ def test_create_content_in_db(github, github_content_file, patched_file_serializ
     )
 
 
-def test_update_content_in_db(github, github_content_file, patched_file_serialize):
+def test_update_content_in_db(github, github_content_file, patched_file_deserialize):
     """Test that update_content_in_db makes the appropriate api call"""
     github.backend.update_content_in_db(github_content_file.obj)
-    patched_file_serialize.assert_called_once_with(
+    patched_file_deserialize.assert_called_once_with(
         site_config=github.backend.site_config,
         website=github.backend.website,
         filepath=github_content_file.path,
@@ -156,7 +157,9 @@ def test_delete_content_in_db(github):
     assert WebsiteContent.objects.filter(id=sync_state.content.id).first() is None
 
 
-def test_sync_all_content_to_db(mocker, github, patched_file_serialize):
+@pytest.mark.parametrize("ref", [NotSet, "abc123jfkdjfdkfj"])
+@pytest.mark.parametrize("path", [None, "src/syllabus_test_sync.md"])
+def test_sync_all_content_to_db(mocker, github, patched_file_deserialize, ref, path):
     """Test that sync_all_content_to_db iterates over all repo content"""
     fake_dir = mocker.Mock(type="dir", path="src", content="")
     fake_files = [
@@ -177,19 +180,25 @@ def test_sync_all_content_to_db(mocker, github, patched_file_serialize):
         ]
     ]
     # Two actual content files to sync. README.md should be ignored.
-    expected_sync_count = 2
+    expected_sync_count = 2 if not path else 1
     github.api.get_repo.return_value.get_contents.side_effect = [
         [fake_dir],
         fake_files,
     ]
     website_contents = github.backend.website.websitecontent_set.all()
-    patched_file_serialize.side_effect = website_contents
+    patched_file_deserialize.side_effect = website_contents
 
-    github.backend.sync_all_content_to_db()
-    assert patched_file_serialize.call_count == expected_sync_count
+    github.backend.sync_all_content_to_db(ref=ref, path=path)
+    assert patched_file_deserialize.call_count == expected_sync_count
+    patched_file_deserialize.assert_any_call(
+        site_config=mocker.ANY,
+        website=github.backend.website,
+        filepath="src/syllabus_test_sync.md",
+        file_contents=mocker.ANY,
+    )
     assert all(
         [
-            sync_state.is_synced
+            sync_state.is_synced is (ref is NotSet)
             for sync_state in ContentSyncState.objects.filter(
                 content__in=website_contents[0:expected_sync_count]
             )

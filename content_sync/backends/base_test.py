@@ -1,5 +1,5 @@
 """ Tests for base backend implementation """
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 
@@ -42,7 +42,9 @@ class _ImplementedBackend(BaseSyncBackend):
     def delete_content_in_db(self, data: Any):
         ...
 
-    def sync_all_content_to_db(self):
+    def sync_all_content_to_db(
+        self, ref: Optional[str] = None, path: Optional[str] = None
+    ):
         ...
 
     def delete_orphaned_content_in_backend(self):

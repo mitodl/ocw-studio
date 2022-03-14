@@ -1,6 +1,6 @@
 """ Sync abstract base """
 import abc
-from typing import Any
+from typing import Any, Optional
 
 from content_sync.models import ContentSyncState
 from websites.models import Website
@@ -136,7 +136,9 @@ class BaseSyncBackend(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def sync_all_content_to_db(self):  # pragma: no cover
+    def sync_all_content_to_db(
+        self, ref: Optional[str] = None, path: Optional[str] = None
+    ):  # pragma: no cover
         """
         Sync all content from the backend to the application database.
 
