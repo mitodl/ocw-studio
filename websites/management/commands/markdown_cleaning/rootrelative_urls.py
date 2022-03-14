@@ -100,6 +100,14 @@ class RootRelativeUrlRule(RegexpCleanupRule):
         except KeyError:
             pass
 
+        if any(p == site_rel_path for p in ['/pages/index.htm', '/index.htm']):
+            try:
+                wc = self.content_lookup.find_within_site(site.uuid, '/')
+                return wc, "links to course root"
+            except KeyError:
+                pass
+
+
         try:
             prepend = "/pages"
             wc = self.content_lookup.find_within_site(
