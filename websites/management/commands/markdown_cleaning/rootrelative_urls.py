@@ -153,8 +153,7 @@ class RootRelativeUrlRule(RegexpCleanupRule):
             pass
 
         try:
-            _, legacy_filename = os.path.split(site_rel_path)
-            match = self.legacy_file_lookup.find(site.uuid, legacy_filename)
+            match = self.legacy_file_lookup.find(site.uuid, site_rel_path)
             return match, "unique file match"
         except self.legacy_file_lookup.MultipleMatchError as error:
             raise self.NotFoundError(error)

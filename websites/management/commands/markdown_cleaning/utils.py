@@ -194,7 +194,7 @@ class LegacyFileLookup:
         pass
 
     def __init__(self):
-        website_contents = WebsiteContent.all_objects.all().prefetch_related("website")
+        website_contents = WebsiteContent.all_objects.all().prefetch_related("website", "parent")
         contents_by_file = defaultdict(list)
         for wc in website_contents:
             if wc.file:
@@ -231,9 +231,19 @@ class LegacyFileLookup:
         except ValueError:
             return None
 
-    def find(self, website_id: str, legacy_filename: str):
+    def find(self, website_id: str, site_rel_path: str):
+        url_dirpath, legacy_filename = os.path.split(site_rel_path)
         key = (website_id, legacy_filename)
         matches = self.contents_by_file[key]
         if len(matches) == 1:
             return matches[0]
-        raise self.MultipleMatchError(f"Found {len(matches)} files with same name.")
+        
+        def parent_matches_url(wc):
+            if wc.parent is None:
+                return False
+            return url_dirpath in wc.parent.dirpath + '/' + wc.parent.filename
+
+        refined = [m for m in matches if parent_matches_url(m)]
+        if len(refined) == 1:
+            return refined[0]
+        raise self.MultipleMatchError(f"Found {len(refined)} after refinement.")
