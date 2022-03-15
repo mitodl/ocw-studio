@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.53.1 (Released March 15, 2022)
+--------------
+
+- cc/fix-relative-metadata-links
+
 Version 0.53.0 (Released March 14, 2022)
 --------------
 
