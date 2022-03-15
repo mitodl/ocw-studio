@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.53.2
+Version 0.53.2 (Released March 15, 2022)
 --------------
 
 - theme assets build cache busting take 3 (#1121)
