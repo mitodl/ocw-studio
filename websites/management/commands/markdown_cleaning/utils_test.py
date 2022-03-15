@@ -23,13 +23,13 @@ def string_uuid():
 def test_content_finder_is_site_specific():
     """Test that ContentLookup is site specific"""
     content_w1 = WebsiteContentFactory.build(
-        website_id="website-uuid-1",
+        website=WebsiteFactory.build(uuid="website-uuid-1"),
         dirpath="content/resources/path/to",
         filename="file1",
         text_id="content-uuid-1",
     )
     content_w2 = WebsiteContentFactory.build(
-        website_id="website-uuid-2",
+        website=WebsiteFactory.build(uuid="website-uuid-2"),
         dirpath="content/resources/path/to",
         filename="file1",
         text_id="content-uuid-1",
@@ -39,8 +39,8 @@ def test_content_finder_is_site_specific():
         content_lookup = ContentLookup()
 
         url = "/resources/path/to/file1"
-        assert content_lookup.find(content_w1.website_id, url) == content_w1
-        assert content_lookup.find(content_w2.website_id, url) == content_w2
+        assert content_lookup.find_within_site(content_w1.website_id, url) == content_w1
+        assert content_lookup.find_within_site(content_w2.website_id, url) == content_w2
 
 
 @pytest.mark.parametrize(
@@ -78,7 +78,7 @@ def test_content_finder_specific_url_replacements(
     url, content_relative_dirpath, filename
 ):
     content = WebsiteContentFactory.build(
-        website_id="website_uuid",
+        website=WebsiteFactory.build(uuid="website_uuid"),
         dirpath=f"content{content_relative_dirpath}",
         filename=filename,
         text_id="content-uuid",
@@ -87,7 +87,7 @@ def test_content_finder_specific_url_replacements(
     with patch_website_contents_all([content]):
         content_lookup = ContentLookup()
 
-        assert content_lookup.find("website_uuid", url) == content
+        assert content_lookup.find_within_site("website_uuid", url) == content
 
 
 @pytest.mark.parametrize(
@@ -96,26 +96,28 @@ def test_content_finder_specific_url_replacements(
 def test_content_finder_returns_metadata_for_site(site_uuid, content_index):
     contents = [
         WebsiteContentFactory.build(
-            website_id="website_one",
+            website=WebsiteFactory.build(uuid="website_one"),
             type="sitemetadata",
             text_id="content-1",
         ),
         WebsiteContentFactory.build(
-            website_id="website_two",
+            website=WebsiteFactory.build(uuid="website_two"),
             type="sitemetadata",
             text_id="content-2",
         ),
     ]
     with patch_website_contents_all(contents):
         content_lookup = ContentLookup()
-        assert content_lookup.find(site_uuid, "/") == contents[content_index]
+        assert (
+            content_lookup.find_within_site(site_uuid, "/") == contents[content_index]
+        )
 
 
 @patch_website_contents_all([])
 def test_content_finder_raises_keyerror():
     content_lookup = ContentLookup()
     with pytest.raises(KeyError):
-        assert content_lookup.find("website_uuid", "url/to/thing")
+        assert content_lookup.find_within_site("website_uuid", "url/to/thing")
 
 
 @pytest.mark.parametrize(

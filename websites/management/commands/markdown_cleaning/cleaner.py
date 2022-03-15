@@ -1,7 +1,7 @@
-"""Facilitates regex-based replacements on WebsiteContentMarkdown."""
+"""Facilitates find-and-replace on WebsiteContent objects."""
 import csv
-import re
 from dataclasses import asdict, dataclass, fields
+from functools import partial
 from typing import Any
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
@@ -9,41 +9,38 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import (
 )
 from websites.management.commands.markdown_cleaning.utils import (
     get_rootrelative_url_from_content,
+    remove_prefix,
 )
 from websites.models import WebsiteContent
+from websites.utils import get_dict_field, set_dict_field
 
 
 class WebsiteContentMarkdownCleaner:
-    """Facilitates regex-based replacements on WebsiteContent markdown.
+    """Facilitates find-and-replace on WebsiteContent markdown fields.
 
     Args:
         rule: A MarkdownCleanupRule instance.
 
-    The given rule specifies a regex and is callable as a replacer function. The
-    rule will be called for every non-overlapping match of the regex and should
-    return the replacement string. This is similar to the `repl` argument of
-    `re.sub`, but is invoked with two arguments `(match, website_content)`,
-    instead of just `match`. Here `website_content` is a partial website_content
-    object.
-
-    If the pattern uses named capturing groups, these groups will be included as
-    csv columns by `write_to_csv()` method.
-
-    Note: Internally records all matches and replacement results for subsequent
-    writing to csv.
+    The cleaner instance will make replacements using the given rule and record
+    information about each replacement. These records may be recovered via the
+    `write_matches_to_csv` method.
     """
 
     @dataclass
     class ReplacementMatch:
-        match: re.Match
+        """Stores data about each replacement made."""
+
+        original_text: str
         replacement: str
         content: WebsiteContent
         notes: Any  # should be a dataclass
+        field: str
 
     csv_metadata_fieldnames = [
         "original_text",
         "replacement",
         "has_changed",
+        "field",
         "replaced_on_site_name",
         "replaced_on_site_short_id",
         "replaced_on_page_uuid",
@@ -51,73 +48,83 @@ class WebsiteContentMarkdownCleaner:
     ]
 
     def __init__(self, rule: MarkdownCleanupRule):
-        self.regex = self.compile_regex(rule.regex)
         self.rule = rule
-
-        self.text_changes: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = []
+        self.replacement_matches: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = (
+            []
+        )
         self.updated_website_contents: "list[WebsiteContent]" = []
         self.updated_sync_states: "list[ContentSyncState]" = []
 
-        def _replacer(match: re.Match, website_content: WebsiteContent):
-            result = rule(match, website_content)
-            if isinstance(result, str):
-                replacement = result
-                notes = self.rule.ReplacementNotes()
-            elif isinstance(result, tuple):
-                replacement, notes = result
-            else:
-                raise ValueError(
-                    "MarkdownCleanupRule instances should return strings or tuples when called"
-                )
-
-            self.text_changes.append(
-                self.ReplacementMatch(
-                    match=match,
-                    replacement=replacement,
-                    content=website_content,
-                    notes=notes,
-                )
+    def store_match_data(
+        self,
+        original_text: str,
+        replacement: str,
+        website_content: WebsiteContent,
+        notes,
+        field: str,
+    ):
+        """Store match data for subsequent csv-generation."""
+        self.replacement_matches.append(
+            self.ReplacementMatch(
+                original_text,
+                replacement=replacement,
+                content=website_content,
+                notes=notes,
+                field=field,
             )
-            return replacement
+        )
+        return replacement
 
-        self.replacer = _replacer
+    @staticmethod
+    def get_field_to_change(website_content: WebsiteContent, field: str):
+        if field == "markdown":
+            return website_content.markdown
+        if field.startswith("metadata."):
+            metadata_keypath = remove_prefix(field, "metadata.")
+            if website_content.metadata is None:
+                return None
+            return get_dict_field(website_content.metadata, metadata_keypath)
 
-    def update_website_content_markdown(self, website_content: WebsiteContent):
+        raise ValueError(f"Unexpected field value: {field}")
+
+    @staticmethod
+    def make_field_change(website_content: WebsiteContent, field: str, new_value: str):
+        if field == "markdown":
+            website_content.markdown = new_value
+            return
+        if field.startswith("metadata."):
+            metadata_keypath = remove_prefix(field, "metadata.")
+            set_dict_field(website_content.metadata, metadata_keypath, new_value)
+            return
+
+        raise ValueError(f"Unexpected field value: {field}")
+
+    def update_website_content(self, wc: WebsiteContent):
         """
         Updates website_content's markdown and checksums in-place. Does not commit to
         database.
         """
-        if not website_content.markdown:
-            return
+        changed = False
+        for field in self.rule.fields:
+            old_text = self.get_field_to_change(wc, field)
+            if old_text is None:
+                continue
+            store_match_data = partial(self.store_match_data, field=field)
+            new_text = self.rule.transform_text(wc, old_text, store_match_data)
+            if old_text != new_text:
+                self.make_field_change(wc, field, new_text)
+                changed = True
 
-        new_markdown = self.regex.sub(
-            lambda match: self.replacer(match, website_content),
-            website_content.markdown,
-        )
-        if new_markdown != website_content.markdown:
-            website_content.markdown = new_markdown
-            self.updated_website_contents.append(website_content)
-
-            sync_state = website_content.content_sync_state
+        if changed:
+            self.updated_website_contents.append(wc)
+            sync_state = wc.content_sync_state
             if not sync_state:
                 return
 
-            new_checksum = website_content.calculate_checksum()
+            new_checksum = wc.calculate_checksum()
             if new_checksum != sync_state.current_checksum:
                 sync_state.current_checksum = new_checksum
                 self.updated_sync_states.append(sync_state)
-
-    @classmethod
-    def compile_regex(cls, pattern):
-        """Compile `pattern` and validate that it has no named capturing groups
-        whose name would conflict with csv metadata fieldnames."""
-        compiled = re.compile(pattern)
-        for groupname in cls.csv_metadata_fieldnames:
-            if groupname in compiled.groupindex:
-                raise ValueError(
-                    f"Regex group name {groupname} is reserved for use by {cls.__name__}"
-                )
-        return compiled
 
     def write_matches_to_csv(self, path: str):
         """Write matches and replacements to csv."""
@@ -125,23 +132,22 @@ class WebsiteContentMarkdownCleaner:
         with open(path, "w", newline="") as csvfile:
             fieldnames = [
                 *self.csv_metadata_fieldnames,
-                *self.regex.groupindex,
                 *(f.name for f in fields(self.rule.ReplacementNotes)),
             ]
             writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)
             writer.writeheader()
-            for change in self.text_changes:
+            for change in self.replacement_matches:
                 row = {
-                    "original_text": change.match[0],
+                    "original_text": change.original_text,
                     "replacement": change.replacement,
-                    "has_changed": change.match[0] != change.replacement,
+                    "has_changed": change.original_text != change.replacement,
+                    "field": change.field,
                     "replaced_on_site_name": change.content.website.name,
                     "replaced_on_site_short_id": change.content.website.short_id,
                     "replaced_on_page_uuid": change.content.text_id,
                     "replaced_on_page_url": get_rootrelative_url_from_content(
                         change.content
                     ),
-                    **change.match.groupdict(),
                     **asdict(change.notes),
                 }
                 writer.writerow(row)

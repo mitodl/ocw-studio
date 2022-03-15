@@ -88,7 +88,7 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
     )
 
     cleaner = get_markdown_cleaner([linkable])
-    cleaner.update_website_content_markdown(target_content)
+    cleaner.update_website_content(target_content)
 
     assert target_content.markdown == expected_markdown
 
@@ -134,7 +134,7 @@ def test_baseurl_replacer_handle_specific_url_replacements(
     )
 
     cleaner = get_markdown_cleaner([linkable])
-    cleaner.update_website_content_markdown(target_content)
+    cleaner.update_website_content(target_content)
 
     assert target_content.markdown == expected_markdown
     assert target_sync_state.current_checksum == target_content.calculate_checksum()
@@ -157,7 +157,7 @@ def test_baseurl_replacer_handles_index_files():
     )
 
     cleaner = get_markdown_cleaner([linkable])
-    cleaner.update_website_content_markdown(target_content)
+    cleaner.update_website_content(target_content)
 
     assert linkable.filename not in target_content.markdown
     assert target_content.markdown == expected_markdown
@@ -224,7 +224,7 @@ def test_baseurl_replacer_replaces_baseurl_links():
     ]
 
     cleaner = get_markdown_cleaner(linked_contents)
-    cleaner.update_website_content_markdown(target_content)
+    cleaner.update_website_content(target_content)
     assert target_content.markdown == expected
     assert target_sync_state.current_checksum == target_content.calculate_checksum()
 
@@ -258,7 +258,7 @@ def test_baseurl_replacer_replaces_content_in_same_course(
     )
 
     cleaner = get_markdown_cleaner([linkable])
-    cleaner.update_website_content_markdown(target_content)
+    cleaner.update_website_content(target_content)
 
     is_markdown_changed = target_content.markdown != markdown
     is_checksum_changed = (

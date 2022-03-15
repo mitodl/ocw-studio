@@ -23,7 +23,7 @@ The `\<` in the first line will be caught by the second rule.
 import re
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
-    MarkdownCleanupRule,
+    RegexpCleanupRule,
 )
 
 
@@ -31,7 +31,7 @@ LINK_WITHOUT_IMAGE = r"\\\[[^\[\]]*\\\]\({{\\<"
 LINK_WITH_IMAGE = r"\\\[!\\\[[^\[\]]*\][^\[\]]*\\\]\({{\\<"
 
 
-class LegacyShortcodeFixOne(MarkdownCleanupRule):
+class LegacyShortcodeFixOne(RegexpCleanupRule):
     """
     Use this BEFORE LegacyShortcodeTwo because this matches against "{{\\<" for
     increased selectivity.
@@ -41,7 +41,7 @@ class LegacyShortcodeFixOne(MarkdownCleanupRule):
 
     alias = "legacy_shortcode_datafix_1_of_2"
 
-    def __call__(self, match: re.Match, _website_content):
+    def replace_match(self, match: re.Match, _website_content):
         original_text = match[0]
         # Intentially not converting {{\< to {{< ... that will be fixed by Rule Two
         fixed = (
@@ -50,7 +50,7 @@ class LegacyShortcodeFixOne(MarkdownCleanupRule):
         return fixed
 
 
-class LegacyShortcodeFixTwo(MarkdownCleanupRule):
+class LegacyShortcodeFixTwo(RegexpCleanupRule):
     """
     Use this AFTER LegacyShortcodeFixOne, which matches against the data fixed
     by this rule.
@@ -60,7 +60,7 @@ class LegacyShortcodeFixTwo(MarkdownCleanupRule):
 
     alias = "legacy_shortcode_datafix_2_of_2"
 
-    def __call__(self, match: re.Match, _website_content):
+    def replace_match(self, match: re.Match, _website_content):
         original_text = match[0]
         fixed = original_text.replace("\\<", "<").replace("\\_", "_")
         return fixed

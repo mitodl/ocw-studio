@@ -11,18 +11,18 @@ metadata for alt text.
 import re
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
-    MarkdownCleanupRule,
+    RegexpCleanupRule,
 )
 from websites.models import WebsiteContent
 
 
-class ResourceFileReplacementRule(MarkdownCleanupRule):
+class ResourceFileReplacementRule(RegexpCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner."""
 
     regex = r"!\[(?P<alt_text>[^\[\]]*)\]\({{< resource_file\s(?P<resource_uuid>[a-z0-9\-]*)\s>}}\)"
 
     alias = "resource_file_to_resource"
 
-    def __call__(self, match: re.Match, website_content: WebsiteContent):
+    def replace_match(self, match: re.Match, website_content: WebsiteContent):
         escaped_title = match.group("resource_uuid")
         return f"{{{{< resource {escaped_title} >}}}}"

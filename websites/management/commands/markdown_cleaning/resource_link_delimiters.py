@@ -8,18 +8,18 @@ to
 import re
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
-    MarkdownCleanupRule,
+    RegexpCleanupRule,
 )
 from websites.models import WebsiteContent
 
 
-class ResourceLinkDelimitersReplacementRule(MarkdownCleanupRule):
+class ResourceLinkDelimitersReplacementRule(RegexpCleanupRule):
     """Replacement rule for use with WebsiteContentMarkdownCleaner."""
 
     regex = r"{{<\sresource_link\s(?P<args>.*?)\s>}}"
 
     alias = "resource_link_delimiter_swap"
 
-    def __call__(self, match: re.Match, website_content: WebsiteContent):
+    def replace_match(self, match: re.Match, website_content: WebsiteContent):
         args = match.group("args")
         return f"{{{{% resource_link {args} %}}}}"
