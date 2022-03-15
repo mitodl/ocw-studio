@@ -436,6 +436,46 @@ def test_website_content_detail_serializer_save(mocker):
     mock_create_website_pipeline.assert_not_called()
 
 
+def test_website_content_detail_serializer_save_null_metadata(mocker):
+    """WebsiteContentDetailSerializer should save if metadata is null"""
+    mock_update_website_backend = mocker.patch(
+        "websites.serializers.update_website_backend"
+    )
+    mock_create_website_pipeline = mocker.patch(
+        "websites.serializers.create_website_publishing_pipeline"
+    )
+    content = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        metadata=None,
+    )
+    existing_text_id = content.text_id
+    new_markdown = "hopefully this saves without error"
+    metadata_patch = {"meta": "data"}
+    user = UserFactory.create()
+    # uuid value is invalid but it's ignored since it's marked readonly
+    serializer = WebsiteContentDetailSerializer(
+        data={
+            "text_id": "----",
+            "markdown": new_markdown,
+            "metadata": metadata_patch,
+        },
+        instance=content,
+        context={
+            "view": mocker.Mock(kwargs={"parent_lookup_website": content.website.name}),
+            "request": mocker.Mock(user=user),
+        },
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    content.refresh_from_db()
+    assert content.text_id == existing_text_id
+    assert content.markdown == new_markdown
+    assert content.metadata == {"meta": "data"}
+    assert content.updated_by == user
+    mock_update_website_backend.assert_called_once_with(content.website)
+    mock_create_website_pipeline.assert_not_called()
+
+
 @pytest.mark.parametrize("add_context_data", [True, False])
 def test_website_content_create_serializer(mocker, add_context_data):
     """
