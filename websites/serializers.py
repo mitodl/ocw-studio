@@ -376,9 +376,10 @@ class WebsiteContentDetailSerializer(
             validated_data["metadata"]["file_type"] = detect_mime_type(
                 validated_data["file"]
             )
+        existing_metadata = instance.metadata if instance.metadata else {}
         if "metadata" in validated_data:
             validated_data["metadata"] = {
-                **instance.metadata,
+                **existing_metadata,
                 **validated_data["metadata"],
             }
         instance = super().update(
