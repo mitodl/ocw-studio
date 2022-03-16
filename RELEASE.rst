@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.53.4
+--------------
+
+- Option to sync a specific commit/path from github to the database (#1108)
+- add inline code support to ckeditor
+
 Version 0.53.3 (Released March 16, 2022)
 --------------
 
