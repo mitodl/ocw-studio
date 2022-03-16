@@ -1,9 +1,11 @@
 """ Github backend """
 import logging
+from typing import Optional
 
 from django.conf import settings
 from github.Commit import Commit
 from github.ContentFile import ContentFile
+from github.GithubObject import NotSet
 from github.PullRequest import PullRequest
 from github.Repository import Repository
 from safedelete.models import HARD_DELETE
@@ -140,7 +142,9 @@ class GithubBackend(BaseSyncBackend):
         content.delete(force_policy=HARD_DELETE)
         return True
 
-    def sync_all_content_to_db(self):
+    def sync_all_content_to_db(
+        self, ref: Optional[str] = NotSet, path: Optional[str] = None
+    ):
         """
         Iterate over a website's WebsiteContent objects, deleting any that don't exist in the git repo.
         Then recursively iterate through the repo, upserting any ContentFiles to WebsiteContent objects.
@@ -153,31 +157,31 @@ class GithubBackend(BaseSyncBackend):
         )
 
         # Iterate over repo files
-        contents = repo.get_contents("")
+        contents = repo.get_contents(path or "", ref=ref)
+        if not isinstance(contents, list):
+            contents = [contents]
         while contents:
             file_content = contents.pop(0)
             if file_content.type == "dir":
-                contents.extend(repo.get_contents(file_content.path))
+                contents.extend(repo.get_contents(file_content.path, ref=ref))
             elif (
                 file_content.type == "file"
                 and file_content.path not in self.IGNORED_PATHS
+                and (path is None or file_content.path == path)
             ):
-                content = deserialize_file_to_website_content(
-                    site_config=self.site_config,
-                    website=self.website,
-                    filepath=file_content.path,
-                    file_contents=decode_file_contents(file_content),
-                )
+                content = self.update_content_in_db(file_content)
                 sync_state = content.content_sync_state
                 sync_state.current_checksum = content.calculate_checksum()
-                sync_state.synced_checksum = sync_state.current_checksum
+                if ref is NotSet:
+                    sync_state.synced_checksum = sync_state.current_checksum
                 sync_state.save()
                 if content.id in website_content_ids:
                     website_content_ids.remove(content.id)
-
-        # Delete any WebsiteContent ids still remaining
-        # we use a hard delete because there's no need to sync a deletion to
-        # the repo when it already doesn't exist
-        self.website.websitecontent_set.filter(id__in=website_content_ids).delete(
-            force_policy=HARD_DELETE
-        )
+        if ref is NotSet and not path:
+            # This should only be done if ref and path kwargs are not specified
+            # Delete any WebsiteContent ids still remaining
+            # we use a hard delete because there's no need to sync a deletion to
+            # the repo when it already doesn't exist
+            self.website.websitecontent_set.filter(id__in=website_content_ids).delete(
+                force_policy=HARD_DELETE
+            )
