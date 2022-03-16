@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.53.3
+--------------
+
+- default metadata to empty object before iterating in seralizer (#1129)
+
 Version 0.53.2 (Released March 15, 2022)
 --------------
 
