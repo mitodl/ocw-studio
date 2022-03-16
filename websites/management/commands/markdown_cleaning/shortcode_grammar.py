@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from pyparsing import nestedExpr, ParseResults
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
-    PyparsingWrapper
+    WrappedParser
 )
 
 def hugo_escape_shortcode_arg_if_necessary(s: str):
@@ -36,7 +36,7 @@ class Shortcode:
         return f'{self.opener} {self.name} {args} {self.closer}'
 
 
-class ShortcodeParser(PyparsingWrapper):
+class ShortcodeParser(WrappedParser):
 
     def __init__(self):
 

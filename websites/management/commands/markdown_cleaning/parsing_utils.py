@@ -1,5 +1,6 @@
 from pyparsing import originalTextFor, ParseResults
-class PyparsingWrapper:
+
+class WrappedParser:
     """
     Wrapper around Pyparsing grammars.
 

@@ -1,9 +1,14 @@
 import abc
 import re
 from dataclasses import dataclass
+from typing import Union
+
+from pyparsing import ParseResults
 
 from websites.models import WebsiteContent
-
+from websites.management.commands.markdown_cleaning.parsing_utils import (
+    WrappedParser
+)
 
 class MarkdownCleanupRule(abc.ABC):
     """
@@ -40,6 +45,19 @@ class MarkdownCleanupRule(abc.ABC):
     @classmethod
     def get_root_fields(cls):
         return {f.split(".")[0] for f in cls.fields}
+    
+    @classmethod
+    def standardize_replacement(cls, result: Union[str, tuple]):
+        if isinstance(result, str):
+            replacement = result
+            notes = cls.ReplacementNotes()
+        elif isinstance(result, tuple):
+            replacement, notes = result
+        else:
+            raise ValueError(
+                "replace_match must return strings or tuples when called"
+            )
+        return replacement, notes 
 
 
 class RegexpCleanupRule(MarkdownCleanupRule):
@@ -70,15 +88,7 @@ class RegexpCleanupRule(MarkdownCleanupRule):
     ) -> str:
         def _replacer(match: re.Match):
             result = self.replace_match(match, website_content)
-            if isinstance(result, str):
-                replacement = result
-                notes = self.ReplacementNotes()
-            elif isinstance(result, tuple):
-                replacement, notes = result
-            else:
-                raise ValueError(
-                    "replace_match must return strings or tuples when called"
-                )
+            replacement, notes = self.standardize_replacement(result)
 
             original_text = match[0]
             on_match(original_text, replacement, website_content, notes)
@@ -90,8 +100,18 @@ class RegexpCleanupRule(MarkdownCleanupRule):
 
 class PyparsingRule(MarkdownCleanupRule):
 
-    def replace_match(self, s, l, toks, website_content: WebsiteContent):
-        pass
+    @abc.abstractmethod
+    def replace_match(self, s: str, l: int, toks: ParseResults, website_content: WebsiteContent):
+        pass        
 
     def transform_text(self, website_content: WebsiteContent, text: str, on_match) -> str:
-        return new_markdown
+        def parse_action(s, l, toks):
+            result = self.replace_match(s, l, toks, website_content)
+            replacement, notes = self.standardize_replacement(result)
+            original_text = toks.original_text
+            on_match(original_text, replacement, website_content, notes)
+            return replacement
+        
+        self.parser.set_parse_action(parse_action)
+
+        return self.parser.transform_string(text)

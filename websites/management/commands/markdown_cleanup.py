@@ -37,6 +37,9 @@ from websites.management.commands.markdown_cleaning.resource_link_delimiters imp
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
+from websites.management.commands.markdown_cleaning.shortcode_logging_rule import (
+    ShortcodeLoggingRule,
+)
 from websites.management.commands.markdown_cleaning.validate_urls import ValidateUrls
 from websites.models import WebsiteContent
 
@@ -57,6 +60,7 @@ class Command(BaseCommand):
         RootRelativeUrlRule,
         MetadataRelativeUrlsFix,
         ValidateUrls,
+        ShortcodeLoggingRule,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
@@ -129,7 +133,7 @@ class Command(BaseCommand):
 
         with ExitStack() as stack:
             Rule = next(R for R in cls.Rules if R.alias == alias)
-            all_wc = WebsiteContent.all_objects.all().prefetch_related("website")
+            all_wc = WebsiteContent.all_objects.all().prefetch_related("website")[:10000]
             if commit:
                 stack.enter_context(transaction.atomic())
                 all_wc.select_for_update()
