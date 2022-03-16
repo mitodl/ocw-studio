@@ -14,7 +14,8 @@ import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import TablePlugin from "@ckeditor/ckeditor5-table/src/table"
 import TableToolbarPlugin from "@ckeditor/ckeditor5-table/src/tabletoolbar"
-import CodeBlock from "@ckeditor/ckeditor5-code-block/src/codeblock"
+import CodeBlockPlugin from "@ckeditor/ckeditor5-code-block/src/codeblock"
+import CodePlugin from "@ckeditor/ckeditor5-basic-styles/src/code"
 
 import { editor } from "@ckeditor/ckeditor5-core"
 
@@ -77,6 +78,8 @@ export const FullEditorConfig = {
     AutoformatPlugin,
     BoldPlugin,
     ItalicPlugin,
+    // note that this is just for inline (not block-level) code
+    CodePlugin,
     UnderlinePlugin,
     BlockQuotePlugin,
     HeadingPlugin,
@@ -89,7 +92,7 @@ export const FullEditorConfig = {
     ParagraphPlugin,
     TablePlugin,
     TableToolbarPlugin,
-    CodeBlock,
+    CodeBlockPlugin,
     ResourceEmbed,
     ResourcePicker,
     ResourceLink,
@@ -111,6 +114,7 @@ export const FullEditorConfig = {
       "bulletedList",
       "numberedList",
       "blockQuote",
+      "code",
       "codeBlock",
       "insertTable",
       "undo",
@@ -138,6 +142,7 @@ export const MinimalEditorConfig = {
     AutoformatPlugin,
     BoldPlugin,
     ItalicPlugin,
+    CodePlugin,
     UnderlinePlugin,
     BlockQuotePlugin,
     LinkPlugin,
@@ -151,6 +156,7 @@ export const MinimalEditorConfig = {
       "bold",
       "italic",
       "underline",
+      "code",
       "link",
       "bulletedList",
       "numberedList",
