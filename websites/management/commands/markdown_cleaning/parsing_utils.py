@@ -1,98 +1,41 @@
-from dataclasses import dataclass, field
-from pyparsing import nestedExpr
-
-def hugo_escape_shortcode_arg_if_necessary(s: str):
-    """Double-quote and escape shortcode arg if necessary.
-
-    Hugo shortcode arguments are space-separated, so arguments containing
-    spaces must be double quoted. Hence quotes, too, must be escaped.
+from pyparsing import originalTextFor, ParseResults
+class PyparsingWrapper:
     """
-    if ' ' in s or '"' in s:
-        return '"' + s.replace('"', R'\"') + '"'
-    return s
+    Wrapper around Pyparsing grammars.
 
-@dataclass
-class Shortcode:
-    name: str
-    args: 'list[str]'
-    opener: str = field(init=False)
-    closer: str = field(init=False)
-    percent_delimiters: bool = False\
+    This serves two purposes:
+        1. Ensure availability of the original text for individual matches
+            on parse actions.
+        2. Provide nice snake_case names. Our version of Pyparsing does not have
+            snake case names. (It's introduce in 3.0; we're on 2.4.7)
+    """
 
-    def __post_init__(self):
-        if self.percent_delimiters:
-            self.opener = '{{%'
-            self.closer = '%}}'
-        else:
-            self.opener = '{{<'
-            self.closer = '>}}'
+    def __init__(self, grammar) -> None:
 
-    def to_hugo(self):
-        args = ' '.join(hugo_escape_shortcode_arg_if_necessary(arg) for arg in self.args)
-        return f'{self.opener} {self.name} {args} {self.closer}'
-
-@dataclass
-class ParsedShortcode:
-    shortcode: Shortcode
-    original_text: str
-
-def find_nth(string: str, sub: str, n, start = 0):
-    """Find the nth occurence of `sub` in string starting from `start`."""
-    i = start
-    remaining = n
-    found_at = -1
-    while (remaining >= 0):
-        found_at = string.find(sub, i)
-        if found_at == -1: return -1
-        i = found_at + len(sub)
-        remaining -= 1
-    return found_at
-
-class ShortcodeParser:
-
-    def __init__(self):
-
-        def record_shortcode(percent_delimiters: bool):
-            """
-            Returns a pyparsing parse action that transforms the nestedExpr
-            match into a ParsedShortcode object.
-            """
-            closer = R'%}}' if percent_delimiters else R'>}}'
-            def _parse_action(s: str, l: int, toks: 'list[list[str]]'):
-                if len(toks) > 1:
-                    raise ValueError('Assumption violated. Investigate.')
-                if any(not isinstance(s, str) for s in toks[0]):
-                    raise ValueError('Unexpected shortcode nesting.')
-
-                closer_count = ''.join(toks[0]).count(closer)
-                start_index = l
-                end_index = find_nth(s, closer, closer_count, l) + len(closer)
-                name = toks[0][0]
-                args = [self.hugo_unescape_shortcode_arg(s) for s in toks[0][1:]]
-                shortcode = Shortcode(name, args, percent_delimiters)
-                original_text = s[start_index: end_index]
-                return ParsedShortcode(shortcode, original_text)
-            return _parse_action
-
-        angle_expr =nestedExpr(opener=R"{{<", closer=R">}}").setParseAction(record_shortcode(percent_delimiters=False))
-        percent_expr = nestedExpr(opener=R"{{%", closer=R"%}}").setParseAction(record_shortcode(percent_delimiters=True))
-
-        self.angle_expr = angle_expr
-        self.percent_expr = percent_expr
-        self.grammar = angle_expr | percent_expr
+        self.grammar = originalTextFor(grammar)
+        self.set_parse_action()
 
 
-    def add_parse_action(self, parse_action):
+    @staticmethod
+    def _original_text_for(s: str, _l: int, toks):
+        original_text = s[toks.pop('_original_start'):toks.pop('_original_end')]
+        results = toks.asDict()
+        results['original_text'] = original_text
+        return ParseResults.from_dict(results)
+
+    def set_parse_action(self, *parse_actions):
         """
-        Add a parse action that will be called for each shortcode match.
+        Set parse actions to on the wrapped grammar. These will be called with
+        arguments
+            - s (str): the *entire* original string
+            - l (int): starting index of match within s
+            - toks (ParseResults): A ParseResults object with properties
+                - original_text: the original text for *this* match
+                - ...: and any named properties on parse results of the underlying
+                    grammar.
         """
-
-        # Add to the two shortcode variants separately. Otherwise the parse
-        # action is only called for the outermost match.
-        # (Which probably wouldn't be a big deal, since they should
-        # not be nested anyway.)
-        self.angle_expr.addParseAction(parse_action)
-        self.percent_expr.addParseAction(parse_action)
+        self.grammar.setParseAction(self._original_text_for)
+        self.grammar.addParseAction(*parse_actions)
 
     def parse_string(self, string: str):
         """
@@ -105,7 +48,3 @@ class ShortcodeParser:
         Snake-case alias for PyParsing's transformString
         """
         return self.grammar.transformString(string)
-
-    @staticmethod
-    def hugo_unescape_shortcode_arg(s: str):
-        return s.strip('"').replace('\\"', '"')
