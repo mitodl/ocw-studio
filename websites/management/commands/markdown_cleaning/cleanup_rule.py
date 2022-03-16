@@ -87,3 +87,11 @@ class RegexpCleanupRule(MarkdownCleanupRule):
 
         new_markdown = self.compiled.sub(_replacer, text)
         return new_markdown
+
+class PyparsingRule(MarkdownCleanupRule):
+
+    def replace_match(self, s, l, toks, website_content: WebsiteContent):
+        pass
+
+    def transform_text(self, website_content: WebsiteContent, text: str, on_match) -> str:
+        return new_markdown
