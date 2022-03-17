@@ -1,4 +1,6 @@
 """ Publish live or draft versions of multiple sites """
+import json
+
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
@@ -21,11 +23,17 @@ class Command(BaseCommand):
             help="The pipeline version to trigger (live or draft)",
         )
         parser.add_argument(
+            "--filter-json",
+            dest="filter_json",
+            default=None,
+            help="If specified, only publish courses that contain comma-delimited site names specified in a JSON file",
+        )
+        parser.add_argument(
             "-f",
             "--filter",
             dest="filter",
             default="",
-            help="If specified, only trigger website pipelines that contain this filter text in their name",
+            help="If specified, only trigger website pipelines whose names are in this comma-delimited list",
         )
         parser.add_argument(
             "-c",
@@ -62,7 +70,7 @@ class Command(BaseCommand):
             self.stderr.write("Pipeline backend is not configured for publishing")
             return
 
-        filter_str = options["filter"].lower()
+        filter_json = options["filter_json"]
         version = options["version"].lower()
         starter_str = options["starter"]
         source_str = options["source"]
@@ -70,15 +78,17 @@ class Command(BaseCommand):
         prepublish = options["prepublish"]
         is_verbose = options["verbosity"] > 1
 
-        self.stdout.write(
-            f"Triggering website {version} builds, source is {source_str}"
-        )
+        if filter_json:
+            with open(filter_json) as input_file:
+                filter_list = json.load(input_file)
+        else:
+            filter_list = [
+                name.strip() for name in options["filter"].split(",") if name
+            ]
 
         website_qset = Website.objects.filter(starter__source=STARTER_SOURCE_GITHUB)
-        if filter_str:
-            website_qset = website_qset.filter(
-                Q(name__icontains=filter_str) | Q(title__icontains=filter_str)
-            )
+        if filter_list:
+            website_qset = website_qset.filter(name__in=filter_list)
         if starter_str:
             website_qset = website_qset.filter(starter__slug=starter_str)
         if source_str:
@@ -96,6 +106,9 @@ class Command(BaseCommand):
 
         website_names = list(website_qset.values_list("name", flat=True))
 
+        self.stdout.write(
+            f"Triggering website {version} builds, source is {source_str}"
+        )
         start = now_in_utc()
         task = publish_websites.delay(
             website_names, version, chunk_size=chunk_size, prepublish=prepublish
