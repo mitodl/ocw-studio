@@ -1,6 +1,6 @@
 import ResourceEmbed from "./ResourceEmbed"
 import Markdown from "./Markdown"
-import { createTestEditor, markdownTest } from "./test_util"
+import { createTestEditor, markdownTest, getConverters } from "./test_util"
 import { turndownService } from "../turndown"
 
 const getEditor = createTestEditor([ResourceEmbed, Markdown])
@@ -25,6 +25,16 @@ describe("ResourceEmbed plugin", () => {
     markdownTest(
       editor,
       "{{< resource asdfasdfasdfasdf >}}",
+      '<section data-uuid="asdfasdfasdfasdf"></section>'
+    )
+  })
+
+  it("should tolerate quotation marks around its argument", async () => {
+    const editor = await getEditor("")
+    // This conversion is not quite lossless. We lose the optional quotes around
+    // shortcode argument.
+    const { md2html } = getConverters(editor)
+    expect(md2html('{{< resource "asdfasdfasdfasdf" >}}')).toBe(
       '<section data-uuid="asdfasdfasdfasdf"></section>'
     )
   })

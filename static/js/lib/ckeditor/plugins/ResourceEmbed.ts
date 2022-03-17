@@ -14,7 +14,7 @@ import {
   RESOURCE_EMBED_COMMAND
 } from "./constants"
 
-export const RESOURCE_SHORTCODE_REGEX = /{{< resource (\S+) >}}/g
+export const RESOURCE_SHORTCODE_REGEX = /{{< resource "?([^\s"]+)"? >}}/g
 
 /**
  * Class for defining Markdown conversion rules for ResourceEmbed
