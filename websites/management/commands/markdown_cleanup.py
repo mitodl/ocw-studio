@@ -1,6 +1,5 @@
 """Replace baseurl-based links with resource_link shortcodes."""
 import os
-from contextlib import ExitStack
 from typing import Type
 
 from django.conf import settings
@@ -30,9 +29,6 @@ from websites.management.commands.markdown_cleaning.metadata_relative_urls impor
 from websites.management.commands.markdown_cleaning.resource_file_rule import (
     ResourceFileReplacementRule,
 )
-from websites.management.commands.markdown_cleaning.resource_link_delimiters import (
-    ResourceLinkDelimitersReplacementRule,
-)
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
@@ -55,7 +51,6 @@ class Command(BaseCommand):
         ResourceFileReplacementRule,
         LegacyShortcodeFixOne,
         LegacyShortcodeFixTwo,
-        ResourceLinkDelimitersReplacementRule,
         RootRelativeUrlRule,
         MetadataRelativeUrlsFix,
         ValidateUrls,
