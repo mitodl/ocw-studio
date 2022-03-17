@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.53.4
+Version 0.53.4 (Released March 17, 2022)
 --------------
 
 - Option to sync a specific commit/path from github to the database (#1108)
