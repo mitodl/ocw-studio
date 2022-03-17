@@ -49,7 +49,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--filter-json",
-            dest="filter-json",
+            dest="filter_json",
             default=None,
             help="If specified, only import courses that contain comma-delimited site names specified in a JSON file",
         )
@@ -74,7 +74,7 @@ class Command(BaseCommand):
             # make sure it ends with a '/'
             prefix = prefix.rstrip("/") + "/"
         bucket_name = options["bucket"]
-        filter_json = options["filter-json"]
+        filter_json = options["filter_json"]
         limit = options["limit"]
         create_new = options["create_new"]
         content_field = options["content_field"]
@@ -83,7 +83,9 @@ class Command(BaseCommand):
             with open(filter_json) as input_file:
                 filter_list = json.load(input_file)
         else:
-            filter_list = options["filter"]
+            filter_list = [
+                name.strip() for name in options["filter"].split(",") if name
+            ]
 
         if not create_new and not content_field:
             self.stderr.write("Either --content-field or --create-new is required")
