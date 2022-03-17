@@ -36,7 +36,6 @@ class ShortcodeTag:
     def hugo_escape(s: str):
         return json.dumps(s)
 
-
 class ShortcodeParser(WrappedParser):
 
     def __init__(self):

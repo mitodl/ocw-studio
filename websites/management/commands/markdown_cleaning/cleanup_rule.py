@@ -102,9 +102,22 @@ class PyparsingRule(MarkdownCleanupRule):
 
     @abc.abstractmethod
     def replace_match(self, s: str, l: int, toks: ParseResults, website_content: WebsiteContent):
-        pass        
+        pass 
+
+    def should_parse(self, _text: str):
+        """
+        If result is truthy, the given text will be parsed.
+        
+        This is useful because PyParsing is not the fastest thing ever created.
+        So if, for example, you only care about {{< resource >}} shortcodes,
+        then there's no need to parse the text if it does not contain '{{< resource'.
+        """
+        return True       
 
     def transform_text(self, website_content: WebsiteContent, text: str, on_match) -> str:
+        if not self.should_parse(text):
+            return text
+
         def parse_action(s, l, toks):
             result = self.replace_match(s, l, toks, website_content)
             replacement, notes = self.standardize_replacement(result)
