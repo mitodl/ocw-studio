@@ -26,14 +26,14 @@ from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix i
 from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
     MetadataRelativeUrlsFix,
 )
+from websites.management.commands.markdown_cleaning.remove_extra_resource_args import (
+    RemoveExtraResourceArgs,
+)
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
 from websites.management.commands.markdown_cleaning.shortcode_logging_rule import (
     ShortcodeLoggingRule,
-)
-from websites.management.commands.markdown_cleaning.remove_extra_resource_args import (
-    RemoveExtraResourceArgs
 )
 from websites.management.commands.markdown_cleaning.validate_urls import ValidateUrls
 from websites.models import WebsiteContent
@@ -54,7 +54,7 @@ class Command(BaseCommand):
         MetadataRelativeUrlsFix,
         ValidateUrls,
         ShortcodeLoggingRule,
-        RemoveExtraResourceArgs
+        RemoveExtraResourceArgs,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
@@ -124,13 +124,13 @@ class Command(BaseCommand):
     @classmethod
     def do_handle(cls, alias, commit, out):
         """Replace baseurl with resource_link"""
-        
+
         Rule = next(R for R in cls.Rules if R.alias == alias)
         rule = Rule()
 
         cleaner = WebsiteContentMarkdownCleaner(rule)
 
-        all_wc = WebsiteContent.all_objects.all().prefetch_related("website")[0:1000]
+        all_wc = WebsiteContent.all_objects.all().prefetch_related("website")
         page_size = 100
         pages = Paginator(all_wc, page_size)
 

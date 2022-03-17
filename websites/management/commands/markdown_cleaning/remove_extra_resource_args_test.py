@@ -15,21 +15,21 @@ def get_markdown_cleaner():
     return WebsiteContentMarkdownCleaner(rule)
 
 
-@pytest.mark.parametrize(['text', 'expected'], [
-    (
-        # If single arg, do not touch at all.
-        R'Hello {{< resource uuid >}}',
-        R'Hello {{< resource uuid >}}'
-    ),
-    (   # If not resource, don't touch at all.
-        R'Hello {{< cat uuid "some other" args >}}',
-        R'Hello {{< cat uuid "some other" args >}}'
-    ),
-    (
-        R'Hello {{< resource uuid "extra" args >}}',
-        R'Hello {{< resource "uuid" >}}'
-    ),
-])
+@pytest.mark.parametrize(
+    ["text", "expected"],
+    [
+        (
+            # If single arg, do not touch at all.
+            R"Hello {{< resource uuid >}}",
+            R"Hello {{< resource uuid >}}",
+        ),
+        (  # If not resource, don't touch at all.
+            R'Hello {{< cat uuid "some other" args >}}',
+            R'Hello {{< cat uuid "some other" args >}}',
+        ),
+        (R'Hello {{< resource uuid "extra" args >}}', R'Hello {{< resource "uuid" >}}'),
+    ],
+)
 def test_shortcode_standardizer(text, expected):
     """Check that it removes extra args from resource shortcodes"""
     target_content = WebsiteContentFactory.build(

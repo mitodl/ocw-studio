@@ -135,6 +135,7 @@ def test_baseurl_replacer_handle_specific_url_replacements(
 
     assert target_content.markdown == expected_markdown
 
+
 def test_baseurl_replacer_handles_index_files():
     """Test specific replacements"""
     website_uuid = "website-uuid"

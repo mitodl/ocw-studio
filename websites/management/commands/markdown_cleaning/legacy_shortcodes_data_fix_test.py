@@ -35,6 +35,7 @@ def test_legacy_shortcode_fix_one(markdown, expected_markdown):
     cleaner.update_website_content(target_content)
     assert target_content.markdown == expected_markdown
 
+
 @pytest.mark.parametrize(
     ["markdown", "expected_markdown"],
     [

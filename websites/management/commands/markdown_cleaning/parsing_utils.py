@@ -1,4 +1,5 @@
-from pyparsing import originalTextFor, ParseResults
+from pyparsing import ParseResults, originalTextFor
+
 
 class WrappedParser:
     """
@@ -16,12 +17,11 @@ class WrappedParser:
         self.grammar = originalTextFor(grammar)
         self.set_parse_action()
 
-
     @staticmethod
     def _original_text_for(s: str, _l: int, toks):
-        original_text = s[toks.pop('_original_start'):toks.pop('_original_end')]
+        original_text = s[toks.pop("_original_start") : toks.pop("_original_end")]
         results = toks.asDict()
-        results['original_text'] = original_text
+        results["original_text"] = original_text
         return ParseResults.from_dict(results)
 
     def set_parse_action(self, *parse_actions):

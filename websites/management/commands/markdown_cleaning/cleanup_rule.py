@@ -5,10 +5,9 @@ from typing import Union
 
 from pyparsing import ParseResults
 
+from websites.management.commands.markdown_cleaning.parsing_utils import WrappedParser
 from websites.models import WebsiteContent
-from websites.management.commands.markdown_cleaning.parsing_utils import (
-    WrappedParser
-)
+
 
 class MarkdownCleanupRule(abc.ABC):
     """
@@ -45,7 +44,7 @@ class MarkdownCleanupRule(abc.ABC):
     @classmethod
     def get_root_fields(cls):
         return {f.split(".")[0] for f in cls.fields}
-    
+
     @classmethod
     def standardize_replacement(cls, result: Union[str, tuple]):
         if isinstance(result, str):
@@ -54,10 +53,8 @@ class MarkdownCleanupRule(abc.ABC):
         elif isinstance(result, tuple):
             replacement, notes = result
         else:
-            raise ValueError(
-                "replace_match must return strings or tuples when called"
-            )
-        return replacement, notes 
+            raise ValueError("replace_match must return strings or tuples when called")
+        return replacement, notes
 
 
 class RegexpCleanupRule(MarkdownCleanupRule):
@@ -98,23 +95,27 @@ class RegexpCleanupRule(MarkdownCleanupRule):
         new_markdown = self.compiled.sub(_replacer, text)
         return new_markdown
 
-class PyparsingRule(MarkdownCleanupRule):
 
+class PyparsingRule(MarkdownCleanupRule):
     @abc.abstractmethod
-    def replace_match(self, s: str, l: int, toks: ParseResults, website_content: WebsiteContent):
-        pass 
+    def replace_match(
+        self, s: str, l: int, toks: ParseResults, website_content: WebsiteContent
+    ):
+        pass
 
     def should_parse(self, _text: str):
         """
         If result is truthy, the given text will be parsed.
-        
+
         This is useful because PyParsing is not the fastest thing ever created.
         So if, for example, you only care about {{< resource >}} shortcodes,
         then there's no need to parse the text if it does not contain '{{< resource'.
         """
-        return True       
+        return True
 
-    def transform_text(self, website_content: WebsiteContent, text: str, on_match) -> str:
+    def transform_text(
+        self, website_content: WebsiteContent, text: str, on_match
+    ) -> str:
         if not self.should_parse(text):
             return text
 
@@ -124,7 +125,7 @@ class PyparsingRule(MarkdownCleanupRule):
             original_text = toks.original_text
             on_match(original_text, replacement, website_content, notes)
             return replacement
-        
+
         self.parser.set_parse_action(parse_action)
 
         return self.parser.transform_string(text)
