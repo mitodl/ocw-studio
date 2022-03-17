@@ -8,6 +8,7 @@ from websites.management.commands.markdown_cleaning.parsing_utils import Wrapped
 
 @dataclass
 class ShortcodeTag:
+    """Represents a shortcode tag."""
     name: str
     args: "list[str]"
     percent_delimiters: bool = False
@@ -27,6 +28,9 @@ class ShortcodeTag:
         return opening_delimiter, closing_delimiter
 
     def to_hugo(self):
+        """
+        Encases all shortcode arguments in double quotes, because Hugo allows it and that's simplest.
+        """
         opening_delimiter, closing_delimiter = self.get_delimiters()
         pieces = [
             opening_delimiter,

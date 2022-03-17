@@ -43,8 +43,7 @@ def test_shortcode_grammar_respects_spaces_in_quoted_arguments(closer):
     text = f'{{{{<{symbol} some_name first_arg 2 "3rd \\"quoted\\"   arg" fourth >}}}}'
     parser = ShortcodeParser()
     parsed = parser.parse_string(text)
-    print("HELLO")
-    print(type(parsed))
+
     assert parsed.shortcode == ShortcodeTag(
         "some_name",
         args=["first_arg", "2", '3rd "quoted"   arg', "fourth"],
