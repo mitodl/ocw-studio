@@ -9,20 +9,25 @@ from websites.management.commands.markdown_cleaning.shortcode_grammar import (
     ['text', 'expected'],
     [
         (
-            # Pyparsing hates whitespace
+            # Quote all the things
+           R"The quick {{< blargle doesnt_need_quotes >}} brown fox",
+           R'The quick {{< blargle "doesnt_need_quotes" >}} brown fox'
+        ),
+        (
+            # Pyparsing hates whitespace.
            R"The quick {{< sup    2 >}} brown fox",
-           R"The quick {{< sup 2 >}} brown fox"
+           R'The quick {{< sup "2" >}} brown fox'
         ),
         (
             # Example: Convert shortcode delimiter
            R'Take {{< resource_link uuid "that {{< sup 123 >}}" >}}, regex.',
-           R'Take {{% resource_link uuid "that {{< sup 123 >}}" %}}, regex.',
+           R'Take {{% resource_link "uuid" "that {{< sup 123 >}}" %}}, regex.',
         ),
         (
             # Example: Convert shortcode delimiter
             # Not a resource_link, so left alone.
-           R'Quotes: {{< some_shortcode no_quotes "spaces are fun" "spaces \"and\" quotes" >}}, regex.',
-           R'Quotes: {{< some_shortcode no_quotes "spaces are fun" "spaces \"and\" quotes" >}}, regex.',
+           R'Quotes: {{< some_shortcode unnecessary_quotes "spaces are fun" "spaces \"and\" quotes" >}}, regex.',
+           R'Quotes: {{< some_shortcode "unnecessary_quotes" "spaces are fun" "spaces \"and\" quotes" >}}, regex.',
         )
     ]
 )

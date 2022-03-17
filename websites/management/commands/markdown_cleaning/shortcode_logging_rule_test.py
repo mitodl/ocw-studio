@@ -23,13 +23,6 @@ def test_shortcode_standardizer():
 
     Hello world {{< wolf "a     b" >}}
     """
-    expected_markdown = R"""
-    Roar {{< cat uuid "some \"text\" cool" >}}
-
-    {{< dog a b >}}
-
-    Hello world {{< wolf "a     b" >}}
-    """
     target_content = WebsiteContentFactory.build(
         markdown=markdown, website=WebsiteFactory.build()
     )
@@ -37,4 +30,4 @@ def test_shortcode_standardizer():
     cleaner = get_markdown_cleaner()
     cleaner.update_website_content(target_content)
 
-    assert target_content.markdown == expected_markdown
+    assert target_content.markdown == markdown
