@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.53.5
+Version 0.53.5 (Released March 17, 2022)
 --------------
 
 - Allow mass-publish to process a list of site names from a json file or comma-delimited string (#1127)
