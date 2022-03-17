@@ -1,23 +1,25 @@
 import pytest
 
 from websites.management.commands.markdown_cleaning.shortcode_grammar import (
-    Shortcode,
+    ShortcodeTag,
     ShortcodeParser,
 )
 
 
-@pytest.mark.parametrize(['percent_delimiters'], [(False,), (True,)])
-def test_shortcode(percent_delimiters):
-    shortocde = Shortcode(
+@pytest.mark.parametrize(['closer', 'percent_delimiters', 'expected'], [
+    (False, False, R'{{< my_shortcode "first" "second   2" >}}'),
+    (True, False, R'{{</ my_shortcode "first" "second   2" >}}'),
+    (False, True, R'{{% my_shortcode "first" "second   2" %}}'),
+    (True, True, R'{{%/ my_shortcode "first" "second   2" %}}')
+])
+def test_shortcode(closer, percent_delimiters, expected):
+    shortocde = ShortcodeTag(
         name='my_shortcode',
         args=['first', 'second   2'],
-        percent_delimiters=percent_delimiters
+        percent_delimiters=percent_delimiters,
+        closer=closer
     )
-
-    if percent_delimiters:
-        assert shortocde.to_hugo() == R'{{% my_shortcode "first" "second   2" %}}'
-    else:
-        assert shortocde.to_hugo() == R'{{< my_shortcode "first" "second   2" >}}'
+    assert shortocde.to_hugo() == expected
 
 @pytest.mark.parametrize(['shortcode_args', 'expected'], [
     (
@@ -30,22 +32,23 @@ def test_shortcode(percent_delimiters):
     )
 ])
 def test_shortcode_serialization(shortcode_args, expected):
-    shortocde = Shortcode(name='meow', args=shortcode_args)
+    shortocde = ShortcodeTag(name='meow', args=shortcode_args)
     assert shortocde.to_hugo() == expected
 
-def test_shortcode_grammar_respects_spaces_in_quoted_arguments():
-    text = R'{{< some_name first_arg 2 "3rd \"quoted\"   arg" fourth >}}'
+@pytest.mark.parametrize(['closer'], [(True,), (False,)])
+def test_shortcode_grammar_respects_spaces_in_quoted_arguments(closer):
+    symbol = '/' if closer else ''
+    text = f'{{{{<{symbol} some_name first_arg 2 "3rd \\"quoted\\"   arg" fourth >}}}}'
     parser = ShortcodeParser()
     parsed = parser.parse_string(text)
 
-    assert parsed.shortcode == Shortcode('some_name', args=[
+    assert parsed.shortcode == ShortcodeTag('some_name', args=[
         'first_arg',
         '2',
         '3rd "quoted"   arg',
         'fourth'
-    ])
+    ], closer=closer)
     assert parsed.original_text == text
-
 
 def test_shortcode_grammar_with_nested_shortcodes():
     """Check parses shortcodes with arguments containing shortcode delimiters.
@@ -64,7 +67,7 @@ def test_shortcode_grammar_with_nested_shortcodes():
     text_quoted = R'{{< fake_shortcode uuid "{{< sup 4 >}}" >}}'
     quoted = parser.parse_string(R'{{< fake_shortcode uuid "{{< sup 4 >}}" >}}')
 
-    assert quoted.shortcode == Shortcode('fake_shortcode', args=[
+    assert quoted.shortcode == ShortcodeTag('fake_shortcode', args=[
         'uuid',
         R'{{< sup 4 >}}'
     ])
@@ -73,7 +76,7 @@ def test_shortcode_grammar_with_nested_shortcodes():
     # Here "sup" and "4" are captured as separate arguments.
     text_not_nested = R"{{< fake_shortcode uuid sup 4 >}}"
     not_nested = parser.parse_string(text_not_nested)
-    assert not_nested.shortcode == Shortcode(name='fake_shortcode', args = ['uuid', 'sup', '4'])
+    assert not_nested.shortcode == ShortcodeTag(name='fake_shortcode', args = ['uuid', 'sup', '4'])
     assert not_nested.original_text == text_not_nested
     
     # "real" nesting raises an error:

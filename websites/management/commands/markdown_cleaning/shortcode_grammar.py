@@ -1,6 +1,6 @@
 import json
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pyparsing import nestedExpr, ParseResults
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
@@ -8,23 +8,28 @@ from websites.management.commands.markdown_cleaning.parsing_utils import (
 )
 
 @dataclass
-class Shortcode:
+class ShortcodeTag:
     name: str
     args: 'list[str]'
-    opener: str = field(init=False)
-    closer: str = field(init=False)
-    percent_delimiters: bool = False\
+    percent_delimiters: bool = False
+    closer: bool = False
 
-    def __post_init__(self):
+    def get_delimiters(self): 
         if self.percent_delimiters:
-            self.opener = '{{%'
-            self.closer = '%}}'
+            opening_delimiter = '{{%'
+            closing_delimiter = '%}}'
         else:
-            self.opener = '{{<'
-            self.closer = '>}}'
+            opening_delimiter = '{{<'
+            closing_delimiter = '>}}'
+        
+        if self.closer:
+            opening_delimiter += '/'
+        
+        return opening_delimiter, closing_delimiter
 
     def to_hugo(self):
-        pieces = [self.opener, self.name, *(self.hugo_escape(arg) for arg in self.args), self.closer]
+        opening_delimiter, closing_delimiter = self.get_delimiters()
+        pieces = [opening_delimiter, self.name, *(self.hugo_escape(arg) for arg in self.args), closing_delimiter]
         return ' '.join(pieces)
     
     @staticmethod
@@ -46,10 +51,11 @@ class ShortcodeParser(WrappedParser):
                     raise ValueError('Assumption violated. Investigate.')
                 if any(not isinstance(s, str) for s in toks[0]):
                     raise ValueError('Unexpected shortcode nesting.')
-
-                name = toks[0][0]
-                args = [self.hugo_unescape_shortcode_arg(s) for s in toks[0][1:]]
-                shortcode = Shortcode(name, args, percent_delimiters)
+                is_closing_tag = toks[0][0] == '/'
+                content = toks[0][1:] if is_closing_tag else toks[0]
+                name = content[0]
+                args = [self.hugo_unescape_shortcode_arg(s) for s in content[1:]]
+                shortcode = ShortcodeTag(name, args, percent_delimiters, closer=is_closing_tag)
                 return ParseResults.from_dict({"shortcode": shortcode})
             return _parse_action
 
