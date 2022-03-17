@@ -9,6 +9,7 @@ from websites.management.commands.markdown_cleaning.parsing_utils import Wrapped
 @dataclass
 class ShortcodeTag:
     """Represents a shortcode tag."""
+
     name: str
     args: "list[str]"
     percent_delimiters: bool = False

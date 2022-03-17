@@ -115,7 +115,7 @@ class WebsiteContentMarkdownCleaner:
 
         return changed
 
-    def write_matches_to_csv(self, path: str):
+    def write_matches_to_csv(self, path: str, only_changes):
         """Write matches and replacements to csv."""
 
         with open(path, "w", newline="") as csvfile:
@@ -126,10 +126,13 @@ class WebsiteContentMarkdownCleaner:
             writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)
             writer.writeheader()
             for change in self.replacement_matches:
+                has_changed = change.original_text != change.replacement
+                if only_changes and not has_changed:
+                    continue
                 row = {
                     "original_text": change.original_text,
                     "replacement": change.replacement,
-                    "has_changed": change.original_text != change.replacement,
+                    "has_changed": has_changed,
                     "field": change.field,
                     "replaced_on_site_name": change.content.website.name,
                     "replaced_on_site_short_id": change.content.website.short_id,

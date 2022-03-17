@@ -86,6 +86,14 @@ class Command(BaseCommand):
             default=False,
             help="Whether to skip running the sync_unsynced_websites task",
         )
+        parser.add_argument(
+            "-ch",
+            "--csv-only-changes",
+            dest="csv_only_changes",
+            action="store_true",
+            default=False,
+            help="Whether to write CSV rows for all matches or only matches that change.",
+        )
 
     @classmethod
     def validate_options(cls, options):
@@ -103,7 +111,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.validate_options(options)
         self.do_handle(
-            commit=options["commit"], alias=options["alias"], out=options["out"]
+            commit=options["commit"],
+            alias=options["alias"],
+            out=options["out"],
+            csv_only_changes=options["csv_only_changes"],
         )
 
         if (
@@ -122,7 +133,7 @@ class Command(BaseCommand):
             )
 
     @classmethod
-    def do_handle(cls, alias, commit, out):
+    def do_handle(cls, alias, commit, out, csv_only_changes):
         """Replace baseurl with resource_link"""
 
         Rule = next(R for R in cls.Rules if R.alias == alias)
@@ -130,7 +141,11 @@ class Command(BaseCommand):
 
         cleaner = WebsiteContentMarkdownCleaner(rule)
 
-        all_wc = WebsiteContent.all_objects.all().order_by('id').prefetch_related("website")
+        all_wc = (
+            WebsiteContent.all_objects.all()
+            .order_by("id")
+            .prefetch_related("website")[0:100]
+        )
         page_size = 100
         pages = Paginator(all_wc, page_size)
 
@@ -144,4 +159,4 @@ class Command(BaseCommand):
 
         if out is not None:
             outpath = os.path.normpath(os.path.join(os.getcwd(), out))
-            cleaner.write_matches_to_csv(outpath)
+            cleaner.write_matches_to_csv(outpath, only_changes=csv_only_changes)
