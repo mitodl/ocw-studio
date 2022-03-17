@@ -1,19 +1,11 @@
+import json
+
 from dataclasses import dataclass, field
 from pyparsing import nestedExpr, ParseResults
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     WrappedParser
 )
-
-def hugo_escape_shortcode_arg_if_necessary(s: str):
-    """Double-quote and escape shortcode arg if necessary.
-
-    Hugo shortcode arguments are space-separated, so arguments containing
-    spaces must be double quoted. Hence quotes, too, must be escaped.
-    """
-    if ' ' in s or '"' in s:
-        return '"' + s.replace('"', R'\"') + '"'
-    return s
 
 @dataclass
 class Shortcode:
@@ -32,8 +24,12 @@ class Shortcode:
             self.closer = '>}}'
 
     def to_hugo(self):
-        args = ' '.join(hugo_escape_shortcode_arg_if_necessary(arg) for arg in self.args)
-        return f'{self.opener} {self.name} {args} {self.closer}'
+        pieces = [self.opener, self.name, *(self.hugo_escape(arg) for arg in self.args), self.closer]
+        return ' '.join(pieces)
+    
+    @staticmethod
+    def hugo_escape(s: str):
+        return json.dumps(s)
 
 
 class ShortcodeParser(WrappedParser):

@@ -15,10 +15,23 @@ def test_shortcode(percent_delimiters):
     )
 
     if percent_delimiters:
-        assert shortocde.to_hugo() == R'{{% my_shortcode first "second   2" %}}'
+        assert shortocde.to_hugo() == R'{{% my_shortcode "first" "second   2" %}}'
     else:
-        assert shortocde.to_hugo() == R'{{< my_shortcode first "second   2" >}}'
+        assert shortocde.to_hugo() == R'{{< my_shortcode "first" "second   2" >}}'
 
+@pytest.mark.parametrize(['shortcode_args', 'expected'], [
+    (
+        [],
+        R'{{< meow >}}'
+    ),
+    (
+        ['abc', 'x y  z', 'f "g" h'],
+        R'{{< meow "abc" "x y  z" "f \"g\" h" >}}'
+    )
+])
+def test_shortcode_serialization(shortcode_args, expected):
+    shortocde = Shortcode(name='meow', args=shortcode_args)
+    assert shortocde.to_hugo() == expected
 
 def test_shortcode_grammar_respects_spaces_in_quoted_arguments():
     text = R'{{< some_name first_arg 2 "3rd \"quoted\"   arg" fourth >}}'
