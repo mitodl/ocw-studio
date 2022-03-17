@@ -1,5 +1,4 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
-from content_sync.factories import ContentSyncStateFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
@@ -33,13 +32,8 @@ def test_resource_file_replacer():
     nice.
     """
     target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
-    ContentSyncStateFactory.build(content=target_content)
 
     cleaner = get_markdown_cleaner()
     cleaner.update_website_content(target_content)
 
     assert target_content.markdown == expected_markdown
-    assert (
-        target_content.content_sync_state.current_checksum
-        == target_content.calculate_checksum()
-    )

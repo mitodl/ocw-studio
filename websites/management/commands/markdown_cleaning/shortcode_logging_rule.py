@@ -24,4 +24,4 @@ class ShortcodeLoggingRule(PyparsingRule):
     def replace_match(self, s: str, l: int, toks, website_content):
         shortcode = toks.shortcode
         notes = self.ReplacementNotes(name=shortcode.name, num_args=len(shortcode.args), args=json.dumps(shortcode.args))
-        return shortcode.to_hugo(), notes
+        return toks.original_text, notes

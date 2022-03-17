@@ -52,8 +52,6 @@ class WebsiteContentMarkdownCleaner:
         self.replacement_matches: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = (
             []
         )
-        self.updated_website_contents: "list[WebsiteContent]" = []
-        self.updated_sync_states: "list[ContentSyncState]" = []
 
     def store_match_data(
         self,
@@ -115,16 +113,7 @@ class WebsiteContentMarkdownCleaner:
                 self.make_field_change(wc, field, new_text)
                 changed = True
 
-        if changed:
-            self.updated_website_contents.append(wc)
-            sync_state = wc.content_sync_state
-            if not sync_state:
-                return
-
-            new_checksum = wc.calculate_checksum()
-            if new_checksum != sync_state.current_checksum:
-                sync_state.current_checksum = new_checksum
-                self.updated_sync_states.append(sync_state)
+        return changed
 
     def write_matches_to_csv(self, path: str):
         """Write matches and replacements to csv."""

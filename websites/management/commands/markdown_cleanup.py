@@ -6,11 +6,10 @@ from typing import Type
 from django.conf import settings
 from django.core.management import BaseCommand
 from django.core.management.base import CommandParser
-from django.db import transaction
+from django.core.paginator import Paginator
 from mitol.common.utils import now_in_utc
 from tqdm import tqdm
 
-from content_sync.models import ContentSyncState
 from content_sync.tasks import sync_unsynced_websites
 from websites.management.commands.markdown_cleaning.baseurl_rule import (
     BaseurlReplacementRule,
@@ -130,27 +129,23 @@ class Command(BaseCommand):
     @classmethod
     def do_handle(cls, alias, commit, out):
         """Replace baseurl with resource_link"""
+        
+        Rule = next(R for R in cls.Rules if R.alias == alias)
+        rule = Rule()
 
-        with ExitStack() as stack:
-            Rule = next(R for R in cls.Rules if R.alias == alias)
-            all_wc = WebsiteContent.all_objects.all().prefetch_related("website")[:10000]
-            if commit:
-                stack.enter_context(transaction.atomic())
-                all_wc.select_for_update()
-            rule = Rule()
-            cleaner = WebsiteContentMarkdownCleaner(rule)
+        cleaner = WebsiteContentMarkdownCleaner(rule)
 
-            wc: WebsiteContent
-            for wc in tqdm(all_wc):
-                cleaner.update_website_content(wc)
+        all_wc = WebsiteContent.all_objects.all().prefetch_related("website")[0:1000]
+        page_size = 100
+        pages = Paginator(all_wc, page_size)
 
-            if commit:
-                all_wc.bulk_update(
-                    cleaner.updated_website_contents, Rule.get_root_fields()
-                )
-                ContentSyncState.objects.bulk_update(
-                    cleaner.updated_sync_states, ["current_checksum"]
-                )
+        with tqdm(total=pages.count) as progress:
+            for page in pages:
+                for wc in page:
+                    updated = cleaner.update_website_content(wc)
+                    if updated and commit:
+                        wc.save()
+                    progress.update()
 
         if out is not None:
             outpath = os.path.normpath(os.path.join(os.getcwd(), out))

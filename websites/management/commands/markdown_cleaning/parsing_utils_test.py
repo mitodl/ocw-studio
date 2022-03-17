@@ -1,7 +1,7 @@
 import pytest
 
 from websites.management.commands.markdown_cleaning.shortcode_grammar import (
-    Shortcode,
+    ShortcodeTag,
     ShortcodeParser,
 )
 
@@ -37,7 +37,7 @@ def test_shortcode_grammar_transform_string(text, expected):
     def parse_action(_s, _l, toks):
         shortcode = toks.shortcode
         if shortcode.name == 'resource_link':
-            replacement = Shortcode(name=shortcode.name, args=shortcode.args, percent_delimiters=True)
+            replacement = ShortcodeTag(name=shortcode.name, args=shortcode.args, percent_delimiters=True)
             return replacement.to_hugo()
         return shortcode.to_hugo()
     parser.set_parse_action(parse_action)
