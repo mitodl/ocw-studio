@@ -80,8 +80,6 @@ interface ReturnProps {
  * The hook returns two things, an array of `Option` objects which
  * can be directly used in a `Select` field and a `loadOptions` function
  * which can be used to fetch new options.
- *
- * Pass `fetchOnStartup = false` to skip fetching options on startup.
  */
 export function useWebsiteSelectOptions(
   valueField = "uuid",

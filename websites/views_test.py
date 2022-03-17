@@ -408,6 +408,18 @@ def test_website_endpoint_search(drf_client):
         ]
 
 
+def test_website_endpoint_empty_search(drf_client):
+    """ should limit the queryset based on the search param """
+    superuser = UserFactory.create(is_superuser=True)
+    drf_client.force_login(superuser)
+    WebsiteFactory.create()
+    WebsiteFactory.create()
+    WebsiteFactory.create()
+    resp = drf_client.get(reverse("websites_api-list"), {"search": ""})
+    expected_uuids = sorted([site.uuid.__str__() for site in Website.objects.all()])
+    assert expected_uuids == sorted([site["uuid"] for site in resp.data["results"]])
+
+
 def test_websites_autogenerate_name(mocker, drf_client):
     """ Website POST endpoint should auto-generate a name if one is not supplied """
     mock_create_website_pipeline = mocker.patch(

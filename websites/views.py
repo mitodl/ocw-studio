@@ -111,7 +111,7 @@ class WebsiteViewSet(
             # Other authenticated users should get a list of websites they are editors/admins/owners for.
             queryset = get_objects_for_user(user, constants.PERMISSION_VIEW)
 
-        if search is not None:
+        if search is not None and search != "":
             # search query param is used in react-select typeahead, and should
             # match on the title, name, and short_id
             search_filter = Q(search=SearchQuery(search))
