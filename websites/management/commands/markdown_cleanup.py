@@ -144,7 +144,7 @@ class Command(BaseCommand):
         all_wc = (
             WebsiteContent.all_objects.all()
             .order_by("id")
-            .prefetch_related("website")[0:100]
+            .prefetch_related("website")
         )
         page_size = 100
         pages = Paginator(all_wc, page_size)
