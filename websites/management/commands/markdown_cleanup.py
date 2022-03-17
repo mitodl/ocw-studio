@@ -130,7 +130,7 @@ class Command(BaseCommand):
 
         cleaner = WebsiteContentMarkdownCleaner(rule)
 
-        all_wc = WebsiteContent.all_objects.all().prefetch_related("website")
+        all_wc = WebsiteContent.all_objects.all().order_by('id').prefetch_related("website")
         page_size = 100
         pages = Paginator(all_wc, page_size)
 
