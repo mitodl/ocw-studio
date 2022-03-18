@@ -54,8 +54,8 @@ collections:
         name: featured-courses
         widget: website-collection
 
-      - label: Course Collections
-        name: collections
+      - label: Course Lists
+        name: courselists
         widget: relation
         multiple: true
         collection: course-lists
