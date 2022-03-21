@@ -14,6 +14,13 @@ export const createTestEditor = (plugins: any[]) => async (
   return editor
 }
 
+export function getConverters(editor: editor.Editor) {
+  const { md2html, html2md } = (editor.data
+    .processor as unknown) as MarkdownDataProcessor
+
+  return { md2html, html2md }
+}
+
 export function markdownTest(
   editor: editor.Editor,
   markdown: string,

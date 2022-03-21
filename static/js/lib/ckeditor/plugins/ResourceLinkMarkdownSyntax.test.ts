@@ -1,8 +1,8 @@
 jest.mock("@ckeditor/ckeditor5-utils/src/version")
 
 import ResourceLink from "@mitodl/ckeditor5-resource-link/src/link"
-import Markdown, { MarkdownDataProcessor } from "./Markdown"
-import { createTestEditor, markdownTest } from "./test_util"
+import Markdown from "./Markdown"
+import { createTestEditor, markdownTest, getConverters } from "./test_util"
 import { turndownService } from "../turndown"
 
 import { RESOURCE_LINK } from "@mitodl/ckeditor5-resource-link/src/constants"
@@ -78,10 +78,24 @@ describe("ResourceLink plugin", () => {
     )
   })
 
+  it.each([
+    'Dogs {{% resource_link uuid123 "bark bark" %}} Woof',
+    'Dogs {{% resource_link "uuid123" "bark bark" %}} Woof'
+  ])("tolerates quotation marks around its argument", async md => {
+    const editor = await getEditor("")
+    // This conversion is not quite lossless. We lose the optional quotes around
+    // shortcode argument.
+    const { md2html } = getConverters(editor)
+    expect(md2html(md)).toBe(
+      `<p>Dogs <a class="resource-link" data-uuid="${encode(
+        "uuid123"
+      )}">bark bark</a> Woof</p>`
+    )
+  })
+
   it("[BUG] does not behave well if link title ends in backslash", async () => {
     const editor = await getEditor("")
-    const { md2html } = (editor.data
-      .processor as unknown) as MarkdownDataProcessor
+    const { md2html } = getConverters(editor)
     expect(md2html('{{% resource_link uuid123 "bad \\" %}}')).toBe(
       // This is wrong. Should not end in &lt;/a&gt;
       `<p><a class="resource-link" data-uuid="${encode(
