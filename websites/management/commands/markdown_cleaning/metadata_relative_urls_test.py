@@ -1,4 +1,3 @@
-from content_sync.factories import ContentSyncStateFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
@@ -48,7 +47,6 @@ def test_updates_multiple_metadata_fields():
         },
         website=website,
     )
-    ContentSyncStateFactory.build(content=content_to_clean)
 
     cleaner = get_markdown_cleaner([wc1, wc2])
     cleaner.update_website_content(content_to_clean)

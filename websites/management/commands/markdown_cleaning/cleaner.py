@@ -52,8 +52,6 @@ class WebsiteContentMarkdownCleaner:
         self.replacement_matches: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = (
             []
         )
-        self.updated_website_contents: "list[WebsiteContent]" = []
-        self.updated_sync_states: "list[ContentSyncState]" = []
 
     def store_match_data(
         self,
@@ -115,18 +113,9 @@ class WebsiteContentMarkdownCleaner:
                 self.make_field_change(wc, field, new_text)
                 changed = True
 
-        if changed:
-            self.updated_website_contents.append(wc)
-            sync_state = wc.content_sync_state
-            if not sync_state:
-                return
+        return changed
 
-            new_checksum = wc.calculate_checksum()
-            if new_checksum != sync_state.current_checksum:
-                sync_state.current_checksum = new_checksum
-                self.updated_sync_states.append(sync_state)
-
-    def write_matches_to_csv(self, path: str):
+    def write_matches_to_csv(self, path: str, only_changes):
         """Write matches and replacements to csv."""
 
         with open(path, "w", newline="") as csvfile:
@@ -137,10 +126,13 @@ class WebsiteContentMarkdownCleaner:
             writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)
             writer.writeheader()
             for change in self.replacement_matches:
+                has_changed = change.original_text != change.replacement
+                if only_changes and not has_changed:
+                    continue
                 row = {
                     "original_text": change.original_text,
                     "replacement": change.replacement,
-                    "has_changed": change.original_text != change.replacement,
+                    "has_changed": has_changed,
                     "field": change.field,
                     "replaced_on_site_name": change.content.website.name,
                     "replaced_on_site_short_id": change.content.website.short_id,

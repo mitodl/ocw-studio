@@ -1,16 +1,14 @@
 """Replace baseurl-based links with resource_link shortcodes."""
 import os
-from contextlib import ExitStack
 from typing import Type
 
 from django.conf import settings
 from django.core.management import BaseCommand
 from django.core.management.base import CommandParser
-from django.db import transaction
+from django.core.paginator import Paginator
 from mitol.common.utils import now_in_utc
 from tqdm import tqdm
 
-from content_sync.models import ContentSyncState
 from content_sync.tasks import sync_unsynced_websites
 from websites.management.commands.markdown_cleaning.baseurl_rule import (
     BaseurlReplacementRule,
@@ -28,14 +26,14 @@ from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix i
 from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
     MetadataRelativeUrlsFix,
 )
-from websites.management.commands.markdown_cleaning.resource_file_rule import (
-    ResourceFileReplacementRule,
-)
-from websites.management.commands.markdown_cleaning.resource_link_delimiters import (
-    ResourceLinkDelimitersReplacementRule,
+from websites.management.commands.markdown_cleaning.remove_extra_resource_args import (
+    RemoveExtraResourceArgs,
 )
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
+)
+from websites.management.commands.markdown_cleaning.shortcode_logging_rule import (
+    ShortcodeLoggingRule,
 )
 from websites.management.commands.markdown_cleaning.validate_urls import ValidateUrls
 from websites.models import WebsiteContent
@@ -50,13 +48,13 @@ class Command(BaseCommand):
 
     Rules: "list[Type[MarkdownCleanupRule]]" = [
         BaseurlReplacementRule,
-        ResourceFileReplacementRule,
         LegacyShortcodeFixOne,
         LegacyShortcodeFixTwo,
-        ResourceLinkDelimitersReplacementRule,
         RootRelativeUrlRule,
         MetadataRelativeUrlsFix,
         ValidateUrls,
+        ShortcodeLoggingRule,
+        RemoveExtraResourceArgs,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
@@ -88,6 +86,14 @@ class Command(BaseCommand):
             default=False,
             help="Whether to skip running the sync_unsynced_websites task",
         )
+        parser.add_argument(
+            "-ch",
+            "--csv-only-changes",
+            dest="csv_only_changes",
+            action="store_true",
+            default=False,
+            help="Whether to write CSV rows for all matches or only matches that change.",
+        )
 
     @classmethod
     def validate_options(cls, options):
@@ -105,7 +111,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.validate_options(options)
         self.do_handle(
-            commit=options["commit"], alias=options["alias"], out=options["out"]
+            commit=options["commit"],
+            alias=options["alias"],
+            out=options["out"],
+            csv_only_changes=options["csv_only_changes"],
         )
 
         if (
@@ -124,30 +133,28 @@ class Command(BaseCommand):
             )
 
     @classmethod
-    def do_handle(cls, alias, commit, out):
+    def do_handle(cls, alias, commit, out, csv_only_changes):
         """Replace baseurl with resource_link"""
 
-        with ExitStack() as stack:
-            Rule = next(R for R in cls.Rules if R.alias == alias)
-            all_wc = WebsiteContent.all_objects.all().prefetch_related("website")
-            if commit:
-                stack.enter_context(transaction.atomic())
-                all_wc.select_for_update()
-            rule = Rule()
-            cleaner = WebsiteContentMarkdownCleaner(rule)
+        Rule = next(R for R in cls.Rules if R.alias == alias)
+        rule = Rule()
 
-            wc: WebsiteContent
-            for wc in tqdm(all_wc):
-                cleaner.update_website_content(wc)
+        cleaner = WebsiteContentMarkdownCleaner(rule)
 
-            if commit:
-                all_wc.bulk_update(
-                    cleaner.updated_website_contents, Rule.get_root_fields()
-                )
-                ContentSyncState.objects.bulk_update(
-                    cleaner.updated_sync_states, ["current_checksum"]
-                )
+        all_wc = (
+            WebsiteContent.all_objects.all().order_by("id").prefetch_related("website")
+        )
+        page_size = 100
+        pages = Paginator(all_wc, page_size)
+
+        with tqdm(total=pages.count) as progress:
+            for page in pages:
+                for wc in page:
+                    updated = cleaner.update_website_content(wc)
+                    if updated and commit:
+                        wc.save()
+                    progress.update()
 
         if out is not None:
             outpath = os.path.normpath(os.path.join(os.getcwd(), out))
-            cleaner.write_matches_to_csv(outpath)
+            cleaner.write_matches_to_csv(outpath, only_changes=csv_only_changes)

@@ -2,7 +2,6 @@ from uuid import uuid4
 
 import pytest
 
-from content_sync.factories import ContentSyncStateFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
@@ -78,7 +77,6 @@ def test_rootrel_rule_only_uses_resource_lines_for_same_site(
     content_to_clean = WebsiteContentFactory.build(
         website=websites[site_name], markdown=markdown
     )
-    ContentSyncStateFactory.build(content=content_to_clean)
 
     cleaner = get_markdown_cleaner([w1], [c1])
     cleaner.update_website_content(content_to_clean)
@@ -133,7 +131,7 @@ def test_rootrel_rule_handles_site_homeages_correctly(
     content_to_clean = WebsiteContentFactory.build(
         website=websites[site_name], markdown=markdown
     )
-    ContentSyncStateFactory.build(content=content_to_clean)
+
     cleaner = get_markdown_cleaner([w1], [c1])
     cleaner.update_website_content(content_to_clean)
 
@@ -171,7 +169,6 @@ def test_rootrel_rule_uses_images_for_image(markdown, site_name, expected_markdo
     content_to_clean = WebsiteContentFactory.build(
         website=websites[site_name], markdown=markdown
     )
-    ContentSyncStateFactory.build(content=content_to_clean)
     cleaner = get_markdown_cleaner([w1], [c1])
     cleaner.update_website_content(content_to_clean)
 

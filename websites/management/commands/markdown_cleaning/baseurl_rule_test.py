@@ -1,7 +1,6 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
 import pytest
 
-from content_sync.factories import ContentSyncStateFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.baseurl_rule import (
     BaseurlReplacementRule,
@@ -78,7 +77,6 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
     website_uuid = "website-uuid"
     website = WebsiteFactory.build(uuid=website_uuid)
     target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
-    ContentSyncStateFactory.build(content=target_content)
 
     linkable = WebsiteContentFactory.build(
         website=website,
@@ -124,7 +122,6 @@ def test_baseurl_replacer_handle_specific_url_replacements(
     markdown = f"my [pets]({{{{< baseurl >}}}}{url}) are legion"
     expected_markdown = 'my {{% resource_link content-uuid "pets" %}} are legion'
     target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
-    target_sync_state = ContentSyncStateFactory.build(content=target_content)
 
     linkable = WebsiteContentFactory.build(
         website=website,
@@ -137,7 +134,6 @@ def test_baseurl_replacer_handle_specific_url_replacements(
     cleaner.update_website_content(target_content)
 
     assert target_content.markdown == expected_markdown
-    assert target_sync_state.current_checksum == target_content.calculate_checksum()
 
 
 def test_baseurl_replacer_handles_index_files():
@@ -147,7 +143,6 @@ def test_baseurl_replacer_handles_index_files():
     markdown = R"my [pets]({{< baseurl >}}/pages/cute/pets) are legion"
     expected_markdown = R'my {{% resource_link content-uuid "pets" %}} are legion'
     target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
-    target_sync_state = ContentSyncStateFactory.build(content=target_content)
 
     linkable = WebsiteContentFactory.build(
         website=website,
@@ -161,7 +156,6 @@ def test_baseurl_replacer_handles_index_files():
 
     assert linkable.filename not in target_content.markdown
     assert target_content.markdown == expected_markdown
-    assert target_sync_state.current_checksum == target_content.calculate_checksum()
 
 
 def test_baseurl_replacer_replaces_baseurl_links():
@@ -195,7 +189,6 @@ def test_baseurl_replacer_replaces_baseurl_links():
 
     website = WebsiteFactory.build()
     target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
-    target_sync_state = ContentSyncStateFactory.build(content=target_content)
 
     linked_contents = [
         WebsiteContentFactory.build(website=website, **kwargs)
@@ -226,7 +219,6 @@ def test_baseurl_replacer_replaces_baseurl_links():
     cleaner = get_markdown_cleaner(linked_contents)
     cleaner.update_website_content(target_content)
     assert target_content.markdown == expected
-    assert target_sync_state.current_checksum == target_content.calculate_checksum()
 
 
 @pytest.mark.parametrize(
@@ -248,7 +240,6 @@ def test_baseurl_replacer_replaces_content_in_same_course(
     w2 = WebsiteFactory.build(uuid="website-uuid-222")
     websites = {w.uuid: w for w in [w1, w2]}
     target_content = WebsiteContentFactory.build(markdown=markdown, website=w1)
-    ContentSyncStateFactory.build(content=target_content)
 
     linkable = WebsiteContentFactory.build(
         website=websites[website_uuid],
@@ -261,9 +252,4 @@ def test_baseurl_replacer_replaces_content_in_same_course(
     cleaner.update_website_content(target_content)
 
     is_markdown_changed = target_content.markdown != markdown
-    is_checksum_changed = (
-        target_content.content_sync_state.current_checksum
-        == target_content.calculate_checksum()
-    )
     assert is_markdown_changed == should_markdown_change
-    assert is_checksum_changed == should_markdown_change
