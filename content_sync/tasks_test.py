@@ -303,7 +303,7 @@ def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
 ):
     """calls upsert_theme_assets_pipeline and unpauses if asked"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
-    mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
+    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
     mock_pipeline_unpause = mocker.patch(
         "content_sync.pipelines.concourse.ThemeAssetsPipeline.unpause_pipeline"
     )
@@ -609,7 +609,7 @@ def test_check_incomplete_publish_build_statuses_500(settings, mocker, api_mock)
 def test_trigger_mass_publish(settings, mocker, backend, version):
     """trigger_mass_publish should call if enabled"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
-    mocker.patch("content_sync.pipelines.concourse.BaseConcourseApi.auth")
+    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
     mock_pipeline_unpause = mocker.patch(
         "content_sync.pipelines.concourse.ConcoursePipeline.unpause_pipeline"
     )

@@ -8,6 +8,7 @@ clearly exists but pylint thinks it doesn't
 import json
 import logging
 import os
+from html import unescape
 from typing import Dict, Optional, Tuple
 from urllib.parse import quote, urljoin, urlparse
 
@@ -47,8 +48,39 @@ class ConcourseApi(BaseConcourseApi):
 
     @retry_on_failure
     def auth(self):
-        """ Same as the base class but with retries"""
-        return super().auth()
+        """ Same as the base class but with retries and support for concourse 7.7"""
+        if self.has_username_and_passwd:
+            self.ATC_AUTH = None
+            session = self._set_new_session()
+            # Get initial sky/login response
+            r = session.get(urljoin(self.url, "/sky/login"))
+            if r.status_code == 200:
+                # Get second sky/login response based on the url found in the first response
+                r = session.get(
+                    unescape(urljoin(self.url, self._get_login_post_path(r.text)))
+                )
+                # Post to the final url to authenticate
+                post_path = unescape(self._get_login_post_path(r.text))
+                r = session.post(
+                    urljoin(self.url, post_path),
+                    data={"login": self.username, "password": self.password},
+                )
+                try:
+                    r.raise_for_status()
+                except HTTPError:
+                    self._close_session()
+                    raise
+                else:
+                    # This case does not raise any HTTPError, the return code is 200
+                    if "invalid username and password" in r.text:
+                        raise ValueError("Invalid username and password")
+                    if r.status_code == requests.codes.ok:
+                        self.ATC_AUTH = self._get_skymarshal_auth()
+                    else:
+                        self._close_session()
+        if self.ATC_AUTH:
+            return True
+        return False
 
     @retry_on_failure
     def get_with_headers(  # pylint:disable=too-many-branches
