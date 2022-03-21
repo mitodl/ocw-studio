@@ -393,6 +393,11 @@ def test_website_endpoint_search(drf_client):
         name="17-482-u-s-military-power-spring-2015",
         short_id="17.482-Spring-2015",
     ).save()
+    WebsiteFactory.create(
+        title="Biomedical Signal and Image Processing",
+        name="hst-582j-biomedical-signal-and-image-processing-spring-2007",
+        short_id="HST.582J-Spring-2007",
+    ).save()
     for word in ["Apple", "Bacon", "Cheese"]:
         resp = drf_client.get(reverse("websites_api-list"), {"search": word})
         assert [website["title"] for website in resp.data.get("results")] == ["Apple"]
@@ -405,6 +410,11 @@ def test_website_endpoint_search(drf_client):
         resp = drf_client.get(reverse("websites_api-list"), {"search": word})
         assert [website["title"] for website in resp.data.get("results")] == [
             "U.S. Military Power"
+        ]
+    for word in ["signal and image", "HsT.582", "hSt-582"]:
+        resp = drf_client.get(reverse("websites_api-list"), {"search": word})
+        assert [website["title"] for website in resp.data.get("results")] == [
+            "Biomedical Signal and Image Processing"
         ]
 
 

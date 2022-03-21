@@ -114,7 +114,7 @@ class WebsiteViewSet(
         if search is not None and search != "":
             # search query param is used in react-select typeahead, and should
             # match on the title, name, and short_id
-            search_filter = Q(search=SearchQuery(search))
+            search_filter = Q(search=SearchQuery(search)) | Q(search__icontains=search)
             if "." in search:
                 # postgres text search behaves oddly with periods but not dashes
                 search_filter = search_filter | Q(
