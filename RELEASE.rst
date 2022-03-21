@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.54.0 (Released March 21, 2022)
+--------------
+
+- tweak internal site search (#1134)
+- Handle authentication for Concourse 7.7 (#1120)
+- tolerate quotes around resource, resource_link uuids (#1136)
+- add localdev support for course collection, list
+- fix a small issue with the website search
+
 Version 0.53.5 (Released March 17, 2022)
 --------------
 
