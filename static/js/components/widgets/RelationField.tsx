@@ -174,7 +174,6 @@ export default function RelationField(props: Props): JSX.Element {
     async (search: string | null, debounce: boolean) => {
       const params = collection ? { type: collection } : { page_content: true }
       const name = crossSite && focusedWebsite ? focusedWebsite : websiteName
-      console.log(`crossSite: ${crossSite}`)
       const url = siteApiContentListingUrl
         .query({
           detailed_list:   true,
