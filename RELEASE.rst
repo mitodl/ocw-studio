@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.54.1
+--------------
+
+- Use pyparsing for some markdown replacements
+
 Version 0.54.0 (Released March 21, 2022)
 --------------
 
