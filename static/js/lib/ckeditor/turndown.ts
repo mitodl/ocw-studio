@@ -47,6 +47,10 @@ export function html2md(html: string): string {
 // the default is "*", which is strange
 turndownService.options.bulletListMarker = "-"
 
+// The default is "_", which causes issues with MathJax
+// Github issue for reference https://github.com/mitodl/ocw-hugo-themes/issues/501
+turndownService.options.emDelimiter = "*"
+
 // this is sort of a hack. Turndown marks certain nodes as "blank" and will
 // then ignore rules defined for them. What we do here is intercept the
 // handling of these 'blank' nodes so that we can use rules define for them if
