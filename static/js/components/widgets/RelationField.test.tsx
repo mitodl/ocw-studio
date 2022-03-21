@@ -185,7 +185,6 @@ describe("RelationField", () => {
               detailed_list:   true,
               content_context: true,
               type:            "page",
-              published:       true,
               ...(withResourcetypeFilter ? { resourcetype: "Image" } : {})
             })
             .toString()
@@ -208,6 +207,25 @@ describe("RelationField", () => {
           .prop("defaultOptions")
       ).toEqual(formatWebsiteOptions(websites, "name"))
     })
+
+    it.each([true, false])(
+      "should not filter on published if cross_site is not set",
+      async isCrossSite => {
+        await render({ cross_site: isCrossSite, value: [] })
+        expect(global.fetch).toHaveBeenCalledWith(
+          siteApiContentListingUrl
+            .query({
+              detailed_list:   true,
+              content_context: true,
+              type:            "page",
+              ...(isCrossSite ? { published: true } : {})
+            })
+            .param({ name: website.name })
+            .toString(),
+          { credentials: "include" }
+        )
+      }
+    )
 
     it("should let the user pick a website and then content within that website", async () => {
       const { wrapper } = await render({ cross_site: true, value: [] })
@@ -372,7 +390,6 @@ describe("RelationField", () => {
             content_context: true,
             search:          search,
             type:            "page",
-            published:       true,
             ...(withResourcetypeFilter ? { resourcetype: "Image" } : {})
           })
           .param({ name: website.name })
