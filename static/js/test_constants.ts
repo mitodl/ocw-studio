@@ -4,7 +4,7 @@ Amazing stuff! Paragraphs!
 
 And another paragraph!
 
-**bold** and even _ita**lic and bold** text_
+**bold** and even *ita**lic and bold** text*
 
 - a
 - list
