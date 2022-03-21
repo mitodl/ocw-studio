@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.54.0
+Version 0.54.0 (Released March 21, 2022)
 --------------
 
 - tweak internal site search (#1134)
