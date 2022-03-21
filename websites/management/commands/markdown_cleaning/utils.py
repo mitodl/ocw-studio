@@ -23,7 +23,8 @@ def remove_prefix(string: str, prefix: str):
 
 def get_rootrelative_url_from_content(content: WebsiteContent):
     dirpath = remove_prefix(content.dirpath, "content/")
-    pieces = ["/courses", content.website.name, dirpath, content.filename]
+    filename = '' if content.filename == '_index' else content.filename
+    pieces = ["/courses", content.website.name, dirpath, filename]
     return "/".join(p for p in pieces if p)
 
 
