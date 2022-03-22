@@ -82,4 +82,5 @@ class ShortcodeParser(WrappedParser):
 
     @staticmethod
     def hugo_unescape_shortcode_arg(s: str):
-        return s.strip('"').replace('\\"', '"')
+        quoted = '"' + s.strip('"')  + '"'
+        return json.loads(quoted)

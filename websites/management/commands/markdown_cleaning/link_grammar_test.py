@@ -7,6 +7,46 @@ from websites.management.commands.markdown_cleaning.link_grammar import (
     MarkdownLink
 )
 
+@pytest.mark.parametrize("text", ["", "simple text", "a [bit] \\] more complex"])
+@pytest.mark.parametrize("dest", ["", "./path/to/thing"])
+@pytest.mark.parametrize(["title", "expected_suffix"], [
+    ("", ""),
+    ('cats "and" dogs', ' "cats \\"and\\" dogs"')
+])
+@pytest.mark.parametrize("is_image", [True, False])
+def test_markdown_link_serialization(is_image, title, expected_suffix, dest, text):
+    link = MarkdownLink(
+        text=text,
+        destination=dest,
+        title=title,
+        is_image=is_image
+    )
+    expected = f"[{text}]({dest}{expected_suffix})"
+    if is_image:
+        expected = '!' + expected
+    
+    assert link.to_markdown() == expected
+
+def test_markdown_link_serialization_more_expliclity():
+    without_title = MarkdownLink(
+        text="some text",
+        destination="path/to/thing",
+        title='',
+        is_image=False
+    )
+
+    assert without_title.to_markdown() == '[some text](path/to/thing)'
+
+    with_title = MarkdownLink(
+        text="some text",
+        destination="path/to/thing",
+        title='Markdown is so "fun" right',
+        is_image=True
+    )
+
+    assert with_title.to_markdown() == '![some text](path/to/thing "Markdown is so \\"fun\\" right")'
+
+
 @pytest.mark.parametrize('is_image', [True, False,])
 @pytest.mark.parametrize('text', [
     '',
@@ -15,7 +55,7 @@ from websites.management.commands.markdown_cleaning.link_grammar import (
     'linklike [] [] [cool]() title',
 ])
 @pytest.mark.parametrize('dest', ['', '/some/destination/url', './and/this',])
-@pytest.mark.parametrize('title', ['', 'my \\"favorite\\"   [title](here)',])
+@pytest.mark.parametrize('title', ['', 'my favorite  [title](here)'])
 def test_link_parser_parses_good_links(title, dest, text, is_image):
     with_title = "" if not title else f' "{title}"'
     markdown = f"[{text}]({dest}{with_title})"
@@ -49,6 +89,19 @@ def test_link_parser_rejects_bad_links(markdown):
     parser = LinkParser()
     with pytest.raises(ParseException):
         parser.parse_string(markdown)
+
+def test_link_parser_titles_with_quotes():
+    markdown = '[markdown](it/is "so \\"fun\\" right?")'
+    parser = LinkParser()
+    parsed = parser.parse_string(markdown)
+    
+    assert parsed.original_text == markdown 
+    assert parsed.link == MarkdownLink(
+        text='markdown',
+        destination='it/is',
+        title='so "fun" right?',
+        text_links=tuple()
+    )
 
 def test_link_parser_with_nesting():
     text = '[some text ![image [another](why) [oh dear](whywhy) text](imageurl) and more ](path/to/thing "with (title?)")'

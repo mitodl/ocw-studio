@@ -1,18 +1,5 @@
-import abc
+import json
 from pyparsing import ParseResults, originalTextFor
-
-
-class Parser(abc.ABC):
-
-    def parse_string(text: str) -> ParseResults:
-        pass
-    
-    def transfer_string(text: str) -> str:
-        pass
-    
-    def set_parse_action(*parse_actions) -> None:
-        pass
-
 
 class WrappedParser:
     """
@@ -68,3 +55,64 @@ class WrappedParser:
         Snake-case alias for Pyparsing's scanString
         """
         return self.grammar.scanString(string)
+
+def standardize_title(s, l, toks):
+    text: str = toks[0]
+    if text.startswith("'") and text.endswith("'"):
+        double_quoted = (
+            text[1:-1]              # remove the outer single quote
+            .replace("\\'", "'")    # unescape single quotes
+            .replace('"', '\\"')    # escape double quotes
+        )
+        return json.loads(double_quoted)
+    elif text.startswith('"')  and text.endswith('"'):
+        return json.loads(text[1:-1])
+
+def unescape_single_quoted_string(text: str):
+    """
+    Unescape quotes in a string that:
+        - is encased in single quotes
+        - in which all inner single quotes are backslash escaped
+    """
+    all_escaped = text[1:-1].count("'") == text[1:-1].count('\\"')
+    if text.startswith("'") and text.endswith("'") and all_escaped:
+        double_quoted = '"' + (
+            text[1:-1]              # remove the outer single quote
+            .replace("\\'", "'")    # unescape single quotes
+            .replace('"', '\\"')    # escape double quotes
+        ) + '"'
+        try:
+            decoded = json.loads(double_quoted)
+            if isinstance(decoded, str):
+                return decoded 
+        except json.decoder.JSONDecodeError:
+            pass
+
+    raise ValueError(f"{text} is not a valid single-quoted string")
+
+def unescape_double_quoted_string(text: str):
+    """
+    Unescape quotes and backslashes in a string that:
+        - is encased in double quotes
+        - in which all inner double quotes are backslash escaped
+        - in which backslashes are backslash-escaped
+    """
+    try:
+        decoded = json.loads(text)
+        if isinstance(decoded, str):
+            return decoded 
+    except json.decoder.JSONDecodeError as err:
+        raise ValueError(f"{text} is not a valid double-quoted string") from err
+
+def unescape_quoted_string(text: str):
+    """
+    Unescape a quoted string. That:
+        - if the string is single-quote-escaped, unescape all single quotes
+        - if the string is double-quote-escaped, escape all double quotes
+
+    Otherwise throws an error.
+    """
+    if text.startswith("'") and text.endswith("'"):
+        return unescape_single_quoted_string(text)
+    else:
+        return unescape_double_quoted_string(text)

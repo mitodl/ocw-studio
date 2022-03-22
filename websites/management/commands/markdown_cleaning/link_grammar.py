@@ -1,8 +1,10 @@
-import re
+import json
 from dataclasses import dataclass, field
-from pyparsing import nestedExpr, Optional, originalTextFor, White, CharsNotIn, quotedString, StringEnd, ParseResults, Literal, ParseException
-from websites.management.commands.markdown_cleaning.parsing_utils import WrappedParser
-
+from pyparsing import nestedExpr, Optional, originalTextFor, White, CharsNotIn, quotedString, StringEnd, ParseResults, Literal
+from websites.management.commands.markdown_cleaning.parsing_utils import (
+    WrappedParser,
+    unescape_quoted_string
+)
 
 @dataclass
 class MarkdownLink:
@@ -23,9 +25,9 @@ class MarkdownLink:
 
     def to_markdown(self):
         """Generate markdown representation of this link/image."""
-        sep = ' ' if self.title else ''
         prefix = '!' if self.is_image else ''
-        return f'{prefix}[{self.text}]({self.destination}{sep}"{self.title}"'
+        title_suffix = ' ' + json.dumps(self.title) if self.title else '';
+        return f'{prefix}[{self.text}]({self.destination}{title_suffix})'
 
 class LinkParser(WrappedParser):
     """
@@ -35,7 +37,7 @@ class LinkParser(WrappedParser):
     ===========
 
     Consider a naive regex appraoch:
-    
+
     >>> import re
     >>> link = re.compile(r'\[(?P<text>.*?)\]\(?<dest>.*?\)')
     >>> first = link.search('See [Reference 1] blah balh [some text](url)')
@@ -76,7 +78,13 @@ class LinkParser(WrappedParser):
             +
             Optional(
                 White(' ') +
-                quotedString.copy().setResultsName('title').setParseAction(lambda _s, _l, t: t[0][1:-1])
+                # CommonMark requires link title to be encased in single-quotes,
+                # double-quotes, or wrapped in parentheses. Let's not bother with
+                # the parentheses case for now.
+                quotedString
+                    .copy()
+                    .setResultsName('title')
+                    .setParseAction(lambda s, l, toks: unescape_quoted_string(toks[0]))
             )
             + StringEnd()
         )

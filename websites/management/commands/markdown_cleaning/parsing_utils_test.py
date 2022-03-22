@@ -1,5 +1,8 @@
 import pytest
 
+from websites.management.commands.markdown_cleaning.parsing_utils import (
+    unescape_quoted_string
+)
 from websites.management.commands.markdown_cleaning.shortcode_grammar import (
     ShortcodeParser,
     ShortcodeTag,
@@ -79,3 +82,38 @@ def test_original_text_records_during_transform_text():
 
     assert parser.transform_string(text) == text
     assert original_texts == expected
+
+@pytest.mark.parametrize(['escaped', 'unescaped'], [
+    (
+        R'''"cats \"and\" 'dogs' are cool."''',
+        R'''cats "and" 'dogs' are cool.'''
+    ),
+    (
+        R'''"backslashes \\\" are \\ ok"''',
+        R'''backslashes \" are \ ok''',
+    ),
+    (
+        R"""'cats \'and\' "dogs" are cool.'""",
+        R"""cats 'and' "dogs" are cool."""
+    ),
+    (
+        R"""'backslashes \\\' are \\ ok'""",
+        R"""backslashes \' are \ ok""",
+    )
+])
+def test_unescape_quoted_string(escaped, unescaped):
+    assert unescape_quoted_string(escaped) == unescaped
+
+@pytest.mark.parametrize('bad_text', [
+    """cat""",
+    """'cat""",
+    """cat'""",
+    '''cat''',
+    '''"cat''',
+    '''cat"''',
+    '"missing "escapes" so sad "',
+    "'missing 'escapes' so sad '",
+])
+def test_unescape_quoted_string(bad_text):
+    with pytest.raises(ValueError):
+        assert unescape_quoted_string(bad_text)
