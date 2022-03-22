@@ -1,4 +1,3 @@
-import json
 from dataclasses import dataclass
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
@@ -38,7 +37,7 @@ class LinkLoggingRule(PyparsingRule):
         notes = self.ReplacementNotes(
             text=link.text,
             destination=link.destination,
-            title=json.dumps(link.title),
+            title=link.title,
         )
         return toks.original_text, notes
 
