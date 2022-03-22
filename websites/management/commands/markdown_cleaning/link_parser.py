@@ -11,6 +11,11 @@ from pyparsing import (
     nestedExpr,
     originalTextFor,
     quotedString,
+    OneOrMore,
+    FollowedBy,
+    Word,
+    ParserElement,
+    Combine
 )
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
@@ -77,16 +82,44 @@ class LinkParser(WrappedParser):
 
     def __init__(self):
 
+        # TODO: Does this affect pyparsing elsewhere?
+        # Might be OK if it does...
+        ParserElement.setDefaultWhitespaceChars(' \t')
+
         is_image = (
             Optional("!")
             .setResultsName("is_image")
             .setParseAction(lambda s, l, toks: bool(toks))
         )
+        double_line_break = (
+            Word('\n', exact=1).setWhitespaceChars(' \t')
+            +
+            Word('\n', exact=1).setWhitespaceChars(' \t')
+        )
+
+        def test_debug(s, l, t):
+            print('HELLO!')
+            print(t)
+
+        text_ignore = quotedString | Literal("\\[") | Literal("\\]")
+        text_content =  Combine(
+            OneOrMore(
+                ~text_ignore
+                +
+                FollowedBy(~double_line_break)
+                +
+                CharsNotIn('[]\n', exact=1)
+            )
+            +
+            ~double_line_break
+        )
+
         text = originalTextFor(
             nestedExpr(
                 opener="[",
                 closer="]",
-                ignoreExpr=quotedString | Literal("\\[") | Literal("\\]"),
+                content=text_content,
+                ignoreExpr=text_ignore,
             )
         ).setResultsName("text")
         text.addParseAction(lambda s, l, toks: toks[0][1:-1])
