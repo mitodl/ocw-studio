@@ -39,7 +39,7 @@ class ResolveUIDRule(PyparsingRule):
         is_image: str
         linked_site_name: Union[str, None] = None
         linked_content_uuid: Union[str, None] = None
-        error: str = ""
+        note: str = ""
 
     def __init__(self) -> None:
         super().__init__()
@@ -50,16 +50,19 @@ class ResolveUIDRule(PyparsingRule):
         original_text = toks.original_text
         notes = partial(self.ReplacementNotes, is_image=link.is_image)
 
+        if not link.destination.startswith("./resolveuid/"):
+            return original_text, notes(note='not a resolveuid link')
+
         try:
             url = urlparse(remove_prefix(link.destination, "./resolveuid/"))
             uuid = UUID(url.path)
         except ValueError as error:
-            return original_text, notes(error=str(error))
+            return original_text, notes(note=str(error))
 
         try:
             linked_content = self.content_lookup.find_by_uuid(uuid)
         except KeyError as error:
-            return original_text, notes(error=str(error))
+            return original_text, notes(note=str(error))
 
         notes = notes(
             linked_content_uuid=linked_content.text_id,

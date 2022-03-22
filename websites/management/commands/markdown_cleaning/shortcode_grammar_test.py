@@ -5,6 +5,7 @@ from websites.management.commands.markdown_cleaning.shortcode_grammar import (
     ShortcodeTag,
 )
 
+
 @pytest.mark.parametrize(["closer"], [(True,), (False,)])
 def test_shortcode_grammar_respects_spaces_in_quoted_arguments(closer):
     symbol = "/" if closer else ""
