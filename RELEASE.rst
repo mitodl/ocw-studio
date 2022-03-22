@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.54.2
+--------------
+
+- fix a typo in the localdev config
+- only query with published = true if cross_site is also true (#1109)
+
 Version 0.54.1 (Released March 22, 2022)
 --------------
 
