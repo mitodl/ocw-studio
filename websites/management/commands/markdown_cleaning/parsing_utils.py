@@ -1,4 +1,17 @@
+import abc
 from pyparsing import ParseResults, originalTextFor
+
+
+class Parser(abc.ABC):
+
+    def parse_string(text: str) -> ParseResults:
+        pass
+    
+    def transfer_string(text: str) -> str:
+        pass
+    
+    def set_parse_action(*parse_actions) -> None:
+        pass
 
 
 class WrappedParser:
@@ -49,3 +62,9 @@ class WrappedParser:
         Snake-case alias for PyParsing's transformString
         """
         return self.grammar.transformString(string)
+
+    def scan_string(self, string: str):
+        """
+        Snake-case alias for Pyparsing's scanString
+        """
+        return self.grammar.scanString(string)

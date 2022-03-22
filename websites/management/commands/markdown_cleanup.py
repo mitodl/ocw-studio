@@ -38,6 +38,9 @@ from websites.management.commands.markdown_cleaning.rootrelative_urls import (
 from websites.management.commands.markdown_cleaning.shortcode_logging_rule import (
     ShortcodeLoggingRule,
 )
+from websites.management.commands.markdown_cleaning.link_logging_rule import (
+    LinkLoggingRule,
+)
 from websites.management.commands.markdown_cleaning.validate_urls import ValidateUrls
 from websites.models import WebsiteContent
 
@@ -59,6 +62,7 @@ class Command(BaseCommand):
         ShortcodeLoggingRule,
         RemoveExtraResourceArgs,
         RemoveInaccesibleGif,
+        LinkLoggingRule,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
