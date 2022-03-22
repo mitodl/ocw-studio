@@ -2,15 +2,17 @@ import json
 from dataclasses import dataclass
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
+from websites.management.commands.markdown_cleaning.parsing_utils import (ShortcodeTag)
 from websites.management.commands.markdown_cleaning.shortcode_grammar import (
     ShortcodeParser,
-    ShortcodeTag,
 )
 
 
 class RemoveExtraResourceArgs(PyparsingRule):
 
     alias = "remove_extra_resource_args"
+
+    Parser = ShortcodeParser
 
     def should_parse(self, text: str):
         return R"{{< resource " in text
@@ -20,10 +22,6 @@ class RemoveExtraResourceArgs(PyparsingRule):
         name: str
         num_args: int
         args: "list[str]"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.parser = ShortcodeParser()
 
     def replace_match(self, s: str, l: int, toks, website_content):
         shortcode: ShortcodeTag = toks.shortcode

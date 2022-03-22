@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass
 from pyparsing import ParseResults, originalTextFor
 
 class WrappedParser:
@@ -116,3 +117,42 @@ def unescape_quoted_string(text: str):
         return unescape_single_quoted_string(text)
     else:
         return unescape_double_quoted_string(text)
+
+@dataclass
+class ShortcodeTag:
+    """Represents a shortcode tag."""
+
+    name: str
+    args: "list[str]"
+    percent_delimiters: bool = False
+    closer: bool = False
+
+    def get_delimiters(self):
+        if self.percent_delimiters:
+            opening_delimiter = "{{%"
+            closing_delimiter = "%}}"
+        else:
+            opening_delimiter = "{{<"
+            closing_delimiter = ">}}"
+
+        if self.closer:
+            opening_delimiter += "/"
+
+        return opening_delimiter, closing_delimiter
+
+    def to_hugo(self):
+        """
+        Encases all shortcode arguments in double quotes, because Hugo allows it and that's simplest.
+        """
+        opening_delimiter, closing_delimiter = self.get_delimiters()
+        pieces = [
+            opening_delimiter,
+            self.name,
+            *(self.hugo_escape(arg) for arg in self.args),
+            closing_delimiter,
+        ]
+        return " ".join(pieces)
+
+    @staticmethod
+    def hugo_escape(s: str):
+        return json.dumps(s)

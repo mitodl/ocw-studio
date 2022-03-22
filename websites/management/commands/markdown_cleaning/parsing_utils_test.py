@@ -117,3 +117,35 @@ def test_unescape_quoted_string(escaped, unescaped):
 def test_unescape_quoted_string(bad_text):
     with pytest.raises(ValueError):
         assert unescape_quoted_string(bad_text)
+
+
+
+@pytest.mark.parametrize(
+    ["closer", "percent_delimiters", "expected"],
+    [
+        (False, False, R'{{< my_shortcode "first" "second   2" >}}'),
+        (True, False, R'{{</ my_shortcode "first" "second   2" >}}'),
+        (False, True, R'{{% my_shortcode "first" "second   2" %}}'),
+        (True, True, R'{{%/ my_shortcode "first" "second   2" %}}'),
+    ],
+)
+def test_shortcode(closer, percent_delimiters, expected):
+    shortocde = ShortcodeTag(
+        name="my_shortcode",
+        args=["first", "second   2"],
+        percent_delimiters=percent_delimiters,
+        closer=closer,
+    )
+    assert shortocde.to_hugo() == expected
+
+
+@pytest.mark.parametrize(
+    ["shortcode_args", "expected"],
+    [
+        ([], R"{{< meow >}}"),
+        (["abc", "x y  z", 'f "g" h'], R'{{< meow "abc" "x y  z" "f \"g\" h" >}}'),
+    ],
+)
+def test_shortcode_serialization(shortcode_args, expected):
+    shortocde = ShortcodeTag(name="meow", args=shortcode_args)
+    assert shortocde.to_hugo() == expected
