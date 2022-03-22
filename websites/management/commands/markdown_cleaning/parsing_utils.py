@@ -1,4 +1,5 @@
 import json
+from uuid import UUID
 from dataclasses import dataclass
 from pyparsing import ParseResults, originalTextFor
 
@@ -120,7 +121,16 @@ def unescape_quoted_string(text: str):
 
 @dataclass
 class ShortcodeTag:
-    """Represents a shortcode tag."""
+    """
+    Represents a shortcode tag.
+    
+    The general dataclass imposes very few limitations, e.g., any shortcode name
+    is allowed and any number of arguments is allowed.
+
+    Avoid direct use for creating new shortocdes. Instead, use convenience
+    methods ShortcodeTag.resource and ShortcodeTag.resource_link. Add more as
+    needed.
+    """
 
     name: str
     args: "list[str]"
@@ -156,3 +166,25 @@ class ShortcodeTag:
     @staticmethod
     def hugo_escape(s: str):
         return json.dumps(s)
+
+    @classmethod
+    def resource_link(cls, uuid: UUID, text: str, fragment=''):
+        """Convenience method to create valid resource_link ShortcodeTag objects."""
+        if not isinstance(uuid, UUID):
+            raise ValueError('resource_link first argument must be valid uuid.')
+        args = [str(uuid), text]
+        if fragment:
+            args.append('#' + fragment)
+        
+        return cls(
+            name='resource_link',
+            percent_delimiters=True,
+            args=args,
+        )
+    
+    @classmethod
+    def resource(cls, uuid: UUID):
+        """Convenience method to create valid resource_link ShortcodeTag objects."""
+        if not isinstance(uuid, UUID):
+            raise ValueError('resource first argument must be valid uuid.')
+        return cls(name='resource', percent_delimiters=False, args=[str(uuid)])

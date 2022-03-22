@@ -2,6 +2,7 @@ from uuid import UUID
 from functools import partial
 from dataclasses import dataclass
 from typing import Union
+from urllib.parse import urlparse
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
 from websites.management.commands.markdown_cleaning.link_grammar import (
@@ -52,7 +53,8 @@ class ResolveUIDRule(PyparsingRule):
         notes = partial(self.ReplacementNotes, is_image=link.is_image)
 
         try:
-            uuid = UUID(remove_prefix(link.destination, './resolveuid/'))
+            url = urlparse(remove_prefix(link.destination, './resolveuid/'))
+            uuid = UUID(url.path)
         except ValueError as error:
             return original_text, notes(error=str(error))
 
@@ -68,16 +70,12 @@ class ResolveUIDRule(PyparsingRule):
 
         if linked_content.website_id == website_content.website_id:
             if link.is_image:
-                shortcode = ShortcodeTag(
-                    name='resource',
-                    args=[str(uuid)],
-                    percent_delimiters=False
-                )
+                shortcode = ShortcodeTag.resource(uuid)
             else:
-                shortcode = ShortcodeTag(
-                    name='resource_link',
-                    args=[str(uuid), link.text],
-                    percent_delimiters=True
+                shortcode = ShortcodeTag.resource_link(
+                    uuid=uuid,
+                    text=link.text,
+                    fragment=url.fragment
                 )
             return shortcode.to_hugo(), notes
         else:

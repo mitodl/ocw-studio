@@ -41,6 +41,9 @@ from websites.management.commands.markdown_cleaning.shortcode_logging_rule impor
 from websites.management.commands.markdown_cleaning.link_logging_rule import (
     LinkLoggingRule,
 )
+from websites.management.commands.markdown_cleaning.resolveuid_rule import (
+    ResolveUIDRule,
+)
 from websites.management.commands.markdown_cleaning.validate_urls import ValidateUrls
 from websites.models import WebsiteContent
 
@@ -63,6 +66,7 @@ class Command(BaseCommand):
         RemoveExtraResourceArgs,
         RemoveInaccesibleGif,
         LinkLoggingRule,
+        ResolveUIDRule
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:

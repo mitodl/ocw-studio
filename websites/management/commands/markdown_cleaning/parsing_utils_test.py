@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
@@ -149,3 +151,52 @@ def test_shortcode(closer, percent_delimiters, expected):
 def test_shortcode_serialization(shortcode_args, expected):
     shortocde = ShortcodeTag(name="meow", args=shortcode_args)
     assert shortocde.to_hugo() == expected
+
+def test_shortcode_resource_link():
+    """
+    Test that ShortcodeTag.resource_link creates correct resource_link shortcodes
+    """
+    id = uuid.uuid4()
+
+    # no fragment supplied
+    assert ShortcodeTag.resource_link(id, text="my text") == ShortcodeTag(
+        name='resource_link',
+        percent_delimiters=True,
+        args=[str(id), "my text"]
+    )
+
+    # Empty string fragment
+    assert ShortcodeTag.resource_link(id, text="my text", fragment="") == ShortcodeTag(
+        name='resource_link',
+        percent_delimiters=True,
+        args=[str(id), "my text"]
+    )
+
+    # Empty string fragment
+    assert ShortcodeTag.resource_link(id, text="my text", fragment="meow") == ShortcodeTag(
+        name='resource_link',
+        percent_delimiters=True,
+        args=[str(id), "my text", "#meow"]
+    )
+
+    with pytest.raises(ValueError):
+         ShortcodeTag.resource_link('bad uuid', text='my text')
+    
+    with pytest.raises(TypeError):
+         ShortcodeTag.resource_link(text='my text')
+    
+def test_shortcode_resource():
+    """
+    Test that ShortcodeTag.resource creates correct resource_link shortcodes
+    """
+    id = uuid.uuid4()
+
+    # no fragment supplied
+    assert ShortcodeTag.resource(id) == ShortcodeTag(
+        name='resource',
+        percent_delimiters=False,
+        args=[str(id)]
+    )
+
+    with pytest.raises(ValueError):
+         ShortcodeTag.resource('bad uuid')
