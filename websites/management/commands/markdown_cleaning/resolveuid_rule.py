@@ -51,7 +51,7 @@ class ResolveUIDRule(PyparsingRule):
         notes = partial(self.ReplacementNotes, is_image=link.is_image)
 
         if not link.destination.startswith("./resolveuid/"):
-            return original_text, notes(note='not a resolveuid link')
+            return original_text, notes(note="not a resolveuid link")
 
         try:
             url = urlparse(remove_prefix(link.destination, "./resolveuid/"))
