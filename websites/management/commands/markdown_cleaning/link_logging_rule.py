@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
-from websites.management.commands.markdown_cleaning.link_grammar import LinkParser
+from websites.management.commands.markdown_cleaning.link_parser import LinkParser
 
 
 class LinkLoggingRule(PyparsingRule):

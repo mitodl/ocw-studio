@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 from pyparsing import ParseException
 
-from websites.management.commands.markdown_cleaning.link_grammar import (
+from websites.management.commands.markdown_cleaning.link_parser import (
     LinkParser,
     MarkdownLink,
 )

@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
-from websites.management.commands.markdown_cleaning.link_grammar import (
+from websites.management.commands.markdown_cleaning.link_parser import (
     LinkParser,
     MarkdownLink,
 )
