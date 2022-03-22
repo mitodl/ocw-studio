@@ -1,5 +1,6 @@
+import re
 from dataclasses import dataclass, field
-from pyparsing import nestedExpr, Optional, originalTextFor, White, CharsNotIn, quotedString, StringEnd, ParseResults, Literal
+from pyparsing import nestedExpr, Optional, originalTextFor, White, CharsNotIn, quotedString, StringEnd, ParseResults, Literal, ParseException
 from websites.management.commands.markdown_cleaning.parsing_utils import WrappedParser
 
 
@@ -30,19 +31,31 @@ class LinkParser(WrappedParser):
     """
     Parser for markdown links and images.
 
-    Why bother? Because a regex-based approach can have troubles when
-        - link text/titles contain square brackets / parentheses
-        - or when links are nested
+    Why bother?
+    ===========
 
-    About nesting... According to CommonMark 0.30:
-        - Link text should not contain links
-            - Images are not expressly forbidden. Are they allowed? Unclear.
-        - Image text CAN contain links
+    Consider a naive regex appraoch:
+    
+    >>> import re
+    >>> link = re.compile(r'\[(?P<text>.*?)\]\(?<dest>.*?\)')
+    >>> first = link.search('See [Reference 1] blah balh [some text](url)')
+    >>> first.group('text')
+    'Reference 1] blah balh [some text'
 
-    This link parser is not quite CommonMark compliant... E.g., the grammar does
-    not allow "at most one line end character" in the separator between link
-    destination and link title, nor is the angle-bracket destination variant
-    treated properly.
+    Way too much text has been captured.
+
+    Of course, we can forbid the `text` group from containing square brackets.
+    But then we won't match links whose titles contain square brackets! Markdown
+    link text (in CommonMark) is allowed to contain any sequence of balanced
+    square brackets, something regex simply can't handle.
+
+    So to robustly parse Markdown links, we can't use regex.
+
+    Speaking of CommonMark: (https://spec.commonmark.org/0.30/#links)
+    The link spec has lots of edge cases. This parser is not fully compliant.
+    For example, the grammar does not allow "at most one line end character" in
+    the separator between link destination and link title, nor is the
+    angle-bracket destination variant treated properly.
     """
 
     def __init__(self):

@@ -11,6 +11,16 @@ class LinkLoggingRule(PyparsingRule):
 
     alias = "link_logging"
 
+    fields = [
+        'markdown',
+        "metadata.related_resources_text",
+        "metadata.image_metadata.caption",
+        "metadata.image_metadata.credit",
+        "metadata.optional_text",
+        "metadata.description",
+        "metadata.course_description",
+    ]
+
     @dataclass
     class ReplacementNotes:
         text: str
