@@ -97,7 +97,6 @@ class RegexpCleanupRule(MarkdownCleanupRule):
 
 
 class PyparsingRule(MarkdownCleanupRule):
-
     @property
     @abc.abstractclassmethod
     def Parser(cls) -> WrappedParser:

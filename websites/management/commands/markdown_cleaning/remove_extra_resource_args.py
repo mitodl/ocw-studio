@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
-from websites.management.commands.markdown_cleaning.parsing_utils import (ShortcodeTag)
+from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
 from websites.management.commands.markdown_cleaning.shortcode_grammar import (
     ShortcodeParser,
 )

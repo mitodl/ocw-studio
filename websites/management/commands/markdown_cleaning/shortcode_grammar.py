@@ -3,8 +3,8 @@ import json
 from pyparsing import ParseResults, nestedExpr
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
+    ShortcodeTag,
     WrappedParser,
-    ShortcodeTag
 )
 
 
@@ -44,5 +44,5 @@ class ShortcodeParser(WrappedParser):
 
     @staticmethod
     def hugo_unescape_shortcode_arg(s: str):
-        quoted = '"' + s.strip('"')  + '"'
+        quoted = '"' + s.strip('"') + '"'
         return json.loads(quoted)

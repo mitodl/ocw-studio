@@ -14,6 +14,7 @@ filepath_migration = importlib.import_module(
 CONTENT_FILENAME_MAX_LEN = filepath_migration.CONTENT_FILENAME_MAX_LEN
 CONTENT_DIRPATH_MAX_LEN = filepath_migration.CONTENT_DIRPATH_MAX_LEN
 
+
 def is_valid_uuid(text: str):
     """
     Return True if text is valid uuid, esle False
@@ -24,6 +25,7 @@ def is_valid_uuid(text: str):
     except ValueError:
         return False
 
+
 def remove_prefix(string: str, prefix: str):
     if string.startswith(prefix):
         return string[len(prefix) :]
@@ -32,7 +34,7 @@ def remove_prefix(string: str, prefix: str):
 
 def get_rootrelative_url_from_content(content: WebsiteContent):
     dirpath = remove_prefix(content.dirpath, "content/")
-    filename = '' if content.filename == '_index' else content.filename
+    filename = "" if content.filename == "_index" else content.filename
     pieces = ["/courses", content.website.name, dirpath, filename]
     return "/".join(p for p in pieces if p)
 
@@ -108,6 +110,7 @@ class ContentLookup:
             dirpath = self.standardize_dirpath(site_relative_path)
             filename = "_index"
             return self.website_contents[(website_id, dirpath, filename)]
+
 
 class UrlSiteRelativiser:
     """

@@ -12,6 +12,7 @@ class ShortcodeLoggingRule(PyparsingRule):
     alias = "shortcode_logging"
 
     Parser = ShortcodeParser
+
     @dataclass
     class ReplacementNotes:
         name: str

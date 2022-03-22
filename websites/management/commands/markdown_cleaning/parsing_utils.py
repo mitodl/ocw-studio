@@ -1,7 +1,9 @@
 import json
-from uuid import UUID
 from dataclasses import dataclass
+from uuid import UUID
+
 from pyparsing import ParseResults, originalTextFor
+
 
 class WrappedParser:
     """
@@ -58,17 +60,19 @@ class WrappedParser:
         """
         return self.grammar.scanString(string)
 
+
 def standardize_title(s, l, toks):
     text: str = toks[0]
     if text.startswith("'") and text.endswith("'"):
         double_quoted = (
-            text[1:-1]              # remove the outer single quote
-            .replace("\\'", "'")    # unescape single quotes
-            .replace('"', '\\"')    # escape double quotes
+            text[1:-1]  # remove the outer single quote
+            .replace("\\'", "'")  # unescape single quotes
+            .replace('"', '\\"')  # escape double quotes
         )
         return json.loads(double_quoted)
-    elif text.startswith('"')  and text.endswith('"'):
+    elif text.startswith('"') and text.endswith('"'):
         return json.loads(text[1:-1])
+
 
 def unescape_single_quoted_string(text: str):
     """
@@ -78,19 +82,24 @@ def unescape_single_quoted_string(text: str):
     """
     all_escaped = text[1:-1].count("'") == text[1:-1].count('\\"')
     if text.startswith("'") and text.endswith("'") and all_escaped:
-        double_quoted = '"' + (
-            text[1:-1]              # remove the outer single quote
-            .replace("\\'", "'")    # unescape single quotes
-            .replace('"', '\\"')    # escape double quotes
-        ) + '"'
+        double_quoted = (
+            '"'
+            + (
+                text[1:-1]  # remove the outer single quote
+                .replace("\\'", "'")  # unescape single quotes
+                .replace('"', '\\"')  # escape double quotes
+            )
+            + '"'
+        )
         try:
             decoded = json.loads(double_quoted)
             if isinstance(decoded, str):
-                return decoded 
+                return decoded
         except json.decoder.JSONDecodeError:
             pass
 
     raise ValueError(f"{text} is not a valid single-quoted string")
+
 
 def unescape_double_quoted_string(text: str):
     """
@@ -102,9 +111,10 @@ def unescape_double_quoted_string(text: str):
     try:
         decoded = json.loads(text)
         if isinstance(decoded, str):
-            return decoded 
+            return decoded
     except json.decoder.JSONDecodeError as err:
         raise ValueError(f"{text} is not a valid double-quoted string") from err
+
 
 def unescape_quoted_string(text: str):
     """
@@ -119,11 +129,12 @@ def unescape_quoted_string(text: str):
     else:
         return unescape_double_quoted_string(text)
 
+
 @dataclass
 class ShortcodeTag:
     """
     Represents a shortcode tag.
-    
+
     The general dataclass imposes very few limitations, e.g., any shortcode name
     is allowed and any number of arguments is allowed.
 
@@ -168,23 +179,23 @@ class ShortcodeTag:
         return json.dumps(s)
 
     @classmethod
-    def resource_link(cls, uuid: UUID, text: str, fragment=''):
+    def resource_link(cls, uuid: UUID, text: str, fragment=""):
         """Convenience method to create valid resource_link ShortcodeTag objects."""
         if not isinstance(uuid, UUID):
-            raise ValueError('resource_link first argument must be valid uuid.')
+            raise ValueError("resource_link first argument must be valid uuid.")
         args = [str(uuid), text]
         if fragment:
-            args.append('#' + fragment)
-        
+            args.append("#" + fragment)
+
         return cls(
-            name='resource_link',
+            name="resource_link",
             percent_delimiters=True,
             args=args,
         )
-    
+
     @classmethod
     def resource(cls, uuid: UUID):
         """Convenience method to create valid resource_link ShortcodeTag objects."""
         if not isinstance(uuid, UUID):
-            raise ValueError('resource first argument must be valid uuid.')
-        return cls(name='resource', percent_delimiters=False, args=[str(uuid)])
+            raise ValueError("resource first argument must be valid uuid.")
+        return cls(name="resource", percent_delimiters=False, args=[str(uuid)])

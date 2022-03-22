@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
-from websites.management.commands.markdown_cleaning.link_grammar import (
-    LinkParser,
-)
+from websites.management.commands.markdown_cleaning.link_grammar import LinkParser
 
 
 class LinkLoggingRule(PyparsingRule):
@@ -17,7 +15,7 @@ class LinkLoggingRule(PyparsingRule):
     Parser = LinkParser
 
     fields = [
-        'markdown',
+        "markdown",
         "metadata.related_resources_text",
         "metadata.image_metadata.caption",
         "metadata.image_metadata.credit",
@@ -43,8 +41,8 @@ class LinkLoggingRule(PyparsingRule):
 
     def should_parse(self, text: str):
         """Should the text be parsed?
-        
+
         If the text does not contain '](', then it definitely does not have
         markdown links.
         """
-        return '](' in text
+        return "](" in text

@@ -1,22 +1,36 @@
 import json
 from dataclasses import dataclass, field
-from pyparsing import nestedExpr, Optional, originalTextFor, White, CharsNotIn, quotedString, StringEnd, ParseResults, Literal
+
+from pyparsing import (
+    CharsNotIn,
+    Literal,
+    Optional,
+    ParseResults,
+    StringEnd,
+    White,
+    nestedExpr,
+    originalTextFor,
+    quotedString,
+)
+
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     WrappedParser,
-    unescape_quoted_string
+    unescape_quoted_string,
 )
+
 
 @dataclass
 class MarkdownLink:
     """
     Representation of a markdown link OR image.
     """
+
     text: str
     destination: str
     is_image: bool = False
-    title: str = ''
+    title: str = ""
 
-    # Tuple of tuples (ParseResults, start_index, end_index) where 
+    # Tuple of tuples (ParseResults, start_index, end_index) where
     # - ParseResult has named tokens
     #       - link: MarkdownLinkOrImage
     #       - original_text: str
@@ -25,9 +39,10 @@ class MarkdownLink:
 
     def to_markdown(self):
         """Generate markdown representation of this link/image."""
-        prefix = '!' if self.is_image else ''
-        title_suffix = ' ' + json.dumps(self.title) if self.title else '';
-        return f'{prefix}[{self.text}]({self.destination}{title_suffix})'
+        prefix = "!" if self.is_image else ""
+        title_suffix = " " + json.dumps(self.title) if self.title else ""
+        return f"{prefix}[{self.text}]({self.destination}{title_suffix})"
+
 
 class LinkParser(WrappedParser):
     """
@@ -62,29 +77,34 @@ class LinkParser(WrappedParser):
 
     def __init__(self):
 
-        is_image = Optional('!').setResultsName('is_image').setParseAction(lambda s, l, toks: bool(toks))
+        is_image = (
+            Optional("!")
+            .setResultsName("is_image")
+            .setParseAction(lambda s, l, toks: bool(toks))
+        )
         text = originalTextFor(
-                nestedExpr(
-                    opener='[',
-                    closer=']',
-                    ignoreExpr=quotedString | Literal('\\[') | Literal('\\]')
-                    )
-            ).setResultsName('text')
+            nestedExpr(
+                opener="[",
+                closer="]",
+                ignoreExpr=quotedString | Literal("\\[") | Literal("\\]"),
+            )
+        ).setResultsName("text")
         text.addParseAction(lambda s, l, toks: toks[0][1:-1])
-        back = originalTextFor(nestedExpr(opener='(', closer=')')).addParseAction(lambda s, l, toks: toks[0][1:-1])
+        back = originalTextFor(nestedExpr(opener="(", closer=")")).addParseAction(
+            lambda s, l, toks: toks[0][1:-1]
+        )
 
         back_parser = (
-            Optional(CharsNotIn(' \t')).setResultsName('destination')
-            +
-            Optional(
-                White(' ') +
+            Optional(CharsNotIn(" \t")).setResultsName("destination")
+            + Optional(
+                White(" ")
+                +
                 # CommonMark requires link title to be encased in single-quotes,
                 # double-quotes, or wrapped in parentheses. Let's not bother with
                 # the parentheses case for now.
-                quotedString
-                    .copy()
-                    .setResultsName('title')
-                    .setParseAction(lambda s, l, toks: unescape_quoted_string(toks[0]))
+                quotedString.copy()
+                .setResultsName("title")
+                .setParseAction(lambda s, l, toks: unescape_quoted_string(toks[0]))
             )
             + StringEnd()
         )
@@ -108,7 +128,7 @@ class LinkParser(WrappedParser):
             # Use self.scan_string not grammar.scan_string
             # so that parse actions attached to LinkParser fire for the nested
             # links, which seems desirable.
-            if '](' in text:
+            if "](" in text:
                 text_links = tuple(self.scan_string(text))
             else:
                 text_links = tuple()
@@ -118,7 +138,7 @@ class LinkParser(WrappedParser):
                 destination=destination,
                 title=title,
                 is_image=is_image,
-                text_links=text_links
+                text_links=text_links,
             )
 
             return ParseResults.from_dict({"link": link})

@@ -1,21 +1,19 @@
-from uuid import UUID
-from functools import partial
 from dataclasses import dataclass
+from functools import partial
 from typing import Union
 from urllib.parse import urlparse
+from uuid import UUID
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
 from websites.management.commands.markdown_cleaning.link_grammar import (
     LinkParser,
     MarkdownLink,
 )
-from websites.management.commands.markdown_cleaning.parsing_utils import (
-    ShortcodeTag
-)
+from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
 from websites.management.commands.markdown_cleaning.utils import (
-    remove_prefix,
     ContentLookup,
-    get_rootrelative_url_from_content
+    get_rootrelative_url_from_content,
+    remove_prefix,
 )
 
 
@@ -30,7 +28,7 @@ class ResolveUIDRule(PyparsingRule):
     Parser = LinkParser
 
     fields = [
-        'markdown',
+        "markdown",
         # There is like 1 instance of resolveuid occurs in one metadata field.
         # Going to fix that manually to ensure it is a root-relative link
         # and not a shortcode... avoids a conditional here.
@@ -41,7 +39,7 @@ class ResolveUIDRule(PyparsingRule):
         is_image: str
         linked_site_name: Union[str, None] = None
         linked_content_uuid: Union[str, None] = None
-        error: str = ''
+        error: str = ""
 
     def __init__(self) -> None:
         super().__init__()
@@ -53,7 +51,7 @@ class ResolveUIDRule(PyparsingRule):
         notes = partial(self.ReplacementNotes, is_image=link.is_image)
 
         try:
-            url = urlparse(remove_prefix(link.destination, './resolveuid/'))
+            url = urlparse(remove_prefix(link.destination, "./resolveuid/"))
             uuid = UUID(url.path)
         except ValueError as error:
             return original_text, notes(error=str(error))
@@ -65,7 +63,7 @@ class ResolveUIDRule(PyparsingRule):
 
         notes = notes(
             linked_content_uuid=linked_content.text_id,
-            linked_site_name=linked_content.website.name
+            linked_site_name=linked_content.website.name,
         )
 
         if linked_content.website_id == website_content.website_id:
@@ -73,9 +71,7 @@ class ResolveUIDRule(PyparsingRule):
                 shortcode = ShortcodeTag.resource(uuid)
             else:
                 shortcode = ShortcodeTag.resource_link(
-                    uuid=uuid,
-                    text=link.text,
-                    fragment=url.fragment
+                    uuid=uuid, text=link.text, fragment=url.fragment
                 )
             return shortcode.to_hugo(), notes
         else:
@@ -83,14 +79,14 @@ class ResolveUIDRule(PyparsingRule):
                 text=link.text,
                 destination=get_rootrelative_url_from_content(linked_content),
                 is_image=link.is_image,
-                title=link.title # should be empty, resolveuid links don't have this.
+                title=link.title,  # should be empty, resolveuid links don't have this.
             )
             return new_link.to_markdown(), notes
 
     def should_parse(self, text: str):
         """Should the text be parsed?
-        
+
         If the text does not contain '](', then it definitely does not have
         markdown links.
         """
-        return 'resolveuid' in text
+        return "resolveuid" in text
