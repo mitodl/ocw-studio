@@ -4,6 +4,7 @@ from typing import Dict, Iterator, Optional
 
 from django.utils.functional import cached_property
 
+from main import settings
 from main.utils import remove_trailing_slashes
 from websites.constants import (
     WEBSITE_CONFIG_CONTENT_DIR_KEY,
@@ -116,7 +117,9 @@ class SiteConfig:
                 return config_item
         return None
 
-    def generate_item_metadata(self, name: str, cls: object = None) -> Dict:
+    def generate_item_metadata(
+        self, name: str, cls: object = None, resource_type=None
+    ) -> Dict:
         """Generate a metadata dict with blank keys for the specified item"""
         item_dict = {}
         item = self.find_item_by_name(name)
@@ -130,13 +133,20 @@ class SiteConfig:
                 if subfields:
                     item_dict[key] = {}
                 else:
-                    value = (
-                        [] if config_field.field.get("multiple", False) is True else ""
-                    )
+                    if key in settings.RESOURCE_TYPE_FIELDS:
+                        value = resource_type or ""
+                    else:
+                        value = (
+                            []
+                            if config_field.field.get("multiple", False) is True
+                            else ""
+                        )
                     if config_field.parent_field is None:
                         item_dict[key] = value
                     else:
-                        item_dict[config_field.parent_field["name"]][key] = value
+                        parent_field = config_field.parent_field["name"]
+                        item_dict[parent_field] = item_dict.get(parent_field, {})
+                        item_dict[parent_field][key] = value
         return item_dict
 
     def find_item_by_filepath(self, filepath: str) -> Optional[ConfigItem]:

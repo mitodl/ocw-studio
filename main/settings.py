@@ -1072,3 +1072,8 @@ SEARCH_API_URL = get_string(
     default=None,
     description="The URL to open discussions search to inject into the theme assets build",
 )
+RESOURCE_TYPE_FIELDS = get_delimited_list(
+    name="RESOURCE_TYPE_FIELDS",
+    default=["resourcetype", "filetype"],
+    description="List of site configuration resource fields that are used to store resource type",
+)

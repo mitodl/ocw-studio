@@ -266,12 +266,12 @@
       "description": "If false, disables the node_modules cache to fix yarn install",
       "value": "false"
     },
-    "OCW_IMPORT_STARTER_SLUG": {
-      "description": "The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
-      "required": false
-    },
     "OCW_GTM_ACCOUNT_ID": {
       "description": "The Google Tag Manager account ID to use in OCW site build pipelines",
+      "required": false
+    },
+    "OCW_IMPORT_STARTER_SLUG": {
+      "description": "The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
       "required": false
     },
     "OCW_NEXT_SEARCH_WEBHOOK_KEY": {
@@ -402,6 +402,10 @@
     },
     "REDIS_URL": {
       "description": "Redis URL for non-production use",
+      "required": false
+    },
+    "RESOURCE_TYPE_FIELDS": {
+      "description": "List of site configuration resource fields that are used to store resource type",
       "required": false
     },
     "ROBOTS_CACHE_TIMEOUT": {
