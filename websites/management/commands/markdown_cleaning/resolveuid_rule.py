@@ -18,13 +18,13 @@ from websites.management.commands.markdown_cleaning.utils import (
 )
 
 
-class LinkLoggingRule(PyparsingRule):
+class ResolveUIDRule(PyparsingRule):
     """
     Find all links in all Websitecontent markdown bodies plus some metadata
     fields and log information about them to a csv.
     """
 
-    alias = "link_logging"
+    alias = "resolveuid"
 
     Parser = LinkParser
 
@@ -79,7 +79,7 @@ class LinkLoggingRule(PyparsingRule):
                     args=[str(uuid), link.text],
                     percent_delimiters=True
                 )
-            return shortcode.to_hugo, notes
+            return shortcode.to_hugo(), notes
         else:
             new_link = MarkdownLink(
                 text=link.text,

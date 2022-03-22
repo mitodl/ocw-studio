@@ -14,6 +14,15 @@ filepath_migration = importlib.import_module(
 CONTENT_FILENAME_MAX_LEN = filepath_migration.CONTENT_FILENAME_MAX_LEN
 CONTENT_DIRPATH_MAX_LEN = filepath_migration.CONTENT_DIRPATH_MAX_LEN
 
+def is_valid_uuid(text: str):
+    """
+    Return True if text is valid uuid, esle False
+    """
+    try:
+        UUID(text)
+        return True
+    except ValueError:
+        return False
 
 def remove_prefix(string: str, prefix: str):
     if string.startswith(prefix):
@@ -43,6 +52,10 @@ class ContentLookup:
         }
         self.websites = {wc.website.name: wc.website_id for wc in website_contents}
 
+        self.by_uuid = {
+            UUID(wc.text_id): wc for wc in website_contents if is_valid_uuid(wc.text_id)
+        }
+
     def __str__(self):
         return self.website_contents.__str__()
 
@@ -55,6 +68,10 @@ class ContentLookup:
     def standardize_filename(filename):
         """Get filename in our database format (see migration 0023)"""
         return filename[0:CONTENT_FILENAME_MAX_LEN].replace(".", "-")
+
+    def find_by_uuid(self, uuid: UUID) -> WebsiteContent:
+        """Retrieve a content object by its UUID"""
+        return self.by_uuid[uuid]
 
     def find(self, root_relative_path: str):
         root_relative_path = root_relative_path.strip("/")
@@ -91,7 +108,6 @@ class ContentLookup:
             dirpath = self.standardize_dirpath(site_relative_path)
             filename = "_index"
             return self.website_contents[(website_id, dirpath, filename)]
-
 
 class UrlSiteRelativiser:
     """
