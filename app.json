@@ -405,7 +405,7 @@
       "required": false
     },
     "RESOURCE_TYPE_FIELDS": {
-      "description": "List of site configuration resource fields that are used to store resource type",
+      "description": "List of site configuration fields that are used to store resource type",
       "required": false
     },
     "ROBOTS_CACHE_TIMEOUT": {
