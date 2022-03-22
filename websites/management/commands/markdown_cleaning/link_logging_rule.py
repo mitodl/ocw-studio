@@ -8,6 +8,8 @@ class LinkLoggingRule(PyparsingRule):
     """
     Find all links in all Websitecontent markdown bodies plus some metadata
     fields and log information about them to a csv.
+
+    Never changes stuff.
     """
 
     alias = "link_logging"
