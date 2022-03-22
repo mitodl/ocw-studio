@@ -97,11 +97,21 @@ class RegexpCleanupRule(MarkdownCleanupRule):
 
 
 class PyparsingRule(MarkdownCleanupRule):
+
+    @property
+    @abc.abstractclassmethod
+    def Parser(cls) -> WrappedParser:
+        """Parser for this rule"""
+
     @abc.abstractmethod
     def replace_match(
         self, s: str, l: int, toks: ParseResults, website_content: WebsiteContent
     ):
         pass
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.parser = self.Parser()
 
     def should_parse(self, _text: str):
         """

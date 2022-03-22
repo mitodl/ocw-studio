@@ -8,8 +8,14 @@ from websites.management.commands.markdown_cleaning.link_grammar import (
 
 
 class LinkLoggingRule(PyparsingRule):
+    """
+    Find all links in all Websitecontent markdown bodies plus some metadata
+    fields and log information about them to a csv.
+    """
 
     alias = "link_logging"
+
+    Parser = LinkParser
 
     fields = [
         'markdown',
@@ -27,10 +33,6 @@ class LinkLoggingRule(PyparsingRule):
         destination: str
         title: str
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.parser = LinkParser()
-
     def replace_match(self, s: str, l: int, toks, website_content):
         link = toks.link
         notes = self.ReplacementNotes(
@@ -41,4 +43,9 @@ class LinkLoggingRule(PyparsingRule):
         return toks.original_text, notes
 
     def should_parse(self, text: str):
+        """Should the text be parsed?
+        
+        If the text does not contain '](', then it definitely does not have
+        markdown links.
+        """
         return '](' in text

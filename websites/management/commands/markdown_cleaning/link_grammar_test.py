@@ -10,7 +10,7 @@ from websites.management.commands.markdown_cleaning.link_grammar import (
 @pytest.mark.parametrize('is_image', [True, False,])
 @pytest.mark.parametrize('text', [
     '',
-    'some title with escaped \] bracket and "quoted ]" brackets',
+    'some title with escaped \\] bracket and "quoted ]" brackets',
     'title with     whitespace',
     'linklike [] [] [cool]() title',
 ])
@@ -39,6 +39,8 @@ def test_link_parser_parses_good_links(title, dest, text, is_image):
 @pytest.mark.parametrize('markdown', [
     'no link here',
     '',
+    '[unbalcned] square brackets](url)'
+    '[not a link] but [this is](url)'
     '[ unbalanced] ](blarg)',
     '[some text](too "many" "things")',
     '[some text](./path/to/thing no_quotation_marks_around_title)'
