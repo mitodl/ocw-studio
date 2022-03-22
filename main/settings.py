@@ -1075,5 +1075,5 @@ SEARCH_API_URL = get_string(
 RESOURCE_TYPE_FIELDS = get_delimited_list(
     name="RESOURCE_TYPE_FIELDS",
     default=["resourcetype", "filetype"],
-    description="List of site configuration resource fields that are used to store resource type",
+    description="List of site configuration fields that are used to store resource type",
 )

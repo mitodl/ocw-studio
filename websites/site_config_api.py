@@ -118,7 +118,7 @@ class SiteConfig:
         return None
 
     def generate_item_metadata(
-        self, name: str, cls: object = None, resource_type=None
+        self, name: str, cls: object = None, resource_type: Optional[str] = None
     ) -> Dict:
         """Generate a metadata dict with blank keys for the specified item"""
         item_dict = {}
