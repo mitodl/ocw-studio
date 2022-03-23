@@ -3,25 +3,25 @@ from dataclasses import dataclass, field
 
 from pyparsing import (
     CharsNotIn,
+    Combine,
+    FollowedBy,
     Literal,
     Optional,
+    ParserElement,
     ParseResults,
     StringEnd,
     White,
+    Word,
+    ZeroOrMore,
     nestedExpr,
     originalTextFor,
     quotedString,
-    FollowedBy,
-    Word,
-    ParserElement,
-    Combine,
-    ZeroOrMore,
 )
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     WrappedParser,
-    unescape_quoted_string,
     restore_initial_default_whitespace_chars,
+    unescape_quoted_string,
 )
 
 
@@ -87,7 +87,11 @@ class LinkParser(WrappedParser):
         # Markdown cares about whitespace containing double newlines, so we
         # can't collapse newlines.
         ParserElement.setDefaultWhitespaceChars("")
-        grammar = self._parser_piece_is_image() + self._parser_piece_text() + self._parser_piece_destination_and_title()
+        grammar = (
+            self._parser_piece_is_image()
+            + self._parser_piece_text()
+            + self._parser_piece_destination_and_title()
+        )
 
         def parse_action(_s, _l, toks):
             token = toks
@@ -120,7 +124,6 @@ class LinkParser(WrappedParser):
 
         super().__init__(grammar)
 
-    
     @staticmethod
     def _parser_piece_is_image():
         """
@@ -133,7 +136,7 @@ class LinkParser(WrappedParser):
             .setParseAction(lambda s, l, toks: bool(toks))
         )
         return is_image
-    
+
     @staticmethod
     def _parser_piece_text():
         """
@@ -152,15 +155,12 @@ class LinkParser(WrappedParser):
         # nestedExpr helper function from PyParsing.
         #
         # Next we define the content that is allowed inside the brackets.
-        content_character = (
-            ~FollowedBy(double_line_break)
-            + CharsNotIn("[]", exact=1)
-        )
+        content_character = ~FollowedBy(double_line_break) + CharsNotIn("[]", exact=1)
         # Normally with nestedExpr, the content parser would be separately to
         # whitespace-separated strings. However, since we set whitespaceChars
         # to '', the content parser is effectively applied to each character
         # separately.
-        # 
+        #
         # If this ever changes, we would need to change content to something
         # like Combine(OneOrMore(~ignore + content_character))
         content = content_character
@@ -174,7 +174,7 @@ class LinkParser(WrappedParser):
         ).setResultsName("text")
         text.addParseAction(lambda s, l, toks: toks[0][1:-1])
         return text
-    
+
     @staticmethod
     def _parser_piece_destination_and_title():
         """
@@ -189,31 +189,27 @@ class LinkParser(WrappedParser):
         ).addParseAction(lambda s, l, toks: toks[0][1:-1])
 
         destination = Combine(
-                # Zero or more non-space characters.
-                # But before each character (exact=1) check if we have a
-                # shortcode. If we do, allow that.
-                ZeroOrMore(
-                    originalTextFor(nestedExpr(opener=R"{{<", closer=">}}"))
-                    | originalTextFor(nestedExpr(opener=R"{{%", closer="%}}"))
-                    | CharsNotIn(" \t", exact=1)
-                )
-            ).setResultsName("destination")
-                
+            # Zero or more non-space characters.
+            # But before each character (exact=1) check if we have a
+            # shortcode. If we do, allow that.
+            ZeroOrMore(
+                originalTextFor(nestedExpr(opener=R"{{<", closer=">}}"))
+                | originalTextFor(nestedExpr(opener=R"{{%", closer="%}}"))
+                | CharsNotIn(" \t", exact=1)
+            )
+        ).setResultsName("destination")
+
         # CommonMark requires link title to be encased in single-quotes,
         # double-quotes, or wrapped in parentheses. Let's not bother with
         # the parentheses case for now.
-        title = (quotedString.copy()
-                .setResultsName("title")
-                .setParseAction(lambda s, l, toks: unescape_quoted_string(toks[0])))
-        
-        # This will parse the contents of dest_and_title
-        dest_and_title_parser = (
-            destination
-            +
-            Optional(White(" ") + title)
-            +
-            StringEnd()
+        title = (
+            quotedString.copy()
+            .setResultsName("title")
+            .setParseAction(lambda s, l, toks: unescape_quoted_string(toks[0]))
         )
+
+        # This will parse the contents of dest_and_title
+        dest_and_title_parser = destination + Optional(White(" ") + title) + StringEnd()
 
         def back_parse_action(_s, _l, toks):
             if " " in toks[0]:

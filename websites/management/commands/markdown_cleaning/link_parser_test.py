@@ -81,7 +81,9 @@ def test_link_parser_parses_good_links(title, dest, text, is_image):
 
 def test_link_parser_with_tabs():
     """
-    Pyparsing's default behavior is to replace tabs with spaces.
+    Pyparsing's default behavior is to replace tabs with spaces. WrappedParser
+    overrides that. Preseving tabs is probably not important for us, but wanted to document
+    the behavior.
     """
     parser = LinkParser()
     parsed = parser.parse_string("[a\tb](url)")

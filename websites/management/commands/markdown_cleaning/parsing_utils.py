@@ -2,7 +2,8 @@ import json
 from dataclasses import dataclass
 from uuid import UUID
 
-from pyparsing import ParseResults, originalTextFor, ParserElement
+from pyparsing import ParserElement, ParseResults, originalTextFor
+
 
 INITIAL_DEFAULT_WHITESPACE_CHARS = ParserElement.DEFAULT_WHITE_CHARS
 
