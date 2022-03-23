@@ -94,69 +94,8 @@ class LinkParser(WrappedParser):
         # Pylint is having trouble with unary operators on PyParsing elements.
         # pylint: disable=invalid-unary-operand-type
 
-        is_image = (
-            Optional("!")
-            .setResultsName("is_image")
-            .setParseAction(lambda s, l, toks: bool(toks))
-        )
-        double_line_break = (
-            Word("\n\r", exact=1) + Optional(Word(" \t")) + Word("\n\r", exact=1)
-        )
 
-        text_ignore = Literal("\\[") | Literal("\\]")
-        text_content = Combine(
-            OneOrMore(
-                ~text_ignore
-                + FollowedBy(~double_line_break)
-                + CharsNotIn("[]", exact=1)
-            )
-            + ~double_line_break
-        )
-        text = originalTextFor(
-            nestedExpr(
-                opener="[",
-                closer="]",
-                content=text_content,
-                ignoreExpr=text_ignore,
-            )
-        ).setResultsName("text")
-        text.addParseAction(lambda s, l, toks: toks[0][1:-1])
-
-        back = originalTextFor(nestedExpr(opener="(", closer=")")).addParseAction(
-            lambda s, l, toks: toks[0][1:-1]
-        )
-
-        back_parser = (
-            Combine(
-                ZeroOrMore(
-                    originalTextFor(nestedExpr(opener=R"{{<", closer=">}}"))
-                    | originalTextFor(nestedExpr(opener=R"{{%", closer="%}}"))
-                    | CharsNotIn(" \t", exact=1)
-                )
-            )
-            .setWhitespaceChars("")  # can't gobble the whitespace,
-            .setResultsName("destination")
-            + Optional(
-                White(" ")
-                +
-                # CommonMark requires link title to be encased in single-quotes,
-                # double-quotes, or wrapped in parentheses. Let's not bother with
-                # the parentheses case for now.
-                quotedString.copy()
-                .setResultsName("title")
-                .setParseAction(lambda s, l, toks: unescape_quoted_string(toks[0]))
-            )
-            + StringEnd()
-        )
-
-        def back_parse_action(_s, _l, toks):
-            if " " in toks[0]:
-                return back_parser.parseString(toks[0])
-            return ParseResults.from_dict({"destination": toks[0]})
-
-        back.addParseAction(back_parse_action)
-
-        grammar = is_image + text + back
+        grammar = self._parser_piece_is_image() + self._parser_piece_text() + self._parser_piece_destination_and_title()
 
         def parse_action(_s, _l, toks):
             token = toks
@@ -188,3 +127,105 @@ class LinkParser(WrappedParser):
         restore_initial_default_whitespace_chars()
 
         super().__init__(grammar)
+
+    
+    @staticmethod
+    def _parser_piece_is_image():
+        """
+        Return PyParsing element to match an optional ! at beginning of links
+        to indicate that the link is actually an image.
+        """
+        is_image = (
+            Optional("!")
+            .setResultsName("is_image")
+            .setParseAction(lambda s, l, toks: bool(toks))
+        )
+        return is_image
+    
+    @staticmethod
+    def _parser_piece_text():
+        """
+        Return PyParsing element to the text of a markdown link.
+        """
+        double_line_break = (
+            Word("\n\r", exact=1) + Optional(Word(" \t")) + Word("\n\r", exact=1)
+        )
+
+        # We will ignore escaped square brackets when match finding balanced
+        # square brackets.
+        ignore = Literal("\\[") | Literal("\\]")
+
+        # The text parser matches balanced brackets containing content defined
+        # by the ParserElement below.
+        # In other words, the text parser will match things like
+        #   - [content]
+        #   - [content[content]content]
+        #   - [content[content[content]]]
+        # etc
+        content = Combine(
+            OneOrMore(
+                ~ignore
+                + FollowedBy(~double_line_break)
+                + CharsNotIn("[]", exact=1)
+            )
+            + ~double_line_break
+        )
+        text = originalTextFor(
+            nestedExpr(
+                opener="[",
+                closer="]",
+                content=content,
+                ignoreExpr=ignore,
+            )
+        ).setResultsName("text")
+        text.addParseAction(lambda s, l, toks: toks[0][1:-1])
+        return text
+    
+    @staticmethod
+    def _parser_piece_destination_and_title():
+        """
+        Return PyParsing element to match the destination and title of a
+        markdown link.
+        """
+
+        # Capture everything between the balanced parentheses
+        # Then parse it later.
+        dest_and_title = originalTextFor(
+            nestedExpr(opener="(", closer=")")
+        ).addParseAction(lambda s, l, toks: toks[0][1:-1])
+
+        destination = Combine(
+                # Zero or more non-space characters.
+                # But before each character (exact=1) check if we have a
+                # shortcode. If we do, allow that.
+                ZeroOrMore(
+                    originalTextFor(nestedExpr(opener=R"{{<", closer=">}}"))
+                    | originalTextFor(nestedExpr(opener=R"{{%", closer="%}}"))
+                    | CharsNotIn(" \t", exact=1)
+                )
+            ).setResultsName("destination")
+                
+        # CommonMark requires link title to be encased in single-quotes,
+        # double-quotes, or wrapped in parentheses. Let's not bother with
+        # the parentheses case for now.
+        title = (quotedString.copy()
+                .setResultsName("title")
+                .setParseAction(lambda s, l, toks: unescape_quoted_string(toks[0])))
+        
+        # This will parse the contents of dest_and_title
+        dest_and_title_parser = (
+            destination
+            +
+            Optional(White(" ") + title)
+            +
+            StringEnd()
+        )
+
+        def back_parse_action(_s, _l, toks):
+            if " " in toks[0]:
+                return dest_and_title_parser.parseString(toks[0])
+            return ParseResults.from_dict({"destination": toks[0]})
+
+        dest_and_title.addParseAction(back_parse_action)
+
+        return dest_and_title
