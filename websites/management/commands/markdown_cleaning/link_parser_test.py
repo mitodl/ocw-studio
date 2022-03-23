@@ -52,6 +52,7 @@ def test_markdown_link_serialization_more_expliclity():
         "",
         'some title with escaped \\] opening and closing \\[  brackets',
         "title with     whitespace",
+        "title with\nsingle\nnewlines",
         "linklike [] [] [cool]() title",
     ],
 )
@@ -77,6 +78,15 @@ def test_link_parser_parses_good_links(title, dest, text, is_image):
     )
     assert parsed.link == expected_link
 
+def test_link_parser_with_tabs():
+    """
+    Pyparsing's default behavior is to replace tabs with spaces... six apparently.
+    The tab below can be preserved by calling parseWithTabs on the top-level
+    grammar. But...we do not care. 
+    """
+    parser = LinkParser()
+    parsed = parser.parse_string("[a\tb](url)")
+    assert parsed.link.text == 'a      b'
 
 def test_link_parser_other_interesting_cases():
     # Shortcodes are a little hard because they have spaces

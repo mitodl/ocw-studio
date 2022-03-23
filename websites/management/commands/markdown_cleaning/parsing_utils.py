@@ -2,8 +2,11 @@ import json
 from dataclasses import dataclass
 from uuid import UUID
 
-from pyparsing import ParseResults, originalTextFor
+from pyparsing import ParseResults, originalTextFor, ParserElement
 
+INITIAL_DEFAULT_WHITESPACE_CHARS = ParserElement.DEFAULT_WHITE_CHARS
+def restore_initial_default_whitespace_chars():
+    ParserElement.setDefaultWhitespaceChars(INITIAL_DEFAULT_WHITESPACE_CHARS)
 
 class WrappedParser:
     """
