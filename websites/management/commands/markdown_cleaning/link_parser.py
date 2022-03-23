@@ -129,7 +129,7 @@ class LinkParser(WrappedParser):
                     |
                     originalTextFor(nestedExpr(opener=R'{{%', closer="%}}"))
                     |
-                    CharsNotIn(" \t")
+                    CharsNotIn(" \t", exact=1)
                 )
             )
             .setWhitespaceChars('') # can't gobble the whitespace, 

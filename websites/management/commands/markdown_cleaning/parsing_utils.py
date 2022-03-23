@@ -22,6 +22,7 @@ class WrappedParser:
     def __init__(self, grammar) -> None:
 
         self.grammar = originalTextFor(grammar)
+        self.grammar.parseWithTabs()
         self.set_parse_action()
 
     @staticmethod
