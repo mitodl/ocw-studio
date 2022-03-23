@@ -45,13 +45,7 @@ def test_markdown_link_serialization_more_expliclity():
     )
 
 
-@pytest.mark.parametrize(
-    "is_image",
-    [
-        True,
-        False,
-    ],
-)
+@pytest.mark.parametrize("is_image", [True, False])
 @pytest.mark.parametrize(
     "text",
     [
@@ -61,14 +55,7 @@ def test_markdown_link_serialization_more_expliclity():
         "linklike [] [] [cool]() title",
     ],
 )
-@pytest.mark.parametrize(
-    "dest",
-    [
-        "",
-        "/some/destination/url",
-        "./and/this",
-    ],
-)
+@pytest.mark.parametrize("dest", ["", "/some/dest/url", "./and/this"])
 @pytest.mark.parametrize("title", ["", "my favorite  [title](here)"])
 def test_link_parser_parses_good_links(title, dest, text, is_image):
     with_title = "" if not title else f' "{title}"'
@@ -90,6 +77,25 @@ def test_link_parser_parses_good_links(title, dest, text, is_image):
     )
     assert parsed.link == expected_link
 
+
+def test_link_parser_other_interesting_cases():
+    # Shortcodes are a little hard because they have spaces
+    markdown1 = R'[some text]({{< baseurl >}}/path/to/thing)'
+    parser = LinkParser()
+    parsed1 = parser.parse_string(markdown1)
+    assert parsed1.link == MarkdownLink(
+        text='some text',
+        destination=R'{{< baseurl >}}/path/to/thing'
+    )
+
+    # Shortcodes are a little hard because they have spaces
+    markdown2 = R'[some text]({{< baseurl >}}/path/to/thing "some title")'
+    parsed2 = parser.parse_string(markdown2)
+    assert parsed2.link == MarkdownLink(
+        text='some text',
+        destination=R'{{< baseurl >}}/path/to/thing',
+        title="some title"
+    )
 
 @pytest.mark.parametrize(
     "markdown",

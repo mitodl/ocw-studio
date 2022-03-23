@@ -15,7 +15,8 @@ from pyparsing import (
     FollowedBy,
     Word,
     ParserElement,
-    Combine
+    Combine,
+    ZeroOrMore,
 )
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
@@ -120,7 +121,17 @@ class LinkParser(WrappedParser):
         )
 
         back_parser = (
-            Optional(CharsNotIn(" \t")).setResultsName("destination")
+            Combine(
+                ZeroOrMore(
+                    originalTextFor(nestedExpr(opener=R'{{<', closer=">}}"))
+                    |
+                    originalTextFor(nestedExpr(opener=R'{{%', closer="%}}"))
+                    |
+                    CharsNotIn(" \t")
+                )
+            )
+            .setWhitespaceChars('') # can't gobble the whitespace, 
+            .setResultsName("destination")
             + Optional(
                 White(" ")
                 +
