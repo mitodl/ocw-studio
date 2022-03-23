@@ -164,13 +164,18 @@ def test_find_file_field(basic_site_config, content_type, field_name):
 
 
 @pytest.mark.parametrize("cls", [None, WebsiteContent])
-def test_generate_item_metadata(parsed_site_config, cls):
+@pytest.mark.parametrize("resource_type", [None, "Image"])
+@pytest.mark.parametrize("file_type", [None, "image/png"])
+@pytest.mark.parametrize("with_kwargs", [True, False])
+def test_generate_item_metadata(
+    parsed_site_config, cls, resource_type, file_type, with_kwargs
+):
     """generate_item_metadata should return the expected dict"""
     class_data = {} if cls else {"title": "", "file": ""}
     expected_data = {
         "description": "",
-        "resourcetype": "",
-        "file_type": "",
+        "resourcetype": (resource_type or "") if with_kwargs else "",
+        "file_type": (file_type or "") if with_kwargs else "",
         "learning_resource_types": [],
         "license": "",
         "image_metadata": {"image-alt": "", "caption": "", "credit": ""},
@@ -183,4 +188,9 @@ def test_generate_item_metadata(parsed_site_config, cls):
         **class_data,
     }
     site_config = SiteConfig(parsed_site_config)
-    assert site_config.generate_item_metadata("resource", cls) == expected_data
+    kwargs = (
+        {"resourcetype": resource_type, "file_type": file_type} if with_kwargs else {}
+    )
+    assert (
+        site_config.generate_item_metadata("resource", cls, **kwargs) == expected_data
+    )

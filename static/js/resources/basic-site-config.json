@@ -64,6 +64,18 @@
           "name": "image",
           "required": false,
           "widget": "file"
+        },
+        {
+          "label": "Resource Type",
+          "name": "resourcetype",
+          "required": false,
+          "widget": "select"
+        },
+        {
+          "label": "File Type",
+          "name": "file_type",
+          "required": false,
+          "widget": "string"
         }
       ],
       "folder": "content/resource",
