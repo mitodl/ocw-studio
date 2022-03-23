@@ -1,4 +1,3 @@
-from email.parser import Parser
 import json
 from dataclasses import dataclass, field
 
@@ -9,11 +8,9 @@ from pyparsing import (
     ParseResults,
     StringEnd,
     White,
-    NotAny,
     nestedExpr,
     originalTextFor,
     quotedString,
-    OneOrMore,
     FollowedBy,
     Word,
     ParserElement,
@@ -90,11 +87,6 @@ class LinkParser(WrappedParser):
         # Markdown cares about whitespace containing double newlines, so we
         # can't collapse newlines.
         ParserElement.setDefaultWhitespaceChars("")
-
-        # Pylint is having trouble with unary operators on PyParsing elements.
-        # pylint: disable=invalid-unary-operand-type
-
-
         grammar = self._parser_piece_is_image() + self._parser_piece_text() + self._parser_piece_destination_and_title()
 
         def parse_action(_s, _l, toks):
@@ -147,6 +139,7 @@ class LinkParser(WrappedParser):
         """
         Return PyParsing element to the text of a markdown link.
         """
+        # No double line breaks in markdown links
         double_line_break = (
             Word("\n\r", exact=1) + Optional(Word(" \t")) + Word("\n\r", exact=1)
         )
@@ -155,21 +148,22 @@ class LinkParser(WrappedParser):
         # square brackets.
         ignore = Literal("\\[") | Literal("\\]")
 
-        # The text parser matches balanced brackets containing content defined
-        # by the ParserElement below.
-        # In other words, the text parser will match things like
-        #   - [content]
-        #   - [content[content]content]
-        #   - [content[content[content]]]
-        # etc
-        content = Combine(
-            OneOrMore(
-                ~ignore
-                + FollowedBy(~double_line_break)
-                + CharsNotIn("[]", exact=1)
-            )
-            + ~double_line_break
+        # The text parser will match text inside balanced brackets using the
+        # nestedExpr helper function from PyParsing.
+        #
+        # Next we define the content that is allowed inside the brackets.
+        content_character = (
+            ~FollowedBy(double_line_break)
+            + CharsNotIn("[]", exact=1)
         )
+        # Normally with nestedExpr, the content parser would be separately to
+        # whitespace-separated strings. However, since we set whitespaceChars
+        # to '', the content parser is effectively applied to each character
+        # separately.
+        # 
+        # If this ever changes, we would need to change content to something
+        # like Combine(OneOrMore(~ignore + content_character))
+        content = content_character
         text = originalTextFor(
             nestedExpr(
                 opener="[",
