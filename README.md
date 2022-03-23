@@ -305,9 +305,14 @@ be uploaded to Google Drive first, and then the "Sync w/Google Drive" button wil
 
 - Add the following to your .env file:
     ``` 
-    AWS_STORAGE_BUCKET_NAME: The S3 bucket to upload google drive files to.  Also populate AWS authentication settings.
+    AWS_STORAGE_BUCKET_NAME=The S3 bucket to upload google drive files to.  Also populate AWS authentication settings.
     DRIVE_SHARED_ID=The id of your Google Team Drive
     DRIVE_SERVICE_ACCOUNT_CREDS=The required Google service account credentials in JSON format.
     DRIVE_IMPORT_RECENT_FILES_SECONDS=Optional, default 3600. The frequency to check for new/updated files.
     DRIVE_UPLOADS_PARENT_FOLDER_ID=Optional, the folder id in the team drive where course folders should go.
    ```
+  
+- If your site configuration for resources has a non-standard field name for type, add the following to your .env file:
+    ``` 
+    RESOURCE_TYPE_FIELDS=resourcetype,filetype,<your_custom_field_name>
+    ```
