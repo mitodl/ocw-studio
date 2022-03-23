@@ -34,3 +34,4 @@ collections:
       - {"label": "Title", "name": "title", "widget": "string", "required": true}
       - {"label": "Image", "name": "image", "widget": "file", "required": false}
       - {"label": "Resource Type", "name": "resourcetype", "widget": "select", "required": false}
+      - {"label": "File Type", "name": "file_type", "widget": "string", "required": false}

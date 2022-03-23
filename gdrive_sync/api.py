@@ -360,6 +360,9 @@ def create_gdrive_resource_content(drive_file: DriveFile):
                     get_valid_base_filename(basename, CONTENT_TYPE_RESOURCE)
                 ),
             )
+            resource_type_fields = {
+                field: resource_type for field in settings.RESOURCE_TYPE_FIELDS
+            }
             resource = WebsiteContent.objects.create(
                 website=drive_file.website,
                 title=drive_file.name,
@@ -374,9 +377,9 @@ def create_gdrive_resource_content(drive_file: DriveFile):
                     ).generate_item_metadata(
                         CONTENT_TYPE_RESOURCE,
                         cls=WebsiteContent,
-                        resource_type=resource_type,
-                    ),
-                    "file_type": drive_file.mime_type,
+                        file_type=drive_file.mime_type,
+                        **resource_type_fields,
+                    )
                 },
             )
         else:

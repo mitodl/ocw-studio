@@ -165,13 +165,14 @@ def test_find_file_field(basic_site_config, content_type, field_name):
 
 @pytest.mark.parametrize("cls", [None, WebsiteContent])
 @pytest.mark.parametrize("resource_type", [None, "Image"])
-def test_generate_item_metadata(parsed_site_config, cls, resource_type):
+@pytest.mark.parametrize("file_type", [None, "image/png"])
+def test_generate_item_metadata(parsed_site_config, cls, resource_type, file_type):
     """generate_item_metadata should return the expected dict"""
     class_data = {} if cls else {"title": "", "file": ""}
     expected_data = {
         "description": "",
         "resourcetype": resource_type or "",
-        "file_type": "",
+        "file_type": file_type or "",
         "learning_resource_types": [],
         "license": "",
         "image_metadata": {"image-alt": "", "caption": "", "credit": ""},
@@ -185,6 +186,8 @@ def test_generate_item_metadata(parsed_site_config, cls, resource_type):
     }
     site_config = SiteConfig(parsed_site_config)
     assert (
-        site_config.generate_item_metadata("resource", cls, resource_type=resource_type)
+        site_config.generate_item_metadata(
+            "resource", cls, resourcetype=resource_type, file_type=file_type
+        )
         == expected_data
     )
