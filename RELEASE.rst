@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.54.2
+Version 0.54.2 (Released March 23, 2022)
 --------------
 
 - Fix gdrive import for ocw-www (#1155)
