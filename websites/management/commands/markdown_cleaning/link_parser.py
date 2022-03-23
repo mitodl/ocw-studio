@@ -91,17 +91,9 @@ class LinkParser(WrappedParser):
             .setResultsName("is_image")
             .setParseAction(lambda s, l, toks: bool(toks))
         )
-        double_line_break = (
-            Word('\n', exact=1).setWhitespaceChars(' \t')
-            +
-            Word('\n', exact=1).setWhitespaceChars(' \t')
-        )
+        double_line_break = Word('\n', exact=1) + Word('\n', exact=1)
 
-        def test_debug(s, l, t):
-            print('HELLO!')
-            print(t)
-
-        text_ignore = quotedString | Literal("\\[") | Literal("\\]")
+        text_ignore =  Literal("\\[") | Literal("\\]")
         text_content =  Combine(
             OneOrMore(
                 ~text_ignore

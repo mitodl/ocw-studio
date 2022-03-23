@@ -56,7 +56,7 @@ def test_markdown_link_serialization_more_expliclity():
     "text",
     [
         "",
-        'some title with escaped \\] bracket and "quoted ]" brackets',
+        'some title with escaped \\] opening and closing \\[  brackets',
         "title with     whitespace",
         "linklike [] [] [cool]() title",
     ],
@@ -106,20 +106,15 @@ def test_link_parser_parses_good_links(title, dest, text, is_image):
         "[cat\n \n \t  \ndog](meow)",
         "[cat\n  \t  \n](meow)",
         "[\n   \t  \n cat](meow)",
-        "[\n   \t \n](meow)"
+        "[\n   \t \n](meow)",
+        "[bracket in ']' quotes](meow)",
+        '[bracket in "]" quotes](meow)'
     ],
 )
 def test_link_parser_rejects_bad_links(markdown):
     parser = LinkParser()
     with pytest.raises(ParseException):
         parser.parse_string(markdown)
-
-def test_woof():
-    markdown = '[markdown](it/is "so \\"fun\\" right?")'
-    parser = LinkParser()
-    result = parser.parse_string(markdown)
-    print('\n\nThe Result:')
-    print(result.link)
 
 
 def test_link_parser_titles_with_quotes():

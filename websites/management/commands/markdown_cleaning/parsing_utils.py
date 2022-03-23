@@ -42,11 +42,14 @@ class WrappedParser:
         self.grammar.setParseAction(self._original_text_for)
         self.grammar.addParseAction(*parse_actions)
 
-    def parse_string(self, string: str):
+    def parse_string(self, string: str, parse_all=True):
         """
         Snake-case alias for PyParsing's parseString.
+
+        Note: The default value for parse_all (True) is different from
+        Pyparsing.
         """
-        return self.grammar.parseString(string)
+        return self.grammar.parseString(string, parseAll=parse_all)
 
     def transform_string(self, string: str):
         """
