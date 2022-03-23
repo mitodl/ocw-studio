@@ -9,6 +9,7 @@ from pyparsing import (
     ParseResults,
     StringEnd,
     White,
+    NotAny,
     nestedExpr,
     originalTextFor,
     quotedString,
@@ -23,8 +24,9 @@ from pyparsing import (
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     WrappedParser,
     unescape_quoted_string,
-    restore_initial_default_whitespace_chars
+    restore_initial_default_whitespace_chars,
 )
+
 
 @dataclass
 class MarkdownLink:
@@ -87,26 +89,28 @@ class LinkParser(WrappedParser):
         # By default pyparsing collapses whitespace characters.
         # Markdown cares about whitespace containing double newlines, so we
         # can't collapse newlines.
-        ParserElement.setDefaultWhitespaceChars('')
+        ParserElement.setDefaultWhitespaceChars("")
+
+        # Pylint is having trouble with unary operators on PyParsing elements.
+        # pylint: disable=invalid-unary-operand-type
 
         is_image = (
             Optional("!")
             .setResultsName("is_image")
             .setParseAction(lambda s, l, toks: bool(toks))
         )
-        double_line_break = Word('\n\r', exact=1) + Optional(Word(' \t')) + Word('\n\r', exact=1)
+        double_line_break = (
+            Word("\n\r", exact=1) + Optional(Word(" \t")) + Word("\n\r", exact=1)
+        )
 
-        text_ignore =  Literal("\\[") | Literal("\\]")
-        text_content =  Combine(
+        text_ignore = Literal("\\[") | Literal("\\]")
+        text_content = Combine(
             OneOrMore(
                 ~text_ignore
-                +
-                FollowedBy(~double_line_break)
-                +
-                CharsNotIn('[]', exact=1)
+                + FollowedBy(~double_line_break)
+                + CharsNotIn("[]", exact=1)
             )
-            +
-            ~double_line_break
+            + ~double_line_break
         )
         text = originalTextFor(
             nestedExpr(
@@ -125,14 +129,12 @@ class LinkParser(WrappedParser):
         back_parser = (
             Combine(
                 ZeroOrMore(
-                    originalTextFor(nestedExpr(opener=R'{{<', closer=">}}"))
-                    |
-                    originalTextFor(nestedExpr(opener=R'{{%', closer="%}}"))
-                    |
-                    CharsNotIn(" \t", exact=1)
+                    originalTextFor(nestedExpr(opener=R"{{<", closer=">}}"))
+                    | originalTextFor(nestedExpr(opener=R"{{%", closer="%}}"))
+                    | CharsNotIn(" \t", exact=1)
                 )
             )
-            .setWhitespaceChars('') # can't gobble the whitespace, 
+            .setWhitespaceChars("")  # can't gobble the whitespace,
             .setResultsName("destination")
             + Optional(
                 White(" ")

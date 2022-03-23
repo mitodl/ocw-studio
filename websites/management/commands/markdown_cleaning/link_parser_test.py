@@ -50,7 +50,7 @@ def test_markdown_link_serialization_more_expliclity():
     "text",
     [
         "",
-        'some title with escaped \\] opening and closing \\[  brackets',
+        "some title with escaped \\] opening and closing \\[  brackets",
         "title with     whitespace",
         "title with\nsingle\nnewlines",
         "linklike [] [] [cool]() title",
@@ -78,43 +78,45 @@ def test_link_parser_parses_good_links(title, dest, text, is_image):
     )
     assert parsed.link == expected_link
 
+
 def test_link_parser_with_tabs():
     """
     Pyparsing's default behavior is to replace tabs with spaces.
     """
     parser = LinkParser()
     parsed = parser.parse_string("[a\tb](url)")
-    assert parsed.link.text == 'a\tb'
+    assert parsed.link.text == "a\tb"
+
 
 def test_link_parser_with_shortcodes_in_destination():
     """Test that the parser allows shortcodes in the destination.
-    
+
     The reason this is a little special is that shortcodes can have spaces
     whereas usually that's not allowed in the destination.
     """
-    markdown1 = R'[some text]({{< baseurl >}}/path/to/thing)'
+    markdown1 = R"[some text]({{< baseurl >}}/path/to/thing)"
     parser = LinkParser()
     parsed1 = parser.parse_string(markdown1)
     assert parsed1.link == MarkdownLink(
-        text='some text',
-        destination=R'{{< baseurl >}}/path/to/thing'
+        text="some text", destination=R"{{< baseurl >}}/path/to/thing"
     )
 
     markdown2 = R'[some text]({{< baseurl >}}/path/to/thing "some title")'
     parsed2 = parser.parse_string(markdown2)
     assert parsed2.link == MarkdownLink(
-        text='some text',
-        destination=R'{{< baseurl >}}/path/to/thing',
-        title="some title"
+        text="some text",
+        destination=R"{{< baseurl >}}/path/to/thing",
+        title="some title",
     )
 
     markdown3 = R'[some text](/front_text{{< baseurl >}}/path/to/thing "some title")'
     parsed3 = parser.parse_string(markdown3)
     assert parsed3.link == MarkdownLink(
-        text='some text',
-        destination=R'/front_text{{< baseurl >}}/path/to/thing',
-        title="some title"
+        text="some text",
+        destination=R"/front_text{{< baseurl >}}/path/to/thing",
+        title="some title",
     )
+
 
 @pytest.mark.parametrize(
     "markdown",
@@ -133,7 +135,7 @@ def test_link_parser_with_shortcodes_in_destination():
         "[\n   \t  \n cat](meow)",
         "[\n   \t \n](meow)",
         "[bracket in ']' quotes](meow)",
-        '[bracket in "]" quotes](meow)'
+        '[bracket in "]" quotes](meow)',
     ],
 )
 def test_link_parser_rejects_bad_links(markdown):
