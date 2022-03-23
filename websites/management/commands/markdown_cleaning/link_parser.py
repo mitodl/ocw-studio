@@ -103,10 +103,7 @@ class LinkParser(WrappedParser):
             # Use self.scan_string not grammar.scan_string
             # so that parse actions attached to LinkParser fire for the nested
             # links, which seems desirable.
-            if "](" in text:
-                text_links = tuple(self.scan_string(text))
-            else:
-                text_links = tuple()
+            text_links = tuple(self.scan_string(text))
 
             link = MarkdownLink(
                 text=text,
@@ -212,9 +209,7 @@ class LinkParser(WrappedParser):
         dest_and_title_parser = destination + Optional(White(" ") + title) + StringEnd()
 
         def back_parse_action(_s, _l, toks):
-            if " " in toks[0]:
-                return dest_and_title_parser.parseString(toks[0])
-            return ParseResults.from_dict({"destination": toks[0]})
+            return dest_and_title_parser.parseString(toks[0])
 
         dest_and_title.addParseAction(back_parse_action)
 
