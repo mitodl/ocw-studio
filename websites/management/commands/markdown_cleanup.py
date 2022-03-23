@@ -26,6 +26,9 @@ from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix i
 from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
     MetadataRelativeUrlsFix,
 )
+from websites.management.commands.markdown_cleaning.removal_rules import (
+    RemoveInaccesibleGif,
+)
 from websites.management.commands.markdown_cleaning.remove_extra_resource_args import (
     RemoveExtraResourceArgs,
 )
@@ -55,6 +58,7 @@ class Command(BaseCommand):
         ValidateUrls,
         ShortcodeLoggingRule,
         RemoveExtraResourceArgs,
+        RemoveInaccesibleGif,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
