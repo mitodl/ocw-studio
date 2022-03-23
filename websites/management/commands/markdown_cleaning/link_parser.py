@@ -156,10 +156,10 @@ class LinkParser(WrappedParser):
         #
         # Next we define the content that is allowed inside the brackets.
         content_character = ~FollowedBy(double_line_break) + CharsNotIn("[]", exact=1)
-        # Normally with nestedExpr, the content parser would be separately to
-        # whitespace-separated strings. However, since we set whitespaceChars
-        # to '', the content parser is effectively applied to each character
-        # separately.
+        # Normally with nestedExpr, the content parser would be separately applied
+        # to each whitespace-separated string within the nested expression.
+        # However, since we set whitespaceChars to '', the content parser is
+        # applied to characters one-at-a-time.
         #
         # If this ever changes, we would need to change content to something
         # like Combine(OneOrMore(~ignore + content_character))
