@@ -119,8 +119,8 @@ class PyparsingRule(MarkdownCleanupRule):
 
         This is an optional optimization mechanism. If we are going to parse a
         text, we need to parse it all, and Pyparsing is not particularly fast.
-        So a text can be easily and quickly ruled out as having no relevant
-        content WITHOUT parsing the text, put that logic here.
+        So if a text can be easily and quickly classified as having no relevant
+        content WITHOUT parsing the text, put that logic here to avoid parsing.
 
         Example:
         =======
