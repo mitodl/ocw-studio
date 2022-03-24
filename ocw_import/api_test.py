@@ -555,7 +555,9 @@ class TestUpdateContentFromS3Data:
     specified fields.
     """
 
-    def __init__(self):
+    @staticmethod
+    def get_updated_content_and_parent(update_field):
+        """Run update_content_from_s3_data with test data and return content, parent"""
         website = WebsiteFactory.build()
         content = WebsiteContentFactory.build(
             markdown="original markdown",
@@ -567,7 +569,7 @@ class TestUpdateContentFromS3Data:
         # that's one of the things we'll test
         parent = WebsiteContentFactory.build()
 
-        self.s3_content_data = {
+        s3_content_data = {
             "markdown": "s3 markdown",
             "metadata": {
                 "title": "s3 title",
@@ -576,61 +578,56 @@ class TestUpdateContentFromS3Data:
             },
             "parent": parent,
         }
-        self.content = content
-        self.parent = parent
-
-    def do_update(self, update_field: str):
-        """Run update_content_from_s3_data with test data"""
         with patch("websites.models.WebsiteContent.objects") as mock:
-            mock.filter.return_value.first.return_value = self.content
-            website = self.content.website
-            text_id = self.content.text_id
-            update_content_from_s3_data(
-                website, text_id, self.s3_content_data, update_field
-            )
+            mock.filter.return_value.first.return_value = content
+            website = content.website
+            text_id = content.text_id
+            update_content_from_s3_data(website, text_id, s3_content_data, update_field)
+
+        return content, parent
 
     def test_update_non_metadata_field(self):
         """
         Only content.markdown should change.
         """
-        self.do_update("markdown")
-        assert self.content.save.call_count == 1
-        assert self.content.markdown == "s3 markdown"
-        assert self.content.metadata == {"title": "original title"}
-        assert self.content.parent_id is None
+        content, _ = self.get_updated_content_and_parent("markdown")
+        assert content.save.call_count == 1
+        assert content.markdown == "s3 markdown"
+        assert content.metadata == {"title": "original title"}
+        assert content.parent_id is None
 
     def test_update_metadata_title(self):
         """
         Only metadata.title should change, and no new metadata keys.
         """
-        self.do_update("metadata.title")
-        assert self.content.save.call_count == 1
-        assert self.content.markdown == "original markdown"
-        assert self.content.metadata == {"title": "s3 title"}
-        assert self.content.parent_id is None
+        content, _ = self.get_updated_content_and_parent("metadata.title")
+        assert content.save.call_count == 1
+        assert content.markdown == "original markdown"
+        assert content.metadata == {"title": "s3 title"}
+        assert content.parent_id is None
 
     def test_update_metadata_author(self):
         """
         metadata.author should be added, no other changes.
         """
-        self.do_update("metadata.author")
-        assert self.content.save.call_count == 1
-        assert self.content.markdown == "original markdown"
-        assert self.content.metadata == {
+        content, _ = self.get_updated_content_and_parent("metadata.author")
+        assert content.save.call_count == 1
+        assert content.markdown == "original markdown"
+        assert content.metadata == {
             "title": "original title",
             "author": "s3 author",
         }
-        assert self.content.parent_id is None
+        assert content.parent_id is None
 
     def test_update_metadata_parent_title(self):
         """
         Test that updating metadata.parent_title also updates parent_id FK.
         """
-        self.do_update("metadata.parent_title")
-        assert self.content.save.call_count == 1
-        assert self.content.markdown == "original markdown"
-        assert self.content.metadata == {
+        content, parent = self.get_updated_content_and_parent("metadata.parent_title")
+        assert content.save.call_count == 1
+        assert content.markdown == "original markdown"
+        assert content.metadata == {
             "title": "original title",
             "parent_title": "s3 parent title",
         }
-        assert self.content.parent_id == self.parent.id
+        assert content.parent_id == parent.id
