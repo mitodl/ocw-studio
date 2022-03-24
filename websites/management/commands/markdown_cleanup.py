@@ -23,6 +23,9 @@ from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix i
     LegacyShortcodeFixOne,
     LegacyShortcodeFixTwo,
 )
+from websites.management.commands.markdown_cleaning.link_logging_rule import (
+    LinkLoggingRule,
+)
 from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
     MetadataRelativeUrlsFix,
 )
@@ -31,6 +34,9 @@ from websites.management.commands.markdown_cleaning.removal_rules import (
 )
 from websites.management.commands.markdown_cleaning.remove_extra_resource_args import (
     RemoveExtraResourceArgs,
+)
+from websites.management.commands.markdown_cleaning.resolveuid_rule import (
+    ResolveUIDRule,
 )
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
@@ -59,6 +65,8 @@ class Command(BaseCommand):
         ShortcodeLoggingRule,
         RemoveExtraResourceArgs,
         RemoveInaccesibleGif,
+        LinkLoggingRule,
+        ResolveUIDRule,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:

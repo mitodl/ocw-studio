@@ -97,19 +97,41 @@ class RegexpCleanupRule(MarkdownCleanupRule):
 
 
 class PyparsingRule(MarkdownCleanupRule):
+    @property
+    @abc.abstractclassmethod
+    def Parser(cls) -> WrappedParser:
+        """Parser for this rule"""
+
     @abc.abstractmethod
     def replace_match(
         self, s: str, l: int, toks: ParseResults, website_content: WebsiteContent
     ):
         pass
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.parser = self.Parser()
+
     def should_parse(self, _text: str):
         """
-        If result is truthy, the given text will be parsed.
+        Determines whether a given text (e.g., markdown page) should be parsed
+        at all. If result is truthy, the text will be parsed.
 
-        This is useful because PyParsing is not the fastest thing ever created.
-        So if, for example, you only care about {{< resource >}} shortcodes,
-        then there's no need to parse the text if it does not contain '{{< resource'.
+        This is an optional optimization mechanism. If we are going to parse a
+        text, we need to parse it all, and Pyparsing is not particularly fast.
+        So if a text can be easily and quickly classified as having no relevant
+        content WITHOUT parsing the text, put that logic here to avoid parsing.
+
+        Example:
+        =======
+        If using ShortcodeParser to make edits to {{ < resource > }} shortcodes,
+        don't bother parsing pages that don't contain the string '{{ < resource'
+
+        N.B: If the page is parsed, all parse matches will be included in the
+        generated CSV. Continuing with the {{< resource > }} shortcode example,
+        if a page contains '{{< resource ', then ALL shortcodes within that page
+        will be parsed whether they are resource shortcodes or some other
+        shortcode.
         """
         return True
 

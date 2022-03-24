@@ -15,6 +15,17 @@ CONTENT_FILENAME_MAX_LEN = filepath_migration.CONTENT_FILENAME_MAX_LEN
 CONTENT_DIRPATH_MAX_LEN = filepath_migration.CONTENT_DIRPATH_MAX_LEN
 
 
+def is_valid_uuid(text: str):
+    """
+    Return True if text is valid uuid, else False
+    """
+    try:
+        UUID(text)
+        return True
+    except ValueError:
+        return False
+
+
 def remove_prefix(string: str, prefix: str):
     if string.startswith(prefix):
         return string[len(prefix) :]
@@ -23,7 +34,8 @@ def remove_prefix(string: str, prefix: str):
 
 def get_rootrelative_url_from_content(content: WebsiteContent):
     dirpath = remove_prefix(content.dirpath, "content/")
-    pieces = ["/courses", content.website.name, dirpath, content.filename]
+    filename = "" if content.filename == "_index" else content.filename
+    pieces = ["/courses", content.website.name, dirpath, filename]
     return "/".join(p for p in pieces if p)
 
 
@@ -42,6 +54,10 @@ class ContentLookup:
         }
         self.websites = {wc.website.name: wc.website_id for wc in website_contents}
 
+        self.by_uuid = {
+            UUID(wc.text_id): wc for wc in website_contents if is_valid_uuid(wc.text_id)
+        }
+
     def __str__(self):
         return self.website_contents.__str__()
 
@@ -54,6 +70,10 @@ class ContentLookup:
     def standardize_filename(filename):
         """Get filename in our database format (see migration 0023)"""
         return filename[0:CONTENT_FILENAME_MAX_LEN].replace(".", "-")
+
+    def find_by_uuid(self, uuid: UUID) -> WebsiteContent:
+        """Retrieve a content object by its UUID"""
+        return self.by_uuid[uuid]
 
     def find(self, root_relative_path: str):
         root_relative_path = root_relative_path.strip("/")

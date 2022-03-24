@@ -13,11 +13,35 @@ from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
     LegacyFileLookup,
     UrlSiteRelativiser,
+    get_rootrelative_url_from_content,
 )
 
 
 def string_uuid():
     return str(uuid4()).replace("-", "")
+
+
+def test_get_rootrelative_url_from_content():
+    c1 = WebsiteContentFactory.build(
+        website=WebsiteFactory.build(name="site-name-1"),
+        dirpath="content/pages/path/to",
+        filename="file1",
+    )
+    c2 = WebsiteContentFactory.build(
+        website=WebsiteFactory.build(name="site-name-2"),
+        dirpath="content/pages/assignments",
+        filename="_index",
+    )
+    c3 = WebsiteContentFactory.build(
+        website=WebsiteFactory.build(name="site-THREE"),
+        dirpath="content/resources/long/path/to",
+        filename="file3",
+    )
+    urls = [get_rootrelative_url_from_content(c) for c in [c1, c2, c3]]
+
+    assert urls[0] == "/courses/site-name-1/pages/path/to/file1"
+    assert urls[1] == "/courses/site-name-2/pages/assignments"
+    assert urls[2] == "/courses/site-THREE/resources/long/path/to/file3"
 
 
 def test_content_finder_is_site_specific():

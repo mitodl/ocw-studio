@@ -11,15 +11,13 @@ class ShortcodeLoggingRule(PyparsingRule):
 
     alias = "shortcode_logging"
 
+    Parser = ShortcodeParser
+
     @dataclass
     class ReplacementNotes:
         name: str
         num_args: int
         args: "list[str]"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.parser = ShortcodeParser()
 
     def replace_match(self, s: str, l: int, toks, website_content):
         shortcode = toks.shortcode

@@ -179,7 +179,7 @@ class RootRelativeUrlRule(RegexpCleanupRule):
             uuid = linked_content.text_id
 
             if is_image:
-                replacement = f'{{{{< resource {uuid} "{title}" >}}}}'
+                replacement = f"{{{{< resource {uuid} >}}}}"
             elif fragment:
                 replacement = (
                     f'{{{{% resource_link {uuid} "{title}" "#{fragment}" %}}}}'
