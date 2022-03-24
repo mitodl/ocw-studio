@@ -17,7 +17,7 @@ CONTENT_DIRPATH_MAX_LEN = filepath_migration.CONTENT_DIRPATH_MAX_LEN
 
 def is_valid_uuid(text: str):
     """
-    Return True if text is valid uuid, esle False
+    Return True if text is valid uuid, else False
     """
     try:
         UUID(text)
