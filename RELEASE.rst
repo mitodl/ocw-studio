@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.54.3
+Version 0.54.3 (Released March 24, 2022)
 --------------
 
 - changed italic delimiter to "*" (#1147)
