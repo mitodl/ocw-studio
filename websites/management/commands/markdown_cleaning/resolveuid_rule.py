@@ -87,9 +87,5 @@ class ResolveUIDRule(PyparsingRule):
             return new_link.to_markdown(), notes
 
     def should_parse(self, text: str):
-        """Should the text be parsed?
-
-        If the text does not contain '](', then it definitely does not have
-        markdown links.
-        """
+        """Should the text be parsed?"""
         return "resolveuid" in text

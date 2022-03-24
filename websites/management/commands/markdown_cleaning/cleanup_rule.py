@@ -119,6 +119,12 @@ class PyparsingRule(MarkdownCleanupRule):
         This is useful because PyParsing is not the fastest thing ever created.
         So if, for example, you only care about {{< resource >}} shortcodes,
         then there's no need to parse the text if it does not contain '{{< resource'.
+
+        NOTE: If the text is parsed, all parse matches will be included in the
+        generated CSV. Continuing with the {{< resource > }} shortcode example,
+        if the text contains '{{< resource ', then ALL shortcodes within that
+        will be parsed whether they are resource shortcodes or some other
+        shortcode.
         """
         return True
 
