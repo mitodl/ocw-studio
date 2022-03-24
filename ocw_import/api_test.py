@@ -1,9 +1,12 @@
 """ Tests for ocw_import.api """
 import json
 import re
+from unittest.mock import patch, Mock
+from copy import deepcopy 
 
 import pytest
 from moto import mock_s3
+from django.forms.models import model_to_dict
 
 from ocw_import.api import (
     get_learning_resource_types,
@@ -11,6 +14,7 @@ from ocw_import.api import (
     import_ocw2hugo_course,
     import_ocw2hugo_sitemetadata,
     update_ocw2hugo_course,
+    update_content_from_s3_data
 )
 from ocw_import.conftest import (
     MOCK_BUCKET_NAME,
@@ -545,3 +549,87 @@ def test_update_ocw2hugo_course_content(
             ).count()
             == (1 if create_new_content else 0)
         )
+
+class TestUpdateContentFromS3Data:
+    """
+    Test that updating a single content object with s3 data only updates the
+    specified fields.
+    """
+
+    def do_update(self, update_field: str):
+        text_id = 'some_file'
+        website = WebsiteFactory.build()
+        content = WebsiteContentFactory.build(
+            text_id=text_id,
+            markdown='original markdown',
+            metadata={"title": 'original title'},
+            website=website
+        )
+        content.save = Mock()
+        # prepare the parent, but do not set content.parent_id.
+        # that's one of the things we'll test
+        parent = WebsiteContentFactory.build()
+
+        s3_content_data = {
+            "markdown": "s3 markdown",
+            "metadata": {
+                "title": "s3 title",
+                "author": "s3 author",
+                "parent_title": "s3 parent title"
+            },
+            "parent": parent
+        }
+        self.content = content
+        self.parent = parent
+        self.original_content_values = deepcopy(model_to_dict(content))
+
+        with patch("websites.models.WebsiteContent.objects") as mock:
+            mock.filter.return_value.first.return_value = content
+            update_content_from_s3_data(website, text_id, s3_content_data, update_field)
+        
+    def test_update_non_metadata_field(self):
+        """
+        Only content.markdown should change.
+        """
+        self.do_update('markdown')
+        assert self.content.save.call_count == 1
+        assert self.content.markdown == 's3 markdown'
+        assert self.content.metadata == {
+            "title": "original title"
+        }
+        assert self.content.parent_id is None
+    
+    def test_update_metadata_title(self):
+        """
+        Only metadata.title should change, and no new metadata keys.
+        """
+        self.do_update('metadata.title')
+        assert self.content.save.call_count == 1
+        assert self.content.markdown == 'original markdown'
+        assert self.content.metadata == {
+            "title": "s3 title"
+        }
+        assert self.content.parent_id is None
+
+    def test_update_metadata_author(self):
+        """
+        metadata.author should be added, no other changes.
+        """
+        self.do_update('metadata.author')
+        assert self.content.save.call_count == 1
+        assert self.content.markdown == 'original markdown'
+        assert self.content.metadata == {
+            "title": "original title",
+            "author": "s3 author"
+        }
+        assert self.content.parent_id is None
+    
+    def test_update_metadata_parent_title(self):
+        self.do_update('metadata.parent_title')
+        assert self.content.save.call_count == 1
+        assert self.content.markdown == 'original markdown'
+        assert self.content.metadata == {
+            "title": "original title",
+            "parent_title": "s3 parent title"
+        }
+        assert self.content.parent_id == self.parent.id

@@ -120,7 +120,7 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
 
 def update_ocw2hugo_content(
     bucket, prefix, website, update_field, create_new_content=False
-):  # pylint:disable=too-many-locals
+):
     """
     update the update_field of all content files for an ocw course from hugo2ocw output
 
@@ -169,6 +169,12 @@ def update_content_from_s3_data(website, text_id, content_data, update_field):
     Returns:
         The WebsiteContent object if it existed, None otherwise.
     """
+    log.info('content:')
+    log.info(content_data)
+    log.info('update_field')
+    log.info(update_field)
+
+
     is_metadata_field = False
 
     if update_field and update_field.startswith("metadata."):
