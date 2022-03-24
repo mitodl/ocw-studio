@@ -30,7 +30,7 @@ describe("table shortcodes", () => {
     const editor = await getEditor("")
     markdownTest(
       editor,
-      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\n\nmy _row_\n\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
+      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\n\nmy *row*\n\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
       `<table>
         <tbody>
           <tr>
@@ -45,7 +45,7 @@ describe("table shortcodes", () => {
     const editor = await getEditor("")
     markdownTest(
       editor,
-      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\n\n- foo\n- _bar_\n\n{{< tdclose >}}{{< tdopen >}}\n\n# Heading\n\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
+      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\n\n- foo\n- *bar*\n\n{{< tdclose >}}{{< tdopen >}}\n\n# Heading\n\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
       `<table>
         <tbody>
           <tr>

@@ -4,7 +4,7 @@ Amazing stuff! Paragraphs!
 
 And another paragraph!
 
-**bold** and even _ita**lic and bold** text_
+**bold** and even *ita**lic and bold** text*
 
 - a
 - list
@@ -12,6 +12,7 @@ And another paragraph!
 - items
 - including
 - [links](https://reactjs.org/docs/hooks-faq.html#how-can-i-measure-a-dom-node)
+- Testing MathJax formulas with emphasis *dftT=μtT μtT*.
 
 also have some
 
@@ -30,6 +31,7 @@ export const TEST_HTML = `<h2 id="a-heading">A heading</h2>
 <li>items</li>
 <li>including</li>
 <li><a href="https://reactjs.org/docs/hooks-faq.html#how-can-i-measure-a-dom-node">links</a></li>
+<li>Testing MathJax formulas with emphasis  <em>dftT=μtT μtT</em>.</li>
 </ul>
 <p>also have some</p>
 <blockquote><p>block quotes</p></blockquote>
