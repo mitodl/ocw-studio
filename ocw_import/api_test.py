@@ -1,11 +1,9 @@
 """ Tests for ocw_import.api """
 import json
 import re
-from copy import deepcopy
 from unittest.mock import Mock, patch
 
 import pytest
-from django.forms.models import model_to_dict
 from moto import mock_s3
 
 from ocw_import.api import (
@@ -557,11 +555,9 @@ class TestUpdateContentFromS3Data:
     specified fields.
     """
 
-    def do_update(self, update_field: str):
-        text_id = "some_file"
+    def __init__(self):
         website = WebsiteFactory.build()
         content = WebsiteContentFactory.build(
-            text_id=text_id,
             markdown="original markdown",
             metadata={"title": "original title"},
             website=website,
@@ -571,7 +567,7 @@ class TestUpdateContentFromS3Data:
         # that's one of the things we'll test
         parent = WebsiteContentFactory.build()
 
-        s3_content_data = {
+        self.s3_content_data = {
             "markdown": "s3 markdown",
             "metadata": {
                 "title": "s3 title",
@@ -582,11 +578,16 @@ class TestUpdateContentFromS3Data:
         }
         self.content = content
         self.parent = parent
-        self.original_content_values = deepcopy(model_to_dict(content))
 
+    def do_update(self, update_field: str):
+        """Run update_content_from_s3_data with test data"""
         with patch("websites.models.WebsiteContent.objects") as mock:
-            mock.filter.return_value.first.return_value = content
-            update_content_from_s3_data(website, text_id, s3_content_data, update_field)
+            mock.filter.return_value.first.return_value = self.content
+            website = self.content.website
+            text_id = self.content.text_id
+            update_content_from_s3_data(
+                website, text_id, self.s3_content_data, update_field
+            )
 
     def test_update_non_metadata_field(self):
         """
@@ -622,6 +623,9 @@ class TestUpdateContentFromS3Data:
         assert self.content.parent_id is None
 
     def test_update_metadata_parent_title(self):
+        """
+        Test that updating metadata.parent_title also updates parent_id FK.
+        """
         self.do_update("metadata.parent_title")
         assert self.content.save.call_count == 1
         assert self.content.markdown == "original markdown"
