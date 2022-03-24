@@ -169,12 +169,6 @@ def update_content_from_s3_data(website, text_id, content_data, update_field):
     Returns:
         The WebsiteContent object if it existed, None otherwise.
     """
-    log.info('content:')
-    log.info(content_data)
-    log.info('update_field')
-    log.info(update_field)
-
-
     is_metadata_field = False
 
     if update_field and update_field.startswith("metadata."):
