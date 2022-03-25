@@ -7,6 +7,9 @@ This happens particularly with links containing baseurl:
     3 link is escaped \[link text\]({{ < baseurl > }}/path/to/thing) because
         showdown does not recognize the markdown, since the "link" contains
         spaces in its destination, which CommonMark does not allow.
+
+So, this removes the unescape for links whose destination starts with a
+shortcode (which is most of them).
 """
 import re
 
