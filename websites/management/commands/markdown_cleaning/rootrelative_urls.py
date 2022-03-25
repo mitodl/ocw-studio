@@ -6,23 +6,19 @@ from dataclasses import dataclass
 from urllib.parse import urlparse
 from uuid import UUID
 
-from websites.management.commands.markdown_cleaning.cleanup_rule import (
-    PyparsingRule,
+from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
+from websites.management.commands.markdown_cleaning.link_parser import (
+    LinkParser,
+    LinkParseResult,
+    MarkdownLink,
 )
+from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
 from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
     LegacyFileLookup,
     UrlSiteRelativiser,
     get_rootrelative_url_from_content,
     remove_prefix,
-)
-from websites.management.commands.markdown_cleaning.link_parser import (
-    LinkParser,
-    MarkdownLink,
-    LinkParseResult
-)
-from websites.management.commands.markdown_cleaning.parsing_utils import (
-    ShortcodeTag
 )
 from websites.models import WebsiteContent
 
@@ -64,7 +60,8 @@ class RootRelativeUrlRule(PyparsingRule):
 
     Parser = LinkParser
 
-    should_parse_regex = re.compile(r'\]\(\.?/(course|resource)')
+    should_parse_regex = re.compile(r"\]\(\.?/?(course|resource)")
+
     def should_parse(self, text: str):
         return self.should_parse_regex.search(text)
 
@@ -103,13 +100,12 @@ class RootRelativeUrlRule(PyparsingRule):
         except KeyError:
             pass
 
-        if any(p == site_rel_path for p in ['/pages/index.htm', '/index.htm']):
+        if any(p == site_rel_path for p in ["/pages/index.htm", "/index.htm"]):
             try:
-                wc = self.content_lookup.find_within_site(site.uuid, '/')
+                wc = self.content_lookup.find_within_site(site.uuid, "/")
                 return wc, "links to course root"
             except KeyError:
                 pass
-
 
         try:
             prepend = "/pages"
@@ -167,13 +163,18 @@ class RootRelativeUrlRule(PyparsingRule):
                 ) from error
             raise self.NotFoundError("Content not found.") from error
 
-    def replace_match(self, s, l, toks: LinkParseResult, website_content: WebsiteContent) -> str:
+    def replace_match(
+        self, s, l, toks: LinkParseResult, website_content: WebsiteContent
+    ) -> str:
         Notes = self.ReplacementNotes
         original_text = toks.original_text
         link = toks.link
         url = urlparse(link.destination)
         is_image = link.is_image
         text = link.text
+
+        if not re.match(R".?/?(course|resource)", url.path):
+            return original_text, Notes("Not rootrelative link", None, None)
 
         try:
             linked_content, note = self.fuzzy_find_linked_content(url.path)
@@ -190,7 +191,9 @@ class RootRelativeUrlRule(PyparsingRule):
                 if is_image:
                     shortcode = ShortcodeTag.resource(uuid=linked_content.text_id)
                 else:
-                    shortcode = ShortcodeTag.resource_link(uuid=linked_content.text_id, text=text, fragment=fragment)
+                    shortcode = ShortcodeTag.resource_link(
+                        uuid=linked_content.text_id, text=text, fragment=fragment
+                    )
                 return shortcode.to_hugo(), notes
             except ValueError:
                 # This happens with within-site links to the homepage.
@@ -199,7 +202,9 @@ class RootRelativeUrlRule(PyparsingRule):
                 # case, but there are only 3 of these, so let's not worry about
                 # it. Plus, keeping resource_links as true UUIDs will be nice
                 # if we implement cross-site resource_links down the road.
-                return original_text, Notes(f'bad uuid: {linked_content.text_id}', is_image, same_site)
+                return original_text, Notes(
+                    f"bad uuid: {linked_content.text_id}", is_image, same_site
+                )
 
         if is_image:
             # Cross-site images would be problematic because
@@ -212,8 +217,7 @@ class RootRelativeUrlRule(PyparsingRule):
 
         destination = get_rootrelative_url_from_content(linked_content)
         if fragment:
-            destination = destination + '#' + fragment
-
+            destination = destination + "#" + fragment
 
         new_link = MarkdownLink(
             text=text,

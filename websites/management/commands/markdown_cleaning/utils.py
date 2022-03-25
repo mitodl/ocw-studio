@@ -172,14 +172,16 @@ class LegacyFileLookup:
             dirpath="content/resources",
         )
 
-    NOTE: 
+    NOTE:
     """
 
     class MultipleMatchError(Exception):
         pass
 
     def __init__(self):
-        website_contents = WebsiteContent.all_objects.all().prefetch_related("website", "parent")
+        website_contents = WebsiteContent.all_objects.all().prefetch_related(
+            "website", "parent"
+        )
         contents_by_file = defaultdict(list)
         for wc in website_contents:
             if wc.file:
@@ -225,7 +227,7 @@ class LegacyFileLookup:
             - website_id: uuid of site in which content should exist
             - legacy_site_rel_path: legacy site relative path, i.e., the portion
                 of the legacy url after the site name.
-        
+
         The match between legacy_site_rel_path and content objects is
         performed primarily based on the `file` property. We use `file` NOT
         dirpath + filename because
@@ -245,12 +247,12 @@ class LegacyFileLookup:
         The corresponding `legacy_site_rel_path`s are:
             /lecture-notes/cdffit.m
             /assignments/cdffit.m
-        
+
         The corresponding OCW-Next content objects have:
-            file                    filename        dirpath           
-            .../uuid1_cdffit.m      cdffit-1        content/resources  
+            file                    filename        dirpath
+            .../uuid1_cdffit.m      cdffit-1        content/resources
             .../uuid2_cdffit.m      cdffit          content/resources
-        
+
         Looking only at these two content objects, we can't decide which one
         goes with `/assignments/cdffit.m` vs `/lecture-notes/cdffit.m`.(The
         beginning portion of `file` contains no useful information.)
@@ -259,8 +261,8 @@ class LegacyFileLookup:
         to look at the parent objects, too:
 
         The corresponding OCW-Next content objects have:
-            file                    filename        dirpath             parent_filename  parent_dirpath 
-            .../uuid1_cdffit.m      cdffit-1        content/resources   assignments      content/pages  
+            file                    filename        dirpath             parent_filename  parent_dirpath
+            .../uuid1_cdffit.m      cdffit-1        content/resources   assignments      content/pages
             .../uuid2_cdffit.m      cdffit          content/resources   lecture-notes    content/pages
         """
         url_dirpath, legacy_filename = os.path.split(legacy_site_rel_path)
@@ -268,11 +270,11 @@ class LegacyFileLookup:
         matches = self.contents_by_file[key]
         if len(matches) == 1:
             return matches[0]
-        
+
         def parent_matches_url(wc):
             if wc.parent is None:
                 return False
-            return url_dirpath in wc.parent.dirpath + '/' + wc.parent.filename
+            return url_dirpath in wc.parent.dirpath + "/" + wc.parent.filename
 
         refined = [m for m in matches if parent_matches_url(m)]
         if len(refined) == 1:

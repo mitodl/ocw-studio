@@ -50,6 +50,7 @@ class MarkdownLink:
         title_suffix = " " + json.dumps(self.title) if self.title else ""
         return f"{prefix}[{self.text}]({self.destination}{title_suffix})"
 
+
 class LinkParseResult(Protocol):
 
     link: MarkdownLink
