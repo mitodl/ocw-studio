@@ -43,7 +43,7 @@ class ValidateUrls(RegexpCleanupRule):
         link_type: str
         url_path: str
         links_to_course: str = ""
-        broken_best_guess: str = 'Yes'
+        broken_best_guess: str = "Yes"
 
     def __init__(self) -> None:
         super().__init__()
@@ -53,8 +53,8 @@ class ValidateUrls(RegexpCleanupRule):
         url = urlparse(match.group("url"))
         original_text = match[0]
         notes = partial(self.ReplacementNotes, url_path=url.path)
-        note_works = partial(notes, broken_best_guess='No')
-        note_broken = partial(notes, broken_best_guess='Yes')
+        note_works = partial(notes, broken_best_guess="No")
+        note_broken = partial(notes, broken_best_guess="Yes")
 
         if url.scheme.startswith("http"):
             return original_text, note_works(link_type="external link")
@@ -68,49 +68,58 @@ class ValidateUrls(RegexpCleanupRule):
             try:
                 linked_content = self.content_lookup.find(url.path)
                 return original_text, note_works(
-                    link_type="course content", links_to_course=linked_content.website.name
+                    link_type="course content",
+                    links_to_course=linked_content.website.name,
                 )
             except KeyError:
                 pass
-            
-            if url.path.endswith('_index.html'):
+
+            if url.path.endswith("_index.html"):
                 return original_text, note_broken("Fix underway: _index.html")
 
-        if url.path.lstrip('/').startswith('course') and '.' in url.path[-8:]:
+        if url.path.lstrip("/").startswith("course") and "." in url.path[-8:]:
             return original_text, note_broken("Fix underway: File issue")
-        if url.path.lstrip('/').startswith('resource') and '.' in url.path[-8:]:
+        if url.path.lstrip("/").startswith("resource") and "." in url.path[-8:]:
             return original_text, note_broken("Fix underway: File issue")
 
-        if url.path == '':
-            return original_text, note_works('within-page link')
+        if url.path == "":
+            return original_text, note_works("within-page link")
 
-        if 'resolveuid' in url.path:
+        if "resolveuid" in url.path:
             return original_text, note_broken("resolveuid link")
-        if 'images/inacessible' in url.path:
+        if "images/inacessible" in url.path:
             return original_text, note_broken("image/inaccessible")
-        if 'icon-question' in url.path:
+        if "icon-question" in url.path:
             return original_text, note_broken("icon-question")
-        if 'images/trans.gif' in url.path:
+        if "images/trans.gif" in url.path:
             return original_text, note_broken("images/trans.gif")
-        if 'mp_logo' in url.path:
+        if "mp_logo" in url.path:
             return original_text, note_broken("mit_press_logo")
-        if 'faq-technical-requirements' in url.path:
-            return original_text, note_broken('faq-technical-requirements (https://ocw.mit.edu/help/faq-technical-requirements/)')
-        if 'fair-use' in url.path or 'fairuse' in url.path:
-            return original_text, note_broken("fairuse (https://ocw.mit.edu/help/faq-fair-use/)")
-        if url.path.rstrip('/').endswith('/terms'):
+        if "faq-technical-requirements" in url.path:
+            return original_text, note_broken(
+                "faq-technical-requirements (https://ocw.mit.edu/help/faq-technical-requirements/)"
+            )
+        if "fair-use" in url.path or "fairuse" in url.path:
+            return original_text, note_broken(
+                "fairuse (https://ocw.mit.edu/help/faq-fair-use/)"
+            )
+        if url.path.rstrip("/").endswith("/terms"):
             return original_text, note_broken("terms (https://ocw.mit.edu/terms/)")
-        if 'images/educator/edu_' in url.path:
-            return original_text, note_broken('image/educate/edu_ ... used for "Semester Breakdown" on https://ocw.mit.edu/courses/sloan-school-of-management/15-279-management-communication-for-undergraduates-fall-2012/instructor-insights/')
-        if url.path.startswith('/ans7870'):
+        if "images/educator/edu_" in url.path:
+            return original_text, note_broken(
+                'image/educate/edu_ ... used for "Semester Breakdown" on https://ocw.mit.edu/courses/sloan-school-of-management/15-279-management-communication-for-undergraduates-fall-2012/instructor-insights/'
+            )
+        if url.path.startswith("/ans7870"):
             return original_text, note_broken("/ans7870 (TODO: investigate)")
-        if url.path.startswith('/20-219IAP15'):
-            return original_text, note_broken('/20-219IAP15 ... (redirects https://ocw.mit.edu/courses/biological-engineering/20-219-becoming-the-next-bill-nye-writing-and-hosting-the-educational-show-january-iap-2015/) ')
-        if url.path == '/images/a_logo_17.gif':
-            return original_text, note_broken('/images/a_logo_17.gif')
-        if url.path.endswith('button_start.png'):
-            return original_text, note_broken('button_start.png')
-        if 'images/educator/classroom_' in url.path:
-            return original_text, note_broken('images/educator/classroom_')
+        if url.path.startswith("/20-219IAP15"):
+            return original_text, note_broken(
+                "/20-219IAP15 ... (redirects https://ocw.mit.edu/courses/biological-engineering/20-219-becoming-the-next-bill-nye-writing-and-hosting-the-educational-show-january-iap-2015/) "
+            )
+        if url.path == "/images/a_logo_17.gif":
+            return original_text, note_broken("/images/a_logo_17.gif")
+        if url.path.endswith("button_start.png"):
+            return original_text, note_broken("button_start.png")
+        if "images/educator/classroom_" in url.path:
+            return original_text, note_broken("images/educator/classroom_")
 
-        return original_text, note_broken('Unknown')
+        return original_text, note_broken("Unknown")

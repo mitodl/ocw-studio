@@ -156,7 +156,10 @@ class Command(BaseCommand):
         cleaner = WebsiteContentMarkdownCleaner(rule)
 
         all_wc = (
-            WebsiteContent.all_objects.all().exclude(website__publish_date__isnull=True).order_by("id").prefetch_related("website")
+            WebsiteContent.all_objects.all()
+            .exclude(website__publish_date__isnull=True)
+            .order_by("id")
+            .prefetch_related("website")
         )
         page_size = 100
         pages = Paginator(all_wc, page_size)

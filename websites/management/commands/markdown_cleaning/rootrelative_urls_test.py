@@ -10,9 +10,9 @@ from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
+    allow_invalid_shortcode_uuids,
     patch_website_all,
     patch_website_contents_all,
-    allow_invalid_shortcode_uuids
 )
 
 
