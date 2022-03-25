@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.54.4
+--------------
+
+- set parent_id when overwriting metadata.parent_uid (#1115)
+- use pyparsing for link paring + resolveuid fix
+- remove image inacessible (#1158)
+
 Version 0.54.3 (Released March 24, 2022)
 --------------
 
