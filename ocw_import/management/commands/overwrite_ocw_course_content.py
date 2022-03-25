@@ -82,10 +82,12 @@ class Command(BaseCommand):
         if filter_json:
             with open(filter_json) as input_file:
                 filter_list = json.load(input_file)
-        else:
+        elif options["filter"]:
             filter_list = [
                 name.strip() for name in options["filter"].split(",") if name
             ]
+        else:
+            filter_list = None
 
         if not create_new and not content_field:
             self.stderr.write("Either --content-field or --create-new is required")

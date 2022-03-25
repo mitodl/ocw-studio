@@ -120,7 +120,7 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
 
 def update_ocw2hugo_content(
     bucket, prefix, website, update_field, create_new_content=False
-):  # pylint:disable=too-many-locals
+):
     """
     update the update_field of all content files for an ocw course from hugo2ocw output
 
@@ -130,12 +130,6 @@ def update_ocw2hugo_content(
         website (Website): Website to import content for
     """
     site_prefix = f"{prefix}{website.name}"
-
-    is_metadata_field = False
-
-    if update_field and update_field.startswith("metadata."):
-        is_metadata_field = True
-        update_field = update_field.replace("metadata.", "", 1)
 
     for resp in bucket.meta.client.get_paginator("list_objects").paginate(
         Bucket=bucket.name, Prefix=f"{site_prefix}/content"
@@ -149,32 +143,61 @@ def update_ocw2hugo_content(
                 filepath = obj["Key"]
             try:
                 text_id, content_data = get_content_data(filepath, s3_content, website)
-
-                content_file = WebsiteContent.objects.filter(
-                    website=website, text_id=text_id
-                ).first()
-
-                if content_file:
-                    if is_metadata_field:
-                        set_dict_field(
-                            content_file.metadata,
-                            update_field,
-                            get_dict_field(
-                                content_data.get("metadata", {}), update_field
-                            ),
-                        )
-                    elif update_field is not None:
-                        setattr(
-                            content_file,
-                            update_field,
-                            content_data.get(update_field, ""),
-                        )
-                    content_file.save()
-                elif create_new_content is True:
+                content = update_content_from_s3_data(
+                    website=website,
+                    text_id=text_id,
+                    content_data=content_data,
+                    update_field=update_field,
+                )
+                if not content and create_new_content is True:
                     convert_data_to_content(filepath, s3_content, website)
 
             except:  # pylint:disable=bare-except
                 log.exception("Error saving WebsiteContent for %s", s3_key)
+
+
+def update_content_from_s3_data(website, text_id, content_data, update_field):
+    """
+    Update the update_field of a single content file for an ocw course from hugo2ocw output
+
+    Args:
+        website (Website): The content's website
+        text_id (str): Tthe content's text_id
+        content_data (dict): Dictionary of content data from s3 bucket
+        update_field (str): the field to update
+
+    Returns:
+        The WebsiteContent object if it existed, None otherwise.
+    """
+    is_metadata_field = False
+
+    if update_field and update_field.startswith("metadata."):
+        is_metadata_field = True
+        update_field = update_field.replace("metadata.", "", 1)
+
+    content_file = WebsiteContent.objects.filter(
+        website=website, text_id=text_id
+    ).first()
+
+    if not content_file:
+        return None
+
+    if is_metadata_field:
+        set_dict_field(
+            content_file.metadata,
+            update_field,
+            get_dict_field(content_data.get("metadata", {}), update_field),
+        )
+        if update_field == "parent_uid" and content_data["parent"]:
+            content_file.parent_id = content_data["parent"].id
+    elif update_field is not None:
+        setattr(
+            content_file,
+            update_field,
+            content_data.get(update_field, ""),
+        )
+    content_file.save()
+    return content_file
 
 
 def get_learning_resource_types(content_json):
