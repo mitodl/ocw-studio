@@ -44,13 +44,15 @@ class BaseurlReplacementRule(PyparsingRule):
         Notes = self.ReplacementNotes
         original_text = toks.original_text
         link = toks.link
-        dest_match = re.search(r'\{\{< baseurl >\}\}(?P<dest>)', link.destination)
+
+        dest_match = re.search(r'\{\{< baseurl >\}\}(?P<dest>.*)', link.destination)
+        if dest_match is None:
+            return original_text
         url = urlparse(dest_match.group('dest'))
 
         # This is probably a link with image as title, where the image is a < resource >
         if R"{{<" in link.text or link.text_links:
             return original_text, Notes(wraps_image=True)
-
         try:
             linked_content = self.content_lookup.find_within_site(
                 website_content.website_id, url.path

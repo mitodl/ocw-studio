@@ -10,6 +10,7 @@ from websites.management.commands.markdown_cleaning.cleaner import (
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
     patch_website_contents_all,
+    allow_invalid_shortcode_uuids
 )
 from websites.management.commands.markdown_cleaning.utils import (
     CONTENT_FILENAME_MAX_LEN,
@@ -29,27 +30,23 @@ def get_markdown_cleaner(website_contents):
         (
             # standard link on same line as baseurl link
             R"Cats are on [wikipedia](https://en.wikipedia.org/wiki/Cat). I also have a cat [meow]({{< baseurl >}}/resources/path/to/file1).",
-            R'Cats are on [wikipedia](https://en.wikipedia.org/wiki/Cat). I also have a cat {{% resource_link content-uuid-1 "meow" %}}.',
+            R'Cats are on [wikipedia](https://en.wikipedia.org/wiki/Cat). I also have a cat {{% resource_link "content-uuid-1" "meow" %}}.',
         ),
         (
             R'This is a link with quote in title: [Cats say "meow"]({{< baseurl >}}/resources/path/to/file1).',
-            R'This is a link with quote in title: {{% resource_link content-uuid-1 "Cats say \"meow\"" %}}.',
-        ),
-        (  # Ignores backslashes around the title brackets
-            R'This is a link with quote in title: \[Cats say "meow"\]({{< baseurl >}}/resources/path/to/file1).',
-            R'This is a link with quote in title: {{% resource_link content-uuid-1 "Cats say \"meow\"" %}}.',
+            R'This is a link with quote in title: {{% resource_link "content-uuid-1" "Cats say \"meow\"" %}}.',
         ),
         (
             R"This link should change [text title]({{< baseurl >}}/resources/path/to/file1) cool",
-            R'This link should change {{% resource_link content-uuid-1 "text title" %}} cool',
+            R'This link should change {{% resource_link "content-uuid-1" "text title" %}} cool',
         ),
         (
             R"This link includes a fragment [text title]({{< baseurl >}}/resources/path/to/file1#some-fragment) cool",
-            R'This link includes a fragment {{% resource_link content-uuid-1 "text title" "#some-fragment" %}} cool',
+            R'This link includes a fragment {{% resource_link "content-uuid-1" "text title" "#some-fragment" %}} cool',
         ),
         (
             R"This link includes a fragment with slash first [text title]({{< baseurl >}}/resources/path/to/file1/#some-fragment) cool",
-            R'This link includes a fragment with slash first {{% resource_link content-uuid-1 "text title" "#some-fragment" %}} cool',
+            R'This link includes a fragment with slash first {{% resource_link "content-uuid-1" "text title" "#some-fragment" %}} cool',
         ),
         (
             # % resource_link % short code is only for textual titles
@@ -62,16 +59,16 @@ def get_markdown_cleaner(website_contents):
             R"This should not change [{{< resource uuid1 >}}]({{< baseurl >}}/resources/mit18_02sc_l20brds_5)",
         ),
         (
-            # Titles with nested brackets may not be feasible with a regex approach, but they're very rare anyway.
-            "This link should not change: [title has [square] braackets]({{< baseurl >}}/resources/path/to/file1) for now",
-            "This link should not change: [title has [square] braackets]({{< baseurl >}}/resources/path/to/file1) for now",
+            "This link should change: [title has [square] braackets]({{< baseurl >}}/resources/path/to/file1) now",
+            R'This link should change: {{% resource_link "content-uuid-1" "title has [square] braackets" %}} now',
         ),
         (
-            "This link should not change: [title \n has newline]({{< baseurl >}}/resources/path/to/file1) for now",
-            "This link should not change: [title \n has newline]({{< baseurl >}}/resources/path/to/file1) for now",
+            "This link has newline: [title \n has newline]({{< baseurl >}}/resources/path/to/file1) now",
+            R'This link has newline: {{% resource_link "content-uuid-1" "title \n has newline" %}} now',
         ),
     ],
 )
+@allow_invalid_shortcode_uuids()
 def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdown):
     """Test specific replacements"""
     website_uuid = "website-uuid"
@@ -108,6 +105,7 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
         ),
     ],
 )
+@allow_invalid_shortcode_uuids()
 def test_baseurl_replacer_handle_specific_url_replacements(
     url, content_relative_dirpath, filename
 ):
@@ -120,7 +118,7 @@ def test_baseurl_replacer_handle_specific_url_replacements(
     website_uuid = "website-uuid"
     website = WebsiteFactory.build(uuid=website_uuid)
     markdown = f"my [pets]({{{{< baseurl >}}}}{url}) are legion"
-    expected_markdown = 'my {{% resource_link content-uuid "pets" %}} are legion'
+    expected_markdown = 'my {{% resource_link "content-uuid" "pets" %}} are legion'
     target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
 
     linkable = WebsiteContentFactory.build(
@@ -136,12 +134,13 @@ def test_baseurl_replacer_handle_specific_url_replacements(
     assert target_content.markdown == expected_markdown
 
 
+@allow_invalid_shortcode_uuids()
 def test_baseurl_replacer_handles_index_files():
     """Test specific replacements"""
     website_uuid = "website-uuid"
     website = WebsiteFactory.build(uuid=website_uuid)
     markdown = R"my [pets]({{< baseurl >}}/pages/cute/pets) are legion"
-    expected_markdown = R'my {{% resource_link content-uuid "pets" %}} are legion'
+    expected_markdown = R'my {{% resource_link "content-uuid" "pets" %}} are legion'
     target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
 
     linkable = WebsiteContentFactory.build(
@@ -158,6 +157,7 @@ def test_baseurl_replacer_handles_index_files():
     assert target_content.markdown == expected_markdown
 
 
+@allow_invalid_shortcode_uuids()
 def test_baseurl_replacer_replaces_baseurl_links():
     """replace_baseurl_links should replace multiple links with expected values"""
 
@@ -175,16 +175,16 @@ def test_baseurl_replacer_replaces_baseurl_links():
     """
 
     expected = R"""
-    « {{% resource_link uuid-111 "Previous" %}} | {{% resource_link uuid-222 "Next" %}} »
+    « {{% resource_link "uuid-111" "Previous" %}} | {{% resource_link "uuid-222" "Next" %}} »
 
     ### Lecture Videos
 
-    *   Watch {{% resource_link uuid-333 "Lecture 21: Vibration Isolation" %}}
+    *   Watch {{% resource_link "uuid-333" "Lecture 21: Vibration Isolation" %}}
         *   Video Chapters
-            *   {{% resource_link uuid-444 "Demonstration of a vibration isolation system-strobe light and vibrating beam" %}}
+            *   {{% resource_link "uuid-444" "Demonstration of a vibration isolation system-strobe light and vibrating beam" %}}
             * Euler's formula
 
-    Wasn't {{% resource_link uuid-333 "the video" %}} fun? Yes it was!
+    Wasn't {{% resource_link "uuid-333" "the video" %}} fun? Yes it was!
     """
 
     website = WebsiteFactory.build()
@@ -225,6 +225,7 @@ def test_baseurl_replacer_replaces_baseurl_links():
     "website_uuid, should_markdown_change",
     [("website-uuid-111", True), ("website-uuid-222", False)],
 )
+@allow_invalid_shortcode_uuids()
 def test_baseurl_replacer_replaces_content_in_same_course(
     website_uuid, should_markdown_change
 ):
