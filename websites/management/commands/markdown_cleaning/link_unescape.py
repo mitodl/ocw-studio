@@ -30,7 +30,6 @@ class LinkUnescape(RegexpCleanupRule):
 
     def replace_match(self, match: re.Match, _website_content):
         original_text = match[0]
-        # Intentially not converting {{\< to {{< ... that will be fixed by Rule Two
         fixed = (
             original_text.replace("\\[", "[").replace("\\]", "]").replace("\\_", "_")
         )
