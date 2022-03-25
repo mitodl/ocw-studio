@@ -48,19 +48,3 @@ class LegacyShortcodeFixOne(RegexpCleanupRule):
             original_text.replace("\\[", "[").replace("\\]", "]").replace("\\_", "_")
         )
         return fixed
-
-
-class LegacyShortcodeFixTwo(RegexpCleanupRule):
-    """
-    Use this AFTER LegacyShortcodeFixOne, which matches against the data fixed
-    by this rule.
-    """
-
-    regex = r"{{\\< .*?>}}"
-
-    alias = "legacy_shortcode_datafix_2_of_2"
-
-    def replace_match(self, match: re.Match, _website_content):
-        original_text = match[0]
-        fixed = original_text.replace("\\<", "<").replace("\\_", "_")
-        return fixed
