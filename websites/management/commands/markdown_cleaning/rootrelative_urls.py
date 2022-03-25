@@ -1,13 +1,13 @@
 """
 WebsiteContentMarkdownCleaner rule to convert root-relative urls to resource_links
 """
-import os
 import re
 from dataclasses import dataclass
 from urllib.parse import urlparse
+from uuid import UUID
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
-    RegexpCleanupRule,
+    PyparsingRule,
 )
 from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
@@ -16,10 +16,18 @@ from websites.management.commands.markdown_cleaning.utils import (
     get_rootrelative_url_from_content,
     remove_prefix,
 )
+from websites.management.commands.markdown_cleaning.link_parser import (
+    LinkParser,
+    MarkdownLink,
+    LinkParseResult
+)
+from websites.management.commands.markdown_cleaning.parsing_utils import (
+    ShortcodeTag
+)
 from websites.models import WebsiteContent
 
 
-class RootRelativeUrlRule(RegexpCleanupRule):
+class RootRelativeUrlRule(PyparsingRule):
     """
     Fix rootrelative urls, converting to shortcodes where possible.
 
@@ -54,16 +62,11 @@ class RootRelativeUrlRule(RegexpCleanupRule):
         is_image: bool
         same_site: bool
 
-    regex = (
-        r"(?P<image_prefix>!?)"  # optional leading "!" to determine if it's a link or an image
-        + r"\\?\["  # match title opening "[" (or "\[" in case corrupted by studio save)
-        + r"(?P<title>[^\[\]\<\>\n]*?)"  # capture the title
-        + r"\\?\]"  # title closing "]" (or "\]")
-        + r"\("  # url open
-        + r"/?"  # optional, non-captured leading "/"
-        + r"(?P<url>(course|resource).*?)"  # capture the url, but only if it's course/ or resoruce/... we don't want links to wikipedia.
-        + r"\)"  # url close
-    )
+    Parser = LinkParser
+
+    should_parse_regex = re.compile(r'\]\(\.?/(course|resource)')
+    def should_parse(self, text: str):
+        return self.should_parse_regex.search(text)
 
     alias = "rootrelative_urls"
 
@@ -164,45 +167,58 @@ class RootRelativeUrlRule(RegexpCleanupRule):
                 ) from error
             raise self.NotFoundError("Content not found.") from error
 
-    def replace_match(self, match: re.Match, website_content: WebsiteContent) -> str:
+    def replace_match(self, s, l, toks: LinkParseResult, website_content: WebsiteContent) -> str:
         Notes = self.ReplacementNotes
-        original_text = match[0]
-        url = match.group("url")
-        image_prefix = match.group("image_prefix")
-        is_image = image_prefix == "!"
-        title = match.group("title")
+        original_text = toks.original_text
+        link = toks.link
+        url = urlparse(link.destination)
+        is_image = link.is_image
+        text = link.text
 
         try:
-            linked_content, note = self.fuzzy_find_linked_content(url)
+            linked_content, note = self.fuzzy_find_linked_content(url.path)
         except self.NotFoundError as error:
             note = str(error)
-            return original_text, Notes(note, is_image, same_site=False)
+            return original_text, Notes(note, is_image, same_site=None)
 
         same_site = linked_content.website_id == website_content.website_id
-        fragment = urlparse(url).fragment
+        fragment = url.fragment
 
         notes = Notes(note, is_image, same_site)
         if same_site:
-            uuid = linked_content.text_id
-
-            if is_image:
-                replacement = f"{{{{< resource {uuid} >}}}}"
-            elif fragment:
-                replacement = (
-                    f'{{{{% resource_link {uuid} "{title}" "#{fragment}" %}}}}'
-                )
-            else:
-                replacement = f'{{{{% resource_link {uuid} "{title}" %}}}}'
-            return replacement, notes
+            try:
+                if is_image:
+                    shortcode = ShortcodeTag.resource(uuid=linked_content.text_id)
+                else:
+                    shortcode = ShortcodeTag.resource_link(uuid=linked_content.text_id, text=text, fragment=fragment)
+                return shortcode.to_hugo(), notes
+            except ValueError:
+                # This happens with within-site links to the homepage.
+                # The text_id of the resource is "sitemetadata", which is not
+                # a uuid. The resource link shortcode probably works in this
+                # case, but there are only 3 of these, so let's not worry about
+                # it. Plus, keeping resource_links as true UUIDs will be nice
+                # if we implement cross-site resource_links down the road.
+                return original_text, Notes(f'bad uuid: {linked_content.text_id}', is_image, same_site)
 
         if is_image:
+            # Cross-site images would be problematic because
+            # - we want to link to the actual image, not the "container" page
+            # - which we probably could do, but don't have code to handle at the moment.
+            #
+            # In practice, there appear to be no cross-site images, so let's not
+            # worry about this for now.
             return original_text, notes
 
-        new_url = get_rootrelative_url_from_content(linked_content)
-
+        destination = get_rootrelative_url_from_content(linked_content)
         if fragment:
-            new_url += f"#{fragment}"
+            destination = destination + '#' + fragment
 
-        replacement = f"{image_prefix}[{title}]({new_url})"
 
-        return replacement, notes
+        new_link = MarkdownLink(
+            text=text,
+            destination=destination,
+            is_image=is_image,
+        )
+
+        return new_link.to_markdown(), notes

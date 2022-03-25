@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass, field
+from typing import Protocol
 
 from pyparsing import (
     CharsNotIn,
@@ -48,6 +49,11 @@ class MarkdownLink:
         prefix = "!" if self.is_image else ""
         title_suffix = " " + json.dumps(self.title) if self.title else ""
         return f"{prefix}[{self.text}]({self.destination}{title_suffix})"
+
+class LinkParseResult(Protocol):
+
+    link: MarkdownLink
+    original_text: str
 
 
 class LinkParser(WrappedParser):

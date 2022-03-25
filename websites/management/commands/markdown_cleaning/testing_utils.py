@@ -1,6 +1,8 @@
 from contextlib import contextmanager
 from unittest.mock import patch
-
+from websites.management.commands.markdown_cleaning.parsing_utils import (
+    ShortcodeTag
+)
 
 @contextmanager
 def patch_website_contents_all(website_contents):
@@ -14,3 +16,8 @@ def patch_website_all(websites):
     with patch("websites.models.Website.objects.all") as mock:
         mock.return_value = websites
         yield mock
+
+@contextmanager
+def allow_invalid_shortcode_uuids():
+    with patch.object(ShortcodeTag, 'validate_uuid'):
+        yield
