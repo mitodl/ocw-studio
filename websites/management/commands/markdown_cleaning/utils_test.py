@@ -191,14 +191,14 @@ def test_url_site_relativiser_raises_value_errors():
 
 
 @pytest.mark.parametrize(
-    ["site_uuid", "filename", "expected_index"],
+    ["site_uuid", "legacy_site_relative_url", "expected_index"],
     [
-        ("site-uuid-one", "someFileName.jpg", 0),
-        ("site-uuid-one", "somefilename.jpg", 1),
-        ("site-uuid-two", "someFileName.jpg", 2),
+        ("site-uuid-one", "/site/pages/someFileName.jpg", 0),
+        ("site-uuid-one", "/site/pages/things/somefilename.jpg", 1),
+        ("site-uuid-two", "/site/woofs/someFileName.jpg", 2),
     ],
 )
-def test_legacy_file_lookup(site_uuid, filename, expected_index):
+def test_legacy_file_lookup(site_uuid, legacy_site_relative_url, expected_index):
     c1a = WebsiteContentFactory.build(
         website_id="site-uuid-one",
         file=f"/courses/site_one/{string_uuid()}_someFileName.jpg",
@@ -218,7 +218,7 @@ def test_legacy_file_lookup(site_uuid, filename, expected_index):
     expected = contents[expected_index]
     with patch_website_contents_all(contents):
         legacy_file_lookup = LegacyFileLookup()
-        assert legacy_file_lookup.find(site_uuid, filename) == expected
+        assert legacy_file_lookup.find(site_uuid, legacy_site_relative_url) == expected
 
 
 def test_legacy_file_lookup_nonunique_filenames():
