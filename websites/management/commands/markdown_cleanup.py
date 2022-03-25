@@ -19,8 +19,8 @@ from websites.management.commands.markdown_cleaning.cleaner import (
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
-from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix import (
-    LegacyShortcodeFixOne,
+from websites.management.commands.markdown_cleaning.link_unescape import (
+    LinkUnescape,
 )
 from websites.management.commands.markdown_cleaning.link_logging_rule import (
     LinkLoggingRule,
@@ -58,7 +58,7 @@ class Command(BaseCommand):
 
     Rules: "list[Type[MarkdownCleanupRule]]" = [
         BaseurlReplacementRule,
-        LegacyShortcodeFixOne,
+        LinkUnescape,
         RootRelativeUrlRule,
         MetadataRelativeUrlsFix,
         ValidateUrls,

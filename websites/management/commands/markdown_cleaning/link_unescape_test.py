@@ -5,8 +5,8 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner as Cleaner,
 )
-from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix import (
-    LegacyShortcodeFixOne,
+from websites.management.commands.markdown_cleaning.link_unescape import (
+    LinkUnescape,
 )
 
 
@@ -30,6 +30,6 @@ def test_legacy_shortcode_fix_one(markdown, expected_markdown):
     website = WebsiteFactory.build()
     target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
 
-    cleaner = Cleaner(LegacyShortcodeFixOne())
+    cleaner = Cleaner(LinkUnescape())
     cleaner.update_website_content(target_content)
     assert target_content.markdown == expected_markdown
