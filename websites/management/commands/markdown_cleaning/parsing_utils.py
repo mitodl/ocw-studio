@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 from uuid import UUID
+from typing import Union
 
 from pyparsing import ParserElement, ParseResults, originalTextFor
 
@@ -190,10 +191,9 @@ class ShortcodeTag:
         return json.dumps(s)
 
     @classmethod
-    def resource_link(cls, uuid: UUID, text: str, fragment=""):
+    def resource_link(cls, uuid: Union[str, UUID], text: str, fragment=""):
         """Convenience method to create valid resource_link ShortcodeTag objects."""
-        if not isinstance(uuid, UUID):
-            raise ValueError("resource_link first argument must be valid uuid.")
+        cls.validate_uuid(uuid)
         args = [str(uuid), text]
         if fragment:
             args.append("#" + fragment)
@@ -205,8 +205,12 @@ class ShortcodeTag:
         )
 
     @classmethod
-    def resource(cls, uuid: UUID):
+    def resource(cls, uuid: Union[str, UUID]):
         """Convenience method to create valid resource_link ShortcodeTag objects."""
-        if not isinstance(uuid, UUID):
-            raise ValueError("resource first argument must be valid uuid.")
+        cls.validate_uuid(uuid)
         return cls(name="resource", percent_delimiters=False, args=[str(uuid)])
+
+    @staticmethod
+    def validate_uuid(uuid: Union[str, UUID]) -> None:
+        if not isinstance(uuid, UUID):
+            UUID(uuid)
