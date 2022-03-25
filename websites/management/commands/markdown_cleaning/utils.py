@@ -172,22 +172,7 @@ class LegacyFileLookup:
             dirpath="content/resources",
         )
 
-    NOTE: The match is based solely on Website and the filename at end of
-    WebsiteContent.file. (The value "95e03c4c924a62a8e3876d49f51889c0_MIT21H_104JF10_syllf09.pdf"
-    above).
-    Advantages:
-        - case sensitive
-        - includes file extension
-    Disadvantages:
-        - sometimes there's not a unique match (see below).
-
-    For example, in res-21g-01-kana-spring-2010, there are three files:
-        /courses/res-21g-01-kana-spring-2010/UUID1_yokudeki.gif
-        /courses/res-21g-01-kana-spring-2010/UUID2_yokudeki.gif
-        /courses/res-21g-01-kana-spring-2010/UUID3_yokudeki.gif
-    with different parent content.
-
-    When multiple matches are found, LegacyFileLookup.find will error.
+    NOTE: 
     """
 
     class MultipleMatchError(Exception):
@@ -231,8 +216,54 @@ class LegacyFileLookup:
         except ValueError:
             return None
 
-    def find(self, website_id: str, site_rel_path: str):
-        url_dirpath, legacy_filename = os.path.split(site_rel_path)
+    def find(self, website_id: str, legacy_site_rel_path: str):
+        """
+        Find content by legacy site-relative URL plus site id.
+
+        Args:
+        ====
+            - website_id: uuid of site in which content should exist
+            - legacy_site_rel_path: legacy site relative path, i.e., the portion
+                of the legacy url after the site name.
+        
+        The match between legacy_site_rel_path and content objects is
+        performed primarily based on the `file` property. We use `file` NOT
+        dirpath + filename because
+            - filename has generally be lowercased, and the legacy URLs are
+                case-sensitive.
+            - filename does not include the file extension, which is often
+                necessary to uniquely identify a match.
+
+        Duplicate filenames
+        ===================
+        One complication is duplicate legacy filenames. Consider the following
+        legacy URLs:
+
+            /courses/civil-and-environmental-engineering/1-017-computing-and-data-analysis-for-environmental-applications-fall-2003/lecture-notes/cdffit.m
+            /courses/civil-and-environmental-engineering/1-017-computing-and-data-analysis-for-environmental-applications-fall-2003/assignments/cdffit.m
+
+        The corresponding `legacy_site_rel_path`s are:
+            /lecture-notes/cdffit.m
+            /assignments/cdffit.m
+        
+        The corresponding OCW-Next content objects have:
+            file                    filename        dirpath           
+            .../uuid1_cdffit.m      cdffit-1        content/resources  
+            .../uuid2_cdffit.m      cdffit          content/resources
+        
+        Looking only at these two content objects, we can't decide which one
+        goes with `/assignments/cdffit.m` vs `/lecture-notes/cdffit.m`.(The
+        beginning portion of `file` contains no useful information.)
+
+        To decide which content goes with which legacy_site_rel_path, we need
+        to look at the parent objects, too:
+
+        The corresponding OCW-Next content objects have:
+            file                    filename        dirpath             parent_filename  parent_dirpath 
+            .../uuid1_cdffit.m      cdffit-1        content/resources   assignments      content/pages  
+            .../uuid2_cdffit.m      cdffit          content/resources   lecture-notes    content/pages
+        """
+        url_dirpath, legacy_filename = os.path.split(legacy_site_rel_path)
         key = (website_id, legacy_filename)
         matches = self.contents_by_file[key]
         if len(matches) == 1:
@@ -246,4 +277,4 @@ class LegacyFileLookup:
         refined = [m for m in matches if parent_matches_url(m)]
         if len(refined) == 1:
             return refined[0]
-        raise self.MultipleMatchError(f"Found {len(refined)} after refinement.")
+        raise self.MultipleMatchError(f"Found {len(refined)} after inspecting parents.")
