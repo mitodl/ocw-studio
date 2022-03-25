@@ -567,14 +567,14 @@ class TestUpdateContentFromS3Data:
         content.save = Mock()
         # prepare the parent, but do not set content.parent_id.
         # that's one of the things we'll test
-        parent = WebsiteContentFactory.build()
+        parent = WebsiteContentFactory.build(id=123)
 
         s3_content_data = {
             "markdown": "s3 markdown",
             "metadata": {
                 "title": "s3 title",
                 "author": "s3 author",
-                "parent_title": "s3 parent title",
+                "parent_uid": "s3_parent_uid",
             },
             "parent": parent,
         }
@@ -619,15 +619,16 @@ class TestUpdateContentFromS3Data:
         }
         assert content.parent_id is None
 
-    def test_update_metadata_parent_title(self):
+    def test_update_metadata_parent_uid(self):
         """
-        Test that updating metadata.parent_title also updates parent_id FK.
+        Test that updating metadata.parent_uid also updates parent_id FK.
         """
-        content, parent = self.get_updated_content_and_parent("metadata.parent_title")
+        content, parent = self.get_updated_content_and_parent("metadata.parent_uid")
         assert content.save.call_count == 1
         assert content.markdown == "original markdown"
         assert content.metadata == {
             "title": "original title",
-            "parent_title": "s3 parent title",
+            "parent_uid": "s3_parent_uid",
         }
+        assert parent.id is not None
         assert content.parent_id == parent.id
