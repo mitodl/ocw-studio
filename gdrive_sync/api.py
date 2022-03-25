@@ -63,7 +63,7 @@ class GDriveStreamReader:
         """Read and return the next chunk of bytes from the GDrive file"""
         if amount:
             # Make sure the chunksize is the same as what's requested by boto3
-            self.downloader._chunksize = 8388608  # pylint:disable=protected-access
+            self.downloader._chunksize = amount  # pylint:disable=protected-access
         if self.done is False:
             self.fh.seek(0)
             self.fh.truncate()
