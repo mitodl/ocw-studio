@@ -1,4 +1,5 @@
 """ Google Drive API functions"""
+import io
 import json
 import logging
 import os
@@ -6,7 +7,6 @@ from datetime import datetime
 from typing import Dict, Iterable, Optional
 
 import boto3
-import requests
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
@@ -15,6 +15,7 @@ from google.oauth2.service_account import (  # pylint:disable=no-name-in-module
     Credentials as ServiceAccountCredentials,
 )
 from googleapiclient.discovery import Resource, build
+from googleapiclient.http import MediaIoBaseDownload
 
 from gdrive_sync.constants import (
     DRIVE_FOLDER_FILES,
@@ -43,6 +44,33 @@ from websites.utils import get_valid_base_filename
 
 
 log = logging.getLogger(__name__)
+
+
+class GDriveStreamReader:
+    """Read a Gdrive media file as bytes via the API"""
+
+    def __init__(self, drive_file: DriveFile):
+        """Initialize the object with a DriveFile"""
+        self.service = get_drive_service()
+        self.request = self.service.files().get_media(
+            fileId=drive_file.file_id, supportsAllDrives=True
+        )
+        self.fh = io.BytesIO()
+        self.downloader = MediaIoBaseDownload(self.fh, self.request)
+        self.done = False
+
+    def read(self, amount: int = None):
+        """Read and return the next chunk of bytes from the GDrive file"""
+        if amount:
+            # Make sure the chunksize is the same as what's requested by boto3
+            self.downloader._chunksize = 8388608  # pylint:disable=protected-access
+        if self.done is False:
+            self.fh.seek(0)
+            self.fh.truncate()
+            _, self.done = self.downloader.next_chunk()
+            self.fh.seek(0)
+            return self.fh.read()
+        return b""
 
 
 def get_drive_service() -> Resource:
@@ -125,8 +153,10 @@ def process_file_result(
         in_file_folder = DRIVE_FOLDER_FILES_FINAL in folder_names
         is_video = file_obj["mimeType"].lower().startswith("video/")
         processable = (
-            (in_video_folder and is_video) or (in_file_folder and not is_video)
-        ) and file_obj.get("webContentLink") is not None
+            ((in_video_folder and is_video) or (in_file_folder and not is_video))
+            and file_obj.get("webContentLink") is not None
+            and file_obj.get("md5Checksum") is not None
+        )
         if website and processable:
             existing_file = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
             if (
@@ -159,31 +189,6 @@ def process_file_result(
     return None
 
 
-def streaming_download(drive_file: DriveFile) -> requests.Response:
-    """Return a streaming response for a drive file download URL"""
-
-    def get_confirm_token(response: requests.Response) -> str:
-        """ Get the confirmation token for downloading a large drive file """
-        for key, value in response.cookies.items():
-            if key.startswith("download_warning"):
-                return value
-        return None
-
-    session = requests.Session()
-    extra_params = {}
-    # make an initial request to get a confirmation token in the cookies if required
-    response = session.get(
-        drive_file.download_link,
-        params=extra_params,
-        stream=True,
-    )
-    token = get_confirm_token(response)
-    if token:
-        extra_params["confirm"] = token
-    response = session.get(drive_file.download_link, params=extra_params, stream=True)
-    return response
-
-
 def stream_to_s3(drive_file: DriveFile):
     """ Stream a Google Drive file to S3 """
     service = None
@@ -211,7 +216,7 @@ def stream_to_s3(drive_file: DriveFile):
             extra_args["ContentDisposition"] = "attachment"
 
         bucket.upload_fileobj(
-            Fileobj=streaming_download(drive_file).raw,
+            Fileobj=GDriveStreamReader(drive_file),
             Key=drive_file.s3_key,
             ExtraArgs=extra_args,
         )

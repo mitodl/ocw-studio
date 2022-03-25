@@ -123,7 +123,7 @@ def test_get_parent_tree(mock_service):
 def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     """stream_to_s3 should make expected drive api and S3 upload calls"""
     mock_service = mocker.patch("gdrive_sync.api.get_drive_service")
-    mock_download = mocker.patch("gdrive_sync.api.streaming_download")
+    mock_download = mocker.patch("gdrive_sync.api.GDriveStreamReader")
     mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
     mock_bucket = mock_boto3.resource.return_value.Bucket.return_value
     drive_file = DriveFileFactory.create(
@@ -169,10 +169,9 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
 
 @pytest.mark.django_db
 def test_stream_to_s3_error(mocker):
-    """Task should make expected drive api and S3 upload calls"""
-    mocker.patch("gdrive_sync.api.boto3")
+    """Task should mark DriveFile status as failed if an s3 upload error occurs"""
     mock_service = mocker.patch("gdrive_sync.api.get_drive_service")
-    mocker.patch("gdrive_sync.api.streaming_download", side_effect=HTTPError())
+    mocker.patch("gdrive_sync.api.GDriveStreamReader.read", side_effect=HTTPError())
     drive_file = DriveFileFactory.create()
     with pytest.raises(HTTPError):
         api.stream_to_s3(drive_file)
@@ -355,7 +354,7 @@ def test_process_file_result(
     process_file_result(file_result)
     drive_file = DriveFile.objects.filter(file_id=file_result["id"]).first()
     file_exists = drive_file is not None
-    assert file_exists is (correct_folder and link is not None)
+    assert file_exists is (correct_folder and link is not None and checksum is not None)
     if drive_file:
         assert drive_file.checksum == checksum
 
