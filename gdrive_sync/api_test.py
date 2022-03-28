@@ -1,7 +1,6 @@
 """gdrive_sync.api tests"""
 import json
 from datetime import timedelta
-from math import ceil
 
 import pytest
 from botocore.exceptions import ClientError
@@ -47,7 +46,7 @@ from websites.models import WebsiteContent
 
 
 pytestmark = pytest.mark.django_db
-# pylint:disable=redefined-outer-name, too-many-arguments, unused-argument
+# pylint:disable=redefined-outer-name, too-many-arguments, unused-argument, protected-access
 
 
 @pytest.fixture
@@ -174,7 +173,8 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
 def test_stream_to_s3_error(mocker):
     """Task should mark DriveFile status as failed if an s3 upload error occurs"""
     mock_service = mocker.patch("gdrive_sync.api.get_drive_service")
-    mocker.patch("gdrive_sync.api.GDriveStreamReader.read", side_effect=HTTPError())
+    mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
+    mock_boto3.resource.return_value.Bucket.side_effect = HTTPError()
     drive_file = DriveFileFactory.create()
     with pytest.raises(HTTPError):
         api.stream_to_s3(drive_file)
@@ -598,7 +598,7 @@ def test_update_sync_status(file_errors, site_errors, status):
 
 
 @pytest.mark.parametrize("chunk_size", [1, 2, 3])
-def test_gdrive_stream_reader(mocker, chunk_size):
+def test_gdrive_stream_reader(mocker, mock_service, chunk_size):
     """The GDriveStreamReader should return the expected bytes"""
     expected_bytes = [b"a", b"b", b"c"]
     bytes_idx = 0
