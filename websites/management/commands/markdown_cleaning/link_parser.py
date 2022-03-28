@@ -1,5 +1,5 @@
-import json
 from dataclasses import dataclass, field
+from typing import Protocol
 
 from pyparsing import (
     CharsNotIn,
@@ -20,6 +20,7 @@ from pyparsing import (
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     WrappedParser,
+    escape_double_quotes,
     restore_initial_default_whitespace_chars,
     unescape_quoted_string,
 )
@@ -46,8 +47,14 @@ class MarkdownLink:
     def to_markdown(self):
         """Generate markdown representation of this link/image."""
         prefix = "!" if self.is_image else ""
-        title_suffix = " " + json.dumps(self.title) if self.title else ""
+        title_suffix = f' "{escape_double_quotes(self.title)}"' if self.title else ""
         return f"{prefix}[{self.text}]({self.destination}{title_suffix})"
+
+
+class LinkParseResult(Protocol):
+
+    link: MarkdownLink
+    original_text: str
 
 
 class LinkParser(WrappedParser):

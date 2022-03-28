@@ -1,5 +1,5 @@
-import json
 from dataclasses import dataclass
+from typing import Union
 from uuid import UUID
 
 from pyparsing import ParserElement, ParseResults, originalTextFor
@@ -72,73 +72,43 @@ class WrappedParser:
         return self.grammar.scanString(string)
 
 
-def standardize_title(s, l, toks):
-    text: str = toks[0]
-    if text.startswith("'") and text.endswith("'"):
-        double_quoted = (
-            text[1:-1]  # remove the outer single quote
-            .replace("\\'", "'")  # unescape single quotes
-            .replace('"', '\\"')  # escape double quotes
-        )
-        return json.loads(double_quoted)
-    elif text.startswith('"') and text.endswith('"'):
-        return json.loads(text[1:-1])
+def escape_double_quotes(s: str):
+    """Encase `s` in double quotes and escape double quotes within `s`."""
+    return s.replace('"', '\\"')
 
 
-def unescape_single_quoted_string(text: str):
+def unescape_string_quoted_with(text: str, single_quotes=False):
     """
-    Unescape quotes in a string that:
-        - is encased in single quotes
-        - in which all inner single quotes are backslash escaped
+    Given a string encased in quotes of type `quote_char` and in which all
+    interior instances of `quote_char` are escaped, strip the encasing instances
+    and unescape the interior instances.
     """
-    all_escaped = text[1:-1].count("'") == text[1:-1].count('\\"')
-    if text.startswith("'") and text.endswith("'") and all_escaped:
-        double_quoted = (
-            '"'
-            + (
-                text[1:-1]  # remove the outer single quote
-                .replace("\\'", "'")  # unescape single quotes
-                .replace('"', '\\"')  # escape double quotes
-            )
-            + '"'
+    q = "'" if single_quotes else '"'
+
+    if f"\\\\{q}" in text:
+        raise NotImplementedError(
+            "Unescaping quoted strings in which backslashes precede quotes is not implemented."
         )
-        try:
-            decoded = json.loads(double_quoted)
-            if isinstance(decoded, str):
-                return decoded
-        except json.decoder.JSONDecodeError:
-            pass
+
+    all_escaped = text[1:-1].count(q) == text[1:-1].count(f"\\{q}")
+    if text.startswith(q) and text.endswith(q) and all_escaped:
+        return text[1:-1].replace(f"\\{q}", q)
 
     raise ValueError(f"{text} is not a valid single-quoted string")
 
 
-def unescape_double_quoted_string(text: str):
-    """
-    Unescape quotes and backslashes in a string that:
-        - is encased in double quotes
-        - in which all inner double quotes are backslash escaped
-        - in which backslashes are backslash-escaped
-    """
-    try:
-        decoded = json.loads(text)
-        if isinstance(decoded, str):
-            return decoded
-    except json.decoder.JSONDecodeError as err:
-        raise ValueError(f"{text} is not a valid double-quoted string") from err
-
-
 def unescape_quoted_string(text: str):
     """
-    Unescape a quoted string. That:
+    Unescape a quoted string. That is:
         - if the string is single-quote-escaped, unescape all single quotes
         - if the string is double-quote-escaped, escape all double quotes
 
     Otherwise throws an error.
     """
     if text.startswith("'") and text.endswith("'"):
-        return unescape_single_quoted_string(text)
+        return unescape_string_quoted_with(text, True)
     else:
-        return unescape_double_quoted_string(text)
+        return unescape_string_quoted_with(text, False)
 
 
 @dataclass
@@ -187,13 +157,12 @@ class ShortcodeTag:
 
     @staticmethod
     def hugo_escape(s: str):
-        return json.dumps(s)
+        return f'"{escape_double_quotes(s)}"'
 
     @classmethod
-    def resource_link(cls, uuid: UUID, text: str, fragment=""):
+    def resource_link(cls, uuid: Union[str, UUID], text: str, fragment=""):
         """Convenience method to create valid resource_link ShortcodeTag objects."""
-        if not isinstance(uuid, UUID):
-            raise ValueError("resource_link first argument must be valid uuid.")
+        cls.validate_uuid(uuid)
         args = [str(uuid), text]
         if fragment:
             args.append("#" + fragment)
@@ -205,8 +174,12 @@ class ShortcodeTag:
         )
 
     @classmethod
-    def resource(cls, uuid: UUID):
+    def resource(cls, uuid: Union[str, UUID]):
         """Convenience method to create valid resource_link ShortcodeTag objects."""
-        if not isinstance(uuid, UUID):
-            raise ValueError("resource first argument must be valid uuid.")
+        cls.validate_uuid(uuid)
         return cls(name="resource", percent_delimiters=False, args=[str(uuid)])
+
+    @staticmethod
+    def validate_uuid(uuid: Union[str, UUID]) -> None:
+        if not isinstance(uuid, UUID):
+            UUID(uuid)

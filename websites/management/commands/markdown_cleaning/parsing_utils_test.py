@@ -91,13 +91,13 @@ def test_original_text_records_during_transform_text():
     [
         (R'''"cats \"and\" 'dogs' are cool."''', R"""cats "and" 'dogs' are cool."""),
         (
-            R'''"backslashes \\\" are \\ ok"''',
-            R"""backslashes \" are \ ok""",
+            R'''"special characters « and backslashes \ \" are \ ok"''',
+            R"""special characters « and backslashes \ " are \ ok""",
         ),
         (R"""'cats \'and\' "dogs" are cool.'""", R"""cats 'and' "dogs" are cool."""),
         (
-            R"""'backslashes \\\' are \\ ok'""",
-            R"""backslashes \' are \ ok""",
+            R"""'special characters « and backslashes \ \' are \ ok'""",
+            R"""special characters « and backslashes \ ' are \ ok""",
         ),
     ],
 )
@@ -118,8 +118,17 @@ def test_unescape_quoted_string(escaped, unescaped):
         "'missing 'escapes' so sad '",
     ],
 )
-def test_unescape_quoted_string(bad_text):
+def test_unescape_quoted_string_raises_value_errors(bad_text):
     with pytest.raises(ValueError):
+        assert unescape_quoted_string(bad_text)
+
+
+@pytest.mark.parametrize(
+    "bad_text",
+    ["' cat \\\\' dog '", '" cat \\\\" dog "'],
+)
+def test_unescape_quoted_string_raises_not_implemented_errors(bad_text):
+    with pytest.raises(NotImplementedError):
         assert unescape_quoted_string(bad_text)
 
 
@@ -147,6 +156,7 @@ def test_shortcode(closer, percent_delimiters, expected):
     [
         ([], R"{{< meow >}}"),
         (["abc", "x y  z", 'f "g" h'], R'{{< meow "abc" "x y  z" "f \"g\" h" >}}'),
+        (["Previous «« cool"], R'{{< meow "Previous «« cool" >}}'),
     ],
 )
 def test_shortcode_serialization(shortcode_args, expected):

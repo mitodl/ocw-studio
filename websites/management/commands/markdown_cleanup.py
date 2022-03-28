@@ -50,7 +50,9 @@ from websites.models import WebsiteContent
 
 class Command(BaseCommand):
     """
-    Performs regex replacements on markdown and updates checksums.
+    Performs regex replacements on markdown.
+
+    Excludes unpublished websites.
     """
 
     help = __doc__
@@ -154,7 +156,10 @@ class Command(BaseCommand):
         cleaner = WebsiteContentMarkdownCleaner(rule)
 
         all_wc = (
-            WebsiteContent.all_objects.all().order_by("id").prefetch_related("website")
+            WebsiteContent.all_objects.all()
+            .exclude(website__publish_date__isnull=True)
+            .order_by("id")
+            .prefetch_related("website")
         )
         page_size = 100
         pages = Paginator(all_wc, page_size)
@@ -162,6 +167,7 @@ class Command(BaseCommand):
         with tqdm(total=pages.count) as progress:
             for page in pages:
                 for wc in page:
+
                     updated = cleaner.update_website_content(wc)
                     if updated and commit:
                         wc.save()

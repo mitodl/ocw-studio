@@ -1,14 +1,18 @@
 """
 WebsiteContentMarkdownCleaner rule to convert root-relative urls to resource_links
 """
-import os
 import re
 from dataclasses import dataclass
 from urllib.parse import urlparse
+from uuid import UUID
 
-from websites.management.commands.markdown_cleaning.cleanup_rule import (
-    RegexpCleanupRule,
+from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
+from websites.management.commands.markdown_cleaning.link_parser import (
+    LinkParser,
+    LinkParseResult,
+    MarkdownLink,
 )
+from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
 from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
     LegacyFileLookup,
@@ -19,7 +23,7 @@ from websites.management.commands.markdown_cleaning.utils import (
 from websites.models import WebsiteContent
 
 
-class RootRelativeUrlRule(RegexpCleanupRule):
+class RootRelativeUrlRule(PyparsingRule):
     """
     Fix rootrelative urls, converting to shortcodes where possible.
 
@@ -54,16 +58,12 @@ class RootRelativeUrlRule(RegexpCleanupRule):
         is_image: bool
         same_site: bool
 
-    regex = (
-        r"(?P<image_prefix>!?)"  # optional leading "!" to determine if it's a link or an image
-        + r"\\?\["  # match title opening "[" (or "\[" in case corrupted by studio save)
-        + r"(?P<title>[^\[\]\<\>\n]*?)"  # capture the title
-        + r"\\?\]"  # title closing "]" (or "\]")
-        + r"\("  # url open
-        + r"/?"  # optional, non-captured leading "/"
-        + r"(?P<url>(course|resource).*?)"  # capture the url, but only if it's course/ or resoruce/... we don't want links to wikipedia.
-        + r"\)"  # url close
-    )
+    Parser = LinkParser
+
+    should_parse_regex = re.compile(r"\]\(\.?/?(course|resource)")
+
+    def should_parse(self, text: str):
+        return self.should_parse_regex.search(text)
 
     alias = "rootrelative_urls"
 
@@ -99,6 +99,13 @@ class RootRelativeUrlRule(RegexpCleanupRule):
             return wc, "Exact dirpath/filename match"
         except KeyError:
             pass
+
+        if any(p == site_rel_path for p in ["/pages/index.htm", "/index.htm"]):
+            try:
+                wc = self.content_lookup.find_within_site(site.uuid, "/")
+                return wc, "links to course root"
+            except KeyError:
+                pass
 
         try:
             prepend = "/pages"
@@ -145,8 +152,7 @@ class RootRelativeUrlRule(RegexpCleanupRule):
             pass
 
         try:
-            _, legacy_filename = os.path.split(site_rel_path)
-            match = self.legacy_file_lookup.find(site.uuid, legacy_filename)
+            match = self.legacy_file_lookup.find(site.uuid, site_rel_path)
             return match, "unique file match"
         except self.legacy_file_lookup.MultipleMatchError as error:
             raise self.NotFoundError(error)
@@ -157,45 +163,66 @@ class RootRelativeUrlRule(RegexpCleanupRule):
                 ) from error
             raise self.NotFoundError("Content not found.") from error
 
-    def replace_match(self, match: re.Match, website_content: WebsiteContent) -> str:
+    def replace_match(
+        self, s, l, toks: LinkParseResult, website_content: WebsiteContent
+    ) -> str:
         Notes = self.ReplacementNotes
-        original_text = match[0]
-        url = match.group("url")
-        image_prefix = match.group("image_prefix")
-        is_image = image_prefix == "!"
-        title = match.group("title")
+        original_text = toks.original_text
+        link = toks.link
+        url = urlparse(link.destination)
+        is_image = link.is_image
+        text = link.text
+
+        if not re.match(R".?/?(course|resource)", url.path):
+            return original_text, Notes("Not rootrelative link", None, None)
 
         try:
-            linked_content, note = self.fuzzy_find_linked_content(url)
+            linked_content, note = self.fuzzy_find_linked_content(url.path)
         except self.NotFoundError as error:
             note = str(error)
-            return original_text, Notes(note, is_image, same_site=False)
+            return original_text, Notes(note, is_image, same_site=None)
 
         same_site = linked_content.website_id == website_content.website_id
-        fragment = urlparse(url).fragment
+        fragment = url.fragment
 
         notes = Notes(note, is_image, same_site)
         if same_site:
-            uuid = linked_content.text_id
-
-            if is_image:
-                replacement = f"{{{{< resource {uuid} >}}}}"
-            elif fragment:
-                replacement = (
-                    f'{{{{% resource_link {uuid} "{title}" "#{fragment}" %}}}}'
+            try:
+                if is_image:
+                    shortcode = ShortcodeTag.resource(uuid=linked_content.text_id)
+                else:
+                    shortcode = ShortcodeTag.resource_link(
+                        uuid=linked_content.text_id, text=text, fragment=fragment
+                    )
+                return shortcode.to_hugo(), notes
+            except ValueError:
+                # This happens with within-site links to the homepage.
+                # The text_id of the resource is "sitemetadata", which is not
+                # a uuid. The resource link shortcode probably works in this
+                # case, but there are only 3 of these, so let's not worry about
+                # it. Plus, keeping resource_links as true UUIDs will be nice
+                # if we implement cross-site resource_links down the road.
+                return original_text, Notes(
+                    f"bad uuid: {linked_content.text_id}", is_image, same_site
                 )
-            else:
-                replacement = f'{{{{% resource_link {uuid} "{title}" %}}}}'
-            return replacement, notes
 
         if is_image:
+            # Cross-site images would be problematic because
+            # - we want to link to the actual image, not the "container" page
+            # - which we probably could do, but don't have code to handle at the moment.
+            #
+            # In practice, there appear to be no cross-site images, so let's not
+            # worry about this for now.
             return original_text, notes
 
-        new_url = get_rootrelative_url_from_content(linked_content)
-
+        destination = get_rootrelative_url_from_content(linked_content)
         if fragment:
-            new_url += f"#{fragment}"
+            destination = destination + "#" + fragment
 
-        replacement = f"{image_prefix}[{title}]({new_url})"
+        new_link = MarkdownLink(
+            text=text,
+            destination=destination,
+            is_image=is_image,
+        )
 
-        return replacement, notes
+        return new_link.to_markdown(), notes

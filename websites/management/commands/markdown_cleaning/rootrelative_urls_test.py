@@ -10,6 +10,7 @@ from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
+    allow_invalid_shortcode_uuids,
     patch_website_all,
     patch_website_contents_all,
 )
@@ -33,18 +34,18 @@ def get_markdown_cleaner(websites, website_contents):
         (
             "site_one",
             R"A link to [same course](/courses/site_one/pages/stuff/page1) goes to resource_link",
-            R'A link to {{% resource_link uuid-1 "same course" %}} goes to resource_link',
+            R'A link to {{% resource_link "uuid-1" "same course" %}} goes to resource_link',
         ),
         # finds correct content even though "some_department"
         (
             "site_one",
             R"A link to [same course](/courses/some_department/site_one/pages/stuff/page1) goes to resource_link",
-            R'A link to {{% resource_link uuid-1 "same course" %}} goes to resource_link',
+            R'A link to {{% resource_link "uuid-1" "same course" %}} goes to resource_link',
         ),
         (
             "site_one",
             R"A link to [same course](/courses/some_department/site_one/pages/stuff/page1#some-fragment) goes to resource_link",
-            R'A link to {{% resource_link uuid-1 "same course" "#some-fragment" %}} goes to resource_link',
+            R'A link to {{% resource_link "uuid-1" "same course" "#some-fragment" %}} goes to resource_link',
         ),
         (
             "site_two",
@@ -64,6 +65,7 @@ def get_markdown_cleaner(websites, website_contents):
         ),
     ],
 )
+@allow_invalid_shortcode_uuids()
 def test_rootrel_rule_only_uses_resource_lines_for_same_site(
     markdown, site_name, expected_markdown
 ):
@@ -90,17 +92,17 @@ def test_rootrel_rule_only_uses_resource_lines_for_same_site(
         (
             "site_one",
             R"A link to [same course](/courses/department/site_one/) goes to resource_link",
-            R'A link to {{% resource_link uuid-1 "same course" %}} goes to resource_link',
+            R'A link to {{% resource_link "uuid-1" "same course" %}} goes to resource_link',
         ),
         (  # no trailing slash in link
             "site_one",
             R"A link to [same course](/courses/department/site_one) goes to resource_link",
-            R'A link to {{% resource_link uuid-1 "same course" %}} goes to resource_link',
+            R'A link to {{% resource_link "uuid-1" "same course" %}} goes to resource_link',
         ),
         (  # no trailing slash in link
             "site_one",
             R"A link to [same course](/courses/department/site_one#a-b-c) goes to resource_link",
-            R'A link to {{% resource_link uuid-1 "same course" "#a-b-c" %}} goes to resource_link',
+            R'A link to {{% resource_link "uuid-1" "same course" "#a-b-c" %}} goes to resource_link',
         ),
         (
             "site_two",
@@ -119,6 +121,7 @@ def test_rootrel_rule_only_uses_resource_lines_for_same_site(
         ),
     ],
 )
+@allow_invalid_shortcode_uuids()
 def test_rootrel_rule_handles_site_homeages_correctly(
     markdown, site_name, expected_markdown
 ):
@@ -144,7 +147,7 @@ def test_rootrel_rule_handles_site_homeages_correctly(
         (
             "site_one",
             R"cool image ![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg) cool ",
-            R"cool image {{< resource uuid-1 >}} cool ",
+            R'cool image {{< resource "uuid-1" >}} cool ',
         ),
         (  # Do not change cross-site images. They would need the AWS file...
             "site_two",
@@ -153,6 +156,7 @@ def test_rootrel_rule_handles_site_homeages_correctly(
         ),
     ],
 )
+@allow_invalid_shortcode_uuids()
 def test_rootrel_rule_uses_images_for_image(markdown, site_name, expected_markdown):
     w1 = WebsiteFactory.build(name="site_one")
     w2 = WebsiteFactory.build(name="site_two")
