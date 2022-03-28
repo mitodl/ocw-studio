@@ -11,6 +11,7 @@ from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
+from django_redis import get_redis_connection
 from mitol.common import envs, pytest_utils
 
 
@@ -154,3 +155,8 @@ class TestSettings(TestCase):
             settings_vars["DEFAULT_DATABASE_CONFIG"]["DISABLE_SERVER_SIDE_CURSORS"]
             is False
         )
+
+    def test_redis_max_connections(self):
+        """Max connections for redis pool should be set to the default"""
+        r = get_redis_connection("redis")
+        assert r.connection_pool.max_connections == settings.REDIS_MAX_CONNECTIONS

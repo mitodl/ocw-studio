@@ -630,6 +630,11 @@ else:
     _redis_url = get_string(
         name="REDIS_URL", default=None, description="Redis URL for non-production use"
     )
+REDIS_MAX_CONNECTIONS = get_int(
+    name="REDIS_MAX_CONNECTIONS",
+    default=256,
+    description="Max number of redis connections",
+)
 
 CELERY_BROKER_URL = get_string(
     name="CELERY_BROKER_URL",
@@ -694,7 +699,10 @@ CACHES = {
     "redis": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": CELERY_BROKER_URL,
-        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {"max_connections": REDIS_MAX_CONNECTIONS},
+        },
     },
 }
 
