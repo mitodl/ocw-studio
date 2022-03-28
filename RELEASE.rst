@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.55.0
+--------------
+
+- Set a configurable limit to the number of redis pool connections (#1170)
+- don't update fields that don't exist in resource data (#1166)
+
 Version 0.54.4 (Released March 28, 2022)
 --------------
 
