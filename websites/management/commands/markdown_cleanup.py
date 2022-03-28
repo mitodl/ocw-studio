@@ -19,12 +19,10 @@ from websites.management.commands.markdown_cleaning.cleaner import (
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
-from websites.management.commands.markdown_cleaning.link_unescape import (
-    LinkUnescape,
-)
 from websites.management.commands.markdown_cleaning.link_logging_rule import (
     LinkLoggingRule,
 )
+from websites.management.commands.markdown_cleaning.link_unescape import LinkUnescape
 from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
     MetadataRelativeUrlsFix,
 )

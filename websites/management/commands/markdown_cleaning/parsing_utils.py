@@ -161,7 +161,13 @@ class ShortcodeTag:
 
     @classmethod
     def resource_link(cls, uuid: Union[str, UUID], text: str, fragment=""):
-        """Convenience method to create valid resource_link ShortcodeTag objects."""
+        """
+        Convenience method to create valid resource_link ShortcodeTag objects.
+
+        Args:
+            - uuid: UUID or str object. If str, should either be coercable to
+                uuid or 'sitemetadata'.
+        """
         cls.validate_uuid(uuid)
         args = [str(uuid), text]
         if fragment:

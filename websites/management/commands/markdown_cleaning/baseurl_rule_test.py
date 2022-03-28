@@ -9,8 +9,8 @@ from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
+    allow_invalid_shortcode_uuids,
     patch_website_contents_all,
-    allow_invalid_shortcode_uuids
 )
 from websites.management.commands.markdown_cleaning.utils import (
     CONTENT_FILENAME_MAX_LEN,
@@ -64,7 +64,7 @@ def get_markdown_cleaner(website_contents):
         ),
         (
             "This link has newline: [title \n has newline]({{< baseurl >}}/resources/path/to/file1) now",
-            R'This link has newline: {{% resource_link "content-uuid-1" "title \n has newline" %}} now',
+            'This link has newline: {{% resource_link "content-uuid-1" "title \n has newline" %}} now',
         ),
     ],
 )
