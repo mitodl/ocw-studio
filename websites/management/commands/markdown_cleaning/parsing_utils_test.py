@@ -155,6 +155,10 @@ def test_shortcode(closer, percent_delimiters, expected):
         ([], R"{{< meow >}}"),
         (["abc", "x y  z", 'f "g" h'], R'{{< meow "abc" "x y  z" "f \"g\" h" >}}'),
         (["Previous «« cool"], R'{{< meow "Previous «« cool" >}}'),
+        (
+            ["hugo", "does not permit \n newlines", "in shortcode arguments"],
+            R'{{< meow "hugo" "does not permit   newlines" "in shortcode arguments" >}}'
+        )
     ],
 )
 def test_shortcode_serialization(shortcode_args, expected):

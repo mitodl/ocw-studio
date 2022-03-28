@@ -158,14 +158,20 @@ class ShortcodeTag:
         pieces = [
             opening_delimiter,
             self.name,
-            *(self.hugo_escape(arg) for arg in self.args),
+            *(self.hugo_escape_arg(arg) for arg in self.args),
             closing_delimiter,
         ]
         return " ".join(pieces)
 
     @staticmethod
-    def hugo_escape(s: str):
-        return f'"{escape_double_quotes(s)}"'
+    def hugo_escape_arg(s: str):
+        """
+        Make shortcode argument safe for Hugo.
+            - encase in double quotes and escape any quotes in the arg
+            - replace newlines with space
+        """
+        no_new_lines = s.replace('\n', ' ')
+        return f'"{escape_double_quotes(no_new_lines)}"'
 
     @classmethod
     def resource_link(cls, uuid: Union[str, UUID], text: str, fragment=""):

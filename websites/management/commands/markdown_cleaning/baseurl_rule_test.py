@@ -63,8 +63,10 @@ def get_markdown_cleaner(website_contents):
             R'This link should change: {{% resource_link "content-uuid-1" "title has [square] braackets" %}} now',
         ),
         (
-            "This link has newline: [title \n has newline]({{< baseurl >}}/resources/path/to/file1) now",
-            'This link has newline: {{% resource_link "content-uuid-1" "title \n has newline" %}} now',
+            # Markdown allows a newline in the link text; Hugo does not permit it in the shortcode argument.
+            # Markdown was not rendering the newline though, anyway
+            "This link had newline: [title \n had newline]({{< baseurl >}}/resources/path/to/file1) now",
+            'This link had newline: {{% resource_link "content-uuid-1" "title   had newline" %}} now',
         ),
     ],
 )
