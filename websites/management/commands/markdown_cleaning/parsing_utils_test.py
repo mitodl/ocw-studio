@@ -122,12 +122,10 @@ def test_unescape_quoted_string_raises_value_errors(bad_text):
     with pytest.raises(ValueError):
         assert unescape_quoted_string(bad_text)
 
+
 @pytest.mark.parametrize(
     "bad_text",
-    [
-        "' cat \\\\' dog '",
-        '" cat \\\\" dog "'
-    ],
+    ["' cat \\\\' dog '", '" cat \\\\" dog "'],
 )
 def test_unescape_quoted_string_raises_not_implemented_errors(bad_text):
     with pytest.raises(NotImplementedError):

@@ -20,9 +20,9 @@ from pyparsing import (
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     WrappedParser,
+    escape_double_quotes,
     restore_initial_default_whitespace_chars,
     unescape_quoted_string,
-    escape_double_quotes,
 )
 
 

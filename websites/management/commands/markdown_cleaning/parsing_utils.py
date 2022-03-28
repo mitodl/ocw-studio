@@ -72,12 +72,12 @@ class WrappedParser:
         return self.grammar.scanString(string)
 
 
-
 def escape_double_quotes(s: str):
     """Encase `s` in double quotes and escape double quotes within `s`."""
     return s.replace('"', '\\"')
 
-def unescape_string_quoted_with(text: str, single_quotes = False):
+
+def unescape_string_quoted_with(text: str, single_quotes=False):
     """
     Given a string encased in quotes of type `quote_char` and in which all
     interior instances of `quote_char` are escaped, strip the encasing instances
@@ -85,10 +85,12 @@ def unescape_string_quoted_with(text: str, single_quotes = False):
     """
     q = "'" if single_quotes else '"'
 
-    if f'\\\\{q}' in text:
-        raise NotImplementedError("Unescaping quoted strings in which backslashes precede quotes is not implemented.")
+    if f"\\\\{q}" in text:
+        raise NotImplementedError(
+            "Unescaping quoted strings in which backslashes precede quotes is not implemented."
+        )
 
-    all_escaped = text[1:-1].count(q) == text[1:-1].count(f'\\{q}')
+    all_escaped = text[1:-1].count(q) == text[1:-1].count(f"\\{q}")
     if text.startswith(q) and text.endswith(q) and all_escaped:
         return text[1:-1].replace(f"\\{q}", q)
 
