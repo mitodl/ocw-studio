@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.55.0
+Version 0.55.0 (Released March 28, 2022)
 --------------
 
 - Set a configurable limit to the number of redis pool connections (#1170)
