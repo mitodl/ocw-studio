@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.54.4
+Version 0.54.4 (Released March 28, 2022)
 --------------
 
 - set parent_id when overwriting metadata.parent_uid (#1115)
