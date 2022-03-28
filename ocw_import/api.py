@@ -183,19 +183,27 @@ def update_content_from_s3_data(website, text_id, content_data, update_field):
         return None
 
     if is_metadata_field:
-        set_dict_field(
-            content_file.metadata,
-            update_field,
-            get_dict_field(content_data.get("metadata", {}), update_field),
+        new_content_value = get_dict_field(
+            content_data.get("metadata", {}), update_field
         )
-        if update_field == "parent_uid" and content_data["parent"]:
-            content_file.parent_id = content_data["parent"].id
+
+        if new_content_value is not None:
+            set_dict_field(
+                content_file.metadata,
+                update_field,
+                new_content_value,
+            )
+            if update_field == "parent_uid" and content_data["parent"]:
+                content_file.parent_id = content_data["parent"].id
     elif update_field is not None:
-        setattr(
-            content_file,
-            update_field,
-            content_data.get(update_field, ""),
-        )
+        new_content_value = content_data.get(update_field, "")
+
+        if new_content_value is not None:
+            setattr(
+                content_file,
+                update_field,
+                content_data.get(update_field, ""),
+            )
     content_file.save()
     return content_file
 

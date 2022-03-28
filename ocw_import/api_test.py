@@ -480,7 +480,14 @@ def test_get_learning_resource_types(content_json, resource_types):
 @pytest.mark.parametrize("content_exists", [True, False])
 @pytest.mark.parametrize(
     "update_field",
-    ["title", "metadata.description", "metadata.image_metadata.image-alt", None],
+    [
+        "title",
+        "metadata.description",
+        "metadata.image_metadata.image-alt",
+        None,
+        "non_existant",
+        "metadata.non_existant",
+    ],
 )
 @pytest.mark.parametrize("create_new_content", [True, False])
 def test_update_ocw2hugo_course_content(
@@ -518,10 +525,12 @@ def test_update_ocw2hugo_course_content(
             text_id="ba36b428-9898-8e45-81d4-2067ac439546",
         )
 
+        assert "non_existant" not in resource.metadata
+
         if update_field == "title":
             assert resource.title == "1-050f07.jpg"
             assert resource.metadata["description"] == "original description"
-        elif update_field is not None:
+        elif update_field not in [None, "non_existant", "metadata.non_existant"]:
             assert resource.title == "original title"
             if update_field == "metadata.description":
                 assert resource.metadata["description"].startswith(
