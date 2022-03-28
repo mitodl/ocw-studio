@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from typing import Union
 from uuid import UUID
@@ -85,14 +86,21 @@ def unescape_string_quoted_with(text: str, single_quotes=False):
     """
     q = "'" if single_quotes else '"'
 
-    if f"\\\\{q}" in text:
-        raise NotImplementedError(
-            "Unescaping quoted strings in which backslashes precede quotes is not implemented."
-        )
+    escaped_quote_regex = re.compile(
+        r"(^|[^\\])"        # anything except a backlsash
+        + r"(\\\\)*\\"      # an odd number of backlsashes
+        + q                 # a quote
+    )
 
-    all_escaped = text[1:-1].count(q) == text[1:-1].count(f"\\{q}")
+    def unescape(match: re.Match):
+        return match[0].replace(f"\\{q}", q)
+
+    quote_count = text[1:-1].count(q)
+    escaped_quote_count = len(escaped_quote_regex.findall(text[1:-1]))
+    all_escaped = quote_count == escaped_quote_count
+
     if text.startswith(q) and text.endswith(q) and all_escaped:
-        return text[1:-1].replace(f"\\{q}", q)
+        return escaped_quote_regex.sub(unescape, text[1:-1])
 
     raise ValueError(f"{text} is not a valid single-quoted string")
 
