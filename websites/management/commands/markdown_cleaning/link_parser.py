@@ -1,4 +1,3 @@
-import json
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -23,6 +22,7 @@ from websites.management.commands.markdown_cleaning.parsing_utils import (
     WrappedParser,
     restore_initial_default_whitespace_chars,
     unescape_quoted_string,
+    escape_double_quotes,
 )
 
 
@@ -47,7 +47,7 @@ class MarkdownLink:
     def to_markdown(self):
         """Generate markdown representation of this link/image."""
         prefix = "!" if self.is_image else ""
-        title_suffix = " " + json.dumps(self.title) if self.title else ""
+        title_suffix = f' "{escape_double_quotes(self.title)}"' if self.title else ""
         return f"{prefix}[{self.text}]({self.destination}{title_suffix})"
 
 
