@@ -87,9 +87,9 @@ def unescape_string_quoted_with(text: str, single_quotes=False):
     q = "'" if single_quotes else '"'
 
     escaped_quote_regex = re.compile(
-        r"(^|[^\\])"        # anything except a backlsash
-        + r"(\\\\)*\\"      # an odd number of backlsashes
-        + q                 # a quote
+        r"(^|[^\\])"  # anything except a backlsash
+        + r"(\\\\)*\\"  # an odd number of backlsashes
+        + q  # a quote
     )
 
     def unescape(match: re.Match):
@@ -170,7 +170,7 @@ class ShortcodeTag:
             - encase in double quotes and escape any quotes in the arg
             - replace newlines with space
         """
-        no_new_lines = s.replace('\n', ' ')
+        no_new_lines = s.replace("\n", " ")
         return f'"{escape_double_quotes(no_new_lines)}"'
 
     @classmethod

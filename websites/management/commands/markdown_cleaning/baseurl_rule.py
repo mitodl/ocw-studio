@@ -7,10 +7,13 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import Pyparsin
 from websites.management.commands.markdown_cleaning.link_parser import (
     LinkParser,
     LinkParseResult,
-    MarkdownLink
+    MarkdownLink,
 )
 from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
-from websites.management.commands.markdown_cleaning.utils import (ContentLookup, get_rootrelative_url_from_content)
+from websites.management.commands.markdown_cleaning.utils import (
+    ContentLookup,
+    get_rootrelative_url_from_content,
+)
 from websites.models import WebsiteContent
 
 
@@ -57,7 +60,7 @@ class BaseurlReplacementRule(PyparsingRule):
             linked_content = self.content_lookup.find_within_site(
                 website_content.website_id, url.path
             )
-            if linked_content.text_id == 'sitemetadata':
+            if linked_content.text_id == "sitemetadata":
                 return original_text
             elif link.is_image:
                 # This shouldn't really happy. ocw-to-hugo converted images

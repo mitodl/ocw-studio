@@ -3,7 +3,7 @@ from pyparsing import ParseResults, nestedExpr
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     ShortcodeTag,
     WrappedParser,
-    unescape_quoted_string
+    unescape_quoted_string,
 )
 
 

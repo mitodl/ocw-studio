@@ -101,7 +101,7 @@ def test_original_text_records_during_transform_text():
         ),
         (
             R'''"quotes are \" \\\" \\\\\" ok "''',
-            R'''quotes are " \\" \\\\" ok ''',
+            R"""quotes are " \\" \\\\" ok """,
         ),
     ],
 )
@@ -120,14 +120,12 @@ def test_unescape_quoted_string(escaped, unescaped):
         '''cat"''',
         '"missing "escapes" so sad "',
         "'missing 'escapes' so sad '",
-        R'"missing escales\\" "'
-        R'"missing escales\\\\" "'
+        R'"missing escales\\" "' R'"missing escales\\\\" "',
     ],
 )
 def test_unescape_quoted_string_raises_value_errors(bad_text):
     with pytest.raises(ValueError):
         assert unescape_quoted_string(bad_text)
-
 
 
 @pytest.mark.parametrize(
@@ -157,8 +155,8 @@ def test_shortcode(closer, percent_delimiters, expected):
         (["Previous «« cool"], R'{{< meow "Previous «« cool" >}}'),
         (
             ["hugo", "does not permit \n newlines", "in shortcode arguments"],
-            R'{{< meow "hugo" "does not permit   newlines" "in shortcode arguments" >}}'
-        )
+            R'{{< meow "hugo" "does not permit   newlines" "in shortcode arguments" >}}',
+        ),
     ],
 )
 def test_shortcode_serialization(shortcode_args, expected):
