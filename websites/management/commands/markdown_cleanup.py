@@ -29,9 +29,6 @@ from websites.management.commands.markdown_cleaning.metadata_relative_urls impor
 from websites.management.commands.markdown_cleaning.removal_rules import (
     RemoveInaccesibleGif,
 )
-from websites.management.commands.markdown_cleaning.remove_extra_resource_args import (
-    RemoveExtraResourceArgs,
-)
 from websites.management.commands.markdown_cleaning.resolveuid_rule import (
     ResolveUIDRule,
 )
@@ -61,7 +58,6 @@ class Command(BaseCommand):
         MetadataRelativeUrlsFix,
         ValidateUrls,
         ShortcodeLoggingRule,
-        RemoveExtraResourceArgs,
         RemoveInaccesibleGif,
         LinkLoggingRule,
         ResolveUIDRule,
