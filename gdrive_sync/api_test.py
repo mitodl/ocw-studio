@@ -1,15 +1,18 @@
 """gdrive_sync.api tests"""
 import json
 from datetime import timedelta
+from math import ceil
 
 import pytest
 from botocore.exceptions import ClientError
+from googleapiclient.http import MediaDownloadProgress
 from mitol.common.utils import now_in_utc
 from moto import mock_s3
 from requests import HTTPError
 
 from gdrive_sync import api
 from gdrive_sync.api import (
+    GDriveStreamReader,
     create_gdrive_resource_content,
     gdrive_root_url,
     get_resource_type,
@@ -592,3 +595,31 @@ def test_update_sync_status(file_errors, site_errors, status):
     assert sorted(website.sync_errors) == sorted(
         [error for error in file_errors if error] + (site_errors or [])
     )
+
+
+@pytest.mark.parametrize("chunk_size", [1, 2, 3])
+def test_gdrive_stream_reader(mocker, chunk_size):
+    """The GDriveStreamReader should return the expected bytes"""
+    expected_bytes = [b"a", b"b", b"c"]
+    bytes_idx = 0
+
+    mock_resp = mocker.Mock(status=200)
+    mocker.patch(
+        "googleapiclient.http._retry_request", return_value=(mock_resp, b"abc")
+    )
+    reader = GDriveStreamReader(DriveFileFactory.build())
+
+    def mock_next_chunk():
+        """Overwrite the MediaIoBaseDownload.next_chunk function for testing purposes"""
+        reader.downloader._fd.write(
+            b"".join(expected_bytes[bytes_idx : bytes_idx + chunk_size])
+        )
+        return MediaDownloadProgress(bytes_idx + chunk_size, 3), bytes_idx >= 2
+
+    reader.downloader.next_chunk = mock_next_chunk
+
+    for i in range(0, 3, chunk_size):
+        bytes_read = reader.read(amount=chunk_size)
+        bytes_idx += chunk_size
+        assert reader.downloader._chunksize == chunk_size
+        assert bytes_read == b"".join(expected_bytes[i : i + chunk_size])
