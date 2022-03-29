@@ -89,7 +89,7 @@ def single_task(timeout: int, raise_block: Optional[bool] = True) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             has_lock = False
-            client = get_redis_connection("redis").client()
+            client = get_redis_connection("redis")
             lock_id = f"{func.__name__}-id-{args[0] if args else 'single'}"
             lock = client.lock(lock_id, timeout=timeout)
             try:
