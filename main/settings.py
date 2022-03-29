@@ -632,7 +632,7 @@ else:
     )
 REDIS_MAX_CONNECTIONS = get_int(
     name="REDIS_MAX_CONNECTIONS",
-    default=256,
+    default=48,
     description="Max number of redis connections",
 )
 
