@@ -44,9 +44,12 @@ from websites.models import WebsiteContent
 
 class Command(BaseCommand):
     """
-    Performs regex replacements on markdown.
+    Performs replacements on markdown. Excludes unpublished websites.
 
-    Excludes unpublished websites.
+    In general, these commands can be run in any order and are independent from
+    one another. It may be useful to run LinkUnescape before other link fixes if
+    your data contains (or may contain) markdown links with erroneously escaped
+    square brackets.
     """
 
     help = __doc__
