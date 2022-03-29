@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.56.0
+--------------
+
+- Fix rootrelative URLs to duplicate files
+
 Version 0.55.0 (Released March 28, 2022)
 --------------
 
