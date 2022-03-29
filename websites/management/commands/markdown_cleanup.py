@@ -1,4 +1,5 @@
 """Replace baseurl-based links with resource_link shortcodes."""
+import logging
 import os
 from typing import Type
 
@@ -46,6 +47,9 @@ from websites.management.commands.markdown_cleaning.shortcode_logging_rule impor
 )
 from websites.management.commands.markdown_cleaning.validate_urls import ValidateUrls
 from websites.models import WebsiteContent
+
+
+log = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -164,14 +168,22 @@ class Command(BaseCommand):
         page_size = 100
         pages = Paginator(all_wc, page_size)
 
+        num_updated = 0
         with tqdm(total=pages.count) as progress:
             for page in pages:
                 for wc in page:
 
                     updated = cleaner.update_website_content(wc)
+                    if updated:
+                        num_updated += 1
                     if updated and commit:
                         wc.save()
                     progress.update()
+
+        if commit:
+            log.info(f"content updated: {num_updated}")
+        else:
+            log.info(f"content that would be updated: {num_updated}")
 
         if out is not None:
             outpath = os.path.normpath(os.path.join(os.getcwd(), out))
