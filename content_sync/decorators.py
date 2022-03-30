@@ -9,7 +9,6 @@ from django_redis import get_redis_connection
 from github.GithubException import RateLimitExceededException
 
 from content_sync.models import ContentSyncState
-from main.celery import app
 
 
 log = logging.getLogger(__name__)
