@@ -3,12 +3,17 @@ As described in
 http://celery.readthedocs.org/en/latest/django/first-steps-with-django.html
 """
 
+import logging
 import os
+import time
 
 from celery import Celery
+from celery.signals import before_task_publish, task_postrun
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "main.settings")
+
+log = logging.getLogger(__name__)
 
 app = Celery("ocw_studio")
 
@@ -31,3 +36,46 @@ app.conf.task_routes = {
     "content_sync.tasks.publish_website_batch": {"queue": "batch"},
     "content_sync.tasks.publish_websites": {"queue": "batch"},
 }
+
+
+@before_task_publish.connect
+def timestamp_task_send(headers=None, **kwargs):  # pylint: disable=unused-argument
+    """Before a task is sent, timestamp the task with the current time"""
+    headers.setdefault("task_sent_timestamp", time.time())
+
+
+@task_postrun.connect
+def log_task_deltatime(
+    task=None, state=None, **kwargs
+):  # pylint: disable=unused-argument
+    """If the task provided a timestamp for which it was sent, log timing information"""
+    # Note: you'd think headers would come in on `task.request.headers` but you'd be wrong
+    try:
+        task_sent_timestamp = getattr(task.request, "task_sent_timestamp", None)
+        task_id = task.request.id
+        task_name = task.request.task
+
+        if task_sent_timestamp:
+            task_postrun_timestamp = time.time()
+            task_deltatime = task_postrun_timestamp - task_sent_timestamp
+            # ignore deltas below zero in case of clock drift
+            task_deltatime = max(task_deltatime, 0)
+
+            log.info(
+                "task_event=log_task_deltatime "
+                "task_name=%s task_id=%s task_state=%s "
+                "task_sent_timestamp=%s task_postrun_timstamp=%s "
+                "task_deltatime=%s",
+                task_name,
+                task_id,
+                state,
+                task_sent_timestamp,
+                task_postrun_timestamp,
+                task_deltatime,
+            )
+        else:
+            log.error(
+                "Task had no task_sent_timestamp: name=%s id=%s ", task_name, task_id
+            )
+    except:  # pylint: disable=bare-except
+        log.exception("Unexpected error trying to log task deltatime")
