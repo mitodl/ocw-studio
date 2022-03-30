@@ -5,10 +5,10 @@ from time import sleep
 from typing import Callable, Optional
 
 from django.conf import settings
+from django_redis import get_redis_connection
 from github.GithubException import RateLimitExceededException
 
 from content_sync.models import ContentSyncState
-from main.celery import app
 
 
 log = logging.getLogger(__name__)
@@ -88,8 +88,9 @@ def single_task(timeout: int, raise_block: Optional[bool] = True) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             has_lock = False
+            client = get_redis_connection("redis")
             lock_id = f"{func.__name__}-id-{args[0] if args else 'single'}"
-            lock = app.backend.client.lock(lock_id, timeout=timeout)
+            lock = client.lock(lock_id, timeout=timeout)
             try:
                 has_lock = lock.acquire(blocking=False)
                 if has_lock:
