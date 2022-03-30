@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.56.0
+--------------
+
+- Convert more baseurl links to resource_links  (#1174)
+
 Version 0.55.1 (Released March 30, 2022)
 --------------
 
