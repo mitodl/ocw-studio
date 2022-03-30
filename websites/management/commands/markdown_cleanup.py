@@ -19,21 +19,15 @@ from websites.management.commands.markdown_cleaning.cleaner import (
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
-from websites.management.commands.markdown_cleaning.legacy_shortcodes_data_fix import (
-    LegacyShortcodeFixOne,
-    LegacyShortcodeFixTwo,
-)
 from websites.management.commands.markdown_cleaning.link_logging_rule import (
     LinkLoggingRule,
 )
+from websites.management.commands.markdown_cleaning.link_unescape import LinkUnescape
 from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
     MetadataRelativeUrlsFix,
 )
 from websites.management.commands.markdown_cleaning.removal_rules import (
     RemoveInaccesibleGif,
-)
-from websites.management.commands.markdown_cleaning.remove_extra_resource_args import (
-    RemoveExtraResourceArgs,
 )
 from websites.management.commands.markdown_cleaning.resolveuid_rule import (
     ResolveUIDRule,
@@ -50,22 +44,23 @@ from websites.models import WebsiteContent
 
 class Command(BaseCommand):
     """
-    Performs regex replacements on markdown.
+    Performs replacements on markdown. Excludes unpublished websites.
 
-    Excludes unpublished websites.
+    In general, these commands can be run in any order and are independent from
+    one another. It may be useful to run LinkUnescape before other link fixes if
+    your data contains (or may contain) markdown links with erroneously escaped
+    square brackets.
     """
 
     help = __doc__
 
     Rules: "list[Type[MarkdownCleanupRule]]" = [
         BaseurlReplacementRule,
-        LegacyShortcodeFixOne,
-        LegacyShortcodeFixTwo,
+        LinkUnescape,
         RootRelativeUrlRule,
         MetadataRelativeUrlsFix,
         ValidateUrls,
         ShortcodeLoggingRule,
-        RemoveExtraResourceArgs,
         RemoveInaccesibleGif,
         LinkLoggingRule,
         ResolveUIDRule,
