@@ -168,25 +168,32 @@ class RootRelativeUrlRule(PyparsingRule):
     ) -> str:
         Notes = self.ReplacementNotes
         original_text = toks.original_text
-        link = toks.link
-        url = urlparse(link.destination)
-        is_image = link.is_image
-        text = link.text
+        destination = toks.link.destination
+        url = urlparse(destination)
+        is_image = toks.link.is_image
+        text = self.parser.transform_string(toks.link.text)
+        link = MarkdownLink(text=text, is_image=is_image, destination=destination)
 
         if not re.match(R".?/?(course|resource)", url.path):
-            return original_text, Notes("Not rootrelative link", None, None)
+            return link.to_markdown(), Notes("Not rootrelative link", None, None)
 
         try:
             linked_content, note = self.fuzzy_find_linked_content(url.path)
         except self.NotFoundError as error:
             note = str(error)
-            return original_text, Notes(note, is_image, same_site=None)
+            return link.to_markdown(), Notes(note, is_image, same_site=None)
 
         same_site = linked_content.website_id == website_content.website_id
         fragment = url.fragment
 
+        can_be_shortcode = (
+            same_site
+            and not "![" in link.text
+            and not "{{%" in link.text
+            and not "{{<" in link.text
+        )
         notes = Notes(note, is_image, same_site)
-        if same_site:
+        if can_be_shortcode:
             try:
                 if is_image:
                     shortcode = ShortcodeTag.resource(uuid=linked_content.text_id)

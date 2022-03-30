@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import Protocol
+from dataclasses import dataclass
+from typing import Protocol, Union
 
 from pyparsing import (
     CharsNotIn,
@@ -42,7 +42,7 @@ class MarkdownLink:
     #       - link: MarkdownLinkOrImage
     #       - original_text: str
     # - start_index, end_index are the start/end of this link within self.text
-    text_links: list = field(default_factory=tuple)
+    text_links: Union[tuple, None] = None
 
     def to_markdown(self):
         """Generate markdown representation of this link/image."""
@@ -88,7 +88,7 @@ class LinkParser(WrappedParser):
     angle-bracket destination variant treated properly.
     """
 
-    def __init__(self):
+    def __init__(self, recursive=False):
 
         # By default pyparsing collapses whitespace characters.
         # Markdown cares about whitespace containing double newlines, so we
@@ -110,7 +110,10 @@ class LinkParser(WrappedParser):
             # Use self.scan_string not grammar.scan_string
             # so that parse actions attached to LinkParser fire for the nested
             # links, which seems desirable.
-            text_links = tuple(self.scan_string(text))
+            if recursive:
+                text_links = tuple(self.scan_string(text))
+            else:
+                text_links = None
 
             link = MarkdownLink(
                 text=text,

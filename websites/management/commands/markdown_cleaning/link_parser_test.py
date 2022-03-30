@@ -73,8 +73,6 @@ def test_link_parser_parses_good_links(title, dest, text, is_image):
         destination=dest,
         title=title,
         is_image=is_image,
-        # Set the two text_links equal. We'll test this separately later.
-        text_links=parsed.link.text_links,
     )
     assert parsed.link == expected_link
 
@@ -156,13 +154,37 @@ def test_link_parser_titles_with_quotes():
         text="markdown",
         destination="it/is",
         title='so "fun" right?',
-        text_links=tuple(),
     )
 
 
-def test_link_parser_with_nesting():
+def test_link_parser_without_recursive_parsing():
+    """
+    With recursive=False, does NOT parse links within the `text` portion of
+    other links and does NOT and call parse actions on them.
+    """
     text = '[some text ![image [another](why) [oh dear](whywhy) text](imageurl) and more ](path/to/thing "with (title?)")'
     parser = LinkParser()
+    action = Mock(wraps=lambda s, l, toks: toks)
+    parser.set_parse_action(action)
+    parsed = parser.parse_string(text)
+
+    assert parsed.link == MarkdownLink(
+        text="some text ![image [another](why) [oh dear](whywhy) text](imageurl) and more ",
+        destination="path/to/thing",
+        title="with (title?)",
+        text_links=None,
+    )
+
+    assert action.call_count == 1
+
+
+def test_link_parser_with_recursive_parsing():
+    """
+    With recursive=True, parses links within the `text` portion of other links
+    and calls parse actions on them.
+    """
+    text = '[some text ![image [another](why) [oh dear](whywhy) text](imageurl) and more ](path/to/thing "with (title?)")'
+    parser = LinkParser(recursive=True)
     action = Mock(wraps=lambda s, l, toks: toks)
     parser.set_parse_action(action)
 
@@ -178,8 +200,12 @@ def test_link_parser_with_nesting():
         destination="imageurl",
         is_image=True,
     )
-    expected_inner_link1 = MarkdownLink(text="another", destination="why")
-    expected_inner_link2 = MarkdownLink(text="oh dear", destination="whywhy")
+    expected_inner_link1 = MarkdownLink(
+        text="another", destination="why", text_links=tuple()
+    )
+    expected_inner_link2 = MarkdownLink(
+        text="oh dear", destination="whywhy", text_links=tuple()
+    )
 
     outer = parsed
     assert outer.link.text == expected_outer_link.text

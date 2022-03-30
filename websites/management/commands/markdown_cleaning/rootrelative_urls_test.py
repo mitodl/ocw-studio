@@ -33,8 +33,14 @@ def get_markdown_cleaner(websites, website_contents):
     [
         (
             "site_one",
-            R"A link to [same course](/courses/site_one/pages/stuff/page1) goes to resource_link",
+            R"A link to [same course](/courses/some_dep/site_one/pages/stuff/page1) goes to resource_link",
             R'A link to {{% resource_link "uuid-1" "same course" %}} goes to resource_link',
+        ),
+        # images wrapped in links should stay that way for now, but still fix outer URL
+        (
+            "site_one",
+            R"A link to [![image](some/image)](/courses/some_dep/site_one/pages/stuff/page1) stays markdown",
+            R"A link to [![image](some/image)](/courses/site_one/pages/stuff/page1) stays markdown",
         ),
         # finds correct content even though "some_department"
         (
@@ -66,7 +72,7 @@ def get_markdown_cleaner(websites, website_contents):
     ],
 )
 @allow_invalid_shortcode_uuids()
-def test_rootrel_rule_only_uses_resource_lines_for_same_site(
+def test_rootrel_rule_only_uses_resource_links_for_same_site(
     markdown, site_name, expected_markdown
 ):
     w1 = WebsiteFactory.build(name="site_one")
@@ -149,6 +155,18 @@ def test_rootrel_rule_handles_site_homeages_correctly(
             R"cool image ![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg) cool ",
             R'cool image {{< resource "uuid-1" >}} cool ',
         ),
+        # This should convert the inner image to resource and fix outer destination
+        (
+            "site_one",
+            R"cool image [![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg)](/courses/dep/site_one/dir/some_page) cool ",
+            R'cool image [{{< resource "uuid-1" >}}](/courses/site_one/pages/dir/some_page) cool ',
+        ),
+        # This should convert the inner image to resource and leave outer destination alone
+        (
+            "site_one",
+            R"cool image [![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg)](/this/dest/should/stay/same) cool ",
+            R'cool image [{{< resource "uuid-1" >}}](/this/dest/should/stay/same) cool ',
+        ),
         (  # Do not change cross-site images. They would need the AWS file...
             "site_two",
             R"cool image ![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg) cool ",
@@ -170,10 +188,17 @@ def test_rootrel_rule_uses_images_for_image(markdown, site_name, expected_markdo
         filename="new_image_filename123.jpg",
         dirpath="content/resources",
     )
+    c2 = WebsiteContentFactory.build(
+        website=w1,
+        text_id="uuid-2",
+        # in general the new filename is the same as old,
+        # possibly appended with "-1" or "-2" if there were duplicates
+        filename="some_page",
+        dirpath="content/pages/dir",
+    )
     content_to_clean = WebsiteContentFactory.build(
         website=websites[site_name], markdown=markdown
     )
-    cleaner = get_markdown_cleaner([w1], [c1])
+    cleaner = get_markdown_cleaner([w1], [c1, c2])
     cleaner.update_website_content(content_to_clean)
-
     assert content_to_clean.markdown == expected_markdown
