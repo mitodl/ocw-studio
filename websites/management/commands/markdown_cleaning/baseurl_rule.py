@@ -63,7 +63,7 @@ class BaseurlReplacementRule(PyparsingRule):
             if linked_content.text_id == "sitemetadata":
                 return original_text
             elif link.is_image:
-                # This shouldn't really happy. ocw-to-hugo converted images
+                # This shouldn't really happen. ocw-to-hugo converted images
                 # to resource shortcodes but not links to resource_links.
                 shortcode = ShortcodeTag.resource(linked_content.text_id)
             else:
