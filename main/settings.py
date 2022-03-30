@@ -635,6 +635,7 @@ REDIS_MAX_CONNECTIONS = get_int(
     default=48,
     description="Max number of redis connections",
 )
+DJANGO_REDIS_CLOSE_CONNECTION = True
 
 CELERY_BROKER_URL = get_string(
     name="CELERY_BROKER_URL",
