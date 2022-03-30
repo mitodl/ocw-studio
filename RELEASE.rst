@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.55.1
+--------------
+
+- Use get_redis_connection("redis").client() instead of app.backend.client (#1181)
+- Fix rootrelative URLs to duplicate files
+
 Version 0.55.0 (Released March 28, 2022)
 --------------
 
