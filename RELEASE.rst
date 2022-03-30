@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.55.1
+Version 0.55.1 (Released March 30, 2022)
 --------------
 
 - Use get_redis_connection("redis").client() instead of app.backend.client (#1181)
