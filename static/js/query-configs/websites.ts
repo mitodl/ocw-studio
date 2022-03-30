@@ -208,9 +208,11 @@ export const deleteWebsiteCollaboratorMutation = (
       // evict the item
       collaborators: evolve({
         [websiteName]: compose(
-          // @ts-ignore
           evictCollaborator,
-          (value: WebsiteCollaborator) => value || []
+          (value: WebsiteCollaborator[]) => {
+            console.log(value)
+            return value ?? []
+          }
         )
       })
     },

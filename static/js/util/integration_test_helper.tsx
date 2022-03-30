@@ -1,7 +1,7 @@
 import React, { ComponentType, FunctionComponent } from "react"
 import { mount, ReactWrapper } from "enzyme"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
-import { createMemoryHistory, MemoryHistory, Update, State } from "history"
+import { createMemoryHistory, MemoryHistory, Update } from "history"
 import { Provider } from "react-redux"
 import { Provider as ReduxQueryProvider } from "redux-query-react"
 import { Router } from "react-router"
@@ -18,7 +18,7 @@ export default class IntegrationTestHelper {
   sandbox: SinonSandbox
   actions: Array<Action>
   handleRequestStub: SinonStub
-  currentLocation: Update<State> | null
+  currentLocation: Update | null
   scrollIntoViewStub: SinonStub
   wrapper?: ReactWrapper | null
   // just roll with it :)

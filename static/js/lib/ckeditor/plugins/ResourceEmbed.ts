@@ -1,4 +1,5 @@
-import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
+import { pickBy } from "lodash"
+import CKEPlugin from "@ckeditor/ckeditor5-core/src/plugin"
 import Turndown from "turndown"
 import Showdown from "showdown"
 import { toWidget } from "@ckeditor/ckeditor5-widget/src/utils"
@@ -13,8 +14,10 @@ import {
   RESOURCE_EMBED,
   RESOURCE_EMBED_COMMAND
 } from "./constants"
+import { Shortcode, makeHtmlString } from "./util"
+import { isNotNil } from "../../../util"
 
-export const RESOURCE_SHORTCODE_REGEX = /{{< resource "?([^\s"]+)"? >}}/g
+export const RESOURCE_SHORTCODE_REGEX = /{{< resource .*? >}}/g
 
 /**
  * Class for defining Markdown conversion rules for ResourceEmbed
@@ -30,8 +33,17 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
         {
           type:    "lang",
           regex:   RESOURCE_SHORTCODE_REGEX,
-          replace: (_s: string, match: string) => {
-            return `<section data-uuid="${match}"></section>`
+          replace: (s: string) => {
+            const shortcode = Shortcode.fromString(s)
+            const uuid = shortcode.get(0) ?? shortcode.get("uuid")
+            const href = shortcode.get("href")
+            const hrefUuid = shortcode.get("href_uuid")
+            const attrs = {
+              "data-uuid":      uuid,
+              "data-href":      href,
+              "data-href-uuid": hrefUuid
+            }
+            return makeHtmlString("section", attrs)
           }
         }
       ]
@@ -45,9 +57,16 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
         rule: {
           filter:      "section",
           replacement: (_content: string, node: Turndown.Node): string => {
-            // @ts-ignore
+            if (!(node instanceof HTMLElement)) {
+              throw new Error("Node should be HTMLElement")
+            }
             const uuid = node.getAttribute("data-uuid")
-            return `{{< resource ${uuid} >}}\n`
+            if (uuid === null) throw new Error("uuid should not be null")
+            const resource = Shortcode.resource(uuid, {
+              href:     node.getAttribute("data-href"),
+              hrefUuid: node.getAttribute("data-href-uuid")
+            })
+            return `${resource.toHugo()}\n`
           }
         }
       }
@@ -87,7 +106,7 @@ class InsertResourceEmbedCommand extends Command {
  * adds the node type to the schema and sets up all the serialization/
  * deserialization rules for it.
  */
-class ResourceEmbedEditing extends Plugin {
+class ResourceEmbedEditing extends CKEPlugin {
   constructor(editor: editor.Editor) {
     super(editor)
   }
@@ -125,9 +144,17 @@ class ResourceEmbedEditing extends Plugin {
       },
 
       model: (viewElement: any, { writer: modelWriter }: any) => {
-        return modelWriter.createElement(RESOURCE_EMBED, {
-          uuid: viewElement.getAttribute("data-uuid")
-        })
+        return modelWriter.createElement(
+          RESOURCE_EMBED,
+          pickBy(
+            {
+              uuid:     viewElement.getAttribute("data-uuid"),
+              href:     viewElement.getAttribute("data-href"),
+              hrefUuid: viewElement.getAttribute("data-href-uuid")
+            },
+            isNotNil
+          )
+        )
       }
     })
 
@@ -137,9 +164,17 @@ class ResourceEmbedEditing extends Plugin {
     conversion.for("dataDowncast").elementToElement({
       model: RESOURCE_EMBED,
       view:  (modelElement: any, { writer: viewWriter }: any) => {
-        return viewWriter.createEmptyElement("section", {
-          "data-uuid": modelElement.getAttribute("uuid")
-        })
+        return viewWriter.createEmptyElement(
+          "section",
+          pickBy(
+            {
+              "data-uuid":      modelElement.getAttribute("uuid"),
+              "data-href":      modelElement.getAttribute("href"),
+              "data-href-uuid": modelElement.getAttribute("hrefUuid")
+            },
+            isNotNil
+          )
+        )
       }
     })
 
@@ -185,22 +220,12 @@ class ResourceEmbedEditing extends Plugin {
  * into the editor. These are rendered to Markdown as `{{< resource UUID >}}`
  * shortcodes.
  */
-export default class ResourceEmbed extends Plugin {
+export default class ResourceEmbed extends CKEPlugin {
   static get pluginName(): string {
     return "ResourceEmbed"
   }
 
-  static get requires(): Plugin[] {
-    // this return value here is throwing a type error that I don't understand,
-    // since very similar code in MarkdownMediaEmbed.ts is fine
-    //
-    // Anyhow, since I have not diagnosed it and since things seem to
-    // be running fine I'm going to just ignore for now.
-    return [
-      // @ts-ignore
-      ResourceEmbedEditing,
-      // @ts-ignore
-      ResourceMarkdownSyntax
-    ]
+  static get requires(): typeof CKEPlugin[] {
+    return [ResourceEmbedEditing, ResourceMarkdownSyntax]
   }
 }
