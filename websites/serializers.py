@@ -29,8 +29,7 @@ from websites.api import (
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role
-
+from websites.utils import permissions_group_name_for_role, get_dict_field
 
 log = logging.getLogger(__name__)
 
@@ -80,6 +79,29 @@ class WebsiteSerializer(serializers.ModelSerializer):
     """ Serializer for websites """
 
     starter = WebsiteStarterSerializer(read_only=True)
+    metadata = serializers.SerializerMethodField(read_only=True)
+
+    def get_metadata(self, instance):
+        """
+        Get the site metadata, but tweak the instructors key to resemble what the theme template for
+        new courses currently expects (this template should change in the future to retrieve course
+        info in a manner similar to featured courses, instead of relying on this api response.
+        """
+        site_metadata = instance.websitecontent_set.filter(type="sitemetadata").first()
+        if site_metadata:
+            instructor_uids = get_dict_field(
+                site_metadata.metadata, "instructors.content"
+            )
+            if instructor_uids:
+                instructors = [
+                    WebsiteContentDetailSerializer(instructor).data
+                    for instructor in WebsiteContent.objects.filter(
+                        text_id__in=instructor_uids
+                    )
+                ]
+                site_metadata.metadata["instructors"] = instructors
+            return site_metadata.metadata
+        return {}
 
     class Meta:
         model = Website

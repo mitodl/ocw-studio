@@ -100,8 +100,10 @@ class WebsiteViewSet(
             # Anonymous users should get a list of all published websites (used for ocw-www carousel)
             ordering = "-first_published_to_production"
             queryset = Website.objects.filter(
-                first_published_to_production__lte=now_in_utc()
-            )
+                first_published_to_production__lte=now_in_utc(),
+                websitecontent__type="sitemetadata",
+                websitecontent__metadata__isnull=False,
+            ).distinct()
         elif is_global_admin(user):
             # Global admins should get a list of all websites, published or not.
             queryset = Website.objects.all()

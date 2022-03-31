@@ -51,11 +51,16 @@ MOCK_GITHUB_DATA = {
 
 @pytest.fixture
 def websites(course_starter):
-    """ Create some websites for tests """
+    """ Create some websites for tests, with all but one having a sitemetadata WebsiteContent object"""
     courses = WebsiteFactory.create_batch(3, published=True, starter=course_starter)
     noncourses = WebsiteFactory.create_batch(2, published=True)
-    WebsiteFactory.create(unpublished=True, starter=course_starter)
-    WebsiteFactory.create(future_publish=True)
+    WebsiteFactory.create(published=True, starter=course_starter, metadata=None)
+    others = [
+        WebsiteFactory.create(unpublished=True, starter=course_starter),
+        WebsiteFactory.create(future_publish=True),
+    ]
+    for site in [*courses, *noncourses, *others]:
+        WebsiteContentFactory.create(website=site, type="sitemetadata")
     return SimpleNamespace(courses=courses, noncourses=noncourses)
 
 
@@ -345,6 +350,7 @@ def test_websites_endpoint_detail_get_denied(drf_client):
         if user:
             drf_client.force_login(user)
         website = WebsiteFactory.create()
+        WebsiteContentFactory.create(website=website, type="sitemetadata")
         resp = drf_client.get(
             reverse("websites_api-detail", kwargs={"name": website.name})
         )
@@ -378,7 +384,7 @@ def test_websites_endpoint_publish_sorting(
         ]
     )
     if published:
-        assert resp.data.get("count") == 6
+        assert resp.data.get("count") == 7
     else:
         assert resp.data.get("count") == 1
     assert expected_uuids == sorted([site["uuid"] for site in resp.data["results"]])
