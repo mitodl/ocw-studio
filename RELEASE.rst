@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.55.2
+--------------
+
+- replace ocwnext with ocw (#1185)
+- handle links/images inside links correctly (#1178)
+- Convert more baseurl links to resource_links  (#1174)
+
 Version 0.55.1 (Released March 30, 2022)
 --------------
 
