@@ -93,6 +93,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "source",
             "draft_publish_date",
             "publish_date",
+            "first_published_to_production",
             "metadata",
             "starter",
             "owner",

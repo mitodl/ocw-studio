@@ -48,6 +48,9 @@ def test_serialize_website_course():
     assert serialized_data["publish_date"] == site.publish_date.strftime(
         ISO_8601_FORMAT
     )
+    assert serialized_data[
+        "first_published_to_production"
+    ] == site.first_published_to_production.strftime(ISO_8601_FORMAT)
     assert serialized_data["metadata"] == site.metadata
     assert isinstance(serialized_data["starter"], dict)
     assert (
