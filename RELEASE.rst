@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.55.2
+Version 0.55.2 (Released March 31, 2022)
 --------------
 
 - replace ocwnext with ocw (#1185)
