@@ -27,6 +27,9 @@ from websites.management.commands.markdown_cleaning.link_unescape import LinkUne
 from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
     MetadataRelativeUrlsFix,
 )
+from websites.management.commands.markdown_cleaning.ocwnext_rule import (
+    OCWNextReplacement,
+)
 from websites.management.commands.markdown_cleaning.removal_rules import (
     RemoveInaccesibleGif,
 )
@@ -68,6 +71,7 @@ class Command(BaseCommand):
         RemoveInaccesibleGif,
         LinkLoggingRule,
         ResolveUIDRule,
+        OCWNextReplacement,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:

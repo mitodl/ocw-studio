@@ -54,7 +54,7 @@ class BaseurlReplacementRule(PyparsingRule):
         url = urlparse(dest_match.group("dest"))
 
         # This is probably a link with image as title, where the image is a < resource >
-        if R"{{<" in link.text or link.text_links:
+        if R"{{<" in link.text or "![" in link.text:
             return original_text, Notes(wraps_image=True)
         try:
             linked_content = self.content_lookup.find_within_site(
