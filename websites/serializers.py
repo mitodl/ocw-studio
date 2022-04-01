@@ -94,12 +94,13 @@ class WebsiteSerializer(serializers.ModelSerializer):
                 site_metadata.metadata, "instructors.content"
             )
             if instructor_uids:
-                instructors = [
-                    WebsiteContentDetailSerializer(instructor).data
-                    for instructor in WebsiteContent.objects.filter(
-                        text_id__in=instructor_uids
-                    )
-                ]
+                instructors = []
+                for uid in instructor_uids:
+                    instructor = WebsiteContent.objects.filter(text_id=uid).first()
+                    if instructor:
+                        instructors.append(
+                            WebsiteContentDetailSerializer(instructor).data
+                        )
                 site_metadata.metadata["instructors"] = instructors
             return site_metadata.metadata
 

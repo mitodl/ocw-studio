@@ -62,9 +62,7 @@ def test_serialize_website_course(instructors):
             )
         instructor_meta = {
             "instructors": {
-                "content": sorted(
-                    [instructor.text_id for instructor in instructor_contents]
-                ),
+                "content": [instructor.text_id for instructor in instructor_contents],
                 "website": instructor_site.name,
             }
         }
@@ -80,7 +78,7 @@ def test_serialize_website_course(instructors):
         else {
             "instructors": [
                 WebsiteContentDetailSerializer(instructor).data
-                for instructor in sorted(instructor_contents, key=lambda i: i.text_id)
+                for instructor in instructor_contents
             ]
         }
     )
