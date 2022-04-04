@@ -1,6 +1,6 @@
 import { pickBy } from "lodash"
 import { TABLE_ALLOWED_ATTRS } from "./constants"
-import { hasNotutilNilProp, isNotNil } from "../../../util"
+import { hasNotNilProp, isNotNil } from "../../../util"
 
 export function buildAttrsString(attrs: RegExpMatchArray | null): string {
   return attrs ?
@@ -168,7 +168,7 @@ export class Shortcode {
       { name: "uuid", value: uuid },
       { name: "href", value: href },
       { name: "href_uuid", value: hrefUuid }
-    ].filter(hasNotutilNilProp("value"))
+    ].filter(hasNotNilProp("value"))
     return new Shortcode(name, params, isPercentDelimited)
   }
 }
