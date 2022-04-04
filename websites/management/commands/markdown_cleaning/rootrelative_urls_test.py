@@ -153,19 +153,19 @@ def test_rootrel_rule_handles_site_homeages_correctly(
         (
             "site_one",
             R"cool image ![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg) cool ",
-            R'cool image {{< resource "uuid-1" >}} cool ',
+            R'cool image {{< resource uuid="uuid-1" >}} cool ',
         ),
         # This should convert the inner image to resource and fix outer destination
         (
             "site_one",
             R"cool image [![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg)](/courses/dep/site_one/dir/some_page) cool ",
-            R'cool image [{{< resource "uuid-1" >}}](/courses/site_one/pages/dir/some_page) cool ',
+            R'cool image [{{< resource uuid="uuid-1" >}}](/courses/site_one/pages/dir/some_page) cool ',
         ),
         # This should convert the inner image to resource and leave outer destination alone
         (
             "site_one",
             R"cool image [![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg)](/this/dest/should/stay/same) cool ",
-            R'cool image [{{< resource "uuid-1" >}}](/this/dest/should/stay/same) cool ',
+            R'cool image [{{< resource uuid="uuid-1" >}}](/this/dest/should/stay/same) cool ',
         ),
         (  # Do not change cross-site images. They would need the AWS file...
             "site_two",

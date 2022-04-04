@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
 from websites.management.commands.markdown_cleaning.shortcode_grammar import (
@@ -23,7 +23,7 @@ class ShortcodeLoggingRule(PyparsingRule):
         shortcode = toks.shortcode
         notes = self.ReplacementNotes(
             name=shortcode.name,
-            num_args=len(shortcode.args),
-            args=json.dumps(shortcode.args),
+            num_args=len(shortcode.params),
+            args=json.dumps([asdict(p) for p in shortcode.params]),
         )
         return toks.original_text, notes

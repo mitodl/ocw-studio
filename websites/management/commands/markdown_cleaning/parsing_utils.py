@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, ClassVar
 from uuid import UUID
 
 from pyparsing import ParserElement, ParseResults, originalTextFor
@@ -120,6 +120,60 @@ def unescape_quoted_string(text: str):
 
 
 @dataclass
+class ShortcodeParam:
+    value: str
+    name: Union[str, None] = None
+
+    param_regex: ClassVar[re.Pattern] = re.compile(r'^((?P<name>[a-zA-Z_]+)=)?(?P<value>.*)$')
+
+    @classmethod
+    def from_hugo(cls, s: str ):
+        """
+        Create a ShortcodeParam object from assignment string. Parameter value
+        will be unescaped.
+
+        Examples
+        ========
+        >>> ShortcodeParam.from_hugo('dog="woof \\"woof\\" bark"')
+        ShortcodeParam(name='dog', value='woof "woof" bark')
+        """
+        match = cls.param_regex.match(s)
+        name = match.group('name')
+        value = cls.hugo_unescape_shortcode_param_value(match.group('value'))
+        return cls(name=name, value=value)
+    
+    def to_hugo(self):
+        """
+        Convert a ShortcodeParam to text expected by hugo. Always encloses the
+        value in double quotes and performs escapes on the inner text if necessary.
+
+        Example
+        =======
+        >>> ShortcodeParam(name='dog', value='woof "woof" bark').to_hugo()
+        'dog="woof \\"woof\\" bark"
+        """
+        hugo_value = self.hugo_escape_param_value(self.value)
+
+        if self.name:
+            return f'{self.name}={hugo_value}'
+        return hugo_value
+    
+    @staticmethod
+    def hugo_unescape_shortcode_param_value(s: str):
+        quoted = '"' + s.strip('"') + '"'
+        return unescape_quoted_string(quoted)
+
+    @staticmethod
+    def hugo_escape_param_value(s: str):
+        """
+        Make shortcode parameter safe for Hugo.
+            - encase in double quotes and escape any quotes in the arg
+            - replace newlines with space
+        """
+        no_new_lines = s.replace("\n", " ")
+        return f'"{escape_double_quotes(no_new_lines)}"'
+
+@dataclass
 class ShortcodeTag:
     """
     Represents a shortcode tag.
@@ -133,7 +187,7 @@ class ShortcodeTag:
     """
 
     name: str
-    args: "list[str]"
+    params: "list[ShortcodeParam]"
     percent_delimiters: bool = False
     closer: bool = False
 
@@ -158,20 +212,10 @@ class ShortcodeTag:
         pieces = [
             opening_delimiter,
             self.name,
-            *(self.hugo_escape_arg(arg) for arg in self.args),
+            *(p.to_hugo() for p in self.params),
             closing_delimiter,
         ]
         return " ".join(pieces)
-
-    @staticmethod
-    def hugo_escape_arg(s: str):
-        """
-        Make shortcode argument safe for Hugo.
-            - encase in double quotes and escape any quotes in the arg
-            - replace newlines with space
-        """
-        no_new_lines = s.replace("\n", " ")
-        return f'"{escape_double_quotes(no_new_lines)}"'
 
     @classmethod
     def resource_link(cls, uuid: Union[str, UUID], text: str, fragment=""):
@@ -183,21 +227,22 @@ class ShortcodeTag:
                 uuid or 'sitemetadata'.
         """
         cls.validate_uuid(uuid)
-        args = [str(uuid), text]
+        params = [ShortcodeParam(str(uuid)), ShortcodeParam(text)]
         if fragment:
-            args.append("#" + fragment)
+            params.append(ShortcodeParam("#" + fragment))
 
         return cls(
             name="resource_link",
             percent_delimiters=True,
-            args=args,
+            params=params,
         )
 
     @classmethod
     def resource(cls, uuid: Union[str, UUID]):
         """Convenience method to create valid resource_link ShortcodeTag objects."""
         cls.validate_uuid(uuid)
-        return cls(name="resource", percent_delimiters=False, args=[str(uuid)])
+        params = [ShortcodeParam(name='uuid', value=str(uuid))]
+        return cls(name="resource", percent_delimiters=False, params=params)
 
     @staticmethod
     def validate_uuid(uuid: Union[str, UUID]) -> None:

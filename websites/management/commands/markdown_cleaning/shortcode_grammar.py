@@ -2,10 +2,9 @@ from pyparsing import ParseResults, nestedExpr
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     ShortcodeTag,
+    ShortcodeParam,
     WrappedParser,
-    unescape_quoted_string,
 )
-
 
 class ShortcodeParser(WrappedParser):
     def __init__(self):
@@ -23,9 +22,9 @@ class ShortcodeParser(WrappedParser):
                 is_closing_tag = toks[0][0] == "/"
                 content = toks[0][1:] if is_closing_tag else toks[0]
                 name = content[0]
-                args = [self.hugo_unescape_shortcode_arg(s) for s in content[1:]]
+                params = [ShortcodeParam.from_hugo(s) for s in content[1:]]
                 shortcode = ShortcodeTag(
-                    name, args, percent_delimiters, closer=is_closing_tag
+                    name, params, percent_delimiters, closer=is_closing_tag
                 )
                 return ParseResults.from_dict({"shortcode": shortcode})
 
@@ -41,7 +40,3 @@ class ShortcodeParser(WrappedParser):
         grammar = angle_expr | percent_expr
         super().__init__(grammar)
 
-    @staticmethod
-    def hugo_unescape_shortcode_arg(s: str):
-        quoted = '"' + s.strip('"') + '"'
-        return unescape_quoted_string(quoted)

@@ -8,6 +8,7 @@ from websites.management.commands.markdown_cleaning.parsing_utils import (
 from websites.management.commands.markdown_cleaning.shortcode_grammar import (
     ShortcodeParser,
     ShortcodeTag,
+    ShortcodeParam
 )
 
 
@@ -50,7 +51,7 @@ def test_shortcode_grammar_transform_string(text, expected):
         shortcode = toks.shortcode
         if shortcode.name == "resource_link":
             replacement = ShortcodeTag(
-                name=shortcode.name, args=shortcode.args, percent_delimiters=True
+                name=shortcode.name, params=shortcode.params, percent_delimiters=True
             )
             return replacement.to_hugo()
         return shortcode.to_hugo()
@@ -140,7 +141,7 @@ def test_unescape_quoted_string_raises_value_errors(bad_text):
 def test_shortcode(closer, percent_delimiters, expected):
     shortocde = ShortcodeTag(
         name="my_shortcode",
-        args=["first", "second   2"],
+        params=[ShortcodeParam("first"), ShortcodeParam("second   2")],
         percent_delimiters=percent_delimiters,
         closer=closer,
     )
@@ -148,7 +149,7 @@ def test_shortcode(closer, percent_delimiters, expected):
 
 
 @pytest.mark.parametrize(
-    ["shortcode_args", "expected"],
+    ["shortcode_param_values", "expected"],
     [
         ([], R"{{< meow >}}"),
         (["abc", "x y  z", 'f "g" h'], R'{{< meow "abc" "x y  z" "f \"g\" h" >}}'),
@@ -159,8 +160,9 @@ def test_shortcode(closer, percent_delimiters, expected):
         ),
     ],
 )
-def test_shortcode_serialization(shortcode_args, expected):
-    shortocde = ShortcodeTag(name="meow", args=shortcode_args)
+def test_shortcode_serialization(shortcode_param_values, expected):
+    params = [ShortcodeParam(s) for s in shortcode_param_values]
+    shortocde = ShortcodeTag(name="meow", params=params)
     assert shortocde.to_hugo() == expected
 
 
@@ -172,12 +174,12 @@ def test_shortcode_resource_link():
 
     # no fragment supplied
     assert ShortcodeTag.resource_link(id, text="my text") == ShortcodeTag(
-        name="resource_link", percent_delimiters=True, args=[str(id), "my text"]
+        name="resource_link", percent_delimiters=True, params=[ShortcodeParam(str(id)), ShortcodeParam("my text")]
     )
 
     # Empty string fragment
     assert ShortcodeTag.resource_link(id, text="my text", fragment="") == ShortcodeTag(
-        name="resource_link", percent_delimiters=True, args=[str(id), "my text"]
+        name="resource_link", percent_delimiters=True, params=[ShortcodeParam(str(id)), ShortcodeParam("my text")]
     )
 
     # Empty string fragment
@@ -186,7 +188,7 @@ def test_shortcode_resource_link():
     ) == ShortcodeTag(
         name="resource_link",
         percent_delimiters=True,
-        args=[str(id), "my text", "#meow"],
+        params=[ShortcodeParam(str(id)), ShortcodeParam("my text"), ShortcodeParam("#meow")],
     )
 
     with pytest.raises(ValueError):
@@ -204,7 +206,7 @@ def test_shortcode_resource():
 
     # no fragment supplied
     assert ShortcodeTag.resource(id) == ShortcodeTag(
-        name="resource", percent_delimiters=False, args=[str(id)]
+        name="resource", percent_delimiters=False, params=[ShortcodeParam(name='uuid', value= str(id))]
     )
 
     with pytest.raises(ValueError):

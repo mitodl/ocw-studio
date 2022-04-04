@@ -3,6 +3,7 @@ import pytest
 from websites.management.commands.markdown_cleaning.shortcode_grammar import (
     ShortcodeParser,
     ShortcodeTag,
+    ShortcodeParam
 )
 
 
@@ -15,7 +16,8 @@ def test_shortcode_grammar_respects_spaces_in_quoted_arguments(closer):
 
     assert parsed.shortcode == ShortcodeTag(
         "some_name",
-        args=["first_arg", "2", '3rd "quoted"   arg', "fourth"],
+        params=[ShortcodeParam(v)
+        for v in ["first_arg", "2", '3rd "quoted"   arg', "fourth"]],
         closer=closer,
     )
     assert parsed.original_text == text
@@ -39,7 +41,7 @@ def test_shortcode_grammar_with_nested_shortcodes():
     quoted = parser.parse_string(R'{{< fake_shortcode uuid "{{< sup 4 >}}" >}}')
 
     assert quoted.shortcode == ShortcodeTag(
-        "fake_shortcode", args=["uuid", R"{{< sup 4 >}}"]
+        "fake_shortcode", params=[ShortcodeParam("uuid"), ShortcodeParam("{{< sup 4 >}}")]
     )
     assert quoted.original_text == text_quoted
 
@@ -47,7 +49,7 @@ def test_shortcode_grammar_with_nested_shortcodes():
     text_not_nested = R"{{< fake_shortcode uuid sup 4 >}}"
     not_nested = parser.parse_string(text_not_nested)
     assert not_nested.shortcode == ShortcodeTag(
-        name="fake_shortcode", args=["uuid", "sup", "4"]
+        name="fake_shortcode", params=[ShortcodeParam("uuid"), ShortcodeParam("sup"), ShortcodeParam("4")]
     )
     assert not_nested.original_text == text_not_nested
 
