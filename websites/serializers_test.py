@@ -37,18 +37,62 @@ from websites.site_config_api import SiteConfig
 pytestmark = pytest.mark.django_db
 
 
-def test_serialize_website_course():
+@pytest.mark.parametrize("instructors", [[], ["Prof. Jane Doe", "Dr. John Smith"]])
+def test_serialize_website_course(instructors):
     """
     Verify that a serialized website contains expected fields
     """
     site = WebsiteFactory.create()
+    instructor_contents = []
+    if instructors:
+        instructor_site = WebsiteFactory.create()
+        for instructor in instructors:
+            names = instructor.split()
+            instructor_contents.append(
+                WebsiteContentFactory.create(
+                    website=instructor_site,
+                    type="instructor",
+                    title=instructor,
+                    metadata={
+                        "last_name": names[2],
+                        "first_name": names[1],
+                        "salutation": names[0],
+                    },
+                )
+            )
+        instructor_meta = {
+            "instructors": {
+                "content": [instructor.text_id for instructor in instructor_contents],
+                "website": instructor_site.name,
+            }
+        }
+    else:
+        instructor_meta = None
+
+    WebsiteContentFactory.create(
+        website=site, type="sitemetadata", metadata=instructor_meta
+    )
+    expected_api_meta = (
+        None
+        if not instructor_meta
+        else {
+            "instructors": [
+                WebsiteContentDetailSerializer(instructor).data
+                for instructor in instructor_contents
+            ]
+        }
+    )
+
     serialized_data = WebsiteSerializer(instance=site).data
     assert serialized_data["name"] == site.name
     assert serialized_data["short_id"] == site.short_id
     assert serialized_data["publish_date"] == site.publish_date.strftime(
         ISO_8601_FORMAT
     )
-    assert serialized_data["metadata"] == site.metadata
+    assert serialized_data[
+        "first_published_to_production"
+    ] == site.first_published_to_production.strftime(ISO_8601_FORMAT)
+    assert serialized_data["metadata"] == expected_api_meta
     assert isinstance(serialized_data["starter"], dict)
     assert (
         serialized_data["starter"]
@@ -95,15 +139,21 @@ def test_website_detail_deserialize():
 
 
 @pytest.mark.parametrize("has_starter", [True, False])
-def test_website_serializer(has_starter):
+@pytest.mark.parametrize("has_sitemeta", [True, False])
+def test_website_serializer(has_starter, has_sitemeta):
     """WebsiteSerializer should serialize a Website object with the correct fields"""
     website = (
-        WebsiteFactory.build() if has_starter else WebsiteFactory.build(starter=None)
+        WebsiteFactory.create() if has_starter else WebsiteFactory.create(starter=None)
+    )
+    expected_meta = (
+        WebsiteContentFactory.create(website=website, type="sitemetadata").metadata
+        if has_sitemeta
+        else None
     )
     serialized_data = WebsiteSerializer(instance=website).data
     assert serialized_data["name"] == website.name
     assert serialized_data["title"] == website.title
-    assert serialized_data["metadata"] == website.metadata
+    assert serialized_data["metadata"] == expected_meta
     assert "config" not in serialized_data
 
 

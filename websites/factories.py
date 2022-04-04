@@ -43,6 +43,7 @@ class WebsiteFactory(DjangoModelFactory):
     short_id = factory.Sequence(lambda n: "site-shortid-%s" % n)
     metadata = factory.Faker("json")
     publish_date = factory.Faker("date_time", tzinfo=pytz.utc)
+    first_published_to_production = factory.Faker("date_time", tzinfo=pytz.utc)
     draft_publish_date = factory.Faker("date_time", tzinfo=pytz.utc)
     starter = factory.SubFactory(WebsiteStarterFactory)
     owner = factory.SubFactory(UserFactory)
@@ -53,11 +54,19 @@ class WebsiteFactory(DjangoModelFactory):
 
     class Params:
         published = factory.Trait(
-            publish_date=factory.Faker("past_datetime", tzinfo=pytz.utc)
+            publish_date=factory.Faker("past_datetime", tzinfo=pytz.utc),
+            first_published_to_production=factory.Faker(
+                "past_datetime", tzinfo=pytz.utc
+            ),
         )
-        unpublished = factory.Trait(publish_date=None)
+        unpublished = factory.Trait(
+            publish_date=None, first_published_to_production=None
+        )
         future_publish = factory.Trait(
-            publish_date=factory.Faker("future_datetime", tzinfo=pytz.utc)
+            publish_date=factory.Faker("future_datetime", tzinfo=pytz.utc),
+            first_published_to_production=factory.Faker(
+                "future_datetime", tzinfo=pytz.utc
+            ),
         )
 
 
