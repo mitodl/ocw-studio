@@ -4,12 +4,14 @@ from datetime import timedelta
 
 import pytest
 from botocore.exceptions import ClientError
+from googleapiclient.http import MediaDownloadProgress
 from mitol.common.utils import now_in_utc
 from moto import mock_s3
 from requests import HTTPError
 
 from gdrive_sync import api
 from gdrive_sync.api import (
+    GDriveStreamReader,
     create_gdrive_resource_content,
     gdrive_root_url,
     get_resource_type,
@@ -44,7 +46,7 @@ from websites.models import WebsiteContent
 
 
 pytestmark = pytest.mark.django_db
-# pylint:disable=redefined-outer-name, too-many-arguments, unused-argument
+# pylint:disable=redefined-outer-name, too-many-arguments, unused-argument, protected-access
 
 
 @pytest.fixture
@@ -123,7 +125,7 @@ def test_get_parent_tree(mock_service):
 def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     """stream_to_s3 should make expected drive api and S3 upload calls"""
     mock_service = mocker.patch("gdrive_sync.api.get_drive_service")
-    mock_download = mocker.patch("gdrive_sync.api.streaming_download")
+    mock_download = mocker.patch("gdrive_sync.api.GDriveStreamReader")
     mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
     mock_bucket = mock_boto3.resource.return_value.Bucket.return_value
     drive_file = DriveFileFactory.create(
@@ -169,10 +171,10 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
 
 @pytest.mark.django_db
 def test_stream_to_s3_error(mocker):
-    """Task should make expected drive api and S3 upload calls"""
-    mocker.patch("gdrive_sync.api.boto3")
+    """Task should mark DriveFile status as failed if an s3 upload error occurs"""
     mock_service = mocker.patch("gdrive_sync.api.get_drive_service")
-    mocker.patch("gdrive_sync.api.streaming_download", side_effect=HTTPError())
+    mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
+    mock_boto3.resource.return_value.Bucket.side_effect = HTTPError()
     drive_file = DriveFileFactory.create()
     with pytest.raises(HTTPError):
         api.stream_to_s3(drive_file)
@@ -355,7 +357,7 @@ def test_process_file_result(
     process_file_result(file_result)
     drive_file = DriveFile.objects.filter(file_id=file_result["id"]).first()
     file_exists = drive_file is not None
-    assert file_exists is (correct_folder and link is not None)
+    assert file_exists is (correct_folder and link is not None and checksum is not None)
     if drive_file:
         assert drive_file.checksum == checksum
 
@@ -593,3 +595,31 @@ def test_update_sync_status(file_errors, site_errors, status):
     assert sorted(website.sync_errors) == sorted(
         [error for error in file_errors if error] + (site_errors or [])
     )
+
+
+@pytest.mark.parametrize("chunk_size", [1, 2, 3])
+def test_gdrive_stream_reader(mocker, mock_service, chunk_size):
+    """The GDriveStreamReader should return the expected bytes"""
+    expected_bytes = [b"a", b"b", b"c"]
+    bytes_idx = 0
+
+    mock_resp = mocker.Mock(status=200)
+    mocker.patch(
+        "googleapiclient.http._retry_request", return_value=(mock_resp, b"abc")
+    )
+    reader = GDriveStreamReader(DriveFileFactory.build())
+
+    def mock_next_chunk():
+        """Overwrite the MediaIoBaseDownload.next_chunk function for testing purposes"""
+        reader.downloader._fd.write(
+            b"".join(expected_bytes[bytes_idx : bytes_idx + chunk_size])
+        )
+        return MediaDownloadProgress(bytes_idx + chunk_size, 3), bytes_idx >= 2
+
+    reader.downloader.next_chunk = mock_next_chunk
+
+    for i in range(0, 3, chunk_size):
+        bytes_read = reader.read(amount=chunk_size)
+        bytes_idx += chunk_size
+        assert reader.downloader._chunksize == chunk_size
+        assert bytes_read == b"".join(expected_bytes[i : i + chunk_size])
