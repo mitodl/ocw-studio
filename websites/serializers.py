@@ -102,6 +102,8 @@ class WebsiteSerializer(serializers.ModelSerializer):
                             WebsiteContentDetailSerializer(instructor).data
                         )
                 site_metadata.metadata["instructors"] = instructors
+            else:
+                site_metadata.metadata["instructors"] = []
             return site_metadata.metadata
 
     class Meta:
