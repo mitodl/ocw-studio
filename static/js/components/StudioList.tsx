@@ -54,7 +54,7 @@ export function StudioListItem(props: ListItemProps): JSX.Element {
   )
 
   const closeMenu = useCallback(
-    (e: React.MouseEvent) => {
+    (e: MouseEvent) => {
       if (e) {
         e.preventDefault()
       }

@@ -117,3 +117,6 @@ celerybeat-schedule
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# VS-Code workspace settings
+.vscode

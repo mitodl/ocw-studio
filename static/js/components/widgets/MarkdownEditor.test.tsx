@@ -31,6 +31,8 @@ jest.mock("../../lib/ckeditor/CKEditor", () => {
   }
 })
 
+jest.mock("@ckeditor/ckeditor5-inspector")
+
 jest.mock("@ckeditor/ckeditor5-react", () => ({
   CKEditor: () => <div />
 }))
