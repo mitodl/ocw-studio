@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.56.0
+--------------
+
+- Added some metrics for celery task completion time
+
 Version 0.55.2 (Released March 31, 2022)
 --------------
 
