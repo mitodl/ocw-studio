@@ -11,7 +11,7 @@ type NonNullableProps<T, K extends keyof T> = T &
  * Return a predicate `obj => boolean` that asserts `obj[key]` is not null and
  * is not undefined.
  */
-export const hasNotutilNilProp = <T, K extends keyof T>(key: K) => (
+export const hasNotNilProp = <T, K extends keyof T>(key: K) => (
   obj: T
 ): obj is NonNullableProps<T, K> => {
   return obj[key] !== undefined && obj[key] !== null
