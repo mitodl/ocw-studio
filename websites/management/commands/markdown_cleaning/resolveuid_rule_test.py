@@ -28,7 +28,7 @@ def get_markdown_cleaner(website_contents):
         ),
         (
             "Here is an image ![should disappear](./resolveuid/5cf754b2b97b4ac18dabdeed1201de94) cool",
-            R'Here is an image {{< resource "5cf754b2-b97b-4ac1-8dab-deed1201de94" >}} cool',
+            R'Here is an image {{< resource uuid="5cf754b2-b97b-4ac1-8dab-deed1201de94" >}} cool',
         ),
     ],
 )
