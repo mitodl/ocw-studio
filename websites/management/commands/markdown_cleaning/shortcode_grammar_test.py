@@ -1,9 +1,9 @@
 import pytest
 
 from websites.management.commands.markdown_cleaning.shortcode_grammar import (
+    ShortcodeParam,
     ShortcodeParser,
     ShortcodeTag,
-    ShortcodeParam
 )
 
 
@@ -20,11 +20,12 @@ def test_shortcode_grammar_respects_spaces_in_quoted_positional_params(closer):
             ShortcodeParam("first_arg"),
             ShortcodeParam("2"),
             ShortcodeParam('3rd "quoted"   arg'),
-            ShortcodeParam('fourth')
+            ShortcodeParam("fourth"),
         ],
         closer=closer,
     )
     assert parsed.original_text == text
+
 
 @pytest.mark.parametrize("closer", [True, False])
 def test_shortcode_grammar_respects_spaces_in_quoted_named_params(closer):
@@ -33,7 +34,7 @@ def test_shortcode_grammar_respects_spaces_in_quoted_named_params(closer):
     parser = ShortcodeParser()
     parsed = parser.parse_string(text)
 
-    print('\n\n')
+    print("\n\n")
     for p in parsed.shortcode.params:
         print(p)
 
@@ -44,7 +45,7 @@ def test_shortcode_grammar_respects_spaces_in_quoted_named_params(closer):
             ShortcodeParam(name="two", value="2"),
             ShortcodeParam(name="and_three", value='3rd "quoted"   arg'),
             # Check a shortcode name with a number in it.
-            ShortcodeParam(name="param_4", value='fourth')
+            ShortcodeParam(name="param_4", value="fourth"),
         ],
         closer=closer,
     )
@@ -69,7 +70,8 @@ def test_shortcode_grammar_with_nested_shortcodes():
     quoted = parser.parse_string(R'{{< fake_shortcode uuid "{{< sup 4 >}}" >}}')
 
     assert quoted.shortcode == ShortcodeTag(
-        "fake_shortcode", params=[ShortcodeParam("uuid"), ShortcodeParam("{{< sup 4 >}}")]
+        "fake_shortcode",
+        params=[ShortcodeParam("uuid"), ShortcodeParam("{{< sup 4 >}}")],
     )
     assert quoted.original_text == text_quoted
 
@@ -77,7 +79,8 @@ def test_shortcode_grammar_with_nested_shortcodes():
     text_not_nested = R"{{< fake_shortcode uuid sup 4 >}}"
     not_nested = parser.parse_string(text_not_nested)
     assert not_nested.shortcode == ShortcodeTag(
-        name="fake_shortcode", params=[ShortcodeParam("uuid"), ShortcodeParam("sup"), ShortcodeParam("4")]
+        name="fake_shortcode",
+        params=[ShortcodeParam("uuid"), ShortcodeParam("sup"), ShortcodeParam("4")],
     )
     assert not_nested.original_text == text_not_nested
 

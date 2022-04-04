@@ -115,6 +115,38 @@ def test_content_finder_specific_url_replacements(
 
 
 @pytest.mark.parametrize(
+    ["root_relative_path", "base_site_name", "expected_content_uuid"],
+    [
+        ("/courses/pets/pages/animals/cats", None, "uuid-cats"),
+        ("{{< baseurl >}}/pages/animals/cats", "pets", "uuid-cats"),
+        ("/courses/pets/pages/animals/unicorns", None, "uuid-unicorns"),
+        ("{{< baseurl >}}/pages/animals/unicorns", "pets", "uuid-unicorns"),
+    ],
+)
+def test_content_finder_find(root_relative_path, base_site_name, expected_content_uuid):
+    website = WebsiteFactory.build(name="pets")
+    c1 = WebsiteContentFactory.build(
+        filename="cats",
+        dirpath="content/pages/animals",
+        website=website,
+        text_id="uuid-cats",
+    )
+    c2 = WebsiteContentFactory.build(
+        filename="_index",
+        dirpath="content/pages/animals/unicorns",
+        website=website,
+        text_id="uuid-unicorns",
+    )
+    with patch_website_contents_all([c1, c2]):
+        content_lookup = ContentLookup()
+        base_site = website if base_site_name == website.name else None
+        assert (
+            content_lookup.find(root_relative_path, base_site).text_id
+            == expected_content_uuid
+        )
+
+
+@pytest.mark.parametrize(
     ["site_uuid", "content_index"], [("website_one", 0), ("website_two", 1)]
 )
 def test_content_finder_returns_metadata_for_site(site_uuid, content_index):

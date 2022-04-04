@@ -7,13 +7,9 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import Pyparsin
 from websites.management.commands.markdown_cleaning.link_parser import (
     LinkParser,
     LinkParseResult,
-    MarkdownLink,
 )
 from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
-from websites.management.commands.markdown_cleaning.utils import (
-    ContentLookup,
-    get_rootrelative_url_from_content,
-)
+from websites.management.commands.markdown_cleaning.utils import ContentLookup
 from websites.models import WebsiteContent
 
 

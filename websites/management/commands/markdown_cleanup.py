@@ -24,17 +24,14 @@ from websites.management.commands.markdown_cleaning.link_logging_rule import (
     LinkLoggingRule,
 )
 from websites.management.commands.markdown_cleaning.link_unescape import LinkUnescape
+from websites.management.commands.markdown_cleaning.link_wrapped_images import (
+    LinkWrappedImagesRule,
+)
 from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
     MetadataRelativeUrlsFix,
 )
-from websites.management.commands.markdown_cleaning.ocwnext_rule import (
-    OCWNextReplacement,
-)
 from websites.management.commands.markdown_cleaning.removal_rules import (
     RemoveInaccesibleGif,
-)
-from websites.management.commands.markdown_cleaning.resolveuid_rule import (
-    ResolveUIDRule,
 )
 from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
@@ -70,8 +67,7 @@ class Command(BaseCommand):
         ShortcodeLoggingRule,
         RemoveInaccesibleGif,
         LinkLoggingRule,
-        ResolveUIDRule,
-        OCWNextReplacement,
+        LinkWrappedImagesRule,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:

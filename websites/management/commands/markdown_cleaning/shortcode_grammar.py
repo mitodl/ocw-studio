@@ -1,10 +1,19 @@
+from typing import Protocol
+
 from pyparsing import ParseResults, nestedExpr
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
-    ShortcodeTag,
     ShortcodeParam,
+    ShortcodeTag,
     WrappedParser,
 )
+
+
+class ShortcodeParseResult(Protocol):
+
+    shortcode: ShortcodeTag
+    original_text: str
+
 
 class ShortcodeParser(WrappedParser):
     def __init__(self):
@@ -24,14 +33,11 @@ class ShortcodeParser(WrappedParser):
                 name = content[0]
                 param_assignments: list[str] = []
                 for s in content[1:]:
-                    if param_assignments and param_assignments[-1].endswith('='):
+                    if param_assignments and param_assignments[-1].endswith("="):
                         param_assignments[-1] += s
                     else:
                         param_assignments.append(s)
-                
-                print('param_assignments')
-                print(param_assignments)
-                    
+
                 params = [ShortcodeParam.from_hugo(s) for s in param_assignments]
                 shortcode = ShortcodeTag(
                     name, params, percent_delimiters, closer=is_closing_tag
@@ -49,4 +55,3 @@ class ShortcodeParser(WrappedParser):
 
         grammar = angle_expr | percent_expr
         super().__init__(grammar)
-
