@@ -73,9 +73,7 @@ def test_serialize_website_course(instructors):
         website=site, type="sitemetadata", metadata=instructor_meta
     )
     expected_api_meta = (
-        {
-            "instructors": []
-        }
+        {"instructors": []}
         if not instructor_meta
         else {
             "instructors": [
@@ -149,11 +147,7 @@ def test_website_serializer(has_starter, has_sitemeta):
     )
     if has_sitemeta:
         WebsiteContentFactory.create(website=website, type="sitemetadata")
-    expected_meta = (
-        {"instructors": []}
-        if has_sitemeta
-        else None
-    )
+    expected_meta = {"instructors": []} if has_sitemeta else None
     serialized_data = WebsiteSerializer(instance=website).data
     assert serialized_data["name"] == website.name
     assert serialized_data["title"] == website.title
