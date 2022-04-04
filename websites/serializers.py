@@ -29,7 +29,7 @@ from websites.api import (
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import get_dict_field, permissions_group_name_for_role
+from websites.utils import permissions_group_name_for_role
 
 
 log = logging.getLogger(__name__)
@@ -80,29 +80,6 @@ class WebsiteSerializer(serializers.ModelSerializer):
     """ Serializer for websites """
 
     starter = WebsiteStarterSerializer(read_only=True)
-    metadata = serializers.SerializerMethodField(read_only=True)
-
-    def get_metadata(self, instance):
-        """
-        Get the site metadata, but tweak the instructors key to resemble what the theme template for
-        new courses currently expects (this template should change in the future to retrieve course
-        info in a manner similar to featured courses, instead of relying on this api response).
-        """
-        site_metadata = instance.websitecontent_set.filter(type="sitemetadata").first()
-        if site_metadata and site_metadata.metadata is not None:
-            instructor_uids = get_dict_field(
-                site_metadata.metadata, "instructors.content"
-            )
-            if instructor_uids:
-                instructors = []
-                for uid in instructor_uids:
-                    instructor = WebsiteContent.objects.filter(text_id=uid).first()
-                    if instructor:
-                        instructors.append(
-                            WebsiteContentDetailSerializer(instructor).data
-                        )
-                site_metadata.metadata["instructors"] = instructors
-            return site_metadata.metadata
 
     class Meta:
         model = Website
@@ -116,7 +93,6 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "source",
             "draft_publish_date",
             "publish_date",
-            "first_published_to_production",
             "metadata",
             "starter",
             "owner",
