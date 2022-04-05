@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.56.1
+--------------
+
+- update fastly vars for mass-publish pipeline definition (#1199)
+- Revert API change (#1200)
+- Handle courses with no instructors (#1196)
+- Get gdrive file body via the google drive api and stream that to s3 (#1169)
+- tolerate href, href_uid on resource shortcode (#1192)
+- Use first_published_to_production instead of publish_date for sorting new courses, get metadata from WebsiteContent (#1191)
+
 Version 0.56.0 (Released April 04, 2022)
 --------------
 
