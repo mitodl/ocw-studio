@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.56.1
+Version 0.56.1 (Released April 05, 2022)
 --------------
 
 - update fastly vars for mass-publish pipeline definition (#1199)
