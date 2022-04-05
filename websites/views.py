@@ -98,7 +98,7 @@ class WebsiteViewSet(
         user = self.request.user
         if self.request.user.is_anonymous:
             # Anonymous users should get a list of all published websites (used for ocw-www carousel)
-            ordering = "-publish_date"
+            ordering = "-first_published_to_production"
             queryset = Website.objects.filter(
                 publish_date__lte=now_in_utc(),
                 # Replace this after imported ocw sites have metadata stored in WebsiteContent objects

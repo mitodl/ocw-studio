@@ -82,15 +82,19 @@ def test_websites_endpoint_list(drf_client, filter_by_type, websites, settings):
         resp = drf_client.get(reverse("websites_api-list"))
         assert resp.data.get("count") == 5
     for idx, site in enumerate(
-        sorted(expected_websites, reverse=True, key=lambda site: site.publish_date)
+        sorted(
+            expected_websites,
+            reverse=True,
+            key=lambda site: site.first_published_to_production,
+        )
     ):
         assert resp.data.get("results")[idx]["uuid"] == str(site.uuid)
         assert resp.data.get("results")[idx]["starter"]["slug"] == (
             settings.OCW_IMPORT_STARTER_SLUG if filter_by_type else site.starter.slug
         )
-        assert resp.data.get("results")[idx]["publish_date"] <= now.strftime(
-            ISO_8601_FORMAT
-        )
+        assert resp.data.get("results")[idx][
+            "first_published_to_production"
+        ] <= now.strftime(ISO_8601_FORMAT)
 
 
 def test_websites_endpoint_list_permissions(drf_client, permission_groups):
