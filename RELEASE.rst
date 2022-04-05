@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.56.2
+--------------
+
+- Sort websites by first_published_to_production (#1204)
+
 Version 0.56.1 (Released April 05, 2022)
 --------------
 
