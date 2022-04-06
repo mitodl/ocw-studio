@@ -9,7 +9,7 @@ from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
-    allow_invalid_shortcode_uuids,
+    allow_invalid_uuids,
     patch_website_contents_all,
 )
 from websites.management.commands.markdown_cleaning.utils import (
@@ -70,7 +70,7 @@ def get_markdown_cleaner(website_contents):
         ),
     ],
 )
-@allow_invalid_shortcode_uuids()
+@allow_invalid_uuids()
 def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdown):
     """Test specific replacements"""
     website_uuid = "website-uuid"
@@ -107,7 +107,7 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
         ),
     ],
 )
-@allow_invalid_shortcode_uuids()
+@allow_invalid_uuids()
 def test_baseurl_replacer_handle_specific_url_replacements(
     url, content_relative_dirpath, filename
 ):
@@ -136,7 +136,7 @@ def test_baseurl_replacer_handle_specific_url_replacements(
     assert target_content.markdown == expected_markdown
 
 
-@allow_invalid_shortcode_uuids()
+@allow_invalid_uuids()
 def test_baseurl_replacer_handles_index_files():
     """Test specific replacements"""
     website_uuid = "website-uuid"
@@ -159,7 +159,7 @@ def test_baseurl_replacer_handles_index_files():
     assert target_content.markdown == expected_markdown
 
 
-@allow_invalid_shortcode_uuids()
+@allow_invalid_uuids()
 def test_baseurl_replacer_replaces_baseurl_links():
     """replace_baseurl_links should replace multiple links with expected values"""
 
@@ -227,7 +227,7 @@ def test_baseurl_replacer_replaces_baseurl_links():
     "website_uuid, should_markdown_change",
     [("website-uuid-111", True), ("website-uuid-222", False)],
 )
-@allow_invalid_shortcode_uuids()
+@allow_invalid_uuids()
 def test_baseurl_replacer_replaces_content_in_same_course(
     website_uuid, should_markdown_change
 ):

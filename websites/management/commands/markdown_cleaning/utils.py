@@ -2,9 +2,11 @@
 import importlib
 import os
 from collections import defaultdict
+from typing import Optional
 from urllib.parse import urlparse
 from uuid import UUID
 
+from main.utils import is_valid_uuid
 from websites.models import Website, WebsiteContent
 
 
@@ -13,17 +15,6 @@ filepath_migration = importlib.import_module(
 )
 CONTENT_FILENAME_MAX_LEN = filepath_migration.CONTENT_FILENAME_MAX_LEN
 CONTENT_DIRPATH_MAX_LEN = filepath_migration.CONTENT_DIRPATH_MAX_LEN
-
-
-def is_valid_uuid(text: str):
-    """
-    Return True if text is valid uuid, else False
-    """
-    try:
-        UUID(text)
-        return True
-    except ValueError:
-        return False
 
 
 def remove_prefix(string: str, prefix: str):
@@ -75,18 +66,25 @@ class ContentLookup:
         """Retrieve a content object by its UUID"""
         return self.by_uuid[uuid]
 
-    def find(self, root_relative_path: str):
-        root_relative_path = root_relative_path.strip("/")
-        root_relative_path += "/"
-        if not root_relative_path.startswith("courses/"):
-            raise KeyError(f"Content for '{root_relative_path}' not found")
-        site_name = root_relative_path.split("/")[1]
+    def find(
+        self, root_relative_path: str, base_site: Optional[Website] = None
+    ) -> WebsiteContent:
+        standardized_path = root_relative_path.strip("/") + "/"
+        baseurl_prefix = R"{{< baseurl >}}"
+        if base_site is not None and standardized_path.startswith(R"{{< baseurl >}}"):
+            standardized_path = f"courses/{base_site.name}" + remove_prefix(
+                standardized_path, baseurl_prefix
+            )
 
-        relative_path = remove_prefix(root_relative_path, f"courses/{site_name}")
+        if not standardized_path.startswith("courses/"):
+            raise KeyError(f"Content for '{standardized_path}' not found")
+        site_name = standardized_path.split("/")[1]
+
+        relative_path = remove_prefix(standardized_path, f"courses/{site_name}")
         site_id = self.websites[site_name]
         return self.find_within_site(site_id, relative_path)
 
-    def find_within_site(self, website_id, site_relative_path: str):
+    def find_within_site(self, website_id, site_relative_path: str) -> WebsiteContent:
         """Lookup content by its website_id and content-relative URL.
 
         Example:

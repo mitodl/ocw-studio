@@ -10,7 +10,7 @@ from websites.management.commands.markdown_cleaning.rootrelative_urls import (
     RootRelativeUrlRule,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
-    allow_invalid_shortcode_uuids,
+    allow_invalid_uuids,
     patch_website_all,
     patch_website_contents_all,
 )
@@ -71,7 +71,7 @@ def get_markdown_cleaner(websites, website_contents):
         ),
     ],
 )
-@allow_invalid_shortcode_uuids()
+@allow_invalid_uuids()
 def test_rootrel_rule_only_uses_resource_links_for_same_site(
     markdown, site_name, expected_markdown
 ):
@@ -127,7 +127,7 @@ def test_rootrel_rule_only_uses_resource_links_for_same_site(
         ),
     ],
 )
-@allow_invalid_shortcode_uuids()
+@allow_invalid_uuids()
 def test_rootrel_rule_handles_site_homeages_correctly(
     markdown, site_name, expected_markdown
 ):
@@ -153,19 +153,19 @@ def test_rootrel_rule_handles_site_homeages_correctly(
         (
             "site_one",
             R"cool image ![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg) cool ",
-            R'cool image {{< resource "uuid-1" >}} cool ',
+            R'cool image {{< resource uuid="uuid-1" >}} cool ',
         ),
         # This should convert the inner image to resource and fix outer destination
         (
             "site_one",
             R"cool image [![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg)](/courses/dep/site_one/dir/some_page) cool ",
-            R'cool image [{{< resource "uuid-1" >}}](/courses/site_one/pages/dir/some_page) cool ',
+            R'cool image [{{< resource uuid="uuid-1" >}}](/courses/site_one/pages/dir/some_page) cool ',
         ),
         # This should convert the inner image to resource and leave outer destination alone
         (
             "site_one",
             R"cool image [![alt text here](/courses/dep/site_one/blah/old_image_filename123.jpg)](/this/dest/should/stay/same) cool ",
-            R'cool image [{{< resource "uuid-1" >}}](/this/dest/should/stay/same) cool ',
+            R'cool image [{{< resource uuid="uuid-1" >}}](/this/dest/should/stay/same) cool ',
         ),
         (  # Do not change cross-site images. They would need the AWS file...
             "site_two",
@@ -174,7 +174,7 @@ def test_rootrel_rule_handles_site_homeages_correctly(
         ),
     ],
 )
-@allow_invalid_shortcode_uuids()
+@allow_invalid_uuids()
 def test_rootrel_rule_uses_images_for_image(markdown, site_name, expected_markdown):
     w1 = WebsiteFactory.build(name="site_one")
     w2 = WebsiteFactory.build(name="site_two")

@@ -19,6 +19,6 @@ def patch_website_all(websites):
 
 
 @contextmanager
-def allow_invalid_shortcode_uuids():
-    with patch.object(ShortcodeTag, "validate_uuid"):
+def allow_invalid_uuids():
+    with patch("main.utils.is_valid_uuid"):
         yield
