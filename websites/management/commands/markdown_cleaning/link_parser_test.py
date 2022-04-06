@@ -136,6 +136,9 @@ def test_link_parser_with_shortcodes_in_destination():
         "[\n   \t \n](meow)",
         "[bracket in ']' quotes](meow)",
         '[bracket in "]" quotes](meow)',
+        '[text] (dest)',
+        '[text]\n(dest)',
+        '[text] \n (dest)'
     ],
 )
 def test_link_parser_rejects_bad_links(markdown):
