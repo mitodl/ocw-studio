@@ -139,6 +139,7 @@ def test_unescape_quoted_string_raises_value_errors(bad_text):
     ],
 )
 def test_shortcode_positional_params(closer, percent_delimiters, expected):
+    """Test creating shortcode objects with positional paramters."""
     shortocde = ShortcodeTag(
         name="my_shortcode",
         params=[ShortcodeParam("first"), ShortcodeParam('second "two"   2')],
@@ -166,6 +167,7 @@ def test_shortcode_positional_params(closer, percent_delimiters, expected):
     ],
 )
 def test_shortcode_named_params(closer, percent_delimiters, expected):
+    """Test creating shortcode objects with named paramters."""
     shortocde = ShortcodeTag(
         name="my_shortcode",
         params=[
@@ -179,6 +181,9 @@ def test_shortcode_named_params(closer, percent_delimiters, expected):
 
 
 def test_shortcode_get_param():
+    """
+    Test retrieving shortcode params by name or position, similar to Hugo's .Get
+    """
     s1 = ShortcodeTag(
         "my_shortcode",
         params=[

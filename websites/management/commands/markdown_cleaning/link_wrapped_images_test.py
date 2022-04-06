@@ -65,6 +65,9 @@ def get_markdown_cleaner(website_contents):
 )
 @allow_invalid_uuids()
 def test_link_wrapped_image_replacement(old_markdown, new_markdown, same_site):
+    """
+    Test link-wrapped images update to resource shortcodes correctly.
+    """
     w1 = WebsiteFactory.build(name="pets")
     w2 = WebsiteFactory.build(name="other-site")
     linked_content = WebsiteContentFactory.build(

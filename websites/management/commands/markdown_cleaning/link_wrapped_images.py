@@ -64,6 +64,13 @@ class LinkWrappedImagesRule(PyparsingRule):
         return "[{{< resource" in text
 
     def replace_match(self, s, l, toks: LinkParseResult, wc: WebsiteContent):
+        """
+        Replace a single markdown link with shortcodes.
+
+        If this link is not a link-wrapped resource, ignore it. If it is,
+        update the shortcode to use href/href_uuid params. Possibly add a
+        resource_link shortcode to account for other text in the link.
+        """
         Notes = self.ReplacementNotes
         link = toks.link
         text = link.text.strip()
