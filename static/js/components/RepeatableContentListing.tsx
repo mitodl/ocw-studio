@@ -4,7 +4,6 @@ import { useMutation, useRequest } from "redux-query-react"
 import { useSelector, useStore } from "react-redux"
 import { requestAsync } from "redux-query"
 import useInterval from "@use-it/interval"
-import { DateTime } from "luxon"
 import { isNil } from "ramda"
 
 import DriveSyncStatusIndicator from "./DriveSyncStatusIndicator"
@@ -38,6 +37,7 @@ import { useURLParamFilter } from "../hooks/search"
 import { singular } from "pluralize"
 import SiteContentEditorDrawer from "./SiteContentEditorDrawer"
 import { useWebsite } from "../context/Website"
+import { formatUpdatedOn } from "../util/websites"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -195,9 +195,7 @@ export default function RepeatableContentListing(props: {
               })
               .toString()}
             title={item.title ?? ""}
-            subtitle={`Updated ${DateTime.fromISO(
-              item.updated_on
-            ).toRelative()}`}
+            subtitle={`Updated ${formatUpdatedOn(item)}`}
           />
         ))}
       </StudioList>

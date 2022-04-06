@@ -31,7 +31,12 @@ describe("ResourcePickerListing", () => {
     focusResourceStub: any,
     setOpenStub: any,
     website: Website,
-    contentListingItems: WebsiteContent[][]
+    contentListingItems: {
+      videos: WebsiteContent[]
+      documents: WebsiteContent[]
+      pages: WebsiteContent[]
+      courseLists: WebsiteContent[]
+    }
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -51,12 +56,12 @@ describe("ResourcePickerListing", () => {
     // @ts-ignore
     useWebsite.mockReturnValue(website)
 
-    contentListingItems = [
-      [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
-      [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
-      [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
-      [makeWebsiteContentDetail(), makeWebsiteContentDetail()]
-    ]
+    contentListingItems = {
+      videos:      [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
+      documents:   [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
+      pages:       [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
+      courseLists: [makeWebsiteContentDetail(), makeWebsiteContentDetail()]
+    }
 
     helper.mockGetRequest(
       siteApiContentListingUrl
@@ -70,7 +75,7 @@ describe("ResourcePickerListing", () => {
           resourcetype:  ResourceType.Video
         })
         .toString(),
-      apiResponse(contentListingItems[0])
+      apiResponse(contentListingItems.videos)
     )
 
     helper.mockGetRequest(
@@ -86,7 +91,7 @@ describe("ResourcePickerListing", () => {
           resourcetype:  ResourceType.Document
         })
         .toString(),
-      apiResponse(contentListingItems[1])
+      apiResponse(contentListingItems.documents)
     )
 
     helper.mockGetRequest(
@@ -100,7 +105,7 @@ describe("ResourcePickerListing", () => {
           detailed_list: true
         })
         .toString(),
-      apiResponse(contentListingItems[2])
+      apiResponse(contentListingItems.pages)
     )
 
     helper.mockGetRequest(
@@ -114,7 +119,7 @@ describe("ResourcePickerListing", () => {
           detailed_list: true
         })
         .toString(),
-      apiResponse(contentListingItems[3])
+      apiResponse(contentListingItems.courseLists)
     )
   })
 
@@ -128,7 +133,7 @@ describe("ResourcePickerListing", () => {
       wrapper
         .find(".resource-picker-listing .resource-item")
         .map(el => el.find("h4").text())
-    ).toEqual(contentListingItems[0].map(item => item.title))
+    ).toEqual(contentListingItems.videos.map(item => item.title))
   })
 
   it("should call focusResource prop with resources", async () => {
@@ -138,13 +143,15 @@ describe("ResourcePickerListing", () => {
       .find(".resource-picker-listing .resource-item")
       .at(0)
       .simulate("click")
-    expect(focusResourceStub.calledWith(contentListingItems[0][0])).toBeTruthy()
+    expect(
+      focusResourceStub.calledWith(contentListingItems.videos[0])
+    ).toBeTruthy()
     wrapper.update()
   })
 
   it("should put a class on if a resource is focused", async () => {
     const { wrapper } = await render({
-      focusedResource: contentListingItems[0][0]
+      focusedResource: contentListingItems.videos[0]
     })
 
     expect(
@@ -157,9 +164,9 @@ describe("ResourcePickerListing", () => {
 
   it("should display an image for images", async () => {
     // @ts-ignore
-    contentListingItems[0][0].metadata.resourcetype = ResourceType.Image
+    contentListingItems.videos[0].metadata.resourcetype = ResourceType.Image
     // @ts-ignore
-    contentListingItems[0][0].file = "/path/to/image.jpg"
+    contentListingItems.videos[0].file = "/path/to/image.jpg"
     const { wrapper } = await render()
     expect(
       wrapper
@@ -172,9 +179,9 @@ describe("ResourcePickerListing", () => {
 
   it("should display a thumbnail for videos", async () => {
     // @ts-ignore
-    contentListingItems[0][0].metadata.resourcetype = ResourceType.Video
+    contentListingItems.videos[0].metadata.resourcetype = ResourceType.Video
     // @ts-ignore
-    contentListingItems[0][0].metadata.video_files = {
+    contentListingItems.videos[0].metadata.video_files = {
       video_thumbnail_file: "/path/to/image.jpg"
     }
     const { wrapper } = await render()
@@ -196,7 +203,7 @@ describe("ResourcePickerListing", () => {
       wrapper
         .find(".resource-picker-listing .resource-item")
         .map(el => el.find("h4").text())
-    ).toEqual(contentListingItems[2].map(item => item.title))
+    ).toEqual(contentListingItems.pages.map(item => item.title))
 
     sinon.assert.calledWith(
       helper.handleRequestStub,
@@ -221,7 +228,7 @@ describe("ResourcePickerListing", () => {
       wrapper
         .find(".resource-picker-listing .resource-item")
         .map(el => el.find("h4").text())
-    ).toEqual(contentListingItems[3].map(item => item.title))
+    ).toEqual(contentListingItems.courseLists.map(item => item.title))
 
     sinon.assert.calledWith(
       helper.handleRequestStub,
@@ -246,6 +253,21 @@ describe("ResourcePickerListing", () => {
     }
   )
 
+  it.each([false, true])(
+    "Includes 'Updated ...' iff singleColumn: true (case: %s)",
+    async singleColumn => {
+      const { wrapper } = await render({ singleColumn })
+      expect(
+        wrapper.find(".resource-picker-listing .resource-item").map(el =>
+          el
+            .find("h4")
+            .text()
+            .includes("Updated")
+        )
+      ).toStrictEqual([singleColumn, singleColumn])
+    }
+  )
+
   it("should allow the user to filter, sort resourcetype", async () => {
     const { wrapper } = await render({
       filter:       "newfilter",
@@ -256,6 +278,6 @@ describe("ResourcePickerListing", () => {
       wrapper
         .find(".resource-picker-listing .resource-item")
         .map(el => el.find("h4").text())
-    ).toEqual(contentListingItems[1].map(item => item.title))
+    ).toEqual(contentListingItems.documents.map(item => item.title))
   })
 })

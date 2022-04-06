@@ -32,6 +32,7 @@ interface TabSettings {
 }
 
 export enum TabIds {
+  Other = "other",
   Documents = "documents",
   Images = "images",
   Videos = "videos",
@@ -45,7 +46,7 @@ const documentTab: TabSettings = {
   id:           TabIds.Documents,
   contentType:  ContentType.Resource,
   resourcetype: ResourceType.Document,
-  embeddable:   true,
+  embeddable:   false,
   singleColumn: true
 }
 const videoTab: TabSettings = {
@@ -63,6 +64,14 @@ const imageTab: TabSettings = {
   resourcetype: ResourceType.Image,
   embeddable:   true,
   singleColumn: false
+}
+const otherFilesTab: TabSettings = {
+  title:        "Other",
+  id:           TabIds.Other,
+  contentType:  ContentType.Resource,
+  resourcetype: ResourceType.Other,
+  embeddable:   false,
+  singleColumn: true
 }
 const pageTab: TabSettings = {
   title:        "Pages",
@@ -96,7 +105,7 @@ const resourcCollectionTab: TabSettings = {
  * except resources, which have separate tabs according to resourcetype
  */
 const TABS: Record<string, TabSettings[]> = {
-  resource:             [documentTab, videoTab, imageTab],
+  resource:             [documentTab, videoTab, imageTab, otherFilesTab],
   page:                 [pageTab],
   course_collections:   [courseCollectionTab],
   resource_collections: [resourcCollectionTab]
@@ -116,7 +125,9 @@ const modeText = {
 export default function ResourcePickerDialog(props: Props): JSX.Element {
   const { mode, isOpen, closeDialog, insertEmbed, contentNames } = props
 
-  const tabs = contentNames.flatMap(name => TABS[name])
+  const tabs = contentNames
+    .flatMap(name => TABS[name])
+    .filter(tab => mode !== RESOURCE_EMBED || tab.embeddable)
   const [activeTabId, setActiveTabId] = useState(tabs[0].id)
 
   // filterInput is to store user input and is updated synchronously
