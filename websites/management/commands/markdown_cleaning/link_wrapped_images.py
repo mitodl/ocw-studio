@@ -35,7 +35,7 @@ class LinkWrappedImagesRule(PyparsingRule):
 
     Original text:
         Hello [{{< resource some_uuid >}}extra text](url) World
-    Becomes 
+    Becomes
         Hello {{< resource uuid="some_uuid" href_uuid="url_uuid" >}}{{< resource_link "url_uuid" "extra text" >}}
     or
         Hello {{< resource uuid="some_uuid" href="url" >}}[extra text](url)
