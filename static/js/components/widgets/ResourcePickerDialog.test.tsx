@@ -72,32 +72,51 @@ describe("ResourcePickerDialog", () => {
 
   it.each([
     {
+      mode:         RESOURCE_EMBED,
       contentNames: ["resource"],
-      expectedTabs: [TabIds.Documents, TabIds.Videos, TabIds.Images]
+      expectedTabs: [TabIds.Videos, TabIds.Images]
     },
-    { contentNames: ["page"], expectedTabs: [TabIds.Pages] },
     {
+      mode:         RESOURCE_LINK,
+      contentNames: ["resource"],
+      expectedTabs: [
+        TabIds.Documents,
+        TabIds.Videos,
+        TabIds.Images,
+        TabIds.Other
+      ]
+    },
+    {
+      mode:         RESOURCE_LINK,
+      contentNames: ["page"],
+      expectedTabs: [TabIds.Pages]
+    },
+    {
+      mode:         RESOURCE_LINK,
       contentNames: ["course_collections"],
       expectedTabs: [TabIds.CourseCollections]
     },
     {
+      mode:         RESOURCE_LINK,
       contentNames: ["resource_collections"],
       expectedTabs: [TabIds.ResourceCollections]
     },
     {
+      mode:         RESOURCE_LINK,
       contentNames: ["resource", "page", "course_collections"],
       expectedTabs: [
         TabIds.Documents,
         TabIds.Videos,
         TabIds.Images,
+        TabIds.Other,
         TabIds.Pages,
         TabIds.CourseCollections
       ]
     }
   ])(
     "should render tabs based on contentNames. Case: $contentNames",
-    async ({ contentNames, expectedTabs }) => {
-      const { wrapper } = await render({ contentNames, expectedTabs })
+    async ({ mode, contentNames, expectedTabs }) => {
+      const { wrapper } = await render({ mode, contentNames, expectedTabs })
       expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual(
         expectedTabs
       )
@@ -171,7 +190,13 @@ describe("ResourcePickerDialog", () => {
       contentType:  "resource",
       singleColumn: false
     },
-    { index: 3, resourcetype: null, contentType: "page", singleColumn: true }
+    {
+      index:        3,
+      resourcetype: ResourceType.Other,
+      contentType:  "resource",
+      singleColumn: true
+    },
+    { index: 4, resourcetype: null, contentType: "page", singleColumn: true }
   ])(
     "passes the correct props to ResourcePickerListing when main tab $index is clicked",
     async ({ resourcetype, contentType, singleColumn, index }) => {
