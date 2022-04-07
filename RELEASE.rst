@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.56.3 (Released April 07, 2022)
+--------------
+
+- Cc/convert link wrapped images (#1206)
+
 Version 0.56.2 (Released April 05, 2022)
 --------------
 
