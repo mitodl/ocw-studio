@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.56.4
+--------------
+
+- add "other" tab to resource picker (#1210)
+
 Version 0.56.3 (Released April 07, 2022)
 --------------
 
