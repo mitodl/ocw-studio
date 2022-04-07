@@ -90,7 +90,7 @@ class Command(BaseCommand):
         )
         super().add_arguments(parser)
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # pylint:disable=too-many-locals
         prefix = options["prefix"]
         if prefix:
             # make sure it ends with a '/'
