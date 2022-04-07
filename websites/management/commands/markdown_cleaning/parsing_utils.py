@@ -104,7 +104,7 @@ def unescape_string_quoted_with(text: str, single_quotes=False):
     if text.startswith(q) and text.endswith(q) and all_escaped:
         return escaped_quote_regex.sub(unescape, text[1:-1])
 
-    raise ValueError(f"{text} is not a valid single-quoted string")
+    raise ValueError(f"{text} is not a valid {q}-quoted string")
 
 
 def unescape_quoted_string(text: str):
@@ -127,7 +127,7 @@ class ShortcodeParam:
     name: Union[str, None] = None
 
     param_regex: ClassVar[re.Pattern] = re.compile(
-        r"^((?P<name>[0-9a-zA-Z_]+)=)?(?P<value>.*)$"
+        r"^((?P<name>[0-9a-zA-Z_\-]+)=)?(?P<value>.*)$"
     )
 
     @classmethod

@@ -89,3 +89,27 @@ def test_shortcode_grammar_with_nested_shortcodes():
     with pytest.raises(ValueError, match="nesting"):
         text_nested = R'{{< fake_shortcode uuid {{< sup 4 >}} "Cats and dogs" >}}'
         parser.parse_string(text_nested)
+
+
+def test_shortcode_parser_parses_named_parameter_and_dashes():
+    text = R'{{< image-gallery-item href="421516494150ff096b974c8f16c0086e_504693-01D.jpg" data-ngdesc="Kristen R leads a discussion" text="engineering is cool" >}}'
+    parser = ShortcodeParser()
+    parsed = parser.parse_string(text)
+
+    assert parsed.shortcode == ShortcodeTag(
+        name='image-gallery-item',
+        params=[
+            ShortcodeParam(
+                name='href',
+                value='421516494150ff096b974c8f16c0086e_504693-01D.jpg'
+            ),
+            ShortcodeParam(
+                 name='data-ngdesc',
+                 value='Kristen R leads a discussion',
+            ),
+            ShortcodeParam(
+                name='text',
+                value='engineering is cool'
+            )
+        ]
+    )
