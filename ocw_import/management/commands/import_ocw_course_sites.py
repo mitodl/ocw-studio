@@ -120,12 +120,6 @@ class Command(BaseCommand):
                 bucket_name, prefix=prefix, filter_list=filter_list
             )
         )
-        if filter_list is not None:
-            course_paths = [
-                path
-                for path in course_paths
-                if any(filter_str in path for filter_str in filter_list)
-            ]
         if limit is not None:
             course_paths = course_paths[:limit]
 
