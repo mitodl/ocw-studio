@@ -1,9 +1,11 @@
 """ Import OCW course sites and content via ocw2hugo output """
+import json
 import pydoc
 
 from django.conf import settings
-from django.core.management import BaseCommand
+from django.core.management import BaseCommand, CommandError
 from mitol.common.utils.datetime import now_in_utc
+from six.moves import input
 
 from content_sync.tasks import sync_unsynced_websites
 from ocw_import.api import fetch_ocw2hugo_course_paths
@@ -46,10 +48,17 @@ class Command(BaseCommand):
             help="List the course paths instead of importing them",
         )
         parser.add_argument(
+            "--filter-json",
+            dest="filter_json",
+            default=None,
+            help="If specified, only publish courses that contain comma-delimited site names specified in a JSON file",
+        )
+        parser.add_argument(
+            "-f",
             "--filter",
             dest="filter",
             default="",
-            help="If specified, only import courses that contain this filter text",
+            help="If specified, only trigger website pipelines whose names are in this comma-delimited list",
         )
         parser.add_argument(
             "--limit",
@@ -87,27 +96,57 @@ class Command(BaseCommand):
             # make sure it ends with a '/'
             prefix = prefix.rstrip("/") + "/"
         bucket_name = options["bucket"]
-        filter_str = options["filter"]
+        filter_json = options["filter_json"]
         limit = options["limit"]
         delete_unpublished = options["delete_unpublished"]
         delete_from_git = options["delete_from_git"]
 
-        if options["list"] is True:
-            course_paths = list(
-                fetch_ocw2hugo_course_paths(
-                    bucket_name, prefix=prefix, filter_list=[filter_str]
-                )
+        if filter_json:
+            with open(filter_json) as input_file:
+                filter_list = json.load(input_file)
+        else:
+            filter_list = [
+                name.strip() for name in options["filter"].split(",") if name
+            ]
+
+        if len(filter_list) < 1:
+            raise CommandError(
+                "This command cannot be run unfiltered.  Use the --filter or --filter-json argument to specify courses to import."
             )
+
+        self.stdout.write(f"Fetching course paths from the '{bucket_name}' bucket...")
+        course_paths = list(
+            fetch_ocw2hugo_course_paths(
+                bucket_name, prefix=prefix, filter_list=filter_list
+            )
+        )
+        if filter_list is not None:
+            course_paths = [
+                path
+                for path in course_paths
+                if any(filter_str in path for filter_str in filter_list)
+            ]
+        if limit is not None:
+            course_paths = course_paths[:limit]
+
+        if options["list"] is True:
             pydoc.pager("\n".join(course_paths))
             return
 
-        self.stdout.write(f"Importing OCW courses from '{bucket_name}' bucket")
+        confirmation = input(
+            f"""WARNING: You are about to destructively import {len(course_paths)} courses from the '{bucket_name}' bucket.
+Before you do this, it's recommended that you run with the --list argument to see which courses will be affected by your filter.
+Would you like to proceed with the import? (y/n): """
+        )
+        if confirmation != "y":
+            self.stdout.write("Aborting...")
+            return
+        self.stdout.write(f"Importing OCW courses from the '{bucket_name}' bucket...")
         start = now_in_utc()
         task = import_ocw2hugo_courses.delay(
             bucket_name=bucket_name,
+            course_paths=course_paths,
             prefix=prefix,
-            filter_str=filter_str,
-            limit=limit,
             delete_unpublished=delete_unpublished,
             chunk_size=options["chunks"],
         )
