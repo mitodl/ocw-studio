@@ -99,6 +99,7 @@ def import_ocw2hugo_courses(
     bucket_name=None,
     course_paths=None,
     prefix=None,
+    limit=None,
     delete_unpublished=True,
     chunk_size=100,
 ):  # pylint:disable=too-many-arguments
@@ -109,6 +110,7 @@ def import_ocw2hugo_courses(
         bucket_name (str): S3 bucket name
         course_paths (list of str): The paths of the courses to be imported
         prefix (str): (Optional) S3 prefix before start of course_id path
+        limit (int): (Optional) Only import this amount of courses
         delete_unpublished (bool): (Optional) If true, delete unpublished courses from the DB
         chunk_size (int): Number of courses to process per task
     """
@@ -116,6 +118,8 @@ def import_ocw2hugo_courses(
         raise TypeError("Bucket name must be specified")
     if not course_paths:
         raise TypeError("Course paths must be specified")
+    if limit is not None:
+        course_paths = course_paths[:limit]
     if delete_unpublished:
         delete_unpublished_courses_task = delete_unpublished_courses.si(
             paths=course_paths

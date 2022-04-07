@@ -120,8 +120,6 @@ class Command(BaseCommand):
                 bucket_name, prefix=prefix, filter_list=filter_list
             )
         )
-        if limit is not None:
-            course_paths = course_paths[:limit]
 
         if options["list"] is True:
             pydoc.pager("\n".join(course_paths))
@@ -141,6 +139,7 @@ Would you like to proceed with the import? (y/n): """
             bucket_name=bucket_name,
             course_paths=course_paths,
             prefix=prefix,
+            limit=limit,
             delete_unpublished=delete_unpublished,
             chunk_size=options["chunks"],
         )
