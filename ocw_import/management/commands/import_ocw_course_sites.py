@@ -5,7 +5,6 @@ import pydoc
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from mitol.common.utils.datetime import now_in_utc
-from six.moves import input
 
 from content_sync.tasks import sync_unsynced_websites
 from ocw_import.api import fetch_ocw2hugo_course_paths
