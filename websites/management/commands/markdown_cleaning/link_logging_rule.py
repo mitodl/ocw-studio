@@ -31,6 +31,7 @@ class LinkLoggingRule(PyparsingRule):
         text: str
         destination: str
         title: str
+        is_image: bool
 
     def replace_match(self, s: str, l: int, toks, website_content):
         link = toks.link
@@ -38,6 +39,7 @@ class LinkLoggingRule(PyparsingRule):
             text=link.text,
             destination=link.destination,
             title=link.title,
+            is_image=link.is_image,
         )
         return toks.original_text, notes
 

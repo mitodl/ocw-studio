@@ -1,4 +1,10 @@
-import React, { SyntheticEvent, useCallback, useState } from "react"
+import React, {
+  SyntheticEvent,
+  useCallback,
+  useMemo,
+  useEffect,
+  useState
+} from "react"
 import { Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 
 import Dialog from "../Dialog"
@@ -124,11 +130,16 @@ const modeText = {
 
 export default function ResourcePickerDialog(props: Props): JSX.Element {
   const { mode, isOpen, closeDialog, insertEmbed, contentNames } = props
-
-  const tabs = contentNames
-    .flatMap(name => TABS[name])
-    .filter(tab => mode !== RESOURCE_EMBED || tab.embeddable)
+  const tabs = useMemo(
+    () =>
+      contentNames
+        .flatMap(name => TABS[name])
+        .filter(tab => mode !== RESOURCE_EMBED || tab.embeddable),
+    [mode, contentNames]
+  )
   const [activeTabId, setActiveTabId] = useState(tabs[0].id)
+
+  useEffect(() => setActiveTabId(tabs[0].id), [tabs])
 
   // filterInput is to store user input and is updated synchronously
   // so that the UI stays responsive
