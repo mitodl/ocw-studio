@@ -6,28 +6,52 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('websites', '0044_add_website__first_published_to_production'),
+        ("websites", "0044_add_website__first_published_to_production"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='website',
-            name='draft_publish_status',
-            field=models.CharField(blank=True, choices=[('succeeded', 'succeeded'), ('pending', 'pending'), ('started', 'started'), ('errored', 'errored'), ('aborted', 'aborted'), ('not-started', 'not-started')], max_length=20, null=True),
+            model_name="website",
+            name="draft_publish_status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("succeeded", "succeeded"),
+                    ("pending", "pending"),
+                    ("started", "started"),
+                    ("errored", "errored"),
+                    ("aborted", "aborted"),
+                    ("not-started", "not-started"),
+                ],
+                max_length=20,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='website',
-            name='latest_build_id_draft',
+            model_name="website",
+            name="latest_build_id_draft",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='website',
-            name='latest_build_id_live',
+            model_name="website",
+            name="latest_build_id_live",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='website',
-            name='live_publish_status',
-            field=models.CharField(blank=True, choices=[('succeeded', 'succeeded'), ('pending', 'pending'), ('started', 'started'), ('errored', 'errored'), ('aborted', 'aborted'), ('not-started', 'not-started')], max_length=20, null=True),
+            model_name="website",
+            name="live_publish_status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("succeeded", "succeeded"),
+                    ("pending", "pending"),
+                    ("started", "started"),
+                    ("errored", "errored"),
+                    ("aborted", "aborted"),
+                    ("not-started", "not-started"),
+                ],
+                max_length=20,
+                null=True,
+            ),
         ),
     ]
