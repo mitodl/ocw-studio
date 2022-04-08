@@ -39,7 +39,7 @@ class LinkLoggingRule(PyparsingRule):
             text=link.text,
             destination=link.destination,
             title=link.title,
-            is_image=link.is_image
+            is_image=link.is_image,
         )
         return toks.original_text, notes
 

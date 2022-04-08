@@ -97,19 +97,15 @@ def test_shortcode_parser_parses_named_parameter_and_dashes():
     parsed = parser.parse_string(text)
 
     assert parsed.shortcode == ShortcodeTag(
-        name='image-gallery-item',
+        name="image-gallery-item",
         params=[
             ShortcodeParam(
-                name='href',
-                value='421516494150ff096b974c8f16c0086e_504693-01D.jpg'
+                name="href", value="421516494150ff096b974c8f16c0086e_504693-01D.jpg"
             ),
             ShortcodeParam(
-                 name='data-ngdesc',
-                 value='Kristen R leads a discussion',
+                name="data-ngdesc",
+                value="Kristen R leads a discussion",
             ),
-            ShortcodeParam(
-                name='text',
-                value='engineering is cool'
-            )
-        ]
+            ShortcodeParam(name="text", value="engineering is cool"),
+        ],
     )
