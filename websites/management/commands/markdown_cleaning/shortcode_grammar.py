@@ -38,10 +38,7 @@ class ShortcodeParser(WrappedParser):
                     else:
                         param_assignments.append(s)
 
-                try:
-                    params = [ShortcodeParam.from_hugo(s) for s in param_assignments]
-                except ValueError:
-                    params = [ShortcodeParam("UNKNOWN")]
+                params = [ShortcodeParam.from_hugo(s) for s in param_assignments]
                 shortcode = ShortcodeTag(
                     name, params, percent_delimiters, closer=is_closing_tag
                 )
