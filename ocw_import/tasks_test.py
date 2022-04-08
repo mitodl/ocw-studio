@@ -13,6 +13,7 @@ from ocw_import.conftest import (
 )
 from ocw_import.tasks import (
     delete_unpublished_courses,
+    fetch_ocw2hugo_course_paths,
     import_ocw2hugo_course_paths,
     import_ocw2hugo_courses,
     update_ocw2hugo_course_paths,
@@ -24,6 +25,12 @@ from websites.models import Website
 # pylint:disable=too-many-arguments
 pytestmark = pytest.mark.django_db
 
+ALL_COURSES_FILTER = [
+    "1-050-engineering-mechanics-i-fall-2007",
+    "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008",
+    "biology",
+    "es-s41-speak-italian-with-your-mouth-full-spring-2012",
+]
 ALL_COURSES_PATHS = [
     "1-050-engineering-mechanics-i-fall-2007/data/course_legacy.json",
     "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008/data/course_legacy.json",
@@ -84,15 +91,20 @@ def test_update_ocw2hugo_course_paths(mocker, paths, create_new_content):
 
 @mock_s3
 @pytest.mark.parametrize(
-    "chunk_size, filter_str, limit, call_count",
-    [[1, None, None, 4], [1, "1-050", None, 1], [2, None, None, 2], [1, None, 1, 1]],
+    "chunk_size, filter_list, limit, call_count",
+    [
+        [1, ALL_COURSES_FILTER, None, 4],
+        [1, ["1-050-engineering-mechanics-i-fall-2007"], None, 1],
+        [2, ALL_COURSES_FILTER, None, 2],
+        [1, ALL_COURSES_FILTER, 1, 1],
+    ],
 )
 @pytest.mark.parametrize("delete_unpublished", [True, False])
 def test_import_ocw2hugo_courses(
     settings,
     mocked_celery,
     mocker,
-    filter_str,
+    filter_list,
     chunk_size,
     limit,
     call_count,
@@ -104,12 +116,17 @@ def test_import_ocw2hugo_courses(
     setup_s3(settings)
     mock_import_paths = mocker.patch("ocw_import.tasks.import_ocw2hugo_course_paths.si")
     mock_delete_task = mocker.patch("ocw_import.tasks.delete_unpublished_courses.si")
+    course_paths = list(
+        fetch_ocw2hugo_course_paths(
+            MOCK_BUCKET_NAME, prefix=TEST_OCW2HUGO_PREFIX, filter_list=filter_list
+        )
+    )
     with pytest.raises(mocked_celery.replace_exception_class):
         import_ocw2hugo_courses.delay(
             bucket_name=MOCK_BUCKET_NAME,
+            course_paths=course_paths,
             prefix=TEST_OCW2HUGO_PREFIX,
             chunk_size=chunk_size,
-            filter_str=filter_str,
             limit=limit,
             delete_unpublished=delete_unpublished,
         )
@@ -117,12 +134,34 @@ def test_import_ocw2hugo_courses(
     assert mock_delete_task.call_count == (1 if delete_unpublished else 0)
 
 
-def test_import_ocw2hugo_courses_nobucket(mocker):
-    """ import_ocw2hugo_course_paths should be called correct # times for given chunk size and # of paths """
+@mock_s3
+def test_import_ocw2hugo_courses_no_bucket(settings, mocker):
+    """ import_ocw2hugo_courses should throw an error if a bucket is not specified """
+    setup_s3(settings)
+    mock_import_paths = mocker.patch("ocw_import.tasks.import_ocw2hugo_course_paths.si")
+    course_paths = list(
+        fetch_ocw2hugo_course_paths(
+            MOCK_BUCKET_NAME,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            filter_list=ALL_COURSES_FILTER,
+        )
+    )
+    with pytest.raises(TypeError):
+        import_ocw2hugo_courses.delay(  # pylint:disable=no-value-for-parameter
+            bucket_name=None,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            course_paths=course_paths,
+            chunk_size=100,
+        )
+    assert mock_import_paths.call_count == 0
+
+
+def test_import_ocw2hugo_courses_no_filter(mocker):
+    """ import_ocw2hugo_courses should throw an error if course_paths is not specified """
     mock_import_paths = mocker.patch("ocw_import.tasks.import_ocw2hugo_course_paths.si")
     with pytest.raises(TypeError):
         import_ocw2hugo_courses.delay(  # pylint:disable=no-value-for-parameter
-            bucket_name=None, prefix=TEST_OCW2HUGO_PREFIX, chunk_size=100
+            bucket_name=MOCK_BUCKET_NAME, prefix=TEST_OCW2HUGO_PREFIX, chunk_size=100
         )
     assert mock_import_paths.call_count == 0
 
@@ -154,19 +193,36 @@ def test_import_ocw2hugo_courses_delete_unpublished(settings, mocker, mocked_cel
     )
     tmpdir = TemporaryDirectory()
     setup_s3_tmpdir(settings, tmpdir.name)
-    with pytest.raises(mocked_celery.replace_exception_class):
-        import_ocw2hugo_courses.delay(
-            bucket_name=MOCK_BUCKET_NAME, prefix=TEST_OCW2HUGO_PREFIX
+    course_paths = list(
+        fetch_ocw2hugo_course_paths(
+            MOCK_BUCKET_NAME,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            filter_list=ALL_COURSES_FILTER,
         )
-    mock_delete_unpublished_courses.assert_called_with(paths=ALL_COURSES_PATHS)
-    tmpdir.cleanup()
-    tmpdir = TemporaryDirectory()
-    setup_s3_tmpdir(
-        settings, tmpdir.name, courses=["1-050-engineering-mechanics-i-fall-2007"]
     )
     with pytest.raises(mocked_celery.replace_exception_class):
         import_ocw2hugo_courses.delay(
-            bucket_name=MOCK_BUCKET_NAME, prefix=TEST_OCW2HUGO_PREFIX
+            bucket_name=MOCK_BUCKET_NAME,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            course_paths=course_paths,
+        )
+    mock_delete_unpublished_courses.assert_called_with(paths=ALL_COURSES_PATHS)
+    single_course_filter = ["1-050-engineering-mechanics-i-fall-2007"]
+    tmpdir.cleanup()
+    tmpdir = TemporaryDirectory()
+    setup_s3_tmpdir(settings, tmpdir.name, courses=single_course_filter)
+    course_paths = list(
+        fetch_ocw2hugo_course_paths(
+            MOCK_BUCKET_NAME,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            filter_list=single_course_filter,
+        )
+    )
+    with pytest.raises(mocked_celery.replace_exception_class):
+        import_ocw2hugo_courses.delay(
+            bucket_name=MOCK_BUCKET_NAME,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            course_paths=course_paths,
         )
     mock_delete_unpublished_courses.assert_called_with(paths=SINGLE_COURSE_PATHS)
     tmpdir.cleanup()
@@ -181,10 +237,18 @@ def test_import_ocw2hugo_courses_delete_unpublished_false(
         "ocw_import.tasks.delete_unpublished_courses.si"
     )
     setup_s3(settings)
+    course_paths = list(
+        fetch_ocw2hugo_course_paths(
+            MOCK_BUCKET_NAME,
+            prefix=TEST_OCW2HUGO_PREFIX,
+            filter_list=ALL_COURSES_FILTER,
+        )
+    )
     with pytest.raises(mocked_celery.replace_exception_class):
         import_ocw2hugo_courses.delay(
             bucket_name=MOCK_BUCKET_NAME,
             prefix=TEST_OCW2HUGO_PREFIX,
+            course_paths=course_paths,
             delete_unpublished=False,
         )
     mock_delete_unpublished_courses.assert_not_called()

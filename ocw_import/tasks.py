@@ -97,8 +97,8 @@ def delete_unpublished_courses(paths=None):
 def import_ocw2hugo_courses(
     self,
     bucket_name=None,
+    course_paths=None,
     prefix=None,
-    filter_str=None,
     limit=None,
     delete_unpublished=True,
     chunk_size=100,
@@ -108,25 +108,24 @@ def import_ocw2hugo_courses(
 
     Args:
         bucket_name (str): S3 bucket name
+        course_paths (list of str): The paths of the courses to be imported
         prefix (str): (Optional) S3 prefix before start of course_id path
-        filter_str (str): (Optional) If specified, only yield course paths containing this string
-        limit (int or None): (Optional) If specified, limits the number of courses imported
+        limit (int): (Optional) Only import this amount of courses
         delete_unpublished (bool): (Optional) If true, delete unpublished courses from the DB
         chunk_size (int): Number of courses to process per task
     """
     if not bucket_name:
         raise TypeError("Bucket name must be specified")
-    course_paths = list(fetch_ocw2hugo_course_paths(bucket_name, prefix=prefix))
+    if not course_paths:
+        raise TypeError("Course paths must be specified")
+    if limit is not None:
+        course_paths = course_paths[:limit]
     if delete_unpublished:
         delete_unpublished_courses_task = delete_unpublished_courses.si(
             paths=course_paths
         )
     else:
         delete_unpublished_courses_task = None
-    if filter_str is not None:
-        course_paths = [path for path in course_paths if filter_str in path]
-    if limit is not None:
-        course_paths = course_paths[:limit]
     course_tasks = [
         import_ocw2hugo_course_paths.si(
             paths=paths,

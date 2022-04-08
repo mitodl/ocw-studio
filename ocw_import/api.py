@@ -66,7 +66,7 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_list=None):
     Args:
         bucket_name (str): S3 bucket name
         prefix (str): (Optional) S3 prefix before start of course_id path
-        filter_list (str): (Optional) If specified, only yield course paths containing this string
+        filter_list (str): (Optional) If specified, only yield course paths that exist in this list
 
     Yields:
         str: The path to a course JSON document in S3
