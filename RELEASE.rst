@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.56.4
+Version 0.56.4 (Released April 08, 2022)
 --------------
 
 - Cc/default active tab (#1216)
