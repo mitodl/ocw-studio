@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router"
 import { useDebouncedEffect } from "./effect"
 import { useTextInputState } from "./state"
+import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 
 interface URLParamFilterReturnValue<ParamType> {
   searchInput: string
@@ -11,6 +12,7 @@ interface URLParamFilterReturnValue<ParamType> {
 
 interface ListingParamsMinimum {
   search?: string | null | undefined
+  offset?: number | null | undefined
 }
 
 /**
@@ -75,4 +77,36 @@ export function useURLParamFilter<LParams extends ListingParamsMinimum>(
     setSearchInput,
     listingParams
   }
+}
+
+/**
+ * The location interface used by react-router
+ */
+type RLocation = ReturnType<typeof useLocation>
+
+const offsetLocation = (
+  location: RLocation,
+  count: number,
+  increment: number
+): RLocation | null => {
+  const params = new URLSearchParams(location.search)
+  const offset = Number(params.get("offset")) + increment
+  if (offset < 0 || offset > count) return null
+  return {
+    ...location,
+    search: params.toString()
+  }
+}
+
+export const usePagination = (
+  count: number,
+  pageSize: number = WEBSITE_CONTENT_PAGE_SIZE
+): {
+  previous: RLocation | null
+  next: RLocation | null
+} => {
+  const location = useLocation()
+  const previous = offsetLocation(location, count, -pageSize)
+  const next = offsetLocation(location, count, +pageSize)
+  return { previous, next }
 }
