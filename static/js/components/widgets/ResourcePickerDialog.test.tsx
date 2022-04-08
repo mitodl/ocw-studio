@@ -123,6 +123,22 @@ describe("ResourcePickerDialog", () => {
     }
   )
 
+  it.each([
+    { modes: [RESOURCE_LINK, RESOURCE_EMBED] as const },
+    { modes: [RESOURCE_EMBED, RESOURCE_LINK] as const }
+  ])("initially displays resource listing for first tab", async ({ modes }) => {
+    const { wrapper } = await render({ mode: modes[0] })
+    const firstTab = wrapper.find(TabPane).first()
+    // first tab has resource listing on initial render
+    expect(firstTab.find(ResourcePickerListing).exists()).toBe(true)
+
+    wrapper.setProps({ mode: modes[1] })
+
+    // and first tab has resource listing after mode change
+    const firstTabNewMode = wrapper.find(TabPane).first()
+    expect(firstTabNewMode.find(ResourcePickerListing).exists()).toBe(true)
+  })
+
   test("TabIds values are unique", () => {
     const uniqueTabIds = new Set(Object.values(TabIds))
     expect(Object.values(TabIds).length).toBe(uniqueTabIds.size)
