@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.56.4
+--------------
+
+- Cc/default active tab (#1216)
+- prevent mass import (#1214)
+- add "other" tab to resource picker (#1210)
+
 Version 0.56.3 (Released April 07, 2022)
 --------------
 
