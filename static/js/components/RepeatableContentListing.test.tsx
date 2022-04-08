@@ -7,13 +7,11 @@ import { Route } from "react-router-dom"
 import RepeatableContentListing from "./RepeatableContentListing"
 import {
   GoogleDriveSyncStatuses,
-  WEBSITE_CONTENT_PAGE_SIZE
 } from "../constants"
 import WebsiteContext from "../context/Website"
 
 import { twoBooleanTestMatrix } from "../test_util"
 import {
-  siteContentListingUrl,
   siteApiContentListingUrl,
   siteApiDetailUrl,
   siteApiContentSyncGDriveUrl,
@@ -239,27 +237,54 @@ describe("RepeatableContentListing", () => {
     }
   })
 
-  test.each(twoBooleanTestMatrix)(
-    "shows the right links when there hasPrevLink=%p and hasNextLink=%p",
-    async (hasNextLink, hasPrevLink) => {
-      apiResponse.next = hasNextLink ? "next" : null
-      apiResponse.previous = hasPrevLink ? "prev" : null
-      const startingOffset = 20
+  it.each([
+    { count: 25, search: { initial: "", next: "offset=10" } },
+    { count: 25, search: { initial: "offset=0", next: "offset=10" } },
+    {
+      count:  25,
+      search: { initial: "offset=10", prev: "offset=0", next: "offset=20" }
+    },
+    {
+      count:  25,
+      search: { initial: "offset=7", prev: "offset=0", next: "offset=17" }
+    },
+    { count: 25, search: { initial: "offset=20", prev: "offset=10" } },
+    { count: 25, search: { initial: "offset=15", prev: "offset=5" } },
+    { count: 5, search: { initial: "" } },
+    { count: 25, search: { initial: "cat=meow", next: "cat=meow&offset=10" } },
+    {
+      count:  25,
+      search: {
+        initial: "offset=7&cat=meow",
+        prev:    "offset=0&cat=meow",
+        next:    "offset=17&cat=meow"
+      }
+    }
+  ])(
+    "pagination uses correct offsets & preserves initial query paramswhen $count items and starting ?$search.initial",
+    async ({ count, search }) => {
       const nextPageItems = [
         makeWebsiteContentListItem(),
         makeWebsiteContentListItem()
       ]
 
-      helper.browserHistory.push(`/?offset=${startingOffset}`)
+      const pathname = `/sites/${website.name}/type/resource/`
+      helper.browserHistory.push({
+        pathname: pathname,
+        search:   search.initial
+      })
+
+      const initialSearch = new URLSearchParams(search.initial)
+      const startingOffset = initialSearch.get("offset") ?? 0
       helper.mockGetRequest(
         siteApiContentListingUrl
           .param({ name: website.name })
           .query({ offset: startingOffset, type: configItem.name })
           .toString(),
         {
-          next:     hasNextLink ? "next" : null,
-          previous: hasPrevLink ? "prev" : null,
-          count:    2,
+          next:     search.next ? "next" : null,
+          previous: search.prev ? "prev" : null,
+          count,
           results:  nextPageItems
         }
       )
@@ -271,33 +296,27 @@ describe("RepeatableContentListing", () => {
       expect(titles).toStrictEqual(nextPageItems.map(item => item.title))
 
       const prevWrapper = wrapper.find(".pagination Link.previous")
-      expect(prevWrapper.exists()).toBe(hasPrevLink)
-      if (hasPrevLink) {
-        expect(prevWrapper.prop("to")).toBe(
-          siteContentListingUrl
-            .param({
-              name:        website.name,
-              contentType: configItem.name
-            })
-            .query({
-              offset: startingOffset - WEBSITE_CONTENT_PAGE_SIZE
-            })
-            .toString()
-        )
+      expect(prevWrapper.exists()).toBe(Boolean(search.prev))
+      if (search.prev) {
+        expect(prevWrapper.prop("to")).toStrictEqual({
+          hash:   "",
+          key:    expect.any(String),
+          pathname,
+          search: search.prev,
+          state:  null
+        })
       }
 
       const nextWrapper = wrapper.find(".pagination Link.next")
-      expect(nextWrapper.exists()).toBe(hasNextLink)
-      if (hasNextLink) {
-        expect(nextWrapper.prop("to")).toBe(
-          siteContentListingUrl
-            .param({
-              name:        website.name,
-              contentType: configItem.name
-            })
-            .query({ offset: startingOffset + WEBSITE_CONTENT_PAGE_SIZE })
-            .toString()
-        )
+      expect(nextWrapper.exists()).toBe(Boolean(search.next))
+      if (search.next) {
+        expect(nextWrapper.prop("to")).toStrictEqual({
+          hash:   "",
+          key:    expect.any(String),
+          pathname,
+          search: search.next,
+          state:  null
+        })
       }
     }
   )

@@ -1,3 +1,4 @@
+import { clamp } from "lodash"
 import { useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router"
 import { useDebouncedEffect } from "./effect"
@@ -90,8 +91,11 @@ const offsetLocation = (
   increment: number
 ): RLocation | null => {
   const params = new URLSearchParams(location.search)
-  const offset = Number(params.get("offset")) + increment
-  if (offset < 0 || offset > count) return null
+  const offset = Number(params.get("offset"))
+  if (offset === 0 && increment < 0) return null
+  const newOffset = clamp(offset + increment, 0, count)
+  if (newOffset >= count) return null
+  params.set("offset", String(newOffset))
   return {
     ...location,
     search: params.toString()
