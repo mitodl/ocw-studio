@@ -9,7 +9,12 @@ from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyChoice
 
 from users.factories import UserFactory
-from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE, STARTER_SOURCES
+from websites.constants import (
+    CONTENT_TYPE_PAGE,
+    CONTENT_TYPE_RESOURCE,
+    STARTER_SOURCES,
+    WEBSITE_SOURCES,
+)
 from websites.models import Website, WebsiteContent, WebsiteStarter
 
 
@@ -48,6 +53,7 @@ class WebsiteFactory(DjangoModelFactory):
     starter = factory.SubFactory(WebsiteStarterFactory)
     owner = factory.SubFactory(UserFactory)
     gdrive_folder = factory.Faker("md5")
+    source = FuzzyChoice(WEBSITE_SOURCES)
 
     class Meta:
         model = Website
