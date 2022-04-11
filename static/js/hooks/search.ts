@@ -85,6 +85,13 @@ export function useURLParamFilter<LParams extends ListingParamsMinimum>(
  */
 type RLocation = ReturnType<typeof useLocation>
 
+/**
+ * Increment the `offset` value for a route location.
+ * @param location The location to clone + modify
+ * @param count The total count of page items
+ * @param increment Amount by which to increment the current offset
+ * @returns A copy of `location` with new offset based on count + increment.
+ */
 const offsetLocation = (
   location: RLocation,
   count: number,
@@ -102,6 +109,11 @@ const offsetLocation = (
   }
 }
 
+/**
+ * A hook that returns the frontend routes for "Previous" and "Next" buttons.
+ * The `next` and `previous` routes are either null or they are the same as the
+ * current route with a different `offset` query parameter.
+ */
 export const usePagination = (
   count: number,
   pageSize: number = WEBSITE_CONTENT_PAGE_SIZE
