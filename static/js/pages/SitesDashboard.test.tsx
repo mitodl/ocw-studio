@@ -18,6 +18,9 @@ import IntegrationTestHelper, {
 } from "../util/integration_test_helper"
 
 import { Website } from "../types/websites"
+import PaginationControls from "../components/PaginationControls"
+import * as searchHooks from '../hooks/search'
+
 
 describe("SitesDashboard", () => {
   let helper: IntegrationTestHelper,
@@ -130,48 +133,32 @@ describe("SitesDashboard", () => {
     expect(wrapper.find(`Link.add-new`).prop("to")).toBe(newSiteUrl.toString())
   })
 
-  test.each([
-    [true, true],
-    [true, false],
-    [false, true],
-    [false, false]
-  ])(
-    "shows the right links when hasPrevLink=%P and hasNextLink=%p",
-    async (hasPrevLink, hasNextLink) => {
-      response.next = hasNextLink ? "next" : null
-      response.previous = hasPrevLink ? "prev" : null
-      const startingOffset = 20
-      helper.mockGetRequest(
-        siteApiListingUrl.query({ offset: startingOffset }).toString(),
-        response
-      )
-      helper.browserHistory.replace({
-        pathname: "/path/to/page",
-        search:   `offset=${startingOffset}`
-      })
-      const { wrapper } = await render()
+  it('paginates the site results', async () => {
+    /**
+     * SitesDashboard uses the same usePagination hook as RepeatableContentListing.
+     * The hook is tested pretty thoroughly through its usage in that component.
+     * Let's just assert that this component uses the hook and passes its results
+     * to the pagination controls.
+     */
+    response.count = 250
+    const startingOffset = 70
+    helper.mockGetRequest(
+      siteApiListingUrl.query({ offset: startingOffset }).toString(),
+      response
+    )
+    helper.browserHistory.replace({
+      pathname: "/path/to/page",
+      search:   `offset=${startingOffset}`
+    })
 
-      const prevWrapper = wrapper.find(".pagination Link.previous")
-      expect(prevWrapper.exists()).toBe(hasPrevLink)
-      if (hasPrevLink) {
-        expect(prevWrapper.prop("to")).toBe(
-          sitesBaseUrl
-            .query({ offset: startingOffset - WEBSITES_PAGE_SIZE })
-            .toString()
-        )
-      }
-
-      const nextWrapper = wrapper.find(".pagination Link.next")
-      expect(nextWrapper.exists()).toBe(hasNextLink)
-      if (hasNextLink) {
-        expect(nextWrapper.prop("to")).toBe(
-          sitesBaseUrl
-            .query({ offset: startingOffset + WEBSITES_PAGE_SIZE })
-            .toString()
-        )
-      }
-    }
-  )
+    const usePagination = jest.spyOn(searchHooks, 'usePagination')
+    const { wrapper } = await render()
+    const paginationControls = wrapper.find(PaginationControls)
+    expect(usePagination).toHaveBeenCalledTimes(2) // once on initial render, once after api call resolves
+    const { next, previous } = usePagination.mock.results[1].value
+    expect(paginationControls.prop('next')).toBe(next)
+    expect(paginationControls.prop('previous')).toBe(previous)
+  })
 
   test("makes description text for a site with metadata", () => {
     const site = {
