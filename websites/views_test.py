@@ -1106,30 +1106,21 @@ def test_websites_endpoint_pipeline_status_denied(
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 def test_publish_endpoint_list(settings, drf_client, version):
     """The WebsitePublishView endpoint should return the appropriate info for correctly filtered sites"""
-    ocw_sites = WebsiteFactory.create_batch(
-        2, source=constants.WEBSITE_SOURCE_OCW_IMPORT
-    )
     draft_published = WebsiteFactory.create_batch(
-        2,
-        source=constants.WEBSITE_SOURCE_STUDIO,
-        draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
-        live_publish_status=None,
+        2, draft_publish_date=now_in_utc(), publish_date=None
     )
     live_published = WebsiteFactory.create_batch(
         2,
-        source=constants.WEBSITE_SOURCE_STUDIO,
-        draft_publish_status=None,
-        live_publish_status=constants.PUBLISH_STATUS_SUCCEEDED,
+        draft_publish_date=None,
+        publish_date=now_in_utc(),
     )
-    expected_sites = ocw_sites + (
-        draft_published if version == VERSION_DRAFT else live_published
-    )
+    expected_sites = draft_published if version == VERSION_DRAFT else live_published
     settings.API_BEARER_TOKEN = "abc123"
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
     resp = drf_client.get(f'{reverse("publish_api-list")}?version={version}')
     assert resp.status_code == 200
     site_dict = {site["name"]: site for site in resp.data["sites"]}
-    assert len(site_dict.keys()) == 4
+    assert len(site_dict.keys()) == 2
     for expected_site in expected_sites:
         publish_site = site_dict.get(expected_site.name, None)
         assert publish_site is not None
