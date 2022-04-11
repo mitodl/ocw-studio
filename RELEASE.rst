@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.57.0
+--------------
+
+- Allow selection of null values for website publish fields in Django admin (#1224)
+
 Version 0.56.4 (Released April 08, 2022)
 --------------
 
