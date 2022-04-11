@@ -39,7 +39,7 @@ def process_drive_file(drive_file_id: str):
     drive_file = DriveFile.objects.get(file_id=drive_file_id)
     try:
         api.stream_to_s3(drive_file)
-        if drive_file.is_video():
+        if drive_file.is_video() and DRIVE_FOLDER_VIDEOS_FINAL in drive_file.drive_path:
             api.transcode_gdrive_video(drive_file)
         api.create_gdrive_resource_content(drive_file)
     except:  # pylint:disable=bare-except

@@ -64,7 +64,9 @@ class DriveFile(TimestampedModel):
 
     def is_video(self):
         """Return True if is is in the video folder"""
-        return DRIVE_FOLDER_VIDEOS_FINAL in self.drive_path.split("/")
+        return self.mime_type.lower().startswith(
+            "video/"
+        ) and DRIVE_FOLDER_VIDEOS_FINAL in self.drive_path.split("/")
 
     def get_valid_s3_key(self) -> str:
         """

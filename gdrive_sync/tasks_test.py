@@ -450,7 +450,10 @@ def test_update_website_status(mocker):
 def test_process_drive_file(mocker, is_video, has_error):
     """The necessary steps should be run to process a google drive file"""
     drive_file = DriveFileFactory.create(
-        drive_path=(DRIVE_FOLDER_VIDEOS_FINAL if is_video else DRIVE_FOLDER_FILES_FINAL)
+        drive_path=(
+            DRIVE_FOLDER_VIDEOS_FINAL if is_video else DRIVE_FOLDER_FILES_FINAL
+        ),
+        mime_type="video/mp4",
     )
     mock_stream_s3 = mocker.patch(
         "gdrive_sync.tasks.api.stream_to_s3",
