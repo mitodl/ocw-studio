@@ -1,7 +1,9 @@
+import { clamp } from "lodash"
 import { useEffect, useState } from "react"
 import { useHistory, useLocation } from "react-router"
 import { useDebouncedEffect } from "./effect"
 import { useTextInputState } from "./state"
+import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
 
 interface URLParamFilterReturnValue<ParamType> {
   searchInput: string
@@ -11,6 +13,7 @@ interface URLParamFilterReturnValue<ParamType> {
 
 interface ListingParamsMinimum {
   search?: string | null | undefined
+  offset?: number | null | undefined
 }
 
 /**
@@ -75,4 +78,51 @@ export function useURLParamFilter<LParams extends ListingParamsMinimum>(
     setSearchInput,
     listingParams
   }
+}
+
+/**
+ * The location interface used by react-router
+ */
+type RLocation = ReturnType<typeof useLocation>
+
+/**
+ * Increment the `offset` value for a route location.
+ * @param location The location to clone + modify
+ * @param count The total count of page items
+ * @param increment Amount by which to increment the current offset
+ * @returns A copy of `location` with new offset based on count + increment.
+ */
+const offsetLocation = (
+  location: RLocation,
+  count: number,
+  increment: number
+): RLocation | null => {
+  const params = new URLSearchParams(location.search)
+  const offset = Number(params.get("offset"))
+  if (offset === 0 && increment < 0) return null
+  const newOffset = clamp(offset + increment, 0, count)
+  if (newOffset >= count) return null
+  params.set("offset", String(newOffset))
+  return {
+    ...location,
+    search: params.toString()
+  }
+}
+
+/**
+ * A hook that returns the frontend routes for "Previous" and "Next" buttons.
+ * The `next` and `previous` routes are either null or they are the same as the
+ * current route with a different `offset` query parameter.
+ */
+export const usePagination = (
+  count: number,
+  pageSize: number = WEBSITE_CONTENT_PAGE_SIZE
+): {
+  previous: RLocation | null
+  next: RLocation | null
+} => {
+  const location = useLocation()
+  const previous = offsetLocation(location, count, -pageSize)
+  const next = offsetLocation(location, count, +pageSize)
+  return { previous, next }
 }

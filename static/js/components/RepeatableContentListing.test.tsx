@@ -5,15 +5,11 @@ import sinon from "sinon"
 import { Route } from "react-router-dom"
 
 import RepeatableContentListing from "./RepeatableContentListing"
-import {
-  GoogleDriveSyncStatuses,
-  WEBSITE_CONTENT_PAGE_SIZE
-} from "../constants"
+import { GoogleDriveSyncStatuses } from "../constants"
 import WebsiteContext from "../context/Website"
 
 import { twoBooleanTestMatrix } from "../test_util"
 import {
-  siteContentListingUrl,
   siteApiContentListingUrl,
   siteApiDetailUrl,
   siteApiContentSyncGDriveUrl,
@@ -239,68 +235,142 @@ describe("RepeatableContentListing", () => {
     }
   })
 
-  test.each(twoBooleanTestMatrix)(
-    "shows the right links when there hasPrevLink=%p and hasNextLink=%p",
-    async (hasNextLink, hasPrevLink) => {
-      apiResponse.next = hasNextLink ? "next" : null
-      apiResponse.previous = hasPrevLink ? "prev" : null
-      const startingOffset = 20
-      const nextPageItems = [
+  describe("pagination", () => {
+    /**
+     *
+     * @param count  total number of items to paginate
+     * @param queryInitial initial route query param
+     * @returns Wrappers for the current page and next/prev buttons, as well
+     * as the route pathname
+     */
+    const setupRouteAndMock = async (count: number, queryInitial: string) => {
+      const pageItems = [
         makeWebsiteContentListItem(),
         makeWebsiteContentListItem()
       ]
 
-      helper.browserHistory.push(`/?offset=${startingOffset}`)
+      const pathname = `/sites/${website.name}/type/resource/`
+      helper.browserHistory.push({
+        pathname: pathname,
+        search:   queryInitial
+      })
+
+      const initialSearch = new URLSearchParams(queryInitial)
+      const startingOffset = initialSearch.get("offset") ?? 0
       helper.mockGetRequest(
         siteApiContentListingUrl
           .param({ name: website.name })
           .query({ offset: startingOffset, type: configItem.name })
           .toString(),
         {
-          next:     hasNextLink ? "next" : null,
-          previous: hasPrevLink ? "prev" : null,
-          count:    2,
-          results:  nextPageItems
+          count,
+          results: pageItems
         }
       )
-
       const { wrapper } = await render()
-      const titles = wrapper
-        .find("StudioListItem")
-        .map(item => item.prop("title"))
-      expect(titles).toStrictEqual(nextPageItems.map(item => item.title))
 
-      const prevWrapper = wrapper.find(".pagination Link.previous")
-      expect(prevWrapper.exists()).toBe(hasPrevLink)
-      if (hasPrevLink) {
-        expect(prevWrapper.prop("to")).toBe(
-          siteContentListingUrl
-            .param({
-              name:        website.name,
-              contentType: configItem.name
-            })
-            .query({
-              offset: startingOffset - WEBSITE_CONTENT_PAGE_SIZE
-            })
-            .toString()
-        )
-      }
-
-      const nextWrapper = wrapper.find(".pagination Link.next")
-      expect(nextWrapper.exists()).toBe(hasNextLink)
-      if (hasNextLink) {
-        expect(nextWrapper.prop("to")).toBe(
-          siteContentListingUrl
-            .param({
-              name:        website.name,
-              contentType: configItem.name
-            })
-            .query({ offset: startingOffset + WEBSITE_CONTENT_PAGE_SIZE })
-            .toString()
-        )
+      const prevLink = wrapper.find(".pagination Link.previous")
+      const nextLink = wrapper.find(".pagination Link.next")
+      return {
+        wrappers: { currentPage: wrapper, prevLink, nextLink },
+        pathname
       }
     }
-  )
+
+    it.each([
+      { count: 25, search: ["", "offset=10"] },
+      { count: 25, search: ["offset=0", "offset=10"] },
+      { count: 25, search: ["cat=meow", "cat=meow&offset=10"] }
+    ])(
+      'shows only a "Next" button when appropriate',
+      async ({ count, search }) => {
+        const [initial, next] = search
+        const { wrappers, pathname } = await setupRouteAndMock(count, initial)
+
+        expect(wrappers.prevLink.exists()).toBe(false)
+        expect(wrappers.nextLink.exists()).toBe(true)
+
+        expect(wrappers.nextLink.prop("to")).toStrictEqual({
+          hash:   "",
+          key:    expect.any(String),
+          pathname,
+          search: next,
+          state:  null
+        })
+      }
+    )
+
+    it.each([
+      { count: 25, search: ["offset=20", "offset=10"] },
+      { count: 25, search: ["offset=15", "offset=5"] },
+      { count: 25, search: ["cat=meow&offset=20", "cat=meow&offset=10"] }
+    ])(
+      'shows only a "Previous" button when appropriate',
+      async ({ count, search }) => {
+        const [initial, previous] = search
+        const { wrappers, pathname } = await setupRouteAndMock(count, initial)
+
+        expect(wrappers.prevLink.exists()).toBe(true)
+        expect(wrappers.nextLink.exists()).toBe(false)
+
+        expect(wrappers.prevLink.prop("to")).toStrictEqual({
+          hash:   "",
+          key:    expect.any(String),
+          pathname,
+          search: previous,
+          state:  null
+        })
+      }
+    )
+
+    it.each([
+      { count: 25, search: ["offset=10", "offset=0", "offset=20"] },
+      { count: 25, search: ["offset=7", "offset=0", "offset=17"] },
+      {
+        count:  25,
+        search: [
+          "cat=meow&offset=14",
+          "cat=meow&offset=4",
+          "cat=meow&offset=24"
+        ]
+      }
+    ])(
+      'shows both "Previous" and "Next" buttons when appropriate',
+      async ({ count, search }) => {
+        const [initial, previous, next] = search
+        const { wrappers, pathname } = await setupRouteAndMock(count, initial)
+
+        expect(wrappers.prevLink.exists()).toBe(true)
+        expect(wrappers.nextLink.exists()).toBe(true)
+
+        expect(wrappers.prevLink.prop("to")).toStrictEqual({
+          hash:   "",
+          key:    expect.any(String),
+          pathname,
+          search: previous,
+          state:  null
+        })
+        expect(wrappers.nextLink.prop("to")).toStrictEqual({
+          hash:   "",
+          key:    expect.any(String),
+          pathname,
+          search: next,
+          state:  null
+        })
+      }
+    )
+
+    it.each([{ count: 5, search: [""] }])(
+      'shows neither "Previous" nor "Next" buttons when appropriate',
+      async ({ count, search }) => {
+        const [initial] = search
+        const { wrappers } = await setupRouteAndMock(count, initial)
+
+        expect(wrappers.prevLink.exists()).toBe(false)
+        expect(wrappers.nextLink.exists()).toBe(false)
+      }
+    )
+  })
 
   test.each([true, false])(
     "should render a link to open the content editor with right label (isSingular=%p)",

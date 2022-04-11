@@ -9,15 +9,8 @@ import { isNil } from "ramda"
 import DriveSyncStatusIndicator from "./DriveSyncStatusIndicator"
 import PaginationControls from "./PaginationControls"
 
-import {
-  GOOGLE_DRIVE_SYNC_PROCESSING_STATES,
-  WEBSITE_CONTENT_PAGE_SIZE
-} from "../constants"
-import {
-  siteContentDetailUrl,
-  siteContentListingUrl,
-  siteContentNewUrl
-} from "../lib/urls"
+import { GOOGLE_DRIVE_SYNC_PROCESSING_STATES } from "../constants"
+import { siteContentDetailUrl, siteContentNewUrl } from "../lib/urls"
 import { addDefaultFields } from "../lib/site_content"
 import {
   syncWebsiteContentMutation,
@@ -33,7 +26,7 @@ import {
   WebsiteContentListItem
 } from "../types/websites"
 import { StudioList, StudioListItem } from "./StudioList"
-import { useURLParamFilter } from "../hooks/search"
+import { useURLParamFilter, usePagination } from "../hooks/search"
 import { singular } from "pluralize"
 import SiteContentEditorDrawer from "./SiteContentEditorDrawer"
 import { useWebsite } from "../context/Website"
@@ -130,9 +123,7 @@ export default function RepeatableContentListing(props: {
   const { search } = useLocation()
   const searchParams = new URLSearchParams(search)
 
-  if (!listing) {
-    return null
-  }
+  const pages = usePagination(listing.count ?? 0)
 
   return (
     <>
@@ -199,23 +190,7 @@ export default function RepeatableContentListing(props: {
           />
         ))}
       </StudioList>
-      <PaginationControls
-        listing={listing}
-        previous={siteContentListingUrl
-          .param({
-            name:        website.name,
-            contentType: configItem.name
-          })
-          .query({ offset: listingParams.offset - WEBSITE_CONTENT_PAGE_SIZE })
-          .toString()}
-        next={siteContentListingUrl
-          .param({
-            name:        website.name,
-            contentType: configItem.name
-          })
-          .query({ offset: listingParams.offset + WEBSITE_CONTENT_PAGE_SIZE })
-          .toString()}
-      />
+      <PaginationControls previous={pages.previous} next={pages.next} />
       <Route
         path={[
           siteContentDetailUrl.param({

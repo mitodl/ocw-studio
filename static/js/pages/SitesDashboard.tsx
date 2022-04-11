@@ -11,12 +11,11 @@ import {
   WebsiteListingResponse
 } from "../query-configs/websites"
 import { getWebsiteListingCursor } from "../selectors/websites"
-import { newSiteUrl, siteDetailUrl, sitesBaseUrl } from "../lib/urls"
-import { WEBSITES_PAGE_SIZE } from "../constants"
+import { newSiteUrl, siteDetailUrl } from "../lib/urls"
 import { Website } from "../types/websites"
 import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 import { StudioList, StudioListItem } from "../components/StudioList"
-import { useURLParamFilter } from "../hooks/search"
+import { useURLParamFilter, usePagination } from "../hooks/search"
 
 export function siteDescription(site: Website): string | null {
   const courseNumber = (site.metadata?.course_numbers ?? [])[0]
@@ -46,6 +45,7 @@ export default function SitesDashboard(): JSX.Element {
   const listing: WebsiteListingResponse = useSelector(getWebsiteListingCursor)(
     listingParams.offset
   )
+  const pages = usePagination(listing.count ?? 0)
 
   return (
     <div className="px-4 dashboard">
@@ -86,21 +86,7 @@ export default function SitesDashboard(): JSX.Element {
             </StudioListItem>
           ))}
         </StudioList>
-        <PaginationControls
-          listing={listing}
-          previous={sitesBaseUrl
-            .query({
-              ...(listingParams.search ? { q: listingParams.search } : {}),
-              offset: listingParams.offset - WEBSITES_PAGE_SIZE
-            })
-            .toString()}
-          next={sitesBaseUrl
-            .query({
-              ...(listingParams.search ? { q: listingParams.search } : {}),
-              offset: listingParams.offset + WEBSITES_PAGE_SIZE
-            })
-            .toString()}
-        />
+        <PaginationControls previous={pages.previous} next={pages.next} />
       </div>
     </div>
   )

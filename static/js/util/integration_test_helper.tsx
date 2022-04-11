@@ -169,6 +169,7 @@ export default class IntegrationTestHelper {
       const wrapper = mount(
         <Provider store={store}>
           <ReduxQueryProvider queriesSelector={getQueries}>
+            {/* @ts-ignore */}
             <Router history={this.browserHistory}>
               <Component {...defaultProps} {...extraProps} />
             </Router>
