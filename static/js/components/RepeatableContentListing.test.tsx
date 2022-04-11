@@ -237,32 +237,21 @@ describe("RepeatableContentListing", () => {
     }
   })
 
-  it.each([
-    { count: 25, search: { initial: "", next: "offset=10" } },
-    { count: 25, search: { initial: "offset=0", next: "offset=10" } },
-    {
-      count:  25,
-      search: { initial: "offset=10", prev: "offset=0", next: "offset=20" }
-    },
-    {
-      count:  25,
-      search: { initial: "offset=7", prev: "offset=0", next: "offset=17" }
-    },
-    { count: 25, search: { initial: "offset=20", prev: "offset=10" } },
-    { count: 25, search: { initial: "offset=15", prev: "offset=5" } },
-    { count: 5, search: { initial: "" } },
-    { count: 25, search: { initial: "cat=meow", next: "cat=meow&offset=10" } },
-    {
-      count:  25,
-      search: {
-        initial: "offset=7&cat=meow",
-        prev:    "offset=0&cat=meow",
-        next:    "offset=17&cat=meow"
-      }
-    }
-  ])(
-    "pagination uses correct offsets & preserves initial query paramswhen $count items and starting ?$search.initial",
-    async ({ count, search }) => {
+  it.only.each`
+  count | initial                | prev                   | next 
+  ${25} | ${""}                  | ${null}                | ${'offset=10'}
+  ${25} | ${"offset=0"}          | ${null}                | ${'offset=10'}
+  ${25} | ${"offset=10"}         | ${'offset=0'}          | ${'offset=20'}
+  ${25} | ${"offset=7"}          | ${'offset=0'}          | ${'offset=17'}
+  ${25} | ${"offset=20"}         | ${'offset=10'}         | ${null}
+  ${25} | ${"offset=15"}         | ${'offset=5'}          | ${null}
+  ${5}  | ${""}                  | ${null}                | ${null}
+  ${25} | ${"cat=meow"}          | ${null}                | ${'cat=meow&offset=10'}
+  ${25} | ${'offset=7&cat=meow'} | ${'offset=0&cat=meow'} | ${'offset=17&cat=meow'}
+  `(
+    "pagination uses correct offsets & preserves initial query paramswhen $count items and starting ?$initial",
+    async ({ count, initial, prev, next }) => {
+      const search = { initial, prev, next }
       const nextPageItems = [
         makeWebsiteContentListItem(),
         makeWebsiteContentListItem()
