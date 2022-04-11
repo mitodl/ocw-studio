@@ -15,6 +15,26 @@ from websites.models import WebsiteContent
 from websites.utils import get_dict_field, set_dict_field
 
 
+def get_ocw_url(content: WebsiteContent):
+    """Return an ocw.mit.edu url to the given content."""
+    rootrel = get_rootrelative_url_from_content(content)
+    return f"https://ocw.mit.edu{rootrel}"
+
+
+def get_studio_url(content: WebsiteContent):
+    """Return an ocw-studio.odl.mit.edu url to the given content."""
+    site_name = content.website.name
+    if content.type == "sitemetadata":
+        return f"https://ocw-studio.odl.mit.edu/sites/{site_name}/type/metadata/"
+    return f"https://ocw-studio.odl.mit.edu/sites/{site_name}/type/page/edit/{content.text_id}/"
+
+
+def get_github_url(content: WebsiteContent):
+    """Return a github.mit.edu url to the given content."""
+    short_id = content.website.short_id
+    return f"https://github.mit.edu/mitocwcontent/{short_id}/tree/main/{content.dirpath}/{content.filename}.md"
+
+
 class WebsiteContentMarkdownCleaner:
     """Facilitates find-and-replace on WebsiteContent markdown fields.
 
@@ -44,7 +64,10 @@ class WebsiteContentMarkdownCleaner:
         "replaced_on_site_name",
         "replaced_on_site_short_id",
         "replaced_on_page_uuid",
-        "replaced_on_page_url",
+        "root_relative_url",
+        "ocw_url",
+        "github_url",
+        "studio_url",
     ]
 
     def __init__(self, rule: MarkdownCleanupRule):
@@ -137,9 +160,12 @@ class WebsiteContentMarkdownCleaner:
                     "replaced_on_site_name": change.content.website.name,
                     "replaced_on_site_short_id": change.content.website.short_id,
                     "replaced_on_page_uuid": change.content.text_id,
-                    "replaced_on_page_url": get_rootrelative_url_from_content(
+                    "root_relative_url": get_rootrelative_url_from_content(
                         change.content
                     ),
+                    "ocw_url": get_ocw_url(change.content),
+                    "studio_url": get_studio_url(change.content),
+                    "github_url": get_github_url(change.content),
                     **asdict(change.notes),
                 }
                 writer.writerow(row)
