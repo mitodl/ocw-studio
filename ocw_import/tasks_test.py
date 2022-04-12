@@ -1,16 +1,9 @@
 """ Tests for ocw_import.tasks """
-from tempfile import TemporaryDirectory
 
 import pytest
 from moto import mock_s3
 
-from ocw_import.api import import_ocw2hugo_course
-from ocw_import.conftest import (
-    MOCK_BUCKET_NAME,
-    TEST_OCW2HUGO_PREFIX,
-    setup_s3,
-    setup_s3_tmpdir,
-)
+from ocw_import.conftest import MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, setup_s3
 from ocw_import.tasks import (
     fetch_ocw2hugo_course_paths,
     import_ocw2hugo_course_paths,
@@ -18,7 +11,6 @@ from ocw_import.tasks import (
     update_ocw2hugo_course_paths,
     update_ocw_resource_data,
 )
-from websites.models import Website
 
 
 # pylint:disable=too-many-arguments

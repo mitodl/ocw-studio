@@ -12,8 +12,7 @@ from ocw_import.api import (
     import_ocw2hugo_course,
     update_ocw2hugo_course,
 )
-from websites.constants import WEBSITE_SOURCE_OCW_IMPORT
-from websites.models import Website, WebsiteStarter
+from websites.models import WebsiteStarter
 
 
 log = logging.getLogger(__name__)
