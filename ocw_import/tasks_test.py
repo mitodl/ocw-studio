@@ -223,6 +223,7 @@ def test_import_ocw2hugo_courses_delete_unpublished(settings, mocker, mocked_cel
             bucket_name=MOCK_BUCKET_NAME,
             prefix=TEST_OCW2HUGO_PREFIX,
             course_paths=course_paths,
+            delete_unpublished=True
         )
     mock_delete_unpublished_courses.assert_called_with(paths=SINGLE_COURSE_PATHS)
     tmpdir.cleanup()
