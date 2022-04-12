@@ -32,7 +32,8 @@ from gdrive_sync.constants import (
 from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.models import DriveFile
 from main.s3_utils import get_s3_resource
-from videos.constants import VideoStatus
+from videos.constants import VideoJobStatus, VideoStatus
+from videos.factories import VideoFactory, VideoJobFactory
 from websites.constants import (
     CONTENT_FILENAMES_FORBIDDEN,
     CONTENT_TYPE_RESOURCE,
@@ -124,7 +125,6 @@ def test_get_parent_tree(mock_service):
 @pytest.mark.parametrize("current_s3_key", [None, "courses/website/current-file.png"])
 def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     """stream_to_s3 should make expected drive api and S3 upload calls"""
-    mock_service = mocker.patch("gdrive_sync.api.get_drive_service")
     mock_download = mocker.patch("gdrive_sync.api.GDriveStreamReader")
     mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
     mock_bucket = mock_boto3.resource.return_value.Bucket.return_value
@@ -135,7 +135,6 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
         drive_path=f"website/{DRIVE_FOLDER_VIDEOS_FINAL if is_video else DRIVE_FOLDER_FILES_FINAL}",
     )
     api.stream_to_s3(drive_file)
-    mock_service.return_value.permissions.return_value.create.assert_called_once()
     if current_s3_key:
         expected_key = current_s3_key
     elif is_video:
@@ -163,24 +162,35 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
         ExtraArgs=expected_extra_args,
     )
     mock_download.assert_called_once_with(drive_file)
-    mock_service.return_value.permissions.return_value.delete.assert_called_once()
     drive_file.refresh_from_db()
     assert drive_file.status == DriveFileStatus.UPLOAD_COMPLETE
     assert drive_file.s3_key == expected_key
 
 
 @pytest.mark.django_db
-def test_stream_to_s3_error(mocker):
-    """Task should mark DriveFile status as failed if an s3 upload error occurs"""
-    mock_service = mocker.patch("gdrive_sync.api.get_drive_service")
+@pytest.mark.parametrize("num_errors", [2, 3, 4])
+def test_stream_to_s3_error(settings, mocker, num_errors):
+    """Task should mark DriveFile status as failed if an s3 upload error occurs more often than retries"""
+    settings.CONTENT_SYNC_RETRIES = 3
+    should_raise = num_errors >= 3
+    mocker.patch("gdrive_sync.api.GDriveStreamReader")
     mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
-    mock_boto3.resource.return_value.Bucket.side_effect = HTTPError()
+    mock_boto3.resource.return_value.Bucket.side_effect = [
+        *[HTTPError() for _ in range(num_errors)],
+        mocker.Mock(),
+    ]
     drive_file = DriveFileFactory.create()
-    with pytest.raises(HTTPError):
+    if should_raise:
+        with pytest.raises(HTTPError):
+            api.stream_to_s3(drive_file)
+    else:
         api.stream_to_s3(drive_file)
     drive_file.refresh_from_db()
-    assert drive_file.status == DriveFileStatus.UPLOAD_FAILED
-    mock_service.return_value.permissions.return_value.delete.assert_called_once()
+    assert drive_file.status == (
+        DriveFileStatus.UPLOAD_FAILED
+        if should_raise
+        else DriveFileStatus.UPLOAD_COMPLETE
+    )
 
 
 @pytest.mark.django_db
@@ -362,6 +372,60 @@ def test_process_file_result(
         assert drive_file.checksum == checksum
 
 
+@pytest.mark.parametrize("status", [DriveFileStatus.UPLOADING, DriveFileStatus.FAILED])
+@pytest.mark.parametrize("same_checksum", [True, False])
+@pytest.mark.parametrize("same_name", [True, False])
+def test_process_file_result_update(settings, mocker, status, same_checksum, same_name):
+    """
+    An existing drive file should not be processed again if the checksum and name are the same, ond the status
+    indicates that processing is complete or in progress.
+    """
+    settings.DRIVE_SHARED_ID = "test_drive"
+    settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
+    website = WebsiteFactory.create()
+    mocker.patch(
+        "gdrive_sync.api.get_parent_tree",
+        return_value=[
+            {
+                "id": "parent",
+                "name": "ancestor_exists",
+            },
+            {
+                "id": "websiteId",
+                "name": website.short_id,
+            },
+            {
+                "id": "subFolderId",
+                "name": DRIVE_FOLDER_FILES_FINAL,
+            },
+        ],
+    )
+    drive_file = DriveFileFactory.create(status=status, website=website)
+    file_result = {
+        "id": drive_file.file_id,
+        "name": drive_file.name if same_name else "new-name",
+        "mimeType": "image/jpeg",
+        "parents": ["subFolderId"],
+        "webContentLink": "http://link",
+        "createdTime": "2021-07-28T00:06:40.439Z",
+        "modifiedTime": "2021-07-29T14:25:19.375Z",
+        "md5Checksum": drive_file.checksum if same_checksum else "new-check-sum",
+        "trashed": False,
+    }
+    result = process_file_result(file_result)
+    assert (result is None) is (
+        same_name
+        and same_checksum
+        and status
+        in (
+            DriveFileStatus.UPLOADING,
+            DriveFileStatus.UPLOAD_COMPLETE,
+            DriveFileStatus.TRANSCODING,
+            DriveFileStatus.COMPLETE,
+        )
+    )
+
+
 def test_walk_gdrive_folder(mocker):
     """walk_gdrive_folder should yield all expected files"""
     files = [
@@ -497,6 +561,29 @@ def test_transcode_gdrive_video(settings, mocker, account_id, region, role_name)
         mock_convert_job.assert_called_once_with(drive_file.video)
     else:
         assert drive_file.video is None
+        mock_convert_job.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "prior_status",
+    [VideoJobStatus.CREATED, VideoJobStatus.CREATED, VideoJobStatus.FAILED],
+)
+def test_transcode_gdrive_video_prior_job(settings, mocker, prior_status):
+    """ create_media_convert_job should be called only if the prior job failed"""
+    settings.AWS_ACCOUNT_ID = "accountABC"
+    settings.AWS_REGION = "us-east-1"
+    settings.AWS_ROLE_NAME = "roleDEF"
+    mock_convert_job = mocker.patch("gdrive_sync.api.create_media_convert_job")
+    video = VideoFactory.create()
+    drive_file = DriveFileFactory.create(
+        website=video.website, video=video, s3_key=video.source_key
+    )
+    VideoJobFactory.create(video=video, status=prior_status)
+    transcode_gdrive_video(drive_file)
+    drive_file.refresh_from_db()
+    if prior_status != VideoJobStatus.CREATED:
+        mock_convert_job.assert_called_once_with(drive_file.video)
+    else:
         mock_convert_job.assert_not_called()
 
 

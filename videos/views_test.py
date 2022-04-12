@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from gdrive_sync.factories import DriveFileFactory
 from videos.conftest import TEST_VIDEOS_WEBHOOK_PATH
-from videos.constants import DESTINATION_YOUTUBE, VideoStatus
+from videos.constants import DESTINATION_YOUTUBE, VideoJobStatus, VideoStatus
 from videos.factories import VideoFactory, VideoJobFactory
 from websites.factories import WebsiteFactory
 
@@ -61,7 +61,7 @@ def test_transcode_jobs_success(settings, drf_client, video_group):
     video_job.refresh_from_db()
     assert video.videofiles.count() == 3
     assert video.videofiles.filter(destination=DESTINATION_YOUTUBE).count() == 1
-    assert video_job.status == data["detail"]["status"]
+    assert video_job.status == VideoJobStatus.COMPLETE
 
 
 def test_transcode_jobs_failure(settings, drf_client, video_group):
@@ -81,7 +81,7 @@ def test_transcode_jobs_failure(settings, drf_client, video_group):
     video_job.refresh_from_db()
     assert video.videofiles.count() == 0
     assert video.status == VideoStatus.FAILED
-    assert video_job.status == data["detail"]["status"]
+    assert video_job.status == VideoJobStatus.FAILED
 
 
 def test_transcode_jobs_wrong_account(drf_client):
