@@ -74,14 +74,6 @@ class Command(BaseCommand):
             help="Do NOT sync all unsynced courses to the backend",
         )
         parser.add_argument(
-            "-d",
-            "--delete_unpublished",
-            dest="delete_unpublished",
-            default=True,
-            type=bool,
-            help="If True, delete all courses that have been unpublished in the source data",
-        )
-        parser.add_argument(
             "--git_delete",
             dest="delete_from_git",
             action="store_true",
@@ -97,7 +89,6 @@ class Command(BaseCommand):
         bucket_name = options["bucket"]
         filter_json = options["filter_json"]
         limit = options["limit"]
-        delete_unpublished = options["delete_unpublished"]
         delete_from_git = options["delete_from_git"]
 
         if filter_json:
@@ -139,7 +130,6 @@ Would you like to proceed with the import? (y/n): """
             course_paths=course_paths,
             prefix=prefix,
             limit=limit,
-            delete_unpublished=delete_unpublished,
             chunk_size=options["chunks"],
         )
         self.stdout.write(f"Starting task {task}...")

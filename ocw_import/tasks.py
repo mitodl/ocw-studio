@@ -12,8 +12,7 @@ from ocw_import.api import (
     import_ocw2hugo_course,
     update_ocw2hugo_course,
 )
-from websites.constants import WEBSITE_SOURCE_OCW_IMPORT
-from websites.models import Website, WebsiteStarter
+from websites.models import WebsiteStarter
 
 
 log = logging.getLogger(__name__)
@@ -69,30 +68,6 @@ def update_ocw2hugo_course_paths(
         )
 
 
-@app.task()
-def delete_unpublished_courses(paths=None):
-    """
-    Delete all unpublished courses based on paths not present for existing Websites
-
-    Args:
-        paths: (list of str): list of course data template paths
-    """
-    if not paths:
-        return
-    course_ids = list(
-        map((lambda key: key.replace("/data/course_legacy.json", "", 1)), paths)
-    )
-    unpublished_courses = Website.objects.filter(
-        source=WEBSITE_SOURCE_OCW_IMPORT
-    ).exclude(name__in=course_ids)
-    if unpublished_courses.count() == 0:
-        log.info("No unpublished courses to delete")
-        return
-    else:
-        log.info("Deleting unpublished courses: %s", unpublished_courses)
-        unpublished_courses.delete()
-
-
 @app.task(bind=True)
 def import_ocw2hugo_courses(
     self,
@@ -100,7 +75,6 @@ def import_ocw2hugo_courses(
     course_paths=None,
     prefix=None,
     limit=None,
-    delete_unpublished=True,
     chunk_size=100,
 ):  # pylint:disable=too-many-arguments
     """
@@ -111,7 +85,6 @@ def import_ocw2hugo_courses(
         course_paths (list of str): The paths of the courses to be imported
         prefix (str): (Optional) S3 prefix before start of course_id path
         limit (int): (Optional) Only import this amount of courses
-        delete_unpublished (bool): (Optional) If true, delete unpublished courses from the DB
         chunk_size (int): Number of courses to process per task
     """
     if not bucket_name:
@@ -120,12 +93,6 @@ def import_ocw2hugo_courses(
         raise TypeError("Course paths must be specified")
     if limit is not None:
         course_paths = course_paths[:limit]
-    if delete_unpublished:
-        delete_unpublished_courses_task = delete_unpublished_courses.si(
-            paths=course_paths
-        )
-    else:
-        delete_unpublished_courses_task = None
     course_tasks = [
         import_ocw2hugo_course_paths.si(
             paths=paths,
@@ -134,13 +101,8 @@ def import_ocw2hugo_courses(
         )
         for paths in chunks(course_paths, chunk_size=chunk_size)
     ]
-    # Make sure that the delete task doesn't take place until after all the import tasks complete
     import_steps = celery.chord(celery.group(course_tasks), chord_finisher.si())
-    delete_steps = celery.group(
-        [delete_unpublished_courses_task] if delete_unpublished else []
-    )
-    workflow = celery.chain(import_steps, delete_steps)
-    raise self.replace(celery.group(workflow))
+    raise self.replace(celery.group(import_steps))
 
 
 @app.task(bind=True)
