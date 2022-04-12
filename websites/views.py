@@ -233,13 +233,13 @@ class WebsitePublishViewSet(viewsets.ViewSet):
         version = self.request.query_params.get("version")
         if version not in (VERSION_LIVE, VERSION_DRAFT):
             raise ValidationError("Invalid version")
+        publish_date_field = (
+            "publish_date" if version == VERSION_LIVE else "draft_publish_date"
+        )
 
-        # Get all sites, minus any never-published sites created in studio (for specified version)
+        # Get all sites, minus any sites that have never been successfully published
         sites = (
-            Website.objects.exclude(
-                Q(**{f"{version}_publish_status": None})
-                & Q(**{"source": constants.WEBSITE_SOURCE_STUDIO})
-            )
+            Website.objects.exclude(Q(**{f"{publish_date_field}__isnull": True}))
             .prefetch_related("starter")
             .order_by("name")
         )
