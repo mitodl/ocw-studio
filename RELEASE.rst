@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.57.2
+Version 0.57.2 (Released April 12, 2022)
 --------------
 
 - improve link logging (#1235)
