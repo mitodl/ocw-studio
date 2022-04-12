@@ -77,7 +77,7 @@ class Command(BaseCommand):
             "-d",
             "--delete_unpublished",
             dest="delete_unpublished",
-            default=True,
+            default=False,
             type=bool,
             help="If True, delete all courses that have been unpublished in the source data",
         )
