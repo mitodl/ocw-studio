@@ -377,7 +377,7 @@ def test_process_file_result(
 @pytest.mark.parametrize("same_name", [True, False])
 def test_process_file_result_update(settings, mocker, status, same_checksum, same_name):
     """
-    An existing drive file should not be processed again is the checksum and name are the same, ond the status
+    An existing drive file should not be processed again if the checksum and name are the same, ond the status
     indicates that processing is complete or in progress.
     """
     settings.DRIVE_SHARED_ID = "test_drive"
