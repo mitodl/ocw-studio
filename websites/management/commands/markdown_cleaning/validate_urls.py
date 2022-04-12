@@ -50,8 +50,13 @@ class ValidateUrls(RegexpCleanupRule):
         self.content_lookup = ContentLookup()
 
     def replace_match(self, match: re.Match, wc: WebsiteContent):
-        url = urlparse(match.group("url"))
         original_text = match[0]
+        try:
+            url = urlparse(match.group("url"))
+        except ValueError:
+            return original_text, self.ReplacementNotes(
+                url_path="unknown", link_type="invalid url"
+            )
         notes = partial(self.ReplacementNotes, url_path=url.path)
         note_works = partial(notes, broken_best_guess="No")
         note_broken = partial(notes, broken_best_guess="Yes")

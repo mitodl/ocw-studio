@@ -107,6 +107,14 @@ class Command(BaseCommand):
             default=False,
             help="Whether to write CSV rows for all matches or only matches that change.",
         )
+        parser.add_argument(
+            "-l",
+            "--limit",
+            dest="limit",
+            type=int,
+            default=None,
+            help="If supplied, at most this many WebsiteContent pages will be scanned.",
+        )
 
     @classmethod
     def validate_options(cls, options):
@@ -128,6 +136,7 @@ class Command(BaseCommand):
             alias=options["alias"],
             out=options["out"],
             csv_only_changes=options["csv_only_changes"],
+            limit=options["limit"],
         )
 
         if (
@@ -146,7 +155,7 @@ class Command(BaseCommand):
             )
 
     @classmethod
-    def do_handle(cls, alias, commit, out, csv_only_changes):
+    def do_handle(cls, alias, commit, out, csv_only_changes, limit):
         """Replace baseurl with resource_link"""
 
         Rule = next(R for R in cls.Rules if R.alias == alias)
@@ -160,8 +169,9 @@ class Command(BaseCommand):
             .order_by("id")
             .prefetch_related("website")
         )
+        target_wc = all_wc if limit is None else all_wc[0 : min(limit, len(all_wc))]
         page_size = 100
-        pages = Paginator(all_wc, page_size)
+        pages = Paginator(target_wc, page_size)
 
         num_updated = 0
         with tqdm(total=pages.count) as progress:
