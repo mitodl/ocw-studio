@@ -6,7 +6,12 @@ import pytest
 
 from videos.api import create_media_convert_job, process_video_outputs
 from videos.conftest import TEST_VIDEOS_WEBHOOK_PATH
-from videos.constants import DESTINATION_ARCHIVE, DESTINATION_YOUTUBE, VideoStatus
+from videos.constants import (
+    DESTINATION_ARCHIVE,
+    DESTINATION_YOUTUBE,
+    VideoFileStatus,
+    VideoStatus,
+)
 from videos.factories import VideoFactory
 from videos.models import VideoFile, VideoJob
 
@@ -61,6 +66,9 @@ def test_process_video_outputs():
             video=video, destination=DESTINATION_YOUTUBE
         )
         assert "_youtube." in youtube_video.s3_key
+        assert youtube_video.status == VideoFileStatus.CREATED
+        assert youtube_video.destination_status is None
+        assert youtube_video.destination_id is None
         for videofile in VideoFile.objects.filter(
             video=video, destination=DESTINATION_ARCHIVE
         ):

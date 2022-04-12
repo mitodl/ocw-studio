@@ -7,7 +7,13 @@ import boto3
 from django.conf import settings
 
 from videos.apps import VideoApp
-from videos.constants import DESTINATION_ARCHIVE, DESTINATION_YOUTUBE, VideoStatus
+from videos.constants import (
+    DESTINATION_ARCHIVE,
+    DESTINATION_YOUTUBE,
+    VideoFileStatus,
+    VideoJobStatus,
+    VideoStatus,
+)
 from videos.models import Video, VideoFile, VideoJob
 
 
@@ -73,6 +79,7 @@ def process_video_outputs(video: Video, output_group_details: dict):
                         else DESTINATION_ARCHIVE,
                         "destination_id": None,
                         "destination_status": None,
+                        "status": VideoFileStatus.CREATED,
                     },
                 )
 
@@ -83,9 +90,11 @@ def update_video_job(video_job: VideoJob, results: dict):
     video = video_job.video
     if status == "COMPLETE":
         process_video_outputs(video, results.get("outputGroupDetails"))
+        video_job.status = VideoJobStatus.COMPLETE
         # future PR: upload to youtube & internet archive, create WebsiteContent for video
     elif status == "ERROR":
         video.status = VideoStatus.FAILED
+        video_job.status = VideoJobStatus.FAILED
         log.error(
             "Transcode failure for %s, error code %s: %s",
             video.source_key,
@@ -94,6 +103,5 @@ def update_video_job(video_job: VideoJob, results: dict):
         )
         video_job.error_code = str(results.get("errorCode"))
         video_job.error_message = results.get("errorMessage")
-    video_job.status = status
     video_job.save()
     video.save()

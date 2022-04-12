@@ -17,6 +17,7 @@ from google.oauth2.service_account import (  # pylint:disable=no-name-in-module
 from googleapiclient.discovery import Resource, build
 from googleapiclient.http import MediaIoBaseDownload
 
+from content_sync.decorators import retry_on_failure
 from gdrive_sync.constants import (
     DRIVE_FOLDER_FILES,
     DRIVE_FOLDER_FILES_FINAL,
@@ -28,8 +29,8 @@ from gdrive_sync.constants import (
 )
 from gdrive_sync.models import DriveFile
 from videos.api import create_media_convert_job
-from videos.constants import VideoStatus
-from videos.models import Video
+from videos.constants import VideoJobStatus, VideoStatus
+from videos.models import Video, VideoJob
 from websites.api import get_valid_new_filename
 from websites.constants import (
     CONTENT_TYPE_RESOURCE,
@@ -163,10 +164,17 @@ def process_file_result(
                 existing_file
                 and existing_file.checksum == file_obj.get("md5Checksum", "")
                 and existing_file.name == file_obj.get("name")
-                and existing_file.status == DriveFileStatus.COMPLETE
+                and existing_file.status
+                in (
+                    DriveFileStatus.COMPLETE,
+                    DriveFileStatus.UPLOADING,
+                    DriveFileStatus.UPLOAD_COMPLETE,
+                    DriveFileStatus.TRANSCODING,
+                )
             ):
                 # For inexplicable reasons, sometimes Google Drive continuously updates
-                # the modifiedTime of files, so only update the DriveFile if the checksum or name changed.
+                # the modifiedTime of files, so only update the DriveFile if the checksum or name changed,
+                # and the status indicates that the file processing is not complete or in progress.
                 return
             drive_file, _ = DriveFile.objects.update_or_create(
                 file_id=file_obj.get("id"),
@@ -189,21 +197,10 @@ def process_file_result(
     return None
 
 
+@retry_on_failure
 def stream_to_s3(drive_file: DriveFile):
     """ Stream a Google Drive file to S3 """
-    service = None
-    permission = None
     try:
-        service = get_drive_service()
-        permission = (
-            service.permissions()
-            .create(
-                supportsAllDrives=True,
-                body={"role": "reader", "type": "anyone"},
-                fileId=drive_file.file_id,
-            )
-            .execute()
-        )
         s3 = boto3.resource("s3")
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
         bucket = s3.Bucket(bucket_name)
@@ -227,13 +224,6 @@ def stream_to_s3(drive_file: DriveFile):
         )
         drive_file.update_status(DriveFileStatus.UPLOAD_FAILED)
         raise
-    finally:
-        if service and permission:
-            service.permissions().delete(
-                supportsAllDrives=True,
-                permissionId=permission["id"],
-                fileId=drive_file.file_id,
-            ).execute()
 
 
 def create_gdrive_folders(website_short_id: str) -> bool:
@@ -401,13 +391,21 @@ def create_gdrive_resource_content(drive_file: DriveFile):
 
 
 def transcode_gdrive_video(drive_file: DriveFile):
-    """Create a MediaConvert transcode job and Video object for the given drive file id"""
+    """Create a MediaConvert transcode job and Video object for the given drive file id if one doesn't already exist"""
     if settings.AWS_ACCOUNT_ID and settings.AWS_REGION and settings.AWS_ROLE_NAME:
         video, _ = Video.objects.get_or_create(
             source_key=drive_file.s3_key,
             website=drive_file.website,
             defaults={"status": VideoStatus.CREATED},
         )
+        prior_job = (
+            VideoJob.objects.filter(video=video)
+            .exclude(status__in=(VideoJobStatus.FAILED, VideoJobStatus.COMPLETE))
+            .first()
+        )
+        if prior_job:
+            # Don't start another transcode job if there's a prior one that hasn't failed/completed yet
+            return
         drive_file.video = video
         drive_file.save()
         try:
