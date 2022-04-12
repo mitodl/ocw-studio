@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.57.1
+Version 0.57.1 (Released April 12, 2022)
 --------------
 
 - remove delete_unpublished_courses (#1234)
