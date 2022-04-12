@@ -100,7 +100,7 @@ def import_ocw2hugo_courses(
     course_paths=None,
     prefix=None,
     limit=None,
-    delete_unpublished=True,
+    delete_unpublished=False,
     chunk_size=100,
 ):  # pylint:disable=too-many-arguments
     """
