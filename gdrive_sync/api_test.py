@@ -296,16 +296,19 @@ def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-argum
 
 @mock_s3
 @pytest.mark.parametrize(
-    "filename, mimetype, expected_type",
+    "filename, in_file_dir, mimetype, expected_type",
     [
-        ["file.docx", "application/ms-word", RESOURCE_TYPE_DOCUMENT],
-        ["file.html", "text/html", RESOURCE_TYPE_DOCUMENT],
-        ["file.mp4", "video/mp4", RESOURCE_TYPE_VIDEO],
-        ["file.jpeg", "image/jpeg", RESOURCE_TYPE_IMAGE],
-        ["file.py", "application/python", RESOURCE_TYPE_OTHER],
+        ["file.docx", True, "application/ms-word", RESOURCE_TYPE_DOCUMENT],
+        ["file.html", True, "text/html", RESOURCE_TYPE_DOCUMENT],
+        ["file.mp4", True, "video/mp4", RESOURCE_TYPE_OTHER],
+        ["file.mp4", False, "video/mp4", RESOURCE_TYPE_VIDEO],
+        ["file.jpeg", True, "image/jpeg", RESOURCE_TYPE_IMAGE],
+        ["file.py", True, "application/python", RESOURCE_TYPE_OTHER],
     ],
 )
-def test_get_resource_type(settings, filename, mimetype, expected_type) -> str:
+def test_get_resource_type(
+    settings, in_file_dir, filename, mimetype, expected_type
+) -> str:
     """get_resource_type should return the expected value for an S3 object"""
     settings.AWS_ACCESS_KEY_ID = "abc"
     settings.AWS_SECRET_ACCESS_KEY = "abc"
@@ -315,7 +318,13 @@ def test_get_resource_type(settings, filename, mimetype, expected_type) -> str:
     test_bucket = conn.Bucket(name=settings.AWS_STORAGE_BUCKET_NAME)
     test_bucket.objects.all().delete()
     test_bucket.put_object(Key=filename, Body=b"", ContentType=mimetype)
-    assert get_resource_type(filename) == expected_type
+    drive_file = DriveFileFactory.build(
+        s3_key=filename,
+        drive_path=(
+            DRIVE_FOLDER_FILES_FINAL if in_file_dir else DRIVE_FOLDER_VIDEOS_FINAL
+        ),
+    )
+    assert get_resource_type(drive_file) == expected_type
 
 
 @pytest.mark.parametrize("is_video", [True, False])
@@ -361,9 +370,7 @@ def test_process_file_result(
         "md5Checksum": checksum,
         "trashed": False,
     }
-    correct_folder = (is_video and in_video_folder) or (
-        not is_video and not in_video_folder
-    )
+    correct_folder = is_video or (not is_video and not in_video_folder)
     process_file_result(file_result)
     drive_file = DriveFile.objects.filter(file_id=file_result["id"]).first()
     file_exists = drive_file is not None

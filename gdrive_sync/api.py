@@ -154,7 +154,7 @@ def process_file_result(
         in_file_folder = DRIVE_FOLDER_FILES_FINAL in folder_names
         is_video = file_obj["mimeType"].lower().startswith("video/")
         processable = (
-            ((in_video_folder and is_video) or (in_file_folder and not is_video))
+            ((in_video_folder and is_video) or in_file_folder)
             and file_obj.get("webContentLink") is not None
             and file_obj.get("md5Checksum") is not None
         )
@@ -297,13 +297,16 @@ def get_s3_content_type(key: str) -> str:
     return bucket.Object(key).content_type
 
 
-def get_resource_type(key: str) -> str:
+def get_resource_type(drive_file: DriveFile) -> str:
     """ Guess the resource type from S3 content_type or extension"""
-    content_type = get_s3_content_type(key)
-    _, extension = os.path.splitext(key)
+    content_type = get_s3_content_type(drive_file.s3_key)
+    _, extension = os.path.splitext(drive_file.s3_key)
     if content_type.startswith("image"):
         return RESOURCE_TYPE_IMAGE
-    if content_type.startswith("video"):
+    if (
+        content_type.startswith("video")
+        and DRIVE_FOLDER_VIDEOS_FINAL in drive_file.drive_path
+    ):
         return RESOURCE_TYPE_VIDEO
     if content_type.startswith("text") or extension in VALID_TEXT_FILE_TYPES:
         return RESOURCE_TYPE_DOCUMENT
@@ -340,7 +343,7 @@ def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[Dict]:
 def create_gdrive_resource_content(drive_file: DriveFile):
     """Create a WebsiteContent resource from a Google Drive file"""
     try:
-        resource_type = get_resource_type(drive_file.s3_key)
+        resource_type = get_resource_type(drive_file)
         resource = drive_file.resource
         if not resource:
             site_config = SiteConfig(drive_file.website.starter.config)
