@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.57.1
+--------------
+
+- remove delete_unpublished_courses (#1234)
+- Update filter for the mass-publish api endpoint (#1229)
+- Sync videos from Google Drive files_final folder, don't transcode or upload to Youtube (#1227)
+- Avoid unnecessary dupe transcode jobs, retry on gdrive->s3 upload errors a few times before raising (#1219)
+- Preserve querystrings when paginating (#1226)
+
 Version 0.57.0 (Released April 11, 2022)
 --------------
 
