@@ -92,15 +92,4 @@ describe("ResourceLink plugin", () => {
       )}">bark bark</a> Woof</p>`
     )
   })
-
-  it("[BUG] does not behave well if link title ends in backslash", async () => {
-    const editor = await getEditor("")
-    const { md2html } = getConverters(editor)
-    expect(md2html('{{% resource_link uuid123 "bad \\" %}}')).toBe(
-      // This is wrong. Should not end in &lt;/a&gt;
-      `<p><a class="resource-link" data-uuid="${encode(
-        "uuid123"
-      )}">bad &lt;/a&gt;</p>`
-    )
-  })
 })

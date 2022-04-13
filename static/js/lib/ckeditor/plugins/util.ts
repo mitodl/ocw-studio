@@ -1,6 +1,51 @@
 import { pickBy } from "lodash"
 import { TABLE_ALLOWED_ATTRS } from "./constants"
-import { hasNotNilProp, isNotNil } from "../../../util"
+import { hasTruthyProp, isNotNil } from "../../../util"
+import { ReplacementFunction } from "turndown"
+
+/**
+ * Given a string encased in quotes and in which all interior quote characters
+ * are escaped, strip the encasing quotes and unescape the interior quotes.
+ *
+ * By default, the quotation character is a double quotation mark.
+ * Use `singleQuotes=true` for single quotes. *The `singleQuotes` option is
+ * currently unused on the frontend, but included for parity with the backend
+ * version of this function.*
+ */
+export const unescapeStringQuotedWith = (
+  text: string,
+  singleQuotes = false
+) => {
+  const q = singleQuotes ? "'" : '"'
+
+  const escapedQuoteRegex = new RegExp(
+    [
+      /(^|[^\\])/.source, // anything except a backlsash
+      /(\\\\)*\\/.source, // an odd number of backlsashes
+      q // a quote
+    ].join(""),
+    "g"
+  )
+
+  const unescape: ReplacementFunction = (s: string) => {
+    // s.replace is OK because there will be exactly one dbl quote in the match
+    return s.replace(`\\${q}`, q)
+  }
+
+  const quoteCount = text.slice(1, -1).split(q).length - 1
+  const escapedQuoteCount = text.match(escapedQuoteRegex)?.length ?? 0
+  const allEscaped = quoteCount === escapedQuoteCount
+  if (allEscaped && text.startsWith(q) && text.endsWith(q)) {
+    return text.slice(1, -1).replace(escapedQuoteRegex, unescape)
+  }
+  throw new Error(`${text} is not a valid ${q}-quoted string`)
+}
+
+const ensureEncasedInQuotes = (text: string, singleQuotes = false) => {
+  const q = singleQuotes ? "'" : '"'
+  if (text.startsWith(q) && text.endsWith(q)) return text
+  return q + text + q
+}
 
 export function buildAttrsString(attrs: RegExpMatchArray | null): string {
   return attrs ?
@@ -14,9 +59,31 @@ export function buildAttrsString(attrs: RegExpMatchArray | null): string {
     ""
 }
 
-interface ShortcodeArg {
+export class ShortcodeParam {
   name?: string
   value: string
+
+  constructor(value: string, name?: string) {
+    this.name = name
+    this.value = value
+  }
+
+  static hugoUnescapeParamValue(value: string) {
+    const encased = ensureEncasedInQuotes(value)
+    return unescapeStringQuotedWith(encased)
+  }
+
+  static hugoEscapeParamValue(value: string): string {
+    return value.replace(/\n/g, " ").replace(/"/g, '\\"')
+  }
+
+  toHugo() {
+    const hugoValue = `"${ShortcodeParam.hugoEscapeParamValue(this.value)}"`
+    if (this.name) {
+      return `${this.name}=${hugoValue}`
+    }
+    return hugoValue
+  }
 }
 
 /**
@@ -26,14 +93,14 @@ interface ShortcodeArg {
 export class Shortcode {
   name: string
 
-  params: ShortcodeArg[]
+  params: ShortcodeParam[]
 
   isPercentDelimited: boolean
 
   constructor(
     name: string,
-    params: ShortcodeArg[],
-    isPercentDelimited: boolean
+    params: ShortcodeParam[],
+    isPercentDelimited = false
   ) {
     this.name = name
     this.params = params
@@ -52,12 +119,7 @@ export class Shortcode {
    * Convert this shortcode to Hugo markdown.
    */
   toHugo() {
-    const stringifiedArgs = this.params
-      .filter(({ value }) => value)
-      .map(({ name, value }) => {
-        return name ? `${name}="${value}"` : `"${value}"`
-      })
-      .join(" ")
+    const stringifiedArgs = this.params.map(p => p.toHugo()).join(" ")
     const interior = `${this.name} ${stringifiedArgs}`
     if (this.isPercentDelimited) {
       return `{{% ${interior} %}}`
@@ -85,10 +147,10 @@ export class Shortcode {
       .matchAll(Shortcode.ARG_REGEXP)
     const name = Shortcode.getArgMatchValue(nameMatch)
     const params = argMatches.map(match => {
-      return {
-        name:  Shortcode.getArgMatchName(match),
-        value: Shortcode.getArgMatchValue(match)
-      }
+      return new ShortcodeParam(
+        Shortcode.getArgMatchValue(match),
+        Shortcode.getArgMatchName(match)
+      )
     })
 
     return new Shortcode(name, params, isPercentDelmited)
@@ -123,7 +185,7 @@ export class Shortcode {
         `Shortcode ${s} is invalid: content includes shortcode delimiters.`
       )
     }
-    const unescapedQuotes = s.match(/(?<!\\)"/g)?.length ?? 0
+    const unescapedQuotes = s.match(/(?<!\\)(\\\\)*"/g)?.length ?? 0
     if (unescapedQuotes % 2 > 0) {
       throw new Error(
         `Shortcode ${s} is invalid: odd number of unescaped quotes.`
@@ -142,7 +204,9 @@ export class Shortcode {
     if (match.groups === undefined) {
       throw new Error("Expected groups to be defined.")
     }
-    return match.groups.qvalue ?? match.groups.uvalue
+    return ShortcodeParam.hugoUnescapeParamValue(
+      match.groups.qvalue ?? match.groups.uvalue
+    )
   }
 
   /**
@@ -160,15 +224,33 @@ export class Shortcode {
    */
   static resource(
     uuid: string,
-    { href, hrefUuid }: { href?: string | null; hrefUuid?: string | null }
+    { href, hrefUuid }: { href?: string | null; hrefUuid?: string | null } = {}
   ) {
+    if (href && hrefUuid) {
+      throw new Error("At most one of href, hrefUuid may be specified")
+    }
     const name = "resource"
     const isPercentDelimited = false
     const params = [
       { name: "uuid", value: uuid },
       { name: "href", value: href },
       { name: "href_uuid", value: hrefUuid }
-    ].filter(hasNotNilProp("value"))
+    ]
+      .filter(hasTruthyProp("value"))
+      .map(({ name, value }) => {
+        return new ShortcodeParam(value, name)
+      })
+    return new Shortcode(name, params, isPercentDelimited)
+  }
+
+  static resourceLink(uuid: string, text: string, suffix?: string) {
+    const name = "resource_link"
+    const isPercentDelimited = true
+    const paramValues = [uuid, text]
+    if (suffix) {
+      paramValues.push(`${suffix}`)
+    }
+    const params = paramValues.map(value => new ShortcodeParam(value))
     return new Shortcode(name, params, isPercentDelimited)
   }
 }

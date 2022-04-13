@@ -50,14 +50,4 @@ describe("ResourceEmbed plugin", () => {
       '<section data-href-uuid="abcwxyz" data-uuid="asdfasdfasdfasdf"></section>'
     )
   })
-
-  it("preserves href and href_uuid params", async () => {
-    const editor = await getEditor("")
-    markdownTest(
-      editor,
-      // This wouldn't really make sense but it's fun to check.
-      '{{< resource uuid="asdfasdfasdfasdf" href="https://www.mit.edu" href_uuid="abcwxyz" >}}',
-      '<section data-href="https://www.mit.edu" data-href-uuid="abcwxyz" data-uuid="asdfasdfasdfasdf"></section>'
-    )
-  })
 })

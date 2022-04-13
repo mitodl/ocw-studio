@@ -19,6 +19,15 @@ export const hasNotNilProp = <T, K extends keyof T>(key: K) => (
 }
 
 /**
+ * Return a predicate `obj => boolean` that asserts `obj[key]` is truthy
+ */
+export const hasTruthyProp = <T, K extends keyof T>(key: K) => (
+  obj: T
+): obj is NonNullableProps<T, K> => {
+  return !!obj[key]
+}
+
+/**
  * Type predicate that asserts value is not null or undefined.
  */
 export const isNotNil = <T>(value: T): value is NonNullable<T> => {
