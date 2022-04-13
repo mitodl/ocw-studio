@@ -64,9 +64,9 @@ class Command(BaseCommand):
             help="Run prepublish actions on each site",
         )
         parser.add_argument(
-            "-ib",
-            "--individual-builds",
-            dest="individual_builds",
+            "-nmb",
+            "--no-mass-build",
+            dest="no_mass_build",
             action="store_true",
             help="Run individual site pipelines instead of the mass-build-sites pipeline",
         )
@@ -83,7 +83,7 @@ class Command(BaseCommand):
         source_str = options["source"]
         chunk_size = int(options["chunk_size"])
         prepublish = options["prepublish"]
-        individual_builds = options["individual_builds"]
+        no_mass_build = options["no_mass_build"]
         is_verbose = options["verbosity"] > 1
 
         if filter_json:
@@ -109,7 +109,7 @@ class Command(BaseCommand):
 
         website_names = list(website_qset.values_list("name", flat=True))
 
-        if individual_builds:
+        if no_mass_build:
             confirmation = input(
                 f"""WARNING: You are about to trigger individual concourse pipelines for {len(website_names)} sites.
 Would you like to proceed? (y/n): """
@@ -127,7 +127,7 @@ Would you like to proceed? (y/n): """
             version,
             chunk_size=chunk_size,
             prepublish=prepublish,
-            no_mass_build=individual_builds,
+            no_mass_build=no_mass_build,
         )
 
         self.stdout.write(
