@@ -24,13 +24,14 @@ from websites import constants
 from websites.api import (
     detect_mime_type,
     incomplete_content_warnings,
+    sync_website_title,
     update_youtube_thumbnail,
 )
 from websites.constants import CONTENT_TYPE_METADATA
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import get_dict_field, permissions_group_name_for_role
+from websites.utils import permissions_group_name_for_role
 
 
 log = logging.getLogger(__name__)
@@ -391,10 +392,7 @@ class WebsiteContentDetailSerializer(
         update_website_backend(instance.website)
         # Sync the metadata title and website title if appropriate
         if instance.type == CONTENT_TYPE_METADATA:
-            title = get_dict_field(instance.metadata, settings.FIELD_METADATA_TITLE)
-            if title:
-                instance.website.title = title
-                instance.website.save()
+            sync_website_title(instance)
         return instance
 
     def get_content_context(self, instance):  # pylint:disable=too-many-branches
@@ -519,6 +517,8 @@ class WebsiteContentCreateSerializer(
             }
         )
         update_website_backend(instance.website)
+        if instance.type == CONTENT_TYPE_METADATA:
+            sync_website_title(instance)
         return instance
 
     class Meta:

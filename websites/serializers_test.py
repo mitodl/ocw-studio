@@ -448,31 +448,45 @@ def test_website_content_detail_serializer_save(mocker, mocked_website_funcs):
     mocked_website_funcs.create_website_pipeline.assert_not_called()
 
 
+@pytest.mark.parametrize("is_new", [True])
 @pytest.mark.parametrize("has_title_field", [True, False])
 def test_website_content_detail_serializer_save_site_meta(  # pylint:disable=unused-argument
-    settings, mocker, mocked_website_funcs, has_title_field
+    settings, mocker, mocked_website_funcs, has_title_field, is_new
 ):
     """Website title should be updated if the expected title field is in metadata"""
     settings.FIELD_METADATA_TITLE = "course_title"
     new_title = "Updated Site Title"
     title_field = settings.FIELD_METADATA_TITLE if has_title_field else "other_title"
-    content = WebsiteContentFactory.create(
-        type=CONTENT_TYPE_METADATA,
-        metadata={},
-    )
-    assert content.website.title != new_title
-    serializer = WebsiteContentDetailSerializer(
-        data={"metadata": {title_field: new_title}},
-        instance=content,
-        context={
-            "view": mocker.Mock(kwargs={"parent_lookup_website": content.website.name}),
-            "request": mocker.Mock(user=UserFactory.create()),
+    if is_new:
+        website = WebsiteFactory.create()
+        instance_kwargs = {}
+        serializer_class = WebsiteContentCreateSerializer
+    else:
+        content = WebsiteContentFactory.create(
+            type=CONTENT_TYPE_METADATA,
+            metadata={},
+        )
+        website = content.website
+        instance_kwargs = {"instance": content}
+        serializer_class = WebsiteContentDetailSerializer
+    assert website.title != new_title
+    serializer = serializer_class(
+        data={
+            "type": CONTENT_TYPE_METADATA,
+            "website_id": website.pk,
+            "metadata": {title_field: new_title},
         },
+        context={
+            "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
+            "request": mocker.Mock(user=UserFactory.create()),
+            "website_id": website.pk,
+        },
+        **instance_kwargs,
     )
     serializer.is_valid(raise_exception=True)
     serializer.save()
-    content.refresh_from_db()
-    assert (content.website.title == new_title) is has_title_field
+    website.refresh_from_db()
+    assert (website.title == new_title) is has_title_field
 
 
 def test_website_content_detail_serializer_save_null_metadata(
