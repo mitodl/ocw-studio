@@ -289,9 +289,9 @@ def test_publish_website_error(mock_api_funcs, settings):
 
 
 def test_get_mass_publish_pipeline_no_backend(settings):
-    """get_mass_publish_pipeline should return None if no backend is specified"""
+    """get_mass_build_sites_pipeline should return None if no backend is specified"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = None
-    assert api.get_mass_publish_pipeline(VERSION_DRAFT) is None
+    assert api.get_mass_build_sites_pipeline(VERSION_DRAFT) is None
 
 
 def test_get_theme_assets_pipeline_no_backend(settings):

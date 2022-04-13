@@ -32,7 +32,7 @@ app.conf.task_routes = {
     "content_sync.tasks.upsert_website_publishing_pipeline": {"queue": "publish"},
     "content_sync.tasks.sync_unsynced_websites": {"queue": "batch"},
     "content_sync.tasks.upsert_pipelines": {"queue": "batch"},
-    "content_sync.tasks.trigger_mass_publish": {"queue": "batch"},
+    "content_sync.tasks.trigger_mass_build": {"queue": "batch"},
     "content_sync.tasks.publish_website_batch": {"queue": "batch"},
     "content_sync.tasks.publish_websites": {"queue": "batch"},
 }

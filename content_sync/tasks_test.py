@@ -12,7 +12,10 @@ from requests import HTTPError
 from content_sync import tasks
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.factories import ContentSyncStateFactory
-from content_sync.pipelines.base import BaseMassPublishPipeline, BaseThemeAssetsPipeline
+from content_sync.pipelines.base import (
+    BaseMassBuildSitesPipeline,
+    BaseThemeAssetsPipeline,
+)
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
@@ -359,7 +362,8 @@ def test_upsert_website_pipeline_batch(
 @pytest.mark.parametrize("prepublish", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 @pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
-@pytest.mark.parametrize("has_mass_publish", [True, False])
+@pytest.mark.parametrize("has_mass_build", [True, False])
+@pytest.mark.parametrize("no_mass_build", [True, False])
 def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments
     mocker,
     mocked_celery,
@@ -368,38 +372,44 @@ def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments
     chunk_size,
     chunks,
     prepublish,
-    has_mass_publish,
+    has_mass_build,
+    no_mass_build,
 ):
     """publish_websites calls upsert_pipeline_batch with correct arguments"""
     websites = WebsiteFactory.create_batch(3)
     website_names = sorted([website.name for website in websites])
     mock_batch = mocker.patch("content_sync.tasks.publish_website_batch.s")
     mocker.patch(
-        "content_sync.tasks.api.get_mass_publish_pipeline",
-        return_value=(mocker.Mock() if has_mass_publish else None),
+        "content_sync.tasks.api.get_mass_build_sites_pipeline",
+        return_value=(mocker.Mock() if has_mass_build else None),
     )
-    mock_mass_pub = mocker.patch("content_sync.tasks.trigger_mass_publish.si")
+    trigger_pipeline = no_mass_build or not has_mass_build
+    mock_mass_build = mocker.patch("content_sync.tasks.trigger_mass_build.si")
     with pytest.raises(TabError):
         tasks.publish_websites.delay(
-            website_names, version, chunk_size=chunk_size, prepublish=prepublish
+            website_names,
+            version,
+            chunk_size=chunk_size,
+            prepublish=prepublish,
+            no_mass_build=no_mass_build,
         )
     mock_batch.assert_any_call(
         website_names[0:chunk_size],
         version,
         prepublish=prepublish,
-        trigger_pipeline=not has_mass_publish,
+        trigger_pipeline=trigger_pipeline,
     )
     if chunks > 1:
         mock_batch.assert_any_call(
             website_names[chunk_size:],
             version,
             prepublish=prepublish,
-            trigger_pipeline=not has_mass_publish,
+            trigger_pipeline=trigger_pipeline,
         )
-    if has_mass_publish:
-        mock_mass_pub.assert_called_once_with(version)
+    if not trigger_pipeline:
+        mock_mass_build.assert_called_once_with(version)
     else:
-        mock_mass_pub.assert_not_called()
+        mock_mass_build.assert_not_called()
 
 
 @pytest.mark.parametrize("prepublish", [True, False])
@@ -607,7 +617,7 @@ def test_check_incomplete_publish_build_statuses_500(settings, mocker, api_mock)
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 @pytest.mark.parametrize("backend", ["concourse", None])
 def test_trigger_mass_publish(settings, mocker, backend, version):
-    """trigger_mass_publish should call if enabled"""
+    """trigger_mass_build should call if enabled"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
     mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
     mock_pipeline_unpause = mocker.patch(
@@ -616,8 +626,8 @@ def test_trigger_mass_publish(settings, mocker, backend, version):
     mock_pipeline_trigger = mocker.patch(
         "content_sync.pipelines.concourse.ConcoursePipeline.trigger_pipeline_build"
     )
-    pipeline_name = BaseMassPublishPipeline.PIPELINE_NAME
-    tasks.trigger_mass_publish.delay(version)
+    pipeline_name = BaseMassBuildSitesPipeline.PIPELINE_NAME
+    tasks.trigger_mass_build.delay(version)
     if backend == "concourse":
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
         mock_pipeline_trigger.assert_called_once_with(pipeline_name)

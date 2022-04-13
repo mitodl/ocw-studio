@@ -47,10 +47,10 @@ class BaseSitePipeline(BasePipeline):
     """ Base class for site-specific publishing """
 
 
-class BaseMassPublishPipeline(BasePipeline):
-    """ Base class for mass publishing """
+class BaseMassBuildSitesPipeline(BasePipeline):
+    """ Base class for mass site building """
 
-    PIPELINE_NAME = "mass-publish"
+    PIPELINE_NAME = "mass-build-sites"
 
 
 class BaseThemeAssetsPipeline(BasePipeline):

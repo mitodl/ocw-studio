@@ -14,14 +14,14 @@ from urllib.parse import quote, urljoin, urlparse
 
 import requests
 import yaml
-from concoursepy.api import Api as BaseConcourseApi
 from django.conf import settings
 from requests import HTTPError
 
+from concoursepy.api import Api as BaseConcourseApi
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
-    BaseMassPublishPipeline,
+    BaseMassBuildSitesPipeline,
     BasePipeline,
     BaseSitePipeline,
     BaseThemeAssetsPipeline,
@@ -399,10 +399,10 @@ class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
             self.api.put_with_headers(url_path, data=config, headers=version_headers)
 
 
-class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
-    """Specialized concourse pipeline for mass publishing multiple sites"""
+class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, ConcoursePipeline):
+    """Specialized concourse pipeline for mass building multiple sites"""
 
-    PIPELINE_NAME = BaseMassPublishPipeline.PIPELINE_NAME
+    PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
 
     def __init__(self, version, api: Optional[ConcourseApi] = None):
         """Initialize the pipeline instance"""
@@ -418,7 +418,7 @@ class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
             "OCW_GTM_ACCOUNT_ID",
         ]
         super().__init__(api=api)
-        self.pipeline_name = "mass_publish"
+        self.pipeline_name = "mass_build_sites"
         self.version = version
         self.instance_vars = f'?vars={quote(json.dumps({"version": version}))}'
 
@@ -452,7 +452,7 @@ class MassPublishPipeline(BaseMassPublishPipeline, ConcoursePipeline):
         with open(
             os.path.join(
                 os.path.dirname(__file__),
-                "definitions/concourse/mass-publish.yml",
+                "definitions/concourse/mass-build-sites.yml",
             )
         ) as pipeline_config_file:
             config_str = (
