@@ -218,6 +218,7 @@ export interface NewWebsitePayload {
 export interface WebsiteStatus {
   uuid: string
   name: string
+  title: string
   /** ISO 8601 datetime string or null */
   publish_date: string | null
   /** ISO 8601 datetime string or null */

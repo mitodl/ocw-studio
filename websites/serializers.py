@@ -26,10 +26,11 @@ from websites.api import (
     incomplete_content_warnings,
     update_youtube_thumbnail,
 )
+from websites.constants import CONTENT_TYPE_METADATA
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role
+from websites.utils import get_dict_field, permissions_group_name_for_role
 
 
 log = logging.getLogger(__name__)
@@ -222,6 +223,7 @@ class WebsiteStatusSerializer(
         fields = [
             "uuid",
             "name",
+            "title",
             "publish_date",
             "draft_publish_date",
             "has_unpublished_live",
@@ -387,6 +389,12 @@ class WebsiteContentDetailSerializer(
             instance, {"updated_by": self.user_from_request(), **validated_data}
         )
         update_website_backend(instance.website)
+        # Sync the metadata title and website title if appropriate
+        if instance.type == CONTENT_TYPE_METADATA:
+            title = get_dict_field(instance.metadata, settings.FIELD_METADATA_TITLE)
+            if title:
+                instance.website.title = title
+                instance.website.save()
         return instance
 
     def get_content_context(self, instance):  # pylint:disable=too-many-branches

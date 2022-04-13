@@ -221,6 +221,7 @@ export const makeWebsiteStatus = (website?: Website): WebsiteStatus => {
   return {
     uuid:                            website.uuid,
     name:                            website.name,
+    title:                           website.title,
     publish_date:                    website.publish_date,
     draft_publish_date:              website.draft_publish_date,
     has_unpublished_draft:           website.has_unpublished_draft,

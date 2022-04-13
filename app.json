@@ -139,6 +139,10 @@
       "description": "Gdrive folder for video uploads",
       "required": false
     },
+    "FIELD_METADATA_TITLE": {
+      "description": "The site metadata field for title",
+      "required": false
+    },
     "FIELD_RESOURCETYPE": {
       "description": "The site config metadata field for the resource type",
       "required": false
