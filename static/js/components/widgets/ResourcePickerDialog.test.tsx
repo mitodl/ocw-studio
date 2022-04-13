@@ -93,7 +93,7 @@ describe("ResourcePickerDialog", () => {
     },
     {
       mode:         RESOURCE_LINK,
-      contentNames: ["course_collections"],
+      contentNames: ["course-collection"],
       expectedTabs: [TabIds.CourseCollections]
     },
     {
@@ -103,7 +103,7 @@ describe("ResourcePickerDialog", () => {
     },
     {
       mode:         RESOURCE_LINK,
-      contentNames: ["resource", "page", "course_collections"],
+      contentNames: ["resource", "page", "course-collection"],
       expectedTabs: [
         TabIds.Documents,
         TabIds.Videos,

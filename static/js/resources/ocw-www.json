@@ -12,7 +12,7 @@
         {
           "label": "Body",
           "link": [
-            "course_collections",
+            "course-collection",
             "resource_collections"
           ],
           "name": "body",

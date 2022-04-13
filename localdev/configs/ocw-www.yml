@@ -15,7 +15,7 @@ collections:
         name: body
         widget: markdown
         link:
-          - course_collections
+          - course-collection
           - resource_collections
 
   - category: Content

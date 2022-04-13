@@ -115,7 +115,7 @@ describe("ResourcePickerListing", () => {
         })
         .query({
           offset:        0,
-          type:          "course_collections",
+          type:          "course-collection",
           detailed_list: true
         })
         .toString(),
@@ -220,7 +220,7 @@ describe("ResourcePickerListing", () => {
 
   it("should fetch and display content collections", async () => {
     const { wrapper } = await render({
-      contentType:       "course_collections",
+      contentType:       "course-collection",
       resourcetype:      null,
       sourceWebsiteName: "ocw-www"
     })
@@ -236,7 +236,7 @@ describe("ResourcePickerListing", () => {
         .param({ name: "ocw-www" })
         .query({
           offset:        0,
-          type:          "course_collections",
+          type:          "course-collection",
           detailed_list: true
         })
         .toString()

@@ -157,7 +157,7 @@ export const exampleSiteConfigFields: ConfigField[] = uniq(
 export enum ContentType {
   Resource = "resource",
   Page = "page",
-  CourseCollections = "course_collections",
+  CourseCollections = "course-collection",
   ResourceCollections = "resource_collections"
 }
 
