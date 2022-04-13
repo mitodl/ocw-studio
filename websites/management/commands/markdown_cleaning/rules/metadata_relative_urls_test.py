@@ -2,8 +2,8 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
-from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
-    MetadataRelativeUrlsFix,
+from websites.management.commands.markdown_cleaning.rules.metadata_relative_urls import (
+    MetadataRelativeUrlsRule,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
     patch_website_contents_all,
@@ -13,7 +13,7 @@ from websites.management.commands.markdown_cleaning.testing_utils import (
 def get_markdown_cleaner(website_contents):
     """Convenience to get rule-specific cleaner"""
     with patch_website_contents_all(website_contents):
-        rule = MetadataRelativeUrlsFix()
+        rule = MetadataRelativeUrlsRule()
         return WebsiteContentMarkdownCleaner(rule)
 
 
@@ -22,7 +22,7 @@ def test_updates_multiple_metadata_fields():
     Check that a single call to update_website_content modifies multiple fields
     for rules that have multiple fields associated.
     """
-    assert len(MetadataRelativeUrlsFix.fields) > 1
+    assert len(MetadataRelativeUrlsRule.fields) > 1
 
     website = WebsiteFactory.build(name="site-1")
     wc1 = WebsiteContentFactory.build(

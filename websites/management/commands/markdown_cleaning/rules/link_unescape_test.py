@@ -5,7 +5,9 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner as Cleaner,
 )
-from websites.management.commands.markdown_cleaning.link_unescape import LinkUnescape
+from websites.management.commands.markdown_cleaning.rules.link_unescape import (
+    LinkUnescapeRule,
+)
 
 
 @pytest.mark.parametrize(
@@ -28,6 +30,6 @@ def test_link_unescape(markdown, expected_markdown):
     website = WebsiteFactory.build()
     target_content = WebsiteContentFactory.build(markdown=markdown, website=website)
 
-    cleaner = Cleaner(LinkUnescape())
+    cleaner = Cleaner(LinkUnescapeRule())
     cleaner.update_website_content(target_content)
     assert target_content.markdown == expected_markdown

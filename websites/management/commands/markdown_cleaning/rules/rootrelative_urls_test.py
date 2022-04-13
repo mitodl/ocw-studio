@@ -6,7 +6,7 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
-from websites.management.commands.markdown_cleaning.rootrelative_urls import (
+from websites.management.commands.markdown_cleaning.rules.rootrelative_urls import (
     RootRelativeUrlRule,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
