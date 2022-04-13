@@ -16,6 +16,7 @@ import {
   WidgetVariant
 } from "../../types/websites"
 import { FormSchema, SiteFormValues } from "../../types/forms"
+import { IS_A_REQUIRED_FIELD } from "../../constants"
 
 // This is added to properly handle file fields, which can have a "null" value
 setLocale({
@@ -69,7 +70,9 @@ export const getFieldSchema = (
       })
     } else {
       schema = yup.object().shape({
-        content: yup.string()
+        content: field.required ?
+          yup.string().required(`${field.name} ${IS_A_REQUIRED_FIELD}`) :
+          yup.string()
       })
     }
     break
@@ -117,7 +120,7 @@ export const getFieldSchema = (
     schema = yup.string()
   }
 
-  if (field.required) {
+  if (field.required && field.widget !== WidgetVariant.Relation) {
     schema = schema.required()
   }
   schema = schema.label(field.label)
