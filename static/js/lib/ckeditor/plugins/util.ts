@@ -150,7 +150,7 @@ export class Shortcode {
    */
   get(param: number | string): string | undefined {
     if (typeof param === "number") {
-      return this.params[0].value
+      return this.params[param]?.value
     }
     return this.params.find(p => p.name === param)?.value
   }

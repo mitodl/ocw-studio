@@ -104,4 +104,23 @@ describe("Shortcode", () => {
       /Cannot mix named and positional/
     )
   })
+
+  describe('Shortcode.get', () => {
+    it.each([
+      '{{< my_shortcdoe catsmeow "dogs woof" >}}',
+      '{{< my_shortcdoe zeroth=catsmeow first="dogs woof" >}}'
+    ])('gets parameters by position', shortcodeText => {
+      const shortcode = Shortcode.fromString(shortcodeText)
+      expect(shortcode.get(0)).toBe("catsmeow")
+      expect(shortcode.get(1)).toBe("dogs woof")
+      expect(shortcode.get(2)).toBe(undefined)
+    })
+
+    it('gets parameters by name', () => {
+      const shortcode = Shortcode.fromString('{{< my_shortcdoe zeroth=catsmeow first="dogs woof" >}}')
+      expect(shortcode.get("zeroth")).toBe("catsmeow")
+      expect(shortcode.get("first")).toBe("dogs woof")
+      expect(shortcode.get("second")).toBe(undefined)
+    })
+  })
 })
