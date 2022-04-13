@@ -195,3 +195,5 @@ export const GOOGLE_DRIVE_SYNC_PROCESSING_STATES = [
   GoogleDriveSyncStatuses.SYNC_STATUS_PENDING,
   GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING
 ]
+
+export const IS_A_REQUIRED_FIELD = "is a required field"
