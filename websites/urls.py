@@ -13,7 +13,7 @@ website_route = router.register(
     r"websites", views.WebsiteViewSet, basename="websites_api"
 )
 publish_route = router.register(
-    r"publish", views.WebsitePublishViewSet, basename="publish_api"
+    r"publish", views.WebsiteMassBuildViewSet, basename="mass_build_api"
 )
 website_route.register(
     r"collaborators",

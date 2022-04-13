@@ -222,14 +222,14 @@ class WebsiteViewSet(
         return Response(status=200)
 
 
-class WebsitePublishViewSet(viewsets.ViewSet):
-    """Return a list of sites that should be published, with the info required by the pipeline"""
+class WebsiteMassBuildViewSet(viewsets.ViewSet):
+    """Return a list of previously published sites, with the info required by the mass-build-sites pipeline"""
 
     serializer_class = WebsitePublishSerializer
     permission_classes = (BearerTokenPermission,)
 
     def list(self, request):
-        """Return a list of websites that should be published, per version"""
+        """Return a list of websites that have been previously published, per version"""
         version = self.request.query_params.get("version")
         if version not in (VERSION_LIVE, VERSION_DRAFT):
             raise ValidationError("Invalid version")
