@@ -44,6 +44,7 @@ class Command(BaseCommand):
         rules.RemoveInaccesibleGifRule,
         rules.LinkLoggingRule,
         rules.LinkWrappedImagesRule,
+        rules.ResourceLinkNextPrevRule,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:

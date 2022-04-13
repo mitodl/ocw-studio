@@ -223,7 +223,9 @@ class ShortcodeTag:
         return " ".join(pieces)
 
     @classmethod
-    def resource_link(cls, uuid: Union[str, UUID], text: str, fragment=""):
+    def resource_link(
+        cls, uuid: Union[str, UUID], text: str, fragment: Optional[str] = None
+    ):
         """
         Convenience method to create valid resource_link ShortcodeTag objects.
 
@@ -268,14 +270,18 @@ class ShortcodeTag:
             return
         raise ValueError("Badly formed uuid.")
 
-    def get(self, param_name: Union[str, int]):
+    def get(self, param_name: Union[str, int], default: Optional[str] = None):
         """
-        Retrieve a shortcode parameter value by name or position.
+        Retrieve a shortcode parameter value by name or position, providing
+        `default` if param does not exist.
         """
         if isinstance(param_name, int):
-            return self.params[param_name].value
+            try:
+                return self.params[param_name].value
+            except IndexError:
+                return default
 
         try:
             return next(p.value for p in self.params if p.name == param_name)
         except StopIteration as e:
-            raise KeyError(f"Param name {param_name} not found.") from e
+            return default

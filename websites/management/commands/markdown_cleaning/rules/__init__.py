@@ -16,6 +16,9 @@ from websites.management.commands.markdown_cleaning.rules.metadata_relative_urls
 from websites.management.commands.markdown_cleaning.rules.removals import (
     RemoveInaccesibleGifRule,
 )
+from websites.management.commands.markdown_cleaning.rules.resource_link_nextprev import (
+    ResourceLinkNextPrevRule,
+)
 from websites.management.commands.markdown_cleaning.rules.rootrelative_urls import (
     RootRelativeUrlRule,
 )

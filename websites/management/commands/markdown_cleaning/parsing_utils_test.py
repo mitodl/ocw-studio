@@ -5,7 +5,7 @@ import pytest
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     unescape_quoted_string,
 )
-from websites.management.commands.markdown_cleaning.shortcode_grammar import (
+from websites.management.commands.markdown_cleaning.shortcode_parser import (
     ShortcodeParam,
     ShortcodeParser,
     ShortcodeTag,
@@ -204,17 +204,15 @@ def test_shortcode_get_param():
     assert s2.get(0) == "bark_bark"
     assert s2.get(1) == "meow"
 
-    with pytest.raises(IndexError):
-        s1.get(2)
+    assert s1.get(2) is None
+    assert s1.get("unicorn") is None
+    assert s2.get(2) is None
+    assert s2.get("cat") is None
 
-    with pytest.raises(KeyError):
-        s1.get("unicorn")
-
-    with pytest.raises(IndexError):
-        s2.get(2)
-
-    with pytest.raises(KeyError):
-        s2.get("cat")
+    assert s1.get(2, "default") == "default"
+    assert s1.get("unicorn", "default") == "default"
+    assert s2.get(2, "default") == "default"
+    assert s2.get("cat", "default") == "default"
 
 
 @pytest.mark.parametrize(
