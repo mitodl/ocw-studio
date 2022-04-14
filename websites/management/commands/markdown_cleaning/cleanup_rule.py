@@ -106,6 +106,21 @@ class PyparsingRule(MarkdownCleanupRule):
     def replace_match(
         self, s: str, l: int, toks: ParseResults, website_content: WebsiteContent
     ):
+        """
+        Called on each match of the parser. The match will be replaced by the
+        return value of this function.
+
+        The first three arguments `(s, l, toks)` the same as for any parse
+        action used with PyParsing. For more, see
+        See https://pyparsing-docs.readthedocs.io/en/latest/pyparsing.html#pyparsing.ParserElement.set_parse_action
+
+        Args:
+            - s: The entire original text (**not** the text of this match; the
+            entire document being parsed)
+            - l: index within s at which this match starts
+            - toks: The parser's tokenization of the match
+            - website_content: The WebsiteContent object that `s` belongs to.
+        """
         pass
 
     def __init__(self) -> None:
