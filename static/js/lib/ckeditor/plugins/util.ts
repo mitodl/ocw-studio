@@ -133,6 +133,9 @@ export class Shortcode {
     return `{{< ${interior} >}}`
   }
 
+  /**
+   * Regexp used for matching individual shortcode arguments.
+   */
   private static ARG_REGEXP = new RegExp(
     [
       /((?<name>[a-zA-Z_]+)=)?/.source,
@@ -145,7 +148,11 @@ export class Shortcode {
     "g"
   )
 
-  static fromString(s: string) {
+  /**
+   * Convert a shortcode string to a Shortcode object.
+   * @param s The shortcode as a string, e.g., `{{% resource_link "uuid" "text" %}}
+   */
+  static fromString(s: string): Shortcode {
     Shortcode.heuristicValidation(s)
     const isPercentDelmited = s.startsWith("{{%") && s.endsWith("%}}")
     const [nameMatch, ...argMatches] = s
