@@ -43,7 +43,7 @@ export enum TabIds {
   Images = "images",
   Videos = "videos",
   Pages = "pages",
-  CourseCollections = "course_collections",
+  CourseCollections = "course-collection",
   ResourceCollections = "resource_collections"
 }
 
