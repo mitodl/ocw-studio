@@ -8,10 +8,10 @@ from django.core.exceptions import ImproperlyConfigured
 from requests import HTTPError
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from content_sync.pipelines.base import BaseMassPublishPipeline
+from content_sync.pipelines.base import BaseMassBuildSitesPipeline
 from content_sync.pipelines.concourse import (
     ConcourseApi,
-    MassPublishPipeline,
+    MassBuildSitesPipeline,
     SitePipeline,
     ThemeAssetsPipeline,
 )
@@ -399,7 +399,7 @@ def test_upsert_mass_publish_pipeline(
         name=settings.ROOT_WEBSITE_NAME,
     )
     instance_vars = f'?vars={quote(json.dumps({"version": version}))}'
-    url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseMassPublishPipeline.PIPELINE_NAME}/config{instance_vars}"
+    url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseMassBuildSitesPipeline.PIPELINE_NAME}/config{instance_vars}"
 
     if not pipeline_exists:
         mock_get = mocker.patch(
@@ -414,7 +414,7 @@ def test_upsert_mass_publish_pipeline(
     mock_put_headers = mocker.patch(
         "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
     )
-    pipeline = MassPublishPipeline(version)
+    pipeline = MassBuildSitesPipeline(version)
     pipeline.upsert_pipeline()
 
     mock_get.assert_any_call(url_path)

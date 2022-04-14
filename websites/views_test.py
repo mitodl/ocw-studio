@@ -1117,7 +1117,7 @@ def test_publish_endpoint_list(settings, drf_client, version):
     expected_sites = draft_published if version == VERSION_DRAFT else live_published
     settings.API_BEARER_TOKEN = "abc123"
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
-    resp = drf_client.get(f'{reverse("publish_api-list")}?version={version}')
+    resp = drf_client.get(f'{reverse("mass_build_api-list")}?version={version}')
     assert resp.status_code == 200
     site_dict = {site["name"]: site for site in resp.data["sites"]}
     assert len(site_dict.keys()) == 2
@@ -1127,19 +1127,19 @@ def test_publish_endpoint_list(settings, drf_client, version):
         assert publish_site["short_id"] == expected_site.short_id
 
 
-def test_publish_endpoint_list_bad_version(settings, drf_client):
-    """The WebsitePublishView endpoint should return a 400 if the version parameter is invalid"""
+def test_mass_build_endpoint_list_bad_version(settings, drf_client):
+    """The WebsiteMassBuildView endpoint should return a 400 if the version parameter is invalid"""
     settings.API_BEARER_TOKEN = "abc123"
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
-    resp = drf_client.get(f'{reverse("publish_api-list")}?version=null')
+    resp = drf_client.get(f'{reverse("mass_build_api-list")}?version=null')
     assert resp.status_code == 400
 
 
 @pytest.mark.parametrize("bad_token", ["wrongtoken", None])
-def test_publish_endpoint_list_bad_token(settings, drf_client, bad_token):
-    """The WebsitePublishView endpoint should return a 403 if the token is invalid or missing"""
+def test_mass_build_endpoint_list_bad_token(settings, drf_client, bad_token):
+    """The WebsiteMassBuildView endpoint should return a 403 if the token is invalid or missing"""
     settings.API_BEARER_TOKEN = "abc123"
     if bad_token:
         drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
-    resp = drf_client.get(f'{reverse("publish_api-list")}?version={VERSION_LIVE}')
+    resp = drf_client.get(f'{reverse("mass_build_api-list")}?version={VERSION_LIVE}')
     assert resp.status_code == 403

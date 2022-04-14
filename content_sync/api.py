@@ -52,10 +52,10 @@ def get_theme_assets_pipeline(api: Optional[object] = None) -> BasePipeline:
 
 
 @is_publish_pipeline_enabled
-def get_mass_publish_pipeline(version: str, api: Optional[object] = None) -> object:
-    """Get a mass publishing pipeline if the backend has one"""
+def get_mass_build_sites_pipeline(version: str, api: Optional[object] = None) -> object:
+    """Get the mass build sites pipeline if the backend has one"""
     return import_string(
-        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.MassPublishPipeline"
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.MassBuildSitesPipeline"
     )(version, api=api)
 
 

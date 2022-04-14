@@ -17,7 +17,6 @@ from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from main.celery import app
-from main.tasks import chord_finisher
 from websites.api import reset_publishing_fields, update_website_status
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
@@ -167,10 +166,10 @@ def upsert_theme_assets_pipeline(unpause=False) -> bool:
 
 
 @app.task(acks_late=True)
-def trigger_mass_publish(version: str) -> bool:
-    """Trigger the mass publish pipeline for the specified version"""
+def trigger_mass_build(version: str) -> bool:
+    """Trigger the mass build pipeline for the specified version"""
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        pipeline = api.get_mass_publish_pipeline(version)
+        pipeline = api.get_mass_build_sites_pipeline(version)
         pipeline.unpause()
         pipeline.trigger()
     return True
@@ -258,31 +257,30 @@ def publish_website_batch(
 
 
 @app.task(bind=True, acks_late=True)
-def publish_websites(
+def publish_websites(  # pylint: disable=too-many-arguments
     self,
     website_names: List[str],
     version: str,
     chunk_size: Optional[int] = 500,
     prepublish: Optional[bool] = False,
+    no_mass_build: Optional[bool] = False,
 ):
     """Publish live or draft versions of multiple websites in parallel batches"""
     if not settings.CONTENT_SYNC_BACKEND or not settings.CONTENT_SYNC_PIPELINE_BACKEND:
         return
-    no_mass_publish = api.get_mass_publish_pipeline(version) is None
+    no_mass_build = no_mass_build or api.get_mass_build_sites_pipeline(version) is None
     site_tasks = [
         publish_website_batch.s(
             name_subset,
             version,
             prepublish=prepublish,
-            trigger_pipeline=no_mass_publish,
+            trigger_pipeline=no_mass_build,
         )
         for name_subset in chunks(sorted(website_names), chunk_size=chunk_size)
     ]
-    site_steps = celery.chord(celery.group(site_tasks), chord_finisher.si())
-    pipeline_step = celery.group(
-        [] if no_mass_publish else [trigger_mass_publish.si(version)]
-    )
-    workflow = celery.chain(site_steps, pipeline_step)
+    if no_mass_build:
+        raise self.replace(celery.group(site_tasks))
+    workflow = celery.chain(celery.group(site_tasks), trigger_mass_build.si(version))
     raise self.replace(celery.group(workflow))
 
 

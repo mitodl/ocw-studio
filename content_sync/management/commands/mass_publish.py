@@ -39,15 +39,15 @@ class Command(BaseCommand):
             "-c",
             "--starter",
             dest="starter",
-            default="",
+            default=None,
             help="If specified, only trigger pipelines for websites that are based on this starter slug",
         )
         parser.add_argument(
             "-s",
             "--source",
             dest="source",
-            default=WEBSITE_SOURCE_OCW_IMPORT,
-            help=f"Only trigger pipelines for websites that are based on this source, default is {WEBSITE_SOURCE_OCW_IMPORT}",
+            default=None,
+            help=f"Only trigger pipelines for websites that are based on this source",
         )
         parser.add_argument(
             "-ch",
@@ -63,6 +63,13 @@ class Command(BaseCommand):
             action="store_true",
             help="Run prepublish actions on each site",
         )
+        parser.add_argument(
+            "-nmb",
+            "--no-mass-build",
+            dest="no_mass_build",
+            action="store_true",
+            help="Run individual site pipelines instead of the mass-build-sites pipeline",
+        )
 
     def handle(self, *args, **options):
 
@@ -76,6 +83,7 @@ class Command(BaseCommand):
         source_str = options["source"]
         chunk_size = int(options["chunk_size"])
         prepublish = options["prepublish"]
+        no_mass_build = options["no_mass_build"]
         is_verbose = options["verbosity"] > 1
 
         if filter_json:
@@ -93,25 +101,33 @@ class Command(BaseCommand):
             website_qset = website_qset.filter(starter__slug=starter_str)
         if source_str:
             website_qset = website_qset.filter(source=source_str)
-            if source_str != WEBSITE_SOURCE_OCW_IMPORT:
-                # do not publish any unpublished sites
-                if version == VERSION_DRAFT:
-                    website_qset = website_qset.exclude(
-                        draft_publish_status__isnull=True
-                    )
-                else:
-                    website_qset = website_qset.exclude(
-                        live_publish_status__isnull=True
-                    )
+        # do not publish any unpublished sites
+        if version == VERSION_DRAFT:
+            website_qset = website_qset.exclude(draft_publish_date__isnull=True)
+        else:
+            website_qset = website_qset.exclude(publish_date__isnull=True)
 
         website_names = list(website_qset.values_list("name", flat=True))
 
+        if no_mass_build:
+            confirmation = input(
+                f"""WARNING: You are about to trigger individual concourse pipelines for {len(website_names)} sites.
+Would you like to proceed? (y/n): """
+            )
+            if confirmation != "y":
+                self.stdout.write("Aborting...")
+                return
+
         self.stdout.write(
-            f"Triggering website {version} builds, source is {source_str}"
+            f"Publishing {version} version for {len(website_names)} sites."
         )
         start = now_in_utc()
         task = publish_websites.delay(
-            website_names, version, chunk_size=chunk_size, prepublish=prepublish
+            website_names,
+            version,
+            chunk_size=chunk_size,
+            prepublish=prepublish,
+            no_mass_build=no_mass_build,
         )
 
         self.stdout.write(
