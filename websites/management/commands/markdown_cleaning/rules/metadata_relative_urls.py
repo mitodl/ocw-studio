@@ -13,7 +13,7 @@ from websites.management.commands.markdown_cleaning.utils import (
 from websites.models import WebsiteContent
 
 
-class MetadataRelativeUrlsFix(RegexpCleanupRule):
+class MetadataRelativeUrlsRule(RegexpCleanupRule):
     """
     Turn relative metadata links into root-relative links. :sob:
 

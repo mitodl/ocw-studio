@@ -22,7 +22,7 @@ LINK_WITHOUT_IMAGE = r"\\\[[^\[\]]*\\\]\({{<"
 LINK_WITH_IMAGE = r"\\\[!\\\[[^\[\]]*\][^\[\]]*\\\]\({{<"
 
 
-class LinkUnescape(RegexpCleanupRule):
+class LinkUnescapeRule(RegexpCleanupRule):
     """
     Unescape links that have been escaped accidentally.
     """

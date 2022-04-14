@@ -4,7 +4,9 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
-from websites.management.commands.markdown_cleaning.subsup_fixes import SubSupFixes
+from websites.management.commands.markdown_cleaning.rules.subsup_fixes import (
+    SubSupFixes,
+)
 
 
 def get_markdown_cleaner():

@@ -6,7 +6,7 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
-from websites.management.commands.markdown_cleaning.link_wrapped_images import (
+from websites.management.commands.markdown_cleaning.rules.link_wrapped_images import (
     LinkWrappedImagesRule,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (

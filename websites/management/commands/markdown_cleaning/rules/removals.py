@@ -3,7 +3,7 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import (
 )
 
 
-class RemoveInaccesibleGif(RegexpCleanupRule):
+class RemoveInaccesibleGifRule(RegexpCleanupRule):
     """
     Remove all instances of "![This resource may not render correctly in a screen reader.](/images/inacessible.gif)".
     """

@@ -5,7 +5,7 @@ from websites.management.commands.markdown_cleaning.parsing_utils import (
     ShortcodeParam,
     ShortcodeTag,
 )
-from websites.management.commands.markdown_cleaning.shortcode_grammar import (
+from websites.management.commands.markdown_cleaning.shortcode_parser import (
     ShortcodeParser,
     ShortcodeParseResult,
 )

@@ -10,7 +10,7 @@ from websites.management.commands.markdown_cleaning.utils import ContentLookup
 from websites.models import WebsiteContent
 
 
-class ValidateUrls(RegexpCleanupRule):
+class ValidateUrlsRule(RegexpCleanupRule):
     """
     This rule never changes anything. Its intent is to find links and validate
     that they work.

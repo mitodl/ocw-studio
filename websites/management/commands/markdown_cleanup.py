@@ -11,36 +11,11 @@ from mitol.common.utils import now_in_utc
 from tqdm import tqdm
 
 from content_sync.tasks import sync_unsynced_websites
-from websites.management.commands.markdown_cleaning.baseurl_rule import (
-    BaseurlReplacementRule,
-)
-from websites.management.commands.markdown_cleaning.cleaner import (
-    WebsiteContentMarkdownCleaner,
-)
-from websites.management.commands.markdown_cleaning.cleanup_rule import (
+from websites.management.commands.markdown_cleaning import (
     MarkdownCleanupRule,
+    WebsiteContentMarkdownCleaner,
+    rules,
 )
-from websites.management.commands.markdown_cleaning.link_logging_rule import (
-    LinkLoggingRule,
-)
-from websites.management.commands.markdown_cleaning.link_unescape import LinkUnescape
-from websites.management.commands.markdown_cleaning.link_wrapped_images import (
-    LinkWrappedImagesRule,
-)
-from websites.management.commands.markdown_cleaning.metadata_relative_urls import (
-    MetadataRelativeUrlsFix,
-)
-from websites.management.commands.markdown_cleaning.removal_rules import (
-    RemoveInaccesibleGif,
-)
-from websites.management.commands.markdown_cleaning.rootrelative_urls import (
-    RootRelativeUrlRule,
-)
-from websites.management.commands.markdown_cleaning.shortcode_logging_rule import (
-    ShortcodeLoggingRule,
-)
-from websites.management.commands.markdown_cleaning.subsup_fixes import SubSupFixes
-from websites.management.commands.markdown_cleaning.validate_urls import ValidateUrls
 from websites.models import WebsiteContent
 
 
@@ -60,16 +35,17 @@ class Command(BaseCommand):
     help = __doc__
 
     Rules: "list[Type[MarkdownCleanupRule]]" = [
-        BaseurlReplacementRule,
-        LinkUnescape,
-        RootRelativeUrlRule,
-        MetadataRelativeUrlsFix,
-        ValidateUrls,
-        ShortcodeLoggingRule,
-        RemoveInaccesibleGif,
-        LinkLoggingRule,
-        LinkWrappedImagesRule,
-        SubSupFixes,
+        rules.BaseurlReplacementRule,
+        rules.LinkUnescapeRule,
+        rules.RootRelativeUrlRule,
+        rules.MetadataRelativeUrlsRule,
+        rules.ValidateUrlsRule,
+        rules.ShortcodeLoggingRule,
+        rules.RemoveInaccesibleGifRule,
+        rules.LinkLoggingRule,
+        rules.LinkWrappedImagesRule,
+        rules.ResourceLinkNextPrevRule,
+        rules.SubSupFixes,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:

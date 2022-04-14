@@ -2,11 +2,11 @@
 import pytest
 
 from websites.factories import WebsiteContentFactory, WebsiteFactory
-from websites.management.commands.markdown_cleaning.baseurl_rule import (
-    BaseurlReplacementRule,
-)
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
+)
+from websites.management.commands.markdown_cleaning.rules.baseurl import (
+    BaseurlReplacementRule,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
     allow_invalid_uuids,

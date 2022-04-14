@@ -14,7 +14,7 @@ from websites.management.commands.markdown_cleaning.link_parser import (
     MarkdownLink,
 )
 from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
-from websites.management.commands.markdown_cleaning.shortcode_grammar import (
+from websites.management.commands.markdown_cleaning.shortcode_parser import (
     ShortcodeParser,
     ShortcodeParseResult,
     ShortcodeTag,
