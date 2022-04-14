@@ -45,6 +45,7 @@ class Command(BaseCommand):
         rules.LinkLoggingRule,
         rules.LinkWrappedImagesRule,
         rules.ResourceLinkNextPrevRule,
+        rules.SubSupFixes,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:

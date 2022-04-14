@@ -25,6 +25,9 @@ from websites.management.commands.markdown_cleaning.rules.rootrelative_urls impo
 from websites.management.commands.markdown_cleaning.rules.shortcode_logging import (
     ShortcodeLoggingRule,
 )
+from websites.management.commands.markdown_cleaning.rules.subsup_fixes import (
+    SubSupFixes,
+)
 from websites.management.commands.markdown_cleaning.rules.validate_urls import (
     ValidateUrlsRule,
 )
