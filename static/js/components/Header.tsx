@@ -48,7 +48,7 @@ export default function Header(props: HeaderProps): JSX.Element {
         await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
       }
     },
-    website ? 5000 : null
+    website ? 50000 : null
   )
 
   return (

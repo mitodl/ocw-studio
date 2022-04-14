@@ -55,6 +55,10 @@ body {
   color: $studio-text-gray;
 }
 
+.dark-gray {
+  color: $studio-dark-gray;
+}
+
 // modal as sidebar CSS adapted from https://codepen.io/bootpen/pen/jbbaRa
 $modal-sidebar-width-narrow: 540px;
 $modal-sidebar-width-wide: 80%;

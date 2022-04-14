@@ -1,4 +1,5 @@
 import React from "react"
+import { Route } from "react-router-dom"
 
 import IntegrationTestHelper, {
   TestRenderer
@@ -7,6 +8,9 @@ import { makeWebsiteDetail } from "../util/factories/websites"
 import { siteApiCollaboratorsUrl, siteDetailUrl } from "../lib/urls"
 import SitePage from "./SitePage"
 import WebsiteContext from "../context/Website"
+import Spinner from "../components/Spinner"
+import SiteCollaboratorList from "../components/SiteCollaboratorList"
+import SiteContentListing from "../components/SiteContentListing"
 
 import { Website } from "../types/websites"
 
@@ -48,9 +52,20 @@ describe("SitePage", () => {
     )
   })
 
-  it("renders a loading message", async () => {
+  it.each([true, false])(
+    "renders a loading spinner when isLoading=%s",
+    async isLoading => {
+      const { wrapper } = await render({ isLoading })
+
+      const spinner = wrapper.find(Spinner)
+      expect(spinner.exists()).toBe(isLoading)
+    }
+  )
+
+  it("keeps old content rendered while loading", async () => {
     const { wrapper } = await render({ isLoading: true })
-    expect(wrapper.text()).toEqual("Loading...")
+    const routes = wrapper.find(Route)
+    expect(routes.exists()).toBe(true)
   })
 
   it("renders the sidebar", async () => {
@@ -58,15 +73,21 @@ describe("SitePage", () => {
     expect(wrapper.find("SiteSidebar").prop("website")).toBe(website)
   })
 
-  //
-  ;[
-    [`/sites/${siteName}/collaborators/`, "SiteCollaboratorList"],
-    [`/sites/${siteName}/type/some-type/`, "SiteContentListing"]
-  ].forEach(([url, expComponent]) => {
-    it(`renders a ${expComponent} component when the browser URL matches`, async () => {
+  it.each([
+    {
+      url:       `/sites/${siteName}/collaborators/`,
+      component: SiteCollaboratorList
+    },
+    {
+      url:       `/sites/${siteName}/type/some-type/`,
+      component: SiteContentListing
+    }
+  ])(
+    `renders a $component.name component when the browser URL matches`,
+    async ({ url, component }) => {
       helper.browserHistory.push(url)
       const { wrapper } = await render()
-      expect(wrapper.find(expComponent).exists()).toBe(true)
-    })
-  })
+      expect(wrapper.find(component).exists()).toBe(true)
+    }
+  )
 })
