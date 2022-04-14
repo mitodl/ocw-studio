@@ -84,7 +84,7 @@ def unescape_string_quoted_with(text: str, single_quotes=False):
     """
     Given a string encased in quotes and in which all interior quote characters
     are escaped, strip the encasing quotes and unescape the interior quotes.
- 
+
     By default, the quotation character is a double quotation mark.
     Use `singleQuotes=true` for single quotes.
     """

@@ -89,6 +89,10 @@ export class ShortcodeParam {
 /**
  * Class to represent shortcodes. Includes some static methods to help create
  * shortcodes.
+ *
+ * Notes:
+ *  - double quotes in shortcode parameter values are un-escaped for internal
+ *  storage.
  */
 export class Shortcode {
   name: string
@@ -117,6 +121,8 @@ export class Shortcode {
 
   /**
    * Convert this shortcode to Hugo markdown.
+   *
+   * Re-escapes double quotes in parameter values
    */
   toHugo() {
     const stringifiedArgs = this.params.map(p => p.toHugo()).join(" ")
