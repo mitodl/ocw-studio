@@ -43,7 +43,7 @@ class Command(BaseCommand):
         return len(fields) == len(values)
 
     def handle(self, *args, **options):
-        
+
         fields = options.get("keys")
         values = options.get("data")
         starter = options.get("starter")
