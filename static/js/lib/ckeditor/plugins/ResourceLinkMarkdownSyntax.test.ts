@@ -29,8 +29,8 @@ describe("ResourceLink plugin", () => {
     turndownService._customRulesSet = undefined
   })
 
-  it("should take in and return 'resource' shortcode", async () => {
-    const md = '{{% resource_link 1234567890 "link text" %}}'
+  it("should take in and return 'resource_link' shortcode", async () => {
+    const md = '{{% resource_link "1234567890" "link text" %}}'
     const editor = await getEditor(md)
 
     // @ts-ignore
@@ -39,14 +39,14 @@ describe("ResourceLink plugin", () => {
 
   it("should not mash an anchor hash thingy", async () => {
     const md =
-      '{{% resource_link 1234-5678 "link text" "some-header-id" %}}{{% resource_link link-this-here-uuid "Title of the Link" "some-heading-id" %}}'
+      '{{% resource_link "1234-5678" "link text" "some-header-id" %}}{{% resource_link "link-this-here-uuid" "Title of the Link" "some-heading-id" %}}'
     const editor = await getEditor(md)
     // @ts-ignore
     expect(editor.getData()).toBe(md)
 
     markdownTest(
       editor,
-      '{{% resource_link 1234-5678 "link text" "#some-header-id" %}}',
+      '{{% resource_link "1234-5678" "link text" "#some-header-id" %}}',
       `<p><a class="resource-link" data-uuid="${encode(
         "1234-5678",
         "#some-header-id"
@@ -58,10 +58,21 @@ describe("ResourceLink plugin", () => {
     const editor = await getEditor("")
     markdownTest(
       editor,
-      '{{% resource_link asdfasdfasdfasdf "text here" %}}',
+      '{{% resource_link "asdfasdfasdfasdf" "text here" %}}',
       `<p><a class="resource-link" data-uuid="${encode(
         "asdfasdfasdfasdf"
       )}">text here</a></p>`
+    )
+  })
+
+  it("displays quotes properly", async () => {
+    const editor = await getEditor("")
+    markdownTest(
+      editor,
+      '{{% resource_link "asdfasdfasdfasdf" "not \\"escaped\\" in the html" %}}',
+      `<p><a class="resource-link" data-uuid="${encode(
+        "asdfasdfasdfasdf"
+      )}">not "escaped" in the html</a></p>`
     )
   })
 
@@ -69,7 +80,7 @@ describe("ResourceLink plugin", () => {
     const editor = await getEditor("")
     markdownTest(
       editor,
-      'dogs {{% resource_link uuid1 "woof" %}} cats {{% resource_link uuid2 "meow" %}}, cool',
+      'dogs {{% resource_link "uuid1" "woof" %}} cats {{% resource_link "uuid2" "meow" %}}, cool',
       `<p>dogs <a class="resource-link" data-uuid="${encode(
         "uuid1"
       )}">woof</a> cats <a class="resource-link" data-uuid="${encode(

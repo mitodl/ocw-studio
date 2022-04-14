@@ -63,6 +63,8 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             const uuid = shortcode.get(0)
             const text = shortcode.get(1)
             const fragment = shortcode.get(2)
+            console.log("text is:")
+            console.log(text)
             const encoded = fragment ?
               encodeShortcodeArgs(uuid, fragment) :
               encodeShortcodeArgs(uuid)
@@ -89,11 +91,11 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
               (node as any).getAttribute("data-uuid") as string
             )
 
-            if (anchor) {
-              return `{{% resource_link ${uuid} "${node.textContent}" "${anchor}" %}}`
-            } else {
-              return `{{% resource_link ${uuid} "${node.textContent}" %}}`
-            }
+            const text = node.textContent
+
+            if (text === null) return ""
+
+            return Shortcode.resourceLink(uuid, text, anchor).toHugo()
           }
         }
       }
