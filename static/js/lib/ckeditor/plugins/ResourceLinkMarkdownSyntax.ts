@@ -9,6 +9,7 @@ import {
   RESOURCE_LINK_CKEDITOR_CLASS,
   RESOURCE_LINK
 } from "@mitodl/ckeditor5-resource-link/src/constants"
+import { Shortcode } from "./util"
 
 export const encodeShortcodeArgs = (...args: (string | undefined)[]) =>
   encodeURIComponent(JSON.stringify(args))
@@ -25,7 +26,7 @@ const decodeShortcodeArgs = (encoded: string) =>
  *   - gets fooled by label texts that include literal `" %}}` values. For
  *     example, % resource_link uuid123 "silly " %}} link" %}}.
  */
-export const RESOURCE_LINK_SHORTCODE_REGEX = /{{% resource_link "?([^\s"]+)"? "(.*?)"(?: "(.*?)")? %}}/g
+export const RESOURCE_LINK_SHORTCODE_REGEX = /{{% resource_link .*? %}}/g
 
 /**
  * Class for defining Markdown conversion rules for Resource links
@@ -57,16 +58,17 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
         {
           type:    "lang",
           regex:   RESOURCE_LINK_SHORTCODE_REGEX,
-          replace: (
-            _s: string,
-            uuid: string,
-            linkText: string,
-            fragment?: string
-          ) => {
+          replace: (s: string) => {
+            const shortcode = Shortcode.fromString(s)
+            const uuid = shortcode.get(0)
+            const text = shortcode.get(1)
+            const fragment = shortcode.get(2)
+            console.log("text is:")
+            console.log(text)
             const encoded = fragment ?
               encodeShortcodeArgs(uuid, fragment) :
               encodeShortcodeArgs(uuid)
-            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${encoded}">${linkText}</a>`
+            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${encoded}">${text}</a>`
           }
         }
       ]
@@ -89,11 +91,11 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
               (node as any).getAttribute("data-uuid") as string
             )
 
-            if (anchor) {
-              return `{{% resource_link ${uuid} "${node.textContent}" "${anchor}" %}}`
-            } else {
-              return `{{% resource_link ${uuid} "${node.textContent}" %}}`
-            }
+            const text = node.textContent
+
+            if (text === null) return ""
+
+            return Shortcode.resourceLink(uuid, text, anchor).toHugo()
           }
         }
       }
