@@ -202,8 +202,8 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
         title=" ".join([title for i in range(11)]),
         metadata={
             "resourcetype": RESOURCE_TYPE_VIDEO,
-            "description": " ".join([description for _ in range(501)]),
             "video_metadata": {
+                "youtube_description": " ".join([description for _ in range(501)]),
                 "youtube_id": youtube_id,
                 "video_tags": tags,
                 "video_speakers": speakers,

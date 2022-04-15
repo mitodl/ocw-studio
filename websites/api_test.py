@@ -335,8 +335,8 @@ def test_videos_with_truncatable_text(mocker, is_ocw):
                 website=website,
                 title=title,
                 metadata={
-                    "description": desc,
                     "resourcetype": RESOURCE_TYPE_VIDEO,
+                    "video_metadata": {"youtube_description": desc},
                     "video_files": {"video_captions_file": "abc123"},
                 },
             )
