@@ -342,7 +342,7 @@ def test_videos_with_truncatable_text(mocker, is_ocw):
             )
         )
     truncatable_content = videos_with_truncatable_text(website)
-    assert len(resources[1].metadata["video_metadata"]["description"]) > 5000
+    assert len(resources[1].metadata["video_metadata"]["youtube_description"]) > 5000
 
     if is_ocw:
         assert len(truncatable_content) == 2
