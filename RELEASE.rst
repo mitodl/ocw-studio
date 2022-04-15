@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.57.3
+Version 0.57.3 (Released April 15, 2022)
 --------------
 
 - fix: required=true for relation widgetvariant (#1240)
