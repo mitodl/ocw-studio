@@ -215,7 +215,10 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
     expected_desc = f'{" ".join([description.replace(">", "") for _ in range(499)])}...'
 
     assert len(content.title) > YT_MAX_LENGTH_TITLE
-    assert len(content.metadata["video_metadata"]["youtube_description"]) > YT_MAX_LENGTH_DESCRIPTION
+    assert (
+        len(content.metadata["video_metadata"]["youtube_description"])
+        > YT_MAX_LENGTH_DESCRIPTION
+    )
     assert len(expected_title) <= YT_MAX_LENGTH_TITLE
     assert len(expected_desc) <= YT_MAX_LENGTH_DESCRIPTION
 
