@@ -1,7 +1,8 @@
 """Updates multiple fields of content based on starter"""
-from django.db import transaction
-from django.core.management import BaseCommand, CommandError
 from django.core.exceptions import FieldDoesNotExist
+from django.core.management import BaseCommand, CommandError
+from django.db import transaction
+
 from websites.models import WebsiteContent
 
 
