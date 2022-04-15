@@ -8,7 +8,7 @@ import { makeWebsiteDetail } from "../util/factories/websites"
 import { siteApiCollaboratorsUrl, siteDetailUrl } from "../lib/urls"
 import SitePage from "./SitePage"
 import WebsiteContext from "../context/Website"
-import Spinner from "../components/Spinner"
+import Spinner from "../components/util/Spinner"
 import SiteCollaboratorList from "../components/SiteCollaboratorList"
 import SiteContentListing from "../components/SiteContentListing"
 

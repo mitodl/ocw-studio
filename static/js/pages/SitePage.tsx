@@ -5,7 +5,7 @@ import SiteSidebar from "../components/SiteSidebar"
 import SiteContentListing from "../components/SiteContentListing"
 import SiteCollaboratorList from "../components/SiteCollaboratorList"
 import Card from "../components/Card"
-import Spinner from "../components/Spinner"
+import Spinner from "../components/util/Spinner"
 import {
   siteCollaboratorsUrl,
   siteContentListingUrl,

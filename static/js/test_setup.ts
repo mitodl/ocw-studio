@@ -34,11 +34,15 @@ beforeEach(() => {
    */
   global.mockFetch = jest.fn()
   global.fetch = global.mockFetch
+
+  global.mockConfirm = jest.fn()
+  global.confirm = global.mockConfirm
 })
 
 declare global {
   // eslint-disable-next-line no-var
-  var mockFetch: jest.Mock<any, Parameters<typeof fetch>>
+  var mockFetch: jest.Mock<any, Parameters<typeof fetch>>,
+    mockConfirm: jest.Mock<any, Parameters<typeof confirm>>
 }
 
 // cleanup after each test run

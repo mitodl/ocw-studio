@@ -85,7 +85,7 @@
     "express": "^4.17.1",
     "fetch-mock": "^9.10.6",
     "formik": "^2.2.9",
-    "history": "^5.0.0",
+    "history": "^4.10.1",
     "isomorphic-fetch": "^3.0.0",
     "jest": "^27.2.5",
     "jest-fail-on-console": "^2.0.4",
