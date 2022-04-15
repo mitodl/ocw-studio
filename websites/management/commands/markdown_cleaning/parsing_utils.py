@@ -91,7 +91,7 @@ def unescape_string_quoted_with(text: str, single_quotes=False):
     q = "'" if single_quotes else '"'
 
     escaped_quote_regex = re.compile(
-        r"(^|[^\\])"  # anything except a backlsash
+        r"(?<!\\)"  # anything except a backslash WITHOUT advancing match position
         + r"(\\\\)*\\"  # an odd number of backlsashes
         + q  # a quote
     )

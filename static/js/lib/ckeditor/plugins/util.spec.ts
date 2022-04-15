@@ -23,6 +23,10 @@ describe("unescapeStringQuotedWith", () => {
     {
       escaped:   String.raw`"quotes are \" \\\" \\\\\" ok "`,
       unescaped: String.raw`quotes are " \\" \\\\" ok `
+    },
+    {
+      escaped:   String.raw`"consecutive quotes are \"\" are OK"`,
+      unescaped: String.raw`consecutive quotes are "" are OK`
     }
   ])("Unescapes interior quotes", ({ escaped, unescaped }) => {
     expect(unescapeStringQuotedWith(escaped)).toBe(unescaped)

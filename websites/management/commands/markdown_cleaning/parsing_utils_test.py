@@ -104,6 +104,10 @@ def test_original_text_records_during_transform_text():
             R'''"quotes are \" \\\" \\\\\" ok "''',
             R"""quotes are " \\" \\\\" ok """,
         ),
+        (
+            R'''"consecutive quotes are \"\" are OK"''',
+            R"""consecutive quotes are "" are OK""",
+        ),
     ],
 )
 def test_unescape_quoted_string(escaped, unescaped):

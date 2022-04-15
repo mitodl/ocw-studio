@@ -20,7 +20,7 @@ export const unescapeStringQuotedWith = (
 
   const escapedQuoteRegex = new RegExp(
     [
-      /(^|[^\\])/.source, // anything except a backlsash
+      /(?<!\\)/.source, // anything except a backslash WITHOUT advancing match position
       /(\\\\)*\\/.source, // an odd number of backlsashes
       q // a quote
     ].join(""),
@@ -35,6 +35,7 @@ export const unescapeStringQuotedWith = (
   const quoteCount = text.slice(1, -1).split(q).length - 1
   const escapedQuoteCount = text.match(escapedQuoteRegex)?.length ?? 0
   const allEscaped = quoteCount === escapedQuoteCount
+  console.log({ quoteCount, escapedQuoteCount })
   if (allEscaped && text.startsWith(q) && text.endsWith(q)) {
     return text.slice(1, -1).replace(escapedQuoteRegex, unescape)
   }
