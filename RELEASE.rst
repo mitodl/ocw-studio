@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.57.4
+--------------
+
+- [markdown cleanup] <, > to «, » (#1245)
+- Rename mass-publish pipeline to mass-build-sites, refactor mass-publish command (#1246)
+- [markdown cleanup] fix superscript/subscript escaping issues (#1241)
+- fix: course_collections renamed to course-collection (#1239)
+
 Version 0.57.3 (Released April 15, 2022)
 --------------
 
