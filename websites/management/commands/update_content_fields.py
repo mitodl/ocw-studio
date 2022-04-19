@@ -1,6 +1,7 @@
 """Updates multiple fields of content based on starter"""
-from argparse import ArgumentTypeError
 import re
+from argparse import ArgumentTypeError
+
 from django.core.exceptions import FieldDoesNotExist
 from django.core.management import BaseCommand, CommandError
 from django.db import transaction
