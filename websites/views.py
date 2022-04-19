@@ -34,6 +34,7 @@ from users.models import User
 from websites import constants
 from websites.api import get_valid_new_filename, update_website_status
 from websites.constants import (
+    CONTENT_TYPE_METADATA,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -100,8 +101,9 @@ class WebsiteViewSet(
             # Anonymous users should get a list of all published websites (used for ocw-www carousel)
             ordering = "-first_published_to_production"
             queryset = Website.objects.filter(
+                first_published_to_production__isnull=False,
                 first_published_to_production__lte=now_in_utc(),
-                websitecontent__type="sitemetadata",
+                websitecontent__type=CONTENT_TYPE_METADATA,
                 websitecontent__metadata__isnull=False,
             ).distinct()
         elif is_global_admin(user):
