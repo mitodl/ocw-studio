@@ -24,8 +24,10 @@ from websites import constants
 from websites.api import (
     detect_mime_type,
     incomplete_content_warnings,
+    sync_website_title,
     update_youtube_thumbnail,
 )
+from websites.constants import CONTENT_TYPE_METADATA
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
@@ -222,6 +224,7 @@ class WebsiteStatusSerializer(
         fields = [
             "uuid",
             "name",
+            "title",
             "publish_date",
             "draft_publish_date",
             "has_unpublished_live",
@@ -387,6 +390,9 @@ class WebsiteContentDetailSerializer(
             instance, {"updated_by": self.user_from_request(), **validated_data}
         )
         update_website_backend(instance.website)
+        # Sync the metadata title and website title if appropriate
+        if instance.type == CONTENT_TYPE_METADATA:
+            sync_website_title(instance)
         return instance
 
     def get_content_context(self, instance):  # pylint:disable=too-many-branches
@@ -511,6 +517,8 @@ class WebsiteContentCreateSerializer(
             }
         )
         update_website_backend(instance.website)
+        if instance.type == CONTENT_TYPE_METADATA:
+            sync_website_title(instance)
         return instance
 
     class Meta:

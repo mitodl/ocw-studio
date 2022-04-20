@@ -548,6 +548,11 @@ FIELD_RESOURCETYPE = get_string(
     default="resourcetype",
     description="The site config metadata field for the resource type",
 )
+FIELD_METADATA_TITLE = get_string(
+    name="FIELD_METADATA_TITLE",
+    default="course_title",
+    description="The site metadata field for title",
+)
 
 # YouTube OCW metadata fields
 YT_FIELD_CAPTIONS = get_string(

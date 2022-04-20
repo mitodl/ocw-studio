@@ -1,4 +1,6 @@
 """ Tests for websites.serializers """
+from types import SimpleNamespace
+
 import pytest
 from dateutil.parser import parse as parse_date
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -9,6 +11,7 @@ from users.factories import UserFactory
 from users.models import User
 from videos.constants import YT_THUMBNAIL_IMG
 from websites.constants import (
+    CONTENT_TYPE_METADATA,
     CONTENT_TYPE_RESOURCE,
     ROLE_EDITOR,
     WEBSITE_SOURCE_OCW_IMPORT,
@@ -35,6 +38,20 @@ from websites.site_config_api import SiteConfig
 
 
 pytestmark = pytest.mark.django_db
+# pylint:disable=redefined-outer-name
+
+
+@pytest.fixture
+def mocked_website_funcs(mocker):
+    """Mocked website-related functions"""
+    return SimpleNamespace(
+        update_website_backend=mocker.patch(
+            "websites.serializers.update_website_backend"
+        ),
+        create_website_pipeline=mocker.patch(
+            "websites.serializers.create_website_publishing_pipeline"
+        ),
+    )
 
 
 def test_serialize_website_course():
@@ -118,6 +135,7 @@ def test_website_status_serializer(mocker, settings, drive_folder, warnings):
     settings.DRIVE_SERVICE_ACCOUNT_CREDS = {"key": "value"}
     settings.DRIVE_SHARED_ID = "abc123"
     values = {
+        "title": "site title",
         "publish_date": "2021-11-01T00:00:00Z",
         "draft_publish_date": "2021-11-02T00:00:00Z",
         "has_unpublished_live": True,
@@ -383,14 +401,8 @@ def test_website_content_detail_serializer_content_context(  # pylint:disable=to
     )
 
 
-def test_website_content_detail_serializer_save(mocker):
+def test_website_content_detail_serializer_save(mocker, mocked_website_funcs):
     """WebsiteContentDetailSerializer should modify only certain fields"""
-    mock_update_website_backend = mocker.patch(
-        "websites.serializers.update_website_backend"
-    )
-    mock_create_website_pipeline = mocker.patch(
-        "websites.serializers.create_website_publishing_pipeline"
-    )
     content = WebsiteContentFactory.create(
         type=CONTENT_TYPE_RESOURCE,
         metadata={
@@ -432,18 +444,55 @@ def test_website_content_detail_serializer_save(mocker):
         "created": "brand new!",
     }
     assert content.updated_by == user
-    mock_update_website_backend.assert_called_once_with(content.website)
-    mock_create_website_pipeline.assert_not_called()
+    mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
+    mocked_website_funcs.create_website_pipeline.assert_not_called()
 
 
-def test_website_content_detail_serializer_save_null_metadata(mocker):
+@pytest.mark.parametrize("is_new", [True])
+@pytest.mark.parametrize("has_title_field", [True, False])
+def test_website_content_detail_serializer_save_site_meta(  # pylint:disable=unused-argument
+    settings, mocker, mocked_website_funcs, has_title_field, is_new
+):
+    """Website title should be updated if the expected title field is in metadata"""
+    settings.FIELD_METADATA_TITLE = "course_title"
+    new_title = "Updated Site Title"
+    title_field = settings.FIELD_METADATA_TITLE if has_title_field else "other_title"
+    if is_new:
+        website = WebsiteFactory.create()
+        instance_kwargs = {}
+        serializer_class = WebsiteContentCreateSerializer
+    else:
+        content = WebsiteContentFactory.create(
+            type=CONTENT_TYPE_METADATA,
+            metadata={},
+        )
+        website = content.website
+        instance_kwargs = {"instance": content}
+        serializer_class = WebsiteContentDetailSerializer
+    assert website.title != new_title
+    serializer = serializer_class(
+        data={
+            "type": CONTENT_TYPE_METADATA,
+            "website_id": website.pk,
+            "metadata": {title_field: new_title},
+        },
+        context={
+            "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
+            "request": mocker.Mock(user=UserFactory.create()),
+            "website_id": website.pk,
+        },
+        **instance_kwargs,
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    website.refresh_from_db()
+    assert (website.title == new_title) is has_title_field
+
+
+def test_website_content_detail_serializer_save_null_metadata(
+    mocker, mocked_website_funcs
+):
     """WebsiteContentDetailSerializer should save if metadata is null"""
-    mock_update_website_backend = mocker.patch(
-        "websites.serializers.update_website_backend"
-    )
-    mock_create_website_pipeline = mocker.patch(
-        "websites.serializers.create_website_publishing_pipeline"
-    )
     content = WebsiteContentFactory.create(
         type=CONTENT_TYPE_RESOURCE,
         metadata=None,
@@ -472,19 +521,18 @@ def test_website_content_detail_serializer_save_null_metadata(mocker):
     assert content.markdown == new_markdown
     assert content.metadata == {"meta": "data"}
     assert content.updated_by == user
-    mock_update_website_backend.assert_called_once_with(content.website)
-    mock_create_website_pipeline.assert_not_called()
+    mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
+    mocked_website_funcs.create_website_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize("add_context_data", [True, False])
-def test_website_content_create_serializer(mocker, add_context_data):
+def test_website_content_create_serializer(
+    mocker, mocked_website_funcs, add_context_data
+):
     """
     WebsiteContentCreateSerializer should create a new WebsiteContent object, using context data as an override
     if extra context data is passed in.
     """
-    mock_update_website_backend = mocker.patch(
-        "websites.serializers.update_website_backend"
-    )
     website = WebsiteFactory.create()
     user = UserFactory.create()
     metadata = {"description": "some text"}
@@ -518,7 +566,7 @@ def test_website_content_create_serializer(mocker, add_context_data):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     content = WebsiteContent.objects.get(title=payload["title"])
-    mock_update_website_backend.assert_called_once_with(content.website)
+    mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
     assert content.website_id == website.pk
     assert content.owner == user
     assert content.updated_by == user

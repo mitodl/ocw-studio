@@ -382,3 +382,11 @@ def incomplete_content_warnings(website):
         )
 
     return messages
+
+
+def sync_website_title(content: WebsiteContent):
+    """Sync sitemetadata title with Website.title"""
+    title = get_dict_field(content.metadata, settings.FIELD_METADATA_TITLE)
+    if title:
+        content.website.title = title
+        content.website.save()
