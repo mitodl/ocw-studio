@@ -19,6 +19,10 @@ import * as networkInterfaceFuncs from "../store/network_interface"
 
 export default class IntegrationTestHelper {
   browserHistory: MemoryHistory = createMemoryHistory({
+    /**
+     * MemoryHistory does not use window.confirm by default, so we need to tell
+     * it to.
+     */
     getUserConfirmation: (message, cb) => {
       const ok = window.confirm(message)
       return cb(ok)

@@ -6,6 +6,10 @@ interface Props extends PromptProps {
   message: string
 }
 
+/**
+ * A wrapper around ReactRouter's <Prompt /> component which also prompts for
+ * confirmation on beforeunload events (if `props.onBeforeUnload` is true).
+ */
 export default function Prompt(props: Props) {
   const { onBeforeUnload, ...otherProps } = props
   const { when, message } = otherProps
