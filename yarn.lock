@@ -2379,15 +2379,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-beforeunload@npm:^2.1.1":
-  version: 2.1.1
-  resolution: "@types/react-beforeunload@npm:2.1.1"
-  dependencies:
-    "@types/react": "*"
-  checksum: ca84ce4f93b347e772a607f35e5fea65047958779b78c7920513870723fae4ef37a471bd88976a3116200633aadd8f363e9b1105289c8400bf567f4399bb572e
-  languageName: node
-  linkType: hard
-
 "@types/react-dom@npm:*, @types/react-dom@npm:>=16.9.0, @types/react-dom@npm:^17.0.9":
   version: 17.0.14
   resolution: "@types/react-dom@npm:17.0.14"
@@ -9923,7 +9914,6 @@ __metadata:
     "@types/pluralize": ^0.0.29
     "@types/ramda": ^0.27.44
     "@types/react": ^17.0.15
-    "@types/react-beforeunload": ^2.1.1
     "@types/react-dom": ^17.0.9
     "@types/react-outside-click-handler": ^1.3.0
     "@types/react-redux": ^7.1.18
@@ -9974,7 +9964,6 @@ __metadata:
     raw-loader: ^4.0.2
     react: 16.14.0
     react-addons-shallow-compare: ^15.6.2
-    react-beforeunload: ^2.5.2
     react-dom: 16.14.0
     react-ga: ^3.3.0
     react-hot-loader: ^4.13.0
@@ -11271,18 +11260,6 @@ __metadata:
   dependencies:
     object-assign: ^4.1.0
   checksum: e47a82aa5488ef88fc553d7c2954b442fbc6c7b719bb566d6945aaffc9014f1771bc83ed6e552a1ea4ae702a3194bcba6fbaf64cd8d8f8a77ba91976b2bb8444
-  languageName: node
-  linkType: hard
-
-"react-beforeunload@npm:^2.5.2":
-  version: 2.5.2
-  resolution: "react-beforeunload@npm:2.5.2"
-  dependencies:
-    prop-types: ^15.7.2
-    tiny-invariant: ^1.1.0
-  peerDependencies:
-    react: ^16.8.0 || ^17.0.0
-  checksum: cc73032cea224806be8f98090bc8efe10a422ca5d8e4ba8717fc5b1a4382f6ce858b7e0469132e7bd20173ba61c126729c29b36f1da3d2220926e51638a15285
   languageName: node
   linkType: hard
 
@@ -13283,7 +13260,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tiny-invariant@npm:^1.0.2, tiny-invariant@npm:^1.1.0":
+"tiny-invariant@npm:^1.0.2":
   version: 1.2.0
   resolution: "tiny-invariant@npm:1.2.0"
   checksum: e09a718a7c4a499ba592cdac61f015d87427a0867ca07f50c11fd9b623f90cdba18937b515d4a5e4f43dac92370498d7bdaee0d0e7a377a61095e02c4a92eade
