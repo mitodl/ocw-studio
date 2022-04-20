@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.57.4
+Version 0.57.4 (Released April 20, 2022)
 --------------
 
 - [markdown cleanup] <, > to «, » (#1245)
