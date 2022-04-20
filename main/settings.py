@@ -562,7 +562,7 @@ YT_FIELD_ID = get_string(
 )
 YT_FIELD_DESCRIPTION = get_string(
     name="YT_FIELD_DESCRIPTION",
-    default="description",
+    default="video_metadata.youtube_description",
     description="The site config metadata field for YouTube description",
 )
 YT_FIELD_SPEAKERS = get_string(

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 from uuid import UUID, uuid4
 
+from django.db.models.fields.json import KeyTextTransform
 from django.http import HttpRequest
 
 
@@ -117,3 +118,26 @@ def truncate_words(content: str, length: int, suffix: Optional[str] = "...") -> 
         return content
     else:
         return content[: (length - len(suffix))].rsplit(" ", 1)[0] + suffix
+
+
+class NestableKeyTextTransform:
+    """
+    From https://stackoverflow.com/questions/65921227/how-to-use-keytexttransform-for-nested-json
+    Returns a KeyTextTransform for nested JSON fields
+
+    Args:
+        field (str): the top level field
+        path (str*): any amount of nested fields to dig down
+
+    Returns:
+        (KeyTextTransform): A KeyTextTransform for the nested value
+    """
+
+    def __new__(cls, field, *path):
+        if not path:
+            raise ValueError("Path must contain at least one key.")
+        head, *tail = path
+        field = KeyTextTransform(head, field)
+        for head in tail:
+            field = KeyTextTransform(head, field)
+        return field
