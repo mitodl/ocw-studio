@@ -81,7 +81,6 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_list=None):
             if key.endswith("course_legacy.json") and (
                 not filter_list or key.split("/")[-3] in filter_list
             ):
-                import pdb; pdb.set_trace()
                 counter =+ 1
                 yield key
             if filter_list and counter == len(filter_list):
