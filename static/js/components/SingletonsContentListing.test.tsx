@@ -1,8 +1,6 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
-import { useLocation } from "react-router-dom"
 import sinon, { SinonStub } from "sinon"
-
 import SingletonsContentListing from "./SingletonsContentListing"
 import WebsiteContext from "../context/Website"
 
@@ -26,6 +24,8 @@ import {
 } from "../types/websites"
 import { createModalState } from "../types/modal_state"
 import SiteContentEditor from "./SiteContentEditor"
+import ConfirmDiscardChanges from "./util/ConfirmDiscardChanges"
+import { nextTick } from "../test_util"
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
@@ -35,11 +35,6 @@ function mocko() {
 jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
   default:    mocko
-}))
-jest.mock("react-router-dom", () => ({
-  __esModule:  true,
-  ...jest.requireActual("react-router-dom"),
-  useLocation: jest.fn()
 }))
 
 describe("SingletonsContentListing", () => {
@@ -72,12 +67,6 @@ describe("SingletonsContentListing", () => {
     websiteContentDetails = {
       [singletonConfigItems[0].name]: content
     }
-    // @ts-ignore
-    useLocation.mockClear()
-    // @ts-ignore
-    useLocation.mockReturnValue({
-      pathname: "/path/to/a/page"
-    })
     render = helper.configureRenderer(
       props => (
         <WebsiteContext.Provider value={website}>
@@ -255,7 +244,27 @@ describe("SingletonsContentListing", () => {
     }
   )
 
-  /**
-   * TODO: Replace "clears a dirty flag when the path changes"
-   */
+  it("clears a dirty flag when the path changes", async () => {
+    const { wrapper } = await render()
+    const editor = wrapper.find(SiteContentEditor).first()
+
+    act(() => editor.prop("setDirty")(true))
+
+    expect(
+      wrapper
+        .update()
+        .find(ConfirmDiscardChanges)
+        .prop("when")
+    ).toBe(true)
+
+    window.mockConfirm.mockReturnValue(true)
+    helper.browserHistory.push("/pages")
+    await nextTick()
+    expect(
+      wrapper
+        .update()
+        .find(ConfirmDiscardChanges)
+        .prop("when")
+    ).toBe(false)
+  })
 })
