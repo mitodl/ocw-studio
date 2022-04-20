@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
-import { useLocation, useHistory } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 
 import Card from "./Card"
 import { SingletonsConfigItem } from "../types/websites"
@@ -15,9 +15,6 @@ export default function SingletonsContentListing(props: {
 }): JSX.Element | null {
   const { configItem } = props
   const { pathname } = useLocation()
-  const hist = useHistory()
-  window.hist = hist
-  console.log("RENDER!")
   const [activeTab, setActiveTab] = useState(0)
   const toggle = (tab: number) => {
     if (activeTab !== tab) setActiveTab(tab)

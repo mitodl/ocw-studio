@@ -104,7 +104,7 @@ export default function RepeatableContentListing(props: {
         }
       }
     },
-    website ? 50000 : null
+    website ? 5000 : null
   )
 
   const labelSingular = configItem.label_singular ?? singular(configItem.label)

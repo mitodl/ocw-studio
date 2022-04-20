@@ -5,7 +5,6 @@ import sinon, { SinonStub } from "sinon"
 
 import SingletonsContentListing from "./SingletonsContentListing"
 import WebsiteContext from "../context/Website"
-import useConfirmation from "../hooks/confirmation"
 
 import { siteApiContentDetailUrl } from "../lib/urls"
 import * as siteContentFuncs from "../lib/site_content"
@@ -37,10 +36,6 @@ jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
   default:    mocko
 }))
-jest.mock("../hooks/confirmation", () => ({
-  __esModule: true,
-  default:    jest.fn()
-}))
 jest.mock("react-router-dom", () => ({
   __esModule:  true,
   ...jest.requireActual("react-router-dom"),
@@ -55,9 +50,7 @@ describe("SingletonsContentListing", () => {
     singletonConfigItems: SingletonConfigItem[],
     websiteContentDetails: Record<string, WebsiteContent>,
     content: WebsiteContent,
-    contentDetailStub: SinonStub,
-    setConfirmationModalVisible: any,
-    conditionalClose: any
+    contentDetailStub: SinonStub
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -79,16 +72,6 @@ describe("SingletonsContentListing", () => {
     websiteContentDetails = {
       [singletonConfigItems[0].name]: content
     }
-    setConfirmationModalVisible = jest.fn()
-    conditionalClose = jest.fn()
-    // @ts-ignore
-    useConfirmation.mockClear()
-    // @ts-ignore
-    useConfirmation.mockReturnValue({
-      confirmationModalVisible: false,
-      setConfirmationModalVisible,
-      conditionalClose
-    })
     // @ts-ignore
     useLocation.mockClear()
     // @ts-ignore

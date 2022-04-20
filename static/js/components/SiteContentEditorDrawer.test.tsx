@@ -36,10 +36,6 @@ jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
   default:    mocko
 }))
-jest.mock("../hooks/confirmation", () => ({
-  __esModule: true,
-  default:    jest.fn()
-}))
 jest.mock("react-router-dom", () => ({
   __esModule: true,
   ...jest.requireActual("react-router-dom"),
