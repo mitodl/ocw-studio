@@ -189,7 +189,7 @@ export default class IntegrationTestHelper {
                * If the component under test uses hooks from react-router, e.g.,
                * useLocation, then the component should be re-rendered when
                * location changes. This re-render will only happen if the
-               * component is rendered via
+               * component is rendered inside a Route
                */}
               <Route path="*" component={ComponentWithProps} />
             </Router>
