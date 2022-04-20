@@ -8,13 +8,13 @@ from uuid import UUID
 from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from django.db.models import CharField, Q, QuerySet
-from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast, Length
 from magic import Magic
 from mitol.common.utils import max_or_none, now_in_utc
 from mitol.mail.api import get_message_sender
 
 from content_sync.constants import VERSION_DRAFT
+from main.utils import NestableKeyTextTransform
 from users.models import User
 from videos.constants import (
     YT_MAX_LENGTH_DESCRIPTION,
@@ -230,11 +230,12 @@ def videos_with_truncatable_text(website: Website) -> List[WebsiteContent]:
     query_resource_type_field = get_dict_query_field(
         "metadata", settings.FIELD_RESOURCETYPE
     )
+    yt_description_fields = settings.YT_FIELD_DESCRIPTION.split(".")
     return (
         WebsiteContent.objects.annotate(
             desc_len=Length(
                 Cast(
-                    KeyTextTransform(settings.YT_FIELD_DESCRIPTION, "metadata"),
+                    NestableKeyTextTransform("metadata", *yt_description_fields),
                     CharField(),
                 )
             )
