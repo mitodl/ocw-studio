@@ -1,9 +1,10 @@
-import React from "react"
-import { useCallback, useState } from "react"
+import React, { useCallback, useState } from "react"
 import { useStore } from "react-redux"
 import { Link } from "react-router-dom"
 import { requestAsync } from "redux-query"
 import useInterval from "@use-it/interval"
+
+import { useSearchParams } from '../hooks/search'
 
 import PublishDrawer from "../components/PublishDrawer"
 
@@ -22,15 +23,19 @@ export interface HeaderProps {
 export default function Header(props: HeaderProps): JSX.Element {
   const { website } = props
   const store = useStore()
+  const [search, setSearchParams] = useSearchParams()
+  const drawerOpen = search.has('publish')
 
-  const [drawerOpen, setDrawerOpen] = useState<boolean>(false)
-  const openPublishDrawer = useCallback(
-    (event: any) => {
-      event.preventDefault()
-      setDrawerOpen(true)
-    },
-    [setDrawerOpen]
-  )
+  const openPublishDrawer = useCallback(() => {
+    const newParams = new URLSearchParams(search)
+    newParams.set('publish', '')
+    setSearchParams(newParams)
+  }, [search, setSearchParams])
+  const closePublishDrawer = useCallback(() => {
+    const newParams = new URLSearchParams(search)
+    newParams.delete('publish')
+    setSearchParams(newParams)
+  }, [search, setSearchParams])
 
   useInterval(
     async () => {
@@ -91,7 +96,7 @@ export default function Header(props: HeaderProps): JSX.Element {
             <PublishDrawer
               website={website}
               visibility={drawerOpen}
-              toggleVisibility={() => setDrawerOpen(visibility => !visibility)}
+              toggleVisibility={closePublishDrawer}
             />
           </div>
         </div>
