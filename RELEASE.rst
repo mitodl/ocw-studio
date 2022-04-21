@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.57.5 (Released April 21, 2022)
+--------------
+
+- set `YT_FIELD_DESCRIPTION` to `video_metadata.youtube_description` (#1253)
+- Escape quotes in resource link text (#1249)
+
 Version 0.57.4 (Released April 20, 2022)
 --------------
 
