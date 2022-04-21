@@ -23,9 +23,6 @@ class Command(BaseCommand):
         )
 
         with transaction.atomic():
-            import pdb
-
-            pdb.set_trace()
             for website in query_set.iterator():
                 if not website.metadata["departments"]:
                     website.metadata["departments"] = [
