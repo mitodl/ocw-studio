@@ -8,7 +8,7 @@ interface PassDownProps {
 export default function BasicModal(props: {
   isVisible: boolean
   hideModal: () => void
-  className: string | null
+  className?: string
   title: string | null
   children: (props: PassDownProps) => JSX.Element | null
 }): JSX.Element | null {

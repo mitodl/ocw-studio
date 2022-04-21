@@ -64,3 +64,14 @@ export const getMockEditor = () => ({
     }
   }
 })
+
+/**
+ * Type assertion that asserts value is not null or undefined.
+ *
+ * Unlike jest assertions, this will refine the type.
+ * See https://github.com/DefinitelyTyped/DefinitelyTyped/issues/41179
+ */
+export const assertNotNil: <T>(value: T) => asserts value is NonNullable<T> = value => {
+  if (value !== undefined && value !== null) return
+  throw new Error('Expected value not to be undefined and not to be null.')
+}

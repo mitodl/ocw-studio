@@ -25,7 +25,7 @@ export default class IntegrationTestHelper {
      */
     getUserConfirmation: (message, cb) => {
       const ok = window.confirm(message)
-      return cb(ok)
+      cb(ok)
     }
   })
   sandbox: SinonSandbox
