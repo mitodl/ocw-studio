@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.57.6
+--------------
+
+- added command to migrate testimonials to stories (#1250)
+- Sync Website.title with the sitemetadata course_title (#1244)
+
 Version 0.57.5 (Released April 21, 2022)
 --------------
 
