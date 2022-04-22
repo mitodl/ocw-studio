@@ -5,7 +5,7 @@ import factory
 import pytest
 from mitol.common.utils import now_in_utc
 
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, VERSION_UNPUBLISH
 from users.factories import UserFactory
 from videos.constants import YT_THUMBNAIL_IMG
 from websites.api import (
@@ -417,6 +417,24 @@ def test_update_website_status(mocker, status, notify, has_user, version):
     assert getattr(website, f"{version}_publish_status") == status
     assert getattr(website, f"{version}_publish_status_updated_on") == now
     assert mock_mail.call_count == (1 if has_user and notify else 0)
+    assert mock_log.call_count == (1 if status == PUBLISH_STATUS_ERRORED else 0)
+
+
+@pytest.mark.parametrize("status", [PUBLISH_STATUS_SUCCEEDED, PUBLISH_STATUS_ERRORED])
+def test_update_website_unpublished_status(mocker, status):
+    """update_website_status should update the appropriate website publishing fields"""
+    mock_mail = mocker.patch("websites.api.mail_on_publish")
+    mock_log = mocker.patch("websites.api.log.error")
+    user = UserFactory.create()
+    website = WebsiteFactory.create(last_unpublished_by=user, unpublished=True)
+    now = now_in_utc()
+    update_website_status(website, VERSION_UNPUBLISH, status, now)
+    website.refresh_from_db()
+    assert website.live_publish_status is None
+    assert website.live_publish_status_updated_on is None
+    assert website.unpublished_status_updated_on == now
+    assert website.unpublished_status == status
+    assert mock_mail.call_count == 0
     assert mock_log.call_count == (1 if status == PUBLISH_STATUS_ERRORED else 0)
 
 
