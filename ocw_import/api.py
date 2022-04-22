@@ -5,7 +5,6 @@ import re
 import uuid
 from copy import deepcopy
 from typing import Dict
-from os import path
 
 import dateutil
 import yaml
@@ -81,7 +80,7 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_list=None):
         ]
     else:
         queryset = [paginator.paginate(Bucket=bucket.name, Prefix=f"{prefix}")]
-    
+
     for list_object in queryset:
         for resp in list_object:
             for obj in resp["Contents"]:
