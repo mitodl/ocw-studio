@@ -65,7 +65,6 @@ def websites(course_starter):
     others = [
         WebsiteFactory.create(not_published=True, starter=course_starter),
         WebsiteFactory.create(future_publish=True),
-        WebsiteFactory.create(unpublished=True)
     ]
     for site in [*courses, *noncourses, *others]:
         WebsiteContentFactory.create(website=site, type="sitemetadata")
