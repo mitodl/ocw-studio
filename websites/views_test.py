@@ -1,5 +1,6 @@
 """ Tests for websites views """
 import datetime
+from random import choices
 from types import SimpleNamespace
 
 import factory
@@ -10,6 +11,7 @@ from django.urls import reverse
 from django.utils.text import slugify
 from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
+from requests import HTTPError
 from rest_framework import status
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
@@ -17,6 +19,11 @@ from main import features
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from websites import constants
+from websites.constants import (
+    PUBLISH_STATUS_ERRORED,
+    PUBLISH_STATUS_NOT_STARTED,
+    PUBLISH_STATUS_SUCCEEDED,
+)
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
@@ -56,8 +63,9 @@ def websites(course_starter):
     noncourses = WebsiteFactory.create_batch(2, published=True)
     WebsiteFactory.create(published=True, starter=course_starter, metadata=None)
     others = [
-        WebsiteFactory.create(unpublished=True, starter=course_starter),
+        WebsiteFactory.create(not_published=True, starter=course_starter),
         WebsiteFactory.create(future_publish=True),
+        WebsiteFactory.create(unpublished=True)
     ]
     for site in [*courses, *noncourses, *others]:
         WebsiteContentFactory.create(website=site, type="sitemetadata")
@@ -273,12 +281,21 @@ def test_websites_endpoint_preview_error(mocker, drf_client):
     assert resp.data == {"details": "422 {}"}
 
 
-def test_websites_endpoint_publish(mocker, drf_client):
-    """A user with admin permissions should be able to request a website publish"""
+@pytest.mark.parametrize(
+    "unpublished, unpublished_status",
+    [[True, PUBLISH_STATUS_NOT_STARTED], [False, None]],
+)
+def test_websites_endpoint_publish(mocker, drf_client, unpublished, unpublished_status):
+    """
+    A user with admin permissions should be able to request a website publish and revert
+    any previous unpublish request
+    """
     mock_publish_website = mocker.patch("websites.views.trigger_publish")
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
-    website = WebsiteFactory.create()
+    website = WebsiteFactory.create(
+        unpublished=unpublished, unpublished_status=unpublished_status
+    )
     admin = UserFactory.create()
     admin.groups.add(website.admin_group)
     drf_client.force_login(admin)
@@ -294,6 +311,8 @@ def test_websites_endpoint_publish(mocker, drf_client):
     assert website.live_publish_status == constants.PUBLISH_STATUS_NOT_STARTED
     assert website.live_publish_status_updated_on == now
     assert website.latest_build_id_live is None
+    assert website.unpublished is False
+    assert website.unpublished_status is None
 
 
 def test_websites_endpoint_publish_denied(mocker, drf_client):
@@ -327,6 +346,61 @@ def test_websites_endpoint_publish_error(mocker, drf_client):
     )
     assert resp.status_code == 500
     assert resp.data == {"details": "422 {}"}
+
+
+def test_websites_endpoint_unpublish(mocker, drf_client):
+    """A user with admin permissions should be able to request a website unpublish"""
+    mock_unpublished_removal = mocker.patch(
+        "websites.views.trigger_unpublished_removal"
+    )
+    now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
+    mocker.patch("websites.views.now_in_utc", return_value=now)
+    website = WebsiteFactory.create()
+    admin = UserFactory.create()
+    admin.groups.add(website.admin_group)
+    drf_client.force_login(admin)
+    resp = drf_client.post(
+        reverse("websites_api-unpublish", kwargs={"name": website.name})
+    )
+    assert resp.status_code == 200
+    website.refresh_from_db()
+
+    mock_unpublished_removal.assert_called_once()
+    assert website.unpublished is True
+    assert website.unpublished_status == constants.PUBLISH_STATUS_NOT_STARTED
+    assert website.last_unpublished_by == admin
+
+
+def test_websites_endpoint_unpublish_denied(drf_client):
+    """A user with edit permissions should not be able to request a website unpublish"""
+    website = WebsiteFactory.create()
+    editor = UserFactory.create()
+    editor.groups.add(website.editor_group)
+    drf_client.force_login(editor)
+    resp = drf_client.post(
+        reverse("websites_api-unpublish", kwargs={"name": website.name})
+    )
+    assert resp.status_code == 500
+    assert resp.data == {
+        "details": "You do not have permission to perform this action."
+    }
+
+
+def test_websites_endpoint_unpublish_error(mocker, drf_client):
+    """ An exception raised by the api publish call should be handled gracefully """
+    mocker.patch(
+        "websites.views.trigger_unpublished_removal",
+        side_effect=[HTTPError("oops")],
+    )
+    website = WebsiteFactory.create()
+    admin = UserFactory.create()
+    admin.groups.add(website.admin_group)
+    drf_client.force_login(admin)
+    resp = drf_client.post(
+        reverse("websites_api-unpublish", kwargs={"name": website.name})
+    )
+    assert resp.status_code == 500
+    assert resp.data == {"details": "oops"}
 
 
 def test_websites_endpoint_detail_update_denied(drf_client):
@@ -1147,4 +1221,47 @@ def test_mass_build_endpoint_list_bad_token(settings, drf_client, bad_token):
     if bad_token:
         drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
     resp = drf_client.get(f'{reverse("mass_build_api-list")}?version={VERSION_LIVE}')
+    assert resp.status_code == 403
+
+
+def test_unpublished_removal_endpoint_list(settings, drf_client):
+    """The WebsiteUnpublishViewSet endpoint should return the appropriate info for correctly filtered sites"""
+    WebsiteFactory.create(
+        draft_publish_date=None,
+        unpublished=False,
+        publish_date=now_in_utc(),
+    )
+    WebsiteFactory.create(
+        publish_date=now_in_utc(),
+        unpublished=True,
+        unpublished_status=PUBLISH_STATUS_SUCCEEDED,
+    )
+    live_unpublished_other = WebsiteFactory.create_batch(
+        2,
+        publish_date=now_in_utc(),
+        unpublished=True,
+        unpublished_status=choices(
+            [None, PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED]
+        )[0],
+    )
+    expected_sites = live_unpublished_other
+    settings.API_BEARER_TOKEN = "abc123"
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.get(f'{reverse("unpublished_removal_api-list")}')
+    assert resp.status_code == 200
+    site_dict = {site["name"]: site for site in resp.data["sites"]}
+    assert len(site_dict.keys()) == 2
+    for expected_site in expected_sites:
+        publish_site = site_dict.get(expected_site.name, None)
+        assert publish_site is not None
+        assert publish_site["short_id"] == expected_site.short_id
+
+
+@pytest.mark.parametrize("bad_token", ["wrongtoken", None])
+def test_unpublished_removal_endpoint_list_bad_token(settings, drf_client, bad_token):
+    """The WebsiteUnpublishViewSet endpoint should return a 403 if the token is invalid or missing"""
+    settings.API_BEARER_TOKEN = "abc123"
+    if bad_token:
+        drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
+    resp = drf_client.get(f'{reverse("unpublished_removal_api-list")}')
     assert resp.status_code == 403

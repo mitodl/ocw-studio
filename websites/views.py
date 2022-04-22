@@ -21,6 +21,7 @@ from rest_framework_extensions.mixins import NestedViewSetMixin
 from content_sync.api import (
     sync_github_website_starters,
     trigger_publish,
+    trigger_unpublished_removal,
     update_website_backend,
 )
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
@@ -35,6 +36,8 @@ from websites import constants
 from websites.api import get_valid_new_filename, update_website_status
 from websites.constants import (
     CONTENT_TYPE_METADATA,
+    PUBLISH_STATUS_NOT_STARTED,
+    PUBLISH_STATUS_SUCCEEDED,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -206,11 +209,33 @@ class WebsiteViewSet(
                 live_publish_status_updated_on=now_in_utc(),
                 latest_build_id_live=None,
                 live_last_published_by=request.user,
+                unpublished=False,
+                unpublished_status=None,
+                last_unpublished_by=None,
             )
             trigger_publish(website.name, VERSION_LIVE)
             return Response(status=200)
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error publishing %s", name)
+            return Response(status=500, data={"details": str(exc)})
+
+    @action(
+        detail=True, methods=["post"], permission_classes=[HasWebsitePublishPermission]
+    )
+    def unpublish(self, request, name=None):
+        """Unpublish the site and trigger the remove-unpublished-sites pipeline"""
+        try:
+            website = self.get_object()
+
+            Website.objects.filter(pk=website.pk).update(
+                unpublished=True,
+                unpublished_status=PUBLISH_STATUS_NOT_STARTED,
+                last_unpublished_by=request.user,
+            )
+            trigger_unpublished_removal()
+            return Response(status=200)
+        except Exception as exc:  # pylint: disable=broad-except
+            log.exception("Error unpublishing %s", name)
             return Response(status=500, data={"details": str(exc)})
 
     @action(detail=True, methods=["post"], permission_classes=[BearerTokenPermission])
@@ -239,9 +264,31 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
             "publish_date" if version == VERSION_LIVE else "draft_publish_date"
         )
 
-        # Get all sites, minus any sites that have never been successfully published
+        # Get all sites, minus any sites that have been unpublished or never successfully published
         sites = (
-            Website.objects.exclude(Q(**{f"{publish_date_field}__isnull": True}))
+            Website.objects.exclude(
+                Q(**{f"{publish_date_field}__isnull": True}) | Q(unpublished=True)
+            )
+            .prefetch_related("starter")
+            .order_by("name")
+        )
+        serializer = WebsitePublishSerializer(instance=sites, many=True)
+        return Response({"sites": serializer.data})
+
+
+class WebsiteUnpublishViewSet(viewsets.ViewSet):
+    """
+    Return a list of sites that need to be unpublished, with the info required by the remove-unpublished-sites pipeline
+    """
+
+    serializer_class = WebsitePublishSerializer
+    permission_classes = (BearerTokenPermission,)
+
+    def list(self, request):
+        """Return a list of websites that need to be processed by the remove-unpublished-sites pipeline"""
+        sites = (
+            Website.objects.filter(unpublished=True)
+            .exclude(unpublished_status=PUBLISH_STATUS_SUCCEEDED)
             .prefetch_related("starter")
             .order_by("name")
         )

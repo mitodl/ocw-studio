@@ -59,7 +59,7 @@ class WebsiteFactory(DjangoModelFactory):
                 "past_datetime", tzinfo=pytz.utc
             ),
         )
-        unpublished = factory.Trait(
+        not_published = factory.Trait(
             publish_date=None, first_published_to_production=None
         )
         future_publish = factory.Trait(

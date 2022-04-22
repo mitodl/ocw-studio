@@ -13,7 +13,7 @@ from magic import Magic
 from mitol.common.utils import max_or_none, now_in_utc
 from mitol.mail.api import get_message_sender
 
-from content_sync.constants import VERSION_DRAFT
+from content_sync.constants import VERSION_DRAFT, VERSION_UNPUBLISH
 from main.utils import NestableKeyTextTransform
 from users.models import User
 from videos.constants import (
@@ -312,7 +312,16 @@ def update_website_status(
     website: Website, version: str, status: str, update_time: datetime
 ):
     """Update some status fields in Website"""
-    if version == VERSION_DRAFT:
+    if version == VERSION_UNPUBLISH:
+        user = website.last_unpublished_by
+        update_kwargs = {
+            "unpublished_status": status,
+            "unpublished_status_updated_on": update_time,
+            "publish_status": None,
+            "live_publish_status_updated_on": None,
+            "latest_build_id_live": None,
+        }
+    elif version == VERSION_DRAFT:
         user = website.draft_last_published_by
         update_kwargs = {
             "draft_publish_status": status,
@@ -343,7 +352,7 @@ def update_website_status(
     Website.objects.filter(name=website.name).update(**update_kwargs)
     if status in (PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_ABORTED):
         log.error("A %s pipeline build failed for %s", version, website.name)
-    if status in PUBLISH_STATUSES_FINAL and user:
+    if status in PUBLISH_STATUSES_FINAL and user and version != VERSION_UNPUBLISH:
         mail_on_publish(
             website.name, version, status == PUBLISH_STATUS_SUCCEEDED, user.id
         )

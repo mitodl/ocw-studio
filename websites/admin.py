@@ -20,11 +20,8 @@ class WebsiteAdmin(TimestampedModelAdmin, GuardedModelAdmin):
     include_created_on_in_list = True
     formfield_overrides = {JSONField: {"widget": PrettyJSONWidget}}
     search_fields = ("title", "name", "uuid", "short_id")
-    list_display = (
-        "name",
-        "title",
-        "publish_date",
-    )
+    list_display = ("name", "title", "publish_date", "unpublished")
+    list_filter = ("unpublished", "starter__name")
     raw_id_fields = ("starter",)
     ordering = ("-created_on",)
 

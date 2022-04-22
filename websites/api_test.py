@@ -431,7 +431,7 @@ def test_update_website_status(mocker, status, notify, has_user, version):
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 def test_update_unpublished_website_status(status, version):
     """update_website_status should update an unpublished site appropriately"""
-    website = WebsiteFactory.create(unpublished=True, draft_publish_date=None)
+    website = WebsiteFactory.create(not_published=True, draft_publish_date=None)
     now = now_in_utc()
     update_website_status(website, version, status, now)
     website.refresh_from_db()

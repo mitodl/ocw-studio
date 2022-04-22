@@ -8,12 +8,16 @@ from django.core.exceptions import ImproperlyConfigured
 from requests import HTTPError
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from content_sync.pipelines.base import BaseMassBuildSitesPipeline
+from content_sync.pipelines.base import (
+    BaseMassBuildSitesPipeline,
+    BaseUnpublishedSiteRemovalPipeline,
+)
 from content_sync.pipelines.concourse import (
     ConcourseApi,
     MassBuildSitesPipeline,
     SitePipeline,
     ThemeAssetsPipeline,
+    UnpublishedSiteRemovalPipeline,
 )
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
@@ -436,6 +440,43 @@ def test_upsert_mass_publish_pipeline(
     assert version in config_str
     assert f"{hugo_projects_path}.git" in config_str
     assert api_url in config_str
+
+
+@pytest.mark.parametrize("pipeline_exists", [True, False])
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_unpublished_site_removal_pipeline(
+    settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
+):  # pylint:disable=too-many-locals,too-many-arguments
+    """The unpublished sites removal pipeline should have expected configuration"""
+    url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME}/config"
+
+    if not pipeline_exists:
+        mock_get = mocker.patch(
+            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            side_effect=HTTPError(),
+        )
+    else:
+        mock_get = mocker.patch(
+            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            return_value=({}, {"X-Concourse-Config-Version": "3"}),
+        )
+    mock_put_headers = mocker.patch(
+        "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
+    )
+    pipeline = UnpublishedSiteRemovalPipeline()
+    pipeline.upsert_pipeline()
+
+    mock_get.assert_any_call(url_path)
+    mock_put_headers.assert_any_call(
+        url_path,
+        data=mocker.ANY,
+        headers=({"X-Concourse-Config-Version": "3"} if pipeline_exists else None),
+    )
+    _, kwargs = mock_put_headers.call_args_list[0]
+    config_str = json.dumps(kwargs)
+    assert settings.SITE_BASE_URL in config_str
+    assert settings.AWS_PUBLISH_BUCKET_NAME in config_str
+    assert VERSION_LIVE in config_str
 
 
 @pytest.mark.parametrize(

@@ -15,6 +15,7 @@ from content_sync.factories import ContentSyncStateFactory
 from content_sync.pipelines.base import (
     BaseMassBuildSitesPipeline,
     BaseThemeAssetsPipeline,
+    BaseUnpublishedSiteRemovalPipeline,
 )
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
@@ -616,8 +617,8 @@ def test_check_incomplete_publish_build_statuses_500(settings, mocker, api_mock)
 
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 @pytest.mark.parametrize("backend", ["concourse", None])
-def test_trigger_mass_publish(settings, mocker, backend, version):
-    """trigger_mass_build should call if enabled"""
+def test_trigger_mass_build(settings, mocker, backend, version):
+    """trigger_mass_build should call trigger_pipeline_build if enabled"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
     mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
     mock_pipeline_unpause = mocker.patch(
@@ -628,6 +629,27 @@ def test_trigger_mass_publish(settings, mocker, backend, version):
     )
     pipeline_name = BaseMassBuildSitesPipeline.PIPELINE_NAME
     tasks.trigger_mass_build.delay(version)
+    if backend == "concourse":
+        mock_pipeline_unpause.assert_called_once_with(pipeline_name)
+        mock_pipeline_trigger.assert_called_once_with(pipeline_name)
+    else:
+        mock_pipeline_trigger.assert_not_called()
+        mock_pipeline_unpause.assert_not_called()
+
+
+@pytest.mark.parametrize("backend", ["concourse", None])
+def test_trigger_unpublished_removal(settings, mocker, backend):
+    """trigger_unpublished_removal should call trigger_pipeline_build if enabled"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
+    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
+    mock_pipeline_unpause = mocker.patch(
+        "content_sync.pipelines.concourse.BaseUnpublishedSiteRemovalPipeline.unpause_pipeline"
+    )
+    mock_pipeline_trigger = mocker.patch(
+        "content_sync.pipelines.concourse.BaseUnpublishedSiteRemovalPipeline.trigger_pipeline_build"
+    )
+    pipeline_name = BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME
+    tasks.trigger_unpublished_removal.delay()
     if backend == "concourse":
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
         mock_pipeline_trigger.assert_called_once_with(pipeline_name)

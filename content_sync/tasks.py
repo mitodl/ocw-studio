@@ -175,6 +175,16 @@ def trigger_mass_build(version: str) -> bool:
     return True
 
 
+@app.task(acks_late=True)
+def trigger_unpublished_removal() -> bool:
+    """Trigger the mass build pipeline for the specified version"""
+    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
+        pipeline = api.get_unpublished_removal_pipeline()
+        pipeline.unpause()
+        pipeline.trigger()
+    return True
+
+
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_task(10)
 def sync_website_content(website_name: str):

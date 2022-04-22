@@ -111,6 +111,23 @@ class Website(TimestampedModel):
         related_name="draft_publisher",
     )
 
+    # Unpublish fields
+    unpublished = models.BooleanField(default=False)
+    unpublished_status = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        choices=zip(constants.PUBLISH_STATUSES, constants.PUBLISH_STATUSES),
+    )
+    unpublished_status_updated_on = models.DateTimeField(null=True, blank=True)
+    last_unpublished_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="unpublisher",
+    )
+
     # Google Drive fields
     gdrive_folder = models.CharField(null=True, blank=True, max_length=64)
     sync_status = models.CharField(null=True, blank=True, max_length=12)
