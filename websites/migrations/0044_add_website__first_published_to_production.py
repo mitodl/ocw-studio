@@ -2,10 +2,9 @@
 
 from django.db import migrations, models
 
-from websites.models import Website
-
 
 def null_out_publish_date_forward(apps, schema_editor):
+    Website = apps.get_model("websites", "Website")
     websites = Website.objects.all()
     for website in websites:
         website.publish_date = None
