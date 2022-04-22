@@ -13,20 +13,6 @@ from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.models import WebsiteContent
 
 
-def write_to_csv(self, path: str, modified_content: List[Dict]):
-    """Write modified contents to csv."""
-
-    with open(path, "w", newline="") as csvfile:
-        if not modified_content:
-            return
-        fieldnames = modified_content[0].keys()
-        self.stdout.write(f"{fieldnames}")
-        writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)
-        writer.writeheader()
-        for content in modified_content:
-            writer.writerow(content)
-
-
 class Command(BaseCommand):
     """ Fix WebsiteContent files that are missing the Website name in their paths"""
 
@@ -122,6 +108,16 @@ class Command(BaseCommand):
                 "Backend sync finished, took {} seconds".format(total_seconds)
             )
 
-        self.stdout.write(
-            f"Done updating {bad_paths.count()} resources, with commit={commit_changes}"
-        )
+        self.stdout.write(f"Finished with commit={commit_changes}")
+
+    def write_to_csv(self, path: str, modified_content: List[Dict]):
+        """Write modified contents to csv."""
+
+        with open(path, "w", newline="") as csvfile:
+            if not modified_content:
+                return
+            fieldnames = modified_content[0].keys()
+            writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)
+            writer.writeheader()
+            for content in modified_content:
+                writer.writerow(content)
