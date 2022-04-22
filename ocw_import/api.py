@@ -5,6 +5,7 @@ import re
 import uuid
 from copy import deepcopy
 from typing import Dict
+from os import path
 
 import dateutil
 import yaml
@@ -74,17 +75,21 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_list=None):
     s3 = get_s3_resource()
     bucket = s3.Bucket(bucket_name)
     paginator = bucket.meta.client.get_paginator("list_objects")
-    counter = 0
-    for resp in paginator.paginate(Bucket=bucket.name, Prefix=f"{prefix}"):
-        for obj in resp["Contents"]:
-            key = obj["Key"]
-            if key.endswith("course_legacy.json") and (
-                not filter_list or key.split("/")[-3] in filter_list
-            ):
-                counter = +1
-                yield key
-            if filter_list and counter == len(filter_list):
-                return
+    if filter_list:
+        queryset = [
+            paginator.paginate(Bucket=bucket.name, Prefix=f"{x}") for x in filter_list
+        ]
+    else:
+        queryset = [paginator.paginate(Bucket=bucket.name, Prefix=f"{prefix}")]
+    
+    for list_object in queryset:
+        for resp in list_object:
+            for obj in resp["Contents"]:
+                key = obj["Key"]
+                if key.endswith("course_legacy.json") and (
+                    not filter_list or key.split("/")[-3] in filter_list
+                ):
+                    yield key
 
 
 def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many-locals
