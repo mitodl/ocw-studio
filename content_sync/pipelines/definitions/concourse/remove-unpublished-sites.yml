@@ -61,9 +61,9 @@ jobs:
                     set -x
                     echo "Blank name for $SITE_URL - skipping."
                     return 0
-                end
+                fi
                 aws s3 rm s3://((ocw-bucket))/$SITE_URL/ --recursive || return 1            
-                curl -X POST -H 'Content-Type: application/json' -H 'Fastly-Key: ((fastly_((version)).api_token))' -H 'Fastly-Soft-Purge: 1' https://api.fastly.com/service/((fastly.service_id))/purge/$NAME
+                curl -X POST -H 'Content-Type: application/json' -H 'Fastly-Key: ((fastly_((version)).api_token))' -H 'Fastly-Soft-Purge: 1' https://api.fastly.com/service/((fastly_((version)).service_id))/purge/$NAME
                 curl -X POST -H 'Content-Type: application/json' --data '{"webhook_key":"((open-webhook-key))","prefix":"'"$SITE_URL"/'","version":"((version))","unpublish": true}' ((open-discussions-url))/api/v0/ocw_next_webhook/
                 curl -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"unpublish","status":"succeeded"}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/
                 set -x

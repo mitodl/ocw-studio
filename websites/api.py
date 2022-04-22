@@ -317,7 +317,7 @@ def update_website_status(
         update_kwargs = {
             "unpublished_status": status,
             "unpublished_status_updated_on": update_time,
-            "publish_status": None,
+            "live_publish_status": None,
             "live_publish_status_updated_on": None,
             "latest_build_id_live": None,
         }
