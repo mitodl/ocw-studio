@@ -9,28 +9,46 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('websites', '0045_blank_publish_fields'),
+        ("websites", "0045_blank_publish_fields"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='website',
-            name='last_unpublished_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='unpublisher', to=settings.AUTH_USER_MODEL),
+            model_name="website",
+            name="last_unpublished_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="unpublisher",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='website',
-            name='unpublished',
+            model_name="website",
+            name="unpublished",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='website',
-            name='unpublished_status',
-            field=models.CharField(blank=True, choices=[('succeeded', 'succeeded'), ('pending', 'pending'), ('started', 'started'), ('errored', 'errored'), ('aborted', 'aborted'), ('not-started', 'not-started')], max_length=20, null=True),
+            model_name="website",
+            name="unpublished_status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("succeeded", "succeeded"),
+                    ("pending", "pending"),
+                    ("started", "started"),
+                    ("errored", "errored"),
+                    ("aborted", "aborted"),
+                    ("not-started", "not-started"),
+                ],
+                max_length=20,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='website',
-            name='unpublished_status_updated_on',
+            model_name="website",
+            name="unpublished_status_updated_on",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]
