@@ -9,16 +9,21 @@ import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
  * A hook for updating search parameters of the CURRENT location. The API is a
  * subset of React Router's v6 useSearchParams hook.
  */
-export const useSearchParams = (): [URLSearchParams, (newSearchParams: URLSearchParams) => void] => {
+export const useSearchParams = (): [
+  URLSearchParams,
+  (newSearchParams: URLSearchParams) => void
+] => {
   const history = useHistory()
   const { search } = history.location
-  const searchParams = useMemo(() =>  new URLSearchParams(search), [search])
-  const setSearchParams = useCallback((newParams: URLSearchParams) => {
-    history.replace({ search: newParams.toString() })
-  }, [history])
+  const searchParams = useMemo(() => new URLSearchParams(search), [search])
+  const setSearchParams = useCallback(
+    (newParams: URLSearchParams) => {
+      history.replace({ search: newParams.toString() })
+    },
+    [history]
+  )
   return [searchParams, setSearchParams]
 }
-
 
 interface URLParamFilterReturnValue<ParamType> {
   searchInput: string

@@ -177,7 +177,9 @@ export const makeWebsiteStarter = (type = "course"): WebsiteStarter => ({
   config: makeWebsiteStarterConfig()
 })
 
-export const makeWebsiteDetail = (): Website => ({
+export const makeWebsiteDetail = (
+  overrides: Partial<Website> = {}
+): Website => ({
   uuid:       casual.uuid,
   created_on: casual.moment.format(),
   updated_on: casual.moment.format(),
@@ -210,7 +212,8 @@ export const makeWebsiteDetail = (): Website => ({
   synced_on:                       null,
   sync_errors:                     null,
   is_admin:                        casual.boolean,
-  content_warnings:                []
+  content_warnings:                [],
+  ...overrides
 })
 
 export const makeWebsiteStatus = (website?: Website): WebsiteStatus => {

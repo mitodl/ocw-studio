@@ -1,14 +1,13 @@
-import React from 'react'
-import userEvent from '@testing-library/user-event'
-import { render, act } from '@testing-library/react'
-import { useHistory, Route } from 'react-router'
-import { History as RHistory } from 'history'
-import Router from './Router'
-import Prompt from './Prompt'
-import { assertNotNil } from '../../test_util'
+import React from "react"
+import userEvent from "@testing-library/user-event"
+import { render, act } from "@testing-library/react"
+import { useHistory, Route } from "react-router"
+import { History as RHistory } from "history"
+import Router from "./Router"
+import Prompt from "./Prompt"
+import { assertNotNil } from "../../test_util"
 
-
-describe('Router', () => {
+describe("Router", () => {
   /**
    * Setup tests for router.
    *
@@ -29,7 +28,7 @@ describe('Router', () => {
     const { getByText, unmount } = render(
       <div>
         <Router>
-          <Route path={'*'} component={TestComponent} />
+          <Route path={"*"} component={TestComponent} />
         </Router>
       </div>
     )
@@ -40,46 +39,44 @@ describe('Router', () => {
   }
 
   it('Does not navigate if user clicks "Cancel" on prompt', async () => {
-    const buttonText = 'Cancel'
+    const buttonText = "Cancel"
     const { browserHistory, getByText, unmount } = setup()
     const user = userEvent.setup()
 
-    expect(browserHistory.location.pathname).toBe('/')
-    act(() => browserHistory.push('/woof'))
+    expect(browserHistory.location.pathname).toBe("/")
+    act(() => browserHistory.push("/woof"))
 
-    expect(browserHistory.location.pathname).toBe('/')
+    expect(browserHistory.location.pathname).toBe("/")
 
-    await act(() => user.pointer([
-      {target: getByText(buttonText)},
-      {keys: '[MouseLeft]'}
-    ]))
+    await act(() =>
+      user.pointer([{ target: getByText(buttonText) }, { keys: "[MouseLeft]" }])
+    )
 
-    expect(browserHistory.location.pathname).toBe('/')
+    expect(browserHistory.location.pathname).toBe("/")
 
     unmount()
   })
 
   it('Does navigate if user clicks "Confirm" on prompt', async () => {
-    const buttonText = 'Confirm'
+    const buttonText = "Confirm"
     const { browserHistory, getByText, unmount } = setup()
     const user = userEvent.setup()
 
-    expect(browserHistory.location.pathname).toBe('/')
-    act(() => browserHistory.push('/woof'))
+    expect(browserHistory.location.pathname).toBe("/")
+    act(() => browserHistory.push("/woof"))
 
-    expect(browserHistory.location.pathname).toBe('/')
+    expect(browserHistory.location.pathname).toBe("/")
 
-    await act(() => user.pointer([
-      {target: getByText(buttonText)},
-      {keys: '[MouseLeft]'}
-    ]))
+    await act(() =>
+      user.pointer([{ target: getByText(buttonText) }, { keys: "[MouseLeft]" }])
+    )
 
-    expect(browserHistory.location.pathname).toBe('/woof')
+    expect(browserHistory.location.pathname).toBe("/woof")
 
     unmount()
 
     // Go back to '/' at test end since history is shared within this file.
-    act(() => browserHistory.push('/'))
-    expect(browserHistory.location.pathname).toBe('/')
+    act(() => browserHistory.push("/"))
+    expect(browserHistory.location.pathname).toBe("/")
   })
 })

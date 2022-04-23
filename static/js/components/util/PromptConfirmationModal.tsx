@@ -1,8 +1,15 @@
-import React, {useState, useCallback, useImperativeHandle, forwardRef} from 'react'
+import React, {
+  useState,
+  useCallback,
+  useImperativeHandle,
+  forwardRef
+} from "react"
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap"
-import { BrowserRouterProps } from 'react-router-dom'
+import { BrowserRouterProps } from "react-router-dom"
 
-export type GetUserConfirmation = NonNullable<BrowserRouterProps["getUserConfirmation"]>
+export type GetUserConfirmation = NonNullable<
+  BrowserRouterProps["getUserConfirmation"]
+>
 
 /**
  * This is a confirmation modal to be used with react-router's <Prompt />.
@@ -11,7 +18,10 @@ export type GetUserConfirmation = NonNullable<BrowserRouterProps["getUserConfirm
  *
  * To use this, consume the ref and pass it to a react-router router component.
  */
-const PromptConfirmationModal = (_props: unknown, ref: React.Ref<GetUserConfirmation>) => {
+const PromptConfirmationModal = (
+  _props: unknown,
+  ref: React.Ref<GetUserConfirmation>
+) => {
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState("This should never be seen.")
   const [onCancel, setOnCancel] = useState(() => () => setIsOpen(false))
@@ -30,12 +40,14 @@ const PromptConfirmationModal = (_props: unknown, ref: React.Ref<GetUserConfirma
   return (
     <Modal isOpen={isOpen}>
       <ModalHeader>Are you sure?</ModalHeader>
-      <ModalBody>
-        {message}
-      </ModalBody>
+      <ModalBody>{message}</ModalBody>
       <ModalFooter>
-        <button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
-        <button className='btn btn-outline-danger' onClick={onConfirm}>Confirm</button>
+        <button className="btn btn-secondary" onClick={onCancel}>
+          Cancel
+        </button>
+        <button className="btn btn-outline-danger" onClick={onConfirm}>
+          Confirm
+        </button>
       </ModalFooter>
     </Modal>
   )

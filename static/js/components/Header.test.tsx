@@ -1,182 +1,169 @@
-import { act } from "react-dom/test-utils"
-import sinon from "sinon"
-import useInterval from "@use-it/interval"
-
-jest.mock("@use-it/interval", () => ({
-  __esModule: true,
-  default:    jest.fn()
-}))
+import React from "react"
+import { act } from "@testing-library/react"
+import IntegrationTest from "../util/integration_test_helper_new"
+import * as dtl from "@testing-library/dom"
+import userEvent from "@testing-library/user-event"
+import {
+  assertInstanceOf,
+  absoluteUrl,
+  flushEventQueue,
+  mergeXProd
+} from "../test_util"
 
 import Header from "./Header"
-import IntegrationTestHelper, {
-  TestRenderer
-} from "../util/integration_test_helper"
 import { logoutUrl, siteApiDetailUrl } from "../lib/urls"
 import { makeWebsiteDetail } from "../util/factories/websites"
-import { Website } from "../types/websites"
 import { PublishStatus } from "../constants"
 
-describe("Header", () => {
-  let helper: IntegrationTestHelper, render: TestRenderer
+describe("Header without loaded website", () => {
+  it("includes the site logo and mit logo", () => {
+    const helper = new IntegrationTest()
 
-  beforeEach(() => {
-    helper = new IntegrationTestHelper()
-    render = helper.configureRenderer(Header)
+    const [result] = helper.render(<Header />)
+    const mitLogo = result.getByAltText("MIT")
+    const ocwLogo = result.getByAltText("OCW Studio")
+
+    assertInstanceOf(mitLogo, HTMLImageElement)
+    assertInstanceOf(ocwLogo, HTMLImageElement)
+
+    expect(mitLogo.src).toBe(absoluteUrl("/static/images/mit-logo.png"))
+    expect(ocwLogo.src).toBe(absoluteUrl("/static/images/ocw-studio-logo.png"))
   })
 
-  afterEach(() => {
-    helper.cleanup()
-    // @ts-ignore
-    useInterval.mockClear()
+  it("shows the user's name and logout link for logged in users", () => {
+    const helper = new IntegrationTest()
+    const [result] = helper.render(<Header />)
+    const links = result.container.querySelector("div.links")
+
+    assertInstanceOf(links, HTMLElement)
+
+    const username = dtl.getByText(links, "Jane Doe")
+    assertInstanceOf(username, HTMLSpanElement)
+
+    const logout = dtl.getByText(links, "Log out")
+    assertInstanceOf(logout, HTMLAnchorElement)
+    expect(logout.href).toBe(absoluteUrl(logoutUrl.toString()))
   })
 
-  it("includes the site logo and mit logo", async () => {
-    const { wrapper } = await render()
-    expect(
-      wrapper
-        .find("img")
-        .at(0)
-        .prop("src")
-    ).toBe("/static/images/mit-logo.png")
-    expect(
-      wrapper
-        .find("img")
-        .at(1)
-        .prop("src")
-    ).toBe("/static/images/ocw-studio-logo.png")
+  it("does not show username+logout for anonymous users", () => {
+    const helper = new IntegrationTest()
+    SETTINGS.user = null // SETTINGS is set in our global setup
+    const [result] = helper.render(<Header />)
+    const links = result.container.querySelector("div.links")
+    expect(links).toBe(null)
+  })
+})
+
+const makeWebsiteWithStatus = (status: PublishStatus, live: boolean) => {
+  const statusField = live ? "live_publish_status" : "draft_publish_status"
+  const statusDateField = live ?
+    "live_publish_status_updated_on" :
+    "draft_publish_status_updated_on"
+  return makeWebsiteDetail({
+    live_publish_status:             PublishStatus.Aborted,
+    draft_publish_status:            PublishStatus.Aborted,
+    live_publish_status_updated_on:  "2020-01-01",
+    draft_publish_status_updated_on: "2020-01-01",
+    [statusField]:                   status,
+    [statusDateField]:               "2021-01-01"
+  })
+}
+
+describe("Header with a loaded website", () => {
+  it("shows the website title", async () => {
+    const helper = new IntegrationTest()
+    const website = makeWebsiteDetail()
+    const [result] = helper.render(<Header website={website} />)
+
+    const h2 = result.getByText(website.title)
+
+    expect(h2.tagName).toBe("H2")
   })
 
-  it("shows the user's name and logout link for logged in users", async () => {
-    const { wrapper } = await render()
-    const links = wrapper.find(".links")
-    expect(links.exists()).toBe(true)
-    expect(links.find("span").text()).toBe("Jane Doe")
-    const logoutLink = links.find("a")
-    expect(logoutLink.text()).toBe("Log out")
-    expect(logoutLink.prop("href")).toBe(logoutUrl.toString())
-  })
+  const liveCases = [{ isLive: true }, { isLive: false }]
+  const statusCases = {
+    polling: [
+      { status: PublishStatus.NotStarted, expectedText: "Not started" },
+      { status: PublishStatus.Pending, expectedText: "In progress..." }
+    ],
+    noPolling: [
+      { status: PublishStatus.Success, expectedText: "Succeeded" },
+      { status: PublishStatus.Errored, expectedText: "Failed" },
+      { status: PublishStatus.Aborted, expectedText: "Aborted" }
+    ]
+  }
 
-  it("renders correctly for an anonymous user", async () => {
-    SETTINGS.user = null
-    const { wrapper } = await render()
-    expect(wrapper.find(".links").exists()).toBe(false)
-  })
+  it.each(mergeXProd(liveCases, statusCases.noPolling))(
+    "does not poll for publishing updates when status=$status",
+    async ({ status, isLive }) => {
+      jest.useFakeTimers()
 
-  describe("with loaded website", () => {
-    let website: Website
+      const helper = new IntegrationTest()
+      const website = makeWebsiteWithStatus(status, isLive)
 
-    beforeEach(() => {
-      website = makeWebsiteDetail()
+      helper.render(<Header website={website} />)
 
-      render = helper.configureRenderer(
-        Header,
-        {},
-        {
-          entities: {
-            websiteDetails: {
-              [website.name]: website
-            }
-          },
-          queries: {}
-        }
-      )
+      const pollingInterval = 5000
+      jest.advanceTimersByTime(pollingInterval + 100)
+      await flushEventQueue(true)
 
-      helper.mockGetRequest(
-        siteApiDetailUrl
-          .param({
-            name: website.name
-          })
-          .query({ only_status: true })
-          .toString(),
-        website
-      )
-    })
+      expect(helper.handleRequest).toHaveBeenCalledTimes(0)
+    }
+  )
 
-    it("shows the website title", async () => {
-      const { wrapper } = await render({ website: website })
-      expect(wrapper.find(".site-header h2").text()).toEqual(website.title)
-    })
+  it.each(mergeXProd(liveCases, statusCases.polling))(
+    "does poll for publishing updates when status=$status",
+    async ({ status, isLive }) => {
+      jest.useFakeTimers()
 
-    it("toggles the publish drawer", async () => {
-      const { wrapper } = await render({ website: website })
-      expect(wrapper.find("PublishDrawer").prop("visibility")).toBeFalsy()
-      act(() => {
-        // @ts-ignore
-        wrapper.find("PublishDrawer").prop("toggleVisibility")()
-      })
-      wrapper.update()
-      expect(wrapper.find("PublishDrawer").prop("visibility")).toBeTruthy()
-      act(() => {
-        // @ts-ignore
-        wrapper.find("PublishDrawer").prop("toggleVisibility")()
-      })
-      wrapper.update()
-      expect(wrapper.find("PublishDrawer").prop("visibility")).toBeFalsy()
-    })
+      const helper = new IntegrationTest()
 
-    //
-    ;[
-      [PublishStatus.Success, false],
-      [PublishStatus.Errored, false],
-      [PublishStatus.Aborted, false],
-      [PublishStatus.Pending, true],
-      [PublishStatus.NotStarted, true]
-    ].forEach(([status, shouldUpdate]) => {
-      [
-        ["draft_publish_status", "draft_publish_status_updated_on"],
-        ["live_publish_status", "live_publish_status_updated_on"]
-      ].forEach(([statusField, statusDateField]) => {
-        describe("publish status", () => {
-          beforeEach(() => {
-            website = {
-              ...website,
-              live_publish_status:             PublishStatus.Aborted,
-              draft_publish_status:            PublishStatus.Aborted,
-              live_publish_status_updated_on:  "2020-01-01",
-              draft_publish_status_updated_on: "2020-01-01",
-              [statusField]:                   status,
-              [statusDateField]:               "2021-01-01"
-            }
-          })
+      const website = makeWebsiteWithStatus(status, isLive)
+      const statusUrl = siteApiDetailUrl
+        .param({ name: website.name })
+        .query({ only_status: true })
+        .toString()
+      helper.mockGetRequest(statusUrl, website)
 
-          it(`${
-            shouldUpdate ? "polls" : "doesn't poll"
-          } the website status when ${statusField}=${status}`, async () => {
-            await render({ website })
-            // @ts-ignore
-            expect(useInterval).toBeCalledTimes(1)
-            // @ts-ignore
-            await useInterval.mock.calls[0][0]()
+      helper.render(<Header website={website} />)
 
-            const statusUrl = siteApiDetailUrl
-              .param({ name: website.name })
-              .query({ only_status: true })
-              .toString()
-            // @ts-ignore
-            if (shouldUpdate) {
-              sinon.assert.calledOnceWithExactly(
-                helper.handleRequestStub,
-                statusUrl,
-                "GET",
-                {
-                  body:        undefined,
-                  headers:     undefined,
-                  credentials: undefined
-                }
-              )
-            } else {
-              sinon.assert.notCalled(helper.handleRequestStub)
-            }
-          })
+      const pollingInterval = 5000
+      jest.advanceTimersByTime(pollingInterval + 100)
+      await flushEventQueue(true)
 
-          it("shows the right publish status", async () => {
-            const { wrapper } = await render({ website })
-            expect(wrapper.find("PublishStatusIndicator").prop("status")).toBe(
-              status
-            )
-          })
-        })
-      })
-    })
+      expect(helper.handleRequest).toHaveBeenCalledTimes(1)
+      expect(helper.handleRequest).toHaveBeenCalledWith(statusUrl, "GET", {})
+    }
+  )
+
+  it.each(
+    mergeXProd(liveCases, [...statusCases.noPolling, ...statusCases.polling])
+  )(
+    'shows text "$expectedText" when status=$status',
+    ({ status, expectedText, isLive }) => {
+      const helper = new IntegrationTest()
+      const website = makeWebsiteWithStatus(status, isLive)
+
+      const [result] = helper.render(<Header website={website} />)
+      expect(result.getByText(expectedText)).toBeDefined()
+    }
+  )
+
+  test("clicking publish opens the publish drawer", async () => {
+    const helper = new IntegrationTest()
+    const website = makeWebsiteDetail()
+    const [result, { history }] = helper.render(<Header website={website} />)
+    await flushEventQueue()
+    const publishButton = result.getByTitle("Publish")
+    assertInstanceOf(publishButton, HTMLButtonElement)
+    const user = userEvent.setup()
+    await act(() =>
+      user.pointer([{ target: publishButton }, { keys: "[MouseLeft]" }])
+    )
+
+    result.getByText("Publish your site")
+    expect(history.location.search).toBe("?publish=")
+
+    result.unmount()
   })
 })

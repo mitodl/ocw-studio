@@ -2,7 +2,7 @@ import React from "react"
 import { Provider } from "react-redux"
 import { Provider as ReduxQueryProvider } from "redux-query-react"
 import { Store } from "./store/configureStore"
-import Router from './components/util/Router'
+import Router from "./components/util/Router"
 
 import App from "./pages/App"
 import { getQueries } from "./lib/redux_query"

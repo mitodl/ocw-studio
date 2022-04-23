@@ -1,5 +1,11 @@
 import React, { useEffect } from "react"
 import { Prompt as ReactRouterPrompt, PromptProps } from "react-router"
+import { Location, Action } from "history"
+
+export type MessageFunc = (
+  location: Location,
+  action: Action
+) => boolean | string
 
 interface Props extends PromptProps {
   onBeforeUnload: boolean
@@ -19,7 +25,7 @@ export default function Prompt(props: Props) {
        * Most browsers won't show this, but Chrome, at least, requires some
        * returnValue to be set.
        */
-      event.returnValue = ''
+      event.returnValue = ""
       event.preventDefault()
     }
     window.addEventListener("beforeunload", listener, { capture: true })

@@ -25,7 +25,7 @@ import {
 import { createModalState } from "../types/modal_state"
 import SiteContentEditor from "./SiteContentEditor"
 import ConfirmDiscardChanges from "./util/ConfirmDiscardChanges"
-import { nextTick } from "../test_util"
+import { flushEventQueue, wait } from "../test_util"
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
@@ -259,7 +259,7 @@ describe("SingletonsContentListing", () => {
 
     window.mockConfirm.mockReturnValue(true)
     helper.browserHistory.push("/pages")
-    await nextTick()
+    await flushEventQueue()
     expect(
       wrapper
         .update()
