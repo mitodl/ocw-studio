@@ -35,54 +35,144 @@ jobs:
         - -exc
         - |
           wget -O unpublishable_sites/sites.json --header="Authorization: Bearer ((api-token))" "((ocw-studio-url))/api/unpublish/"
-  - task: get-repo-build-course-publish-course
-    attempts: 3
-    timeout: 10m
-    params:
-      OCW_STUDIO_BASE_URL: ((ocw-studio-url))
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: {repository: ardiea/ocw-course-publisher, tag: latest}
-      inputs:
-        - name: unpublishable_sites
-      run:
-        path: bash
-        args:
+  - load_var: unpublished
+    file: unpublishable_sites/sites.json
+    format: json
+    reveal: true
+  - across:
+    - var: site
+      values: ((.:unpublished.sites))
+      max_in_flight: 5
+    do:  # takes a list of steps
+    - task: search-index-removal
+      timeout: 1m
+      attempts: 3
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: curlimages/curl}
+        run:
+          path: curl
+          args:
+            - -f
+            - -X
+            - POST
+            - -H
+            - 'Content-Type: application/json'
+            - --data
+            - '{"webhook_key":"((open-webhook-key))","prefix":"((.:site.site_url))/","version":"((version))", "unpublished": true}'
+            - ((open-discussions-url))/api/v0/ocw_next_webhook/
+      on_failure:
+        try:
+          task: webhook
+          timeout: 1m
+          attempts: 3
+          config:
+            << : *webhook-config
+            run:
+              path: curl
+              args:
+                - -f
+                - -X
+                - POST
+                - -H
+                - 'Content-Type: application/json'
+                - -H
+                - 'Authorization: Bearer ((api-token))'
+                - --data
+                - '{"version":"((version))","status":"errored", "unpublished": true}'
+                -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
+    - task: empty-s3-bucket
+      timeout: 10m
+      attempts: 3
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: amazon/aws-cli, tag: latest}
+        run:
+          path: sh
+          args:
           - -exc
           - |
-            process_site()
-            {
-                NAME=$(echo $1 | jq -c '.name' | tr -d '"')
-                SITE_URL=$(echo $1 | jq -c '.site_url' | tr -d '"')
-                if [ -z "$NAME" ]
-                then
-                    set -x
-                    echo "Blank name for $SITE_URL - skipping."
-                    return 0
-                fi
-                aws s3 rm s3://((ocw-bucket))/$SITE_URL/ --recursive || return 1            
-                curl -X POST -H 'Content-Type: application/json' -H 'Fastly-Key: ((fastly_((version)).api_token))' -H 'Fastly-Soft-Purge: 1' https://api.fastly.com/service/((fastly_((version)).service_id))/purge/$NAME
-                curl -X POST -H 'Content-Type: application/json' --data '{"webhook_key":"((open-webhook-key))","prefix":"'"$SITE_URL"/'","version":"((version))", "unpublished": true}' ((open-discussions-url))/api/v0/ocw_next_webhook/
-                curl -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"((version))","status":"succeeded", "unpublished": true}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/
-                set -x
-                echo "Unpublished $NAME"
-                return 0
-            }
-            fail_site()
-            {
-                NAME=$(echo $1 | jq -c '.name' | tr -d '"')
-                curl -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"((version))","status":"errored", "unpublished": true}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/
-                set -x
-                echo "Failed to unpublish $NAME"
-            }
-            set +x
-            jq -c '.sites[]' unpublishable_sites/sites.json | while read i; do
-                 set +x
-                 result=$(process_site $i) || result=1
-                 if [[ $result == 1 ]]
-                 then
-                   fail_site $i
-                 fi
-            done
+            aws s3 rm s3://((ocw-bucket))/((.:site.site_url))/ --recursive
+      on_failure:
+        try:
+          task: webhook
+          timeout: 1m
+          attempts: 3
+          config:
+            << : *webhook-config
+            run:
+              path: curl
+              args:
+                - -f
+                - -X
+                - POST
+                - -H
+                - 'Content-Type: application/json'
+                - -H
+                - 'Authorization: Bearer ((api-token))'
+                - --data
+                - '{"version":"((version))","status":"errored", "unpublished": true}'
+                -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
+    - task: clear-cdn-cache
+      timeout: 1m
+      attempts: 3
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: curlimages/curl}
+        run:
+          path: curl
+          args:
+            - -f
+            - -X
+            - POST
+            - -H
+            - 'Fastly-Key: ((fastly_((version)).api_token))'
+            - -H
+            - 'Fastly-Soft-Purge: 1'
+            - https://api.fastly.com/service/((fastly_((version)).service_id))/purge/((.:site.name))
+      on_success:
+        try:
+          task: webhook
+          timeout: 1m
+          attempts: 3
+          config:
+            << : *webhook-config
+            run:
+              path: curl
+              args:
+                - -f
+                - -X
+                - POST
+                - -H
+                - 'Content-Type: application/json'
+                - -H
+                - 'Authorization: Bearer ((api-token))'
+                - --data
+                - '{"version":"((version))","status":"succeeded", "unpublished": true}'
+                -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
+      on_failure:
+        try:
+          task: webhook
+          timeout: 1m
+          attempts: 3
+          config:
+            << : *webhook-config
+            run:
+              path: curl
+              args:
+                - -f
+                - -X
+                - POST
+                - -H
+                - 'Content-Type: application/json'
+                - -H
+                - 'Authorization: Bearer ((api-token))'
+                - --data
+                - '{"version":"((version))","status":"errored", "unpublished": true}'
+                -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
