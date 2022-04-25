@@ -171,7 +171,7 @@ def test_trigger_unpublished_removal(settings, mocker):
     """Verify trigger_unpublished_removal calls the appropriate task"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
     mock_task = mocker.patch("content_sync.tasks.trigger_unpublished_removal")
-    api.trigger_unpublished_removal()
+    api.trigger_unpublished_removal(WebsiteFactory.build())
     mock_task.delay.assert_called_once()
 
 
