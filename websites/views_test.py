@@ -1150,19 +1150,29 @@ def test_websites_content_create_empty(drf_client, global_admin_user):
     "status", [constants.PUBLISH_STATUS_STARTED, constants.PUBLISH_STATUS_ERRORED]
 )
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
+@pytest.mark.parametrize("unpublished", [True, False])
 def test_websites_endpoint_pipeline_status(
-    settings, mocker, drf_client, permission_groups, version, status
+    settings, mocker, drf_client, permission_groups, version, status, unpublished
 ):
     """The pipeline_complete endpoint should send notifications to site owner/admins"""
     mock_update_status = mocker.patch("websites.views.update_website_status")
     settings.API_BEARER_TOKEN = "abc123"
     website = permission_groups.websites[0]
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    data = {"version": version, "status": f"{status}"}
+    if unpublished:
+        data["unpublished"] = True
     resp = drf_client.post(
         reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
-        data={"version": version, "status": f"{status}"},
+        data=data,
     )
-    mock_update_status.assert_called_once_with(website, version, status, mocker.ANY)
+    mock_update_status.assert_called_once_with(
+        website,
+        version,
+        status,
+        mocker.ANY,
+        unpublished=(unpublished and version == VERSION_LIVE),
+    )
     assert resp.status_code == 200
 
 

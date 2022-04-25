@@ -5,7 +5,7 @@ import factory
 import pytest
 from mitol.common.utils import now_in_utc
 
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, VERSION_UNPUBLISH
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from users.factories import UserFactory
 from videos.constants import YT_THUMBNAIL_IMG
 from websites.api import (
@@ -428,7 +428,7 @@ def test_update_website_unpublished_status(mocker, status):
     user = UserFactory.create()
     website = WebsiteFactory.create(last_unpublished_by=user, unpublished=True)
     now = now_in_utc()
-    update_website_status(website, VERSION_UNPUBLISH, status, now)
+    update_website_status(website, VERSION_LIVE, status, now, unpublished=True)
     website.refresh_from_db()
     assert website.live_publish_status is None
     assert website.live_publish_status_updated_on is None

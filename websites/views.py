@@ -245,7 +245,10 @@ class WebsiteViewSet(
         data = request.data
         version = data["version"]
         publish_status = data.get("status")
-        update_website_status(website, version, publish_status, now_in_utc())
+        unpublished = data.get("unpublished", False) and version == VERSION_LIVE
+        update_website_status(
+            website, version, publish_status, now_in_utc(), unpublished=unpublished
+        )
         return Response(status=200)
 
 
