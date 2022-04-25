@@ -20,10 +20,10 @@ from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from websites import constants
 from websites.constants import (
+    CONTENT_TYPE_METADATA,
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
-    CONTENT_TYPE_METADATA,
 )
 from websites.factories import (
     WebsiteContentFactory,
