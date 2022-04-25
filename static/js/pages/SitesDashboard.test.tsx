@@ -9,7 +9,7 @@ import {
 } from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer
-} from "../util/integration_test_helper"
+} from "../util/integration_test_helper_old"
 
 import { Website } from "../types/websites"
 import PaginationControls from "../components/PaginationControls"

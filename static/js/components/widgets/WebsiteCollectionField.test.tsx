@@ -1,6 +1,6 @@
 import IntegrationTestHelper, {
   TestRenderer
-} from "../../util/integration_test_helper"
+} from "../../util/integration_test_helper_old"
 import WebsiteCollectionField from "./WebsiteCollectionField"
 
 import {

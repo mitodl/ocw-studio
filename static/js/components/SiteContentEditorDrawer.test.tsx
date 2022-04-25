@@ -7,7 +7,7 @@ import WebsiteContext from "../context/Website"
 import { siteApiContentDetailUrl } from "../lib/urls"
 import IntegrationTestHelper, {
   TestRenderer
-} from "../util/integration_test_helper"
+} from "../util/integration_test_helper_old"
 import {
   makeRepeatableConfigItem,
   makeWebsiteContentDetail,

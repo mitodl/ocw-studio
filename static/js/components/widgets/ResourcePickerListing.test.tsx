@@ -11,7 +11,7 @@ import {
 } from "../../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer
-} from "../../util/integration_test_helper"
+} from "../../util/integration_test_helper_old"
 import { useWebsite } from "../../context/Website"
 import ResourcePickerListing from "./ResourcePickerListing"
 import { ResourceType } from "../../constants"

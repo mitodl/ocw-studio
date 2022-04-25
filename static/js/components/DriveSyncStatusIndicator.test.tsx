@@ -3,7 +3,7 @@ import moment from "moment"
 
 import IntegrationTestHelper, {
   TestRenderer
-} from "../util/integration_test_helper"
+} from "../util/integration_test_helper_old"
 import DriveSyncStatusIndicator from "./DriveSyncStatusIndicator"
 import { GoogleDriveSyncStatuses } from "../constants"
 import { makeWebsiteDetail } from "../util/factories/websites"

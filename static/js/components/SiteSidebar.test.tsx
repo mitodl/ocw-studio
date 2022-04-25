@@ -8,7 +8,7 @@ import { times } from "lodash"
 import { siteCollaboratorsUrl, siteContentListingUrl } from "../lib/urls"
 import IntegrationTestHelper, {
   TestRenderer
-} from "../util/integration_test_helper"
+} from "../util/integration_test_helper_old"
 
 import { Website } from "../types/websites"
 

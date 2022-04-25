@@ -23,7 +23,7 @@ import {
 } from "../query-configs/websites"
 import IntegrationTestHelper, {
   TestRenderer
-} from "../util/integration_test_helper"
+} from "../util/integration_test_helper_old"
 import {
   makeRepeatableConfigItem,
   makeWebsiteContentListItem,

@@ -9,7 +9,7 @@ import { Option } from "./SelectField"
 
 import IntegrationTestHelper, {
   TestRenderer
-} from "../../util/integration_test_helper"
+} from "../../util/integration_test_helper_old"
 
 import {
   makeWebsiteContentDetail,

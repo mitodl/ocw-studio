@@ -5,7 +5,7 @@ import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
 import { ROLE_EDITOR } from "../constants"
 import IntegrationTestHelper, {
   TestRenderer
-} from "../util/integration_test_helper"
+} from "../util/integration_test_helper_old"
 import {
   makeWebsiteDetail,
   makeWebsiteCollaborator

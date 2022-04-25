@@ -4,7 +4,7 @@ import casual from "casual"
 
 import IntegrationTestHelper, {
   TestRenderer
-} from "../../util/integration_test_helper"
+} from "../../util/integration_test_helper_old"
 import SortableSelect, { SortableItem } from "./SortableSelect"
 import { Option } from "./SelectField"
 import { zip } from "ramda"

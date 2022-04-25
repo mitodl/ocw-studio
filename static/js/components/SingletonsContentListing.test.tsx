@@ -8,7 +8,7 @@ import { siteApiContentDetailUrl } from "../lib/urls"
 import * as siteContentFuncs from "../lib/site_content"
 import IntegrationTestHelper, {
   TestRenderer
-} from "../util/integration_test_helper"
+} from "../util/integration_test_helper_old"
 import {
   makeSingletonConfigItem,
   makeSingletonsConfigItem,

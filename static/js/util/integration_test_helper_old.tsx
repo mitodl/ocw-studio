@@ -17,6 +17,9 @@ import { getQueries } from "../lib/redux_query"
 
 import * as networkInterfaceFuncs from "../store/network_interface"
 
+/**
+ * Avoid using this for new tests. Prefer `IntegrationTestHelper.tsx` instead.
+ */
 export default class IntegrationTestHelper {
   browserHistory: MemoryHistory = createMemoryHistory({
     /**

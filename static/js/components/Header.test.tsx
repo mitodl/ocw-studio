@@ -1,6 +1,6 @@
 import React from "react"
 import { act } from "@testing-library/react"
-import IntegrationTest from "../util/integration_test_helper_new"
+import IntegrationTestHelper from "../util/IntegrationTestHelper"
 import * as dtl from "@testing-library/dom"
 import userEvent from "@testing-library/user-event"
 import {
@@ -17,7 +17,7 @@ import { PublishStatus } from "../constants"
 
 describe("Header without loaded website", () => {
   it("includes the site logo and mit logo", () => {
-    const helper = new IntegrationTest()
+    const helper = new IntegrationTestHelper()
 
     const [result] = helper.render(<Header />)
     const mitLogo = result.getByAltText("MIT")
@@ -31,7 +31,7 @@ describe("Header without loaded website", () => {
   })
 
   it("shows the user's name and logout link for logged in users", () => {
-    const helper = new IntegrationTest()
+    const helper = new IntegrationTestHelper()
     const [result] = helper.render(<Header />)
     const links = result.container.querySelector("div.links")
 
@@ -46,7 +46,7 @@ describe("Header without loaded website", () => {
   })
 
   it("does not show username+logout for anonymous users", () => {
-    const helper = new IntegrationTest()
+    const helper = new IntegrationTestHelper()
     SETTINGS.user = null // SETTINGS is set in our global setup
     const [result] = helper.render(<Header />)
     const links = result.container.querySelector("div.links")
@@ -71,7 +71,7 @@ const makeWebsiteWithStatus = (status: PublishStatus, live: boolean) => {
 
 describe("Header with a loaded website", () => {
   it("shows the website title", async () => {
-    const helper = new IntegrationTest()
+    const helper = new IntegrationTestHelper()
     const website = makeWebsiteDetail()
     const [result] = helper.render(<Header website={website} />)
 
@@ -98,7 +98,7 @@ describe("Header with a loaded website", () => {
     async ({ status, isLive }) => {
       jest.useFakeTimers()
 
-      const helper = new IntegrationTest()
+      const helper = new IntegrationTestHelper()
       const website = makeWebsiteWithStatus(status, isLive)
 
       helper.render(<Header website={website} />)
@@ -116,7 +116,7 @@ describe("Header with a loaded website", () => {
     async ({ status, isLive }) => {
       jest.useFakeTimers()
 
-      const helper = new IntegrationTest()
+      const helper = new IntegrationTestHelper()
 
       const website = makeWebsiteWithStatus(status, isLive)
       const statusUrl = siteApiDetailUrl
@@ -141,7 +141,7 @@ describe("Header with a loaded website", () => {
   )(
     'shows text "$expectedText" when status=$status',
     ({ status, expectedText, isLive }) => {
-      const helper = new IntegrationTest()
+      const helper = new IntegrationTestHelper()
       const website = makeWebsiteWithStatus(status, isLive)
 
       const [result] = helper.render(<Header website={website} />)
@@ -150,7 +150,7 @@ describe("Header with a loaded website", () => {
   )
 
   test("clicking publish opens the publish drawer", async () => {
-    const helper = new IntegrationTest()
+    const helper = new IntegrationTestHelper()
     const website = makeWebsiteDetail()
     const [result, { history }] = helper.render(<Header website={website} />)
     await flushEventQueue()

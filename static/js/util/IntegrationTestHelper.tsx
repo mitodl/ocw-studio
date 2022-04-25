@@ -34,7 +34,16 @@ type HandleRequest = (
   options?: NetworkOptions
 ) => Partial<Reponse>
 
-export default class IntegrationTest {
+/**
+ * A helper for writing integration tests with @testing-library/react. This
+ * class assists in
+ *  - rendering the component under test in an app-like environment (e.g., with
+ *  a redux store and router)
+ *  - provides utilities for mocking API calls
+ *
+ * See [`Header.test.tsx`](../components/Header.test.tsx) for example usage.
+ */
+export default class IntegrationTestHelper {
   handleRequest = jest.fn(((url, method, options) => {
     const withOptions = `with options ${JSON.stringify(options)}`
     console.error(

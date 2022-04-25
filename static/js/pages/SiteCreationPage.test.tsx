@@ -4,7 +4,7 @@ import { act } from "react-dom/test-utils"
 import SiteCreationPage from "./SiteCreationPage"
 import IntegrationTestHelper, {
   TestRenderer
-} from "../util/integration_test_helper"
+} from "../util/integration_test_helper_old"
 import {
   makeWebsiteDetail,
   makeWebsiteStarter
