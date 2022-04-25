@@ -212,7 +212,7 @@ describe("SingletonsContentListing", () => {
     { dirty: true, confirmCalls: 1 },
     { dirty: false, confirmCalls: 0 }
   ])(
-    "prompts for confirmation iff discarding dirty state [dirty=$dirty]",
+    "prompts for confirmation on pathname change iff discarding dirty state [dirty=$dirty]",
     async ({ dirty, confirmCalls }) => {
       const { wrapper } = await render()
       const editor = wrapper.find(SiteContentEditor).first()
@@ -222,6 +222,29 @@ describe("SingletonsContentListing", () => {
       expect(window.mockConfirm).toHaveBeenCalledTimes(0)
       helper.browserHistory.push("/elsewhere")
       expect(window.mockConfirm).toHaveBeenCalledTimes(confirmCalls)
+      if (confirmCalls > 0) {
+        expect(window.mockConfirm.mock.calls[0][0]).toMatch(/Are you sure you want to discard your changes\?/)
+      }
+    }
+  )
+
+  it.each([
+    { dirty: true, confirmCalls: 1 },
+    { dirty: false, confirmCalls: 0 }
+  ])(
+    "prompts for confirmation on publish iff state is dirty [dirty=$dirty]",
+    async ({ dirty, confirmCalls }) => {
+      const { wrapper } = await render()
+      const editor = wrapper.find(SiteContentEditor).first()
+
+      act(() => editor.prop("setDirty")(dirty))
+
+      expect(window.mockConfirm).toHaveBeenCalledTimes(0)
+      helper.browserHistory.push("?publish=")
+      expect(window.mockConfirm).toHaveBeenCalledTimes(confirmCalls)
+      if (confirmCalls > 0) {
+        expect(window.mockConfirm.mock.calls[0][0]).toMatch(/Are you sure you want to publish\?/)
+      }
     }
   )
 
