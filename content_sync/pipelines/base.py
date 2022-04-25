@@ -42,6 +42,13 @@ class BasePipeline(abc.ABC):
         """
         ...
 
+    @abc.abstractmethod
+    def pause_pipeline(self, pipeline_name: str):
+        """
+        Called to pause a website pipeline.
+        """
+        ...
+
 
 class BaseSitePipeline(BasePipeline):
     """ Base class for site-specific publishing """

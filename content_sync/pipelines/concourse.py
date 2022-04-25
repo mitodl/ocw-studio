@@ -176,6 +176,10 @@ class ConcoursePipeline(BasePipeline):
         """Make URL for fetching job info"""
         return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}{self.instance_vars}"
 
+    def _make_pipeline_pause_url(self, pipeline_name: str):
+        """Make URL for pausing a pipeline"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/pause{self.instance_vars}"
+
     def _make_pipeline_unpause_url(self, pipeline_name: str):
         """Make URL for unpausing a pipeline"""
         return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/unpause{self.instance_vars}"
@@ -185,6 +189,10 @@ class ConcoursePipeline(BasePipeline):
         pipeline_info = self.api.get(self._make_pipeline_config_url(pipeline_name))
         job_name = pipeline_info["config"]["jobs"][0]["name"]
         return self.api.post(self._make_builds_url(pipeline_name, job_name))["id"]
+
+    def pause_pipeline(self, pipeline_name: str):
+        """Pause the pipeline"""
+        self.api.put(self._make_pipeline_pause_url(pipeline_name))
 
     def unpause_pipeline(self, pipeline_name: str):
         """Unpause the pipeline"""

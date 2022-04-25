@@ -232,7 +232,7 @@ class WebsiteViewSet(
                 unpublished_status=PUBLISH_STATUS_NOT_STARTED,
                 last_unpublished_by=request.user,
             )
-            trigger_unpublished_removal()
+            trigger_unpublished_removal(website)
             return Response(status=200)
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error unpublishing %s", name)

@@ -176,12 +176,14 @@ def trigger_mass_build(version: str) -> bool:
 
 
 @app.task(acks_late=True)
-def trigger_unpublished_removal() -> bool:
+def trigger_unpublished_removal(website_name: str) -> bool:
     """Trigger the mass build pipeline for the specified version"""
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        pipeline = api.get_unpublished_removal_pipeline()
-        pipeline.unpause()
-        pipeline.trigger()
+        site_pipeline = api.get_sync_pipeline(Website.objects.get(name=website_name))
+        site_pipeline.pause_pipeline(VERSION_LIVE)
+        removal_pipeline = api.get_unpublished_removal_pipeline()
+        removal_pipeline.unpause()
+        removal_pipeline.trigger()
     return True
 
 

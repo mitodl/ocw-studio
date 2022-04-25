@@ -102,9 +102,9 @@ def trigger_publish(website_name: str, version: str):
 
 
 @is_sync_enabled
-def trigger_unpublished_removal():
+def trigger_unpublished_removal(website: Website):
     """Remove unpublished sites on the backend"""
-    tasks.trigger_unpublished_removal.delay()
+    tasks.trigger_unpublished_removal.delay(website.name)
 
 
 def sync_github_website_starters(

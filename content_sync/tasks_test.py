@@ -645,12 +645,17 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
     mock_pipeline_unpause = mocker.patch(
         "content_sync.pipelines.concourse.BaseUnpublishedSiteRemovalPipeline.unpause_pipeline"
     )
+    mock_pipeline_pause = mocker.patch(
+        "content_sync.pipelines.concourse.SitePipeline.pause_pipeline"
+    )
     mock_pipeline_trigger = mocker.patch(
         "content_sync.pipelines.concourse.BaseUnpublishedSiteRemovalPipeline.trigger_pipeline_build"
     )
     pipeline_name = BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME
-    tasks.trigger_unpublished_removal.delay()
+    site = WebsiteFactory.create()
+    tasks.trigger_unpublished_removal.delay(site.name)
     if backend == "concourse":
+        mock_pipeline_pause.assert_called_once_with(VERSION_LIVE)
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
         mock_pipeline_trigger.assert_called_once_with(pipeline_name)
     else:

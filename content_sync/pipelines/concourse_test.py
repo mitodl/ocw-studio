@@ -311,8 +311,9 @@ def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
 
 
 @pytest.mark.parametrize("version", ["live", "draft"])
-def test_unpause_pipeline(settings, mocker, mock_auth, version):
-    """unpause_pipeline should make the expected put request"""
+@pytest.mark.parametrize("action", ["pause", "unpause"])
+def test_pause_unpause_pipeline(settings, mocker, mock_auth, version, action):
+    """pause_pipeline and unpause_pipeline should make the expected put requests"""
     settings.CONCOURSE_TEAM = "myteam"
     mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
     website = WebsiteFactory.create(
@@ -321,14 +322,14 @@ def test_unpause_pipeline(settings, mocker, mock_auth, version):
         )
     )
     pipeline = SitePipeline(website)
-    pipeline.unpause_pipeline(version)
+    getattr(pipeline, f"{action}_pipeline")(version)
     mock_put.assert_any_call(
-        f"/api/v1/teams/myteam/pipelines/{version}/unpause{pipeline.instance_vars}"
+        f"/api/v1/teams/myteam/pipelines/{version}/{action}{pipeline.instance_vars}"
     )
     pipeline = ThemeAssetsPipeline()
-    pipeline.unpause_pipeline(ThemeAssetsPipeline.PIPELINE_NAME)
+    getattr(pipeline, f"{action}_pipeline")(ThemeAssetsPipeline.PIPELINE_NAME)
     mock_put.assert_any_call(
-        f"/api/v1/teams/myteam/pipelines/ocw-theme-assets/unpause{pipeline.instance_vars}"
+        f"/api/v1/teams/myteam/pipelines/ocw-theme-assets/{action}{pipeline.instance_vars}"
     )
 
 
