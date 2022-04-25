@@ -5,6 +5,7 @@ import SiteSidebar from "../components/SiteSidebar"
 import SiteContentListing from "../components/SiteContentListing"
 import SiteCollaboratorList from "../components/SiteCollaboratorList"
 import Card from "../components/Card"
+import Spinner from "../components/util/Spinner"
 import {
   siteCollaboratorsUrl,
   siteContentListingUrl,
@@ -23,36 +24,35 @@ export default function SitePage(props: SitePageProps): JSX.Element | null {
 
   const website = useWebsite()
 
-  if (isLoading) {
-    return <div className="site-page std-page-body container">Loading...</div>
-  }
-
-  if (!website) {
-    return null
-  }
-
   return (
     <div className="site-page std-page-body container pt-3">
-      <div className="content-container">
-        <Card>
-          <SiteSidebar website={website} />
-        </Card>
-        <div className="content pl-3">
-          <Route
-            path={siteCollaboratorsUrl.param("name", website.name).toString()}
-          >
-            <SiteCollaboratorList />
-          </Route>
-          <Route
-            path={siteContentListingUrl.param({ name: website.name }).pathname}
-          >
-            <SiteContentListing />
-          </Route>
-          <Route path={siteDetailUrl.param({ name: website.name }).toString()}>
-            <DocumentTitle title={formatTitle(website.title)} />
-          </Route>
+      {isLoading && <Spinner />}
+      {website && (
+        <div className="content-container">
+          <Card>
+            <SiteSidebar website={website} />
+          </Card>
+          <div className="content pl-3">
+            <Route
+              path={siteCollaboratorsUrl.param("name", website.name).toString()}
+            >
+              <SiteCollaboratorList />
+            </Route>
+            <Route
+              path={
+                siteContentListingUrl.param({ name: website.name }).pathname
+              }
+            >
+              <SiteContentListing />
+            </Route>
+            <Route
+              path={siteDetailUrl.param({ name: website.name }).toString()}
+            >
+              <DocumentTitle title={formatTitle(website.title)} />
+            </Route>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

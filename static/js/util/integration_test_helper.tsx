@@ -1,11 +1,15 @@
 import React, { ComponentType, FunctionComponent } from "react"
 import { mount, ReactWrapper } from "enzyme"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
-import { createMemoryHistory, MemoryHistory, Update } from "history"
 import { Provider } from "react-redux"
 import { Provider as ReduxQueryProvider } from "redux-query-react"
-import { Router } from "react-router"
+import {
+  createMemoryHistory,
+  MemoryHistory,
+  Location as HLocation
+} from "history"
 import { Action } from "redux"
+import { Router, Route } from "react-router"
 
 import { ReduxState } from "../reducers"
 import configureStore, { Store } from "../store/configureStore"
@@ -14,11 +18,20 @@ import { getQueries } from "../lib/redux_query"
 import * as networkInterfaceFuncs from "../store/network_interface"
 
 export default class IntegrationTestHelper {
-  browserHistory: MemoryHistory
+  browserHistory: MemoryHistory = createMemoryHistory({
+    /**
+     * MemoryHistory does not use window.confirm by default, so we need to tell
+     * it to.
+     */
+    getUserConfirmation: (message, cb) => {
+      const ok = window.confirm(message)
+      return cb(ok)
+    }
+  })
   sandbox: SinonSandbox
   actions: Array<Action>
   handleRequestStub: SinonStub
-  currentLocation: Update | null
+  currentLocation: HLocation | null = null
   scrollIntoViewStub: SinonStub
   wrapper?: ReactWrapper | null
   // just roll with it :)
@@ -31,11 +44,9 @@ export default class IntegrationTestHelper {
     this.scrollIntoViewStub = this.sandbox.stub()
     window.HTMLDivElement.prototype.scrollIntoView = this.scrollIntoViewStub
     window.HTMLFieldSetElement.prototype.scrollIntoView = this.scrollIntoViewStub
-    this.browserHistory = createMemoryHistory()
-    this.currentLocation = null
     this.wrapper = null
-    this.browserHistory.listen(url => {
-      this.currentLocation = url
+    this.browserHistory.listen(location => {
+      this.currentLocation = location
     })
 
     // we return "no match" here as a sentinel default response
@@ -166,12 +177,21 @@ export default class IntegrationTestHelper {
       const store = configureStore(defaultState ?? perRenderDefaultState)
       beforeRenderActions.forEach(action => store.dispatch(action))
 
+      const ComponentWithProps = () => (
+        <Component {...defaultProps} {...extraProps} />
+      )
+
       const wrapper = mount(
         <Provider store={store}>
           <ReduxQueryProvider queriesSelector={getQueries}>
-            {/* @ts-ignore */}
             <Router history={this.browserHistory}>
-              <Component {...defaultProps} {...extraProps} />
+              {/**
+               * If the component under test uses hooks from react-router, e.g.,
+               * useLocation, then the component should be re-rendered when
+               * location changes. This re-render will only happen if the
+               * component is rendered inside a Route
+               */}
+              <Route path="*" component={ComponentWithProps} />
             </Router>
           </ReduxQueryProvider>
         </Provider>

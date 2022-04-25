@@ -63,8 +63,6 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             const uuid = shortcode.get(0)
             const text = shortcode.get(1)
             const fragment = shortcode.get(2)
-            console.log("text is:")
-            console.log(text)
             const encoded = fragment ?
               encodeShortcodeArgs(uuid, fragment) :
               encodeShortcodeArgs(uuid)

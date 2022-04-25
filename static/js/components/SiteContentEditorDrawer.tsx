@@ -7,8 +7,7 @@ import {
   WebsiteContentModalState,
   RepeatableConfigItem
 } from "../types/websites"
-import useConfirmation from "../hooks/confirmation"
-import ConfirmationModal from "./ConfirmationModal"
+import ConfirmDiscardChanges from "./util/ConfirmDiscardChanges"
 import BasicModal from "./BasicModal"
 import { singular } from "pluralize"
 import { createModalState } from "../types/modal_state"
@@ -52,6 +51,7 @@ export default function SiteContentEditorDrawer(
 
   const closeDrawer = useCallback(() => {
     const queryParams = new URLSearchParams(search)
+    const initialLocation = history.location
     history.push(
       siteContentListingUrl
         .param({
@@ -61,17 +61,15 @@ export default function SiteContentEditorDrawer(
         .query(queryParams)
         .toString()
     )
+    if (history.location !== initialLocation) {
+      /**
+       * Closing the modal is actually irrelevant in our current setup because
+       * the component will no longer be visible when the route is updated.
+       * But let's close it anyway.
+       */
+      setDrawerState(createModalState("closed"))
+    }
   }, [website.name, configItem.name, search, history])
-
-  const {
-    confirmationModalVisible,
-    setConfirmationModalVisible,
-    conditionalClose
-  } = useConfirmation({
-    dirty,
-    setDirty,
-    close: closeDrawer
-  })
 
   const labelSingular = configItem.label_singular ?? singular(configItem.label)
 
@@ -85,15 +83,10 @@ export default function SiteContentEditorDrawer(
 
   return (
     <>
-      <ConfirmationModal
-        dirty={dirty}
-        confirmationModalVisible={confirmationModalVisible}
-        setConfirmationModalVisible={setConfirmationModalVisible}
-        dismiss={() => conditionalClose(true)}
-      />
+      <ConfirmDiscardChanges when={dirty} />
       <BasicModal
         isVisible={drawerState.open()}
-        hideModal={() => conditionalClose(false)}
+        hideModal={closeDrawer}
         title={modalTitle}
         className={modalClassName}
       >
@@ -104,7 +97,7 @@ export default function SiteContentEditorDrawer(
                 loadContent={true}
                 configItem={configItem}
                 editorState={drawerState}
-                dismiss={() => conditionalClose(true)}
+                dismiss={closeDrawer}
                 fetchWebsiteContentListing={fetchWebsiteContentListing}
                 setDirty={setDirty}
               />

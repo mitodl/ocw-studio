@@ -1,15 +1,11 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
-import { useLocation } from "react-router-dom"
 import sinon, { SinonStub } from "sinon"
-
 import SingletonsContentListing from "./SingletonsContentListing"
 import WebsiteContext from "../context/Website"
-import useConfirmation from "../hooks/confirmation"
 
 import { siteApiContentDetailUrl } from "../lib/urls"
 import * as siteContentFuncs from "../lib/site_content"
-import configureStore from "../store/configureStore"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper"
@@ -27,6 +23,9 @@ import {
   WebsiteContent
 } from "../types/websites"
 import { createModalState } from "../types/modal_state"
+import SiteContentEditor from "./SiteContentEditor"
+import ConfirmDiscardChanges from "./util/ConfirmDiscardChanges"
+import { nextTick } from "../test_util"
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
@@ -37,15 +36,6 @@ jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
   default:    mocko
 }))
-jest.mock("../hooks/confirmation", () => ({
-  __esModule: true,
-  default:    jest.fn()
-}))
-jest.mock("react-router-dom", () => ({
-  __esModule:  true,
-  ...jest.requireActual("react-router-dom"),
-  useLocation: jest.fn()
-}))
 
 describe("SingletonsContentListing", () => {
   let helper: IntegrationTestHelper,
@@ -55,9 +45,7 @@ describe("SingletonsContentListing", () => {
     singletonConfigItems: SingletonConfigItem[],
     websiteContentDetails: Record<string, WebsiteContent>,
     content: WebsiteContent,
-    contentDetailStub: SinonStub,
-    setConfirmationModalVisible: any,
-    conditionalClose: any
+    contentDetailStub: SinonStub
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -79,22 +67,6 @@ describe("SingletonsContentListing", () => {
     websiteContentDetails = {
       [singletonConfigItems[0].name]: content
     }
-    setConfirmationModalVisible = jest.fn()
-    conditionalClose = jest.fn()
-    // @ts-ignore
-    useConfirmation.mockClear()
-    // @ts-ignore
-    useConfirmation.mockReturnValue({
-      confirmationModalVisible: false,
-      setConfirmationModalVisible,
-      conditionalClose
-    })
-    // @ts-ignore
-    useLocation.mockClear()
-    // @ts-ignore
-    useLocation.mockReturnValue({
-      pathname: "/path/to/a/page"
-    })
     render = helper.configureRenderer(
       props => (
         <WebsiteContext.Provider value={website}>
@@ -167,11 +139,12 @@ describe("SingletonsContentListing", () => {
     ).toBe(true)
   })
 
-  //
-  ;[true, false].forEach(contentContext => {
-    it(`loads content detail from the API if needed ${
-      contentContext ? "with" : "without"
-    } content context`, async () => {
+  it.each([
+    { contentContext: true, preposition: "with" },
+    { contentContext: false, preposition: "without" }
+  ])(
+    "loads content detail from the API if needed $preposition content context",
+    async ({ contentContext }) => {
       const needsContentContextStub = helper.sandbox
         .stub(siteContentFuncs, "needsContentContext")
         .returns(contentContext)
@@ -218,8 +191,8 @@ describe("SingletonsContentListing", () => {
           expect(editorWrapper.prop("content")).toBeNull()
         }
       })
-    })
-  })
+    }
+  )
 
   it("should render the SiteContentEditor component", async () => {
     const { wrapper } = await render()
@@ -235,72 +208,63 @@ describe("SingletonsContentListing", () => {
     )
   })
 
-  it("uses visibility from useConfirmation", async () => {
-    // @ts-ignore
-    useConfirmation.mockReturnValue({
-      confirmationModalVisible: true,
-      setConfirmationModalVisible,
-      conditionalClose
-    })
-    const { wrapper } = await render({ website })
-    expect(
-      wrapper.find("ConfirmationModal").prop("confirmationModalVisible")
-    ).toBeTruthy()
-  })
+  it.each([
+    { dirty: true, confirmCalls: 1 },
+    { dirty: false, confirmCalls: 0 }
+  ])(
+    "prompts for confirmation iff discarding dirty state [dirty=$dirty]",
+    async ({ dirty, confirmCalls }) => {
+      const { wrapper } = await render()
+      const editor = wrapper.find(SiteContentEditor).first()
 
-  it("sets visibility on the confirmation modal", async () => {
-    const { wrapper } = await render({ website })
-    const setVisible = wrapper
-      .find("ConfirmationModal")
-      .prop("setConfirmationModalVisible")
-    // @ts-ignore
-    act(() => setVisible(true))
-    expect(setConfirmationModalVisible).toBeCalledWith(true)
-  })
+      act(() => editor.prop("setDirty")(dirty))
 
-  it("dismisses a modal", async () => {
-    const { wrapper } = await render({ website })
-    // @ts-ignore
-    wrapper.find("ConfirmationModal").prop("dismiss")()
-    expect(conditionalClose).toBeCalledWith(true)
-  })
-
-  it("sets a dirty flag", async () => {
-    const { wrapper } = await render()
-    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeFalsy()
-    const setDirty =
-      // @ts-ignore
-      useConfirmation.mock.calls[useConfirmation.mock.calls.length - 1][0]
-        .setDirty
-    // @ts-ignore
-    for (const editor of wrapper.find("SiteContentEditor").map(item => item)) {
-      expect(editor.prop("setDirty")).toBe(setDirty)
+      expect(window.mockConfirm).toHaveBeenCalledTimes(0)
+      helper.browserHistory.push("/elsewhere")
+      expect(window.mockConfirm).toHaveBeenCalledTimes(confirmCalls)
     }
-    act(() => setDirty(true))
-    wrapper.update()
-    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeTruthy()
-  })
+  )
+
+  it.each([true, false])(
+    "changes route and unmounts when dirty iff confirmed",
+    async confirmed => {
+      const { wrapper } = await render()
+      const editor = wrapper.find(SiteContentEditor).first()
+
+      act(() => editor.prop("setDirty")(true))
+      window.mockConfirm.mockReturnValue(confirmed)
+
+      expect(helper.browserHistory.location.pathname).toBe("/")
+      helper.browserHistory.push("/elsewhere")
+      if (confirmed) {
+        expect(helper.browserHistory.location.pathname).toBe("/elsewhere")
+      } else {
+        expect(helper.browserHistory.location.pathname).toBe("/")
+      }
+    }
+  )
 
   it("clears a dirty flag when the path changes", async () => {
     const { wrapper } = await render()
-    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeFalsy()
-    const setDirty =
-      // @ts-ignore
-      useConfirmation.mock.calls[useConfirmation.mock.calls.length - 1][0]
-        .setDirty
-    act(() => setDirty(true))
-    // @ts-ignore
-    useLocation.mockReturnValue({
-      pathname: "/resources"
-    })
+    const editor = wrapper.find(SiteContentEditor).first()
 
-    // force a rerender so it picks up the changed location
-    await wrapper.setProps({
-      store: configureStore({ entities: {}, queries: {} })
-    })
+    act(() => editor.prop("setDirty")(true))
 
-    // @ts-ignore
-    wrapper.update()
-    expect(wrapper.find("ConfirmationModal").prop("dirty")).toBeFalsy()
+    expect(
+      wrapper
+        .update()
+        .find(ConfirmDiscardChanges)
+        .prop("when")
+    ).toBe(true)
+
+    window.mockConfirm.mockReturnValue(true)
+    helper.browserHistory.push("/pages")
+    await nextTick()
+    expect(
+      wrapper
+        .update()
+        .find(ConfirmDiscardChanges)
+        .prop("when")
+    ).toBe(false)
   })
 })

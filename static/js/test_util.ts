@@ -18,6 +18,9 @@ export const shouldIf = (
   tf: any // eslint-disable-line
 ): string => (tf ? "should" : "should not")
 
+/**
+ * Promisified version of setTimeout
+ */
 export const wait = async (ms: number): Promise<undefined> => {
   return new Promise(resolve => {
     setTimeout(() => {
@@ -25,6 +28,11 @@ export const wait = async (ms: number): Promise<undefined> => {
     }, ms)
   })
 }
+
+/**
+ * Wait for stuff currently in the event queue to finish.
+ */
+export const nextTick = () => wait(0)
 
 export const mockMatchMedia = () => {
   Object.defineProperty(window, "matchMedia", {

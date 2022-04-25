@@ -210,7 +210,6 @@ export const deleteWebsiteCollaboratorMutation = (
         [websiteName]: compose(
           evictCollaborator,
           (value: WebsiteCollaborator[]) => {
-            console.log(value)
             return value ?? []
           }
         )

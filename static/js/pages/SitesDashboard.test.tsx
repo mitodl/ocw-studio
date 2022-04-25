@@ -79,6 +79,18 @@ describe("SitesDashboard", () => {
   test("lets the user filter the sites", async () => {
     const { wrapper } = await render()
     const filterInput = wrapper.find(".site-search-input")
+    helper.mockGetRequest(
+      siteApiListingUrl
+        .param({ offset: 0, search: "my-search-string" })
+        .toString(),
+      {
+        results:  [],
+        next:     "null",
+        previous: null,
+        count:    0
+      }
+    )
+
     const event = {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       preventDefault() {},
