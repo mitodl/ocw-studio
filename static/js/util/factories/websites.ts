@@ -216,11 +216,9 @@ export const makeWebsiteDetail = (
   ...overrides
 })
 
-export const makeWebsiteStatus = (website?: Website): WebsiteStatus => {
-  if (!website) {
-    website = makeWebsiteDetail()
-  }
-
+export const makeWebsiteStatus = (
+  website = makeWebsiteDetail()
+): WebsiteStatus => {
   return {
     uuid:                            website.uuid,
     name:                            website.name,
@@ -240,7 +238,7 @@ export const makeWebsiteStatus = (website?: Website): WebsiteStatus => {
 }
 
 export const makeWebsiteListing = (): Website[] =>
-  times(WEBSITES_PAGE_SIZE).map(makeWebsiteDetail)
+  times(WEBSITES_PAGE_SIZE).map(() => makeWebsiteDetail())
 
 export const makeWebsiteCollaborator = (): WebsiteCollaborator => ({
   user_id: incr.next().value,
