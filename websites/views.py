@@ -65,6 +65,7 @@ from websites.serializers import (
     WebsiteStarterSerializer,
     WebsiteStatusSerializer,
     WebsiteWriteSerializer,
+    WebsiteUnpublishSerializer,
 )
 from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename, permissions_group_name_for_role
@@ -284,7 +285,6 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
     Return a list of sites that need to be unpublished, with the info required by the remove-unpublished-sites pipeline
     """
 
-    serializer_class = WebsitePublishSerializer
     permission_classes = (BearerTokenPermission,)
 
     def list(self, request):
@@ -295,7 +295,7 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
             .prefetch_related("starter")
             .order_by("name")
         )
-        serializer = WebsitePublishSerializer(instance=sites, many=True)
+        serializer = WebsiteUnpublishSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
 
 

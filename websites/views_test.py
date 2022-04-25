@@ -23,6 +23,7 @@ from websites.constants import (
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
+    CONTENT_TYPE_METADATA,
 )
 from websites.factories import (
     WebsiteContentFactory,
@@ -1235,17 +1236,19 @@ def test_mass_build_endpoint_list_bad_token(settings, drf_client, bad_token):
 
 def test_unpublished_removal_endpoint_list(settings, drf_client):
     """The WebsiteUnpublishViewSet endpoint should return the appropriate info for correctly filtered sites"""
-    WebsiteFactory.create(
-        draft_publish_date=None,
-        unpublished=False,
-        publish_date=now_in_utc(),
-    )
-    WebsiteFactory.create(
-        publish_date=now_in_utc(),
-        unpublished=True,
-        unpublished_status=PUBLISH_STATUS_SUCCEEDED,
-    )
-    live_unpublished_other = WebsiteFactory.create_batch(
+    published_sites = [
+        WebsiteFactory.create(
+            draft_publish_date=None,
+            unpublished=False,
+            publish_date=now_in_utc(),
+        ),
+        WebsiteFactory.create(
+            publish_date=now_in_utc(),
+            unpublished=True,
+            unpublished_status=PUBLISH_STATUS_SUCCEEDED,
+        ),
+    ]
+    expected_sites = WebsiteFactory.create_batch(
         2,
         publish_date=now_in_utc(),
         unpublished=True,
@@ -1253,7 +1256,10 @@ def test_unpublished_removal_endpoint_list(settings, drf_client):
             [None, PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED]
         )[0],
     )
-    expected_sites = live_unpublished_other
+    for site in [*published_sites, *expected_sites]:
+        WebsiteContentFactory.create(
+            type=CONTENT_TYPE_METADATA, website=site, metadata={}
+        )
     settings.API_BEARER_TOKEN = "abc123"
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
     resp = drf_client.get(f'{reverse("unpublished_removal_api-list")}')
@@ -1263,7 +1269,8 @@ def test_unpublished_removal_endpoint_list(settings, drf_client):
     for expected_site in expected_sites:
         publish_site = site_dict.get(expected_site.name, None)
         assert publish_site is not None
-        assert publish_site["short_id"] == expected_site.short_id
+        assert publish_site["name"] == expected_site.name
+        assert publish_site["site_uid"] == expected_site.uuid.hex
 
 
 @pytest.mark.parametrize("bad_token", ["wrongtoken", None])

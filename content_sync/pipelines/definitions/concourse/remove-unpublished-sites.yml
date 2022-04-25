@@ -61,7 +61,7 @@ jobs:
             - -H
             - 'Content-Type: application/json'
             - --data
-            - '{"webhook_key":"((open-webhook-key))","prefix":"((.:site.site_url))/","version":"((version))", "unpublished": true}'
+            - '{"webhook_key":"((open-webhook-key))","site_uid":"((.:site.site_uid))/","version":"((version))", "unpublished": true}'
             - ((open-discussions-url))/api/v0/ocw_next_webhook/
       on_failure:
         try:
