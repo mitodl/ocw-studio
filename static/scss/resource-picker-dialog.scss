@@ -56,7 +56,7 @@
 
 .resource-picker-dialog {
   .modal-dialog {
-    max-width: 650px;
+    max-width: fit-content;
 
     .modal-body {
       min-height: 500px;
