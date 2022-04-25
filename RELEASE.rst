@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.57.6
+Version 0.57.6 (Released April 25, 2022)
 --------------
 
 - added command to migrate testimonials to stories (#1250)
