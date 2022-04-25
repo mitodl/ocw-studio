@@ -35,9 +35,7 @@ def migrate_field(apps, forward):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('websites', '0045_blank_publish_fields'),
+        ("websites", "0045_blank_publish_fields"),
     ]
 
-    operations = [
-        migrations.RunPython(migrate_fields_forward, migrate_fields_forward)
-    ]
+    operations = [migrations.RunPython(migrate_fields_forward, migrate_fields_forward)]
