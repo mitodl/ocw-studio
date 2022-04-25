@@ -25,7 +25,7 @@ import {
 import { createModalState } from "../types/modal_state"
 import SiteContentEditor from "./SiteContentEditor"
 import ConfirmDiscardChanges from "./util/ConfirmDiscardChanges"
-import { flushEventQueue, wait } from "../test_util"
+import { flushEventQueue } from "../test_util"
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
@@ -223,7 +223,9 @@ describe("SingletonsContentListing", () => {
       helper.browserHistory.push("/elsewhere")
       expect(window.mockConfirm).toHaveBeenCalledTimes(confirmCalls)
       if (confirmCalls > 0) {
-        expect(window.mockConfirm.mock.calls[0][0]).toMatch(/Are you sure you want to discard your changes\?/)
+        expect(window.mockConfirm.mock.calls[0][0]).toMatch(
+          /Are you sure you want to discard your changes\?/
+        )
       }
     }
   )
@@ -243,7 +245,9 @@ describe("SingletonsContentListing", () => {
       helper.browserHistory.push("?publish=")
       expect(window.mockConfirm).toHaveBeenCalledTimes(confirmCalls)
       if (confirmCalls > 0) {
-        expect(window.mockConfirm.mock.calls[0][0]).toMatch(/Are you sure you want to publish\?/)
+        expect(window.mockConfirm.mock.calls[0][0]).toMatch(
+          /Are you sure you want to publish\?/
+        )
       }
     }
   )
