@@ -349,6 +349,14 @@ describe("SiteContent", () => {
     sinon.assert.calledWith(fetchWebsiteListingStub)
     sinon.assert.calledWith(dismissStub)
     sinon.assert.calledWith(setDirtyStub, false)
+
+    /**
+     * setDirty should be called before and only before dismiss (it is called
+     * multiple times).
+     */
+    expect(setDirtyStub.calledBefore(dismissStub)).toBe(true)
+    expect(setDirtyStub.calledAfter(dismissStub)).toBe(false)
+
     // @ts-ignore
     expect(store.getState().entities.websiteContentDetails).toStrictEqual({
       [contentDetailKey({
