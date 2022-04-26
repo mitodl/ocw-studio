@@ -18,18 +18,21 @@ def migrate_field(apps, forward):
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     original_name = "filetype" if forward else "resourcetype"
     updated_name = "resourcetype" if forward else "filetype"
-    ocw_www = Website.objects.get(name="ocw-www")
-    resources = WebsiteContent.objects.filter(
-        type="resource",
-        website=ocw_www,
-        website__source=WEBSITE_SOURCE_STUDIO,
-        metadata__has_key=original_name,
-    )
-    for resource in resources:
-        value = resource.metadata[original_name]
-        del resource.metadata[original_name]
-        resource.metadata[updated_name] = value
-        resource.save()
+    try:
+        ocw_www = Website.objects.get(name="ocw-www")
+        resources = WebsiteContent.objects.filter(
+            type="resource",
+            website=ocw_www,
+            website__source=WEBSITE_SOURCE_STUDIO,
+            metadata__has_key=original_name,
+        )
+        for resource in resources:
+            value = resource.metadata[original_name]
+            del resource.metadata[original_name]
+            resource.metadata[updated_name] = value
+            resource.save()
+    except Website.DoesNotExist:
+        return
 
 
 class Migration(migrations.Migration):
