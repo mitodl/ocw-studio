@@ -14,23 +14,26 @@ def migrate_fields_backward(apps, schema_editor):
 
 
 def migrate_field(apps, forward):
+    WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
     Website = apps.get_model("websites", "Website")
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     original_name = "filetype" if forward else "resourcetype"
     updated_name = "resourcetype" if forward else "filetype"
     try:
-        ocw_www = Website.objects.get(name="ocw-www")
-        resources = WebsiteContent.objects.filter(
-            type="resource",
-            website=ocw_www,
-            website__source=WEBSITE_SOURCE_STUDIO,
-            metadata__has_key=original_name,
-        )
-        for resource in resources:
-            value = resource.metadata[original_name]
-            del resource.metadata[original_name]
-            resource.metadata[updated_name] = value
-            resource.save()
+        www_starter = WebsiteStarter.objects.get(name="ocw-www")
+        ocw_www_sites = Website.objects.filter(starter=www_starter)
+        for ocw_www in ocw_www_sites:
+            resources = WebsiteContent.objects.filter(
+                type="resource",
+                website=ocw_www,
+                website__source=WEBSITE_SOURCE_STUDIO,
+                metadata__has_key=original_name,
+            )
+            for resource in resources:
+                value = resource.metadata[original_name]
+                del resource.metadata[original_name]
+                resource.metadata[updated_name] = value
+                resource.save()
     except Website.DoesNotExist:
         return
 
