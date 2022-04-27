@@ -495,11 +495,11 @@ def test_update_transcripts_for_video(
     if update_transcript_return_value and is_ocw:
         assert (
             get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS)
-            == "webvtt_transcript"
+            == "/webvtt_transcript"
         )
         assert (
             get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT)
-            == "pdf_transcript"
+            == "/pdf_transcript"
         )
 
         if initial_status == VideoStatus.SUBMITTED_FOR_TRANSCRIPTION and (
