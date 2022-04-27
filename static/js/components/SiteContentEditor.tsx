@@ -151,11 +151,11 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
     // update the publish status
     refreshWebsiteStatus()
 
+    setDirty(false)
     if (dismiss) {
       // turn off modal on success
       dismiss()
     }
-    setDirty(false)
   }
 
   return (
