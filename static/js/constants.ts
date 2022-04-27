@@ -158,7 +158,8 @@ export enum ContentType {
   Resource = "resource",
   Page = "page",
   CourseCollections = "course-collection",
-  ResourceCollections = "resource_collections"
+  ResourceCollections = "resource_collections",
+  VideoGallery = "video_gallery"
 }
 
 export enum ResourceType {
