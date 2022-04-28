@@ -239,12 +239,12 @@ def update_transcripts_for_video(video_id: int):
                 set_dict_field(
                     metadata,
                     settings.YT_FIELD_TRANSCRIPT,
-                    video.pdf_transcript_file.name,
+                    urljoin("/", video.pdf_transcript_file.name),
                 )
                 set_dict_field(
                     metadata,
                     settings.YT_FIELD_CAPTIONS,
-                    video.webvtt_transcript_file.name,
+                    urljoin("/", video.webvtt_transcript_file.name),
                 )
                 video_resource.save()
 
