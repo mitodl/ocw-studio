@@ -62,14 +62,18 @@ def websites(course_starter):
     """ Create some websites for tests, with all but one having a sitemetadata WebsiteContent object"""
     courses = WebsiteFactory.create_batch(3, published=True, starter=course_starter)
     noncourses = WebsiteFactory.create_batch(2, published=True)
-    WebsiteFactory.create(published=True, starter=course_starter, metadata=None)
-    others = [
+    not_published = [
+        WebsiteFactory.create(published=True, starter=course_starter, metadata=None),
+        WebsiteFactory.create(published=True, unpublished=True, starter=course_starter),
         WebsiteFactory.create(not_published=True, starter=course_starter),
         WebsiteFactory.create(future_publish=True),
     ]
-    for site in [*courses, *noncourses, *others]:
-        WebsiteContentFactory.create(website=site, type="sitemetadata")
-    return SimpleNamespace(courses=courses, noncourses=noncourses)
+    for site in [*courses, *noncourses, *not_published]:
+        if site.metadata:
+            WebsiteContentFactory.create(website=site, type="sitemetadata")
+    return SimpleNamespace(
+        courses=courses, noncourses=noncourses, not_published=not_published
+    )
 
 
 @pytest.fixture
@@ -451,17 +455,17 @@ def test_websites_endpoint_publish_sorting(
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
     resp = drf_client.get(reverse("websites_api-list"), {"published": published})
-    expected_uuids = sorted(
-        [
-            site.uuid.__str__()
-            for site in Website.objects.filter(publish_date__isnull=not published)
-        ]
-    )
     if published:
-        assert resp.data.get("count") == 7
+        assert resp.data.get("count") == 5
+        expected_uids = [
+            site.uuid.__str__() for site in (*websites.courses, *websites.noncourses)
+        ]
     else:
-        assert resp.data.get("count") == 1
-    assert expected_uuids == sorted([site["uuid"] for site in resp.data["results"]])
+        assert resp.data.get("count") == 4
+        expected_uids = [site.uuid.__str__() for site in websites.not_published]
+    assert sorted([site["uuid"] for site in resp.data["results"]]) == sorted(
+        expected_uids
+    )
 
 
 def test_website_endpoint_search(drf_client):

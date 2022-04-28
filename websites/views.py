@@ -101,15 +101,18 @@ class WebsiteViewSet(
         published = self.request.query_params.get("published", None)
 
         user = self.request.user
+        published_filter = Q(
+            first_published_to_production__isnull=False,
+            first_published_to_production__lte=now_in_utc(),
+            publish_date__isnull=False,
+            unpublished=False,
+            websitecontent__type=CONTENT_TYPE_METADATA,
+            websitecontent__metadata__isnull=False,
+        )
         if self.request.user.is_anonymous:
             # Anonymous users should get a list of all published websites (used for ocw-www carousel)
             ordering = "-first_published_to_production"
-            queryset = Website.objects.filter(
-                first_published_to_production__isnull=False,
-                first_published_to_production__lte=now_in_utc(),
-                websitecontent__type=CONTENT_TYPE_METADATA,
-                websitecontent__metadata__isnull=False,
-            ).distinct()
+            queryset = Website.objects.filter(published_filter).distinct()
         elif is_global_admin(user):
             # Global admins should get a list of all websites, published or not.
             queryset = Website.objects.all()
@@ -142,7 +145,10 @@ class WebsiteViewSet(
 
         if published is not None:
             published = _parse_bool(published)
-            queryset = queryset.filter(publish_date__isnull=not published)
+            if published:
+                queryset = queryset.filter(published_filter)
+            else:
+                queryset = queryset.exclude(published_filter)
 
         return queryset.select_related("starter").order_by(ordering)
 
