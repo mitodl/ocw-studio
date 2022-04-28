@@ -34,7 +34,7 @@ def migrate_field(apps, forward):
                 del resource.metadata[original_name]
                 resource.metadata[updated_name] = value
                 resource.save()
-    except Website.DoesNotExist:
+    except WebsiteStarter.DoesNotExist:
         return
 
 
