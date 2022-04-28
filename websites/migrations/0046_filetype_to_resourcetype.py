@@ -44,4 +44,4 @@ class Migration(migrations.Migration):
         ("websites", "0045_blank_publish_fields"),
     ]
 
-    operations = [migrations.RunPython(migrate_fields_forward, migrate_fields_forward)]
+    operations = [migrations.RunPython(migrate_fields_forward, migrate_fields_backward)]
