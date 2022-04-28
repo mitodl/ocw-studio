@@ -17,6 +17,9 @@ import { getQueries } from "../lib/redux_query"
 
 import * as networkInterfaceFuncs from "../store/network_interface"
 
+/**
+ * Avoid using this for new tests. Prefer `IntegrationTestHelper.tsx` instead.
+ */
 export default class IntegrationTestHelper {
   browserHistory: MemoryHistory = createMemoryHistory({
     /**
@@ -25,7 +28,7 @@ export default class IntegrationTestHelper {
      */
     getUserConfirmation: (message, cb) => {
       const ok = window.confirm(message)
-      return cb(ok)
+      cb(ok)
     }
   })
   sandbox: SinonSandbox

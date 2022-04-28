@@ -49,6 +49,7 @@ declare global {
 // eslint-disable-next-line mocha/no-top-level-hooks
 afterEach(function() {
   jest.resetAllMocks()
+  jest.useRealTimers()
   const node = document.querySelector("#integration_test_div")
   if (node) {
     ReactDOM.unmountComponentAtNode(node)

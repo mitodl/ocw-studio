@@ -1,9 +1,10 @@
-import React from "react"
-import { useCallback, useState } from "react"
+import React, { useCallback } from "react"
 import { useStore } from "react-redux"
 import { Link } from "react-router-dom"
 import { requestAsync } from "redux-query"
 import useInterval from "@use-it/interval"
+
+import { useSearchParams } from "../hooks/search"
 
 import PublishDrawer from "../components/PublishDrawer"
 
@@ -22,15 +23,19 @@ export interface HeaderProps {
 export default function Header(props: HeaderProps): JSX.Element {
   const { website } = props
   const store = useStore()
+  const [search, setSearchParams] = useSearchParams()
+  const drawerOpen = search.has("publish")
 
-  const [drawerOpen, setDrawerOpen] = useState<boolean>(false)
-  const openPublishDrawer = useCallback(
-    (event: any) => {
-      event.preventDefault()
-      setDrawerOpen(true)
-    },
-    [setDrawerOpen]
-  )
+  const openPublishDrawer = useCallback(() => {
+    const newParams = new URLSearchParams(search)
+    newParams.set("publish", "")
+    setSearchParams(newParams)
+  }, [search, setSearchParams])
+  const closePublishDrawer = useCallback(() => {
+    const newParams = new URLSearchParams(search)
+    newParams.delete("publish")
+    setSearchParams(newParams)
+  }, [search, setSearchParams])
 
   useInterval(
     async () => {
@@ -45,7 +50,11 @@ export default function Header(props: HeaderProps): JSX.Element {
               website.live_publish_status
             )))
       ) {
-        await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
+        try {
+          await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
+        } catch (err) {
+          console.error(err)
+        }
       }
     },
     website ? 5000 : null
@@ -59,6 +68,7 @@ export default function Header(props: HeaderProps): JSX.Element {
             <img
               src="/static/images/mit-logo.png"
               className="pr-1 border-right border-dark"
+              alt="MIT"
             />
           </Link>
           <Link to={sitesBaseUrl.toString()}>
@@ -84,6 +94,7 @@ export default function Header(props: HeaderProps): JSX.Element {
               type="button"
               onClick={openPublishDrawer}
               className="btn cyan-button-outline"
+              title="Publish"
             >
               <i className="material-icons mr-1">publish</i> Publish
             </button>
@@ -91,7 +102,7 @@ export default function Header(props: HeaderProps): JSX.Element {
             <PublishDrawer
               website={website}
               visibility={drawerOpen}
-              toggleVisibility={() => setDrawerOpen(visibility => !visibility)}
+              toggleVisibility={closePublishDrawer}
             />
           </div>
         </div>

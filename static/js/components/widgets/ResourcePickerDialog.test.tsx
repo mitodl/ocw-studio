@@ -6,7 +6,7 @@ import { ReactWrapper } from "enzyme"
 import ResourcePickerDialog, { TabIds } from "./ResourcePickerDialog"
 import IntegrationTestHelper, {
   TestRenderer
-} from "../../util/integration_test_helper"
+} from "../../util/integration_test_helper_old"
 import { useDebouncedState } from "../../hooks/state"
 import { useState } from "react"
 import { makeWebsiteContentDetail } from "../../util/factories/websites"

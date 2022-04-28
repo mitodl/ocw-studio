@@ -3,7 +3,7 @@ import ReactDOM from "react-dom"
 import { AppContainer } from "react-hot-loader"
 
 import configureStore from "./store/configureStore"
-import Router, { RootProps } from "./Router"
+import Root, { RootProps } from "./Root"
 
 import * as Sentry from "@sentry/browser"
 
@@ -30,12 +30,12 @@ const renderApp = (Component: ComponentType<RootProps>): void => {
   )
 }
 
-renderApp(Router)
+renderApp(Root)
 
 if ((module as any).hot) {
-  (module as any).hot.accept("./Router", () => {
+  (module as any).hot.accept("./Root", () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const RouterNext = require("./Router").default
-    renderApp(RouterNext)
+    const RootNext = require("./Root").default
+    renderApp(RootNext)
   })
 }

@@ -3,7 +3,7 @@ import sinon from "sinon"
 import App from "./App"
 import IntegrationTestHelper, {
   TestRenderer
-} from "../util/integration_test_helper"
+} from "../util/integration_test_helper_old"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { siteApiDetailUrl, sitesBaseUrl } from "../lib/urls"
 
