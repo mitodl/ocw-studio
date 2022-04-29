@@ -9,7 +9,7 @@ from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyChoice
 
 from users.factories import UserFactory
-from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE, STARTER_SOURCES
+from websites import constants
 from websites.models import Website, WebsiteContent, WebsiteStarter
 
 
@@ -22,7 +22,7 @@ class WebsiteStarterFactory(DjangoModelFactory):
     path = factory.Faker("uri")
     name = factory.Faker("domain_word")
     slug = factory.Sequence(lambda n: "starter-%x" % n)
-    source = FuzzyChoice(STARTER_SOURCES)
+    source = FuzzyChoice(constants.STARTER_SOURCES)
     commit = factory.Faker("md5")
     config = factory.LazyAttribute(
         lambda _: yaml.load(
@@ -45,6 +45,7 @@ class WebsiteFactory(DjangoModelFactory):
     publish_date = factory.Faker("date_time", tzinfo=pytz.utc)
     first_published_to_production = factory.Faker("date_time", tzinfo=pytz.utc)
     draft_publish_date = factory.Faker("date_time", tzinfo=pytz.utc)
+    unpublish_status = None
     starter = factory.SubFactory(WebsiteStarterFactory)
     owner = factory.SubFactory(UserFactory)
     gdrive_folder = factory.Faker("md5")
@@ -58,9 +59,25 @@ class WebsiteFactory(DjangoModelFactory):
             first_published_to_production=factory.Faker(
                 "past_datetime", tzinfo=pytz.utc
             ),
+            unpublish_status=None,
         )
         not_published = factory.Trait(
             publish_date=None, first_published_to_production=None
+        )
+        unpublished = factory.Trait(
+            publish_date=factory.Faker("past_datetime", tzinfo=pytz.utc),
+            first_published_to_production=factory.Faker(
+                "past_datetime", tzinfo=pytz.utc
+            ),
+            unpublish_status=FuzzyChoice(
+                [
+                    constants.PUBLISH_STATUS_PENDING,
+                    constants.PUBLISH_STATUS_STARTED,
+                    constants.PUBLISH_STATUS_ERRORED,
+                    constants.PUBLISH_STATUS_ABORTED,
+                    constants.PUBLISH_STATUS_NOT_STARTED,
+                ]
+            ),
         )
         future_publish = factory.Trait(
             publish_date=factory.Faker("future_datetime", tzinfo=pytz.utc),
@@ -74,7 +91,7 @@ class WebsiteContentFactory(DjangoModelFactory):
     """Factory for WebsiteContent"""
 
     title = factory.Sequence(lambda n: "OCW Site Content %s" % n)
-    type = FuzzyChoice([CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE])
+    type = FuzzyChoice([constants.CONTENT_TYPE_PAGE, constants.CONTENT_TYPE_RESOURCE])
     markdown = factory.Faker("text")
     metadata = factory.LazyAttribute(lambda _: {})
     filename = factory.Sequence(lambda n: "my-file-%s" % n)

@@ -26,11 +26,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="website",
-            name="unpublished",
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name="website",
             name="unpublish_status",
             field=models.CharField(
                 blank=True,

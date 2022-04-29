@@ -64,7 +64,7 @@ def websites(course_starter):
     noncourses = WebsiteFactory.create_batch(2, published=True)
     not_published = [
         WebsiteFactory.create(published=True, starter=course_starter, metadata=None),
-        WebsiteFactory.create(published=True, unpublished=True, starter=course_starter),
+        WebsiteFactory.create(unpublished=True, starter=course_starter),
         WebsiteFactory.create(not_published=True, starter=course_starter),
         WebsiteFactory.create(future_publish=True),
     ]
@@ -1196,16 +1196,24 @@ def test_websites_endpoint_pipeline_status_denied(
     assert resp.status_code == 403
 
 
+@pytest.mark.parametrize("unpublished", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-def test_publish_endpoint_list(settings, drf_client, version):
+def test_mass_build_endpoint_list(settings, drf_client, version, unpublished):
     """The WebsitePublishView endpoint should return the appropriate info for correctly filtered sites"""
+    now = now_in_utc()
     draft_published = WebsiteFactory.create_batch(
-        2, draft_publish_date=now_in_utc(), publish_date=None
+        2,
+        draft_publish_date=now,
+        publish_date=None,
+        first_published_to_production=now,
+        unpublish_status=constants.PUBLISH_STATUS_NOT_STARTED if unpublished else None,
     )
     live_published = WebsiteFactory.create_batch(
         2,
         draft_publish_date=None,
         publish_date=now_in_utc(),
+        first_published_to_production=now,
+        unpublish_status=constants.PUBLISH_STATUS_NOT_STARTED if unpublished else None,
     )
     expected_sites = draft_published if version == VERSION_DRAFT else live_published
     settings.API_BEARER_TOKEN = "abc123"
@@ -1213,11 +1221,14 @@ def test_publish_endpoint_list(settings, drf_client, version):
     resp = drf_client.get(f'{reverse("mass_build_api-list")}?version={version}')
     assert resp.status_code == 200
     site_dict = {site["name"]: site for site in resp.data["sites"]}
-    assert len(site_dict.keys()) == 2
-    for expected_site in expected_sites:
-        publish_site = site_dict.get(expected_site.name, None)
-        assert publish_site is not None
-        assert publish_site["short_id"] == expected_site.short_id
+    if not unpublished or version == VERSION_DRAFT:
+        assert len(site_dict.keys()) == 2
+        for expected_site in expected_sites:
+            publish_site = site_dict.get(expected_site.name, None)
+            assert publish_site is not None
+            assert publish_site["short_id"] == expected_site.short_id
+    else:
+        assert len(site_dict.keys()) == 0
 
 
 def test_mass_build_endpoint_list_bad_version(settings, drf_client):
@@ -1243,22 +1254,15 @@ def test_unpublished_removal_endpoint_list(settings, drf_client):
     published_sites = [
         WebsiteFactory.create(
             draft_publish_date=None,
-            unpublished=False,
             publish_date=now_in_utc(),
         ),
         WebsiteFactory.create(
             publish_date=now_in_utc(),
-            unpublished=True,
             unpublish_status=PUBLISH_STATUS_SUCCEEDED,
         ),
     ]
     expected_sites = WebsiteFactory.create_batch(
-        2,
-        publish_date=now_in_utc(),
-        unpublished=True,
-        unpublish_status=choices(
-            [None, PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED]
-        )[0],
+        2, publish_date=now_in_utc(), unpublished=True
     )
     for site in [*published_sites, *expected_sites]:
         WebsiteContentFactory.create(

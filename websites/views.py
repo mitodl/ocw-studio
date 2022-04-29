@@ -105,7 +105,7 @@ class WebsiteViewSet(
             first_published_to_production__isnull=False,
             first_published_to_production__lte=now_in_utc(),
             publish_date__isnull=False,
-            unpublished=False,
+            unpublish_status__isnull=True,
             websitecontent__type=CONTENT_TYPE_METADATA,
             websitecontent__metadata__isnull=False,
         )
@@ -216,7 +216,6 @@ class WebsiteViewSet(
                 live_publish_status_updated_on=now_in_utc(),
                 latest_build_id_live=None,
                 live_last_published_by=request.user,
-                unpublished=False,
                 unpublish_status=None,
                 last_unpublished_by=None,
             )
@@ -235,7 +234,6 @@ class WebsiteViewSet(
             website = self.get_object()
 
             Website.objects.filter(pk=website.pk).update(
-                unpublished=True,
                 unpublish_status=PUBLISH_STATUS_NOT_STARTED,
                 last_unpublished_by=request.user,
             )
@@ -274,14 +272,12 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
             "publish_date" if version == VERSION_LIVE else "draft_publish_date"
         )
 
-        # Get all sites, minus any sites that have been unpublished or never successfully published
-        sites = (
-            Website.objects.exclude(
-                Q(**{f"{publish_date_field}__isnull": True}) | Q(unpublished=True)
-            )
-            .prefetch_related("starter")
-            .order_by("name")
-        )
+        # Get all sites, minus any sites that have never been successfully published
+        sites = Website.objects.exclude(Q(**{f"{publish_date_field}__isnull": True}))
+        # For live builds, exclude previously published sites that have been unpublished
+        if version == VERSION_LIVE:
+            sites = sites.exclude(unpublish_status__isnull=False)
+        sites = sites.prefetch_related("starter").order_by("name")
         serializer = WebsitePublishSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
 
@@ -296,8 +292,10 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
     def list(self, request):
         """Return a list of websites that need to be processed by the remove-unpublished-sites pipeline"""
         sites = (
-            Website.objects.filter(unpublished=True)
-            .exclude(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
+            Website.objects.exclude(
+                Q(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
+                | Q(unpublish_status__isnull=True)
+            )
             .prefetch_related("starter")
             .order_by("name")
         )
