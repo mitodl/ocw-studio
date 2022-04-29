@@ -150,13 +150,15 @@ class WebsiteUnpublishSerializer(serializers.ModelSerializer):
 
     def get_site_uid(self, instance):
         """Get the website uid"""
-        meta_content = WebsiteContent.objects.get(
+        meta_content = WebsiteContent.objects.filter(
             type=CONTENT_TYPE_METADATA, website=instance
-        )
-        return (
-            meta_content.metadata.get("legacy_uid", "").replace("-", "")
-            or meta_content.website.uuid.hex
-        )
+        ).first()
+        legacy_uid = (
+            meta_content.metadata.get("legacy_uid", "")
+            if meta_content is not None
+            else ""
+        ).replace("-", "")
+        return legacy_uid or instance.uuid.hex
 
     class Meta:
         model = Website

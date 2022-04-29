@@ -599,17 +599,21 @@ def test_website_publish_serializer_base_url(settings, is_root_site):
     )
 
 
+@pytest.mark.parametrize("has_metadata", [True, False])
 @pytest.mark.parametrize("has_legacy_uid", [True, False])
-def test_website_unpublish_serializer(has_legacy_uid):
-    """ The WebsiteUnublishSerializer should return the correct values """
+def test_website_unpublish_serializer(has_legacy_uid, has_metadata):
+    """ The WebsiteUnublishSerializer should return the correct value for site_uid"""
     site = WebsiteFactory.create(unpublished=True)
-    legacy_uid = "e6748d7d876a465cbc5a4212d3619e09"
-    WebsiteContentFactory.create(
-        website=site,
-        type=CONTENT_TYPE_METADATA,
-        metadata=({"legacy_uid": legacy_uid} if has_legacy_uid else {}),
-    )
+    legacy_uid = "e6748-d7d8-76a46-5cbc-5a42-12d3619e09"
+    if has_metadata:
+        WebsiteContentFactory.create(
+            website=site,
+            type=CONTENT_TYPE_METADATA,
+            metadata=({"legacy_uid": legacy_uid} if has_legacy_uid else {}),
+        )
     serializer = WebsiteUnpublishSerializer(site)
     assert serializer.data["site_uid"] == (
-        legacy_uid if has_legacy_uid else site.uuid.hex
+        legacy_uid.replace("-", "")
+        if has_legacy_uid and has_metadata
+        else site.uuid.hex
     )

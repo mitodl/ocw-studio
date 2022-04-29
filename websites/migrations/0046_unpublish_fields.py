@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="website",
-            name="unpublished_status",
+            name="unpublish_status",
             field=models.CharField(
                 blank=True,
                 choices=[
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="website",
-            name="unpublished_status_updated_on",
+            name="unpublish_status_updated_on",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

@@ -332,8 +332,8 @@ def update_website_status(
     elif unpublished:
         user = website.last_unpublished_by
         update_kwargs = {
-            "unpublished_status": status,
-            "unpublished_status_updated_on": update_time,
+            "unpublish_status": status,
+            "unpublish_status_updated_on": update_time,
             "live_publish_status": None,
             "live_publish_status_updated_on": None,
             "latest_build_id_live": None,

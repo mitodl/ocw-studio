@@ -113,13 +113,13 @@ class Website(TimestampedModel):
 
     # Unpublish fields
     unpublished = models.BooleanField(default=False)
-    unpublished_status = models.CharField(
+    unpublish_status = models.CharField(
         max_length=20,
         blank=True,
         null=True,
         choices=zip(constants.PUBLISH_STATUSES, constants.PUBLISH_STATUSES),
     )
-    unpublished_status_updated_on = models.DateTimeField(null=True, blank=True)
+    unpublish_status_updated_on = models.DateTimeField(null=True, blank=True)
     last_unpublished_by = models.ForeignKey(
         User,
         null=True,

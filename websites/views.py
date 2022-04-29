@@ -217,7 +217,7 @@ class WebsiteViewSet(
                 latest_build_id_live=None,
                 live_last_published_by=request.user,
                 unpublished=False,
-                unpublished_status=None,
+                unpublish_status=None,
                 last_unpublished_by=None,
             )
             trigger_publish(website.name, VERSION_LIVE)
@@ -236,7 +236,7 @@ class WebsiteViewSet(
 
             Website.objects.filter(pk=website.pk).update(
                 unpublished=True,
-                unpublished_status=PUBLISH_STATUS_NOT_STARTED,
+                unpublish_status=PUBLISH_STATUS_NOT_STARTED,
                 last_unpublished_by=request.user,
             )
             trigger_unpublished_removal(website)
@@ -297,7 +297,7 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
         """Return a list of websites that need to be processed by the remove-unpublished-sites pipeline"""
         sites = (
             Website.objects.filter(unpublished=True)
-            .exclude(unpublished_status=PUBLISH_STATUS_SUCCEEDED)
+            .exclude(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
             .prefetch_related("starter")
             .order_by("name")
         )

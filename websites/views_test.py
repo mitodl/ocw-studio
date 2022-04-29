@@ -286,10 +286,10 @@ def test_websites_endpoint_preview_error(mocker, drf_client):
 
 
 @pytest.mark.parametrize(
-    "unpublished, unpublished_status",
+    "unpublished, unpublish_status",
     [[True, PUBLISH_STATUS_NOT_STARTED], [False, None]],
 )
-def test_websites_endpoint_publish(mocker, drf_client, unpublished, unpublished_status):
+def test_websites_endpoint_publish(mocker, drf_client, unpublished, unpublish_status):
     """
     A user with admin permissions should be able to request a website publish and revert
     any previous unpublish request
@@ -298,7 +298,7 @@ def test_websites_endpoint_publish(mocker, drf_client, unpublished, unpublished_
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create(
-        unpublished=unpublished, unpublished_status=unpublished_status
+        unpublished=unpublished, unpublish_status=unpublish_status
     )
     admin = UserFactory.create()
     admin.groups.add(website.admin_group)
@@ -316,7 +316,7 @@ def test_websites_endpoint_publish(mocker, drf_client, unpublished, unpublished_
     assert website.live_publish_status_updated_on == now
     assert website.latest_build_id_live is None
     assert website.unpublished is False
-    assert website.unpublished_status is None
+    assert website.unpublish_status is None
 
 
 def test_websites_endpoint_publish_denied(mocker, drf_client):
@@ -371,7 +371,7 @@ def test_websites_endpoint_unpublish(mocker, drf_client):
 
     mock_unpublished_removal.assert_called_once()
     assert website.unpublished is True
-    assert website.unpublished_status == constants.PUBLISH_STATUS_NOT_STARTED
+    assert website.unpublish_status == constants.PUBLISH_STATUS_NOT_STARTED
     assert website.last_unpublished_by == admin
 
 
@@ -1249,14 +1249,14 @@ def test_unpublished_removal_endpoint_list(settings, drf_client):
         WebsiteFactory.create(
             publish_date=now_in_utc(),
             unpublished=True,
-            unpublished_status=PUBLISH_STATUS_SUCCEEDED,
+            unpublish_status=PUBLISH_STATUS_SUCCEEDED,
         ),
     ]
     expected_sites = WebsiteFactory.create_batch(
         2,
         publish_date=now_in_utc(),
         unpublished=True,
-        unpublished_status=choices(
+        unpublish_status=choices(
             [None, PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED]
         )[0],
     )

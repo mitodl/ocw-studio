@@ -421,7 +421,7 @@ def test_update_website_status(mocker, status, notify, has_user, version):
 
 
 @pytest.mark.parametrize("status", [PUBLISH_STATUS_SUCCEEDED, PUBLISH_STATUS_ERRORED])
-def test_update_website_unpublished_status(mocker, status):
+def test_update_website_unpublish_status(mocker, status):
     """update_website_status should update the appropriate website publishing fields"""
     mock_mail = mocker.patch("websites.api.mail_on_publish")
     mock_log = mocker.patch("websites.api.log.error")
@@ -432,8 +432,8 @@ def test_update_website_unpublished_status(mocker, status):
     website.refresh_from_db()
     assert website.live_publish_status is None
     assert website.live_publish_status_updated_on is None
-    assert website.unpublished_status_updated_on == now
-    assert website.unpublished_status == status
+    assert website.unpublish_status_updated_on == now
+    assert website.unpublish_status == status
     assert mock_mail.call_count == 0
     assert mock_log.call_count == (1 if status == PUBLISH_STATUS_ERRORED else 0)
 
