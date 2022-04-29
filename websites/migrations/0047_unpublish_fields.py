@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("websites", "0045_blank_publish_fields"),
+        ("websites", "0046_filetype_to_resourcetype"),
     ]
 
     operations = [
