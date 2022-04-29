@@ -1,6 +1,5 @@
 """ Tests for websites views """
 import datetime
-from random import choices
 from types import SimpleNamespace
 
 import factory
@@ -21,7 +20,6 @@ from users.factories import UserFactory
 from websites import constants
 from websites.constants import (
     CONTENT_TYPE_METADATA,
-    PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
 )
