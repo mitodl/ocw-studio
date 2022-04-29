@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.58.0
+Version 0.58.0 (Released April 29, 2022)
 --------------
 
 - fix erroneous prompting when saving new pages (#1279)
