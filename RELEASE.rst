@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.58.1
+--------------
+
+- Unpublish sites - backend code (#1270)
+- add migration to move filetype to resourcetype (#1276)
+- Fix file paths command (#1261)
+- publish alert, prettier prompt, new IntegrationTestHelper
+- fix transcript links (#1281)
+
 Version 0.58.0 (Released April 29, 2022)
 --------------
 
