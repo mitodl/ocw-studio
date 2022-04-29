@@ -3,6 +3,7 @@ import logging
 import os
 from typing import Optional
 
+import boto3
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
@@ -74,3 +75,18 @@ def check_mandatory_settings(mandatory_settings):
         raise ImproperlyConfigured(
             "The following settings are missing: {}".format(", ".join(missing_settings))
         )
+
+
+def move_s3_object(from_path, to_path):
+    """Move an S3 object from one path to another"""
+    s3 = boto3.resource("s3")
+    log.error(f"COPY FROM {from_path} TO {to_path}")
+    bucket = settings.AWS_STORAGE_BUCKET_NAME
+    s3.Object(bucket, to_path).copy_from(
+        CopySource={"Bucket": bucket, "Key": from_path}
+    )
+    extra_args = {"ACL": "public-read"}
+    s3.meta.client.copy(
+        {"Bucket": bucket, "Key": from_path}, bucket, to_path, extra_args
+    )
+    s3.Object(bucket, from_path).delete()

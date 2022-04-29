@@ -3,8 +3,14 @@ import json
 from os import path
 
 import pytest
+from django.conf import settings
 
-from videos.api import create_media_convert_job, process_video_outputs
+from gdrive_sync.factories import DriveFileFactory
+from videos.api import (
+    create_media_convert_job,
+    prepare_video_download_file,
+    process_video_outputs,
+)
 from videos.conftest import TEST_VIDEOS_WEBHOOK_PATH
 from videos.constants import (
     DESTINATION_ARCHIVE,
@@ -12,8 +18,10 @@ from videos.constants import (
     VideoFileStatus,
     VideoStatus,
 )
-from videos.factories import VideoFactory
+from videos.factories import VideoFactory, VideoFileFactory
 from videos.models import VideoFile, VideoJob
+from websites.constants import CONTENT_TYPE_RESOURCE
+from websites.factories import WebsiteContentFactory
 
 
 pytestmark = pytest.mark.django_db
@@ -53,8 +61,9 @@ def test_create_media_convert_job(settings, mocker):
     assert video.status == VideoStatus.TRANSCODING
 
 
-def test_process_video_outputs():
+def test_process_video_outputs(mocker):
     """ Based on transcoder output, three new video files should be created"""
+    mock_prepare_download = mocker.patch("videos.api.prepare_video_download_file")
     video = VideoFactory.create()
     with open(
         f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json", "r"
@@ -62,6 +71,7 @@ def test_process_video_outputs():
         outputs = json.loads(infile.read())["detail"]["outputGroupDetails"]
         process_video_outputs(video, outputs)
         assert video.videofiles.count() == 3
+        mock_prepare_download.assert_called_once_with(video)
         youtube_video = VideoFile.objects.get(
             video=video, destination=DESTINATION_YOUTUBE
         )
@@ -73,3 +83,25 @@ def test_process_video_outputs():
             video=video, destination=DESTINATION_ARCHIVE
         ):
             assert "_youtube." not in videofile.s3_key
+
+
+def test_prepare_video_download_file(mocker):
+    """The correct video file S3 path should be changed, and Website.file updated"""
+    content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
+    video = VideoFactory.create(website=content.website)
+    DriveFileFactory.create(website=video.website, video=video, resource=content)
+    mock_move_s3 = mocker.patch("videos.api.move_s3_object")
+    dl_video_name = "my_video__360p_16_9.mp4"
+    for name in ("my_video_youtube.mp4", dl_video_name, "my_video_360p_4_3.mp4"):
+        VideoFileFactory.create(
+            video=video,
+            s3_key=f"{settings.VIDEO_S3_TRANSCODE_PREFIX}/fakejobid/{video.website.name}/{name}",
+            destination=DESTINATION_ARCHIVE,
+        )
+    prepare_video_download_file(video)
+    mock_move_s3.assert_called_once_with(
+        f"{settings.VIDEO_S3_TRANSCODE_PREFIX}/fakejobid/{video.website.name}/{dl_video_name}",
+        f"sites/{video.website.name}/{dl_video_name}",
+    )
+    content.refresh_from_db()
+    assert content.file.name == f"sites/{video.website.name}/{dl_video_name}"

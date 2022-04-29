@@ -2,10 +2,13 @@
 import json
 import logging
 import os
+from urllib.parse import urljoin, urlparse
 
 import boto3
 from django.conf import settings
 
+from content_sync.utils import move_s3_object
+from gdrive_sync.models import DriveFile
 from videos.apps import VideoApp
 from videos.constants import (
     DESTINATION_ARCHIVE,
@@ -15,15 +18,39 @@ from videos.constants import (
     VideoStatus,
 )
 from videos.models import Video, VideoFile, VideoJob
+from websites.utils import set_dict_field
 
 
 log = logging.getLogger(__name__)
 
+VIDEO_DOWNLOAD_PATTERN = "_360p_16_9."
 
-def create_media_convert_job(video: Video, source_prefix=None):
+
+def prepare_video_download_file(video: Video):
+    """Update the video file and associated resource metadata with correct download url"""
+    video_file = VideoFile.objects.filter(
+        video=video,
+        destination=DESTINATION_ARCHIVE,
+        s3_key__contains=VIDEO_DOWNLOAD_PATTERN,
+    ).first()
+    if not video_file:
+        return
+    new_s3_key = urljoin(
+        f"{urlparse(video.website.get_url()).path}/",
+        f"{video_file.s3_key.split('/')[-1]}",
+    ).strip("/")
+    if new_s3_key != video_file.s3_key:
+        move_s3_object(video_file.s3_key, new_s3_key)
+        video_file.s3_key = new_s3_key
+        video_file.save()
+    content = DriveFile.objects.get(video=video).resource
+    content.file = new_s3_key
+    content.save()
+
+
+def create_media_convert_job(video: Video):
     """Create a MediaConvert job for a Video"""
-    if source_prefix is None:
-        source_prefix = settings.DRIVE_S3_UPLOAD_PREFIX
+    source_prefix = settings.DRIVE_S3_UPLOAD_PREFIX
     endpoint = boto3.client(
         "mediaconvert",
         region_name=settings.AWS_REGION,
@@ -82,16 +109,20 @@ def process_video_outputs(video: Video, output_group_details: dict):
                         "status": VideoFileStatus.CREATED,
                     },
                 )
+    prepare_video_download_file(video)
 
 
 def update_video_job(video_job: VideoJob, results: dict):
     """Update a VideoJob and associated Video, VideoFiles based on MediaConvert results"""
+    video_job.job_output = results
     status = results.get("status")
     video = video_job.video
     if status == "COMPLETE":
-        process_video_outputs(video, results.get("outputGroupDetails"))
         video_job.status = VideoJobStatus.COMPLETE
-        # future PR: upload to youtube & internet archive, create WebsiteContent for video
+        try:
+            process_video_outputs(video, results.get("outputGroupDetails"))
+        except:  # pylint:disable=bare-except
+            log.exception("Error processing video outputs for job %s", video_job.job_id)
     elif status == "ERROR":
         video.status = VideoStatus.FAILED
         video_job.status = VideoJobStatus.FAILED

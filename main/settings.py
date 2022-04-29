@@ -553,6 +553,11 @@ FIELD_METADATA_TITLE = get_string(
     default="course_title",
     description="The site metadata field for title",
 )
+FIELD_METADATA_VIDEO_DOWNLOAD = get_string(
+    name="FIELD_METADATA_VIDEO_DOWNLOAD",
+    default="video_files.archive_url",
+    description="The video download url metadata field",
+)
 
 # YouTube OCW metadata fields
 YT_FIELD_CAPTIONS = get_string(
