@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.58.0 (Released April 29, 2022)
+--------------
+
+- fix erroneous prompting when saving new pages (#1279)
+- Added video-gallery to add link ResourceDialogPicker (#1273)
+- Added a check to return as soon as filter_set has been gone over (#1257)
+- Prompt for confirmation when discarding changes
+- New sites API: Filter out sites without sitemetadata content instead of Website.metadata (#1202)
+
 Version 0.57.6 (Released April 25, 2022)
 --------------
 
