@@ -12,8 +12,11 @@ router = SimpleRouter()
 website_route = router.register(
     r"websites", views.WebsiteViewSet, basename="websites_api"
 )
-publish_route = router.register(
+mass_build_route = router.register(
     r"publish", views.WebsiteMassBuildViewSet, basename="mass_build_api"
+)
+unpublish_route = router.register(
+    r"unpublish", views.WebsiteUnpublishViewSet, basename="unpublished_removal_api"
 )
 website_route.register(
     r"collaborators",

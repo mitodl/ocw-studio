@@ -420,6 +420,24 @@ def test_update_website_status(mocker, status, notify, has_user, version):
     assert mock_log.call_count == (1 if status == PUBLISH_STATUS_ERRORED else 0)
 
 
+@pytest.mark.parametrize("status", [PUBLISH_STATUS_SUCCEEDED, PUBLISH_STATUS_ERRORED])
+def test_update_website_unpublish_status(mocker, status):
+    """update_website_status should update the appropriate website publishing fields"""
+    mock_mail = mocker.patch("websites.api.mail_on_publish")
+    mock_log = mocker.patch("websites.api.log.error")
+    user = UserFactory.create()
+    website = WebsiteFactory.create(last_unpublished_by=user, unpublished=True)
+    now = now_in_utc()
+    update_website_status(website, VERSION_LIVE, status, now, unpublished=True)
+    website.refresh_from_db()
+    assert website.live_publish_status is None
+    assert website.live_publish_status_updated_on is None
+    assert website.unpublish_status_updated_on == now
+    assert website.unpublish_status == status
+    assert mock_mail.call_count == 0
+    assert mock_log.call_count == (1 if status == PUBLISH_STATUS_ERRORED else 0)
+
+
 @pytest.mark.parametrize(
     "status",
     [
@@ -431,7 +449,7 @@ def test_update_website_status(mocker, status, notify, has_user, version):
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 def test_update_unpublished_website_status(status, version):
     """update_website_status should update an unpublished site appropriately"""
-    website = WebsiteFactory.create(unpublished=True, draft_publish_date=None)
+    website = WebsiteFactory.create(not_published=True, draft_publish_date=None)
     now = now_in_utc()
     update_website_status(website, version, status, now)
     website.refresh_from_db()

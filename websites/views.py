@@ -21,6 +21,7 @@ from rest_framework_extensions.mixins import NestedViewSetMixin
 from content_sync.api import (
     sync_github_website_starters,
     trigger_publish,
+    trigger_unpublished_removal,
     update_website_backend,
 )
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
@@ -35,6 +36,8 @@ from websites import constants
 from websites.api import get_valid_new_filename, update_website_status
 from websites.constants import (
     CONTENT_TYPE_METADATA,
+    PUBLISH_STATUS_NOT_STARTED,
+    PUBLISH_STATUS_SUCCEEDED,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -61,6 +64,7 @@ from websites.serializers import (
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
     WebsiteStatusSerializer,
+    WebsiteUnpublishSerializer,
     WebsiteWriteSerializer,
 )
 from websites.site_config_api import SiteConfig
@@ -97,15 +101,18 @@ class WebsiteViewSet(
         published = self.request.query_params.get("published", None)
 
         user = self.request.user
+        published_filter = Q(
+            first_published_to_production__isnull=False,
+            first_published_to_production__lte=now_in_utc(),
+            publish_date__isnull=False,
+            unpublish_status__isnull=True,
+            websitecontent__type=CONTENT_TYPE_METADATA,
+            websitecontent__metadata__isnull=False,
+        )
         if self.request.user.is_anonymous:
             # Anonymous users should get a list of all published websites (used for ocw-www carousel)
             ordering = "-first_published_to_production"
-            queryset = Website.objects.filter(
-                first_published_to_production__isnull=False,
-                first_published_to_production__lte=now_in_utc(),
-                websitecontent__type=CONTENT_TYPE_METADATA,
-                websitecontent__metadata__isnull=False,
-            ).distinct()
+            queryset = Website.objects.filter(published_filter).distinct()
         elif is_global_admin(user):
             # Global admins should get a list of all websites, published or not.
             queryset = Website.objects.all()
@@ -138,7 +145,10 @@ class WebsiteViewSet(
 
         if published is not None:
             published = _parse_bool(published)
-            queryset = queryset.filter(publish_date__isnull=not published)
+            if published:
+                queryset = queryset.filter(published_filter)
+            else:
+                queryset = queryset.exclude(published_filter)
 
         return queryset.select_related("starter").order_by(ordering)
 
@@ -206,11 +216,31 @@ class WebsiteViewSet(
                 live_publish_status_updated_on=now_in_utc(),
                 latest_build_id_live=None,
                 live_last_published_by=request.user,
+                unpublish_status=None,
+                last_unpublished_by=None,
             )
             trigger_publish(website.name, VERSION_LIVE)
             return Response(status=200)
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error publishing %s", name)
+            return Response(status=500, data={"details": str(exc)})
+
+    @action(
+        detail=True, methods=["post"], permission_classes=[HasWebsitePublishPermission]
+    )
+    def unpublish(self, request, name=None):
+        """Unpublish the site and trigger the remove-unpublished-sites pipeline"""
+        try:
+            website = self.get_object()
+
+            Website.objects.filter(pk=website.pk).update(
+                unpublish_status=PUBLISH_STATUS_NOT_STARTED,
+                last_unpublished_by=request.user,
+            )
+            trigger_unpublished_removal(website)
+            return Response(status=200)
+        except Exception as exc:  # pylint: disable=broad-except
+            log.exception("Error unpublishing %s", name)
             return Response(status=500, data={"details": str(exc)})
 
     @action(detail=True, methods=["post"], permission_classes=[BearerTokenPermission])
@@ -220,7 +250,10 @@ class WebsiteViewSet(
         data = request.data
         version = data["version"]
         publish_status = data.get("status")
-        update_website_status(website, version, publish_status, now_in_utc())
+        unpublished = data.get("unpublished", False) and version == VERSION_LIVE
+        update_website_status(
+            website, version, publish_status, now_in_utc(), unpublished=unpublished
+        )
         return Response(status=200)
 
 
@@ -240,12 +273,33 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
         )
 
         # Get all sites, minus any sites that have never been successfully published
+        sites = Website.objects.exclude(Q(**{f"{publish_date_field}__isnull": True}))
+        # For live builds, exclude previously published sites that have been unpublished
+        if version == VERSION_LIVE:
+            sites = sites.exclude(unpublish_status__isnull=False)
+        sites = sites.prefetch_related("starter").order_by("name")
+        serializer = WebsitePublishSerializer(instance=sites, many=True)
+        return Response({"sites": serializer.data})
+
+
+class WebsiteUnpublishViewSet(viewsets.ViewSet):
+    """
+    Return a list of sites that need to be unpublished, with the info required by the remove-unpublished-sites pipeline
+    """
+
+    permission_classes = (BearerTokenPermission,)
+
+    def list(self, request):
+        """Return a list of websites that need to be processed by the remove-unpublished-sites pipeline"""
         sites = (
-            Website.objects.exclude(Q(**{f"{publish_date_field}__isnull": True}))
+            Website.objects.exclude(
+                Q(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
+                | Q(unpublish_status__isnull=True)
+            )
             .prefetch_related("starter")
             .order_by("name")
         )
-        serializer = WebsitePublishSerializer(instance=sites, many=True)
+        serializer = WebsiteUnpublishSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
 
 

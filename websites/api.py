@@ -309,7 +309,11 @@ def reset_publishing_fields(website_name: str):
 
 
 def update_website_status(
-    website: Website, version: str, status: str, update_time: datetime
+    website: Website,
+    version: str,
+    status: str,
+    update_time: datetime,
+    unpublished=False,
 ):
     """Update some status fields in Website"""
     if version == VERSION_DRAFT:
@@ -325,6 +329,15 @@ def update_website_status(
             else:
                 # Allow user to retry
                 update_kwargs["has_unpublished_draft"] = True
+    elif unpublished:
+        user = website.last_unpublished_by
+        update_kwargs = {
+            "unpublish_status": status,
+            "unpublish_status_updated_on": update_time,
+            "live_publish_status": None,
+            "live_publish_status_updated_on": None,
+            "latest_build_id_live": None,
+        }
     else:
         user = website.live_last_published_by
         update_kwargs = {
@@ -343,7 +356,7 @@ def update_website_status(
     Website.objects.filter(name=website.name).update(**update_kwargs)
     if status in (PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_ABORTED):
         log.error("A %s pipeline build failed for %s", version, website.name)
-    if status in PUBLISH_STATUSES_FINAL and user:
+    if status in PUBLISH_STATUSES_FINAL and user and not unpublished:
         mail_on_publish(
             website.name, version, status == PUBLISH_STATUS_SUCCEEDED, user.id
         )

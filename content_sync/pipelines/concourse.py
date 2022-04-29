@@ -25,6 +25,7 @@ from content_sync.pipelines.base import (
     BasePipeline,
     BaseSitePipeline,
     BaseThemeAssetsPipeline,
+    BaseUnpublishedSiteRemovalPipeline,
 )
 from content_sync.utils import check_mandatory_settings
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
@@ -175,6 +176,10 @@ class ConcoursePipeline(BasePipeline):
         """Make URL for fetching job info"""
         return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}{self.instance_vars}"
 
+    def _make_pipeline_pause_url(self, pipeline_name: str):
+        """Make URL for pausing a pipeline"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/pause{self.instance_vars}"
+
     def _make_pipeline_unpause_url(self, pipeline_name: str):
         """Make URL for unpausing a pipeline"""
         return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/unpause{self.instance_vars}"
@@ -184,6 +189,10 @@ class ConcoursePipeline(BasePipeline):
         pipeline_info = self.api.get(self._make_pipeline_config_url(pipeline_name))
         job_name = pipeline_info["config"]["jobs"][0]["name"]
         return self.api.post(self._make_builds_url(pipeline_name, job_name))["id"]
+
+    def pause_pipeline(self, pipeline_name: str):
+        """Pause the pipeline"""
+        self.api.put(self._make_pipeline_pause_url(pipeline_name))
 
     def unpause_pipeline(self, pipeline_name: str):
         """Unpause the pipeline"""
@@ -210,6 +219,22 @@ class ConcoursePipeline(BasePipeline):
             return self.trigger_pipeline_build(self.PIPELINE_NAME)
         else:
             raise ValueError("No default name specified for this pipeline")
+
+    def upsert_config(self, config_str: str, pipeline_name: str):
+        """Upsert the configuration for a pipeline"""
+        config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
+        log.debug(config)
+        # Try to get the pipeline_name of the pipeline if it already exists, because it will be
+        # necessary to update an existing pipeline.
+        url_path = self._make_pipeline_config_url(pipeline_name)
+        try:
+            _, headers = self.api.get_with_headers(url_path)
+            version_headers = {
+                "X-Concourse-Config-Version": headers["X-Concourse-Config-Version"]
+            }
+        except HTTPError:
+            version_headers = None
+        self.api.put_with_headers(url_path, data=config, headers=version_headers)
 
 
 class SitePipeline(BaseSitePipeline, ConcoursePipeline):
@@ -328,19 +353,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
                     .replace("((theme-created-trigger))", theme_created_trigger)
                     .replace("((build-drafts))", build_drafts)
                 )
-            config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
-            log.debug(config)
-            # Try to get the pipeline_name of the pipeline if it already exists, because it will be
-            # necessary to update an existing pipeline.
-            url_path = self._make_pipeline_config_url(pipeline_name)
-            try:
-                _, headers = self.api.get_with_headers(url_path)
-                version_headers = {
-                    "X-Concourse-Config-Version": headers["X-Concourse-Config-Version"]
-                }
-            except HTTPError:
-                version_headers = None
-            self.api.put_with_headers(url_path, data=config, headers=version_headers)
+            self.upsert_config(config_str, pipeline_name)
 
 
 class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
@@ -384,19 +397,7 @@ class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
                 .replace("((ocw-bucket-live))", settings.AWS_PUBLISH_BUCKET_NAME)
                 .replace("((purge_header))", purge_header)
             )
-            config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
-            log.debug(config)
-            # Try to get the pipeline_name of the pipeline if it already exists, because it will be
-            # necessary to update an existing pipeline.
-            url_path = self._make_pipeline_config_url(self.PIPELINE_NAME)
-            try:
-                _, headers = self.api.get_with_headers(url_path)
-                version_headers = {
-                    "X-Concourse-Config-Version": headers["X-Concourse-Config-Version"]
-                }
-            except HTTPError:
-                version_headers = None
-            self.api.put_with_headers(url_path, data=config, headers=version_headers)
+            self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
 class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, ConcoursePipeline):
@@ -479,15 +480,45 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, ConcoursePipeline):
                 .replace("((build-drafts))", build_drafts)
             )
         log.debug(config_str)
-        config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
-        # Try to get the version of the pipeline if it already exists, because it will be
-        # necessary to update an existing pipeline.
-        url_path = self._make_pipeline_config_url(self.PIPELINE_NAME)
-        try:
-            _, headers = self.api.get_with_headers(url_path)
-            version_headers = {
-                "X-Concourse-Config-Version": headers["X-Concourse-Config-Version"]
-            }
-        except HTTPError:
-            version_headers = None
-        self.api.put_with_headers(url_path, data=config, headers=version_headers)
+        self.upsert_config(config_str, self.PIPELINE_NAME)
+
+
+class UnpublishedSiteRemovalPipeline(
+    BaseUnpublishedSiteRemovalPipeline, ConcoursePipeline
+):
+    """Specialized concourse pipeline for removing unpublished sites"""
+
+    PIPELINE_NAME = BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME
+
+    def __init__(self, api: Optional[ConcourseApi] = None):
+        """Initialize the pipeline instance"""
+        self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
+            "AWS_PUBLISH_BUCKET_NAME"
+        ]
+        super().__init__(api=api)
+        self.pipeline_name = "remove_unpublished_sites"
+        self.version = VERSION_LIVE
+
+    def upsert_pipeline(self):  # pylint:disable=too-many-locals
+        """
+        Create or update the concourse pipeline
+        """
+        destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
+
+        with open(
+            os.path.join(
+                os.path.dirname(__file__),
+                "definitions/concourse/remove-unpublished-sites.yml",
+            )
+        ) as pipeline_config_file:
+            config_str = (
+                pipeline_config_file.read()
+                .replace("((ocw-bucket))", destination_bucket)
+                .replace("((ocw-studio-url))", settings.SITE_BASE_URL)
+                .replace("((version))", VERSION_LIVE)
+                .replace("((api-token))", settings.API_BEARER_TOKEN or "")
+                .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
+                .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
+            )
+        log.debug(config_str)
+        self.upsert_config(config_str, self.PIPELINE_NAME)

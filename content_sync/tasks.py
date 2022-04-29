@@ -175,6 +175,18 @@ def trigger_mass_build(version: str) -> bool:
     return True
 
 
+@app.task(acks_late=True)
+def trigger_unpublished_removal(website_name: str) -> bool:
+    """Trigger the unpublished site removal pipeline and pause the specified site pipeline"""
+    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
+        site_pipeline = api.get_sync_pipeline(Website.objects.get(name=website_name))
+        site_pipeline.pause_pipeline(VERSION_LIVE)
+        removal_pipeline = api.get_unpublished_removal_pipeline()
+        removal_pipeline.unpause()
+        removal_pipeline.trigger()
+    return True
+
+
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_task(10)
 def sync_website_content(website_name: str):

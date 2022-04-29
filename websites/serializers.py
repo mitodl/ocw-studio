@@ -104,7 +104,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
 
 
 class WebsitePublishSerializer(serializers.ModelSerializer):
-    """ Serializer for websites """
+    """ Serializer for mass building websites """
 
     starter_slug = serializers.SerializerMethodField(read_only=True)
     base_url = serializers.SerializerMethodField(read_only=True)
@@ -133,6 +133,39 @@ class WebsitePublishSerializer(serializers.ModelSerializer):
             "starter_slug",
             "site_url",
             "base_url",
+        ]
+        read_only_fields = fields
+
+
+class WebsiteUnpublishSerializer(serializers.ModelSerializer):
+    """ Serializer for removing unpublished websites """
+
+    site_url = serializers.SerializerMethodField(read_only=True)
+    site_uid = serializers.SerializerMethodField(read_only=True)
+
+    def get_site_url(self, instance):
+        """Get the website relative url"""
+        site_config = SiteConfig(instance.starter.config)
+        return f"{site_config.root_url_path}/{instance.name}".strip("/")
+
+    def get_site_uid(self, instance):
+        """Get the website uid"""
+        meta_content = WebsiteContent.objects.filter(
+            type=CONTENT_TYPE_METADATA, website=instance
+        ).first()
+        legacy_uid = (
+            meta_content.metadata.get("legacy_uid", "")
+            if meta_content is not None
+            else ""
+        ).replace("-", "")
+        return legacy_uid or instance.uuid.hex
+
+    class Meta:
+        model = Website
+        fields = [
+            "name",
+            "site_url",
+            "site_uid",
         ]
         read_only_fields = fields
 

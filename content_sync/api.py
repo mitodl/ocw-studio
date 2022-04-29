@@ -59,6 +59,14 @@ def get_mass_build_sites_pipeline(version: str, api: Optional[object] = None) ->
     )(version, api=api)
 
 
+@is_publish_pipeline_enabled
+def get_unpublished_removal_pipeline(api: Optional[object] = None) -> object:
+    """Get the unpublished sites removal pipeline if the backend has one"""
+    return import_string(
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.UnpublishedSiteRemovalPipeline"
+    )(api=api)
+
+
 @is_sync_enabled
 def sync_content(sync_state: ContentSyncState):
     """ Sync a piece of content based on its sync state """
@@ -91,6 +99,12 @@ def trigger_publish(website_name: str, version: str):
         tasks.publish_website_backend_draft.delay(website_name)
     else:
         tasks.publish_website_backend_live.delay(website_name)
+
+
+@is_sync_enabled
+def trigger_unpublished_removal(website: Website):
+    """Remove unpublished sites on the backend"""
+    tasks.trigger_unpublished_removal.delay(website.name)
 
 
 def sync_github_website_starters(

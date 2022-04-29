@@ -42,6 +42,13 @@ class BasePipeline(abc.ABC):
         """
         ...
 
+    @abc.abstractmethod
+    def pause_pipeline(self, pipeline_name: str):
+        """
+        Called to pause a website pipeline.
+        """
+        ...
+
 
 class BaseSitePipeline(BasePipeline):
     """ Base class for site-specific publishing """
@@ -57,3 +64,9 @@ class BaseThemeAssetsPipeline(BasePipeline):
     """ Base class for theme asset publishing """
 
     PIPELINE_NAME = "ocw-theme-assets"
+
+
+class BaseUnpublishedSiteRemovalPipeline(BasePipeline):
+    """ Base class for removing unpublished sites """
+
+    PIPELINE_NAME = "remove-unpublished-sites"
