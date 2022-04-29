@@ -27,7 +27,7 @@ VIDEO_DOWNLOAD_PATTERN = "_360p_16_9."
 
 
 def prepare_video_download_file(video: Video):
-    """Update the video file and associated resource metadata with correct download url"""
+    """Update the video file and associated resource with correct download url"""
     video_file = VideoFile.objects.filter(
         video=video,
         destination=DESTINATION_ARCHIVE,

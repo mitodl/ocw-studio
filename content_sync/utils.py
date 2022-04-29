@@ -80,7 +80,6 @@ def check_mandatory_settings(mandatory_settings):
 def move_s3_object(from_path, to_path):
     """Move an S3 object from one path to another"""
     s3 = boto3.resource("s3")
-    log.error(f"COPY FROM {from_path} TO {to_path}")
     bucket = settings.AWS_STORAGE_BUCKET_NAME
     s3.Object(bucket, to_path).copy_from(
         CopySource={"Bucket": bucket, "Key": from_path}
