@@ -7,7 +7,6 @@ import os
 
 from django.conf import settings
 from django.core.management import BaseCommand, CommandParser
-from google_auth_oauthlib.flow import InstalledAppFlow
 from mitol.common.utils import now_in_utc
 
 from content_sync.tasks import sync_unsynced_websites
@@ -47,12 +46,12 @@ class Command(BaseCommand):
         """
         Run the command
         """
-        filter = [name.strip() for name in options["filter"].split(",") if name]
+        site_filter = [name.strip() for name in options["filter"].split(",") if name]
         is_verbose = options["verbosity"] > 1
 
         videos = Video.objects.all()
-        if filter:
-            videos.filter(website__name__in=filter)
+        if site_filter:
+            videos.filter(website__name__in=site_filter)
 
         self.stdout.write(
             f"Updating downloadable video files for {videos.count()} sites."
@@ -64,7 +63,7 @@ class Command(BaseCommand):
                 )
             try:
                 prepare_video_download_file(video)
-            except Exception as exc:
+            except Exception as exc:  # pylint:disable=broad-except
                 self.stderr.write(
                     f"Error Updating video {video.source_key} for site {video.website.name}: {exc}"
                 )

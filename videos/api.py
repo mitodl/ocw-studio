@@ -18,7 +18,6 @@ from videos.constants import (
     VideoStatus,
 )
 from videos.models import Video, VideoFile, VideoJob
-from websites.utils import set_dict_field
 
 
 log = logging.getLogger(__name__)

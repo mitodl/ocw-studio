@@ -3,7 +3,6 @@ import json
 from os import path
 
 import pytest
-from django.conf import settings
 
 from gdrive_sync.factories import DriveFileFactory
 from videos.api import (
@@ -85,7 +84,7 @@ def test_process_video_outputs(mocker):
             assert "_youtube." not in videofile.s3_key
 
 
-def test_prepare_video_download_file(mocker):
+def test_prepare_video_download_file(settings, mocker):
     """The correct video file S3 path should be changed, and Website.file updated"""
     content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
     video = VideoFactory.create(website=content.website)
