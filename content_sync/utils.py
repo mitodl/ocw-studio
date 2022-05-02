@@ -81,9 +81,6 @@ def move_s3_object(from_path, to_path):
     """Move an S3 object from one path to another"""
     s3 = boto3.resource("s3")
     bucket = settings.AWS_STORAGE_BUCKET_NAME
-    s3.Object(bucket, to_path).copy_from(
-        CopySource={"Bucket": bucket, "Key": from_path}
-    )
     extra_args = {"ACL": "public-read"}
     s3.meta.client.copy(
         {"Bucket": bucket, "Key": from_path}, bucket, to_path, extra_args

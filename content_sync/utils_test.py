@@ -1,7 +1,15 @@
 """Content sync utility functionality tests"""
+import boto3
 import pytest
+from botocore.exceptions import ClientError
+from moto import mock_s3
 
-from content_sync.utils import get_destination_filepath, get_destination_url
+from content_sync.utils import (
+    get_destination_filepath,
+    get_destination_url,
+    move_s3_object,
+)
+from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
 from websites.factories import WebsiteContentFactory, WebsiteStarterFactory
 from websites.site_config_api import ConfigItem, SiteConfig
 
@@ -115,3 +123,20 @@ def test_get_destination_filepath(is_page_content, dirpath, filename, expected):
         get_destination_filepath(content, SiteConfig(content.website.starter.config))
         == expected
     )
+
+
+@mock_s3
+def test_move_s3_object(settings):
+    """S3 key for a moved object should be changed as expected"""
+    settings.AWS_STORAGE_BUCKET_NAME = MOCK_BUCKET_NAME
+    setup_s3(settings)
+    client = boto3.client("s3")
+    from_path = "biology/config/_default/menus.yaml"
+    to_path = "courses/mycourse/_default/menus.yaml"
+    assert client.get_object(Bucket=MOCK_BUCKET_NAME, Key=from_path) is not None
+    with pytest.raises(ClientError):
+        client.get_object(Bucket=MOCK_BUCKET_NAME, Key=to_path)
+    move_s3_object(from_path, to_path)
+    with pytest.raises(ClientError):
+        client.get_object(Bucket=MOCK_BUCKET_NAME, Key=from_path)
+    assert client.get_object(Bucket=MOCK_BUCKET_NAME, Key=to_path) is not None
