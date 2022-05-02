@@ -283,11 +283,8 @@ def test_websites_endpoint_preview_error(mocker, drf_client):
     assert resp.data == {"details": "422 {}"}
 
 
-@pytest.mark.parametrize(
-    "unpublished, unpublish_status",
-    [[True, PUBLISH_STATUS_NOT_STARTED], [False, None]],
-)
-def test_websites_endpoint_publish(mocker, drf_client, unpublished, unpublish_status):
+@pytest.mark.parametrize("unpublish_status", [PUBLISH_STATUS_NOT_STARTED, None])
+def test_websites_endpoint_publish(mocker, drf_client, unpublish_status):
     """
     A user with admin permissions should be able to request a website publish and revert
     any previous unpublish request
@@ -295,9 +292,7 @@ def test_websites_endpoint_publish(mocker, drf_client, unpublished, unpublish_st
     mock_publish_website = mocker.patch("websites.views.trigger_publish")
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
-    website = WebsiteFactory.create(
-        unpublished=unpublished, unpublish_status=unpublish_status
-    )
+    website = WebsiteFactory.create(unpublish_status=unpublish_status)
     admin = UserFactory.create()
     admin.groups.add(website.admin_group)
     drf_client.force_login(admin)
