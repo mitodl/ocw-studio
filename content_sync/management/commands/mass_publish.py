@@ -102,7 +102,7 @@ class Command(BaseCommand):
         if source_str:
             website_qset = website_qset.filter(source=source_str)
         # do not publish any sites that have been unpublished or never been published before
-        website_qset = website_qset.exclude(unpublished=True)
+        website_qset = website_qset.filter(unpublish_status__isnull=True)
         if version == VERSION_DRAFT:
             website_qset = website_qset.exclude(draft_publish_date__isnull=True)
         else:
