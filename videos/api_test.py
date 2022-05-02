@@ -86,26 +86,32 @@ def test_process_video_outputs(mocker):
             assert "_youtube." not in videofile.s3_key
 
 
-def test_prepare_video_download_file(settings, mocker):
+@pytest.mark.parametrize("files_exist", [True, False])
+def test_prepare_video_download_file(settings, mocker, files_exist):
     """The correct video file S3 path should be changed, and Website.file updated"""
     content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
     video = VideoFactory.create(website=content.website)
     DriveFileFactory.create(website=video.website, video=video, resource=content)
     mock_move_s3 = mocker.patch("videos.api.move_s3_object")
     dl_video_name = "my_video__360p_16_9.mp4"
-    for name in ("my_video_youtube.mp4", dl_video_name, "my_video_360p_4_3.mp4"):
-        VideoFileFactory.create(
-            video=video,
-            s3_key=f"{settings.VIDEO_S3_TRANSCODE_PREFIX}/fakejobid/{video.website.name}/{name}",
-            destination=DESTINATION_ARCHIVE,
-        )
+    if files_exist:
+        for name in ("my_video_youtube.mp4", dl_video_name, "my_video_360p_4_3.mp4"):
+            VideoFileFactory.create(
+                video=video,
+                s3_key=f"{settings.VIDEO_S3_TRANSCODE_PREFIX}/fakejobid/{video.website.name}/{name}",
+                destination=DESTINATION_ARCHIVE,
+            )
     prepare_video_download_file(video)
-    mock_move_s3.assert_called_once_with(
-        f"{settings.VIDEO_S3_TRANSCODE_PREFIX}/fakejobid/{video.website.name}/{dl_video_name}",
-        f"sites/{video.website.name}/{dl_video_name}",
-    )
     content.refresh_from_db()
-    assert content.file.name == f"sites/{video.website.name}/{dl_video_name}"
+    if files_exist:
+        mock_move_s3.assert_called_once_with(
+            f"{settings.VIDEO_S3_TRANSCODE_PREFIX}/fakejobid/{video.website.name}/{dl_video_name}",
+            f"sites/{video.website.name}/{dl_video_name}",
+        )
+        assert content.file.name == f"sites/{video.website.name}/{dl_video_name}"
+    else:
+        mock_move_s3.assert_not_called()
+        assert content.file.name == ""
 
 
 @pytest.mark.parametrize("raises_exception", [True, False])
