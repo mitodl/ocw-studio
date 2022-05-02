@@ -9,15 +9,17 @@ from videos.api import (
     create_media_convert_job,
     prepare_video_download_file,
     process_video_outputs,
+    update_video_job,
 )
 from videos.conftest import TEST_VIDEOS_WEBHOOK_PATH
 from videos.constants import (
     DESTINATION_ARCHIVE,
     DESTINATION_YOUTUBE,
     VideoFileStatus,
+    VideoJobStatus,
     VideoStatus,
 )
-from videos.factories import VideoFactory, VideoFileFactory
+from videos.factories import VideoFactory, VideoFileFactory, VideoJobFactory
 from videos.models import VideoFile, VideoJob
 from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.factories import WebsiteContentFactory
@@ -104,3 +106,40 @@ def test_prepare_video_download_file(settings, mocker):
     )
     content.refresh_from_db()
     assert content.file.name == f"sites/{video.website.name}/{dl_video_name}"
+
+
+@pytest.mark.parametrize("raises_exception", [True, False])
+def test_update_video_job_success(mocker, raises_exception):
+    """The video job should be updated as expected if the transcode job succeeded"""
+    mock_process_outputs = mocker.patch(
+        "videos.api.process_video_outputs",
+        side_effect=(ValueError() if raises_exception else None),
+    )
+    mock_log = mocker.patch("videos.api.log.exception")
+    video_job = VideoJobFactory.create(status=VideoJobStatus.CREATED)
+    with open(
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json", "r"
+    ) as infile:
+        data = json.loads(infile.read())["detail"]
+    update_video_job(video_job, data)
+    mock_process_outputs.assert_called_once()
+    video_job.refresh_from_db()
+    assert video_job.job_output == data
+    assert video_job.status == VideoJobStatus.COMPLETE
+    assert mock_log.call_count == (1 if raises_exception else 0)
+
+
+def test_update_video_job_error(mocker):
+    """The video job should be updated as expected if the transcode job failed"""
+    mock_log = mocker.patch("videos.api.log.error")
+    video_job = VideoJobFactory.create()
+    with open(f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_error.json", "r") as infile:
+        data = json.loads(infile.read())["detail"]
+    update_video_job(video_job, data)
+    video_job.refresh_from_db()
+    assert video_job.job_output == data
+    assert video_job.error_code == str(data.get("errorCode"))
+    assert video_job.error_message == data.get("errorMessage")
+    assert video_job.status == VideoJobStatus.FAILED
+    assert video_job.video.status == VideoStatus.FAILED
+    mock_log.assert_called_once()

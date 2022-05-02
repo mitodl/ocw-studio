@@ -133,5 +133,7 @@ def update_video_job(video_job: VideoJob, results: dict):
         )
         video_job.error_code = str(results.get("errorCode"))
         video_job.error_message = results.get("errorMessage")
+    else:
+        raise Exception(json.dumps(results))
     video_job.save()
     video.save()
