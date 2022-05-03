@@ -2,7 +2,7 @@ import React, { ComponentType } from "react"
 import ReactDOM from "react-dom"
 import { AppContainer } from "react-hot-loader"
 
-import configureStore from "./store/configureStore"
+import { store } from "./store"
 import Root, { RootProps } from "./Root"
 
 import * as Sentry from "@sentry/browser"
@@ -16,8 +16,6 @@ Sentry.init({
   release:     SETTINGS.release_version,
   environment: SETTINGS.environment
 })
-
-const store = configureStore()
 
 const rootEl = document.getElementById("container")
 

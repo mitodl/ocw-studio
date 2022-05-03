@@ -9,7 +9,7 @@ import {
   WebsiteListingResponse,
   WebsitesListing
 } from "../query-configs/websites"
-import { ReduxState } from "../reducers"
+import { ReduxState } from "../store"
 import {
   ContentListingParams,
   WebsiteStarter,

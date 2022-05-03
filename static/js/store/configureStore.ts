@@ -3,13 +3,12 @@ import { createLogger } from "redux-logger"
 import { queryMiddleware } from "redux-query"
 
 import { makeRequest } from "./network_interface"
-import rootReducer, { ReduxState } from "../reducers"
+import rootReducer, { ReduxState } from "./rootReducer"
 import { getQueries, getEntities } from "../lib/redux_query"
 
 export type Store = ReturnType<typeof configureStore>
 
 // Setup middleware
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default function configureStore(initialState?: ReduxState) {
   const COMMON_MIDDLEWARE = [
     queryMiddleware(makeRequest, getQueries, getEntities)
@@ -35,9 +34,9 @@ export default function configureStore(initialState?: ReduxState) {
 
   if ((module as any).hot) {
     // Enable Webpack hot module replacement for reducers
-    (module as any).hot.accept("../reducers", () => {
+    (module as any).hot.accept("./rootReducer", () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const nextRootReducer = require("../reducers")
+      const nextRootReducer = require("./rootReducer")
 
       store.replaceReducer(nextRootReducer)
     })
