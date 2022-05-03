@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.59.1
+--------------
+
+- Remove stray slash from unpublish pipeline (#1291)
+
 Version 0.59.0 (Released May 03, 2022)
 --------------
 
