@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.59.0
+Version 0.59.0 (Released May 03, 2022)
 --------------
 
 - Fix mass publish command (#1289)
