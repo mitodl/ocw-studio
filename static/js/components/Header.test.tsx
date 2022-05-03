@@ -1,14 +1,14 @@
 import React from "react"
 import { act } from "@testing-library/react"
-import IntegrationTestHelper from "../util/IntegrationTestHelper"
 import * as dtl from "@testing-library/dom"
 import userEvent from "@testing-library/user-event"
 import {
+  IntegrationTestHelper,
   assertInstanceOf,
   absoluteUrl,
   flushEventQueue,
   mergeXProd
-} from "../test_util"
+} from "../testing_utils"
 
 import Header from "./Header"
 import { logoutUrl, siteApiDetailUrl } from "../lib/urls"
@@ -47,7 +47,7 @@ describe("Header without loaded website", () => {
 
   it("does not show username+logout for anonymous users", () => {
     const helper = new IntegrationTestHelper()
-    SETTINGS.user = null // SETTINGS is set in our global setup
+    helper.patchInitialReduxState({ user: { user: null } })
     const [result] = helper.render(<Header />)
     const links = result.container.querySelector("div.links")
     expect(links).toBe(null)

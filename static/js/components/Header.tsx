@@ -1,5 +1,5 @@
 import React, { useCallback } from "react"
-import { useStore } from "react-redux"
+import { useAppDispatch, useAppSelector } from "../hooks/redux"
 import { Link } from "react-router-dom"
 import { requestAsync } from "redux-query"
 import useInterval from "@use-it/interval"
@@ -22,7 +22,8 @@ export interface HeaderProps {
 
 export default function Header(props: HeaderProps): JSX.Element {
   const { website } = props
-  const store = useStore()
+  const dispatch = useAppDispatch()
+  const { user } = useAppSelector(state => state.user)
   const [search, setSearchParams] = useSearchParams()
   const drawerOpen = search.has("publish")
 
@@ -51,7 +52,7 @@ export default function Header(props: HeaderProps): JSX.Element {
             )))
       ) {
         try {
-          await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
+          await dispatch(requestAsync(websiteStatusRequest(website.name)))
         } catch (err) {
           console.error(err)
         }
@@ -79,9 +80,9 @@ export default function Header(props: HeaderProps): JSX.Element {
             />
           </Link>
         </div>
-        {SETTINGS.user !== null ? (
+        {user !== null ? (
           <div className="links">
-            <span className="pr-5">{SETTINGS.user.name}</span>
+            <span className="pr-5">{user.name}</span>
             <a href={logoutUrl.toString()}>Log out</a>
           </div>
         ) : null}

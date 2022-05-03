@@ -1,5 +1,5 @@
 import { getCookie } from "./api/util"
-import { ReduxState } from "../reducers"
+import { ReduxState } from "../store"
 import { QueriesState, Entities } from "redux-query"
 
 export const DEFAULT_POST_OPTIONS = {
