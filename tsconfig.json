@@ -10,7 +10,6 @@
     "allowJs": true,
     "checkJs": false,
     "jsx": "react",
-    "declaration": true,
     "outDir": "./dist/",
     "tsBuildInfoFile": ".tsbuildinfo",
     "strict": true,
