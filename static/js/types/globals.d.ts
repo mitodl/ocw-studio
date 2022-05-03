@@ -1,4 +1,6 @@
-/* eslint-disable */
+/* eslint-disable camelcase */
+/* eslint-disable one-var */
+/* eslint-disable no-var */
 
 interface SETTINGS {
   reactGaDebug: string;
@@ -8,17 +10,21 @@ interface SETTINGS {
   release_version: string;
   sentry_dsn: string;
   gdrive_enabled: bool;
-  user: {
-    username: string;
-    email: string;
-    name: string;
-  } | null;
+  /**
+   * Settings.user does exist, but leaving it untyped to help encourage using
+   * `store.user` instead.
+   */
+  // user: User | null;
 }
+export declare global {
 
-declare var SETTINGS: SETTINGS;
+  declare var SETTINGS: SETTINGS
 
-declare var _testing: boolean;
+  declare var _testing: boolean
 
-declare var __REDUX_DEVTOOLS_EXTENSION__: Function;
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  declare var __REDUX_DEVTOOLS_EXTENSION__: Function
 
-declare var __webpack_public_path__: string;
+  declare var __webpack_public_path__: string
+
+}

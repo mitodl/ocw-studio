@@ -1,25 +1,35 @@
 import React from "react"
-import { shallow } from "enzyme"
+import { screen } from "@testing-library/react"
+import {
+  IntegrationTestHelper,
+  assertInstanceOf,
+  absoluteUrl
+} from "../testing_utils"
 
 import HomePage from "./HomePage"
 
-describe("HomePage", () => {
-  it("shows the Touchstone login button if the user is logged out", () => {
-    SETTINGS.user = null
-    const wrapper = shallow(<HomePage />)
-    const link = wrapper.find("a[href='/login/saml/?idp=default']")
-    expect(link.exists()).toBeTruthy()
-    expect(link.text()).toBe("Login with MIT Touchstone")
+const LOGIN_TEXT = "Login with MIT Touchstone"
+
+describe("Homepage", () => {
+  it("does show Touchstone Login when the user is logged out", () => {
+    const helper = new IntegrationTestHelper()
+    helper.patchInitialReduxState({ user: { user: null } })
+    const [result] = helper.render(<HomePage />)
+    const link = result.getByText(LOGIN_TEXT)
+    assertInstanceOf(link, HTMLAnchorElement)
+    expect(link.href).toBe(absoluteUrl("/login/saml/?idp=default"))
   })
 
-  it("should set the title", () => {
-    const wrapper = shallow(<HomePage />)
-    expect(wrapper.find("DocumentTitle").prop("title")).toBe("OCW Studio")
+  it("does NOT show Touchstone Login is NOT visible if user is already logged in", () => {
+    const helper = new IntegrationTestHelper()
+    helper.render(<HomePage />)
+    const link = screen.queryByText(LOGIN_TEXT)
+    expect(link).toBe(null)
   })
 
-  it("hides the Touchstone login button if the user is logged in", () => {
-    const wrapper = shallow(<HomePage />)
-    const link = wrapper.find("a[href='/login/saml/?idp=default']")
-    expect(link.exists()).toBeFalsy()
+  it("sets the document title", () => {
+    const helper = new IntegrationTestHelper()
+    helper.render(<HomePage />)
+    expect(document.title).toBe("OCW Studio")
   })
 })
