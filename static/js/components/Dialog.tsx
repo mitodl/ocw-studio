@@ -1,5 +1,12 @@
 import React from "react"
-import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap"
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalProps
+} from "reactstrap"
 
 export interface Props {
   open: boolean
@@ -8,15 +15,15 @@ export interface Props {
   acceptText?: string
   altAcceptText?: string
   cancelText?: string
-  headerContent: JSX.Element | string
-  bodyContent: JSX.Element | string
-  wrapClassName?: string
-  modalClassName?: string
-  backdropClassName?: string
-  contentClassName?: string
+  headerContent: React.ReactNode
+  bodyContent: React.ReactNode
+  wrapClassName?: ModalProps["wrapClassName"]
+  modalClassName?: ModalProps["modalClassName"]
+  backdropClassName?: ModalProps["backdropClassName"]
+  contentClassName?: ModalProps["contentClassName"]
 }
 
-export default function Dialog(props: Props): JSX.Element | null {
+const Dialog: React.FC<Props> = props => {
   const {
     open,
     headerContent,
@@ -52,7 +59,7 @@ export default function Dialog(props: Props): JSX.Element | null {
       <ModalBody>{bodyContent}</ModalBody>
       <ModalFooter>
         {onAccept ? (
-          <Button color="primary" onClick={onAccept}>
+          <Button className="cyan-button" onClick={onAccept}>
             {acceptText || "OK"}
           </Button>
         ) : null}
@@ -63,3 +70,5 @@ export default function Dialog(props: Props): JSX.Element | null {
     </Modal>
   )
 }
+
+export default Dialog
