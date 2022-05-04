@@ -237,8 +237,8 @@ export const makeWebsiteStatus = (
   }
 }
 
-export const makeWebsiteListing = (): Website[] =>
-  times(WEBSITES_PAGE_SIZE).map(() => makeWebsiteDetail())
+export const makeWebsites = (n = WEBSITES_PAGE_SIZE): Website[] =>
+  times(n).map(() => makeWebsiteDetail())
 
 export const makeWebsiteCollaborator = (): WebsiteCollaborator => ({
   user_id: incr.next().value,
