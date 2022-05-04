@@ -4,7 +4,7 @@ import { newSiteUrl, siteApiListingUrl, siteDetailUrl } from "../lib/urls"
 import { WebsiteListingResponse } from "../query-configs/websites"
 import { wait } from "../test_util"
 import {
-  makeWebsiteListing,
+  makeWebsites,
   makeWebsiteDetail
 } from "../util/factories/websites"
 import IntegrationTestHelper, {
@@ -24,7 +24,7 @@ describe("SitesDashboard", () => {
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    websites = makeWebsiteListing()
+    websites = makeWebsites()
     websitesLookup = {}
     for (const site of websites) {
       websitesLookup[site.name] = site

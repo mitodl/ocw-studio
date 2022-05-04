@@ -14,7 +14,7 @@ import IntegrationTestHelper, {
 import {
   makeWebsiteContentDetail,
   makeWebsiteDetail,
-  makeWebsiteListing
+  makeWebsites
 } from "../../util/factories/websites"
 import { siteApiContentListingUrl } from "../../lib/urls"
 import { WEBSITE_CONTENT_PAGE_SIZE } from "../../constants"
@@ -111,7 +111,7 @@ describe("RelationField", () => {
     // @ts-ignore
     debouncedFetch.mockResolvedValue({ json: async () => fakeResponse })
 
-    websites = makeWebsiteListing()
+    websites = makeWebsites()
     // @ts-ignore
     useWebsiteSelectOptions.mockReturnValue({
       options:     formatWebsiteOptions(websites, "name"),

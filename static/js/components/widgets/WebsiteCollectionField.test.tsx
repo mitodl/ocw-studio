@@ -8,7 +8,7 @@ import {
   useWebsiteSelectOptions
 } from "../../hooks/websites"
 import { Website } from "../../types/websites"
-import { makeWebsiteListing } from "../../util/factories/websites"
+import { makeWebsites } from "../../util/factories/websites"
 import { triggerSortableSelect } from "./test_util"
 import { Option } from "./SelectField"
 import SortableSelect from "./SortableSelect"
@@ -33,7 +33,7 @@ describe("WebsiteCollectionField", () => {
       name:  "test-site-collection",
       value: []
     })
-    websites = makeWebsiteListing()
+    websites = makeWebsites()
     websiteOptions = formatWebsiteOptions(websites, "name")
     // @ts-ignore
     useWebsiteSelectOptions.mockReturnValue({
