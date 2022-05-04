@@ -3,7 +3,7 @@ import { cloneDeep, defaultsDeep } from "lodash"
 import { render, RenderOptions } from "@testing-library/react"
 import { Provider } from "react-redux"
 import { Provider as ReduxQueryProvider } from "redux-query-react"
-import { createMemoryHistory } from "history"
+import { createMemoryHistory, InitialEntry } from "history"
 import { Router, Route } from "react-router"
 import {
   NetworkOptions,
@@ -50,7 +50,7 @@ type HandleRequest = (
   url: string,
   method: string,
   options?: NetworkOptions
-) => Partial<Reponse>
+) => Promise<Partial<Reponse>>
 
 /**
  * A helper for writing integration tests with @testing-library/react. This
@@ -71,12 +71,14 @@ export default class IntegrationTestHelper {
   }) as HandleRequest)
 
   private initialStorePatch: ReduxPatch = {}
+  private initialEntries: InitialEntry[]
 
-  constructor() {
+  constructor(location: InitialEntry = "/") {
+    this.initialEntries = [location]
     mockMakeRequest.mockClear()
     mockMakeRequest.mockImplementation((url, method, options) => ({
-      execute: callback => {
-        const response = this.handleRequest(url, method, options)
+      execute: async callback => {
+        const response = await this.handleRequest(url, method, options)
         const err = null
         const resStatus = response.status ?? 0
         const resBody = response.body ?? undefined
@@ -91,16 +93,16 @@ export default class IntegrationTestHelper {
     }))
   }
 
-  mockRequest(
+  mockRequest = (
     url: string,
     method: "GET" | "POST" | "PATCH" | "DELETE",
     responseBody: unknown,
     code: number,
     options = {}
-  ): this {
+  ): this => {
     when(this.handleRequest)
       .calledWith(url, method, options)
-      .mockReturnValue({
+      .mockResolvedValue({
         body:   responseBody,
         status: code
       })
@@ -112,39 +114,39 @@ export default class IntegrationTestHelper {
    * pass the API url you want to mock and the object which should be
    * returned as the request body!
    */
-  mockGetRequest(url: string, body: unknown, code = 200): this {
+  mockGetRequest = (url: string, body: unknown, code = 200): this => {
     return this.mockRequest(url, "GET", body, code)
   }
 
   /**
    * Convenience method for mocking out a POST request
    */
-  mockPostRequest(url: string, body: unknown, code = 201): this {
+  mockPostRequest = (url: string, body: unknown, code = 201): this => {
     return this.mockRequest(url, "POST", body, code)
   }
 
   /**
    * Convenience method for mocking out a PATCH request
    */
-  mockPatchRequest(url: string, body: unknown, code = 200): this {
+  mockPatchRequest = (url: string, body: unknown, code = 200): this => {
     return this.mockRequest(url, "PATCH", body, code)
   }
 
   /**
    * Convenience method for mocking out a DELETE request
    */
-  mockDeleteRequest(url: string, body: unknown, code = 204): this {
+  mockDeleteRequest = (url: string, body: unknown, code = 204): this => {
     return this.mockRequest(url, "DELETE", body, code)
   }
 
-  patchInitialReduxState(patch: ReduxPatch = {}) {
+  patchInitialReduxState = (patch: ReduxPatch = {}) => {
     this.initialStorePatch = patch
   }
 
-  render(ui: React.ReactElement, options?: RenderOptions) {
+  render = (ui: React.ReactElement, options?: RenderOptions) => {
     const initialStoreState = getInitialState(this.initialStorePatch)
     const store = configureStore(initialStoreState)
-    const history = createMemoryHistory()
+    const history = createMemoryHistory({ initialEntries: this.initialEntries })
     const renderResult = render(
       <Provider store={store}>
         <ReduxQueryProvider queriesSelector={getQueries}>

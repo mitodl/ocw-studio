@@ -3,6 +3,8 @@ import ReactDOM from "react-dom"
 import Adapter from "enzyme-adapter-react-16"
 import Enzyme from "enzyme"
 import failOnConsole from "jest-fail-on-console"
+// Adds some dom-related matches to jest
+import "@testing-library/jest-dom"
 
 failOnConsole()
 
