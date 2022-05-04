@@ -6,7 +6,6 @@ export interface Props {
   toggleModal: () => void
   onCancel?: () => void
   onAccept?: () => void
-  altOnAccept?: () => void
   acceptText?: string
   altAcceptText?: string
   cancelText?: string
@@ -25,10 +24,8 @@ export default function Dialog(props: Props): JSX.Element | null {
     headerContent,
     bodyContent,
     onAccept,
-    altOnAccept,
     onCancel,
     acceptText,
-    altAcceptText,
     cancelText,
     wrapClassName,
     modalClassName,
@@ -59,11 +56,6 @@ export default function Dialog(props: Props): JSX.Element | null {
         {onAccept ? (
           <Button color="primary" onClick={onAccept}>
             {acceptText || "OK"}
-          </Button>
-        ) : null}
-        {altOnAccept ? (
-          <Button color="primary" onClick={altOnAccept}>
-            {altAcceptText || "OK"}
           </Button>
         ) : null}
         <Button color="secondary" onClick={onCancel || toggleModal}>

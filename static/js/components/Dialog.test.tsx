@@ -21,7 +21,6 @@ describe("Dialog", () => {
   let toggleModalStub: SinonStub,
     onCancelStub: SinonStub,
     onAcceptStub: SinonStub,
-    altOnAcceptStub: SinonStub,
     headerContent: JSX.Element | string,
     bodyContent: JSX.Element | string,
     render: (props: ExtraProps) => ShallowWrapper
@@ -30,13 +29,11 @@ describe("Dialog", () => {
     toggleModalStub = sinon.stub()
     onCancelStub = sinon.stub()
     onAcceptStub = sinon.stub()
-    altOnAcceptStub = sinon.stub()
     render = (props: ExtraProps) =>
       shallow(
         <Dialog
           toggleModal={toggleModalStub}
           onAccept={onAcceptStub}
-          altOnAccept={altOnAcceptStub}
           onCancel={onCancelStub}
           {...props}
         />
@@ -70,14 +67,6 @@ describe("Dialog", () => {
     okButton.simulate("click")
     sinon.assert.calledOnce(onAcceptStub)
 
-    const altOkButton = wrapper
-      .find("ModalFooter")
-      .find("Button")
-      .at(1)
-    expect(altOkButton.childAt(0).text()).toBe("OK")
-    altOkButton.simulate("click")
-    sinon.assert.calledOnce(altOnAcceptStub)
-
     const cancelButton = wrapper
       .find("ModalFooter")
       .find("Button")
@@ -91,7 +80,6 @@ describe("Dialog", () => {
     headerContent = <h1>Header</h1>
     bodyContent = <div>Body</div>
     const acceptText = "Save"
-    const altAcceptText = "Create Draft"
     const cancelText = "Back"
     const wrapper = render({
       open: false,
