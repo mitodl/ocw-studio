@@ -141,3 +141,26 @@ export const mergeXProd = <
   ): (A & B)[] => {
   return R.xprod(a, b).map(([x, y]) => ({ ...x, ...y }))
 }
+
+/**
+ * Runs `cb` with a fake `window.location` object, then restores the original
+ * `window.location` and returns the fake object for assertions.
+ *
+ * Why? Because:
+ *  - JSDOM does not support navigation, so *some* things with window.location,
+ *  like assigning to `href`, won't work.
+ *  - and standard mocking techniques, like `jest.spyOn(window.location, 'href', 'set')
+ *    don't work because `window.location` is not configurable.
+ */
+export const withFakeLocation = async (
+  cb: () => Promise<void> | void
+): Promise<void> => {
+  const originalLocation = window.location
+  try {
+    window.location = { ...originalLocation }
+  } catch (err) {
+    await cb()
+  } finally {
+    window.location = originalLocation
+  }
+}
