@@ -3,8 +3,7 @@ import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap"
 
 export interface Props {
   open: boolean
-  toggleModal: () => void
-  onCancel?: () => void
+  onCancel: () => void
   onAccept?: () => void
   acceptText?: string
   altAcceptText?: string
@@ -20,7 +19,6 @@ export interface Props {
 export default function Dialog(props: Props): JSX.Element | null {
   const {
     open,
-    toggleModal,
     headerContent,
     bodyContent,
     onAccept,
@@ -34,7 +32,7 @@ export default function Dialog(props: Props): JSX.Element | null {
   } = props
 
   const closeBtn = (
-    <button className="close" onClick={toggleModal}>
+    <button className="close" onClick={onCancel}>
       &times;
     </button>
   )
@@ -42,13 +40,13 @@ export default function Dialog(props: Props): JSX.Element | null {
   return (
     <Modal
       isOpen={open}
-      toggle={toggleModal}
+      toggle={onCancel}
       wrapClassName={wrapClassName}
       modalClassName={modalClassName}
       backdropClassName={backdropClassName}
       contentClassName={contentClassName}
     >
-      <ModalHeader toggle={toggleModal} close={closeBtn}>
+      <ModalHeader toggle={onCancel} close={closeBtn}>
         {headerContent}
       </ModalHeader>
       <ModalBody>{bodyContent}</ModalBody>
@@ -58,7 +56,7 @@ export default function Dialog(props: Props): JSX.Element | null {
             {acceptText || "OK"}
           </Button>
         ) : null}
-        <Button color="secondary" onClick={onCancel || toggleModal}>
+        <Button color="secondary" onClick={onCancel}>
           {cancelText || "Cancel"}
         </Button>
       </ModalFooter>

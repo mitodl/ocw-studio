@@ -31,7 +31,8 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     setSelectedCollaborator
   ] = useState<WebsiteCollaborator | null>(null)
 
-  const toggleDeleteModal = () => setDeleteModal(!deleteModal)
+  const closeDeleteModal = useCallback(() => setDeleteModal(false), [])
+  const openDeleteModal = useCallback(() => setDeleteModal(true), [])
   const toggleEditVisibility = () => setEditVisibility(!editVisibility)
 
   const startEdit = (collaborator: WebsiteCollaborator | null) => (
@@ -47,7 +48,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   ) => {
     event.preventDefault()
     setSelectedCollaborator(collaborator)
-    toggleDeleteModal()
+    openDeleteModal()
   }
 
   const [deleteQueryState, deleteCollaborator] = useMutation(
@@ -111,7 +112,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
       </StudioList>
       <Dialog
         open={deleteModal}
-        toggleModal={toggleDeleteModal}
+        onCancel={closeDeleteModal}
         headerContent={"Remove collaborator"}
         bodyContent={`Are you sure you want to remove ${
           selectedCollaborator ? selectedCollaborator.name : "this user"
@@ -119,7 +120,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
         acceptText="Delete"
         onAccept={() => {
           onDelete()
-          toggleDeleteModal()
+          closeDeleteModal()
         }}
       />
     </>
