@@ -3,7 +3,7 @@ import { User } from "../../types/user"
 
 interface UserState {
   user: User | null
-  hasSessionExpired: boolean
+  authenticationErrors: number
 }
 
 const initialState: UserState = {
@@ -14,8 +14,14 @@ const initialState: UserState = {
    * the store value.
    */
   // @ts-expect-error intentially untyped
-  user:              SETTINGS.user,
-  hasSessionExpired: false
+  user:                 SETTINGS.user,
+  /**
+   * How many authentication errors has this user experienced?
+   *
+   * This is a counter in order to re-show the login prompt if it was previously
+   * dismissed and the user experiences another auth error.
+   */
+  authenticationErrors: 0
 }
 
 const userSlice = createSlice({
@@ -25,15 +31,15 @@ const userSlice = createSlice({
     setUser(state, action: PayloadAction<User>) {
       state.user = action.payload
     },
-    setExpired(state) {
-      state.hasSessionExpired = true
+    incrementAuthenticationErrors(state) {
+      state.authenticationErrors += 1
     },
     clearUser(state) {
       state.user = null
-      state.hasSessionExpired = false
+      state.authenticationErrors = 0
     }
   }
 })
 
-export const { setExpired, setUser, clearUser } = userSlice.actions
+export const { setUser, clearUser, incrementAuthenticationErrors } = userSlice.actions
 export default userSlice
