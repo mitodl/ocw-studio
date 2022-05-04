@@ -40,7 +40,8 @@ export const siteApiContentListingUrl = siteApiContentUrl.query({
 })
 export const siteApiContentDetailUrl = siteApiContentUrl.segment(":textId/")
 export const siteApiListingUrl = siteApi.query({
-  limit: WEBSITES_PAGE_SIZE
+  limit:  WEBSITES_PAGE_SIZE,
+  offset: 0
 })
 export const siteApiContentSyncGDriveUrl = siteApiContentUrl.segment(
   "gdrive_sync/"

@@ -27,6 +27,7 @@ import {
   WebsiteStarterConfig,
   WebsiteStatus
 } from "../../types/websites"
+import { WebsiteListingResponse } from "../../query-configs/websites"
 
 const incr = incrementer()
 
@@ -239,6 +240,18 @@ export const makeWebsiteStatus = (
 
 export const makeWebsites = (n = WEBSITES_PAGE_SIZE): Website[] =>
   times(n).map(() => makeWebsiteDetail())
+
+export const makeWebsiteListing = (
+  websites: Website[],
+  {
+    previous = null,
+    next = null
+  }: { previous?: string | null; next?: string | null } = {}
+): WebsiteListingResponse => {
+  const count = websites.length
+  const results = websites
+  return { next, previous, results, count }
+}
 
 export const makeWebsiteCollaborator = (): WebsiteCollaborator => ({
   user_id: incr.next().value,
