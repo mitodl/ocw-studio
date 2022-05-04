@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react-hooks"
 
 import { Website } from "../types/websites"
-import { makeWebsiteListing } from "../util/factories/websites"
+import { makeWebsites } from "../util/factories/websites"
 import { formatWebsiteOptions, useWebsiteSelectOptions } from "./websites"
 import { debouncedFetch } from "../lib/api/util"
 import { siteApiListingUrl } from "../lib/urls"
@@ -16,7 +16,7 @@ describe("website hooks", () => {
     let websites: Website[]
 
     beforeEach(() => {
-      websites = makeWebsiteListing()
+      websites = makeWebsites()
       // @ts-ignore
       debouncedFetch.mockReturnValue({
         json: () => ({ results: websites })
