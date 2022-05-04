@@ -7,7 +7,6 @@ import Dialog from "./Dialog"
 interface ExtraProps {
   open: boolean
   acceptText?: string
-  altAcceptText?: string
   cancelText?: string
   headerContent: JSX.Element | string
   bodyContent: JSX.Element | string
@@ -52,21 +51,21 @@ describe("Dialog", () => {
         .text()
     ).toBe(headerContent)
 
-    const okButton = wrapper
-      .find("ModalFooter")
-      .find("Button")
-      .at(0)
-    expect(okButton.childAt(0).text()).toBe("OK")
-    okButton.simulate("click")
-    sinon.assert.calledOnce(onAcceptStub)
-
     const cancelButton = wrapper
       .find("ModalFooter")
       .find("Button")
-      .at(2)
+      .at(0)
     expect(cancelButton.childAt(0).text()).toBe("Cancel")
     cancelButton.simulate("click")
     sinon.assert.calledOnce(onCancelStub)
+
+    const okButton = wrapper
+      .find("ModalFooter")
+      .find("Button")
+      .at(1)
+    expect(okButton.childAt(0).text()).toBe("OK")
+    okButton.simulate("click")
+    sinon.assert.calledOnce(onAcceptStub)
   })
 
   it("renders a Dialog with passed button text", () => {
@@ -79,30 +78,21 @@ describe("Dialog", () => {
       headerContent,
       bodyContent,
       acceptText,
-      altAcceptText,
       cancelText
     })
     expect(wrapper.find("Modal").prop("isOpen")).toBe(false)
-    const okButton = wrapper
-      .find("ModalFooter")
-      .find("Button")
-      .at(0)
-    expect(okButton.childAt(0).text()).toBe(acceptText)
-
-    expect(
-      wrapper
-        .find("ModalFooter")
-        .find("Button")
-        .at(1)
-        .childAt(0)
-        .text()
-    ).toBe(altAcceptText)
 
     const cancelButton = wrapper
       .find("ModalFooter")
       .find("Button")
-      .at(2)
+      .at(0)
     expect(cancelButton.childAt(0).text()).toBe(cancelText)
+
+    const okButton = wrapper
+      .find("ModalFooter")
+      .find("Button")
+      .at(1)
+    expect(okButton.childAt(0).text()).toBe(acceptText)
   })
 
   it("sets various classnames", () => {

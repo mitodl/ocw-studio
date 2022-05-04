@@ -143,7 +143,7 @@ describe("SiteCollaboratorList", () => {
       dialog
         .find("ModalFooter")
         .find("button")
-        .at(0)
+        .at(1)
         .simulate("click")
     })
     wrapper.update()

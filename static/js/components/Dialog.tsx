@@ -58,14 +58,14 @@ const Dialog: React.FC<Props> = props => {
       </ModalHeader>
       <ModalBody>{bodyContent}</ModalBody>
       <ModalFooter>
+        <Button color="secondary" onClick={onCancel}>
+          {cancelText || "Cancel"}
+        </Button>
         {onAccept ? (
           <Button className="cyan-button" onClick={onAccept}>
             {acceptText || "OK"}
           </Button>
         ) : null}
-        <Button color="secondary" onClick={onCancel}>
-          {cancelText || "Cancel"}
-        </Button>
       </ModalFooter>
     </Modal>
   )
