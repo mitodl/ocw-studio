@@ -18,21 +18,18 @@ interface ExtraProps {
 }
 
 describe("Dialog", () => {
-  let toggleModalStub: SinonStub,
-    onCancelStub: SinonStub,
+  let onCancelStub: SinonStub,
     onAcceptStub: SinonStub,
     headerContent: JSX.Element | string,
     bodyContent: JSX.Element | string,
     render: (props: ExtraProps) => ShallowWrapper
 
   beforeEach(() => {
-    toggleModalStub = sinon.stub()
     onCancelStub = sinon.stub()
     onAcceptStub = sinon.stub()
     render = (props: ExtraProps) =>
       shallow(
         <Dialog
-          toggleModal={toggleModalStub}
           onAccept={onAcceptStub}
           onCancel={onCancelStub}
           {...props}
@@ -45,7 +42,7 @@ describe("Dialog", () => {
     bodyContent = <div>Body</div>
     const wrapper = render({ open: true, headerContent, bodyContent })
     expect(wrapper.find("Modal").prop("isOpen")).toBe(true)
-    expect(wrapper.find("Modal").prop("toggle")).toBe(toggleModalStub)
+    expect(wrapper.find("Modal").prop("toggle")).toBe(onCancelStub)
     expect(
       wrapper
         .find("ModalBody")

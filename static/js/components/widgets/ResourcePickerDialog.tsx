@@ -188,7 +188,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
   return (
     <Dialog
       open={isOpen}
-      toggleModal={closeDialog}
+      onCancel={closeDialog}
       wrapClassName="resource-picker-dialog"
       headerContent={title}
       onAccept={focusedResource ? addResource : undefined}
