@@ -29,11 +29,7 @@ describe("Dialog", () => {
     onAcceptStub = sinon.stub()
     render = (props: ExtraProps) =>
       shallow(
-        <Dialog
-          onAccept={onAcceptStub}
-          onCancel={onCancelStub}
-          {...props}
-        />
+        <Dialog onAccept={onAcceptStub} onCancel={onCancelStub} {...props} />
       )
   })
 
