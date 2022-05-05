@@ -1,4 +1,4 @@
-import { Dispatch } from 'redux'
+import { Dispatch } from "redux"
 import { combineReducers, ActionCreator } from "@reduxjs/toolkit"
 import { entitiesReducer, queriesReducer, ReduxQueryAction } from "redux-query"
 import user from "./user"
@@ -10,7 +10,9 @@ const rootReducer = combineReducers({
 })
 export default rootReducer
 
-type GetActions<T extends Record<string, ActionCreator<any>>> = ReturnType<T[keyof T]>
+type GetActions<T extends Record<string, ActionCreator<any>>> = ReturnType<
+  T[keyof T]
+>
 
 export type UserAction = GetActions<typeof user.actions>
 

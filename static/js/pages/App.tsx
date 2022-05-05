@@ -18,7 +18,7 @@ import WebsiteContext from "../context/Website"
 import PrivacyPolicyPage from "./PrivacyPolicyPage"
 import NotFound from "../components/NotFound"
 import { siteDetailUrl, sitesBaseUrl } from "../lib/urls"
-import AuthenticationAlert from '../components/AuthenticationAlert'
+import AuthenticationAlert from "../components/AuthenticationAlert"
 
 interface SiteMatchParams {
   name: string
