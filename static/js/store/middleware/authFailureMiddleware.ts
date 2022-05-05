@@ -1,7 +1,7 @@
-import { Middleware } from 'redux'
-import { ReduxState, AppDispatch } from '../rootReducer'
-import { actionTypes, RequestFailureAction } from 'redux-query'
-import { incrementAuthenticationErrors } from '../user'
+import { Middleware } from "redux"
+import { ReduxState, AppDispatch } from "../rootReducer"
+import { actionTypes, RequestFailureAction } from "redux-query"
+import { incrementAuthenticationErrors } from "../user"
 
 const failures = [actionTypes.REQUEST_FAILURE, actionTypes.MUTATE_FAILURE]
 
@@ -19,7 +19,10 @@ type AppMiddleware = Middleware<unknown, ReduxState, AppDispatch>
 const isAuthenticationError = (response: RequestFailureAction): boolean => {
   if (response.status === 401) return true
   if (response.status === 403) {
-    return response.responseBody.detail === 'Authentication credentials were not provided.'
+    return (
+      response.responseBody.detail ===
+      "Authentication credentials were not provided."
+    )
   }
   return false
 }

@@ -7,7 +7,6 @@ import rootReducer, { ReduxState } from "./rootReducer"
 import { getQueries, getEntities } from "../lib/redux_query"
 import authFailureMiddleware from "./middleware/authFailureMiddleware"
 
-
 export type Store = ReturnType<typeof configureStore>
 
 // Setup middleware
