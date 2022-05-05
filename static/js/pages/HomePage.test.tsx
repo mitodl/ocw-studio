@@ -20,7 +20,7 @@ describe("Homepage", () => {
     expect(link.href).toBe(absoluteUrl("/login/saml/?idp=default"))
   })
 
-  it("does NOT show Touchstone Login is NOT visible if user is already logged in", () => {
+  it("does NOT show Touchstone Login if user is already logged in", () => {
     const helper = new IntegrationTestHelper()
     helper.render(<HomePage />)
     const link = screen.queryByText(LOGIN_TEXT)
