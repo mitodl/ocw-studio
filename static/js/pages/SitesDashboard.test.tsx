@@ -3,10 +3,7 @@ import SitesDashboard, { siteDescription } from "./SitesDashboard"
 import { newSiteUrl, siteApiListingUrl, siteDetailUrl } from "../lib/urls"
 import { WebsiteListingResponse } from "../query-configs/websites"
 import { wait } from "../test_util"
-import {
-  makeWebsites,
-  makeWebsiteDetail
-} from "../util/factories/websites"
+import { makeWebsites, makeWebsiteDetail } from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../util/integration_test_helper_old"

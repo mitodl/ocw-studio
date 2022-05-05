@@ -13,7 +13,6 @@ export interface Props {
   onCancel: () => void
   onAccept?: () => void
   acceptText?: string
-  altAcceptText?: string
   cancelText?: string
   headerContent: React.ReactNode
   bodyContent: React.ReactNode

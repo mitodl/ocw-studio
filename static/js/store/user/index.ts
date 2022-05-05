@@ -41,5 +41,9 @@ const userSlice = createSlice({
   }
 })
 
-export const { setUser, clearUser, incrementAuthenticationErrors } = userSlice.actions
+export const {
+  setUser,
+  clearUser,
+  incrementAuthenticationErrors
+} = userSlice.actions
 export default userSlice
