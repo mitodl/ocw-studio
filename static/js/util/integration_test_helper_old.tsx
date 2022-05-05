@@ -11,11 +11,12 @@ import {
 import { Action } from "redux"
 import { Router, Route } from "react-router"
 
-import { ReduxState } from "../reducers"
+import { ReduxState } from "../store"
 import configureStore, { Store } from "../store/configureStore"
 import { getQueries } from "../lib/redux_query"
 
 import * as networkInterfaceFuncs from "../store/network_interface"
+import { getInitialState } from "../testing_utils/IntegrationTestHelper"
 
 /**
  * Avoid using this for new tests. Prefer `IntegrationTestHelper.tsx` instead.
@@ -167,17 +168,20 @@ export default class IntegrationTestHelper {
   configureRenderer(
     Component: ComponentType<any> | FunctionComponent<any>,
     defaultProps = {},
-    defaultState?: ReduxState
+    defaultStatePatch?: Partial<ReduxState>
   ) {
     return async (
       extraProps = {},
       beforeRenderActions = [],
-      perRenderDefaultState?: ReduxState
+      perRenderDefaultStatePatch?: Partial<ReduxState>
     ): Promise<{
       wrapper: ReactWrapper
       store: Store
     }> => {
-      const store = configureStore(defaultState ?? perRenderDefaultState)
+      const initialState = getInitialState(
+        defaultStatePatch ?? perRenderDefaultStatePatch
+      )
+      const store = configureStore(initialState)
       beforeRenderActions.forEach(action => store.dispatch(action))
 
       const ComponentWithProps = () => (

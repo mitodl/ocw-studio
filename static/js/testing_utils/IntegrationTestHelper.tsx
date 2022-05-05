@@ -1,4 +1,5 @@
 import React from "react"
+import { cloneDeep, defaultsDeep } from "lodash"
 import { render, RenderOptions } from "@testing-library/react"
 import { Provider } from "react-redux"
 import { Provider as ReduxQueryProvider } from "redux-query-react"
@@ -13,9 +14,26 @@ import {
 } from "redux-query"
 import { when } from "jest-when"
 import configureStore from "../store/configureStore"
+import user from "../store/user"
+import { ReduxState } from "../store"
 import { getQueries } from "../lib/redux_query"
+import { DeepPartial } from "../types/util"
 
 import * as networkInterfaceFuncs from "../store/network_interface"
+
+export type ReduxPatch = DeepPartial<ReduxState>
+
+// Exported for use in integration_test_helper_old. Remove export once that's gone.
+export const getInitialState = (patch: ReduxPatch = {}): ReduxState => {
+  const empty = cloneDeep({
+    user:     user.getInitialState(),
+    entities: {
+      websiteDetails: {}
+    },
+    queries: {}
+  })
+  return defaultsDeep(cloneDeep(patch), empty)
+}
 
 const { makeRequest: mockMakeRequest } = networkInterfaceFuncs as jest.Mocked<
   typeof networkInterfaceFuncs
@@ -51,6 +69,8 @@ export default class IntegrationTestHelper {
     )
     return {}
   }) as HandleRequest)
+
+  private initialStorePatch: ReduxPatch = {}
 
   constructor() {
     mockMakeRequest.mockClear()
@@ -117,13 +137,13 @@ export default class IntegrationTestHelper {
     return this.mockRequest(url, "DELETE", body, code)
   }
 
+  patchInitialReduxState(patch: ReduxPatch = {}) {
+    this.initialStorePatch = patch
+  }
+
   render(ui: React.ReactElement, options?: RenderOptions) {
-    const store = configureStore({
-      entities: {
-        websiteDetails: {}
-      },
-      queries: {}
-    })
+    const initialStoreState = getInitialState(this.initialStorePatch)
+    const store = configureStore(initialStoreState)
     const history = createMemoryHistory()
     const renderResult = render(
       <Provider store={store}>

@@ -1,13 +1,15 @@
 import React from "react"
+import { useAppSelector } from "../hooks/redux"
 import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 
 export default function HomePage(): JSX.Element | null {
+  const { user } = useAppSelector(state => state.user)
   return (
     <div className="container home-page">
       <DocumentTitle title={formatTitle()} />
       <div className="row pt-5 home-page-div">
         <div className="home-page-background">
-          {!SETTINGS.user ? (
+          {!user ? (
             <div className="text-center">
               <a
                 href="/login/saml/?idp=default"
