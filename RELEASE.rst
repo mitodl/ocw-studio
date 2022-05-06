@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.59.2
+Version 0.59.2 (Released May 06, 2022)
 --------------
 
 - Cc/user store (#1297)
