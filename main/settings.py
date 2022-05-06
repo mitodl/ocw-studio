@@ -1091,3 +1091,8 @@ RESOURCE_TYPE_FIELDS = get_delimited_list(
     default=["resourcetype", "filetype"],
     description="List of site configuration fields that are used to store resource type",
 )
+SITEMAP_DOMAIN = get_string(
+    name="SITEMAP_DOMAIN",
+    default="ocw.mit.edu",
+    description="The domain to be used in Hugo builds for fully qualified URLs in the sitemap"
+)

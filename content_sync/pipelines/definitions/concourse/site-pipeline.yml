@@ -129,6 +129,7 @@ jobs:
           OCW_STUDIO_BASE_URL: ((ocw-studio-url))
           STATIC_API_BASE_URL: ((static-api-base-url))
           OCW_IMPORT_STARTER_SLUG: ((ocw-import-starter-slug))
+          SITEMAP_DOMAIN: ((sitemap-domain))
         config:
           platform: linux
           image_resource:
