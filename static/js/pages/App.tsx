@@ -18,6 +18,7 @@ import WebsiteContext from "../context/Website"
 import PrivacyPolicyPage from "./PrivacyPolicyPage"
 import NotFound from "../components/NotFound"
 import { siteDetailUrl, sitesBaseUrl } from "../lib/urls"
+import AuthenticationAlert from "../components/AuthenticationAlert"
 
 interface SiteMatchParams {
   name: string
@@ -41,6 +42,7 @@ export default function App(): JSX.Element {
     <div className="app">
       <div className="app-content">
         <Header website={website} />
+        <AuthenticationAlert />
         <div className="page-content">
           <Switch>
             <Route exact path="/" component={HomePage} />

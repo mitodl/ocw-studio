@@ -1,34 +1,35 @@
 import React from "react"
-import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap"
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalProps
+} from "reactstrap"
 
 export interface Props {
   open: boolean
-  toggleModal: () => void
-  onCancel?: () => void
+  onCancel: () => void
   onAccept?: () => void
-  altOnAccept?: () => void
   acceptText?: string
-  altAcceptText?: string
   cancelText?: string
-  headerContent: JSX.Element | string
-  bodyContent: JSX.Element | string
-  wrapClassName?: string
-  modalClassName?: string
-  backdropClassName?: string
-  contentClassName?: string
+  headerContent: React.ReactNode
+  bodyContent: React.ReactNode
+  wrapClassName?: ModalProps["wrapClassName"]
+  modalClassName?: ModalProps["modalClassName"]
+  backdropClassName?: ModalProps["backdropClassName"]
+  contentClassName?: ModalProps["contentClassName"]
 }
 
-export default function Dialog(props: Props): JSX.Element | null {
+const Dialog: React.FC<Props> = props => {
   const {
     open,
-    toggleModal,
     headerContent,
     bodyContent,
     onAccept,
-    altOnAccept,
     onCancel,
     acceptText,
-    altAcceptText,
     cancelText,
     wrapClassName,
     modalClassName,
@@ -37,7 +38,7 @@ export default function Dialog(props: Props): JSX.Element | null {
   } = props
 
   const closeBtn = (
-    <button className="close" onClick={toggleModal}>
+    <button className="close" onClick={onCancel}>
       &times;
     </button>
   )
@@ -45,31 +46,28 @@ export default function Dialog(props: Props): JSX.Element | null {
   return (
     <Modal
       isOpen={open}
-      toggle={toggleModal}
+      toggle={onCancel}
       wrapClassName={wrapClassName}
       modalClassName={modalClassName}
       backdropClassName={backdropClassName}
       contentClassName={contentClassName}
     >
-      <ModalHeader toggle={toggleModal} close={closeBtn}>
+      <ModalHeader toggle={onCancel} close={closeBtn}>
         {headerContent}
       </ModalHeader>
       <ModalBody>{bodyContent}</ModalBody>
       <ModalFooter>
+        <Button color="secondary" onClick={onCancel}>
+          {cancelText || "Cancel"}
+        </Button>
         {onAccept ? (
-          <Button color="primary" onClick={onAccept}>
+          <Button className="cyan-button" onClick={onAccept}>
             {acceptText || "OK"}
           </Button>
         ) : null}
-        {altOnAccept ? (
-          <Button color="primary" onClick={altOnAccept}>
-            {altAcceptText || "OK"}
-          </Button>
-        ) : null}
-        <Button color="secondary" onClick={onCancel || toggleModal}>
-          {cancelText || "Cancel"}
-        </Button>
       </ModalFooter>
     </Modal>
   )
 }
+
+export default Dialog

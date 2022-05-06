@@ -5,13 +5,15 @@ import { queryMiddleware } from "redux-query"
 import { makeRequest } from "./network_interface"
 import rootReducer, { ReduxState } from "./rootReducer"
 import { getQueries, getEntities } from "../lib/redux_query"
+import authFailureMiddleware from "./middleware/authFailureMiddleware"
 
 export type Store = ReturnType<typeof configureStore>
 
 // Setup middleware
 export default function configureStore(initialState?: ReduxState) {
   const COMMON_MIDDLEWARE = [
-    queryMiddleware(makeRequest, getQueries, getEntities)
+    queryMiddleware(makeRequest, getQueries, getEntities),
+    authFailureMiddleware
   ]
 
   // Store factory configuration
