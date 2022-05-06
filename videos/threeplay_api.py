@@ -187,7 +187,7 @@ def update_transcripts_for_video(video: Video) -> bool:
         webvtt_response = fetch_file(webvtt_url)
         if webvtt_response:
             video.webvtt_transcript_file.save(
-                "transcript_webvtt", File(webvtt_response, name="transcript_webvtt")
+                "transcript.webvtt", File(webvtt_response, name="transcript.webvtt")
             )
 
         video.save()
