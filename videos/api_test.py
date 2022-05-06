@@ -4,16 +4,25 @@ from os import path
 
 import pytest
 
-from videos.api import create_media_convert_job, process_video_outputs
+from gdrive_sync.factories import DriveFileFactory
+from videos.api import (
+    create_media_convert_job,
+    prepare_video_download_file,
+    process_video_outputs,
+    update_video_job,
+)
 from videos.conftest import TEST_VIDEOS_WEBHOOK_PATH
 from videos.constants import (
     DESTINATION_ARCHIVE,
     DESTINATION_YOUTUBE,
     VideoFileStatus,
+    VideoJobStatus,
     VideoStatus,
 )
-from videos.factories import VideoFactory
+from videos.factories import VideoFactory, VideoFileFactory, VideoJobFactory
 from videos.models import VideoFile, VideoJob
+from websites.constants import CONTENT_TYPE_RESOURCE
+from websites.factories import WebsiteContentFactory
 
 
 pytestmark = pytest.mark.django_db
@@ -53,8 +62,9 @@ def test_create_media_convert_job(settings, mocker):
     assert video.status == VideoStatus.TRANSCODING
 
 
-def test_process_video_outputs():
+def test_process_video_outputs(mocker):
     """ Based on transcoder output, three new video files should be created"""
+    mock_prepare_download = mocker.patch("videos.api.prepare_video_download_file")
     video = VideoFactory.create()
     with open(
         f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json", "r"
@@ -62,6 +72,7 @@ def test_process_video_outputs():
         outputs = json.loads(infile.read())["detail"]["outputGroupDetails"]
         process_video_outputs(video, outputs)
         assert video.videofiles.count() == 3
+        mock_prepare_download.assert_called_once_with(video)
         youtube_video = VideoFile.objects.get(
             video=video, destination=DESTINATION_YOUTUBE
         )
@@ -73,3 +84,68 @@ def test_process_video_outputs():
             video=video, destination=DESTINATION_ARCHIVE
         ):
             assert "_youtube." not in videofile.s3_key
+
+
+@pytest.mark.parametrize("files_exist", [True, False])
+def test_prepare_video_download_file(settings, mocker, files_exist):
+    """The correct video file S3 path should be changed, and Website.file updated"""
+    content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
+    video = VideoFactory.create(website=content.website)
+    DriveFileFactory.create(website=video.website, video=video, resource=content)
+    mock_move_s3 = mocker.patch("videos.api.move_s3_object")
+    dl_video_name = "my_video__360p_16_9.mp4"
+    if files_exist:
+        for name in ("my_video_youtube.mp4", dl_video_name, "my_video_360p_4_3.mp4"):
+            VideoFileFactory.create(
+                video=video,
+                s3_key=f"{settings.VIDEO_S3_TRANSCODE_PREFIX}/fakejobid/{video.website.name}/{name}",
+                destination=DESTINATION_ARCHIVE,
+            )
+    prepare_video_download_file(video)
+    content.refresh_from_db()
+    if files_exist:
+        mock_move_s3.assert_called_once_with(
+            f"{settings.VIDEO_S3_TRANSCODE_PREFIX}/fakejobid/{video.website.name}/{dl_video_name}",
+            f"sites/{video.website.name}/{dl_video_name}",
+        )
+        assert content.file.name == f"sites/{video.website.name}/{dl_video_name}"
+    else:
+        mock_move_s3.assert_not_called()
+        assert content.file.name == ""
+
+
+@pytest.mark.parametrize("raises_exception", [True, False])
+def test_update_video_job_success(mocker, raises_exception):
+    """The video job should be updated as expected if the transcode job succeeded"""
+    mock_process_outputs = mocker.patch(
+        "videos.api.process_video_outputs",
+        side_effect=(ValueError() if raises_exception else None),
+    )
+    mock_log = mocker.patch("videos.api.log.exception")
+    video_job = VideoJobFactory.create(status=VideoJobStatus.CREATED)
+    with open(
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json", "r"
+    ) as infile:
+        data = json.loads(infile.read())["detail"]
+    update_video_job(video_job, data)
+    mock_process_outputs.assert_called_once()
+    video_job.refresh_from_db()
+    assert video_job.job_output == data
+    assert video_job.status == VideoJobStatus.COMPLETE
+    assert mock_log.call_count == (1 if raises_exception else 0)
+
+
+def test_update_video_job_error(mocker):
+    """The video job should be updated as expected if the transcode job failed"""
+    mock_log = mocker.patch("videos.api.log.error")
+    video_job = VideoJobFactory.create()
+    with open(f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_error.json", "r") as infile:
+        data = json.loads(infile.read())["detail"]
+    update_video_job(video_job, data)
+    video_job.refresh_from_db()
+    assert video_job.job_output == data
+    assert video_job.error_code == str(data.get("errorCode"))
+    assert video_job.error_message == data.get("errorMessage")
+    assert video_job.status == VideoJobStatus.FAILED
+    assert video_job.video.status == VideoStatus.FAILED
+    mock_log.assert_called_once()

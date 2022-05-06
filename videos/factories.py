@@ -4,7 +4,7 @@ from django.conf import settings
 from factory.django import DjangoModelFactory
 from factory.fuzzy import FuzzyChoice
 
-from videos.constants import ALL_DESTINATIONS, VideoStatus
+from videos.constants import ALL_DESTINATIONS, VideoJobStatus, VideoStatus
 from videos.models import Video, VideoFile, VideoJob
 from websites.factories import WebsiteFactory
 
@@ -41,7 +41,7 @@ class VideoJobFactory(DjangoModelFactory):
 
     video = factory.SubFactory(VideoFactory)
     job_id = factory.Faker("md5")
-    status = FuzzyChoice("ERROR")
+    status = VideoJobStatus.CREATED
 
     class Meta:
         model = VideoJob
