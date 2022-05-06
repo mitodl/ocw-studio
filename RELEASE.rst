@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.59.3
+--------------
+
+- fix webvtt transcript (#1302)
+- redirect to login on authentication failures (#1300)
+- Set up one of the transcoded video outputs to be downloadable (#1288)
+
 Version 0.59.2 (Released May 06, 2022)
 --------------
 
