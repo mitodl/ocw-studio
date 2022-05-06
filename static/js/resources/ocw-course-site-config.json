@@ -835,7 +835,7 @@
             {
               "label": "Legacy UID",
               "name": "legacy_uid",
-              "widget": "string"
+              "widget": "hidden"
             }
           ],
           "file": "data/course.json",
