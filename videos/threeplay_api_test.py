@@ -151,8 +151,10 @@ def test_update_transcripts_for_video(
 
     if webvtt_transcript_content:
         assert video_file.video.webvtt_transcript_file.path.startswith(
-            url_base + "_transcript_webvtt"
+            url_base + "_transcript"
         )
+        assert video_file.video.webvtt_transcript_file.path.endswith(".webvtt")
+
     else:
         assert video_file.video.webvtt_transcript_file == ""
 
