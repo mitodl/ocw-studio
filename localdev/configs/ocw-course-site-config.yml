@@ -678,7 +678,7 @@ collections:
                 Higher Education: [ ]
           - label: "Legacy UID"
             name: "legacy_uid"
-            widget: "string"
+            widget: "hidden"
   - category: Settings
     label: Menu
     name: menu
