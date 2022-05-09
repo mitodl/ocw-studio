@@ -70,6 +70,7 @@ jobs:
       OCW_STUDIO_BASE_URL: ((ocw-studio-url))
       STATIC_API_BASE_URL: ((static-api-base-url))
       GIT_KEY: ((git-private-key-var))
+      SITEMAP_DOMAIN: ((sitemap-domain))
     config:
       platform: linux
       image_resource:

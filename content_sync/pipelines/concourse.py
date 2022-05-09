@@ -352,6 +352,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
                     .replace("((theme-deployed-trigger))", theme_deployed_trigger)
                     .replace("((theme-created-trigger))", theme_created_trigger)
                     .replace("((build-drafts))", build_drafts)
+                    .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
                 )
             self.upsert_config(config_str, pipeline_name)
 
@@ -478,6 +479,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, ConcoursePipeline):
                 .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
                 .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
                 .replace("((build-drafts))", build_drafts)
+                .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
             )
         log.debug(config_str)
         self.upsert_config(config_str, self.PIPELINE_NAME)

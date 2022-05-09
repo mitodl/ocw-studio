@@ -449,6 +449,10 @@
       "description": "Site name",
       "required": false
     },
+    "SITEMAP_DOMAIN": {
+      "description": "The domain to be used in Hugo builds for fully qualified URLs in the sitemap",
+      "required": false
+    },
     "SOCIAL_AUTH_SAML_CONTACT_NAME": {
       "description": "The SAML contact name for our app",
       "required": false
