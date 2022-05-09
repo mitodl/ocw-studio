@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.59.3
+Version 0.59.3 (Released May 09, 2022)
 --------------
 
 - fix webvtt transcript (#1302)
