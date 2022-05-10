@@ -1,7 +1,69 @@
-import { pickBy } from "lodash"
+import { pickBy, escapeRegExp } from "lodash"
 import { TABLE_ALLOWED_ATTRS } from "./constants"
 import { hasTruthyProp, isNotNil } from "../../../util"
 import { ReplacementFunction } from "turndown"
+
+interface SubstringRange {
+  start: number
+  end: number
+}
+
+/**
+ * Returns the substring ranges of nested expressions within text.
+ *
+ * @example
+ * ```
+ *           // 0         1         2         3         4
+ *           // 01234567890123456789012345678901234567890123456789
+ * const text = "Hello {{< shortcode {{< sup 12 >}} >}} goodbye.
+ * const opener = "{{<"
+ * matches = findNestedExpressions(text, "{{<", ">}}")
+ * expect(matches).toEqual([{ start: 7, end: 39 }])
+ * ```
+ * Note that `end` is the string index of the next character after the closer.
+ * In this way, `end - start` is the substring length.
+ */
+export const findNestedExpressions = (
+  text: string,
+  opener: string,
+  closer: string
+): SubstringRange[] => {
+  const matches: SubstringRange[] = []
+  let startSearchAt = 0
+  while (startSearchAt < text.length) {
+    const match = findNestedExpression(text, opener, closer, startSearchAt)
+    if (!match) return matches
+    matches.push(match)
+    startSearchAt = match.end
+  }
+  return matches
+}
+
+const findNestedExpression = (
+  text: string,
+  opener: string,
+  closer: string,
+  startingFrom = 0
+): SubstringRange | null => {
+  const start = text.indexOf(opener, startingFrom)
+  if (start < 0) return null
+  let scanningIndex = start + opener.length
+  let numOpen = 1
+  const regex = new RegExp(`${escapeRegExp(opener)}|${escapeRegExp(closer)}`)
+  while (numOpen > 0) {
+    const nextDelimiter = text.substring(scanningIndex).match(regex)
+    if (nextDelimiter === null) return null
+    if (nextDelimiter[0] === opener) {
+      numOpen += 1
+    }
+    if (nextDelimiter[0] === closer) {
+      numOpen -= 1
+    }
+    // The index will never be null since the regexp has matched and is not global.
+    scanningIndex += nextDelimiter.index! + nextDelimiter[0].length
+  }
+  return { start, end: scanningIndex }
+}
 
 /**
  * Given a string encased in quotes and in which all interior quote characters
@@ -126,8 +188,8 @@ export class Shortcode {
    * Re-escapes double quotes in parameter values
    */
   toHugo() {
-    const stringifiedArgs = this.params.map(p => p.toHugo()).join(" ")
-    const interior = `${this.name} ${stringifiedArgs}`
+    const stringifiedArgs = this.params.map(p => p.toHugo())
+    const interior = [this.name, ...stringifiedArgs].join(" ")
     if (this.isPercentDelimited) {
       return `{{% ${interior} %}}`
     }
@@ -191,12 +253,6 @@ export class Shortcode {
     if (!isPercentDelmited && !isAngleDelimited) {
       throw new Error(
         `${s} is not a valid shortcode: should start/end with matching delimiters`
-      )
-    }
-    const delimiters = ["{{<", ">}}", "{{%", "%}}"]
-    if (delimiters.some(d => s.slice(3, -3).includes(d))) {
-      throw new Error(
-        `Shortcode ${s} is invalid: content includes shortcode delimiters.`
       )
     }
     const unescapedQuotes = s.match(/(?<!\\)(\\\\)*"/g)?.length ?? 0
@@ -267,6 +323,42 @@ export class Shortcode {
     const params = paramValues.map(value => new ShortcodeParam(value))
     return new Shortcode(name, params, isPercentDelimited)
   }
+}
+
+type ShortcodeReplacer = (shortcode: Shortcode) => string
+
+/**
+ * Replace instances of a specific shortcode using `replacer`.
+ */
+export const replaceShortcodes = (
+  text: string,
+  replacer: ShortcodeReplacer,
+  {
+    isPercentDelimited = false,
+    name
+  }: { name: string; isPercentDelimited?: boolean }
+) => {
+  const opener = isPercentDelimited ? "{{%" : "{{<"
+  const namedOpener = `${opener} ${name}`
+  const closer = isPercentDelimited ? "%}}" : ">}}"
+  const matches = findNestedExpressions(text, opener, closer).filter(m => {
+    return text.substring(m.start, m.start + namedOpener.length) === namedOpener
+  })
+  if (matches.length === 0) return text
+  const pieces = matches.reduce(
+    (pieces, range, i, ranges) => {
+      const shortcode = Shortcode.fromString(
+        text.substring(range.start, range.end)
+      )
+      pieces.push(replacer(shortcode))
+      const isLast = i + 1 === ranges.length
+      const nextStart = isLast ? text.length : ranges[i + 1].start
+      pieces.push(text.substring(range.end, nextStart))
+      return pieces
+    },
+    [text.substring(0, matches[0].start)]
+  )
+  return pieces.join("")
 }
 
 /**

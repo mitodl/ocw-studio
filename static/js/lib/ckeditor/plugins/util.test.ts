@@ -1,4 +1,10 @@
-import { unescapeStringQuotedWith, Shortcode, ShortcodeParam } from "./util"
+import {
+  unescapeStringQuotedWith,
+  Shortcode,
+  ShortcodeParam,
+  replaceShortcodes,
+  findNestedExpressions
+} from "./util"
 
 const makeParams = ({
   value,
@@ -140,19 +146,17 @@ describe("Shortcode", () => {
       )
     })
 
-    it("throws error if content includes shortcode delimiter", () => {
-      const text = '{{< old_resource_link uuid123 "H{{< sub 2 >}}'
-      expect(() => Shortcode.fromString(text)).toThrow(
-        /includes shortcode delimiter/
-      )
-    })
-
-    it("throws error if content includes odd number of unescaped quotes", () => {
-      const text = '{{< old_resource_link uuid123 "cat\\"" " >}}'
-      expect(() => Shortcode.fromString(text)).toThrow(
-        /odd number of unescaped quotes/
-      )
-    })
+    it.each([
+      '{{< old_resource_link uuid123 "H{{< sub 2 >}}',
+      '{{< old_resource_link uuid123 "cat\\"" " >}}'
+    ])(
+      "throws error if content includes odd number of unescaped quotes",
+      text => {
+        expect(() => Shortcode.fromString(text)).toThrow(
+          /odd number of unescaped quotes/
+        )
+      }
+    )
 
     it.each([
       "{{< some_shortcode uuid123",
@@ -323,5 +327,100 @@ describe("Shortcode", () => {
       const shortcode = Shortcode.resourceLink(uuid, text, suffix)
       expect(shortcode.toHugo()).toBe(expected)
     })
+  })
+})
+
+describe("findNestedExpressions", () => {
+  test("finding balanced expressions", () => {
+    const opener = "<<"
+    const closer = ">>"
+    //            0         1         2         3
+    //            0123456789012345678901234567890123456789
+    const text = "a << hello << a >> << >> >> << >> b"
+    const expected = [
+      { start: 2, end: 27 },
+      { start: 28, end: 33 }
+    ]
+    expect(findNestedExpressions(text, opener, closer)).toStrictEqual(expected)
+  })
+
+  test("finding balanced expressions with unclosed, unopened delimiters", () => {
+    const opener = "<<"
+    const closer = ">>"
+    //            0         1         2         3
+    //            0123456789012345678901234567890123456789
+    const text = ">> << >> >> <<"
+    const expected = [{ start: 3, end: 8 }]
+    expect(findNestedExpressions(text, opener, closer)).toStrictEqual(expected)
+  })
+
+  test("with no matches", () => {
+    const opener = "<<"
+    const closer = ">>"
+    //            0         1         2         3
+    //            0123456789012345678901234567890123456789
+    const text = ">> rats >> << cats"
+    expect(findNestedExpressions(text, opener, closer)).toStrictEqual([])
+  })
+
+  test("with opener and closer of unequal lengths", () => {
+    const opener = "[[["
+    const closer = ">"
+    //            0         1         2         3
+    //            0123456789012345678901234567890123456789
+    const text = "cats [[[ rats [[[]]] > [[[ >> bats"
+    const expected = [{ start: 5, end: 29 }]
+    expect(findNestedExpressions(text, opener, closer)).toStrictEqual(expected)
+  })
+})
+
+describe("replaceShortcodes", () => {
+  const capitalizingReplacer = (shortcode: Shortcode) => {
+    const name = shortcode.name
+    const newShortcode = new Shortcode(
+      name.toUpperCase(),
+      shortcode.params,
+      shortcode.isPercentDelimited
+    )
+    return newShortcode.toHugo()
+  }
+
+  it.each([
+    {
+      text:               'hello {{< shortcode "{{< sup 1 >}}" >}} other',
+      expected:           'hello {{< SHORTCODE "{{< sup 1 >}}" >}} other',
+      isPercentDelimited: false
+    },
+    {
+      text:               'hello {{% shortcode "{{< sup 1 >}}" %}} other',
+      expected:           'hello {{% SHORTCODE "{{< sup 1 >}}" %}} other',
+      isPercentDelimited: true
+    },
+    {
+      text:     '{{< shortcode abcd >}}" >}} and {{< shortcode xyz >}}" >}}',
+      expected:
+        '{{< SHORTCODE "abcd" >}}" >}} and {{< SHORTCODE "xyz" >}}" >}}',
+      isPercentDelimited: false
+    }
+  ])(
+    "replaces shortcodes in the text according to replacer function",
+    ({ text, expected, isPercentDelimited }) => {
+      const replaced = replaceShortcodes(text, capitalizingReplacer, {
+        name: "shortcode",
+        isPercentDelimited
+      })
+      expect(replaced).toBe(expected)
+    }
+  )
+
+  it("only affects shortcodes of specified name", () => {
+    const text = "{{< some_shortcode >}} and {{< still_lowercase >}}"
+    const expected = "{{< SOME_SHORTCODE >}} and {{< still_lowercase >}}"
+    const replacer = jest.fn(capitalizingReplacer)
+    const replaced = replaceShortcodes(text, replacer, {
+      name: "some_shortcode"
+    })
+    expect(replaced).toBe(expected)
+    expect(replacer).toHaveBeenCalledTimes(1)
   })
 })
