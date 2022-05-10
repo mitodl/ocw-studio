@@ -14,10 +14,8 @@ import {
   RESOURCE_EMBED,
   RESOURCE_EMBED_COMMAND
 } from "./constants"
-import { Shortcode, makeHtmlString } from "./util"
+import { Shortcode, makeHtmlString, replaceShortcodes } from "./util"
 import { isNotNil } from "../../../util"
-
-export const RESOURCE_SHORTCODE_REGEX = /{{< resource .*? >}}/g
 
 /**
  * Class for defining Markdown conversion rules for ResourceEmbed
@@ -31,19 +29,20 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
     return function resourceExtension(): Showdown.ShowdownExtension[] {
       return [
         {
-          type:    "lang",
-          regex:   RESOURCE_SHORTCODE_REGEX,
-          replace: (s: string) => {
-            const shortcode = Shortcode.fromString(s)
-            const uuid = shortcode.get(0) ?? shortcode.get("uuid")
-            const href = shortcode.get("href")
-            const hrefUuid = shortcode.get("href_uuid")
-            const attrs = {
-              "data-uuid":      uuid,
-              "data-href":      href,
-              "data-href-uuid": hrefUuid
+          type:   "lang",
+          filter: (text: string) => {
+            const replacer = (shortcode: Shortcode) => {
+              const uuid = shortcode.get(0) ?? shortcode.get("uuid")
+              const href = shortcode.get("href")
+              const hrefUuid = shortcode.get("href_uuid")
+              const attrs = {
+                "data-uuid":      uuid,
+                "data-href":      href,
+                "data-href-uuid": hrefUuid
+              }
+              return makeHtmlString("section", attrs)
             }
-            return makeHtmlString("section", attrs)
+            return replaceShortcodes(text, replacer, { name: "resource" })
           }
         }
       ]
