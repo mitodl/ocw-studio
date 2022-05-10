@@ -26,7 +26,7 @@ from websites.api import (
     sync_website_title,
     update_youtube_thumbnail,
 )
-from websites.constants import CONTENT_TYPE_METADATA
+from websites.constants import CONTENT_TYPE_METADATA, CONTENT_TYPE_RESOURCE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
@@ -130,7 +130,7 @@ class WebsiteMassBuildSerializer(serializers.ModelSerializer):
 
     def get_s3_path(self, instance):
         """Get the website s3 path"""
-        return instance.site_s3_path
+        return instance.s3_path
 
     def get_base_url(self, instance):
         """Get the base url (should be same as site_url except for the root site)"""
@@ -415,10 +415,13 @@ class WebsiteContentDetailSerializer(
 
     def update(self, instance, validated_data):
         """Add updated_by to the data"""
-        if instance.type == "resource":
+        if instance.type == CONTENT_TYPE_RESOURCE:
             update_youtube_thumbnail(
                 instance.website.uuid, validated_data.get("metadata"), overwrite=True
             )
+        elif instance.type == CONTENT_TYPE_METADATA:
+            # Add the s3 path for the site to the metadata
+            validated_data["metadata"][settings.FIELD_METADATA_S3_PATH] = instance.website.s3_path
         if "file" in validated_data:
             if "metadata" not in validated_data:
                 validated_data["metadata"] = {}
@@ -540,10 +543,15 @@ class WebsiteContentCreateSerializer(
             for field in {"is_page_content", "filename", "dirpath", "text_id"}
             if field in self.context
         }
-        if validated_data.get("type") == "resource":
+        if validated_data.get("type") == CONTENT_TYPE_RESOURCE:
             update_youtube_thumbnail(
                 self.context["website_id"], validated_data.get("metadata")
             )
+        elif validated_data.get("type") == CONTENT_TYPE_METADATA:
+            # Add the s3 path for the site to the metadata
+            validated_data["metadata"][settings.FIELD_METADATA_S3_PATH] = Website.objects.get(
+                id=self.context["website_id"]
+            ).s3_path
 
         if "file" in validated_data:
             if "metadata" not in validated_data:

@@ -340,7 +340,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
                     .replace("((ocw-site-repo))", self.website.short_id)
                     .replace("((ocw-site-repo-branch))", branch)
                     .replace("((config-slug))", self.website.starter.slug)
-                    .replace("((s3-path))", self.website.site_s3_path)
+                    .replace("((s3-path))", self.website.s3_path)
                     .replace("((base-url))", base_url)
                     .replace("((site-url))", self.website.url_path)
                     .replace("((site-name))", self.website.name)

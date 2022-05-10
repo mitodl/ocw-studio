@@ -207,7 +207,7 @@ class Website(TimestampedModel):
         return "/".join(part.strip("/") for part in [site_url_prefix, url_path] if part)
 
     @property
-    def site_s3_path(self):
+    def s3_path(self):
         """ Get the S3 object path for uploaded files"""
         site_config = SiteConfig(self.starter.config)
         url_parts = [
@@ -246,7 +246,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     def upload_file_to(self, filename):
         """Return the appropriate filepath for an upload"""
         url_parts = [
-            self.website.site_s3_path,
+            self.website.s3_path,
             f"{self.text_id.replace('-', '')}_{filename}",
         ]
         return "/".join([part for part in url_parts if part != ""])
