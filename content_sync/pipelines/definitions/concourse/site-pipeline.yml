@@ -131,6 +131,8 @@ jobs:
           STATIC_API_BASE_URL: ((static-api-base-url))
           OCW_IMPORT_STARTER_SLUG: ((ocw-import-starter-slug))
           SITEMAP_DOMAIN: ((sitemap-domain))
+          S3_PATH: ((s3-path))
+          SITE_URL: ((site-url))
         config:
           platform: linux
           image_resource:
@@ -178,7 +180,7 @@ jobs:
             args:
             - -exc
             - |
-              aws s3 sync s3://((ocw-studio-bucket))/((site-url)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))              
+              aws s3 sync s3://((ocw-studio-bucket))/((s3-path)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))              
               aws s3 sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
         on_failure:
           try:

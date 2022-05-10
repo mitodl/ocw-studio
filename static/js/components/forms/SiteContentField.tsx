@@ -10,6 +10,7 @@ interface Props {
   field: ConfigField
   contentContext: WebsiteContent[] | null
   onChange?: (e: React.ChangeEvent<any>) => void
+  disabled?: boolean
 }
 
 /**
@@ -18,13 +19,17 @@ interface Props {
 export default function SiteContentField({
   field,
   contentContext,
-  onChange
+  onChange,
+  disabled
 }: Props): JSX.Element {
   const extraProps = widgetExtraProps(field)
   const component = componentFromWidget(field)
 
   if (component && typeof component !== "string") {
     extraProps.contentContext = contentContext
+  }
+  if (disabled) {
+    extraProps.disabled = disabled
   }
 
   return (

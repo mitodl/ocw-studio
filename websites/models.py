@@ -1,5 +1,6 @@
 """ websites models """
 import json
+import re
 from hashlib import sha256
 from typing import Dict
 from urllib.parse import urljoin
@@ -28,10 +29,10 @@ from websites import constants
 from websites.constants import (
     CONTENT_DIRPATH_MAX_LEN,
     CONTENT_FILENAME_MAX_LEN,
-    CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
+    CONTENT_FILEPATH_UNIQUE_CONSTRAINT, WEBSITE_SOURCE_OCW_IMPORT,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role
+from websites.utils import permissions_group_name_for_role, get_dict_field
 
 
 def validate_yaml(value):
@@ -172,13 +173,49 @@ class Website(TimestampedModel):
             if version == VERSION_LIVE
             else settings.OCW_STUDIO_DRAFT_URL
         )
+        if self.url_path:
+            return urljoin(base_url, self.url_path)
+
+    @property
+    def url_sections(self):
+        """Get the sections required for the url path as a dict"""
         site_config = SiteConfig(self.starter.config)
-        site_url = (
+        return re.findall(r"(\[.+?\])+", site_config.site_url_path) or []
+
+    @property
+    def url_path(self):
+        """ Get the url path based on site config"""
+        site_config = SiteConfig(self.starter.config)
+        url_path = site_config.site_url_path
+        site_url_prefix = (
             ""
             if self.name == settings.ROOT_WEBSITE_NAME
-            else f"{site_config.root_url_path}/{self.name}".strip("/")
+            else site_config.root_url_path
         )
-        return urljoin(base_url, site_url)
+        if not url_path or (self.source == WEBSITE_SOURCE_OCW_IMPORT and self.first_published_to_production):
+            # use name for published legacy ocw sites or for any sites without a `url_path` in config.
+            url_path = self.name
+        else:
+            for section in self.url_sections:
+                section_type, section_field = re.sub(r"[\[\]]+", "", section).split(":")
+                content = self.websitecontent_set.get(type=section_type)
+                value = get_dict_field(content.metadata, section_field)
+                if not value:
+                    # Incomplete metadata required for url
+                    return None
+                url_path = url_path.replace(section, slugify(value.replace(".", "-")))
+        return "/".join(part.strip("/") for part in [site_url_prefix, url_path] if part)
+
+    @property
+    def site_s3_path(self):
+        """ Get the S3 object path for uploaded files"""
+        site_config = SiteConfig(self.starter.config)
+        url_parts = [
+            site_config.root_url_path,
+            self.name,
+        ]
+        return "/".join([part.strip("/") for part in url_parts if part != ""])
+
 
     class Meta:
         permissions = (
@@ -208,10 +245,8 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
 
     def upload_file_to(self, filename):
         """Return the appropriate filepath for an upload"""
-        site_config = SiteConfig(self.website.starter.config)
         url_parts = [
-            site_config.root_url_path,
-            self.website.name,
+            self.website.site_s3_path,
             f"{self.text_id.replace('-', '')}_{filename}",
         ]
         return "/".join([part for part in url_parts if part != ""])

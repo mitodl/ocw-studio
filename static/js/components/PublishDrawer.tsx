@@ -144,8 +144,8 @@ export default function PublishDrawer(props: Props): JSX.Element {
     <Modal isOpen={visibility} toggle={toggleVisibility} modalClassName="right">
       <ModalHeader toggle={toggleVisibility}>Publish your site</ModalHeader>
       <ModalBody>
-        {renderOption(STAGING)}
-        {website.is_admin ? renderOption(PRODUCTION) : null}
+        {website.draft_url ? renderOption(STAGING) : null}
+        {website.live_url && website.is_admin ? renderOption(PRODUCTION) : null}
         {website.content_warnings && !isEmpty(website.content_warnings) ? (
           <div className="publish-warnings pt-2">
             <strong className="text-danger">
@@ -154,6 +154,18 @@ export default function PublishDrawer(props: Props): JSX.Element {
             <ul className="text-danger">
               {website.content_warnings.map((warning: string, idx: number) => (
                 <li key={idx}>{warning}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {!website.draft_url && !website.live_url ? (
+          <div className="publish-warnings pt-2">
+            <strong className="text-danger">
+              This site cannot be published until all required metadata is populated:
+            </strong>
+            <ul className="text-danger">
+              {website.url_sections.map((required_field: string, idx: number) => (
+                <li key={idx}>{required_field.replace(/[\[\]]+/g, "").split(":")[1]}</li>
               ))}
             </ul>
           </div>

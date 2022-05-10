@@ -12,7 +12,6 @@ from rest_framework.exceptions import ValidationError
 
 from content_sync.api import (
     create_website_backend,
-    create_website_publishing_pipeline,
     update_website_backend,
 )
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
@@ -43,9 +42,17 @@ ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is re
 class WebsiteStarterSerializer(serializers.ModelSerializer):
     """ Serializer for website starters """
 
+    site_url_path = serializers.SerializerMethodField(read_only=True)
+
+    def get_site_url_path(self, instance):
+        """ Get the Google Drive folder URL for the site"""
+        site_config = SiteConfig(instance.config)
+        return site_config.site_url_path
+
     class Meta:
         model = WebsiteStarter
-        fields = ["id", "name", "path", "source", "commit", "slug"]
+        fields = ["id", "name", "path", "source", "commit", "slug", "site_url_path"]
+        read_only_fields = ["site_url_path"]
 
 
 class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
@@ -53,7 +60,7 @@ class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WebsiteStarter
-        fields = WebsiteStarterSerializer.Meta.fields + ["config"]
+        fields = ["id", "name", "path", "source", "commit", "slug", "config"]
 
 
 class WebsiteGoogleDriveMixin(serializers.Serializer):
@@ -99,16 +106,19 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "metadata",
             "starter",
             "owner",
+            "url_path",
+            "url_sections"
         ]
         extra_kwargs = {"owner": {"write_only": True}}
 
 
-class WebsitePublishSerializer(serializers.ModelSerializer):
+class WebsiteMassBuildSerializer(serializers.ModelSerializer):
     """ Serializer for mass building websites """
 
     starter_slug = serializers.SerializerMethodField(read_only=True)
     base_url = serializers.SerializerMethodField(read_only=True)
     site_url = serializers.SerializerMethodField(read_only=True)
+    s3_path = serializers.SerializerMethodField(read_only=True)
 
     def get_starter_slug(self, instance):
         """Get the website starter slug"""
@@ -116,8 +126,11 @@ class WebsitePublishSerializer(serializers.ModelSerializer):
 
     def get_site_url(self, instance):
         """Get the website relative url"""
-        site_config = SiteConfig(instance.starter.config)
-        return f"{site_config.root_url_path}/{instance.name}".strip("/")
+        return instance.url_path
+
+    def get_s3_path(self, instance):
+        """Get the website s3 path"""
+        return instance.site_s3_path
 
     def get_base_url(self, instance):
         """Get the base url (should be same as site_url except for the root site)"""
@@ -133,6 +146,7 @@ class WebsitePublishSerializer(serializers.ModelSerializer):
             "starter_slug",
             "site_url",
             "base_url",
+            "s3_path"
         ]
         read_only_fields = fields
 
@@ -214,7 +228,6 @@ class WebsiteDetailSerializer(
             "live_url",
             "has_unpublished_live",
             "has_unpublished_draft",
-            "gdrive_url",
             "live_publish_status",
             "live_publish_status_updated_on",
             "draft_publish_status",
@@ -293,7 +306,6 @@ class WebsiteWriteSerializer(serializers.ModelSerializer, RequestUserSerializerM
         with transaction.atomic():
             website = super().create(validated_data)
         create_website_backend(website)
-        create_website_publishing_pipeline(website)
         create_gdrive_folders.delay(website.short_id)
         return website
 

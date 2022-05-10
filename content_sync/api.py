@@ -80,12 +80,6 @@ def create_website_backend(website: Website):
     tasks.create_website_backend.delay(website.name)
 
 
-@is_publish_pipeline_enabled
-def create_website_publishing_pipeline(website: Website):
-    """ Create the publish pipeline for a website"""
-    tasks.upsert_website_publishing_pipeline.delay(website.name)
-
-
 @is_sync_enabled
 def update_website_backend(website: Website):
     """ Update the backend content for a website"""
@@ -135,7 +129,10 @@ def publish_website(  # pylint: disable=too-many-arguments
             backend.merge_backend_live()
 
         if trigger_pipeline and settings.CONTENT_SYNC_PIPELINE_BACKEND:
+            tasks.upsert_website_publishing_pipeline(website)
             pipeline = get_sync_pipeline(website, api=pipeline_api)
+            # Always upsert pipeline in case the site url path changed
+            pipeline.upsert_pipeline()
             pipeline.unpause_pipeline(version)
             build_id = pipeline.trigger_pipeline_build(version)
             update_kwargs = {

@@ -194,28 +194,6 @@ def test_get_sync_pipeline(settings, mocker, pipeline_api):
     import_string_mock.assert_any_call(website, api=pipeline_api)
 
 
-def test_create_website_publishing_pipeline(settings, mocker):
-    """upsert_website_publishing_pipeline task should be called if pipelines are enabled"""
-    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
-    mock_task = mocker.patch(
-        "content_sync.api.tasks.upsert_website_publishing_pipeline.delay"
-    )
-    website = WebsiteFactory.create()
-    api.create_website_publishing_pipeline(website)
-    mock_task.assert_called_once_with(website.name)
-
-
-def test_create_website_publishing_pipeline_disabled(settings, mocker):
-    """upsert_website_publishing_pipeline task should not be called if pipelines are disabled"""
-    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
-    mock_task = mocker.patch(
-        "content_sync.api.tasks.upsert_website_publishing_pipeline.delay"
-    )
-    website = WebsiteFactory.create()
-    api.create_website_publishing_pipeline(website)
-    mock_task.assert_not_called()
-
-
 @pytest.mark.parametrize("prepublish", [True, False])
 @pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
 @pytest.mark.parametrize("has_api", [True, False])

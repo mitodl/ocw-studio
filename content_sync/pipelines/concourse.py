@@ -273,14 +273,12 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
             # Invalid github url, so skip
             return
 
-        site_config = SiteConfig(self.website.starter.config)
-        site_url = f"{site_config.root_url_path}/{self.website.name}".strip("/")
         if self.website.name == settings.ROOT_WEBSITE_NAME:
             base_url = ""
             theme_created_trigger = "true"
             theme_deployed_trigger = "false"
         else:
-            base_url = site_url
+            base_url = self.website.url_path
             theme_created_trigger = "false"
             theme_deployed_trigger = "true"
         hugo_projects_url = urljoin(
@@ -342,8 +340,9 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
                     .replace("((ocw-site-repo))", self.website.short_id)
                     .replace("((ocw-site-repo-branch))", branch)
                     .replace("((config-slug))", self.website.starter.slug)
+                    .replace("((s3-path))", self.website.site_s3_path)
                     .replace("((base-url))", base_url)
-                    .replace("((site-url))", site_url)
+                    .replace("((site-url))", self.website.url_path)
                     .replace("((site-name))", self.website.name)
                     .replace("((purge-url))", f"purge/{self.website.name}")
                     .replace("((purge_header))", purge_header)
