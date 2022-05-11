@@ -13,12 +13,12 @@ interface SubstringRange {
  *
  * @example
  * ```
- *           // 0         1         2         3         4
- *           // 01234567890123456789012345678901234567890123456789
+ *            // 0         1         2         3         4
+ *            // 01234567890123456789012345678901234567890123456789
  * const text = "Hello {{< shortcode {{< sup 12 >}} >}} goodbye.
  * const opener = "{{<"
  * matches = findNestedExpressions(text, "{{<", ">}}")
- * expect(matches).toEqual([{ start: 7, end: 39 }])
+ * expect(matches).toEqual([{ start: 6, end: 38 }])
  * ```
  * Note that `end` is the string index of the next character after the closer.
  * In this way, `end - start` is the substring length.
@@ -39,6 +39,20 @@ export const findNestedExpressions = (
   return matches
 }
 
+/**
+ * Find the next balanced instance of opener...closer in text starting at the
+ * specified index within text.
+ *
+ * @example
+ * ```
+ *            // 0         1         2         3         4
+ *            // 01234567890123456789012345678901234567890123456789
+ * const text = "hello [ b [ ] ] world [ [ ] [ ] ] bye"
+ * const startingFrom = 16
+ * const range = findNestedExpression(text, "[", "]", startingFrom)
+ * expect(range).toEqual({ start: 22, end: 33 })
+ * ```
+ */
 const findNestedExpression = (
   text: string,
   opener: string,
