@@ -10,10 +10,7 @@ from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from content_sync.api import (
-    create_website_backend,
-    update_website_backend,
-)
+from content_sync.api import create_website_backend, update_website_backend
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from gdrive_sync.api import gdrive_root_url, is_gdrive_enabled
 from gdrive_sync.tasks import create_gdrive_folders
@@ -107,7 +104,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "starter",
             "owner",
             "url_path",
-            "url_sections"
+            "url_sections",
         ]
         extra_kwargs = {"owner": {"write_only": True}}
 
@@ -140,14 +137,7 @@ class WebsiteMassBuildSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Website
-        fields = [
-            "name",
-            "short_id",
-            "starter_slug",
-            "site_url",
-            "base_url",
-            "s3_path"
-        ]
+        fields = ["name", "short_id", "starter_slug", "site_url", "base_url", "s3_path"]
         read_only_fields = fields
 
 
@@ -422,8 +412,12 @@ class WebsiteContentDetailSerializer(
         elif instance.type == CONTENT_TYPE_METADATA:
             # Add the site s3 path and url path to the metadata
             website = instance.website
-            validated_data["metadata"][settings.FIELD_METADATA_S3_PATH] = website.s3_path
-            validated_data["metadata"][settings.FIELD_METADATA_URL_PATH] = website.url_path
+            validated_data["metadata"][
+                settings.FIELD_METADATA_S3_PATH
+            ] = website.s3_path
+            validated_data["metadata"][
+                settings.FIELD_METADATA_URL_PATH
+            ] = website.url_path
         if "file" in validated_data:
             if "metadata" not in validated_data:
                 validated_data["metadata"] = {}
@@ -552,8 +546,12 @@ class WebsiteContentCreateSerializer(
         elif validated_data.get("type") == CONTENT_TYPE_METADATA:
             # Add the site s3 path and url path to the metadata
             website = Website.objects.get(id=self.context["website_id"])
-            validated_data["metadata"][settings.FIELD_METADATA_S3_PATH] = website.s3_path
-            validated_data["metadata"][settings.FIELD_METADATA_URL_PATH] = website.url_path
+            validated_data["metadata"][
+                settings.FIELD_METADATA_S3_PATH
+            ] = website.s3_path
+            validated_data["metadata"][
+                settings.FIELD_METADATA_URL_PATH
+            ] = website.url_path
 
         if "file" in validated_data:
             if "metadata" not in validated_data:

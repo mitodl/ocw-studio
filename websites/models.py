@@ -29,10 +29,11 @@ from websites import constants
 from websites.constants import (
     CONTENT_DIRPATH_MAX_LEN,
     CONTENT_FILENAME_MAX_LEN,
-    CONTENT_FILEPATH_UNIQUE_CONSTRAINT, WEBSITE_SOURCE_OCW_IMPORT,
+    CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
+    WEBSITE_SOURCE_OCW_IMPORT,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role, get_dict_field
+from websites.utils import get_dict_field, permissions_group_name_for_role
 
 
 def validate_yaml(value):
@@ -188,11 +189,12 @@ class Website(TimestampedModel):
         site_config = SiteConfig(self.starter.config)
         url_path = site_config.site_url_path
         site_url_prefix = (
-            ""
-            if self.name == settings.ROOT_WEBSITE_NAME
-            else site_config.root_url_path
+            "" if self.name == settings.ROOT_WEBSITE_NAME else site_config.root_url_path
         )
-        if not url_path or (self.source == WEBSITE_SOURCE_OCW_IMPORT and self.first_published_to_production):
+        if not url_path or (
+            self.source == WEBSITE_SOURCE_OCW_IMPORT
+            and self.first_published_to_production
+        ):
             # use name for published legacy ocw sites or for any sites without a `url_path` in config.
             url_path = self.name
         else:
@@ -215,7 +217,6 @@ class Website(TimestampedModel):
             self.name,
         ]
         return "/".join([part.strip("/") for part in url_parts if part != ""])
-
 
     class Meta:
         permissions = (

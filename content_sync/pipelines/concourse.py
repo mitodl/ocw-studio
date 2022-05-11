@@ -30,7 +30,7 @@ from content_sync.pipelines.base import (
 from content_sync.utils import check_mandatory_settings
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.models import Website
-from websites.site_config_api import SiteConfig
+
 
 
 log = logging.getLogger(__name__)

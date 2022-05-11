@@ -273,7 +273,9 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
         )
 
         # Get all sites, minus any sites that have never been successfully published or have no metadata
-        sites = Website.objects.exclude(Q(**{f"{publish_date_field}__isnull": True})).filter(
+        sites = Website.objects.exclude(
+            Q(**{f"{publish_date_field}__isnull": True})
+        ).filter(
             websitecontent__type=CONTENT_TYPE_METADATA,
             websitecontent__metadata__isnull=False,
         )
