@@ -502,6 +502,11 @@ VIDEO_S3_TRANSCODE_PREFIX = get_string(
         "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert"
     ),
 )
+VIDEO_S3_TRANSCODE_ENDPOINT = get_string(
+    name="VIDEO_S3_TRANSCODE_ENDPOINT",
+    default="aws_mediaconvert_transcodes",
+    description=("Endpoint to be used for AWS MediaConvert"),
+)
 VIDEO_TRANSCODE_QUEUE = get_string(
     name="VIDEO_TRANSCODE_QUEUE",
     default="Default",

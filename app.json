@@ -537,6 +537,10 @@
       "description": "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert",
       "required": false
     },
+    "VIDEO_S3_TRANSCODE_ENDPOINT": {
+      "description": "Endpoint for AWS MediaConvert",
+      "required": false
+    },
     "VIDEO_TRANSCODE_QUEUE": {
       "description": "Name of MediaConvert queue to use for transcoding",
       "required": false

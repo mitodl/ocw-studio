@@ -50,14 +50,10 @@ def prepare_video_download_file(video: Video):
 def create_media_convert_job(video: Video):
     """Create a MediaConvert job for a Video"""
     source_prefix = settings.DRIVE_S3_UPLOAD_PREFIX
-    endpoint = boto3.client(
+    client = boto3.client(
         "mediaconvert",
         region_name=settings.AWS_REGION,
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-    ).describe_endpoints()["Endpoints"][0]["Url"]
-    client = boto3.client(
-        "mediaconvert", region_name=settings.AWS_REGION, endpoint_url=endpoint
+        endpoint_url=settings.VIDEO_S3_TRANSCODE_ENDPOINT,
     )
     with open(
         os.path.join(settings.BASE_DIR, f"{VideoApp.name}/config/mediaconvert.json"),
