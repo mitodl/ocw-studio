@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.60.1 (Released May 11, 2022)
+--------------
+
+- update references to the mitodl/ocw-course-publisher docker container to specify version and set it to 0.2 (#1321)
+- Fix workflow syntax (#1319)
+- updated node version (#1310)
+- Added a github action workflow for releasing to CI
+- migrate ocw-www content type pages to page (#1312)
+- add SITEMAP_DOMAIN to the app and pipeline templates (#1306)
+
 Version 0.60.0 (Released May 11, 2022)
 --------------
 
