@@ -1,5 +1,6 @@
 """ websites models """
 import json
+import logging
 import re
 from hashlib import sha256
 from typing import Dict
@@ -35,6 +36,7 @@ from websites.constants import (
 from websites.site_config_api import SiteConfig
 from websites.utils import get_dict_field, permissions_group_name_for_role
 
+log = logging.getLogger(__name__)
 
 def validate_yaml(value):
     """Validator function to ensure that the value is YAML-formatted"""
@@ -174,20 +176,20 @@ class Website(TimestampedModel):
             if version == VERSION_LIVE
             else settings.OCW_STUDIO_DRAFT_URL
         )
-        if self.url_path:
-            return urljoin(base_url, self.url_path)
+        url_path = self.format_url_path()
+        if url_path:
+            return urljoin(base_url, url_path)
 
     @property
     def url_sections(self):
         """Get the sections required for the url path as a dict"""
         site_config = SiteConfig(self.starter.config)
-        return re.findall(r"(\[.+?\])+", site_config.site_url_path) or []
+        return re.findall(r"(\[.+?\])+", site_config.site_url_format) or []
 
-    @property
-    def url_path(self):
+    def format_url_path(self, metadata: Dict = None):
         """ Get the url path based on site config"""
         site_config = SiteConfig(self.starter.config)
-        url_path = site_config.site_url_path
+        url_path = site_config.site_url_format
         site_url_prefix = (
             "" if self.name == settings.ROOT_WEBSITE_NAME else site_config.root_url_path
         )
@@ -200,13 +202,21 @@ class Website(TimestampedModel):
         else:
             for section in self.url_sections:
                 section_type, section_field = re.sub(r"[\[\]]+", "", section).split(":")
-                content = self.websitecontent_set.get(type=section_type)
-                value = get_dict_field(content.metadata, section_field)
+                if metadata:
+                    value = get_dict_field(metadata, section_field)
+                if not metadata or not value:
+                    content = self.websitecontent_set.get(type=section_type)
+                    value = get_dict_field(content.metadata, section_field)
                 if not value:
                     # Incomplete metadata required for url
                     return None
                 url_path = url_path.replace(section, slugify(value.replace(".", "-")))
         return "/".join(part.strip("/") for part in [site_url_prefix, url_path] if part)
+
+    @property
+    def url_path(self):
+        """ Get the url path as a property """
+        return self.format_url_path()
 
     @property
     def s3_path(self):

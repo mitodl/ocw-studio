@@ -39,17 +39,17 @@ ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is re
 class WebsiteStarterSerializer(serializers.ModelSerializer):
     """ Serializer for website starters """
 
-    site_url_path = serializers.SerializerMethodField(read_only=True)
+    site_url_format = serializers.SerializerMethodField(read_only=True)
 
-    def get_site_url_path(self, instance):
-        """ Get the Google Drive folder URL for the site"""
+    def get_site_url_format(self, instance):
+        """ Get the site url format string"""
         site_config = SiteConfig(instance.config)
-        return site_config.site_url_path
+        return site_config.site_url_format
 
     class Meta:
         model = WebsiteStarter
-        fields = ["id", "name", "path", "source", "commit", "slug", "site_url_path"]
-        read_only_fields = ["site_url_path"]
+        fields = ["id", "name", "path", "source", "commit", "slug", "site_url_format"]
+        read_only_fields = ["site_url_format"]
 
 
 class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
@@ -123,7 +123,7 @@ class WebsiteMassBuildSerializer(serializers.ModelSerializer):
 
     def get_site_url(self, instance):
         """Get the website relative url"""
-        return instance.url_path
+        return instance.format_url_path()
 
     def get_s3_path(self, instance):
         """Get the website s3 path"""
@@ -417,7 +417,7 @@ class WebsiteContentDetailSerializer(
             ] = website.s3_path
             validated_data["metadata"][
                 settings.FIELD_METADATA_URL_PATH
-            ] = website.url_path
+            ] = website.format_url_path(metadata=validated_data["metadata"])
         if "file" in validated_data:
             if "metadata" not in validated_data:
                 validated_data["metadata"] = {}
@@ -551,8 +551,7 @@ class WebsiteContentCreateSerializer(
             ] = website.s3_path
             validated_data["metadata"][
                 settings.FIELD_METADATA_URL_PATH
-            ] = website.url_path
-
+            ] = website.format_url_path(metadata=validated_data["metadata"])
         if "file" in validated_data:
             if "metadata" not in validated_data:
                 validated_data["metadata"] = {}

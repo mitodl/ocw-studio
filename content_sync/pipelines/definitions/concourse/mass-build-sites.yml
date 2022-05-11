@@ -108,7 +108,7 @@ jobs:
                 S3_PATH=$(echo $1 | jq -c '.s3_path' | tr -d '"')
                 SITE_URL=$(echo $1 | jq -c '.site_url' | tr -d '"')
                 BASE_URL=$(echo $1 | jq -c '.base_url' | tr -d '"')
-                if [[ "$SITE_URL_PATH" == null || "$S3_PATH" == null ]]
+                if [[ "$SITE_URL" == null || "$S3_PATH" == null ]]
                 then
                   return 1
                 fi

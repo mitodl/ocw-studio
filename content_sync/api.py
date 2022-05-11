@@ -129,7 +129,6 @@ def publish_website(  # pylint: disable=too-many-arguments
             backend.merge_backend_live()
 
         if trigger_pipeline and settings.CONTENT_SYNC_PIPELINE_BACKEND:
-            tasks.upsert_website_publishing_pipeline(website)
             pipeline = get_sync_pipeline(website, api=pipeline_api)
             # Always upsert pipeline in case the site url path changed
             pipeline.upsert_pipeline()
