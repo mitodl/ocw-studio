@@ -75,7 +75,7 @@ jobs:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: ardiea/ocw-course-publisher, tag: latest}
+        source: {repository: mitodl/ocw-course-publisher, tag: 0.2}
       inputs:
         - name: publishable_sites
         - name: ocw-hugo-projects
