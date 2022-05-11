@@ -123,7 +123,7 @@ class WebsiteMassBuildSerializer(serializers.ModelSerializer):
 
     def get_site_url(self, instance):
         """Get the website relative url"""
-        return instance.format_url_path()
+        return instance.url_path
 
     def get_s3_path(self, instance):
         """Get the website s3 path"""
