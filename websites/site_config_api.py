@@ -10,6 +10,7 @@ from websites.constants import (
     WEBSITE_CONFIG_DEFAULT_CONTENT_DIR,
     WEBSITE_CONFIG_ROOT_URL_PATH_KEY,
     WEBSITE_CONFIG_SITE_URL_PATH_KEY,
+    WEBSITE_CONFIG_SITE_S3_PATH_KEY,
 )
 
 
@@ -82,13 +83,6 @@ class SiteConfig:
         Returns the root url path described in the site config
         """
         return self.raw_data.get(WEBSITE_CONFIG_ROOT_URL_PATH_KEY, "").strip("/")
-
-    @cached_property
-    def site_url_path(self) -> str:
-        """
-        Returns the root url path described in the site config
-        """
-        return self.raw_data.get(WEBSITE_CONFIG_SITE_URL_PATH_KEY, "").strip("/")
 
     def iter_items(self) -> Iterator[ConfigItem]:
         """Yields all config items for which users can enter data"""

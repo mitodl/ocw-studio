@@ -26,7 +26,7 @@ from websites.api import (
     sync_website_title,
     update_youtube_thumbnail,
 )
-from websites.constants import CONTENT_TYPE_METADATA
+from websites.constants import CONTENT_TYPE_METADATA, CONTENT_TYPE_RESOURCE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
@@ -415,10 +415,15 @@ class WebsiteContentDetailSerializer(
 
     def update(self, instance, validated_data):
         """Add updated_by to the data"""
-        if instance.type == "resource":
+        if instance.type == CONTENT_TYPE_RESOURCE:
             update_youtube_thumbnail(
                 instance.website.uuid, validated_data.get("metadata"), overwrite=True
             )
+        elif instance.type == CONTENT_TYPE_METADATA:
+            # Add the site s3 path and url path to the metadata
+            website = instance.website
+            validated_data["metadata"][settings.FIELD_METADATA_S3_PATH] = website.s3_path
+            validated_data["metadata"][settings.FIELD_METADATA_URL_PATH] = website.url_path
         if "file" in validated_data:
             if "metadata" not in validated_data:
                 validated_data["metadata"] = {}
@@ -540,10 +545,15 @@ class WebsiteContentCreateSerializer(
             for field in {"is_page_content", "filename", "dirpath", "text_id"}
             if field in self.context
         }
-        if validated_data.get("type") == "resource":
+        if validated_data.get("type") == CONTENT_TYPE_RESOURCE:
             update_youtube_thumbnail(
                 self.context["website_id"], validated_data.get("metadata")
             )
+        elif validated_data.get("type") == CONTENT_TYPE_METADATA:
+            # Add the site s3 path and url path to the metadata
+            website = Website.objects.get(id=self.context["website_id"])
+            validated_data["metadata"][settings.FIELD_METADATA_S3_PATH] = website.s3_path
+            validated_data["metadata"][settings.FIELD_METADATA_URL_PATH] = website.url_path
 
         if "file" in validated_data:
             if "metadata" not in validated_data:
