@@ -445,12 +445,12 @@
       "description": "The log level for Sentry",
       "required": false
     },
-    "SITE_NAME": {
-      "description": "Site name",
-      "required": false
-    },
     "SITEMAP_DOMAIN": {
       "description": "The domain to be used in Hugo builds for fully qualified URLs in the sitemap",
+      "required": false
+    },
+    "SITE_NAME": {
+      "description": "Site name",
       "required": false
     },
     "SOCIAL_AUTH_SAML_CONTACT_NAME": {
@@ -535,6 +535,10 @@
     },
     "USE_X_FORWARDED_PORT": {
       "description": "Use the PORT from original url accessed by user",
+      "required": false
+    },
+    "VIDEO_S3_TRANSCODE_ENDPOINT": {
+      "description": "Endpoint to be used for AWS MediaConvert",
       "required": false
     },
     "VIDEO_S3_TRANSCODE_PREFIX": {
