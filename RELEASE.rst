@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.60.1
+Version 0.60.1 (Released May 11, 2022)
 --------------
 
 - update references to the mitodl/ocw-course-publisher docker container to specify version and set it to 0.2 (#1321)
