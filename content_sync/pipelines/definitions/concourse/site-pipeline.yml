@@ -125,6 +125,7 @@ jobs:
         timeout: 20m
         attempts: 3
         params:
+          API_BEARER_TOKEN: ((api-token))
           GTM_ACCOUNT_ID: ((gtm-account-id))
           OCW_STUDIO_BASE_URL: ((ocw-studio-url))
           STATIC_API_BASE_URL: ((static-api-base-url))
