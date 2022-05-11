@@ -79,9 +79,6 @@ jobs:
         source: {repository: mitodl/ocw-course-publisher, tag: 0.2}
       inputs:
         - name: publishable_sites
-        - name: ocw-hugo-projects
-        - name: ocw-hugo-themes
-        - name: webpack-json
       run:
         path: bash
         args:
@@ -106,23 +103,19 @@ jobs:
                 SHORT_ID=$(echo $1 | jq -c '.short_id' | tr -d '"')
                 STARTER_SLUG=$(echo $1| jq -c '.starter_slug' | tr -d '"')
                 S3_PATH=$(echo $1 | jq -c '.s3_path' | tr -d '"')
-                SITE_URL=$(echo $1 | jq -c '.site_url' | tr -d '"')
+                SITE_URL_PATH=$(echo $1 | jq -c '.site_url' | tr -d '"')
                 BASE_URL=$(echo $1 | jq -c '.base_url' | tr -d '"')
-                if [[ "$SITE_URL" == null || "$S3_PATH" == null ]]
+                if [[ "$SITE_URL_PATH" == null || "$S3_PATH" == null ]]
                 then
                   return 1
                 fi
                 export S3_PATH=$S3_PATH
-                export SITE_URL=$SITE_URL
+                export SITE_URL_PATH=$SITE_URL_PATH
                 git -c core.sshCommand="ssh $GITKEYSSH -o StrictHostKeyChecking=no" clone -b ((ocw-site-repo-branch)) ((markdown-uri))/$SHORT_ID.git || return 1
                 cd $CURDIR/$SHORT_ID
                 cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
                 hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl /$BASE_URL --themesDir ../ocw-hugo-themes/ ((build-drafts))  || return 1
                 cd $CURDIR
-                aws s3 sync s3://((ocw-studio-bucket))/$S3_PATH s3://((ocw-bucket))/$SITE_URL --metadata site-id=$NAME || return 1            
-                aws s3 sync $SHORT_ID/public s3://((ocw-bucket))/$BASE_URL --metadata site-id=$NAME || return 1
-                curl -X POST -H 'Content-Type: application/json' --data '{"webhook_key":"((open-webhook-key))","prefix":"'"$SITE_URL"/'","version":"((version))"}' ((open-discussions-url))/api/v0/ocw_next_webhook/
-                curl -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"((version))","status":"succeeded"}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/
                 rm -rf $SHORT_ID
                 return 0
             }
@@ -139,22 +132,3 @@ jobs:
                    fail_site $i
                  fi
             done
-  - task: clear-cdn-cache
-    timeout: 1m
-    attempts: 3
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: {repository: curlimages/curl}
-      run:
-        path: curl
-        args:
-          - -f
-          - -X
-          - POST
-          - -H
-          - 'Fastly-Key: ((fastly_((version)).api_token))'
-          - -H
-          - 'Fastly-Soft-Purge: 1'
-          - https://api.fastly.com/service/((fastly_((version)).service_id))/purge_all
