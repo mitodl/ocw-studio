@@ -64,7 +64,7 @@ services:
       - redis
 
   watch:
-    image: node:15.14.0
+    image: node:16.15.0
     working_dir: /src
     command: >
       /bin/bash -c './webpack_dev_server.sh --install'
