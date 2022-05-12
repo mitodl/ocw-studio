@@ -177,15 +177,18 @@ export class Shortcode {
   params: ShortcodeParam[]
 
   isPercentDelimited: boolean
+  isClosing: boolean
 
   constructor(
     name: string,
     params: ShortcodeParam[],
-    isPercentDelimited = false
+    isPercentDelimited = false,
+    isClosing = false
   ) {
     this.name = name
     this.params = params
     this.isPercentDelimited = isPercentDelimited
+    this.isClosing = isClosing
 
     const hasPositionalParams = params.some(p => p.name === undefined)
     const hasNamedParams = params.some(p => p.name !== undefined)
@@ -203,12 +206,15 @@ export class Shortcode {
    */
   toHugo() {
     const stringifiedArgs = this.params.map(p => p.toHugo())
-    const interior = [this.name, ...stringifiedArgs].join(" ")
+    const name = this.isClosing ? `/${this.name}` : this.name
+    const interior = [name, ...stringifiedArgs].join(" ")
     if (this.isPercentDelimited) {
       return `{{% ${interior} %}}`
     }
     return `{{< ${interior} >}}`
   }
+
+  private static IS_CLOSING_REGEXP = /\s*(?<isClosing>\/)?\s*/
 
   /**
    * Regexp used for matching individual shortcode arguments.
@@ -232,8 +238,14 @@ export class Shortcode {
   static fromString(s: string): Shortcode {
     Shortcode.heuristicValidation(s)
     const isPercentDelmited = s.startsWith("{{%") && s.endsWith("%}}")
-    const [nameMatch, ...argMatches] = s
-      .slice(3, -3)
+
+    const interior = s.slice(3, -3)
+    const isClosingMatch = interior.match(Shortcode.IS_CLOSING_REGEXP)
+    // re ! the IS_CLOSING_REGEXP regexp will always match and has groups
+    const isClosing = isClosingMatch!.groups!.isClosing === '/'
+    const nameAndArgs = interior.slice(isClosingMatch![0].length)
+
+    const [nameMatch, ...argMatches] = nameAndArgs
       .matchAll(Shortcode.ARG_REGEXP)
     const name = Shortcode.getArgMatchValue(nameMatch)
     const params = argMatches.map(match => {
@@ -243,7 +255,7 @@ export class Shortcode {
       )
     })
 
-    return new Shortcode(name, params, isPercentDelmited)
+    return new Shortcode(name, params, isPercentDelmited, isClosing)
   }
 
   /**

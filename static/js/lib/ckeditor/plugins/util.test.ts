@@ -52,7 +52,7 @@ describe("unescapeStringQuotedWith", () => {
 })
 
 describe("Shortcode", () => {
-  describe("Shortcode.parse", () => {
+  describe("Shortcode.fromString", () => {
     it("parses shortcodes with named params", () => {
       const text =
         '{{< some_shortcode cool_arg="cats and dogs" href_uuid=uuid456 >}}'
@@ -169,6 +169,28 @@ describe("Shortcode", () => {
         expect(() => Shortcode.fromString(text)).toThrow(/matching delimiters/)
       }
     )
+
+    it.each([
+      {
+        text:     "{{< /some_shortcode >}}",
+        expected: new Shortcode('some_shortcode', [], false, true)
+      },
+      {
+        text:     "{{< / some_shortcode >}}",
+        expected: new Shortcode('some_shortcode', [], false, true)
+      },
+      {
+        text:     "{{</ some_shortcode >}}",
+        expected: new Shortcode('some_shortcode', [], false, true)
+      },
+      {
+        text:     "{{% /some_shortcode %}}",
+        expected: new Shortcode('some_shortcode', [], true, true)
+      }
+    ])('parses closing shortcodes', ({ text, expected }) => {
+      const result = Shortcode.fromString(text)
+      expect(result).toStrictEqual(expected)
+    })
   })
 
   it("does not allow mixing named and positional params", () => {
@@ -232,6 +254,11 @@ describe("Shortcode", () => {
         expect(shortcode.toHugo()).toBe(expected)
       }
     )
+
+    it('includes / for closing shortcodes', () => {
+      const shortcode = new Shortcode("some_shortcode", [], false, true)
+      expect(shortcode.toHugo()).toBe('{{< /some_shortcode >}}')
+    })
   })
 
   describe("Shortcode.get", () => {
