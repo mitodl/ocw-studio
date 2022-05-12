@@ -35,7 +35,6 @@ from websites.serializers import (
     WebsiteStatusSerializer,
     WebsiteUnpublishSerializer,
 )
-from websites.site_config_api import SiteConfig
 
 
 pytestmark = pytest.mark.django_db
@@ -186,8 +185,8 @@ def test_website_detail_serializer(
     assert (
         parse_date(serialized_data["draft_publish_date"]) == website.draft_publish_date
     )
-    assert serialized_data["live_url"] == website.get_url("live")
-    assert serialized_data["draft_url"] == website.get_url("draft")
+    assert serialized_data["live_url"] == website.get_full_url("live")
+    assert serialized_data["draft_url"] == website.get_full_url("draft")
     assert serialized_data["has_unpublished_live"] == website.has_unpublished_live
     assert serialized_data["has_unpublished_draft"] == website.has_unpublished_draft
     assert serialized_data["gdrive_url"] == (
@@ -585,13 +584,10 @@ def test_website_content_create_serializer(
 @pytest.mark.parametrize("is_root_site", [True, False])
 def test_website_publish_serializer_base_url(settings, is_root_site):
     """ The WebsitePublishSerializer should return the correct base_url value """
-    site = WebsiteFactory.create()
-    site_config = SiteConfig(site.starter.config)
+    site = WebsiteFactory.create(url_path="courses/my-site")
     settings.ROOT_WEBSITE_NAME = site.name if is_root_site else "some_other_root_name"
     serializer = WebsiteMassBuildSerializer(site)
-    assert serializer.data["base_url"] == (
-        "" if is_root_site else f"{site_config.root_url_path}/{site.name}".strip("/")
-    )
+    assert serializer.data["base_url"] == ("" if is_root_site else site.url_path)
 
 
 @pytest.mark.parametrize("has_metadata", [True, False])

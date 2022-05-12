@@ -54,6 +54,9 @@ class WebsiteFactory(DjangoModelFactory):
         model = Website
 
     class Params:
+        with_url_path = factory.Trait(
+            url_path=factory.Sequence(lambda n: "courses/site-path-%s" % n)
+        )
         published = factory.Trait(
             publish_date=factory.Faker("past_datetime", tzinfo=pytz.utc),
             first_published_to_production=factory.Faker(

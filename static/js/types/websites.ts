@@ -252,6 +252,7 @@ export type Website = WebsiteStatus & {
   has_unpublished_draft: boolean
   has_unpublished_live: boolean
   content_warnings?: Array<string>
+  url_sections: Array<string>
 }
 
 type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR

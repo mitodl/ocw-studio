@@ -139,7 +139,7 @@ def test_website_content_unpublished():
 def test_website_get_url(
     settings, name, root_url, is_home, version, expected_path
 ):  # pylint:disable=too-many-arguments
-    """Verify that Website.get_url returns the expected value"""
+    """Verify that Website.get_full_url returns the expected value"""
     settings.OCW_STUDIO_LIVE_URL = "http://test-live.edu"
     settings.OCW_STUDIO_DRAFT_URL = "http://test-draft.edu"
     expected_domain = (
@@ -151,13 +151,13 @@ def test_website_get_url(
     starter.config["root-url-path"] = root_url
     starter.save()
     settings.ROOT_WEBSITE_NAME = name if is_home else "test-home"
-    website = WebsiteFactory.create(name=name, starter=starter)
-    assert website.get_url(version) == urljoin(expected_domain, expected_path)
+    website = WebsiteFactory.create(name=name, starter=starter, url_path=expected_path)
+    assert website.get_full_url(version) == urljoin(expected_domain, expected_path)
 
 
 @pytest.mark.django_db
 def test_website_get_url_no_starter():
-    """Verify that Website.get_url returns None if there is no starter"""
+    """Verify that Website.get_full_url returns None if there is no starter"""
     website = WebsiteFactory.create(starter=None)
-    assert website.get_url("draft") is None
-    assert website.get_url("live") is None
+    assert website.get_full_url("draft") is None
+    assert website.get_full_url("live") is None

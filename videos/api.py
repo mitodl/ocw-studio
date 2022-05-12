@@ -35,7 +35,7 @@ def prepare_video_download_file(video: Video):
     if not video_file:
         return
     new_s3_key = urljoin(
-        f"{urlparse(video.website.get_url()).path}/",
+        f"{urlparse(video.website.get_full_url()).path}/",
         f"{video_file.s3_key.split('/')[-1]}",
     ).strip("/")
     if new_s3_key != video_file.s3_key:

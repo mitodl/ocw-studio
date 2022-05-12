@@ -30,7 +30,7 @@ def permission_groups():
         site_admin,
         site_editor,
     ) = UserFactory.create_batch(5)
-    websites = WebsiteFactory.create_batch(2, owner=site_owner)
+    websites = WebsiteFactory.create_batch(2, owner=site_owner, with_url_path=True)
     global_admin.groups.add(Group.objects.get(name=constants.GLOBAL_ADMIN))
     global_author.groups.add(Group.objects.get(name=constants.GLOBAL_AUTHOR))
     site_admin.groups.add(websites[0].admin_group)

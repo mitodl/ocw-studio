@@ -372,7 +372,7 @@ def test_mail_on_publish(settings, mocker, success, version, permission_groups):
         {
             "site": {
                 "title": website.title,
-                "url": f"http://test.{version}.edu/{website.starter.config['root-url-path']}/{website.name}",
+                "url": f"http://test.{version}.edu/{website.url_path}",
             },
             "version": version,
         },

@@ -1188,6 +1188,7 @@ def test_mass_build_endpoint_list(settings, drf_client, version, unpublished):
         publish_date=None,
         first_published_to_production=now,
         unpublish_status=constants.PUBLISH_STATUS_NOT_STARTED if unpublished else None,
+        with_url_path=True,
     )
     live_published = WebsiteFactory.create_batch(
         2,
@@ -1195,6 +1196,7 @@ def test_mass_build_endpoint_list(settings, drf_client, version, unpublished):
         publish_date=now_in_utc(),
         first_published_to_production=now,
         unpublish_status=constants.PUBLISH_STATUS_NOT_STARTED if unpublished else None,
+        with_url_path=True,
     )
     expected_sites = draft_published if version == VERSION_DRAFT else live_published
     settings.API_BEARER_TOKEN = "abc123"

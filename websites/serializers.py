@@ -6,7 +6,6 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import transaction
-from django.db.models import Q
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -21,14 +20,14 @@ from websites import constants
 from websites.api import (
     detect_mime_type,
     incomplete_content_warnings,
-    sync_website_title,
+    sync_website_data,
     update_youtube_thumbnail,
 )
 from websites.constants import CONTENT_TYPE_METADATA, CONTENT_TYPE_RESOURCE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import get_dict_query_field, permissions_group_name_for_role
+from websites.utils import permissions_group_name_for_role
 
 
 log = logging.getLogger(__name__)
@@ -196,11 +195,11 @@ class WebsiteDetailSerializer(
 
     def get_live_url(self, instance):
         """Get the live url for the site"""
-        return instance.get_url(version=VERSION_LIVE)
+        return instance.get_full_url(version=VERSION_LIVE)
 
     def get_draft_url(self, instance):
         """Get the draft url for the site"""
-        return instance.get_url(version=VERSION_DRAFT)
+        return instance.get_full_url(version=VERSION_DRAFT)
 
     def update(self, instance, validated_data):
         """ Remove owner attribute if present, it should not be changed"""
@@ -398,18 +397,8 @@ class UniqueWebsiteUrlMixin(serializers.Serializer):
             if self.instance
             else Website.objects.get(pk=self.context["website_id"])
         )
-        metadata_url_field = get_dict_query_field(
-            "metadata", settings.FIELD_METADATA_URL_PATH
-        )
         url = website.format_url_path(metadata=attrs)
-        if (
-            url
-            and WebsiteContent.objects.filter(
-                Q(type=CONTENT_TYPE_METADATA) & Q(**{f"{metadata_url_field}": url})
-            )
-            .exclude(website__pk=website.pk)
-            .exists()
-        ):
+        if url and Website.objects.filter(url_path=url).exclude(pk=website.pk).exists():
             raise serializers.ValidationError(f"The website URL {url} is not unique")
         return attrs
 
@@ -462,9 +451,9 @@ class WebsiteContentDetailSerializer(
             instance, {"updated_by": self.user_from_request(), **validated_data}
         )
         update_website_backend(instance.website)
-        # Sync the metadata title and website title if appropriate
+        # Sync the metadata and website data if appropriate
         if instance.type == CONTENT_TYPE_METADATA:
-            sync_website_title(instance)
+            sync_website_data(instance)
         return instance
 
     def get_content_context(self, instance):  # pylint:disable=too-many-branches
@@ -598,7 +587,7 @@ class WebsiteContentCreateSerializer(
         )
         update_website_backend(instance.website)
         if instance.type == CONTENT_TYPE_METADATA:
-            sync_website_title(instance)
+            sync_website_data(instance)
         return instance
 
     class Meta:

@@ -132,6 +132,7 @@ class Website(TimestampedModel):
         on_delete=models.SET_NULL,
         related_name="unpublisher",
     )
+    url_path = models.CharField(max_length=2048, unique=True, blank=False, null=True)
 
     @property
     def unpublished(self):
@@ -167,7 +168,7 @@ class Website(TimestampedModel):
             + list(self.editor_group.user_set.all())
         )
 
-    def get_url(self, version=VERSION_LIVE):
+    def get_full_url(self, version=VERSION_LIVE):
         """Get the home page (live or draft) of the website"""
         if self.starter is None:
             # if there is no starter, there is no ability to publish
@@ -178,9 +179,15 @@ class Website(TimestampedModel):
             if version == VERSION_LIVE
             else settings.OCW_STUDIO_DRAFT_URL
         )
-        url_path = self.format_url_path()
-        if url_path:
+        url_path = self.url_path
+        if url_path is not None:
             return urljoin(base_url, url_path)
+
+    @property
+    def url_sections(self):
+        """Get the sections required for the url path as a dict"""
+        site_config = SiteConfig(self.starter.config)
+        return re.findall(r"(\[.+?\])+", site_config.site_url_path) or []
 
     def format_url_path(self, metadata: Dict = None):
         """ Get the url path based on site config"""
@@ -196,7 +203,7 @@ class Website(TimestampedModel):
             # use name for published legacy ocw sites or for any sites without a `url_path` in config.
             url_path = self.name
         else:
-            for section in re.findall(r"(\[.+?\])+", site_config.site_url_format) or []:
+            for section in self.url_sections or []:
                 section_type, section_field = re.sub(r"[\[\]]+", "", section).split(":")
                 value = None
                 if metadata:
@@ -210,11 +217,6 @@ class Website(TimestampedModel):
                     return None
                 url_path = url_path.replace(section, slugify(value.replace(".", "-")))
         return "/".join(part.strip("/") for part in [site_url_prefix, url_path] if part)
-
-    @property
-    def url_path(self):
-        """ Get the url path as a property """
-        return self.format_url_path()
 
     @property
     def s3_path(self):

@@ -272,17 +272,12 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
             "publish_date" if version == VERSION_LIVE else "draft_publish_date"
         )
 
-        # Get all sites, minus any sites that have never been successfully published or have no metadata
-        sites = Website.objects.exclude(
-            Q(**{f"{publish_date_field}__isnull": True})
-        ).filter(
-            websitecontent__type=CONTENT_TYPE_METADATA,
-            websitecontent__metadata__isnull=False,
-        )
+        # Get all sites, minus any sites that have never been successfully published
+        sites = Website.objects.exclude(Q(**{f"{publish_date_field}__isnull": True}))
         # For live builds, exclude previously published sites that have been unpublished
         if version == VERSION_LIVE:
             sites = sites.exclude(unpublish_status__isnull=False)
-        sites = sites.prefetch_related("starter").order_by("name").distinct()
+        sites = sites.prefetch_related("starter").order_by("name")
         serializer = WebsiteMassBuildSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
 
