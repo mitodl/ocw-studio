@@ -52,7 +52,7 @@ describe("unescapeStringQuotedWith", () => {
 })
 
 describe("Shortcode", () => {
-  describe("Shortcode.parse", () => {
+  describe("Shortcode.fromString", () => {
     it("parses shortcodes with named params", () => {
       const text =
         '{{< some_shortcode cool_arg="cats and dogs" href_uuid=uuid456 >}}'
@@ -169,6 +169,28 @@ describe("Shortcode", () => {
         expect(() => Shortcode.fromString(text)).toThrow(/matching delimiters/)
       }
     )
+
+    it.each([
+      {
+        text:     "{{< /some_shortcode >}}",
+        expected: new Shortcode('some_shortcode', [], false, true)
+      },
+      {
+        text:     "{{< / some_shortcode >}}",
+        expected: new Shortcode('some_shortcode', [], false, true)
+      },
+      {
+        text:     "{{</ some_shortcode >}}",
+        expected: new Shortcode('some_shortcode', [], false, true)
+      },
+      {
+        text:     "{{% /some_shortcode %}}",
+        expected: new Shortcode('some_shortcode', [], true, true)
+      }
+    ])('parses closing shortcodes', ({ text, expected }) => {
+      const result = Shortcode.fromString(text)
+      expect(result).toStrictEqual(expected)
+    })
   })
 
   it("does not allow mixing named and positional params", () => {
@@ -232,6 +254,11 @@ describe("Shortcode", () => {
         expect(shortcode.toHugo()).toBe(expected)
       }
     )
+
+    it('includes / for closing shortcodes', () => {
+      const shortcode = new Shortcode("some_shortcode", [], false, true)
+      expect(shortcode.toHugo()).toBe('{{< /some_shortcode >}}')
+    })
   })
 
   describe("Shortcode.get", () => {
@@ -375,12 +402,16 @@ describe("findNestedExpressions", () => {
 })
 
 describe("replaceShortcodes", () => {
+  /**
+   * toy replacer function for testing purposes
+   */
   const capitalizingReplacer = (shortcode: Shortcode) => {
     const name = shortcode.name
     const newShortcode = new Shortcode(
       name.toUpperCase(),
       shortcode.params,
-      shortcode.isPercentDelimited
+      shortcode.isPercentDelimited,
+      shortcode.isClosing
     )
     return newShortcode.toHugo()
   }
@@ -413,11 +444,20 @@ describe("replaceShortcodes", () => {
     }
   )
 
-  it("only affects shortcodes of specified name", () => {
-    const text =
-      "hello {{< some_shortcode >}} and {{< some_shortcode_same_beginning >}}"
-    const expected =
-      "hello {{< SOME_SHORTCODE >}} and {{< some_shortcode_same_beginning >}}"
+  it.each([
+    {
+      text:
+        "hello {{< some_shortcode >}} and {{< some_shortcode_same_beginning >}}",
+      expected:
+        "hello {{< SOME_SHORTCODE >}} and {{< some_shortcode_same_beginning >}}"
+    },
+    {
+      text:
+        "hello {{< /some_shortcode >}} and {{< some_shortcode_same_beginning >}}",
+      expected:
+        "hello {{< /SOME_SHORTCODE >}} and {{< some_shortcode_same_beginning >}}"
+    }
+  ])("only affects shortcodes of specified name", ({ text, expected }) => {
     const replacer = jest.fn(capitalizingReplacer)
     const replaced = replaceShortcodes(text, replacer, {
       name: "some_shortcode"
