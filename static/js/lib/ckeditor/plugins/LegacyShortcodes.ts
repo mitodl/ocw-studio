@@ -5,7 +5,7 @@ import { editor } from "@ckeditor/ckeditor5-core"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 import { LEGACY_SHORTCODES } from "./constants"
-import { replaceShortcodes, Shortcode } from './util'
+import { replaceShortcodes, Shortcode } from "./util"
 
 const shortcodeClass = (shortcode: string) => `legacy-shortcode-${shortcode}`
 
@@ -20,11 +20,11 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
   get showdownExtension() {
     return (): ShowdownExtension[] => [
       {
-        type:    "lang",
-        filter:   text => {
+        type:   "lang",
+        filter: text => {
           const replacer = (shortcode: Shortcode, originalText: string) => {
             if (LEGACY_SHORTCODES.includes(shortcode.name)) {
-              const paramsText = shortcode.params.map(p => p.toHugo()).join(' ')
+              const paramsText = shortcode.params.map(p => p.toHugo()).join(" ")
               const tag = `<span ${DATA_ISCLOSING}="${shortcode.isClosing}" ${
                 shortcode.params.length > 0 ?
                   `${DATA_ARGUMENTS}="${encodeURIComponent(paramsText)}"` :
@@ -35,7 +35,7 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
             return originalText
           }
           return replaceShortcodes(text, replacer)
-        },
+        }
       }
     ]
   }

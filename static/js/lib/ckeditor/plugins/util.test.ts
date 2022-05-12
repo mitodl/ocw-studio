@@ -173,21 +173,21 @@ describe("Shortcode", () => {
     it.each([
       {
         text:     "{{< /some_shortcode >}}",
-        expected: new Shortcode('some_shortcode', [], false, true)
+        expected: new Shortcode("some_shortcode", [], false, true)
       },
       {
         text:     "{{< / some_shortcode >}}",
-        expected: new Shortcode('some_shortcode', [], false, true)
+        expected: new Shortcode("some_shortcode", [], false, true)
       },
       {
         text:     "{{</ some_shortcode >}}",
-        expected: new Shortcode('some_shortcode', [], false, true)
+        expected: new Shortcode("some_shortcode", [], false, true)
       },
       {
         text:     "{{% /some_shortcode %}}",
-        expected: new Shortcode('some_shortcode', [], true, true)
+        expected: new Shortcode("some_shortcode", [], true, true)
       }
-    ])('parses closing shortcodes', ({ text, expected }) => {
+    ])("parses closing shortcodes", ({ text, expected }) => {
       const result = Shortcode.fromString(text)
       expect(result).toStrictEqual(expected)
     })
@@ -255,9 +255,9 @@ describe("Shortcode", () => {
       }
     )
 
-    it('includes / for closing shortcodes', () => {
+    it("includes / for closing shortcodes", () => {
       const shortcode = new Shortcode("some_shortcode", [], false, true)
-      expect(shortcode.toHugo()).toBe('{{< /some_shortcode >}}')
+      expect(shortcode.toHugo()).toBe("{{< /some_shortcode >}}")
     })
   })
 

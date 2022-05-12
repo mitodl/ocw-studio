@@ -242,11 +242,12 @@ export class Shortcode {
     const interior = s.slice(3, -3)
     const isClosingMatch = interior.match(Shortcode.IS_CLOSING_REGEXP)
     // re ! the IS_CLOSING_REGEXP regexp will always match and has groups
-    const isClosing = isClosingMatch!.groups!.isClosing === '/'
+    const isClosing = isClosingMatch!.groups!.isClosing === "/"
     const nameAndArgs = interior.slice(isClosingMatch![0].length)
 
-    const [nameMatch, ...argMatches] = nameAndArgs
-      .matchAll(Shortcode.ARG_REGEXP)
+    const [nameMatch, ...argMatches] = nameAndArgs.matchAll(
+      Shortcode.ARG_REGEXP
+    )
     const name = Shortcode.getArgMatchValue(nameMatch)
     const params = argMatches.map(match => {
       return new ShortcodeParam(
