@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.60.2
+Version 0.60.2 (Released May 12, 2022)
 --------------
 
 - Fix deploy configuration
