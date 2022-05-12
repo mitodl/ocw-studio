@@ -182,12 +182,6 @@ class Website(TimestampedModel):
         if url_path:
             return urljoin(base_url, url_path)
 
-    @property
-    def url_sections(self):
-        """Get the sections required for the url path as a dict"""
-        site_config = SiteConfig(self.starter.config)
-        return re.findall(r"(\[.+?\])+", site_config.site_url_format) or []
-
     def format_url_path(self, metadata: Dict = None):
         """ Get the url path based on site config"""
         site_config = SiteConfig(self.starter.config)
@@ -202,13 +196,15 @@ class Website(TimestampedModel):
             # use name for published legacy ocw sites or for any sites without a `url_path` in config.
             url_path = self.name
         else:
-            for section in self.url_sections:
+            for section in re.findall(r"(\[.+?\])+", site_config.site_url_format) or []:
                 section_type, section_field = re.sub(r"[\[\]]+", "", section).split(":")
+                value = None
                 if metadata:
                     value = get_dict_field(metadata, section_field)
                 if not metadata or not value:
-                    content = self.websitecontent_set.get(type=section_type)
-                    value = get_dict_field(content.metadata, section_field)
+                    content = self.websitecontent_set.filter(type=section_type).first()
+                    if content:
+                        value = get_dict_field(content.metadata, section_field)
                 if not value:
                     # Incomplete metadata required for url
                     return None

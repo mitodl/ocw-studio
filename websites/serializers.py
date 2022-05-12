@@ -28,7 +28,8 @@ from websites.constants import CONTENT_TYPE_METADATA, CONTENT_TYPE_RESOURCE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role, get_dict_query_field
+from websites.utils import get_dict_query_field, permissions_group_name_for_role
+
 
 log = logging.getLogger(__name__)
 
@@ -387,18 +388,30 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
 
 class UniqueWebsiteUrlMixin(serializers.Serializer):
     """Validate that the website url will be unique"""
-    def validate(self, data):
+
+    def validate(self, attrs):
         """
         Check that the website url will be unique.
         """
-        website = Website.objects.get(id=self.context["website_id"])
-        metadata_url_field = get_dict_query_field("metadata", settings.FIELD_METADATA_URL_PATH)
-        url = website.format_url_path(metadata=data)
-        if Website.objects.filter(
-            Q(**{metadata_url_field: url})
-        ).exclude(website=website).exists():
+        website = (
+            self.instance.website
+            if self.instance
+            else Website.objects.get(pk=self.context["website_id"])
+        )
+        metadata_url_field = get_dict_query_field(
+            "metadata", settings.FIELD_METADATA_URL_PATH
+        )
+        url = website.format_url_path(metadata=attrs)
+        if (
+            url
+            and WebsiteContent.objects.filter(
+                Q(type=CONTENT_TYPE_METADATA) & Q(**{f"{metadata_url_field}": url})
+            )
+            .exclude(website__pk=website.pk)
+            .exists()
+        ):
             raise serializers.ValidationError(f"The website URL {url} is not unique")
-        return data
+        return attrs
 
 
 class WebsiteContentSerializer(serializers.ModelSerializer):
@@ -560,7 +573,7 @@ class WebsiteContentCreateSerializer(
             )
         elif validated_data.get("type") == CONTENT_TYPE_METADATA:
             # Add the site s3 path and url path to the metadata
-            website = Website.objects.get(id=self.context["website_id"])
+            website = Website.objects.get(pk=self.context["website_id"])
             validated_data["metadata"][
                 settings.FIELD_METADATA_S3_PATH
             ] = website.s3_path

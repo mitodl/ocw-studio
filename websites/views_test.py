@@ -502,7 +502,7 @@ def test_website_endpoint_empty_search(drf_client):
     assert expected_uuids == sorted([site["uuid"] for site in resp.data["results"]])
 
 
-def test_websites_autogenerate_name(mocker, drf_client):
+def test_websites_autogenerate_name(drf_client):
     """ Website POST endpoint should auto-generate a name if one is not supplied """
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
