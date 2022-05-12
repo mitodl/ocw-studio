@@ -5,6 +5,7 @@ import { editor } from "@ckeditor/ckeditor5-core"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 import { LEGACY_SHORTCODES } from "./constants"
+import { replaceShortcodes, Shortcode } from './util'
 
 const shortcodeClass = (shortcode: string) => `legacy-shortcode-${shortcode}`
 
@@ -17,35 +18,26 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
   }
 
   get showdownExtension() {
-    return function legacyShortcodeExtension(): ShowdownExtension[] {
-      return LEGACY_SHORTCODES.map(
-        (shortcode: string): ShowdownExtension => {
-          const shortcodeRegex = new RegExp(`{{< /?${shortcode} (.*?)>}}`, "g")
-          const closingShortcodeRegex = new RegExp(
-            `{{< /${shortcode} (.*?)>}}`,
-            "g"
-          )
-
-          return {
-            type:    "lang",
-            regex:   shortcodeRegex,
-            replace: (stringMatch: string, shortcodeArgs: string | null) => {
-              const isClosing = JSON.stringify(
-                closingShortcodeRegex.test(stringMatch)
-              )
-
-              const tag = `<span ${DATA_ISCLOSING}="${isClosing}" ${
-                shortcodeArgs ?
-                  `${DATA_ARGUMENTS}="${encodeURIComponent(shortcodeArgs)}"` :
+    return (): ShowdownExtension[] => [
+      {
+        type:    "lang",
+        filter:   text => {
+          const replacer = (shortcode: Shortcode, originalText: string) => {
+            if (LEGACY_SHORTCODES.includes(shortcode.name)) {
+              const paramsText = shortcode.params.map(p => p.toHugo()).join(' ')
+              const tag = `<span ${DATA_ISCLOSING}="${shortcode.isClosing}" ${
+                shortcode.params.length > 0 ?
+                  `${DATA_ARGUMENTS}="${encodeURIComponent(paramsText)}"` :
                   ""
-              } class="${shortcodeClass(shortcode)}"></span>`
-
+              } class="${shortcodeClass(shortcode.name)}"></span>`
               return tag
             }
+            return originalText
           }
-        }
-      )
-    }
+          return replaceShortcodes(text, replacer)
+        },
+      }
+    ]
   }
 
   get turndownRules(): TurndownRule[] {
@@ -64,7 +56,7 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
 
           return `{{< ${isClosingTag ? "/" : ""}${shortcode} ${
             rawShortcodeArgs !== undefined && rawShortcodeArgs !== null ?
-              decodeURIComponent(rawShortcodeArgs) :
+              `${decodeURIComponent(rawShortcodeArgs)} ` :
               ""
           }>}}`
         }
