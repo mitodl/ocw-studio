@@ -161,12 +161,17 @@ export default function PublishDrawer(props: Props): JSX.Element {
         {!website.draft_url && !website.live_url ? (
           <div className="publish-warnings pt-2">
             <strong className="text-danger">
-              This site cannot be published until all required metadata is populated:
+              This site cannot be published until all required metadata is
+              populated:
             </strong>
             <ul className="text-danger">
-              {website.url_sections.map((required_field: string, idx: number) => (
-                <li key={idx}>{required_field.replace(/[\[\]]+/g, "").split(":")[1]}</li>
-              ))}
+              {website.url_sections.map(
+                (requiredField: string, idx: number) => (
+                  <li key={idx}>
+                    {requiredField.replace(/[[\]]+/g, "").split(":")[1]}
+                  </li>
+                )
+              )}
             </ul>
           </div>
         ) : null}

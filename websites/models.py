@@ -36,7 +36,9 @@ from websites.constants import (
 from websites.site_config_api import SiteConfig
 from websites.utils import get_dict_field, permissions_group_name_for_role
 
+
 log = logging.getLogger(__name__)
+
 
 def validate_yaml(value):
     """Validator function to ensure that the value is YAML-formatted"""

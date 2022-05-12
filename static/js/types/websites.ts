@@ -44,7 +44,7 @@ interface ConfigFieldBaseProps {
   help?: string
   default?: any
   widget: WidgetVariant
-  condition?: FieldValueCondition,
+  condition?: FieldValueCondition
   disabled?: boolean
 }
 

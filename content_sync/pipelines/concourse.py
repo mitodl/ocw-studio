@@ -32,7 +32,6 @@ from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.models import Website
 
 
-
 log = logging.getLogger(__name__)
 
 MANDATORY_CONCOURSE_SETTINGS = [
