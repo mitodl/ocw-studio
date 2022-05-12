@@ -414,8 +414,10 @@ describe("replaceShortcodes", () => {
   )
 
   it("only affects shortcodes of specified name", () => {
-    const text = "{{< some_shortcode >}} and {{< still_lowercase >}}"
-    const expected = "{{< SOME_SHORTCODE >}} and {{< still_lowercase >}}"
+    const text =
+      "hello {{< some_shortcode >}} and {{< some_shortcode_same_beginning >}}"
+    const expected =
+      "hello {{< SOME_SHORTCODE >}} and {{< some_shortcode_same_beginning >}}"
     const replacer = jest.fn(capitalizingReplacer)
     const replaced = replaceShortcodes(text, replacer, {
       name: "some_shortcode"

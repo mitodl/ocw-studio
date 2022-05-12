@@ -353,10 +353,11 @@ export const replaceShortcodes = (
   }: { name: string; isPercentDelimited?: boolean }
 ) => {
   const opener = isPercentDelimited ? "{{%" : "{{<"
-  const namedOpener = `${opener} ${name}`
+  const openerAndNameRegex = new RegExp([opener, "\\s*", name, "\\s+"].join(""))
   const closer = isPercentDelimited ? "%}}" : ">}}"
   const matches = findNestedExpressions(text, opener, closer).filter(m => {
-    return text.substring(m.start, m.start + namedOpener.length) === namedOpener
+    if (name === undefined) return true
+    return openerAndNameRegex.test(text.substring(m.start, m.end))
   })
   if (matches.length === 0) return text
   const pieces = matches.reduce(
