@@ -465,4 +465,13 @@ describe("replaceShortcodes", () => {
     expect(replaced).toBe(expected)
     expect(replacer).toHaveBeenCalledTimes(1)
   })
+
+  it("affects all shortcodes if no name is specified", () => {
+    const text = "{{< some_shortcode >}} and {{< other_shortcode >}}"
+    const expected = "{{< SOME_SHORTCODE >}} and {{< OTHER_SHORTCODE >}}"
+    const replacer = jest.fn(capitalizingReplacer)
+    const replaced = replaceShortcodes(text, replacer)
+    expect(replaced).toBe(expected)
+    expect(replacer).toHaveBeenCalledTimes(2)
+  })
 })

@@ -351,7 +351,7 @@ export class Shortcode {
   }
 }
 
-type ShortcodeReplacer = (shortcode: Shortcode) => string
+type ShortcodeReplacer = (shortcode: Shortcode, originalText: string) => string
 
 /**
  * Replace instances of a specific shortcode using `replacer`.
@@ -362,7 +362,7 @@ export const replaceShortcodes = (
   {
     isPercentDelimited = false,
     name
-  }: { name: string; isPercentDelimited?: boolean }
+  }: { name?: string; isPercentDelimited?: boolean } = {}
 ) => {
   const opener = isPercentDelimited ? "{{%" : "{{<"
   const openerAndNameRegex = new RegExp(
@@ -376,11 +376,10 @@ export const replaceShortcodes = (
   if (matches.length === 0) return text
   const pieces = matches.reduce(
     (acc, range, i, ranges) => {
-      const shortcode = Shortcode.fromString(
-        text.substring(range.start, range.end)
-      )
+      const originalText = text.substring(range.start, range.end)
+      const shortcode = Shortcode.fromString(originalText)
       // accumulate the replacement
-      acc.push(replacer(shortcode))
+      acc.push(replacer(shortcode, originalText))
       // and the text up until the next replacement
       const isLast = i + 1 === ranges.length
       const nextStart = isLast ? text.length : ranges[i + 1].start
