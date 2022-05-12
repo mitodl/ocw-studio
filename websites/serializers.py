@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import transaction
+from django.db.models import Q
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -27,8 +28,7 @@ from websites.constants import CONTENT_TYPE_METADATA, CONTENT_TYPE_RESOURCE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role
-
+from websites.utils import permissions_group_name_for_role, get_dict_query_field
 
 log = logging.getLogger(__name__)
 
@@ -149,8 +149,7 @@ class WebsiteUnpublishSerializer(serializers.ModelSerializer):
 
     def get_site_url(self, instance):
         """Get the website relative url"""
-        site_config = SiteConfig(instance.starter.config)
-        return f"{site_config.root_url_path}/{instance.name}".strip("/")
+        return instance.url_path
 
     def get_site_uid(self, instance):
         """Get the website uid"""
@@ -386,6 +385,22 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         fields = ["user_id", "email", "name", "group", "role"]
 
 
+class UniqueWebsiteUrlMixin(serializers.Serializer):
+    """Validate that the website url will be unique"""
+    def validate(self, data):
+        """
+        Check that the website url will be unique.
+        """
+        website = Website.objects.get(id=self.context["website_id"])
+        metadata_url_field = get_dict_query_field("metadata", settings.FIELD_METADATA_URL_PATH)
+        url = website.format_url_path(metadata=data)
+        if Website.objects.filter(
+            Q(**{metadata_url_field: url})
+        ).exclude(website=website).exists():
+            raise serializers.ValidationError(f"The website URL {url} is not unique")
+        return data
+
+
 class WebsiteContentSerializer(serializers.ModelSerializer):
     """Serializes WebsiteContent for the list view"""
 
@@ -397,7 +412,7 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
 
 
 class WebsiteContentDetailSerializer(
-    serializers.ModelSerializer, RequestUserSerializerMixin
+    serializers.ModelSerializer, RequestUserSerializerMixin, UniqueWebsiteUrlMixin
 ):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""
 
@@ -528,9 +543,9 @@ class WebsiteContentDetailSerializer(
 
 
 class WebsiteContentCreateSerializer(
-    serializers.ModelSerializer, RequestUserSerializerMixin
+    serializers.ModelSerializer, RequestUserSerializerMixin, UniqueWebsiteUrlMixin
 ):
-    """Serializer which creates a new WebsiteContent"""
+    """Serializer mixin which validates that urls are unique"""
 
     def create(self, validated_data):
         user = self.user_from_request()

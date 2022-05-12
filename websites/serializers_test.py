@@ -49,9 +49,6 @@ def mocked_website_funcs(mocker):
         update_website_backend=mocker.patch(
             "websites.serializers.update_website_backend"
         ),
-        create_website_pipeline=mocker.patch(
-            "websites.serializers.create_website_publishing_pipeline"
-        ),
     )
 
 
@@ -446,7 +443,6 @@ def test_website_content_detail_serializer_save(mocker, mocked_website_funcs):
     }
     assert content.updated_by == user
     mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
-    mocked_website_funcs.create_website_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize("is_new", [True])
@@ -523,7 +519,6 @@ def test_website_content_detail_serializer_save_null_metadata(
     assert content.metadata == {"meta": "data"}
     assert content.updated_by == user
     mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
-    mocked_website_funcs.create_website_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize("add_context_data", [True, False])

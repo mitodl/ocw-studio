@@ -142,9 +142,6 @@ def test_websites_endpoint_list_create(mocker, drf_client, permission_groups):
     mock_create_website_backend = mocker.patch(
         "websites.serializers.create_website_backend"
     )
-    mock_create_website_pipeline = mocker.patch(
-        "websites.serializers.create_website_publishing_pipeline"
-    )
     starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
     for [user, has_perm] in [
         [permission_groups.global_admin, True],
@@ -167,7 +164,6 @@ def test_websites_endpoint_list_create(mocker, drf_client, permission_groups):
             website = Website.objects.get(name=f"{user.username}_site")
             assert website.owner == user
             mock_create_website_backend.assert_any_call(website)
-            mock_create_website_pipeline.assert_any_call(website)
 
 
 @pytest.mark.parametrize("method", ["put", "patch", "delete"])
@@ -224,9 +220,6 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
     mock_update_website_backend = mocker.patch(
         "websites.serializers.update_website_backend"
     )
-    mock_create_website_pipeline = mocker.patch(
-        "websites.serializers.create_website_publishing_pipeline"
-    )
     website = WebsiteFactory.create()
     admin_user = UserFactory.create()
     admin_user.groups.add(website.admin_group)
@@ -241,7 +234,6 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
     assert updated_site.title == new_title
     assert updated_site.owner == website.owner
     mock_update_website_backend.assert_called_once_with(website)
-    mock_create_website_pipeline.assert_not_called()
 
 
 def test_websites_endpoint_preview(mocker, drf_client):
@@ -512,9 +504,6 @@ def test_website_endpoint_empty_search(drf_client):
 
 def test_websites_autogenerate_name(mocker, drf_client):
     """ Website POST endpoint should auto-generate a name if one is not supplied """
-    mock_create_website_pipeline = mocker.patch(
-        "websites.serializers.create_website_publishing_pipeline"
-    )
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
     starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
@@ -528,7 +517,6 @@ def test_websites_autogenerate_name(mocker, drf_client):
     assert resp.status_code == status.HTTP_201_CREATED
     assert resp.data["name"] == slugified_title
     assert resp.data["short_id"] == website_short_id
-    mock_create_website_pipeline.assert_called_once()
 
 
 def test_website_starters_list(settings, drf_client, course_starter):
