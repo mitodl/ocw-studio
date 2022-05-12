@@ -10,9 +10,5 @@ interface Props {
 export default function ErrorComponent(props: Props): JSX.Element {
   const { children } = props
 
-  return (
-    <div className="w-50 m-auto pt-5">
-      {children}
-    </div>
-  )
+  return <div className="w-50 m-auto pt-5">{children}</div>
 }

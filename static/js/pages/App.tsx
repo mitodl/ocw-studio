@@ -41,7 +41,6 @@ export default function App(): JSX.Element {
 
   const { user } = useAppSelector(state => state.user)
 
-
   return (
     <div className="app">
       <div className="app-content">
@@ -52,7 +51,9 @@ export default function App(): JSX.Element {
             <Route exact path="/" component={HomePage} />
             <Route exact path="/new-site" component={SiteCreationPage} />
             <Route exact path="/sites">
-              {user ? <SitesDashboard /> :
+              {user ? (
+                <SitesDashboard />
+              ) : (
                 <ErrorComponent>
                   <h1>Login required!</h1>
                   <div>
@@ -62,7 +63,8 @@ export default function App(): JSX.Element {
                     </Link>
                     . Sorry!
                   </div>
-                </ErrorComponent>}
+                </ErrorComponent>
+              )}
             </Route>
             <Route path={siteDetailUrl.pathname}>
               {status === 404 ? (
@@ -88,7 +90,7 @@ export default function App(): JSX.Element {
               <MarkdownEditorTestPage />
             </Route>
             <Route path="*">
-              <ErrorComponent >
+              <ErrorComponent>
                 <h1>That's a 404!</h1>
               </ErrorComponent>
             </Route>
