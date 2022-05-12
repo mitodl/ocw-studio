@@ -1,4 +1,5 @@
 import React from "react"
+import { useAppSelector } from "../hooks/redux"
 import { useSelector } from "react-redux"
 import { Route, Switch } from "react-router"
 import { Link, useRouteMatch } from "react-router-dom"
@@ -16,7 +17,7 @@ import { websiteDetailRequest } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
 import WebsiteContext from "../context/Website"
 import PrivacyPolicyPage from "./PrivacyPolicyPage"
-import NotFound from "../components/NotFound"
+import ErrorComponent from "../components/ErrorComponent"
 import { siteDetailUrl, sitesBaseUrl } from "../lib/urls"
 import AuthenticationAlert from "../components/AuthenticationAlert"
 
@@ -38,6 +39,9 @@ export default function App(): JSX.Element {
   )
   const website = useSelector(getWebsiteDetailCursor)(siteName || "")
 
+  const { user } = useAppSelector(state => state.user)
+
+
   return (
     <div className="app">
       <div className="app-content">
@@ -47,10 +51,23 @@ export default function App(): JSX.Element {
           <Switch>
             <Route exact path="/" component={HomePage} />
             <Route exact path="/new-site" component={SiteCreationPage} />
-            <Route exact path="/sites" component={SitesDashboard} />
+            <Route exact path="/sites">
+              {user ? <SitesDashboard /> :
+                <ErrorComponent>
+                  <h1>Login required!</h1>
+                  <div>
+                    You need to be logged in to view site dashboard{" "}
+                    <Link to="/" className="underline">
+                      Home page
+                    </Link>
+                    . Sorry!
+                  </div>
+                </ErrorComponent>}
+            </Route>
             <Route path={siteDetailUrl.pathname}>
               {status === 404 ? (
-                <NotFound>
+                <ErrorComponent>
+                  <h1>That's a 404!</h1>
                   <div>
                     We couldn't locate a site named "{siteName}". Try returning
                     to the{" "}
@@ -59,7 +76,7 @@ export default function App(): JSX.Element {
                     </Link>
                     . Sorry!
                   </div>
-                </NotFound>
+                </ErrorComponent>
               ) : (
                 <WebsiteContext.Provider value={website}>
                   <SitePage isLoading={isSiteLoading} />
@@ -71,7 +88,9 @@ export default function App(): JSX.Element {
               <MarkdownEditorTestPage />
             </Route>
             <Route path="*">
-              <NotFound />
+              <ErrorComponent >
+                <h1>That's a 404!</h1>
+              </ErrorComponent>
             </Route>
           </Switch>
         </div>
