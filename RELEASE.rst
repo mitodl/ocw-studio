@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.60.2 (Released May 12, 2022)
+--------------
+
+- Fix deploy configuration
+- add API_BEARER_TOKEN to the Hugo step in the site build pipelines (#1329)
+- use the proper ocw-course-publisher image and specify version (#1326)
+
 Version 0.60.1 (Released May 11, 2022)
 --------------
 
