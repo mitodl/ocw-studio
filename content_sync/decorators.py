@@ -2,7 +2,7 @@
 import functools
 import logging
 from time import sleep
-from typing import Callable, Optional
+from typing import Any, Callable, Optional, TypeVar
 
 from django.conf import settings
 from django_redis import get_redis_connection
@@ -11,14 +11,17 @@ from github.GithubException import RateLimitExceededException
 from content_sync.models import ContentSyncState
 
 
+F = TypeVar("F", bound=Callable[..., Any])
+
 log = logging.getLogger(__name__)
 
 
-def retry_on_failure(func: Callable) -> Callable:
+def retry_on_failure(func: F) -> F:
     """
     Retry a function a certain number of times if it fails.
     """
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         retries = settings.CONTENT_SYNC_RETRIES
         while retries > 0:
