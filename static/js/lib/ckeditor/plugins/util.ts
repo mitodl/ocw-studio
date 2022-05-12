@@ -360,15 +360,17 @@ export const replaceShortcodes = (
   })
   if (matches.length === 0) return text
   const pieces = matches.reduce(
-    (pieces, range, i, ranges) => {
+    (acc, range, i, ranges) => {
       const shortcode = Shortcode.fromString(
         text.substring(range.start, range.end)
       )
-      pieces.push(replacer(shortcode))
+      // accumulate the replacement
+      acc.push(replacer(shortcode))
+      // and the text up until the next replacement
       const isLast = i + 1 === ranges.length
       const nextStart = isLast ? text.length : ranges[i + 1].start
-      pieces.push(text.substring(range.end, nextStart))
-      return pieces
+      acc.push(text.substring(range.end, nextStart))
+      return acc
     },
     [text.substring(0, matches[0].start)]
   )
