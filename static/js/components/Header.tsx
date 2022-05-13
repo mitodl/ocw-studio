@@ -65,13 +65,13 @@ export default function Header(props: HeaderProps): JSX.Element {
     <header className="p-3">
       <div className="d-flex justify-content-between">
         <div>
-          <Link to="https://www.mit.edu">
+          <a href="https://www.mit.edu" target="_blank" rel="noreferrer">
             <img
               src="/static/images/mit-logo.png"
               className="pr-1 border-right border-dark"
               alt="MIT"
             />
-          </Link>
+          </a>
           <Link to={sitesBaseUrl.toString()}>
             <img
               className="logo pl-2"
