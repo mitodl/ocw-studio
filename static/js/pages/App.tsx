@@ -1,5 +1,4 @@
 import React from "react"
-import { useAppSelector } from "../hooks/redux"
 import { useSelector } from "react-redux"
 import { Route, Switch } from "react-router"
 import { Link, useRouteMatch } from "react-router-dom"
@@ -7,8 +6,8 @@ import { useRequest } from "redux-query-react"
 
 import SitePage from "./SitePage"
 import SiteCreationPage from "./SiteCreationPage"
-import SitesDashboard from "./SitesDashboard"
 import Header from "../components/Header"
+import SitesDashboard from "./SitesDashboard"
 import Footer from "../components/Footer"
 import HomePage from "./HomePage"
 import MarkdownEditorTestPage from "./MarkdownEditorTestPage"
@@ -20,7 +19,7 @@ import PrivacyPolicyPage from "./PrivacyPolicyPage"
 import ErrorComponent from "../components/ErrorComponent"
 import { siteDetailUrl, sitesBaseUrl } from "../lib/urls"
 import AuthenticationAlert from "../components/AuthenticationAlert"
-
+import PrivateRoute from "../components/util/PrivateRoute"
 interface SiteMatchParams {
   name: string
 }
@@ -39,8 +38,6 @@ export default function App(): JSX.Element {
   )
   const website = useSelector(getWebsiteDetailCursor)(siteName || "")
 
-  const { user } = useAppSelector(state => state.user)
-
   return (
     <div className="app">
       <div className="app-content">
@@ -50,22 +47,9 @@ export default function App(): JSX.Element {
           <Switch>
             <Route exact path="/" component={HomePage} />
             <Route exact path="/new-site" component={SiteCreationPage} />
-            <Route exact path="/sites">
-              {user ? (
-                <SitesDashboard />
-              ) : (
-                <ErrorComponent>
-                  <h1>Login required!</h1>
-                  <div>
-                    You need to be logged in to view site dashboard{" "}
-                    <Link to="/" className="underline">
-                      Home page
-                    </Link>
-                    . Sorry!
-                  </div>
-                </ErrorComponent>
-              )}
-            </Route>
+            <PrivateRoute exact path="/sites">
+              <SitesDashboard />
+            </PrivateRoute>
             <Route path={siteDetailUrl.pathname}>
               {status === 404 ? (
                 <ErrorComponent>

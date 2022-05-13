@@ -3,6 +3,7 @@ import UrlAssembler from "./url-assembler"
 import { WEBSITES_PAGE_SIZE } from "../constants"
 
 export const logoutUrl = UrlAssembler.prefix("/logout")
+export const loginUrl = UrlAssembler.prefix("/")
 
 // PAGE URLS
 export const sitesBaseUrl = UrlAssembler.prefix("/sites/")
