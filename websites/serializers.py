@@ -137,7 +137,7 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
         url_path = validated_data.get("url_path")
         if not url_path:
             return
-        instance.url_path = urljoin(instance.get_site_root_path(), url_path)
+        instance.url_path = instance.assemble_url_path(instance.get_site_root_path(), url_path)
         instance.save()
         content = instance.websitecontent_set.filter(type=CONTENT_TYPE_METADATA).first()
         if content:
