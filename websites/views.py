@@ -6,6 +6,7 @@ import os
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.postgres.search import SearchQuery, SearchVector
+from django.db import transaction, IntegrityError
 from django.db.models import Case, CharField, F, OuterRef, Q, Value, When
 from django.utils.functional import cached_property
 from django.utils.text import slugify
@@ -68,8 +69,7 @@ from websites.serializers import (
     WebsiteWriteSerializer,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import get_valid_base_filename, permissions_group_name_for_role
-
+from websites.utils import get_valid_base_filename, permissions_group_name_for_role, set_dict_field
 
 log = logging.getLogger(__name__)
 
@@ -181,6 +181,19 @@ class WebsiteViewSet(
 
         return serializer_class(*args, **kwargs)
 
+    @transaction.atomic
+    def update_publish_data(self, website, url):
+        """Update website url and metadata"""
+        website.url = url
+        try:
+            website.save()
+        except IntegrityError:
+            raise ValidationError("URL is not unique")
+        content = website.websitecontent_set.get(CONTENT_TYPE_METADATA)
+        set_dict_field(content.metadata, settings.FIELD_METADATA_S3_PATH, website.s3_path)
+        set_dict_field(content.metadata, settings.FIELD_METADATA_URL_PATH, url)
+        content.save()
+
     @action(
         detail=True, methods=["post"], permission_classes=[HasWebsitePreviewPermission]
     )
@@ -188,7 +201,9 @@ class WebsiteViewSet(
         """Trigger a preview task for the website"""
         try:
             website = self.get_object()
-
+            url = self.request.data.get("url")
+            if url and website.first_published_to_production is None:
+                self.update_publish_data(website, url)
             Website.objects.filter(pk=website.pk).update(
                 has_unpublished_draft=False,
                 draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
@@ -209,7 +224,9 @@ class WebsiteViewSet(
         """Trigger a publish task for the website"""
         try:
             website = self.get_object()
-
+            url = self.request.data.get("url")
+            if url and website.first_published_to_production is None:
+                self.update_publish_data(website, url)
             Website.objects.filter(pk=website.pk).update(
                 has_unpublished_live=False,
                 live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
