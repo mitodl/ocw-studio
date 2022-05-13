@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.60.3
+--------------
+
+- add VIDEO_S3_TRANSCODE_ENDPOINT (#1324)
+- Update the prod deploy script to point to prod (#1333)
+- Added a github action for production releases. (#1331)
+- make retry_on_failure preserve type hints (#1313)
+
 Version 0.60.2 (Released May 12, 2022)
 --------------
 
