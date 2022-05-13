@@ -363,6 +363,47 @@ describe("findNestedExpressions", () => {
     expect(findNestedExpressions(text, opener, closer)).toStrictEqual([])
   })
 
+  test.each([
+    {
+      //                      0         1         2         3
+      //                      0123456789012345678901234567890123456789
+      text:                  'rats << cats "<<" bats >> hats',
+      expected:              { start: 5, end: 25 },
+      ignoreWithinDblQuotes: true
+    },
+    {
+      //                      0         1         2         3
+      //                      0123456789012345678901234567890123456789
+      text:                  'rats << cats ">>" bats >> hats',
+      expected:              { start: 5, end: 25 },
+      ignoreWithinDblQuotes: true
+    },
+    {
+      //                      0         1         2         3
+      //                      0123456789012345678901234567890123456789
+      text:                  'rats "still << finds if whole >> is in quotes" hats',
+      expected:              { start: 12, end: 32 },
+      ignoreWithinDblQuotes: true
+    },
+    {
+      //                      0         1         2         3
+      //                      0123456789012345678901234567890123456789
+      text:                  'rats << cats ">>" bats >> hats',
+      expected:              { start: 5, end: 16 },
+      ignoreWithinDblQuotes: false
+    },
+  ])(
+    "ignores openers/closers in quotation marks",
+    ({ text, expected, ignoreWithinDblQuotes }) => {
+      const opener = "<<"
+      const closer = ">>"
+
+      expect(
+        findNestedExpressions(text, opener, closer, ignoreWithinDblQuotes)
+      ).toStrictEqual([expected])
+    }
+  )
+
   test("with opener and closer of unequal lengths", () => {
     const opener = "[[["
     const closer = ">"
@@ -394,6 +435,22 @@ describe("replaceShortcodes", () => {
     {
       text:               'hello {{% shortcode "{{< sup 1 >}}" %}} other',
       expected:           'hello {{% SHORTCODE "{{< sup 1 >}}" %}} other',
+      isPercentDelimited: true
+    },
+    {
+      // ignores closer in quotes
+      text:
+        'hello {{% shortcode "false %}} closer" %}} and another one {{% shortcode "fa\\"lse %}} closer" %}} cool',
+      expected:
+        'hello {{% SHORTCODE "false %}} closer" %}} and another one {{% SHORTCODE "fa\\"lse %}} closer" %}} cool',
+      isPercentDelimited: true
+    },
+    {
+      // ignores opener in quotes
+      text:
+        'hello {{% shortcode "false {{% opener" %}} and another one {{% shortcode "fa\\"lse {{% opener" %}} cool',
+      expected:
+        'hello {{% SHORTCODE "false {{% opener" %}} and another one {{% SHORTCODE "fa\\"lse {{% opener" %}} cool',
       isPercentDelimited: true
     },
     {

@@ -3,6 +3,17 @@ import { TABLE_ALLOWED_ATTRS } from "./constants"
 import { hasTruthyProp, isNotNil } from "../../../util"
 import { ReplacementFunction } from "turndown"
 
+/**
+ * Regexes for matching unescaped single/double quotes.
+ *
+ * Arguably these should allow an even number of backslashes preceeding the
+ * quotation mark, but Hugo doesn't tolerate that anyway.
+ */
+const UNESCAPED_QUOTE_REGEX = {
+  single: /(?<!\\)'/g,
+  double: /(?<!\\)"/g
+}
+
 interface SubstringRange {
   start: number
   end: number
@@ -22,16 +33,26 @@ interface SubstringRange {
  * ```
  * Note that `end` is the string index of the next character after the closer.
  * In this way, `end - start` is the substring length.
+ *
+ * If `ignoreWithinDblQuotes = true` (the default) delimiters inside a quoted
+ * string after the first opener will be ignored.
  */
 export const findNestedExpressions = (
   text: string,
   opener: string,
-  closer: string
+  closer: string,
+  ignoreWithinDblQuotes = true
 ): SubstringRange[] => {
   const matches: SubstringRange[] = []
   let startSearchAt = 0
   while (startSearchAt < text.length) {
-    const match = findNestedExpression(text, opener, closer, startSearchAt)
+    const match = findNestedExpression(
+      text,
+      opener,
+      closer,
+      startSearchAt,
+      ignoreWithinDblQuotes
+    )
     if (!match) return matches
     matches.push(match)
     startSearchAt = match.end
@@ -57,24 +78,34 @@ const findNestedExpression = (
   text: string,
   opener: string,
   closer: string,
-  startingFrom = 0
+  startingFrom = 0,
+  ignoreWithinDblQuotes = true
 ): SubstringRange | null => {
   const start = text.indexOf(opener, startingFrom)
   if (start < 0) return null
   let scanningIndex = start + opener.length
   let numOpen = 1
   const regex = new RegExp(`${escapeRegExp(opener)}|${escapeRegExp(closer)}`)
+  let openDblQuotes = 0
   while (numOpen > 0) {
     const nextDelimiter = text.substring(scanningIndex).match(regex)
     if (nextDelimiter === null) return null
+    // The index will never be null since the regexp has matched and is not global.
+    const matchEnd =
+      scanningIndex + nextDelimiter.index! + nextDelimiter[0].length
+    const dblQuotes = text
+      .substring(scanningIndex, matchEnd)
+      .match(UNESCAPED_QUOTE_REGEX.double)
+    openDblQuotes += dblQuotes?.length ?? 0
+    openDblQuotes %= 2
+    scanningIndex = matchEnd
+    if (ignoreWithinDblQuotes && openDblQuotes === 1) continue
     if (nextDelimiter[0] === opener) {
       numOpen += 1
     }
     if (nextDelimiter[0] === closer) {
       numOpen -= 1
     }
-    // The index will never be null since the regexp has matched and is not global.
-    scanningIndex += nextDelimiter.index! + nextDelimiter[0].length
   }
   return { start, end: scanningIndex }
 }
