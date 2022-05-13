@@ -1,11 +1,12 @@
 """ Serializers for websites """
 import logging
+import re
 from collections import defaultdict
 from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import Group
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -20,14 +21,14 @@ from websites import constants
 from websites.api import (
     detect_mime_type,
     incomplete_content_warnings,
-    sync_website_data,
+    sync_website_title,
     update_youtube_thumbnail,
 )
 from websites.constants import CONTENT_TYPE_METADATA, CONTENT_TYPE_RESOURCE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role
+from websites.utils import permissions_group_name_for_role, set_dict_field
 
 
 log = logging.getLogger(__name__)
@@ -104,9 +105,55 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "starter",
             "owner",
             "url_path",
-            "url_sections",
         ]
         extra_kwargs = {"owner": {"write_only": True}}
+
+
+class WebsiteUrlSerializer(serializers.ModelSerializer):
+    """ Serializer for website urls """
+
+    def validate(self, attrs):
+        """
+        Check that the website url will be unique and template sections have been replaced.
+        """
+        url = urljoin(self.instance.get_site_root_path(), attrs.get("url_path"))
+        if re.findall(r"[\[\]]+", url):
+            raise serializers.ValidationError(
+                f"You must replace the url sections in brackets"
+            )
+        if (
+            url
+            and Website.objects.filter(url_path=url)
+            .exclude(pk=self.instance.pk)
+            .exists()
+        ):
+            raise serializers.ValidationError(
+                f"The website URL {attrs.get('url_path')} is not unique"
+            )
+        return attrs
+
+    def update(self, instance, validated_data):
+        """ Update the website url_path"""
+        url_path = validated_data.get("url_path")
+        if not url_path:
+            return
+        instance.url_path = urljoin(instance.get_site_root_path(), url_path)
+        instance.save()
+        content = instance.websitecontent_set.filter(type=CONTENT_TYPE_METADATA).first()
+        if content:
+            set_dict_field(
+                content.metadata, settings.FIELD_METADATA_S3_PATH, instance.s3_path
+            )
+            set_dict_field(
+                content.metadata, settings.FIELD_METADATA_URL_PATH, instance.url_path
+            )
+            content.save()
+
+    class Meta:
+        model = Website
+        fields = [
+            "url_path",
+        ]
 
 
 class WebsiteMassBuildSerializer(serializers.ModelSerializer):
@@ -185,6 +232,7 @@ class WebsiteDetailSerializer(
     is_admin = serializers.SerializerMethodField(read_only=True)
     live_url = serializers.SerializerMethodField(read_only=True)
     draft_url = serializers.SerializerMethodField(read_only=True)
+    url_format = serializers.SerializerMethodField(read_only=True)
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
@@ -201,6 +249,10 @@ class WebsiteDetailSerializer(
         """Get the draft url for the site"""
         return instance.get_full_url(version=VERSION_DRAFT)
 
+    def get_url_format(self, instance):
+        """Get the current/potential url path for the site"""
+        return instance.get_url_path(with_prefix=False)
+
     def update(self, instance, validated_data):
         """ Remove owner attribute if present, it should not be changed"""
         validated_data.pop("owner", None)
@@ -215,6 +267,8 @@ class WebsiteDetailSerializer(
             "is_admin",
             "draft_url",
             "live_url",
+            "url_path",
+            "url_format",
             "has_unpublished_live",
             "has_unpublished_draft",
             "live_publish_status",
@@ -246,6 +300,8 @@ class WebsiteDetailSerializer(
             "sync_errors",
             "synced_on",
             "content_warnings",
+            "url_format",
+            "url_path",
         ]
 
 
@@ -385,24 +441,6 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         fields = ["user_id", "email", "name", "group", "role"]
 
 
-class UniqueWebsiteUrlMixin(serializers.Serializer):
-    """Validate that the website url will be unique"""
-
-    def validate(self, attrs):
-        """
-        Check that the website url will be unique.
-        """
-        website = (
-            self.instance.website
-            if self.instance
-            else Website.objects.get(pk=self.context["website_id"])
-        )
-        url = website.format_url_path(metadata=attrs)
-        if url and Website.objects.filter(url_path=url).exclude(pk=website.pk).exists():
-            raise serializers.ValidationError(f"The website URL {url} is not unique")
-        return attrs
-
-
 class WebsiteContentSerializer(serializers.ModelSerializer):
     """Serializes WebsiteContent for the list view"""
 
@@ -414,7 +452,7 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
 
 
 class WebsiteContentDetailSerializer(
-    serializers.ModelSerializer, RequestUserSerializerMixin, UniqueWebsiteUrlMixin
+    serializers.ModelSerializer, RequestUserSerializerMixin
 ):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""
 
@@ -434,7 +472,7 @@ class WebsiteContentDetailSerializer(
             ] = website.s3_path
             validated_data["metadata"][
                 settings.FIELD_METADATA_URL_PATH
-            ] = website.format_url_path(metadata=validated_data["metadata"])
+            ] = website.url_path_from_metadata(metadata=validated_data["metadata"])
         if "file" in validated_data:
             if "metadata" not in validated_data:
                 validated_data["metadata"] = {}
@@ -451,9 +489,9 @@ class WebsiteContentDetailSerializer(
             instance, {"updated_by": self.user_from_request(), **validated_data}
         )
         update_website_backend(instance.website)
-        # Sync the metadata and website data if appropriate
+        # Sync the metadata title and website title if appropriate
         if instance.type == CONTENT_TYPE_METADATA:
-            sync_website_data(instance)
+            sync_website_title(instance)
         return instance
 
     def get_content_context(self, instance):  # pylint:disable=too-many-branches
@@ -545,7 +583,7 @@ class WebsiteContentDetailSerializer(
 
 
 class WebsiteContentCreateSerializer(
-    serializers.ModelSerializer, RequestUserSerializerMixin, UniqueWebsiteUrlMixin
+    serializers.ModelSerializer, RequestUserSerializerMixin
 ):
     """Serializer mixin which validates that urls are unique"""
 
@@ -568,7 +606,7 @@ class WebsiteContentCreateSerializer(
             ] = website.s3_path
             validated_data["metadata"][
                 settings.FIELD_METADATA_URL_PATH
-            ] = website.format_url_path(metadata=validated_data["metadata"])
+            ] = website.url_path_from_metadata(metadata=validated_data["metadata"])
         if "file" in validated_data:
             if "metadata" not in validated_data:
                 validated_data["metadata"] = {}
@@ -587,7 +625,7 @@ class WebsiteContentCreateSerializer(
         )
         update_website_backend(instance.website)
         if instance.type == CONTENT_TYPE_METADATA:
-            sync_website_data(instance)
+            sync_website_title(instance)
         return instance
 
     class Meta:

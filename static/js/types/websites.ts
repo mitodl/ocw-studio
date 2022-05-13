@@ -45,7 +45,6 @@ interface ConfigFieldBaseProps {
   default?: any
   widget: WidgetVariant
   condition?: FieldValueCondition
-  disabled?: boolean
 }
 
 export interface MarkdownConfigField extends ConfigFieldBaseProps {
@@ -252,7 +251,8 @@ export type Website = WebsiteStatus & {
   has_unpublished_draft: boolean
   has_unpublished_live: boolean
   content_warnings?: Array<string>
-  url_sections: Array<string>
+  url_path: string,
+  url_format: string
 }
 
 type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR

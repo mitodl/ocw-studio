@@ -132,7 +132,7 @@ class Website(TimestampedModel):
         on_delete=models.SET_NULL,
         related_name="unpublisher",
     )
-    url_path = models.CharField(max_length=2048, unique=True, blank=False, null=True)
+    url_path = models.CharField(max_length=2048, unique=True, blank=True, null=True)
 
     @property
     def unpublished(self):
@@ -168,6 +168,15 @@ class Website(TimestampedModel):
             + list(self.editor_group.user_set.all())
         )
 
+    def get_site_root_path(self):
+        """Get the site root url path"""
+        if self.starter is None:
+            return None
+        site_config = SiteConfig(self.starter.config)
+        if site_config:
+            return site_config.root_url_path
+        return ""
+
     def get_full_url(self, version=VERSION_LIVE):
         """Get the home page (live or draft) of the website"""
         if self.starter is None:
@@ -179,23 +188,35 @@ class Website(TimestampedModel):
             if version == VERSION_LIVE
             else settings.OCW_STUDIO_DRAFT_URL
         )
+        if self.name == settings.ROOT_WEBSITE_NAME:
+            return base_url
         url_path = self.url_path
         if url_path is not None:
             return urljoin(base_url, url_path)
+        else:
+            return urljoin(base_url, self.get_site_root_path())
 
-    @property
-    def url_sections(self):
-        """Get the sections required for the url path as a dict"""
-        site_config = SiteConfig(self.starter.config)
-        return re.findall(r"(\[.+?\])+", site_config.site_url_path) or []
+    def get_url_path(self, with_prefix=False):
+        """Get the current/potential url path, with or without site prefix"""
+        url_path = self.url_path or self.url_path_from_metadata()
+        root_path = self.get_site_root_path()
+        if with_prefix:
+            if root_path and not url_path.startswith(root_path):
+                url_path = self.assemble_url_path(root_path, url_path)
+        elif url_path is not None:
+            url_path = re.sub(f"^{root_path}/", "", url_path, 1)
+        return url_path
 
-    def format_url_path(self, metadata: Dict = None):
-        """ Get the url path based on site config"""
+    def assemble_url_path(self, prefix, path):
+        """Combine site prefix and url path"""
+        return "/".join(part.strip("/") for part in [prefix, path] if part)
+
+    def url_path_from_metadata(self, metadata: Dict = None):
+        """ Get the url path based on site config and metadata"""
+        if self.starter is None:
+            return None
         site_config = SiteConfig(self.starter.config)
         url_path = site_config.site_url_format
-        site_url_prefix = (
-            "" if self.name == settings.ROOT_WEBSITE_NAME else site_config.root_url_path
-        )
         if not url_path or (
             self.source == WEBSITE_SOURCE_OCW_IMPORT
             and self.first_published_to_production
@@ -203,20 +224,20 @@ class Website(TimestampedModel):
             # use name for published legacy ocw sites or for any sites without a `url_path` in config.
             url_path = self.name
         else:
-            for section in self.url_sections or []:
+            for section in re.findall(r"(\[.+?\])+", site_config.site_url_format) or []:
                 section_type, section_field = re.sub(r"[\[\]]+", "", section).split(":")
                 value = None
                 if metadata:
-                    value = get_dict_field(metadata, section_field)
+                    value = slugify(get_dict_field(metadata, section_field))
                 if not metadata or not value:
                     content = self.websitecontent_set.filter(type=section_type).first()
                     if content:
-                        value = get_dict_field(content.metadata, section_field)
+                        value = slugify(get_dict_field(content.metadata, section_field))
                 if not value:
                     # Incomplete metadata required for url
-                    return None
-                url_path = url_path.replace(section, slugify(value.replace(".", "-")))
-        return "/".join(part.strip("/") for part in [site_url_prefix, url_path] if part)
+                    return section
+                url_path = url_path.replace(section, value.replace(".", "-"))
+        return url_path
 
     @property
     def s3_path(self):

@@ -138,7 +138,6 @@ export function FormFields(props: InnerFormProps): JSX.Element {
                 contentContext={contentContext}
                 values={values}
                 onChange={handleChange}
-                disabled={field.disabled}
               />
             ) : SETTINGS.gdrive_enabled &&
               content?.type === "resource" &&
@@ -148,7 +147,6 @@ export function FormFields(props: InnerFormProps): JSX.Element {
                   key={field.name}
                   contentContext={contentContext}
                   onChange={handleChange}
-                  disabled={field.disabled}
                 />
               )
           )}

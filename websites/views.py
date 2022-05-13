@@ -2,11 +2,12 @@
 import json
 import logging
 import os
+from typing import Dict
 
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.postgres.search import SearchQuery, SearchVector
-from django.db import transaction, IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import Case, CharField, F, OuterRef, Q, Value, When
 from django.utils.functional import cached_property
 from django.utils.text import slugify
@@ -66,10 +67,16 @@ from websites.serializers import (
     WebsiteStarterSerializer,
     WebsiteStatusSerializer,
     WebsiteUnpublishSerializer,
+    WebsiteUrlSerializer,
     WebsiteWriteSerializer,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import get_valid_base_filename, permissions_group_name_for_role, set_dict_field
+from websites.utils import (
+    get_valid_base_filename,
+    permissions_group_name_for_role,
+    set_dict_field,
+)
+
 
 log = logging.getLogger(__name__)
 
@@ -161,6 +168,8 @@ class WebsiteViewSet(
             self.request.query_params.get("only_status")
         ):
             return WebsiteStatusSerializer
+        elif self.action in ("preview", "publish"):
+            return WebsiteUrlSerializer
         else:
             return WebsiteDetailSerializer
 
@@ -182,17 +191,12 @@ class WebsiteViewSet(
         return serializer_class(*args, **kwargs)
 
     @transaction.atomic
-    def update_publish_data(self, website, url):
+    def update_publish_data(self, data: Dict, website: Website) -> Response or None:
         """Update website url and metadata"""
-        website.url = url
-        try:
-            website.save()
-        except IntegrityError:
-            raise ValidationError("URL is not unique")
-        content = website.websitecontent_set.get(CONTENT_TYPE_METADATA)
-        set_dict_field(content.metadata, settings.FIELD_METADATA_S3_PATH, website.s3_path)
-        set_dict_field(content.metadata, settings.FIELD_METADATA_URL_PATH, url)
-        content.save()
+        serializer = WebsiteUrlSerializer(data=data, instance=website)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.update(website, serializer.validated_data)
 
     @action(
         detail=True, methods=["post"], permission_classes=[HasWebsitePreviewPermission]
@@ -201,9 +205,11 @@ class WebsiteViewSet(
         """Trigger a preview task for the website"""
         try:
             website = self.get_object()
-            url = self.request.data.get("url")
+            url = self.request.data.get("url_path")
             if url and website.first_published_to_production is None:
-                self.update_publish_data(website, url)
+                errors = self.update_publish_data(request.data, website)
+                if errors:
+                    return errors
             Website.objects.filter(pk=website.pk).update(
                 has_unpublished_draft=False,
                 draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
@@ -224,9 +230,11 @@ class WebsiteViewSet(
         """Trigger a publish task for the website"""
         try:
             website = self.get_object()
-            url = self.request.data.get("url")
+            url = self.request.data.get("url_path")
             if url and website.first_published_to_production is None:
-                self.update_publish_data(website, url)
+                errors = self.update_publish_data(request.data, website)
+                if errors:
+                    return errors
             Website.objects.filter(pk=website.pk).update(
                 has_unpublished_live=False,
                 live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,

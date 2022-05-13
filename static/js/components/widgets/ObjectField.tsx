@@ -15,7 +15,6 @@ interface Props {
   contentContext: WebsiteContent[] | null
   values: SiteFormValues
   onChange?: (e: React.ChangeEvent<any>) => void
-  disabled?: boolean
 }
 
 /**
@@ -60,7 +59,6 @@ export default function ObjectField(props: Props): JSX.Element {
                 key={innerField.name}
                 contentContext={contentContext}
                 onChange={onChange}
-                disabled={field.disabled}
               />
             ))}
         </div>

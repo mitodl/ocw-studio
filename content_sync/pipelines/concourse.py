@@ -14,10 +14,10 @@ from urllib.parse import quote, urljoin, urlparse
 
 import requests
 import yaml
-from concoursepy.api import Api as BaseConcourseApi
 from django.conf import settings
 from requests import HTTPError
 
+from concoursepy.api import Api as BaseConcourseApi
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
@@ -277,7 +277,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
             theme_created_trigger = "true"
             theme_deployed_trigger = "false"
         else:
-            base_url = self.website.url_path
+            base_url = self.website.get_url_path(with_prefix=True)
             theme_created_trigger = "false"
             theme_deployed_trigger = "true"
         hugo_projects_url = urljoin(
@@ -341,7 +341,9 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
                     .replace("((config-slug))", self.website.starter.slug)
                     .replace("((s3-path))", self.website.s3_path)
                     .replace("((base-url))", base_url)
-                    .replace("((site-url))", self.website.url_path)
+                    .replace(
+                        "((site-url))", self.website.get_url_path(with_prefix=True)
+                    )
                     .replace("((site-name))", self.website.name)
                     .replace("((purge-url))", f"purge/{self.website.name}")
                     .replace("((purge_header))", purge_header)
