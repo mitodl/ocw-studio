@@ -17,16 +17,7 @@ export const encodeShortcodeArgs = (...args: (string | undefined)[]) =>
 const decodeShortcodeArgs = (encoded: string) =>
   JSON.parse(decodeURIComponent(encoded))
 
-/**
- * (\S+) to match and capture the UUID
- * "(.*?)" to match and capture the label text
- * (?: "(.*?)")? to match the optional anchor ID param
- *
- * Limitations:
- *   - gets fooled by label texts that include literal `" %}}` values. For
- *     example, % resource_link uuid123 "silly " %}} link" %}}.
- */
-export const RESOURCE_LINK_SHORTCODE_REGEX = /{{% resource_link .*? %}}/g
+const RESOURCE_LINK_SHORTCODE_REGEX = Shortcode.regex("resource_link", true)
 
 /**
  * Class for defining Markdown conversion rules for Resource links
