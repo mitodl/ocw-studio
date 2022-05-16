@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.60.3
+Version 0.60.3 (Released May 16, 2022)
 --------------
 
 - add VIDEO_S3_TRANSCODE_ENDPOINT (#1324)
