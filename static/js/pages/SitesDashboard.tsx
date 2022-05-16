@@ -73,7 +73,7 @@ export default function SitesDashboard(): JSX.Element {
         <StudioList>
           {listing.results.map((site: Website) => (
             <StudioListItem
-              title={site.title}
+              title={`${site.title} (${site.short_id})`}
               subtitle={siteDescription(site) ?? ""}
               to={siteDetailUrl.param({ name: site.name }).toString()}
               key={site.uuid}

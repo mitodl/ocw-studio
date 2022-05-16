@@ -67,7 +67,9 @@ describe("SitesDashboard", () => {
       expect(li.prop("to")).toBe(
         siteDetailUrl.param({ name: website.name }).toString()
       )
-      expect(li.find("Link").text()).toBe(website.title)
+      expect(li.find("Link").text()).toBe(
+        `${website.title} (${website.short_id})`
+      )
       expect(li.prop("subtitle")).toBe(siteDescription(website))
       idx++
     }
