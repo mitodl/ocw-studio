@@ -337,6 +337,49 @@ def test_websites_endpoint_publish_error(mocker, drf_client):
     assert resp.data == {"details": "422 {}"}
 
 
+@pytest.mark.parametrize("is_published", [True, False])
+@pytest.mark.parametrize("action", ["preview", "publish"])
+def test_websites_endpoint_publish_with_url(
+    mocker, drf_client, ocw_site, is_published, action
+):
+    """url path should be updated if provided and site is not published"""
+    mock_publish = mocker.patch("websites.views.trigger_publish")
+    new_url_path = "5-new-site-fall-2020"
+    old_url_path = "courses/old-path"
+    ocw_site.url_path = old_url_path
+    ocw_site.first_published_to_production = now_in_utc() if is_published else None
+    ocw_site.save()
+
+    data = {"url_path": new_url_path}
+    drf_client.force_login(UserFactory.create(is_superuser=True))
+    drf_client.post(
+        reverse(f"websites_api-{action}", kwargs={"name": ocw_site.name}), data=data
+    )
+    ocw_site.refresh_from_db()
+    assert ocw_site.url_path == (
+        ocw_site.assemble_full_url_path(new_url_path)
+        if not is_published
+        else old_url_path
+    )
+    mock_publish.assert_called_once()
+
+
+@pytest.mark.parametrize("action", ["preview", "publish"])
+def test_websites_endpoint_publish_with_url_error(drf_client, ocw_site, action):
+    """An error should be returned if url_path validation fails"""
+    drf_client.force_login(UserFactory.create(is_superuser=True))
+    ocw_site.first_published_to_production = None
+    ocw_site.save()
+    response = drf_client.post(
+        reverse(f"websites_api-{action}", kwargs={"name": ocw_site.name}),
+        data={"url_path": "new-path=[metadata:year]"},
+    )
+    assert response.status_code == 400
+    assert response.json() == {
+        "url_path": ["You must replace the url sections in brackets"]
+    }
+
+
 def test_websites_endpoint_unpublish(mocker, drf_client):
     """A user with admin permissions should be able to request a website unpublish"""
     mock_unpublished_removal = mocker.patch(

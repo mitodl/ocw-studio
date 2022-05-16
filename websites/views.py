@@ -7,7 +7,7 @@ from typing import Dict
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.postgres.search import SearchQuery, SearchVector
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from django.db.models import Case, CharField, F, OuterRef, Q, Value, When
 from django.utils.functional import cached_property
 from django.utils.text import slugify
@@ -71,11 +71,7 @@ from websites.serializers import (
     WebsiteWriteSerializer,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import (
-    get_valid_base_filename,
-    permissions_group_name_for_role,
-    set_dict_field,
-)
+from websites.utils import get_valid_base_filename, permissions_group_name_for_role
 
 
 log = logging.getLogger(__name__)
@@ -194,9 +190,8 @@ class WebsiteViewSet(
     def update_publish_data(self, data: Dict, website: Website) -> Response or None:
         """Update website url and metadata"""
         serializer = WebsiteUrlSerializer(data=data, instance=website)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        serializer.update(website, serializer.validated_data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.update(website, serializer.validated_data)
 
     @action(
         detail=True, methods=["post"], permission_classes=[HasWebsitePreviewPermission]
@@ -207,9 +202,7 @@ class WebsiteViewSet(
             website = self.get_object()
             url = self.request.data.get("url_path")
             if url and website.first_published_to_production is None:
-                errors = self.update_publish_data(request.data, website)
-                if errors:
-                    return errors
+                self.update_publish_data(request.data, website)
             Website.objects.filter(pk=website.pk).update(
                 has_unpublished_draft=False,
                 draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
@@ -219,6 +212,8 @@ class WebsiteViewSet(
             )
             trigger_publish(website.name, VERSION_DRAFT)
             return Response(status=200)
+        except ValidationError as ve:
+            return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error previewing %s", name)
             return Response(status=500, data={"details": str(exc)})
@@ -232,9 +227,7 @@ class WebsiteViewSet(
             website = self.get_object()
             url = self.request.data.get("url_path")
             if url and website.first_published_to_production is None:
-                errors = self.update_publish_data(request.data, website)
-                if errors:
-                    return errors
+                self.update_publish_data(request.data, website)
             Website.objects.filter(pk=website.pk).update(
                 has_unpublished_live=False,
                 live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
@@ -246,6 +239,8 @@ class WebsiteViewSet(
             )
             trigger_publish(website.name, VERSION_LIVE)
             return Response(status=200)
+        except ValidationError as ve:
+            return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error publishing %s", name)
             return Response(status=500, data={"details": str(exc)})

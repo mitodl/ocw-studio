@@ -9,7 +9,12 @@ from django.contrib.auth.models import Group
 
 from users.factories import UserFactory
 from websites import constants
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.constants import CONTENT_TYPE_METADATA
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.permissions import create_global_groups
 
 
@@ -105,3 +110,13 @@ def site_config_singleton_only(basic_site_config):
         "file" in file_config_item
     ), "Expected collections.2.files.0 to be a singleton config item"
     return {**site_config, "collections": [files_config_item]}
+
+
+@pytest.fixture()
+def ocw_site(parsed_site_config):
+    """ OCW Course site with metadata"""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=parsed_site_config)
+    )
+    WebsiteContentFactory(type=CONTENT_TYPE_METADATA, website=website)
+    return website

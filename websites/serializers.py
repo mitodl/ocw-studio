@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.auth.models import Group
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -112,14 +112,14 @@ class WebsiteSerializer(serializers.ModelSerializer):
 class WebsiteUrlSerializer(serializers.ModelSerializer):
     """ Serializer for website urls """
 
-    def validate(self, attrs):
+    def validate_url_path(self, value):
         """
         Check that the website url will be unique and template sections have been replaced.
         """
-        url = urljoin(self.instance.get_site_root_path(), attrs.get("url_path"))
+        url = self.instance.assemble_full_url_path(value)
         if re.findall(r"[\[\]]+", url):
             raise serializers.ValidationError(
-                f"You must replace the url sections in brackets"
+                "You must replace the url sections in brackets"
             )
         if (
             url
@@ -127,17 +127,15 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
             .exclude(pk=self.instance.pk)
             .exists()
         ):
-            raise serializers.ValidationError(
-                f"The website URL {attrs.get('url_path')} is not unique"
-            )
-        return attrs
+            raise serializers.ValidationError("The website URL is not unique")
+        return value
 
     def update(self, instance, validated_data):
         """ Update the website url_path"""
         url_path = validated_data.get("url_path")
         if not url_path:
             return
-        instance.url_path = instance.assemble_url_path(instance.get_site_root_path(), url_path)
+        instance.url_path = instance.assemble_full_url_path(url_path)
         instance.save()
         content = instance.websitecontent_set.filter(type=CONTENT_TYPE_METADATA).first()
         if content:

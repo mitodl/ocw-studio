@@ -14,6 +14,7 @@ from websites.constants import (
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_RESOURCE,
     ROLE_EDITOR,
+    WEBSITE_CONFIG_ROOT_URL_PATH_KEY,
     WEBSITE_SOURCE_OCW_IMPORT,
 )
 from websites.factories import (
@@ -34,6 +35,7 @@ from websites.serializers import (
     WebsiteStarterSerializer,
     WebsiteStatusSerializer,
     WebsiteUnpublishSerializer,
+    WebsiteUrlSerializer,
 )
 
 
@@ -608,3 +610,41 @@ def test_website_unpublish_serializer(has_legacy_uid, has_metadata):
         if has_legacy_uid and has_metadata
         else site.uuid.hex
     )
+
+
+def test_website_url_serializer_update(ocw_site, parsed_site_config):
+    """WebsiteUrlSerializer should update the website url_path"""
+    new_url_path = "1.45-test-course-fall-2012"
+    data = {"url_path": new_url_path}
+    serializer = WebsiteUrlSerializer(ocw_site, data)
+    assert serializer.is_valid()
+    assert serializer.validated_data["url_path"] == new_url_path
+    serializer.update(ocw_site, serializer.validated_data)
+    ocw_site.refresh_from_db()
+    assert (
+        ocw_site.url_path
+        == f"{parsed_site_config[WEBSITE_CONFIG_ROOT_URL_PATH_KEY]}/{new_url_path}"
+    )
+
+
+def test_website_url_serializer_incomplete_url_path(ocw_site):
+    """WebsiteUrlSerializer should invalidate a url_path that still has brackets"""
+    new_url_path = "1.45-test-course-[metadata.semester]-2012"
+    data = {"url_path": new_url_path}
+    serializer = WebsiteUrlSerializer(ocw_site, data)
+    assert serializer.is_valid() is False
+    assert serializer.errors.get("url_path") == [
+        "You must replace the url sections in brackets"
+    ]
+
+
+def test_website_url_serializer_duplicate_url_path(ocw_site, parsed_site_config):
+    """WebsiteUrlSerializer should invalidate a duplicate url_path"""
+    new_url_path = "1.45-test-course-spring-2022"
+    WebsiteFactory.create(
+        url_path=f"{parsed_site_config[WEBSITE_CONFIG_ROOT_URL_PATH_KEY]}/{new_url_path}"
+    )
+    data = {"url_path": new_url_path}
+    serializer = WebsiteUrlSerializer(ocw_site, data)
+    assert serializer.is_valid() is False
+    assert serializer.errors.get("url_path") == ["The website URL is not unique"]

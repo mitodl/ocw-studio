@@ -31,7 +31,7 @@ from websites.constants import (
     CONTENT_DIRPATH_MAX_LEN,
     CONTENT_FILENAME_MAX_LEN,
     CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
-    WEBSITE_SOURCE_OCW_IMPORT,
+    CONTENT_TYPE_METADATA,
 )
 from websites.site_config_api import SiteConfig
 from websites.utils import get_dict_field, permissions_group_name_for_role
@@ -198,18 +198,24 @@ class Website(TimestampedModel):
 
     def get_url_path(self, with_prefix=False):
         """Get the current/potential url path, with or without site prefix"""
-        url_path = self.url_path or self.url_path_from_metadata()
+        url_path = self.url_path
+        if not url_path:
+            sitemeta = WebsiteContent.objects.filter(type=CONTENT_TYPE_METADATA).first()
+            if sitemeta:
+                url_path = self.url_path_from_metadata(metadata=sitemeta.metadata)
         root_path = self.get_site_root_path()
         if with_prefix:
             if root_path and not url_path.startswith(root_path):
-                url_path = self.assemble_url_path(root_path, url_path)
+                url_path = self.assemble_full_url_path(url_path)
         elif url_path is not None:
             url_path = re.sub(f"^{root_path}/", "", url_path, 1)
         return url_path
 
-    def assemble_url_path(self, prefix, path):
+    def assemble_full_url_path(self, path):
         """Combine site prefix and url path"""
-        return "/".join(part.strip("/") for part in [prefix, path] if part)
+        return "/".join(
+            part.strip("/") for part in [self.get_site_root_path(), path] if part
+        )
 
     def url_path_from_metadata(self, metadata: Dict = None):
         """ Get the url path based on site config and metadata"""
@@ -217,26 +223,25 @@ class Website(TimestampedModel):
             return None
         site_config = SiteConfig(self.starter.config)
         url_path = site_config.site_url_format
-        if not url_path or (
-            self.source == WEBSITE_SOURCE_OCW_IMPORT
-            and self.first_published_to_production
-        ):
-            # use name for published legacy ocw sites or for any sites without a `url_path` in config.
+        if not url_path or self.first_published_to_production:
+            # use name for published  sites or for any sites without a `url_path` in config.
             url_path = self.name
         else:
             for section in re.findall(r"(\[.+?\])+", site_config.site_url_format) or []:
                 section_type, section_field = re.sub(r"[\[\]]+", "", section).split(":")
                 value = None
                 if metadata:
-                    value = slugify(get_dict_field(metadata, section_field))
+                    value = get_dict_field(metadata, section_field)
                 if not metadata or not value:
                     content = self.websitecontent_set.filter(type=section_type).first()
                     if content:
-                        value = slugify(get_dict_field(content.metadata, section_field))
+                        value = get_dict_field(content.metadata, section_field)
                 if not value:
                     # Incomplete metadata required for url
-                    return section
-                url_path = url_path.replace(section, value.replace(".", "-"))
+                    value = section
+                else:
+                    value = slugify(value.replace(".", "-"))
+                url_path = url_path.replace(section, value)
         return url_path
 
     @property
@@ -247,7 +252,7 @@ class Website(TimestampedModel):
             site_config.root_url_path,
             self.name,
         ]
-        return "/".join([part.strip("/") for part in url_parts if part != ""])
+        return "/".join([part.strip("/") for part in url_parts if part])
 
     class Meta:
         permissions = (
