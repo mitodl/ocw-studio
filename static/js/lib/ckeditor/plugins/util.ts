@@ -126,8 +126,8 @@ export class Shortcode {
    * Re-escapes double quotes in parameter values
    */
   toHugo() {
-    const stringifiedArgs = this.params.map(p => p.toHugo()).join(" ")
-    const interior = `${this.name} ${stringifiedArgs}`
+    const stringifiedArgs = this.params.map(p => p.toHugo())
+    const interior = [this.name, ...stringifiedArgs].join(" ")
     if (this.isPercentDelimited) {
       return `{{% ${interior} %}}`
     }
@@ -193,12 +193,6 @@ export class Shortcode {
         `${s} is not a valid shortcode: should start/end with matching delimiters`
       )
     }
-    const delimiters = ["{{<", ">}}", "{{%", "%}}"]
-    if (delimiters.some(d => s.slice(3, -3).includes(d))) {
-      throw new Error(
-        `Shortcode ${s} is invalid: content includes shortcode delimiters.`
-      )
-    }
     const unescapedQuotes = s.match(/(?<!\\)(\\\\)*"/g)?.length ?? 0
     if (unescapedQuotes % 2 > 0) {
       throw new Error(
@@ -231,6 +225,37 @@ export class Shortcode {
       return this.params[param]?.value
     }
     return this.params.find(p => p.name === param)?.value
+  }
+
+  /**
+   * Returns a global regex that matches shortcodes of given name. Useful for
+   * use in Showdown rules.
+   */
+  static regex(name: string, isPercentDelimited: boolean) {
+    const opener = isPercentDelimited ? "{{%" : "{{<"
+    const closer = isPercentDelimited ? "%}}" : ">}}"
+    const regex = new RegExp(
+      [
+        opener,
+        String.raw`\s${name}\s`,
+        /**
+         * Non-greedily capture anything up until the closer. Except if there is
+         * a non-escaped quotation mark, then there must be another.
+         *
+         * The "quotation marks come in pairs" strategy means that things like
+         * `'{{% resource_link uuid "fake %}} closer" %}}' will be fully
+         * caputured.
+         */
+        "(",
+        /[^"]*?/.source, // non-greedily capture anything except quotation
+        "|",
+        /(?<!\\)".*?(?<!\\)"/.source, // if there's an unescaped quote, then there must be another
+        ")*?",
+        closer
+      ].join(""),
+      "g"
+    )
+    return regex
   }
 
   /**
