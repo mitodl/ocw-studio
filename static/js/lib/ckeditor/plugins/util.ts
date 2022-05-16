@@ -244,14 +244,15 @@ export class Shortcode {
    * Returns a global regex that matches shortcodes of given name. Useful for
    * use in Showdown rules.
    */
-  static regex(name: string, isPercentDelimited: boolean) {
+  static regex(name: string | RegExp, isPercentDelimited: boolean) {
     const opener = isPercentDelimited ? "{{%" : "{{<"
     const closer = isPercentDelimited ? "%}}" : ">}}"
     const regex = new RegExp(
       [
         opener,
         Shortcode.IS_CLOSING_REGEXP.source,
-        String.raw`${name}\s`,
+        name instanceof RegExp ? `(${name.source})` : name,
+        String.raw`\s`,
         /**
          * Non-greedily capture anything up until the closer. Except if there is
          * a non-escaped quotation mark, then there must be another.

@@ -389,7 +389,7 @@ describe("Shortcode", () => {
       ])
     })
 
-    it('captures closing and opening shortcodes', () => {
+    it("captures closing and opening shortcodes", () => {
       const regex = Shortcode.regex("some_shortcode", false)
       const text = `
       a {{< some_shortcode xyz >}} b
@@ -398,16 +398,17 @@ describe("Shortcode", () => {
       `
       const match = text.match(regex)
       expect(match).toStrictEqual([
-        '{{< some_shortcode xyz >}}',
-        '{{< /some_shortcode >}}',
-        '{{</ some_shortcode >}}'
+        "{{< some_shortcode xyz >}}",
+        "{{< /some_shortcode >}}",
+        "{{</ some_shortcode >}}"
       ])
     })
 
     it.each([
       {
-        name:     "some_shortcode",
-        text:     "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}} {{< /some_shortcode xyz >}}",
+        name: "some_shortcode",
+        text:
+          "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}} {{< /some_shortcode xyz >}}",
         expected: ["{{< some_shortcode xyz >}}", "{{< /some_shortcode xyz >}}"]
       },
       {
@@ -426,6 +427,13 @@ describe("Shortcode", () => {
       const text = 'a {{< shortcode "cat \\" >}}" >}} b'
       const match = text.match(regex)
       expect(match).toStrictEqual(['{{< shortcode "cat \\" >}}" >}}'])
+    })
+
+    it("can take a regex as name parameter", () => {
+      const regex = Shortcode.regex(/cat|dog/, false)
+      const text = "a {{< cat meow >}} {{< dog woof >}} {{< dragon roar >}}  b"
+      const match = text.match(regex)
+      expect(match).toStrictEqual(["{{< cat meow >}}", "{{< dog woof >}}"])
     })
   })
 })
