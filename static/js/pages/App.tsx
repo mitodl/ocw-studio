@@ -6,8 +6,8 @@ import { useRequest } from "redux-query-react"
 
 import SitePage from "./SitePage"
 import SiteCreationPage from "./SiteCreationPage"
-import SitesDashboard from "./SitesDashboard"
 import Header from "../components/Header"
+import SitesDashboard from "./SitesDashboard"
 import Footer from "../components/Footer"
 import HomePage from "./HomePage"
 import MarkdownEditorTestPage from "./MarkdownEditorTestPage"
@@ -16,10 +16,10 @@ import { websiteDetailRequest } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
 import WebsiteContext from "../context/Website"
 import PrivacyPolicyPage from "./PrivacyPolicyPage"
-import NotFound from "../components/NotFound"
+import ErrorComponent from "../components/ErrorComponent"
 import { siteDetailUrl, sitesBaseUrl } from "../lib/urls"
 import AuthenticationAlert from "../components/AuthenticationAlert"
-
+import PrivateRoute from "../components/util/PrivateRoute"
 interface SiteMatchParams {
   name: string
 }
@@ -47,10 +47,13 @@ export default function App(): JSX.Element {
           <Switch>
             <Route exact path="/" component={HomePage} />
             <Route exact path="/new-site" component={SiteCreationPage} />
-            <Route exact path="/sites" component={SitesDashboard} />
+            <PrivateRoute exact path="/sites">
+              <SitesDashboard />
+            </PrivateRoute>
             <Route path={siteDetailUrl.pathname}>
               {status === 404 ? (
-                <NotFound>
+                <ErrorComponent>
+                  <h1>That's a 404!</h1>
                   <div>
                     We couldn't locate a site named "{siteName}". Try returning
                     to the{" "}
@@ -59,7 +62,7 @@ export default function App(): JSX.Element {
                     </Link>
                     . Sorry!
                   </div>
-                </NotFound>
+                </ErrorComponent>
               ) : (
                 <WebsiteContext.Provider value={website}>
                   <SitePage isLoading={isSiteLoading} />
@@ -71,7 +74,9 @@ export default function App(): JSX.Element {
               <MarkdownEditorTestPage />
             </Route>
             <Route path="*">
-              <NotFound />
+              <ErrorComponent>
+                <h1>That's a 404!</h1>
+              </ErrorComponent>
             </Route>
           </Switch>
         </div>

@@ -38,7 +38,7 @@ describe("App", () => {
   it("should render 404 when no match", async () => {
     helper.browserHistory.push("/nonsense")
     const { wrapper } = await render()
-    expect(wrapper.find("NotFound").exists()).toBeTruthy()
+    expect(wrapper.find("ErrorComponent").exists()).toBeTruthy()
   })
 
   it("should render the site header", async () => {
@@ -66,7 +66,7 @@ describe("App", () => {
       helper.mockGetRequest(siteDetailApiUrl, {}, 404)
       helper.browserHistory.push(siteDetailUrl)
       const { wrapper } = await render()
-      const notFound = wrapper.find("NotFound")
+      const notFound = wrapper.find("ErrorComponent")
       expect(notFound.exists()).toBeTruthy()
       expect(notFound.find("Link").prop("to")).toBe(sitesBaseUrl.toString())
     })
