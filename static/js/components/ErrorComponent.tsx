@@ -4,9 +4,6 @@ interface Props {
   children?: React.ReactNode
 }
 
-/**
- * Our 404 component.
- */
 export default function ErrorComponent(props: Props): JSX.Element {
   const { children } = props
 
