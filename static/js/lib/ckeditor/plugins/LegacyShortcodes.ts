@@ -5,6 +5,7 @@ import { editor } from "@ckeditor/ckeditor5-core"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 import { LEGACY_SHORTCODES } from "./constants"
+import { Shortcode } from "./util"
 
 const shortcodeClass = (shortcode: string) => `legacy-shortcode-${shortcode}`
 
@@ -18,33 +19,35 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
 
   get showdownExtension() {
     return function legacyShortcodeExtension(): ShowdownExtension[] {
-      return LEGACY_SHORTCODES.map(
-        (shortcode: string): ShowdownExtension => {
-          const shortcodeRegex = new RegExp(`{{< /?${shortcode} (.*?)>}}`, "g")
-          const closingShortcodeRegex = new RegExp(
-            `{{< /${shortcode} (.*?)>}}`,
-            "g"
-          )
+      const nameRegex = new RegExp(LEGACY_SHORTCODES.join("|"))
+      return [
+        {
+          type:    "lang",
+          /**
+           * It's important that there's a single regex for all the legacy
+           * shortcodes, rather than one per shortcode. Otherwise the order of
+           * the replacements is important.
+           *
+           * For example, image-gallery-item and sub are both legacy shortcodes
+           * and sometimes they are used together:
+           *  {{< image-gallery-item ... "H{{< sub 2 >}}O" >}}
+           * If separate regexes are used, then image-gallery-item would need to
+           * come before sub so that the sub-replacement is not used on the above
+           * example.
+           */
+          regex:   Shortcode.regex(nameRegex, false),
+          replace: (stringMatch: string) => {
+            const shortcode = Shortcode.fromString(stringMatch)
+            const { isClosing } = shortcode
+            const params = shortcode.params.map(p => p.toHugo()).join(" ")
+            const tag = `<span ${DATA_ISCLOSING}="${isClosing}" ${
+              params ? `${DATA_ARGUMENTS}="${encodeURIComponent(params)}"` : ""
+            } class="${shortcodeClass(shortcode.name)}"></span>`
 
-          return {
-            type:    "lang",
-            regex:   shortcodeRegex,
-            replace: (stringMatch: string, shortcodeArgs: string | null) => {
-              const isClosing = JSON.stringify(
-                closingShortcodeRegex.test(stringMatch)
-              )
-
-              const tag = `<span ${DATA_ISCLOSING}="${isClosing}" ${
-                shortcodeArgs ?
-                  `${DATA_ARGUMENTS}="${encodeURIComponent(shortcodeArgs)}"` :
-                  ""
-              } class="${shortcodeClass(shortcode)}"></span>`
-
-              return tag
-            }
+            return tag
           }
         }
-      )
+      ]
     }
   }
 
@@ -64,7 +67,7 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
 
           return `{{< ${isClosingTag ? "/" : ""}${shortcode} ${
             rawShortcodeArgs !== undefined && rawShortcodeArgs !== null ?
-              decodeURIComponent(rawShortcodeArgs) :
+              `${decodeURIComponent(rawShortcodeArgs)} ` :
               ""
           }>}}`
         }
