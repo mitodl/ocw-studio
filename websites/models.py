@@ -203,6 +203,8 @@ class Website(TimestampedModel):
             sitemeta = WebsiteContent.objects.filter(type=CONTENT_TYPE_METADATA).first()
             if sitemeta:
                 url_path = self.url_path_from_metadata(metadata=sitemeta.metadata)
+            else:
+                url_path = self.name
         root_path = self.get_site_root_path()
         if with_prefix:
             if root_path and not url_path.startswith(root_path):

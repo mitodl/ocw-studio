@@ -14,10 +14,10 @@ from urllib.parse import quote, urljoin, urlparse
 
 import requests
 import yaml
+from concoursepy.api import Api as BaseConcourseApi
 from django.conf import settings
 from requests import HTTPError
 
-from concoursepy.api import Api as BaseConcourseApi
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (

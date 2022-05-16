@@ -141,10 +141,13 @@ def test_upsert_website_pipelines(
     if home_page:
         name = settings.ROOT_WEBSITE_NAME
         starter.config["root-url-path"] = ""
+        site_path = None
     else:
         name = "standard-course"
         starter.config["root-url-path"] = "courses"
-    website = WebsiteFactory.create(starter=starter, name=name)
+        site_path = "courses/my-site-fall-2020"
+
+    website = WebsiteFactory.create(starter=starter, name=name, url_path=site_path)
 
     instance_vars = f"%7B%22site%22%3A%20%22{website.name}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={instance_vars}"
@@ -188,6 +191,7 @@ def test_upsert_website_pipelines(
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
     assert api_url in config_str
+
     if home_page:
         assert (
             f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/{website.name} s3://{bucket}/{website.name}"
@@ -196,11 +200,11 @@ def test_upsert_website_pipelines(
         assert f"aws s3 sync course-markdown/public s3://{bucket}/" in config_str
     else:
         assert (
-            f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/courses/{website.name} s3://{bucket}/courses/{website.name}"
+            f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/courses/{website.name} s3://{bucket}/{website.url_path}"
             in config_str
         )
         assert (
-            f"aws s3 sync course-markdown/public s3://{bucket}/courses/{website.name}"
+            f"aws s3 sync course-markdown/public s3://{bucket}/{website.url_path}"
             in config_str
         )
     assert f"purge/{website.name}" in config_str
@@ -392,10 +396,10 @@ def test_upsert_pipeline(settings, mocker, mock_auth, pipeline_exists):
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-def test_upsert_mass_publish_pipeline(
+def test_upsert_mass_build_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
 ):  # pylint:disable=too-many-locals,too-many-arguments
-    """The mass publish pipeline should have expected configuration"""
+    """The mass build pipeline should have expected configuration"""
     hugo_projects_path = "https://github.com/org/repo"
     WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(
@@ -437,6 +441,10 @@ def test_upsert_mass_publish_pipeline(
         api_url = settings.OCW_STUDIO_LIVE_URL
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
+    assert (
+        f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH s3://{bucket}/$SITE_URL"
+        in config_str
+    )
     assert bucket in config_str
     assert version in config_str
     assert f"{hugo_projects_path}.git" in config_str

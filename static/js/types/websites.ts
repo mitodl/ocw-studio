@@ -251,7 +251,7 @@ export type Website = WebsiteStatus & {
   has_unpublished_draft: boolean
   has_unpublished_live: boolean
   content_warnings?: Array<string>
-  url_path: string,
+  url_path: string
   url_format: string
 }
 
