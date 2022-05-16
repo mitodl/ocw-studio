@@ -140,19 +140,17 @@ describe("Shortcode", () => {
       )
     })
 
-    it("throws error if content includes shortcode delimiter", () => {
-      const text = '{{< old_resource_link uuid123 "H{{< sub 2 >}}'
-      expect(() => Shortcode.fromString(text)).toThrow(
-        /includes shortcode delimiter/
-      )
-    })
-
-    it("throws error if content includes odd number of unescaped quotes", () => {
-      const text = '{{< old_resource_link uuid123 "cat\\"" " >}}'
-      expect(() => Shortcode.fromString(text)).toThrow(
-        /odd number of unescaped quotes/
-      )
-    })
+    it.each([
+      '{{< old_resource_link uuid123 "H{{< sub 2 >}}',
+      '{{< old_resource_link uuid123 "cat\\"" " >}}'
+    ])(
+      "throws error if content includes odd number of unescaped quotes",
+      text => {
+        expect(() => Shortcode.fromString(text)).toThrow(
+          /odd number of unescaped quotes/
+        )
+      }
+    )
 
     it.each([
       "{{< some_shortcode uuid123",
@@ -322,6 +320,75 @@ describe("Shortcode", () => {
     ])("makes resource links", ({ uuid, text, suffix, expected }) => {
       const shortcode = Shortcode.resourceLink(uuid, text, suffix)
       expect(shortcode.toHugo()).toBe(expected)
+    })
+  })
+
+  describe("Shortcode.regex", () => {
+    it.each([
+      {
+        text:               'hello {{< shortcode_name "{{< sup 1 >}}" >}} other',
+        expected:           '{{< shortcode_name "{{< sup 1 >}}" >}}',
+        isPercentDelimited: false
+      },
+      {
+        text:               'hello {{% shortcode_name "{{< sup 1 >}}" %}} other',
+        expected:           '{{% shortcode_name "{{< sup 1 >}}" %}}',
+        isPercentDelimited: true
+      },
+      {
+        // ignores closer in quotes
+        text:               'hello {{% shortcode_name "false %}} closer" %}} not fooled',
+        expected:           '{{% shortcode_name "false %}} closer" %}}',
+        isPercentDelimited: true
+      },
+      {
+        // ignores opener in quotes
+        text:               'hello {{% shortcode_name "false {{% opener" %}} not fooled',
+        expected:           '{{% shortcode_name "false {{% opener" %}}',
+        isPercentDelimited: true
+      }
+    ])(
+      "captures the shortcode content",
+      ({ text, expected, isPercentDelimited }) => {
+        const regex = Shortcode.regex("shortcode_name", isPercentDelimited)
+        const match = text.match(regex)
+        expect(match).toStrictEqual([expected])
+      }
+    )
+
+    it("captures all the shortcode instances", () => {
+      const regex = Shortcode.regex("resource", false)
+      const text =
+        "a {{< resource xyz >}} b {{< resource_one 123 >}} c {{< resource 456 >}} d"
+      const match = text.match(regex)
+      expect(match).toStrictEqual([
+        "{{< resource xyz >}}",
+        "{{< resource 456 >}}"
+      ])
+    })
+
+    it.each([
+      {
+        name:     "some_shortcode",
+        text:     "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}}",
+        expected: "{{< some_shortcode xyz >}}"
+      },
+      {
+        name:     "some_shortcode_two",
+        text:     "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}}",
+        expected: "{{< some_shortcode_two 123 >}}"
+      }
+    ])("captures shortcodes of specified name", ({ text, expected, name }) => {
+      const regex = Shortcode.regex(name, false)
+      const match = text.match(regex)
+      expect(match).toStrictEqual([expected])
+    })
+
+    it("tolerates an odd number of escaped quotes", () => {
+      const regex = Shortcode.regex("shortcode", false)
+      const text = 'a {{< shortcode "cat \\" >}}" >}} b'
+      const match = text.match(regex)
+      expect(match).toStrictEqual(['{{< shortcode "cat \\" >}}" >}}'])
     })
   })
 })

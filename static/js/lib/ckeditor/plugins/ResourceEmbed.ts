@@ -17,7 +17,7 @@ import {
 import { Shortcode, makeHtmlString } from "./util"
 import { isNotNil } from "../../../util"
 
-export const RESOURCE_SHORTCODE_REGEX = /{{< resource .*? >}}/g
+const RESOURCE_SHORTCODE_REGEX = Shortcode.regex("resource", false)
 
 /**
  * Class for defining Markdown conversion rules for ResourceEmbed
