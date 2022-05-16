@@ -174,12 +174,19 @@ def test_generate_item_metadata(
     class_data = {} if cls else {"title": "", "file": ""}
     expected_data = {
         "description": "",
+        "body": "",
+        "draft": "",
         "resourcetype": (resource_type or "") if with_kwargs else "",
         "file_type": (file_type or "") if with_kwargs else "",
         "learning_resource_types": [],
         "license": "",
         "image_metadata": {"image-alt": "", "caption": "", "credit": ""},
-        "video_metadata": {"youtube_id": "", "video_speakers": "", "video_tags": ""},
+        "video_metadata": {
+            "youtube_id": "",
+            "video_speakers": "",
+            "video_tags": "",
+            "youtube_description": "",
+        },
         "video_files": {
             "video_thumbnail_file": "",
             "video_captions_file": "",

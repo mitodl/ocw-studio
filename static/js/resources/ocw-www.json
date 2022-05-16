@@ -4,28 +4,59 @@
       "category": "Content",
       "fields": [
         {
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
+        },
+        {
           "label": "Title",
           "name": "title",
           "required": true,
           "widget": "string"
         },
         {
+          "embed": [
+            "resource"
+          ],
           "label": "Body",
           "link": [
-            "course-collection",
-            "resource_collections"
+            "course_collections",
+            "resource_collections",
+            "resource",
+            "page"
           ],
+          "minimal": false,
           "name": "body",
           "widget": "markdown"
         }
       ],
       "folder": "content/pages",
-      "label": "Page",
-      "name": "pages"
+      "label": "Pages",
+      "name": "page"
     },
     {
       "category": "Content",
       "fields": [
+        {
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
+        },
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "label": "Description",
+          "name": "description",
+          "widget": "markdown"
+        },
         {
           "collection": "resource",
           "cross_site": true,
@@ -44,45 +75,12 @@
       "category": "Content",
       "fields": [
         {
-          "label": "Description",
-          "name": "description",
-          "widget": "markdown"
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
         },
-        {
-          "collection": "resource",
-          "display_field": "title",
-          "filter": {
-            "field": "filetype",
-            "filter_type": "equals",
-            "value": "Image"
-          },
-          "label": "Cover Image",
-          "multiple": false,
-          "name": "cover-image",
-          "widget": "relation"
-        },
-        {
-          "label": "Featured Courses",
-          "name": "featured-courses",
-          "widget": "website-collection"
-        },
-        {
-          "collection": "course-lists",
-          "display_field": "title",
-          "label": "Course Lists",
-          "multiple": true,
-          "name": "courselists",
-          "sortable": true,
-          "widget": "relation"
-        }
-      ],
-      "folder": "content/collections",
-      "label": "Course Collections",
-      "name": "course-collection"
-    },
-    {
-      "category": "Content",
-      "fields": [
         {
           "label": "Title",
           "name": "title",
@@ -108,6 +106,57 @@
       "category": "Content",
       "fields": [
         {
+          "label": "Description",
+          "name": "description",
+          "widget": "markdown"
+        },
+        {
+          "collection": "resource",
+          "display_field": "title",
+          "filter": {
+            "field": "resourcetype",
+            "filter_type": "equals",
+            "value": "Image"
+          },
+          "label": "Cover Image",
+          "multiple": false,
+          "name": "cover-image",
+          "widget": "relation"
+        },
+        {
+          "collection": "course-lists",
+          "display_field": "title",
+          "label": "Featured Courses List",
+          "multiple": false,
+          "name": "featured-courses",
+          "sortable": false,
+          "widget": "relation"
+        },
+        {
+          "collection": "course-lists",
+          "display_field": "title",
+          "label": "Course Lists",
+          "multiple": true,
+          "name": "courselists",
+          "sortable": true,
+          "widget": "relation"
+        }
+      ],
+      "folder": "content/collections",
+      "label": "Course Collections",
+      "name": "course-collection"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
+        },
+        {
           "label": "Title",
           "name": "title",
           "required": true,
@@ -132,7 +181,7 @@
           "collection": "resource",
           "display_field": "title",
           "filter": {
-            "field": "filetype",
+            "field": "resourcetype",
             "filter_type": "equals",
             "value": "Image"
           },
@@ -141,6 +190,7 @@
           "min": 1,
           "multiple": false,
           "name": "image",
+          "required": true,
           "widget": "relation"
         }
       ],
@@ -152,6 +202,13 @@
       "category": "Content",
       "fields": [
         {
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
+        },
+        {
           "label": "Title",
           "name": "title",
           "required": true,
@@ -159,7 +216,6 @@
         },
         {
           "label": "Body",
-          "minimal": true,
           "name": "body",
           "widget": "markdown"
         },
@@ -177,6 +233,13 @@
     {
       "category": "Content",
       "fields": [
+        {
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
+        },
         {
           "label": "Title",
           "name": "title",
@@ -202,7 +265,7 @@
           "collection": "resource",
           "display_field": "title",
           "filter": {
-            "field": "filetype",
+            "field": "resourcetype",
             "filter_type": "equals",
             "value": "Image"
           },
@@ -220,17 +283,25 @@
         },
         {
           "label": "Body",
+          "minimal": false,
           "name": "body",
           "widget": "markdown"
         }
       ],
-      "folder": "content/testimonials",
-      "label": "Testimonial",
-      "name": "testimonials"
+      "folder": "content/stories",
+      "label": "Stories",
+      "name": "stories"
     },
     {
       "category": "Content",
       "fields": [
+        {
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
+        },
         {
           "label": "Title",
           "name": "title",
@@ -239,13 +310,12 @@
         },
         {
           "label": "Description",
-          "minimal": true,
           "name": "description",
           "widget": "markdown"
         },
         {
-          "label": "File Type",
-          "name": "filetype",
+          "label": "Resource Type",
+          "name": "resourcetype",
           "options": [
             "Image",
             "Video",
@@ -263,7 +333,7 @@
         {
           "condition": {
             "equals": "Image",
-            "field": "filetype"
+            "field": "resourcetype"
           },
           "fields": [
             {
@@ -294,6 +364,13 @@
     {
       "category": "Content",
       "fields": [
+        {
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
+        },
         {
           "label": "First name",
           "name": "first_name",

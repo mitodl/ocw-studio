@@ -4,6 +4,48 @@
       "category": "Content",
       "fields": [
         {
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
+        },
+        {
+          "label": "Title",
+          "name": "title",
+          "required": true,
+          "widget": "string"
+        },
+        {
+          "embed": [
+            "resource"
+          ],
+          "label": "Body",
+          "link": [
+            "resource",
+            "page",
+            "video_gallery"
+          ],
+          "minimal": false,
+          "name": "body",
+          "widget": "markdown"
+        }
+      ],
+      "folder": "content/pages",
+      "label": "Pages",
+      "name": "page"
+    },
+    {
+      "category": "Content",
+      "fields": [
+        {
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
+        },
+        {
           "label": "Title",
           "name": "title",
           "required": true,
@@ -18,20 +60,8 @@
             "resource",
             "page"
           ],
+          "minimal": false,
           "name": "body",
-          "widget": "markdown"
-        }
-      ],
-      "folder": "content/pages",
-      "label": "Pages",
-      "name": "page"
-    },
-    {
-      "category": "Content",
-      "fields": [
-        {
-          "label": "Description",
-          "name": "description",
           "widget": "markdown"
         },
         {
@@ -57,6 +87,14 @@
       "category": "Content",
       "fields": [
         {
+          "help": "Enable this setting to prevent publishing in production",
+          "label": "Draft",
+          "name": "draft",
+          "required": true,
+          "widget": "boolean"
+        },
+        {
+          "help": "If this is a video, this will be published as the YouTube title",
           "label": "Title",
           "name": "title",
           "required": true,
@@ -64,8 +102,21 @@
         },
         {
           "label": "Description",
-          "minimal": true,
           "name": "description",
+          "widget": "markdown"
+        },
+        {
+          "embed": [
+            "resource"
+          ],
+          "help": "The body of the resource page, displayed below the page title and above the resource\n",
+          "label": "Body",
+          "link": [
+            "resource",
+            "page"
+          ],
+          "minimal": false,
+          "name": "body",
           "widget": "markdown"
         },
         {
@@ -107,6 +158,7 @@
             "Exams",
             "Exams with Solutions",
             "Image Gallery",
+            "Instructor Insights",
             "Labs",
             "Lecture Audio",
             "Lecture Notes",
@@ -180,12 +232,12 @@
             {
               "label": "Caption",
               "name": "caption",
-              "widget": "string"
+              "widget": "markdown"
             },
             {
               "label": "Credit",
               "name": "credit",
-              "widget": "text"
+              "widget": "markdown"
             }
           ],
           "label": "Image Metadata",
@@ -204,6 +256,11 @@
               "widget": "string"
             },
             {
+              "label": "Youtube Description",
+              "name": "youtube_description",
+              "widget": "text"
+            },
+            {
               "label": "Youtube Speakers",
               "name": "video_speakers",
               "widget": "string"
@@ -214,6 +271,7 @@
               "widget": "text"
             }
           ],
+          "help": "These fields will be published to YouTube",
           "label": "Video Metadata",
           "name": "video_metadata",
           "widget": "object"
@@ -240,6 +298,7 @@
               "widget": "string"
             }
           ],
+          "help": "Internal YouTube fields, don't edit unless you know what you're doing\n",
           "label": "Video Files",
           "name": "video_files",
           "widget": "object"
@@ -392,6 +451,7 @@
                 "Exams",
                 "Exams with Solutions",
                 "Image Gallery",
+                "Instructor Insights",
                 "Labs",
                 "Lecture Audio",
                 "Lecture Notes",

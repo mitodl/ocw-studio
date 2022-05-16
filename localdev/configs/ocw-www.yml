@@ -3,9 +3,15 @@ root-url-path: ""
 collections:
   - category: Content
     folder: content/pages
-    label: Page
-    name: pages
+    label: Pages
+    name: page
     fields:
+      - label: Draft
+        name: draft
+        required: true
+        widget: boolean
+        help: Enable this setting to prevent publishing in production
+
       - label: Title
         name: title
         widget: string
@@ -14,15 +20,35 @@ collections:
       - label: Body
         name: body
         widget: markdown
+        minimal: false
         link:
-          - course-collection
+          - course_collections
           - resource_collections
+          - resource
+          - page
+        embed:
+          - resource
 
   - category: Content
     folder: content/resource_collections
     label: "Resource Collections"
     name: "resource_collections"
     fields:
+      - label: Draft
+        name: draft
+        required: true
+        widget: boolean
+        help: Enable this setting to prevent publishing in production
+
+      - label: Title
+        name: title
+        widget: string
+        required: true
+
+      - label: Description
+        name: description
+        widget: markdown
+
       - widget: relation
         name: resources
         label: Resources
@@ -32,41 +58,16 @@ collections:
         sortable: true
 
   - category: Content
-    folder: content/collections
-    label: "Course Collections"
-    name: course-collection
-    fields:
-      - label: "Description"
-        name: "description"
-        widget: "markdown"
-      - label: Cover Image
-        name: cover-image
-        widget: relation
-        collection: resource
-        display_field: title
-        multiple: false
-        filter:
-          field: "filetype"
-          filter_type: "equals"
-          value: "Image"
-
-      - label: Featured Courses
-        name: featured-courses
-        widget: website-collection
-
-      - label: Course Lists
-        name: courselists
-        widget: relation
-        multiple: true
-        collection: course-lists
-        display_field: title
-        sortable: true
-
-  - category: Content
     folder: content/course-lists
     label: "Course Lists"
     name: "course-lists"
     fields:
+      - label: Draft
+        name: draft
+        required: true
+        widget: boolean
+        help: Enable this setting to prevent publishing in production
+
       - label: Title
         name: title
         widget: string
@@ -81,10 +82,51 @@ collections:
         widget: website-collection
 
   - category: Content
+    folder: content/collections
+    label: "Course Collections"
+    name: "course-collection"
+    fields:
+      - label: "Description"
+        name: "description"
+        widget: "markdown"
+      - label: Cover Image
+        name: cover-image
+        widget: relation
+        collection: resource
+        display_field: title
+        multiple: false
+        filter:
+          field: "resourcetype"
+          filter_type: "equals"
+          value: "Image"
+
+      - label: Featured Courses List
+        name: featured-courses
+        widget: relation
+        multiple: false
+        collection: course-lists
+        display_field: title
+        sortable: false
+
+      - label: Course Lists
+        name: courselists
+        widget: relation
+        multiple: true
+        collection: course-lists
+        display_field: title
+        sortable: true
+
+  - category: Content
     folder: content/promos
     label: Promo
     name: promos
     fields:
+      - label: Draft
+        name: draft
+        required: true
+        widget: boolean
+        help: Enable this setting to prevent publishing in production
+
       - label: Title
         name: title
         widget: string
@@ -107,11 +149,12 @@ collections:
         widget: relation
         collection: resource
         display_field: title
+        required: true
         multiple: false
         min: 1
         max: 1
         filter:
-          field: "filetype"
+          field: "resourcetype"
           filter_type: "equals"
           value: "Image"
 
@@ -120,6 +163,12 @@ collections:
     label: Notification
     name: notifications
     fields:
+      - label: Draft
+        name: draft
+        required: true
+        widget: boolean
+        help: Enable this setting to prevent publishing in production
+
       - label: Title
         name: title
         widget: string
@@ -128,7 +177,6 @@ collections:
       - label: Body
         name: body
         widget: markdown
-        minimal: true
 
       - label: Headless
         name: headless
@@ -136,10 +184,16 @@ collections:
         default: true
 
   - category: Content
-    folder: content/testimonials
-    label: Testimonial
-    name: testimonials
+    folder: content/stories
+    label: Stories
+    name: stories
     fields:
+      - label: Draft
+        name: draft
+        required: true
+        widget: boolean
+        help: Enable this setting to prevent publishing in production
+
       - label: Title
         name: title
         widget: string
@@ -166,7 +220,7 @@ collections:
         min: 1
         max: 1
         filter:
-          field: "filetype"
+          field: "resourcetype"
           filter_type: "equals"
           value: "Image"
 
@@ -177,12 +231,19 @@ collections:
       - label: Body
         name: body
         widget: markdown
+        minimal: false
 
   - category: Content
     folder: content/resources
     label: Resources
     name: resource
     fields:
+      - label: Draft
+        name: draft
+        required: true
+        widget: boolean
+        help: Enable this setting to prevent publishing in production
+
       - label: Title
         name: title
         required: true
@@ -190,9 +251,8 @@ collections:
       - label: Description
         name: description
         widget: markdown
-        minimal: true
-      - label: File Type
-        name: filetype
+      - label: Resource Type
+        name: resourcetype
         required: true
         widget: select
         options:
@@ -208,7 +268,7 @@ collections:
       - label: Image Metadata
         name: metadata
         widget: object
-        condition: { field: filetype, equals: Image }
+        condition: { field: resourcetype, equals: Image }
         fields:
           - label: ALT text
             name: image_alt
@@ -226,6 +286,12 @@ collections:
     name: instructor
     slug: text_id
     fields:
+      - label: Draft
+        name: draft
+        required: true
+        widget: boolean
+        help: Enable this setting to prevent publishing in production
+
       - label: First name
         name: first_name
         widget: string
@@ -259,8 +325,4 @@ collections:
         name: navmenu
         label: Navigation Menu
         fields:
-          - {
-            "label": "Menu",
-            "name": "mainmenu",
-            "widget": "menu",
-          }
+          - { "label": "Menu", "name": "mainmenu", "widget": "menu" }
