@@ -251,8 +251,8 @@ export type Website = WebsiteStatus & {
   has_unpublished_draft: boolean
   has_unpublished_live: boolean
   content_warnings?: Array<string>
-  url_path: string
-  url_format: string
+  url_path: string | null
+  s3_path: string | null
 }
 
 type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR
