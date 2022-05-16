@@ -88,8 +88,9 @@ def test_fetch_file(mocker, content, status_code):
 
 @pytest.mark.parametrize("pdf_transcript_content", [False, BytesIO(b"content")])
 @pytest.mark.parametrize("webvtt_transcript_content", [False, BytesIO(b"content")])
+@pytest.mark.parametrize("status", ["complete", "in_progress"])
 def test_update_transcripts_for_video(
-    mocker, settings, pdf_transcript_content, webvtt_transcript_content
+    mocker, settings, pdf_transcript_content, webvtt_transcript_content, status
 ):
     """test update_transcripts_for_video"""
 
@@ -105,12 +106,7 @@ def test_update_transcripts_for_video(
 
     threeplay_response = {
         "code": 200,
-        "data": [
-            {
-                "id": 2,
-                "media_file_id": 3,
-            }
-        ],
+        "data": [{"id": 2, "media_file_id": 3, "status": status}],
     }
 
     mocker.patch(
@@ -123,13 +119,14 @@ def test_update_transcripts_for_video(
 
     update_transcripts_for_video(video)
 
-    mock_fetch_file.assert_any_call(
-        "https://static.3playmedia.com/p/files/3/threeplay_transcripts/2?project_id=1&format_id=51"
-    )
+    if status == "complete":
+        mock_fetch_file.assert_any_call(
+            "https://static.3playmedia.com/p/files/3/threeplay_transcripts/2?project_id=1&format_id=51"
+        )
 
-    mock_fetch_file.assert_any_call(
-        "https://static.3playmedia.com/p/files/3/threeplay_transcripts/2?project_id=1&format_id=46"
-    )
+        mock_fetch_file.assert_any_call(
+            "https://static.3playmedia.com/p/files/3/threeplay_transcripts/2?project_id=1&format_id=46"
+        )
 
     site_config = SiteConfig(video.website.starter.config)
     url_base = "/".join(
@@ -141,7 +138,7 @@ def test_update_transcripts_for_video(
         ]
     )
 
-    if pdf_transcript_content:
+    if pdf_transcript_content and status == "complete":
         assert video_file.video.pdf_transcript_file.path.startswith(
             url_base + "_transcript"
         )
@@ -149,7 +146,7 @@ def test_update_transcripts_for_video(
     else:
         assert video_file.video.pdf_transcript_file == ""
 
-    if webvtt_transcript_content:
+    if webvtt_transcript_content and status == "complete":
         assert video_file.video.webvtt_transcript_file.path.startswith(
             url_base + "_transcript"
         )

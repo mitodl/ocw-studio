@@ -167,6 +167,7 @@ def update_transcripts_for_video(video: Video) -> bool:
     if (
         threeplay_transcript_json.get("data")
         and len(threeplay_transcript_json.get("data")) > 0
+        and threeplay_transcript_json.get("data")[0].get("status") == "complete"
     ):
         transcript_id = threeplay_transcript_json["data"][0].get("id")
         media_file_id = threeplay_transcript_json["data"][0].get("media_file_id")
