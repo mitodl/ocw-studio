@@ -116,7 +116,8 @@ def site_config_singleton_only(basic_site_config):
 def ocw_site(parsed_site_config):
     """ OCW Course site with metadata"""
     website = WebsiteFactory.create(
-        starter=WebsiteStarterFactory.create(config=parsed_site_config)
+        starter=WebsiteStarterFactory.create(config=parsed_site_config),
+        first_published_to_production=None,
     )
     WebsiteContentFactory(type=CONTENT_TYPE_METADATA, website=website)
     return website

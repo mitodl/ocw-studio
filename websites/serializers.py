@@ -117,6 +117,13 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
         Check that the website url will be unique and template sections have been replaced.
         """
         url = self.instance.assemble_full_url_path(value)
+        if (
+            self.instance.first_published_to_production
+            and url != self.instance.url_path
+        ):
+            raise serializers.ValidationError(
+                "The URL cannot be changed after publishing."
+            )
         if re.findall(r"[\[\]]+", url):
             raise serializers.ValidationError(
                 "You must replace the url sections in brackets"
