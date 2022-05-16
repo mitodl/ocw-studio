@@ -165,6 +165,28 @@ describe("Shortcode", () => {
     )
   })
 
+  it.each([
+    {
+      text:     "{{< /some_shortcode >}}",
+      expected: new Shortcode("some_shortcode", [], false, true)
+    },
+    {
+      text:     "{{< / some_shortcode >}}",
+      expected: new Shortcode("some_shortcode", [], false, true)
+    },
+    {
+      text:     "{{</ some_shortcode >}}",
+      expected: new Shortcode("some_shortcode", [], false, true)
+    },
+    {
+      text:     "{{% /some_shortcode %}}",
+      expected: new Shortcode("some_shortcode", [], true, true)
+    }
+  ])("parses closing shortcodes", ({ text, expected }) => {
+    const result = Shortcode.fromString(text)
+    expect(result).toStrictEqual(expected)
+  })
+
   it("does not allow mixing named and positional params", () => {
     const text = '{{< resource uuid123 href_uuid="uuid456" >}}'
     expect(() => Shortcode.fromString(text)).toThrow(
@@ -367,21 +389,36 @@ describe("Shortcode", () => {
       ])
     })
 
+    it('captures closing and opening shortcodes', () => {
+      const regex = Shortcode.regex("some_shortcode", false)
+      const text = `
+      a {{< some_shortcode xyz >}} b
+      c {{< /some_shortcode >}} d
+      e {{</ some_shortcode >}} f
+      `
+      const match = text.match(regex)
+      expect(match).toStrictEqual([
+        '{{< some_shortcode xyz >}}',
+        '{{< /some_shortcode >}}',
+        '{{</ some_shortcode >}}'
+      ])
+    })
+
     it.each([
       {
         name:     "some_shortcode",
-        text:     "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}}",
-        expected: "{{< some_shortcode xyz >}}"
+        text:     "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}} {{< /some_shortcode xyz >}}",
+        expected: ["{{< some_shortcode xyz >}}", "{{< /some_shortcode xyz >}}"]
       },
       {
         name:     "some_shortcode_two",
         text:     "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}}",
-        expected: "{{< some_shortcode_two 123 >}}"
+        expected: ["{{< some_shortcode_two 123 >}}"]
       }
     ])("captures shortcodes of specified name", ({ text, expected, name }) => {
       const regex = Shortcode.regex(name, false)
       const match = text.match(regex)
-      expect(match).toStrictEqual([expected])
+      expect(match).toStrictEqual(expected)
     })
 
     it("tolerates an odd number of escaped quotes", () => {
