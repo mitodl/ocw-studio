@@ -78,7 +78,7 @@
           "widget": "string"
         },
         {
-          "default": "some_default_license",
+          "default": "default_license_specificed_in_config",
           "label": "License",
           "name": "license",
           "required": true,
