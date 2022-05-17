@@ -58,9 +58,7 @@ describe("Prompting for authentication", () => {
 
       setMockWebsiteResponse(authRejectionBody, 403)
 
-      const siteLink = await waitFor(() =>
-        result.getByText(`${website.title} (${website.short_id})`)
-      )
+      const siteLink = await waitFor(() => result.getByText(website.title))
       await act(() => user.click(siteLink))
 
       const dialog = await waitFor(() => result.getByRole("dialog"))
@@ -86,9 +84,7 @@ describe("Prompting for authentication", () => {
 
     setMockWebsiteResponse({ detail: "misc client error" }, 400)
 
-    const siteLink = await waitFor(() =>
-      result.getByText(`${website.title} (${website.short_id})`)
-    )
+    const siteLink = await waitFor(() => result.getByText(website.title))
     await act(() => user.click(siteLink))
 
     /**
