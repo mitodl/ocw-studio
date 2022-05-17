@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.61.1
+--------------
+
+- check for 3play completion (#1345)
+- improve frontend shortcode regex to not be fooled by delimiters in shortcode args (#1347)
+
 Version 0.61.0 (Released May 17, 2022)
 --------------
 
