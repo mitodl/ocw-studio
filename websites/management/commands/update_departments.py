@@ -8,16 +8,15 @@ from websites.models import WebsiteContent
 
 
 class Command(BaseCommand):
-
     def add_arguments(self, parser):
-        
+
         parser.add_argument(
             "-d",
             "--departments",
             dest="departments",
             nargs="*",
             help="Departments to add to the courses",
-            required=True
+            required=True,
         )
 
         parser.add_argument(
@@ -26,9 +25,8 @@ class Command(BaseCommand):
             dest="name",
             nargs="*",
             help="Identifiers to filter websites based on istartswith lookup",
-            required=True
+            required=True,
         )
-
 
     def handle(self, *args, **options):
         filter_set = options["name"]
@@ -51,8 +49,7 @@ class Command(BaseCommand):
         )
         with transaction.atomic():
             for sitemetadata in query_set.iterator():
-                sitemetadata.metadata["department_numbers"] = list(set([
-                    *sitemetadata.metadata["department_numbers"],
-                    *departments
-                ]))
+                sitemetadata.metadata["department_numbers"] = list(
+                    set([*sitemetadata.metadata["department_numbers"], *departments])
+                )
                 sitemetadata.save()
