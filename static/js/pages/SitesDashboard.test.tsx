@@ -1,4 +1,4 @@
-import SitesDashboard, { siteDescription } from "./SitesDashboard"
+import SitesDashboard from "./SitesDashboard"
 
 import { newSiteUrl, siteApiListingUrl, siteDetailUrl } from "../lib/urls"
 import { WebsiteListingResponse } from "../query-configs/websites"
@@ -160,20 +160,5 @@ describe("SitesDashboard", () => {
     const { next, previous } = usePagination.mock.results[1].value
     expect(paginationControls.prop("next")).toBe(next)
     expect(paginationControls.prop("previous")).toBe(previous)
-  })
-
-  test("makes description text for a site with metadata", () => {
-    const site = {
-      ...makeWebsiteDetail(),
-      metadata: null
-    }
-    expect(siteDescription(site)).toBe(null)
-  })
-
-  test("makes description text for a site without metadata", () => {
-    const site = makeWebsiteDetail()
-    expect(siteDescription(site)).toBe(
-      `${site.metadata.course_numbers[0]} - ${site.metadata.term}`
-    )
   })
 })

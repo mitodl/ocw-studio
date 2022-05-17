@@ -17,16 +17,6 @@ import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 import { StudioList, StudioListItem } from "../components/StudioList"
 import { useURLParamFilter, usePagination } from "../hooks/search"
 
-export function siteDescription(site: Website): string | null {
-  const courseNumber = (site.metadata?.course_numbers ?? [])[0]
-  const term = site.metadata?.term
-
-  if (courseNumber && term) {
-    return `${courseNumber} - ${term}`
-  }
-  return null
-}
-
 function getListingParams(search: string): WebsiteListingParams {
   const qsParams = new URLSearchParams(search)
   const offset = Number(qsParams.get("offset") ?? 0)
