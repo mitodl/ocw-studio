@@ -116,10 +116,25 @@ class SiteConfig:
                 return config_item
         return None
 
-    def generate_item_metadata(self, name: str, cls: object = None, **kwargs) -> Dict:
-        """Generate a metadata dict with blank keys for the specified item"""
+    def generate_item_metadata(
+        self, name: str, cls: object = None, use_defaults=False, values: Dict = {}
+    ) -> Dict:
+        """Generate a metadata dict with blank keys for the specified item. If
+        use_defaults is True, fill the keys with default values from config.
+        """
         item_dict = {}
         item = self.find_item_by_name(name)
+
+        def get_leaf_field_value(config_field: ConfigField):
+            key = config_field.field["name"]
+            if values.get(key) is not None:
+                return values.get(key)
+            if use_defaults and config_field.field.get("default") is not None:
+                return config_field.field.get("default")
+            if config_field.field.get("multiple"):
+                return []
+            return ""
+
         if not item:
             return item_dict
         for config_field in self.iter_item_fields(item):
@@ -130,14 +145,7 @@ class SiteConfig:
                 if subfields:
                     item_dict[key] = {}
                 else:
-                    if key in kwargs:
-                        value = kwargs[key] or ""
-                    else:
-                        value = (
-                            []
-                            if config_field.field.get("multiple", False) is True
-                            else ""
-                        )
+                    value = get_leaf_field_value(config_field)
                     if config_field.parent_field is None:
                         item_dict[key] = value
                     else:

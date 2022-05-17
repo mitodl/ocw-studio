@@ -25,6 +25,13 @@ class Command(BaseCommand):
             help="Only update metadata of this_type (default = resource)",
         )
         parser.add_argument(
+            "-ud",
+            "--use-defaults",
+            dest="use_defaults",
+            action="store_true",
+            help="Use default config values for metadata values that do not currently exist",
+        )
+        parser.add_argument(
             "-f",
             "--filter",
             dest="filter",
@@ -45,6 +52,7 @@ class Command(BaseCommand):
         starter_str = options["starter"]
         source_str = options["source"]
         type_str = options["type"]
+        use_defaults = options["use_defaults"]
 
         content_qset = WebsiteContent.objects.filter(
             website__starter__slug=starter_str, type=type_str
@@ -63,7 +71,9 @@ class Command(BaseCommand):
 
         base_metadata = SiteConfig(
             WebsiteStarter.objects.get(slug=starter_str).config
-        ).generate_item_metadata(type_str, cls=WebsiteContent)
+        ).generate_item_metadata(
+            type_str, cls=WebsiteContent, use_defaults=use_defaults
+        )
         with transaction.atomic():
             for content in content_qset.iterator():
                 if set(base_metadata.keys()).symmetric_difference(

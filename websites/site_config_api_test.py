@@ -166,18 +166,20 @@ def test_find_file_field(basic_site_config, content_type, field_name):
 @pytest.mark.parametrize("cls", [None, WebsiteContent])
 @pytest.mark.parametrize("resource_type", [None, "Image"])
 @pytest.mark.parametrize("file_type", [None, "image/png"])
-@pytest.mark.parametrize("with_kwargs", [True, False])
+@pytest.mark.parametrize("use_defaults", [True, False])
+@pytest.mark.parametrize("values", [True, False])
 def test_generate_item_metadata(
-    parsed_site_config, cls, resource_type, file_type, with_kwargs
+    parsed_site_config, cls, resource_type, file_type, use_defaults, values
 ):
     """generate_item_metadata should return the expected dict"""
     class_data = {} if cls else {"title": "", "file": ""}
+    default_license = "https://creativecommons.org/licenses/by-nc-sa/4.0/"
     expected_data = {
         "description": "",
-        "resourcetype": (resource_type or "") if with_kwargs else "",
-        "file_type": (file_type or "") if with_kwargs else "",
+        "resourcetype": (resource_type or "") if values else "",
+        "file_type": (file_type or "") if values else "",
         "learning_resource_types": [],
-        "license": "",
+        "license": default_license if use_defaults else "",
         "image_metadata": {"image-alt": "", "caption": "", "credit": ""},
         "video_metadata": {"youtube_id": "", "video_speakers": "", "video_tags": ""},
         "video_files": {
@@ -188,9 +190,10 @@ def test_generate_item_metadata(
         **class_data,
     }
     site_config = SiteConfig(parsed_site_config)
-    kwargs = (
-        {"resourcetype": resource_type, "file_type": file_type} if with_kwargs else {}
-    )
+    values = {"resourcetype": resource_type, "file_type": file_type} if values else {}
     assert (
-        site_config.generate_item_metadata("resource", cls, **kwargs) == expected_data
+        site_config.generate_item_metadata(
+            "resource", cls, use_defaults=use_defaults, values=values
+        )
+        == expected_data
     )
