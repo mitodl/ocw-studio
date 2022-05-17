@@ -92,7 +92,7 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
-            - put: slack-webook
+            - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
@@ -131,7 +131,7 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
-            - put: slack-webook
+            - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
@@ -151,7 +151,7 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
-            - put: slack-webook
+            - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
@@ -199,7 +199,7 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
-            - put: slack-webook
+            - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
@@ -233,7 +233,7 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
-            - put: slack-webook
+            - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
@@ -289,7 +289,7 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
-            - put: slack-webook
+            - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
