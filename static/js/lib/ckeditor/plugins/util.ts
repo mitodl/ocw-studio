@@ -315,3 +315,20 @@ export const makeHtmlString = (
     })
   return `<${tagName} ${attrAssignments.join(" ")}></${tagName}>`
 }
+
+/**
+ * Escape shortcode delimiters, e.g., `"{{<"` --> `"{{\<"`.
+ *
+ * This is something of a workaround for when we do NOT want shortcode-esque
+ * text to be considered a shortcode, for example the `sup` group in
+ * `'{{% resource_link uuid "{{< sup 2 > }}" %}}'`. Hugo will display this sup
+ * as literal text, so Studio should, too.
+ *
+ * By escaping `<` or `{` in the shortcode delimiter, we prevent the text from
+ * triggering shortcode-related code, e.g., Showdown extensions. Markdown allows
+ * optionally escaping these characters, so there is no affect on the rendered
+ * HTML.
+ */
+export const escapeShortcodes = (text: string) => {
+  return text.replace(/{{</g, "{{\\<").replace("{{%", "{\\{%")
+}

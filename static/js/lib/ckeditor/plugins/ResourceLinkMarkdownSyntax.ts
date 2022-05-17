@@ -9,7 +9,7 @@ import {
   RESOURCE_LINK_CKEDITOR_CLASS,
   RESOURCE_LINK
 } from "@mitodl/ckeditor5-resource-link/src/constants"
-import { Shortcode } from "./util"
+import { Shortcode, escapeShortcodes } from "./util"
 
 export const encodeShortcodeArgs = (...args: (string | undefined)[]) =>
   encodeURIComponent(JSON.stringify(args))
@@ -52,7 +52,7 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
           replace: (s: string) => {
             const shortcode = Shortcode.fromString(s)
             const uuid = shortcode.get(0)
-            const text = shortcode.get(1)
+            const text = escapeShortcodes(shortcode.get(1) ?? "")
             const fragment = shortcode.get(2)
             const encoded = fragment ?
               encodeShortcodeArgs(uuid, fragment) :

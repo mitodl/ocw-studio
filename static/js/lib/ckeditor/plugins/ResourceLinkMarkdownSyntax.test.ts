@@ -10,11 +10,13 @@ import ResourceLinkMarkdownSyntax, {
   encodeShortcodeArgs as encode
 } from "./ResourceLinkMarkdownSyntax"
 import Paragraph from "@ckeditor/ckeditor5-paragraph/src/paragraph"
+import LegacyShortcodes from "./LegacyShortcodes"
 
 const getEditor = createTestEditor([
   Paragraph,
   ResourceLink,
   ResourceLinkMarkdownSyntax,
+  LegacyShortcodes,
   Markdown
 ])
 
@@ -102,5 +104,14 @@ describe("ResourceLink plugin", () => {
         "uuid123"
       )}">bark bark</a> Woof</p>`
     )
+  })
+
+  it("Treats legacy shortcodes in link text as literal text", async () => {
+    const editor = await getEditor("")
+    const md = 'Dogs {{% resource_link "uuid123" "{{< sup 2 >}}" %}} Woof'
+    const html = `<p>Dogs <a class="resource-link" data-uuid="${encode(
+      "uuid123"
+    )}">{{&lt; sup 2 &gt;}}</a> Woof</p>`
+    markdownTest(editor, md, html)
   })
 })
