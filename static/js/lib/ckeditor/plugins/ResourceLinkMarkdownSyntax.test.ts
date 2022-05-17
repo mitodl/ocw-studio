@@ -106,7 +106,7 @@ describe("ResourceLink plugin", () => {
     )
   })
 
-  it("Escapes shortcodes in the link text", async () => {
+  it("Treats legacy shortcodes in link text as literal text", async () => {
     const editor = await getEditor("")
     const md = 'Dogs {{% resource_link "uuid123" "{{< sup 2 >}}" %}} Woof'
     const html = `<p>Dogs <a class="resource-link" data-uuid="${encode(
