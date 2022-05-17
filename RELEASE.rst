@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.61.0
+Version 0.61.0 (Released May 17, 2022)
 --------------
 
 - Hid Site Dashboard and refactored component (#1332)
