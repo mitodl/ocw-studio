@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.61.0 (Released May 17, 2022)
+--------------
+
+- Hid Site Dashboard and refactored component (#1332)
+- use anchor not link for external link (#1341)
+
 Version 0.60.3 (Released May 16, 2022)
 --------------
 
