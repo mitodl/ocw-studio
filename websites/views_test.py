@@ -241,7 +241,7 @@ def test_websites_endpoint_preview(mocker, drf_client):
     mock_trigger_publish = mocker.patch("websites.views.trigger_publish")
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
-    website = WebsiteFactory.create()
+    website = WebsiteFactory.create(url_path="courses/mysite")
     editor = UserFactory.create()
     editor.groups.add(website.editor_group)
     drf_client.force_login(editor)
@@ -378,6 +378,19 @@ def test_websites_endpoint_publish_with_url_error(drf_client, ocw_site, action):
     assert response.json() == {
         "url_path": ["You must replace the url sections in brackets"]
     }
+
+
+@pytest.mark.parametrize("action", ["preview", "publish"])
+def test_websites_endpoint_publish_with_url_blank_error(drf_client, action):
+    """An error should be returned if a site has no url_path yet"""
+    drf_client.force_login(UserFactory.create(is_superuser=True))
+    website = WebsiteFactory.create(not_published=True, url_path=None)
+    response = drf_client.post(
+        reverse(f"websites_api-{action}", kwargs={"name": website.name}),
+        data={},
+    )
+    assert response.status_code == 400
+    assert response.json() == {"url_path": ["The URL path cannot be blank"]}
 
 
 def test_websites_endpoint_unpublish(mocker, drf_client):

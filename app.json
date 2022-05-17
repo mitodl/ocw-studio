@@ -139,16 +139,8 @@
       "description": "Gdrive folder for video uploads",
       "required": false
     },
-    "FIELD_METADATA_S3_PATH": {
-      "description": "The site metadata field for s3 path",
-      "required": false
-    },
     "FIELD_METADATA_TITLE": {
       "description": "The site metadata field for title",
-      "required": false
-    },
-    "FIELD_METADATA_URL_PATH": {
-      "description": "The site metadata field for url path",
       "required": false
     },
     "FIELD_RESOURCETYPE": {

@@ -11,26 +11,16 @@ from websites.utils import set_dict_field
 
 def populate_url_path(apps, schema_editor):
     """
-    Populate url_path for all sites that have been published to production
+    Populate url_path for all sites that have already been published to production
     """
     Website = apps.get_model("websites", "Website")
     for site in Website.objects.exclude(first_published_to_production__isnull=True):
         if site.starter is None:
             continue
-        with transaction.atomic():
-            site_config = SiteConfig(site.starter.config)
-            root = site_config.root_url_path
-            site.url_path = urljoin(root, site.name)
-            site.save()
-            content = site.websitecontent_set.filter(type=CONTENT_TYPE_METADATA).first()
-            if content:
-                set_dict_field(
-                    content.metadata, settings.FIELD_METADATA_S3_PATH, site.url_path
-                )
-                set_dict_field(
-                    content.metadata, settings.FIELD_METADATA_URL_PATH, site.url_path
-                )
-                content.save()
+        site_config = SiteConfig(site.starter.config)
+        root = site_config.root_url_path
+        site.url_path = "/".join([root, site.name]).strip("/")
+        site.save()
 
 
 class Migration(migrations.Migration):

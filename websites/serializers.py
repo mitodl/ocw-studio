@@ -13,6 +13,7 @@ from rest_framework.exceptions import ValidationError
 
 from content_sync.api import create_website_backend, update_website_backend
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.models import ContentSyncState
 from gdrive_sync.api import gdrive_root_url, is_gdrive_enabled
 from gdrive_sync.tasks import create_gdrive_folders
 from main.serializers import RequestUserSerializerMixin
@@ -28,7 +29,7 @@ from websites.constants import CONTENT_TYPE_METADATA, CONTENT_TYPE_RESOURCE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role, set_dict_field
+from websites.utils import permissions_group_name_for_role
 
 
 log = logging.getLogger(__name__)
@@ -116,6 +117,8 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
         """
         Check that the website url will be unique and template sections have been replaced.
         """
+        if not value and self.instance.url_path is None:
+            raise serializers.ValidationError("The URL path cannot be blank")
         url = self.instance.assemble_full_url_path(value)
         if (
             self.instance.first_published_to_production
@@ -140,19 +143,13 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """ Update the website url_path"""
         url_path = validated_data.get("url_path")
-        if not url_path:
-            return
-        instance.url_path = instance.assemble_full_url_path(url_path)
-        instance.save()
-        content = instance.websitecontent_set.filter(type=CONTENT_TYPE_METADATA).first()
-        if content:
-            set_dict_field(
-                content.metadata, settings.FIELD_METADATA_S3_PATH, instance.s3_path
-            )
-            set_dict_field(
-                content.metadata, settings.FIELD_METADATA_URL_PATH, instance.url_path
-            )
-            content.save()
+        with transaction.atomic():
+            instance.url_path = instance.assemble_full_url_path(url_path)
+            instance.save()
+            # Force a backend resync of all associated content with file paths
+            ContentSyncState.objects.filter(
+                content__in=instance.websitecontent_set.filter(file__isnull=False)
+            ).update(synced_checksum=None)
 
     class Meta:
         model = Website
@@ -469,15 +466,6 @@ class WebsiteContentDetailSerializer(
             update_youtube_thumbnail(
                 instance.website.uuid, validated_data.get("metadata"), overwrite=True
             )
-        elif instance.type == CONTENT_TYPE_METADATA:
-            # Add the site s3 path and url path to the metadata
-            website = instance.website
-            validated_data["metadata"][
-                settings.FIELD_METADATA_S3_PATH
-            ] = website.s3_path
-            validated_data["metadata"][
-                settings.FIELD_METADATA_URL_PATH
-            ] = website.url_path_from_metadata(metadata=validated_data["metadata"])
         if "file" in validated_data:
             if "metadata" not in validated_data:
                 validated_data["metadata"] = {}
@@ -603,15 +591,6 @@ class WebsiteContentCreateSerializer(
             update_youtube_thumbnail(
                 self.context["website_id"], validated_data.get("metadata")
             )
-        elif validated_data.get("type") == CONTENT_TYPE_METADATA:
-            # Add the site s3 path and url path to the metadata
-            website = Website.objects.get(pk=self.context["website_id"])
-            validated_data["metadata"][
-                settings.FIELD_METADATA_S3_PATH
-            ] = website.s3_path
-            validated_data["metadata"][
-                settings.FIELD_METADATA_URL_PATH
-            ] = website.url_path_from_metadata(metadata=validated_data["metadata"])
         if "file" in validated_data:
             if "metadata" not in validated_data:
                 validated_data["metadata"] = {}

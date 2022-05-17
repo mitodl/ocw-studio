@@ -558,16 +558,6 @@ FIELD_METADATA_TITLE = get_string(
     default="course_title",
     description="The site metadata field for title",
 )
-FIELD_METADATA_S3_PATH = get_string(
-    name="FIELD_METADATA_S3_PATH",
-    default="s3_path",
-    description="The site metadata field for s3 path",
-)
-FIELD_METADATA_URL_PATH = get_string(
-    name="FIELD_METADATA_URL_PATH",
-    default="url_path",
-    description="The site metadata field for url path",
-)
 # YouTube OCW metadata fields
 YT_FIELD_CAPTIONS = get_string(
     name="YT_FIELD_CAPTIONS",

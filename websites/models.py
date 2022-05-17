@@ -4,7 +4,7 @@ import logging
 import re
 from hashlib import sha256
 from typing import Dict
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from uuid import uuid4
 
 import yaml
@@ -132,6 +132,12 @@ class Website(TimestampedModel):
         on_delete=models.SET_NULL,
         related_name="unpublisher",
     )
+
+    """
+    URL path values should include the starter config prefix (ie "courses/") so that sites
+    with a url_path of "courses/my-site-fall-2020" can coexist with "sites/my-site-fall-2020"
+    without unique key violations being raised.
+    """
     url_path = models.CharField(max_length=2048, unique=True, blank=True, null=True)
 
     @property
@@ -196,7 +202,7 @@ class Website(TimestampedModel):
         else:
             return urljoin(base_url, self.get_site_root_path())
 
-    def get_url_path(self, with_prefix=False):
+    def get_url_path(self, with_prefix=True):
         """Get the current/potential url path, with or without site prefix"""
         url_path = self.url_path
         if not url_path:
@@ -224,11 +230,11 @@ class Website(TimestampedModel):
         if self.starter is None:
             return None
         site_config = SiteConfig(self.starter.config)
-        url_path = site_config.site_url_format
-        if not url_path or self.first_published_to_production:
+        url_format = site_config.site_url_format
+        if not url_format or self.first_published_to_production:
             # use name for published  sites or for any sites without a `url_path` in config.
-            url_path = self.name
-        else:
+            url_format = self.name
+        elif url_format:
             for section in re.findall(r"(\[.+?\])+", site_config.site_url_format) or []:
                 section_type, section_field = re.sub(r"[\[\]]+", "", section).split(":")
                 value = None
@@ -243,8 +249,8 @@ class Website(TimestampedModel):
                     value = section
                 else:
                     value = slugify(value.replace(".", "-"))
-                url_path = url_path.replace(section, value)
-        return url_path
+                url_format = url_format.replace(section, value)
+        return url_format
 
     @property
     def s3_path(self):
@@ -361,7 +367,12 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
                 else {}
             )
             if self.file and self.file.url:
-                full_metadata[file_field["name"]] = self.file.url
+                s3_path = self.website.s3_path
+                url_path = self.website.url_path
+                file_url = self.file.url
+                if url_path and s3_path != url_path:
+                    file_url = file_url.replace(s3_path, url_path, 1)
+                full_metadata[file_field["name"]] = urlparse(file_url).path
             else:
                 full_metadata[file_field["name"]] = None
             return full_metadata

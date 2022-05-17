@@ -277,7 +277,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
             theme_created_trigger = "true"
             theme_deployed_trigger = "false"
         else:
-            base_url = self.website.get_url_path(with_prefix=True)
+            base_url = self.website.get_url_path()
             theme_created_trigger = "false"
             theme_deployed_trigger = "true"
         hugo_projects_url = urljoin(
@@ -341,9 +341,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
                     .replace("((config-slug))", self.website.starter.slug)
                     .replace("((s3-path))", self.website.s3_path)
                     .replace("((base-url))", base_url)
-                    .replace(
-                        "((site-url))", self.website.get_url_path(with_prefix=True)
-                    )
+                    .replace("((site-url))", self.website.get_url_path())
                     .replace("((site-name))", self.website.name)
                     .replace("((purge-url))", f"purge/{self.website.name}")
                     .replace("((purge_header))", purge_header)

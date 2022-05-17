@@ -2,12 +2,10 @@
 import json
 import logging
 import os
-from typing import Dict
 
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.postgres.search import SearchQuery, SearchVector
-from django.db import transaction
 from django.db.models import Case, CharField, F, OuterRef, Q, Value, When
 from django.utils.functional import cached_property
 from django.utils.text import slugify
@@ -186,64 +184,55 @@ class WebsiteViewSet(
 
         return serializer_class(*args, **kwargs)
 
-    @transaction.atomic
-    def update_publish_data(self, data: Dict, website: Website) -> Response or None:
-        """Update website url and metadata"""
-        serializer = WebsiteUrlSerializer(data=data, instance=website)
-        if serializer.is_valid(raise_exception=True):
-            serializer.update(website, serializer.validated_data)
+    def publish_version(self, name, version, request):
+        """Process a publish request for the specified version"""
+        try:
+            website = self.get_object()
+            if website.first_published_to_production is None:
+                if not request.data.get("url_path"):
+                    request.data["url_path"] = None
+                serializer = WebsiteUrlSerializer(data=request.data, instance=website)
+                if serializer.is_valid(raise_exception=True):
+                    serializer.update(website, serializer.validated_data)
+            if version == VERSION_DRAFT:
+                Website.objects.filter(pk=website.pk).update(
+                    has_unpublished_draft=False,
+                    draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
+                    draft_publish_status_updated_on=now_in_utc(),
+                    latest_build_id_draft=None,
+                    draft_last_published_by=request.user,
+                )
+            else:
+                Website.objects.filter(pk=website.pk).update(
+                    has_unpublished_live=False,
+                    live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
+                    live_publish_status_updated_on=now_in_utc(),
+                    latest_build_id_live=None,
+                    live_last_published_by=request.user,
+                    unpublish_status=None,
+                    last_unpublished_by=None,
+                )
+            trigger_publish(website.name, version)
+            return Response(status=200)
+        except ValidationError as ve:
+            return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:  # pylint: disable=broad-except
+            log.exception("Error publishing %s version for %s", version, name)
+            return Response(status=500, data={"details": str(exc)})
 
     @action(
         detail=True, methods=["post"], permission_classes=[HasWebsitePreviewPermission]
     )
     def preview(self, request, name=None):
         """Trigger a preview task for the website"""
-        try:
-            website = self.get_object()
-            url = self.request.data.get("url_path")
-            if url and website.first_published_to_production is None:
-                self.update_publish_data(request.data, website)
-            Website.objects.filter(pk=website.pk).update(
-                has_unpublished_draft=False,
-                draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
-                draft_publish_status_updated_on=now_in_utc(),
-                latest_build_id_draft=None,
-                draft_last_published_by=request.user,
-            )
-            trigger_publish(website.name, VERSION_DRAFT)
-            return Response(status=200)
-        except ValidationError as ve:
-            return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as exc:  # pylint: disable=broad-except
-            log.exception("Error previewing %s", name)
-            return Response(status=500, data={"details": str(exc)})
+        return self.publish_version(name, VERSION_DRAFT, request)
 
     @action(
         detail=True, methods=["post"], permission_classes=[HasWebsitePublishPermission]
     )
     def publish(self, request, name=None):
         """Trigger a publish task for the website"""
-        try:
-            website = self.get_object()
-            url = self.request.data.get("url_path")
-            if url and website.first_published_to_production is None:
-                self.update_publish_data(request.data, website)
-            Website.objects.filter(pk=website.pk).update(
-                has_unpublished_live=False,
-                live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
-                live_publish_status_updated_on=now_in_utc(),
-                latest_build_id_live=None,
-                live_last_published_by=request.user,
-                unpublish_status=None,
-                last_unpublished_by=None,
-            )
-            trigger_publish(website.name, VERSION_LIVE)
-            return Response(status=200)
-        except ValidationError as ve:
-            return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as exc:  # pylint: disable=broad-except
-            log.exception("Error publishing %s", name)
-            return Response(status=500, data={"details": str(exc)})
+        return self.publish_version(name, VERSION_LIVE, request)
 
     @action(
         detail=True, methods=["post"], permission_classes=[HasWebsitePublishPermission]
@@ -293,7 +282,9 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
         )
 
         # Get all sites, minus any sites that have never been successfully published
-        sites = Website.objects.exclude(Q(**{f"{publish_date_field}__isnull": True}))
+        sites = Website.objects.exclude(
+            Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
+        )
         # For live builds, exclude previously published sites that have been unpublished
         if version == VERSION_LIVE:
             sites = sites.exclude(unpublish_status__isnull=False)

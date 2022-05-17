@@ -131,8 +131,6 @@ jobs:
           STATIC_API_BASE_URL: ((static-api-base-url))
           OCW_IMPORT_STARTER_SLUG: ((ocw-import-starter-slug))
           SITEMAP_DOMAIN: ((sitemap-domain))
-          S3_PATH: ((s3-path))
-          URL_PATH: ((site-url))
         config:
           platform: linux
           image_resource:
