@@ -168,7 +168,7 @@ def test_find_file_field(basic_site_config, content_type, field_name):
 @pytest.mark.parametrize("file_type", [None, "image/png"])
 @pytest.mark.parametrize("use_defaults", [True, False])
 @pytest.mark.parametrize("values", [True, False])
-def test_generate_item_metadata(
+def test_generate_item_metadata(  # pylint: disable=too-many-arguments
     parsed_site_config, cls, resource_type, file_type, use_defaults, values
 ):
     """generate_item_metadata should return the expected dict"""

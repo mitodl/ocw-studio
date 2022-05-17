@@ -117,11 +117,16 @@ class SiteConfig:
         return None
 
     def generate_item_metadata(
-        self, name: str, cls: object = None, use_defaults=False, values: Dict = {}
+        self,
+        name: str,
+        cls: object = None,
+        use_defaults=False,
+        values: Optional[Dict] = None,
     ) -> Dict:
         """Generate a metadata dict with blank keys for the specified item. If
         use_defaults is True, fill the keys with default values from config.
         """
+        values = values or {}
         item_dict = {}
         item = self.find_item_by_name(name)
 
