@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.61.1
+--------------
+
+- treat shortcodes in resource link text as literal text (#1359)
+- make markdown editor minimal by default (#1351)
+- short ID added with title in sites list (#1346)
+- check for 3play completion (#1345)
+- improve frontend shortcode regex to not be fooled by delimiters in shortcode args (#1347)
+
 Version 0.61.0 (Released May 17, 2022)
 --------------
 
