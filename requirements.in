@@ -39,6 +39,7 @@ uwsgi
 pyyaml
 tqdm
 yamale
+django-model-utils==4.2.0
 
 google-api-python-client
 google-auth
