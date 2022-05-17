@@ -43,7 +43,7 @@ class WebsiteStarterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WebsiteStarter
-        fields = ["id", "name", "path", "source", "commit", "slug"]
+        fields = ["id", "name", "path", "source", "commit", "slug", "status"]
 
 
 class WebsiteStarterDetailSerializer(serializers.ModelSerializer):

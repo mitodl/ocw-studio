@@ -106,15 +106,22 @@ PUBLISH_STATUSES_FINAL = [
 
 OCW_HUGO_THEMES_GIT = "https://github.com/mitodl/ocw-hugo-themes.git"
 
+
 class WebsiteStarterStatus:
     """Simple class for values/keys of status in website starter"""
 
-    DEFAULT = 'default'
-    ACTIVE = 'active'
-    INACTIVE = 'inactive'
+    DEFAULT = "default"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
 
 WEBSITE_STARTER_STATUS_CHOICES = Choices(
-    (WebsiteStarterStatus.DEFAULT, 'Default'),
-    (WebsiteStarterStatus.ACTIVE, 'Active'),
-    (WebsiteStarterStatus.INACTIVE, 'Inactive'),
+    (WebsiteStarterStatus.DEFAULT, "Default"),
+    (WebsiteStarterStatus.ACTIVE, "Active"),
+    (WebsiteStarterStatus.INACTIVE, "Inactive"),
 )
+
+ALLOWED_WEBSITE_STARTER_STATUS = [
+    WebsiteStarterStatus.DEFAULT,
+    WebsiteStarterStatus.ACTIVE,
+]

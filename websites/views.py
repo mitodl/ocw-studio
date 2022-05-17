@@ -42,6 +42,7 @@ from websites.constants import (
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
+    ALLOWED_WEBSITE_STARTER_STATUS,
 )
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import (
@@ -326,10 +327,13 @@ class WebsiteStarterViewSet(
     permission_classes = (ReadonlyPermission,)
 
     def get_queryset(self):
+        queryset = WebsiteStarter.objects.filter(
+            status__in=ALLOWED_WEBSITE_STARTER_STATUS
+        ).all()
         if features.is_enabled(features.USE_LOCAL_STARTERS):
-            return WebsiteStarter.objects.all()
+            return queryset
         else:
-            return WebsiteStarter.objects.filter(source=constants.STARTER_SOURCE_GITHUB)
+            return queryset.filter(source=constants.STARTER_SOURCE_GITHUB)
 
     def get_serializer_class(self):
         if self.action == "list":

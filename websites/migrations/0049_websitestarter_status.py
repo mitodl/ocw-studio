@@ -6,13 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('websites', '0048_www_pages_to_page'),
+        ("websites", "0048_www_pages_to_page"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='websitestarter',
-            name='status',
-            field=models.CharField(choices=[('default', 'Default'), ('active', 'Active'), ('inactive', 'Inactive')], default='active', help_text='Starters with only Active and Default status will be shown while creating a new site.', max_length=30),
+            model_name="websitestarter",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("default", "Default"),
+                    ("active", "Active"),
+                    ("inactive", "Inactive"),
+                ],
+                default="active",
+                help_text="Starters with only Active and Default status will be shown while creating a new site.",
+                max_length=30,
+            ),
         ),
     ]
