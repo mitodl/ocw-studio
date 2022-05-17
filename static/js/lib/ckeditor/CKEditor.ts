@@ -162,7 +162,9 @@ export const MinimalEditorConfig = {
       "numberedList",
       "blockQuote",
       "undo",
-      "redo"
+      "redo",
+      ADD_RESOURCE_LINK,
+      ADD_RESOURCE_EMBED
     ]
   },
   language: "en"
