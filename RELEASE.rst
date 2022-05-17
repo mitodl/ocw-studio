@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.61.1
+Version 0.61.1 (Released May 17, 2022)
 --------------
 
 - treat shortcodes in resource link text as literal text (#1359)
