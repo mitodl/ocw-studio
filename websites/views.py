@@ -188,7 +188,7 @@ class WebsiteViewSet(
         """Process a publish request for the specified version"""
         try:
             website = self.get_object()
-            if website.first_published_to_production is None:
+            if website.publish_date is None:
                 if not request.data.get("url_path"):
                     request.data["url_path"] = None
                 serializer = WebsiteUrlSerializer(data=request.data, instance=website)

@@ -195,7 +195,7 @@ def test_website_url_path_from_metadata_no_format():
 
 def test_website_url_path_from_metadata_published(ocw_site):
     """ Website.name should be returned for a that's already been published"""
-    ocw_site.first_published_to_production = now_in_utc()
+    ocw_site.publish_date = now_in_utc()
     assert ocw_site.url_path_from_metadata() == ocw_site.name
 
 
@@ -217,7 +217,7 @@ def test_website_url_path_from_metadata(missing_keys):
             "site-url-format": "[meta:course_nr]-[meta:title]-[meta:term]-[meta:year]"
         }
     )
-    website = WebsiteFactory.create(starter=starter, first_published_to_production=None)
+    website = WebsiteFactory.create(starter=starter, not_published=True)
     expected_url_path = "{course_nr}-{title}-{term}-{year}".format(
         course_nr=(
             "1-1" if metadata.get("course_nr") is not None else "[meta:course_nr]"
@@ -250,7 +250,7 @@ def test_assemble_full_url_path(root_path, url_path):
 @pytest.mark.parametrize("published", [True, False])
 def test_get_url_path(ocw_site, url_path, with_prefix, published):
     """get_url_path should return the expected url path with or without a prefix"""
-    ocw_site.first_published_to_production = now_in_utc() if published else None
+    ocw_site.publish_date = now_in_utc() if published else None
     ocw_site.url_path = url_path
     config = SiteConfig(ocw_site.starter.config)
     root_path = config.root_url_path

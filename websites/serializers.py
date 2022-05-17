@@ -41,17 +41,9 @@ ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is re
 class WebsiteStarterSerializer(serializers.ModelSerializer):
     """ Serializer for website starters """
 
-    site_url_format = serializers.SerializerMethodField(read_only=True)
-
-    def get_site_url_format(self, instance):
-        """ Get the site url format string"""
-        site_config = SiteConfig(instance.config)
-        return site_config.site_url_format
-
     class Meta:
         model = WebsiteStarter
-        fields = ["id", "name", "path", "source", "commit", "slug", "site_url_format"]
-        read_only_fields = ["site_url_format"]
+        fields = ["id", "name", "path", "source", "commit", "slug"]
 
 
 class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
@@ -59,7 +51,7 @@ class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WebsiteStarter
-        fields = ["id", "name", "path", "source", "commit", "slug", "config"]
+        fields = WebsiteStarterSerializer.Meta.fields + ["config"]
 
 
 class WebsiteGoogleDriveMixin(serializers.Serializer):
@@ -120,10 +112,7 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
         if not value and self.instance.url_path is None:
             raise serializers.ValidationError("The URL path cannot be blank")
         url = self.instance.assemble_full_url_path(value)
-        if (
-            self.instance.first_published_to_production
-            and url != self.instance.url_path
-        ):
+        if self.instance.publish_date and url != self.instance.url_path:
             raise serializers.ValidationError(
                 "The URL cannot be changed after publishing."
             )
@@ -234,7 +223,6 @@ class WebsiteDetailSerializer(
     is_admin = serializers.SerializerMethodField(read_only=True)
     live_url = serializers.SerializerMethodField(read_only=True)
     draft_url = serializers.SerializerMethodField(read_only=True)
-    url_format = serializers.SerializerMethodField(read_only=True)
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
@@ -251,10 +239,6 @@ class WebsiteDetailSerializer(
         """Get the draft url for the site"""
         return instance.get_full_url(version=VERSION_DRAFT)
 
-    def get_url_format(self, instance):
-        """Get the current/potential url path for the site"""
-        return instance.get_url_path(with_prefix=False)
-
     def update(self, instance, validated_data):
         """ Remove owner attribute if present, it should not be changed"""
         validated_data.pop("owner", None)
@@ -270,7 +254,6 @@ class WebsiteDetailSerializer(
             "draft_url",
             "live_url",
             "url_path",
-            "url_format",
             "has_unpublished_live",
             "has_unpublished_draft",
             "live_publish_status",
@@ -302,7 +285,6 @@ class WebsiteDetailSerializer(
             "sync_errors",
             "synced_on",
             "content_warnings",
-            "url_format",
             "url_path",
         ]
 
@@ -591,6 +573,7 @@ class WebsiteContentCreateSerializer(
             update_youtube_thumbnail(
                 self.context["website_id"], validated_data.get("metadata")
             )
+
         if "file" in validated_data:
             if "metadata" not in validated_data:
                 validated_data["metadata"] = {}

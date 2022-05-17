@@ -6,14 +6,17 @@ import { requestAsync } from "redux-query"
 import moment from "moment"
 import { isEmpty } from "ramda"
 
-import { websiteAction, websiteDetailRequest } from "../query-configs/websites"
+import {
+  websiteAction,
+  websiteDetailRequest,
+  WebsitePublishPayload
+} from "../query-configs/websites"
 import { isErrorStatusCode } from "../lib/util"
 import PublishStatusIndicator from "./PublishStatusIndicator"
 
 import { Website } from "../types/websites"
-
-const STAGING = "staging"
-const PRODUCTION = "production"
+import { PublishForm } from "./forms/PublishForm"
+import { PUBLISH_OPTION_PRODUCTION, PUBLISH_OPTION_STAGING } from "../constants"
 
 type Props = {
   visibility: boolean
@@ -23,23 +26,32 @@ type Props = {
 export default function PublishDrawer(props: Props): JSX.Element {
   const { visibility, toggleVisibility, website } = props
 
-  const [{ isPending: previewIsPending }, previewWebsite] = useMutation(() =>
-    websiteAction(website.name, "preview")
+  const [
+    { isPending: previewIsPending },
+    previewWebsite
+  ] = useMutation((payload: WebsitePublishPayload) =>
+    websiteAction(website.name, "preview", payload)
   )
-  const [{ isPending: publishIsPending }, publishWebsite] = useMutation(() =>
-    websiteAction(website.name, "publish")
+
+  const [
+    { isPending: publishIsPending },
+    publishWebsite
+  ] = useMutation((payload: WebsitePublishPayload) =>
+    websiteAction(website.name, "publish", payload)
   )
   const store = useStore()
-  const [publishOption, setPublishOption] = useState<string>(STAGING)
+  const [publishOption, setPublishOption] = useState<string>(
+    PUBLISH_OPTION_STAGING
+  )
   const [errorStaging, setErrorStaging] = useState<boolean>(false)
   const [errorProduction, setErrorProduction] = useState<boolean>(false)
 
-  const onPreview = async () => {
+  const onPreview = async (payload: WebsitePublishPayload) => {
     setErrorStaging(false)
     if (previewIsPending) {
       return
     }
-    const response = await previewWebsite()
+    const response = await previewWebsite(payload)
     if (!response) {
       return
     } else {
@@ -53,12 +65,12 @@ export default function PublishDrawer(props: Props): JSX.Element {
     }
   }
 
-  const onPublish = async () => {
+  const onPublish = async (payload: WebsitePublishPayload) => {
     setErrorProduction(false)
     if (publishIsPending) {
       return
     }
-    const response = await publishWebsite()
+    const response = await publishWebsite(payload)
     if (!response) {
       return
     } else {
@@ -73,11 +85,10 @@ export default function PublishDrawer(props: Props): JSX.Element {
   }
 
   const renderOption = (option: string) => {
-    const isStaging = option === STAGING
+    const isStaging = option === PUBLISH_OPTION_STAGING
     const label = isStaging ? "Staging" : "Production"
     const publish = isStaging ? onPreview : onPublish
     const error = isStaging ? errorStaging : errorProduction
-    const siteUrl = isStaging ? website.draft_url : website.live_url
     const publishDate = isStaging ?
       website.draft_publish_date :
       website.publish_date
@@ -102,10 +113,6 @@ export default function PublishDrawer(props: Props): JSX.Element {
         </div>
         {publishOption === option ? (
           <div className="publish-option-description">
-            <a href={siteUrl} target="_blank" rel="noreferrer">
-              {siteUrl}
-            </a>
-            <br />
             Last updated:{" "}
             {publishDate ?
               moment(publishDate).format("dddd, MMMM D h:mma ZZ") :
@@ -126,13 +133,12 @@ export default function PublishDrawer(props: Props): JSX.Element {
                 <br />
               </>
             ) : null}
-            <button
-              onClick={publish}
+            <PublishForm
+              onSubmit={publish}
               disabled={!hasUnpublishedChanges}
-              className="btn btn-publish cyan-button-outline d-flex flex-direction-row align-items-center"
-            >
-              Publish
-            </button>
+              website={website}
+              option={option}
+            ></PublishForm>
             <PublishStatusIndicator status={publishStatus} />
           </div>
         ) : null}
@@ -141,11 +147,15 @@ export default function PublishDrawer(props: Props): JSX.Element {
   }
 
   return (
-    <Modal isOpen={visibility} toggle={toggleVisibility} modalClassName="right">
+    <Modal
+      isOpen={visibility}
+      toggle={toggleVisibility}
+      modalClassName={`right ${website.publish_date ? "" : "wide"}`}
+    >
       <ModalHeader toggle={toggleVisibility}>Publish your site</ModalHeader>
       <ModalBody>
-        {renderOption(STAGING)}
-        {website.is_admin ? renderOption(PRODUCTION) : null}
+        {renderOption(PUBLISH_OPTION_STAGING)}
+        {website.is_admin ? renderOption(PUBLISH_OPTION_PRODUCTION) : null}
         {website.content_warnings && !isEmpty(website.content_warnings) ? (
           <div className="publish-warnings pt-2">
             <strong className="text-danger">

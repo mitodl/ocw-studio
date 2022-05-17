@@ -194,10 +194,8 @@ class Website(TimestampedModel):
             if version == VERSION_LIVE
             else settings.OCW_STUDIO_DRAFT_URL
         )
-        if self.name == settings.ROOT_WEBSITE_NAME:
-            return base_url
         url_path = self.url_path
-        if url_path is not None:
+        if url_path:
             return urljoin(base_url, url_path)
         else:
             return urljoin(base_url, self.get_site_root_path())
@@ -231,7 +229,7 @@ class Website(TimestampedModel):
             return None
         site_config = SiteConfig(self.starter.config)
         url_format = site_config.site_url_format
-        if not url_format or self.first_published_to_production:
+        if not url_format or self.publish_date:
             # use name for published  sites or for any sites without a `url_path` in config.
             url_format = self.name
         elif url_format:

@@ -105,6 +105,7 @@ jobs:
                 NAME=$(echo $1 | jq -c '.name' | tr -d '"')
                 SHORT_ID=$(echo $1 | jq -c '.short_id' | tr -d '"')
                 STARTER_SLUG=$(echo $1| jq -c '.starter_slug' | tr -d '"')
+                S3_PATH=$(echo $1 | jq -c '.s3_path' | tr -d '"')
                 SITE_URL=$(echo $1 | jq -c '.site_url' | tr -d '"')
                 BASE_URL=$(echo $1 | jq -c '.base_url' | tr -d '"')
                 if [[ "$SITE_URL" == null || "$S3_PATH" == null ]]

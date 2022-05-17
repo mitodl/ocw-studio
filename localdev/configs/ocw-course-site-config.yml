@@ -680,12 +680,6 @@ collections:
           - label: "Legacy UID"
             name: "legacy_uid"
             widget: "hidden"
-          - label: "S3 Path"
-            name: "s3_path"
-            widget: "hidden"
-          - label: "URL Path"
-            name: "url_path"
-            widget: "hidden"
   - category: Settings
     label: Menu
     name: menu

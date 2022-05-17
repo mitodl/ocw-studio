@@ -653,7 +653,7 @@ def test_website_url_serializer_duplicate_url_path(ocw_site, parsed_site_config)
 
 def test_website_url_serializer_url_path_published(ocw_site):
     """WebsiteUrlSerializer should invalidate a url_path for a published site"""
-    ocw_site.first_published_to_production = now_in_utc()
+    ocw_site.publish_date = now_in_utc()
     new_url_path = "1.45-test-course-spring-2022"
     data = {"url_path": new_url_path}
     serializer = WebsiteUrlSerializer(ocw_site, data)

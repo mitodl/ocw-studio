@@ -347,7 +347,7 @@ def test_websites_endpoint_publish_with_url(
     new_url_path = "5-new-site-fall-2020"
     old_url_path = "courses/old-path"
     ocw_site.url_path = old_url_path
-    ocw_site.first_published_to_production = now_in_utc() if is_published else None
+    ocw_site.publish_date = now_in_utc() if is_published else None
     ocw_site.save()
 
     data = {"url_path": new_url_path}
@@ -368,7 +368,7 @@ def test_websites_endpoint_publish_with_url(
 def test_websites_endpoint_publish_with_url_error(drf_client, ocw_site, action):
     """An error should be returned if url_path validation fails"""
     drf_client.force_login(UserFactory.create(is_superuser=True))
-    ocw_site.first_published_to_production = None
+    ocw_site.publish_date = None
     ocw_site.save()
     response = drf_client.post(
         reverse(f"websites_api-{action}", kwargs={"name": ocw_site.name}),

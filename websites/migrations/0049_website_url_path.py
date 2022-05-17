@@ -14,7 +14,7 @@ def populate_url_path(apps, schema_editor):
     Populate url_path for all sites that have already been published to production
     """
     Website = apps.get_model("websites", "Website")
-    for site in Website.objects.exclude(first_published_to_production__isnull=True):
+    for site in Website.objects.exclude(publish_date__isnull=True):
         if site.starter is None:
             continue
         site_config = SiteConfig(site.starter.config)
@@ -26,7 +26,7 @@ def populate_url_path(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("websites", "0047_unpublish_fields"),
+        ("websites", "0048_www_pages_to_page"),
     ]
 
     operations = [

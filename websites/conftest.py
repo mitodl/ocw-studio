@@ -117,7 +117,7 @@ def ocw_site(parsed_site_config):
     """ OCW Course site with metadata"""
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(config=parsed_site_config),
-        first_published_to_production=None,
+        not_published=True,
     )
     WebsiteContentFactory(type=CONTENT_TYPE_METADATA, website=website)
     return website
