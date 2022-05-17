@@ -149,7 +149,12 @@ export const MinimalEditorConfig = {
     ListPlugin,
     ParagraphPlugin,
     MarkdownListSyntax,
-    Markdown
+    Markdown,
+    ResourceEmbed,
+    ResourcePicker,
+    ResourceLink,
+    ResourceLinkMarkdownSyntax,
+    LegacyShortcodes
   ],
   toolbar: {
     items: [

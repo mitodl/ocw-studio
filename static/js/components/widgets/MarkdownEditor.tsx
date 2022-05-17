@@ -105,6 +105,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     if (minimal) {
       return {
         ...MinimalEditorConfig,
+        [CKEDITOR_RESOURCE_UTILS]: {
+          renderResource,
+          openResourcePicker
+        },
         toolbar: {
           ...MinimalEditorConfig.toolbar,
           items: MinimalEditorConfig.toolbar.items.filter(toolbarItemsFilter)
