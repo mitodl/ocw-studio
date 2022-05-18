@@ -5,6 +5,7 @@ import pytest
 from dateutil.parser import parse as parse_date
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models import CharField, Value
+from mitol.common.utils import now_in_utc
 
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
@@ -14,6 +15,7 @@ from websites.constants import (
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_RESOURCE,
     ROLE_EDITOR,
+    WEBSITE_CONFIG_ROOT_URL_PATH_KEY,
     WEBSITE_SOURCE_OCW_IMPORT,
 )
 from websites.factories import (
@@ -28,12 +30,13 @@ from websites.serializers import (
     WebsiteContentDetailSerializer,
     WebsiteContentSerializer,
     WebsiteDetailSerializer,
-    WebsitePublishSerializer,
+    WebsiteMassBuildSerializer,
     WebsiteSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
     WebsiteStatusSerializer,
     WebsiteUnpublishSerializer,
+    WebsiteUrlSerializer,
 )
 from websites.site_config_api import SiteConfig
 
@@ -48,9 +51,6 @@ def mocked_website_funcs(mocker):
     return SimpleNamespace(
         update_website_backend=mocker.patch(
             "websites.serializers.update_website_backend"
-        ),
-        create_website_pipeline=mocker.patch(
-            "websites.serializers.create_website_publishing_pipeline"
         ),
     )
 
@@ -189,8 +189,8 @@ def test_website_detail_serializer(
     assert (
         parse_date(serialized_data["draft_publish_date"]) == website.draft_publish_date
     )
-    assert serialized_data["live_url"] == website.get_url("live")
-    assert serialized_data["draft_url"] == website.get_url("draft")
+    assert serialized_data["live_url"] == website.get_full_url("live")
+    assert serialized_data["draft_url"] == website.get_full_url("draft")
     assert serialized_data["has_unpublished_live"] == website.has_unpublished_live
     assert serialized_data["has_unpublished_draft"] == website.has_unpublished_draft
     assert serialized_data["gdrive_url"] == (
@@ -198,6 +198,8 @@ def test_website_detail_serializer(
         if drive_credentials is not None and drive_folder is not None
         else None
     )
+    assert serialized_data["url_path"] == website.url_path
+    assert serialized_data["url_suggestion"] == website.url_path
 
 
 @pytest.mark.parametrize("user_is_admin", [True, False])
@@ -216,6 +218,42 @@ def test_website_detail_serializer_is_admin(mocker, user_is_admin, has_user):
     assert serialized["is_admin"] == (user_is_admin and has_user)
     if has_user:
         is_site_admin_mock.assert_called_once_with(user, website)
+
+
+def test_website_detail_serializer_with_url_format(mocker, ocw_site):
+    """ The url suggestion should be equal to the starter config site-url-format"""
+    user = UserFactory.create(is_superuser=True)
+    serialized = WebsiteDetailSerializer(
+        instance=ocw_site,
+        context={"request": mocker.Mock(user=user)},
+    ).data
+    assert serialized["url_path"] is None
+    assert (
+        serialized["url_suggestion"]
+        == SiteConfig(ocw_site.starter.config).site_url_format
+    )
+
+
+def test_website_detail_serializer_with_url_format_partial(mocker, ocw_site):
+    """ The url suggestion should have relevant metadata fields filled in"""
+    user = UserFactory.create(is_superuser=True)
+    term = "Fall"
+    year = "2028"
+    content = ocw_site.websitecontent_set.get(type=CONTENT_TYPE_METADATA)
+    content.metadata["term"] = term
+    content.metadata["year"] = year
+    content.save()
+    expected_suggestion = (
+        SiteConfig(ocw_site.starter.config)
+        .site_url_format.replace("[sitemetadata:term]", term.lower())
+        .replace("[sitemetadata:year]", year)
+    )
+    serialized = WebsiteDetailSerializer(
+        instance=ocw_site,
+        context={"request": mocker.Mock(user=user)},
+    ).data
+    assert serialized["url_path"] is None
+    assert serialized["url_suggestion"] == expected_suggestion
 
 
 def test_website_collaborator_serializer():
@@ -245,6 +283,18 @@ def test_website_content_serializer():
 
 
 def test_website_content_detail_serializer():
+    """WebsiteContentDetailSerializer should serialize all relevant fields to the frontend"""
+    content = WebsiteContentFactory.create()
+    serialized_data = WebsiteContentDetailSerializer(instance=content).data
+    assert serialized_data["text_id"] == str(content.text_id)
+    assert serialized_data["title"] == content.title
+    assert serialized_data["type"] == content.type
+    assert serialized_data["updated_on"] == content.updated_on.isoformat()[:-6] + "Z"
+    assert serialized_data["markdown"] == content.markdown
+    assert serialized_data["metadata"] == content.metadata
+
+
+def test_website_content_detail_serializer_with_url_format():
     """WebsiteContentDetailSerializer should serialize all relevant fields to the frontend"""
     content = WebsiteContentFactory.create()
     serialized_data = WebsiteContentDetailSerializer(instance=content).data
@@ -446,7 +496,6 @@ def test_website_content_detail_serializer_save(mocker, mocked_website_funcs):
     }
     assert content.updated_by == user
     mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
-    mocked_website_funcs.create_website_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize("is_new", [True])
@@ -523,7 +572,6 @@ def test_website_content_detail_serializer_save_null_metadata(
     assert content.metadata == {"meta": "data"}
     assert content.updated_by == user
     mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
-    mocked_website_funcs.create_website_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize("add_context_data", [True, False])
@@ -590,13 +638,10 @@ def test_website_content_create_serializer(
 @pytest.mark.parametrize("is_root_site", [True, False])
 def test_website_publish_serializer_base_url(settings, is_root_site):
     """ The WebsitePublishSerializer should return the correct base_url value """
-    site = WebsiteFactory.create()
-    site_config = SiteConfig(site.starter.config)
+    site = WebsiteFactory.create(url_path="courses/my-site")
     settings.ROOT_WEBSITE_NAME = site.name if is_root_site else "some_other_root_name"
-    serializer = WebsitePublishSerializer(site)
-    assert serializer.data["base_url"] == (
-        "" if is_root_site else f"{site_config.root_url_path}/{site.name}".strip("/")
-    )
+    serializer = WebsiteMassBuildSerializer(site)
+    assert serializer.data["base_url"] == ("" if is_root_site else site.url_path)
 
 
 @pytest.mark.parametrize("has_metadata", [True, False])
@@ -617,3 +662,53 @@ def test_website_unpublish_serializer(has_legacy_uid, has_metadata):
         if has_legacy_uid and has_metadata
         else site.uuid.hex
     )
+
+
+def test_website_url_serializer_update(ocw_site, parsed_site_config):
+    """WebsiteUrlSerializer should update the website url_path"""
+    new_url_path = "1.45-test-course-fall-2012"
+    data = {"url_path": new_url_path}
+    serializer = WebsiteUrlSerializer(ocw_site, data)
+    assert serializer.is_valid()
+    assert serializer.validated_data["url_path"] == new_url_path
+    serializer.update(ocw_site, serializer.validated_data)
+    ocw_site.refresh_from_db()
+    assert (
+        ocw_site.url_path
+        == f"{parsed_site_config[WEBSITE_CONFIG_ROOT_URL_PATH_KEY]}/{new_url_path}"
+    )
+
+
+def test_website_url_serializer_incomplete_url_path(ocw_site):
+    """WebsiteUrlSerializer should invalidate a url_path that still has brackets"""
+    new_url_path = "1.45-test-course-[metadata.semester]-2012"
+    data = {"url_path": new_url_path}
+    serializer = WebsiteUrlSerializer(ocw_site, data)
+    assert serializer.is_valid() is False
+    assert serializer.errors.get("url_path") == [
+        "You must replace the url sections in brackets"
+    ]
+
+
+def test_website_url_serializer_duplicate_url_path(ocw_site, parsed_site_config):
+    """WebsiteUrlSerializer should invalidate a duplicate url_path"""
+    new_url_path = "1.45-test-course-spring-2022"
+    WebsiteFactory.create(
+        url_path=f"{parsed_site_config[WEBSITE_CONFIG_ROOT_URL_PATH_KEY]}/{new_url_path}"
+    )
+    data = {"url_path": new_url_path}
+    serializer = WebsiteUrlSerializer(ocw_site, data)
+    assert serializer.is_valid() is False
+    assert serializer.errors.get("url_path") == ["The website URL is not unique"]
+
+
+def test_website_url_serializer_url_path_published(ocw_site):
+    """WebsiteUrlSerializer should invalidate a url_path for a published site"""
+    ocw_site.publish_date = now_in_utc()
+    new_url_path = "1.45-test-course-spring-2022"
+    data = {"url_path": new_url_path}
+    serializer = WebsiteUrlSerializer(ocw_site, data)
+    assert serializer.is_valid() is False
+    assert serializer.errors.get("url_path") == [
+        "The URL cannot be changed after publishing."
+    ]

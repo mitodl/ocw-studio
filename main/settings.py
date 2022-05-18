@@ -558,7 +558,6 @@ FIELD_METADATA_TITLE = get_string(
     default="course_title",
     description="The site metadata field for title",
 )
-
 # YouTube OCW metadata fields
 YT_FIELD_CAPTIONS = get_string(
     name="YT_FIELD_CAPTIONS",

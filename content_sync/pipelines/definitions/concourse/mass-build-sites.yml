@@ -105,14 +105,19 @@ jobs:
                 NAME=$(echo $1 | jq -c '.name' | tr -d '"')
                 SHORT_ID=$(echo $1 | jq -c '.short_id' | tr -d '"')
                 STARTER_SLUG=$(echo $1| jq -c '.starter_slug' | tr -d '"')
+                S3_PATH=$(echo $1 | jq -c '.s3_path' | tr -d '"')
                 SITE_URL=$(echo $1 | jq -c '.site_url' | tr -d '"')
                 BASE_URL=$(echo $1 | jq -c '.base_url' | tr -d '"')
+                if [[ "$SITE_URL" == null || "$S3_PATH" == null ]]
+                then
+                  return 1
+                fi
                 git -c core.sshCommand="ssh $GITKEYSSH -o StrictHostKeyChecking=no" clone -b ((ocw-site-repo-branch)) ((markdown-uri))/$SHORT_ID.git || return 1
                 cd $CURDIR/$SHORT_ID
                 cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
                 hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl /$BASE_URL --themesDir ../ocw-hugo-themes/ ((build-drafts))  || return 1
                 cd $CURDIR
-                aws s3 sync s3://((ocw-studio-bucket))/$SITE_URL s3://((ocw-bucket))/$SITE_URL --metadata site-id=$NAME || return 1            
+                aws s3 sync s3://((ocw-studio-bucket))/$S3_PATH s3://((ocw-bucket))/$SITE_URL --metadata site-id=$NAME || return 1            
                 aws s3 sync $SHORT_ID/public s3://((ocw-bucket))/$BASE_URL --metadata site-id=$NAME || return 1
                 curl -X POST -H 'Content-Type: application/json' --data '{"webhook_key":"((open-webhook-key))","prefix":"'"$SITE_URL"/'","version":"((version))"}' ((open-discussions-url))/api/v0/ocw_next_webhook/
                 curl -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"((version))","status":"succeeded"}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/

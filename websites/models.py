@@ -1,8 +1,10 @@
 """ websites models """
 import json
+import logging
+import re
 from hashlib import sha256
 from typing import Dict
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from uuid import uuid4
 
 import yaml
@@ -29,9 +31,13 @@ from websites.constants import (
     CONTENT_DIRPATH_MAX_LEN,
     CONTENT_FILENAME_MAX_LEN,
     CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
+    CONTENT_TYPE_METADATA,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role
+from websites.utils import get_dict_field, permissions_group_name_for_role
+
+
+log = logging.getLogger(__name__)
 
 
 def validate_yaml(value):
@@ -127,6 +133,13 @@ class Website(TimestampedModel):
         related_name="unpublisher",
     )
 
+    """
+    URL path values should include the starter config prefix (ie "courses/") so that sites
+    with a url_path of "courses/my-site-fall-2020" can coexist with "sites/my-site-fall-2020"
+    without unique key violations being raised.
+    """
+    url_path = models.CharField(max_length=2048, unique=True, blank=True, null=True)
+
     @property
     def unpublished(self):
         """ Indicate whether or not site has been unpublished"""
@@ -161,7 +174,16 @@ class Website(TimestampedModel):
             + list(self.editor_group.user_set.all())
         )
 
-    def get_url(self, version=VERSION_LIVE):
+    def get_site_root_path(self):
+        """Get the site root url path"""
+        if self.starter is None:
+            return None
+        site_config = SiteConfig(self.starter.config)
+        if site_config:
+            return site_config.root_url_path
+        return ""
+
+    def get_full_url(self, version=VERSION_LIVE):
         """Get the home page (live or draft) of the website"""
         if self.starter is None:
             # if there is no starter, there is no ability to publish
@@ -172,13 +194,72 @@ class Website(TimestampedModel):
             if version == VERSION_LIVE
             else settings.OCW_STUDIO_DRAFT_URL
         )
-        site_config = SiteConfig(self.starter.config)
-        site_url = (
-            ""
-            if self.name == settings.ROOT_WEBSITE_NAME
-            else f"{site_config.root_url_path}/{self.name}".strip("/")
+        url_path = self.url_path
+        if url_path:
+            return urljoin(base_url, url_path)
+        else:
+            return urljoin(base_url, self.get_site_root_path())
+
+    def get_url_path(self, with_prefix=True):
+        """Get the current/potential url path, with or without site prefix"""
+        url_path = self.url_path
+        if not url_path:
+            sitemeta = self.websitecontent_set.filter(
+                type=CONTENT_TYPE_METADATA
+            ).first()
+            url_path = self.url_path_from_metadata(
+                metadata=sitemeta.metadata if sitemeta else None
+            )
+        root_path = self.get_site_root_path()
+        if with_prefix:
+            if root_path and not url_path.startswith(root_path):
+                url_path = self.assemble_full_url_path(url_path)
+        elif url_path is not None:
+            url_path = re.sub(f"^{root_path}/", "", url_path, 1)
+        return url_path
+
+    def assemble_full_url_path(self, path):
+        """Combine site prefix and url path"""
+        return "/".join(
+            part.strip("/") for part in [self.get_site_root_path(), path] if part
         )
-        return urljoin(base_url, site_url)
+
+    def url_path_from_metadata(self, metadata: Dict = None):
+        """ Get the url path based on site config and metadata"""
+        if self.starter is None:
+            return None
+        site_config = SiteConfig(self.starter.config)
+        url_format = site_config.site_url_format
+        if not url_format or self.publish_date:
+            # use name for published  sites or for any sites without a `url_path` in config.
+            url_format = self.name
+        elif url_format:
+            for section in re.findall(r"(\[.+?\])+", site_config.site_url_format) or []:
+                section_type, section_field = re.sub(r"[\[\]]+", "", section).split(":")
+                value = None
+                if metadata:
+                    value = get_dict_field(metadata, section_field)
+                if not metadata or not value:
+                    content = self.websitecontent_set.filter(type=section_type).first()
+                    if content:
+                        value = get_dict_field(content.metadata, section_field)
+                if not value:
+                    # Incomplete metadata required for url
+                    value = section
+                else:
+                    value = slugify(value.replace(".", "-"))
+                url_format = url_format.replace(section, value)
+        return url_format
+
+    @property
+    def s3_path(self):
+        """ Get the S3 object path for uploaded files"""
+        site_config = SiteConfig(self.starter.config)
+        url_parts = [
+            site_config.root_url_path,
+            self.name,
+        ]
+        return "/".join([part.strip("/") for part in url_parts if part])
 
     class Meta:
         permissions = (
@@ -208,10 +289,8 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
 
     def upload_file_to(self, filename):
         """Return the appropriate filepath for an upload"""
-        site_config = SiteConfig(self.website.starter.config)
         url_parts = [
-            site_config.root_url_path,
-            self.website.name,
+            self.website.s3_path,
             f"{self.text_id.replace('-', '')}_{filename}",
         ]
         return "/".join([part for part in url_parts if part != ""])
@@ -287,7 +366,12 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
                 else {}
             )
             if self.file and self.file.url:
-                full_metadata[file_field["name"]] = self.file.url
+                s3_path = self.website.s3_path
+                url_path = self.website.url_path
+                file_url = self.file.url
+                if url_path and s3_path != url_path:
+                    file_url = file_url.replace(s3_path, url_path, 1)
+                full_metadata[file_field["name"]] = urlparse(file_url).path
             else:
                 full_metadata[file_field["name"]] = None
             return full_metadata

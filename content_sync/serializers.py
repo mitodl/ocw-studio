@@ -113,7 +113,11 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
                 omitted_keys.append(file_field["name"])
                 file_url = front_matter_data.get(file_field["name"], None)
                 if file_url is not None:
+                    s3_path = website.s3_path
+                    url_path = website.url_path
                     file_url = urlparse(file_url).path.lstrip("/")
+                    if url_path and s3_path != url_path:
+                        file_url = file_url.replace(url_path, s3_path, 1)
 
         base_defaults = {
             "metadata": dict_without_keys(front_matter_data, *omitted_keys),

@@ -142,9 +142,6 @@ def test_websites_endpoint_list_create(mocker, drf_client, permission_groups):
     mock_create_website_backend = mocker.patch(
         "websites.serializers.create_website_backend"
     )
-    mock_create_website_pipeline = mocker.patch(
-        "websites.serializers.create_website_publishing_pipeline"
-    )
     starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
     for [user, has_perm] in [
         [permission_groups.global_admin, True],
@@ -167,7 +164,6 @@ def test_websites_endpoint_list_create(mocker, drf_client, permission_groups):
             website = Website.objects.get(name=f"{user.username}_site")
             assert website.owner == user
             mock_create_website_backend.assert_any_call(website)
-            mock_create_website_pipeline.assert_any_call(website)
 
 
 @pytest.mark.parametrize("method", ["put", "patch", "delete"])
@@ -224,9 +220,6 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
     mock_update_website_backend = mocker.patch(
         "websites.serializers.update_website_backend"
     )
-    mock_create_website_pipeline = mocker.patch(
-        "websites.serializers.create_website_publishing_pipeline"
-    )
     website = WebsiteFactory.create()
     admin_user = UserFactory.create()
     admin_user.groups.add(website.admin_group)
@@ -241,7 +234,6 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
     assert updated_site.title == new_title
     assert updated_site.owner == website.owner
     mock_update_website_backend.assert_called_once_with(website)
-    mock_create_website_pipeline.assert_not_called()
 
 
 def test_websites_endpoint_preview(mocker, drf_client):
@@ -249,7 +241,7 @@ def test_websites_endpoint_preview(mocker, drf_client):
     mock_trigger_publish = mocker.patch("websites.views.trigger_publish")
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
-    website = WebsiteFactory.create()
+    website = WebsiteFactory.create(url_path="courses/mysite")
     editor = UserFactory.create()
     editor.groups.add(website.editor_group)
     drf_client.force_login(editor)
@@ -343,6 +335,62 @@ def test_websites_endpoint_publish_error(mocker, drf_client):
     )
     assert resp.status_code == 500
     assert resp.data == {"details": "422 {}"}
+
+
+@pytest.mark.parametrize("is_published", [True, False])
+@pytest.mark.parametrize("action", ["preview", "publish"])
+def test_websites_endpoint_publish_with_url(
+    mocker, drf_client, ocw_site, is_published, action
+):
+    """url path should be updated if provided and site is not published"""
+    mock_publish = mocker.patch("websites.views.trigger_publish")
+    new_url_path = "5-new-site-fall-2020"
+    old_url_path = "courses/old-path"
+    ocw_site.url_path = old_url_path
+    ocw_site.publish_date = now_in_utc() if is_published else None
+    ocw_site.save()
+
+    data = {"url_path": new_url_path}
+    drf_client.force_login(UserFactory.create(is_superuser=True))
+    drf_client.post(
+        reverse(f"websites_api-{action}", kwargs={"name": ocw_site.name}), data=data
+    )
+    ocw_site.refresh_from_db()
+    assert ocw_site.url_path == (
+        ocw_site.assemble_full_url_path(new_url_path)
+        if not is_published
+        else old_url_path
+    )
+    mock_publish.assert_called_once()
+
+
+@pytest.mark.parametrize("action", ["preview", "publish"])
+def test_websites_endpoint_publish_with_url_error(drf_client, ocw_site, action):
+    """An error should be returned if url_path validation fails"""
+    drf_client.force_login(UserFactory.create(is_superuser=True))
+    ocw_site.publish_date = None
+    ocw_site.save()
+    response = drf_client.post(
+        reverse(f"websites_api-{action}", kwargs={"name": ocw_site.name}),
+        data={"url_path": "new-path=[metadata:year]"},
+    )
+    assert response.status_code == 400
+    assert response.json() == {
+        "url_path": ["You must replace the url sections in brackets"]
+    }
+
+
+@pytest.mark.parametrize("action", ["preview", "publish"])
+def test_websites_endpoint_publish_with_url_blank_error(drf_client, action):
+    """An error should be returned if a site has no url_path yet"""
+    drf_client.force_login(UserFactory.create(is_superuser=True))
+    website = WebsiteFactory.create(not_published=True, url_path=None)
+    response = drf_client.post(
+        reverse(f"websites_api-{action}", kwargs={"name": website.name}),
+        data={},
+    )
+    assert response.status_code == 400
+    assert response.json() == {"url_path": ["The URL path cannot be blank"]}
 
 
 def test_websites_endpoint_unpublish(mocker, drf_client):
@@ -510,11 +558,8 @@ def test_website_endpoint_empty_search(drf_client):
     assert expected_uuids == sorted([site["uuid"] for site in resp.data["results"]])
 
 
-def test_websites_autogenerate_name(mocker, drf_client):
+def test_websites_autogenerate_name(drf_client):
     """ Website POST endpoint should auto-generate a name if one is not supplied """
-    mock_create_website_pipeline = mocker.patch(
-        "websites.serializers.create_website_publishing_pipeline"
-    )
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
     starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
@@ -528,7 +573,6 @@ def test_websites_autogenerate_name(mocker, drf_client):
     assert resp.status_code == status.HTTP_201_CREATED
     assert resp.data["name"] == slugified_title
     assert resp.data["short_id"] == website_short_id
-    mock_create_website_pipeline.assert_called_once()
 
 
 def test_website_starters_list(settings, drf_client, course_starter):
@@ -1200,6 +1244,7 @@ def test_mass_build_endpoint_list(settings, drf_client, version, unpublished):
         publish_date=None,
         first_published_to_production=now,
         unpublish_status=constants.PUBLISH_STATUS_NOT_STARTED if unpublished else None,
+        with_url_path=True,
     )
     live_published = WebsiteFactory.create_batch(
         2,
@@ -1207,6 +1252,7 @@ def test_mass_build_endpoint_list(settings, drf_client, version, unpublished):
         publish_date=now_in_utc(),
         first_published_to_production=now,
         unpublish_status=constants.PUBLISH_STATUS_NOT_STARTED if unpublished else None,
+        with_url_path=True,
     )
     expected_sites = draft_published if version == VERSION_DRAFT else live_published
     settings.API_BEARER_TOKEN = "abc123"

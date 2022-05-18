@@ -106,9 +106,9 @@ def test_prepare_video_download_file(settings, mocker, files_exist):
     if files_exist:
         mock_move_s3.assert_called_once_with(
             f"{settings.VIDEO_S3_TRANSCODE_PREFIX}/fakejobid/{video.website.name}/{dl_video_name}",
-            f"sites/{video.website.name}/{dl_video_name}",
+            f"{video.website.s3_path}/{dl_video_name}",
         )
-        assert content.file.name == f"sites/{video.website.name}/{dl_video_name}"
+        assert content.file.name == f"{video.website.s3_path}/{dl_video_name}"
     else:
         mock_move_s3.assert_not_called()
         assert content.file.name == ""

@@ -27,7 +27,8 @@ describe("PublishDrawer", () => {
       ...makeWebsiteDetail(),
       has_unpublished_draft: true,
       has_unpublished_live:  true,
-      is_admin:              true
+      is_admin:              true,
+      url_path:              "mysite-fall-2025"
     }
     refreshWebsiteStub = helper.mockGetRequest(
       siteApiDetailUrl.param({ name: website.name }).toString(),
@@ -260,7 +261,10 @@ describe("PublishDrawer", () => {
           wrapper.update()
           await act(async () => {
             // @ts-ignore
-            wrapper.find(".btn-publish").prop("onClick")()
+            wrapper
+              .find("PublishForm")
+              .find(".btn-publish")
+              .simulate("submit")
           })
           wrapper.update()
           expect(wrapper.find(".publish-option-description").text()).toContain(
@@ -271,7 +275,9 @@ describe("PublishDrawer", () => {
             `/api/websites/${website.name}/${api}/`,
             "POST",
             {
-              body:        {},
+              body: {
+                url_path: website.url_path
+              },
               headers:     { "X-CSRFTOKEN": "" },
               credentials: undefined
             }
@@ -288,7 +294,9 @@ describe("PublishDrawer", () => {
                 action: api
               })
               .toString(),
-            {}
+            {
+              url_path: website.url_path
+            }
           )
           const { wrapper } = await render()
           await act(async () => {
@@ -296,17 +304,27 @@ describe("PublishDrawer", () => {
             wrapper.find(`#publish-${action}`).prop("onChange")()
           })
           wrapper.update()
-          expect(wrapper.find(".btn-publish").prop("disabled")).toBeFalsy()
+          expect(
+            wrapper
+              .find("PublishForm")
+              .find(".btn-publish")
+              .prop("disabled")
+          ).toBeFalsy()
           await act(async () => {
             // @ts-ignore
-            wrapper.find(".btn-publish").prop("onClick")()
+            wrapper
+              .find("PublishForm")
+              .find(".btn-publish")
+              .simulate("submit")
           })
           sinon.assert.calledOnceWithExactly(
             actionStub,
             `/api/websites/${website.name}/${api}/`,
             "POST",
             {
-              body:        {},
+              body: {
+                url_path: website.url_path
+              },
               headers:     { "X-CSRFTOKEN": "" },
               credentials: undefined
             }

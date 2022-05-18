@@ -279,7 +279,7 @@ def mail_on_publish(website_name: str, version: str, success: bool, user_id: int
             {
                 "site": {
                     "title": website.title,
-                    "url": website.get_url(version),
+                    "url": website.get_full_url(version),
                 },
                 "version": version,
             },

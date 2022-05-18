@@ -2,7 +2,6 @@
 import json
 import logging
 import os
-from urllib.parse import urljoin, urlparse
 
 import boto3
 from django.conf import settings
@@ -34,9 +33,11 @@ def prepare_video_download_file(video: Video):
     ).first()
     if not video_file:
         return
-    new_s3_key = urljoin(
-        f"{urlparse(video.website.get_url()).path}/",
-        f"{video_file.s3_key.split('/')[-1]}",
+    new_s3_key = "/".join(
+        [
+            f"{video.website.s3_path}",
+            f"{video_file.s3_key.split('/')[-1]}",
+        ]
     ).strip("/")
     if new_s3_key != video_file.s3_key:
         move_s3_object(video_file.s3_key, new_s3_key)

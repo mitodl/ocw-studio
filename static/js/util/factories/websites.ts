@@ -214,6 +214,9 @@ export const makeWebsiteDetail = (
   sync_errors:                     null,
   is_admin:                        casual.boolean,
   content_warnings:                [],
+  url_path:                        null,
+  url_suggestion:                  "[sitemetadata:primary_course_number]-[sitemetdata:title]",
+  s3_path:                         `courses/${casual.word}`,
   ...overrides
 })
 

@@ -40,6 +40,7 @@ class WebsiteFactory(DjangoModelFactory):
 
     title = factory.Sequence(lambda n: "Site %s" % n)
     name = factory.Sequence(lambda n: "site-name-%s" % n)
+    url_path = factory.Sequence(lambda n: "courses/site-path-%s" % n)
     short_id = factory.Sequence(lambda n: "site-shortid-%s" % n)
     metadata = factory.Faker("json")
     publish_date = factory.Faker("date_time", tzinfo=pytz.utc)
@@ -54,6 +55,9 @@ class WebsiteFactory(DjangoModelFactory):
         model = Website
 
     class Params:
+        with_url_path = factory.Trait(
+            url_path=factory.Sequence(lambda n: "courses/site-path-%s" % n)
+        )
         published = factory.Trait(
             publish_date=factory.Faker("past_datetime", tzinfo=pytz.utc),
             first_published_to_production=factory.Faker(

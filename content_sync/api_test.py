@@ -194,34 +194,13 @@ def test_get_sync_pipeline(settings, mocker, pipeline_api):
     import_string_mock.assert_any_call(website, api=pipeline_api)
 
 
-def test_create_website_publishing_pipeline(settings, mocker):
-    """upsert_website_publishing_pipeline task should be called if pipelines are enabled"""
-    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
-    mock_task = mocker.patch(
-        "content_sync.api.tasks.upsert_website_publishing_pipeline.delay"
-    )
-    website = WebsiteFactory.create()
-    api.create_website_publishing_pipeline(website)
-    mock_task.assert_called_once_with(website.name)
-
-
-def test_create_website_publishing_pipeline_disabled(settings, mocker):
-    """upsert_website_publishing_pipeline task should not be called if pipelines are disabled"""
-    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
-    mock_task = mocker.patch(
-        "content_sync.api.tasks.upsert_website_publishing_pipeline.delay"
-    )
-    website = WebsiteFactory.create()
-    api.create_website_publishing_pipeline(website)
-    mock_task.assert_not_called()
-
-
 @pytest.mark.parametrize("prepublish", [True, False])
 @pytest.mark.parametrize("prepublish_actions", [[], ["some.Action"]])
 @pytest.mark.parametrize("has_api", [True, False])
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
 @pytest.mark.parametrize("status", [None, PUBLISH_STATUS_NOT_STARTED])
 @pytest.mark.parametrize("trigger", [True, False])
+@pytest.mark.parametrize("publish_date", [None, now_in_utc()])
 def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-arguments
     settings,
     mocker,
@@ -232,10 +211,11 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     version,
     status,
     trigger,
+    publish_date,
 ):
     """Verify that the appropriate backend calls are made by the publish_website function"""
     settings.PREPUBLISH_ACTIONS = prepublish_actions
-    website = WebsiteFactory.create()
+    website = WebsiteFactory.create(publish_date=publish_date)
     setattr(website, f"{version}_publish_status", status)
     if status:
         setattr(website, f"{version}_publish_status_updated_on", now_in_utc())
@@ -263,6 +243,7 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
         mock_api_funcs.mock_get_pipeline.assert_called_once_with(
             website, api=pipeline_api
         )
+        assert pipeline.upsert_pipeline.call_count == (0 if publish_date else 1)
         pipeline.trigger_pipeline_build.assert_called_once_with(version)
         pipeline.unpause_pipeline.assert_called_once_with(version)
         assert getattr(website, f"latest_build_id_{version}") == build_id

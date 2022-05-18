@@ -4,6 +4,7 @@ import re
 
 import pytest
 import yaml
+from django.core.files.uploadedfile import SimpleUploadedFile
 from moto import mock_s3
 
 from content_sync.serializers import (
@@ -16,6 +17,7 @@ from content_sync.serializers import (
     deserialize_file_to_website_content,
     serialize_content_to_file,
 )
+from websites.constants import WEBSITE_CONFIG_ROOT_URL_PATH_KEY
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
@@ -43,7 +45,7 @@ EXAMPLE_HUGO_MARKDOWN_WITH_FILE = """---
 title: Example File
 content_type: resource
 uid: abcdefg
-image: https://test.edu/courses/website_name/image.png
+image: https://test.edu/courses/website_name-fall-2025/image.png
 ---
 # My markdown
 - abc
@@ -91,21 +93,26 @@ def get_example_menu_data():
     ]
 
 
+@mock_s3
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "markdown, exp_sections", [["# Some markdown...\n- and\n- a\n- list", 2], [None, 1]]
 )
-def test_hugo_file_serialize(markdown, exp_sections):
+def test_hugo_file_serialize(settings, markdown, exp_sections):
     """HugoMarkdownFileSerializer.serialize should create the expected file contents"""
+    settings.OCW_STUDIO_USE_S3 = True
     metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
     content = WebsiteContentFactory.create(
         text_id="abcdefg",
         title="Content Title",
-        type="sometype",
+        type="resource",
         markdown=markdown,
         metadata=metadata,
+        file=SimpleUploadedFile("mysite/test.pdf", b"content"),
+        website=WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2025"),
     )
     site_config = SiteConfig(content.website.starter.config)
+
     file_content = HugoMarkdownFileSerializer(site_config).serialize(
         website_content=content
     )
@@ -126,6 +133,10 @@ def test_hugo_file_serialize(markdown, exp_sections):
             f"uid: {content.text_id}",
         ]
         + [f"{k}: {v}" for k, v in metadata.items()]
+    )
+    assert (
+        f"image: /media/{content.website.url_path}/{content.file.name.split('/')[-1]}"
+        in front_matter_lines
     )
     if exp_sections > 1:
         assert md_file_sections[1] == markdown
@@ -222,19 +233,20 @@ def test_hugo_menu_yaml_deserialize(omnibus_config):
 def test_hugo_file_deserialize_with_file(settings):
     """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
     settings.DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-    website = WebsiteFactory.create()
+    website = WebsiteFactory.create(url_path="courses/website_name-fall-2025")
+    website.starter.config[WEBSITE_CONFIG_ROOT_URL_PATH_KEY] = "courses"
     site_config = SiteConfig(website.starter.config)
     website_content = HugoMarkdownFileSerializer(site_config).deserialize(
         website=website,
         filepath="/test/file.md",
         file_contents=EXAMPLE_HUGO_MARKDOWN_WITH_FILE,
     )
-    path = "courses/website_name/image.png"
+    expected_path = f"courses/{website.name}/image.png"
     assert "image" not in website_content.metadata.keys()
-    assert website_content.file == path
+    assert website_content.file == expected_path
     assert (
         website_content.file.url
-        == f"https://s3.amazonaws.com/{settings.AWS_STORAGE_BUCKET_NAME}/{path}"
+        == f"https://s3.amazonaws.com/{settings.AWS_STORAGE_BUCKET_NAME}/{expected_path}"
     )
 
 

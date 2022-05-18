@@ -1,4 +1,5 @@
 root-url-path: str()
+site-url-format: str(required=False)
 content-dir: str(required=False)
 collections: list(include('content_item'))
 ---

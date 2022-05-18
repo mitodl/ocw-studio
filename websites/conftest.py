@@ -9,7 +9,12 @@ from django.contrib.auth.models import Group
 
 from users.factories import UserFactory
 from websites import constants
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.constants import CONTENT_TYPE_METADATA
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.permissions import create_global_groups
 
 
@@ -30,7 +35,7 @@ def permission_groups():
         site_admin,
         site_editor,
     ) = UserFactory.create_batch(5)
-    websites = WebsiteFactory.create_batch(2, owner=site_owner)
+    websites = WebsiteFactory.create_batch(2, owner=site_owner, with_url_path=True)
     global_admin.groups.add(Group.objects.get(name=constants.GLOBAL_ADMIN))
     global_author.groups.add(Group.objects.get(name=constants.GLOBAL_AUTHOR))
     site_admin.groups.add(websites[0].admin_group)
@@ -105,3 +110,15 @@ def site_config_singleton_only(basic_site_config):
         "file" in file_config_item
     ), "Expected collections.2.files.0 to be a singleton config item"
     return {**site_config, "collections": [files_config_item]}
+
+
+@pytest.fixture()
+def ocw_site(parsed_site_config):
+    """ OCW Course site with metadata"""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=parsed_site_config),
+        not_published=True,
+        url_path=None,
+    )
+    WebsiteContentFactory(type=CONTENT_TYPE_METADATA, website=website)
+    return website

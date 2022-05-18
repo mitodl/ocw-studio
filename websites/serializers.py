@@ -1,5 +1,6 @@
 """ Serializers for websites """
 import logging
+import re
 from collections import defaultdict
 from urllib.parse import urljoin
 
@@ -10,12 +11,9 @@ from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from content_sync.api import (
-    create_website_backend,
-    create_website_publishing_pipeline,
-    update_website_backend,
-)
+from content_sync.api import create_website_backend, update_website_backend
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.models import ContentSyncState
 from gdrive_sync.api import gdrive_root_url, is_gdrive_enabled
 from gdrive_sync.tasks import create_gdrive_folders
 from main.serializers import RequestUserSerializerMixin
@@ -27,7 +25,7 @@ from websites.api import (
     sync_website_title,
     update_youtube_thumbnail,
 )
-from websites.constants import CONTENT_TYPE_METADATA
+from websites.constants import CONTENT_TYPE_METADATA, CONTENT_TYPE_RESOURCE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
@@ -99,16 +97,63 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "metadata",
             "starter",
             "owner",
+            "url_path",
         ]
         extra_kwargs = {"owner": {"write_only": True}}
 
 
-class WebsitePublishSerializer(serializers.ModelSerializer):
+class WebsiteUrlSerializer(serializers.ModelSerializer):
+    """ Serializer for assigning website urls """
+
+    def validate_url_path(self, value):
+        """
+        Check that the website url will be unique and template sections have been replaced.
+        """
+        if not value and self.instance.url_path is None:
+            raise serializers.ValidationError("The URL path cannot be blank")
+        url = self.instance.assemble_full_url_path(value)
+        if self.instance.publish_date and url != self.instance.url_path:
+            raise serializers.ValidationError(
+                "The URL cannot be changed after publishing."
+            )
+        if re.findall(r"[\[\]]+", url):
+            raise serializers.ValidationError(
+                "You must replace the url sections in brackets"
+            )
+        if (
+            url
+            and Website.objects.filter(url_path=url)
+            .exclude(pk=self.instance.pk)
+            .exists()
+        ):
+            raise serializers.ValidationError("The website URL is not unique")
+        return value
+
+    def update(self, instance, validated_data):
+        """ Update the website url_path"""
+        url_path = validated_data.get("url_path")
+        with transaction.atomic():
+            instance.url_path = instance.assemble_full_url_path(url_path)
+            instance.save()
+            # Force a backend resync of all associated content with file paths
+            ContentSyncState.objects.filter(
+                content__in=instance.websitecontent_set.filter(file__isnull=False)
+            ).update(synced_checksum=None)
+
+    class Meta:
+        model = Website
+        fields = [
+            "url_path",
+        ]
+
+
+class WebsiteMassBuildSerializer(serializers.ModelSerializer):
     """ Serializer for mass building websites """
 
     starter_slug = serializers.SerializerMethodField(read_only=True)
     base_url = serializers.SerializerMethodField(read_only=True)
     site_url = serializers.SerializerMethodField(read_only=True)
+    s3_path = serializers.SerializerMethodField(read_only=True)
 
     def get_starter_slug(self, instance):
         """Get the website starter slug"""
@@ -116,8 +161,11 @@ class WebsitePublishSerializer(serializers.ModelSerializer):
 
     def get_site_url(self, instance):
         """Get the website relative url"""
-        site_config = SiteConfig(instance.starter.config)
-        return f"{site_config.root_url_path}/{instance.name}".strip("/")
+        return instance.url_path
+
+    def get_s3_path(self, instance):
+        """Get the website s3 path"""
+        return instance.s3_path
 
     def get_base_url(self, instance):
         """Get the base url (should be same as site_url except for the root site)"""
@@ -127,13 +175,7 @@ class WebsitePublishSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Website
-        fields = [
-            "name",
-            "short_id",
-            "starter_slug",
-            "site_url",
-            "base_url",
-        ]
+        fields = ["name", "short_id", "starter_slug", "site_url", "base_url", "s3_path"]
         read_only_fields = fields
 
 
@@ -145,8 +187,7 @@ class WebsiteUnpublishSerializer(serializers.ModelSerializer):
 
     def get_site_url(self, instance):
         """Get the website relative url"""
-        site_config = SiteConfig(instance.starter.config)
-        return f"{site_config.root_url_path}/{instance.name}".strip("/")
+        return instance.url_path
 
     def get_site_uid(self, instance):
         """Get the website uid"""
@@ -170,11 +211,22 @@ class WebsiteUnpublishSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class WebsiteUrlSuggestionMixin(serializers.Serializer):
+    """Add the url_suggestion custom field"""
+
+    url_suggestion = serializers.SerializerMethodField(read_only=True)
+
+    def get_url_suggestion(self, instance):
+        """Get the current or potential url path for the site"""
+        return instance.get_url_path(with_prefix=False)
+
+
 class WebsiteDetailSerializer(
     serializers.ModelSerializer,
     WebsiteGoogleDriveMixin,
     WebsiteValidationMixin,
     RequestUserSerializerMixin,
+    WebsiteUrlSuggestionMixin,
 ):
     """ Serializer for websites with serialized config """
 
@@ -192,11 +244,11 @@ class WebsiteDetailSerializer(
 
     def get_live_url(self, instance):
         """Get the live url for the site"""
-        return instance.get_url(version=VERSION_LIVE)
+        return instance.get_full_url(version=VERSION_LIVE)
 
     def get_draft_url(self, instance):
         """Get the draft url for the site"""
-        return instance.get_url(version=VERSION_DRAFT)
+        return instance.get_full_url(version=VERSION_DRAFT)
 
     def update(self, instance, validated_data):
         """ Remove owner attribute if present, it should not be changed"""
@@ -212,9 +264,10 @@ class WebsiteDetailSerializer(
             "is_admin",
             "draft_url",
             "live_url",
+            "url_path",
+            "url_suggestion",
             "has_unpublished_live",
             "has_unpublished_draft",
-            "gdrive_url",
             "live_publish_status",
             "live_publish_status_updated_on",
             "draft_publish_status",
@@ -244,11 +297,15 @@ class WebsiteDetailSerializer(
             "sync_errors",
             "synced_on",
             "content_warnings",
+            "url_path",
         ]
 
 
 class WebsiteStatusSerializer(
-    serializers.ModelSerializer, WebsiteGoogleDriveMixin, WebsiteValidationMixin
+    serializers.ModelSerializer,
+    WebsiteGoogleDriveMixin,
+    WebsiteValidationMixin,
+    WebsiteUrlSuggestionMixin,
 ):
     """Serializer for website status fields"""
 
@@ -271,6 +328,7 @@ class WebsiteStatusSerializer(
             "sync_errors",
             "synced_on",
             "content_warnings",
+            "url_suggestion",
         ]
         read_only_fields = fields
 
@@ -293,7 +351,6 @@ class WebsiteWriteSerializer(serializers.ModelSerializer, RequestUserSerializerM
         with transaction.atomic():
             website = super().create(validated_data)
         create_website_backend(website)
-        create_website_publishing_pipeline(website)
         create_gdrive_folders.delay(website.short_id)
         return website
 
@@ -403,7 +460,7 @@ class WebsiteContentDetailSerializer(
 
     def update(self, instance, validated_data):
         """Add updated_by to the data"""
-        if instance.type == "resource":
+        if instance.type == CONTENT_TYPE_RESOURCE:
             update_youtube_thumbnail(
                 instance.website.uuid, validated_data.get("metadata"), overwrite=True
             )
@@ -528,7 +585,7 @@ class WebsiteContentCreateSerializer(
             for field in {"is_page_content", "filename", "dirpath", "text_id"}
             if field in self.context
         }
-        if validated_data.get("type") == "resource":
+        if validated_data.get("type") == CONTENT_TYPE_RESOURCE:
             update_youtube_thumbnail(
                 self.context["website_id"], validated_data.get("metadata")
             )

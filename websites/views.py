@@ -59,12 +59,13 @@ from websites.serializers import (
     WebsiteContentDetailSerializer,
     WebsiteContentSerializer,
     WebsiteDetailSerializer,
-    WebsitePublishSerializer,
+    WebsiteMassBuildSerializer,
     WebsiteSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
     WebsiteStatusSerializer,
     WebsiteUnpublishSerializer,
+    WebsiteUrlSerializer,
     WebsiteWriteSerializer,
 )
 from websites.site_config_api import SiteConfig
@@ -161,6 +162,8 @@ class WebsiteViewSet(
             self.request.query_params.get("only_status")
         ):
             return WebsiteStatusSerializer
+        elif self.action in ("preview", "publish"):
+            return WebsiteUrlSerializer
         else:
             return WebsiteDetailSerializer
 
@@ -181,49 +184,55 @@ class WebsiteViewSet(
 
         return serializer_class(*args, **kwargs)
 
+    def publish_version(self, name, version, request):
+        """Process a publish request for the specified version"""
+        try:
+            website = self.get_object()
+            if website.publish_date is None:
+                if not request.data.get("url_path"):
+                    request.data["url_path"] = None
+                serializer = WebsiteUrlSerializer(data=request.data, instance=website)
+                if serializer.is_valid(raise_exception=True):
+                    serializer.update(website, serializer.validated_data)
+            if version == VERSION_DRAFT:
+                Website.objects.filter(pk=website.pk).update(
+                    has_unpublished_draft=False,
+                    draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
+                    draft_publish_status_updated_on=now_in_utc(),
+                    latest_build_id_draft=None,
+                    draft_last_published_by=request.user,
+                )
+            else:
+                Website.objects.filter(pk=website.pk).update(
+                    has_unpublished_live=False,
+                    live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
+                    live_publish_status_updated_on=now_in_utc(),
+                    latest_build_id_live=None,
+                    live_last_published_by=request.user,
+                    unpublish_status=None,
+                    last_unpublished_by=None,
+                )
+            trigger_publish(website.name, version)
+            return Response(status=200)
+        except ValidationError as ve:
+            return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:  # pylint: disable=broad-except
+            log.exception("Error publishing %s version for %s", version, name)
+            return Response(status=500, data={"details": str(exc)})
+
     @action(
         detail=True, methods=["post"], permission_classes=[HasWebsitePreviewPermission]
     )
     def preview(self, request, name=None):
         """Trigger a preview task for the website"""
-        try:
-            website = self.get_object()
-
-            Website.objects.filter(pk=website.pk).update(
-                has_unpublished_draft=False,
-                draft_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
-                draft_publish_status_updated_on=now_in_utc(),
-                latest_build_id_draft=None,
-                draft_last_published_by=request.user,
-            )
-            trigger_publish(website.name, VERSION_DRAFT)
-            return Response(status=200)
-        except Exception as exc:  # pylint: disable=broad-except
-            log.exception("Error previewing %s", name)
-            return Response(status=500, data={"details": str(exc)})
+        return self.publish_version(name, VERSION_DRAFT, request)
 
     @action(
         detail=True, methods=["post"], permission_classes=[HasWebsitePublishPermission]
     )
     def publish(self, request, name=None):
         """Trigger a publish task for the website"""
-        try:
-            website = self.get_object()
-
-            Website.objects.filter(pk=website.pk).update(
-                has_unpublished_live=False,
-                live_publish_status=constants.PUBLISH_STATUS_NOT_STARTED,
-                live_publish_status_updated_on=now_in_utc(),
-                latest_build_id_live=None,
-                live_last_published_by=request.user,
-                unpublish_status=None,
-                last_unpublished_by=None,
-            )
-            trigger_publish(website.name, VERSION_LIVE)
-            return Response(status=200)
-        except Exception as exc:  # pylint: disable=broad-except
-            log.exception("Error publishing %s", name)
-            return Response(status=500, data={"details": str(exc)})
+        return self.publish_version(name, VERSION_LIVE, request)
 
     @action(
         detail=True, methods=["post"], permission_classes=[HasWebsitePublishPermission]
@@ -260,7 +269,7 @@ class WebsiteViewSet(
 class WebsiteMassBuildViewSet(viewsets.ViewSet):
     """Return a list of previously published sites, with the info required by the mass-build-sites pipeline"""
 
-    serializer_class = WebsitePublishSerializer
+    serializer_class = WebsiteMassBuildSerializer
     permission_classes = (BearerTokenPermission,)
 
     def list(self, request):
@@ -273,12 +282,14 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
         )
 
         # Get all sites, minus any sites that have never been successfully published
-        sites = Website.objects.exclude(Q(**{f"{publish_date_field}__isnull": True}))
+        sites = Website.objects.exclude(
+            Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
+        )
         # For live builds, exclude previously published sites that have been unpublished
         if version == VERSION_LIVE:
             sites = sites.exclude(unpublish_status__isnull=False)
         sites = sites.prefetch_related("starter").order_by("name")
-        serializer = WebsitePublishSerializer(instance=sites, many=True)
+        serializer = WebsiteMassBuildSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
 
 

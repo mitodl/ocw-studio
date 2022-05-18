@@ -866,5 +866,6 @@
       "name": "menu"
     }
   ],
-  "root-url-path": "courses"
+  "root-url-path": "courses",
+  "site-url-format": "[sitemetadata:primary_course_number]-[sitemetadata:course_title]-[sitemetadata:term]-[sitemetadata:year]"
 }

@@ -158,7 +158,11 @@ export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({
   }
 })
 
-export const websiteAction = (name: string, action: string): QueryConfig => ({
+export const websiteAction = (
+  name: string,
+  action: string,
+  payload: WebsitePublishPayload
+): QueryConfig => ({
   url:     siteApiActionUrl.param({ name, action }).toString(),
   options: {
     method:  "POST",
@@ -166,7 +170,7 @@ export const websiteAction = (name: string, action: string): QueryConfig => ({
       "X-CSRFTOKEN": getCookie("csrftoken") || ""
     }
   },
-  body: {}
+  body: payload
 })
 
 export const websiteStartersRequest = (): QueryConfig => ({
@@ -462,6 +466,11 @@ export type NewWebsiteContentPayload = {
   metadata: any
   // eslint-disable-next-line camelcase
   text_id?: string
+}
+
+export type WebsitePublishPayload = {
+  // eslint-disable-next-line camelcase
+  url_path?: string
 }
 
 export const createWebsiteContentMutation = (
