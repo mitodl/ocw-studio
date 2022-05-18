@@ -8,7 +8,7 @@ import {
   PUBLISH_OPTION_PRODUCTION,
   PUBLISH_OPTION_STAGING
 } from "../../constants"
-import { defaultFormikChildProps } from "../../test_util"
+import { assertInstanceOf, defaultFormikChildProps } from "../../test_util"
 import { makeWebsiteDetail } from "../../util/factories/websites"
 
 describe("PublishForm", () => {
@@ -52,19 +52,22 @@ describe("PublishForm", () => {
 
     const props = wrapper.find("Formik").props()
     expect(props.onSubmit).toBe(onSubmitStub)
-  }) //
-  ;[null, "courses/5.2-my-course"].forEach(urlPath => {
-    it(`initialValue for url_path should be based on website ${
-      urlPath ? "url_path" : "url_suggestion"
-    }`, () => {
+  })
+
+  it.each([
+    { urlPath: null, basedOn: "url_suggestion" },
+    { urlPath: "courses/5.2-my-course", basedOn: "url_path" }
+  ])(
+    "initialValue for url_path should be based on website $basedOn",
+    ({ urlPath }) => {
       website.publish_date = null
       website.url_path = urlPath
       const wrapper = renderForm()
       expect(wrapper.prop("initialValues")).toEqual({
         url_path: website.url_path ? "5.2-my-course" : website.url_suggestion
       })
-    })
-  })
+    }
+  )
 
   it("shows a field for URL Path if website is not published", () => {
     website.publish_date = null
@@ -78,25 +81,27 @@ describe("PublishForm", () => {
         .filterWhere(node => node.prop("name") === "url_path")
         .exists()
     ).toBeTruthy()
-  }) //
-  ;[PUBLISH_OPTION_STAGING, PUBLISH_OPTION_PRODUCTION].forEach(option => {
-    it("shows a URL link instead of a field if website is published", () => {
-      website.publish_date = "2020-01-01"
-      website.url_path = "courses/my-url-fall-2028"
-      const form = renderInnerForm(
-        { isSubmitting: false, status: "whatever" },
-        { option: option }
-      )
-      expect(
-        form
-          .find("Field")
-          .filterWhere(node => node.prop("name") === "url_path")
-          .exists()
-      ).toBeFalsy()
-      expect(form.find("a").prop("href")).toEqual(
-        option === PUBLISH_OPTION_STAGING ? website.draft_url : website.live_url
-      )
-    })
+  })
+
+  it.each([
+    { option: PUBLISH_OPTION_STAGING },
+    { option: PUBLISH_OPTION_PRODUCTION }
+  ])("shows a URL link instead of a field if website is published", option => {
+    website.publish_date = "2020-01-01"
+    website.url_path = "courses/my-url-fall-2028"
+    const form = renderInnerForm(
+      { isSubmitting: false, status: "whatever" },
+      { option: option }
+    )
+    expect(
+      form
+        .find("Field")
+        .filterWhere(node => node.prop("name") === "url_path")
+        .exists()
+    ).toBeFalsy()
+    expect(form.find("a").prop("href")).toEqual(
+      option === PUBLISH_OPTION_STAGING ? website.draft_url : website.live_url
+    )
   })
 
   describe("validation", () => {
@@ -106,8 +111,7 @@ describe("PublishForm", () => {
           await websiteUrlValidation.validateAt("url_path", { url_path: "" })
         ).rejects.toThrow()
       } catch (error) {
-        expect(error).toBeInstanceOf(ValidationError)
-        // @ts-ignore
+        assertInstanceOf(error, ValidationError)
         expect(error.errors).toStrictEqual(["URL Path is a required field"])
       }
     })

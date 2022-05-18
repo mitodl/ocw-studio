@@ -13,9 +13,9 @@ export interface SiteFormValues {
 
 type Props = {
   onSubmit: (
-    values: any,
-    formikHelpers: FormikHelpers<any>
-  ) => void | Promise<any>
+    values: SiteFormValues,
+    formikHelpers: FormikHelpers<SiteFormValues>
+  ) => void
   website: Website
   option: string
   disabled: boolean
@@ -33,14 +33,14 @@ export const websiteUrlValidation = yup.object().shape({
     )
 })
 
-export const PublishForm = ({
+export const PublishForm: React.FC<Props> = ({
   onSubmit,
   website,
   disabled,
   option
-}: Props): JSX.Element | null => {
+}) => {
   const initialValues: SiteFormValues = {
-    // @ts-ignore
+    // @ts-expect-error
     url_path: website.url_path ?
       website.url_path.split("/").pop() :
       website.url_suggestion

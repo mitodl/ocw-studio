@@ -103,7 +103,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
 
 
 class WebsiteUrlSerializer(serializers.ModelSerializer):
-    """ Serializer for website urls """
+    """ Serializer for assigning website urls """
 
     def validate_url_path(self, value):
         """
@@ -567,7 +567,7 @@ class WebsiteContentDetailSerializer(
 class WebsiteContentCreateSerializer(
     serializers.ModelSerializer, RequestUserSerializerMixin
 ):
-    """Serializer mixin which validates that urls are unique"""
+    """Serializer which creates a new WebsiteContent"""
 
     def create(self, validated_data):
         user = self.user_from_request()
