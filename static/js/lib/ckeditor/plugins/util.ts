@@ -146,7 +146,7 @@ export class Shortcode {
    */
   private static ARG_REGEXP = new RegExp(
     [
-      /((?<name>[a-zA-Z_]+)=)?/.source,
+      /((?<name>[a-zA-Z\-_]+)=)?/.source,
       "(",
       /("(?<qvalue>.*?)(?<!\\)")/.source,
       "|",

@@ -46,15 +46,15 @@ describe("unescapeStringQuotedWith", () => {
 })
 
 describe("Shortcode", () => {
-  describe("Shortcode.parse", () => {
+  describe("Shortcode.fromString", () => {
     it("parses shortcodes with named params", () => {
       const text =
-        '{{< some_shortcode cool_arg="cats and dogs" href_uuid=uuid456 >}}'
+        '{{< some_shortcode param-with-dash="cats and dogs" with_underscore=uuid456 >}}'
       const result = Shortcode.fromString(text)
 
       const params = [
-        { name: "cool_arg", value: "cats and dogs" },
-        { name: "href_uuid", value: "uuid456" }
+        { name: "param-with-dash", value: "cats and dogs" },
+        { name: "with_underscore", value: "uuid456" }
       ].map(makeParams)
       expect(result).toStrictEqual(
         new Shortcode("some_shortcode", params, false)
