@@ -53,3 +53,7 @@ class Command(BaseCommand):
                     set([*sitemetadata.metadata["department_numbers"], *departments])
                 )
                 sitemetadata.save()
+        
+        self.stdout.write(
+            f"Departmensts successfully updated for {query_set.count()} sites"
+        )
