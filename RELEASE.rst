@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.61.2
+--------------
+
+- Customizable URLs for studio (#1316)
+- improve legacy shortcode handling (#1349)
+
 Version 0.61.1 (Released May 17, 2022)
 --------------
 
