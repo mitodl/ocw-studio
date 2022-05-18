@@ -5,8 +5,7 @@ import { ValidationError } from "yup"
 
 import { PublishForm, websiteUrlValidation } from "./PublishForm"
 import {
-  PUBLISH_OPTION_PRODUCTION,
-  PUBLISH_OPTION_STAGING
+  PublishingEnv
 } from "../../constants"
 import { assertInstanceOf, defaultFormikChildProps } from "../../test_util"
 import { makeWebsiteDetail } from "../../util/factories/websites"
@@ -21,7 +20,7 @@ describe("PublishForm", () => {
         onSubmit={onSubmitStub}
         disabled={false}
         website={website}
-        option={PUBLISH_OPTION_STAGING}
+        option={PublishingEnv.Staging}
         {...props}
       />
     )
@@ -83,7 +82,7 @@ describe("PublishForm", () => {
     ).toBeTruthy()
   })
 
-  it.each([PUBLISH_OPTION_STAGING, PUBLISH_OPTION_PRODUCTION])(
+  it.each([PublishingEnv.Staging, PublishingEnv.Production])(
     "shows a URL link instead of a field if website is published",
     option => {
       website.publish_date = "2020-01-01"
@@ -99,7 +98,7 @@ describe("PublishForm", () => {
           .exists()
       ).toBeFalsy()
       expect(form.find("a").prop("href")).toEqual(
-        option === PUBLISH_OPTION_STAGING ? website.draft_url : website.live_url
+        option === PublishingEnv.Staging ? website.draft_url : website.live_url
       )
     }
   )
@@ -109,7 +108,7 @@ describe("PublishForm", () => {
     website.url_path = "courses/my-url-fall-2028"
     const form = renderInnerForm(
       { isSubmitting: false, status: "whatever" },
-      { option: PUBLISH_OPTION_PRODUCTION }
+      { option: PublishingEnv.Production }
     )
     //expect(form.find("a").exists()).toBeFalsy()
     expect(form.find("span").text()).toEqual(`${website.live_url}`)

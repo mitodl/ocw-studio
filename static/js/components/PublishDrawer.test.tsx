@@ -109,13 +109,13 @@ describe("PublishDrawer", () => {
         it("renders the date and url", async () => {
           const { wrapper } = await render()
           await act(async () => {
-            // @ts-ignore
+            // @ts-expect-error
             wrapper
               .find("input[type='radio']")
-              // @ts-ignore
+              // @ts-expect-error
               .at(idx)
-              // @ts-ignore
-              .prop("onChange")()
+              // @ts-expect-error
+              .prop("onChange")({ target: { checked: true } })
           })
           wrapper.update()
           expect(wrapper.find(".publish-option-description").text()).toContain(
@@ -137,13 +137,13 @@ describe("PublishDrawer", () => {
         it("renders the publish status", async () => {
           const { wrapper } = await render()
           await act(async () => {
-            // @ts-ignore
+            // @ts-expect-error
             wrapper
               .find("input[type='radio']")
-              // @ts-ignore
+              // @ts-expect-error
               .at(idx)
-              // @ts-ignore
-              .prop("onChange")()
+              // @ts-expect-error
+              .prop("onChange")({ target: { checked: true } })
           })
           wrapper.update()
           expect(wrapper.find("PublishStatusIndicator").prop("status")).toBe(
@@ -161,13 +161,13 @@ describe("PublishDrawer", () => {
           website[publishDateField] = null
           const { wrapper } = await render()
           await act(async () => {
-            // @ts-ignore
+            // @ts-expect-error
             wrapper
               .find("input[type='radio']")
-              // @ts-ignore
+              // @ts-expect-error
               .at(idx)
-              // @ts-ignore
-              .prop("onChange")()
+              // @ts-expect-error
+              .prop("onChange")({ target: { checked: true } })
           })
           wrapper.update()
           expect(wrapper.find(".publish-option-description").text()).toContain(
@@ -178,20 +178,19 @@ describe("PublishDrawer", () => {
         it("has an option with the right label", async () => {
           const { wrapper } = await render()
           await act(async () => {
-            // @ts-ignore
+            // @ts-expect-error
             wrapper
               .find("input[type='radio']")
-              // @ts-ignore
+              // @ts-expect-error
               .at(idx)
-              // @ts-ignore
-              .prop("onChange")()
+              // @ts-expect-error
+              .prop("onChange")({ target: { checked: true } })
           })
           wrapper.update()
-          // @ts-ignore
           expect(
             wrapper
               .find(".publish-option label")
-              // @ts-ignore
+              // @ts-expect-error
               .at(idx)
               .text()
           ).toBe(label)
@@ -201,8 +200,9 @@ describe("PublishDrawer", () => {
           website[unpublishedField] = false
           const { wrapper } = await render()
           await act(async () => {
-            // @ts-ignore
-            wrapper.find(`#publish-${action}`).prop("onChange")()
+            const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
+            // @ts-expect-error
+            onChange(({target: { checked: true }}))
           })
           wrapper.update()
           expect(wrapper.find(".btn-publish").prop("disabled")).toBe(true)
@@ -220,8 +220,9 @@ describe("PublishDrawer", () => {
           website[unpublishedField] = true
           const { wrapper } = await render()
           await act(async () => {
-            // @ts-ignore
-            wrapper.find(`#publish-${action}`).prop("onChange")()
+            const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
+            // @ts-expect-error
+            onChange(({target: { checked: true }}))
           })
           wrapper.update()
           expect(wrapper.find(".publish-option-description").text()).toContain(
@@ -255,12 +256,12 @@ describe("PublishDrawer", () => {
           )
           const { wrapper } = await render()
           await act(async () => {
-            // @ts-ignore
-            wrapper.find(`#publish-${action}`).prop("onChange")()
+            const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
+            // @ts-expect-error
+            onChange(({target: { checked: true }}))
           })
           wrapper.update()
           await act(async () => {
-            // @ts-ignore
             wrapper
               .find("PublishForm")
               .find(".btn-publish")
@@ -300,8 +301,9 @@ describe("PublishDrawer", () => {
           )
           const { wrapper } = await render()
           await act(async () => {
-            // @ts-ignore
-            wrapper.find(`#publish-${action}`).prop("onChange")()
+            const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
+            // @ts-expect-error
+            onChange(({target: { checked: true }}))
           })
           wrapper.update()
           expect(
@@ -311,7 +313,6 @@ describe("PublishDrawer", () => {
               .prop("disabled")
           ).toBeFalsy()
           await act(async () => {
-            // @ts-ignore
             wrapper
               .find("PublishForm")
               .find(".btn-publish")

@@ -40,6 +40,7 @@ import {
   WebsiteStarter,
   WebsiteStatus
 } from "../types/websites"
+import { PublishingEnv } from "../constants"
 
 export type WebsiteDetails = Record<string, Website>
 
@@ -158,20 +159,24 @@ export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({
   }
 })
 
-export const websiteAction = (
+export const websitePublishAction = (
   name: string,
-  action: string,
+  publishingEnv: PublishingEnv,
   payload: WebsitePublishPayload
-): QueryConfig => ({
-  url:     siteApiActionUrl.param({ name, action }).toString(),
-  options: {
-    method:  "POST",
-    headers: {
-      "X-CSRFTOKEN": getCookie("csrftoken") || ""
-    }
-  },
-  body: payload
-})
+): QueryConfig => {
+  const action =
+    publishingEnv === PublishingEnv.Production ? "publish" : "preview"
+  return {
+    url:     siteApiActionUrl.param({ name, action }).toString(),
+    options: {
+      method:  "POST",
+      headers: {
+        "X-CSRFTOKEN": getCookie("csrftoken") || ""
+      }
+    },
+    body: payload
+  }
+}
 
 export const websiteStartersRequest = (): QueryConfig => ({
   url:       startersApi.toString(),

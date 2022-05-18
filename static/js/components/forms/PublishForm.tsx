@@ -5,7 +5,7 @@ import * as yup from "yup"
 import { FormError } from "./FormError"
 
 import { Website } from "../../types/websites"
-import { PUBLISH_OPTION_STAGING } from "../../constants"
+import { PublishingEnv } from "../../constants"
 
 export interface SiteFormValues {
   url_path: string // eslint-disable-line camelcase
@@ -47,7 +47,7 @@ export const PublishForm: React.FC<Props> = ({
   }
 
   const fullUrl =
-    option === PUBLISH_OPTION_STAGING ? website.draft_url : website.live_url
+    option === PublishingEnv.Staging ? website.draft_url : website.live_url
   const partialUrl = website.url_path ?
     fullUrl.slice(0, fullUrl.lastIndexOf("/")) :
     fullUrl
@@ -64,7 +64,7 @@ export const PublishForm: React.FC<Props> = ({
             <div className="form-group">
               <label htmlFor="url_path">URL: </label>{" "}
               {website.url_path ? (
-                website.publish_date || option === PUBLISH_OPTION_STAGING ? (
+                website.publish_date || option === PublishingEnv.Staging ? (
                   <a href={fullUrl} target="_blank" rel="noreferrer">
                     {fullUrl}{" "}
                   </a>
