@@ -21,6 +21,7 @@ class WebsiteStarterFactory(DjangoModelFactory):
 
     path = factory.Faker("uri")
     name = factory.Faker("domain_word")
+    status = factory.Faker(constants.WebsiteStarterStatus.ACTIVE)
     slug = factory.Sequence(lambda n: "starter-%x" % n)
     source = FuzzyChoice(constants.STARTER_SOURCES)
     commit = factory.Faker("md5")

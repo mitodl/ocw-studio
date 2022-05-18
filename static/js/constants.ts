@@ -201,3 +201,9 @@ export const IS_A_REQUIRED_FIELD = "is a required field"
 
 export const PUBLISH_OPTION_STAGING = "staging"
 export const PUBLISH_OPTION_PRODUCTION = "production"
+
+export enum WebsiteStarterStatus {
+  Default = "default",
+  Active = "active",
+  Inactive = "inactive"
+}

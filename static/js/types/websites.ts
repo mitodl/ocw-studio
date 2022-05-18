@@ -5,7 +5,8 @@ import {
   ROLE_ADMIN,
   ROLE_EDITOR,
   ROLE_GLOBAL,
-  ROLE_OWNER
+  ROLE_OWNER,
+  WebsiteStarterStatus
 } from "../constants"
 import { SiteFormValue } from "./forms"
 import { ModalState } from "./modal_state"
@@ -202,6 +203,7 @@ export interface WebsiteStarterConfig {
 export interface WebsiteStarter {
   id: number
   name: string
+  status: WebsiteStarterStatus
   path: string
   source: string
   commit: string | null

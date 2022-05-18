@@ -79,6 +79,7 @@ def test_website_starter_serializer():
     starter = WebsiteStarterFactory.build()
     serialized_data = WebsiteStarterSerializer(instance=starter).data
     assert serialized_data["name"] == starter.name
+    assert serialized_data["status"] == starter.status
     assert serialized_data["path"] == starter.path
     assert serialized_data["source"] == starter.source
     assert serialized_data["commit"] == starter.commit
