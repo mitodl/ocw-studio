@@ -1,6 +1,7 @@
 """ Constants for websites """
 from model_utils import Choices
 
+
 CONTENT_TYPE_PAGE = "page"
 CONTENT_TYPE_VIDEO_GALLERY = "video_gallery"
 CONTENT_TYPE_RESOURCE = "resource"

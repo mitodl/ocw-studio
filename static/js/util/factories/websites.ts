@@ -7,7 +7,8 @@ import {
   ROLE_EDITOR,
   ROLE_GLOBAL,
   ROLE_OWNER,
-  WEBSITES_PAGE_SIZE
+  WEBSITES_PAGE_SIZE,
+  WebsiteStarterStatus
 } from "../../constants"
 import exampleSiteConfig from "../../resources/ocw-course-site-config.json"
 
@@ -168,9 +169,13 @@ export const makeSingletonsConfigItem = (
 export const makeWebsiteStarterConfig = (): WebsiteStarterConfig =>
   cloneDeep(exampleSiteConfig as WebsiteStarterConfig)
 
-export const makeWebsiteStarter = (type = "course"): WebsiteStarter => ({
+export const makeWebsiteStarter = (
+  type = "course",
+  status = WebsiteStarterStatus.Active
+): WebsiteStarter => ({
   id:     incr.next().value,
   name:   casual.title,
+  status: status,
   path:   casual.url,
   source: casual.word,
   commit: null,

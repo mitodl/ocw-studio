@@ -35,6 +35,7 @@ from users.models import User
 from websites import constants
 from websites.api import get_valid_new_filename, update_website_status
 from websites.constants import (
+    ALLOWED_WEBSITE_STARTER_STATUS,
     CONTENT_TYPE_METADATA,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
@@ -42,7 +43,6 @@ from websites.constants import (
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
-    ALLOWED_WEBSITE_STARTER_STATUS,
 )
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import (
