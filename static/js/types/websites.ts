@@ -252,7 +252,7 @@ export type Website = WebsiteStatus & {
   has_unpublished_live: boolean
   content_warnings?: Array<string>
   url_path: string | null
-  url_suggestion: string,
+  url_suggestion: string
   s3_path: string | null
 }
 

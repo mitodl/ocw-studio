@@ -276,8 +276,7 @@ describe("PublishDrawer", () => {
             "POST",
             {
               body: {
-                url_path: website.url_path,
-                name:     website.name
+                url_path: website.url_path
               },
               headers:     { "X-CSRFTOKEN": "" },
               credentials: undefined
@@ -296,8 +295,7 @@ describe("PublishDrawer", () => {
               })
               .toString(),
             {
-              url_path: website.url_path,
-              name:     website.name
+              url_path: website.url_path
             }
           )
           const { wrapper } = await render()
@@ -325,8 +323,7 @@ describe("PublishDrawer", () => {
             "POST",
             {
               body: {
-                url_path: website.url_path,
-                name:     website.name
+                url_path: website.url_path
               },
               headers:     { "X-CSRFTOKEN": "" },
               credentials: undefined

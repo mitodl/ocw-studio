@@ -8,8 +8,7 @@ import { Website } from "../../types/websites"
 import { PUBLISH_OPTION_STAGING } from "../../constants"
 
 export interface SiteFormValues {
-  url_path: string // eslint-disable-line
-  name: string
+  url_path: string // eslint-disable-line camelcase
 }
 
 type Props = {
@@ -27,11 +26,11 @@ export const websiteUrlValidation = yup.object().shape({
     .string()
     .label("URL Path")
     .trim()
-    .matches(
-      /^[a-zA-Z0-9\-._]+$/,
-      "* This field cannot contain white space or special characters"
-    )
     .required()
+    .matches(
+      /^[a-zA-Z0-9\-._]*$/,
+      "Only alphanumeric characters, periods, dashes, or underscores allowed"
+    )
 })
 
 export const PublishForm = ({
@@ -40,10 +39,11 @@ export const PublishForm = ({
   disabled,
   option
 }: Props): JSX.Element | null => {
-
   const initialValues: SiteFormValues = {
-    url_path: (website.url_path ? website.url_path.split("/").pop() : website.url_suggestion),
-    name:     website.name
+    // @ts-ignore
+    url_path: website.url_path ?
+      website.url_path.split("/").pop() :
+      website.url_suggestion
   }
 
   const fullUrl =
