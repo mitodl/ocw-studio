@@ -204,7 +204,9 @@ class Website(TimestampedModel):
         """Get the current/potential url path, with or without site prefix"""
         url_path = self.url_path
         if not url_path:
-            sitemeta = WebsiteContent.objects.filter(type=CONTENT_TYPE_METADATA).first()
+            sitemeta = self.websitecontent_set.filter(
+                type=CONTENT_TYPE_METADATA
+            ).first()
             if sitemeta:
                 url_path = self.url_path_from_metadata(metadata=sitemeta.metadata)
             else:

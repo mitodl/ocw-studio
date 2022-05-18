@@ -38,6 +38,7 @@ from websites.serializers import (
     WebsiteUnpublishSerializer,
     WebsiteUrlSerializer,
 )
+from websites.site_config_api import SiteConfig
 
 
 pytestmark = pytest.mark.django_db
@@ -197,6 +198,8 @@ def test_website_detail_serializer(
         if drive_credentials is not None and drive_folder is not None
         else None
     )
+    assert serialized_data["url_path"] == website.url_path
+    assert serialized_data["url_suggestion"] == website.url_path
 
 
 @pytest.mark.parametrize("user_is_admin", [True, False])
@@ -215,6 +218,42 @@ def test_website_detail_serializer_is_admin(mocker, user_is_admin, has_user):
     assert serialized["is_admin"] == (user_is_admin and has_user)
     if has_user:
         is_site_admin_mock.assert_called_once_with(user, website)
+
+
+def test_website_detail_serializer_with_url_format(mocker, ocw_site):
+    """ The url suggestion should be equal to the starter config site-url-format"""
+    user = UserFactory.create(is_superuser=True)
+    serialized = WebsiteDetailSerializer(
+        instance=ocw_site,
+        context={"request": mocker.Mock(user=user)},
+    ).data
+    assert serialized["url_path"] is None
+    assert (
+        serialized["url_suggestion"]
+        == SiteConfig(ocw_site.starter.config).site_url_format
+    )
+
+
+def test_website_detail_serializer_with_url_format_partial(mocker, ocw_site):
+    """ The url suggestion should have relevant metadata fields filled in"""
+    user = UserFactory.create(is_superuser=True)
+    term = "Fall"
+    year = "2028"
+    content = ocw_site.websitecontent_set.get(type=CONTENT_TYPE_METADATA)
+    content.metadata["term"] = term
+    content.metadata["year"] = year
+    content.save()
+    expected_suggestion = (
+        SiteConfig(ocw_site.starter.config)
+        .site_url_format.replace("[sitemetadata:term]", term.lower())
+        .replace("[sitemetadata:year]", year)
+    )
+    serialized = WebsiteDetailSerializer(
+        instance=ocw_site,
+        context={"request": mocker.Mock(user=user)},
+    ).data
+    assert serialized["url_path"] is None
+    assert serialized["url_suggestion"] == expected_suggestion
 
 
 def test_website_collaborator_serializer():
@@ -244,6 +283,18 @@ def test_website_content_serializer():
 
 
 def test_website_content_detail_serializer():
+    """WebsiteContentDetailSerializer should serialize all relevant fields to the frontend"""
+    content = WebsiteContentFactory.create()
+    serialized_data = WebsiteContentDetailSerializer(instance=content).data
+    assert serialized_data["text_id"] == str(content.text_id)
+    assert serialized_data["title"] == content.title
+    assert serialized_data["type"] == content.type
+    assert serialized_data["updated_on"] == content.updated_on.isoformat()[:-6] + "Z"
+    assert serialized_data["markdown"] == content.markdown
+    assert serialized_data["metadata"] == content.metadata
+
+
+def test_website_content_detail_serializer_with_url_format():
     """WebsiteContentDetailSerializer should serialize all relevant fields to the frontend"""
     content = WebsiteContentFactory.create()
     serialized_data = WebsiteContentDetailSerializer(instance=content).data

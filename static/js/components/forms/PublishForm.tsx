@@ -40,20 +40,10 @@ export const PublishForm = ({
   disabled,
   option
 }: Props): JSX.Element | null => {
-  const defaultUrlPath = website.name
 
   const initialValues: SiteFormValues = {
-    url_path: (website.url_path ?
-      website.url_path :
-      website.starter ?
-        website.starter.config ?
-          website.starter.config["site-url-format"] || defaultUrlPath :
-          defaultUrlPath :
-        defaultUrlPath
-    )
-      .split("/")
-      .pop(),
-    name: website.name
+    url_path: (website.url_path ? website.url_path.split("/").pop() : website.url_suggestion),
+    name:     website.name
   }
 
   const fullUrl =

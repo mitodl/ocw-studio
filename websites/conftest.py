@@ -118,6 +118,7 @@ def ocw_site(parsed_site_config):
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(config=parsed_site_config),
         not_published=True,
+        url_path=None,
     )
     WebsiteContentFactory(type=CONTENT_TYPE_METADATA, website=website)
     return website

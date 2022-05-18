@@ -223,6 +223,7 @@ class WebsiteDetailSerializer(
     is_admin = serializers.SerializerMethodField(read_only=True)
     live_url = serializers.SerializerMethodField(read_only=True)
     draft_url = serializers.SerializerMethodField(read_only=True)
+    url_suggestion = serializers.SerializerMethodField(read_only=True)
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
@@ -239,6 +240,10 @@ class WebsiteDetailSerializer(
         """Get the draft url for the site"""
         return instance.get_full_url(version=VERSION_DRAFT)
 
+    def get_url_suggestion(self, instance):
+        """Get the current or potential url path for the site"""
+        return instance.get_url_path(with_prefix=False)
+
     def update(self, instance, validated_data):
         """ Remove owner attribute if present, it should not be changed"""
         validated_data.pop("owner", None)
@@ -254,6 +259,7 @@ class WebsiteDetailSerializer(
             "draft_url",
             "live_url",
             "url_path",
+            "url_suggestion",
             "has_unpublished_live",
             "has_unpublished_draft",
             "live_publish_status",
@@ -286,6 +292,7 @@ class WebsiteDetailSerializer(
             "synced_on",
             "content_warnings",
             "url_path",
+            "url_suggestion",
         ]
 
 
