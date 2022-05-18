@@ -83,26 +83,26 @@ describe("PublishForm", () => {
     ).toBeTruthy()
   })
 
-  it.each([
-    { option: PUBLISH_OPTION_STAGING },
-    { option: PUBLISH_OPTION_PRODUCTION }
-  ])("shows a URL link instead of a field if website is published", option => {
-    website.publish_date = "2020-01-01"
-    website.url_path = "courses/my-url-fall-2028"
-    const form = renderInnerForm(
-      { isSubmitting: false, status: "whatever" },
-      { option: option }
-    )
-    expect(
-      form
-        .find("Field")
-        .filterWhere(node => node.prop("name") === "url_path")
-        .exists()
-    ).toBeFalsy()
-    expect(form.find("a").prop("href")).toEqual(
-      option === PUBLISH_OPTION_STAGING ? website.draft_url : website.live_url
-    )
-  })
+  it.each([PUBLISH_OPTION_STAGING, PUBLISH_OPTION_PRODUCTION])(
+    "shows a URL link instead of a field if website is published",
+    option => {
+      website.publish_date = "2020-01-01"
+      website.url_path = "courses/my-url-fall-2028"
+      const form = renderInnerForm(
+        { isSubmitting: false, status: "whatever" },
+        { option: option }
+      )
+      expect(
+        form
+          .find("Field")
+          .filterWhere(node => node.prop("name") === "url_path")
+          .exists()
+      ).toBeFalsy()
+      expect(form.find("a").prop("href")).toEqual(
+        option === PUBLISH_OPTION_STAGING ? website.draft_url : website.live_url
+      )
+    }
+  )
 
   describe("validation", () => {
     it("rejects an empty url", async () => {
