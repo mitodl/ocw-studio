@@ -211,11 +211,22 @@ class WebsiteUnpublishSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class WebsiteUrlSuggestionMixin(serializers.Serializer):
+    """Add the url_suggestion custom field"""
+
+    url_suggestion = serializers.SerializerMethodField(read_only=True)
+
+    def get_url_suggestion(self, instance):
+        """Get the current or potential url path for the site"""
+        return instance.get_url_path(with_prefix=False)
+
+
 class WebsiteDetailSerializer(
     serializers.ModelSerializer,
     WebsiteGoogleDriveMixin,
     WebsiteValidationMixin,
     RequestUserSerializerMixin,
+    WebsiteUrlSuggestionMixin,
 ):
     """ Serializer for websites with serialized config """
 
@@ -223,7 +234,6 @@ class WebsiteDetailSerializer(
     is_admin = serializers.SerializerMethodField(read_only=True)
     live_url = serializers.SerializerMethodField(read_only=True)
     draft_url = serializers.SerializerMethodField(read_only=True)
-    url_suggestion = serializers.SerializerMethodField(read_only=True)
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
@@ -239,10 +249,6 @@ class WebsiteDetailSerializer(
     def get_draft_url(self, instance):
         """Get the draft url for the site"""
         return instance.get_full_url(version=VERSION_DRAFT)
-
-    def get_url_suggestion(self, instance):
-        """Get the current or potential url path for the site"""
-        return instance.get_url_path(with_prefix=False)
 
     def update(self, instance, validated_data):
         """ Remove owner attribute if present, it should not be changed"""
@@ -292,12 +298,14 @@ class WebsiteDetailSerializer(
             "synced_on",
             "content_warnings",
             "url_path",
-            "url_suggestion",
         ]
 
 
 class WebsiteStatusSerializer(
-    serializers.ModelSerializer, WebsiteGoogleDriveMixin, WebsiteValidationMixin
+    serializers.ModelSerializer,
+    WebsiteGoogleDriveMixin,
+    WebsiteValidationMixin,
+    WebsiteUrlSuggestionMixin,
 ):
     """Serializer for website status fields"""
 
@@ -320,6 +328,7 @@ class WebsiteStatusSerializer(
             "sync_errors",
             "synced_on",
             "content_warnings",
+            "url_suggestion",
         ]
         read_only_fields = fields
 
