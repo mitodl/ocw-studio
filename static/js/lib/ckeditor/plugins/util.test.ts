@@ -46,15 +46,15 @@ describe("unescapeStringQuotedWith", () => {
 })
 
 describe("Shortcode", () => {
-  describe("Shortcode.parse", () => {
+  describe("Shortcode.fromString", () => {
     it("parses shortcodes with named params", () => {
       const text =
-        '{{< some_shortcode cool_arg="cats and dogs" href_uuid=uuid456 >}}'
+        '{{< some_shortcode param-with-dash="cats and dogs" with_underscore=uuid456 >}}'
       const result = Shortcode.fromString(text)
 
       const params = [
-        { name: "cool_arg", value: "cats and dogs" },
-        { name: "href_uuid", value: "uuid456" }
+        { name: "param-with-dash", value: "cats and dogs" },
+        { name: "with_underscore", value: "uuid456" }
       ].map(makeParams)
       expect(result).toStrictEqual(
         new Shortcode("some_shortcode", params, false)
@@ -163,6 +163,28 @@ describe("Shortcode", () => {
         expect(() => Shortcode.fromString(text)).toThrow(/matching delimiters/)
       }
     )
+  })
+
+  it.each([
+    {
+      text:     "{{< /some_shortcode >}}",
+      expected: new Shortcode("some_shortcode", [], false, true)
+    },
+    {
+      text:     "{{< / some_shortcode >}}",
+      expected: new Shortcode("some_shortcode", [], false, true)
+    },
+    {
+      text:     "{{</ some_shortcode >}}",
+      expected: new Shortcode("some_shortcode", [], false, true)
+    },
+    {
+      text:     "{{% /some_shortcode %}}",
+      expected: new Shortcode("some_shortcode", [], true, true)
+    }
+  ])("parses closing shortcodes", ({ text, expected }) => {
+    const result = Shortcode.fromString(text)
+    expect(result).toStrictEqual(expected)
   })
 
   it("does not allow mixing named and positional params", () => {
@@ -367,21 +389,37 @@ describe("Shortcode", () => {
       ])
     })
 
+    it("captures closing and opening shortcodes", () => {
+      const regex = Shortcode.regex("some_shortcode", false)
+      const text = `
+      a {{< some_shortcode xyz >}} b
+      c {{< /some_shortcode >}} d
+      e {{</ some_shortcode >}} f
+      `
+      const match = text.match(regex)
+      expect(match).toStrictEqual([
+        "{{< some_shortcode xyz >}}",
+        "{{< /some_shortcode >}}",
+        "{{</ some_shortcode >}}"
+      ])
+    })
+
     it.each([
       {
-        name:     "some_shortcode",
-        text:     "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}}",
-        expected: "{{< some_shortcode xyz >}}"
+        name: "some_shortcode",
+        text:
+          "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}} {{< /some_shortcode xyz >}}",
+        expected: ["{{< some_shortcode xyz >}}", "{{< /some_shortcode xyz >}}"]
       },
       {
         name:     "some_shortcode_two",
         text:     "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}}",
-        expected: "{{< some_shortcode_two 123 >}}"
+        expected: ["{{< some_shortcode_two 123 >}}"]
       }
     ])("captures shortcodes of specified name", ({ text, expected, name }) => {
       const regex = Shortcode.regex(name, false)
       const match = text.match(regex)
-      expect(match).toStrictEqual([expected])
+      expect(match).toStrictEqual(expected)
     })
 
     it("tolerates an odd number of escaped quotes", () => {
@@ -389,6 +427,13 @@ describe("Shortcode", () => {
       const text = 'a {{< shortcode "cat \\" >}}" >}} b'
       const match = text.match(regex)
       expect(match).toStrictEqual(['{{< shortcode "cat \\" >}}" >}}'])
+    })
+
+    it("can take a regex as name parameter", () => {
+      const regex = Shortcode.regex(/cat|dog/, false)
+      const text = "a {{< cat meow >}} {{< dog woof >}} {{< dragon roar >}}  b"
+      const match = text.match(regex)
+      expect(match).toStrictEqual(["{{< cat meow >}}", "{{< dog woof >}}"])
     })
   })
 })
