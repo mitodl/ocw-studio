@@ -10,6 +10,11 @@ resource_types:
     source:
       repository: governmentpaas/s3-resource
       tag: latest
+  - name: slack-alert
+    type: docker-image
+    source:
+      repository: arbourd/concourse-slack-alert-resource
+      tag: v0.15.0
 resources:
   - name: webpack-json
     type: s3-resource-iam
@@ -54,6 +59,12 @@ resources:
         headers:
           Content-Type: "application/json"
         out_only: true
+  - name: slack-webhook
+    type: slack-alert
+    check_every: never
+    source:
+      url: ((slack-url))
+      disabled: false
 jobs:
   - name: build-ocw-site
     serial: true
@@ -72,55 +83,79 @@ jobs:
         trigger: false
         on_failure:
           try:
-            put: ocw-studio-webhook
-            timeout: 1m
-            params:
-                text: |
-                  {
-                    "version": "((pipeline_name))",
-                    "status": "errored"
-                  }
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed to get webpack-json"
       - get: ocw-hugo-themes
         trigger: false
         timeout: 5m
         on_failure:
           try:
-            put: ocw-studio-webhook
-            timeout: 1m
-            params:
-                text: |
-                  {
-                    "version": "((pipeline_name))",
-                    "status": "errored"
-                  }
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed to get ocw-hugo-themes"
       - get: ocw-hugo-projects
         trigger: false
         timeout: 5m
         attempts: 3
         on_failure:
           try:
-            put: ocw-studio-webhook
-            timeout: 1m
-            params:
-                text: |
-                  {
-                    "version": "((pipeline_name))",
-                    "status": "errored"
-                  }
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed to get ocw-hugo-projects"
       - get: course-markdown
         trigger: false
         timeout: 5m
         attempts: 3
         on_failure:
           try:
-            put: ocw-studio-webhook
-            timeout: 1m
-            params:
-                text: |
-                  {
-                    "version": "((pipeline_name))",
-                    "status": "errored"
-                  }
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed to get course-markdown"
       - task: build-course-task
         timeout: 20m
         attempts: 3
@@ -154,15 +189,21 @@ jobs:
               hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/ ((build-drafts))
         on_failure:
           try:
-            put: ocw-studio-webhook
-            timeout: 1m
-            attempts: 3
-            params:
-                text: |
-                  {
-                    "version": "((pipeline_name))",
-                    "status": "errored"
-                  }
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on build-course-task"
       - task: copy-s3-buckets
         timeout: 20m
         attempts: 3
@@ -182,15 +223,21 @@ jobs:
               aws s3 sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
         on_failure:
           try:
-            put: ocw-studio-webhook
-            timeout: 1m
-            attempts: 3
-            params:
-                text: |
-                  {
-                    "version": "((pipeline_name))",
-                    "status": "errored"
-                  }
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on copy-s3-buckets"
       - task: clear-cdn-cache
         timeout: 5m
         attempts: 3
@@ -232,12 +279,18 @@ jobs:
                     }
         on_failure:
           try:
-            put: ocw-studio-webhook
-            timeout: 1m
-            attempts: 3
-            params:
-                text: |
-                  {
-                    "version": "((pipeline_name))",
-                    "status": "errored"
-                  }
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on clear-cdn-cache"
