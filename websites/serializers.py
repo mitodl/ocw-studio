@@ -457,6 +457,7 @@ class WebsiteContentDetailSerializer(
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""
 
     content_context = serializers.SerializerMethodField()
+    url_path = serializers.SerializerMethodField()
 
     def update(self, instance, validated_data):
         """Add updated_by to the data"""
@@ -485,11 +486,17 @@ class WebsiteContentDetailSerializer(
             sync_website_title(instance)
         return instance
 
+    def get_url_path(self, instance):
+        """Get the parent website url path"""
+        return instance.website.url_path
+
     def get_content_context(self, instance):  # pylint:disable=too-many-branches
         """
         Create mapping of uuid to a display name for any values in the metadata
         """
+        log.error("GET_CONTENT_CONTEXT!!!!")
         if not self.context or not self.context.get("content_context"):
+            log.error("GOODBYE")
             return None
 
         lookup = defaultdict(list)  # website name -> list of text_id
@@ -501,16 +508,19 @@ class WebsiteContentDetailSerializer(
                 try:
                     if field.parent_field is None:
                         value = metadata.get(field.field["name"])
+                        log.error(f"value 1 is {value}")
                     else:
                         value = metadata.get(field.parent_field["name"], {}).get(
                             field.field["name"]
                         )
+                        log.error(f"value 2 is {value}")
 
                     if widget == "relation":
                         content = value["content"]
                         website_name = value["website"]
                         if isinstance(content, str):
                             content = [content]
+                            log.error(f"content is {content}")
 
                         if (
                             isinstance(content, list)
@@ -524,6 +534,7 @@ class WebsiteContentDetailSerializer(
                                 lookup[website_name].extend([content_uuid])
                         else:
                             lookup[website_name].extend(content)
+                        log.error(f"lookup is {lookup}")
 
                     elif widget == "menu":
                         website_name = instance.website.name
@@ -548,6 +559,7 @@ class WebsiteContentDetailSerializer(
                     website__name=website_name, text_id__in=text_ids
                 )
             )
+        log.error(f"CONTENTS: {contents}")
         return WebsiteContentDetailSerializer(
             contents, many=True, context={"content_context": False}
         ).data
@@ -563,7 +575,7 @@ class WebsiteContentDetailSerializer(
 
     class Meta:
         model = WebsiteContent
-        read_only_fields = ["text_id", "type", "content_context"]
+        read_only_fields = ["text_id", "type", "content_context", "url_path"]
         fields = read_only_fields + [
             "title",
             "markdown",

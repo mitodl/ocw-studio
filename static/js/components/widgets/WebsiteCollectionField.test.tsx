@@ -48,7 +48,7 @@ describe("WebsiteCollectionField", () => {
 
   it("should pass published=true to the useWebsiteSelectOptions", async () => {
     await render()
-    expect(useWebsiteSelectOptions).toBeCalledWith("name", true)
+    expect(useWebsiteSelectOptions).toBeCalledWith("url_path", true)
   })
 
   it("should pass things down to SortableSelect", async () => {
@@ -75,7 +75,7 @@ describe("WebsiteCollectionField", () => {
         name:  "test-site-collection",
         value: [
           {
-            id:    websites[0].name,
+            id:    websites[0].url_path,
             title: websites[0].title
           }
         ]
