@@ -252,50 +252,6 @@ describe("PublishDrawer", () => {
           })
         })
 
-        it("renders an error message if the publish didn't work", async () => {
-          const actionStub = helper.mockPostRequest(
-            siteApiActionUrl
-              .param({
-                name:   website.name,
-                action: api
-              })
-              .toString(),
-            {},
-            500
-          )
-          const { wrapper } = await render()
-          await act(async () => {
-            const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
-            // @ts-expect-error
-            onChange({ target: { checked: true } })
-          })
-          wrapper.update()
-          await act(async () => {
-            wrapper
-              .find("PublishForm")
-              .find(".btn-publish")
-              .simulate("submit")
-          })
-          wrapper.update()
-          expect(wrapper.find(".publish-option-description").text()).toContain(
-            "There was an error publishing the site."
-          )
-          sinon.assert.calledOnceWithExactly(
-            actionStub,
-            `/api/websites/${website.name}/${api}/`,
-            "POST",
-            {
-              body: {
-                url_path: website.url_path
-              },
-              headers:     { "X-CSRFTOKEN": "" },
-              credentials: undefined
-            }
-          )
-          sinon.assert.notCalled(refreshWebsiteStub)
-          sinon.assert.notCalled(toggleVisibilityStub)
-        })
-
         it("publish button sends the expected request", async () => {
           const actionStub = helper.mockPostRequest(
             siteApiActionUrl
