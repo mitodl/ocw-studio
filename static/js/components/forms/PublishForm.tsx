@@ -11,11 +11,13 @@ export interface SiteFormValues {
   url_path: string // eslint-disable-line camelcase
 }
 
+export type OnSubmitPublish = (
+  values: SiteFormValues,
+  formikHelpers: FormikHelpers<SiteFormValues>
+) => void
+
 type Props = {
-  onSubmit: (
-    values: SiteFormValues,
-    formikHelpers: FormikHelpers<SiteFormValues>
-  ) => void
+  onSubmit: OnSubmitPublish
   website: Website
   option: string
   disabled: boolean
@@ -33,7 +35,7 @@ export const websiteUrlValidation = yup.object().shape({
     )
 })
 
-export const PublishForm: React.FC<Props> = ({
+const PublishForm: React.FC<Props> = ({
   onSubmit,
   website,
   disabled,
@@ -85,7 +87,7 @@ export const PublishForm: React.FC<Props> = ({
               <br />
             </div>
           )}
-          <div className="form-group d-flex justify-content-end">
+          <div className="form-group d-flex justify-content-between flex-row-reverse align-items-center">
             <button
               type="submit"
               className="btn btn-publish cyan-button-outline d-flex flex-direction-row align-items-center"
@@ -93,13 +95,17 @@ export const PublishForm: React.FC<Props> = ({
             >
               Publish
             </button>
+            {status && (
+              // Status is being used to store non-field errors
+              <div className="form-error">
+                <strong>{status}</strong>
+              </div>
+            )}
           </div>
-          {status && (
-            // Status is being used to store non-field errors
-            <div className="form-error">{status}</div>
-          )}
         </Form>
       )}
     </Formik>
   )
 }
+
+export default PublishForm

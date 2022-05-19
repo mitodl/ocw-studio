@@ -4,9 +4,7 @@ import { shallow } from "enzyme"
 import { ValidationError } from "yup"
 
 import { PublishForm, websiteUrlValidation } from "./PublishForm"
-import {
-  PublishingEnv
-} from "../../constants"
+import { PublishingEnv } from "../../constants"
 import { assertInstanceOf, defaultFormikChildProps } from "../../test_util"
 import { makeWebsiteDetail } from "../../util/factories/websites"
 

@@ -1,27 +1,36 @@
+import React from "react"
 import moment from "moment"
 import sinon, { SinonStub } from "sinon"
 import { act } from "react-dom/test-utils"
 import { isEmpty } from "ramda"
 
 import { siteApiActionUrl, siteApiDetailUrl } from "../lib/urls"
-import { shouldIf } from "../test_util"
+import { assertInstanceOf, shouldIf } from "../test_util"
 import { makeWebsiteDetail } from "../util/factories/websites"
-import IntegrationTestHelper, {
+import IntegrationTestHelperOld, {
   TestRenderer
 } from "../util/integration_test_helper_old"
+
+import App from "../pages/App"
+import { IntegrationTestHelper } from "../testing_utils"
+
 import PublishDrawer from "./PublishDrawer"
 
 import { Website } from "../types/websites"
+import userEvent from "@testing-library/user-event"
+import { waitFor, screen } from "@testing-library/react"
+import * as dom from "@testing-library/dom"
+import _ from "lodash"
 
 describe("PublishDrawer", () => {
-  let helper: IntegrationTestHelper,
+  let helper: IntegrationTestHelperOld,
     website: Website,
     render: TestRenderer,
     toggleVisibilityStub: SinonStub,
     refreshWebsiteStub: SinonStub
 
   beforeEach(() => {
-    helper = new IntegrationTestHelper()
+    helper = new IntegrationTestHelperOld()
     toggleVisibilityStub = helper.sandbox.stub()
     website = {
       ...makeWebsiteDetail(),
@@ -202,7 +211,7 @@ describe("PublishDrawer", () => {
           await act(async () => {
             const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
             // @ts-expect-error
-            onChange(({target: { checked: true }}))
+            onChange({ target: { checked: true } })
           })
           wrapper.update()
           expect(wrapper.find(".btn-publish").prop("disabled")).toBe(true)
@@ -222,7 +231,7 @@ describe("PublishDrawer", () => {
           await act(async () => {
             const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
             // @ts-expect-error
-            onChange(({target: { checked: true }}))
+            onChange({ target: { checked: true } })
           })
           wrapper.update()
           expect(wrapper.find(".publish-option-description").text()).toContain(
@@ -258,7 +267,7 @@ describe("PublishDrawer", () => {
           await act(async () => {
             const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
             // @ts-expect-error
-            onChange(({target: { checked: true }}))
+            onChange({ target: { checked: true } })
           })
           wrapper.update()
           await act(async () => {
@@ -269,7 +278,7 @@ describe("PublishDrawer", () => {
           })
           wrapper.update()
           expect(wrapper.find(".publish-option-description").text()).toContain(
-            "We apologize, there was an error publishing the site. Please try again in a few minutes."
+            "There was an error publishing the site."
           )
           sinon.assert.calledOnceWithExactly(
             actionStub,
@@ -303,7 +312,7 @@ describe("PublishDrawer", () => {
           await act(async () => {
             const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
             // @ts-expect-error
-            onChange(({target: { checked: true }}))
+            onChange({ target: { checked: true } })
           })
           wrapper.update()
           expect(
@@ -345,4 +354,79 @@ describe("PublishDrawer", () => {
       })
     }
   )
+})
+
+describe.each([
+  {
+    publishToLabel: "Production",
+    api:            "publish"
+  },
+  {
+    publishToLabel: "Staging",
+    api:            "preview"
+  }
+])("Publishing Drawer Errors ($publishToLabel)", ({ publishToLabel, api }) => {
+  const setup = (websiteDetails: Partial<Website> = {}) => {
+    const website = makeWebsiteDetail({ is_admin: true, ...websiteDetails })
+    const user = userEvent.setup()
+    const helper = new IntegrationTestHelper(`/sites/${website.name}?publish=`)
+    helper.mockGetWebsiteDetail(website)
+    const publishUrl = siteApiActionUrl
+      .param({ name: website.name, action: api })
+      .toString()
+    const setPublishResult = _.partial(helper.mockPostRequest, publishUrl)
+    const [result] = helper.render(<App />)
+    return { user, result, setPublishResult }
+  }
+
+  it("renders a generic error message if publihing API failed", async () => {
+    const { user, result, setPublishResult } = setup()
+    const dialog = await screen.findByRole("dialog")
+    const envButton = await dom.findByText(dialog, publishToLabel)
+    await act(() => user.click(envButton))
+
+    const publishButton = await dom.findByText(dialog, "Publish")
+    const form = dialog.querySelector("form")
+    expect(form).toContainElement(publishButton)
+    expect(publishButton).toHaveAttribute("type", "submit")
+    assertInstanceOf(form, HTMLFormElement)
+
+    setPublishResult(undefined, 500)
+    act(() => form.submit())
+    await waitFor(() => {
+      expect(dialog).toHaveTextContent(
+        "We apologize, there was a problem publishing your site."
+      )
+    })
+    result.unmount()
+  })
+
+  it("renders a specific error for url issues", async () => {
+    const { user, result, setPublishResult } = setup({
+      publish_date: null,
+      url_path:     "some_path_in_use"
+    })
+    const dialog = await screen.findByRole("dialog")
+    const envButton = await dom.findByText(dialog, publishToLabel)
+    await act(() => user.click(envButton))
+
+    const publishButton = await dom.findByText(dialog, "Publish")
+    const form = dialog.querySelector("form")
+    expect(form).toContainElement(publishButton)
+    expect(publishButton).toHaveAttribute("type", "submit")
+    assertInstanceOf(form, HTMLFormElement)
+
+    setPublishResult({ url_path: "Some url error" }, 400)
+    act(() => form.submit())
+
+    await waitFor(() => {
+      expect(dialog).toHaveTextContent(
+        "We apologize, there was a problem publishing your site."
+      )
+    })
+    const errorMsg = await dom.findByText(dialog, "Some url error")
+    assertInstanceOf(errorMsg.previousSibling, HTMLInputElement)
+    expect(errorMsg.previousSibling.name).toBe("url_path")
+    result.unmount()
+  })
 })

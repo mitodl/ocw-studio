@@ -14,7 +14,10 @@ import { isErrorStatusCode } from "../lib/util"
 import PublishStatusIndicator from "./PublishStatusIndicator"
 
 import { Website } from "../types/websites"
-import { PublishForm } from "./forms/PublishForm"
+import PublishForm, {
+  OnSubmitPublish,
+  SiteFormValues
+} from "./forms/PublishForm"
 import { PublishingEnv, PublishStatus } from "../constants"
 import { useAppDispatch } from "../hooks/redux"
 
@@ -58,7 +61,6 @@ const getPublishingInfo = (
 const PublishingOption: React.FC<PublishingOptionProps> = props => {
   const { publishingEnv, selected, onSelect, website, onPublishSuccess } = props
   const publishingInfo = getPublishingInfo(website, publishingEnv)
-  const [error, setError] = useState<null | Record<string, string>>(null)
 
   const [
     { isPending },
@@ -67,8 +69,7 @@ const PublishingOption: React.FC<PublishingOptionProps> = props => {
     websitePublishAction(website.name, publishingEnv, payload)
   )
 
-  const handlePublish = async (payload: WebsitePublishPayload) => {
-    setError(null)
+  const handlePublish: OnSubmitPublish = async (payload, helpers) => {
     if (isPending) {
       return
     }
@@ -77,7 +78,14 @@ const PublishingOption: React.FC<PublishingOptionProps> = props => {
       return
     } else {
       if (isErrorStatusCode(response.status)) {
-        setError(response.body)
+        const errorBody: Partial<SiteFormValues> | undefined = response.body
+        const errors = {
+          url_path: errorBody?.url_path
+        }
+        helpers.setErrors(errors)
+        helpers.setStatus(
+          "We apologize, there was a problem publishing your site."
+        )
       } else {
         onPublishSuccess()
       }
@@ -112,15 +120,6 @@ const PublishingOption: React.FC<PublishingOptionProps> = props => {
           {publishingInfo.hasUnpublishedChanges && (
             <>
               <strong>You have unpublished changes.</strong>
-              <br />
-            </>
-          )}
-          {error && (
-            <>
-              <strong className="text-danger">
-                We apologize, there was an error publishing the site. Please try
-                again in a few minutes.
-              </strong>
               <br />
             </>
           )}
