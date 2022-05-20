@@ -24,8 +24,8 @@ import { useWebsiteSelectOptions } from "../../hooks/websites"
 import SortableSelect from "./SortableSelect"
 
 // This is how we store the data when dealing with a cross-site relation
-// the first string is the content UUID, the second is the website UUID, third is website url_path
-type CrossSitePair = [string, string[]]
+// the first string is the content UUID, and the second is the website UUID
+type CrossSitePair = [string, string]
 
 /* eslint-disable camelcase */
 interface Props {
@@ -102,7 +102,7 @@ export default function RelationField(props: Props): JSX.Element {
   //
   // We can `useEffect` so we can be sure that whenever the `value` prop
   // changes we update the `Map`.
-  const [contentToWebsite, setContentToWebsite] = useState<Map<string, string[]>>(
+  const [contentToWebsite, setContentToWebsite] = useState<Map<string, string>>(
     new Map()
   )
   useEffect(() => {
@@ -137,7 +137,7 @@ export default function RelationField(props: Props): JSX.Element {
   const filterContentListing = useCallback(
     (results: WebsiteContent[]) => {
       const valueAsSet = new Set(Array.isArray(value) ? value.flat() : [value])
-      console.error("filterContentListing valueAsSet = " + JSON.stringify(valueAsSet))
+
       return results
         .map(entry => ({
           ...entry,
@@ -174,7 +174,6 @@ export default function RelationField(props: Props): JSX.Element {
     async (search: string | null, debounce: boolean) => {
       const params = collection ? { type: collection } : { page_content: true }
       const name = crossSite && focusedWebsite ? focusedWebsite : websiteName
-      console.error("fetchOptions for " + name)
       const url = siteApiContentListingUrl
         .query({
           detailed_list:   true,
@@ -219,7 +218,7 @@ export default function RelationField(props: Props): JSX.Element {
           setContentToWebsite(cur => {
             const update = new Map(cur)
             results.forEach(websiteContent => {
-              update.set(websiteContent.text_id, [name, websiteContent.url_path])
+              update.set(websiteContent.text_id, websiteContent.url_path)
             })
             return update
           })
@@ -269,7 +268,6 @@ export default function RelationField(props: Props): JSX.Element {
       // defaultOptions should always be true here since fetchOptions will only ever
       // return null if debounce=true
       if (mounted && defaultOptions) {
-        console.error("defaultOptions is " + defaultOptions)
         setOptions(oldOptions =>
           uniqBy([...oldOptions, ...defaultOptions], "value")
         )
@@ -313,7 +311,6 @@ export default function RelationField(props: Props): JSX.Element {
           }
         }
       }
-      console.error("updatedEvent value is " + updatedEvent.target.value)
       onChange(updatedEvent)
     },
     [onChange, name, crossSite, contentToWebsite, websiteName]
@@ -321,7 +318,6 @@ export default function RelationField(props: Props): JSX.Element {
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
-      console.error("handleChange value is " + event.target.value)
       onChangeShim(event.target.value)
     },
     [onChangeShim]
@@ -336,7 +332,6 @@ export default function RelationField(props: Props): JSX.Element {
           [value as string],
     [multiple, value, crossSite]
   )
-  console.error("selectedIds value is " + selectedIds)
 
   const isOptionDisabled = useCallback(
     (option: Option) => {
