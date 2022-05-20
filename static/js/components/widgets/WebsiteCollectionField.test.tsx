@@ -53,7 +53,7 @@ describe("WebsiteCollectionField", () => {
 
   it("should pass things down to SortableSelect", async () => {
     const value = websites.map(website => ({
-      id:    website.name,
+      id:    website.url_path,
       title: website.title
     }))
 
@@ -75,7 +75,7 @@ describe("WebsiteCollectionField", () => {
         name:  "test-site-collection",
         value: [
           {
-            id:    websites[0].url_path,
+            id:    websites[0].name,
             title: websites[0].title
           }
         ]

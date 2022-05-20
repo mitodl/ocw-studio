@@ -24,7 +24,7 @@ from safedelete.models import SafeDeleteModel
 from safedelete.queryset import SafeDeleteQueryset
 
 from content_sync.constants import VERSION_LIVE
-from main.settings import YT_FIELD_TRANSCRIPT, YT_FIELD_CAPTIONS
+from main.settings import YT_FIELD_CAPTIONS, YT_FIELD_TRANSCRIPT
 from main.utils import uuid_string
 from users.models import User
 from websites import constants
@@ -35,7 +35,12 @@ from websites.constants import (
     CONTENT_TYPE_METADATA,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import get_dict_field, permissions_group_name_for_role, set_dict_field
+from websites.utils import (
+    get_dict_field,
+    permissions_group_name_for_role,
+    set_dict_field,
+)
+
 
 log = logging.getLogger(__name__)
 
@@ -362,9 +367,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         s3_path = self.website.s3_path
         url_path = self.website.url_path
         full_metadata = (
-            self.metadata
-            if (self.metadata and isinstance(self.metadata, dict))
-            else {}
+            self.metadata if (self.metadata and isinstance(self.metadata, dict)) else {}
         )
         modified = False
         if file_field:
@@ -381,7 +384,9 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
             for field in (YT_FIELD_TRANSCRIPT, YT_FIELD_CAPTIONS):
                 value = get_dict_field(full_metadata, field)
                 if value is not None:
-                    set_dict_field(full_metadata, field, value.replace(s3_path, url_path, 1))
+                    set_dict_field(
+                        full_metadata, field, value.replace(s3_path, url_path, 1)
+                    )
                     modified = True
         return full_metadata if modified else self.metadata
 

@@ -62,9 +62,12 @@ export const PublishForm: React.FC<Props> = ({
         <Form>
           {!website.publish_date ? (
             <div className="form-group">
-              <label htmlFor="url_path">URL: </label> { website.draft_publish_date ? (
-              <a href={website.draft_url}>{website.draft_url}</a>) : <span>{`${partialUrl}`}</span>
-              }
+              <label htmlFor="url_path">URL: </label>{" "}
+              {website.draft_publish_date ? (
+                <a href={website.draft_url}>{website.draft_url}</a>
+              ) : (
+                <span>{`${partialUrl}`}</span>
+              )}
               <Field type="text" name="url_path" className="form-control" />
               <ErrorMessage name="url_path" component={FormError} />
             </div>

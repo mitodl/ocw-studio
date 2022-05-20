@@ -58,7 +58,9 @@ def test_websitecontent_calculate_checksum(metadata, markdown, dirpath, exp_chec
 @pytest.mark.parametrize("has_file", [True, False])
 @pytest.mark.parametrize("is_video", [True, False])
 @pytest.mark.parametrize("has_metadata", [True, False])
-def test_websitecontent_full_metadata(has_file_widget, has_file, is_video, has_metadata):
+def test_websitecontent_full_metadata(
+    has_file_widget, has_file, is_video, has_metadata
+):
     """WebsiteContent.full_metadata returns expected file field in metadata when appropriate"""
     file = SimpleUploadedFile("test.txt", b"content")
     title = ("Test Title",)
@@ -68,22 +70,22 @@ def test_websitecontent_full_metadata(has_file_widget, has_file, is_video, has_m
         {"label": "My File", "name": "my_file", "widget": "file", "required": False},
     ]
     video_fields_section = {
-          "fields": [
+        "fields": [
             {
-              "label": "Video Captions (WebVTT) URL",
-              "name": "video_captions_file",
-              "widget": "string"
+                "label": "Video Captions (WebVTT) URL",
+                "name": "video_captions_file",
+                "widget": "string",
             },
             {
-              "label": "Video Transcript (PDF) URL",
-              "name": "video_transcript_file",
-              "widget": "string"
-            }
-          ],
-          "label": "Video Files",
-          "name": "video_files",
-          "widget": "object"
-        }
+                "label": "Video Transcript (PDF) URL",
+                "name": "video_transcript_file",
+                "widget": "string",
+            },
+        ],
+        "label": "Video Files",
+        "name": "video_files",
+        "widget": "object",
+    }
     fields = config_fields if has_file_widget else config_fields[0:1]
     if is_video and has_metadata:
         fields.append(video_fields_section)
@@ -104,14 +106,16 @@ def test_websitecontent_full_metadata(has_file_widget, has_file, is_video, has_m
     metadata = {"title": title, "description": description}
     if is_video and has_metadata:
         metadata["video_files"] = {
-            "video_captions_file": f"/sites/mysite/transcript.webvtt",
-            "video_transcript_file": f"/sites/mysite/transcript.pdf"
+            "video_captions_file": "/sites/mysite/transcript.webvtt",
+            "video_transcript_file": "/sites/mysite/transcript.pdf",
         }
     content = WebsiteContentFactory.build(
         type="resource",
         metadata=metadata if has_metadata else None,
         file=(file if has_file else None),
-        website=WebsiteFactory(starter=starter, url_path="sites/mysite-fall-2008", name="mysite"),
+        website=WebsiteFactory(
+            starter=starter, url_path="sites/mysite-fall-2008", name="mysite"
+        ),
     )
 
     full_metadata = content.full_metadata
@@ -121,14 +125,22 @@ def test_websitecontent_full_metadata(has_file_widget, has_file, is_video, has_m
 
     if has_file_widget:
         assert full_metadata["my_file"] == (
-            content.file.url.replace(content.website.s3_path, content.website.url_path) if has_file else None
+            content.file.url.replace(content.website.s3_path, content.website.url_path)
+            if has_file
+            else None
         )
     elif has_metadata:
         assert "my_file" not in full_metadata.keys()
 
     if is_video and has_metadata:
-        assert full_metadata["video_files"]["video_captions_file"] == f"/{content.website.url_path}/transcript.webvtt"
-        assert full_metadata["video_files"]["video_transcript_file"] == f"/{content.website.url_path}/transcript.pdf"
+        assert (
+            full_metadata["video_files"]["video_captions_file"]
+            == f"/{content.website.url_path}/transcript.webvtt"
+        )
+        assert (
+            full_metadata["video_files"]["video_transcript_file"]
+            == f"/{content.website.url_path}/transcript.pdf"
+        )
     if not has_metadata and not has_file_widget:
         assert full_metadata is None
 
