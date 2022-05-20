@@ -298,5 +298,6 @@ export const makeWebsiteContentDetail = (): WebsiteContent => ({
   metadata: {
     description: casual.short_description
   },
-  content_context: []
+  content_context: [],
+  url_path:        casual.text
 })

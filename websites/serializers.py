@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import transaction
+from django.db.models import Q
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -547,10 +548,10 @@ class WebsiteContentDetailSerializer(
                     continue
 
         contents = []
-        for website_name, text_ids in lookup.items():
+        for website_id, text_ids in lookup.items():
             contents.extend(
                 WebsiteContent.objects.filter(
-                    website__name=website_name, text_id__in=text_ids
+                    (Q(website__url_path=website_id) | Q(website__name=website_id)), text_id__in=text_ids
                 )
             )
         return WebsiteContentDetailSerializer(
