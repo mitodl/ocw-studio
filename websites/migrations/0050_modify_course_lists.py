@@ -5,6 +5,7 @@ from django.db.models import Q
 
 
 def replace_field(from_field, to_field, apps):
+    """Replace values from one website field for another across resource collections and course lists"""
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     Website = apps.get_model("websites", "Website")
     with transaction.atomic():
@@ -52,14 +53,14 @@ def replace_field(from_field, to_field, apps):
 
 def name_to_url_path(apps, schema_editor):
     """
-    Replace Website.name with Website.url_path in the course list
+    Replace Website.name with Website.url_path in the course lists and resource collections
     """
     replace_field("name", "url_path", apps)
 
 
 def url_path_to_name(apps, schema_editor):
     """
-    Replace Website.url_path with Website.name in the course list
+    Replace Website.url_path with Website.name in the course lists and resource collections
     """
     replace_field("url_path", "name", apps)
 
