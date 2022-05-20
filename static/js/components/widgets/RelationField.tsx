@@ -218,7 +218,10 @@ export default function RelationField(props: Props): JSX.Element {
           setContentToWebsite(cur => {
             const update = new Map(cur)
             results.forEach(websiteContent => {
-              update.set(websiteContent.text_id, websiteContent.url_path)
+              update.set(
+                websiteContent.text_id,
+                websiteContent.url_path || name
+              )
             })
             return update
           })
