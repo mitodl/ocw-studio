@@ -551,7 +551,8 @@ class WebsiteContentDetailSerializer(
         for website_id, text_ids in lookup.items():
             contents.extend(
                 WebsiteContent.objects.filter(
-                    (Q(website__url_path=website_id) | Q(website__name=website_id)), text_id__in=text_ids
+                    (Q(website__url_path=website_id) | Q(website__name=website_id)),
+                    text_id__in=text_ids,
                 )
             )
         return WebsiteContentDetailSerializer(
