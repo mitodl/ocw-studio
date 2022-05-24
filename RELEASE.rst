@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.62.0
+--------------
+
+- Custom URL tweaks (#1371)
+- added command to update departments (#1256)
+- Added slack notifications on_failure cases to the individual site pipelines. (#1358)
+- Customizable URLs for studio (#1316)
+- improve legacy shortcode handling (#1349)
+
 Version 0.61.1 (Released May 17, 2022)
 --------------
 
