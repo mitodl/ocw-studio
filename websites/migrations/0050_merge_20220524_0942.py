@@ -6,9 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('websites', '0049_websitestarter_status'),
-        ('websites', '0049_website_url_path'),
+        ("websites", "0049_websitestarter_status"),
+        ("websites", "0049_website_url_path"),
     ]
 
-    operations = [
-    ]
+    operations = []
