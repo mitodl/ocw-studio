@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import transaction
+from django.db.models import Q
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -457,6 +458,7 @@ class WebsiteContentDetailSerializer(
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""
 
     content_context = serializers.SerializerMethodField()
+    url_path = serializers.SerializerMethodField()
 
     def update(self, instance, validated_data):
         """Add updated_by to the data"""
@@ -484,6 +486,10 @@ class WebsiteContentDetailSerializer(
         if instance.type == CONTENT_TYPE_METADATA:
             sync_website_title(instance)
         return instance
+
+    def get_url_path(self, instance):
+        """Get the parent website url path"""
+        return instance.website.url_path
 
     def get_content_context(self, instance):  # pylint:disable=too-many-branches
         """
@@ -542,10 +548,11 @@ class WebsiteContentDetailSerializer(
                     continue
 
         contents = []
-        for website_name, text_ids in lookup.items():
+        for website_id, text_ids in lookup.items():
             contents.extend(
                 WebsiteContent.objects.filter(
-                    website__name=website_name, text_id__in=text_ids
+                    (Q(website__url_path=website_id) | Q(website__name=website_id)),
+                    text_id__in=text_ids,
                 )
             )
         return WebsiteContentDetailSerializer(
@@ -563,7 +570,7 @@ class WebsiteContentDetailSerializer(
 
     class Meta:
         model = WebsiteContent
-        read_only_fields = ["text_id", "type", "content_context"]
+        read_only_fields = ["text_id", "type", "content_context", "url_path"]
         fields = read_only_fields + [
             "title",
             "markdown",

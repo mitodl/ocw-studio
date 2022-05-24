@@ -286,7 +286,9 @@ describe("RelationField", () => {
           name:  "relation_field",
           value: {
             website: website.name,
-            content: [[contentListingItems[0].text_id, website.name]]
+            content: [
+              [contentListingItems[0].text_id, contentListingItems[0].url_path]
+            ]
           }
         }
       })

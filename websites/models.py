@@ -24,6 +24,7 @@ from safedelete.models import SafeDeleteModel
 from safedelete.queryset import SafeDeleteQueryset
 
 from content_sync.constants import VERSION_LIVE
+from main.settings import YT_FIELD_CAPTIONS, YT_FIELD_TRANSCRIPT
 from main.utils import uuid_string
 from users.models import User
 from websites import constants
@@ -34,7 +35,11 @@ from websites.constants import (
     CONTENT_TYPE_METADATA,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import get_dict_field, permissions_group_name_for_role
+from websites.utils import (
+    get_dict_field,
+    permissions_group_name_for_role,
+    set_dict_field,
+)
 
 
 log = logging.getLogger(__name__)
@@ -359,23 +364,31 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     def full_metadata(self) -> Dict:
         """Return the metadata field with file upload included"""
         file_field = self.get_config_file_field()
+        s3_path = self.website.s3_path
+        url_path = self.website.url_path
+        full_metadata = (
+            self.metadata if (self.metadata and isinstance(self.metadata, dict)) else {}
+        )
+        modified = False
         if file_field:
-            full_metadata = (
-                self.metadata
-                if (self.metadata and isinstance(self.metadata, dict))
-                else {}
-            )
             if self.file and self.file.url:
-                s3_path = self.website.s3_path
-                url_path = self.website.url_path
                 file_url = self.file.url
                 if url_path and s3_path != url_path:
                     file_url = file_url.replace(s3_path, url_path, 1)
                 full_metadata[file_field["name"]] = urlparse(file_url).path
             else:
                 full_metadata[file_field["name"]] = None
-            return full_metadata
-        return self.metadata
+            modified = True
+        # Update video transcript/caption paths if they exist
+        if full_metadata:
+            for field in (YT_FIELD_TRANSCRIPT, YT_FIELD_CAPTIONS):
+                value = get_dict_field(full_metadata, field)
+                if value is not None:
+                    set_dict_field(
+                        full_metadata, field, value.replace(s3_path, url_path, 1)
+                    )
+                    modified = True
+        return full_metadata if modified else self.metadata
 
     def get_config_file_field(self) -> Dict:
         """Get the site config file field for the object, if any"""

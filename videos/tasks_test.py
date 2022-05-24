@@ -458,8 +458,8 @@ def test_update_transcripts_for_video(
         destination=DESTINATION_YOUTUBE, destination_id="expected_id"
     )
     video = videofile.video
-    video.pdf_transcript_file = "pdf_transcript"
-    video.webvtt_transcript_file = "webvtt_transcript"
+    video.pdf_transcript_file = f"{video.website.s3_path}/pdf_transcript"
+    video.webvtt_transcript_file = f"{video.website.s3_path}/webvtt_transcript"
     video.status = initial_status
     video.save()
 
@@ -495,11 +495,11 @@ def test_update_transcripts_for_video(
     if update_transcript_return_value and is_ocw:
         assert (
             get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS)
-            == "/webvtt_transcript"
+            == f"/{video.website.url_path}/webvtt_transcript"
         )
         assert (
             get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT)
-            == "/pdf_transcript"
+            == f"/{video.website.url_path}/pdf_transcript"
         )
 
         if initial_status == VideoStatus.SUBMITTED_FOR_TRANSCRIPTION and (

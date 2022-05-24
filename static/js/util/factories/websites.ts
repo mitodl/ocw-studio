@@ -214,9 +214,11 @@ export const makeWebsiteDetail = (
   sync_errors:                     null,
   is_admin:                        casual.boolean,
   content_warnings:                [],
-  url_path:                        null,
-  url_suggestion:                  "[sitemetadata:primary_course_number]-[sitemetdata:title]",
-  s3_path:                         `courses/${casual.word}`,
+  url_path:                        times(4)
+    .map(() => casual.word)
+    .join("-"),
+  url_suggestion: "[sitemetadata:primary_course_number]-[sitemetdata:title]",
+  s3_path:        `courses/${casual.word}`,
   ...overrides
 })
 
@@ -296,5 +298,6 @@ export const makeWebsiteContentDetail = (): WebsiteContent => ({
   metadata: {
     description: casual.short_description
   },
-  content_context: []
+  content_context: [],
+  url_path:        casual.text
 })

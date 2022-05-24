@@ -284,7 +284,9 @@ def test_website_content_serializer():
 
 def test_website_content_detail_serializer():
     """WebsiteContentDetailSerializer should serialize all relevant fields to the frontend"""
-    content = WebsiteContentFactory.create()
+    content = WebsiteContentFactory.create(
+        website=WebsiteFactory.create(url_path="courses/mysite-fall-2022")
+    )
     serialized_data = WebsiteContentDetailSerializer(instance=content).data
     assert serialized_data["text_id"] == str(content.text_id)
     assert serialized_data["title"] == content.title
@@ -292,6 +294,7 @@ def test_website_content_detail_serializer():
     assert serialized_data["updated_on"] == content.updated_on.isoformat()[:-6] + "Z"
     assert serialized_data["markdown"] == content.markdown
     assert serialized_data["metadata"] == content.metadata
+    assert serialized_data["url_path"] == content.website.url_path
 
 
 def test_website_content_detail_serializer_with_url_format():

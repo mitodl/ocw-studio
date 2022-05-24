@@ -284,6 +284,7 @@ export interface WebsiteContent extends WebsiteContentListItem {
   metadata: null | Record<string, SiteFormValue>
   content_context: WebsiteContent[] | null
   file?: string
+  url_path?: string
 }
 
 export interface ContentListingParams {
