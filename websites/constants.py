@@ -115,14 +115,12 @@ class WebsiteStarterStatus:
     ACTIVE = "active"
     INACTIVE = "inactive"
 
+    ALLOWED_STATUSES = [DEFAULT, ACTIVE]
+    ALL_STATUSES = [DEFAULT, ACTIVE, INACTIVE]
+
 
 WEBSITE_STARTER_STATUS_CHOICES = Choices(
     (WebsiteStarterStatus.DEFAULT, "Default"),
     (WebsiteStarterStatus.ACTIVE, "Active"),
     (WebsiteStarterStatus.INACTIVE, "Inactive"),
 )
-
-ALLOWED_WEBSITE_STARTER_STATUS = [
-    WebsiteStarterStatus.DEFAULT,
-    WebsiteStarterStatus.ACTIVE,
-]
