@@ -216,9 +216,7 @@ def delete_s3_objects(
 def update_transcripts_for_video(video_id: int):
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
-    log.error("update_transcripts_for_video")
     if threeplay_api.update_transcripts_for_video(video):
-        log.error("update_transcripts_for_video yes update")
         first_transcript_download = False
 
         if video.status != VideoStatus.COMPLETE:
@@ -228,7 +226,6 @@ def update_transcripts_for_video(video_id: int):
 
         website = video.website
         if is_ocw_site(website):
-            log.error("update_transcripts_for_video is ocw")
             search_fields = {}
             search_fields[
                 get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)
@@ -238,7 +235,6 @@ def update_transcripts_for_video(video_id: int):
             ] = video.youtube_id()
 
             for video_resource in website.websitecontent_set.filter(**search_fields):
-                log.error("UPDATING METADATA")
                 metadata = video_resource.metadata
                 set_dict_field(
                     metadata,
