@@ -103,7 +103,7 @@ describe("RelationField", () => {
 
     websites = makeWebsites()
     useWebsiteSelectOptions.mockReturnValue({
-      options:     formatWebsiteOptions(websites, "name"),
+      options:     formatWebsiteOptions(websites, "title", "name"),
       loadOptions: jest.fn()
     })
   })
@@ -193,7 +193,7 @@ describe("RelationField", () => {
           .find("SelectField")
           .at(0)
           .prop("defaultOptions")
-      ).toEqual(formatWebsiteOptions(websites, "name"))
+      ).toEqual(formatWebsiteOptions(websites, "title", "name"))
     })
 
     it.each(["ocw-www", null])(

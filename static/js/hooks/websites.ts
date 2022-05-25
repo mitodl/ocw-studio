@@ -54,15 +54,19 @@ export function useWebsiteContent(
  * Format an array of Website objects into an array of Option
  * objects, which can be passed to a Select field.
  *
+ * The `labelField` argument indicates what field of the Website
+ * you'd like to show to the user.
+ *
  * The `valueField` argument indicates what field on the Website
  * you'd like to use for a user-readable label.
  */
 export const formatWebsiteOptions = (
   websites: Website[],
+  labelField: string,
   valueField: string
 ): Option[] =>
   websites.map(website => ({
-    label: website.title,
+    label: website[labelField],
     value: website[valueField]
   }))
 
@@ -82,6 +86,7 @@ interface ReturnProps {
  * which can be used to fetch new options.
  */
 export function useWebsiteSelectOptions(
+  labelField = "title",
   valueField = "uuid",
   published: boolean | undefined = undefined
 ): ReturnProps {
@@ -114,7 +119,7 @@ export function useWebsiteSelectOptions(
       }
       const json: WebsiteListingResponse = await response.json()
       const { results } = json
-      const options = formatWebsiteOptions(results, valueField)
+      const options = formatWebsiteOptions(results, labelField, valueField)
       setOptions(current =>
         uniqBy(option => option.value, [...current, ...options])
       )
@@ -122,7 +127,7 @@ export function useWebsiteSelectOptions(
         callback(options)
       }
     },
-    [setOptions, valueField, published]
+    [setOptions, labelField, valueField, published]
   )
 
   // on startup we want to fetch options initially so defaultOptions can
