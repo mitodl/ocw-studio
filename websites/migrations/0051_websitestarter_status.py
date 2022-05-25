@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("websites", "0048_www_pages_to_page"),
+        ("websites", "0050_modify_course_lists"),
     ]
 
     operations = [
