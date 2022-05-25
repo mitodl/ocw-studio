@@ -142,7 +142,10 @@ def test_websites_endpoint_list_create(mocker, drf_client, permission_groups):
     mock_create_website_backend = mocker.patch(
         "websites.serializers.create_website_backend"
     )
-    starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
+    starter = WebsiteStarterFactory.create(
+        source=constants.STARTER_SOURCE_GITHUB,
+        status=constants.WebsiteStarterStatus.ACTIVE,
+    )
     for [user, has_perm] in [
         [permission_groups.global_admin, True],
         [permission_groups.global_author, True],
@@ -562,7 +565,10 @@ def test_websites_autogenerate_name(drf_client):
     """ Website POST endpoint should auto-generate a name if one is not supplied """
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
-    starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
+    starter = WebsiteStarterFactory.create(
+        source=constants.STARTER_SOURCE_GITHUB,
+        status=constants.WebsiteStarterStatus.ACTIVE,
+    )
     website_title = "My Title"
     website_short_id = "my-title"
     slugified_title = slugify(website_title)
@@ -578,7 +584,10 @@ def test_websites_autogenerate_name(drf_client):
 def test_website_starters_list(settings, drf_client, course_starter):
     """ Website starters endpoint should return a serialized list """
     settings.FEATURES[features.USE_LOCAL_STARTERS] = False
-    new_starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
+    new_starter = WebsiteStarterFactory.create(
+        source=constants.STARTER_SOURCE_GITHUB,
+        status=constants.WebsiteStarterStatus.ACTIVE,
+    )
     resp = drf_client.get(reverse("website_starters_api-list"))
     expected_starters = [course_starter, new_starter]
     serialized_data = WebsiteStarterSerializer(expected_starters, many=True).data
@@ -590,7 +599,10 @@ def test_website_starters_list(settings, drf_client, course_starter):
 
 def test_website_starters_retrieve(drf_client):
     """ Website starters endpoint should return a single serialized starter """
-    starter = WebsiteStarterFactory.create(source=constants.STARTER_SOURCE_GITHUB)
+    starter = WebsiteStarterFactory.create(
+        source=constants.STARTER_SOURCE_GITHUB,
+        status=constants.WebsiteStarterStatus.ACTIVE,
+    )
     resp = drf_client.get(
         reverse("website_starters_api-detail", kwargs={"pk": starter.id})
     )
@@ -608,6 +620,7 @@ def test_website_starters_local(
         source=factory.Iterator(
             [constants.STARTER_SOURCE_LOCAL, constants.STARTER_SOURCE_GITHUB]
         ),
+        status=factory.Iterator([constants.WebsiteStarterStatus.ACTIVE]),
     )
     resp = drf_client.get(reverse("website_starters_api-list"))
     assert len(resp.data) == exp_result_count

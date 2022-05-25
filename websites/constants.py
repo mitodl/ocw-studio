@@ -1,4 +1,6 @@
 """ Constants for websites """
+from model_utils import Choices
+
 
 CONTENT_TYPE_PAGE = "page"
 CONTENT_TYPE_VIDEO_GALLERY = "video_gallery"
@@ -104,3 +106,21 @@ PUBLISH_STATUSES_FINAL = [
 ]
 
 OCW_HUGO_THEMES_GIT = "https://github.com/mitodl/ocw-hugo-themes.git"
+
+
+class WebsiteStarterStatus:
+    """Simple class for values/keys of status in website starter"""
+
+    DEFAULT = "default"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+    ALLOWED_STATUSES = [DEFAULT, ACTIVE]
+    ALL_STATUSES = [DEFAULT, ACTIVE, INACTIVE]
+
+
+WEBSITE_STARTER_STATUS_CHOICES = Choices(
+    (WebsiteStarterStatus.DEFAULT, "Default"),
+    (WebsiteStarterStatus.ACTIVE, "Active"),
+    (WebsiteStarterStatus.INACTIVE, "Inactive"),
+)

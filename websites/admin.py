@@ -105,7 +105,7 @@ class WebsiteStarterAdmin(TimestampedModelAdmin):
 
     form = WebsiteStarterForm
     include_created_on_in_list = True
-    list_display = ("id", "name", "source", "commit")
+    list_display = ("id", "name", "status", "source", "commit")
     list_filter = ("source",)
     search_fields = ("name", "path")
 

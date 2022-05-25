@@ -7,6 +7,8 @@ import { FormError } from "./FormError"
 import { WebsiteStarter } from "../../types/websites"
 import SelectField from "../widgets/SelectField"
 
+import { WebsiteStarterStatus } from "../../constants"
+
 export interface SiteFormValues {
   title: string
   short_id: string // eslint-disable-line
@@ -45,10 +47,14 @@ export const SiteForm = ({
   onSubmit,
   websiteStarters
 }: Props): JSX.Element | null => {
+  const defaultWebsiteStarter =
+    websiteStarters.find(obj => obj.status === WebsiteStarterStatus.Default) ||
+    (websiteStarters.length > 0 ? websiteStarters[0] : null)
+
   const initialValues: SiteFormValues = {
     title:    "",
     short_id: "",
-    starter:  websiteStarters.length > 0 ? websiteStarters[0].id : 0
+    starter:  defaultWebsiteStarter?.id || 0
   }
 
   return (

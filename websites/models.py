@@ -33,6 +33,8 @@ from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
     CONTENT_TYPE_METADATA,
+    WEBSITE_STARTER_STATUS_CHOICES,
+    WebsiteStarterStatus,
 )
 from websites.site_config_api import SiteConfig
 from websites.utils import (
@@ -438,6 +440,12 @@ class WebsiteStarter(TimestampedModel):
         max_length=100,
         null=False,
         help_text="Human-friendly name of the starter project.",
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=WEBSITE_STARTER_STATUS_CHOICES,
+        default=WebsiteStarterStatus.ACTIVE,
+        help_text=f"Starters with only {WEBSITE_STARTER_STATUS_CHOICES[WebsiteStarterStatus.ACTIVE]} and {WEBSITE_STARTER_STATUS_CHOICES[WebsiteStarterStatus.DEFAULT]} status will be shown while creating a new site.",
     )
     source = models.CharField(
         max_length=15,
