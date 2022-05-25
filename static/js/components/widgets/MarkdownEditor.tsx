@@ -92,8 +92,28 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   )
 
   const editorConfig = useMemo(() => {
+    const toolbarItemsFilter = (item: string): boolean => {
+      if (item === ADD_RESOURCE_LINK) {
+        return link.length > 0
+      }
+      if (item === ADD_RESOURCE_EMBED) {
+        return embed.length > 0
+      }
+      return true
+    }
+
     if (minimal) {
-      return MinimalEditorConfig
+      return {
+        ...MinimalEditorConfig,
+        [CKEDITOR_RESOURCE_UTILS]: {
+          renderResource,
+          openResourcePicker
+        },
+        toolbar: {
+          ...MinimalEditorConfig.toolbar,
+          items: MinimalEditorConfig.toolbar.items.filter(toolbarItemsFilter)
+        }
+      }
     } else {
       // this render function is stuck into the editor config
       // our ResourceEmbed plugin can pull the callback out,
@@ -106,15 +126,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         },
         toolbar: {
           ...FullEditorConfig.toolbar,
-          items: FullEditorConfig.toolbar.items.filter(item => {
-            if (item === ADD_RESOURCE_LINK) {
-              return link.length > 0
-            }
-            if (item === ADD_RESOURCE_EMBED) {
-              return embed.length > 0
-            }
-            return true
-          })
+          items: FullEditorConfig.toolbar.items.filter(toolbarItemsFilter)
         }
       }
     }

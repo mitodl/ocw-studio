@@ -148,8 +148,13 @@ export const MinimalEditorConfig = {
     LinkPlugin,
     ListPlugin,
     ParagraphPlugin,
+    ResourceEmbed,
+    ResourcePicker,
+    ResourceLink,
+    ResourceLinkMarkdownSyntax,
     MarkdownListSyntax,
-    Markdown
+    Markdown,
+    LegacyShortcodes
   ],
   toolbar: {
     items: [
@@ -162,7 +167,9 @@ export const MinimalEditorConfig = {
       "numberedList",
       "blockQuote",
       "undo",
-      "redo"
+      "redo",
+      ADD_RESOURCE_LINK,
+      ADD_RESOURCE_EMBED
     ]
   },
   language: "en"
