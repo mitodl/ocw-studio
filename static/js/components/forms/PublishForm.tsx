@@ -64,7 +64,9 @@ export const PublishForm: React.FC<Props> = ({
             <div className="form-group">
               <label htmlFor="url_path">URL: </label>{" "}
               {website.url_path ? (
-                <a href={website.draft_url}>{website.draft_url}</a>
+                <a href={website.draft_url} target="_blank" rel="noreferrer">
+                  {website.draft_url}{" "}
+                </a>
               ) : (
                 <span>{`${partialUrl}`}</span>
               )}
