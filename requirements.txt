@@ -250,7 +250,7 @@ pygithub==1.55
     # via -r requirements.in
 pygments==2.7.4
     # via ipython
-pyjwt==2.1.0
+pyjwt==2.4.0
     # via
     #   pygithub
     #   social-auth-core
