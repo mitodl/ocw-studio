@@ -104,6 +104,17 @@ describe("PublishForm", () => {
     }
   )
 
+  it("shows a text-only live url for unpublished site", () => {
+    website.publish_date = null
+    website.url_path = "courses/my-url-fall-2028"
+    const form = renderInnerForm(
+      { isSubmitting: false, status: "whatever" },
+      { option: PUBLISH_OPTION_PRODUCTION }
+    )
+    //expect(form.find("a").exists()).toBeFalsy()
+    expect(form.find("span").text()).toEqual(`${website.live_url}`)
+  })
+
   describe("validation", () => {
     it("rejects an empty url", async () => {
       try {

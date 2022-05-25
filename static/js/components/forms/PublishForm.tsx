@@ -64,9 +64,13 @@ export const PublishForm: React.FC<Props> = ({
             <div className="form-group">
               <label htmlFor="url_path">URL: </label>{" "}
               {website.url_path ? (
-                <a href={website.draft_url} target="_blank" rel="noreferrer">
-                  {website.draft_url}{" "}
-                </a>
+                website.publish_date || option === PUBLISH_OPTION_STAGING ? (
+                  <a href={fullUrl} target="_blank" rel="noreferrer">
+                    {fullUrl}{" "}
+                  </a>
+                ) : (
+                  <span>{`${fullUrl}`}</span>
+                )
               ) : (
                 <span>{`${partialUrl}`}</span>
               )}
