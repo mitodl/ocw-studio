@@ -1,6 +1,4 @@
 """ Website models tests """
-from urllib.parse import urljoin
-
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from mitol.common.utils import now_in_utc
@@ -204,7 +202,9 @@ def test_website_get_full_url(
     starter.save()
     settings.ROOT_WEBSITE_NAME = name if is_home else "test-home"
     website = WebsiteFactory.create(name=name, starter=starter, url_path=expected_path)
-    assert website.get_full_url(version) == urljoin(expected_domain, expected_path)
+    assert website.get_full_url(version) == "/".join(
+        section for section in [expected_domain, expected_path] if section
+    )
 
 
 def test_website_get_full_url_no_starter():
