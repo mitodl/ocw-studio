@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.62.0
+Version 0.62.0 (Released May 25, 2022)
 --------------
 
 - Custom URL tweaks (#1371)
