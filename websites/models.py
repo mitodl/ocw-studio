@@ -202,7 +202,7 @@ class Website(TimestampedModel):
             else settings.OCW_STUDIO_DRAFT_URL
         )
         url_path = self.url_path
-        if url_path:
+        if url_path and self.name != settings.ROOT_WEBSITE_NAME:
             return urljoin(base_url, url_path)
         else:
             return urljoin(base_url, self.get_site_root_path())
