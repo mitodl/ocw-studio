@@ -215,7 +215,10 @@ def stream_to_s3(drive_file: DriveFile):
         drive_file.update_status(DriveFileStatus.UPLOADING)
         extra_args = {"ContentType": drive_file.mime_type, "ACL": "public-read"}
 
-        if drive_file.mime_type.startswith("video/"):
+        if (
+            drive_file.mime_type == "application/pdf"
+            or drive_file.mime_type.startswith("video/")
+        ):
             extra_args["ContentDisposition"] = "attachment"
 
         bucket.upload_fileobj(

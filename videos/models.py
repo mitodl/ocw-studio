@@ -1,8 +1,11 @@
 """Video models"""
+from django.conf import settings
+from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models import CASCADE
 from mitol.common.models import TimestampedModel
 
+from main.s3_utils import Boto3StorageWithAttachmentContentDisposition
 from videos.constants import (
     DESTINATION_YOUTUBE,
     VideoFileStatus,
@@ -11,6 +14,14 @@ from videos.constants import (
 )
 from websites.models import Website
 from websites.site_config_api import SiteConfig
+
+
+def video_transcript_storage():
+    """Returns storage that should be used for pdf_transcript_file"""
+    if settings.DEFAULT_FILE_STORAGE == "storages.backends.s3boto3.S3Boto3Storage":
+        return Boto3StorageWithAttachmentContentDisposition
+    else:
+        return default_storage
 
 
 class Video(TimestampedModel):
@@ -44,7 +55,12 @@ class Video(TimestampedModel):
         max_length=50, null=False, blank=False, default=VideoStatus.CREATED
     )
     pdf_transcript_file = models.FileField(
-        upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
+        upload_to=upload_file_to,
+        editable=True,
+        null=True,
+        blank=True,
+        max_length=2048,
+        storage=video_transcript_storage(),
     )
     webvtt_transcript_file = models.FileField(
         upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048

@@ -1,6 +1,7 @@
 """ S3 utility functions """
 import boto3
 from django.conf import settings
+from storages.backends.s3boto3 import S3Boto3Storage
 
 
 def get_boto3_options(extra_options=None):
@@ -71,3 +72,14 @@ def get_s3_object_and_read(obj, iteration=0):
             return get_s3_object_and_read(obj, iteration + 1)
         else:
             raise
+
+
+class Boto3StorageWithAttachmentContentDisposition(S3Boto3Storage):
+    """Boto3Storage with overwritten get_object_parameters to set content-disposition"""
+
+    def get_object_parameters(self, name):
+        """We want files to have the Content-Disposition header set to attachment."""
+
+        parameters = self.object_parameters.copy()
+        parameters["ContentDisposition"] = "attachment"
+        return parameters
