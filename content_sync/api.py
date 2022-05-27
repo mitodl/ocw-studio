@@ -156,7 +156,6 @@ def publish_website(  # pylint: disable=too-many-arguments
         }
         raise
     finally:
-        log.error(update_kwargs)
         Website.objects.filter(name=name).update(**update_kwargs)
 
 
