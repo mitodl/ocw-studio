@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.62.1
+Version 0.62.1 (Released May 31, 2022)
 --------------
 
 - Bump pyjwt from 2.1.0 to 2.4.0 (#1374)
