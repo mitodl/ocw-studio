@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.63.0
+Version 0.63.0 (Released May 31, 2022)
 --------------
 
 - add migration to move metadata description on resources to the markdown body (#1382)
