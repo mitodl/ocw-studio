@@ -96,7 +96,7 @@ jobs:
               timeout: 1m
               params:
                 alert_type: failed
-                text: "Failed to get webpack-json"
+                text: "Failed on get webpack-json : ((pipeline_name))/((site-name))"
       - get: ocw-hugo-themes
         trigger: false
         timeout: 5m
@@ -115,7 +115,7 @@ jobs:
               timeout: 1m
               params:
                 alert_type: failed
-                text: "Failed to get ocw-hugo-themes"
+                text: "Failed to get ocw-hugo-themes : ((pipeline_name))/((site-name))"
       - get: ocw-hugo-projects
         trigger: false
         timeout: 5m
@@ -135,7 +135,7 @@ jobs:
               timeout: 1m
               params:
                 alert_type: failed
-                text: "Failed to get ocw-hugo-projects"
+                text: "Failed to get ocw-hugo-projects : ((pipeline_name))/((site-name))"
       - get: course-markdown
         trigger: false
         timeout: 5m
@@ -155,7 +155,7 @@ jobs:
               timeout: 1m
               params:
                 alert_type: failed
-                text: "Failed to get course-markdown"
+                text: "Failed to get course-markdown : ((pipeline_name))/((site-name))"
       - task: build-course-task
         timeout: 20m
         attempts: 3
@@ -203,7 +203,7 @@ jobs:
               timeout: 1m
               params:
                 alert_type: failed
-                text: "Failed on build-course-task"
+                text: "Failed on build-course-task : ((pipeline_name))/((site-name))"
       - task: copy-s3-buckets
         timeout: 20m
         attempts: 3
@@ -237,7 +237,7 @@ jobs:
               timeout: 1m
               params:
                 alert_type: failed
-                text: "Failed on copy-s3-buckets"
+                text: "Failed on copy-s3-buckets : ((pipeline_name))/((site-name))"
       - task: clear-cdn-cache
         timeout: 5m
         attempts: 3
@@ -293,4 +293,4 @@ jobs:
               timeout: 1m
               params:
                 alert_type: failed
-                text: "Failed on clear-cdn-cache"
+                text: "Failed on clear-cdn-cache : ((pipeline_name))/((site-name))"
