@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.62.1 (Released May 31, 2022)
+--------------
+
+- Bump pyjwt from 2.1.0 to 2.4.0 (#1374)
+- Bump nokogiri from 1.12.5 to 1.13.6 in /docs (#1334)
+- Show proper urls on the Publish Drawer (#1377)
+- Fix conflicting migrations (#1378)
+- feat: Limit site starter options when creating new site (#1355)
+- allow setting link / embed on minimal markdown editor (#1364)
+
 Version 0.62.0 (Released May 25, 2022)
 --------------
 
