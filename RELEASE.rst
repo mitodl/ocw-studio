@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.63.1
+--------------
+
+- Adding information to the body of each slack alert to indicate which pipeline + course failed (#1385)
+
 Version 0.63.0 (Released May 31, 2022)
 --------------
 
