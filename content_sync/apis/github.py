@@ -327,10 +327,10 @@ class GithubApiWrapper:
 
         for sync_state in unsynced_states.iterator():
             content = sync_state.content
-            current_checksum = content.calculate_checksum()
             filepath = get_destination_filepath(content, self.site_config)
             if not filepath:
                 continue
+            current_checksum = content.calculate_checksum()
             if sync_state.current_checksum != current_checksum:
                 # sync_state.current_checksum is out of date
                 sync_state.current_checksum = current_checksum
