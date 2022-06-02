@@ -16,6 +16,8 @@ import { Website } from "../types/websites"
 import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 import { StudioList, StudioListItem } from "../components/StudioList"
 import { useURLParamFilter, usePagination } from "../hooks/search"
+import { usePermission } from "../hooks/permissions"
+import { Permissions } from "../constants"
 
 function getListingParams(search: string): WebsiteListingParams {
   const qsParams = new URLSearchParams(search)
@@ -37,6 +39,8 @@ export default function SitesDashboard(): JSX.Element {
   )
   const pages = usePagination(listing.count ?? 0)
 
+  const canAddSites = usePermission(Permissions.canCreateSites)
+
   return (
     <div className="px-4 dashboard">
       <DocumentTitle title={formatTitle("Sites")} />
@@ -52,12 +56,14 @@ export default function SitesDashboard(): JSX.Element {
               value={searchInput}
               onChange={setSearchInput}
             />
-            <Link
-              className="btn cyan-button larger add-new"
-              to={newSiteUrl.toString()}
-            >
-              Add Site
-            </Link>
+            {canAddSites ? (
+              <Link
+                className="btn cyan-button larger add-new"
+                to={newSiteUrl.toString()}
+              >
+                Add Site
+              </Link>
+            ) : null}
           </div>
         </div>
         <StudioList>

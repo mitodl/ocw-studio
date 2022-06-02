@@ -31,6 +31,7 @@ def _index(request):
             "username": user.username,
             "email": user.email,
             "name": user.name,
+            "isSuperuser": user.is_superuser,
         }
         if user.is_authenticated
         else None

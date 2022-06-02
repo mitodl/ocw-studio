@@ -85,6 +85,7 @@ def test_react_page(
                 "username": user.username,
                 "email": user.email,
                 "name": user.name,
+                "isSuperuser": False,
             }
             if is_authenticated
             else None,
