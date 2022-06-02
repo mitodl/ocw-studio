@@ -327,14 +327,24 @@ class GithubApiWrapper:
 
         for sync_state in unsynced_states.iterator():
             content = sync_state.content
+            current_checksum = content.calculate_checksum()
             filepath = get_destination_filepath(content, self.site_config)
             if not filepath:
                 continue
+            if sync_state.current_checksum != current_checksum:
+                # sync_state.current_checksum is out of date
+                sync_state.current_checksum = current_checksum
+                sync_state.save()
+                if (
+                    current_checksum == sync_state.synced_checksum
+                    and not content.deleted
+                ):
+                    continue
             synced_results.append(
                 SyncResult(
                     sync_id=sync_state.id,
                     filepath=filepath,
-                    checksum=content.calculate_checksum(),
+                    checksum=current_checksum,
                     deleted=content.deleted is not None,
                 )
             )
