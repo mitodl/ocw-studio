@@ -47,13 +47,11 @@ class Command(BaseCommand):
         start = now_in_utc()
 
         if delete:
-            self.stdout.write(
-                "Delete existing unpublished sites removal pipeline first"
-            )
+            self.stdout.write("Delete existing theme assets pipelines first")
             api = get_pipeline_api()
             if api:
                 api.delete_pipelines(names=[BaseThemeAssetsPipeline.PIPELINE_NAME])
-                self.stdout.write("Deleted unpublished sites removal pipeline")
+                self.stdout.write("Deleted theme assets pipeline")
             else:
                 self.stdout.error("No pipeline api configured")
 

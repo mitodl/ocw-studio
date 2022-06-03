@@ -90,7 +90,7 @@ class Command(BaseCommand):
                 api.delete_pipelines(names=[VERSION_LIVE, VERSION_DRAFT])
                 self.stdout.write("Deleted all site pipelines")
             else:
-                self.stdout.error("No general pipeline configured")
+                self.stdout.error("No pipeline api configured")
 
         if filter_str:
             website_qset = Website.objects.filter(
