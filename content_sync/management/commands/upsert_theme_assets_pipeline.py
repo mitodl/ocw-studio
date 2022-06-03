@@ -1,9 +1,10 @@
 """ Management command for backpopulating the theme pipeline """
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
-from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
+from content_sync.api import get_pipeline_api
+from content_sync.pipelines.base import BaseThemeAssetsPipeline
 from content_sync.tasks import upsert_theme_assets_pipeline
 
 
@@ -20,6 +21,13 @@ class Command(BaseCommand):
             action="store_true",
             help="Unpause the pipelines after creating/updating them",
         )
+        parser.add_argument(
+            "-d",
+            "--delete",
+            dest="delete",
+            action="store_true",
+            help="Delete existing theme assets pipelines first",
+        )
 
     def handle(self, *args, **options):
 
@@ -31,15 +39,26 @@ class Command(BaseCommand):
 
         is_verbose = options["verbosity"] > 1
         unpause = options["unpause"]
+        delete = options["delete"]
 
         if is_verbose:
             self.stdout.write(f"Upserting theme assets pipeline")
 
         start = now_in_utc()
+
+        if delete:
+            self.stdout.write(
+                "Delete existing unpublished sites removal pipeline first"
+            )
+            api = get_pipeline_api()
+            if api:
+                api.delete_pipelines(names=[BaseThemeAssetsPipeline.PIPELINE_NAME])
+                self.stdout.write("Deleted unpublished sites removal pipeline")
+            else:
+                self.stdout.error("No pipeline api configured")
+
         task = upsert_theme_assets_pipeline.delay(unpause=unpause)
-
         self.stdout.write(f"Started celery task {task} to upsert theme assets pipeline")
-
         self.stdout.write("Waiting on task...")
 
         result = task.get()

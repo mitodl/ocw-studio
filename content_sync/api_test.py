@@ -184,13 +184,12 @@ def test_sync_github_website_starters(mocker):
     mock_task.assert_called_once_with(*args, **kwargs)
 
 
-@pytest.mark.parametrize("pipeline_api", [None, {}])
-def test_get_general_pipeline(settings, mocker, pipeline_api):
-    """ Verify that get_general_pipeline() imports the pipeline class based on settings.py """
+def test_get_pipeline_api(settings, mocker):
+    """ Verify that get_pipeline_api() imports the pipeline api class based on settings.py """
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
-    import_string_mock = mocker.patch("content_sync.pipelines.concourse.GeneralPipeline")
-    api.get_general_pipeline(api=pipeline_api)
-    import_string_mock.assert_any_call(api=pipeline_api)
+    import_string_mock = mocker.patch("content_sync.pipelines.concourse.PipelineApi")
+    api.get_pipeline_api()
+    import_string_mock.assert_called_once_with()
 
 
 @pytest.mark.parametrize("pipeline_api", [None, {}])
@@ -303,7 +302,7 @@ def test_get_site_pipeline_no_backend(settings):
     assert api.get_site_pipeline(WebsiteFactory.create()) is None
 
 
-def test_get_general_pipeline_no_backend(settings):
+def test_get_pipeline_api_no_backend(settings):
     """get_general_pipeline should return None if no backend is specified"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = None
-    assert api.get_general_pipeline() is None
+    assert api.get_pipeline_api() is None

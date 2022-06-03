@@ -13,11 +13,11 @@ from content_sync.pipelines.base import (
     BaseUnpublishedSiteRemovalPipeline,
 )
 from content_sync.pipelines.concourse import (
-    ConcourseApi,
     MassBuildSitesPipeline,
+    PipelineApi,
     SitePipeline,
     ThemeAssetsPipeline,
-    UnpublishedSiteRemovalPipeline, GeneralPipeline,
+    UnpublishedSiteRemovalPipeline,
 )
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
@@ -34,53 +34,63 @@ AUTH_URLS = [
 
 
 PIPELINES_LIST = [
-    {'id': 1,
-     'name': VERSION_DRAFT,
-     'instance_vars': {'site': 'test-site-1'},
-     'paused': False,
-     'public': False,
-     'archived': False,
-     'team_name': 'team1',
-     'last_updated': 1652878975},
-    {'id': 2,
-     'name': VERSION_DRAFT,
-     'instance_vars': {'site': 'test-site-2'},
-     'paused': False,
-     'public': False,
-     'archived': False,
-     'team_name': 'team1',
-     'last_updated': 1652878976},
-    {'id': 3,
-     'name': VERSION_LIVE,
-     'instance_vars': {'site': 'test-site-1'},
-     'paused': False,
-     'public': False,
-     'archived': False,
-     'team_name': 'team1',
-     'last_updated': 1652878975},
-    {'id': 4,
-     'name': VERSION_LIVE,
-     'instance_vars': {'site': 'test-site-2'},
-     'paused': False,
-     'public': False,
-     'archived': False,
-     'team_name': 'team1',
-     'last_updated': 1652878976},
-    {'id': 5,
-     'name': "something_else",
-     'instance_vars': {'site': 'test-site-other1'},
-     'paused': False,
-     'public': False,
-     'archived': False,
-     'team_name': 'team1',
-     'last_updated': 1652878976},
+    {
+        "id": 1,
+        "name": VERSION_DRAFT,
+        "instance_vars": {"site": "test-site-1"},
+        "paused": False,
+        "public": False,
+        "archived": False,
+        "team_name": "team1",
+        "last_updated": 1652878975,
+    },
+    {
+        "id": 2,
+        "name": VERSION_DRAFT,
+        "instance_vars": {"site": "test-site-2"},
+        "paused": False,
+        "public": False,
+        "archived": False,
+        "team_name": "team1",
+        "last_updated": 1652878976,
+    },
+    {
+        "id": 3,
+        "name": VERSION_LIVE,
+        "instance_vars": {"site": "test-site-1"},
+        "paused": False,
+        "public": False,
+        "archived": False,
+        "team_name": "team1",
+        "last_updated": 1652878975,
+    },
+    {
+        "id": 4,
+        "name": VERSION_LIVE,
+        "instance_vars": {"site": "test-site-2"},
+        "paused": False,
+        "public": False,
+        "archived": False,
+        "team_name": "team1",
+        "last_updated": 1652878976,
+    },
+    {
+        "id": 5,
+        "name": "something_else",
+        "instance_vars": {"site": "test-site-other1"},
+        "paused": False,
+        "public": False,
+        "archived": False,
+        "team_name": "team1",
+        "last_updated": 1652878976,
+    },
 ]
 
 
 @pytest.fixture
 def mock_auth(mocker):
     """Mock the concourse api auth method"""
-    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
+    mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
 
 
 @pytest.fixture
@@ -95,7 +105,7 @@ def pipeline_settings(settings):
 @pytest.mark.parametrize("stream", [True, False])
 @pytest.mark.parametrize("iterator", [True, False])
 def test_api_get_with_headers(mocker, mock_auth, stream, iterator):
-    """ ConcourseApi.get_with_headers function should work as expected """
+    """ PipelineApi.get_with_headers function should work as expected """
     mock_text = '[{"test": "output"}]' if iterator else '{"test": "output"}'
     stream_output = ["yielded"]
     mocker.patch(
@@ -109,7 +119,7 @@ def test_api_get_with_headers(mocker, mock_auth, stream, iterator):
         "content_sync.pipelines.concourse.requests.get", return_value=mock_response
     )
     url_path = "/api/v1/teams/myteam/pipelines/draft/config?vars={site=mypipeline}"
-    api = ConcourseApi("http://test.edu", "test", "test", "myteam")
+    api = PipelineApi("http://test.edu", "test", "test", "myteam")
     result, headers = api.get_with_headers(url_path, stream=stream, iterator=iterator)
     mock_get.assert_called_once_with(
         f"http://test.edu{url_path}", headers=mocker.ANY, stream=stream
@@ -122,8 +132,8 @@ def test_api_get_with_headers(mocker, mock_auth, stream, iterator):
 @pytest.mark.parametrize("status_code", [200, 401])
 @pytest.mark.parametrize("ok_response", [True, False])
 def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
-    """ ConcourseApi.put_with_headers function should work as expected """
-    mock_auth = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
+    """ PipelineApi.put_with_headers function should work as expected """
+    mock_auth = mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_response = mocker.Mock(
         status_code=status_code, headers={"X-Test": "header_value"}
     )
@@ -135,7 +145,7 @@ def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
         "content_sync.pipelines.concourse.requests.put", return_value=mock_response
     )
     url_path = "/api/v1/teams/myteam/pipelines/draft/config?vars={site=mypipeline}"
-    api = ConcourseApi("http://test.edu", "test", "test", "myteam")
+    api = PipelineApi("http://test.edu", "test", "test", "myteam")
     data = {"test": "value"}
     assert api.put_with_headers(url_path, data=data, headers=headers) is (
         status_code == 200
@@ -149,6 +159,67 @@ def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
         assert kwargs["headers"][key] == value
         assert kwargs["data"] == data
     assert mock_auth.call_count == 1 if ok_response else 2
+
+
+@pytest.mark.parametrize("status_code", [201, 403])
+@pytest.mark.parametrize("ok_response", [True, False])
+def test_api_delete(mocker, mock_auth, status_code, ok_response):
+    """ PipelineApi.delete function should work as expected """
+    mock_auth = mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
+    mock_response = mocker.Mock(
+        status_code=status_code, headers={"X-Test": "header_value"}
+    )
+    mocker.patch(
+        "content_sync.pipelines.concourse.BaseConcourseApi._is_response_ok",
+        return_value=ok_response,
+    )
+    mock_delete = mocker.patch(
+        "content_sync.pipelines.concourse.requests.delete", return_value=mock_response
+    )
+    url_path = "/api/v1/teams/myteam/pipelines/draft?vars={site=mypipeline}"
+    api = PipelineApi("http://test.edu", "test", "test", "myteam")
+    data = {"test": "value"}
+    assert api.delete(url_path, data=data) is (status_code == 200)
+    mock_delete.assert_any_call(
+        f"http://test.edu{url_path}", data=data, headers=mocker.ANY
+    )
+    assert mock_auth.call_count == 1 if ok_response else 2
+
+
+@pytest.mark.parametrize("names", [None, [VERSION_DRAFT, VERSION_LIVE]])
+def test_get_pipelines(settings, mocker, mock_auth, names):
+    """The correct list of pipelines should be returned"""
+    settings.CONCOURSE_TEAM = "team1"
+    mocker.patch(
+        "content_sync.pipelines.concourse.BaseConcourseApi.list_pipelines",
+        return_value=PIPELINES_LIST,
+    )
+    api = PipelineApi()
+    matching_list = api.get_pipelines(names=names)
+    assert len(matching_list) == (5 if not names else 4)
+    assert matching_list == (PIPELINES_LIST if not names else PIPELINES_LIST[0:4])
+
+
+@pytest.mark.parametrize("names", [None, [VERSION_DRAFT, VERSION_LIVE]])
+def test_delete_pipelines(settings, mocker, mock_auth, names):
+    """The correct list of pipelines should be deleted"""
+    settings.CONCOURSE_TEAM = "team1"
+    mocker.patch(
+        "content_sync.pipelines.concourse.BaseConcourseApi.list_pipelines",
+        return_value=PIPELINES_LIST,
+    )
+    mock_api_delete = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.delete"
+    )
+    api = PipelineApi()
+    api.delete_pipelines(names=names)
+    for idx, site_pipeline in enumerate(PIPELINES_LIST):
+        if idx < 4 or names is None:
+            pipe_name = site_pipeline["name"]
+            pipe_vars = f'?vars={quote(json.dumps(site_pipeline["instance_vars"]))}'
+            mock_api_delete.assert_any_call(
+                f"/api/v1/teams/team1/pipelines/{pipe_name}{pipe_vars}"
+            )
 
 
 def test_upsert_website_pipeline_missing_settings(settings):
@@ -198,18 +269,18 @@ def test_upsert_website_pipelines(
 
     if not pipeline_exists:
         mock_get = mocker.patch(
-            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
             side_effect=HTTPError(),
         )
     else:
         mock_get = mocker.patch(
-            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
             return_value=({}, {"X-Concourse-Config-Version": "3"}),
         )
     mock_put_headers = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
-    existing_api = ConcourseApi("a", "b", "c", "d") if with_api else None
+    existing_api = PipelineApi("a", "b", "c", "d") if with_api else None
     pipeline = SitePipeline(website, api=existing_api)
     assert (pipeline.api == existing_api) is with_api
     pipeline.upsert_pipeline()
@@ -268,11 +339,11 @@ def test_upsert_pipeline_public_vs_private(
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.test.edu"
     settings.OCW_STUDIO_LIVE_URL = "https://live.test.edu"
     mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+        "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
         return_value=(None, {"X-Concourse-Config-Version": 1}),
     )
     mock_put_headers = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
     starter = WebsiteStarterFactory.create(
         source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/site"
@@ -300,10 +371,10 @@ def test_upsert_pipeline_public_vs_private(
 )
 def test_upsert_website_pipelines_invalid_starter(mocker, mock_auth, source, path):
     """A pipeline should not be upserted for invalid WebsiteStarters"""
-    mock_get = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.get")
-    mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
+    mock_get = mocker.patch("content_sync.pipelines.concourse.PipelineApi.get")
+    mock_put = mocker.patch("content_sync.pipelines.concourse.PipelineApi.put")
     mock_put_headers = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
     starter = WebsiteStarterFactory.create(source=source, path=path)
     website = WebsiteFactory.create(starter=starter)
@@ -319,12 +390,12 @@ def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
     """The correct requests should be made to trigger a pipeline build"""
     job_name = "build-ocw-site"
     mock_get = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.get",
+        "content_sync.pipelines.concourse.PipelineApi.get",
         return_value={"config": {"jobs": [{"name": job_name}]}},
     )
     expected_build_id = 123456
     mock_post = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.post",
+        "content_sync.pipelines.concourse.PipelineApi.post",
         return_value={"id": expected_build_id},
     )
     website = WebsiteFactory.create(
@@ -344,7 +415,7 @@ def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
     )
     job_name = "build-theme-assets"
     mock_get = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.get",
+        "content_sync.pipelines.concourse.PipelineApi.get",
         return_value={"config": {"jobs": [{"name": job_name}]}},
     )
     pipeline = ThemeAssetsPipeline()
@@ -363,7 +434,7 @@ def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
 def test_pause_unpause_pipeline(settings, mocker, mock_auth, version, action):
     """pause_pipeline and unpause_pipeline should make the expected put requests"""
     settings.CONCOURSE_TEAM = "myteam"
-    mock_put = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.put")
+    mock_put = mocker.patch("content_sync.pipelines.concourse.PipelineApi.put")
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(
             source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
@@ -381,38 +452,12 @@ def test_pause_unpause_pipeline(settings, mocker, mock_auth, version, action):
     )
 
 
-@pytest.mark.parametrize("names", [None, [VERSION_DRAFT, VERSION_LIVE]])
-def test_list_pipelines(settings, mocker, mock_auth, names):
-    """The correct list of pipelines should be returned"""
-    settings.CONCOURSE_TEAM = "team1"
-    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.list_pipelines", return_value=PIPELINES_LIST)
-    pipeline = GeneralPipeline()
-    matching_list = pipeline.list_pipelines(names=names)
-    assert len(matching_list) == (5 if not names else 4)
-    assert matching_list == (PIPELINES_LIST if not names else PIPELINES_LIST[0:4])
-
-
-@pytest.mark.parametrize("names", [None, [VERSION_DRAFT, VERSION_LIVE]])
-def test_delete_pipelines(settings, mocker, mock_auth, names):
-    """The correct list of pipelines should be deleted"""
-    settings.CONCOURSE_TEAM = "team1"
-    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.list_pipelines", return_value=PIPELINES_LIST)
-    mock_api_delete = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.delete")
-    pipeline = GeneralPipeline()
-    pipeline.delete_pipelines(names=names)
-    for idx, site_pipeline in enumerate(PIPELINES_LIST):
-        if idx < 4 or names is None:
-            pipe_name = PIPELINES_LIST[idx]['name']
-            pipe_vars = f'?vars={quote(json.dumps(PIPELINES_LIST[idx]["instance_vars"]))}'
-            mock_api_delete.assert_any_call(f"/api/v1/teams/team1/pipelines/{pipe_name}{pipe_vars}")
-
-
 def test_get_build_status(mocker, mock_auth):
     """Get the status of the build for the site"""
     build_id = 123456
     status = "status"
     mock_get = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.get_build",
+        "content_sync.pipelines.concourse.PipelineApi.get_build",
         return_value={"status": status},
     )
     website = WebsiteFactory.create(
@@ -433,18 +478,18 @@ def test_upsert_pipeline(settings, mocker, mock_auth, pipeline_exists):
 
     if not pipeline_exists:
         mock_get = mocker.patch(
-            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
             side_effect=HTTPError(),
         )
     else:
         mock_get = mocker.patch(
-            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
             return_value=({}, {"X-Concourse-Config-Version": "3"}),
         )
     mock_put_headers = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
-    api = ConcourseApi("http://test.edu", "test", "test", "myteam")
+    api = PipelineApi("http://test.edu", "test", "test", "myteam")
     pipeline = ThemeAssetsPipeline(api)
     pipeline.upsert_pipeline()
     mock_get.assert_any_call(url_path)
@@ -482,16 +527,16 @@ def test_upsert_mass_build_pipeline(
 
     if not pipeline_exists:
         mock_get = mocker.patch(
-            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
             side_effect=HTTPError(),
         )
     else:
         mock_get = mocker.patch(
-            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
             return_value=({}, {"X-Concourse-Config-Version": "3"}),
         )
     mock_put_headers = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
     pipeline = MassBuildSitesPipeline(version)
     pipeline.upsert_pipeline()
@@ -531,16 +576,16 @@ def test_unpublished_site_removal_pipeline(
 
     if not pipeline_exists:
         mock_get = mocker.patch(
-            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
             side_effect=HTTPError(),
         )
     else:
         mock_get = mocker.patch(
-            "content_sync.pipelines.concourse.ConcourseApi.get_with_headers",
+            "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
             return_value=({}, {"X-Concourse-Config-Version": "3"}),
         )
     mock_put_headers = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi.put_with_headers"
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
     pipeline = UnpublishedSiteRemovalPipeline()
     pipeline.upsert_pipeline()
@@ -583,11 +628,11 @@ def test_api_auth(
     """verify that the auth function posts to the expected url and returns the expected response"""
     settings.CONCOURSE_PASSWORD = password
     mock_skymarshal = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi._get_skymarshal_auth",
+        "content_sync.pipelines.concourse.PipelineApi._get_skymarshal_auth",
         return_value=auth_token,
     )
     mock_session = mocker.patch(
-        "content_sync.pipelines.concourse.ConcourseApi._set_new_session"
+        "content_sync.pipelines.concourse.PipelineApi._set_new_session"
     )
     mock_session.return_value.get.side_effect = [
         mocker.Mock(text=url, status_code=get_status) for url in [*get_urls, *get_urls]
@@ -595,7 +640,7 @@ def test_api_auth(
     mock_session.return_value.post.return_value = mocker.Mock(
         text="ok", status_code=post_status
     )
-    api = ConcourseApi(
+    api = PipelineApi(
         settings.CONCOURSE_URL,
         settings.CONCOURSE_USERNAME,
         settings.CONCOURSE_PASSWORD,

@@ -36,11 +36,11 @@ def get_sync_backend(website: Website) -> BaseSyncBackend:
 
 
 @is_publish_pipeline_enabled
-def get_general_pipeline(api: Optional[object] = None) -> BasePipeline:
+def get_pipeline_api() -> BasePipeline:
     """ Get the base backend pipeline """
     return import_string(
-        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.GeneralPipeline"
-    )(api=api)
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.PipelineApi"
+    )()
 
 
 @is_publish_pipeline_enabled

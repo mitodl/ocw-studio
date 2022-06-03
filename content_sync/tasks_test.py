@@ -307,7 +307,7 @@ def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
 ):
     """calls upsert_theme_assets_pipeline and unpauses if asked"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
-    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
+    mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_pipeline_unpause = mocker.patch(
         "content_sync.pipelines.concourse.ThemeAssetsPipeline.unpause_pipeline"
     )
@@ -620,7 +620,7 @@ def test_check_incomplete_publish_build_statuses_500(settings, mocker, api_mock)
 def test_trigger_mass_build(settings, mocker, backend, version):
     """trigger_mass_build should call trigger_pipeline_build if enabled"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
-    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
+    mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_pipeline_unpause = mocker.patch(
         "content_sync.pipelines.concourse.GeneralPipeline.unpause_pipeline"
     )
@@ -641,7 +641,7 @@ def test_trigger_mass_build(settings, mocker, backend, version):
 def test_trigger_unpublished_removal(settings, mocker, backend):
     """trigger_unpublished_removal should call trigger_pipeline_build if enabled"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
-    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
+    mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_pipeline_unpause = mocker.patch(
         "content_sync.pipelines.concourse.BaseUnpublishedSiteRemovalPipeline.unpause_pipeline"
     )

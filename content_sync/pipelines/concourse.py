@@ -9,12 +9,12 @@ import json
 import logging
 import os
 from html import unescape
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import quote, urljoin, urlparse
 
 import requests
 import yaml
-from concoursepy.api import Api as BaseConcourseApi
+from concoursepy.api import Api
 from django.conf import settings
 from requests import HTTPError
 
@@ -23,6 +23,7 @@ from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
     BaseGeneralPipeline,
     BaseMassBuildSitesPipeline,
+    BasePipelineApi,
     BaseSitePipeline,
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
@@ -41,10 +42,19 @@ MANDATORY_CONCOURSE_SETTINGS = [
 ]
 
 
-class ConcourseApi(BaseConcourseApi):
+class PipelineApi(Api, BasePipelineApi):
     """
     Customized pipeline_name of concoursepy.api.Api that allows for getting/setting headers
     """
+
+    def __init__(self, url=None, username=None, password=None, token=None):
+        """Initialize the API"""
+        super().__init__(
+            url or settings.CONCOURSE_URL,
+            username=username or settings.CONCOURSE_USERNAME,
+            password=password or settings.CONCOURSE_PASSWORD,
+            token=token or settings.CONCOURSE_TEAM,
+        )
 
     @retry_on_failure
     def auth(self):
@@ -139,10 +149,11 @@ class ConcourseApi(BaseConcourseApi):
 
     @retry_on_failure
     def delete(self, path, data=None):
+        """Make a delete request"""
         url = self._make_api_url(path)
-        kwargs = {'headers': self.headers}
+        kwargs = {"headers": self.headers}
         if data is not None:
-            kwargs['data'] = data
+            kwargs["data"] = data
         r = self.requests.delete(url, **kwargs)
         if not self._is_response_ok(r) and self.has_username_and_passwd:
             self.auth()
@@ -152,6 +163,25 @@ class ConcourseApi(BaseConcourseApi):
         else:
             r.raise_for_status()
         return False
+
+    def get_pipelines(self, names: List[str] = None):
+        """Retrieve a list of concourse pipelines, filtered by team and optionally name"""
+        pipelines = super().list_pipelines(settings.CONCOURSE_TEAM)
+        if names:
+            pipelines = [
+                pipeline for pipeline in pipelines if pipeline["name"] in names
+            ]
+        return pipelines
+
+    def delete_pipelines(self, names: List[str] = None):
+        """Delete all pipelines matching filters"""
+        pipeline_list = self.get_pipelines(names)
+        for item in pipeline_list:
+            pipeline = GeneralPipeline(api=self)
+            instance_vars = item.get("instance_vars")
+            if instance_vars:
+                pipeline.set_instance_vars(instance_vars)
+            pipeline.delete_pipeline(item["name"])
 
 
 class GeneralPipeline(BaseGeneralPipeline):
@@ -172,16 +202,11 @@ class GeneralPipeline(BaseGeneralPipeline):
     @staticmethod
     def get_api():
         """Get a Concourse API instance"""
-        return ConcourseApi(
-            settings.CONCOURSE_URL,
-            settings.CONCOURSE_USERNAME,
-            settings.CONCOURSE_PASSWORD,
-            settings.CONCOURSE_TEAM,
-        )
+        return PipelineApi()
 
     def set_instance_vars(self, instance_vars: Dict):
         """Set the instance vars for the pipeline"""
-        self.instance_vars = f'?vars={quote(json.dumps(instance_vars))}'
+        self.instance_vars = f"?vars={quote(json.dumps(instance_vars))}"
 
     def _make_pipeline_url(self, pipeline_name: str):
         """Make URL for getting/destroying a pipeline"""
@@ -265,21 +290,8 @@ class GeneralPipeline(BaseGeneralPipeline):
         self.api.put_with_headers(url_path, data=config, headers=version_headers)
 
     def upsert_pipeline(self):
-        raise NotImplemented
-
-    def list_pipelines(self, names: [str] = None):
-        """Retrieve a list of concourse pipelines, filtered by team and optionally name"""
-        pipelines = self.api.list_pipelines(settings.CONCOURSE_TEAM)
-        if names:
-            pipelines = [pipeline for pipeline in pipelines if pipeline["name"] in names]
-        return pipelines
-
-    def delete_pipelines(self, names: [str] = None):
-        """Delete all pipelines matching filters"""
-        pipelines = self.list_pipelines(names)
-        for pipeline in pipelines:
-            self.set_instance_vars(pipeline["instance_vars"])
-            self.delete_pipeline(pipeline["name"])
+        """Placeholder for upsert_pipeline"""
+        raise NotImplementedError("Choose a more specific pipeline class")
 
 
 class SitePipeline(BaseSitePipeline, GeneralPipeline):
@@ -299,7 +311,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         "OCW_GTM_ACCOUNT_ID",
     ]
 
-    def __init__(self, website: Website, api: Optional[ConcourseApi] = None):
+    def __init__(self, website: Website, api: Optional[PipelineApi] = None):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
         self.website = website
@@ -413,7 +425,7 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
         "SEARCH_API_URL",
     ]
 
-    def __init__(self, api: Optional[ConcourseApi] = None):
+    def __init__(self, api: Optional[PipelineApi] = None):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
         self.set_instance_vars({"branch": settings.GITHUB_WEBHOOK_BRANCH})
@@ -448,7 +460,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
 
-    def __init__(self, version, api: Optional[ConcourseApi] = None):
+    def __init__(self, version, api: Optional[PipelineApi] = None):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
             "AWS_PREVIEW_BUCKET_NAME",
@@ -534,7 +546,7 @@ class UnpublishedSiteRemovalPipeline(
 
     PIPELINE_NAME = BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME
 
-    def __init__(self, api: Optional[ConcourseApi] = None):
+    def __init__(self, api: Optional[PipelineApi] = None):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
             "AWS_PUBLISH_BUCKET_NAME"

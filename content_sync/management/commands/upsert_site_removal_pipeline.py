@@ -3,7 +3,8 @@ from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.api import get_unpublished_removal_pipeline
+from content_sync.api import get_pipeline_api, get_unpublished_removal_pipeline
+from content_sync.pipelines.base import BaseUnpublishedSiteRemovalPipeline
 
 
 class Command(BaseCommand):
@@ -19,6 +20,13 @@ class Command(BaseCommand):
             action="store_true",
             help="Unpause the pipeline after creating/updating it",
         )
+        parser.add_argument(
+            "-d",
+            "--delete",
+            dest="delete",
+            action="store_true",
+            help="Delete existing site removal pipelines first",
+        )
 
     def handle(self, *args, **options):
 
@@ -29,8 +37,21 @@ class Command(BaseCommand):
         self.stdout.write("Creating unpublished sites removal pipeline")
 
         unpause = options["unpause"]
-
+        delete = options["delete"]
         start = now_in_utc()
+
+        if delete:
+            self.stdout.write(
+                "Delete existing unpublished sites removal pipeline first"
+            )
+            api = get_pipeline_api()
+            if api:
+                api.delete_pipelines(
+                    names=[BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME]
+                )
+                self.stdout.write("Deleted unpublished sites removal pipeline")
+            else:
+                self.stdout.error("No pipeline api configured")
 
         pipeline = get_unpublished_removal_pipeline()
         pipeline.upsert_pipeline()

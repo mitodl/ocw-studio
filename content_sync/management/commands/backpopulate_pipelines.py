@@ -1,11 +1,11 @@
 """ Backpopulate website pipelines"""
-from content_sync.constants import VERSION_LIVE, VERSION_DRAFT
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.api import get_general_pipeline
+from content_sync.api import get_pipeline_api
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.tasks import upsert_pipelines
 from websites.models import Website
 
@@ -85,9 +85,9 @@ class Command(BaseCommand):
 
         if delete:
             self.stdout.write("Deleting all existing site pipelines first")
-            base_pipeline = get_general_pipeline()
-            if base_pipeline:
-                base_pipeline.delete_pipelines(names=[VERSION_LIVE, VERSION_DRAFT])
+            api = get_pipeline_api()
+            if api:
+                api.delete_pipelines(names=[VERSION_LIVE, VERSION_DRAFT])
                 self.stdout.write("Deleted all site pipelines")
             else:
                 self.stdout.error("No general pipeline configured")
