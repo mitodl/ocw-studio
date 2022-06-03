@@ -17,7 +17,7 @@ from content_sync.pipelines.concourse import (
     MassBuildSitesPipeline,
     SitePipeline,
     ThemeAssetsPipeline,
-    UnpublishedSiteRemovalPipeline,
+    UnpublishedSiteRemovalPipeline, GeneralPipeline,
 )
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
@@ -30,6 +30,50 @@ AUTH_URLS = [
     '"/sky/issuer/auth/local?req=xtvhpv2hdsvjgownxnpowsiph&amp;foo=bar"',
     '"/sky/issuer/auth/local?access_type=offline&client_id=concourse-web&amp;redirect_uri=https%3A%2F%2Fcicd-ci.odl.mit.edu%2Fsky%2Fcallback"',
     '"/sky/issuer/auth/local/login?back=%2Fsky%2Fissuer%2Fauth%3Faccess_type%3Doffline%26client_id%3Dconcourse-web%26redirect_uri&amp;foo=bar%"',
+]
+
+
+PIPELINES_LIST = [
+    {'id': 1,
+     'name': VERSION_DRAFT,
+     'instance_vars': {'site': 'test-site-1'},
+     'paused': False,
+     'public': False,
+     'archived': False,
+     'team_name': 'team1',
+     'last_updated': 1652878975},
+    {'id': 2,
+     'name': VERSION_DRAFT,
+     'instance_vars': {'site': 'test-site-2'},
+     'paused': False,
+     'public': False,
+     'archived': False,
+     'team_name': 'team1',
+     'last_updated': 1652878976},
+    {'id': 3,
+     'name': VERSION_LIVE,
+     'instance_vars': {'site': 'test-site-1'},
+     'paused': False,
+     'public': False,
+     'archived': False,
+     'team_name': 'team1',
+     'last_updated': 1652878975},
+    {'id': 4,
+     'name': VERSION_LIVE,
+     'instance_vars': {'site': 'test-site-2'},
+     'paused': False,
+     'public': False,
+     'archived': False,
+     'team_name': 'team1',
+     'last_updated': 1652878976},
+    {'id': 5,
+     'name': "something_else",
+     'instance_vars': {'site': 'test-site-other1'},
+     'paused': False,
+     'public': False,
+     'archived': False,
+     'team_name': 'team1',
+     'last_updated': 1652878976},
 ]
 
 
@@ -335,6 +379,32 @@ def test_pause_unpause_pipeline(settings, mocker, mock_auth, version, action):
     mock_put.assert_any_call(
         f"/api/v1/teams/myteam/pipelines/ocw-theme-assets/{action}{pipeline.instance_vars}"
     )
+
+
+@pytest.mark.parametrize("names", [None, [VERSION_DRAFT, VERSION_LIVE]])
+def test_list_pipelines(settings, mocker, mock_auth, names):
+    """The correct list of pipelines should be returned"""
+    settings.CONCOURSE_TEAM = "team1"
+    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.list_pipelines", return_value=PIPELINES_LIST)
+    pipeline = GeneralPipeline()
+    matching_list = pipeline.list_pipelines(names=names)
+    assert len(matching_list) == (5 if not names else 4)
+    assert matching_list == (PIPELINES_LIST if not names else PIPELINES_LIST[0:4])
+
+
+@pytest.mark.parametrize("names", [None, [VERSION_DRAFT, VERSION_LIVE]])
+def test_delete_pipelines(settings, mocker, mock_auth, names):
+    """The correct list of pipelines should be deleted"""
+    settings.CONCOURSE_TEAM = "team1"
+    mocker.patch("content_sync.pipelines.concourse.ConcourseApi.list_pipelines", return_value=PIPELINES_LIST)
+    mock_api_delete = mocker.patch("content_sync.pipelines.concourse.ConcourseApi.delete")
+    pipeline = GeneralPipeline()
+    pipeline.delete_pipelines(names=names)
+    for idx, site_pipeline in enumerate(PIPELINES_LIST):
+        if idx < 4 or names is None:
+            pipe_name = PIPELINES_LIST[idx]['name']
+            pipe_vars = f'?vars={quote(json.dumps(PIPELINES_LIST[idx]["instance_vars"]))}'
+            mock_api_delete.assert_any_call(f"/api/v1/teams/team1/pipelines/{pipe_name}{pipe_vars}")
 
 
 def test_get_build_status(mocker, mock_auth):

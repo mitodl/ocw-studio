@@ -259,10 +259,10 @@ def test_sync_github_site_configs(mocker):
 
 
 def test_upsert_web_publishing_pipeline(api_mock):
-    """ upsert_web_publishing_pipeline should call api.get_sync_pipeline"""
+    """ upsert_web_publishing_pipeline should call api.get_site_pipeline"""
     website = WebsiteFactory.create()
     tasks.upsert_website_publishing_pipeline.delay(website.name)
-    api_mock.get_sync_pipeline.assert_called_once_with(website)
+    api_mock.get_site_pipeline.assert_called_once_with(website)
 
 
 def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
@@ -272,7 +272,7 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
         "Attempted to create pipeline for Website that doesn't exist: name=%s",
         "fake",
     )
-    api_mock.get_sync_pipeline.assert_not_called()
+    api_mock.get_site_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize("create_backend", [True, False])
@@ -333,7 +333,7 @@ def test_upsert_website_pipeline_batch(
     """upsert_website_pipeline_batch should make the expected function calls"""
     settings.GITHUB_RATE_LIMIT_CHECK = check_limit
     mock_get_backend = mocker.patch("content_sync.tasks.api.get_sync_backend")
-    mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_sync_pipeline")
+    mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_site_pipeline")
     mock_throttle = mocker.patch("content_sync.tasks.api.throttle_git_backend_calls")
     websites = WebsiteFactory.create_batch(2)
     website_names = sorted([website.name for website in websites])
@@ -501,15 +501,15 @@ def test_check_incomplete_publish_build_statuses(
         live_publish_status=None,
         latest_build_id_live=4,
     )
-    api_mock.get_sync_pipeline.return_value.get_build_status.return_value = new_status
+    api_mock.get_site_pipeline.return_value.get_build_status.return_value = new_status
     tasks.check_incomplete_publish_build_statuses.delay()
     for website, version in [
         (draft_site_in_query, VERSION_DRAFT),
         (live_site_in_query, VERSION_LIVE),
     ]:
         if should_check and pipeline is not None:
-            api_mock.get_sync_pipeline.assert_any_call(website)
-            api_mock.get_sync_pipeline.return_value.get_build_status.assert_any_call(
+            api_mock.get_site_pipeline.assert_any_call(website)
+            api_mock.get_site_pipeline.return_value.get_build_status.assert_any_call(
                 getattr(website, f"latest_build_id_{version}")
             )
             if should_update:
@@ -518,7 +518,7 @@ def test_check_incomplete_publish_build_statuses(
                 )
         else:
             with pytest.raises(AssertionError):
-                api_mock.get_sync_pipeline.assert_any_call(website)
+                api_mock.get_site_pipeline.assert_any_call(website)
             with pytest.raises(AssertionError):
                 mock_update_status.assert_any_call(
                     website, version, new_status, mocker.ANY
@@ -530,7 +530,7 @@ def test_check_incomplete_publish_build_statuses(
         (live_site_excluded_status, VERSION_LIVE),
     ]:
         with pytest.raises(AssertionError):
-            api_mock.get_sync_pipeline.assert_any_call(website)
+            api_mock.get_site_pipeline.assert_any_call(website)
         with pytest.raises(AssertionError):
             mock_update_status.assert_any_call(website, version, new_status, mocker.ANY)
 
@@ -544,11 +544,11 @@ def test_check_incomplete_publish_build_statuses_no_setting(settings, api_mock):
         draft_publish_status=PUBLISH_STATUS_NOT_STARTED,
         latest_build_id_draft=1,
     )
-    api_mock.get_sync_pipeline.return_value.get_build_status.return_value = (
+    api_mock.get_site_pipeline.return_value.get_build_status.return_value = (
         PUBLISH_STATUS_NOT_STARTED
     )
     tasks.check_incomplete_publish_build_statuses.delay()
-    api_mock.get_sync_pipeline.assert_not_called()
+    api_mock.get_site_pipeline.assert_not_called()
     stuck_website.refresh_from_db()
     assert stuck_website.draft_publish_status == PUBLISH_STATUS_NOT_STARTED
 
@@ -561,11 +561,11 @@ def test_check_incomplete_publish_build_statuses_abort(settings, api_mock):
         draft_publish_status=PUBLISH_STATUS_NOT_STARTED,
         latest_build_id_draft=1,
     )
-    api_mock.get_sync_pipeline.return_value.get_build_status.return_value = (
+    api_mock.get_site_pipeline.return_value.get_build_status.return_value = (
         PUBLISH_STATUS_NOT_STARTED
     )
     tasks.check_incomplete_publish_build_statuses.delay()
-    api_mock.get_sync_pipeline.return_value.abort_build.assert_called_once_with(
+    api_mock.get_site_pipeline.return_value.abort_build.assert_called_once_with(
         stuck_website.latest_build_id_draft
     )
     stuck_website.refresh_from_db()
@@ -581,7 +581,7 @@ def test_check_incomplete_publish_build_statuses_404(settings, mocker, api_mock)
         draft_publish_status=PUBLISH_STATUS_NOT_STARTED,
         latest_build_id_draft=1,
     )
-    api_mock.get_sync_pipeline.return_value.get_build_status.side_effect = HTTPError(
+    api_mock.get_site_pipeline.return_value.get_build_status.side_effect = HTTPError(
         response=mocker.Mock(status_code=404)
     )
     tasks.check_incomplete_publish_build_statuses.delay()
@@ -604,7 +604,7 @@ def test_check_incomplete_publish_build_statuses_500(settings, mocker, api_mock)
         live_publish_status=PUBLISH_STATUS_NOT_STARTED,
         latest_build_id_live=1,
     )
-    api_mock.get_sync_pipeline.return_value.get_build_status.side_effect = HTTPError(
+    api_mock.get_site_pipeline.return_value.get_build_status.side_effect = HTTPError(
         response=mocker.Mock(status_code=500)
     )
     tasks.check_incomplete_publish_build_statuses.delay()
@@ -622,10 +622,10 @@ def test_trigger_mass_build(settings, mocker, backend, version):
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
     mocker.patch("content_sync.pipelines.concourse.ConcourseApi.auth")
     mock_pipeline_unpause = mocker.patch(
-        "content_sync.pipelines.concourse.ConcoursePipeline.unpause_pipeline"
+        "content_sync.pipelines.concourse.GeneralPipeline.unpause_pipeline"
     )
     mock_pipeline_trigger = mocker.patch(
-        "content_sync.pipelines.concourse.ConcoursePipeline.trigger_pipeline_build"
+        "content_sync.pipelines.concourse.GeneralPipeline.trigger_pipeline_build"
     )
     pipeline_name = BaseMassBuildSitesPipeline.PIPELINE_NAME
     tasks.trigger_mass_build.delay(version)

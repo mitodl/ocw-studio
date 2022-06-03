@@ -21,8 +21,8 @@ from requests import HTTPError
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
+    BaseGeneralPipeline,
     BaseMassBuildSitesPipeline,
-    BasePipeline,
     BaseSitePipeline,
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
@@ -154,7 +154,7 @@ class ConcourseApi(BaseConcourseApi):
         return False
 
 
-class ConcoursePipeline(BasePipeline):
+class GeneralPipeline(BaseGeneralPipeline):
     """ Base class for a Concourse pipeline """
 
     MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS
@@ -185,7 +185,7 @@ class ConcoursePipeline(BasePipeline):
 
     def _make_pipeline_url(self, pipeline_name: str):
         """Make URL for getting/destroying a pipeline"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/{self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}{self.instance_vars}"
 
     def _make_builds_url(self, pipeline_name: str, job_name: str):
         """Make URL for fetching builds information"""
@@ -221,8 +221,8 @@ class ConcoursePipeline(BasePipeline):
         """Unpause the pipeline"""
         self.api.put(self._make_pipeline_unpause_url(pipeline_name))
 
-    def destroy_pipeline(self, pipeline_name: str):
-        """Destroy a pipeline"""
+    def delete_pipeline(self, pipeline_name: str):
+        """Delete a pipeline"""
         self.api.delete(self._make_pipeline_url(pipeline_name))
 
     def get_build_status(self, build_id: int):
@@ -254,6 +254,7 @@ class ConcoursePipeline(BasePipeline):
         # Try to get the pipeline_name of the pipeline if it already exists, because it will be
         # necessary to update an existing pipeline.
         url_path = self._make_pipeline_config_url(pipeline_name)
+        log.error(url_path)
         try:
             _, headers = self.api.get_with_headers(url_path)
             version_headers = {
@@ -266,8 +267,22 @@ class ConcoursePipeline(BasePipeline):
     def upsert_pipeline(self):
         raise NotImplemented
 
+    def list_pipelines(self, names: [str] = None):
+        """Retrieve a list of concourse pipelines, filtered by team and optionally name"""
+        pipelines = self.api.list_pipelines(settings.CONCOURSE_TEAM)
+        if names:
+            pipelines = [pipeline for pipeline in pipelines if pipeline["name"] in names]
+        return pipelines
 
-class SitePipeline(BaseSitePipeline, ConcoursePipeline):
+    def delete_pipelines(self, names: [str] = None):
+        """Delete all pipelines matching filters"""
+        pipelines = self.list_pipelines(names)
+        for pipeline in pipelines:
+            self.set_instance_vars(pipeline["instance_vars"])
+            self.delete_pipeline(pipeline["name"])
+
+
+class SitePipeline(BaseSitePipeline, GeneralPipeline):
     """
     Concourse-CI publishing pipeline, dependent on a Github backend, for individual sites
     """
@@ -386,7 +401,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
             self.upsert_config(config_str, pipeline_name)
 
 
-class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
+class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
     """
     Concourse-CI pipeline for publishing theme assets
     """
@@ -428,7 +443,7 @@ class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
             self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
-class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, ConcoursePipeline):
+class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
     """Specialized concourse pipeline for mass building multiple sites"""
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
@@ -513,7 +528,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, ConcoursePipeline):
 
 
 class UnpublishedSiteRemovalPipeline(
-    BaseUnpublishedSiteRemovalPipeline, ConcoursePipeline
+    BaseUnpublishedSiteRemovalPipeline, GeneralPipeline
 ):
     """Specialized concourse pipeline for removing unpublished sites"""
 

@@ -49,6 +49,24 @@ class BasePipeline(abc.ABC):
         """
         ...
 
+    @abc.abstractmethod
+    def delete_pipelines(self, **kwargs):
+        """
+        Called to delete pipelines.
+        """
+        ...
+
+    @abc.abstractmethod
+    def list_pipelines(self, **kwargs):
+        """
+        Called to list pipelines.
+        """
+        ...
+
+
+class BaseGeneralPipeline(BasePipeline):
+    """ Base class for general pipelines """
+
 
 class BaseSitePipeline(BasePipeline):
     """ Base class for site-specific publishing """
