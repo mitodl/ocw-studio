@@ -4,7 +4,7 @@ from django.db import transaction
 from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.api import get_sync_backend, get_site_pipeline
+from content_sync.api import get_site_pipeline, get_sync_backend
 from content_sync.models import ContentSyncState
 from websites.models import Website
 
