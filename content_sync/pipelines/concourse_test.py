@@ -109,7 +109,7 @@ def test_api_get_with_headers(mocker, mock_auth, stream, iterator):
     mock_text = '[{"test": "output"}]' if iterator else '{"test": "output"}'
     stream_output = ["yielded"]
     mocker.patch(
-        "content_sync.pipelines.concourse.BaseConcourseApi.iter_sse_stream",
+        "content_sync.pipelines.concourse.Api.iter_sse_stream",
         return_value=stream_output,
     )
     mock_response = mocker.Mock(
@@ -138,7 +138,7 @@ def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
         status_code=status_code, headers={"X-Test": "header_value"}
     )
     mocker.patch(
-        "content_sync.pipelines.concourse.BaseConcourseApi._is_response_ok",
+        "content_sync.pipelines.concourse.Api._is_response_ok",
         return_value=ok_response,
     )
     mock_put = mocker.patch(
@@ -170,7 +170,7 @@ def test_api_delete(mocker, mock_auth, status_code, ok_response):
         status_code=status_code, headers={"X-Test": "header_value"}
     )
     mocker.patch(
-        "content_sync.pipelines.concourse.BaseConcourseApi._is_response_ok",
+        "content_sync.pipelines.concourse.Api._is_response_ok",
         return_value=ok_response,
     )
     mock_delete = mocker.patch(
@@ -191,7 +191,7 @@ def test_get_pipelines(settings, mocker, mock_auth, names):
     """The correct list of pipelines should be returned"""
     settings.CONCOURSE_TEAM = "team1"
     mocker.patch(
-        "content_sync.pipelines.concourse.BaseConcourseApi.list_pipelines",
+        "content_sync.pipelines.concourse.Api.list_pipelines",
         return_value=PIPELINES_LIST,
     )
     api = PipelineApi()
@@ -205,7 +205,7 @@ def test_delete_pipelines(settings, mocker, mock_auth, names):
     """The correct list of pipelines should be deleted"""
     settings.CONCOURSE_TEAM = "team1"
     mocker.patch(
-        "content_sync.pipelines.concourse.BaseConcourseApi.list_pipelines",
+        "content_sync.pipelines.concourse.Api.list_pipelines",
         return_value=PIPELINES_LIST,
     )
     mock_api_delete = mocker.patch(
