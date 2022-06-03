@@ -84,6 +84,11 @@ def db_data():
         website=website,
         updated_by=factory.Iterator([users[0], users[0], users[0], users[1], users[1]]),
     )
+    for content in website_contents:
+        content.content_sync_state.data = {
+            GIT_DATA_FILEPATH: fake_destination_filepath(content)
+        }
+        content.content_sync_state.save()
     return SimpleNamespace(
         users=users, website=website, website_contents=website_contents
     )
@@ -334,11 +339,6 @@ def test_upsert_content_files_for_user(
     records to reflect the results.
     """
     mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
-    for content in db_data.website_contents:
-        content.content_sync_state.data = {
-            GIT_DATA_FILEPATH: fake_destination_filepath(content)
-        }
-        content.content_sync_state.save()
     db_data.website_contents[2].delete()  # ensure we record a delete for the user
     mock_repo = mock_api_wrapper.org.get_repo.return_value
     user = db_data.users[0]
@@ -375,6 +375,48 @@ def test_upsert_content_files_for_user(
                 content.content_sync_state.current_checksum
                 == content.calculate_checksum()
             )
+
+
+def test_upsert_content_files_for_user_update_checksum(
+    mocker,
+    mock_api_wrapper,
+    db_data,
+    patched_file_serialize,
+    patched_destination_filepath,
+):
+    """
+    upsert_content_files_for_user should upsert all content files for a user in 1 commit and modify ContentSyncState
+    records to reflect the results.
+    """
+    mock_git_tree_element = mocker.patch("content_sync.apis.github.InputGitTreeElement")
+
+    # Set up one of the sync states to be out of date
+    outdated_css = db_data.website_contents[3].content_sync_state
+    outdated_css.current_checksum = ""  # out of date checksum
+    outdated_css.synced_checksum = db_data.website_contents[3].calculate_checksum()
+    outdated_css.save()
+
+    user = db_data.users[1]
+    expected_content = db_data.website_contents[4]
+    mock_api_wrapper.upsert_content_files_for_user(user.id)
+
+    assert mock_git_tree_element.call_count == 1
+    mock_git_tree_element.assert_called_once_with(
+        fake_destination_filepath(db_data.website_contents[4]),
+        "100644",
+        "blob",
+        mocker.ANY,
+    )
+    with pytest.raises(AssertionError):
+        mock_git_tree_element.assert_called_once_with(
+            fake_destination_filepath(db_data.website_contents[3]),
+            "100644",
+            "blob",
+            mocker.ANY,
+        )
+
+    expected_content.refresh_from_db()
+    assert expected_content.content_sync_state.is_synced is True
 
 
 @pytest.mark.parametrize(
