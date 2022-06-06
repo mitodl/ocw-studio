@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.63.2
+--------------
+
+- Always set publish fields in publish_website function (#1383)
+- Management command & github api tweak to ensure checksums are current (#1390)
+
 Version 0.63.1 (Released June 02, 2022)
 --------------
 
