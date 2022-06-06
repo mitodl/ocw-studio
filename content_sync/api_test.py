@@ -217,6 +217,7 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     settings.PREPUBLISH_ACTIONS = prepublish_actions
     website = WebsiteFactory.create(publish_date=publish_date)
     setattr(website, f"{version}_publish_status", status)
+    setattr(website, f"has_unpublished_{version}", status == PUBLISH_STATUS_NOT_STARTED)
     if status:
         setattr(website, f"{version}_publish_status_updated_on", now_in_utc())
     website.save()
@@ -253,9 +254,7 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
         pipeline.unpause_pipeline.assert_not_called()
         assert getattr(website, f"latest_build_id_{version}") is None
     assert getattr(website, f"{version}_publish_status") == PUBLISH_STATUS_NOT_STARTED
-    assert getattr(website, f"has_unpublished_{version}") is (
-        status == PUBLISH_STATUS_NOT_STARTED
-    )
+    assert getattr(website, f"has_unpublished_{version}") is False
     assert getattr(website, f"{version}_last_published_by") is None
     assert getattr(website, f"{version}_publish_status_updated_on") is not None
     if len(prepublish_actions) > 0 and prepublish:
