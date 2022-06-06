@@ -161,7 +161,7 @@ def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
     assert mock_auth.call_count == 1 if ok_response else 2
 
 
-@pytest.mark.parametrize("status_code", [201, 403])
+@pytest.mark.parametrize("status_code", [200, 403])
 @pytest.mark.parametrize("ok_response", [True, False])
 def test_api_delete(mocker, mock_auth, status_code, ok_response):
     """ PipelineApi.delete function should work as expected """
