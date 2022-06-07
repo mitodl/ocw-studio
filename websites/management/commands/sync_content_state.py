@@ -1,9 +1,8 @@
 """Updates/creates content sync records for website contents"""
 from django.db.models import Q
 
-from main.management.commands.filter import WebsiteFilterCommand
-
 from content_sync.api import upsert_content_sync_state
+from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import WebsiteContent
 
 

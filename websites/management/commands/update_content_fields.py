@@ -8,7 +8,6 @@ from django.db import transaction
 from django.db.models import Q
 
 from main.management.commands.filter import WebsiteFilterCommand
-
 from websites.models import WebsiteContent
 
 

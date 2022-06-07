@@ -4,7 +4,6 @@ import sys
 from django.db.models import Q
 
 from main.management.commands.filter import WebsiteFilterCommand
-
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
 

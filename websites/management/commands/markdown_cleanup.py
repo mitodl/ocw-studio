@@ -7,12 +7,11 @@ from django.conf import settings
 from django.core.management.base import CommandParser
 from django.core.paginator import Paginator
 from django.db.models import Q
-
-from main.management.commands.filter import WebsiteFilterCommand
 from mitol.common.utils import now_in_utc
 from tqdm import tqdm
 
 from content_sync.tasks import sync_unsynced_websites
+from main.management.commands.filter import WebsiteFilterCommand
 from websites.management.commands.markdown_cleaning import (
     MarkdownCleanupRule,
     WebsiteContentMarkdownCleaner,

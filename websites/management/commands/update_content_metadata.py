@@ -1,8 +1,8 @@
 """ Update content metadata for websites based on a specific starter """
 from django.db import transaction
 from django.db.models import Q
-from main.management.commands.filter import WebsiteFilterCommand
 
+from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
 
