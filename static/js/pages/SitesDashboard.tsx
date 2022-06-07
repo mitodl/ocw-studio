@@ -39,7 +39,7 @@ export default function SitesDashboard(): JSX.Element {
   )
   const pages = usePagination(listing.count ?? 0)
 
-  const canAddSites = usePermission(Permissions.canCreateSites)
+  const canAddSites = usePermission(Permissions.canAddWebsite)
 
   return (
     <div className="px-4 dashboard">

@@ -5,10 +5,10 @@ import { Permissions } from "../constants"
 // grant access based on user permissions
 export function usePermission(permission: Permissions): boolean {
   const { user } = useAppSelector(state => state.user)
-  const validators = { canCreateSites: _canCreateSites }
+  const validators = { canAddWebsite: _canAddWebsite }
 
-  function _canCreateSites(): boolean {
-    return user?.isSuperuser || false
+  function _canAddWebsite(): boolean {
+    return user?.canAddWebsite || false
   }
 
   return validators[permission]()

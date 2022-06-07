@@ -211,5 +211,5 @@ export enum PublishingEnv {
 }
 
 export enum Permissions {
-  canCreateSites = "canCreateSites"
+  canAddWebsite = "canAddWebsite"
 }
