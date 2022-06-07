@@ -13,7 +13,7 @@ class Command(WebsiteFilterCommand):
     help = "Backpopulate website groups and permissions"
 
     def add_arguments(self, parser):
-
+        super().add_arguments(parser)
         parser.add_argument(
             "--only-global",
             dest="only-global",
@@ -22,6 +22,7 @@ class Command(WebsiteFilterCommand):
         )
 
     def handle(self, *args, **options):
+        super().handle(*args, **options)
 
         self.stdout.write(f"Creating website permission groups")
         start = now_in_utc()

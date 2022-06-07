@@ -46,14 +46,14 @@ class Command(WebsiteFilterCommand):
         is_verbose = options["verbosity"] > 1
 
         videos = Video.objects.all()
-        if self.site_list:
-            videos.filter(
-                Q(website__name__in=self.site_list)
-                | Q(website__short_id__in=self.site_list)
+        if self.filter_list:
+            videos = videos.filter(
+                Q(website__name__in=self.filter_list)
+                | Q(website__short_id__in=self.filter_list)
             )
 
         self.stdout.write(
-            f"Updating downloadable video files for {videos.count()} sites."
+            f"Updating downloadable video files for {videos.count()} videos."
         )
         for video in videos:
             if is_verbose:
@@ -67,7 +67,7 @@ class Command(WebsiteFilterCommand):
                     f"Error Updating video {video.source_key} for site {video.website.short_id}: {exc}"
                 )
         self.stdout.write(
-            f"Completed Updating downloadable video files for {videos.count()} sites."
+            f"Completed Updating downloadable video files for {videos.count()} videos."
         )
 
         if settings.CONTENT_SYNC_BACKEND and not options["skip_sync"]:

@@ -50,7 +50,7 @@ class Command(WebsiteFilterCommand):
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
-        self.add_arguments(parser)
+        super().add_arguments(parser)
         aliases = [R.alias for R in self.Rules]
         parser.add_argument(
             dest="alias",
@@ -110,7 +110,7 @@ class Command(WebsiteFilterCommand):
             ) from not_found
 
     def handle(self, *args, **options):
-        self.handle(*args, **options)
+        super().handle(*args, **options)
         self.validate_options(options)
         self.do_handle(
             commit=options["commit"],

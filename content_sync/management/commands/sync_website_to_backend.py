@@ -37,24 +37,24 @@ class Command(WebsiteFilterCommand):
             self.stdout.stderr(
                 "You must specify a website or list of websites to process, --filter or --filter-json"
             )
-            for site_identifier in self.filter_list:
-                website = fetch_website(site_identifier)
-                backend = get_sync_backend(website)
-                should_create = options["force_create"]
-                should_delete = options["git_delete"]
-                if not should_create:
-                    should_create = not ContentSyncState.objects.filter(
-                        content__website=website
-                    ).exists()
-                if should_create:
-                    self.stdout.write(
-                        f"Creating website in backend for '{website.title}'..."
-                    )
-                    backend.create_website_in_backend()
+        for site_identifier in self.filter_list:
+            website = fetch_website(site_identifier)
+            backend = get_sync_backend(website)
+            should_create = options["force_create"]
+            should_delete = options["git_delete"]
+            if not should_create:
+                should_create = not ContentSyncState.objects.filter(
+                    content__website=website
+                ).exists()
+            if should_create:
                 self.stdout.write(
-                    f"Updating website content in backend for '{website.title}'..."
+                    f"Creating website in backend for '{website.title}'..."
                 )
-                backend.sync_all_content_to_backend()
-                if should_delete:
-                    backend.delete_orphaned_content_in_backend()
-                reset_publishing_fields(website.name)
+                backend.create_website_in_backend()
+            self.stdout.write(
+                f"Updating website content in backend for '{website.title}'..."
+            )
+            backend.sync_all_content_to_backend()
+            if should_delete:
+                backend.delete_orphaned_content_in_backend()
+            reset_publishing_fields(website.name)

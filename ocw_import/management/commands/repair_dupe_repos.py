@@ -1,20 +1,22 @@
 """ Fix sites that have been assigned a new repo on every import """
-from django.core.management import BaseCommand
 from django.db import transaction
+from django.db.models import Q
 from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.api import get_site_pipeline, get_sync_backend
 from content_sync.models import ContentSyncState
+from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import Website
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """  Fix sites that have been assigned a new repo on every import"""
 
     help = __doc__
 
     def handle(self, *args, **options):
+        super().handle(*args, **options)
         self.stdout.write("Fixing repos for imported OCW sites")
         start = now_in_utc()
         errors = 0
@@ -23,6 +25,10 @@ class Command(BaseCommand):
             .filter(source="ocw-import", short_id__regex=r".+\-\d{1,2}$")
             .order_by("name")
         )
+        if self.filter_list:
+            websites = websites.filter(
+                Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
+            )
         self.stdout.write(f"Repairing repos for {websites.count()} sites")
         for website in websites:
             try:
