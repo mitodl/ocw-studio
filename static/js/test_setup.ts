@@ -20,10 +20,10 @@ const _createSettings = (): typeof SETTINGS => ({
   gdrive_enabled:  false,
   // @ts-expect-error Settings.user comes from django, but is left off SETTINGS type to encourage getting it from the store.
   user:            {
-    username:    "example",
-    name:        "Jane Doe",
-    email:       "jane@example.com",
-    isSuperuser: true
+    username:      "example",
+    name:          "Jane Doe",
+    email:         "jane@example.com",
+    canAddWebsite: true
   }
 })
 
