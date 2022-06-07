@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.63.2
+Version 0.63.2 (Released June 07, 2022)
 --------------
 
 - Always set publish fields in publish_website function (#1383)
