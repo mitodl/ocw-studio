@@ -1,17 +1,21 @@
 """Updates derived values in WebsiteContent records to match the site config"""
+import sys
 
-from django.core.management import BaseCommand
+from django.db.models import Q
+
+from main.management.commands.filter import WebsiteFilterCommand
 
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """Updates derived values in WebsiteContent records to match the site config"""
 
     help = __doc__
 
     def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument(
             "-s",
             "--starter-slug",
@@ -20,7 +24,8 @@ class Command(BaseCommand):
             help="If specified, only sync contents for websites that user the given starter.",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # pylint:disable=too-many-locals
+        super().handle(*args, **options)
         starter_qset = WebsiteStarter.objects.all()
         starter_slug = options.get("starter_slug")
         if starter_slug:
@@ -31,7 +36,7 @@ class Command(BaseCommand):
                         f"WebsiteStarter with slug '{starter_slug}' not found."
                     )
                 )
-                exit(1)
+                sys.exit(1)
 
         updates_performed = False
         for starter in starter_qset:
@@ -48,6 +53,10 @@ class Command(BaseCommand):
                 else:
                     other_config_item_names.append(config_item.name)
             websites = Website.objects.filter(starter=starter)
+            if self.filter_list:
+                websites = websites.filter(
+                    Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
+                )
             for website in websites:
                 _contents_updated = WebsiteContent.objects.filter(
                     website=website,

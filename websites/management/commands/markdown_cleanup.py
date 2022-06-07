@@ -4,9 +4,11 @@ import os
 from typing import Type
 
 from django.conf import settings
-from django.core.management import BaseCommand
 from django.core.management.base import CommandParser
 from django.core.paginator import Paginator
+from django.db.models import Q
+
+from main.management.commands.filter import WebsiteFilterCommand
 from mitol.common.utils import now_in_utc
 from tqdm import tqdm
 
@@ -22,7 +24,7 @@ from websites.models import WebsiteContent
 log = logging.getLogger(__name__)
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """
     Performs replacements on markdown. Excludes unpublished websites.
 
@@ -49,6 +51,7 @@ class Command(BaseCommand):
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
+        self.add_arguments(parser)
         aliases = [R.alias for R in self.Rules]
         parser.add_argument(
             dest="alias",
@@ -108,6 +111,7 @@ class Command(BaseCommand):
             ) from not_found
 
     def handle(self, *args, **options):
+        self.handle(*args, **options)
         self.validate_options(options)
         self.do_handle(
             commit=options["commit"],
@@ -115,6 +119,7 @@ class Command(BaseCommand):
             out=options["out"],
             csv_only_changes=options["csv_only_changes"],
             limit=options["limit"],
+            filter_list=self.filter_list,
         )
 
         if (
@@ -133,7 +138,7 @@ class Command(BaseCommand):
             )
 
     @classmethod
-    def do_handle(cls, alias, commit, out, csv_only_changes, limit):
+    def do_handle(cls, alias, commit, out, csv_only_changes, limit, filter_list=None):
         """Replace baseurl with resource_link"""
 
         Rule = next(R for R in cls.Rules if R.alias == alias)
@@ -147,6 +152,10 @@ class Command(BaseCommand):
             .order_by("id")
             .prefetch_related("website")
         )
+        if filter_list:
+            all_wc = all_wc.filter(
+                Q(website__name__in=filter_list) | Q(website__short_id__in=filter_list)
+            )
         target_wc = all_wc if limit is None else all_wc[0 : min(limit, len(all_wc))]
         page_size = 100
         pages = Paginator(target_wc, page_size)

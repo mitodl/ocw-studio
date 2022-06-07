@@ -6,10 +6,12 @@ metadata to point to that path for downloads.
 import os
 
 from django.conf import settings
-from django.core.management import BaseCommand, CommandParser
+from django.core.management import CommandParser
+from django.db.models import Q
 from mitol.common.utils import now_in_utc
 
 from content_sync.tasks import sync_unsynced_websites
+from main.management.commands.filter import WebsiteFilterCommand
 from videos.api import prepare_video_download_file
 from videos.models import Video
 
@@ -17,7 +19,7 @@ from videos.models import Video
 script_path = os.path.dirname(os.path.realpath(__file__))
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """
     Move 16:9 transcoded videos into the correct S3 paths for syncing, and update the resource
     metadata to point to that path for downloads.
@@ -26,13 +28,7 @@ class Command(BaseCommand):
     help = __doc__
 
     def add_arguments(self, parser: CommandParser) -> None:
-        parser.add_argument(
-            "-f",
-            "--filter",
-            dest="filter",
-            default="",
-            help="If specified, only process videos for sites with names in this comma-delimited list",
-        )
+        super().add_arguments(parser)
         parser.add_argument(
             "-ss",
             "--skip-sync",
@@ -46,12 +42,15 @@ class Command(BaseCommand):
         """
         Run the command
         """
-        site_filter = [name.strip() for name in options["filter"].split(",") if name]
+        super().handle(*args, **options)
         is_verbose = options["verbosity"] > 1
 
         videos = Video.objects.all()
-        if site_filter:
-            videos.filter(website__name__in=site_filter)
+        if self.site_list:
+            videos.filter(
+                Q(website__name__in=self.site_list)
+                | Q(website__short_id__in=self.site_list)
+            )
 
         self.stdout.write(
             f"Updating downloadable video files for {videos.count()} sites."
@@ -59,13 +58,13 @@ class Command(BaseCommand):
         for video in videos:
             if is_verbose:
                 self.stdout.write(
-                    f"Updating video {video.source_key} for site {video.website.name}"
+                    f"Updating video {video.source_key} for site {video.website.short_id}"
                 )
             try:
                 prepare_video_download_file(video)
             except Exception as exc:  # pylint:disable=broad-except
                 self.stderr.write(
-                    f"Error Updating video {video.source_key} for site {video.website.name}: {exc}"
+                    f"Error Updating video {video.source_key} for site {video.website.short_id}: {exc}"
                 )
         self.stdout.write(
             f"Completed Updating downloadable video files for {videos.count()} sites."

@@ -1,19 +1,20 @@
 """Reset ContentSyncState synced checksums to None"""
 from django.conf import settings
-from django.core.management import BaseCommand
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.models import ContentSyncState
 from content_sync.tasks import sync_unsynced_websites
+from main.management.commands.filter import WebsiteFilterCommand
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """Reset ContentSyncState synced checksums to None"""
 
     help = __doc__
 
     def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument(
             "-t",
             "--type",
@@ -27,13 +28,6 @@ class Command(BaseCommand):
             dest="create_backends",
             action="store_true",
             help="Create backends if they do not exist (and sync them too)",
-        )
-        parser.add_argument(
-            "-f",
-            "--filter",
-            dest="filter",
-            default="",
-            help="If specified, only process content for sites that start with this text in their name/short_id",
         )
         parser.add_argument(
             "-starter",
@@ -58,13 +52,12 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-
+        super().handle(*args, **options)
         self.stdout.write("Resetting synced checksums to null")
         start = now_in_utc()
 
         type_str = options["type"].lower()
         create_backends = options["create_backends"]
-        filter_str = options["filter"].lower()
         starter_str = options["starter"].lower()
         source_str = options["source"].lower()
         skip_sync = options["skip_sync"]
@@ -72,10 +65,10 @@ class Command(BaseCommand):
         content_qset = ContentSyncState.objects.exclude(synced_checksum__isnull=True)
         if type_str:
             content_qset = content_qset.filter(Q(content__type=type_str))
-        if filter_str:
+        if self.filter_list:
             content_qset = content_qset.filter(
-                Q(content__website__name__startswith=filter_str)
-                | Q(content__website__short_id__startswith=filter_str)
+                Q(content__website__name__in=self.filter_list)
+                | Q(content__website__short_id__in=self.filter_list)
             )
         if starter_str:
             content_qset = content_qset.filter(

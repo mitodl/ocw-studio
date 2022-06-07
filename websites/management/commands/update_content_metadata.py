@@ -1,18 +1,19 @@
 """ Update content metadata for websites based on a specific starter """
-from django.core.management import BaseCommand
 from django.db import transaction
 from django.db.models import Q
+from main.management.commands.filter import WebsiteFilterCommand
 
 from websites.models import WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """ Update content metadata for websites based on a specific starter """
 
     help = __doc__
 
     def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument(
             "starter",
             help="The WebsiteStarter slug to process",
@@ -32,13 +33,6 @@ class Command(BaseCommand):
             help="Use default config values for metadata values that do not currently exist",
         )
         parser.add_argument(
-            "-f",
-            "--filter",
-            dest="filter",
-            default="",
-            help="If specified, only update metadata for websites with names/short_ids matching this filter",
-        )
-        parser.add_argument(
             "-s",
             "--source",
             dest="source",
@@ -47,8 +41,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-
-        filter_str = options["filter"].lower()
+        super().handle(*args, **options)
         starter_str = options["starter"]
         source_str = options["source"]
         type_str = options["type"]
@@ -57,10 +50,10 @@ class Command(BaseCommand):
         content_qset = WebsiteContent.objects.filter(
             website__starter__slug=starter_str, type=type_str
         )
-        if filter_str:
+        if self.filter_list:
             content_qset = content_qset.filter(
-                Q(website__name__startswith=filter_str)
-                | Q(website__short_id__startswith=filter_str)
+                Q(website__name__in=self.filter_list)
+                | Q(website__short_id__in=self.filter_list)
             )
         if source_str:
             content_qset = content_qset.filter(website__source=source_str)

@@ -42,7 +42,7 @@ class Command(BaseCommand):
         delete_all = options["delete_all"]
 
         if is_verbose:
-            self.stdout.write(f"Upserting theme assets pipeline")
+            self.stdout.write("Upserting theme assets pipeline")
 
         start = now_in_utc()
 
@@ -60,7 +60,7 @@ class Command(BaseCommand):
         self.stdout.write("Waiting on task...")
 
         result = task.get()
-        if result != True:
+        if result is not True:
             raise CommandError(f"Some errors occurred: {result}")
 
         total_seconds = (now_in_utc() - start).total_seconds()

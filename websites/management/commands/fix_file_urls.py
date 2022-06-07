@@ -5,20 +5,22 @@ from typing import Dict, List
 
 import boto3
 from django.conf import settings
-from django.core.management import BaseCommand
+from django.db.models import Q
 from mitol.common.utils import now_in_utc
 
 from content_sync.tasks import sync_unsynced_websites
+from main.management.commands.filter import WebsiteFilterCommand
 from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.models import WebsiteContent
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """ Fix WebsiteContent files that are missing the Website name in their paths"""
 
     help = __doc__
 
     def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument(
             "-o",
             "--out",
@@ -51,7 +53,8 @@ class Command(BaseCommand):
             help="Whether to skip running the sync_unsynced_websites task",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # pylint:disable=too-many-locals
+        super().handle(*args, **options)
         commit_changes = options["commit"]
         prefix = options["prefix"]
         csv_output = options["out"]
@@ -61,6 +64,11 @@ class Command(BaseCommand):
             type=CONTENT_TYPE_RESOURCE,
             file__regex=r"^/?{}/[A-Za-z0-9\-\.\_]+(\.).*".format(prefix),
         )
+        if self.filter_list:
+            bad_paths = bad_paths.filter(
+                Q(website__name__in=self.filter_list)
+                | Q(website__short_id__in=self.filter_list)
+            )
 
         self.stdout.write(
             f"Found {bad_paths.count()} resources with '{prefix}/' file paths missing website names"

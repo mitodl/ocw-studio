@@ -1,6 +1,6 @@
 """ Management command for upserting the remove-unpublished-sites pipeline """
 from django.conf import settings
-from django.core.management import BaseCommand, CommandError
+from django.core.management import BaseCommand
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.api import get_pipeline_api, get_unpublished_removal_pipeline
@@ -55,10 +55,10 @@ class Command(BaseCommand):
 
         pipeline = get_unpublished_removal_pipeline()
         pipeline.upsert_pipeline()
-        self.stdout.write(f"Created unpublished sites removal pipeline")
+        self.stdout.write("Created unpublished sites removal pipeline")
         if unpause:
             pipeline.unpause()
-            self.stdout.write(f"Unpaused unpublished sites removal pipeline")
+            self.stdout.write("Unpaused unpublished sites removal pipeline")
 
         total_seconds = (now_in_utc() - start).total_seconds()
         self.stdout.write(

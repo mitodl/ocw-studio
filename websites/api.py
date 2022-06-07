@@ -169,11 +169,13 @@ def fetch_website(filter_value: str) -> Website:
         except ValueError:
             pass
     website_results = Website.objects.filter(
-        Q(name__iexact=filter_value) | Q(title__iexact=filter_value)
+        Q(name__iexact=filter_value)
+        | Q(title__iexact=filter_value)
+        | Q(short_id__iexact=filter_value)
     ).all()
     if len(website_results) == 0:
         raise Website.DoesNotExist(
-            f"Could not find a Website with a matching uuid, name, or title ('{filter_value}')"
+            f"Could not find a Website with a matching uuid, name, short_id, or title ('{filter_value}')"
         )
     if len(website_results) == 1:
         return website_results[0]
