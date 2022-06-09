@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.63.4
+--------------
+
+- Option to delete existing pipelines in management commands (#1392)
+- update generate_item_metadata to optionally use config default value (#1363)
+- Show publishing api errors in publishing drawer (#1367)
+- remove two unused dependencies (#1360)
+- do not emit declaration files (#1293)
+
 Version 0.63.3 (Released June 09, 2022)
 --------------
 
