@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.63.3 (Released June 09, 2022)
+--------------
+
+- Updating nginx version in docker-compose to 1.22.0 (#1397)
+
 Version 0.63.2 (Released June 07, 2022)
 --------------
 
