@@ -126,7 +126,9 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
             .exclude(pk=self.instance.pk)
             .exists()
         ):
-            raise serializers.ValidationError("The website URL is not unique")
+            raise serializers.ValidationError(
+                "The given website URL is already in use."
+            )
         return value
 
     def update(self, instance, validated_data):

@@ -20,6 +20,8 @@ import { getQueries } from "../lib/redux_query"
 import { DeepPartial } from "../types/util"
 
 import * as networkInterfaceFuncs from "../store/network_interface"
+import { Website } from "../types/websites"
+import { siteApiDetailUrl } from "../lib/urls"
 
 export type ReduxPatch = DeepPartial<ReduxState>
 
@@ -34,11 +36,6 @@ export const getInitialState = (patch: ReduxPatch = {}): ReduxState => {
   })
   return defaultsDeep(cloneDeep(patch), empty)
 }
-
-const { makeRequest: mockMakeRequest } = networkInterfaceFuncs as jest.Mocked<
-  typeof networkInterfaceFuncs
->
-jest.mock("../store/network_interface")
 
 type Reponse = {
   status: ResponseStatus
@@ -75,6 +72,7 @@ export default class IntegrationTestHelper {
 
   constructor(location: InitialEntry = "/") {
     this.initialEntries = [location]
+    const mockMakeRequest = jest.spyOn(networkInterfaceFuncs, "makeRequest")
     mockMakeRequest.mockClear()
     mockMakeRequest.mockImplementation((url, method, options) => ({
       execute: async callback => {
@@ -98,10 +96,10 @@ export default class IntegrationTestHelper {
     method: "GET" | "POST" | "PATCH" | "DELETE",
     responseBody: unknown,
     code: number,
-    options = {}
+    optionsMatcher = expect.anything()
   ): this => {
     when(this.handleRequest)
-      .calledWith(url, method, options)
+      .calledWith(url, method, optionsMatcher)
       .mockResolvedValue({
         body:   responseBody,
         status: code
@@ -117,6 +115,12 @@ export default class IntegrationTestHelper {
   mockGetRequest = (url: string, body: unknown, code = 200): this => {
     return this.mockRequest(url, "GET", body, code)
   }
+
+  mockGetWebsiteDetail = (website: Website) =>
+    this.mockGetRequest(
+      siteApiDetailUrl.param({ name: website.name }).toString(),
+      website
+    )
 
   /**
    * Convenience method for mocking out a POST request

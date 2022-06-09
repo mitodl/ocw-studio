@@ -703,7 +703,9 @@ def test_website_url_serializer_duplicate_url_path(ocw_site, parsed_site_config)
     data = {"url_path": new_url_path}
     serializer = WebsiteUrlSerializer(ocw_site, data)
     assert serializer.is_valid() is False
-    assert serializer.errors.get("url_path") == ["The website URL is not unique"]
+    assert serializer.errors.get("url_path") == [
+        "The given website URL is already in use."
+    ]
 
 
 def test_website_url_serializer_url_path_published(ocw_site):
