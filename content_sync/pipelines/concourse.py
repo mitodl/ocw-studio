@@ -9,20 +9,21 @@ import json
 import logging
 import os
 from html import unescape
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import quote, urljoin, urlparse
 
 import requests
 import yaml
-from concoursepy.api import Api as BaseConcourseApi
+from concoursepy.api import Api
 from django.conf import settings
 from requests import HTTPError
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
+    BaseGeneralPipeline,
     BaseMassBuildSitesPipeline,
-    BasePipeline,
+    BasePipelineApi,
     BaseSitePipeline,
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
@@ -41,10 +42,19 @@ MANDATORY_CONCOURSE_SETTINGS = [
 ]
 
 
-class ConcourseApi(BaseConcourseApi):
+class PipelineApi(Api, BasePipelineApi):
     """
     Customized pipeline_name of concoursepy.api.Api that allows for getting/setting headers
     """
+
+    def __init__(self, url=None, username=None, password=None, token=None):
+        """Initialize the API"""
+        super().__init__(
+            url or settings.CONCOURSE_URL,
+            username=username or settings.CONCOURSE_USERNAME,
+            password=password or settings.CONCOURSE_PASSWORD,
+            token=token or settings.CONCOURSE_TEAM,
+        )
 
     @retry_on_failure
     def auth(self):
@@ -137,8 +147,44 @@ class ConcourseApi(BaseConcourseApi):
         """Same as base put method but with a retry"""
         return super().put(path, data)
 
+    @retry_on_failure
+    def delete(self, path, data=None):
+        """Make a delete request"""
+        url = self._make_api_url(path)
+        kwargs = {"headers": self.headers}
+        if data is not None:
+            kwargs["data"] = data
+        r = self.requests.delete(url, **kwargs)
+        if not self._is_response_ok(r) and self.has_username_and_passwd:
+            self.auth()
+            r = self.requests.delete(url, **kwargs)
+        if r.status_code == requests.codes.ok:
+            return True
+        else:
+            r.raise_for_status()
+        return False
 
-class ConcoursePipeline(BasePipeline):
+    def get_pipelines(self, names: List[str] = None):
+        """Retrieve a list of concourse pipelines, filtered by team and optionally name"""
+        pipelines = super().list_pipelines(settings.CONCOURSE_TEAM)
+        if names:
+            pipelines = [
+                pipeline for pipeline in pipelines if pipeline["name"] in names
+            ]
+        return pipelines
+
+    def delete_pipelines(self, names: List[str] = None):
+        """Delete all pipelines matching filters"""
+        pipeline_list = self.get_pipelines(names)
+        for item in pipeline_list:
+            pipeline = GeneralPipeline(api=self)
+            instance_vars = item.get("instance_vars")
+            if instance_vars:
+                pipeline.set_instance_vars(instance_vars)
+            pipeline.delete_pipeline(item["name"])
+
+
+class GeneralPipeline(BaseGeneralPipeline):
     """ Base class for a Concourse pipeline """
 
     MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS
@@ -156,12 +202,15 @@ class ConcoursePipeline(BasePipeline):
     @staticmethod
     def get_api():
         """Get a Concourse API instance"""
-        return ConcourseApi(
-            settings.CONCOURSE_URL,
-            settings.CONCOURSE_USERNAME,
-            settings.CONCOURSE_PASSWORD,
-            settings.CONCOURSE_TEAM,
-        )
+        return PipelineApi()
+
+    def set_instance_vars(self, instance_vars: Dict):
+        """Set the instance vars for the pipeline"""
+        self.instance_vars = f"?vars={quote(json.dumps(instance_vars))}"
+
+    def _make_pipeline_url(self, pipeline_name: str):
+        """Make URL for getting/destroying a pipeline"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}{self.instance_vars}"
 
     def _make_builds_url(self, pipeline_name: str, job_name: str):
         """Make URL for fetching builds information"""
@@ -197,6 +246,10 @@ class ConcoursePipeline(BasePipeline):
         """Unpause the pipeline"""
         self.api.put(self._make_pipeline_unpause_url(pipeline_name))
 
+    def delete_pipeline(self, pipeline_name: str):
+        """Delete a pipeline"""
+        self.api.delete(self._make_pipeline_url(pipeline_name))
+
     def get_build_status(self, build_id: int):
         """Retrieve the status of the build"""
         return self.api.get_build(build_id)["status"]
@@ -226,6 +279,7 @@ class ConcoursePipeline(BasePipeline):
         # Try to get the pipeline_name of the pipeline if it already exists, because it will be
         # necessary to update an existing pipeline.
         url_path = self._make_pipeline_config_url(pipeline_name)
+        log.error(url_path)
         try:
             _, headers = self.api.get_with_headers(url_path)
             version_headers = {
@@ -235,8 +289,12 @@ class ConcoursePipeline(BasePipeline):
             version_headers = None
         self.api.put_with_headers(url_path, data=config, headers=version_headers)
 
+    def upsert_pipeline(self):
+        """Placeholder for upsert_pipeline"""
+        raise NotImplementedError("Choose a more specific pipeline class")
 
-class SitePipeline(BaseSitePipeline, ConcoursePipeline):
+
+class SitePipeline(BaseSitePipeline, GeneralPipeline):
     """
     Concourse-CI publishing pipeline, dependent on a Github backend, for individual sites
     """
@@ -253,11 +311,11 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
         "OCW_GTM_ACCOUNT_ID",
     ]
 
-    def __init__(self, website: Website, api: Optional[ConcourseApi] = None):
+    def __init__(self, website: Website, api: Optional[PipelineApi] = None):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
         self.website = website
-        self.instance_vars = f'?vars={quote(json.dumps({"site": self.website.name}))}'
+        self.set_instance_vars({"site": self.website.name})
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals
         """
@@ -355,7 +413,7 @@ class SitePipeline(BaseSitePipeline, ConcoursePipeline):
             self.upsert_config(config_str, pipeline_name)
 
 
-class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
+class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
     """
     Concourse-CI pipeline for publishing theme assets
     """
@@ -367,12 +425,10 @@ class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
         "SEARCH_API_URL",
     ]
 
-    def __init__(self, api: Optional[ConcourseApi] = None):
+    def __init__(self, api: Optional[PipelineApi] = None):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
-        self.instance_vars = (
-            f'?vars={quote(json.dumps({"branch": settings.GITHUB_WEBHOOK_BRANCH}))}'
-        )
+        self.set_instance_vars({"branch": settings.GITHUB_WEBHOOK_BRANCH})
 
     def upsert_pipeline(self):
         """Upsert the theme assets pipeline"""
@@ -399,12 +455,12 @@ class ThemeAssetsPipeline(ConcoursePipeline, BaseThemeAssetsPipeline):
             self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
-class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, ConcoursePipeline):
+class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
     """Specialized concourse pipeline for mass building multiple sites"""
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
 
-    def __init__(self, version, api: Optional[ConcourseApi] = None):
+    def __init__(self, version, api: Optional[PipelineApi] = None):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
             "AWS_PREVIEW_BUCKET_NAME",
@@ -420,7 +476,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, ConcoursePipeline):
         super().__init__(api=api)
         self.pipeline_name = "mass_build_sites"
         self.version = version
-        self.instance_vars = f'?vars={quote(json.dumps({"version": version}))}'
+        self.set_instance_vars({"version": version})
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals
         """
@@ -484,13 +540,13 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, ConcoursePipeline):
 
 
 class UnpublishedSiteRemovalPipeline(
-    BaseUnpublishedSiteRemovalPipeline, ConcoursePipeline
+    BaseUnpublishedSiteRemovalPipeline, GeneralPipeline
 ):
     """Specialized concourse pipeline for removing unpublished sites"""
 
     PIPELINE_NAME = BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME
 
-    def __init__(self, api: Optional[ConcourseApi] = None):
+    def __init__(self, api: Optional[PipelineApi] = None):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
             "AWS_PUBLISH_BUCKET_NAME"

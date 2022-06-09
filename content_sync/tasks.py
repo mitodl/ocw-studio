@@ -106,7 +106,7 @@ def upsert_website_publishing_pipeline(website_name: str):
             website_name,
         )
     else:
-        pipeline = api.get_sync_pipeline(website)
+        pipeline = api.get_site_pipeline(website)
         pipeline.upsert_pipeline()
 
 
@@ -123,7 +123,7 @@ def upsert_website_pipeline_batch(
             api.throttle_git_backend_calls(backend)
             backend.create_website_in_backend()
             backend.sync_all_content_to_backend()
-        pipeline = api.get_sync_pipeline(website, api=api_instance)
+        pipeline = api.get_site_pipeline(website, api=api_instance)
         if not api_instance:
             # Keep using the same api instance to minimize multiple authentication calls
             api_instance = pipeline.api
@@ -179,7 +179,7 @@ def trigger_mass_build(version: str) -> bool:
 def trigger_unpublished_removal(website_name: str) -> bool:
     """Trigger the unpublished site removal pipeline and pause the specified site pipeline"""
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        site_pipeline = api.get_sync_pipeline(Website.objects.get(name=website_name))
+        site_pipeline = api.get_site_pipeline(Website.objects.get(name=website_name))
         site_pipeline.pause_pipeline(VERSION_LIVE)
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
@@ -360,7 +360,7 @@ def check_incomplete_publish_build_statuses():
             for version, update_dt, last_status in versions_to_check:
                 build_id = getattr(website, f"latest_build_id_{version}")
                 if build_id is not None:
-                    pipeline = api.get_sync_pipeline(website)
+                    pipeline = api.get_site_pipeline(website)
                     try:
                         status = pipeline.get_build_status(build_id)
                     except HTTPError as err:

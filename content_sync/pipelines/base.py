@@ -1,5 +1,20 @@
 """ Sync abstract base """
 import abc
+from typing import List
+
+
+class BasePipelineApi(abc.ABC):
+    """ Base class for a pipeline API"""
+
+    @abc.abstractmethod
+    def list_pipelines(self, names: List[str] = None):
+        """Retrieve a list of pipelines"""
+        ...
+
+    @abc.abstractmethod
+    def delete_pipelines(self, names: List[str] = None):
+        """Delete a list of pipelines"""
+        ...
 
 
 class BasePipeline(abc.ABC):
@@ -48,6 +63,10 @@ class BasePipeline(abc.ABC):
         Called to pause a website pipeline.
         """
         ...
+
+
+class BaseGeneralPipeline(BasePipeline):
+    """ Base class for general pipelines """
 
 
 class BaseSitePipeline(BasePipeline):

@@ -36,7 +36,15 @@ def get_sync_backend(website: Website) -> BaseSyncBackend:
 
 
 @is_publish_pipeline_enabled
-def get_sync_pipeline(website: Website, api: Optional[object] = None) -> BasePipeline:
+def get_pipeline_api() -> BasePipeline:
+    """ Get the base backend pipeline """
+    return import_string(
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.PipelineApi"
+    )()
+
+
+@is_publish_pipeline_enabled
+def get_site_pipeline(website: Website, api: Optional[object] = None) -> BasePipeline:
     """ Get the configured sync publishing pipeline """
     return import_string(
         f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"
@@ -129,7 +137,7 @@ def publish_website(  # pylint: disable=too-many-arguments
             backend.merge_backend_live()
 
         if trigger_pipeline and settings.CONTENT_SYNC_PIPELINE_BACKEND:
-            pipeline = get_sync_pipeline(website, api=pipeline_api)
+            pipeline = get_site_pipeline(website, api=pipeline_api)
             # Always upsert pipeline in case the site url path changed,
             # unless it's been published to production (url path permanent).
             if not website.publish_date:

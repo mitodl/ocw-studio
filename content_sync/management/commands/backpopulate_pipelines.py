@@ -4,6 +4,8 @@ from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
+from content_sync.api import get_pipeline_api
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.tasks import upsert_pipelines
 from websites.models import Website
 
@@ -56,6 +58,13 @@ class Command(BaseCommand):
             action="store_true",
             help="Unpause the pipelines after creating/updating them",
         )
+        parser.add_argument(
+            "-d",
+            "--delete-all",
+            dest="delete_all",
+            action="store_true",
+            help="Delete all existing site pipelines first",
+        )
 
     def handle(self, *args, **options):
 
@@ -72,6 +81,16 @@ class Command(BaseCommand):
         create_backend = options["create_backend"]
         is_verbose = options["verbosity"] > 1
         unpause = options["unpause"]
+        delete_all = options["delete_all"]
+
+        if delete_all:
+            self.stdout.write("Deleting all existing site pipelines first")
+            api = get_pipeline_api()
+            if api:
+                api.delete_pipelines(names=[VERSION_LIVE, VERSION_DRAFT])
+                self.stdout.write("Deleted all site pipelines")
+            else:
+                self.stdout.error("No pipeline api configured")
 
         if filter_str:
             website_qset = Website.objects.filter(

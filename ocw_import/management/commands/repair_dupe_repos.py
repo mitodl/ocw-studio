@@ -4,7 +4,7 @@ from django.db import transaction
 from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.api import get_sync_backend, get_sync_pipeline
+from content_sync.api import get_site_pipeline, get_sync_backend
 from content_sync.models import ContentSyncState
 from websites.models import Website
 
@@ -36,7 +36,7 @@ class Command(BaseCommand):
                     )
                     backend = get_sync_backend(website)
                     backend.sync_all_content_to_backend()
-                    get_sync_pipeline(website).upsert_pipeline()
+                    get_site_pipeline(website).upsert_pipeline()
                     for i in range(3, int(idx) + 1):
                         try:
                             backend.api.org.get_repo(f"{base_repo}-{i}").delete()

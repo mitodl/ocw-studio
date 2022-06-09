@@ -23,7 +23,7 @@ def mock_api_funcs(settings, mocker):
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     return SimpleNamespace(
         mock_get_backend=mocker.patch("content_sync.api.get_sync_backend"),
-        mock_get_pipeline=mocker.patch("content_sync.api.get_sync_pipeline"),
+        mock_get_pipeline=mocker.patch("content_sync.api.get_site_pipeline"),
         mock_import_string=mocker.patch("content_sync.api.import_string"),
     )
 
@@ -184,13 +184,21 @@ def test_sync_github_website_starters(mocker):
     mock_task.assert_called_once_with(*args, **kwargs)
 
 
+def test_get_pipeline_api(settings, mocker):
+    """ Verify that get_pipeline_api() imports the pipeline api class based on settings.py """
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    import_string_mock = mocker.patch("content_sync.pipelines.concourse.PipelineApi")
+    api.get_pipeline_api()
+    import_string_mock.assert_called_once_with()
+
+
 @pytest.mark.parametrize("pipeline_api", [None, {}])
-def test_get_sync_pipeline(settings, mocker, pipeline_api):
-    """ Verify that get_sync_pipeline() imports the pipeline class based on settings.py """
+def test_get_site_pipeline(settings, mocker, pipeline_api):
+    """ Verify that get_site_pipeline() imports the pipeline class based on settings.py """
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     import_string_mock = mocker.patch("content_sync.pipelines.concourse.SitePipeline")
     website = WebsiteFactory.create()
-    api.get_sync_pipeline(website, api=pipeline_api)
+    api.get_site_pipeline(website, api=pipeline_api)
     import_string_mock.assert_any_call(website, api=pipeline_api)
 
 
@@ -288,7 +296,13 @@ def test_get_theme_assets_pipeline_no_backend(settings):
     assert api.get_theme_assets_pipeline() is None
 
 
-def test_get_sync_pipeline_no_backend(settings):
-    """get_sync_pipeline should return None if no backend is specified"""
+def test_get_site_pipeline_no_backend(settings):
+    """get_site_pipeline should return None if no backend is specified"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = None
-    assert api.get_sync_pipeline(WebsiteFactory.create()) is None
+    assert api.get_site_pipeline(WebsiteFactory.create()) is None
+
+
+def test_get_pipeline_api_no_backend(settings):
+    """get_general_pipeline should return None if no backend is specified"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
+    assert api.get_pipeline_api() is None
