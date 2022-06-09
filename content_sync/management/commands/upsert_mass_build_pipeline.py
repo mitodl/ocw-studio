@@ -23,8 +23,8 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "-d",
-            "--delete",
-            dest="delete",
+            "--delete-all",
+            dest="delete_all",
             action="store_true",
             help="Delete existing mass publish pipelines first",
         )
@@ -38,10 +38,10 @@ class Command(BaseCommand):
         self.stdout.write("Creating mass build pipelines")
 
         unpause = options["unpause"]
-        delete = options["delete"]
+        delete_all = options["delete_all"]
         start = now_in_utc()
 
-        if delete:
+        if delete_all:
             self.stdout.write("Deleting existing mass build pipelines first")
             api = get_pipeline_api()
             if api:

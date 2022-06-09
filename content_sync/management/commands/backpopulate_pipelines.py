@@ -60,8 +60,8 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "-d",
-            "--delete",
-            dest="delete",
+            "--delete-all",
+            dest="delete_all",
             action="store_true",
             help="Delete all existing site pipelines first",
         )
@@ -81,9 +81,9 @@ class Command(BaseCommand):
         create_backend = options["create_backend"]
         is_verbose = options["verbosity"] > 1
         unpause = options["unpause"]
-        delete = options["delete"]
+        delete_all = options["delete_all"]
 
-        if delete:
+        if delete_all:
             self.stdout.write("Deleting all existing site pipelines first")
             api = get_pipeline_api()
             if api:

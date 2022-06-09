@@ -22,8 +22,8 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "-d",
-            "--delete",
-            dest="delete",
+            "--delete-all",
+            dest="delete_all",
             action="store_true",
             help="Delete existing site removal pipelines first",
         )
@@ -37,10 +37,10 @@ class Command(BaseCommand):
         self.stdout.write("Creating unpublished sites removal pipeline")
 
         unpause = options["unpause"]
-        delete = options["delete"]
+        delete_all = options["delete_all"]
         start = now_in_utc()
 
-        if delete:
+        if delete_all:
             self.stdout.write(
                 "Delete existing unpublished sites removal pipeline first"
             )

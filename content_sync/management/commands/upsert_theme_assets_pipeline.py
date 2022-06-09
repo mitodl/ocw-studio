@@ -23,8 +23,8 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "-d",
-            "--delete",
-            dest="delete",
+            "--delete-all",
+            dest="delete_all",
             action="store_true",
             help="Delete existing theme assets pipelines first",
         )
@@ -39,14 +39,14 @@ class Command(BaseCommand):
 
         is_verbose = options["verbosity"] > 1
         unpause = options["unpause"]
-        delete = options["delete"]
+        delete_all = options["delete_all"]
 
         if is_verbose:
             self.stdout.write(f"Upserting theme assets pipeline")
 
         start = now_in_utc()
 
-        if delete:
+        if delete_all:
             self.stdout.write("Delete existing theme assets pipelines first")
             api = get_pipeline_api()
             if api:
