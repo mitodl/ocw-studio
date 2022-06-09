@@ -275,6 +275,7 @@ def test_update_youtube_statuses(
                 },
                 "video_metadata": {"youtube_id": video_file.destination_id},
                 "image": "",
+                "license": "default_license_specificed_in_config",
             }
     else:
         mock_youtube.assert_not_called()

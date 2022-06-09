@@ -76,6 +76,13 @@
           "name": "file_type",
           "required": false,
           "widget": "string"
+        },
+        {
+          "default": "default_license_specificed_in_config",
+          "label": "License",
+          "name": "license",
+          "required": true,
+          "widget": "string"
         }
       ],
       "folder": "content/resource",

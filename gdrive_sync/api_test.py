@@ -498,6 +498,7 @@ def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
         assert content.metadata["resourcetype"] == RESOURCE_TYPE_DOCUMENT
         assert content.metadata["file_type"] == mime_type
         assert content.metadata["image"] == ""
+        assert content.metadata["license"] == "default_license_specificed_in_config"
         drive_file.refresh_from_db()
         assert drive_file.resource == content
 
