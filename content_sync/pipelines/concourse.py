@@ -279,7 +279,6 @@ class GeneralPipeline(BaseGeneralPipeline):
         # Try to get the pipeline_name of the pipeline if it already exists, because it will be
         # necessary to update an existing pipeline.
         url_path = self._make_pipeline_config_url(pipeline_name)
-        log.error(url_path)
         try:
             _, headers = self.api.get_with_headers(url_path)
             version_headers = {
