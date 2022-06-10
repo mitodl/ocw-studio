@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.63.4
+Version 0.63.4 (Released June 10, 2022)
 --------------
 
 - Remove log statement (#1400)
