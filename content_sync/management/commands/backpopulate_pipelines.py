@@ -1,28 +1,23 @@
 """ Backpopulate website pipelines"""
 from django.conf import settings
-from django.core.management import BaseCommand, CommandError
+from django.core.management import CommandError
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.api import get_pipeline_api
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.tasks import upsert_pipelines
+from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import Website
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """ Backpopulate website pipelines """
 
     help = __doc__
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "-f",
-            "--filter",
-            dest="filter",
-            default="",
-            help="If specified, only process websites that contain this filter text in their name",
-        )
+        super().add_arguments(parser)
         parser.add_argument(
             "-s",
             "--starter",
@@ -67,14 +62,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-
+        super().handle(*args, **options)
         if not settings.CONTENT_SYNC_PIPELINE_BACKEND:
             self.stderr.write("Pipeline backend is not configured")
             return
 
         self.stdout.write("Creating website pipelines")
 
-        filter_str = options["filter"].lower()
         starter_str = options["starter"]
         source_str = options["source"]
         chunk_size = int(options["chunk_size"])
@@ -92,9 +86,9 @@ class Command(BaseCommand):
             else:
                 self.stdout.error("No pipeline api configured")
 
-        if filter_str:
+        if self.filter_list:
             website_qset = Website.objects.filter(
-                Q(name__startswith=filter_str) | Q(title__startswith=filter_str)
+                Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
             )
         else:
             website_qset = Website.objects.all()

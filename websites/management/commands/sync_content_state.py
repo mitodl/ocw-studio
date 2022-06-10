@@ -1,22 +1,18 @@
 """Updates/creates content sync records for website contents"""
-from django.core.management import BaseCommand
+from django.db.models import Q
 
 from content_sync.api import upsert_content_sync_state
-from websites.api import fetch_website
+from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import WebsiteContent
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """Updates/creates content sync records for website contents"""
 
     help = __doc__
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--website",
-            dest="website",
-            help="If provided, only update sync states for website with a matching uuid, name, or title.",
-        )
+        super().add_arguments(parser)
         parser.add_argument(
             "--content-title",
             dest="content_title",
@@ -29,15 +25,18 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        super().handle(*args, **options)
         filter_qset = {}
-        if options["website"]:
-            website = fetch_website(options["website"])
-            filter_qset["website"] = website
         if options["content_title"]:
             filter_qset["title__icontains"] = options["content_title"]
         if options["text_id"]:
             filter_qset["text_id"] = options["text_id"]
         content_qset = WebsiteContent.objects.filter(**filter_qset)
+        if self.filter_list:
+            content_qset = content_qset.filter(
+                Q(website__name__in=self.filter_list)
+                | Q(website__short_id__in=self.filter_list)
+            )
         num_records = content_qset.count()
         self.stdout.write(
             self.style.WARNING(

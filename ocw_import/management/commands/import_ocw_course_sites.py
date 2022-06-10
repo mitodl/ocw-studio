@@ -1,22 +1,23 @@
 """ Import OCW course sites and content via ocw2hugo output """
-import json
 import pydoc
 
 from django.conf import settings
-from django.core.management import BaseCommand, CommandError
+from django.core.management import CommandError
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.tasks import sync_unsynced_websites
+from main.management.commands.filter import WebsiteFilterCommand
 from ocw_import.api import fetch_ocw2hugo_course_paths
 from ocw_import.tasks import import_ocw2hugo_courses
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """ Import OCW course sites and content via ocw2hugo output """
 
     help = __doc__
 
     def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument(
             "-b",
             "--bucket",
@@ -47,19 +48,6 @@ class Command(BaseCommand):
             help="List the course paths instead of importing them",
         )
         parser.add_argument(
-            "--filter-json",
-            dest="filter_json",
-            default=None,
-            help="If specified, only publish courses that contain comma-delimited site names specified in a JSON file",
-        )
-        parser.add_argument(
-            "-f",
-            "--filter",
-            dest="filter",
-            default="",
-            help="If specified, only trigger website pipelines whose names are in this comma-delimited list",
-        )
-        parser.add_argument(
             "--limit",
             dest="limit",
             default=None,
@@ -79,27 +67,18 @@ class Command(BaseCommand):
             action="store_true",
             help="If included, delete any git repo files that don't match WebsiteContent filepaths",
         )
-        super().add_arguments(parser)
 
     def handle(self, *args, **options):  # pylint:disable=too-many-locals
+        super().handle(*args, **options)
         prefix = options["prefix"]
         if prefix:
             # make sure it ends with a '/'
             prefix = prefix.rstrip("/") + "/"
         bucket_name = options["bucket"]
-        filter_json = options["filter_json"]
         limit = options["limit"]
         delete_from_git = options["delete_from_git"]
 
-        if filter_json:
-            with open(filter_json) as input_file:
-                filter_list = json.load(input_file)
-        else:
-            filter_list = [
-                name.strip() for name in options["filter"].split(",") if name
-            ]
-
-        if len(filter_list) < 1:
+        if len(self.filter_list) < 1:
             raise CommandError(
                 "This command cannot be run unfiltered.  Use the --filter or --filter-json argument to specify courses to import."
             )
@@ -107,7 +86,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Fetching course paths from the '{bucket_name}' bucket...")
         course_paths = list(
             fetch_ocw2hugo_course_paths(
-                bucket_name, prefix=prefix, filter_list=filter_list
+                bucket_name, prefix=prefix, filter_list=self.filter_list
             )
         )
 

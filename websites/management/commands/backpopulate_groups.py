@@ -1,26 +1,19 @@
 """ Backpopulate website groups and permissions"""
-from django.core.management import BaseCommand
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
+from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import Website
 from websites.permissions import create_global_groups, setup_website_groups_permissions
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """ Backpopulate website groups and permissions """
 
     help = "Backpopulate website groups and permissions"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "-f",
-            "--filter",
-            dest="filter",
-            default="",
-            help="If specified, only process websites that contain this filter text in their name",
-        )
-
+        super().add_arguments(parser)
         parser.add_argument(
             "--only-global",
             dest="only-global",
@@ -29,11 +22,11 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        super().handle(*args, **options)
 
         self.stdout.write(f"Creating website permission groups")
         start = now_in_utc()
 
-        filter_str = options["filter"].lower()
         is_verbose = options["verbosity"] > 1
 
         total_websites = 0
@@ -42,16 +35,17 @@ class Command(BaseCommand):
         total_owners = 0
 
         # Redo global groups too in case permissions changed
-        if not filter_str:
+        if not self.filter_list:
             created, updated = create_global_groups()
             self.stdout.write(
                 f"Global groups: created {created} groups, updated {updated} groups"
             )
 
         if not options["only-global"]:
-            if filter_str:
+            if self.filter_list:
                 website_qset = Website.objects.filter(
-                    Q(name__icontains=filter_str) | Q(title__icontains=filter_str)
+                    Q(name__in=self.filter_list)
+                    | Q(short_id__icontains=self.filter_list)
                 )
             else:
                 website_qset = Website.objects.all()

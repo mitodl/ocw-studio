@@ -1,18 +1,17 @@
 """ Update OCW course sites and content via update_ocw_resource_data """
-import json
-
-from django.core.management import BaseCommand
 from mitol.common.utils.datetime import now_in_utc
 
+from main.management.commands.filter import WebsiteFilterCommand
 from ocw_import.tasks import update_ocw_resource_data
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """ Import OCW course sites and content via ocw2hugo output """
 
     help = __doc__
 
     def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument(
             "-b",
             "--bucket",
@@ -42,18 +41,6 @@ class Command(BaseCommand):
             help="Number of courses to process per celery task (default 10)",
         )
         parser.add_argument(
-            "--filter",
-            dest="filter",
-            default=None,
-            help="If specified, only import courses that contain these comma-delimited site names",
-        )
-        parser.add_argument(
-            "--filter-json",
-            dest="filter_json",
-            default=None,
-            help="If specified, only import courses that contain comma-delimited site names specified in a JSON file",
-        )
-        parser.add_argument(
             "--limit",
             dest="limit",
             default=None,
@@ -66,28 +53,17 @@ class Command(BaseCommand):
             action="store_true",
             help="Create any new content if it doesn't exist",
         )
-        super().add_arguments(parser)
 
     def handle(self, *args, **options):
+        super().handle(*args, **options)
         prefix = options["prefix"]
         if prefix:
             # make sure it ends with a '/'
             prefix = prefix.rstrip("/") + "/"
         bucket_name = options["bucket"]
-        filter_json = options["filter_json"]
         limit = options["limit"]
         create_new = options["create_new"]
         content_field = options["content_field"]
-
-        if filter_json:
-            with open(filter_json) as input_file:
-                filter_list = json.load(input_file)
-        elif options["filter"]:
-            filter_list = [
-                name.strip() for name in options["filter"].split(",") if name
-            ]
-        else:
-            filter_list = None
 
         if not create_new and not content_field:
             self.stderr.write("Either --content-field or --create-new is required")
@@ -97,7 +73,7 @@ class Command(BaseCommand):
         task = update_ocw_resource_data.delay(
             bucket_name=bucket_name,
             prefix=prefix,
-            filter_list=filter_list,
+            filter_list=self.filter_list,
             limit=limit,
             chunk_size=options["chunks"],
             content_field=options["content_field"],

@@ -111,6 +111,7 @@ def test_fetch_website_by_uuid(uuid_str, filter_value):
     [
         [{"title": "my test title"}, "my test title"],
         [{"name": "my test name"}, "my test name"],
+        [{"short_id": "my.test.name"}, "my.test.name"],
         [
             {"title": "05d329fd-05ca-4770-b8b2-77ad711daca9"},
             "05d329fd-05ca-4770-b8b2-77ad711daca9",

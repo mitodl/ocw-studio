@@ -1,39 +1,26 @@
 """ Publish live or draft versions of multiple sites """
-import json
-
 from django.conf import settings
-from django.core.management import BaseCommand, CommandError
+from django.core.management import CommandError
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.constants import VERSION_DRAFT
 from content_sync.tasks import publish_websites
-from websites.constants import STARTER_SOURCE_GITHUB, WEBSITE_SOURCE_OCW_IMPORT
+from main.management.commands.filter import WebsiteFilterCommand
+from websites.constants import STARTER_SOURCE_GITHUB
 from websites.models import Website
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """ Publish live or draft versions of multiple sites  """
 
     help = __doc__
 
     def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument(
             "version",
             help="The pipeline version to trigger (live or draft)",
-        )
-        parser.add_argument(
-            "--filter-json",
-            dest="filter_json",
-            default=None,
-            help="If specified, only publish courses that contain comma-delimited site names specified in a JSON file",
-        )
-        parser.add_argument(
-            "-f",
-            "--filter",
-            dest="filter",
-            default="",
-            help="If specified, only trigger website pipelines whose names are in this comma-delimited list",
         )
         parser.add_argument(
             "-c",
@@ -47,7 +34,7 @@ class Command(BaseCommand):
             "--source",
             dest="source",
             default=None,
-            help=f"Only trigger pipelines for websites that are based on this source",
+            help="Only trigger pipelines for websites that are based on this source",
         )
         parser.add_argument(
             "-ch",
@@ -71,13 +58,12 @@ class Command(BaseCommand):
             help="Run individual site pipelines instead of the mass-build-sites pipeline",
         )
 
-    def handle(self, *args, **options):
-
+    def handle(self, *args, **options):  # pylint:disable=too-many-locals
+        super().handle(*args, **options)
         if not settings.CONTENT_SYNC_PIPELINE_BACKEND:
             self.stderr.write("Pipeline backend is not configured for publishing")
             return
 
-        filter_json = options["filter_json"]
         version = options["version"].lower()
         starter_str = options["starter"]
         source_str = options["source"]
@@ -86,17 +72,11 @@ class Command(BaseCommand):
         no_mass_build = options["no_mass_build"]
         is_verbose = options["verbosity"] > 1
 
-        if filter_json:
-            with open(filter_json) as input_file:
-                filter_list = json.load(input_file)
-        else:
-            filter_list = [
-                name.strip() for name in options["filter"].split(",") if name
-            ]
-
         website_qset = Website.objects.filter(starter__source=STARTER_SOURCE_GITHUB)
-        if filter_list:
-            website_qset = website_qset.filter(name__in=filter_list)
+        if self.filter_list:
+            website_qset = website_qset.filter(
+                Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
+            )
         if starter_str:
             website_qset = website_qset.filter(starter__slug=starter_str)
         if source_str:

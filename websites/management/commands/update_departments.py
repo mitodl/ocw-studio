@@ -1,15 +1,20 @@
+""" Update departments metadata for website(s)"""
 from functools import reduce
 
-from django.core.management import BaseCommand
 from django.db import transaction
 from django.db.models import Q
 
+from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import WebsiteContent
 
 
-class Command(BaseCommand):
-    def add_arguments(self, parser):
+class Command(WebsiteFilterCommand):
+    """ Update departments metadata for website(s)"""
 
+    help = __doc__
+
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument(
             "-d",
             "--departments",
@@ -20,18 +25,19 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "-n",
-            "--name",
-            dest="name",
+            "-s",
+            "--startswith",
+            dest="startswith",
             nargs="*",
             help="Identifiers to filter websites based on istartswith lookup",
             required=True,
         )
 
     def handle(self, *args, **options):
-        filter_set = options["name"]
+        super().handle(*args, **options)
+        startswith = options["startswith"]
         departments = options["departments"]
-        filter_query_set = [
+        startswith_query_set = [
             "website__name__istartswith",
             "website__short_id__istartswith",
         ]
@@ -39,9 +45,17 @@ class Command(BaseCommand):
         query_set = WebsiteContent.objects.filter(
             reduce(
                 lambda x, y: x | y,
-                [Q(**{key: value}) for key, value in zip(filter_query_set, filter_set)],
+                [
+                    Q(**{key: value})
+                    for key, value in zip(startswith_query_set, startswith)
+                ],
             ),
         )
+        if self.filter_list:
+            query_set = query_set.filter(
+                Q(website__name__in=self.filter_list)
+                | Q(website__short_id__in=self.filter_list)
+            )
 
         query_set = query_set.filter(type="sitemetadata")
         self.stdout.write(

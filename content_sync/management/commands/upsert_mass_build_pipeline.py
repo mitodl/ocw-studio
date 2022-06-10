@@ -1,6 +1,6 @@
 """ Management command for upserting the mass build pipeline """
 from django.conf import settings
-from django.core.management import BaseCommand, CommandError
+from django.core.management import BaseCommand
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.api import get_mass_build_sites_pipeline, get_pipeline_api
