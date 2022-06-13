@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.64.0
+--------------
+
+- Added permission hook for conditional rendering  (#1389)
+- Use common mgmt command options for filtering by websites (#1394)
+
 Version 0.63.4 (Released June 10, 2022)
 --------------
 
