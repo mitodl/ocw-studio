@@ -10,6 +10,7 @@ from mitol.common.utils.webpack import webpack_public_path
 from rest_framework.pagination import LimitOffsetPagination
 
 from gdrive_sync.api import is_gdrive_enabled
+from websites import constants
 
 
 def _index(request):
@@ -31,6 +32,7 @@ def _index(request):
             "username": user.username,
             "email": user.email,
             "name": user.name,
+            "canAddWebsite": user.has_perm(constants.PERMISSION_ADD),
         }
         if user.is_authenticated
         else None

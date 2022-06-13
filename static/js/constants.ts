@@ -209,3 +209,7 @@ export enum PublishingEnv {
   Staging = "staging",
   Production = "production"
 }
+
+export enum Permission {
+  CanAddWebsite = "canAddWebsite"
+}
