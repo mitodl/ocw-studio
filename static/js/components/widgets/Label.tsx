@@ -10,7 +10,7 @@ export interface Props {
  * A component for showing a read-only label
  */
 const Label: React.FC<Props> = props => {
-  const { name, value } = props
+  const { value } = props
   return (
     <div className="py-2">
       {value && !(value instanceof File) ? (
