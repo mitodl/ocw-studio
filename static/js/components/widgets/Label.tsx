@@ -15,7 +15,7 @@ const Label: React.FC<Props> = props => {
     <div className="py-2">
       {value && !(value instanceof File) ? (
         <div className="current-file">
-        Current file: {filenameFromPath(value)}
+          Current file: {filenameFromPath(value)}
         </div>
       ) : null}
     </div>
