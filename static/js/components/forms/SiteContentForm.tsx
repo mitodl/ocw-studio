@@ -144,7 +144,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
             ) : SETTINGS.gdrive_enabled &&
               content?.type === "resource" &&
               field.widget === WidgetVariant.File ? (
-                <div className="form-group">
+                <div>
                   <label htmlFor={field.name}>{field.label}</label>
                   <Field
                     as={Label}
