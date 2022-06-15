@@ -14,9 +14,9 @@ const Label: React.FC<Props> = props => {
   return (
     <div className="py-2">
       {value && !(value instanceof File) ? (
-        <div className="current-file">
-          Current file: {filenameFromPath(value)}
-        </div>
+        <form className="current-file">
+          <input value={filenameFromPath(value)} readOnly></input>
+        </form>
       ) : null}
     </div>
   )

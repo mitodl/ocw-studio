@@ -144,12 +144,15 @@ export function FormFields(props: InnerFormProps): JSX.Element {
             ) : SETTINGS.gdrive_enabled &&
               content?.type === "resource" &&
               field.widget === WidgetVariant.File ? (
-                <Field
-                  as={Label}
-                  name={field.name}
-                  className="form-control"
-                  onChange={handleChange}
-                />
+                <div className="form-group">
+                  <label htmlFor={field.name}>{field.label}</label>
+                  <Field
+                    as={Label}
+                    name={field.name}
+                    className="form-control"
+                    onChange={handleChange}
+                  />
+                </div>
               ) : (
                 <SiteContentField
                   field={field}
