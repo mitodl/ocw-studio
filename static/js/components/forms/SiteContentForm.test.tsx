@@ -244,6 +244,31 @@ test.each`
   }
 )
 
+test.each`
+  isGdriveEnabled | isResource | willRender
+  ${true}         | ${true}    | ${true}
+  ${false}        | ${true}    | ${false}
+  ${true}         | ${false}   | ${false}
+  ${false}        | ${false}   | ${false}
+`(
+  "filename label field render:$willRender when gdrive:$isGdriveEnabled and resource:$isResource",
+  ({ isGdriveEnabled, isResource, willRender }) => {
+    const data = setupData()
+    SETTINGS.gdrive_enabled = isGdriveEnabled
+    data.content.type = isResource ? "resource" : "page"
+    const configItem = makeEditableConfigItem(data.content.type)
+    const field = makeWebsiteConfigField({ widget: WidgetVariant.File })
+    configItem.fields = [field]
+    const values = { file: "courses/file.pdf" }
+    const { form } = setupInnerForm({
+      ...data,
+      configItem,
+      values
+    })
+    expect(form.find("Label").exists()).toBe(willRender)
+  }
+)
+
 test("SiteContentField creates new values", () => {
   const data = setupData()
   data.configItem.fields = [
