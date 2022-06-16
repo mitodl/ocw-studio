@@ -7,14 +7,20 @@ export interface Props {
 }
 
 /**
- * A component for showing a read-only label; handleChange is not defined so this is readOnly
+ * A component for showing a read-only label
  */
 const Label: React.FC<Props> = props => {
   const { value } = props
   return (
     <div className="form-group">
       {value && !(value instanceof File) ? (
-        <div className="form-control">{filenameFromPath(value)}</div>
+        <input
+          className="form-control"
+          placeholder={filenameFromPath(value)}
+          type="text"
+          readOnly
+          style={{ cursor: "not-allowed" }}
+        ></input>
       ) : null}
     </div>
   )
