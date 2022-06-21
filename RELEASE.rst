@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.64.0
+Version 0.64.0 (Released June 21, 2022)
 --------------
 
 - Added permission hook for conditional rendering  (#1389)
