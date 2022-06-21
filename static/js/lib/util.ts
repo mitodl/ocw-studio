@@ -48,11 +48,17 @@ export const objectToFormData = (
 
 export const filenameFromPath = (filepath: string): string => {
   const basename = filepath.split("/").pop() || ""
-  if (basename.includes("_")) {
-    return basename
-      .split("_")
-      .slice(1)
-      .join("_")
+  const UUID = new RegExp(
+    "^[0-9A-F]{8}-?[0-9A-F]{4}-?[4][0-9A-F]{3}-?[89AB][0-9A-F]{3}-?[0-9A-F]{12}",
+    "i"
+  )
+  if (UUID.test(basename)) {
+    if (basename.includes("_")) {
+      return basename
+        .split("_")
+        .slice(1)
+        .join("_")
+    }
   }
   return basename
 }

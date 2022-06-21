@@ -63,7 +63,7 @@ describe("FileUploadField", () => {
         <FileUploadField
           name={fileFieldName}
           onChange={jest.fn()}
-          value={`https://aws.com/uuid_${currentFile}`}
+          value={`https://aws.com/32629a023dc541288e430392b51e7b61_${currentFile}`}
         />
       )
       expect(
