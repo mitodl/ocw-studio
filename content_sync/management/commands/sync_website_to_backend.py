@@ -34,7 +34,7 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
         if not self.filter_list:
-            self.stdout.stderr(
+            self.stderr.write(
                 "You must specify a website or list of websites to process, --filter or --filter-json"
             )
         for site_identifier in self.filter_list:
