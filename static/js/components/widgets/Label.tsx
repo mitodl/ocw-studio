@@ -16,7 +16,7 @@ const Label: React.FC<Props> = props => {
       {value && !(value instanceof File) ? (
         <input
           className="form-control"
-          placeholder={filenameFromPath(value)}
+          value={filenameFromPath(value)}
           type="text"
           readOnly
           style={{ cursor: "not-allowed" }}
