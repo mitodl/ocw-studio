@@ -3,7 +3,7 @@ import { filenameFromPath } from "../../lib/util"
 
 export interface Props {
   name?: string
-  value?: string | File | null
+  value?: string | File
 }
 
 /**
