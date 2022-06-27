@@ -22,6 +22,7 @@ import * as domUtil from "../../util/dom"
 import ObjectField from "../widgets/ObjectField"
 
 import * as Website from "../../context/Website"
+import Label from "../widgets/Label"
 const { useWebsite: mockUseWebsite } = Website as jest.Mocked<typeof Website>
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
@@ -91,7 +92,7 @@ function setupInnerForm(props: Partial<InnerFormProps> = {}) {
     <Formik
       onSubmit={data.onSubmit}
       validate={validate}
-      initialValues={{}}
+      initialValues={props.values ?? {}}
       enableReinitialize={true}
     >
       {formikProps => (
@@ -245,27 +246,30 @@ test.each`
 )
 
 test.each`
-  isGdriveEnabled | isResource | willRender
-  ${true}         | ${true}    | ${true}
-  ${false}        | ${true}    | ${false}
-  ${true}         | ${false}   | ${false}
-  ${false}        | ${false}   | ${false}
+  isGdriveEnabled | isResource | willRender | filename
+  ${true}         | ${true}    | ${true}    | ${"courses/file.pdf"}
+  ${false}        | ${true}    | ${false}   | ${null}
+  ${true}         | ${false}   | ${false}   | ${null}
+  ${false}        | ${false}   | ${false}   | ${null}
 `(
-  "filename label field render:$willRender when gdrive:$isGdriveEnabled and resource:$isResource",
-  ({ isGdriveEnabled, isResource, willRender }) => {
+  "filename label field render:$willRender with filename:$filename when gdrive:$isGdriveEnabled and resource:$isResource",
+  ({ isGdriveEnabled, isResource, willRender, filename }) => {
     const data = setupData()
     SETTINGS.gdrive_enabled = isGdriveEnabled
     data.content.type = isResource ? "resource" : "page"
     const configItem = makeEditableConfigItem(data.content.type)
     const field = makeWebsiteConfigField({ widget: WidgetVariant.File })
     configItem.fields = [field]
-    const values = { file: "courses/file.pdf" }
+    const values = { [field.name]: "courses/file.pdf" }
     const { form } = setupInnerForm({
       ...data,
       configItem,
       values
     })
-    expect(form.find("Label").exists()).toBe(willRender)
+    expect(form.find(Label).exists()).toBe(willRender)
+    if (willRender) {
+      expect(form.find(Label).prop("value")).toBe(filename)
+    }
   }
 )
 
