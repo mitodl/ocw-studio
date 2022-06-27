@@ -64,12 +64,19 @@ describe("util", () => {
     expect(result).toBeNull()
   })
   ;[
-    ["http://aws.amazon.com/bucket/uuid/uuid_filename.jpg", "filename.jpg"],
     [
-      "http://aws.amazon.com/bucket/uuid/uuid_longer_filename.jpg",
+      "http://aws.amazon.com/bucket/32629a023dc541288e430392b51e7b61/32629a023dc541288e430392b51e7b61_filename.jpg",
+      "filename.jpg"
+    ],
+    [
+      "http://aws.amazon.com/bucket/32629a02-3dc5-4128-8e43-0392b51e7b61/32629a02-3dc5-4128-8e43-0392b51e7b61_longer_filename.jpg",
       "longer_filename.jpg"
     ],
-    ["/media/text_id/uuid_filename.jpg", "filename.jpg"],
+    ["http://aws.amazon.com/bucket/longer_filename.jpg", "longer_filename.jpg"],
+    [
+      "/media/text_id/32629a02-3dc5-4128-8e43-0392b51e7b61_filename.jpg",
+      "filename.jpg"
+    ],
     ["/media/text_id/filename.jpg", "filename.jpg"]
   ].forEach(([filepath, expected]) => {
     it("filenameFromPath should return expected values", () => {

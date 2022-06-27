@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from "react"
 import {
+  Field,
   Form,
   Formik,
   FormikHelpers,
@@ -12,6 +13,7 @@ import {
 
 import SiteContentField from "./SiteContentField"
 import ObjectField from "../widgets/ObjectField"
+import Label from "../widgets/Label"
 
 import {
   contentInitialValues,
@@ -141,7 +143,17 @@ export function FormFields(props: InnerFormProps): JSX.Element {
               />
             ) : SETTINGS.gdrive_enabled &&
               content?.type === "resource" &&
-              field.widget === WidgetVariant.File ? null : (
+              field.widget === WidgetVariant.File ? (
+                <div key={field.name}>
+                  <label htmlFor={field.name}>{field.label}</label>
+                  <Field
+                    as={Label}
+                    name={field.name}
+                    className="form-control"
+                    onChange={handleChange}
+                  />
+                </div>
+              ) : (
                 <SiteContentField
                   field={field}
                   key={field.name}
