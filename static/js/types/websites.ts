@@ -256,7 +256,7 @@ export type Website = WebsiteStatus & {
   url_path: string | null
   url_suggestion: string
   s3_path: string | null
-  unpublished: boolean
+  unpublished: boolean | undefined
 }
 
 type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR

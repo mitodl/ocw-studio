@@ -235,7 +235,6 @@ class WebsiteDetailSerializer(
     live_url = serializers.SerializerMethodField(read_only=True)
     draft_url = serializers.SerializerMethodField(read_only=True)
     unpublished = serializers.ReadOnlyField()
-    
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
