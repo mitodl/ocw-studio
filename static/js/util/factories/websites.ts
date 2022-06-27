@@ -224,6 +224,7 @@ export const makeWebsiteDetail = (
     .join("-"),
   url_suggestion: "[sitemetadata:primary_course_number]-[sitemetdata:title]",
   s3_path:        `courses/${casual.word}`,
+  unpublished:    false,
   ...overrides
 })
 

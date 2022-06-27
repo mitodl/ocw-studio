@@ -347,7 +347,6 @@ class WebsiteWriteSerializer(serializers.ModelSerializer, RequestUserSerializerM
     )
     unpublished = serializers.ReadOnlyField()
 
-
     def create(self, validated_data):
         """Ensure that the website is created by the requesting user"""
         validated_data["owner"] = self.user_from_request()
