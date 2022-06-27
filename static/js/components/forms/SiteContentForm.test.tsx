@@ -235,7 +235,7 @@ test.each`
     const configItem = makeEditableConfigItem(data.content.type)
     const field = makeWebsiteConfigField({ widget: WidgetVariant.File })
     configItem.fields = [field]
-    const values = { file: "courses/file.pdf" }
+    const values = { [field.name]: "courses/file.pdf" }
     const { form } = setupInnerForm({
       ...data,
       configItem,
