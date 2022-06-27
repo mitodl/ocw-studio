@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.65.0
+--------------
+
+- fixed small error (#1408)
+- add management command set_content_metadata_to_default (#1402)
+
 Version 0.64.0 (Released June 21, 2022)
 --------------
 
