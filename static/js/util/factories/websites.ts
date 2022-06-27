@@ -244,7 +244,8 @@ export const makeWebsiteStatus = (
     draft_publish_status_updated_on: website.draft_publish_status_updated_on,
     sync_status:                     null,
     synced_on:                       null,
-    sync_errors:                     null
+    sync_errors:                     null,
+    unpublished:                     false
   }
 }
 
