@@ -80,6 +80,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
     """ Serializer for websites """
 
     starter = WebsiteStarterSerializer(read_only=True)
+    unpublished = serializers.ReadOnlyField()
 
     class Meta:
         model = Website
@@ -98,6 +99,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "starter",
             "owner",
             "url_path",
+            "unpublished",
         ]
         extra_kwargs = {"owner": {"write_only": True}}
 
@@ -232,6 +234,7 @@ class WebsiteDetailSerializer(
     is_admin = serializers.SerializerMethodField(read_only=True)
     live_url = serializers.SerializerMethodField(read_only=True)
     draft_url = serializers.SerializerMethodField(read_only=True)
+    unpublished = serializers.ReadOnlyField()
 
     def get_is_admin(self, obj):
         """ Determine if the request user is an admin"""
@@ -342,6 +345,7 @@ class WebsiteWriteSerializer(serializers.ModelSerializer, RequestUserSerializerM
     starter = serializers.PrimaryKeyRelatedField(
         queryset=WebsiteStarter.objects.all(), write_only=True
     )
+    unpublished = serializers.ReadOnlyField()
 
     def create(self, validated_data):
         """Ensure that the website is created by the requesting user"""

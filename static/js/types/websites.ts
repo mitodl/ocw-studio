@@ -234,6 +234,7 @@ export interface WebsiteStatus {
   sync_status: GoogleDriveSyncStatuses | null
   synced_on: string | null
   sync_errors: Array<string> | null
+  unpublished: boolean
 }
 
 export type Website = WebsiteStatus & {

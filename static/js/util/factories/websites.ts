@@ -224,6 +224,7 @@ export const makeWebsiteDetail = (
     .join("-"),
   url_suggestion: "[sitemetadata:primary_course_number]-[sitemetdata:title]",
   s3_path:        `courses/${casual.word}`,
+  unpublished:    false,
   ...overrides
 })
 
@@ -244,7 +245,8 @@ export const makeWebsiteStatus = (
     draft_publish_status_updated_on: website.draft_publish_status_updated_on,
     sync_status:                     null,
     synced_on:                       null,
-    sync_errors:                     null
+    sync_errors:                     null,
+    unpublished:                     false
   }
 }
 

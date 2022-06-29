@@ -74,7 +74,7 @@ export default function SitesDashboard(): JSX.Element {
               to={siteDetailUrl.param({ name: site.name }).toString()}
               key={site.uuid}
             >
-              {site.publish_date ? (
+              {site.publish_date && !site.unpublished ? (
                 <div className="text-success">Published</div>
               ) : (
                 <div className="text-dark">Draft</div>
