@@ -45,7 +45,8 @@ export enum TabIds {
   Pages = "pages",
   CourseCollections = "course-collection",
   ResourceCollections = "resource_collections",
-  VideoGallery = "video_gallery"
+  VideoGallery = "video_gallery",
+  ResourceList = "resource-list"
 }
 
 const documentTab: TabSettings = {
@@ -114,6 +115,14 @@ const videoGallery: TabSettings = {
   embeddable:   false,
   singleColumn: true
 }
+const resourceList: TabSettings = {
+  title:        "Resource List",
+  id:           TabIds.ResourceList,
+  contentType:  ContentType.ResourceList,
+  resourcetype: null,
+  embeddable:   false,
+  singleColumn: true
+}
 
 /**
  * Maps a content name from our config schemas to a group of tabs.
@@ -125,7 +134,8 @@ const TABS: Record<string, TabSettings[]> = {
   page:                 [pageTab],
   course_collections:   [courseCollectionTab],
   resource_collections: [resourcCollectionTab],
-  video_gallery:        [videoGallery]
+  video_gallery:        [videoGallery],
+  "resource-list":         [resourceList]
 }
 
 const modeText = {
