@@ -135,7 +135,7 @@ const TABS: Record<string, TabSettings[]> = {
   course_collections:   [courseCollectionTab],
   resource_collections: [resourcCollectionTab],
   video_gallery:        [videoGallery],
-  "resource-list":         [resourceList]
+  "resource-list":      [resourceList]
 }
 
 const modeText = {
