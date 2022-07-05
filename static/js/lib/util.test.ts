@@ -77,6 +77,10 @@ describe("util", () => {
       "/media/text_id/32629a02-3dc5-4128-8e43-0392b51e7b61_filename.jpg",
       "filename.jpg"
     ],
+    [
+      "/media/text_id/ab3d029952cda060f4afcd811189a591_longer_filename.jpg",
+      "longer_filename.jpg"
+    ],
     ["/media/text_id/filename.jpg", "filename.jpg"]
   ].forEach(([filepath, expected]) => {
     it("filenameFromPath should return expected values", () => {
