@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.66.0
+--------------
+
+- Added a check for site status (#1405)
+- Add Filename to Edit Resource Menu When GDrive Sync Enabled (#1406)
+
 Version 0.65.0 (Released June 30, 2022)
 --------------
 
