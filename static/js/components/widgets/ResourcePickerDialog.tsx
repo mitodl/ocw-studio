@@ -145,7 +145,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     () =>
       contentNames
         .flatMap(name => TABS[name])
-        .filter(tab => mode !== RESOURCE_EMBED || tab.embeddable),
+        .filter(tab => tab && (mode !== RESOURCE_EMBED || tab.embeddable)),
     [mode, contentNames]
   )
   const [activeTabId, setActiveTabId] = useState(tabs[0].id)
