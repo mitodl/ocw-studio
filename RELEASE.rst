@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.66.0
+Version 0.66.0 (Released July 11, 2022)
 --------------
 
 - Added a check for site status (#1405)
