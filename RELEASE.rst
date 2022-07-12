@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.67.0
+--------------
+
+- added resource list to resource picker (#1412)
+- Removing UUID v1 from displayed filenames in Edit Resource drawer (#1415)
+- added check to filter undefined tabs (#1411)
+
 Version 0.66.0 (Released July 11, 2022)
 --------------
 
