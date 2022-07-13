@@ -197,7 +197,9 @@ class YouTubeApi:
         results = self.client.videos().list(part="status", id=video_id).execute()
         return results["items"][0]["status"]["uploadStatus"]
 
-    def upload_video(self, videofile: VideoFile, privacy="unlisted"):
+    def upload_video(
+        self, videofile: VideoFile, privacy="unlisted", notify_subscribers=False
+    ):
         """
         Transfer the video's original video file from S3 to YouTube.
         The YT account must be validated for videos > 15 minutes long:
@@ -206,6 +208,7 @@ class YouTubeApi:
         Args:
             video(Video): The Video object whose original source file will be uploaded'
             privacy(str): The privacy level to set the YouTube video to.
+            notify_subscribers(bool): whether subscribers should be notified
 
         Returns:
             dict: YouTube API response
@@ -221,6 +224,7 @@ class YouTubeApi:
                 categoryId=settings.YT_CATEGORY_ID,
             ),
             status=dict(privacyStatus=privacy),
+            notifySubscribers=notify_subscribers,
         )
 
         with Reader(settings.AWS_STORAGE_BUCKET_NAME, videofile.s3_key) as s3_stream:
