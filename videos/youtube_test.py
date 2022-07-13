@@ -181,6 +181,31 @@ def test_upload_video_long_fields(mocker, youtube_mocker):
     assert called_kwargs["body"]["snippet"]["title"] == f"{name[:97]}..."
 
 
+def test_upload_notify_subscribers(mocker, youtube_mocker):
+    """
+    Test that the upload_youtube_video task appropriately sets notifySubscribers
+    """
+    # test notifySubscribers == False (by default)
+    name = "".join(random.choice(string.ascii_lowercase) for c in range(50))
+    video_file = VideoFileFactory.create()
+    video_file.video.source_key = video_file.s3_key.replace("file_", name)
+    mocker.patch("videos.youtube.resumable_upload")
+    mock_upload = youtube_mocker().videos.return_value.insert
+    YouTubeApi().upload_video(video_file)
+    called_args, called_kwargs = mock_upload.call_args
+    assert not called_kwargs["body"]["notifySubscribers"]
+
+    # test notifySubscribers == True
+    name = "".join(random.choice(string.ascii_lowercase) for c in range(50))
+    video_file = VideoFileFactory.create()
+    video_file.video.source_key = video_file.s3_key.replace("file_", name)
+    mocker.patch("videos.youtube.resumable_upload")
+    mock_upload = youtube_mocker().videos.return_value.insert
+    YouTubeApi().upload_video(video_file, notify_subscribers=True)
+    called_args, called_kwargs = mock_upload.call_args
+    assert called_kwargs["body"]["notifySubscribers"]
+
+
 def test_delete_video(youtube_mocker):
     """
     Test that the 'delete_video' method executes a YouTube API deletion request and returns the status code
