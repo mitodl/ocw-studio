@@ -224,13 +224,13 @@ class YouTubeApi:
                 categoryId=settings.YT_CATEGORY_ID,
             ),
             status=dict(privacyStatus=privacy),
-            notifySubscribers=notify_subscribers,
         )
 
         with Reader(settings.AWS_STORAGE_BUCKET_NAME, videofile.s3_key) as s3_stream:
             request = self.client.videos().insert(
                 part=",".join(request_body.keys()),
                 body=request_body,
+                notifySubscribers=notify_subscribers,
                 media_body=MediaIoBaseUpload(
                     s3_stream, mimetype="video/*", chunksize=-1, resumable=True
                 ),

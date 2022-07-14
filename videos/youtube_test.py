@@ -193,7 +193,7 @@ def test_upload_notify_subscribers(mocker, youtube_mocker):
     mock_upload = youtube_mocker().videos.return_value.insert
     YouTubeApi().upload_video(video_file)
     called_args, called_kwargs = mock_upload.call_args
-    assert not called_kwargs["body"]["notifySubscribers"]
+    assert not called_kwargs["notifySubscribers"]
 
     # test notifySubscribers == True
     name = "".join(random.choice(string.ascii_lowercase) for c in range(50))
@@ -203,7 +203,7 @@ def test_upload_notify_subscribers(mocker, youtube_mocker):
     mock_upload = youtube_mocker().videos.return_value.insert
     YouTubeApi().upload_video(video_file, notify_subscribers=True)
     called_args, called_kwargs = mock_upload.call_args
-    assert called_kwargs["body"]["notifySubscribers"]
+    assert called_kwargs["notifySubscribers"]
 
 
 def test_delete_video(youtube_mocker):
