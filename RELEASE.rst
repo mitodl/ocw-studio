@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.67.0
+Version 0.67.0 (Released July 14, 2022)
 --------------
 
 - added resource list to resource picker (#1412)
