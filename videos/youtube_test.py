@@ -73,7 +73,7 @@ def youtube_website(mocker):
 
 @pytest.fixture
 def mock_mail(mocker):
-    """ Objects and mocked functions for mail tests"""
+    """Objects and mocked functions for mail tests"""
     mock_get_message_sender = mocker.patch("videos.youtube.get_message_sender")
     mock_sender = mock_get_message_sender.return_value.__enter__.return_value
     video_file = VideoFileFactory.create()
@@ -181,29 +181,19 @@ def test_upload_video_long_fields(mocker, youtube_mocker):
     assert called_kwargs["body"]["snippet"]["title"] == f"{name[:97]}..."
 
 
-def test_upload_notify_subscribers(mocker, youtube_mocker):
+@pytest.mark.parametrize("notify", [True, False])
+def test_upload_notify_subscribers(mocker, youtube_mocker, notify):
     """
     Test that the upload_youtube_video task appropriately sets notifySubscribers
     """
-    # test notifySubscribers == False (by default)
     name = "".join(random.choice(string.ascii_lowercase) for c in range(50))
     video_file = VideoFileFactory.create()
     video_file.video.source_key = video_file.s3_key.replace("file_", name)
     mocker.patch("videos.youtube.resumable_upload")
     mock_upload = youtube_mocker().videos.return_value.insert
-    YouTubeApi().upload_video(video_file)
+    YouTubeApi().upload_video(video_file, notify_subscribers=notify)
     called_args, called_kwargs = mock_upload.call_args
-    assert not called_kwargs["notifySubscribers"]
-
-    # test notifySubscribers == True
-    name = "".join(random.choice(string.ascii_lowercase) for c in range(50))
-    video_file = VideoFileFactory.create()
-    video_file.video.source_key = video_file.s3_key.replace("file_", name)
-    mocker.patch("videos.youtube.resumable_upload")
-    mock_upload = youtube_mocker().videos.return_value.insert
-    YouTubeApi().upload_video(video_file, notify_subscribers=True)
-    called_args, called_kwargs = mock_upload.call_args
-    assert called_kwargs["notifySubscribers"]
+    assert called_kwargs["notifySubscribers"] is notify
 
 
 def test_delete_video(youtube_mocker):
@@ -380,7 +370,7 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments
     version,
     privacy,
 ):
-    """ Check that youtube.update_video is called for appropriate resources and not others"""
+    """Check that youtube.update_video is called for appropriate resources and not others"""
     mock_youtube = mocker.patch("videos.youtube.YouTubeApi")
     mock_update_video = mock_youtube.return_value.update_video
     mocker.patch("videos.youtube.is_ocw_site", return_value=is_ocw)
