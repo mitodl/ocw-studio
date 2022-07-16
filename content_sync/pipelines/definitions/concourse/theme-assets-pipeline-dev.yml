@@ -1,0 +1,55 @@
+---
+resources:
+- name: ocw-hugo-themes
+  type: git
+  source:
+    uri: ((ocw-hugo-themes-uri))
+    branch: ((ocw-hugo-themes-branch))
+jobs:
+- name: build-theme-assets
+  serial: true
+  plan:
+  - get: ocw-hugo-themes
+    trigger: true
+  - task: build-ocw-hugo-themes
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: mitodl/ocw-course-publisher, tag: 0.2}
+      inputs:
+      - name: ocw-hugo-themes
+      outputs:
+      - name: ocw-hugo-themes
+      params:
+        SEARCH_API_URL: ((search-api-url))
+      run:
+        path: sh
+        args:
+        - -exc
+        - |
+          cd ocw-hugo-themes
+          yarn install --pure-lockfile
+          npm run build:webpack
+          npm run build:githash
+  - task: copy-s3-buckets
+    timeout: 20m
+    attempts: 3
+    config:
+      inputs:
+        - name: ocw-hugo-themes
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: amazon/aws-cli, tag: latest}
+      params:
+        AWS_ACCESS_KEY_ID: ((minio-root-user))
+        AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+      run:
+        path: sh
+        args:
+          - -exc
+          - |
+            aws s3 --endpoint-url http://10.1.0.100:9000 cp ocw-hugo-themes/base-theme/dist s3://((ocw-bucket-draft)) --recursive --metadata site-id=ocw-hugo-themes
+            aws s3 --endpoint-url http://10.1.0.100:9000 cp ocw-hugo-themes/base-theme/dist s3://((ocw-bucket-live)) --recursive --metadata site-id=ocw-hugo-themes
+            aws s3 --endpoint-url http://10.1.0.100:9000 cp ocw-hugo-themes/base-theme/data/webpack.json s3://ol-eng-artifacts/ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json --metadata site-id=ocw-hugo-themes

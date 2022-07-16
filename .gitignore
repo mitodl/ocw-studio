@@ -118,5 +118,8 @@ celerybeat-schedule
 !.yarn/sdks
 !.yarn/versions
 
+# Minio
+s3/
+
 # VS-Code workspace settings
 .vscode

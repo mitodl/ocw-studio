@@ -40,6 +40,8 @@ MANDATORY_CONCOURSE_SETTINGS = [
     "CONCOURSE_USERNAME",
     "CONCOURSE_PASSWORD",
 ]
+DEV = settings.ENVIRONMENT == "dev"
+DEV_SUFFIX = "-dev" if DEV else ""
 
 
 class PipelineApi(Api, BasePipelineApi):
@@ -350,12 +352,22 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
             if branch == settings.GIT_BRANCH_PREVIEW:
                 pipeline_name = VERSION_DRAFT
-                destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
                 static_api_url = settings.OCW_STUDIO_DRAFT_URL
+                if DEV:
+                    destination_bucket = settings.MINIO_DRAFT_BUCKET_NAME
+                    resource_base_url = settings.RESOURCE_BASE_URL_DRAFT
+                else:
+                    destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
+                    resource_base_url = ""
             else:
                 pipeline_name = VERSION_LIVE
-                destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
                 static_api_url = settings.OCW_STUDIO_LIVE_URL
+                if DEV:
+                    destination_bucket = settings.MINIO_LIVE_BUCKET_NAME
+                    resource_base_url = settings.RESOURCE_BASE_URL_LIVE
+                else:
+                    destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
+                    resource_base_url = ""
             if settings.CONCOURSE_IS_PRIVATE_REPO:
                 markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.website.short_id}.git"
                 private_key_var = "\n      private_key: ((git-private-key))"
@@ -364,11 +376,13 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 private_key_var = ""
             build_drafts = "--buildDrafts" if pipeline_name == VERSION_DRAFT else ""
 
+            pipeline_template = f"definitions/concourse/site-pipeline{DEV_SUFFIX}.yml"
             with open(
-                os.path.join(
-                    os.path.dirname(__file__), "definitions/concourse/site-pipeline.yml"
-                )
+                os.path.join(os.path.dirname(__file__), pipeline_template)
             ) as pipeline_config_file:
+                ocw_studio_url = (
+                    "http://10.1.0.102:8043" if DEV else settings.SITE_BASE_URL
+                )
                 config_str = (
                     pipeline_config_file.read()
                     .replace("((markdown-uri))", markdown_uri)
@@ -383,12 +397,17 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                         "((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH
                     )
                     .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
-                    .replace("((ocw-studio-url))", settings.SITE_BASE_URL)
+                    .replace("((ocw-studio-url))", ocw_studio_url)
                     .replace("((static-api-base-url))", static_api_url)
                     .replace(
                         "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
                     )
-                    .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME)
+                    .replace(
+                        "((ocw-studio-bucket))",
+                        settings.MINIO_STORAGE_BUCKET_NAME
+                        if DEV
+                        else settings.AWS_STORAGE_BUCKET_NAME,
+                    )
                     .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
                     .replace(
                         "((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
@@ -408,6 +427,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     .replace("((theme-created-trigger))", theme_created_trigger)
                     .replace("((build-drafts))", build_drafts)
                     .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
+                    .replace("((minio-root-user))", settings.MINIO_ROOT_USER)
+                    .replace("((minio-root-password))", settings.MINIO_ROOT_PASSWORD)
+                    .replace("((resource-base-url))", resource_base_url)
                 )
             self.upsert_config(config_str, pipeline_name)
 
@@ -431,25 +453,37 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
 
     def upsert_pipeline(self):
         """Upsert the theme assets pipeline"""
+        pipeline_template = (
+            f"definitions/concourse/theme-assets-pipeline{DEV_SUFFIX}.yml"
+        )
         with open(
-            os.path.join(
-                os.path.dirname(__file__),
-                "definitions/concourse/theme-assets-pipeline.yml",
-            )
+            os.path.join(os.path.dirname(__file__), pipeline_template)
         ) as pipeline_config_file:
             purge_header = (
                 ""
                 if settings.CONCOURSE_HARD_PURGE
                 else "\n          - -H\n          - 'Fastly-Soft-Purge: 1'"
             )
+            draft_bucket = (
+                settings.MINIO_DRAFT_BUCKET_NAME
+                if DEV
+                else settings.AWS_PREVIEW_BUCKET_NAME
+            )
+            live_bucket = (
+                settings.MINIO_LIVE_BUCKET_NAME
+                if DEV
+                else settings.AWS_PUBLISH_BUCKET_NAME
+            )
             config_str = (
                 pipeline_config_file.read()
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
                 .replace("((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH)
                 .replace("((search-api-url))", settings.SEARCH_API_URL)
-                .replace("((ocw-bucket-draft))", settings.AWS_PREVIEW_BUCKET_NAME)
-                .replace("((ocw-bucket-live))", settings.AWS_PUBLISH_BUCKET_NAME)
+                .replace("((ocw-bucket-draft))", draft_bucket)
+                .replace("((ocw-bucket-live))", live_bucket)
                 .replace("((purge_header))", purge_header)
+                .replace("((minio-root-user))", settings.MINIO_ROOT_USER)
+                .replace("((minio-root-password))", settings.MINIO_ROOT_PASSWORD)
             )
             self.upsert_config(config_str, self.PIPELINE_NAME)
 
@@ -504,11 +538,9 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             static_api_url = settings.OCW_STUDIO_LIVE_URL
         build_drafts = "--buildDrafts" if self.version == VERSION_DRAFT else ""
 
+        pipeline_template = f"definitions/concourse/mass-build-sites{DEV_SUFFIX}.yml"
         with open(
-            os.path.join(
-                os.path.dirname(__file__),
-                "definitions/concourse/mass-build-sites.yml",
-            )
+            os.path.join(os.path.dirname(__file__), pipeline_template)
         ) as pipeline_config_file:
             config_str = (
                 pipeline_config_file.read()
@@ -560,11 +592,11 @@ class UnpublishedSiteRemovalPipeline(
         """
         destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
 
+        pipeline_template = (
+            f"definitions/concourse/remove-unpublished-sites{DEV_SUFFIX}.yml"
+        )
         with open(
-            os.path.join(
-                os.path.dirname(__file__),
-                "definitions/concourse/remove-unpublished-sites.yml",
-            )
+            os.path.join(os.path.dirname(__file__), pipeline_template)
         ) as pipeline_config_file:
             config_str = (
                 pipeline_config_file.read()
