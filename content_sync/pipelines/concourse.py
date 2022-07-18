@@ -40,8 +40,6 @@ MANDATORY_CONCOURSE_SETTINGS = [
     "CONCOURSE_USERNAME",
     "CONCOURSE_PASSWORD",
 ]
-DEV = settings.ENVIRONMENT == "dev"
-DEV_SUFFIX = "-dev" if DEV else ""
 
 
 class PipelineApi(Api, BasePipelineApi):
@@ -322,6 +320,8 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         """
         Create or update a concourse pipeline for the given Website
         """
+        is_dev = settings.ENVIRONMENT == "dev"
+        dev_suffix = "-dev" if is_dev else ""
         starter = self.website.starter
         if starter.source != STARTER_SOURCE_GITHUB:
             # This pipeline only handles sites with github-based starters
@@ -359,8 +359,8 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             f"{settings.GIT_BRANCH_PREVIEW}": {
                 "pipeline_name": VERSION_DRAFT,
                 "static_api_url": settings.OCW_STUDIO_DRAFT_URL,
-                "destination_bucket": settings.MINIO_DRAFT_BUCKET_NAME,
-                "resource_base_url": settings.RESOURCE_BASE_URL_DRAFT,
+                "destination_bucket": settings.AWS_PREVIEW_BUCKET_NAME,
+                "resource_base_url": "",
             },
             f"{settings.GIT_BRANCH_RELEASE}-dev": {
                 "pipeline_name": VERSION_LIVE,
@@ -376,7 +376,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             },
         }
         for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
-            branch_vars = all_vars[f"{branch}{DEV_SUFFIX}"]
+            branch_vars = all_vars[f"{branch}{dev_suffix}"]
             pipeline_name = branch_vars["pipeline_name"]
             static_api_url = branch_vars["static_api_url"]
             destination_bucket = branch_vars["destination_bucket"]
@@ -390,12 +390,12 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 private_key_var = ""
             build_drafts = "--buildDrafts" if pipeline_name == VERSION_DRAFT else ""
 
-            pipeline_template = f"definitions/concourse/site-pipeline{DEV_SUFFIX}.yml"
+            pipeline_template = f"definitions/concourse/site-pipeline{dev_suffix}.yml"
             with open(
                 os.path.join(os.path.dirname(__file__), pipeline_template)
             ) as pipeline_config_file:
                 ocw_studio_url = (
-                    "http://10.1.0.102:8043" if DEV else settings.SITE_BASE_URL
+                    "http://10.1.0.102:8043" if is_dev else settings.SITE_BASE_URL
                 )
                 config_str = (
                     pipeline_config_file.read()
@@ -419,7 +419,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     .replace(
                         "((ocw-studio-bucket))",
                         settings.MINIO_STORAGE_BUCKET_NAME
-                        if DEV
+                        if is_dev
                         else settings.AWS_STORAGE_BUCKET_NAME,
                     )
                     .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
@@ -467,8 +467,10 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
 
     def upsert_pipeline(self):
         """Upsert the theme assets pipeline"""
+        is_dev = settings.ENVIRONMENT == "dev"
+        dev_suffix = "-dev" if is_dev else ""
         pipeline_template = (
-            f"definitions/concourse/theme-assets-pipeline{DEV_SUFFIX}.yml"
+            f"definitions/concourse/theme-assets-pipeline{dev_suffix}.yml"
         )
         with open(
             os.path.join(os.path.dirname(__file__), pipeline_template)
@@ -480,12 +482,12 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
             )
             draft_bucket = (
                 settings.MINIO_DRAFT_BUCKET_NAME
-                if DEV
+                if is_dev
                 else settings.AWS_PREVIEW_BUCKET_NAME
             )
             live_bucket = (
                 settings.MINIO_LIVE_BUCKET_NAME
-                if DEV
+                if is_dev
                 else settings.AWS_PUBLISH_BUCKET_NAME
             )
             config_str = (
@@ -529,6 +531,8 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
         """
         Create or update the concourse pipeline
         """
+        is_dev = settings.ENVIRONMENT == "dev"
+        dev_suffix = "-dev" if is_dev else ""
         starter = Website.objects.get(name=settings.ROOT_WEBSITE_NAME).starter
         starter_path_url = urlparse(starter.path)
         hugo_projects_url = urljoin(
@@ -552,7 +556,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             static_api_url = settings.OCW_STUDIO_LIVE_URL
         build_drafts = "--buildDrafts" if self.version == VERSION_DRAFT else ""
 
-        pipeline_template = f"definitions/concourse/mass-build-sites{DEV_SUFFIX}.yml"
+        pipeline_template = f"definitions/concourse/mass-build-sites{dev_suffix}.yml"
         with open(
             os.path.join(os.path.dirname(__file__), pipeline_template)
         ) as pipeline_config_file:
@@ -604,10 +608,12 @@ class UnpublishedSiteRemovalPipeline(
         """
         Create or update the concourse pipeline
         """
+        is_dev = settings.ENVIRONMENT == "dev"
+        dev_suffix = "-dev" if is_dev else ""
         destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
 
         pipeline_template = (
-            f"definitions/concourse/remove-unpublished-sites{DEV_SUFFIX}.yml"
+            f"definitions/concourse/remove-unpublished-sites{dev_suffix}.yml"
         )
         with open(
             os.path.join(os.path.dirname(__file__), pipeline_template)

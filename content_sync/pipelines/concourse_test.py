@@ -96,6 +96,7 @@ def mock_auth(mocker):
 @pytest.fixture
 def pipeline_settings(settings):
     """ Default settings for pipelines"""
+    settings.ENVIRONMENT = "test"
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
     settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
@@ -224,6 +225,7 @@ def test_delete_pipelines(settings, mocker, mock_auth, names):
 
 def test_upsert_website_pipeline_missing_settings(settings):
     """An exception should be raised if required settings are missing"""
+    settings.ENVIRONMENT = "test"
     settings.AWS_PREVIEW_BUCKET_NAME = None
     website = WebsiteFactory.create()
     with pytest.raises(ImproperlyConfigured):
@@ -471,7 +473,9 @@ def test_get_build_status(mocker, mock_auth):
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
-def test_upsert_pipeline(settings, mocker, mock_auth, pipeline_exists):
+def test_upsert_pipeline(
+    settings, pipeline_settings, mocker, mock_auth, pipeline_exists
+):
     """ Test upserting the theme assets pipeline """
     instance_vars = f"%7B%22branch%22%3A%20%22{settings.GITHUB_WEBHOOK_BRANCH}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={instance_vars}"
