@@ -349,26 +349,38 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
         )
 
+        all_vars = {
+            f"{settings.GIT_BRANCH_PREVIEW}-dev": {
+                "pipeline_name": VERSION_DRAFT,
+                "static_api_url": settings.OCW_STUDIO_DRAFT_URL,
+                "destination_bucket": settings.MINIO_DRAFT_BUCKET_NAME,
+                "resource_base_url": settings.RESOURCE_BASE_URL_DRAFT,
+            },
+            f"{settings.GIT_BRANCH_PREVIEW}": {
+                "pipeline_name": VERSION_DRAFT,
+                "static_api_url": settings.OCW_STUDIO_DRAFT_URL,
+                "destination_bucket": settings.MINIO_DRAFT_BUCKET_NAME,
+                "resource_base_url": settings.RESOURCE_BASE_URL_DRAFT,
+            },
+            f"{settings.GIT_BRANCH_RELEASE}-dev": {
+                "pipeline_name": VERSION_LIVE,
+                "static_api_url": settings.OCW_STUDIO_LIVE_URL,
+                "destination_bucket": settings.MINIO_LIVE_BUCKET_NAME,
+                "resource_base_url": settings.RESOURCE_BASE_URL_LIVE,
+            },
+            f"{settings.GIT_BRANCH_RELEASE}": {
+                "pipeline_name": VERSION_LIVE,
+                "static_api_url": settings.OCW_STUDIO_LIVE_URL,
+                "destination_bucket": settings.AWS_PUBLISH_BUCKET_NAME,
+                "resource_base_url": "",
+            },
+        }
         for branch in [settings.GIT_BRANCH_PREVIEW, settings.GIT_BRANCH_RELEASE]:
-            if branch == settings.GIT_BRANCH_PREVIEW:
-                pipeline_name = VERSION_DRAFT
-                static_api_url = settings.OCW_STUDIO_DRAFT_URL
-            else:
-                pipeline_name = VERSION_LIVE
-                static_api_url = settings.OCW_STUDIO_LIVE_URL
-
-            if branch == settings.GIT_BRANCH_PREVIEW and DEV:
-                destination_bucket = settings.MINIO_DRAFT_BUCKET_NAME
-                resource_base_url = settings.RESOURCE_BASE_URL_DRAFT
-            elif branch == settings.GIT_BRANCH_PREVIEW and not DEV:
-                destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
-                resource_base_url = ""
-            elif branch == settings.GIT_BRANCH_RELEASE and DEV:
-                destination_bucket = settings.MINIO_LIVE_BUCKET_NAME
-                resource_base_url = settings.RESOURCE_BASE_URL_LIVE
-            else:
-                destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
-                resource_base_url = ""
+            branch_vars = all_vars[f"{branch}{DEV_SUFFIX}"]
+            pipeline_name = branch_vars["pipeline_name"]
+            static_api_url = branch_vars["static_api_url"]
+            destination_bucket = branch_vars["destination_bucket"]
+            resource_base_url = branch_vars["resource_base_url"]
 
             if settings.CONCOURSE_IS_PRIVATE_REPO:
                 markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.website.short_id}.git"
