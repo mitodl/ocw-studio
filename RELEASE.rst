@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.68.0
+--------------
+
+- Set notifySubscribers to False by default for YouTube videos uploaded through Studio (#1418)
+
 Version 0.67.0 (Released July 14, 2022)
 --------------
 
