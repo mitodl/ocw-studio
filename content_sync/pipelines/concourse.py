@@ -353,21 +353,23 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             if branch == settings.GIT_BRANCH_PREVIEW:
                 pipeline_name = VERSION_DRAFT
                 static_api_url = settings.OCW_STUDIO_DRAFT_URL
-                if DEV:
-                    destination_bucket = settings.MINIO_DRAFT_BUCKET_NAME
-                    resource_base_url = settings.RESOURCE_BASE_URL_DRAFT
-                else:
-                    destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
-                    resource_base_url = ""
             else:
                 pipeline_name = VERSION_LIVE
                 static_api_url = settings.OCW_STUDIO_LIVE_URL
-                if DEV:
-                    destination_bucket = settings.MINIO_LIVE_BUCKET_NAME
-                    resource_base_url = settings.RESOURCE_BASE_URL_LIVE
-                else:
-                    destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
-                    resource_base_url = ""
+
+            if branch == settings.GIT_BRANCH_PREVIEW and DEV:
+                destination_bucket = settings.MINIO_DRAFT_BUCKET_NAME
+                resource_base_url = settings.RESOURCE_BASE_URL_DRAFT
+            elif branch == settings.GIT_BRANCH_PREVIEW and not DEV:
+                destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
+                resource_base_url = ""
+            elif branch == settings.GIT_BRANCH_RELEASE and DEV:
+                destination_bucket = settings.MINIO_LIVE_BUCKET_NAME
+                resource_base_url = settings.RESOURCE_BASE_URL_LIVE
+            else:
+                destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
+                resource_base_url = ""
+
             if settings.CONCOURSE_IS_PRIVATE_REPO:
                 markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.website.short_id}.git"
                 private_key_var = "\n      private_key: ((git-private-key))"
