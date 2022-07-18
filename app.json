@@ -251,30 +251,6 @@
       "description": "Feature flag middleware querystring prefix",
       "required": false
     },
-    "MINIO_ROOT_USER": {
-      "description": "The access key id for the minio dev server",
-      "required": false
-    },
-    "MINIO_ROOT_PASSWORD": {
-      "description": "The secret access key for the minio dev server",
-      "required": false
-    },
-    "MINIO_STORAGE_BUCKET_NAME": {
-      "description": "The name to use for the ocw-studio storage bucket in the minio dev server",
-      "required": false
-    },
-    "MINIO_DRAFT_BUCKET_NAME": {
-      "description": "The name to use for the draft bucket in the minio dev server",
-      "required": false
-    },
-    "MINIO_LIVE_BUCKET_NAME": {
-      "description": "The name to use for the live bucket in the minio dev server",
-      "required": false
-    },
-    "MINIO_ARTIFACTS_BUCKET_NAME": {
-      "description": "The name to use for the artifacts bucket in the minio dev server",
-      "required": false
-    },
     "MITOL_MAIL_FORMAT_RECIPIENT_FUNC": {
       "description": "function to format email recipients",
       "required": false
@@ -434,14 +410,6 @@
     },
     "REDIS_URL": {
       "description": "Redis URL for non-production use",
-      "required": false
-    },
-    "RESOURCE_BASE_URL_DRAFT": {
-      "description": "The draft resource base url to use when building and deploying sites locally to minio",
-      "required": false
-    },
-    "RESOURCE_BASE_URL_LIVE": {
-      "description": "The live resource base url to use when building and deploying sites locally to minio",
       "required": false
     },
     "RESOURCE_TYPE_FIELDS": {
