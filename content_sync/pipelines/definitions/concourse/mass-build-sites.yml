@@ -24,7 +24,7 @@ resources:
   - name: webpack-json
     type: s3-resource-iam
     source:
-      bucket: ol-eng-artifacts
+      bucket: ((artifacts-bucket))
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
 task-config: &webhook-config
   platform: linux

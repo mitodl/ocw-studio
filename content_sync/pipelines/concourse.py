@@ -365,7 +365,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             branch = branch_vars["branch"]
             pipeline_name = branch_vars["pipeline_name"]
             static_api_url = branch_vars["static_api_url"]
-            ocw_studio_bucket = branch_vars["ocw_studio_bucket_name"]
+            storage_bucket_name = branch_vars["storage_bucket_name"]
             artifacts_bucket = branch_vars["artifacts_bucket_name"]
             if branch == settings.GIT_BRANCH_PREVIEW:
                 destination_bucket = branch_vars["preview_bucket_name"]
@@ -409,7 +409,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     .replace(
                         "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
                     )
-                    .replace("((ocw-studio-bucket))", ocw_studio_bucket)
+                    .replace("((ocw-studio-bucket))", storage_bucket_name)
                     .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
                     .replace(
                         "((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
@@ -512,8 +512,10 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
         """
         Create or update the concourse pipeline
         """
-        is_dev = settings.ENVIRONMENT == "dev"
+        env = settings.ENVIRONMENT
+        is_dev = env == "dev"
         dev_suffix = "-dev" if is_dev else ""
+        template_vars = get_template_vars(env)
         starter = Website.objects.get(name=settings.ROOT_WEBSITE_NAME).starter
         starter_path_url = urlparse(starter.path)
         hugo_projects_url = urljoin(
@@ -528,14 +530,23 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             private_key_var = ""
 
         if self.version == VERSION_DRAFT:
-            branch = settings.GIT_BRANCH_PREVIEW
-            destination_bucket = settings.AWS_PREVIEW_BUCKET_NAME
-            static_api_url = settings.OCW_STUDIO_DRAFT_URL
-        else:
-            branch = settings.GIT_BRANCH_RELEASE
-            destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
-            static_api_url = settings.OCW_STUDIO_LIVE_URL
-        build_drafts = "--buildDrafts" if self.version == VERSION_DRAFT else ""
+            template_vars.update(
+                {
+                    "branch": settings.GIT_BRANCH_PREVIEW,
+                    "static_api_url": settings.OCW_STUDIO_DRAFT_URL,
+                    "destination_bucket": template_vars["preview_bucket_name"],
+                    "build_drafts": "--buildDrafts",
+                }
+            )
+        elif self.version == VERSION_LIVE:
+            template_vars.update(
+                {
+                    "branch": settings.GIT_BRANCH_RELEASE,
+                    "static_api_url": settings.OCW_STUDIO_LIVE_URL,
+                    "destination_bucket": template_vars["publish_bucket_name"],
+                    "build_drafts": "",
+                }
+            )
 
         pipeline_template = f"definitions/concourse/mass-build-sites{dev_suffix}.yml"
         with open(
@@ -546,7 +557,8 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
                 .replace("((markdown-uri))", markdown_uri)
                 .replace("((git-private-key-var))", private_key_var)
                 .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
-                .replace("((ocw-bucket))", destination_bucket)
+                .replace("((artifacts-bucket", template_vars["artifacts_bucket_name"])
+                .replace("((ocw-bucket))", template_vars["destination_bucket"])
                 .replace("((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH)
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
                 .replace("((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH)
@@ -555,14 +567,14 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
                     "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
                 )
                 .replace("((ocw-studio-url))", settings.SITE_BASE_URL)
-                .replace("((static-api-base-url))", static_api_url)
+                .replace("((static-api-base-url))", template_vars["static_api_url"])
                 .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME)
-                .replace("((ocw-site-repo-branch))", branch)
+                .replace("((ocw-site-repo-branch))", template_vars["branch"])
                 .replace("((version))", self.version)
                 .replace("((api-token))", settings.API_BEARER_TOKEN or "")
                 .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
                 .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
-                .replace("((build-drafts))", build_drafts)
+                .replace("((build-drafts))", template_vars["build_drafts"])
                 .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
             )
         log.debug(config_str)

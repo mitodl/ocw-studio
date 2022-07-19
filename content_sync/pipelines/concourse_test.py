@@ -2,6 +2,7 @@
 import json
 from html import unescape
 from urllib.parse import quote, urljoin
+from content_sync.utils import get_template_vars
 from main.settings import MINIO_DRAFT_BUCKET_NAME
 
 import pytest
@@ -261,18 +262,7 @@ def test_upsert_website_pipelines(
 ):  # pylint:disable=too-many-locals,too-many-arguments,too-many-branches,unused-argument
     # Set AWS expectations based on environment
     env = settings.ENVIRONMENT
-    expected_aws_values = {
-        "test": {
-            "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
-            "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
-            "storage_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
-        },
-        "dev": {
-            "preview_bucket_name": settings.MINIO_DRAFT_BUCKET_NAME,
-            "publish_bucket_name": settings.MINIO_LIVE_BUCKET_NAME,
-            "storage_bucket_name": settings.MINIO_STORAGE_BUCKET_NAME,
-        },
-    }
+    expected_aws_values = get_template_vars(env)
     expected_endpoint_prefix = (
         "--endpoint-url http://10.1.0.100:9000 " if env == "dev" else ""
     )
@@ -324,11 +314,11 @@ def test_upsert_website_pipelines(
     )
     if version == VERSION_DRAFT:
         _, kwargs = mock_put_headers.call_args_list[0]
-        bucket = expected_aws_values[env]["preview_bucket_name"]
+        bucket = expected_aws_values["preview_bucket_name"]
         api_url = settings.OCW_STUDIO_DRAFT_URL
     else:
         _, kwargs = mock_put_headers.call_args_list[1]
-        bucket = expected_aws_values[env]["publish_bucket_name"]
+        bucket = expected_aws_values["publish_bucket_name"]
         api_url = settings.OCW_STUDIO_LIVE_URL
 
     config_str = json.dumps(kwargs)
@@ -338,7 +328,7 @@ def test_upsert_website_pipelines(
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
     assert api_url in config_str
 
-    storage_bucket_name = expected_aws_values[env]["storage_bucket_name"]
+    storage_bucket_name = expected_aws_values["storage_bucket_name"]
     if home_page:
         assert (
             f"s3 {expected_endpoint_prefix}sync s3://{storage_bucket_name}/{website.name} s3://{bucket}/{website.name}"
@@ -579,6 +569,8 @@ def test_upsert_mass_build_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
 ):  # pylint:disable=too-many-locals,too-many-arguments
     """The mass build pipeline should have expected configuration"""
+    env = settings.ENVIRONMENT
+    expected_aws_values = get_template_vars(env)
     hugo_projects_path = "https://github.com/org/repo"
     WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(
@@ -613,10 +605,10 @@ def test_upsert_mass_build_pipeline(
     )
     _, kwargs = mock_put_headers.call_args_list[0]
     if version == VERSION_DRAFT:
-        bucket = settings.AWS_PREVIEW_BUCKET_NAME
+        bucket = expected_aws_values["preview_bucket_name"]
         api_url = settings.OCW_STUDIO_DRAFT_URL
-    else:
-        bucket = settings.AWS_PUBLISH_BUCKET_NAME
+    elif version == VERSION_LIVE:
+        bucket = expected_aws_values["publish_bucket_name"]
         api_url = settings.OCW_STUDIO_LIVE_URL
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
