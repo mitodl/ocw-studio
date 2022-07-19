@@ -94,17 +94,19 @@ def get_template_vars(env):
     default_vars = {
         "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
         "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
-        "ocw_studio_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
+        "storage_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
         "artifacts_bucket_name": "ol-eng-artifacts",
         "resource_base_url_draft": "",
         "resource_base_url_live": "",
+        "ocw_studio_url": settings.SITE_BASE_URL,
     }
     dev_vars = {
         "preview_bucket_name": settings.MINIO_DRAFT_BUCKET_NAME,
         "publish_bucket_name": settings.MINIO_LIVE_BUCKET_NAME,
-        "ocw_studio_bucket_name": settings.MINIO_STORAGE_BUCKET_NAME,
+        "storage_bucket_name": settings.MINIO_STORAGE_BUCKET_NAME,
         "artifacts_bucket_name": settings.MINIO_ARTIFACTS_BUCKET_NAME,
         "resource_base_url_draft": settings.RESOURCE_BASE_URL_DRAFT,
         "resource_base_url_live": settings.RESOURCE_BASE_URL_LIVE,
+        "ocw_studio_url": "http://10.1.0.102:8043",
     }
     return dev_vars if env == "dev" else default_vars

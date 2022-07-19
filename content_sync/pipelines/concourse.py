@@ -386,9 +386,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             with open(
                 os.path.join(os.path.dirname(__file__), pipeline_template)
             ) as pipeline_config_file:
-                ocw_studio_url = (
-                    "http://10.1.0.102:8043" if is_dev else settings.SITE_BASE_URL
-                )
                 config_str = (
                     pipeline_config_file.read()
                     .replace("((markdown-uri))", markdown_uri)
@@ -404,7 +401,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                         "((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH
                     )
                     .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
-                    .replace("((ocw-studio-url))", ocw_studio_url)
+                    .replace("((ocw-studio-url))", branch_vars["ocw_studio_url"])
                     .replace("((static-api-base-url))", static_api_url)
                     .replace(
                         "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
@@ -566,7 +563,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
                 .replace(
                     "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
                 )
-                .replace("((ocw-studio-url))", settings.SITE_BASE_URL)
+                .replace("((ocw-studio-url))", template_vars["ocw_studio_url"])
                 .replace("((static-api-base-url))", template_vars["static_api_url"])
                 .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME)
                 .replace("((ocw-site-repo-branch))", template_vars["branch"])
