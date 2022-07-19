@@ -628,6 +628,8 @@ def test_unpublished_site_removal_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
 ):  # pylint:disable=too-many-locals,too-many-arguments
     """The unpublished sites removal pipeline should have expected configuration"""
+    env = settings.ENVIRONMENT
+    template_vars = get_template_vars(env)
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME}/config"
 
     if not pipeline_exists:
@@ -654,8 +656,8 @@ def test_unpublished_site_removal_pipeline(
     )
     _, kwargs = mock_put_headers.call_args_list[0]
     config_str = json.dumps(kwargs)
-    assert settings.SITE_BASE_URL in config_str
-    assert settings.AWS_PUBLISH_BUCKET_NAME in config_str
+    assert template_vars["ocw_studio_url"] in config_str
+    assert template_vars["publish_bucket_name"] in config_str
     assert VERSION_LIVE in config_str
 
 

@@ -598,9 +598,11 @@ class UnpublishedSiteRemovalPipeline(
         """
         Create or update the concourse pipeline
         """
-        is_dev = settings.ENVIRONMENT == "dev"
+        env = settings.ENVIRONMENT
+        is_dev = env == "dev"
         dev_suffix = "-dev" if is_dev else ""
-        destination_bucket = settings.AWS_PUBLISH_BUCKET_NAME
+        template_vars = get_template_vars(env)
+        destination_bucket = template_vars["publish_bucket_name"]
 
         pipeline_template = (
             f"definitions/concourse/remove-unpublished-sites{dev_suffix}.yml"
@@ -611,7 +613,7 @@ class UnpublishedSiteRemovalPipeline(
             config_str = (
                 pipeline_config_file.read()
                 .replace("((ocw-bucket))", destination_bucket)
-                .replace("((ocw-studio-url))", settings.SITE_BASE_URL)
+                .replace("((ocw-studio-url))", template_vars["ocw_studio_url"])
                 .replace("((version))", VERSION_LIVE)
                 .replace("((api-token))", settings.API_BEARER_TOKEN or "")
                 .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
