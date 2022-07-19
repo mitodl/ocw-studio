@@ -606,10 +606,10 @@ def test_upsert_mass_build_pipeline(
     _, kwargs = mock_put_headers.call_args_list[0]
     if version == VERSION_DRAFT:
         bucket = expected_aws_values["preview_bucket_name"]
-        api_url = settings.OCW_STUDIO_DRAFT_URL
+        static_api_url = settings.OCW_STUDIO_DRAFT_URL
     elif version == VERSION_LIVE:
         bucket = expected_aws_values["publish_bucket_name"]
-        api_url = settings.OCW_STUDIO_LIVE_URL
+        static_api_url = settings.OCW_STUDIO_LIVE_URL
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert (
@@ -619,7 +619,7 @@ def test_upsert_mass_build_pipeline(
     assert bucket in config_str
     assert version in config_str
     assert f"{hugo_projects_path}.git" in config_str
-    assert api_url in config_str
+    assert static_api_url in config_str
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
