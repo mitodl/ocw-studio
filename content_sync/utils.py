@@ -2,6 +2,7 @@
 import logging
 import os
 from typing import Optional
+from xml.dom.pulldom import default_bufsize
 
 import boto3
 from django.conf import settings
@@ -86,3 +87,24 @@ def move_s3_object(from_path, to_path):
         {"Bucket": bucket, "Key": from_path}, bucket, to_path, extra_args
     )
     s3.Object(bucket, from_path).delete()
+
+
+def get_template_vars(env):
+    """Get an object with all the template vars we need in pipelines based on env"""
+    default_vars = {
+        "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
+        "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
+        "ocw_studio_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
+        "artifacts_bucket_name": "ol-eng-artifacts",
+        "resource_base_url_draft": "",
+        "resource_base_url_live": "",
+    }
+    dev_vars = {
+        "preview_bucket_name": settings.MINIO_DRAFT_BUCKET_NAME,
+        "publish_bucket_name": settings.MINIO_LIVE_BUCKET_NAME,
+        "ocw_studio_bucket_name": settings.MINIO_STORAGE_BUCKET_NAME,
+        "artifacts_bucket_name": settings.MINIO_ARTIFACTS_BUCKET_NAME,
+        "resource_base_url_draft": settings.RESOURCE_BASE_URL_DRAFT,
+        "resource_base_url_live": settings.RESOURCE_BASE_URL_LIVE,
+    }
+    return dev_vars if env == "dev" else default_vars

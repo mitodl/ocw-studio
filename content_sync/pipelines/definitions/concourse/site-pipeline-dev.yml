@@ -18,7 +18,7 @@ resources:
       endpoint: http://10.1.0.100:9000
       access_key_id: ((minio-root-user))
       secret_access_Key: ((minio-root-password))
-      bucket: ol-eng-artifacts
+      bucket: ((artifacts-bucket))
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
   - name: course-markdown
     type: git

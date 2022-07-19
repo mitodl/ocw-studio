@@ -49,7 +49,7 @@ jobs:
           - |
             aws s3 cp ocw-hugo-themes/base-theme/dist s3://((ocw-bucket-draft)) --recursive --metadata site-id=ocw-hugo-themes
             aws s3 cp ocw-hugo-themes/base-theme/dist s3://((ocw-bucket-live)) --recursive --metadata site-id=ocw-hugo-themes
-            aws s3 cp ocw-hugo-themes/base-theme/data/webpack.json s3://ol-eng-artifacts/ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json --metadata site-id=ocw-hugo-themes
+            aws s3 cp ocw-hugo-themes/base-theme/data/webpack.json s3://((artifacts-bucket))/ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json --metadata site-id=ocw-hugo-themes
   - task: clear-cdn-cache-draft
     timeout: 5m
     attempts: 3

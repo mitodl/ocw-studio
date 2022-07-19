@@ -20,7 +20,7 @@ resources:
     type: s3-resource-iam
     check_every: never
     source:
-      bucket: ol-eng-artifacts
+      bucket: ((artifacts-bucket))
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
   - name: course-markdown
     type: git

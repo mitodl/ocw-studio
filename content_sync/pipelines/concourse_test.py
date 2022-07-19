@@ -2,6 +2,7 @@
 import json
 from html import unescape
 from urllib.parse import quote, urljoin
+from main.settings import MINIO_DRAFT_BUCKET_NAME
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -93,14 +94,24 @@ def mock_auth(mocker):
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
 
 
-@pytest.fixture
-def pipeline_settings(settings):
+@pytest.fixture(scope="function", params=["test", "dev"])
+def pipeline_settings(settings, request):
     """ Default settings for pipelines"""
-    settings.ENVIRONMENT = "test"
+    env = request.param
+    settings.ENVIRONMENT = env
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
     settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
     settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
+    if env == "dev":
+        settings.MINIO_ROOT_USER = "minio_root_user"
+        settings.MINIO_ROOT_PASSWORD = "minio_root_password"
+        settings.MINIO_STORAGE_BUCKET_NAME = "storage_bucket_dev"
+        settings.MINIO_DRAFT_BUCKET_NAME = "draft_bucket_dev"
+        settings.MINIO_LIVE_BUCKET_NAME = "live_bucket_dev"
+        settings.MINIO_ARTIFACTS_BUCKET_NAME = "artifact_buckets_dev"
+        settings.RESOURCE_BASE_URL_DRAFT = "https://draft.ocw.mit.edu"
+        settings.RESOURCE_BASE_URL_LIVE = "https://ocw.mit.edu"
 
 
 @pytest.mark.parametrize("stream", [True, False])
@@ -248,7 +259,25 @@ def test_upsert_website_pipelines(
     hard_purge,
     with_api,
 ):  # pylint:disable=too-many-locals,too-many-arguments,too-many-branches,unused-argument
-    """The correct concourse API args should be made for a website"""
+    # Set AWS expectations based on environment
+    env = settings.ENVIRONMENT
+    expected_aws_values = {
+        "test": {
+            "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
+            "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
+            "storage_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
+        },
+        "dev": {
+            "preview_bucket_name": settings.MINIO_DRAFT_BUCKET_NAME,
+            "publish_bucket_name": settings.MINIO_LIVE_BUCKET_NAME,
+            "storage_bucket_name": settings.MINIO_STORAGE_BUCKET_NAME,
+        },
+    }
+    expected_endpoint_prefix = (
+        "--endpoint-url http://10.1.0.100:9000 " if env == "dev" else ""
+    )
+
+    # The correct concourse API args should be made for a website
     settings.CONCOURSE_HARD_PURGE = hard_purge
 
     hugo_projects_path = "https://github.com/org/repo"
@@ -295,11 +324,11 @@ def test_upsert_website_pipelines(
     )
     if version == VERSION_DRAFT:
         _, kwargs = mock_put_headers.call_args_list[0]
-        bucket = settings.AWS_PREVIEW_BUCKET_NAME
+        bucket = expected_aws_values[env]["preview_bucket_name"]
         api_url = settings.OCW_STUDIO_DRAFT_URL
     else:
         _, kwargs = mock_put_headers.call_args_list[1]
-        bucket = settings.AWS_PUBLISH_BUCKET_NAME
+        bucket = expected_aws_values[env]["publish_bucket_name"]
         api_url = settings.OCW_STUDIO_LIVE_URL
 
     config_str = json.dumps(kwargs)
@@ -309,25 +338,32 @@ def test_upsert_website_pipelines(
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
     assert api_url in config_str
 
+    storage_bucket_name = expected_aws_values[env]["storage_bucket_name"]
     if home_page:
         assert (
-            f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/{website.name} s3://{bucket}/{website.name}"
+            f"s3 {expected_endpoint_prefix}sync s3://{storage_bucket_name}/{website.name} s3://{bucket}/{website.name}"
             in config_str
         )
-        assert f"aws s3 sync course-markdown/public s3://{bucket}/" in config_str
+        assert (
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/public s3://{bucket}/"
+            in config_str
+        )
     else:
         assert (
-            f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/courses/{website.name} s3://{bucket}/{website.url_path}"
+            f"s3 {expected_endpoint_prefix}sync s3://{storage_bucket_name}/courses/{website.name} s3://{bucket}/{website.url_path}"
             in config_str
         )
         assert (
-            f"aws s3 sync course-markdown/public s3://{bucket}/{website.url_path}"
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/public s3://{bucket}/{website.url_path}"
             in config_str
         )
-    assert f"purge/{website.name}" in config_str
-    assert f" --metadata site-id={website.name}" in config_str
-    has_soft_purge_header = "Fastly-Soft-Purge" in config_str
-    assert has_soft_purge_header is not hard_purge
+
+    # The dev pipelines don't hit Fastly
+    if not env == "dev":
+        assert f"purge/{website.name}" in config_str
+        assert f" --metadata site-id={website.name}" in config_str
+        has_soft_purge_header = "Fastly-Soft-Purge" in config_str
+        assert has_soft_purge_header is not hard_purge
 
 
 @pytest.mark.parametrize("is_private_repo", [True, False])
@@ -504,11 +540,35 @@ def test_upsert_pipeline(
     )
     _, kwargs = mock_put_headers.call_args_list[0]
     config_str = json.dumps(kwargs)
+    env = settings.ENVIRONMENT
+    expected_bucket_names = {
+        "test": {
+            "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
+            "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
+            "artifacts_bucket_name": "ol-eng-artifacts",
+        },
+        "dev": {
+            "preview_bucket_name": settings.MINIO_DRAFT_BUCKET_NAME,
+            "publish_bucket_name": settings.MINIO_LIVE_BUCKET_NAME,
+            "artifacts_bucket_name": settings.MINIO_ARTIFACTS_BUCKET_NAME,
+        },
+    }
+    preview_bucket_name = expected_bucket_names[env]["preview_bucket_name"]
+    publish_bucket_name = expected_bucket_names[env]["publish_bucket_name"]
+    artifacts_bucket_name = expected_bucket_names[env]["artifacts_bucket_name"]
+    assert_string = (
+        f"s3://{artifacts_bucket_name}/ocw-hugo-themes/{settings.GITHUB_WEBHOOK_BRANCH}"
+    )
+    f = open("/src/test_output.txt", "a")
+    f.write(f"env: {env}\n\n")
+    f.write(f"config_str: {str(config_str)}\n\n")
+    f.write(f"assert string: {assert_string}\n\n")
+    f.close()
     assert settings.SEARCH_API_URL in config_str
-    assert settings.AWS_PREVIEW_BUCKET_NAME in config_str
-    assert settings.AWS_PUBLISH_BUCKET_NAME in config_str
+    assert preview_bucket_name in config_str
+    assert publish_bucket_name in config_str
     assert (
-        f"s3://ol-eng-artifacts/ocw-hugo-themes/{settings.GITHUB_WEBHOOK_BRANCH}"
+        f"s3://{artifacts_bucket_name}/ocw-hugo-themes/{settings.GITHUB_WEBHOOK_BRANCH}"
         in config_str
     )
 
