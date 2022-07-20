@@ -248,6 +248,7 @@ def test_upsert_website_pipeline_missing_settings(settings):
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("hard_purge", [True, False])
 @pytest.mark.parametrize("with_api", [True, False])
+# pylint:disable-next=too-many-locals,too-many-arguments,too-many-branches,unused-argument
 def test_upsert_website_pipelines(
     settings,
     mocker,
@@ -258,7 +259,8 @@ def test_upsert_website_pipelines(
     pipeline_exists,
     hard_purge,
     with_api,
-):  # pylint:disable=too-many-locals,too-many-arguments,too-many-branches,unused-argument
+):
+    """The correct concourse API args should be made for a website"""
     # Set AWS expectations based on environment
     env = settings.ENVIRONMENT
     expected_aws_values = get_template_vars(env)
@@ -266,7 +268,6 @@ def test_upsert_website_pipelines(
         "--endpoint-url http://10.1.0.100:9000 " if env == "dev" else ""
     )
 
-    # The correct concourse API args should be made for a website
     settings.CONCOURSE_HARD_PURGE = hard_purge
 
     hugo_projects_path = "https://github.com/org/repo"
@@ -500,7 +501,7 @@ def test_get_build_status(mocker, mock_auth):
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 def test_upsert_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists
-):
+): # pylint:disable=too-many-locals
     """ Test upserting the theme assets pipeline """
     instance_vars = f"%7B%22branch%22%3A%20%22{settings.GITHUB_WEBHOOK_BRANCH}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={instance_vars}"
