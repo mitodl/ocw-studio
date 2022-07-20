@@ -5,7 +5,6 @@ from s3 and clears out the video resource metadata so it can be repopulates with
 
 import os
 
-import boto3
 from django.conf import settings
 from django.core.management import BaseCommand
 
