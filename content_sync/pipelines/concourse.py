@@ -391,8 +391,8 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     .replace("((markdown-uri))", markdown_uri)
                     .replace("((git-private-key-var))", private_key_var)
                     .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
-                    .replace("((artifacts-bucket))", artifacts_bucket)
-                    .replace("((ocw-bucket))", destination_bucket)
+                    .replace("((artifacts-bucket))", artifacts_bucket or "")
+                    .replace("((ocw-bucket))", destination_bucket or "")
                     .replace(
                         "((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH
                     )
@@ -401,12 +401,12 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                         "((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH
                     )
                     .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
-                    .replace("((ocw-studio-url))", branch_vars["ocw_studio_url"])
+                    .replace("((ocw-studio-url))", branch_vars["ocw_studio_url"] or "")
                     .replace("((static-api-base-url))", static_api_url)
                     .replace(
                         "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
                     )
-                    .replace("((ocw-studio-bucket))", storage_bucket_name)
+                    .replace("((ocw-studio-bucket))", storage_bucket_name or "")
                     .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
                     .replace(
                         "((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
@@ -426,9 +426,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     .replace("((theme-created-trigger))", theme_created_trigger)
                     .replace("((build-drafts))", build_drafts)
                     .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
-                    .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID)
-                    .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY)
-                    .replace("((resource-base-url))", resource_base_url)
+                    .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
+                    .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
+                    .replace("((resource-base-url))", resource_base_url or "")
                 )
             self.upsert_config(config_str, pipeline_name)
 
@@ -472,12 +472,12 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
                 .replace("((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH)
                 .replace("((search-api-url))", settings.SEARCH_API_URL)
-                .replace("((ocw-bucket-draft))", s3_buckets["preview_bucket_name"])
-                .replace("((ocw-bucket-live))", s3_buckets["publish_bucket_name"])
-                .replace("((artifacts-bucket))", s3_buckets["artifacts_bucket_name"])
+                .replace("((ocw-bucket-draft))", s3_buckets["preview_bucket_name"] or "")
+                .replace("((ocw-bucket-live))", s3_buckets["publish_bucket_name"] or "")
+                .replace("((artifacts-bucket))", s3_buckets["artifacts_bucket_name"] or "")
                 .replace("((purge_header))", purge_header)
-                .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID)
-                .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY)
+                .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
+                .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
             )
             self.upsert_config(config_str, self.PIPELINE_NAME)
 
@@ -554,8 +554,8 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
                 .replace("((markdown-uri))", markdown_uri)
                 .replace("((git-private-key-var))", private_key_var)
                 .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
-                .replace("((artifacts-bucket", template_vars["artifacts_bucket_name"])
-                .replace("((ocw-bucket))", template_vars["destination_bucket"])
+                .replace("((artifacts-bucket", template_vars["artifacts_bucket_name"] or "")
+                .replace("((ocw-bucket))", template_vars["destination_bucket"] or "")
                 .replace("((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH)
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
                 .replace("((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH)
@@ -563,15 +563,15 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
                 .replace(
                     "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
                 )
-                .replace("((ocw-studio-url))", template_vars["ocw_studio_url"])
-                .replace("((static-api-base-url))", template_vars["static_api_url"])
-                .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME)
-                .replace("((ocw-site-repo-branch))", template_vars["branch"])
+                .replace("((ocw-studio-url))", template_vars["ocw_studio_url"] or "")
+                .replace("((static-api-base-url))", template_vars["static_api_url"] or "")
+                .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME or "")
+                .replace("((ocw-site-repo-branch))", template_vars["branch"] or "")
                 .replace("((version))", self.version)
                 .replace("((api-token))", settings.API_BEARER_TOKEN or "")
                 .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
                 .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
-                .replace("((build-drafts))", template_vars["build_drafts"])
+                .replace("((build-drafts))", template_vars["build_drafts"] or "")
                 .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
             )
         log.debug(config_str)
@@ -613,7 +613,7 @@ class UnpublishedSiteRemovalPipeline(
             config_str = (
                 pipeline_config_file.read()
                 .replace("((ocw-bucket))", destination_bucket)
-                .replace("((ocw-studio-url))", template_vars["ocw_studio_url"])
+                .replace("((ocw-studio-url))", template_vars["ocw_studio_url"] or "")
                 .replace("((version))", VERSION_LIVE)
                 .replace("((api-token))", settings.API_BEARER_TOKEN or "")
                 .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
