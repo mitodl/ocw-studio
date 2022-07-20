@@ -42,6 +42,7 @@ services:
       - "6379"
     networks:
      - default-network
+     - minio-network
 
   nginx:
     image: nginx:1.22.0
@@ -115,6 +116,7 @@ services:
       - redis
     networks:
       - default-network
+      - minio-network
 
   concourse-db:
     image: postgres:11.6

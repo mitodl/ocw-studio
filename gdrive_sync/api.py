@@ -202,9 +202,16 @@ def process_file_result(
 def stream_to_s3(drive_file: DriveFile):
     """ Stream a Google Drive file to S3 """
     try:
-        s3 = boto3.resource("s3")
+        log.info(settings.ENVIRONMENT)
+        log.info(str(drive_file.__dict__))
+        if settings.ENVIRONMENT == "dev":
+            s3 = get_boto3_resource("s3")
+        else:
+            s3 = boto3.resource("s3")
+        log.info(str(s3.__dict__))
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
         bucket = s3.Bucket(bucket_name)
+        log.info(str(bucket.__dict__))
         if not drive_file.s3_key:
             drive_file.s3_key = drive_file.get_valid_s3_key()
         drive_file.update_status(DriveFileStatus.UPLOADING)

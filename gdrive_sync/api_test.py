@@ -125,6 +125,7 @@ def test_get_parent_tree(mock_service):
 @pytest.mark.parametrize("current_s3_key", [None, "courses/website/current-file.png"])
 def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     """stream_to_s3 should make expected drive api and S3 upload calls"""
+    settings.ENVIRONMENT = "test"
     mock_download = mocker.patch("gdrive_sync.api.GDriveStreamReader")
     mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
     mock_bucket = mock_boto3.resource.return_value.Bucket.return_value
@@ -171,6 +172,7 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
 @pytest.mark.parametrize("num_errors", [2, 3, 4])
 def test_stream_to_s3_error(settings, mocker, num_errors):
     """Task should mark DriveFile status as failed if an s3 upload error occurs more often than retries"""
+    settings.ENVIRONMENT = "test"
     settings.CONTENT_SYNC_RETRIES = 3
     should_raise = num_errors >= 3
     mocker.patch("gdrive_sync.api.GDriveStreamReader")
