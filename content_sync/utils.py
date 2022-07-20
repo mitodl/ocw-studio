@@ -2,12 +2,11 @@
 import logging
 import os
 from typing import Optional
-from xml.dom.pulldom import default_bufsize
 
-import boto3
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+from main.s3_utils import get_boto3_resource
 from websites.constants import WEBSITE_CONTENT_FILETYPE
 from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
@@ -80,7 +79,7 @@ def check_mandatory_settings(mandatory_settings):
 
 def move_s3_object(from_path, to_path):
     """Move an S3 object from one path to another"""
-    s3 = boto3.resource("s3")
+    s3 = get_boto3_resource("s3")
     bucket = settings.AWS_STORAGE_BUCKET_NAME
     extra_args = {"ACL": "public-read"}
     s3.meta.client.copy(
@@ -91,22 +90,22 @@ def move_s3_object(from_path, to_path):
 
 def get_template_vars(env):
     """Get an object with all the template vars we need in pipelines based on env"""
-    default_vars = {
+    base_vars = {
         "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
         "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
         "storage_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
         "artifacts_bucket_name": "ol-eng-artifacts",
+    }
+    default_vars = {
         "resource_base_url_draft": "",
         "resource_base_url_live": "",
         "ocw_studio_url": settings.SITE_BASE_URL,
     }
+    default_vars.update(base_vars)
     dev_vars = {
-        "preview_bucket_name": settings.MINIO_DRAFT_BUCKET_NAME,
-        "publish_bucket_name": settings.MINIO_LIVE_BUCKET_NAME,
-        "storage_bucket_name": settings.MINIO_STORAGE_BUCKET_NAME,
-        "artifacts_bucket_name": settings.MINIO_ARTIFACTS_BUCKET_NAME,
         "resource_base_url_draft": settings.RESOURCE_BASE_URL_DRAFT,
         "resource_base_url_live": settings.RESOURCE_BASE_URL_LIVE,
         "ocw_studio_url": "http://10.1.0.102:8043",
     }
+    dev_vars.update(base_vars)
     return dev_vars if env == "dev" else default_vars

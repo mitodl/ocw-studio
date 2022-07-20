@@ -6,7 +6,6 @@ import time
 from io import BytesIO
 from urllib.parse import urljoin
 
-import boto3
 import httplib2
 import oauth2client
 from django.conf import settings
@@ -18,6 +17,7 @@ from mitol.mail.api import get_message_sender
 from smart_open.s3 import Reader
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from main.s3_utils import get_boto3_client
 from main.utils import truncate_words
 from videos.constants import (
     DESTINATION_YOUTUBE,
@@ -181,7 +181,7 @@ class YouTubeApi:
         authorization = credentials.authorize(httplib2.Http())
         credentials.refresh(authorization)
         self.client = build("youtube", "v3", credentials=credentials)
-        self.s3 = boto3.client("s3")
+        self.s3 = get_boto3_client("s3")
 
     def video_status(self, video_id):
         """

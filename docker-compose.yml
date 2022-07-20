@@ -20,7 +20,7 @@ x-environment:
 networks:
   default-network:
     driver: bridge
-  concourse-network:
+  minio-network:
     driver: bridge
     ipam:
       driver: default
@@ -46,8 +46,8 @@ services:
   nginx:
     image: nginx:1.22.0
     environment:
-      MINIO_DRAFT_BUCKET_NAME: $MINIO_DRAFT_BUCKET_NAME
-      MINIO_LIVE_BUCKET_NAME: $MINIO_LIVE_BUCKET_NAME
+      AWS_PREVIEW_BUCKET_NAME: $AWS_PREVIEW_BUCKET_NAME
+      AWS_PUBLISH_BUCKET_NAME: $AWS_PUBLISH_BUCKET_NAME
     ports:
       - "8043:8043"
       - "8044:8044"
@@ -57,7 +57,7 @@ services:
       - s3
     networks:
       default-network:
-      concourse-network:
+      minio-network:
         ipv4_address: 10.1.0.102
 
   web:
@@ -83,6 +83,7 @@ services:
       - redis
     networks:
       - default-network
+      - minio-network
 
   watch:
     image: node:16.15.0
@@ -121,7 +122,6 @@ services:
       POSTGRES_DB: concourse
       POSTGRES_USER: postgres
       PGDATA: /database
-    profiles: ["concourse"]
     networks:
       - default-network
 
@@ -151,37 +151,36 @@ services:
       CONCOURSE_WORKER_RUNTIME: "containerd"
       CONCOURSE_ENABLE_PIPELINE_INSTANCES: "true"
       CONCOURSE_ENABLE_ACROSS_STEP: "true"
-    profiles: ["concourse"]
     links:
       - web
       - nginx
       - s3
     networks:
       default-network:
-      concourse-network:
+      minio-network:
         ipv4_address: 10.1.0.101
 
   s3:
     image: minio/minio
     ports:
       - "9000:9000"
+      - "9001:9001"
     volumes:
       - ./s3:/data
     environment:
       MINIO_ROOT_USER: $MINIO_ROOT_USER
       MINIO_ROOT_PASSWORD: $MINIO_ROOT_PASSWORD
-    command: server --address 0.0.0.0:9000 /data
+    command: server --address 0.0.0.0:9000 --console-address 0.0.0.0:9001 /data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
-    profiles: ["concourse"]
     networks:
       default-network:
-      concourse-network:
+      minio-network:
         ipv4_address: 10.1.0.100
-  s3-client:
+  create-buckets:
     image: minio/mc
     depends_on:
       s3:
@@ -189,24 +188,23 @@ services:
     environment:
       MINIO_ROOT_USER: $MINIO_ROOT_USER
       MINIO_ROOT_PASSWORD: $MINIO_ROOT_PASSWORD
-      MINIO_STORAGE_BUCKET_NAME: $MINIO_STORAGE_BUCKET_NAME
-      MINIO_DRAFT_BUCKET_NAME: $MINIO_DRAFT_BUCKET_NAME
-      MINIO_LIVE_BUCKET_NAME: $MINIO_LIVE_BUCKET_NAME
-      MINIO_ARTIFACTS_BUCKET_NAME: $MINIO_ARTIFACTS_BUCKET_NAME
+      AWS_STORAGE_BUCKET_NAME: $AWS_STORAGE_BUCKET_NAME
+      AWS_PREVIEW_BUCKET_NAME: $AWS_PREVIEW_BUCKET_NAME
+      AWS_PUBLISH_BUCKET_NAME: $AWS_PUBLISH_BUCKET_NAME
+      AWS_ARTIFACTS_BUCKET_NAME: $AWS_ARTIFACTS_BUCKET_NAME
     restart: on-failure
     entrypoint: >
       /bin/sh -c "
       /usr/bin/mc alias set minio http://10.1.0.100:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD;
-      /usr/bin/mc mb minio/$MINIO_STORAGE_BUCKET_NAME;
-      /usr/bin/mc policy set public minio/$MINIO_STORAGE_BUCKET_NAME;
-      /usr/bin/mc mb minio/$MINIO_DRAFT_BUCKET_NAME;
-      /usr/bin/mc policy set public minio/$MINIO_DRAFT_BUCKET_NAME;
-      /usr/bin/mc mb minio/$MINIO_LIVE_BUCKET_NAME;
-      /usr/bin/mc policy set public minio/$MINIO_LIVE_BUCKET_NAME;
-      /usr/bin/mc mb minio/$MINIO_ARTIFACTS_BUCKET_NAME;
-      /usr/bin/mc policy set public minio/$MINIO_ARTIFACTS_BUCKET_NAME;
-      /usr/bin/mc version enable minio/$MINIO_ARTIFACTS_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc policy set public minio/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_PREVIEW_BUCKET_NAME;
+      /usr/bin/mc policy set public minio/$AWS_PREVIEW_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_PUBLISH_BUCKET_NAME;
+      /usr/bin/mc policy set public minio/$AWS_PUBLISH_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_ARTIFACTS_BUCKET_NAME;
+      /usr/bin/mc policy set public minio/$AWS_ARTIFACTS_BUCKET_NAME;
+      /usr/bin/mc version enable minio/$AWS_ARTIFACTS_BUCKET_NAME;
       "
-    profiles: ["concourse"]
     networks:
-      - concourse-network
+      - minio-network

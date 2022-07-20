@@ -2,8 +2,6 @@
 import json
 from html import unescape
 from urllib.parse import quote, urljoin
-from content_sync.utils import get_template_vars
-from main.settings import MINIO_DRAFT_BUCKET_NAME
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -21,6 +19,7 @@ from content_sync.pipelines.concourse import (
     ThemeAssetsPipeline,
     UnpublishedSiteRemovalPipeline,
 )
+from content_sync.utils import get_template_vars
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
@@ -105,12 +104,12 @@ def pipeline_settings(settings, request):
     settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
     settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
     if env == "dev":
-        settings.MINIO_ROOT_USER = "minio_root_user"
-        settings.MINIO_ROOT_PASSWORD = "minio_root_password"
-        settings.MINIO_STORAGE_BUCKET_NAME = "storage_bucket_dev"
-        settings.MINIO_DRAFT_BUCKET_NAME = "draft_bucket_dev"
-        settings.MINIO_LIVE_BUCKET_NAME = "live_bucket_dev"
-        settings.MINIO_ARTIFACTS_BUCKET_NAME = "artifact_buckets_dev"
+        settings.AWS_ACCESS_KEY_ID = "minio_root_user"
+        settings.AWS_SECRET_ACCESS_KEY = "minio_root_password"
+        settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket_dev"
+        settings.AWS_DRAFT_BUCKET_NAME = "draft_bucket_dev"
+        settings.AWS_LIVE_BUCKET_NAME = "live_bucket_dev"
+        settings.AWS_ARTIFACTS_BUCKET_NAME = "artifact_buckets_dev"
         settings.RESOURCE_BASE_URL_DRAFT = "https://draft.ocw.mit.edu"
         settings.RESOURCE_BASE_URL_LIVE = "https://ocw.mit.edu"
 
@@ -531,29 +530,10 @@ def test_upsert_pipeline(
     _, kwargs = mock_put_headers.call_args_list[0]
     config_str = json.dumps(kwargs)
     env = settings.ENVIRONMENT
-    expected_bucket_names = {
-        "test": {
-            "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
-            "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
-            "artifacts_bucket_name": "ol-eng-artifacts",
-        },
-        "dev": {
-            "preview_bucket_name": settings.MINIO_DRAFT_BUCKET_NAME,
-            "publish_bucket_name": settings.MINIO_LIVE_BUCKET_NAME,
-            "artifacts_bucket_name": settings.MINIO_ARTIFACTS_BUCKET_NAME,
-        },
-    }
-    preview_bucket_name = expected_bucket_names[env]["preview_bucket_name"]
-    publish_bucket_name = expected_bucket_names[env]["publish_bucket_name"]
-    artifacts_bucket_name = expected_bucket_names[env]["artifacts_bucket_name"]
-    assert_string = (
-        f"s3://{artifacts_bucket_name}/ocw-hugo-themes/{settings.GITHUB_WEBHOOK_BRANCH}"
-    )
-    f = open("/src/test_output.txt", "a")
-    f.write(f"env: {env}\n\n")
-    f.write(f"config_str: {str(config_str)}\n\n")
-    f.write(f"assert string: {assert_string}\n\n")
-    f.close()
+    expected_template_vars = get_template_vars(env)
+    preview_bucket_name = expected_template_vars["preview_bucket_name"]
+    publish_bucket_name = expected_template_vars["publish_bucket_name"]
+    artifacts_bucket_name = expected_template_vars["artifacts_bucket_name"]
     assert settings.SEARCH_API_URL in config_str
     assert preview_bucket_name in config_str
     assert publish_bucket_name in config_str

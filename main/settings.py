@@ -1035,51 +1035,6 @@ ANYMAIL = {
     "MAILGUN_API_KEY": MAILGUN_KEY,
     "MAILGUN_SENDER_DOMAIN": MAILGUN_SENDER_DOMAIN,
 }
-
-# minio
-MINIO_ROOT_USER = get_string(
-    name="MINIO_ROOT_USER",
-    default="mitodl",
-    description="The access key id for the minio dev server",
-    required=False,
-    dev_only=True,
-)
-MINIO_ROOT_PASSWORD = get_string(
-    name="MINIO_ROOT_PASSWORD",
-    default="mitodl",
-    description="The secret access key for the minio dev server",
-    required=False,
-    dev_only=True,
-)
-MINIO_STORAGE_BUCKET_NAME = get_string(
-    name="MINIO_STORAGE_BUCKET_NAME",
-    default="ol-ocw-studio-app",
-    description="The name to use for the ocw-studio storage bucket in the minio dev server",
-    required=False,
-    dev_only=True,
-)
-MINIO_DRAFT_BUCKET_NAME = get_string(
-    name="MINIO_DRAFT_BUCKET_NAME",
-    default="ocw-content-draft",
-    description="The name to use for the draft bucket in the minio dev server",
-    required=False,
-    dev_only=True,
-)
-MINIO_LIVE_BUCKET_NAME = get_string(
-    name="MINIO_LIVE_BUCKET_NAME",
-    default="ocw-content-live",
-    description="The name to use for the live bucket in the minio dev server",
-    required=False,
-    dev_only=True,
-)
-MINIO_ARTIFACTS_BUCKET_NAME = get_string(
-    name="MINIO_ARTIFACTS_BUCKET_NAME",
-    default="ol-eng-artifacts",
-    description="The name to use for the artifacts bucket in the minio dev server",
-    required=False,
-    dev_only=True,
-)
-
 MITOL_MAIL_FROM_EMAIL = get_string(
     name="MITOL_MAIL_FROM_EMAIL",
     default="webmaster@localhost",

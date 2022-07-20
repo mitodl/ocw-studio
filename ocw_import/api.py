@@ -11,7 +11,7 @@ import yaml
 from django.conf import settings
 
 from gdrive_sync.api import create_gdrive_folders, is_gdrive_enabled
-from main.s3_utils import get_s3_object_and_read, get_s3_resource
+from main.s3_utils import get_boto3_resource, get_s3_object_and_read
 from main.utils import get_dirpath_and_filename, is_valid_uuid
 from ocw_import.constants import OCW_SECTION_TYPE_MAPPING, OCW_TYPE_ASSIGNMENTS
 from websites.api import find_available_name, get_valid_new_filename
@@ -71,7 +71,7 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_list=None):
     Yields:
         str: The path to a course JSON document in S3
     """
-    s3 = get_s3_resource()
+    s3 = get_boto3_resource("s3")
     bucket = s3.Bucket(bucket_name)
     paginator = bucket.meta.client.get_paginator("list_objects")
     if filter_list:
@@ -512,7 +512,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         path (str): The course URL path
         starter_id (int or None): The id of the WebsiteStarter to associated with the created Website
     """
-    s3 = get_s3_resource()
+    s3 = get_boto3_resource("s3")
     bucket = s3.Bucket(bucket_name)
     course_data = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
     name = path.replace("/data/course_legacy.json", "", 1)
@@ -563,7 +563,7 @@ def update_ocw2hugo_course(
         content_update_field (string): Website content field that should be overwritten
         create_new_content (bool): Create new content if it doesn't exist
     """
-    s3 = get_s3_resource()
+    s3 = get_boto3_resource("s3")
     bucket = s3.Bucket(bucket_name)
     name = path.replace("/data/course_legacy.json", "", 1)
 

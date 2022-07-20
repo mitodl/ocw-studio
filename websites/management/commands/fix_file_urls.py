@@ -10,6 +10,7 @@ from mitol.common.utils import now_in_utc
 
 from content_sync.tasks import sync_unsynced_websites
 from main.management.commands.filter import WebsiteFilterCommand
+from main.s3_utils import get_boto3_options, get_boto3_resource
 from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.models import WebsiteContent
 
@@ -74,7 +75,9 @@ class Command(WebsiteFilterCommand):
             f"Found {bad_paths.count()} resources with '{prefix}/' file paths missing website names"
         )
 
-        s3_bucket = boto3.resource("s3").Bucket(name=settings.AWS_STORAGE_BUCKET_NAME)
+        s3_bucket = get_boto3_resource("s3").Bucket(
+            name=settings.AWS_STORAGE_BUCKET_NAME
+        )
         for content in bad_paths:
             new_path = re.sub(
                 r"^(/?{}/)(.*)".format(prefix),

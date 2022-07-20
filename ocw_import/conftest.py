@@ -5,7 +5,7 @@ from shutil import copytree, rmtree
 
 import pytest
 
-from main.s3_utils import get_s3_resource
+from main.s3_utils import get_boto3_resource
 from websites.factories import WebsiteFactory
 
 
@@ -32,10 +32,11 @@ def setup_s3(settings):
     Set up the fake s3 data
     """
     # Fake the settings
+    settings.ENVIRONMENT = "test"
     settings.AWS_ACCESS_KEY_ID = "abc"
     settings.AWS_SECRET_ACCESS_KEY = "abc"
     # Create our fake bucket
-    conn = get_s3_resource()
+    conn = get_boto3_resource("s3")
     conn.create_bucket(Bucket=MOCK_BUCKET_NAME)
 
     # Add data to the fake bucket
@@ -52,10 +53,11 @@ def setup_s3_tmpdir(settings, tmpdir, courses=None):
     Set up the fake s3 data
     """
     # Fake the settings
+    settings.ENVIRONMENT = "test"
     settings.AWS_ACCESS_KEY_ID = "abc"
     settings.AWS_SECRET_ACCESS_KEY = "abc"
     # Create our fake bucket
-    conn = get_s3_resource()
+    conn = get_boto3_resource("s3")
     conn.create_bucket(Bucket=MOCK_BUCKET_NAME)
     # Copy test data to tmpdir
     rmtree(tmpdir)

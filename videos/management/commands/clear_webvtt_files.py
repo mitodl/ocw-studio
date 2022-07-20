@@ -9,6 +9,7 @@ import boto3
 from django.conf import settings
 from django.core.management import BaseCommand
 
+from main.s3_utils import get_boto3_options, get_boto3_resource
 from videos.models import Video
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.utils import set_dict_field
@@ -29,7 +30,7 @@ class Command(BaseCommand):
         Run the command
         """
 
-        s3 = boto3.resource("s3")
+        s3 = get_boto3_resource("s3")
         bucket = settings.AWS_STORAGE_BUCKET_NAME
 
         videos = Video.objects.filter(

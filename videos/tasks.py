@@ -2,7 +2,6 @@
 import logging
 from urllib.parse import urljoin
 
-import boto3
 import celery
 from django.conf import settings
 from django.db import transaction
@@ -14,6 +13,7 @@ from content_sync.decorators import single_task
 from gdrive_sync.models import DriveFile
 from main.celery import app
 from main.constants import STATUS_CREATED
+from main.s3_utils import get_boto3_resource
 from videos import threeplay_api
 from videos.constants import (
     DESTINATION_YOUTUBE,
@@ -200,7 +200,7 @@ def delete_s3_objects(
     """
     Delete objects from an S3 bucket
     """
-    s3 = boto3.resource("s3")
+    s3 = get_boto3_resource("s3")
     bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
     if not as_filter:
         bucket.delete_objects(Delete={"Objects": [{"Key": key}]})

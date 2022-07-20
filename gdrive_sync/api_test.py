@@ -31,7 +31,7 @@ from gdrive_sync.constants import (
 )
 from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.models import DriveFile
-from main.s3_utils import get_s3_resource
+from main.s3_utils import get_boto3_resource
 from videos.constants import VideoJobStatus, VideoStatus
 from videos.factories import VideoFactory, VideoJobFactory
 from websites.constants import (
@@ -310,10 +310,11 @@ def test_get_resource_type(
     settings, in_file_dir, filename, mimetype, expected_type
 ) -> str:
     """get_resource_type should return the expected value for an S3 object"""
+    settings.ENVIRONMENT = "test"
     settings.AWS_ACCESS_KEY_ID = "abc"
     settings.AWS_SECRET_ACCESS_KEY = "abc"
     settings.AWS_STORAGE_BUCKET_NAME = "test-bucket"
-    conn = get_s3_resource()
+    conn = get_boto3_resource("s3")
     conn.create_bucket(Bucket=settings.AWS_STORAGE_BUCKET_NAME)
     test_bucket = conn.Bucket(name=settings.AWS_STORAGE_BUCKET_NAME)
     test_bucket.objects.all().delete()
