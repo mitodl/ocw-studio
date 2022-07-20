@@ -10,7 +10,7 @@ from mitol.common.utils import now_in_utc
 
 from content_sync.tasks import sync_unsynced_websites
 from main.management.commands.filter import WebsiteFilterCommand
-from main.s3_utils import get_boto3_options, get_boto3_resource
+from main.s3_utils import get_boto3_resource
 from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.models import WebsiteContent
 
