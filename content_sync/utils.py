@@ -211,7 +211,7 @@ def strip_dev_lines(pipeline_config_file_path):
     Returns:
         str: The contents of the file found at pipeline_config_file_path with the lines between DEV_START and DEV_END stripped out
     """
-    strip_lines_between(pipeline_config_file_path, DEV_START, DEV_END)
+    return strip_lines_between(pipeline_config_file_path, DEV_START, DEV_END)
 
 
 def strip_non_dev_lines(pipeline_config_file_path):
@@ -226,4 +226,4 @@ def strip_non_dev_lines(pipeline_config_file_path):
     Returns:
         str: The contents of the file found at pipeline_config_file_path with the lines between NON_DEV_START and NON_DEV_END stripped out
     """
-    strip_lines_between(pipeline_config_file_path, NON_DEV_START, NON_DEV_END)
+    return strip_lines_between(pipeline_config_file_path, NON_DEV_START, NON_DEV_END)
