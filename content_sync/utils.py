@@ -174,25 +174,25 @@ def strip_lines_between(pipeline_config_file_path, start_tag, end_tag):
     """
     check_matching_tags(pipeline_config_file_path, start_tag, end_tag)
     sections_found = 0
-    non_dev_sections = [{}]
+    section_matches = [{}]
     lines = []
     with open(pipeline_config_file_path) as pipeline_config_file:
         for num, line in enumerate(pipeline_config_file, 1):
             lines.append(line)
             if start_tag in line:
-                non_dev_sections[sections_found] = {"start": num}
+                section_matches[sections_found] = {"start": num}
             if end_tag in line:
-                non_dev_sections[sections_found]["end"] = num
-            if "end" in non_dev_sections[sections_found]:
+                section_matches[sections_found]["end"] = num
+            if "end" in section_matches[sections_found]:
                 sections_found += 1
-                non_dev_sections.append({})
-        non_dev_sections.pop()
+                section_matches.append({})
+        section_matches.pop()
         sliced = []
-        for num, section in enumerate(non_dev_sections, 1):
-            start = 0 if num == 1 else non_dev_sections[num - 1]["end"]
+        for num, section in enumerate(section_matches, 1):
+            start = 0 if num == 1 else section_matches[num - 1]["end"]
             end = section["start"] - 1
             sliced += lines[start:end]
-        start = non_dev_sections[len(non_dev_sections) - 1]["end"]
+        start = section_matches[len(section_matches) - 1]["end"]
         end = len(lines)
         if start != end:
             sliced += lines[start:end]
