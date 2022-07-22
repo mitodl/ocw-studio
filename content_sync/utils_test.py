@@ -1,12 +1,23 @@
 """Content sync utility functionality tests"""
+import os
+
 import pytest
 from botocore.exceptions import ClientError
 from moto import mock_s3
 
+from content_sync.constants import DEV_END, DEV_START, NON_DEV_END, NON_DEV_START
+from content_sync.test_constants import (
+    EVEN_TAGS_TEST_FILE,
+    EXPECTED_REMAINING_STRING_DEV,
+    EXPECTED_REMAINING_STRING_NON_DEV,
+    UNEVEN_TAGS_TEST_FILE,
+)
 from content_sync.utils import (
+    check_matching_tags,
     get_destination_filepath,
     get_destination_url,
     move_s3_object,
+    strip_lines_between,
 )
 from main.s3_utils import get_boto3_client
 from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
@@ -140,3 +151,51 @@ def test_move_s3_object(settings):
     with pytest.raises(ClientError):
         client.get_object(Bucket=MOCK_BUCKET_NAME, Key=from_path)
     assert client.get_object(Bucket=MOCK_BUCKET_NAME, Key=to_path) is not None
+
+
+def test_check_matching_tags():
+    """check_matching_tags should throw an exception if the tags don't match"""
+    uneven_tags_test_file = os.path.join(
+        os.path.dirname(__file__), UNEVEN_TAGS_TEST_FILE
+    )
+    even_tags_test_file = os.path.join(os.path.dirname(__file__), EVEN_TAGS_TEST_FILE)
+    with pytest.raises(ValueError):
+        check_matching_tags(uneven_tags_test_file, DEV_START, DEV_END)
+    assert (
+        check_matching_tags(uneven_tags_test_file, NON_DEV_START, NON_DEV_END) is True
+    )
+    assert check_matching_tags(even_tags_test_file, DEV_START, DEV_END) is True
+    assert check_matching_tags(even_tags_test_file, NON_DEV_START, NON_DEV_END) is True
+
+
+@pytest.mark.parametrize(
+    "start_tag, end_tag, expected",
+    [
+        [DEV_START, DEV_END, EXPECTED_REMAINING_STRING_DEV],
+        [NON_DEV_START, NON_DEV_END, EXPECTED_REMAINING_STRING_NON_DEV],
+    ],
+)
+def test_strip_lines_between(start_tag, end_tag, expected):
+    """check that strip_lines_between strips the expected content"""
+    even_tags_test_file = os.path.join(os.path.dirname(__file__), EVEN_TAGS_TEST_FILE)
+    print(strip_lines_between(even_tags_test_file, start_tag, end_tag))
+    assert expected == strip_lines_between(even_tags_test_file, start_tag, end_tag)
+
+
+@pytest.mark.parametrize(
+    "start_tag, end_tag",
+    [
+        ["# DEV START", "# DEV END"],
+        ["# STARTT DEV", "# END DEV"],
+        ["# START DEV", "# ENDD DEV"],
+        ["#START DEV", "# END DEV"],
+        ["# START DEV", "#END DEV"],
+        ["# START PROD", "# END DEV"],
+        ["# START DEV", "# END PROD"],
+    ],
+)
+def test_bad_tags(start_tag, end_tag):
+    """make sure errors are thrown if a bad combination of start_tag and end_tag are passed"""
+    even_tags_test_file = os.path.join(os.path.dirname(__file__), EVEN_TAGS_TEST_FILE)
+    with pytest.raises(ValueError):
+        check_matching_tags(even_tags_test_file, start_tag, end_tag)

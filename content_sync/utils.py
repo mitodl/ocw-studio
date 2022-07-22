@@ -6,6 +6,14 @@ from typing import Optional
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+from content_sync.constants import (
+    DEV_END,
+    DEV_START,
+    END_TAG_PREFIX,
+    NON_DEV_END,
+    NON_DEV_START,
+    START_TAG_PREFIX,
+)
 from main.s3_utils import get_boto3_resource
 from websites.constants import WEBSITE_CONTENT_FILETYPE
 from websites.models import WebsiteContent
@@ -109,3 +117,114 @@ def get_template_vars(env):
     }
     dev_vars.update(base_vars)
     return dev_vars if env == "dev" else default_vars
+
+
+def check_matching_tags(pipeline_config_file_path, start_tag, end_tag):
+    """
+    Opens a file and checks to make sure the same number of start_tag and end_tag strings exist in its contents
+    Also checks to make sure that start and end tags are properly prefixed and their suffixes match
+
+    Args:
+        pipeline_config_file_path (str): The path to a pipeline config file
+        start_tag (str): The start tag delimiter
+        end_tag (str): The end tag delimiter
+
+    Returns:
+        bool: True if the amount of start_tag matches the amount of end_tag in pipeline_config_file, False if not
+    """
+
+    start_tags = 0
+    end_tags = 0
+    if not start_tag.startswith(START_TAG_PREFIX):
+        raise ValueError(
+            f"{start_tag} is not properly prefixed with {START_TAG_PREFIX}"
+        )
+    if not end_tag.startswith(END_TAG_PREFIX):
+        raise ValueError(f"{end_tag} is not properly prefixed with {END_TAG_PREFIX}")
+    if not start_tag.replace(START_TAG_PREFIX, "") == end_tag.replace(
+        END_TAG_PREFIX, ""
+    ):
+        raise ValueError(f"{start_tag} and {end_tag} do not have matching suffixes")
+    with open(pipeline_config_file_path) as pipeline_config_file:
+        for line in pipeline_config_file:
+            if start_tag in line:
+                start_tags += 1
+            elif end_tag in line:
+                end_tags += 1
+        equal = start_tags == end_tags
+        if not equal:
+            raise ValueError(
+                f"Number of {start_tag} tags does not match number of {end_tag} tags in {pipeline_config_file_path}"
+            )
+        else:
+            return start_tags == end_tags
+
+
+def strip_lines_between(pipeline_config_file_path, start_tag, end_tag):
+    """
+    Opens a file, reads the contents and strips out the lines between any matching instances of start_tag and end_tag
+    start_tag must start with "# START" followed by a tag and end_tag must start with "# END" followed by the same tag, separated by spaces
+
+    Args:
+        pipeline_config_file_path (str): The path to a pipeline config file
+        start_tag (str): The start tag delimiter
+        end_tag (str): The end tag delimiter
+
+    Returns:
+        str: The contents of the file found at pipeline_config_file_path with the lines between start_tag and end_tag stripped out
+    """
+    check_matching_tags(pipeline_config_file_path, start_tag, end_tag)
+    sections_found = 0
+    non_dev_sections = [{}]
+    lines = []
+    with open(pipeline_config_file_path) as pipeline_config_file:
+        for num, line in enumerate(pipeline_config_file, 1):
+            lines.append(line)
+            if start_tag in line:
+                non_dev_sections[sections_found] = {"start": num}
+            if end_tag in line:
+                non_dev_sections[sections_found]["end"] = num
+            if "end" in non_dev_sections[sections_found]:
+                sections_found += 1
+                non_dev_sections.append({})
+        non_dev_sections.pop()
+        sliced = []
+        for num, section in enumerate(non_dev_sections, 1):
+            start = 0 if num == 1 else non_dev_sections[num - 1]["end"]
+            end = section["start"] - 1
+            sliced += lines[start:end]
+        start = non_dev_sections[len(non_dev_sections) - 1]["end"]
+        end = len(lines)
+        if start != end:
+            sliced += lines[start:end]
+        return "".join(sliced)
+
+
+def strip_dev_lines(pipeline_config_file_path):
+    """
+    Runs strip_lines_between for content_sync.utils.constants.DEV_START and DEV_END
+
+    Args:
+        pipeline_config_file_path (str): The path to a pipeline config file
+        start_tag (str): The start tag delimiter
+        end_tag (str): The end tag delimiter
+
+    Returns:
+        str: The contents of the file found at pipeline_config_file_path with the lines between DEV_START and DEV_END stripped out
+    """
+    strip_lines_between(pipeline_config_file_path, DEV_START, DEV_END)
+
+
+def strip_non_dev_lines(pipeline_config_file_path):
+    """
+    Runs strip_lines_between for content_sync.utils.constants.NON_DEV_START and NON_DEV_END
+
+    Args:
+        pipeline_config_file_path (str): The path to a pipeline config file
+        start_tag (str): The start tag delimiter
+        end_tag (str): The end tag delimiter
+
+    Returns:
+        str: The contents of the file found at pipeline_config_file_path with the lines between NON_DEV_START and NON_DEV_END stripped out
+    """
+    strip_lines_between(pipeline_config_file_path, NON_DEV_START, NON_DEV_END)
