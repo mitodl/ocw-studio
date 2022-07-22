@@ -156,8 +156,7 @@ def check_matching_tags(pipeline_config_file_path, start_tag, end_tag):
             raise ValueError(
                 f"Number of {start_tag} tags does not match number of {end_tag} tags in {pipeline_config_file_path}"
             )
-        else:
-            return start_tags == end_tags
+        return start_tags == end_tags
 
 
 def strip_lines_between(pipeline_config_file_path, start_tag, end_tag):
