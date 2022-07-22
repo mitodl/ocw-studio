@@ -189,7 +189,7 @@ def strip_lines_between(pipeline_config_file_path, start_tag, end_tag):
         section_matches.pop()
         sliced = []
         for num, section in enumerate(section_matches, 1):
-            start = 0 if num == 1 else section_matches[num - 1]["end"]
+            start = 0 if num == 1 else section_matches[num - 2]["end"]
             end = section["start"] - 1
             sliced += lines[start:end]
         start = section_matches[len(section_matches) - 1]["end"]
