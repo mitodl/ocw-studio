@@ -1103,6 +1103,20 @@ RESOURCE_BASE_URL_LIVE = get_string(
     required=False,
     dev_only=True,
 )
+OCW_HUGO_THEMES_BRANCH = get_string(
+    name="OCW_HUGO_THEMES_BRANCH",
+    description="The branch to use in development of ocw-hugo-themes",
+    default="main",
+    required=False,
+    dev_only=True,
+)
+OCW_HUGO_PROJECTS_BRANCH = get_string(
+    name="OCW_HUGO_PROJECTS_BRANCH",
+    description="The branch to use in development of ocw-hugo-projects",
+    default="main",
+    required=False,
+    dev_only=True,
+)
 RESOURCE_TYPE_FIELDS = get_delimited_list(
     name="RESOURCE_TYPE_FIELDS",
     default=["resourcetype", "filetype"],

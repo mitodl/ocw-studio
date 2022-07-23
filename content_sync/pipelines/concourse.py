@@ -18,7 +18,7 @@ from concoursepy.api import Api
 from django.conf import settings
 from requests import HTTPError
 
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
     BaseGeneralPipeline,
@@ -28,7 +28,14 @@ from content_sync.pipelines.base import (
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
 )
-from content_sync.utils import check_mandatory_settings, get_template_vars
+from content_sync.utils import (
+    check_mandatory_settings,
+    get_template_vars,
+    get_theme_branch,
+    strip_dev_lines,
+    strip_non_dev_lines,
+)
+from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.models import Website
 
@@ -204,6 +211,15 @@ class GeneralPipeline(BaseGeneralPipeline):
         """Get a Concourse API instance"""
         return PipelineApi()
 
+    def get_pipeline_definition(self, pipeline_file: str):
+        """Get the pipeline definition as a string, processing for environment"""
+        pipeline_template = os.path.join(os.path.dirname(__file__), pipeline_file)
+        return (
+            strip_non_dev_lines(pipeline_template)
+            if is_dev()
+            else strip_dev_lines(pipeline_template)
+        )
+
     def set_instance_vars(self, instance_vars: Dict):
         """Set the instance vars for the pipeline"""
         self.instance_vars = f"?vars={quote(json.dumps(instance_vars))}"
@@ -298,6 +314,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
     Concourse-CI publishing pipeline, dependent on a Github backend, for individual sites
     """
 
+    BRANCH = settings.GITHUB_WEBHOOK_BRANCH
     MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
         "AWS_PREVIEW_BUCKET_NAME",
         "AWS_PUBLISH_BUCKET_NAME",
@@ -313,17 +330,22 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
     def __init__(self, website: Website, api: Optional[PipelineApi] = None):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
-        self.website = website
-        self.set_instance_vars({"site": self.website.name})
+        self.WEBSITE = website
+        self.BRANCH = get_theme_branch()
+        self.set_instance_vars({"site": self.WEBSITE.name})
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals
         """
         Create or update a concourse pipeline for the given Website
         """
-        env = settings.ENVIRONMENT
-        is_dev = env == "dev"
-        dev_suffix = "-dev" if is_dev else ""
-        starter = self.website.starter
+        ocw_hugo_themes_branch = self.BRANCH
+        ocw_hugo_projects_branch = (
+            (settings.OCW_HUGO_PROJECTS_BRANCH or self.BRANCH)
+            if is_dev
+            else self.BRANCH
+        )
+
+        starter = self.WEBSITE.starter
         if starter.source != STARTER_SOURCE_GITHUB:
             # This pipeline only handles sites with github-based starters
             return
@@ -332,12 +354,12 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             # Invalid github url, so skip
             return
 
-        if self.website.name == settings.ROOT_WEBSITE_NAME:
+        if self.WEBSITE.name == settings.ROOT_WEBSITE_NAME:
             base_url = ""
             theme_created_trigger = "true"
             theme_deployed_trigger = "false"
         else:
-            base_url = self.website.get_url_path()
+            base_url = self.WEBSITE.get_url_path()
             theme_created_trigger = "false"
             theme_deployed_trigger = "true"
         hugo_projects_url = urljoin(
@@ -361,7 +383,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 "static_api_url": settings.OCW_STUDIO_LIVE_URL,
             },
         ]:
-            branch_vars.update(get_template_vars(env))
+            branch_vars.update(get_template_vars())
             branch = branch_vars["branch"]
             pipeline_name = branch_vars["pipeline_name"]
             static_api_url = branch_vars["static_api_url"]
@@ -375,63 +397,58 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 resource_base_url = branch_vars["resource_base_url_live"]
 
             if settings.CONCOURSE_IS_PRIVATE_REPO:
-                markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.website.short_id}.git"
+                markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = "\n      private_key: ((git-private-key))"
             else:
-                markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.website.short_id}.git"
+                markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = ""
             build_drafts = "--buildDrafts" if pipeline_name == VERSION_DRAFT else ""
 
-            pipeline_template = f"definitions/concourse/site-pipeline{dev_suffix}.yml"
-            with open(
-                os.path.join(os.path.dirname(__file__), pipeline_template)
-            ) as pipeline_config_file:
-                config_str = (
-                    pipeline_config_file.read()
-                    .replace("((markdown-uri))", markdown_uri)
-                    .replace("((git-private-key-var))", private_key_var)
-                    .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
-                    .replace("((artifacts-bucket))", artifacts_bucket or "")
-                    .replace("((ocw-bucket))", destination_bucket or "")
-                    .replace(
-                        "((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH
-                    )
-                    .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
-                    .replace(
-                        "((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH
-                    )
-                    .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
-                    .replace("((ocw-studio-url))", branch_vars["ocw_studio_url"] or "")
-                    .replace("((static-api-base-url))", static_api_url)
-                    .replace(
-                        "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
-                    )
-                    .replace("((ocw-studio-bucket))", storage_bucket_name or "")
-                    .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
-                    .replace(
-                        "((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
-                    )
-                    .replace("((ocw-site-repo))", self.website.short_id)
-                    .replace("((ocw-site-repo-branch))", branch)
-                    .replace("((config-slug))", self.website.starter.slug)
-                    .replace("((s3-path))", self.website.s3_path)
-                    .replace("((base-url))", base_url)
-                    .replace("((site-url))", self.website.get_url_path())
-                    .replace("((site-name))", self.website.name)
-                    .replace("((purge-url))", f"purge/{self.website.name}")
-                    .replace("((purge_header))", purge_header)
-                    .replace("((pipeline_name))", pipeline_name)
-                    .replace("((api-token))", settings.API_BEARER_TOKEN or "")
-                    .replace("((theme-deployed-trigger))", theme_deployed_trigger)
-                    .replace("((theme-created-trigger))", theme_created_trigger)
-                    .replace("((build-drafts))", build_drafts)
-                    .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
-                    .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
-                    .replace(
-                        "((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or ""
-                    )
-                    .replace("((resource-base-url))", resource_base_url or "")
+            config_str = (
+                self.get_pipeline_definition("definitions/concourse/site-pipeline.yml")
+                .replace("((markdown-uri))", markdown_uri)
+                .replace("((git-private-key-var))", private_key_var)
+                .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
+                .replace("((artifacts-bucket))", artifacts_bucket or "")
+                .replace("((ocw-bucket))", destination_bucket or "")
+                .replace("((ocw-hugo-themes-branch))", ocw_hugo_themes_branch)
+                .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
+                .replace("((ocw-hugo-projects-branch))", ocw_hugo_projects_branch)
+                .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
+                .replace("((ocw-studio-url))", branch_vars["ocw_studio_url"] or "")
+                .replace("((static-api-base-url))", static_api_url)
+                .replace(
+                    "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
                 )
+                .replace("((ocw-studio-bucket))", storage_bucket_name or "")
+                .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
+                .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
+                .replace("((ocw-site-repo))", self.WEBSITE.short_id)
+                .replace("((ocw-site-repo-branch))", branch)
+                .replace("((config-slug))", self.WEBSITE.starter.slug)
+                .replace("((s3-path))", self.WEBSITE.s3_path)
+                .replace("((base-url))", base_url)
+                .replace("((site-url))", self.WEBSITE.get_url_path())
+                .replace("((site-name))", self.WEBSITE.name)
+                .replace("((purge-url))", f"purge/{self.WEBSITE.name}")
+                .replace("((purge_header))", purge_header)
+                .replace("((pipeline_name))", pipeline_name)
+                .replace("((api-token))", settings.API_BEARER_TOKEN or "")
+                .replace("((theme-deployed-trigger))", theme_deployed_trigger)
+                .replace("((theme-created-trigger))", theme_created_trigger)
+                .replace("((build-drafts))", build_drafts)
+                .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
+                .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
+                .replace(
+                    "((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or ""
+                )
+                .replace("((endpoint-url))", DEV_ENDPOINT_URL)
+                .replace(
+                    "((cli-endpoint-url))",
+                    f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
+                )
+                .replace("((resource-base-url))", resource_base_url or "")
+            )
             self.upsert_config(config_str, pipeline_name)
 
 
@@ -441,6 +458,7 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
     """
 
     PIPELINE_NAME = BaseThemeAssetsPipeline.PIPELINE_NAME
+    BRANCH = settings.GITHUB_WEBHOOK_BRANCH
 
     MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
         "GITHUB_WEBHOOK_BRANCH",
@@ -450,44 +468,38 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
     def __init__(self, api: Optional[PipelineApi] = None):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
+        self.BRANCH = get_theme_branch()
         self.set_instance_vars({"branch": settings.GITHUB_WEBHOOK_BRANCH})
 
     def upsert_pipeline(self):
         """Upsert the theme assets pipeline"""
-        env = settings.ENVIRONMENT
-        is_dev = env == "dev"
-        dev_suffix = "-dev" if is_dev else ""
-        s3_buckets = get_template_vars(env)
-        pipeline_template = (
-            f"definitions/concourse/theme-assets-pipeline{dev_suffix}.yml"
+        template_vars = get_template_vars()
+        purge_header = (
+            ""
+            if settings.CONCOURSE_HARD_PURGE
+            else "\n          - -H\n          - 'Fastly-Soft-Purge: 1'"
         )
-        with open(
-            os.path.join(os.path.dirname(__file__), pipeline_template)
-        ) as pipeline_config_file:
-            purge_header = (
-                ""
-                if settings.CONCOURSE_HARD_PURGE
-                else "\n          - -H\n          - 'Fastly-Soft-Purge: 1'"
+        config_str = (
+            self.get_pipeline_definition(
+                "definitions/concourse/theme-assets-pipeline.yml"
             )
-            config_str = (
-                pipeline_config_file.read()
-                .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
-                .replace("((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH)
-                .replace("((search-api-url))", settings.SEARCH_API_URL)
-                .replace(
-                    "((ocw-bucket-draft))", s3_buckets["preview_bucket_name"] or ""
-                )
-                .replace("((ocw-bucket-live))", s3_buckets["publish_bucket_name"] or "")
-                .replace(
-                    "((artifacts-bucket))", s3_buckets["artifacts_bucket_name"] or ""
-                )
-                .replace("((purge_header))", purge_header)
-                .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
-                .replace(
-                    "((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or ""
-                )
+            .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
+            .replace("((ocw-hugo-themes-branch))", self.BRANCH)
+            .replace("((search-api-url))", settings.SEARCH_API_URL)
+            .replace("((ocw-bucket-draft))", template_vars["preview_bucket_name"] or "")
+            .replace("((ocw-bucket-live))", template_vars["publish_bucket_name"] or "")
+            .replace(
+                "((artifacts-bucket))", template_vars["artifacts_bucket_name"] or ""
             )
-            self.upsert_config(config_str, self.PIPELINE_NAME)
+            .replace("((purge_header))", purge_header)
+            .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
+            .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
+            .replace(
+                "((cli-endpoint-url))",
+                f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
+            )
+        )
+        self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
 class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
@@ -510,17 +522,15 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
         ]
         super().__init__(api=api)
         self.pipeline_name = "mass_build_sites"
-        self.version = version
+        self.BRANCH = get_theme_branch()
+        self.VERSION = version
         self.set_instance_vars({"version": version})
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals
         """
         Create or update the concourse pipeline
         """
-        env = settings.ENVIRONMENT
-        is_dev = env == "dev"
-        dev_suffix = "-dev" if is_dev else ""
-        template_vars = get_template_vars(env)
+        template_vars = get_template_vars()
         starter = Website.objects.get(name=settings.ROOT_WEBSITE_NAME).starter
         starter_path_url = urlparse(starter.path)
         hugo_projects_url = urljoin(
@@ -531,64 +541,68 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}"
             private_key_var = "((git-private-key))"
         else:
-            markdown_uri = f"git://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}"
+            markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}"
             private_key_var = ""
 
-        if self.version == VERSION_DRAFT:
+        if self.VERSION == VERSION_DRAFT:
             template_vars.update(
                 {
                     "branch": settings.GIT_BRANCH_PREVIEW,
                     "static_api_url": settings.OCW_STUDIO_DRAFT_URL,
                     "destination_bucket": template_vars["preview_bucket_name"],
                     "build_drafts": "--buildDrafts",
+                    "resource_base_url": settings.RESOURCE_BASE_URL_DRAFT,
                 }
             )
-        elif self.version == VERSION_LIVE:
+        elif self.VERSION == VERSION_LIVE:
             template_vars.update(
                 {
                     "branch": settings.GIT_BRANCH_RELEASE,
                     "static_api_url": settings.OCW_STUDIO_LIVE_URL,
                     "destination_bucket": template_vars["publish_bucket_name"],
                     "build_drafts": "",
+                    "resource_base_url": settings.RESOURCE_BASE_URL_LIVE,
                 }
             )
 
-        pipeline_template = f"definitions/concourse/mass-build-sites{dev_suffix}.yml"
-        with open(
-            os.path.join(os.path.dirname(__file__), pipeline_template)
-        ) as pipeline_config_file:
-            config_str = (
-                pipeline_config_file.read()
-                .replace("((markdown-uri))", markdown_uri)
-                .replace("((git-private-key-var))", private_key_var)
-                .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
-                .replace(
-                    "((artifacts-bucket", template_vars["artifacts_bucket_name"] or ""
-                )
-                .replace("((ocw-bucket))", template_vars["destination_bucket"] or "")
-                .replace("((ocw-hugo-themes-branch))", settings.GITHUB_WEBHOOK_BRANCH)
-                .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
-                .replace("((ocw-hugo-projects-branch))", settings.GITHUB_WEBHOOK_BRANCH)
-                .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
-                .replace(
-                    "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
-                )
-                .replace("((ocw-studio-url))", template_vars["ocw_studio_url"] or "")
-                .replace(
-                    "((static-api-base-url))", template_vars["static_api_url"] or ""
-                )
-                .replace(
-                    "((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME or ""
-                )
-                .replace("((ocw-site-repo-branch))", template_vars["branch"] or "")
-                .replace("((version))", self.version)
-                .replace("((api-token))", settings.API_BEARER_TOKEN or "")
-                .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
-                .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
-                .replace("((build-drafts))", template_vars["build_drafts"] or "")
-                .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
+        config_str = (
+            self.get_pipeline_definition("definitions/concourse/mass-build-sites.yml")
+            .replace("((markdown-uri))", markdown_uri)
+            .replace("((git-private-key-var))", private_key_var)
+            .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
+            .replace(
+                "((artifacts-bucket))", template_vars["artifacts_bucket_name"] or ""
             )
-        log.debug(config_str)
+            .replace("((ocw-bucket))", template_vars["destination_bucket"] or "")
+            .replace("((ocw-hugo-themes-branch))", self.BRANCH)
+            .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
+            .replace(
+                "((ocw-hugo-projects-branch))",
+                (settings.OCW_HUGO_PROJECTS_BRANCH or self.BRANCH)
+                if is_dev
+                else self.BRANCH,
+            )
+            .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
+            .replace("((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG)
+            .replace("((ocw-studio-url))", template_vars["ocw_studio_url"] or "")
+            .replace("((static-api-base-url))", template_vars["static_api_url"] or "")
+            .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME or "")
+            .replace("((ocw-site-repo-branch))", template_vars["branch"] or "")
+            .replace("((version))", self.VERSION)
+            .replace("((api-token))", settings.API_BEARER_TOKEN or "")
+            .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
+            .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
+            .replace("((build-drafts))", template_vars["build_drafts"] or "")
+            .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
+            .replace("((endpoint-url))", DEV_ENDPOINT_URL)
+            .replace(
+                "((cli-endpoint-url))",
+                f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
+            )
+            .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
+            .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
+            .replace("((resource-base-url))", template_vars["resource_base_url"])
+        )
         self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
@@ -606,32 +620,31 @@ class UnpublishedSiteRemovalPipeline(
         ]
         super().__init__(api=api)
         self.pipeline_name = "remove_unpublished_sites"
-        self.version = VERSION_LIVE
+        self.VERSION = VERSION_LIVE
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals
         """
         Create or update the concourse pipeline
         """
-        env = settings.ENVIRONMENT
-        is_dev = env == "dev"
-        dev_suffix = "-dev" if is_dev else ""
-        template_vars = get_template_vars(env)
+        template_vars = get_template_vars()
         destination_bucket = template_vars["publish_bucket_name"]
 
-        pipeline_template = (
-            f"definitions/concourse/remove-unpublished-sites{dev_suffix}.yml"
-        )
-        with open(
-            os.path.join(os.path.dirname(__file__), pipeline_template)
-        ) as pipeline_config_file:
-            config_str = (
-                pipeline_config_file.read()
-                .replace("((ocw-bucket))", destination_bucket)
-                .replace("((ocw-studio-url))", template_vars["ocw_studio_url"] or "")
-                .replace("((version))", VERSION_LIVE)
-                .replace("((api-token))", settings.API_BEARER_TOKEN or "")
-                .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
-                .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
+        config_str = (
+            self.get_pipeline_definition(
+                "definitions/concourse/remove-unpublished-sites.yml"
             )
+            .replace("((ocw-bucket))", destination_bucket)
+            .replace("((ocw-studio-url))", template_vars["ocw_studio_url"] or "")
+            .replace("((version))", VERSION_LIVE)
+            .replace("((api-token))", settings.API_BEARER_TOKEN or "")
+            .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
+            .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
+            .replace(
+                "((cli-endpoint-url))",
+                f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
+            )
+            .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
+            .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
+        )
         log.debug(config_str)
         self.upsert_config(config_str, self.PIPELINE_NAME)

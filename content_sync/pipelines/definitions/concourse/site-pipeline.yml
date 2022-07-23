@@ -10,16 +10,23 @@ resource_types:
     source:
       repository: governmentpaas/s3-resource
       tag: latest
+  # START NON-DEV
   - name: slack-alert
     type: docker-image
     source:
       repository: arbourd/concourse-slack-alert-resource
       tag: v0.15.0
+  # END NON-DEV
 resources:
   - name: webpack-json
     type: s3-resource-iam
     check_every: never
     source:
+      # START DEV-ONLY
+      endpoint: ((endpoint-url))
+      access_key_id: ((minio-root-user))
+      secret_access_Key: ((minio-root-password))
+      # END DEV-ONLY
       bucket: ((artifacts-bucket))
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
   - name: course-markdown
@@ -50,6 +57,7 @@ resources:
             Content-Type: "application/json"
             Authorization: "Bearer ((api-token))"
         out_only: true
+  # START NON-DEV
   - name: open-discussions-webhook
     type: http-resource
     check_every: never
@@ -65,6 +73,7 @@ resources:
     source:
       url: ((slack-url))
       disabled: false
+  # END NON-DEV
 jobs:
   - name: build-ocw-site
     serial: true
@@ -92,11 +101,13 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
+            # START NON-DEV  
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
                 text: "Failed on get webpack-json : ((pipeline_name))/((site-name))"
+            # END NON-DEV
       - get: ocw-hugo-themes
         trigger: false
         timeout: 5m
@@ -111,11 +122,13 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
                 text: "Failed to get ocw-hugo-themes : ((pipeline_name))/((site-name))"
+            # END NON-DEV
       - get: ocw-hugo-projects
         trigger: false
         timeout: 5m
@@ -131,11 +144,13 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
                 text: "Failed to get ocw-hugo-projects : ((pipeline_name))/((site-name))"
+            # END NON-DEV
       - get: course-markdown
         trigger: false
         timeout: 5m
@@ -151,11 +166,13 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
                 text: "Failed to get course-markdown : ((pipeline_name))/((site-name))"
+            # END NON-DEV
       - task: build-course-task
         timeout: 20m
         attempts: 3
@@ -199,14 +216,22 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
                 text: "Failed on build-course-task : ((pipeline_name))/((site-name))"
+            # END NON-DEV
       - task: copy-s3-buckets
         timeout: 20m
         attempts: 3
+        # START DEV-ONLY
+        params:
+          AWS_ACCESS_KEY_ID: ((minio-root-user))
+          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+          RESOURCE_BASE_URL: ((resource-base-url))
+        # END DEV-ONLY
         config:
           inputs:
             - name: course-markdown
@@ -219,8 +244,8 @@ jobs:
             args:
             - -exc
             - |
-              aws s3 sync s3://((ocw-studio-bucket))/((s3-path)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))              
-              aws s3 sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
+              aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))              
+              aws s3((cli-endpoint-url)) sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
         on_failure:
           try:
             do:
@@ -233,11 +258,14 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: failed
                 text: "Failed on copy-s3-buckets : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+      # START NON-DEV
       - task: clear-cdn-cache
         timeout: 5m
         attempts: 3
@@ -294,3 +322,4 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed on clear-cdn-cache : ((pipeline_name))/((site-name))"
+      # END NON-DEV

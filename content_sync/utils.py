@@ -3,8 +3,8 @@ import logging
 import os
 from typing import Optional
 
-from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.conf import settings
 
 from content_sync.constants import (
     DEV_END,
@@ -15,6 +15,7 @@ from content_sync.constants import (
     START_TAG_PREFIX,
 )
 from main.s3_utils import get_boto3_resource
+from main.utils import is_dev
 from websites.constants import WEBSITE_CONTENT_FILETYPE
 from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
@@ -96,7 +97,7 @@ def move_s3_object(from_path, to_path):
     s3.Object(bucket, from_path).delete()
 
 
-def get_template_vars(env):
+def get_template_vars():
     """Get an object with all the template vars we need in pipelines based on env"""
     base_vars = {
         "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
@@ -116,7 +117,29 @@ def get_template_vars(env):
         "ocw_studio_url": "http://10.1.0.102:8043",
     }
     dev_vars.update(base_vars)
-    return dev_vars if env == "dev" else default_vars
+    return dev_vars if is_dev() else default_vars
+
+
+def get_theme_branch():
+    """
+    Gets the branch to use of ocw-hugo-themes in pipelines, defaulting to settings.GITHUB_WEBHOOK_BRANCH
+    if settings.ENVIRONMENT is anything but "dev," otherwise take the value of settings.OCW_HUGO_THEMES_BRANCH
+    """
+    f = open("/src/test_output.txt", "a")
+    f.write(f"env: {settings.ENVIRONMENT}\n")
+    github_webhook_branch = settings.GITHUB_WEBHOOK_BRANCH
+    branch = (
+        (settings.OCW_HUGO_THEMES_BRANCH or github_webhook_branch)
+        if is_dev()
+        else github_webhook_branch
+    )
+    f.write(f"branch: {branch}\n")
+    f.close()
+    return (
+        (settings.OCW_HUGO_THEMES_BRANCH or github_webhook_branch)
+        if is_dev()
+        else github_webhook_branch
+    )
 
 
 def check_matching_tags(pipeline_config_file_path, start_tag, end_tag):
