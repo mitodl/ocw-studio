@@ -609,7 +609,6 @@ def test_unpublished_site_removal_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
 ):  # pylint:disable=too-many-locals,too-many-arguments
     """The unpublished sites removal pipeline should have expected configuration"""
-    env = settings.ENVIRONMENT
     template_vars = get_template_vars()
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME}/config"
 

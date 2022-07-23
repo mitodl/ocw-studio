@@ -341,7 +341,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         ocw_hugo_themes_branch = self.BRANCH
         ocw_hugo_projects_branch = (
             (settings.OCW_HUGO_PROJECTS_BRANCH or self.BRANCH)
-            if is_dev
+            if is_dev()
             else self.BRANCH
         )
 
@@ -579,7 +579,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             .replace(
                 "((ocw-hugo-projects-branch))",
                 (settings.OCW_HUGO_PROJECTS_BRANCH or self.BRANCH)
-                if is_dev
+                if is_dev()
                 else self.BRANCH,
             )
             .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
