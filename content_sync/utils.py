@@ -125,16 +125,7 @@ def get_theme_branch():
     Gets the branch to use of ocw-hugo-themes in pipelines, defaulting to settings.GITHUB_WEBHOOK_BRANCH
     if settings.ENVIRONMENT is anything but "dev," otherwise take the value of settings.OCW_HUGO_THEMES_BRANCH
     """
-    f = open("/src/test_output.txt", "a")
-    f.write(f"env: {settings.ENVIRONMENT}\n")
     github_webhook_branch = settings.GITHUB_WEBHOOK_BRANCH
-    branch = (
-        (settings.OCW_HUGO_THEMES_BRANCH or github_webhook_branch)
-        if is_dev()
-        else github_webhook_branch
-    )
-    f.write(f"branch: {branch}\n")
-    f.close()
     return (
         (settings.OCW_HUGO_THEMES_BRANCH or github_webhook_branch)
         if is_dev()
