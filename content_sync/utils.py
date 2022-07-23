@@ -3,8 +3,8 @@ import logging
 import os
 from typing import Optional
 
-from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
 from content_sync.constants import (
     DEV_END,
