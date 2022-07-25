@@ -183,6 +183,9 @@ jobs:
           STATIC_API_BASE_URL: ((static-api-base-url))
           OCW_IMPORT_STARTER_SLUG: ((ocw-import-starter-slug))
           SITEMAP_DOMAIN: ((sitemap-domain))
+          # START DEV-ONLY
+          RESOURCE_BASE_URL: ((resource-base-url))
+          # END DEV-ONLY
         config:
           platform: linux
           image_resource:
@@ -230,7 +233,6 @@ jobs:
         params:
           AWS_ACCESS_KEY_ID: ((minio-root-user))
           AWS_SECRET_ACCESS_KEY: ((minio-root-password))
-          RESOURCE_BASE_URL: ((resource-base-url))
         # END DEV-ONLY
         config:
           inputs:
