@@ -27,6 +27,9 @@ import SiteContentEditor from "./SiteContentEditor"
 import ConfirmDiscardChanges from "./util/ConfirmDiscardChanges"
 import { flushEventQueue } from "../test_util"
 
+// Check test failure on github actions
+
+
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
   return <div>mock</div>
