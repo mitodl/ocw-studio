@@ -6,7 +6,6 @@ import os
 from datetime import datetime
 from typing import Dict, Iterable, Optional
 
-import boto3
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
