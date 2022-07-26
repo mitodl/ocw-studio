@@ -30,7 +30,7 @@ def valid_settings(settings):
 def youtube_settings(settings, mocker):
     """Populate required youtube settings with dummy values"""
     settings.YT_CLIENT_ID = "testvalue"
-    settings.YT_CLIENT_SECRET = "testvalue"
+    settings.YT_CLIENT_SECRET = "testvalue"  # pragma: allowlist secret
     settings.YT_PROJECT_ID = "testvalue"
     settings.YT_ACCESS_TOKEN = "testvalue"
     settings.YT_REFRESH_TOKEN = "testvalue"
