@@ -13,15 +13,12 @@ def get_boto3_options(extra_options=None):
     Returns:
         dict: A dictionary of options to initialize an s3 resource or client with
     """
-    options = {}
+    options = {
+        "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
+        "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
+    }
     if settings.ENVIRONMENT == "dev":
-        options.update(
-            {
-                "endpoint_url": "http://10.1.0.100:9000",
-                "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
-                "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
-            }
-        )
+        options.update({"endpoint_url": "http://10.1.0.100:9000"})
     if extra_options:
         options.update(extra_options)
     return options
