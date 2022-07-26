@@ -178,7 +178,6 @@ def test_check_matching_tags():
 def test_strip_lines_between(start_tag, end_tag, expected):
     """check that strip_lines_between strips the expected content"""
     even_tags_test_file = os.path.join(os.path.dirname(__file__), EVEN_TAGS_TEST_FILE)
-    print(strip_lines_between(even_tags_test_file, start_tag, end_tag))
     assert expected == strip_lines_between(even_tags_test_file, start_tag, end_tag)
 
 
