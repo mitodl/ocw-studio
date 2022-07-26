@@ -375,12 +375,18 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             {
                 "branch": settings.GIT_BRANCH_PREVIEW,
                 "pipeline_name": VERSION_DRAFT,
-                "static_api_url": settings.OCW_STUDIO_DRAFT_URL,
+                "static_api_url": settings.STATIC_API_BASE_URL
+                or settings.OCW_STUDIO_DRAFT_URL
+                if is_dev()
+                else settings.OCW_STUDIO_DRAFT_URL,
             },
             {
                 "branch": settings.GIT_BRANCH_RELEASE,
                 "pipeline_name": VERSION_LIVE,
-                "static_api_url": settings.OCW_STUDIO_LIVE_URL,
+                "static_api_url": settings.STATIC_API_BASE_URL
+                or settings.OCW_STUDIO_LIVE_URL
+                if is_dev()
+                else settings.OCW_STUDIO_LIVE_URL,
             },
         ]:
             branch_vars.update(get_template_vars())
@@ -548,7 +554,10 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             template_vars.update(
                 {
                     "branch": settings.GIT_BRANCH_PREVIEW,
-                    "static_api_url": settings.OCW_STUDIO_DRAFT_URL,
+                    "static_api_url": settings.STATIC_API_BASE_URL
+                    or settings.OCW_STUDIO_DRAFT_URL
+                    if is_dev()
+                    else settings.OCW_STUDIO_DRAFT_URL,
                     "destination_bucket": template_vars["preview_bucket_name"],
                     "build_drafts": "--buildDrafts",
                     "resource_base_url": settings.RESOURCE_BASE_URL_DRAFT,
@@ -558,7 +567,10 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             template_vars.update(
                 {
                     "branch": settings.GIT_BRANCH_RELEASE,
-                    "static_api_url": settings.OCW_STUDIO_LIVE_URL,
+                    "static_api_url": settings.STATIC_API_BASE_URL
+                    or settings.OCW_STUDIO_DRAFT_URL
+                    if is_dev()
+                    else settings.OCW_STUDIO_DRAFT_URL,
                     "destination_bucket": template_vars["publish_bucket_name"],
                     "build_drafts": "",
                     "resource_base_url": settings.RESOURCE_BASE_URL_LIVE,
