@@ -568,9 +568,9 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
                 {
                     "branch": settings.GIT_BRANCH_RELEASE,
                     "static_api_url": settings.STATIC_API_BASE_URL
-                    or settings.OCW_STUDIO_DRAFT_URL
+                    or settings.OCW_STUDIO_LIVE_URL
                     if is_dev()
-                    else settings.OCW_STUDIO_DRAFT_URL,
+                    else settings.OCW_STUDIO_LIVE_URL,
                     "destination_bucket": template_vars["publish_bucket_name"],
                     "build_drafts": "",
                     "resource_base_url": settings.RESOURCE_BASE_URL_LIVE,
