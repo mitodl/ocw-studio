@@ -127,7 +127,7 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     """stream_to_s3 should make expected drive api and S3 upload calls"""
     settings.ENVIRONMENT = "test"
     mock_download = mocker.patch("gdrive_sync.api.GDriveStreamReader")
-    mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
+    mock_boto3 = mocker.patch("main.s3_utils.boto3")
     mock_bucket = mock_boto3.resource.return_value.Bucket.return_value
     drive_file = DriveFileFactory.create(
         name="A (Test) File!.ext",
@@ -176,7 +176,7 @@ def test_stream_to_s3_error(settings, mocker, num_errors):
     settings.CONTENT_SYNC_RETRIES = 3
     should_raise = num_errors >= 3
     mocker.patch("gdrive_sync.api.GDriveStreamReader")
-    mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
+    mock_boto3 = mocker.patch("main.s3_utils.boto3")
     mock_boto3.resource.return_value.Bucket.side_effect = [
         *[HTTPError() for _ in range(num_errors)],
         mocker.Mock(),
