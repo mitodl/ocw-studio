@@ -1089,6 +1089,13 @@ SEARCH_API_URL = get_string(
     default=None,
     description="The URL to open discussions search to inject into the theme assets build",
 )
+STATIC_API_BASE_URL = get_string(
+    name="STATIC_API_BASE_URL",
+    description="The static api base url to use when building and deploying sites locally to minio",
+    default="",
+    required=False,
+    dev_only=True,
+)
 RESOURCE_BASE_URL_DRAFT = get_string(
     name="RESOURCE_BASE_URL_DRAFT",
     description="The draft resource base url to use when building and deploying sites locally to minio",
