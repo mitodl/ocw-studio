@@ -39,7 +39,7 @@ def required_concourse_settings(settings):
     """ Other required settings for concourse pipelines """
     settings.CONCOURSE_URL = "http://localconcourse.edu"
     settings.CONCOURSE_USERNAME = "test"
-    settings.CONCOURSE_PASSWORD = "pass"
+    settings.CONCOURSE_PASSWORD = "pass"  # pragma: allowlist secret
     settings.CONCOURSE_TEAM = "ocwtest"
     settings.AWS_PREVIEW_BUCKET_NAME = "preview_bucket"
     settings.AWS_PUBLISH_BUCKET_NAME = "publish_bucket"
@@ -50,6 +50,6 @@ def required_concourse_settings(settings):
     settings.GIT_ORGANIZATION = "test_org"
     settings.GITHUB_WEBHOOK_BRANCH = "release"
     settings.SITE_BASE_URL = "http://test.edu"
-    settings.API_BEARER_TOKEN = "abc123"
+    settings.API_BEARER_TOKEN = "abc123"  # pragma: allowlist secret
     settings.SEARCH_API_URL = "http://test.edu/api/v0/search"
     settings.OCW_GTM_ACCOUNT_ID = "abc123"

@@ -2,8 +2,14 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: git@github.com:Yelp/detect-secrets
-    rev: v0.14.2
+    rev: v1.3.0
     hooks:
     -   id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
+        args:
+          - --baseline
+          - .secrets.baseline
+          - --exclude-files
+          - README.md
+          - --exclude-files
+          - .yarn/releases/yarn-3.1.0.cjs
         exclude: .*_test.*|yarn\.lock
