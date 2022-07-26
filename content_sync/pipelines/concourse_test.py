@@ -113,8 +113,9 @@ def pipeline_settings(settings, request):
         settings.AWS_ARTIFACTS_BUCKET_NAME = "artifact_buckets_dev"
         settings.OCW_HUGO_THEMES_BRANCH = "themes_dev"
         settings.OCW_HUGO_PROJECTS_BRANCH = "projects_dev"
+        settings.STATIC_API_BASE_URL = "https://ocw.mit.edu"
         settings.RESOURCE_BASE_URL_DRAFT = "https://draft.ocw.mit.edu"
-        settings.RESOURCE_BASE_URL_LIVE = "https://ocw.mit.edu"
+        settings.RESOURCE_BASE_URL_LIVE = "https://live.ocw.mit.edu"
 
 
 @pytest.mark.parametrize("stream", [True, False])
@@ -551,7 +552,7 @@ def test_upsert_mass_build_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
 ):  # pylint:disable=too-many-locals,too-many-arguments
     """The mass build pipeline should have expected configuration"""
-    expected_aws_values = get_template_vars()
+    expected_template_vars = get_template_vars()
     hugo_projects_path = "https://github.com/org/repo"
     WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(
@@ -586,10 +587,10 @@ def test_upsert_mass_build_pipeline(
     )
     _, kwargs = mock_put_headers.call_args_list[0]
     if version == VERSION_DRAFT:
-        bucket = expected_aws_values["preview_bucket_name"]
+        bucket = expected_template_vars["preview_bucket_name"]
         static_api_url = settings.OCW_STUDIO_DRAFT_URL
     elif version == VERSION_LIVE:
-        bucket = expected_aws_values["publish_bucket_name"]
+        bucket = expected_template_vars["publish_bucket_name"]
         static_api_url = settings.OCW_STUDIO_LIVE_URL
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
