@@ -218,6 +218,9 @@ AWS_STORAGE_BUCKET_NAME=ol-ocw-studio-app
 AWS_PREVIEW_BUCKET_NAME=ocw-content-draft
 AWS_PUBLISH_BUCKET_NAME=ocw-content-live
 AWS_ARTIFACTS_BUCKET_NAME=ol-eng-artifacts
+OCW_HUGO_THEMES_BRANCH=main
+OCW_HUGO_PROJECTS_BRANCH=main
+STATIC_API_BASE_URL=https://ocw.mit.edu
 RESOURCE_BASE_URL_DRAFT=https://draft.ocw.mit.edu
 RESOURCE_BASE_URL_LIVE=https://ocw.mit.edu
 ```
@@ -232,6 +235,19 @@ in your site click "Sync w/ Google Drive."  If you visit http://localhost:9001 i
 You can log into this with whatever you set `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` to. Inside, you should be able to browse the files you uploaded
 to the bucket. Videos are not currently supported locally beacuse of the transcoding service that is normally used with this. The preview and publish
 buckets are exposed via nginx locally at http://localhost:8044 and http://localhost:8045 respectively.
+
+In order to complete your local development setup, you will need to follow the instructions below to configure a Concourse docker container so you
+can run pipelines and have them push their output to your Minio S3 buckets. The `OCW_HUGO_THEMES_BRANCH` and `OCW_HUGO_PROJECTS_BRANCH` settings will
+control the branch of each of these repos that are pulled down in pipelines that build sites.  If you are debugging an issue with a specific branch,
+This is where you want to change them before you run a command that pushes up a pipeline like `docker-compose exec web ./manage.py backpopulate_pipelines --filter etc...`
+
+Note that you may also want to set `OCW_STUDIO_LIVE_URL=https://localhost:8045/`and `OCW_STUDIO_DRAFT_URL=http://localhost:8045/` in your `.env` file so that the URLs
+in the publish drawer will point to your Minio published content. If you do this, you will likely need to also set `STATIC_API_BASE_URL` to https://ocw.mit.edu like above.
+Usually the best way to get started getting content into your local instance of `ocw-studio` is to dump and restore the production database to your local instance.
+One side effect of doing this is that the `ocw-www` site in production has a bunch of different sites linked to it via various course lists.  When building `ocw-www`,
+Hugo will attempt to fetch static JSON data related to these linked courses and will encounter errors if it cannot fetch them. To avoid this, make sure `STATIC_API_BASE_URL`
+is set as detailed above. If `STATIC_API_BASE_URL` is not set, it will fall back to `OCW_STUDIO_DRAFT_URL` or `OCW_STUDIO_LIVE_URL` depending on the context of the pipeline.
+So, if you have this set to a URL where the courses referenced in your `ocw-www` site's course lists haven't been published, you will have issues.
 
 
 # Enabling Concourse-CI integration
@@ -276,9 +292,15 @@ your local instance instead. The pipeline templates with the `-dev` suffix are u
 
 When you click publish on a site, the pipelines in your local instance of Concourse will be triggered. If you set up Minio as
 detailed above, the pipelines will publish their output to your locally running S3 buckets inside it. As also described above,
-you can view the output of your sites at http://localhost:8044 and http://localhost:8045 for draft and live respectively. Note
-that `/index.html` is not automatically appended to the end of URLs like when sites are deployed to fastly, so you will need to
-do this yourself.
+you can view the output of your sites at http://localhost:8044 and http://localhost:8045 for draft and live respectively. You will
+need to also make sure you run `docker-compose exec web ./manage.py upsert_theme_assets_pipeline` to push up the theme assets
+pipeline to your local Concourse instance. You will then need to log into Concourse, unpause the pipeline and start a run of it.
+This will place theme assets into the bucket you have configured at `AWS_ARTIFACTS_BUCKET_NAME` that your site pipelines can
+reference. If you have already existing sites that don't have their pipelines pushed up into your local Concourse yet, you will
+need to run `docker-compose exec web ./manage.py backpopulate_pipelines` and use the `--filter` or `--filter-json` arguments to
+specify the sites to push up pipelines for.  The mass build sites pipeline can be pushed up with `docker-compose exec web ./manage.py upsert_mass_build_pipeline`.
+Beware that when testing the mass build pipeline locally, you will likely need to limit the amount of sites in your local instance
+as with only one dockerized worker publishing the entire OCW site will take a very long time.
 
 
 # Enabling YouTube integration
