@@ -248,6 +248,20 @@ jobs:
             - |
               aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))              
               aws s3((cli-endpoint-url)) sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
+        # START DEV-ONLY
+        on_success:
+          try:
+            do:
+              - put: ocw-studio-webhook
+                timeout: 1m
+                attempts: 3
+                params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "succeeded"
+                    }
+        # END DEV-ONLY
         on_failure:
           try:
             do:
