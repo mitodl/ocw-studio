@@ -10,7 +10,9 @@ jobs:
   serial: true
   plan:
   - get: ocw-hugo-themes
+    # START NON-DEV
     trigger: true
+    # END NON-DEV
   - task: build-ocw-hugo-themes
     config:
       platform: linux
