@@ -10,7 +10,9 @@ jobs:
   serial: true
   plan:
   - get: ocw-hugo-themes
+    # START NON-DEV
     trigger: true
+    # END NON-DEV
   - task: build-ocw-hugo-themes
     config:
       platform: linux
@@ -39,6 +41,11 @@ jobs:
       inputs:
         - name: ocw-hugo-themes
       platform: linux
+      # START DEV-ONLY
+      params:
+        AWS_ACCESS_KEY_ID: ((minio-root-user))
+        AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+      # END DEV-ONLY
       image_resource:
         type: docker-image
         source: {repository: amazon/aws-cli, tag: latest}
@@ -47,9 +54,10 @@ jobs:
         args:
           - -exc
           - |
-            aws s3 cp ocw-hugo-themes/base-theme/dist s3://((ocw-bucket-draft)) --recursive --metadata site-id=ocw-hugo-themes
-            aws s3 cp ocw-hugo-themes/base-theme/dist s3://((ocw-bucket-live)) --recursive --metadata site-id=ocw-hugo-themes
-            aws s3 cp ocw-hugo-themes/base-theme/data/webpack.json s3://ol-eng-artifacts/ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json --metadata site-id=ocw-hugo-themes
+            aws s3((cli-endpoint-url)) cp ocw-hugo-themes/base-theme/dist s3://((ocw-bucket-draft)) --recursive --metadata site-id=ocw-hugo-themes
+            aws s3((cli-endpoint-url)) cp ocw-hugo-themes/base-theme/dist s3://((ocw-bucket-live)) --recursive --metadata site-id=ocw-hugo-themes
+            aws s3((cli-endpoint-url)) cp ocw-hugo-themes/base-theme/data/webpack.json s3://((artifacts-bucket))/ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json --metadata site-id=ocw-hugo-themes
+  # START NON-DEV
   - task: clear-cdn-cache-draft
     timeout: 5m
     attempts: 3
@@ -84,3 +92,4 @@ jobs:
           - -H
           - 'Fastly-Key: ((fastly_live.api_token))'((purge_header))
           - https://api.fastly.com/service/((fastly_live.service_id))/purge/ocw-hugo-themes
+  # END NON-DEV

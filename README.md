@@ -155,36 +155,6 @@ npm run fmt
 You can also try `npm run fmt:check` to see if any files need to be reformatted.
 
 
-# Importing OCW course sites
-
-We have raw data for numerous course sites in cloud storage. These sites can be imported into OCW Studio and
-saved into the database via a management command: `import_ocw_course_sites`.
-
-This command will only work if you have the following:
-1. The name of the AWS bucket which contains the course data. Ask a fellow developer for this.
-1. Valid settings for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. As with other settings, these should be
-   specified in your `.env` file. You can copy these from heroku, or ask a fellow developer for them.
-
-Some example commands:
-
-```bash
-# List the data file names of all available course sites
-manage.py import_ocw_course_sites -b <bucket_name> --list
-
-# List the data file names of all course sites that match a filter
-manage.py import_ocw_course_sites -b <bucket_name> --filter frameworks-of-urban-governance --list
-
-# Import course sites with a data file name that matches a filter
-manage.py import_ocw_course_sites -b <bucket_name> --filter frameworks-of-urban-governance
-
-# Import 30 total course sites
-manage.py import_ocw_course_sites -b <bucket_name> --limit 30
-
-# Import ALL course sites (this will take quite a while)
-manage.py import_ocw_course_sites -b <bucket_name>
-```
-
-
 # Defining local starter projects and site configs
 
 This project includes some tools that simplify development with starter projects and site configs. These tools allow you to do the following:
@@ -225,7 +195,7 @@ If you wish to use a github app,
    ```
    GITHUB_APP_ID=<app id>
    ```
- - Generate a private key.  A pem file will download.  You need to use the content of this file in your .env file:
+ - Generate a private key. A pem file will download. You need to use the content of this file in your .env file:
    ```
    GITHUB_APP_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\nMIIEpQ......\n-----END RSA PRIVATE KEY-----
    ```
@@ -233,10 +203,57 @@ If you wish to use a github app,
    
 
 
+# Local S3 emulation with Minio
+
+Our `docker-compose` configuration includes an instance of [Minio](https://github.com/minio/minio) which emulates Amazon's S3 service locally.
+This works in conjunction with the `ENVIRONMENT` env variable being set to "dev." When this is set, usage of the `boto3` library will automatically
+set `endpoint_url` to the internal docker IP address of the Minio instance. You will need a few env variables:
+
+```python
+MINIO_ROOT_USER=minio_user
+MINIO_ROOT_PASSWORD=minio_password
+AWS_ACCESS_KEY_ID=minio_user
+AWS_SECRET_ACCESS_KEY=minio_password
+AWS_STORAGE_BUCKET_NAME=ol-ocw-studio-app
+AWS_PREVIEW_BUCKET_NAME=ocw-content-draft
+AWS_PUBLISH_BUCKET_NAME=ocw-content-live
+AWS_ARTIFACTS_BUCKET_NAME=ol-eng-artifacts
+OCW_HUGO_THEMES_BRANCH=main
+OCW_HUGO_PROJECTS_BRANCH=main
+STATIC_API_BASE_URL=https://ocw.mit.edu
+RESOURCE_BASE_URL_DRAFT=https://draft.ocw.mit.edu
+RESOURCE_BASE_URL_LIVE=https://ocw.mit.edu
+```
+
+Notice how `MINIO_ROOT_USER` is the same value as `AWS_ACCESS_KEY_ID` and `MINIO_ROOT_PASSWORD` is the same as `AWS_SECRET_ACCESS_KEY`. This is to
+ensure that the Minio server is initialized with the same access keys that `ocw-studio` is using. The rest of the AWS bucket name keys are the same
+as a standard AWS configuration. the `RESOURCE_BASE_URL` keys are for use with the Concourse container. When using Minio in conjunction with Concourse
+and running any of the management commands that upsert pipelines, these values will be used for the `RESOURCE_BASE_URL` env variable when building sites.
+
+In sites that support resource upload, you should be able to upload anything except videos to Google Drive using the RC Google Drive credentials, then
+in your site click "Sync w/ Google Drive."  If you visit http://localhost:9001 in your web browser, you should be brought to the Minio control panel.
+You can log into this with whatever you set `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` to. Inside, you should be able to browse the files you uploaded
+to the bucket. Videos are not currently supported locally beacuse of the transcoding service that is normally used with this. The preview and publish
+buckets are exposed via nginx locally at http://localhost:8044 and http://localhost:8045 respectively.
+
+In order to complete your local development setup, you will need to follow the instructions below to configure a Concourse docker container so you
+can run pipelines and have them push their output to your Minio S3 buckets. The `OCW_HUGO_THEMES_BRANCH` and `OCW_HUGO_PROJECTS_BRANCH` settings will
+control the branch of each of these repos that are pulled down in pipelines that build sites.  If you are debugging an issue with a specific branch,
+This is where you want to change them before you run a command that pushes up a pipeline like `docker-compose exec web ./manage.py backpopulate_pipelines --filter etc...`
+
+Note that you may also want to set `OCW_STUDIO_LIVE_URL=https://localhost:8045/`and `OCW_STUDIO_DRAFT_URL=http://localhost:8045/` in your `.env` file so that the URLs
+in the publish drawer will point to your Minio published content. If you do this, you will likely need to also set `STATIC_API_BASE_URL` to https://ocw.mit.edu like above.
+Usually the best way to get started getting content into your local instance of `ocw-studio` is to dump and restore the production database to your local instance.
+One side effect of doing this is that the `ocw-www` site in production has a bunch of different sites linked to it via various course lists.  When building `ocw-www`,
+Hugo will attempt to fetch static JSON data related to these linked courses and will encounter errors if it cannot fetch them. To avoid this, make sure `STATIC_API_BASE_URL`
+is set as detailed above. If `STATIC_API_BASE_URL` is not set, it will fall back to `OCW_STUDIO_DRAFT_URL` or `OCW_STUDIO_LIVE_URL` depending on the context of the pipeline.
+So, if you have this set to a URL where the courses referenced in your `ocw-www` site's course lists haven't been published, you will have issues.
+
+
 # Enabling Concourse-CI integration
 Concourse-CI integration is enabled by default to create and trigger publishing pipelines, but you
 will need to follow some additional steps before it is fully functional.
-- Set up github integration as described above
+- Set up Github integration as described above
 - Set up a Concourse-CI instance with a team, username, and password
 - Add the following to your .env file:
     ``` 
@@ -256,19 +273,9 @@ will need to follow some additional steps before it is fully functional.
 - There are also several management commands for Concourse-CI pipelines:
   - `backpopulate_pipelines`: to create/update pipelines for all or some existing `Websites` (filters available)
   - `trigger_pipelines <version>`: to manually trigger the draft or live pipeline for all or some existing `Websites` (filters available)
-- If you wish to disable concourse integration, set `CONTENT_SYNC_PIPELINE_BACKEND=` in your .env file.  
+- If you wish to disable concourse integration, set `CONTENT_SYNC_PIPELINE_BACKEND=` in your .env file. 
 
 ### Running a Local Concourse Docker Container
-  You can run a local concourse instance in a docker container for some light testing.  You will need docker-compose version 1.28.0 or above:
-
-    `docker-compose --profile concourse up`
-  
-
-The concourse UI will be available for login at http://concourse:8080 (You should  add `127.0.0.1 concourse` to your hosts file.)
-  
-However, this comes with some limitations.  The pipeline will never succeed as currently configured because of how AWS credentials and fastly variables are 
-passed to concourse.  But it will be enough to create and trigger pipelines.  You can also get the webhook working via ngrok.
-
 You will need to set the following .env variables for the concourse docker container:
  
 ```python
@@ -276,11 +283,26 @@ CONCOURSE_URL=http://concourse:8080
 CONCOURSE_PASSWORD=test
 CONCOURSE_USERNAME=test
 CONCOURSE_TEAM=main
-
-OCW_STUDIO_BASE_URL=<ngrok URL if testing webhooks>
-
 ```
-  
+
+When you spin up `ocw-studio` with `docker-compose up`, the Concourse container will come up with everything else.
+The concourse UI will be available for login at http://concourse:8080 (You should  add `127.0.0.1 concourse` to your hosts file.)
+When you create a new website or run one of the various management commands that push pipelines up to Concourse, they will go to
+your local instance instead. The pipeline templates with the `-dev` suffix are used when `settings.ENVIRONMENT` is set to "dev."
+
+When you click publish on a site, the pipelines in your local instance of Concourse will be triggered. If you set up Minio as
+detailed above, the pipelines will publish their output to your locally running S3 buckets inside it. As also described above,
+you can view the output of your sites at http://localhost:8044 and http://localhost:8045 for draft and live respectively. You will
+need to also make sure you run `docker-compose exec web ./manage.py upsert_theme_assets_pipeline` to push up the theme assets
+pipeline to your local Concourse instance. You will then need to log into Concourse, unpause the pipeline and start a run of it.
+This will place theme assets into the bucket you have configured at `AWS_ARTIFACTS_BUCKET_NAME` that your site pipelines can
+reference. If you have already existing sites that don't have their pipelines pushed up into your local Concourse yet, you will
+need to run `docker-compose exec web ./manage.py backpopulate_pipelines` and use the `--filter` or `--filter-json` arguments to
+specify the sites to push up pipelines for.  The mass build sites pipeline can be pushed up with `docker-compose exec web ./manage.py upsert_mass_build_pipeline`.
+Beware that when testing the mass build pipeline locally, you will likely need to limit the amount of sites in your local instance
+as with only one dockerized worker publishing the entire OCW site will take a very long time.
+
+
 # Enabling YouTube integration
 - Create a new project at https://console.cloud.google.com/apis/dashboard
   - Save the project ID in your ``.env`` file as ``YT_PROJECT_ID``
@@ -300,16 +322,16 @@ OCW_STUDIO_BASE_URL=<ngrok URL if testing webhooks>
 
 # Enabling Google Drive integration
 With Google Drive integration enabled, a folder on the specified Team Drive will be created for each new website.
-The folder will have the same name as the short_id of the website.  Under this folder will be 3 subfolders:
-`files`, `files_final`, `videos_final`.  Videos should be uploaded to `videos_final`, everything else should be uploaded
-to `files_final`.  The `files` folder is just for temporary storage.  
+The folder will have the same name as the short_id of the website. Under this folder will be 3 subfolders:
+`files`, `files_final`, `videos_final`. Videos should be uploaded to `videos_final`, everything else should be uploaded
+to `files_final`. The `files` folder is just for temporary storage. 
 
-If this integration is enabled, manual resource creation and file uploads will no longer be possible.  Files must
+If this integration is enabled, manual resource creation and file uploads will no longer be possible. Files must
 be uploaded to Google Drive first, and then the "Sync w/Google Drive" button will import and create resources for them.
 
 - Add the following to your .env file:
     ``` 
-    AWS_STORAGE_BUCKET_NAME=The S3 bucket to upload google drive files to.  Also populate AWS authentication settings.
+    AWS_STORAGE_BUCKET_NAME=The S3 bucket to upload google drive files to. Also populate AWS authentication settings.
     DRIVE_SHARED_ID=The id of your Google Team Drive
     DRIVE_SERVICE_ACCOUNT_CREDS=The required Google service account credentials in JSON format.
     DRIVE_IMPORT_RECENT_FILES_SECONDS=Optional, default 3600. The frequency to check for new/updated files.

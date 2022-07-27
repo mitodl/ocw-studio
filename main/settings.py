@@ -1035,7 +1035,6 @@ ANYMAIL = {
     "MAILGUN_API_KEY": MAILGUN_KEY,
     "MAILGUN_SENDER_DOMAIN": MAILGUN_SENDER_DOMAIN,
 }
-
 MITOL_MAIL_FROM_EMAIL = get_string(
     name="MITOL_MAIL_FROM_EMAIL",
     default="webmaster@localhost",
@@ -1089,6 +1088,41 @@ SEARCH_API_URL = get_string(
     name="SEARCH_API_URL",
     default=None,
     description="The URL to open discussions search to inject into the theme assets build",
+)
+STATIC_API_BASE_URL = get_string(
+    name="STATIC_API_BASE_URL",
+    description="The static api base url to use when building and deploying sites locally to minio",
+    default="",
+    required=False,
+    dev_only=True,
+)
+RESOURCE_BASE_URL_DRAFT = get_string(
+    name="RESOURCE_BASE_URL_DRAFT",
+    description="The draft resource base url to use when building and deploying sites locally to minio",
+    default="",
+    required=False,
+    dev_only=True,
+)
+RESOURCE_BASE_URL_LIVE = get_string(
+    name="RESOURCE_BASE_URL_LIVE",
+    description="The live resource base url to use when building and deploying sites locally to minio",
+    default="",
+    required=False,
+    dev_only=True,
+)
+OCW_HUGO_THEMES_BRANCH = get_string(
+    name="OCW_HUGO_THEMES_BRANCH",
+    description="The branch to use in development of ocw-hugo-themes",
+    default="main",
+    required=False,
+    dev_only=True,
+)
+OCW_HUGO_PROJECTS_BRANCH = get_string(
+    name="OCW_HUGO_PROJECTS_BRANCH",
+    description="The branch to use in development of ocw-hugo-projects",
+    default="main",
+    required=False,
+    dev_only=True,
 )
 RESOURCE_TYPE_FIELDS = get_delimited_list(
     name="RESOURCE_TYPE_FIELDS",

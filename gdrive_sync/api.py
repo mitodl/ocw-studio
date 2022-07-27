@@ -6,7 +6,6 @@ import os
 from datetime import datetime
 from typing import Dict, Iterable, Optional
 
-import boto3
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
@@ -28,6 +27,7 @@ from gdrive_sync.constants import (
     WebsiteSyncStatus,
 )
 from gdrive_sync.models import DriveFile
+from main.s3_utils import get_boto3_resource
 from videos.api import create_media_convert_job
 from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
@@ -201,7 +201,7 @@ def process_file_result(
 def stream_to_s3(drive_file: DriveFile):
     """ Stream a Google Drive file to S3 """
     try:
-        s3 = boto3.resource("s3")
+        s3 = get_boto3_resource("s3")
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
         bucket = s3.Bucket(bucket_name)
         if not drive_file.s3_key:
@@ -292,7 +292,7 @@ def create_gdrive_folders(website_short_id: str) -> bool:
 
 def get_s3_content_type(key: str) -> str:
     """Return the S3 object content_type"""
-    s3 = boto3.resource("s3")
+    s3 = get_boto3_resource("s3")
     bucket = s3.Bucket(name=settings.AWS_STORAGE_BUCKET_NAME)
     return bucket.Object(key).content_type
 

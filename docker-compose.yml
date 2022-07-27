@@ -17,6 +17,15 @@ x-environment:
   DJANGO_SETTINGS_MODULE: "main.settings"
   PYTHONPATH: "."
 
+networks:
+  default-network:
+    driver: bridge
+  minio-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "10.1.0.0/24"
 services:
   db:
     image: postgres:12.8
@@ -24,23 +33,34 @@ services:
       - "5431:5432"
     environment:
       POSTGRES_PASSWORD: postgres  # pragma: allowlist secret
+    networks:
+     - default-network
 
   redis:
     image: redis:6.0.10
     ports:
       - "6379"
+    networks:
+     - default-network
+     - minio-network
 
   nginx:
     image: nginx:1.22.0
+    environment:
+      AWS_PREVIEW_BUCKET_NAME: $AWS_PREVIEW_BUCKET_NAME
+      AWS_PUBLISH_BUCKET_NAME: $AWS_PUBLISH_BUCKET_NAME
     ports:
       - "8043:8043"
+      - "8044:8044"
+      - "8045:8045"
     links:
       - web
+      - s3
     networks:
-      default:
-        aliases:
-          # this ensures that containers route this hostname back to the web app
-          - "xpro.odl.local"
+      default-network:
+      minio-network:
+        ipv4_address: 10.1.0.102
+
   web:
     build:
       context: .
@@ -62,6 +82,9 @@ services:
     links:
       - db
       - redis
+    networks:
+      - default-network
+      - minio-network
 
   watch:
     image: node:16.15.0
@@ -75,6 +98,8 @@ services:
       DOCKER_HOST: ${DOCKER_HOST:-missing}
       CONTAINER_NAME: 'watch'
     env_file: .env
+    networks:
+      - default-network
 
   celery:
     build:
@@ -89,6 +114,9 @@ services:
     links:
       - db
       - redis
+    networks:
+      - default-network
+      - minio-network
 
   concourse-db:
     image: postgres:11.6
@@ -96,10 +124,11 @@ services:
       POSTGRES_DB: concourse
       POSTGRES_USER: postgres
       PGDATA: /database
-    profiles: ["concourse"]
+    networks:
+      - default-network
 
   concourse:
-    image: concourse/concourse:7.7.0
+    image: concourse/concourse:7.7.1
     command: quickstart
     privileged: true
     depends_on: [concourse-db]
@@ -107,6 +136,8 @@ services:
     stdin_open: true
     tty: true
     environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       CONCOURSE_POSTGRES_HOST: concourse-db
       CONCOURSE_POSTGRES_USER: postgres
       CONCOURSE_POSTGRES_DATABASE: concourse
@@ -118,10 +149,65 @@ services:
       CONCOURSE_CONTENT_SECURITY_POLICY: "*"
       CONCOURSE_CLUSTER_NAME: ocw
       CONCOURSE_WORKER_CONTAINERD_DNS_SERVER: "8.8.8.8"
+      CONCOURSE_CONTAINERD_ALLOW_HOST_ACCESS: "true"
       CONCOURSE_WORKER_RUNTIME: "containerd"
       CONCOURSE_ENABLE_PIPELINE_INSTANCES: "true"
       CONCOURSE_ENABLE_ACROSS_STEP: "true"
-    profiles: ["concourse"]
+      CONCOURSE_CONTAINERD_MAX_CONTAINERS: 1200
     links:
       - web
       - nginx
+      - s3
+    networks:
+      default-network:
+      minio-network:
+        ipv4_address: 10.1.0.101
+
+  s3:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./s3:/data
+    environment:
+      MINIO_ROOT_USER: $MINIO_ROOT_USER
+      MINIO_ROOT_PASSWORD: $MINIO_ROOT_PASSWORD
+    command: server --address 0.0.0.0:9000 --console-address 0.0.0.0:9001 /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      default-network:
+      minio-network:
+        ipv4_address: 10.1.0.100
+  create-buckets:
+    image: minio/mc
+    depends_on:
+      s3:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: $MINIO_ROOT_USER
+      MINIO_ROOT_PASSWORD: $MINIO_ROOT_PASSWORD
+      AWS_STORAGE_BUCKET_NAME: $AWS_STORAGE_BUCKET_NAME
+      AWS_PREVIEW_BUCKET_NAME: $AWS_PREVIEW_BUCKET_NAME
+      AWS_PUBLISH_BUCKET_NAME: $AWS_PUBLISH_BUCKET_NAME
+      AWS_ARTIFACTS_BUCKET_NAME: $AWS_ARTIFACTS_BUCKET_NAME
+    restart: on-failure
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set minio http://10.1.0.100:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD;
+      /usr/bin/mc mb minio/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc policy set public minio/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_PREVIEW_BUCKET_NAME;
+      /usr/bin/mc policy set public minio/$AWS_PREVIEW_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_PUBLISH_BUCKET_NAME;
+      /usr/bin/mc policy set public minio/$AWS_PUBLISH_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_ARTIFACTS_BUCKET_NAME;
+      /usr/bin/mc policy set public minio/$AWS_ARTIFACTS_BUCKET_NAME;
+      /usr/bin/mc version enable minio/$AWS_ARTIFACTS_BUCKET_NAME;
+      "
+    networks:
+      - minio-network

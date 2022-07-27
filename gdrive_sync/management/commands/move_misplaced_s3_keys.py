@@ -5,6 +5,7 @@ from django.db.models import Q
 
 from content_sync.tasks import sync_website_content
 from gdrive_sync.models import DriveFile
+from main.s3_utils import get_boto3_client, get_boto3_options
 from websites.constants import WEBSITE_SOURCE_STUDIO
 from websites.models import Website, WebsiteContent
 
@@ -15,7 +16,7 @@ class Command(BaseCommand):
     help = __doc__
 
     def handle(self, *args, **options):
-        s3 = boto3.client("s3")
+        s3 = get_boto3_client("s3")
         for site in Website.objects.filter(source=WEBSITE_SOURCE_STUDIO).values(
             "uuid", "name", "short_id"
         ):

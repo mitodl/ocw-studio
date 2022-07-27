@@ -22,7 +22,7 @@ services:
 
   nginx:
     volumes:
-      - ./config/nginx.conf:/etc/nginx/conf.d/web.conf
+      - ./config/nginx.conf:/etc/nginx/templates/web.conf.template
       - ./:/src
 
   watch:

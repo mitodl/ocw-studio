@@ -4,7 +4,6 @@ from datetime import datetime
 from random import choice
 from urllib.parse import urljoin
 
-import boto3
 import pytest
 import pytz
 from django.conf import settings
@@ -13,6 +12,7 @@ from moto import mock_s3
 
 from gdrive_sync.api import create_gdrive_resource_content
 from gdrive_sync.factories import DriveFileFactory
+from main.s3_utils import get_boto3_client
 from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
 from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
@@ -393,7 +393,7 @@ def test_delete_s3_objects(settings):
     """Test that s3 objects are deleted"""
     settings.AWS_STORAGE_BUCKET_NAME = MOCK_BUCKET_NAME
     setup_s3(settings)
-    client = boto3.client("s3")
+    client = get_boto3_client("s3")
     assert (
         client.get_object(
             Bucket=MOCK_BUCKET_NAME, Key="biology/config/_default/menus.yaml"

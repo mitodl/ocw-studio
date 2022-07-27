@@ -31,7 +31,7 @@ from gdrive_sync.constants import (
 )
 from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.models import DriveFile
-from main.s3_utils import get_s3_resource
+from main.s3_utils import get_boto3_resource
 from videos.constants import VideoJobStatus, VideoStatus
 from videos.factories import VideoFactory, VideoJobFactory
 from websites.constants import (
@@ -125,8 +125,9 @@ def test_get_parent_tree(mock_service):
 @pytest.mark.parametrize("current_s3_key", [None, "courses/website/current-file.png"])
 def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     """stream_to_s3 should make expected drive api and S3 upload calls"""
+    settings.ENVIRONMENT = "test"
     mock_download = mocker.patch("gdrive_sync.api.GDriveStreamReader")
-    mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
+    mock_boto3 = mocker.patch("main.s3_utils.boto3")
     mock_bucket = mock_boto3.resource.return_value.Bucket.return_value
     drive_file = DriveFileFactory.create(
         name="A (Test) File!.ext",
@@ -171,10 +172,11 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
 @pytest.mark.parametrize("num_errors", [2, 3, 4])
 def test_stream_to_s3_error(settings, mocker, num_errors):
     """Task should mark DriveFile status as failed if an s3 upload error occurs more often than retries"""
+    settings.ENVIRONMENT = "test"
     settings.CONTENT_SYNC_RETRIES = 3
     should_raise = num_errors >= 3
     mocker.patch("gdrive_sync.api.GDriveStreamReader")
-    mock_boto3 = mocker.patch("gdrive_sync.api.boto3")
+    mock_boto3 = mocker.patch("main.s3_utils.boto3")
     mock_boto3.resource.return_value.Bucket.side_effect = [
         *[HTTPError() for _ in range(num_errors)],
         mocker.Mock(),
@@ -310,10 +312,11 @@ def test_get_resource_type(
     settings, in_file_dir, filename, mimetype, expected_type
 ) -> str:
     """get_resource_type should return the expected value for an S3 object"""
+    settings.ENVIRONMENT = "test"
     settings.AWS_ACCESS_KEY_ID = "abc"
     settings.AWS_SECRET_ACCESS_KEY = "abc"
     settings.AWS_STORAGE_BUCKET_NAME = "test-bucket"
-    conn = get_s3_resource()
+    conn = get_boto3_resource("s3")
     conn.create_bucket(Bucket=settings.AWS_STORAGE_BUCKET_NAME)
     test_bucket = conn.Bucket(name=settings.AWS_STORAGE_BUCKET_NAME)
     test_bucket.objects.all().delete()

@@ -19,6 +19,7 @@ from content_sync.pipelines.concourse import (
     ThemeAssetsPipeline,
     UnpublishedSiteRemovalPipeline,
 )
+from content_sync.utils import get_template_vars, get_theme_branch
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
@@ -93,13 +94,28 @@ def mock_auth(mocker):
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
 
 
-@pytest.fixture
-def pipeline_settings(settings):
+@pytest.fixture(scope="function", params=["test", "dev"])
+def pipeline_settings(settings, request):
     """ Default settings for pipelines"""
+    env = request.param
+    settings.ENVIRONMENT = env
+    settings.GITHUB_WEBHOOK_BRANCH = "main"
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
     settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
     settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
+    if env == "dev":
+        settings.AWS_ACCESS_KEY_ID = "minio_root_user"
+        settings.AWS_SECRET_ACCESS_KEY = "minio_root_password"
+        settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket_dev"
+        settings.AWS_DRAFT_BUCKET_NAME = "draft_bucket_dev"
+        settings.AWS_LIVE_BUCKET_NAME = "live_bucket_dev"
+        settings.AWS_ARTIFACTS_BUCKET_NAME = "artifact_buckets_dev"
+        settings.OCW_HUGO_THEMES_BRANCH = "themes_dev"
+        settings.OCW_HUGO_PROJECTS_BRANCH = "projects_dev"
+        settings.STATIC_API_BASE_URL = "https://ocw.mit.edu"
+        settings.RESOURCE_BASE_URL_DRAFT = "https://draft.ocw.mit.edu"
+        settings.RESOURCE_BASE_URL_LIVE = "https://live.ocw.mit.edu"
 
 
 @pytest.mark.parametrize("stream", [True, False])
@@ -224,6 +240,7 @@ def test_delete_pipelines(settings, mocker, mock_auth, names):
 
 def test_upsert_website_pipeline_missing_settings(settings):
     """An exception should be raised if required settings are missing"""
+    settings.ENVIRONMENT = "test"
     settings.AWS_PREVIEW_BUCKET_NAME = None
     website = WebsiteFactory.create()
     with pytest.raises(ImproperlyConfigured):
@@ -237,16 +254,23 @@ def test_upsert_website_pipeline_missing_settings(settings):
 @pytest.mark.parametrize("with_api", [True, False])
 def test_upsert_website_pipelines(
     settings,
+    pipeline_settings,
     mocker,
     mock_auth,
-    pipeline_settings,
     version,
     home_page,
     pipeline_exists,
     hard_purge,
     with_api,
-):  # pylint:disable=too-many-locals,too-many-arguments,too-many-branches,unused-argument
+):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements
     """The correct concourse API args should be made for a website"""
+    # Set AWS expectations based on environment
+    env = settings.ENVIRONMENT
+    expected_template_vars = get_template_vars()
+    expected_endpoint_prefix = (
+        "--endpoint-url http://10.1.0.100:9000 " if env == "dev" else ""
+    )
+
     settings.CONCOURSE_HARD_PURGE = hard_purge
 
     hugo_projects_path = "https://github.com/org/repo"
@@ -293,11 +317,11 @@ def test_upsert_website_pipelines(
     )
     if version == VERSION_DRAFT:
         _, kwargs = mock_put_headers.call_args_list[0]
-        bucket = settings.AWS_PREVIEW_BUCKET_NAME
+        bucket = expected_template_vars["preview_bucket_name"]
         api_url = settings.OCW_STUDIO_DRAFT_URL
     else:
         _, kwargs = mock_put_headers.call_args_list[1]
-        bucket = settings.AWS_PUBLISH_BUCKET_NAME
+        bucket = expected_template_vars["publish_bucket_name"]
         api_url = settings.OCW_STUDIO_LIVE_URL
 
     config_str = json.dumps(kwargs)
@@ -307,25 +331,32 @@ def test_upsert_website_pipelines(
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
     assert api_url in config_str
 
+    storage_bucket_name = expected_template_vars["storage_bucket_name"]
     if home_page:
         assert (
-            f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/{website.name} s3://{bucket}/{website.name}"
+            f"s3 {expected_endpoint_prefix}sync s3://{storage_bucket_name}/{website.name} s3://{bucket}/{website.name}"
             in config_str
         )
-        assert f"aws s3 sync course-markdown/public s3://{bucket}/" in config_str
+        assert (
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/public s3://{bucket}/"
+            in config_str
+        )
     else:
         assert (
-            f"s3 sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/courses/{website.name} s3://{bucket}/{website.url_path}"
+            f"s3 {expected_endpoint_prefix}sync s3://{storage_bucket_name}/courses/{website.name} s3://{bucket}/{website.url_path}"
             in config_str
         )
         assert (
-            f"aws s3 sync course-markdown/public s3://{bucket}/{website.url_path}"
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/public s3://{bucket}/{website.url_path}"
             in config_str
         )
-    assert f"purge/{website.name}" in config_str
-    assert f" --metadata site-id={website.name}" in config_str
-    has_soft_purge_header = "Fastly-Soft-Purge" in config_str
-    assert has_soft_purge_header is not hard_purge
+
+    # The dev pipelines don't hit Fastly
+    if not env == "dev":
+        assert f"purge/{website.name}" in config_str
+        assert f" --metadata site-id={website.name}" in config_str
+        has_soft_purge_header = "Fastly-Soft-Purge" in config_str
+        assert has_soft_purge_header is not hard_purge
 
 
 @pytest.mark.parametrize("is_private_repo", [True, False])
@@ -471,7 +502,9 @@ def test_get_build_status(mocker, mock_auth):
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
-def test_upsert_pipeline(settings, mocker, mock_auth, pipeline_exists):
+def test_upsert_pipeline(
+    settings, pipeline_settings, mocker, mock_auth, pipeline_exists
+):  # pylint:disable=too-many-locals
     """ Test upserting the theme assets pipeline """
     instance_vars = f"%7B%22branch%22%3A%20%22{settings.GITHUB_WEBHOOK_BRANCH}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={instance_vars}"
@@ -500,12 +533,16 @@ def test_upsert_pipeline(settings, mocker, mock_auth, pipeline_exists):
     )
     _, kwargs = mock_put_headers.call_args_list[0]
     config_str = json.dumps(kwargs)
+    expected_template_vars = get_template_vars()
+    expected_branch = get_theme_branch()
+    preview_bucket_name = expected_template_vars["preview_bucket_name"]
+    publish_bucket_name = expected_template_vars["publish_bucket_name"]
+    artifacts_bucket_name = expected_template_vars["artifacts_bucket_name"]
     assert settings.SEARCH_API_URL in config_str
-    assert settings.AWS_PREVIEW_BUCKET_NAME in config_str
-    assert settings.AWS_PUBLISH_BUCKET_NAME in config_str
+    assert preview_bucket_name in config_str
+    assert publish_bucket_name in config_str
     assert (
-        f"s3://ol-eng-artifacts/ocw-hugo-themes/{settings.GITHUB_WEBHOOK_BRANCH}"
-        in config_str
+        f"s3://{artifacts_bucket_name}/ocw-hugo-themes/{expected_branch}" in config_str
     )
 
 
@@ -515,6 +552,7 @@ def test_upsert_mass_build_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
 ):  # pylint:disable=too-many-locals,too-many-arguments
     """The mass build pipeline should have expected configuration"""
+    expected_template_vars = get_template_vars()
     hugo_projects_path = "https://github.com/org/repo"
     WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(
@@ -549,11 +587,11 @@ def test_upsert_mass_build_pipeline(
     )
     _, kwargs = mock_put_headers.call_args_list[0]
     if version == VERSION_DRAFT:
-        bucket = settings.AWS_PREVIEW_BUCKET_NAME
-        api_url = settings.OCW_STUDIO_DRAFT_URL
-    else:
-        bucket = settings.AWS_PUBLISH_BUCKET_NAME
-        api_url = settings.OCW_STUDIO_LIVE_URL
+        bucket = expected_template_vars["preview_bucket_name"]
+        static_api_url = settings.OCW_STUDIO_DRAFT_URL
+    elif version == VERSION_LIVE:
+        bucket = expected_template_vars["publish_bucket_name"]
+        static_api_url = settings.OCW_STUDIO_LIVE_URL
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert (
@@ -563,7 +601,7 @@ def test_upsert_mass_build_pipeline(
     assert bucket in config_str
     assert version in config_str
     assert f"{hugo_projects_path}.git" in config_str
-    assert api_url in config_str
+    assert static_api_url in config_str
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
@@ -572,6 +610,7 @@ def test_unpublished_site_removal_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
 ):  # pylint:disable=too-many-locals,too-many-arguments
     """The unpublished sites removal pipeline should have expected configuration"""
+    template_vars = get_template_vars()
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME}/config"
 
     if not pipeline_exists:
@@ -598,8 +637,8 @@ def test_unpublished_site_removal_pipeline(
     )
     _, kwargs = mock_put_headers.call_args_list[0]
     config_str = json.dumps(kwargs)
-    assert settings.SITE_BASE_URL in config_str
-    assert settings.AWS_PUBLISH_BUCKET_NAME in config_str
+    assert template_vars["ocw_studio_url"] in config_str
+    assert template_vars["publish_bucket_name"] in config_str
     assert VERSION_LIVE in config_str
 
 

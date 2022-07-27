@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 from uuid import UUID, uuid4
 
+from django.conf import settings
 from django.db.models.fields.json import KeyTextTransform
 from django.http import HttpRequest
 
@@ -141,3 +142,13 @@ class NestableKeyTextTransform:
         for head in tail:
             field = KeyTextTransform(head, field)
         return field
+
+
+def is_dev() -> bool:
+    """
+    Returns True or False if settings.ENVIRONMENT is set to "dev"
+
+    Returns:
+        (bool): A boolean indicating whether on not the environment is dev
+    """
+    return settings.ENVIRONMENT == "dev"

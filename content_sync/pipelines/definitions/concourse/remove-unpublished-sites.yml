@@ -44,6 +44,7 @@ jobs:
       values: ((.:unpublished.sites))
       max_in_flight: 5
     do:  # takes a list of steps
+    # START NON-DEV
     - task: search-index-removal
       timeout: 1m
       attempts: 3
@@ -83,9 +84,15 @@ jobs:
                 - --data
                 - '{"version":"((version))","status":"errored", "unpublished": true}'
                 -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
+    # END NON-DEV
     - task: empty-s3-bucket
       timeout: 10m
       attempts: 3
+      # START DEV-ONLY
+      params:
+        AWS_ACCESS_KEY_ID: ((minio-root-user))
+        AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+      # END DEV-ONLY
       config:
         platform: linux
         image_resource:
@@ -96,7 +103,7 @@ jobs:
           args:
           - -exc
           - |
-            aws s3 rm s3://((ocw-bucket))/((.:site.site_url))/ --recursive
+            aws s3((cli-endpoint-url)) rm s3://((ocw-bucket))/((.:site.site_url))/ --recursive
       on_failure:
         try:
           task: webhook
@@ -117,6 +124,7 @@ jobs:
                 - --data
                 - '{"version":"((version))","status":"errored", "unpublished": true}'
                 -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
+    # START NON-DEV
     - task: clear-cdn-cache
       timeout: 1m
       attempts: 3
@@ -176,3 +184,4 @@ jobs:
                 - --data
                 - '{"version":"((version))","status":"errored", "unpublished": true}'
                 -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
+    # END NON-DEV

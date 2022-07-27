@@ -1,0 +1,8 @@
+# START DEV-ONLY
+foo: line 1
+# END DEV-ONLY
+bar: line 2
+# START NON-DEV
+baz: line 3
+# END NON-DEV
+qux: line 4
