@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.69.0 (Released July 27, 2022)
+--------------
+
+- Clean up noisy detect-secrets errors (#1425)
+
 Version 0.68.0 (Released July 18, 2022)
 --------------
 
