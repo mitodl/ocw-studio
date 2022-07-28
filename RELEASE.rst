@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.70.0
+--------------
+
+- add local s3 storage emulation with minio (#1421)
+
 Version 0.69.0 (Released July 27, 2022)
 --------------
 
