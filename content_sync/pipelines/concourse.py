@@ -513,7 +513,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         version,
         api: Optional[PipelineApi] = None,
