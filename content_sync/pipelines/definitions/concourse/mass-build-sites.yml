@@ -149,18 +149,14 @@ jobs:
               NAME=$(echo $1 | jq -c '.name' | tr -d '"')
               curl -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"((version))","status":"errored"}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/
             }
-            index=0
             jq -c '.sites[]' publishable_sites/sites.json | while read i; do
-              if [[ $index < 10 ]]
+              result=$(process_site $i) || result=1
+              echo "RESULT IS $result"
+              if [[ $result == 1 ]]
               then
-                result=$(process_site $i) || result=1
-                echo "RESULT IS $result"
-                if [[ $result == 1 ]]
-                then
-                  fail_site $i
-                fi
-                ((index=index+1))
+                fail_site $i
               fi
+            fi
             done
   # START NON-DEV
   - task: clear-cdn-cache
