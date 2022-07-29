@@ -28,6 +28,27 @@ class Command(BaseCommand):
             action="store_true",
             help="Delete existing mass publish pipelines first",
         )
+        parser.add_argument(
+            "-p",
+            "--prefix",
+            dest="prefix",
+            default="",
+            help="An optional prefix to prepend to the deploy path",
+        )
+        parser.add_argument(
+            "-t",
+            "--themes-branch",
+            dest="themes-branch",
+            default="",
+            help="An optional override for the branch of ocw-hugo-themes to use in the builds",
+        )
+        parser.add_argument(
+            "-r",
+            "--projects-branch",
+            dest="projects-branch",
+            default="",
+            help="An optional override for the branch of ocw-hugo-projects to use in the builds",
+        )
 
     def handle(self, *args, **options):
 
@@ -39,6 +60,9 @@ class Command(BaseCommand):
 
         unpause = options["unpause"]
         delete_all = options["delete_all"]
+        prefix = options["prefix"]
+        themes_branch = options["themes-branch"]
+        projects_branch = options["projects-branch"]
         start = now_in_utc()
 
         if delete_all:
@@ -51,7 +75,12 @@ class Command(BaseCommand):
                 self.stdout.error("No pipeline api configured")
 
         for version in (VERSION_DRAFT, VERSION_LIVE):
-            pipeline = get_mass_build_sites_pipeline(version)
+            pipeline = get_mass_build_sites_pipeline(
+                version,
+                prefix=prefix,
+                themes_branch=themes_branch,
+                projects_branch=projects_branch,
+            )
             pipeline.upsert_pipeline()
             self.stdout.write(f"Created {version} mass build pipeline")
             if unpause:
@@ -59,6 +88,4 @@ class Command(BaseCommand):
                 self.stdout.write(f"Unpaused {version} mass build pipeline")
 
         total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(
-            "Pipeline upsert finished, took {} seconds".format(total_seconds)
-        )
+        self.stdout.write(f"Pipeline upsert finished, took {total_seconds} seconds")

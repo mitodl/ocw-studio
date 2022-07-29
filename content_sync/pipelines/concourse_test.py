@@ -2,6 +2,7 @@
 import json
 from html import unescape
 from urllib.parse import quote, urljoin
+from main.utils import is_dev
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -548,8 +549,19 @@ def test_upsert_pipeline(
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+@pytest.mark.parametrize("themes_branch", ["", "main", "test_themes_branch"])
+@pytest.mark.parametrize("projects_branch", ["", "main", "test_projects_branch"])
+@pytest.mark.parametrize("prefix", ["", "/test_prefix", "test_prefix"])
 def test_upsert_mass_build_pipeline(
-    settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
+    settings,
+    pipeline_settings,
+    mocker,
+    mock_auth,
+    pipeline_exists,
+    version,
+    themes_branch,
+    projects_branch,
+    prefix,
 ):  # pylint:disable=too-many-locals,too-many-arguments
     """The mass build pipeline should have expected configuration"""
     expected_template_vars = get_template_vars()
@@ -560,8 +572,26 @@ def test_upsert_mass_build_pipeline(
         ),
         name=settings.ROOT_WEBSITE_NAME,
     )
-    instance_vars = f'?vars={quote(json.dumps({"version": version}))}'
-    url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseMassBuildSitesPipeline.PIPELINE_NAME}/config{instance_vars}"
+    themes_branch = (
+        themes_branch if themes_branch and not is_dev() else get_theme_branch()
+    )
+    projects_branch = (
+        projects_branch
+        if projects_branch and not is_dev()
+        else settings.OCW_HUGO_THEMES_BRANCH or settings.GITHUB_WEBHOOK_BRANCH
+    )
+    if prefix:
+        stripped_prefix = prefix[1:] if prefix.startswith("/") else prefix
+    else:
+        stripped_prefix = ""
+    instance_vars = {
+        "version": version,
+        "themes_branch": themes_branch,
+        "projects_branch": projects_branch,
+        "prefix": stripped_prefix,
+    }
+    instance_vars_str = f"?vars={quote(json.dumps(instance_vars))}"
+    url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseMassBuildSitesPipeline.PIPELINE_NAME}/config{instance_vars_str}"
 
     if not pipeline_exists:
         mock_get = mocker.patch(
@@ -576,7 +606,7 @@ def test_upsert_mass_build_pipeline(
     mock_put_headers = mocker.patch(
         "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
-    pipeline = MassBuildSitesPipeline(version)
+    pipeline = MassBuildSitesPipeline(**instance_vars)
     pipeline.upsert_pipeline()
 
     mock_get.assert_any_call(url_path)
@@ -595,11 +625,15 @@ def test_upsert_mass_build_pipeline(
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert (
-        f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH s3://{bucket}/$SITE_URL"
+        f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH s3://{bucket}$PREFIX/$SITE_URL"
         in config_str
     )
     assert bucket in config_str
     assert version in config_str
+    if stripped_prefix:
+        assert f'\\"PREFIX\\": \\"{stripped_prefix}\\"' in config_str
+    assert f'\\"branch\\": \\"{themes_branch}\\"' in config_str
+    assert f'\\"branch\\": \\"{projects_branch}\\"' in config_str
     assert f"{hugo_projects_path}.git" in config_str
     assert static_api_url in config_str
 
