@@ -156,7 +156,6 @@ jobs:
               then
                 fail_site $i
               fi
-            fi
             done
   # START NON-DEV
   - task: clear-cdn-cache
