@@ -625,7 +625,7 @@ def test_upsert_mass_build_pipeline(
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert (
-        f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH s3://{bucket}$PREFIX/$SITE_URL"
+        f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH s3://{bucket}/$PREFIX/$SITE_URL"
         in config_str
     )
     assert bucket in config_str
