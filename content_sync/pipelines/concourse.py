@@ -513,7 +513,14 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
 
-    def __init__(self, version, api: Optional[PipelineApi] = None):
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        version,
+        api: Optional[PipelineApi] = None,
+        prefix: Optional[str] = None,
+        themes_branch: Optional[str] = None,
+        projects_branch: Optional[str] = None,
+    ):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
             "AWS_PREVIEW_BUCKET_NAME",
@@ -528,9 +535,23 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
         ]
         super().__init__(api=api)
         self.pipeline_name = "mass_build_sites"
-        self.BRANCH = get_theme_branch()
         self.VERSION = version
-        self.set_instance_vars({"version": version})
+        if prefix:
+            self.PREFIX = prefix[1:] if prefix.startswith("/") else prefix
+        else:
+            self.PREFIX = ""
+        self.THEMES_BRANCH = themes_branch if themes_branch else get_theme_branch()
+        self.PROJECTS_BRANCH = (
+            projects_branch if projects_branch else self.THEMES_BRANCH
+        )
+        self.set_instance_vars(
+            {
+                "version": version,
+                "themes_branch": self.THEMES_BRANCH,
+                "projects_branch": self.PROJECTS_BRANCH,
+                "prefix": self.PREFIX,
+            }
+        )
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals
         """
@@ -586,13 +607,13 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
                 "((artifacts-bucket))", template_vars["artifacts_bucket_name"] or ""
             )
             .replace("((ocw-bucket))", template_vars["destination_bucket"] or "")
-            .replace("((ocw-hugo-themes-branch))", self.BRANCH)
+            .replace("((ocw-hugo-themes-branch))", self.THEMES_BRANCH)
             .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
             .replace(
                 "((ocw-hugo-projects-branch))",
-                (settings.OCW_HUGO_PROJECTS_BRANCH or self.BRANCH)
+                (settings.OCW_HUGO_PROJECTS_BRANCH or self.PROJECTS_BRANCH)
                 if is_dev()
-                else self.BRANCH,
+                else self.PROJECTS_BRANCH,
             )
             .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
             .replace("((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG)
@@ -614,6 +635,14 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
             .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
             .replace("((resource-base-url))", template_vars["resource_base_url"])
+            .replace("((prefix))", self.PREFIX)
+            .replace(
+                "((trigger))",
+                str(
+                    self.THEMES_BRANCH == settings.GITHUB_WEBHOOK_BRANCH
+                    and self.PROJECTS_BRANCH == settings.GITHUB_WEBHOOK_BRANCH
+                ),
+            )
         )
         self.upsert_config(config_str, self.PIPELINE_NAME)
 

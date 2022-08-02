@@ -46,13 +46,13 @@ jobs:
     trigger: false
   - get: webpack-json
     # START NON-DEV
-    trigger: true
+    trigger: ((trigger))
     # END NON-DEV
   - get: ocw-hugo-projects
     timeout: 1m
     attempts: 3
     # START NON-DEV
-    trigger: true
+    trigger: ((trigger))
     # END NON-DEV
   - task: get-sites
     timeout: 2m
@@ -81,6 +81,7 @@ jobs:
       STATIC_API_BASE_URL: ((static-api-base-url))
       GIT_KEY: ((git-private-key-var))
       SITEMAP_DOMAIN: ((sitemap-domain))
+      PREFIX: ((prefix))
       # START DEV-ONLY
       AWS_ACCESS_KEY_ID: ((minio-root-user))
       AWS_SECRET_ACCESS_KEY: ((minio-root-password))
@@ -134,10 +135,10 @@ jobs:
               fi
               cd $CURDIR/$SHORT_ID
               cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
-              hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl /$BASE_URL --themesDir ../ocw-hugo-themes/ ((build-drafts))  || return 1
+              hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl /$PREFIX/$BASE_URL --themesDir ../ocw-hugo-themes/ ((build-drafts))  || return 1
               cd $CURDIR
-              aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH s3://((ocw-bucket))/$SITE_URL --metadata site-id=$NAME || return 1            
-              aws s3((cli-endpoint-url)) sync $SHORT_ID/public s3://((ocw-bucket))/$BASE_URL --metadata site-id=$NAME || return 1
+              aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH s3://((ocw-bucket))/$PREFIX/$SITE_URL --metadata site-id=$NAME || return 1            
+              aws s3((cli-endpoint-url)) sync $SHORT_ID/public s3://((ocw-bucket))/$PREFIX/$BASE_URL --metadata site-id=$NAME || return 1
               curl -X POST -H 'Content-Type: application/json' --data '{"webhook_key":"((open-webhook-key))","prefix":"'"$SITE_URL"/'","version":"((version))"}' ((open-discussions-url))/api/v0/ocw_next_webhook/
               curl -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"((version))","status":"succeeded"}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/
               rm -rf $SHORT_ID
