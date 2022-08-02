@@ -127,7 +127,7 @@ jobs:
               then
                 return 1
               fi
-              if [[ "$GITSSHKEY" != "" ]]
+              if [[ "$GITKEYSSH" != "" ]]
               then
                 git -c core.sshCommand="ssh $GITKEYSSH -o StrictHostKeyChecking=no" clone -b ((ocw-site-repo-branch)) ((markdown-uri))/$SHORT_ID.git || return 1
               else
