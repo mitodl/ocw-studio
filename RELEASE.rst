@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.70.1
+--------------
+
+- alternate theme rendering - mass build pipeline (#1429)
+
 Version 0.70.0 (Released July 28, 2022)
 --------------
 
