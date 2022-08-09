@@ -44,8 +44,6 @@ import LegacyShortcodes from "./plugins/LegacyShortcodes"
  */
 const SUPPORTED_PROGRAMMING_LANGUAGES = [
   { language: "plaintext", label: "Plain text" },
-  { language: "matlab", label: "Matlab" },
-  { language: "julia", label: "Julia" },
   { language: "c", label: "C" },
   { language: "cs", label: "C#" },
   { language: "cpp", label: "C++" },
@@ -54,23 +52,14 @@ const SUPPORTED_PROGRAMMING_LANGUAGES = [
   { language: "html", label: "HTML" },
   { language: "java", label: "Java" },
   { language: "javascript", label: "JavaScript" },
+  { language: "julia", label: "Julia" },
+  { language: "matlab", label: "Matlab" },
   { language: "php", label: "PHP" },
   { language: "python", label: "Python" },
   { language: "ruby", label: "Ruby" },
   { language: "typescript", label: "TypeScript" },
   { language: "xml", label: "XML" }
-].sort((first, second) => {
-  const labelOne = first.label.toUpperCase()
-  const labelTwo = second.label.toUpperCase()
-
-  if (labelOne < labelTwo) {
-    return -1
-  }
-  if (labelOne > labelTwo) {
-    return 1
-  }
-  return 0
-})
+]
 
 export const FullEditorConfig = {
   plugins: [
