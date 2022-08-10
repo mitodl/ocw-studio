@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.70.1
+Version 0.70.1 (Released August 10, 2022)
 --------------
 
 - GITKEYSSH not GITSSHKEY (#1432)
