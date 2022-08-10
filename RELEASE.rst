@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.70.1 (Released August 10, 2022)
+--------------
+
+- GITKEYSSH not GITSSHKEY (#1432)
+- alternate theme rendering - mass build pipeline (#1429)
+
 Version 0.70.0 (Released July 28, 2022)
 --------------
 
