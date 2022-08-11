@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.71.0
+--------------
+
+- Setting default language for code blocks to plain text (#1437)
+
 Version 0.70.1 (Released August 10, 2022)
 --------------
 
