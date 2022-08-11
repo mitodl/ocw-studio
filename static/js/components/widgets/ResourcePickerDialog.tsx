@@ -18,6 +18,7 @@ import {
   RESOURCE_LINK
 } from "../../lib/ckeditor/plugins/constants"
 import { WebsiteContent } from "../../types/websites"
+import { useWebsite } from "../../context/Website"
 
 interface Props {
   mode: ResourceDialogMode
@@ -29,12 +30,23 @@ interface Props {
 
 interface TabSettings {
   title: string
-  id: TabIds
-  contentType: ContentType
+  id: string
+  contentType: string
   resourcetype: string | null
   embeddable: boolean
   singleColumn: boolean
-  sourceWebsiteName?: string
+}
+
+export function toTabSettings(elt: string[]) {
+  const newTabSettings: TabSettings = {
+    title:        elt[1],
+    id:           elt[0],
+    contentType:  elt[0],
+    resourcetype: null,
+    embeddable:   false,
+    singleColumn: true
+  }
+  return newTabSettings
 }
 
 export enum TabIds {
@@ -81,62 +93,6 @@ const otherFilesTab: TabSettings = {
   embeddable:   false,
   singleColumn: true
 }
-const pageTab: TabSettings = {
-  title:        "Pages",
-  id:           TabIds.Pages,
-  contentType:  ContentType.Page,
-  resourcetype: null,
-  embeddable:   false,
-  singleColumn: true
-}
-const courseCollectionTab: TabSettings = {
-  title:             "Course Collections",
-  id:                TabIds.CourseCollections,
-  contentType:       ContentType.CourseCollections,
-  resourcetype:      null,
-  embeddable:        false,
-  singleColumn:      true,
-  sourceWebsiteName: "ocw-www"
-}
-const resourcCollectionTab: TabSettings = {
-  title:        "Resource Collections",
-  id:           TabIds.ResourceCollections,
-  contentType:  ContentType.ResourceCollections,
-  resourcetype: null,
-  embeddable:   false,
-  singleColumn: true
-}
-
-const videoGallery: TabSettings = {
-  title:        "Video Gallery",
-  id:           TabIds.VideoGallery,
-  contentType:  ContentType.VideoGallery,
-  resourcetype: null,
-  embeddable:   false,
-  singleColumn: true
-}
-const resourceList: TabSettings = {
-  title:        "Resource List",
-  id:           TabIds.ResourceList,
-  contentType:  ContentType.ResourceList,
-  resourcetype: null,
-  embeddable:   false,
-  singleColumn: true
-}
-
-/**
- * Maps a content name from our config schemas to a group of tabs.
- * Slightly awkward because most content types correspond to a single tab,
- * except resources, which have separate tabs according to resourcetype
- */
-const TABS: Record<string, TabSettings[]> = {
-  resource:             [documentTab, videoTab, imageTab, otherFilesTab],
-  page:                 [pageTab],
-  course_collections:   [courseCollectionTab],
-  resource_collections: [resourcCollectionTab],
-  video_gallery:        [videoGallery],
-  "resource-list":      [resourceList]
-}
 
 const modeText = {
   [RESOURCE_EMBED]: {
@@ -151,13 +107,32 @@ const modeText = {
 
 export default function ResourcePickerDialog(props: Props): JSX.Element {
   const { mode, isOpen, closeDialog, insertEmbed, contentNames } = props
+  const website = useWebsite()
+  const definedCategories = useMemo(
+    () => {
+      return website.starter?.config?.collections
+        .filter(entry => entry.category === "Content")
+        .flatMap(elt => [elt.name, elt.label])
+    },
+    [website.starter?.config?.collections])
   const tabs = useMemo(
     () =>
       contentNames
-        .flatMap(name => TABS[name])
+        .flatMap(name => {
+          if (name && name === "resource") {
+            return [documentTab, videoTab, imageTab, otherFilesTab]
+          } else if (
+            definedCategories &&
+            definedCategories?.indexOf(name) !== -1
+          ) {
+            const idx = definedCategories?.indexOf(name)
+            return [toTabSettings(definedCategories?.slice(idx, idx + 2))]
+          } else return []
+        })
         .filter(tab => tab && (mode !== RESOURCE_EMBED || tab.embeddable)),
-    [mode, contentNames]
+    [contentNames, definedCategories, mode]
   )
+
   const [activeTabId, setActiveTabId] = useState(tabs[0].id)
 
   useEffect(() => setActiveTabId(tabs[0].id), [tabs])
@@ -237,7 +212,6 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                     focusResource={setFocusedResource}
                     focusedResource={focusedResource}
                     singleColumn={tab.singleColumn}
-                    sourceWebsiteName={tab.sourceWebsiteName}
                   />
                 ) : null}
               </TabPane>
