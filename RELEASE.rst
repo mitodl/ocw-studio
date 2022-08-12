@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.71.1
+--------------
+
+- don't retry the mass build automatically (#1445)
+- clean up mass build sites logging (#1442)
+
 Version 0.71.0 (Released August 11, 2022)
 --------------
 
