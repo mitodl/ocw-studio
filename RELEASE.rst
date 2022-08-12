@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.71.1
+--------------
+
+- clean up mass build sites logging (#1442)
+
 Version 0.71.0 (Released August 11, 2022)
 --------------
 
