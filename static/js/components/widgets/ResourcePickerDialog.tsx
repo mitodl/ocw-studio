@@ -108,13 +108,11 @@ const modeText = {
 export default function ResourcePickerDialog(props: Props): JSX.Element {
   const { mode, isOpen, closeDialog, insertEmbed, contentNames } = props
   const website = useWebsite()
-  const definedCategories = useMemo(
-    () => {
-      return website.starter?.config?.collections
-        .filter(entry => entry.category === "Content")
-        .flatMap(elt => [elt.name, elt.label])
-    },
-    [website.starter?.config?.collections])
+  const definedCategories = useMemo(() => {
+    return website.starter?.config?.collections
+      .filter(entry => entry.category === "Content")
+      .flatMap(elt => [elt.name, elt.label])
+  }, [website.starter?.config?.collections])
   const tabs = useMemo(
     () =>
       contentNames
