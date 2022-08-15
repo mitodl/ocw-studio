@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.71.1
+Version 0.71.1 (Released August 15, 2022)
 --------------
 
 - don't retry the mass build automatically (#1445)
