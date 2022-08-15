@@ -9,7 +9,10 @@ import IntegrationTestHelper, {
 } from "../../util/integration_test_helper_old"
 import { useDebouncedState } from "../../hooks/state"
 import { useState } from "react"
-import { makeWebsiteContentDetail } from "../../util/factories/websites"
+import {
+  makeWebsiteContentDetail,
+  makeWebsiteDetail
+} from "../../util/factories/websites"
 import { WebsiteContent } from "../../types/websites"
 import {
   RESOURCE_EMBED,
@@ -17,6 +20,8 @@ import {
 } from "../../lib/ckeditor/plugins/constants"
 import { ResourceType } from "../../constants"
 import Dialog from "../Dialog"
+import WebsiteContext from "../../context/Website"
+import { Website } from "../../types/websites"
 
 jest.mock("../../hooks/state")
 
@@ -44,10 +49,12 @@ describe("ResourcePickerDialog", () => {
     insertEmbedStub: sinon.SinonStub,
     closeDialogStub: sinon.SinonStub,
     setStub: sinon.SinonStub,
-    resource: WebsiteContent
+    resource: WebsiteContent,
+    website: Website
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
+    website = makeWebsiteDetail()
 
     insertEmbedStub = helper.sandbox.stub()
     closeDialogStub = helper.sandbox.stub()
@@ -57,13 +64,20 @@ describe("ResourcePickerDialog", () => {
     // @ts-ignore
     useDebouncedState.mockReturnValue(["", setStub])
 
-    render = helper.configureRenderer(ResourcePickerDialog, {
-      mode:         RESOURCE_EMBED,
-      contentNames: ["resource", "page"],
-      isOpen:       true,
-      closeDialog:  closeDialogStub,
-      insertEmbed:  insertEmbedStub
-    })
+    render = helper.configureRenderer(
+      props => (
+        <WebsiteContext.Provider value={website}>
+          <ResourcePickerDialog {...props} />
+        </WebsiteContext.Provider>
+      ),
+      {
+        mode:         RESOURCE_EMBED,
+        contentNames: ["resource", "page"],
+        isOpen:       true,
+        closeDialog:  closeDialogStub,
+        insertEmbed:  insertEmbedStub
+      }
+    )
   })
 
   afterEach(() => {
