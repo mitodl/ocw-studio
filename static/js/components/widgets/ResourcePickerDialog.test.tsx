@@ -72,7 +72,7 @@ describe("ResourcePickerDialog", () => {
       ),
       {
         mode:         RESOURCE_EMBED,
-        contentNames: ["resource", "page"],
+        contentNames: ["resource", "pages"],
         isOpen:       true,
         closeDialog:  closeDialogStub,
         insertEmbed:  insertEmbedStub
@@ -102,29 +102,18 @@ describe("ResourcePickerDialog", () => {
     },
     {
       mode:         RESOURCE_LINK,
-      contentNames: ["page"],
+      contentNames: ["pages"],
       expectedTabs: [TabIds.Pages]
     },
     {
       mode:         RESOURCE_LINK,
-      contentNames: ["course_collections"],
-      expectedTabs: [TabIds.CourseCollections]
-    },
-    {
-      mode:         RESOURCE_LINK,
-      contentNames: ["resource_collections"],
-      expectedTabs: [TabIds.ResourceCollections]
-    },
-    {
-      mode:         RESOURCE_LINK,
-      contentNames: ["resource", "page", "course_collections"],
+      contentNames: ["resource", "pages"],
       expectedTabs: [
         TabIds.Documents,
         TabIds.Videos,
         TabIds.Images,
         TabIds.Other,
-        TabIds.Pages,
-        TabIds.CourseCollections
+        TabIds.Pages
       ]
     }
   ])(
@@ -226,7 +215,7 @@ describe("ResourcePickerDialog", () => {
       contentType:  "resource",
       singleColumn: true
     },
-    { index: 4, resourcetype: null, contentType: "page", singleColumn: true }
+    { index: 4, resourcetype: null, contentType: "pages", singleColumn: true }
   ])(
     "passes the correct props to ResourcePickerListing when main tab $index is clicked",
     async ({ resourcetype, contentType, singleColumn, index }) => {
