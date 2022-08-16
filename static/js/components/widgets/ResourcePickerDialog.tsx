@@ -54,7 +54,7 @@ export enum TabIds {
   Documents = "documents",
   Images = "images",
   Videos = "videos",
-  Pages = "pages",
+  Pages = "page",
   CourseCollections = "course-collection",
   ResourceCollections = "resource_collections",
   VideoGallery = "video_gallery",
@@ -113,6 +113,13 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
       .filter(entry => entry.category === "Content")
       .flatMap(elt => [elt.name, elt.label])
   }, [website.starter?.config?.collections])
+
+  console.log("definedCategories")
+  console.log(definedCategories)
+
+  console.log("contentNames")
+  console.log(contentNames)
+
   const tabs = useMemo(
     () =>
       contentNames
@@ -167,7 +174,8 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
   }, [insertEmbed, focusedResource, closeDialog, isOpen, mode])
 
   const { acceptText, title } = modeText[mode]
-
+  console.log("tabs")
+  console.log(tabs)
   return (
     <Dialog
       open={isOpen}

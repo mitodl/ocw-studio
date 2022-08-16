@@ -72,7 +72,7 @@ describe("ResourcePickerDialog", () => {
       ),
       {
         mode:         RESOURCE_EMBED,
-        contentNames: ["resource", "pages"],
+        contentNames: ["resource", "page"],
         isOpen:       true,
         closeDialog:  closeDialogStub,
         insertEmbed:  insertEmbedStub
@@ -102,12 +102,12 @@ describe("ResourcePickerDialog", () => {
     },
     {
       mode:         RESOURCE_LINK,
-      contentNames: ["pages"],
+      contentNames: ["page"],
       expectedTabs: [TabIds.Pages]
     },
     {
       mode:         RESOURCE_LINK,
-      contentNames: ["resource", "pages"],
+      contentNames: ["resource", "page"],
       expectedTabs: [
         TabIds.Documents,
         TabIds.Videos,
@@ -215,7 +215,7 @@ describe("ResourcePickerDialog", () => {
       contentType:  "resource",
       singleColumn: true
     },
-    { index: 4, resourcetype: null, contentType: "pages", singleColumn: true }
+    { index: 4, resourcetype: null, contentType: "page", singleColumn: true }
   ])(
     "passes the correct props to ResourcePickerListing when main tab $index is clicked",
     async ({ resourcetype, contentType, singleColumn, index }) => {
