@@ -19,6 +19,7 @@ import {
 } from "../../lib/ckeditor/plugins/constants"
 import { WebsiteContent } from "../../types/websites"
 import { useWebsite } from "../../context/Website"
+import _, { keyBy } from "lodash"
 
 interface Props {
   mode: ResourceDialogMode
@@ -37,11 +38,14 @@ interface TabSettings {
   singleColumn: boolean
 }
 
-export function toTabSettings(elt: string[]) {
+export function toTabSettings(
+  contentType: string,
+  contentTitle: string
+): TabSettings {
   const newTabSettings: TabSettings = {
-    title:        elt[1],
-    id:           elt[0],
-    contentType:  elt[0],
+    title:        contentTitle,
+    id:           contentType,
+    contentType:  contentType,
     resourcetype: null,
     embeddable:   false,
     singleColumn: true
@@ -109,9 +113,11 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
   const { mode, isOpen, closeDialog, insertEmbed, contentNames } = props
   const website = useWebsite()
   const definedCategories = useMemo(() => {
-    return website.starter?.config?.collections
-      .filter(entry => entry.category === "Content")
-      .flatMap(elt => [elt.name, elt.label])
+    const contentCollections =
+      website.starter?.config?.collections.filter(
+        entry => entry.category === "Content"
+      ) ?? []
+    return keyBy(contentCollections, collection => collection.name)
   }, [website.starter?.config?.collections])
   const tabs = useMemo(
     () =>
@@ -119,12 +125,13 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
         .flatMap(name => {
           if (name && name === "resource") {
             return [documentTab, videoTab, imageTab, otherFilesTab]
-          } else if (
-            definedCategories &&
-            definedCategories?.indexOf(name) !== -1
-          ) {
-            const idx = definedCategories?.indexOf(name)
-            return [toTabSettings(definedCategories?.slice(idx, idx + 2))]
+          } else if (definedCategories && _.has(definedCategories, name)) {
+            return [
+              toTabSettings(
+                definedCategories[name]["name"],
+                definedCategories[name]["label"]
+              )
+            ]
           } else return []
         })
         .filter(tab => tab && (mode !== RESOURCE_EMBED || tab.embeddable)),
