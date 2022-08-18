@@ -38,10 +38,7 @@ interface TabSettings {
   singleColumn: boolean
 }
 
-export function toTabSettings(
-  contentType: string,
-  contentTitle: string
-): TabSettings {
+const toTabSettings = (contentType: string, contentTitle: string) => {
   const newTabSettings: TabSettings = {
     title:        contentTitle,
     id:           contentType,
@@ -125,7 +122,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
         .flatMap(name => {
           if (name && name === "resource") {
             return [documentTab, videoTab, imageTab, otherFilesTab]
-          } else if (definedCategories && _.has(definedCategories, name)) {
+          } else if (_.has(definedCategories, name)) {
             return [
               toTabSettings(
                 definedCategories[name]["name"],
