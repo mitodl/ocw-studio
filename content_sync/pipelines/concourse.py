@@ -34,6 +34,8 @@ from content_sync.utils import (
     get_theme_branch,
     strip_dev_lines,
     strip_non_dev_lines,
+    strip_offline_lines,
+    strip_online_lines,
 )
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
@@ -211,14 +213,26 @@ class GeneralPipeline(BaseGeneralPipeline):
         """Get a Concourse API instance"""
         return PipelineApi()
 
-    def get_pipeline_definition(self, pipeline_file: str):
+    def get_pipeline_definition(
+        self, pipeline_file: str, offline: Optional[bool] = None
+    ):
         """Get the pipeline definition as a string, processing for environment"""
-        pipeline_template = os.path.join(os.path.dirname(__file__), pipeline_file)
-        return (
-            strip_non_dev_lines(pipeline_template)
-            if is_dev()
-            else strip_dev_lines(pipeline_template)
-        )
+        with open(
+            os.path.join(os.path.dirname(__file__), pipeline_file)
+        ) as pipeline_config_file:
+            pipeline_config = pipeline_config_file.read()
+            pipeline_config = (
+                strip_non_dev_lines(pipeline_config)
+                if is_dev()
+                else strip_dev_lines(pipeline_config)
+            )
+            pipeline_config = (
+                strip_online_lines(pipeline_config)
+                if offline
+                else strip_offline_lines(pipeline_config)
+            )
+            print(pipeline_config)
+            return pipeline_config
 
     def set_instance_vars(self, instance_vars: Dict):
         """Set the instance vars for the pipeline"""
@@ -520,6 +534,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
         prefix: Optional[str] = None,
         themes_branch: Optional[str] = None,
         projects_branch: Optional[str] = None,
+        offline: Optional[bool] = None,
     ):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
@@ -544,12 +559,14 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
         self.PROJECTS_BRANCH = (
             projects_branch if projects_branch else self.THEMES_BRANCH
         )
+        self.OFFLINE = offline
         self.set_instance_vars(
             {
                 "version": version,
                 "themes_branch": self.THEMES_BRANCH,
                 "projects_branch": self.PROJECTS_BRANCH,
                 "prefix": self.PREFIX,
+                "offline": self.OFFLINE,
             }
         )
 
@@ -599,7 +616,9 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             )
 
         config_str = (
-            self.get_pipeline_definition("definitions/concourse/mass-build-sites.yml")
+            self.get_pipeline_definition(
+                "definitions/concourse/mass-build-sites.yml", offline=self.OFFLINE
+            )
             .replace("((markdown-uri))", markdown_uri)
             .replace("((git-private-key-var))", private_key_var)
             .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)

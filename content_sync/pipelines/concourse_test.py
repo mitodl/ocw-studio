@@ -589,6 +589,7 @@ def test_upsert_mass_build_pipeline(
         "themes_branch": themes_branch,
         "projects_branch": projects_branch,
         "prefix": stripped_prefix,
+        "offline": False,
     }
     instance_vars_str = f"?vars={quote(json.dumps(instance_vars))}"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseMassBuildSitesPipeline.PIPELINE_NAME}/config{instance_vars_str}"
