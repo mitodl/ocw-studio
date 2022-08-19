@@ -190,6 +190,8 @@ def strip_lines_between(pipeline_config, start_tag, end_tag):
         str: The contents of the file found at pipeline_config_file_path with the lines between start_tag and end_tag stripped out
     """
     check_matching_tags(pipeline_config, start_tag, end_tag)
+    if start_tag not in pipeline_config and end_tag not in pipeline_config:
+        return pipeline_config
     sections_found = 0
     section_matches = [{}]
     lines = []
