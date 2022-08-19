@@ -139,11 +139,11 @@ def get_theme_branch():
 
 def check_matching_tags(pipeline_config, start_tag, end_tag):
     """
-    Opens a file and checks to make sure the same number of start_tag and end_tag strings exist in its contents
+    Iterates lines in pipeline_config and checks to make sure the same number of start_tag and end_tag strings exist in its contents
     Also checks to make sure that start and end tags are properly prefixed and their suffixes match
 
     Args:
-        pipeline_config_file_path (str): The path to a pipeline config file
+        pipeline_config (str): A pipeline config in string format
         start_tag (str): The start tag delimiter
         end_tag (str): The end tag delimiter
 
@@ -178,16 +178,18 @@ def check_matching_tags(pipeline_config, start_tag, end_tag):
 
 def strip_lines_between(pipeline_config, start_tag, end_tag):
     """
-    Opens a file, reads the contents and strips out the lines between any matching instances of start_tag and end_tag
-    start_tag must start with "# START" followed by a tag and end_tag must start with "# END" followed by the same tag, separated by spaces
+    Strips out the lines between any matching instances of start_tag and end_tag from pipeline_config
+
+    start_tag must start with "# START" followed by a tag and end_tag must start
+    with "# END" followed by the same tag, separated by spaces
 
     Args:
-        pipeline_config_file_path (str): The path to a pipeline config file
+        pipeline_config (str): A pipeline config in string format
         start_tag (str): The start tag delimiter
         end_tag (str): The end tag delimiter
 
     Returns:
-        str: The contents of the file found at pipeline_config_file_path with the lines between start_tag and end_tag stripped out
+        str: The contents of pipeline_config with the lines between start_tag and end_tag stripped out
     """
     check_matching_tags(pipeline_config, start_tag, end_tag)
     if start_tag not in pipeline_config and end_tag not in pipeline_config:
@@ -222,10 +224,10 @@ def strip_dev_lines(pipeline_config):
     Runs strip_lines_between for content_sync.utils.constants.DEV_START and DEV_END
 
     Args:
-        pipeline_config_file_path (str): The path to a pipeline config file
+        pipeline_config (str): A pipeline config in string format
 
     Returns:
-        str: The contents of the file found at pipeline_config_file_path with the lines between DEV_START and DEV_END stripped out
+        str: The contents of pipeline_config with the lines between DEV_START and DEV_END stripped out
     """
     return strip_lines_between(pipeline_config, DEV_START, DEV_END)
 
@@ -235,10 +237,10 @@ def strip_non_dev_lines(pipeline_config):
     Runs strip_lines_between for content_sync.utils.constants.NON_DEV_START and NON_DEV_END
 
     Args:
-        pipeline_config_file_path (str): The path to a pipeline config file
+        pipeline_config (str): A pipeline config in string format
 
     Returns:
-        str: The contents of the file found at pipeline_config_file_path with the lines between NON_DEV_START and NON_DEV_END stripped out
+        str: The contents of pipeline_config with the lines between NON_DEV_START and NON_DEV_END stripped out
     """
     return strip_lines_between(pipeline_config, NON_DEV_START, NON_DEV_END)
 
@@ -248,10 +250,10 @@ def strip_offline_lines(pipeline_config):
     Runs strip_lines_between for content_sync.utils.constants.OFFLINE_START and OFFLINE_END
 
     Args:
-        pipeline_config_file_path (str): The path to a pipeline config file
+        pipeline_config (str): A pipeline config in string format
 
     Returns:
-        str: The contents of the file found at pipeline_config_file_path with the lines between OFFLINE_START and OFFLINE_END stripped out
+        str: The contents of pipeline_config with the lines between OFFLINE_START and OFFLINE_END stripped out
     """
     return strip_lines_between(pipeline_config, OFFLINE_START, OFFLINE_END)
 
@@ -261,11 +263,11 @@ def strip_online_lines(pipeline_config):
     Runs strip_lines_between for content_sync.utils.constants.NON_DEV_START and NON_DEV_END
 
     Args:
-        pipeline_config_file_path (str): The path to a pipeline config file
+        pipeline_config (str): A pipeline config in string format
         start_tag (str): The start tag delimiter
         end_tag (str): The end tag delimiter
 
     Returns:
-        str: The contents of the file found at pipeline_config_file_path with the lines between ONLINE_START and ONLINE_END stripped out
+        str: The contents of pipeline_config with the lines between ONLINE_START and ONLINE_END stripped out
     """
     return strip_lines_between(pipeline_config, ONLINE_START, ONLINE_END)
