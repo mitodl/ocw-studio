@@ -33,11 +33,13 @@ resources:
       bucket: ((artifacts-bucket))
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
   # END ONLINE-ONLY
+# START ONLINE-ONLY
 task-config: &webhook-config
   platform: linux
   image_resource:
     type: docker-image
     source: {repository: curlimages/curl}
+# END ONLINE-ONLY
 jobs:
 - name: mass-publish
   serial: true
@@ -212,10 +214,12 @@ jobs:
                 echo "SYNCING $SHORT_ID/public to s3://((ocw-bucket))$PREFIX/$SITE_URL failed for $NAME" > /dev/tty
                 return 1
               fi
+              # START ONLINE-ONLY
               # START NON-DEV
               curl -s -X POST -H 'Content-Type: application/json' --data '{"webhook_key":"((open-webhook-key))","prefix":"'"$SITE_URL"/'","version":"((version))"}' ((open-discussions-url))/api/v0/ocw_next_webhook/
               # END NON-DEV
               curl -s -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"((version))","status":"succeeded"}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/
+              # END ONLINE-ONLY
               rm -rf $SHORT_ID
               echo "PUBLISH OF $NAME COMPLETE" > /dev/tty
               return 0
@@ -224,7 +228,9 @@ jobs:
             {
               NAME=$(echo $1 | jq -c '.name' | tr -d '"')
               echo "PUBLISH OF $NAME FAILED" > /dev/tty
+              # START ONLINE-ONLY
               curl -s -X POST -H 'Content-Type: application/json' -H 'Authorization: Bearer ((api-token))' --data '{"version":"((version))","status":"errored"}' ((ocw-studio-url))/api/websites/$NAME/pipeline_status/
+              # END ONLINE-ONLY
             }
             while read SITE; do
               RESULT=$(process_site $SITE) || RESULT=1
@@ -242,6 +248,7 @@ jobs:
               echo "ALL BUILDS SUCCEEDED" > /dev/tty
               exit 0
             fi
+  # START ONLINE-ONLY
   # START NON-DEV
   - task: clear-cdn-cache
     timeout: 1m
@@ -263,3 +270,4 @@ jobs:
           - 'Fastly-Soft-Purge: 1'
           - https://api.fastly.com/service/((fastly_((version)).service_id))/purge_all
   # END NON-DEV
+  # END ONLINE-ONLY
