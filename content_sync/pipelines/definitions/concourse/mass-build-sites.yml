@@ -21,6 +21,7 @@ resources:
     source:
       uri: ((ocw-hugo-projects-uri))
       branch: ((ocw-hugo-projects-branch))
+  # START ONLINE-ONLY
   - name: webpack-json
     type: s3-resource-iam
     source:
@@ -31,6 +32,7 @@ resources:
       # END DEV-ONLY
       bucket: ((artifacts-bucket))
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
+  # END ONLINE-ONLY
 task-config: &webhook-config
   platform: linux
   image_resource:
@@ -44,16 +46,43 @@ jobs:
     timeout: 1m
     attempts: 3
     trigger: false
+  # START ONLINE-ONLY
   - get: webpack-json
     # START NON-DEV
     trigger: ((trigger))
     # END NON-DEV
+  # END ONLINE-ONLY
   - get: ocw-hugo-projects
     timeout: 1m
     attempts: 3
     # START NON-DEV
     trigger: ((trigger))
     # END NON-DEV
+  # START OFFLINE-ONLY
+  - task: build-ocw-hugo-themes
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: mitodl/ocw-course-publisher, tag: 0.2}
+      inputs:
+      - name: ocw-hugo-themes
+      outputs:
+      - name: ocw-hugo-themes
+      params:
+        SEARCH_API_URL: ((search-api-url))
+      run:
+        path: sh
+        args:
+        - -exc
+        - |
+          cd ocw-hugo-themes
+          yarn install --pure-lockfile
+          npm run build:webpack
+          npm run build:githash
+          mkdir -p ./base-theme/static/static/
+          cp -r ./base-theme/dist/static/* ./base-theme/static/static/
+  # END OFFLINE-ONLY
   - task: get-sites
     timeout: 2m
     attempts: 3
@@ -96,7 +125,9 @@ jobs:
         - name: publishable_sites
         - name: ocw-hugo-projects
         - name: ocw-hugo-themes
+        # START ONLINE-ONLY
         - name: webpack-json
+        # END ONLINE-ONLY
       run:
         path: bash
         args:
@@ -140,7 +171,10 @@ jobs:
                 git clone -b ((ocw-site-repo-branch)) ((markdown-uri))/$SHORT_ID.git --quiet || return 1
               fi
               cd $CURDIR/$SHORT_ID
+              # START ONLINE-ONLY
               cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
+              # END ONLINE-ONLY
+              ls -lah ../ocw-hugo-themes/base-theme/static > /dev/tty
               # START OFFLINE-ONLY
               echo "PULLING IN STATIC RESOURCES FOR $NAME" > /dev/tty
               STUDIO_S3_RESULT=$(aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH ./content/static --only-show-errors) || STUDIO_S3_RESULT=1
@@ -152,7 +186,13 @@ jobs:
               touch ./content/static/_index.md
               # END OFFLINE-ONLY
               echo "RUNNING HUGO BUILD FOR $NAME" > /dev/tty
+              echo "BASE_URL: $BASE_URL" > /dev/tty
+              # START ONLINE-ONLY
               HUGO_RESULT=$(hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl $PREFIX/$BASE_URL --themesDir ../ocw-hugo-themes/ ((build-drafts)) --quiet) || HUGO_RESULT=1
+              # END ONLINE-ONLY
+              # START OFFLINE-ONLY
+              HUGO_RESULT=$(hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --themesDir ../ocw-hugo-themes/ ((build-drafts)) --quiet) || HUGO_RESULT=1
+              # END OFFLINE-ONLY
               if [[ $HUGO_RESULT == 1 ]]
               then
                 echo "HUGO BUILD FAILED FOR $NAME" > /dev/tty
@@ -168,6 +208,7 @@ jobs:
                 return 1
               fi
               # END ONLINE-ONLY
+              ls -lah $SHORT_ID/public > /dev/tty
               PUBLISH_S3_RESULT=$(aws s3((cli-endpoint-url)) sync $SHORT_ID/public s3://((ocw-bucket))$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1
               if [[ $PUBLISH_S3_RESULT == 1 ]]
               then

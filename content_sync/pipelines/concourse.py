@@ -547,6 +547,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             "GIT_ORGANIZATION",
             "GITHUB_WEBHOOK_BRANCH",
             "OCW_GTM_ACCOUNT_ID",
+            "SEARCH_API_URL",
         ]
         super().__init__(api=api)
         self.pipeline_name = "mass_build_sites"
@@ -655,6 +656,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
             .replace("((resource-base-url))", template_vars["resource_base_url"])
             .replace("((prefix))", self.PREFIX)
+            .replace("((search-api-url))", settings.SEARCH_API_URL)
             .replace(
                 "((trigger))",
                 str(
