@@ -174,7 +174,6 @@ jobs:
               # START ONLINE-ONLY
               cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
               # END ONLINE-ONLY
-              ls -lah ../ocw-hugo-themes/base-theme/static > /dev/tty
               # START OFFLINE-ONLY
               echo "PULLING IN STATIC RESOURCES FOR $NAME" > /dev/tty
               STUDIO_S3_RESULT=$(aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH ./content/static --only-show-errors) || STUDIO_S3_RESULT=1
@@ -186,7 +185,6 @@ jobs:
               touch ./content/static/_index.md
               # END OFFLINE-ONLY
               echo "RUNNING HUGO BUILD FOR $NAME" > /dev/tty
-              echo "BASE_URL: $BASE_URL" > /dev/tty
               # START ONLINE-ONLY
               HUGO_RESULT=$(hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl $PREFIX/$BASE_URL --themesDir ../ocw-hugo-themes/ ((build-drafts)) --quiet) || HUGO_RESULT=1
               # END ONLINE-ONLY
@@ -208,7 +206,6 @@ jobs:
                 return 1
               fi
               # END ONLINE-ONLY
-              ls -lah $SHORT_ID/public > /dev/tty
               PUBLISH_S3_RESULT=$(aws s3((cli-endpoint-url)) sync $SHORT_ID/public s3://((ocw-bucket))$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1
               if [[ $PUBLISH_S3_RESULT == 1 ]]
               then
