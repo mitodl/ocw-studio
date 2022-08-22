@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.71.2
+Version 0.71.2 (Released August 22, 2022)
 --------------
 
 - Pt/resource picker tabs (#1448)
