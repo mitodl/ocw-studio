@@ -526,7 +526,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
 
-    def __init__(  # pylint: disable=too-many-arguments,too-many-statements
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         version,
         api: Optional[PipelineApi] = None,
@@ -555,7 +555,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             self.PREFIX = prefix[1:] if prefix.startswith("/") else prefix
         else:
             self.PREFIX = ""
-        self.THEMES_BRANCH = themes_branch if themes_branch else get_theme_branch()
+        self.THEMES_BRANCH = themes_branch if themes_branch else get_theme_branch() # pylint: disable=too-many-statements
         self.PROJECTS_BRANCH = (
             projects_branch if projects_branch else self.THEMES_BRANCH
         )
