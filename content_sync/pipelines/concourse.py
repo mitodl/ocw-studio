@@ -555,7 +555,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             self.PREFIX = prefix[1:] if prefix.startswith("/") else prefix
         else:
             self.PREFIX = ""
-        self.THEMES_BRANCH = themes_branch if themes_branch else get_theme_branch() # pylint: disable=too-many-statements
+        self.THEMES_BRANCH = themes_branch if themes_branch else get_theme_branch()
         self.PROJECTS_BRANCH = (
             projects_branch if projects_branch else self.THEMES_BRANCH
         )
