@@ -231,7 +231,6 @@ class GeneralPipeline(BaseGeneralPipeline):
                 if offline
                 else strip_offline_lines(pipeline_config)
             )
-            print(pipeline_config)
             return pipeline_config
 
     def set_instance_vars(self, instance_vars: Dict):
