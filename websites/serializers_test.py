@@ -130,9 +130,7 @@ def test_website_serializer(has_starter):
 @pytest.mark.parametrize("drive_folder", [None, "abc123"])
 def test_website_status_serializer(mocker, settings, drive_folder, warnings):
     """WebsiteStatusSerializer should serialize a Website object with the correct status fields"""
-    mocker.patch(
-        "websites.serializers.incomplete_content_warnings", return_value=warnings
-    )
+    mocker.patch("websites.serializers.get_content_warnings", return_value=warnings)
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "dfg789"
     settings.DRIVE_SERVICE_ACCOUNT_CREDS = {"key": "value"}
     settings.DRIVE_SHARED_ID = "abc123"
@@ -222,7 +220,7 @@ def test_website_detail_serializer_is_admin(mocker, user_is_admin, has_user):
 
 
 def test_website_detail_serializer_with_url_format(mocker, ocw_site):
-    """ The url suggestion should be equal to the starter config site-url-format"""
+    """The url suggestion should be equal to the starter config site-url-format"""
     user = UserFactory.create(is_superuser=True)
     serialized = WebsiteDetailSerializer(
         instance=ocw_site,
@@ -236,7 +234,7 @@ def test_website_detail_serializer_with_url_format(mocker, ocw_site):
 
 
 def test_website_detail_serializer_with_url_format_partial(mocker, ocw_site):
-    """ The url suggestion should have relevant metadata fields filled in"""
+    """The url suggestion should have relevant metadata fields filled in"""
     user = UserFactory.create(is_superuser=True)
     term = "Fall"
     year = "2028"
@@ -258,7 +256,7 @@ def test_website_detail_serializer_with_url_format_partial(mocker, ocw_site):
 
 
 def test_website_collaborator_serializer():
-    """ WebsiteCollaboratorSerializer should serialize a User object with correct fields """
+    """WebsiteCollaboratorSerializer should serialize a User object with correct fields"""
     collaborator = (
         User.objects.filter(id=UserFactory.create().id)
         .annotate(role=Value(ROLE_EDITOR, CharField()))
@@ -641,7 +639,7 @@ def test_website_content_create_serializer(
 
 @pytest.mark.parametrize("is_root_site", [True, False])
 def test_website_publish_serializer_base_url(settings, is_root_site):
-    """ The WebsitePublishSerializer should return the correct base_url value """
+    """The WebsitePublishSerializer should return the correct base_url value"""
     site = WebsiteFactory.create(url_path="courses/my-site")
     settings.ROOT_WEBSITE_NAME = site.name if is_root_site else "some_other_root_name"
     serializer = WebsiteMassBuildSerializer(site)
@@ -651,7 +649,7 @@ def test_website_publish_serializer_base_url(settings, is_root_site):
 @pytest.mark.parametrize("has_metadata", [True, False])
 @pytest.mark.parametrize("has_legacy_uid", [True, False])
 def test_website_unpublish_serializer(has_legacy_uid, has_metadata):
-    """ The WebsiteUnublishSerializer should return the correct value for site_uid"""
+    """The WebsiteUnublishSerializer should return the correct value for site_uid"""
     site = WebsiteFactory.create(unpublished=True)
     legacy_uid = "e6748-d7d8-76a46-5cbc-5a42-12d3619e09"
     if has_metadata:

@@ -21,7 +21,7 @@ from users.models import User
 from websites import constants
 from websites.api import (
     detect_mime_type,
-    incomplete_content_warnings,
+    get_content_warnings,
     sync_website_title,
     update_youtube_thumbnail,
 )
@@ -39,7 +39,7 @@ ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is re
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):
-    """ Serializer for website starters """
+    """Serializer for website starters"""
 
     class Meta:
         model = WebsiteStarter
@@ -47,7 +47,7 @@ class WebsiteStarterSerializer(serializers.ModelSerializer):
 
 
 class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
-    """ Serializer for website starters with serialized config """
+    """Serializer for website starters with serialized config"""
 
     class Meta:
         model = WebsiteStarter
@@ -55,12 +55,12 @@ class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
 
 
 class WebsiteGoogleDriveMixin(serializers.Serializer):
-    """ Serializer for website google drive details"""
+    """Serializer for website google drive details"""
 
     gdrive_url = serializers.SerializerMethodField()
 
     def get_gdrive_url(self, instance):
-        """ Get the Google Drive folder URL for the site"""
+        """Get the Google Drive folder URL for the site"""
         if is_gdrive_enabled() and instance.gdrive_folder:
             return urljoin(gdrive_root_url(), instance.gdrive_folder)
         return None
@@ -73,11 +73,11 @@ class WebsiteValidationMixin(serializers.Serializer):
 
     def get_content_warnings(self, instance):
         """Return any missing content data warnings"""
-        return incomplete_content_warnings(instance)
+        return get_content_warnings(instance)
 
 
 class WebsiteSerializer(serializers.ModelSerializer):
-    """ Serializer for websites """
+    """Serializer for websites"""
 
     starter = WebsiteStarterSerializer(read_only=True)
     unpublished = serializers.ReadOnlyField()
@@ -105,7 +105,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
 
 
 class WebsiteUrlSerializer(serializers.ModelSerializer):
-    """ Serializer for assigning website urls """
+    """Serializer for assigning website urls"""
 
     def validate_url_path(self, value):
         """
@@ -148,7 +148,7 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
 
 
 class WebsiteMassBuildSerializer(serializers.ModelSerializer):
-    """ Serializer for mass building websites """
+    """Serializer for mass building websites"""
 
     starter_slug = serializers.SerializerMethodField(read_only=True)
     base_url = serializers.SerializerMethodField(read_only=True)
@@ -180,7 +180,7 @@ class WebsiteMassBuildSerializer(serializers.ModelSerializer):
 
 
 class WebsiteUnpublishSerializer(serializers.ModelSerializer):
-    """ Serializer for removing unpublished websites """
+    """Serializer for removing unpublished websites"""
 
     site_url = serializers.SerializerMethodField(read_only=True)
     site_uid = serializers.SerializerMethodField(read_only=True)
@@ -228,7 +228,7 @@ class WebsiteDetailSerializer(
     RequestUserSerializerMixin,
     WebsiteUrlSuggestionMixin,
 ):
-    """ Serializer for websites with serialized config """
+    """Serializer for websites with serialized config"""
 
     starter = WebsiteStarterDetailSerializer(read_only=True)
     is_admin = serializers.SerializerMethodField(read_only=True)
@@ -237,7 +237,7 @@ class WebsiteDetailSerializer(
     unpublished = serializers.ReadOnlyField()
 
     def get_is_admin(self, obj):
-        """ Determine if the request user is an admin"""
+        """Determine if the request user is an admin"""
         user = self.user_from_request()
         if user:
             return is_site_admin(user, obj)
@@ -252,7 +252,7 @@ class WebsiteDetailSerializer(
         return instance.get_full_url(version=VERSION_DRAFT)
 
     def update(self, instance, validated_data):
-        """ Remove owner attribute if present, it should not be changed"""
+        """Remove owner attribute if present, it should not be changed"""
         validated_data.pop("owner", None)
         with transaction.atomic():
             website = super().update(instance, validated_data)
@@ -388,7 +388,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         return self.context["website"]
 
     def validate_email(self, email):
-        """ The user should exist and not be a global admin """
+        """The user should exist and not be a global admin"""
         user = User.objects.filter(email=email).first()
         if not user:
             raise ValidationError("User does not exist")
@@ -422,7 +422,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         return user
 
     def update(self, instance, validated_data):
-        """ Change a collaborator's permission group for the website """
+        """Change a collaborator's permission group for the website"""
         website = self.website
         user = instance
         role = validated_data.get("role")

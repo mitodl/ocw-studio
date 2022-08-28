@@ -13,7 +13,7 @@ from websites.api import (
     fetch_website,
     get_valid_new_filename,
     get_valid_new_slug,
-    incomplete_content_warnings,
+    get_content_warnings,
     is_ocw_site,
     mail_on_publish,
     update_website_status,
@@ -471,15 +471,18 @@ def test_update_unpublished_website_status(status, version):
 @pytest.mark.parametrize("has_missing_ids", [True, False])
 @pytest.mark.parametrize("has_missing_captions", [True, False])
 @pytest.mark.parametrize("has_truncatable_text", [True, False])
-def test_incomplete_content_warnings(
-    mocker, has_missing_ids, has_missing_captions, has_truncatable_text
+@pytest.mark.parametrize("is_draft", [True, False])
+def test_get_content_warnings(
+    mocker, has_missing_ids, has_missing_captions, has_truncatable_text, is_draft
 ):
-    """incomplete_content_warnings should return expected warning messages"""
+    """get_content_warnings should return expected warning messages"""
     website = WebsiteFactory.create()
     video_content = WebsiteContentFactory.create_batch(3, website=website)
     no_yt_ids = video_content[0:2] if has_missing_ids else []
     no_caps = video_content[1:3] if has_missing_captions else []
     truncatable_vids = [video_content[2]] if has_truncatable_text else []
+    # testing only for videos here, but warnings will be the same for any content type
+    draft_titles = [video_content[1]] if is_draft else []
     mocker.patch(
         "websites.api.videos_with_truncatable_text", return_value=truncatable_vids
     )
@@ -491,7 +494,11 @@ def test_incomplete_content_warnings(
         "websites.api.videos_missing_captions",
         return_value=no_caps,
     )
-    warnings = incomplete_content_warnings(website)
+    mocker.patch(
+        "websites.api.draft_content",
+        return_value=draft_titles,
+    )
+    warnings = get_content_warnings(website)
     warnings_len = 0
     if has_missing_ids:
         warnings_len += 1
@@ -503,7 +510,18 @@ def test_incomplete_content_warnings(
             assert content.title in warnings[1 if has_missing_ids else 0]
     if has_truncatable_text:
         warnings_len += 1
+        assert (
+            video_content[2].title
+            in warnings[int(has_missing_ids) + int(has_missing_captions)]
+        )
+    if is_draft:
+        warnings_len += 1
         assert len(warnings) == warnings_len
-        assert video_content[2].title in warnings[warnings_len - 1]
-    if not has_missing_ids and not has_missing_captions and not has_truncatable_text:
+        assert video_content[1].title in warnings[warnings_len - 1]
+    if (
+        not has_missing_ids
+        and not has_missing_captions
+        and not has_truncatable_text
+        and not is_draft
+    ):
         assert warnings == []
