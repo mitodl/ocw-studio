@@ -270,9 +270,7 @@ def videos_missing_captions(website: Website) -> List[WebsiteContent]:
 
 
 def draft_content(website: Website) -> List[WebsiteContent]:
-    """Return a list of WebsiteContent objects that are"""
-    if not is_ocw_site(website):
-        return []
+    """Return a list of WebsiteContent objects that are set to Draft"""
     query_draft_field = get_dict_query_field("metadata", "draft")
     return WebsiteContent.objects.filter(
         Q(website=website) & Q(**{query_draft_field: True})
