@@ -11,9 +11,9 @@ from videos.constants import YT_THUMBNAIL_IMG
 from websites.api import (
     detect_mime_type,
     fetch_website,
+    get_content_warnings,
     get_valid_new_filename,
     get_valid_new_slug,
-    get_content_warnings,
     is_ocw_site,
     mail_on_publish,
     update_website_status,
