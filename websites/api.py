@@ -192,7 +192,7 @@ def is_ocw_site(website: Website) -> bool:
 
 
 def update_youtube_thumbnail(website_id: str, metadata: Dict, overwrite=False):
-    """ Assign a youtube thumbnail url if appropriate to a website's metadata"""
+    """Assign a youtube thumbnail url if appropriate to a website's metadata"""
     website = Website.objects.get(uuid=website_id)
     if is_ocw_site(website):
         youtube_id = get_dict_field(metadata, settings.YT_FIELD_ID)
@@ -266,6 +266,14 @@ def videos_missing_captions(website: Website) -> List[WebsiteContent]:
         Q(website=website)
         & Q(**{query_resource_type_field: RESOURCE_TYPE_VIDEO})
         & (Q(**{query_caption_field: None}) | Q(**{query_caption_field: ""}))
+    )
+
+
+def draft_content(website: Website) -> List[WebsiteContent]:
+    """Return a list of WebsiteContent objects that are set to Draft"""
+    query_draft_field = get_dict_query_field("metadata", "draft")
+    return WebsiteContent.objects.filter(
+        Q(website=website) & Q(**{query_draft_field: True})
     )
 
 
@@ -364,10 +372,10 @@ def update_website_status(
         )
 
 
-def incomplete_content_warnings(website):
+def get_content_warnings(website):
     """
     Return array with error/warning messages for any website content missing expected data
-    (currently: video youtube ids and captions).
+    (currently: video youtube ids and captions) or any draft content.
     """
     missing_youtube_ids = videos_with_unassigned_youtube_ids(website)
 
@@ -380,6 +388,8 @@ def incomplete_content_warnings(website):
     truncatable_video_titles = [
         video.title for video in videos_with_truncatable_text(website)
     ]
+
+    draft_content_titles = [content.title for content in draft_content(website)]
 
     messages = []
 
@@ -394,6 +404,11 @@ def incomplete_content_warnings(website):
     if len(truncatable_video_titles) > 0:
         messages.append(
             f"The following videos have titles or descriptions that will be truncated on YouTube: {', '.join(truncatable_video_titles)}"
+        )
+
+    if len(draft_content_titles) > 0:
+        messages.append(
+            f"The following content is still set to Draft: {', '.join(draft_content_titles)}"
         )
 
     return messages
