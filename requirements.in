@@ -15,9 +15,9 @@ django-safedelete==1.0.0
 django-server-status
 django-storages
 django-webpack-loader
-google-api-python-client
-google-auth
-google-auth-oauthlib
+google-api-python-client>=2.58.0
+google-auth>=2.11.0
+google-auth-oauthlib>=0.5.2
 mitol-django-authentication==1.2.0
 mitol-django-common==1.2.0
 mitol-django-mail==2.2.0
