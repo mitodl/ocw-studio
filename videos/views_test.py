@@ -3,9 +3,11 @@ import json
 from types import SimpleNamespace
 
 import pytest
+from django.http.response import HttpResponse
 from django.urls import reverse
 
 from gdrive_sync.factories import DriveFileFactory
+from users.factories import UserFactory
 from videos.conftest import TEST_VIDEOS_WEBHOOK_PATH
 from videos.constants import DESTINATION_YOUTUBE, VideoJobStatus, VideoStatus
 from videos.factories import VideoFactory, VideoJobFactory
@@ -154,3 +156,29 @@ def test_transcript_job(mocker, video_status, callback_key, drf_client, settings
         update_transcripts_for_video_call.assert_called_once_with(video.id)
     else:
         update_transcripts_for_video_call.assert_not_called()
+
+
+def test_youtube_token_initial_get(mocker, admin_client):
+    """User should be redirected to an authentication url"""
+    mock_redirect = mocker.patch("videos.views.redirect", return_value=HttpResponse())
+    mocker.patch("rest_framework.views.isinstance", return_value=True)
+    admin_client.get(reverse("yt_tokens"), follow=True)
+    mock_redirect.assert_called_once()
+
+
+def test_youtube_token_callback(mocker, admin_client):
+    """User should receive access and refresh tokens"""
+    mock_flow = mocker.patch(
+        "videos.views.InstalledAppFlow.from_client_config",
+        return_value=mocker.Mock(credentials=mocker.Mock(token="a", refresh_token="b")),
+    )
+    response = admin_client.get(f"{reverse('yt_tokens')}?code=abcdef")
+    mock_flow.return_value.fetch_token.assert_called_once()
+    assert response.json() == {"YT_ACCESS_TOKEN": "a", "YT_REFRESH_TOKEN": "b"}
+
+
+def test_youtube_token_admins_only(drf_client):
+    """A non-admin user should get a 403"""
+    drf_client.force_login(UserFactory.create())
+    response = drf_client.get(reverse("yt_tokens"), follow=True)
+    assert response.status_code == 403
