@@ -91,7 +91,7 @@ class YoutubeTokensView(GenericAPIView):
         )
 
         if not request.query_params.get("code"):
-            authorization_url, state = flow.authorization_url(
+            authorization_url, _ = flow.authorization_url(
                 access_type="offline", prompt="consent", include_granted_scopes="true"
             )
             return redirect(f"{authorization_url}&redirect_uri={token_url}")
