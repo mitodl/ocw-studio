@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.72.0
+--------------
+
+- Pt/draft content warnings (#1456)
+
 Version 0.71.3 (Released August 31, 2022)
 --------------
 
