@@ -105,6 +105,8 @@ def pipeline_settings(settings, request):
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
     settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
     settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
+    settings.OCW_NEXT_SEARCH_WEBHOOK_KEY = "abc123"
+    settings.OPEN_DISCUSSIONS_URL = "https://open.mit.edu"
     if env == "dev":
         settings.AWS_ACCESS_KEY_ID = "minio_root_user"
         settings.AWS_SECRET_ACCESS_KEY = "minio_root_password"
@@ -552,6 +554,7 @@ def test_upsert_pipeline(
 @pytest.mark.parametrize("themes_branch", ["", "main", "test_themes_branch"])
 @pytest.mark.parametrize("projects_branch", ["", "main", "test_projects_branch"])
 @pytest.mark.parametrize("prefix", ["", "/test_prefix", "test_prefix"])
+@pytest.mark.parametrize("offline", [True, False])
 def test_upsert_mass_build_pipeline(
     settings,
     pipeline_settings,
@@ -562,7 +565,8 @@ def test_upsert_mass_build_pipeline(
     themes_branch,
     projects_branch,
     prefix,
-):  # pylint:disable=too-many-locals,too-many-arguments
+    offline,
+):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements
     """The mass build pipeline should have expected configuration"""
     expected_template_vars = get_template_vars()
     hugo_projects_path = "https://github.com/org/repo"
@@ -584,11 +588,18 @@ def test_upsert_mass_build_pipeline(
         stripped_prefix = prefix[1:] if prefix.startswith("/") else prefix
     else:
         stripped_prefix = ""
+    build_drafts = "--buildDrafts" if version == VERSION_DRAFT else ""
+    endpoint_url = (
+        " --endpoint-url http://10.1.0.100:9000"
+        if settings.ENVIRONMENT == "dev"
+        else ""
+    )
     instance_vars = {
         "version": version,
         "themes_branch": themes_branch,
         "projects_branch": projects_branch,
         "prefix": stripped_prefix,
+        "offline": offline,
     }
     instance_vars_str = f"?vars={quote(json.dumps(instance_vars))}"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseMassBuildSitesPipeline.PIPELINE_NAME}/config{instance_vars_str}"
@@ -624,10 +635,6 @@ def test_upsert_mass_build_pipeline(
         static_api_url = settings.OCW_STUDIO_LIVE_URL
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
-    assert (
-        f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH s3://{bucket}$PREFIX/$SITE_URL"
-        in config_str
-    )
     assert bucket in config_str
     assert version in config_str
     if stripped_prefix:
@@ -636,6 +643,34 @@ def test_upsert_mass_build_pipeline(
     assert f'\\"branch\\": \\"{projects_branch}\\"' in config_str
     assert f"{hugo_projects_path}.git" in config_str
     assert static_api_url in config_str
+    if offline:
+        assert "PULLING IN STATIC RESOURCES FOR $NAME" in config_str
+        assert "touch ./content/static_resources/_index.md" in config_str
+        assert f"HUGO_RESULT=$(hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --themesDir ../ocw-hugo-themes/ {build_drafts} --quiet) || HUGO_RESULT=1"
+        if settings.ENVIRONMENT == "dev":
+            assert (
+                f"STUDIO_S3_RESULT=$(aws s3{endpoint_url} sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH ./content/static_resources --only-show-errors) || STUDIO_S3_RESULT=1"
+                in config_str
+            )
+    else:
+        assert (
+            "cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data"
+            in config_str
+        )
+        assert (
+            f"HUGO_RESULT=$(hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl $PREFIX/$BASE_URL --themesDir ../ocw-hugo-themes/ {build_drafts} --quiet) || HUGO_RESULT=1"
+            in config_str
+        )
+        assert (
+            f"STUDIO_S3_RESULT=$(aws s3{endpoint_url} sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH s3://{bucket}$PREFIX/$SITE_URL --metadata site-id=$NAME --only-show-errors) || STUDIO_S3_RESULT=1"
+            in config_str
+        )
+        if settings.ENVIRONMENT != "dev":
+            assert settings.OCW_NEXT_SEARCH_WEBHOOK_KEY in config_str
+            assert (
+                f"{settings.OPEN_DISCUSSIONS_URL}/api/v0/ocw_next_webhook/"
+                in config_str
+            )
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])

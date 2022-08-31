@@ -49,6 +49,13 @@ class Command(BaseCommand):
             default="",
             help="An optional override for the branch of ocw-hugo-projects to use in the builds",
         )
+        parser.add_argument(
+            "-o",
+            "--offline",
+            dest="offline",
+            action="store_true",
+            help="Upserts an alternate version of the pipeline to mass-build-sites-offline",
+        )
 
     def handle(self, *args, **options):
 
@@ -63,6 +70,7 @@ class Command(BaseCommand):
         prefix = options["prefix"]
         themes_branch = options["themes-branch"]
         projects_branch = options["projects-branch"]
+        offline = options["offline"]
         start = now_in_utc()
 
         if delete_all:
@@ -80,6 +88,7 @@ class Command(BaseCommand):
                 prefix=prefix,
                 themes_branch=themes_branch,
                 projects_branch=projects_branch,
+                offline=offline,
             )
             pipeline.upsert_pipeline()
             self.stdout.write(f"Created {version} mass build pipeline")
