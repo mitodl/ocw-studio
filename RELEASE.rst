@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.71.3 (Released August 31, 2022)
+--------------
+
+- Bump lxml from 4.6.5 to 4.9.1 (#1416)
+- Bump tzinfo from 1.2.7 to 1.2.10 in /docs (#1423)
+
 Version 0.71.2 (Released August 22, 2022)
 --------------
 
