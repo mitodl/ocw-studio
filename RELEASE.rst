@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.72.1
+Version 0.72.1 (Released September 01, 2022)
 --------------
 
 - mass-build-sites offline flag (#1453)
