@@ -554,6 +554,7 @@ def test_upsert_pipeline(
 @pytest.mark.parametrize("themes_branch", ["", "main", "test_themes_branch"])
 @pytest.mark.parametrize("projects_branch", ["", "main", "test_projects_branch"])
 @pytest.mark.parametrize("prefix", ["", "/test_prefix", "test_prefix"])
+@pytest.mark.parametrize("starter", ["", "ocw-course"])
 @pytest.mark.parametrize("offline", [True, False])
 def test_upsert_mass_build_pipeline(
     settings,
@@ -565,6 +566,7 @@ def test_upsert_mass_build_pipeline(
     themes_branch,
     projects_branch,
     prefix,
+    starter,
     offline,
 ):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements
     """The mass build pipeline should have expected configuration"""
@@ -599,6 +601,7 @@ def test_upsert_mass_build_pipeline(
         "themes_branch": themes_branch,
         "projects_branch": projects_branch,
         "prefix": stripped_prefix,
+        "starter": starter,
         "offline": offline,
     }
     instance_vars_str = f"?vars={quote(json.dumps(instance_vars))}"
@@ -637,6 +640,8 @@ def test_upsert_mass_build_pipeline(
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert bucket in config_str
     assert version in config_str
+    if starter:
+        assert f"&starter={starter}" in config_str
     if stripped_prefix:
         assert f'\\"PREFIX\\": \\"{stripped_prefix}\\"' in config_str
     assert f'\\"branch\\": \\"{themes_branch}\\"' in config_str
