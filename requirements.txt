@@ -138,11 +138,11 @@ factory-boy==3.2.0
     # via mitol-django-common
 faker==8.10.0
     # via factory-boy
-google-api-core==1.31.0
+google-api-core==2.8.2
     # via google-api-python-client
-google-api-python-client==2.14.0
+google-api-python-client==2.58.0
     # via -r requirements.in
-google-auth==1.33.1
+google-auth==2.11.0
     # via
     #   -r requirements.in
     #   google-api-core
@@ -151,9 +151,9 @@ google-auth==1.33.1
     #   google-auth-oauthlib
 google-auth-httplib2==0.1.0
     # via google-api-python-client
-google-auth-oauthlib==0.4.5
+google-auth-oauthlib==0.5.2
     # via -r requirements.in
-googleapis-common-protos==1.53.0
+googleapis-common-protos==1.56.4
     # via google-api-core
 html5lib==1.1
     # via mitol-django-mail
@@ -209,9 +209,7 @@ oauthlib==3.1.1
     #   requests-oauthlib
     #   social-auth-core
 packaging==21.0
-    # via
-    #   google-api-core
-    #   pytest
+    # via pytest
 parso==0.7.1
     # via jedi
 pexpect==4.8.0
@@ -281,7 +279,6 @@ pytz==2021.1
     # via
     #   celery
     #   django
-    #   google-api-core
     #   mitol-django-common
 pyyaml==5.4
     # via
@@ -321,8 +318,6 @@ six==1.15.0
     #   cryptography
     #   django-compat
     #   django-server-status
-    #   google-api-core
-    #   google-api-python-client
     #   google-auth
     #   google-auth-httplib2
     #   html5lib

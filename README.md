@@ -306,18 +306,16 @@ as with only one dockerized worker publishing the entire OCW site will take a ve
 # Enabling YouTube integration
 - Create a new project at https://console.cloud.google.com/apis/dashboard
   - Save the project ID in your ``.env`` file as ``YT_PROJECT_ID``
-- Create an OAuth client ID for the project (type: ``Desktop client``)
+- Create an OAuth client ID for the project (type: ``Web application``)
+  - Add an authorized Javascript origin (ie `https://<your_domain>/`)
+  - Add an authorized redirect URI: `https://<your_domain>/api/youtube-tokens/`
   - You may need to create an oauth consent screen if prompted; make sure to publish it.
   - Save your client ID and client secret in your ``.env`` file (as ``YT_CLIENT_ID`` and ``YT_CLIENT_SECRET``)
 - Enable the YouTube Data API v3 for your project
-- Run the following Django command to generate values for ``YT_ACCESS_TOKEN`` and ``YT_REFRESH_TOKEN``:
-
-.. code-block:: bash
-
-    docker-compose run web python manage.py youtube_tokens
-
-- Click on the provided link, follow the prompts, and enter the verification code back in the shell.
-- Save the ``YT_ACCESS_TOKEN`` and ``YT_REFRESH_TOKEN`` values to your ``.env`` file
+- Go to `https://<your_domain>/api/youtube-tokens/`.  
+- You should be prompted to choose a Google account.  Choose an account that has upload permissions for your Youtube channel.
+- You will then be prompted to choose an account or brand account.  Choose whichever is appropriate.
+- After clicking through these and allowing any requested permissions, you should be redirected back to an API response containing values for YT_ACCESS_TOKEN and YT_REFRESH_TOKEN.  Add these to your .env file.
 
 
 # Enabling Google Drive integration
