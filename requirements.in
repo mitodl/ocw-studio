@@ -24,7 +24,6 @@ mitol-django-mail==2.2.0
 drf-extensions
 ipython
 newrelic
-oauth2client
 psycopg2
 pygithub==1.55
 python-magic
