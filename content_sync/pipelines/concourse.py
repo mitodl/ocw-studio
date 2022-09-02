@@ -521,7 +521,7 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
         self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
-class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
+class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # pylint: disable=too-many-instance-attributes
     """Specialized concourse pipeline for mass building multiple sites"""
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
