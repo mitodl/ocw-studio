@@ -1,6 +1,7 @@
 import EssentialsPlugin from "@ckeditor/ckeditor5-essentials/src/essentials"
 import AutoformatPlugin from "@ckeditor/ckeditor5-autoformat/src/autoformat"
 import BoldPlugin from "@ckeditor/ckeditor5-basic-styles/src/bold"
+import SubscriptPlugin from "@ckeditor/ckeditor5-basic-styles/src/subscript"
 import ItalicPlugin from "@ckeditor/ckeditor5-basic-styles/src/italic"
 import UnderlinePlugin from "@ckeditor/ckeditor5-basic-styles/src/underline"
 import BlockQuotePlugin from "@ckeditor/ckeditor5-block-quote/src/blockquote"
@@ -32,6 +33,8 @@ import DisallowNestedTables from "./plugins/DisallowNestedTables"
 import TableMarkdownSyntax from "./plugins/TableMarkdownSyntax"
 import MarkdownListSyntax from "./plugins/MarkdownListSyntax"
 import LegacyShortcodes from "./plugins/LegacyShortcodes"
+import SubscriptSyntaxPlugin from "./plugins/SubscriptSyntaxPlugin"
+
 
 /**
  * Programming languages we support in CKEditor code blocks
@@ -86,10 +89,12 @@ export const FullEditorConfig = {
     ResourcePicker,
     ResourceLink,
     ResourceLinkMarkdownSyntax,
+    SubscriptSyntaxPlugin,
     TableMarkdownSyntax,
     MarkdownListSyntax,
     LegacyShortcodes,
     Markdown,
+    SubscriptPlugin,
     DisallowNestedTables
   ],
   toolbar: {
@@ -108,6 +113,7 @@ export const FullEditorConfig = {
       "insertTable",
       "undo",
       "redo",
+      "subscript",
       ADD_RESOURCE_LINK,
       ADD_RESOURCE_EMBED
     ]
@@ -141,8 +147,10 @@ export const MinimalEditorConfig = {
     ResourcePicker,
     ResourceLink,
     ResourceLinkMarkdownSyntax,
+    SubscriptSyntaxPlugin,
     MarkdownListSyntax,
     Markdown,
+    SubscriptPlugin,
     LegacyShortcodes
   ],
   toolbar: {
@@ -157,6 +165,7 @@ export const MinimalEditorConfig = {
       "blockQuote",
       "undo",
       "redo",
+      "subscript",
       ADD_RESOURCE_LINK,
       ADD_RESOURCE_EMBED
     ]

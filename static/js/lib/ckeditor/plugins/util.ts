@@ -307,6 +307,14 @@ export class Shortcode {
     const params = paramValues.map(value => new ShortcodeParam(value))
     return new Shortcode(name, params, isPercentDelimited)
   }
+
+  static toSubscript(text: string) {
+    const name = "subscript"
+    const isPercentDelimited = true
+
+    const param = new ShortcodeParam(text, "content")
+    return new Shortcode(name, [param], isPercentDelimited)
+  }
 }
 
 /**
