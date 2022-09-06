@@ -35,7 +35,9 @@ from users.models import User
 from websites import constants
 from websites.api import get_valid_new_filename, update_website_status
 from websites.constants import (
+    CONTENT_TYPE_COURSE_LIST,
     CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_RESOURCE_COLLECTION,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
     RESOURCE_TYPE_DOCUMENT,
@@ -236,19 +238,44 @@ class WebsiteViewSet(
         return self.publish_version(name, VERSION_LIVE, request)
 
     @action(
-        detail=True, methods=["post"], permission_classes=[HasWebsitePublishPermission]
+        detail=True,
+        methods=["post", "get"],
+        permission_classes=[HasWebsitePublishPermission],
     )
     def unpublish(self, request, name=None):
         """Unpublish the site and trigger the remove-unpublished-sites pipeline"""
         try:
             website = self.get_object()
-
-            Website.objects.filter(pk=website.pk).update(
-                unpublish_status=PUBLISH_STATUS_NOT_STARTED,
-                last_unpublished_by=request.user,
-            )
-            trigger_unpublished_removal(website)
-            return Response(status=200)
+            if request.method == "GET":
+                site_dependencies = WebsiteContent.objects.filter(
+                    (
+                        Q(type=CONTENT_TYPE_COURSE_LIST)
+                        | Q(type=CONTENT_TYPE_RESOURCE_COLLECTION)
+                    ),
+                    (
+                        Q(metadata__courses__icontains=website.name)
+                        | Q(metadata__resources__content__icontains=website.name)
+                    ),
+                    website__name=settings.ROOT_WEBSITE_NAME,
+                )
+                return Response(
+                    status=200,
+                    data={
+                        "Site dependencies": WebsiteContentSerializer(
+                            instance=site_dependencies, many=True
+                        ).data
+                    },
+                )
+            else:
+                Website.objects.filter(pk=website.pk).update(
+                    unpublish_status=PUBLISH_STATUS_NOT_STARTED,
+                    last_unpublished_by=request.user,
+                )
+                trigger_unpublished_removal(website)
+                return Response(
+                    status=200,
+                    data="Site has been unpublished and 'remove-unpublished-sites' pipeline has been triggered.",
+                )
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error unpublishing %s", name)
             return Response(status=500, data={"details": str(exc)})
