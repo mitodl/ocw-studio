@@ -50,6 +50,13 @@ class Command(BaseCommand):
             help="An optional override for the branch of ocw-hugo-projects to use in the builds",
         )
         parser.add_argument(
+            "-s",
+            "--starter",
+            dest="starter",
+            default="",
+            help="",
+        )
+        parser.add_argument(
             "-o",
             "--offline",
             dest="offline",
@@ -70,6 +77,7 @@ class Command(BaseCommand):
         prefix = options["prefix"]
         themes_branch = options["themes-branch"]
         projects_branch = options["projects-branch"]
+        starter = options["starter"]
         offline = options["offline"]
         start = now_in_utc()
 
@@ -88,6 +96,7 @@ class Command(BaseCommand):
                 prefix=prefix,
                 themes_branch=themes_branch,
                 projects_branch=projects_branch,
+                starter=starter,
                 offline=offline,
             )
             pipeline.upsert_pipeline()

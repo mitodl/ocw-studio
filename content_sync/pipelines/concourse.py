@@ -521,7 +521,9 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
         self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
-class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
+class MassBuildSitesPipeline(
+    BaseMassBuildSitesPipeline, GeneralPipeline
+):  # pylint: disable=too-many-instance-attributes
     """Specialized concourse pipeline for mass building multiple sites"""
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
@@ -533,6 +535,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
         prefix: Optional[str] = None,
         themes_branch: Optional[str] = None,
         projects_branch: Optional[str] = None,
+        starter: Optional[str] = None,
         offline: Optional[bool] = None,
     ):
         """Initialize the pipeline instance"""
@@ -559,6 +562,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
         self.PROJECTS_BRANCH = (
             projects_branch if projects_branch else self.THEMES_BRANCH
         )
+        self.STARTER = starter
         self.OFFLINE = offline
         self.set_instance_vars(
             {
@@ -566,6 +570,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
                 "themes_branch": self.THEMES_BRANCH,
                 "projects_branch": self.PROJECTS_BRANCH,
                 "prefix": self.PREFIX,
+                "starter": self.STARTER,
                 "offline": self.OFFLINE,
             }
         )
@@ -656,6 +661,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):
             .replace("((resource-base-url))", template_vars["resource_base_url"])
             .replace("((prefix))", self.PREFIX)
             .replace("((search-api-url))", settings.SEARCH_API_URL)
+            .replace("((starter))", f"&starter={self.STARTER}" if self.STARTER else "")
             .replace(
                 "((trigger))",
                 str(

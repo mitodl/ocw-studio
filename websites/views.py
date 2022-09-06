@@ -276,6 +276,7 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
     def list(self, request):
         """Return a list of websites that have been previously published, per version"""
         version = self.request.query_params.get("version")
+        starter = self.request.query_params.get("starter")
         if version not in (VERSION_LIVE, VERSION_DRAFT):
             raise ValidationError("Invalid version")
         publish_date_field = (
@@ -289,6 +290,9 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
         # For live builds, exclude previously published sites that have been unpublished
         if version == VERSION_LIVE:
             sites = sites.exclude(unpublish_status__isnull=False)
+        # If a starter has been specified by the query, only return sites made with that starter
+        if starter:
+            sites = sites.filter(starter=WebsiteStarter.objects.get(name=starter))
         sites = sites.prefetch_related("starter").order_by("name")
         serializer = WebsiteMassBuildSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})

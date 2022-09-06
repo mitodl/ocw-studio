@@ -66,6 +66,7 @@ def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments
     prefix: Optional[str] = None,
     themes_branch: Optional[str] = None,
     projects_branch: Optional[str] = None,
+    starter: Optional[str] = None,
     offline: Optional[bool] = None,
 ) -> object:
     """Get the mass build sites pipeline if the backend has one"""
@@ -77,6 +78,7 @@ def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments
         prefix=prefix,
         themes_branch=themes_branch,
         projects_branch=projects_branch,
+        starter=starter,
         offline=offline,
     )
 
