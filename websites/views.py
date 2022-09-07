@@ -37,6 +37,7 @@ from websites.api import get_valid_new_filename, update_website_status
 from websites.constants import (
     CONTENT_TYPE_COURSE_LIST,
     CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE_COLLECTION,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
@@ -247,7 +248,7 @@ class WebsiteViewSet(
         try:
             website = self.get_object()
             if request.method == "GET":
-                site_dependencies = WebsiteContent.objects.filter(
+                ocw_www_dependencies = WebsiteContent.objects.filter(
                     (
                         Q(type=CONTENT_TYPE_COURSE_LIST)
                         | Q(type=CONTENT_TYPE_RESOURCE_COLLECTION)
@@ -258,12 +259,21 @@ class WebsiteViewSet(
                     ),
                     website__name=settings.ROOT_WEBSITE_NAME,
                 )
+                course_dependencies = WebsiteContent.objects.filter(
+                    type=CONTENT_TYPE_PAGE,
+                    markdown__contains=website.name,
+                )
                 return Response(
                     status=200,
                     data={
-                        "Site dependencies": WebsiteContentSerializer(
-                            instance=site_dependencies, many=True
-                        ).data
+                        "Site dependencies": {
+                            "ocw www": WebsiteContentSerializer(
+                                instance=ocw_www_dependencies, many=True
+                            ).data,
+                            "course": WebsiteContentSerializer(
+                                instance=course_dependencies, many=True
+                            ).data,
+                        }
                     },
                 )
             else:
