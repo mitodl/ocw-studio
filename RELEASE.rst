@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.73.0
+--------------
+
+- mass build starter filter (#1467)
+
 Version 0.72.2 (Released September 07, 2022)
 --------------
 
