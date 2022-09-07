@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.72.2
+Version 0.72.2 (Released September 07, 2022)
 --------------
 
 - Refactor Youtube token generation (#1459)
