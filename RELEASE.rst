@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.73.0
+--------------
+
+- In the mass site build, if building for offline, move any HTML files from content to static (#1471)
+- mass build starter filter (#1467)
+
 Version 0.72.2 (Released September 07, 2022)
 --------------
 
