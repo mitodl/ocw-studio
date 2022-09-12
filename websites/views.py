@@ -65,6 +65,7 @@ from websites.serializers import (
     WebsiteDetailSerializer,
     WebsiteMassBuildSerializer,
     WebsiteSerializer,
+    WebsiteBasicSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
     WebsiteStatusSerializer,
@@ -259,9 +260,13 @@ class WebsiteViewSet(
                     ),
                     website__name=settings.ROOT_WEBSITE_NAME,
                 )
-                course_dependencies = WebsiteContent.objects.filter(
+                course_content_dependencies = WebsiteContent.objects.filter(
                     type=CONTENT_TYPE_PAGE,
                     markdown__contains=website.name,
+                )
+                course_dependencies = Website.objects.filter(
+                    ~Q(name=website.name),
+                    metadata__icontains=website.name
                 )
                 return Response(
                     status=200,
@@ -270,8 +275,11 @@ class WebsiteViewSet(
                             "ocw www": WebsiteContentSerializer(
                                 instance=ocw_www_dependencies, many=True
                             ).data,
-                            "course": WebsiteContentSerializer(
+                            "course": WebsiteBasicSerializer(
                                 instance=course_dependencies, many=True
+                            ).data,
+                            "course content": WebsiteContentSerializer(
+                                instance=course_content_dependencies, many=True
                             ).data,
                         }
                     },

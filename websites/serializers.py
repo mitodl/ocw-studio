@@ -104,6 +104,13 @@ class WebsiteSerializer(serializers.ModelSerializer):
         extra_kwargs = {"owner": {"write_only": True}}
 
 
+class WebsiteBasicSerializer(serializers.ModelSerializer):
+    """Serializer for websites with only basic fields"""
+
+    class Meta:
+        model = Website
+        fields = ["uuid", "name", "title"]
+
 class WebsiteUrlSerializer(serializers.ModelSerializer):
     """Serializer for assigning website urls"""
 
