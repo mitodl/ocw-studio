@@ -80,7 +80,7 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
               (node as any).getAttribute("data-uuid") as string
             )
 
-            const text = node.textContent
+            const text = _content
 
             if (text === null) return ""
 

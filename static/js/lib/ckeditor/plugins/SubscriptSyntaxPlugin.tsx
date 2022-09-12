@@ -6,8 +6,6 @@ import { TurndownRule } from "../../../types/ckeditor_markdown"
 import { Shortcode } from "./util"
 
 
-const SUBSCRIPT_REGEX = Shortcode.regex("subscript", true)
-
 export default class SubscriptSyntaxPlugin extends MarkdownSyntaxPlugin {
   static get pluginName(): string {
     return "SubscriptSyntaxPlugin"
@@ -19,11 +17,12 @@ export default class SubscriptSyntaxPlugin extends MarkdownSyntaxPlugin {
       return [
         {
           type:    "lang",
-          regex:   SUBSCRIPT_REGEX,
+          // eslint-disable-next-line no-useless-escape
+          regex:   new RegExp(/\\\(\s+_{\w+}_\s+\\\)/),
           replace: (s :string) => {
-            const value = Shortcode.fromString(s).get("content")
+            const value = s.match("(?<=_{)(.*)(?=}_)")
             // eslint-disable-next-line no-debugger
-            return `<sub class='subscript'>${value}</sub>`
+            return `<sub class='subscript'>${value ? value[0] : ""}</sub>`
           }
         }
       ]
@@ -39,8 +38,7 @@ export default class SubscriptSyntaxPlugin extends MarkdownSyntaxPlugin {
             return (node.nodeName === "SUB")
           },
           replacement: (content: string, _: Turndown.Node): string => {
-            const text = content
-            const v = Shortcode.toSubscript(text).toHugo()
+            const v = `\\( _{${content}}_ \\)`
             return v
           }
         }
