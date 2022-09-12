@@ -98,16 +98,14 @@ def test_youtube_settings(mocker, settings):
     settings.YT_CLIENT_ID = "yt_client_id"
     settings.YT_CLIENT_SECRET = "yt_secret"
     settings.YT_REFRESH_TOKEN = "yt_refresh"
-    mock_oauth = mocker.patch("videos.youtube.oauth2client.client.GoogleCredentials")
+    mock_oauth = mocker.patch("videos.youtube.Credentials")
     YouTubeApi()
     mock_oauth.assert_called_with(
         settings.YT_ACCESS_TOKEN,
-        settings.YT_CLIENT_ID,
-        settings.YT_CLIENT_SECRET,
-        settings.YT_REFRESH_TOKEN,
-        None,
-        "https://accounts.google.com/o/oauth2/token",
-        None,
+        client_id=settings.YT_CLIENT_ID,
+        client_secret=settings.YT_CLIENT_SECRET,
+        refresh_token=settings.YT_REFRESH_TOKEN,
+        token_uri="https://accounts.google.com/o/oauth2/token",
     )
 
 

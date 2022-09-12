@@ -34,7 +34,7 @@ def youtube_settings(settings, mocker):
     settings.YT_PROJECT_ID = "testvalue"
     settings.YT_ACCESS_TOKEN = "testvalue"
     settings.YT_REFRESH_TOKEN = "testvalue"
-    mocker.patch("videos.youtube.oauth2client")
+    mocker.patch("videos.youtube.Credentials")
 
 
 @pytest.fixture(autouse=True)

@@ -6,10 +6,9 @@ import time
 from io import BytesIO
 from urllib.parse import urljoin
 
-import httplib2
-import oauth2client
 from django.conf import settings
 from django.db.models import Q
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseUpload
@@ -169,17 +168,13 @@ class YouTubeApi:
         """
         Generate an authorized YouTube API client and S3 client
         """
-        credentials = oauth2client.client.GoogleCredentials(
+        credentials = Credentials(
             settings.YT_ACCESS_TOKEN,
-            settings.YT_CLIENT_ID,
-            settings.YT_CLIENT_SECRET,
-            settings.YT_REFRESH_TOKEN,
-            None,
-            "https://accounts.google.com/o/oauth2/token",
-            None,
+            token_uri="https://accounts.google.com/o/oauth2/token",
+            client_id=settings.YT_CLIENT_ID,
+            client_secret=settings.YT_CLIENT_SECRET,
+            refresh_token=settings.YT_REFRESH_TOKEN,
         )
-        authorization = credentials.authorize(httplib2.Http())
-        credentials.refresh(authorization)
         self.client = build("youtube", "v3", credentials=credentials)
         self.s3 = get_boto3_client("s3")
 
