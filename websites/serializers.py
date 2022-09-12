@@ -111,6 +111,7 @@ class WebsiteBasicSerializer(serializers.ModelSerializer):
         model = Website
         fields = ["uuid", "name", "title"]
 
+
 class WebsiteUrlSerializer(serializers.ModelSerializer):
     """Serializer for assigning website urls"""
 
@@ -452,7 +453,8 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
 
 class WebsiteContentSerializer(serializers.ModelSerializer):
     """Serializes WebsiteContent for the list view"""
-    website_name = serializers.CharField(source='website.name')
+
+    website_name = serializers.CharField(source="website.name")
 
     class Meta:
         model = WebsiteContent

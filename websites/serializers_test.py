@@ -73,15 +73,16 @@ def test_serialize_website_course():
         == WebsiteStarterSerializer(instance=site.starter).data
     )
 
+
 def test_serialize_basic_website_course():
     """
     Verify that a serialized basic website contains expected fields
     """
     site = WebsiteFactory.create()
     serialized_data = WebsiteSerializer(instance=site).data
-    assert serialized_data["uuid"] == site.uuid
     assert serialized_data["name"] == site.name
     assert serialized_data["title"] == site.title
+
 
 def test_website_starter_serializer():
     """WebsiteStarterSerializer should serialize a WebsiteStarter object with the correct fields"""

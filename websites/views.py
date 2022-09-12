@@ -58,6 +58,7 @@ from websites.permissions import (
     is_global_admin,
 )
 from websites.serializers import (
+    WebsiteBasicSerializer,
     WebsiteCollaboratorSerializer,
     WebsiteContentCreateSerializer,
     WebsiteContentDetailSerializer,
@@ -65,7 +66,6 @@ from websites.serializers import (
     WebsiteDetailSerializer,
     WebsiteMassBuildSerializer,
     WebsiteSerializer,
-    WebsiteBasicSerializer,
     WebsiteStarterDetailSerializer,
     WebsiteStarterSerializer,
     WebsiteStatusSerializer,
@@ -265,8 +265,7 @@ class WebsiteViewSet(
                     markdown__contains=website.name,
                 )
                 course_dependencies = Website.objects.filter(
-                    ~Q(name=website.name),
-                    metadata__icontains=website.name
+                    ~Q(name=website.name), metadata__icontains=website.name
                 )
                 return Response(
                     status=200,
