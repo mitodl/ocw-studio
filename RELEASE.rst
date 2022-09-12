@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.74.0
+--------------
+
+- removed underline PR (#1475)
+
 Version 0.73.0 (Released September 08, 2022)
 --------------
 
