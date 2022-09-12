@@ -3,7 +3,6 @@ import Showdown from "showdown"
 
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
-import { Shortcode } from "./util"
 
 
 export default class SubscriptSyntaxPlugin extends MarkdownSyntaxPlugin {
