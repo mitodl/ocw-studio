@@ -2,7 +2,6 @@ import EssentialsPlugin from "@ckeditor/ckeditor5-essentials/src/essentials"
 import AutoformatPlugin from "@ckeditor/ckeditor5-autoformat/src/autoformat"
 import BoldPlugin from "@ckeditor/ckeditor5-basic-styles/src/bold"
 import ItalicPlugin from "@ckeditor/ckeditor5-basic-styles/src/italic"
-import UnderlinePlugin from "@ckeditor/ckeditor5-basic-styles/src/underline"
 import BlockQuotePlugin from "@ckeditor/ckeditor5-block-quote/src/blockquote"
 import HeadingPlugin from "@ckeditor/ckeditor5-heading/src/heading"
 import ImagePlugin from "@ckeditor/ckeditor5-image/src/image"
@@ -69,7 +68,6 @@ export const FullEditorConfig = {
     ItalicPlugin,
     // note that this is just for inline (not block-level) code
     CodePlugin,
-    UnderlinePlugin,
     BlockQuotePlugin,
     HeadingPlugin,
     ImagePlugin,
@@ -98,7 +96,6 @@ export const FullEditorConfig = {
       "|",
       "bold",
       "italic",
-      "underline",
       "link",
       "bulletedList",
       "numberedList",
@@ -132,7 +129,6 @@ export const MinimalEditorConfig = {
     BoldPlugin,
     ItalicPlugin,
     CodePlugin,
-    UnderlinePlugin,
     BlockQuotePlugin,
     LinkPlugin,
     ListPlugin,
@@ -149,7 +145,6 @@ export const MinimalEditorConfig = {
     items: [
       "bold",
       "italic",
-      "underline",
       "code",
       "link",
       "bulletedList",
