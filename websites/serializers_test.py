@@ -274,6 +274,7 @@ def test_website_content_serializer():
     content = WebsiteContentFactory.create()
     serialized_data = WebsiteContentSerializer(instance=content).data
     assert serialized_data["text_id"] == str(content.text_id)
+    assert serialized_data["website_name"] == content.website.name
     assert serialized_data["title"] == content.title
     assert serialized_data["type"] == content.type
     assert serialized_data["updated_on"] == content.updated_on.isoformat()[:-6] + "Z"

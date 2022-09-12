@@ -445,10 +445,11 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
 
 class WebsiteContentSerializer(serializers.ModelSerializer):
     """Serializes WebsiteContent for the list view"""
+    website_name = serializers.CharField(source='website.name')
 
     class Meta:
         model = WebsiteContent
-        read_only_fields = ["text_id", "title", "type", "updated_on"]
+        read_only_fields = ["text_id", "website_name", "title", "type", "updated_on"]
         # See WebsiteContentCreateSerializer below for creating new WebsiteContent objects
         fields = read_only_fields
 
