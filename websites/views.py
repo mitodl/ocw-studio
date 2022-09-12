@@ -261,8 +261,9 @@ class WebsiteViewSet(
                     website__name=settings.ROOT_WEBSITE_NAME,
                 )
                 course_content_dependencies = WebsiteContent.objects.filter(
+                    ~Q(website__name=website.name),
                     type=CONTENT_TYPE_PAGE,
-                    markdown__contains=website.name,
+                    markdown__icontains=website.name,
                 )
                 course_dependencies = Website.objects.filter(
                     ~Q(name=website.name), metadata__icontains=website.name
