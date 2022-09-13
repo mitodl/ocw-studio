@@ -5,9 +5,13 @@ from model_utils import Choices
 CONTENT_TYPE_PAGE = "page"
 CONTENT_TYPE_VIDEO_GALLERY = "video_gallery"
 CONTENT_TYPE_RESOURCE = "resource"
+CONTENT_TYPE_RESOURCE_COLLECTION = "resource_collections"
+CONTENT_TYPE_RESOURCE_LIST = "resource-list"
 CONTENT_TYPE_INSTRUCTOR = "instructor"
 CONTENT_TYPE_METADATA = "sitemetadata"
 CONTENT_TYPE_NAVMENU = "navmenu"
+CONTENT_TYPE_COURSE_LIST = "course-lists"
+
 
 COURSE_PAGE_LAYOUTS = ["instructor_insights"]
 COURSE_RESOURCE_LAYOUTS = ["pdf", "video"]

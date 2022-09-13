@@ -104,6 +104,14 @@ class WebsiteSerializer(serializers.ModelSerializer):
         extra_kwargs = {"owner": {"write_only": True}}
 
 
+class WebsiteBasicSerializer(serializers.ModelSerializer):
+    """Serializer for websites with only basic fields"""
+
+    class Meta:
+        model = Website
+        fields = ["uuid", "name", "title"]
+
+
 class WebsiteUrlSerializer(serializers.ModelSerializer):
     """Serializer for assigning website urls"""
 
@@ -446,9 +454,11 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
 class WebsiteContentSerializer(serializers.ModelSerializer):
     """Serializes WebsiteContent for the list view"""
 
+    website_name = serializers.CharField(source="website.name")
+
     class Meta:
         model = WebsiteContent
-        read_only_fields = ["text_id", "title", "type", "updated_on"]
+        read_only_fields = ["text_id", "website_name", "title", "type", "updated_on"]
         # See WebsiteContentCreateSerializer below for creating new WebsiteContent objects
         fields = read_only_fields
 
