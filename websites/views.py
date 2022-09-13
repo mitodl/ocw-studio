@@ -271,14 +271,14 @@ class WebsiteViewSet(
                 return Response(
                     status=200,
                     data={
-                        "Site dependencies": {
-                            "ocw www": WebsiteContentSerializer(
+                        "site_dependencies": {
+                            "ocw_www": WebsiteContentSerializer(
                                 instance=ocw_www_dependencies, many=True
                             ).data,
                             "course": WebsiteBasicSerializer(
                                 instance=course_dependencies, many=True
                             ).data,
-                            "course content": WebsiteContentSerializer(
+                            "course_content": WebsiteContentSerializer(
                                 instance=course_content_dependencies, many=True
                             ).data,
                         }
