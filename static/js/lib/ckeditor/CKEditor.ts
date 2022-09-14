@@ -35,7 +35,6 @@ import MarkdownListSyntax from "./plugins/MarkdownListSyntax"
 import LegacyShortcodes from "./plugins/LegacyShortcodes"
 import SubscriptSyntaxPlugin from "./plugins/SubscriptSyntaxPlugin"
 
-
 /**
  * Programming languages we support in CKEditor code blocks
  *
