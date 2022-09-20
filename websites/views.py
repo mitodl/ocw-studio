@@ -423,7 +423,7 @@ class WebsiteCollaboratorViewSet(
     NestedViewSetMixin,
     viewsets.ModelViewSet,
 ):
-    """ Viewset for Website collaborators along with their group/role """
+    """Viewset for Website collaborators along with their group/role"""
 
     serializer_class = WebsiteCollaboratorSerializer
     permission_classes = (HasWebsiteCollaborationPermission,)
@@ -481,13 +481,13 @@ class WebsiteCollaboratorViewSet(
         )
 
     def get_serializer_context(self):
-        """ Get the serializer context """
+        """Get the serializer context"""
         return {
             "website": self.website,
         }
 
     def destroy(self, request, *args, **kwargs):
-        """ Remove the user from all groups for this website """
+        """Remove the user from all groups for this website"""
         user = self.get_object()
         user.groups.remove(*get_groups_with_perms(self.website))
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -575,7 +575,9 @@ class WebsiteContentViewSet(
         if types:
             queryset = queryset.filter(type__in=types)
         if search:
-            queryset = queryset.filter(title__icontains=search)
+            queryset = queryset.filter(
+                Q(title__icontains=search) | Q(file__iregex=f"{search}([^/]+|$)")
+            )
         if resourcetype:
             if resourcetype == RESOURCE_TYPE_OTHER:
                 queryset = queryset.exclude(
@@ -649,7 +651,7 @@ class WebsiteContentViewSet(
         return {**super().get_serializer_context(), **added_context}
 
     def perform_destroy(self, instance: WebsiteContent):
-        """ (soft) deletes a WebsiteContent record """
+        """(soft) deletes a WebsiteContent record"""
         instance.updated_by = self.request.user
         super().perform_destroy(
             instance
@@ -663,7 +665,7 @@ class WebsiteContentViewSet(
         permission_classes=(HasWebsiteContentPermission,),
     )
     def gdrive_sync(self, request, **kwargs):  # pylint:disable=unused-argument
-        """ Trigger a task to sync all non-video Google Drive files"""
+        """Trigger a task to sync all non-video Google Drive files"""
         website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
         website.sync_status = WebsiteSyncStatus.PENDING
         website.save()
