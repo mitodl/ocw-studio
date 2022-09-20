@@ -385,7 +385,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         if full_metadata:
             for field in (YT_FIELD_TRANSCRIPT, YT_FIELD_CAPTIONS):
                 value = get_dict_field(full_metadata, field)
-                if value is not None:
+                if value and url_path:
                     set_dict_field(
                         full_metadata, field, value.replace(s3_path, url_path, 1)
                     )
