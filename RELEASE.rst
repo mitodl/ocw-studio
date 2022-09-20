@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.74.0
+Version 0.74.0 (Released September 20, 2022)
 --------------
 
 - feat: site dependencies shown while course unpublishing (#1468)
