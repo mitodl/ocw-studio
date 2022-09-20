@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.75.0
+--------------
+
+- ZIP up offline sites in mass-build-sites (#1477)
+
 Version 0.74.0 (Released September 20, 2022)
 --------------
 
