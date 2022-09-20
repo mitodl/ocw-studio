@@ -27,8 +27,6 @@ describe("ResourceLink plugin", () => {
     turndownService.rules.array = turndownService.rules.array.filter(
       (rule: any) => rule.name !== RESOURCE_LINK
     )
-    // @ts-ignore
-    turndownService._customRulesSet = undefined
   })
 
   it("should take in and return 'resource_link' shortcode", async () => {

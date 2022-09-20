@@ -7,6 +7,7 @@ import MarkdownConfigPlugin from "./MarkdownConfigPlugin"
 import { ATTRIBUTE_REGEX } from "./constants"
 
 import { turndownService } from "../turndown"
+import Turndown from "turndown"
 import { buildAttrsString } from "./util"
 
 /**
@@ -68,6 +69,8 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
 const TD_CONTENT_REGEX = /<td.*?>([\S\s]*?)<\/td>/g
 const TH_CONTENT_REGEX = /<th(?!ead).*?>([\S\s]*?)<\/th>/g
 
+const BASE_TURNDOWN_RULES = [...turndownService.rules.array]
+
 /**
  * Plugin implementing Markdown for CKEditor
  *
@@ -76,6 +79,8 @@ const TH_CONTENT_REGEX = /<th(?!ead).*?>([\S\s]*?)<\/th>/g
  * based on https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-markdown-gfm/src/markdown.js
  */
 export default class Markdown extends MarkdownConfigPlugin {
+  turndownRules: Turndown.Rule[]
+
   constructor(editor: editor.Editor) {
     super(editor)
 
@@ -87,14 +92,11 @@ export default class Markdown extends MarkdownConfigPlugin {
 
     converter.setFlavor("github")
 
-    // @ts-ignore
-    if (!turndownService._customRulesSet) {
-      turndownRules.forEach(({ name, rule }) =>
-        turndownService.addRule(name, rule)
-      )
-      // @ts-ignore
-      turndownService._customRulesSet = true
-    }
+    turndownService.rules.array = [...BASE_TURNDOWN_RULES]
+    turndownRules.forEach(({ name, rule }) =>
+      turndownService.addRule(name, rule)
+    )
+    this.turndownRules = [...turndownService.rules.array]
 
     function formatTableCell(
       el: string,
@@ -107,7 +109,7 @@ export default class Markdown extends MarkdownConfigPlugin {
       )}</${el}>`
     }
 
-    function md2html(md: string): string {
+    const md2html = (md: string): string => {
       return converter
         .makeHtml(md)
         .replace(TD_CONTENT_REGEX, (_match, contents) =>
@@ -118,18 +120,35 @@ export default class Markdown extends MarkdownConfigPlugin {
         )
     }
 
-    function html2md(html: string): string {
-      return turndownService.turndown(html)
-    }
+    const html2md = (html: string): string => this.turndown(html)
 
     // some typescript wrangling necessary here unfortunately b/c of some
     // shortcomings in the typings for @ckeditor/ckeditor5-engine
     // and @ckeditor/ckeditor5-core
-    (editor.data.processor as unknown) = new MarkdownDataProcessor(
+    ;(editor.data.processor as unknown) = new MarkdownDataProcessor(
       (editor.data as any).viewDocument,
       md2html,
       html2md
     )
+  }
+
+  /**
+   * The @ckeditor/ckeditor5-markdown-gfm package uses a single turndownService
+   * instance for all instances of GFMDataProcessor. So sad.
+   *
+   * This is frustrating because we want different editors to support different
+   * markdown syntaxes (e.g., "minimal" editors do not support table editing.)
+   *
+   * So we'll emulate separate instances by swapping out the rulesset on the
+   * single instance.
+   */
+  turndown = (html: string) => {
+    try {
+      turndownService.rules.array = this.turndownRules
+      return turndownService.turndown(html)
+    } finally {
+      turndownService.rules.array = BASE_TURNDOWN_RULES
+    }
   }
 
   static get pluginName(): string {

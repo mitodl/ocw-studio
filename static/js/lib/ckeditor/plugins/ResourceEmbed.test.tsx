@@ -10,8 +10,6 @@ describe("ResourceEmbed plugin", () => {
     turndownService.rules.array = turndownService.rules.array.filter(
       (rule: any) => rule.filter !== "figure" && rule.filter !== "section"
     )
-    // @ts-ignore
-    turndownService._customRulesSet = undefined
   })
 
   it("should take in and return 'resource' shortcode", async () => {
