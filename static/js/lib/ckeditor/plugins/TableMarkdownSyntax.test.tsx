@@ -22,8 +22,6 @@ describe("table shortcodes", () => {
     turndownService.rules.array = turndownService.rules.array.filter(
       (rule: any) => !equals(rule.filter, TABLE_ELS)
     )
-    // @ts-ignore
-    turndownService._customRulesSet = undefined
   })
 
   it("should transform a table with rows, content", async () => {

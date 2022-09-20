@@ -14,8 +14,6 @@ describe("ResourceEmbed plugin", () => {
     turndownService.rules.array = turndownService.rules.array.filter(
       (rule: any) => !/LegacyShortcodeSyntax/.test(rule.name)
     )
-    // @ts-ignore
-    turndownService._customRulesSet = undefined
   })
 
   test.each(LEGACY_SHORTCODES)(
