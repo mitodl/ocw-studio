@@ -124,10 +124,12 @@ def get_app_installation_id(app: GithubIntegration) -> Optional[str]:
         "User-Agent": "PyGithub/Python",
     }
 
-    response_dict = requests.get(
+    response = requests.get(
         f"{app.base_url}/app/installations",
         headers=headers,
-    ).json()
+    )
+    response.raise_for_status()
+    response_dict = response.json()
     if response_dict:
         for git_app in response_dict:
             if git_app["app_id"] == settings.GITHUB_APP_ID:
@@ -137,18 +139,23 @@ def get_app_installation_id(app: GithubIntegration) -> Optional[str]:
 def get_token():
     """ Get a github token for requests """
     if settings.GITHUB_APP_ID and settings.GITHUB_APP_PRIVATE_KEY:
-        app = GithubIntegration(
-            settings.GITHUB_APP_ID,
-            default_backend().load_pem_private_key(
-                settings.GITHUB_APP_PRIVATE_KEY, None
-            ),
-            **(
-                {"base_url": settings.GIT_API_URL}
-                if settings.GIT_API_URL is not None
-                else {}
-            ),
-        )
-        return app.get_access_token(get_app_installation_id(app)).token
+        try:
+            app = GithubIntegration(
+                settings.GITHUB_APP_ID,
+                default_backend().load_pem_private_key(
+                    settings.GITHUB_APP_PRIVATE_KEY, None
+                ),
+                **(
+                    {"base_url": settings.GIT_API_URL}
+                    if settings.GIT_API_URL is not None
+                    else {}
+                ),
+            )
+            return app.get_access_token(get_app_installation_id(app)).token
+        except Exception as exc:
+            raise ImproperlyConfigured(
+                "Could not initialize github app, check credentials"
+            ) from exc
     elif settings.GIT_TOKEN:
         return settings.GIT_TOKEN
     else:

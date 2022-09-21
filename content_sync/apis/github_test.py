@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from github import GithubException, GithubIntegration
+from requests import HTTPError
 
 from content_sync.apis.github import (
     GIT_DATA_FILEPATH,
@@ -72,6 +73,16 @@ GITHUB_APP_INSTALLATIONS = """[
   }
 ]
 """
+
+
+@pytest.fixture(autouse=True)
+def mock_github_integration(mocker):
+    """ Mock the github app request"""
+    mock_get = mocker.patch("content_sync.apis.github.requests.get")
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = json.loads(GITHUB_APP_INSTALLATIONS)
+    mock_integration = mocker.patch("content_sync.apis.github.GithubIntegration")
+    mock_integration.return_value.get_access_token.return_value.token = "gh_token"
 
 
 @pytest.fixture
@@ -576,8 +587,40 @@ def test_get_token_misconfigured(settings):
     settings.GIT_TOKEN = None
     settings.GITHUB_APP_ID = None
     settings.GITHUB_APP_PRIVATE_KEY = "fake_key"
-    with pytest.raises(ImproperlyConfigured):
+    with pytest.raises(ImproperlyConfigured) as exc:
         get_token()
+    assert (
+        exc.value.args[0]
+        == "Missing Github settings, a token or app id and private key are required"
+    )
+
+
+def test_get_token_bad_private_key(settings):
+    """Should raise ImproperlyConfigured if GITHUB_APP_PRIVATE_KEY is not a valid encoded key"""
+    settings.GITHUB_APP_ID = 12
+    settings.GITHUB_APP_PRIVATE_KEY = "not_a_valid_key"
+    with pytest.raises(ImproperlyConfigured) as exc:
+        get_token()
+    assert exc.value.args[0] == "Could not initialize github app, check credentials"
+
+
+def test_get_token_401(settings, mocker, mock_rsa_key):
+    """Should raise ImproperlyConfigured if github returns an error response"""
+    settings.GITHUB_APP_ID = 12
+    settings.GITHUB_APP_PRIVATE_KEY = mock_rsa_key
+    mocker.patch("content_sync.apis.github.GithubIntegration")
+    mocker.patch(
+        "content_sync.apis.github.requests.get",
+        side_effect=HTTPError(
+            response=mocker.Mock(
+                status_code=401,
+                json=mocker.Mock(return_value="A valid JWT token could not be decoded"),
+            )
+        ),
+    )
+    with pytest.raises(ImproperlyConfigured) as exc:
+        get_token()
+    assert exc.value.args[0] == "Could not initialize github app, check credentials"
 
 
 @pytest.mark.parametrize(
@@ -588,8 +631,6 @@ def test_get_app_installation_id(settings, mocker, mock_rsa_key, app_id, install
     """Should return the installation id based on matching app id returned in a response from Github"""
     settings.GITHUB_APP_ID = app_id
     settings.GITHUB_APP_PRIVATE_KEY = mock_rsa_key
-    mock_get = mocker.patch("content_sync.apis.github.requests.get")
-    mock_get.return_value.json.return_value = json.loads(GITHUB_APP_INSTALLATIONS)
     installation_id = get_app_installation_id(
         GithubIntegration(settings.GITHUB_APP_ID, mock_rsa_key)
     )
