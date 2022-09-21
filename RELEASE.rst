@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.74.0 (Released September 20, 2022)
+--------------
+
+- feat: site dependencies shown while course unpublishing (#1468)
+- Remove oauth2client (#1466)
+- removed underline PR (#1475)
+
 Version 0.73.0 (Released September 08, 2022)
 --------------
 
