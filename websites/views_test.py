@@ -57,7 +57,7 @@ MOCK_GITHUB_DATA = {
 
 @pytest.fixture
 def websites(course_starter):
-    """ Create some websites for tests, with all but one having a sitemetadata WebsiteContent object"""
+    """Create some websites for tests, with all but one having a sitemetadata WebsiteContent object"""
     courses = WebsiteFactory.create_batch(3, published=True, starter=course_starter)
     noncourses = WebsiteFactory.create_batch(2, published=True)
     not_published = [
@@ -262,7 +262,7 @@ def test_websites_endpoint_preview(mocker, drf_client):
 
 
 def test_websites_endpoint_preview_error(mocker, drf_client):
-    """ An exception raised by the api preview call should be handled gracefully """
+    """An exception raised by the api preview call should be handled gracefully"""
     mocker.patch(
         "websites.views.trigger_publish",
         side_effect=[GithubException(status=422, data={}, headers={})],
@@ -324,7 +324,7 @@ def test_websites_endpoint_publish_denied(mocker, drf_client):
 
 
 def test_websites_endpoint_publish_error(mocker, drf_client):
-    """ An exception raised by the api publish call should be handled gracefully """
+    """An exception raised by the api publish call should be handled gracefully"""
     mocker.patch(
         "websites.views.trigger_publish",
         side_effect=[GithubException(status=422, data={}, headers={})],
@@ -435,7 +435,7 @@ def test_websites_endpoint_unpublish_denied(drf_client):
 
 
 def test_websites_endpoint_unpublish_error(mocker, drf_client):
-    """ An exception raised by the api publish call should be handled gracefully """
+    """An exception raised by the api publish call should be handled gracefully"""
     mocker.patch(
         "websites.views.trigger_unpublished_removal",
         side_effect=[HTTPError("oops")],
@@ -480,7 +480,7 @@ def test_websites_endpoint_detail_get_denied(drf_client):
 
 
 def test_websites_endpoint_sorting(drf_client, websites, settings):
-    """ Response should be sorted according to query parameter """
+    """Response should be sorted according to query parameter"""
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
     resp = drf_client.get(
@@ -513,7 +513,7 @@ def test_websites_endpoint_publish_sorting(
 
 
 def test_website_endpoint_search(drf_client):
-    """ should limit the queryset based on the search param """
+    """should limit the queryset based on the search param"""
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
 
@@ -550,7 +550,7 @@ def test_website_endpoint_search(drf_client):
 
 
 def test_website_endpoint_empty_search(drf_client):
-    """ should limit the queryset based on the search param """
+    """should limit the queryset based on the search param"""
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
     WebsiteFactory.create()
@@ -562,7 +562,7 @@ def test_website_endpoint_empty_search(drf_client):
 
 
 def test_websites_autogenerate_name(drf_client):
-    """ Website POST endpoint should auto-generate a name if one is not supplied """
+    """Website POST endpoint should auto-generate a name if one is not supplied"""
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
     starter = WebsiteStarterFactory.create(
@@ -582,7 +582,7 @@ def test_websites_autogenerate_name(drf_client):
 
 
 def test_website_starters_list(settings, drf_client, course_starter):
-    """ Website starters endpoint should return a serialized list """
+    """Website starters endpoint should return a serialized list"""
     settings.FEATURES[features.USE_LOCAL_STARTERS] = False
     new_starter = WebsiteStarterFactory.create(
         source=constants.STARTER_SOURCE_GITHUB,
@@ -598,7 +598,7 @@ def test_website_starters_list(settings, drf_client, course_starter):
 
 
 def test_website_starters_retrieve(drf_client):
-    """ Website starters endpoint should return a single serialized starter """
+    """Website starters endpoint should return a single serialized starter"""
     starter = WebsiteStarterFactory.create(
         source=constants.STARTER_SOURCE_GITHUB,
         status=constants.WebsiteStarterStatus.ACTIVE,
@@ -613,7 +613,7 @@ def test_website_starters_retrieve(drf_client):
 def test_website_starters_local(
     settings, drf_client, use_local_starters, exp_result_count
 ):
-    """ Website starters endpoint should only return local starters if a feature flag is set to True """
+    """Website starters endpoint should only return local starters if a feature flag is set to True"""
     settings.FEATURES[features.USE_LOCAL_STARTERS] = use_local_starters
     WebsiteStarterFactory.create_batch(
         2,
@@ -680,6 +680,13 @@ def test_website_starters_site_configs_exception(mocker, drf_client):
         ["", "page", "", 5],
         ["", "", "text2", 1],
         ["", "", "", 6],
+        ["", "", "myfile3", 1],
+        ["", "", "myfile", 5],
+        ["", "", ".png", 5],
+        ["", "", ".p", 5],
+        ["", "", ".pdf", 0],
+        ["", "", "test", 0],
+        ["", "", "courses", 0],
     ],
 )
 def test_websites_content_list(  # pylint: disable=too-many-locals
@@ -702,6 +709,7 @@ def test_websites_content_list(  # pylint: disable=too-many-locals
             website=website,
             title=f"some TEXT{num} here for a case insensitive search",
             metadata={"resourcetype": "Image" if num % 2 == 0 else "Video"},
+            file=f"courses/my-test-site/myFile{num+1}.png",
         )
         for num in range(5)
     ]
