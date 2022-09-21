@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.75.0
+--------------
+
+- emulate separate turndown instances (#1490)
+- Fix WebsiteContent.full_metadata property (#1489)
+- ZIP up offline sites in mass-build-sites (#1477)
+
 Version 0.74.0 (Released September 20, 2022)
 --------------
 
