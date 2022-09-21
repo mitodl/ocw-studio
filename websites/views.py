@@ -576,7 +576,7 @@ class WebsiteContentViewSet(
             queryset = queryset.filter(type__in=types)
         if search:
             queryset = queryset.filter(
-                Q(title__icontains=search) | Q(file__iregex=f"{search}([^/]+|$)")
+                Q(title__icontains=search) | Q(file__iregex=f"{search}([^/]+$|$)")
             )
         if resourcetype:
             if resourcetype == RESOURCE_TYPE_OTHER:

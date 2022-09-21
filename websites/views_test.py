@@ -685,6 +685,8 @@ def test_website_starters_site_configs_exception(mocker, drf_client):
         ["", "", ".png", 5],
         ["", "", ".p", 5],
         ["", "", ".pdf", 0],
+        ["", "", "test", 0],
+        ["", "", "courses", 0],
     ],
 )
 def test_websites_content_list(  # pylint: disable=too-many-locals
@@ -707,7 +709,7 @@ def test_websites_content_list(  # pylint: disable=too-many-locals
             website=website,
             title=f"some TEXT{num} here for a case insensitive search",
             metadata={"resourcetype": "Image" if num % 2 == 0 else "Video"},
-            file=f"myFile{num+1}.png",
+            file=f"courses/my-test-site/myFile{num+1}.png",
         )
         for num in range(5)
     ]
