@@ -22,6 +22,8 @@ import { DeepPartial } from "../types/util"
 import * as networkInterfaceFuncs from "../store/network_interface"
 import { Website } from "../types/websites"
 import { siteApiDetailUrl } from "../lib/urls"
+import WebsiteContext from "../context/Website"
+import { makeWebsiteDetail } from "../util/factories/websites"
 
 export type ReduxPatch = DeepPartial<ReduxState>
 
@@ -178,5 +180,25 @@ export default class IntegrationTestHelper {
       options
     )
     return [renderResult, { history }] as const
+  }
+
+  /**
+   * Renders the given component, wrapping it in our application providors AND
+   * a WebsiteContext.Provider.
+   *
+   * If the website argument is blank, a mock website will be created and used
+   * as the context value.
+   */
+  renderWithWebsite = (
+    ui: React.ReactElement,
+    website?: Website,
+    options?: RenderOptions
+  ) => {
+    const site = website ?? makeWebsiteDetail()
+    const wrappedUi = (
+      <WebsiteContext.Provider value={site}>{ui}</WebsiteContext.Provider>
+    )
+    const [result, context] = this.render(wrappedUi, options)
+    return [result, { ...context, website: site }] as const
   }
 }

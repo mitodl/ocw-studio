@@ -52,7 +52,12 @@ declare global {
 // cleanup after each test run
 // eslint-disable-next-line mocha/no-top-level-hooks
 afterEach(function() {
-  jest.resetAllMocks()
+  /**
+   * Clear all mock call counts between tests.
+   * This does NOT clear mock implementations.
+   * Mock implementations are always cleared between test files.
+   */
+  jest.clearAllMocks()
   jest.useRealTimers()
   const node = document.querySelector("#integration_test_div")
   if (node) {

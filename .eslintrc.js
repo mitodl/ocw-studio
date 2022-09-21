@@ -18,7 +18,7 @@ module.exports = {
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/no-unused-vars": [
       "error",
-      { argsIgnorePattern: "_" }
+      { argsIgnorePattern: "_", varsIgnorePattern: "_" },
     ],
     "mocha/no-top-level-hooks": "off",
     "mocha/no-sibling-hooks": "off",
