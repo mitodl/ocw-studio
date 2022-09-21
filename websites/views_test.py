@@ -14,6 +14,7 @@ from requests import HTTPError
 from rest_framework import status
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.models import ContentSyncState
 from main import features
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
@@ -345,7 +346,9 @@ def test_websites_endpoint_publish_error(mocker, drf_client):
 def test_websites_endpoint_publish_with_url(
     mocker, drf_client, ocw_site, is_published, action
 ):
-    """url path should be updated if provided and site is not published"""
+    """url path should be updated and content sync state reset if site is not published"""
+    css = ContentSyncState.objects.filter(content__website=ocw_site)
+    css.update(synced_checksum="notnull")
     mock_publish = mocker.patch("websites.views.trigger_publish")
     new_url_path = "5-new-site-fall-2020"
     old_url_path = "courses/old-path"
@@ -365,6 +368,10 @@ def test_websites_endpoint_publish_with_url(
         else old_url_path
     )
     mock_publish.assert_called_once()
+    assert css.count() > 0
+    for sync_state in css:
+        sync_state.refresh_from_db()
+        assert sync_state.synced_checksum == ("notnull" if is_published else None)
 
 
 @pytest.mark.parametrize("action", ["preview", "publish"])

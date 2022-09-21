@@ -14,6 +14,7 @@ from rest_framework.exceptions import ValidationError
 
 from content_sync.api import create_website_backend, update_website_backend
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.models import ContentSyncState
 from gdrive_sync.api import gdrive_root_url, is_gdrive_enabled
 from gdrive_sync.tasks import create_gdrive_folders
 from main.serializers import RequestUserSerializerMixin
@@ -147,6 +148,11 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             instance.url_path = instance.assemble_full_url_path(url_path)
             instance.save()
+            if self.instance.publish_date is None:
+                # Force a backend resync of all associated content with file paths
+                ContentSyncState.objects.filter(
+                    content__in=instance.websitecontent_set.filter(file__isnull=False)
+                ).update(synced_checksum=None)
 
     class Meta:
         model = Website
