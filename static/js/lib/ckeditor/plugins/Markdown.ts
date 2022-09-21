@@ -9,6 +9,7 @@ import { ATTRIBUTE_REGEX } from "./constants"
 import { turndownService } from "../turndown"
 import Turndown from "turndown"
 import { buildAttrsString } from "./util"
+import { validateHtml2md } from "./validateMdConversion"
 
 /**
  * Data processor for CKEditor which implements conversion to / from Markdown
@@ -109,7 +110,7 @@ export default class Markdown extends MarkdownConfigPlugin {
       )}</${el}>`
     }
 
-    const md2html = (md: string): string => {
+    const unvalidatedMd2html = (md: string): string => {
       return converter
         .makeHtml(md)
         .replace(TD_CONTENT_REGEX, (_match, contents) =>
@@ -120,16 +121,23 @@ export default class Markdown extends MarkdownConfigPlugin {
         )
     }
 
-    const html2md = (html: string): string => this.turndown(html)
+    const unvalidatedHtml2md = this.turndown
+
+    const md2html = unvalidatedMd2html
+    const html2md = (html: string): string => {
+      const md = unvalidatedHtml2md(html)
+      validateHtml2md(md, html, unvalidatedMd2html)
+      return md
+    }
 
     // some typescript wrangling necessary here unfortunately b/c of some
     // shortcomings in the typings for @ckeditor/ckeditor5-engine
     // and @ckeditor/ckeditor5-core
-    ;(editor.data.processor as unknown) = new MarkdownDataProcessor(
+    editor.data.processor = new MarkdownDataProcessor(
       (editor.data as any).viewDocument,
       md2html,
       html2md
-    )
+    ) as typeof HtmlDataProcessor
   }
 
   /**

@@ -29,8 +29,9 @@ import {
   WebsiteContent
 } from "../types/websites"
 import { SiteFormValues } from "../types/forms"
+import ErrorBoundary from "./ErrorBoundary"
 
-interface Props {
+export interface SiteContentEditorProps {
   content?: WebsiteContent | null
   loadContent: boolean
   configItem: EditableConfigItem
@@ -40,7 +41,9 @@ interface Props {
   setDirty: (dirty: boolean) => void
 }
 
-export default function SiteContentEditor(props: Props): JSX.Element | null {
+export default function SiteContentEditor(
+  props: SiteContentEditorProps
+): JSX.Element | null {
   const {
     dismiss,
     configItem,
@@ -159,12 +162,14 @@ export default function SiteContentEditor(props: Props): JSX.Element | null {
   }
 
   return (
-    <SiteContentForm
-      onSubmit={onSubmitForm}
-      configItem={configItem}
-      content={content}
-      editorState={editorState}
-      setDirty={setDirty}
-    />
+    <ErrorBoundary>
+      <SiteContentForm
+        onSubmit={onSubmitForm}
+        configItem={configItem}
+        content={content}
+        editorState={editorState}
+        setDirty={setDirty}
+      />
+    </ErrorBoundary>
   )
 }

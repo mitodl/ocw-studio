@@ -5,7 +5,7 @@ import { AppContainer } from "react-hot-loader"
 import { store } from "./store"
 import Root, { RootProps } from "./Root"
 
-import * as Sentry from "@sentry/browser"
+import * as Sentry from "@sentry/react"
 
 require("react-hot-loader/patch")
 /* global SETTINGS:false */

@@ -21,6 +21,7 @@ import {
   RESOURCE_LINK
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
+import useThrowSynchronously from "../../hooks/useAsyncError"
 
 export interface Props {
   value?: string
@@ -41,6 +42,7 @@ type RenderQueueEntry = [string, HTMLElement]
  */
 export default function MarkdownEditor(props: Props): JSX.Element {
   const { link, embed, value, name, onChange, minimal } = props
+  const throwSynchronously = useThrowSynchronously()
 
   const editor = useRef<editor.Editor>()
   const setEditorRef = useCallback(editorInstance => {
@@ -164,6 +166,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         data={value ?? ""}
         onReady={setEditorRef}
         onChange={onChangeCB}
+        onError={throwSynchronously}
       />
       {(link.length > 0 || embed.length > 0) && (
         <ResourcePickerDialog

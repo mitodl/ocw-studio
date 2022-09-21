@@ -4,8 +4,8 @@ module.exports = {
     '@testing-library/react-hooks/disable-error-filtering.js',
     "<rootDir>static/js/test_setup.ts"
   ],
-  cacheDirectory: ".jest-cache",
-  transform: {    "^.+\\.(t|j)sx?$": ["@swc/jest"],  },
+  cacheDirectory:   ".jest-cache",
+  transform:        {    "^.+\\.(t|j)sx?$": ["@swc/jest"],  },
   moduleNameMapper: {
     "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
       "<rootDir>/static/js/mocks/fileMock.js",
@@ -28,5 +28,9 @@ module.exports = {
       ")/)"
   ],
   testPathIgnorePatterns: ["<rootDir>/staticfiles/", "<rootDir>/node_modules/"],
-  testEnvironment: "jsdom"
+  testEnvironment:        "jsdom",
+  watchPlugins:           [
+    "jest-watch-typeahead/filename",
+    "jest-watch-typeahead/testname"
+  ]
 }

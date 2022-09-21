@@ -4,8 +4,10 @@ import { act } from "react-dom/test-utils"
 import sinon, { SinonStub } from "sinon"
 import * as yup from "yup"
 import * as formikFuncs from "formik"
+import sentryTestkit from "sentry-testkit"
+import * as Sentry from "@sentry/react"
 
-import SiteContentEditor from "./SiteContentEditor"
+import SiteContentEditor, { SiteContentEditorProps } from "./SiteContentEditor"
 import WebsiteContext from "../context/Website"
 
 import * as siteContentFuncs from "../lib/site_content"
@@ -14,9 +16,10 @@ import {
   siteApiContentUrl,
   siteApiDetailUrl
 } from "../lib/urls"
-import IntegrationTestHelper, {
+import IntegrationTestHelperOld, {
   TestRenderer
 } from "../util/integration_test_helper_old"
+import { IntegrationTestHelper, screen } from "../testing_utils"
 import {
   makeRepeatableConfigItem,
   makeSingletonConfigItem,
@@ -27,6 +30,7 @@ import {
 import { getContentSchema } from "./forms/validation"
 import * as validationFuncs from "./forms/validation"
 import { shouldIf } from "../test_util"
+import MarkdownEditor from "./widgets/MarkdownEditor"
 
 import {
   EditableConfigItem,
@@ -40,18 +44,21 @@ import { createModalState } from "../types/modal_state"
 
 jest.mock("./forms/validation")
 
-// ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
-function mocko() {
-  return <div>mock</div>
-}
-
 jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
-  default:    mocko
+  default:    jest.fn(() => <div>mock markdown editor</div>)
 }))
+const mockMarkdownEditor = jest.mocked(MarkdownEditor)
+
+const { testkit, sentryTransport } = sentryTestkit()
+Sentry.init({
+  dsn:       "https://fake@fakesentry.example.com/123",
+  // @ts-expect-error let's seeeeee
+  transport: sentryTransport
+})
 
 describe("SiteContent", () => {
-  let helper: IntegrationTestHelper,
+  let helper: IntegrationTestHelperOld,
     render: TestRenderer,
     website: Website,
     websiteStatus: WebsiteStatus,
@@ -66,7 +73,8 @@ describe("SiteContent", () => {
     setDirtyStub: SinonStub
 
   beforeEach(() => {
-    helper = new IntegrationTestHelper()
+    testkit.reset()
+    helper = new IntegrationTestHelperOld()
     website = makeWebsiteDetail()
     websiteStatus = makeWebsiteStatus(website)
     content = makeWebsiteContentDetail()
@@ -506,5 +514,38 @@ describe("SiteContent", () => {
 
     sinon.assert.notCalled(fetchWebsiteListingStub)
     sinon.assert.notCalled(dismissStub)
+  })
+
+  /**
+   * Prefer using this setup for new tests. Expand as necessary.
+   */
+  const setup = (props: Partial<SiteContentEditorProps> = {}) => {
+    const configItem = makeRepeatableConfigItem()
+    const setDirty = jest.fn()
+    const helper = new IntegrationTestHelper()
+    const [result, { history }] = helper.renderWithWebsite(
+      <SiteContentEditor
+        editorState={createModalState("adding")}
+        loadContent={true}
+        setDirty={setDirty}
+        configItem={configItem}
+        {...props}
+      />
+    )
+    return { history, result }
+  }
+
+  it("Displays a fallback for runtime errors and submits to sentry", () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {
+      /** noOp */
+    })
+    mockMarkdownEditor.mockImplementationOnce(() => {
+      throw new Error("Ruh roh.")
+    })
+    setup()
+    expect(testkit.reports()).toHaveLength(1)
+    expect(testkit.reports()[0].error?.message).toBe("Ruh roh.")
+    expect(consoleError).toHaveBeenCalled()
+    screen.getByText("An error has occurred.", { exact: false })
   })
 })
