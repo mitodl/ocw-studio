@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.75.0
+Version 0.75.0 (Released September 22, 2022)
 --------------
 
 - increase timeout on mass-build-sites (#1500)
