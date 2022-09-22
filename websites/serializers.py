@@ -146,13 +146,14 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
         """Update the website url_path"""
         url_path = validated_data.get("url_path")
         with transaction.atomic():
-            instance.url_path = instance.assemble_full_url_path(url_path)
-            instance.save()
-            if self.instance.publish_date is None:
+            url_path = instance.assemble_full_url_path(url_path)
+            if url_path != instance.url_path and self.instance.publish_date is None:
+                instance.url_path = url_path
                 # Force a backend resync of all associated content with file paths
                 ContentSyncState.objects.filter(
                     content__in=instance.websitecontent_set.filter(file__isnull=False)
                 ).update(synced_checksum=None)
+            instance.save()
 
     class Meta:
         model = Website
