@@ -103,7 +103,7 @@ jobs:
           wget -O publishable_sites/sites.json --header="Authorization: Bearer ((api-token))" "((ocw-studio-url))/api/publish/?version=((version))((starter))"
   - task: get-repo-build-course-publish-course
     attempts: 1
-    timeout: 300m
+    timeout: 1200m
     params:
       API_BEARER_TOKEN: ((api-token))
       GTM_ACCOUNT_ID: ((gtm-account-id))
