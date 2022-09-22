@@ -1,12 +1,12 @@
 """ Content sync factories """
-from factory import SubFactory
+import factory
 from factory.django import DjangoModelFactory
 
 
 class ContentSyncStateFactory(DjangoModelFactory):
     """ Factory for ContentSyncState """
 
-    content = SubFactory("websites.factories.WebsiteContentFactory")
+    content = factory.SubFactory("websites.factories.WebsiteContentFactory")
 
     class Meta:
         model = "content_sync.ContentSyncState"
