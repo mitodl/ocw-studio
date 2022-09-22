@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.75.0
+--------------
+
+- increase timeout on mass-build-sites (#1500)
+- Bring back synced_checksum reset for nonpublished sites after a url change (#1496)
+- log ckeditor errors and use sentry/react (#1488)
+- Adding functionality to search resources by filename (#1487)
+- emulate separate turndown instances (#1490)
+- Fix WebsiteContent.full_metadata property (#1489)
+- ZIP up offline sites in mass-build-sites (#1477)
+
 Version 0.74.0 (Released September 20, 2022)
 --------------
 
