@@ -107,6 +107,22 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed on get webpack-json : ((pipeline_name))/((site-name))"
+        on_error:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting webpack-json : ((pipeline_name))/((site-name))"
+        on_abort:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting webpack-json : ((pipeline_name))/((site-name))"
             # END NON-DEV
       - get: ocw-hugo-themes
         trigger: false
@@ -128,6 +144,22 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed to get ocw-hugo-themes : ((pipeline_name))/((site-name))"
+        on_error:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting ocw-hugo-themes : ((pipeline_name))/((site-name))"
+        on_abort:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting ocw-hugo-themes : ((pipeline_name))/((site-name))"
             # END NON-DEV
       - get: ocw-hugo-projects
         trigger: false
@@ -150,6 +182,22 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed to get ocw-hugo-projects : ((pipeline_name))/((site-name))"
+        on_error:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting ocw-hugo-projects : ((pipeline_name))/((site-name))"
+        on_abort:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting ocw-hugo-projects : ((pipeline_name))/((site-name))"
             # END NON-DEV
       - get: course-markdown
         trigger: false
@@ -172,6 +220,22 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed to get course-markdown : ((pipeline_name))/((site-name))"
+        on_error:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting course-markdown : ((pipeline_name))/((site-name))"
+        on_abort:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting course-markdown : ((pipeline_name))/((site-name))"
             # END NON-DEV
       - task: build-course-task
         timeout: 20m
@@ -225,6 +289,22 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed on build-course-task : ((pipeline_name))/((site-name))"
+        on_error:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error during build-course-task : ((pipeline_name))/((site-name))"
+        on_abort:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted during build-course-task : ((pipeline_name))/((site-name))"
             # END NON-DEV
       - task: copy-s3-buckets
         timeout: 20m
@@ -280,6 +360,22 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed on copy-s3-buckets : ((pipeline_name))/((site-name))"
+        on_error:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error during copy-s3-buckets : ((pipeline_name))/((site-name))"
+        on_abort:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted during copy-s3-buckets : ((pipeline_name))/((site-name))"
             # END NON-DEV
       # START NON-DEV
       - task: clear-cdn-cache
@@ -338,4 +434,20 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed on clear-cdn-cache : ((pipeline_name))/((site-name))"
+        on_error:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error during clear-cdn-cache : ((pipeline_name))/((site-name))"
+        on_abort:
+          try:
+            do:
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted during clear-cdn-cache : ((pipeline_name))/((site-name))"
       # END NON-DEV
