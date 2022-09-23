@@ -107,17 +107,37 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed on get webpack-json : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_error:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV  
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: errored
                 text: "Concourse System Error while getting webpack-json : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_abort:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV  
             - put: slack-webhook
               timeout: 1m
               params:
@@ -144,17 +164,37 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed to get ocw-hugo-themes : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_error:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: errored
                 text: "Concourse System Error while getting ocw-hugo-themes : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_abort:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
@@ -182,17 +222,37 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed to get ocw-hugo-projects : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_error:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: errored
                 text: "Concourse System Error while getting ocw-hugo-projects : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_abort:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
@@ -220,17 +280,37 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed to get course-markdown : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_error:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: errored
                 text: "Concourse System Error while getting course-markdown : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_abort:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
@@ -289,17 +369,37 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed on build-course-task : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_error:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: errored
                 text: "Concourse System Error during build-course-task : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_abort:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
@@ -360,17 +460,39 @@ jobs:
               params:
                 alert_type: failed
                 text: "Failed on copy-s3-buckets : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_error:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
                 alert_type: errored
                 text: "Concourse System Error during copy-s3-buckets : ((pipeline_name))/((site-name))"
+            # END NON-DEV
         on_abort:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
@@ -437,6 +559,15 @@ jobs:
         on_error:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
             - put: slack-webhook
               timeout: 1m
               params:
@@ -445,6 +576,15 @@ jobs:
         on_abort:
           try:
             do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
             - put: slack-webhook
               timeout: 1m
               params:
