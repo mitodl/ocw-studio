@@ -152,9 +152,9 @@ def get_token():
                 ),
             )
             return app.get_access_token(get_app_installation_id(app)).token
-        except Exception as exc:
+        except (requests.HTTPError, ValueError, TypeError) as exc:
             raise ImproperlyConfigured(
-                "Could not initialize github app, check credentials"
+                "Could not initialize github app, check the relevant settings"
             ) from exc
     elif settings.GIT_TOKEN:
         return settings.GIT_TOKEN

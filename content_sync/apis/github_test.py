@@ -601,7 +601,10 @@ def test_get_token_bad_private_key(settings):
     settings.GITHUB_APP_PRIVATE_KEY = "not_a_valid_key"
     with pytest.raises(ImproperlyConfigured) as exc:
         get_token()
-    assert exc.value.args[0] == "Could not initialize github app, check credentials"
+    assert (
+        exc.value.args[0]
+        == "Could not initialize github app, check the relevant settings"
+    )
 
 
 def test_get_token_401(settings, mocker, mock_rsa_key):
@@ -620,7 +623,10 @@ def test_get_token_401(settings, mocker, mock_rsa_key):
     )
     with pytest.raises(ImproperlyConfigured) as exc:
         get_token()
-    assert exc.value.args[0] == "Could not initialize github app, check credentials"
+    assert (
+        exc.value.args[0]
+        == "Could not initialize github app, check the relevant settings"
+    )
 
 
 @pytest.mark.parametrize(
