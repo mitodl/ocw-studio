@@ -185,7 +185,10 @@ jobs:
                 return 1
               fi
               mkdir -p ./static/static_resources
-              [[ -f ./content/static_resources/*.html ]] && mv ./content/static_resources/*.html ./static/static_resources
+              if compgen -G "./content/static_resources/*.html" > /dev/null
+              then
+                mv ./content/static_resources/*.html ./static/static_resources
+              fi
               touch ./content/static_resources/_index.md
               # END OFFLINE-ONLY
               echo "RUNNING HUGO BUILD FOR $NAME" > /dev/tty
