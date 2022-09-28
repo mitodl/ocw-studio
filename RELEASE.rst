@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.75.2
+--------------
+
+- proper pathing for the zip command (#1507)
+- use a different method to check if html files exist (#1505)
+
 Version 0.75.1 (Released September 28, 2022)
 --------------
 
