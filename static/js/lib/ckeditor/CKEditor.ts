@@ -16,6 +16,7 @@ import TableToolbarPlugin from "@ckeditor/ckeditor5-table/src/tabletoolbar"
 import CodeBlockPlugin from "@ckeditor/ckeditor5-code-block/src/codeblock"
 import CodePlugin from "@ckeditor/ckeditor5-basic-styles/src/code"
 import Mathematics from 'ckeditor5-math/src/math'
+import MathSyntax from "./plugins/MathSyntax"
 
 import { editor } from "@ckeditor/ckeditor5-core"
 
@@ -89,8 +90,9 @@ export const FullEditorConfig = {
     TableMarkdownSyntax,
     MarkdownListSyntax,
     LegacyShortcodes,
-    Markdown,
     Mathematics,
+    MathSyntax,
+    Markdown,
     DisallowNestedTables
   ],
   toolbar: {
@@ -149,7 +151,6 @@ export const MinimalEditorConfig = {
     ResourceLinkMarkdownSyntax,
     MarkdownListSyntax,
     Markdown,
-    Mathematics,
     LegacyShortcodes
   ],
   toolbar: {
