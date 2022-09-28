@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.75.1
+Version 0.75.1 (Released September 28, 2022)
 --------------
 
 - Adding on_error and on_abort notifications to slack. (#1503)
