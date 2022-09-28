@@ -185,7 +185,10 @@ jobs:
                 return 1
               fi
               mkdir -p ./static/static_resources
-              [[ -f ./content/static_resources/*.html ]] && mv ./content/static_resources/*.html ./static/static_resources
+              if compgen -G "./content/static_resources/*.html" > /dev/null
+              then
+                mv ./content/static_resources/*.html ./static/static_resources
+              fi
               touch ./content/static_resources/_index.md
               # END OFFLINE-ONLY
               echo "RUNNING HUGO BUILD FOR $NAME" > /dev/tty
@@ -203,7 +206,8 @@ jobs:
               cd $CURDIR
               echo "STARTING S3 SYNC FOR $NAME" > /dev/tty
               # START OFFLINE-ONLY
-              zip $NAME.zip -r $SHORT_ID/public
+              cd $CURDIR/$SHORT_ID/public
+              zip $NAME.zip -r ./
               PUBLISH_S3_RESULT=$(aws s3((cli-endpoint-url)) sync ./ s3://((ocw-bucket))$PREFIX/$BASE_URL --exclude="*" --include="$NAME.zip" --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1
               if [[ $PUBLISH_S3_RESULT == 1 ]]
               then
@@ -211,6 +215,7 @@ jobs:
                 return 1
               fi
               rm $NAME.zip
+              cd $CURDIR
               # END OFFLINE-ONLY
               # START ONLINE-ONLY
               STUDIO_S3_RESULT=$(aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH s3://((ocw-bucket))$PREFIX/$SITE_URL --metadata site-id=$NAME --only-show-errors) || STUDIO_S3_RESULT=1

@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.75.1 (Released September 28, 2022)
+--------------
+
+- Adding on_error and on_abort notifications to slack. (#1503)
+- Provide a more helpful error log message when something goes wrong w/git authentication (#1494)
+
 Version 0.75.0 (Released September 22, 2022)
 --------------
 
