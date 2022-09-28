@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from typing import Dict, Iterable, Optional
 
+import PyPDF2
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
@@ -75,7 +76,7 @@ class GDriveStreamReader:
 
 
 def get_drive_service() -> Resource:
-    """ Return a Google Drive service Resource"""
+    """Return a Google Drive service Resource"""
     key = json.loads(settings.DRIVE_SERVICE_ACCOUNT_CREDS)
     creds = ServiceAccountCredentials.from_service_account_info(
         key, scopes=["https://www.googleapis.com/auth/drive"]
@@ -116,7 +117,7 @@ def query_files(query: str, fields: str) -> Iterable[Dict]:
 
 
 def get_parent_tree(parents):
-    """ Return a list of parent folders """
+    """Return a list of parent folders"""
     service = get_drive_service()
     tree = []  # Result
     while True:
@@ -199,7 +200,7 @@ def process_file_result(
 
 @retry_on_failure
 def stream_to_s3(drive_file: DriveFile):
-    """ Stream a Google Drive file to S3 """
+    """Stream a Google Drive file to S3"""
     try:
         s3 = get_boto3_resource("s3")
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
@@ -298,7 +299,7 @@ def get_s3_content_type(key: str) -> str:
 
 
 def get_resource_type(drive_file: DriveFile) -> str:
-    """ Guess the resource type from S3 content_type or extension"""
+    """Guess the resource type from S3 content_type or extension"""
     content_type = get_s3_content_type(drive_file.s3_key)
     _, extension = os.path.splitext(drive_file.s3_key)
     if content_type.startswith("image"):
@@ -328,7 +329,7 @@ def gdrive_root_url():
 
 
 def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[Dict]:
-    """ Yield a list of all files under a Google Drive folder and its subfolders"""
+    """Yield a list of all files under a Google Drive folder and its subfolders"""
     query = f'parents = "{folder_id}" and not trashed'
     drive_results = query_files(query=query, fields=fields)
     for result in drive_results:
@@ -345,11 +346,11 @@ def create_gdrive_resource_content(drive_file: DriveFile):
     try:
         resource_type = get_resource_type(drive_file)
         resource = drive_file.resource
+        basename, extension = os.path.splitext(drive_file.name)
         if not resource:
             site_config = SiteConfig(drive_file.website.starter.config)
             config_item = site_config.find_item_by_name(name=CONTENT_TYPE_RESOURCE)
             dirpath = config_item.file_target if config_item else None
-            basename, _ = os.path.splitext(drive_file.name)
 
             filename = get_valid_new_filename(
                 website_pk=drive_file.website.pk,
@@ -362,9 +363,17 @@ def create_gdrive_resource_content(drive_file: DriveFile):
                 "file_type": drive_file.mime_type,
                 **{field: resource_type for field in settings.RESOURCE_TYPE_FIELDS},
             }
+            resource_title = drive_file.name
+            if extension.lower() == ".pdf":
+                pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                pdf_metadata = pdf_reader.metadata
+                if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
+                    resource_title = pdf_metadata["/Title"]
+
             resource = WebsiteContent.objects.create(
                 website=drive_file.website,
-                title=drive_file.name,
+                title=resource_title,
                 file=drive_file.s3_key,
                 type=CONTENT_TYPE_RESOURCE,
                 is_page_content=True,
@@ -383,6 +392,12 @@ def create_gdrive_resource_content(drive_file: DriveFile):
             )
         else:
             resource.file = drive_file.s3_key
+            if extension.lower() == ".pdf":
+                pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                pdf_metadata = pdf_reader.metadata
+                if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
+                    resource.title = pdf_metadata["/Title"]
             resource.save()
         drive_file.resource = resource
         drive_file.update_status(DriveFileStatus.COMPLETE)

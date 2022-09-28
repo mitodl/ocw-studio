@@ -26,6 +26,7 @@ ipython
 newrelic
 psycopg2
 pygithub==1.55
+PyPDF2
 python-magic
 redis
 requests

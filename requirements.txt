@@ -257,6 +257,8 @@ pyparsing==2.4.7
     # via
     #   httplib2
     #   packaging
+pypdf2==2.11.0
+    # via -r requirements.in
 pytest==6.1.2
     # via mitol-django-common
 python-dateutil==2.8.1
@@ -348,6 +350,8 @@ traitlets==4.3.3
     # via
     #   ipython
     #   matplotlib-inline
+typing-extensions==4.3.0
+    # via pypdf2
 uritemplate==3.0.1
     # via google-api-python-client
 urllib3==1.25.10
