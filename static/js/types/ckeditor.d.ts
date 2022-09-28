@@ -73,3 +73,5 @@ declare module '@ckeditor/ckeditor5-table/src/table';
 declare module '@ckeditor/ckeditor5-code-block/src/codeblock';
 
 declare module '@ckeditor/ckeditor5-basic-styles/src/code';
+
+declare module 'ckeditor5-math/src/math'

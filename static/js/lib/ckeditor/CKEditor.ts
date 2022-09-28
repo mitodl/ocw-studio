@@ -15,6 +15,7 @@ import TablePlugin from "@ckeditor/ckeditor5-table/src/table"
 import TableToolbarPlugin from "@ckeditor/ckeditor5-table/src/tabletoolbar"
 import CodeBlockPlugin from "@ckeditor/ckeditor5-code-block/src/codeblock"
 import CodePlugin from "@ckeditor/ckeditor5-basic-styles/src/code"
+import Mathematics from 'ckeditor5-math/src/math'
 
 import { editor } from "@ckeditor/ckeditor5-core"
 
@@ -60,6 +61,7 @@ const SUPPORTED_PROGRAMMING_LANGUAGES = [
   { language: "xml", label: "XML" }
 ]
 
+
 export const FullEditorConfig = {
   plugins: [
     EssentialsPlugin,
@@ -88,6 +90,7 @@ export const FullEditorConfig = {
     MarkdownListSyntax,
     LegacyShortcodes,
     Markdown,
+    Mathematics,
     DisallowNestedTables
   ],
   toolbar: {
@@ -103,6 +106,7 @@ export const FullEditorConfig = {
       "code",
       "codeBlock",
       "insertTable",
+      "math",
       "undo",
       "redo",
       ADD_RESOURCE_LINK,
@@ -118,6 +122,12 @@ export const FullEditorConfig = {
   table: {
     contentToolbar:  ["tableColumn", "tableRow", "mergeTableCells"],
     defaultHeadings: { rows: 1 }
+  },
+  math: {
+    engine:          'mathjax',
+    outputType:      'script',
+    forceOutputType: false,
+    enablePreview:   true
   },
   language: "en"
 }
@@ -139,6 +149,7 @@ export const MinimalEditorConfig = {
     ResourceLinkMarkdownSyntax,
     MarkdownListSyntax,
     Markdown,
+    Mathematics,
     LegacyShortcodes
   ],
   toolbar: {
@@ -150,11 +161,18 @@ export const MinimalEditorConfig = {
       "bulletedList",
       "numberedList",
       "blockQuote",
+      "math",
       "undo",
       "redo",
       ADD_RESOURCE_LINK,
       ADD_RESOURCE_EMBED
     ]
+  },
+  math: {
+    engine:          'mathjax',
+    outputType:      'script',
+    forceOutputType: false,
+    enablePreview:   true
   },
   language: "en"
 }
