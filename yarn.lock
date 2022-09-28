@@ -465,7 +465,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-clipboard@npm:^31.1.0":
+"@ckeditor/ckeditor5-clipboard@npm:^31.0.0, @ckeditor/ckeditor5-clipboard@npm:^31.1.0":
   version: 31.1.0
   resolution: "@ckeditor/ckeditor5-clipboard@npm:31.1.0"
   dependencies:
@@ -613,6 +613,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ckeditor/ckeditor5-inspector@npm:^2.2.2":
+  version: 2.3.0
+  resolution: "@ckeditor/ckeditor5-inspector@npm:2.3.0"
+  checksum: e833b8392a77495581452cff1a411107e44ea8f985d827add805674b65e6b800ea2de24851d24d38fa29a4426e284ea0c5de420caef20169aaff2dd941856946
+  languageName: node
+  linkType: hard
+
 "@ckeditor/ckeditor5-inspector@npm:^3.1.1":
   version: 3.1.1
   resolution: "@ckeditor/ckeditor5-inspector@npm:3.1.1"
@@ -737,7 +744,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-undo@npm:^31.1.0":
+"@ckeditor/ckeditor5-undo@npm:^31.0.0, @ckeditor/ckeditor5-undo@npm:^31.1.0":
   version: 31.1.0
   resolution: "@ckeditor/ckeditor5-undo@npm:31.1.0"
   dependencies:
@@ -759,7 +766,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-utils@npm:^31.1.0":
+"@ckeditor/ckeditor5-utils@npm:^31.0.0, @ckeditor/ckeditor5-utils@npm:^31.1.0":
   version: 31.1.0
   resolution: "@ckeditor/ckeditor5-utils@npm:31.1.0"
   dependencies:
@@ -4198,6 +4205,22 @@ __metadata:
   version: 1.2.2
   resolution: "cjs-module-lexer@npm:1.2.2"
   checksum: 977f3f042bd4f08e368c890d91eecfbc4f91da0bc009a3c557bc4dfbf32022ad1141244ac1178d44de70fc9f3dea7add7cd9a658a34b9fae98a55d8f92331ce5
+  languageName: node
+  linkType: hard
+
+"ckeditor5-math@npm:31.0.0":
+  version: 31.0.0
+  resolution: "ckeditor5-math@npm:31.0.0"
+  dependencies:
+    "@ckeditor/ckeditor5-clipboard": ^31.0.0
+    "@ckeditor/ckeditor5-core": ^31.0.0
+    "@ckeditor/ckeditor5-engine": ^31.0.0
+    "@ckeditor/ckeditor5-inspector": ^2.2.2
+    "@ckeditor/ckeditor5-ui": ^31.0.0
+    "@ckeditor/ckeditor5-undo": ^31.0.0
+    "@ckeditor/ckeditor5-utils": ^31.0.0
+    "@ckeditor/ckeditor5-widget": ^31.0.0
+  checksum: 66c5321b0c1c4d91166ea3bb44172bddddb059f07a4b0b4815c751fe3f959a6f5196b1586ff1c0b9d0686195e7f324d147f5c5689e3ad4a6cb5d144b1fff7746
   languageName: node
   linkType: hard
 
@@ -9236,6 +9259,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mathjax@npm:^3.2.2":
+  version: 3.2.2
+  resolution: "mathjax@npm:3.2.2"
+  checksum: 8ad843cd72ef8543837270c34d83ed6a734a66047f1fbf9c463065ce7b7f9dfb8e02d76ac353199217a036f963c7bcee8e7c9cc213cbe36dd0f511c8d4f1f6e8
+  languageName: node
+  linkType: hard
+
 "mdn-data@npm:2.0.14":
   version: 2.0.14
   resolution: "mdn-data@npm:2.0.14"
@@ -10079,6 +10109,7 @@ __metadata:
     autoprefixer: 9
     bootstrap: 4
     casual: ^1.6.2
+    ckeditor5-math: 31.0.0
     classnames: ^2.3.1
     core-js: ^3.16.0
     css-loader: ^4.2.1
@@ -10101,6 +10132,7 @@ __metadata:
     js-beautify: ^1.14.0
     lodash: ^4.17.21
     luxon: ^2.0.2
+    mathjax: ^3.2.2
     mini-css-extract-plugin: ^0.10.0
     pluralize: ^8.0.0
     postcss-loader: ^6.1.1

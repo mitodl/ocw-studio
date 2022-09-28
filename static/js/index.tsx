@@ -6,6 +6,7 @@ import { store } from "./store"
 import Root, { RootProps } from "./Root"
 
 import * as Sentry from "@sentry/browser"
+import katex from 'katex'
 
 require("react-hot-loader/patch")
 /* global SETTINGS:false */
