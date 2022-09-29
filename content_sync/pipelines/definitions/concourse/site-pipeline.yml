@@ -407,7 +407,7 @@ jobs:
                 text: "User Aborted during build-course-task : ((pipeline_name))/((site-name))"
             # END NON-DEV
       - task: copy-s3-buckets
-        timeout: 20m
+        timeout: 40m
         attempts: 3
         # START DEV-ONLY
         params:
