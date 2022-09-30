@@ -365,14 +365,11 @@ def create_gdrive_resource_content(drive_file: DriveFile):
             }
             resource_title = drive_file.name
             if extension.lower() == ".pdf":
-                try:
-                    pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
-                    pdf_reader = PyPDF2.PdfReader(pdf_file)
-                    pdf_metadata = pdf_reader.metadata
-                    if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
-                        resource_title = pdf_metadata["/Title"]
-                except:  # if no access to Google Drive stream, silently continue
-                    pass
+                pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                pdf_metadata = pdf_reader.metadata
+                if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
+                    resource_title = pdf_metadata["/Title"]
 
             resource = WebsiteContent.objects.create(
                 website=drive_file.website,
@@ -396,14 +393,11 @@ def create_gdrive_resource_content(drive_file: DriveFile):
         else:
             resource.file = drive_file.s3_key
             if extension.lower() == ".pdf":
-                try:
-                    pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
-                    pdf_reader = PyPDF2.PdfReader(pdf_file)
-                    pdf_metadata = pdf_reader.metadata
-                    if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
-                        resource.title = pdf_metadata["/Title"]
-                except:  # if no access to Google Drive stream, silently continue
-                    pass
+                pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                pdf_metadata = pdf_reader.metadata
+                if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
+                    resource.title = pdf_metadata["/Title"]
             resource.save()
         drive_file.resource = resource
         drive_file.update_status(DriveFileStatus.COMPLETE)
