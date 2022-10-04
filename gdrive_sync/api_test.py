@@ -473,6 +473,19 @@ def test_walk_gdrive_folder(mocker):
     )  # parent, subfolder1, subfolder1_1, subfolder2
 
 
+@pytest.fixture
+def mock_gdrive_pdf(mocker):
+    """Mock reading the metadata of a PDF file with blank metadata"""
+    mocker.patch(
+        "gdrive_sync.api.GDriveStreamReader",
+        return_value=mocker.Mock(read=mocker.Mock(return_value=b"fake_bytes")),
+    )
+    mocker.patch(
+        "gdrive_sync.api.PyPDF2.PdfReader",
+        return_value=mocker.Mock(metadata={}),
+    )
+
+
 @pytest.mark.parametrize(
     "mime_type", ["application/pdf", "application/vnd.ms-powerpoint"]
 )
@@ -507,16 +520,9 @@ def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
 
 
 def test_create_gdrive_resource_content_forbidden_name(
-    mock_get_s3_content_type, mocker
+    mock_get_s3_content_type, mock_gdrive_pdf
 ):
     """content for a google drive file with a forbidden name should have its filename attribute modified"""
-    mocker.patch(
-        "gdrive_sync.api.GDriveStreamReader",
-        return_value=mocker.Mock(read=mocker.Mock(return_value=b"fake_bytes")),
-    )
-    mocker.patch(
-        "gdrive_sync.api.PyPDF2.PdfReader", return_value=mocker.Mock(metadata={})
-    )
     drive_file = DriveFileFactory.create(
         name=f"{CONTENT_FILENAMES_FORBIDDEN[0]}.pdf",
         s3_key=f"test/path/{CONTENT_FILENAMES_FORBIDDEN[0]}.pdf",

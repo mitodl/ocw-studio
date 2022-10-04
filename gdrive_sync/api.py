@@ -340,6 +340,16 @@ def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[Dict]:
                 yield sub_result
 
 
+def get_pdf_title(drive_file: DriveFile) -> str:
+    """Get the title of a PDF from its metadata, if available"""
+    pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    pdf_metadata = pdf_reader.metadata
+    if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
+        return pdf_metadata["/Title"]
+    return drive_file.name
+
+
 @transaction.atomic
 def create_gdrive_resource_content(drive_file: DriveFile):
     """Create a WebsiteContent resource from a Google Drive file"""
@@ -363,13 +373,12 @@ def create_gdrive_resource_content(drive_file: DriveFile):
                 "file_type": drive_file.mime_type,
                 **{field: resource_type for field in settings.RESOURCE_TYPE_FIELDS},
             }
-            resource_title = drive_file.name
-            if extension.lower() == ".pdf":
-                pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
-                pdf_reader = PyPDF2.PdfReader(pdf_file)
-                pdf_metadata = pdf_reader.metadata
-                if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
-                    resource_title = pdf_metadata["/Title"]
+
+            resource_title = (
+                get_pdf_title(drive_file)
+                if extension.lower() == ".pdf"
+                else drive_file.name
+            )
 
             resource = WebsiteContent.objects.create(
                 website=drive_file.website,
@@ -393,11 +402,10 @@ def create_gdrive_resource_content(drive_file: DriveFile):
         else:
             resource.file = drive_file.s3_key
             if extension.lower() == ".pdf":
-                pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
-                pdf_reader = PyPDF2.PdfReader(pdf_file)
-                pdf_metadata = pdf_reader.metadata
-                if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
-                    resource.title = pdf_metadata["/Title"]
+                # update resource title if PDF metadata contains title
+                pdf_title = get_pdf_title(drive_file)
+                if pdf_title != drive_file.name:
+                    resource.title = pdf_title
             resource.save()
         drive_file.resource = resource
         drive_file.update_status(DriveFileStatus.COMPLETE)
