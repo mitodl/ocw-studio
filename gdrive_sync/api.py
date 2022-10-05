@@ -221,7 +221,7 @@ def stream_to_s3(drive_file: DriveFile):
         drive_file.update_status(DriveFileStatus.UPLOAD_COMPLETE)
     except:  # pylint:disable=bare-except
         drive_file.sync_error = (
-            f"An error occurred uploading google drive file {drive_file.name} to S3"
+            f"An error occurred uploading Google Drive file {drive_file.name} to S3"
         )
         drive_file.update_status(DriveFileStatus.UPLOAD_FAILED)
         raise
@@ -350,7 +350,7 @@ def get_pdf_title(drive_file: DriveFile) -> str:
             return pdf_metadata["/Title"]
     except PyPDF2.errors.PdfReadError:
         log.exception("The file %s is not a valid PDF", drive_file.name)
-        drive_file.sync_error = f"Could not create a resource from Google Drive file {drive_file.name} because it not a valid PDF"
+        drive_file.sync_error = f"Could not create a resource from Google Drive file {drive_file.name} because it is not a valid PDF"
         raise
     return drive_file.name
 
@@ -417,7 +417,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
     except:  # pylint:disable=bare-except
         log.exception("Error creating resource for drive file %s", drive_file.file_id)
         drive_file.sync_error = (
-            f"Could not create a resource from google drive file {drive_file.name}"
+            f"Could not create a resource from Google Drive file {drive_file.name}"
         )
         drive_file.update_status(DriveFileStatus.FAILED)
 
