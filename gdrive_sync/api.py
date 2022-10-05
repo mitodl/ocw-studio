@@ -343,10 +343,15 @@ def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[Dict]:
 def get_pdf_title(drive_file: DriveFile) -> str:
     """Get the title of a PDF from its metadata, if available"""
     pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
-    pdf_metadata = pdf_reader.metadata
-    if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
-        return pdf_metadata["/Title"]
+    try:
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        pdf_metadata = pdf_reader.metadata
+        if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
+            return pdf_metadata["/Title"]
+    except PyPDF2.errors.PdfReadError:
+        log.exception("The file %s is not a valid PDF", drive_file.name)
+        drive_file.sync_error = f"Could not create a resource from Google Drive file {drive_file.name} because it not a valid PDF"
+        raise
     return drive_file.name
 
 
