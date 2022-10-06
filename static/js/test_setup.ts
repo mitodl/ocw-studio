@@ -65,6 +65,4 @@ afterEach(function() {
   }
   document.body.innerHTML = ""
   global.SETTINGS = _createSettings()
-  // @ts-ignore
-  window.location = "http://fake/"
 })
