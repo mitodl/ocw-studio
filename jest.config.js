@@ -24,6 +24,7 @@ module.exports = {
       "@ckeditor/*" +
       "|@mitodl/ckeditor5-resource-link/*" +
       "|ckeditor5/*" +
+      "|ckeditor5-math/*" +
       "|lodash-es" +
       ")/)"
   ],
