@@ -38,20 +38,35 @@ class MathSyntax extends MarkdownSyntaxPlugin {
          *
          * Why use BOTH lang and output extensions?
          * Why use BOTH for mathjax? Because we want inputs like
+         *
+         * Added an extra backlash to make it work with ocw-hugo-themes
          */
         {
           type:    "lang",
-          regex:   /\\\((.*?)\\\)/g,
+          regex:   /\\\\\((.*?)\\\\\)/g,
           replace: (_stringMatch: string, math: string) => {
             return `<span data-math>${math}</span>`
+          }
+        },
+        {
+          type:    "lang",
+          regex:   /\\\\\[(.*?)\\\\\]/g,
+          replace: (_stringMatch: string, math: string) => {
+            return `<span data-math mode="display">${math}</span>`
           }
         },
         {
           type:    "output",
           regex:   /<span data-math="">(.*?)<\/span>/g,
           replace: (_stringMatch: string, math: string) => {
-            console.log('hello')
             return `<script type="math/tex">${math}</script>`
+          }
+        },
+        {
+          type:    "output",
+          regex:   /<span data-math="" mode="display">(.*?)<\/span>/g,
+          replace: (_stringMatch: string, math: string) => {
+            return `<script type="math/tex; mode=display">${math}</script>`
           }
         }
       ]
@@ -64,12 +79,14 @@ class MathSyntax extends MarkdownSyntaxPlugin {
         name: 'MathSyntaxRule',
         rule: {
           filter: node => {
-            return node instanceof HTMLScriptElement && node.type === 'math/tex'
+            return node instanceof HTMLScriptElement && node.type.includes('math/tex')
           },
           replacement: (_content: string, node): string => {
             // Use node.textContent not _content because we want
             // the unescaped version. E.g., \frac{1}{2}, not \\frac{1}
-            return String.raw`\(${node.textContent}\)`
+            // @ts-ignore
+            const isDisplayMode = node.type.includes('mode=display')
+            return isDisplayMode ? String.raw`\\[${node.textContent}\\]` : String.raw`\\(${node.textContent}\\)`
           }
         }
       }
