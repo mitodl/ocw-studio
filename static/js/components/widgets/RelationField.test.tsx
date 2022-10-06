@@ -3,9 +3,9 @@ import { act } from "react-dom/test-utils"
 import R from "ramda"
 
 import RelationField from "./RelationField"
-import { debouncedFetch } from "../../lib/api/util"
+import * as apiUtil from "../../lib/api/util"
 import WebsiteContext from "../../context/Website"
-import { Option } from "./SelectField"
+import SelectField, { Option } from "./SelectField"
 
 import IntegrationTestHelper, {
   TestRenderer
@@ -24,23 +24,25 @@ import {
   Website,
   WebsiteContent
 } from "../../types/websites"
-import { ReactWrapper } from "enzyme"
 import { FormError } from "../forms/FormError"
-import {
-  formatWebsiteOptions,
-  useWebsiteSelectOptions
-} from "../../hooks/websites"
+import * as websiteHooks from "../../hooks/websites"
 import SortableSelect from "./SortableSelect"
+import { assertNotNil } from "../../test_util"
 
 jest.mock("../../lib/api/util", () => ({
   ...jest.requireActual("../../lib/api/util"),
   debouncedFetch: jest.fn()
 }))
+const debouncedFetch = jest.mocked(apiUtil.debouncedFetch)
 
 jest.mock("../../hooks/websites", () => ({
   ...jest.requireActual("../../hooks/websites"),
   useWebsiteSelectOptions: jest.fn()
 }))
+const { formatWebsiteOptions } = websiteHooks
+const useWebsiteSelectOptions = jest.mocked(
+  websiteHooks.useWebsiteSelectOptions
+)
 
 describe("RelationField", () => {
   let website: Website,
@@ -70,24 +72,12 @@ describe("RelationField", () => {
         onChange
       }
     )
-
-    // @ts-ignore
-    render = async (props = {}) => {
-      let _wrapper, _store
+    render = async props => {
+      const result = _render(props)
       await act(async () => {
-        // @ts-ignore
-        const { wrapper, store } = await _render(props)
-        // @ts-ignore
-        _wrapper = wrapper
-        // @ts-ignore
-        _store = store
+        await result
       })
-      return {
-        // @ts-ignore
-        wrapper: _wrapper,
-        // @ts-ignore
-        store:   _store
-      }
+      return result
     }
 
     contentListingItems = R.times(
@@ -108,11 +98,10 @@ describe("RelationField", () => {
     }
 
     global.mockFetch.mockResolvedValue({ json: async () => fakeResponse })
-    // @ts-ignore
+    // @ts-expect-error Not fully simulating the response
     debouncedFetch.mockResolvedValue({ json: async () => fakeResponse })
 
     websites = makeWebsites()
-    // @ts-ignore
     useWebsiteSelectOptions.mockReturnValue({
       options:     formatWebsiteOptions(websites, "name"),
       loadOptions: jest.fn()
@@ -122,10 +111,8 @@ describe("RelationField", () => {
   afterEach(() => {
     helper.cleanup()
 
-    // @ts-ignore
     debouncedFetch.mockClear()
     global.mockFetch.mockClear()
-    // @ts-ignore
     useWebsiteSelectOptions.mockReset()
   })
 
@@ -230,12 +217,11 @@ describe("RelationField", () => {
     it("should let the user pick a website and then content within that website", async () => {
       const { wrapper } = await render({ cross_site: true, value: [] })
       await act(async () => {
-        // @ts-ignore
         wrapper
-          .find("SelectField")
+          .find(SelectField)
           .at(0)
           .prop("onChange")({
-          // @ts-ignore
+          // @ts-expect-error Not fully simulating event
             target: { value: "new-uuid" }
           })
         wrapper.update()
@@ -260,7 +246,6 @@ describe("RelationField", () => {
 
       // UI now shows content
       expect(
-        // @ts-ignore
         wrapper
           .find("SelectField")
           .at(1)
@@ -341,7 +326,7 @@ describe("RelationField", () => {
       const numbers = ["one", "two", "three"]
       const fakeEvent = { target: { value: numbers, name } }
       await act(async () => {
-        // @ts-ignore
+        // @ts-expect-error Not fully simulating the event
         select.prop("onChange")(fakeEvent)
       })
       expect(onChangeStub).toBeCalledWith({
@@ -421,7 +406,7 @@ describe("RelationField", () => {
     it(`should omit items listed by valuesToOmit, except those already selected, when value ${
       valueIsArray ? "is" : "is not"
     } an array`, async () => {
-      let wrapper: ReactWrapper, loadOptionsResponse
+      let loadOptionsResponse
       const valuesToOmit = new Set([
         contentListingItems[0].text_id,
         contentListingItems[2].text_id,
@@ -435,16 +420,14 @@ describe("RelationField", () => {
       )
       const expectedOptions = expectedResults.map(asOption)
 
-      await act(async () => {
-        wrapper = (await render({ valuesToOmit, value })).wrapper
-      })
-      // @ts-ignore
-      wrapper.update()
-      // @ts-ignore
-      const loadOptions = wrapper.find("SelectField").prop("loadOptions")
+      const { wrapper } = await render({ valuesToOmit, value })
 
+      wrapper.update()
+
+      const loadOptions = wrapper.find(SelectField).prop("loadOptions")
+      assertNotNil(loadOptions)
       await act(async () => {
-        // @ts-ignore
+        // @ts-expect-error mock is using wrong number of arguments
         loadOptionsResponse = await loadOptions()
       })
 

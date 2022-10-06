@@ -2,7 +2,7 @@ import EmbeddedResource from "./EmbeddedResource"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../../util/integration_test_helper_old"
-import { useWebsite } from "../../context/Website"
+import * as contextWebsite from "../../context/Website"
 import {
   makeWebsiteContentDetail,
   makeWebsiteDetail
@@ -13,6 +13,7 @@ import { ResourceType } from "../../constants"
 
 jest.mock("../../context/Website")
 jest.mock("../../hooks/state")
+const useWebsite = jest.mocked(contextWebsite.useWebsite)
 
 describe("EmbeddedResource", () => {
   let helper: IntegrationTestHelper,
@@ -25,7 +26,7 @@ describe("EmbeddedResource", () => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
     content = makeWebsiteContentDetail()
-    // @ts-ignore
+
     useWebsite.mockReturnValue(website)
 
     helper.mockGetRequest(

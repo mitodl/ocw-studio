@@ -8,7 +8,23 @@ import HierarchicalSelectField, {
   calcOptions,
   Level
 } from "./HierarchicalSelectField"
-import { Option } from "./SelectField"
+import SelectField, { Option } from "./SelectField"
+
+const simulateSelectValue = (
+  wrapper: ShallowWrapper,
+  value: string,
+  idx: number
+) => {
+  return act(() => {
+    wrapper
+      .find(SelectField)
+      .at(idx)
+      .prop("onChange")({
+      // @ts-expect-error not simulating whole event
+        target: { value }
+      })
+  })
+}
 
 describe("HierarchicalSelectField", () => {
   let render: (props?: any) => ShallowWrapper,
@@ -91,14 +107,7 @@ describe("HierarchicalSelectField", () => {
     const wrapper = render()
 
     for (let idx = 0; idx < levels.length; ++idx) {
-      act(() => {
-        // @ts-ignore
-        wrapper
-          .find("SelectField")
-          .at(idx)
-          // @ts-ignore
-          .prop("onChange")({ target: { value: selectPath[idx].value } })
-      })
+      simulateSelectValue(wrapper, selectPath[idx].value, idx)
       expect(
         wrapper
           .find("SelectField")
@@ -111,23 +120,9 @@ describe("HierarchicalSelectField", () => {
   it("resets values on deeper levels when a value is set", () => {
     const wrapper = render()
     for (let idx = 0; idx < levels.length; ++idx) {
-      act(() => {
-        // @ts-ignore
-        wrapper
-          .find("SelectField")
-          .at(idx)
-          // @ts-ignore
-          .prop("onChange")({ target: { value: selectPath[idx].value } })
-      })
+      simulateSelectValue(wrapper, selectPath[idx].value, idx)
     }
-    act(() => {
-      // @ts-ignore
-      wrapper
-        .find("SelectField")
-        .at(0)
-        // @ts-ignore
-        .prop("onChange")({ target: { value: "Topic2" } })
-    })
+    simulateSelectValue(wrapper, "Topic2", 0)
     expect(
       wrapper
         .find("SelectField")
@@ -147,24 +142,10 @@ describe("HierarchicalSelectField", () => {
   it("keeps selection on higher levels when a value is set at a deeper one", () => {
     const wrapper = render()
     for (let idx = 0; idx < levels.length; ++idx) {
-      act(() => {
-        // @ts-ignore
-        wrapper
-          .find("SelectField")
-          .at(idx)
-          // @ts-ignore
-          .prop("onChange")({ target: { value: selectPath[idx].value } })
-      })
+      simulateSelectValue(wrapper, selectPath[idx].value, idx)
     }
     const lastIdx = levels.length - 1
-    act(() => {
-      // @ts-ignore
-      wrapper
-        .find("SelectField")
-        .at(lastIdx)
-        // @ts-ignore
-        .prop("onChange")({ target: { value: "potato" } })
-    })
+    simulateSelectValue(wrapper, "potato", lastIdx)
     expect(
       wrapper
         .find("SelectField")
@@ -201,7 +182,7 @@ describe("HierarchicalSelectField", () => {
       const button = wrapper.find(".values div button").at(valueIndex)
       expect(button.text()).toBe("delete")
       const event = { preventDefault: jest.fn() }
-      // @ts-ignore
+      // @ts-expect-error Not simulating the whole event
       button.prop("onClick")(event)
       expect(event.preventDefault).toBeCalled()
       expect(onChangeStub).toBeCalledWith({
@@ -222,17 +203,10 @@ describe("HierarchicalSelectField", () => {
       const wrapper = render({
         value
       })
-      act(() => {
-        // @ts-ignore
-        wrapper
-          .find("SelectField")
-          .at(0)
-          // @ts-ignore
-          .prop("onChange")({ target: { value: "Topic2" } })
-      })
+      simulateSelectValue(wrapper, "Topic2", 0)
 
       const event = { preventDefault: jest.fn() }
-      // @ts-ignore
+      // @ts-expect-error Not simulating the whole event
       wrapper.find(".add").prop("onClick")(event)
 
       expect(event.preventDefault).toBeCalled()
@@ -252,7 +226,7 @@ describe("HierarchicalSelectField", () => {
     })
 
     const event = { preventDefault: jest.fn() }
-    // @ts-ignore
+    // @ts-expect-error Not simulating the whole event
     wrapper.find(".add").prop("onClick")(event)
 
     expect(event.preventDefault).toBeCalled()

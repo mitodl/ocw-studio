@@ -1,6 +1,6 @@
 import React from "react"
 import { act } from "react-dom/test-utils"
-import { default as useIt } from "@use-it/interval"
+import { default as useInterval } from "@use-it/interval"
 import sinon from "sinon"
 import { Route } from "react-router-dom"
 
@@ -38,7 +38,7 @@ import {
 import { singular } from "pluralize"
 import { StudioListItem } from "./StudioList"
 
-const useInterval = useIt as jest.Mocked<typeof useIt>
+const spyUseInterval = jest.mocked(useInterval)
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
@@ -134,8 +134,7 @@ describe("RepeatableContentListing", () => {
 
   afterEach(() => {
     helper.cleanup()
-    // @ts-ignore
-    useInterval.mockClear()
+    spyUseInterval.mockClear()
     jest.useRealTimers()
   })
 
@@ -184,7 +183,7 @@ describe("RepeatableContentListing", () => {
     const { wrapper } = await render()
     const syncLink = wrapper.find("button.sync")
     await act(async () => {
-      // @ts-ignore
+      // @ts-expect-error Not mocking whole object
       syncLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
     })
     expect(postSyncStub.called).toBeTruthy()
@@ -406,56 +405,59 @@ describe("RepeatableContentListing", () => {
     }
   )
 
-  //
-  ;[
-    [GoogleDriveSyncStatuses.SYNC_STATUS_PENDING, true],
-    [GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING, true],
-    ["Failed", false]
-  ].forEach(([status, shouldUpdate]) => {
-    describe("sync status polling", () => {
-      beforeEach(() => {
-        website = {
-          ...website,
-          //@ts-ignore
-          sync_status: status,
-          synced_on:   "2021-01-01"
-        }
-      })
+  describe.each([
+    {
+      status:       GoogleDriveSyncStatuses.SYNC_STATUS_PENDING,
+      shouldUpdate: true
+    },
+    {
+      status:       GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING,
+      shouldUpdate: true
+    },
+    {
+      status:       GoogleDriveSyncStatuses.SYNC_STATUS_FAILED,
+      shouldUpdate: false
+    }
+  ])("sync status polling", ({ status, shouldUpdate }) => {
+    beforeEach(() => {
+      website = {
+        ...website,
+        sync_status: status,
+        synced_on:   "2021-01-01"
+      }
+    })
 
-      it(`${
-        shouldUpdate ? "polls" : "doesn't poll"
-      } the website sync status when sync_status=${status}`, async () => {
-        SETTINGS.gdrive_enabled = true
-        const getStatusStub = helper.mockGetRequest(
-          siteApiDetailUrl
-            .param({ name: website.name })
-            .query({ only_status: true })
-            .toString(),
-          { sync_status: "Complete" }
-        )
-        const getResourcesStub = helper.mockGetRequest(
-          siteApiContentListingUrl
-            .param({
-              name: website.name
-            })
-            .query({ offset: 0, type: configItem.name })
-            .toString(),
-          apiResponse
-        )
-        await render({ website })
-        // @ts-ignore
-        expect(useInterval).toBeCalledTimes(2)
-        // @ts-ignore
-        await useInterval.mock.calls[0][0]()
+    it(`${
+      shouldUpdate ? "polls" : "doesn't poll"
+    } the website sync status when sync_status=${status}`, async () => {
+      SETTINGS.gdrive_enabled = true
+      const getStatusStub = helper.mockGetRequest(
+        siteApiDetailUrl
+          .param({ name: website.name })
+          .query({ only_status: true })
+          .toString(),
+        { sync_status: "Complete" }
+      )
+      const getResourcesStub = helper.mockGetRequest(
+        siteApiContentListingUrl
+          .param({
+            name: website.name
+          })
+          .query({ offset: 0, type: configItem.name })
+          .toString(),
+        apiResponse
+      )
+      await render({ website })
+      expect(spyUseInterval).toBeCalledTimes(2)
+      await spyUseInterval.mock.calls[0][0]()
 
-        if (shouldUpdate) {
-          sinon.assert.calledOnce(getStatusStub)
-          sinon.assert.calledTwice(getResourcesStub)
-        } else {
-          sinon.assert.notCalled(getStatusStub)
-          sinon.assert.calledOnce(getResourcesStub)
-        }
-      })
+      if (shouldUpdate) {
+        sinon.assert.calledOnce(getStatusStub)
+        sinon.assert.calledTwice(getResourcesStub)
+      } else {
+        sinon.assert.notCalled(getStatusStub)
+        sinon.assert.calledOnce(getResourcesStub)
+      }
     })
   })
 

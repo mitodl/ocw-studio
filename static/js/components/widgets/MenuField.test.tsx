@@ -32,7 +32,7 @@ const dummyHugoItems: HugoItem[] = [
   }
 ]
 
-const dummyInternalMenuItems: InternalSortableMenuItem[] = [
+const dummyInternalMenuItems: Required<InternalSortableMenuItem>[] = [
   {
     id:       "32629a02-3dc5-4128-8e43-0392b51e7b61",
     text:     "Unit 1",
@@ -154,7 +154,7 @@ describe("MenuField", () => {
     expect(deleteBtn.prop("className")).toContain("material-icons")
     expect(deleteBtn.text()).toEqual("delete")
     const preventDefaultStub = jest.fn()
-    // @ts-ignore
+    // @ts-expect-error Not simulating the whole event
     deleteBtn.prop("onClick")({ preventDefault: preventDefaultStub })
     wrapper.update()
     expect(preventDefaultStub).toBeCalledTimes(1)
@@ -219,7 +219,7 @@ describe("MenuField", () => {
       const title = "My Title"
       const internalLinkUuid = "12629a02-3dc5-4128-8e43-0392b51e7b61"
       const externalLinkUrl = "http://example.com"
-      const menuItem = useExistingItem ? // @ts-ignored
+      const menuItem = useExistingItem ?
         dummyInternalMenuItems[0].children[0] :
         null
       const menuItemForm = renderMenuItemForm(menuItem)

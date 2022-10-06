@@ -12,6 +12,23 @@ import {
 import { siteDetailUrl, siteApi, startersApi } from "../lib/urls"
 
 import { Website, WebsiteStarter } from "../types/websites"
+import { assertNotNil } from "../test_util"
+import { ReactWrapper } from "enzyme"
+import { SiteForm, SiteFormProps } from "../components/forms/SiteForm"
+import { FormikHelpers } from "formik"
+
+const simulateSubmit = (
+  wrapper: ReactWrapper<SiteFormProps>,
+  formikStubs: Partial<Record<keyof FormikHelpers<any>, jest.Mock>>,
+  data: any
+) => {
+  const onSubmit = wrapper.prop("onSubmit")
+  assertNotNil(onSubmit)
+  return act(async () => {
+    // @ts-expect-error using Partial on FormikHelpers... we don't need all of them
+    onSubmit(data, formikStubs)
+  })
+}
 
 describe("SiteCreationPage", () => {
   let helper: IntegrationTestHelper,
@@ -25,17 +42,13 @@ describe("SiteCreationPage", () => {
     starters = [makeWebsiteStarter(), makeWebsiteStarter()]
     website = makeWebsiteDetail()
     historyPushStub = jest.fn()
-    render = helper.configureRenderer(
-      // @ts-ignore
-      SiteCreationPage,
-      {
-        history:  { push: historyPushStub },
-        entities: {
-          starters: []
-        },
-        queries: {}
-      }
-    )
+    render = helper.configureRenderer(SiteCreationPage, {
+      history:  { push: historyPushStub },
+      entities: {
+        starters: []
+      },
+      queries: {}
+    })
 
     helper.mockGetRequest(startersApi.toString(), starters)
   })
@@ -73,19 +86,11 @@ describe("SiteCreationPage", () => {
     it("that creates a new site and redirect on success", async () => {
       createWebsiteStub = helper.mockPostRequest(siteApi.toString(), website)
       const { wrapper } = await render()
-      const form = wrapper.find("SiteForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            title:    "My Title",
-            short_id: "My-Title",
-            starter:  1
-          },
-          // @ts-ignore
-          formikStubs
-        )
+      const form = wrapper.find(SiteForm)
+      await simulateSubmit(form, formikStubs, {
+        title:    "My Title",
+        short_id: "My-Title",
+        starter:  1
       })
       sinon.assert.calledOnce(createWebsiteStub)
       expect(formikStubs.setSubmitting).toHaveBeenCalledTimes(1)
@@ -108,19 +113,11 @@ describe("SiteCreationPage", () => {
         400
       )
       const { wrapper } = await render()
-      const form = wrapper.find("SiteForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            title:    errorMsg,
-            short_id: "my-site",
-            starter:  1
-          },
-          // @ts-ignore
-          formikStubs
-        )
+      const form = wrapper.find(SiteForm)
+      await simulateSubmit(form, formikStubs, {
+        title:    errorMsg,
+        short_id: "my-site",
+        starter:  1
       })
       sinon.assert.calledOnce(createWebsiteStub)
       expect(formikStubs.setErrors).toHaveBeenCalledTimes(1)
@@ -142,19 +139,11 @@ describe("SiteCreationPage", () => {
         400
       )
       const { wrapper } = await render()
-      const form = wrapper.find("SiteForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            title:    "My Title",
-            short_id: "My-Title",
-            starter:  1
-          },
-          // @ts-ignore
-          formikStubs
-        )
+      const form = wrapper.find(SiteForm)
+      await simulateSubmit(form, formikStubs, {
+        title:    "My Title",
+        short_id: "My-Title",
+        starter:  1
       })
       sinon.assert.calledOnce(createWebsiteStub)
       expect(formikStubs.setStatus).toHaveBeenCalledTimes(1)

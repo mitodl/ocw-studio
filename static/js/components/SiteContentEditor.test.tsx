@@ -27,9 +27,8 @@ import {
   makeWebsiteDetail,
   makeWebsiteStatus
 } from "../util/factories/websites"
-import { getContentSchema } from "./forms/validation"
 import * as validationFuncs from "./forms/validation"
-import { shouldIf } from "../test_util"
+import { assertNotNil, shouldIf } from "../test_util"
 import MarkdownEditor from "./widgets/MarkdownEditor"
 
 import {
@@ -41,8 +40,11 @@ import {
 } from "../types/websites"
 import { contentDetailKey } from "../query-configs/websites"
 import { createModalState } from "../types/modal_state"
+import SiteContentForm from "./forms/SiteContentForm"
+import { FormikHelpers } from "formik"
 
 jest.mock("./forms/validation")
+const getContentSchema = jest.mocked(validationFuncs.getContentSchema)
 
 jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
@@ -50,10 +52,12 @@ jest.mock("./widgets/MarkdownEditor", () => ({
 }))
 const mockMarkdownEditor = jest.mocked(MarkdownEditor)
 
+const { Formik } = formikFuncs
+
 const { testkit, sentryTransport } = sentryTestkit()
 Sentry.init({
   dsn:       "https://fake@fakesentry.example.com/123",
-  // @ts-expect-error let's seeeeee
+  // @ts-expect-error Unsure the issue here.
   transport: sentryTransport
 })
 
@@ -64,7 +68,7 @@ describe("SiteContent", () => {
     websiteStatus: WebsiteStatus,
     configItem: EditableConfigItem,
     historyPushStub: SinonStub,
-    formikStubs: { [key: string]: SinonStub },
+    formikStubs: Record<keyof FormikHelpers<any>, SinonStub>,
     content: WebsiteContent,
     dismissStub: SinonStub,
     fetchWebsiteListingStub: SinonStub,
@@ -80,7 +84,6 @@ describe("SiteContent", () => {
     content = makeWebsiteContentDetail()
     configItem = makeRepeatableConfigItem()
     mockContentSchema = yup.object().shape({})
-    // @ts-ignore
     getContentSchema.mockImplementation(() => mockContentSchema)
     historyPushStub = helper.sandbox.stub()
     dismissStub = helper.sandbox.stub()
@@ -89,6 +92,7 @@ describe("SiteContent", () => {
       dismiss:                    dismissStub,
       fetchWebsiteContentListing: fetchWebsiteListingStub
     }
+    // @ts-expect-error There are others, e.g., setFieldError, but we do not need them
     formikStubs = {
       setErrors:     helper.sandbox.stub(),
       setSubmitting: helper.sandbox.stub(),
@@ -185,10 +189,10 @@ describe("SiteContent", () => {
     it("with no errors", async () => {
       const { wrapper } = await render()
       const values = { val: "ues" }
-      // @ts-ignore
-      const result = await wrapper.find("Formik").prop("validate")(values)
+      const validate = wrapper.find(Formik).prop("validate")
+      assertNotNil(validate)
+      const result = await validate(values)
       expect(result).toStrictEqual({})
-      // @ts-ignore
       sinon.assert.calledOnceWithExactly(
         getContentSchemaStub,
         configItem,
@@ -209,10 +213,10 @@ describe("SiteContent", () => {
       validateYupSchemaStub.throws(error)
       const validationData = ["An error was found"]
       yupToFormErrorsStub.returns(validationData)
-      // @ts-ignore
-      const result = await wrapper.find("Formik").prop("validate")(values)
+      const validate = wrapper.find(Formik).prop("validate")
+      assertNotNil(validate)
+      const result = await validate(values)
       expect(result).toStrictEqual(validationData)
-      // @ts-ignore
       sinon.assert.calledOnceWithExactly(
         getContentSchemaStub,
         configItem,
@@ -242,14 +246,13 @@ describe("SiteContent", () => {
         configItem: configItem,
         ...successStubs
       })
-      const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
+      const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
       const values = {
         title:       "A title",
         description: "Some description"
       }
 
       await act(async () => {
-        // @ts-ignore
         onSubmit(values, formikStubs)
       })
       wrapper.update()
@@ -314,13 +317,12 @@ describe("SiteContent", () => {
       ...successStubs
     })
 
-    const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
+    const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
     const values = {
       title:       "A title",
       description: "Some description"
     }
     await act(async () => {
-      // @ts-ignore
       await onSubmit(values, formikStubs)
     })
     sinon.assert.calledWith(
@@ -365,7 +367,6 @@ describe("SiteContent", () => {
     expect(setDirtyStub.calledBefore(dismissStub)).toBe(true)
     expect(setDirtyStub.calledAfter(dismissStub)).toBe(false)
 
-    // @ts-ignore
     expect(store.getState().entities.websiteContentDetails).toStrictEqual({
       [contentDetailKey({
         textId: content.text_id,
@@ -407,9 +408,8 @@ describe("SiteContent", () => {
           ...successStubs
         })
 
-        const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
+        const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
         await act(async () => {
-          // @ts-ignore
           await onSubmit({}, formikStubs)
         })
         sinon.assert.calledWith(formikStubs.setErrors, errorObj)
@@ -423,9 +423,8 @@ describe("SiteContent", () => {
         })
         const { wrapper } = await render({ editorState, ...successStubs })
 
-        const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
+        const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
         await act(async () => {
-          // @ts-ignore
           await onSubmit({}, formikStubs)
         })
         sinon.assert.calledWith(formikStubs.setStatus, errorMessage)
@@ -486,13 +485,12 @@ describe("SiteContent", () => {
   it("only fetches content listing and hides modal if props are passed in", async () => {
     const { wrapper } = await render()
 
-    const onSubmit = wrapper.find("SiteContentForm").prop("onSubmit")
+    const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
     const values = {
       title:       "A title",
       description: "Some description"
     }
     await act(async () => {
-      // @ts-ignore
       await onSubmit(values, formikStubs)
     })
     sinon.assert.calledWith(
