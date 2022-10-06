@@ -13,7 +13,7 @@ export const isErrorResponse = (response: ActionPromiseValue<any>): boolean =>
  * If an HTTP response contains errors in the body, return either a string representing
  */
 export const getResponseBodyError = (
-  response: ActionPromiseValue<any>
+  response: ActionPromiseValue<any> | null
 ): string | { [key: string]: string } | null => {
   if (!response || !response.body) {
     return null
@@ -39,8 +39,7 @@ export const objectToFormData = (
     if (key === "metadata") {
       formData.append(key, JSON.stringify(value))
     } else if (!isNil(value)) {
-      // @ts-ignore
-      formData.append(key, value)
+      formData.append(key, String(value))
     }
   })
   return formData

@@ -43,13 +43,14 @@ export const sharedWait = async (
     return
   }
 
-  let resolve
+  let resolve = (): void => {
+    throw new Error("Not assigned yet")
+  }
   sharedWaitPromises[key] = new Promise(_resolve => {
     resolve = _resolve
   })
   await wait(delayMillis)
   delete sharedWaitPromises[key]
-  // @ts-ignore
   resolve()
 }
 

@@ -1,5 +1,5 @@
 import { ShowdownExtension } from "showdown"
-import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
+import CKPlugin from "@ckeditor/ckeditor5-core/src/plugin"
 import { editor } from "@ckeditor/ckeditor5-core"
 
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
@@ -79,7 +79,7 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
 const shortcodeModelName = (shortcode: string) =>
   `legacy-shortcode-${shortcode}`
 
-class LegacyShortcodeEditing extends Plugin {
+class LegacyShortcodeEditing extends CKPlugin {
   static get pluginName(): string {
     return "LegacyShortcodeEditing"
   }
@@ -185,13 +185,8 @@ class LegacyShortcodeEditing extends Plugin {
   }
 }
 
-export default class LegacyShortcodes extends Plugin {
-  static get requires(): Plugin[] {
-    return [
-      // @ts-ignore
-      LegacyShortcodeEditing,
-      // @ts-ignore
-      LegacyShortcodeSyntax
-    ]
+export default class LegacyShortcodes extends CKPlugin {
+  static get requires(): typeof CKPlugin[] {
+    return [LegacyShortcodeEditing, LegacyShortcodeSyntax]
   }
 }
