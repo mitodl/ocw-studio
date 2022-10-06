@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.76.0
+--------------
+
+- increase timeout on copy-s3-buckets (#1515)
+
 Version 0.75.2 (Released October 06, 2022)
 --------------
 
