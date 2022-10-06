@@ -5,6 +5,7 @@ from datetime import timedelta
 import pytest
 from botocore.exceptions import ClientError
 from googleapiclient.http import MediaDownloadProgress
+from PyPDF2.errors import PdfReadError
 from mitol.common.utils import now_in_utc
 from moto import mock_s3
 from requests import HTTPError
@@ -14,6 +15,7 @@ from gdrive_sync.api import (
     GDriveStreamReader,
     create_gdrive_resource_content,
     gdrive_root_url,
+    get_pdf_title,
     get_resource_type,
     process_file_result,
     transcode_gdrive_video,
@@ -534,6 +536,23 @@ def test_create_gdrive_resource_content_forbidden_name(
         drive_file.resource.filename
         == f"{CONTENT_FILENAMES_FORBIDDEN[0]}-{CONTENT_TYPE_RESOURCE}"
     )
+
+
+def test_gdrive_pdf_failure(mock_get_s3_content_type, mocker):
+    """Non-valid PDFs should raise an error"""
+    with pytest.raises(PdfReadError) as e:
+        mocker.patch(
+            "gdrive_sync.api.GDriveStreamReader",
+            return_value=mocker.Mock(read=mocker.Mock(return_value=b"fake_bytes")),
+        )
+
+        drive_file = DriveFileFactory.create(
+            name="mylecturenotes123.pdf",
+            s3_key="test/path/mylecturenotes123.pdf",
+            mime_type="application/pdf",
+        )
+        get_pdf_title(drive_file)
+    assert e.value.args[0] == "EOF marker not found"
 
 
 @pytest.mark.parametrize("mytitle", ["", "MyTitle"])
