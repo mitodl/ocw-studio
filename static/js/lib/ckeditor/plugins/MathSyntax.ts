@@ -45,14 +45,14 @@ class MathSyntax extends MarkdownSyntaxPlugin {
           type:    "lang",
           regex:   /\\\\\((.*?)\\\\\)/g,
           replace: (_stringMatch: string, math: string) => {
-            return `<span data-math>${math}</span>`
+            return `<span data-math="">${math}</span>`
           }
         },
         {
           type:    "lang",
           regex:   /\\\\\[(.*?)\\\\\]/g,
           replace: (_stringMatch: string, math: string) => {
-            return `<span data-math mode="display">${math}</span>`
+            return `<span data-math="" mode="display">${math}</span>`
           }
         },
         {
