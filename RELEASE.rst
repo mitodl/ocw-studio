@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.75.2
+Version 0.75.2 (Released October 06, 2022)
 --------------
 
 - proper pathing for the zip command (#1507)
