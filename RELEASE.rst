@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.76.0 (Released October 06, 2022)
+--------------
+
+- increase timeout on copy-s3-buckets (#1515)
+
+Version 0.75.2 (Released October 06, 2022)
+--------------
+
+- proper pathing for the zip command (#1507)
+- use a different method to check if html files exist (#1505)
+
 Version 0.75.1 (Released September 28, 2022)
 --------------
 
