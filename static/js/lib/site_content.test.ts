@@ -31,7 +31,7 @@ import {
   DEFAULT_TITLE_FIELD
 } from "./site_content"
 import { exampleSiteConfigFields, MAIN_PAGE_CONTENT_FIELD } from "../constants"
-import { isIf, shouldIf } from "../test_util"
+import { assertNotNil, shouldIf } from "../test_util"
 
 import {
   ConfigField,
@@ -109,16 +109,20 @@ describe("site_content", () => {
         {
           label:  "Title",
           name:   "title",
-          widget: "string"
+          widget: WidgetVariant.String as const
         },
         {
           label:  "Description",
           name:   "description",
-          widget: "text"
+          widget: WidgetVariant.Text as const
         }
       ]
-      // @ts-ignore
-      const payload = contentFormValuesToPayload(values, fields)
+
+      const payload = contentFormValuesToPayload(
+        values,
+        fields,
+        makeWebsiteDetail()
+      )
       expect(payload).toStrictEqual({
         title:    "a title",
         type:     "metadata",
@@ -140,12 +144,16 @@ describe("site_content", () => {
         {
           label:  "Image",
           name:   "upload",
-          widget: "file"
+          widget: WidgetVariant.File as const
         },
         ...makeFileConfigItem().fields
       ]
-      // @ts-ignore
-      const payload = contentFormValuesToPayload(values, fields)
+
+      const payload = contentFormValuesToPayload(
+        values,
+        fields,
+        makeWebsiteDetail()
+      )
       expect(payload instanceof FormData).toBe(true)
     })
 
@@ -164,24 +172,19 @@ describe("site_content", () => {
         {
           tags: []
         },
-        // @ts-ignore
         [descriptionField],
         makeWebsiteDetail()
       )
       expect(payload).toStrictEqual({ metadata: { tags: [] } })
     })
 
-    //
-    ;[
-      [null, true],
-      ["", true],
-      [undefined, false]
-    ].forEach(([value, isPartOfPayload]) => {
-      it(`${shouldIf(
-        Boolean(isPartOfPayload)
-      )} add the value to payload if the field value is ${String(
-        value
-      )}`, () => {
+    it.each([
+      { value: null, isPartOfPayload: true, should: "Should" },
+      { value: "", isPartOfPayload: true, should: "Should" },
+      { value: undefined, isPartOfPayload: false, should: "Should NOT" }
+    ])(
+      "$should add the value to payload if the field value is $value",
+      ({ value, isPartOfPayload }) => {
         const field: ConfigField = {
           name:   "description",
           label:  "Description",
@@ -189,15 +192,15 @@ describe("site_content", () => {
         }
         const payload = contentFormValuesToPayload(
           {
-            // @ts-ignore
+            // @ts-expect-error Undefined is not one of the permitted types, but this test is being extra cautious.
             description: value
           },
           [field],
           makeWebsiteDetail()
         )
         expect(Object.values(payload).length).toBe(isPartOfPayload ? 1 : 0)
-      })
-    })
+      }
+    )
 
     it("uses a default empty value if the original value shouldn't be sent to the server", () => {
       for (const [widget, expectedDefault] of Object.entries(defaultsMapping)) {
@@ -239,7 +242,6 @@ describe("site_content", () => {
             [field.fields[1].name]: true
           }
         },
-        // @ts-ignore
         [field],
         makeWebsiteDetail()
       )
@@ -274,7 +276,6 @@ describe("site_content", () => {
       }
       const payload = contentFormValuesToPayload(
         values,
-        // @ts-ignore
         [field],
         makeWebsiteDetail()
       )
@@ -294,8 +295,7 @@ describe("site_content", () => {
       const content = makeWebsiteContentDetail()
       // combine all possible fields so we can test all code paths
       const fields = cloneDeep(exampleSiteConfigFields)
-      // @ts-ignore
-      const payload = contentInitialValues(content, fields)
+      const payload = contentInitialValues(content, fields, makeWebsiteDetail())
       expect(payload).toStrictEqual({
         tags:                      [],
         align:                     "",
@@ -317,12 +317,14 @@ describe("site_content", () => {
       const fieldWithoutDefault = exampleSiteConfigFields.find(
         (field: ConfigField) => !field.default
       )
+      assertNotNil(fieldWithDefault)
+      assertNotNil(fieldWithoutDefault)
+
       const fields = [fieldWithDefault, fieldWithoutDefault]
-      // @ts-ignore
-      const values = newInitialValues(fields)
-      // @ts-ignore
+
+      const values = newInitialValues(fields, makeWebsiteDetail())
       expect(values[fieldWithDefault.name]).toBe(fieldWithDefault.default)
-      // @ts-ignore
+
       expect(values[fieldWithoutDefault.name]).toBe("")
     })
 
@@ -546,38 +548,43 @@ describe("site_content", () => {
   })
 
   describe("fieldIsVisible and fieldHasData", () => {
-    [
-      [true, "input", { conditionField: "matching value" }, true, true],
-      [true, "input", { conditionField: "non-matching value" }, false, false],
-      [false, "input", { conditionField: "matching value" }, true, true],
-      [false, "input", { conditionField: "non-matching value" }, true, true],
-      [true, "hidden", { conditionField: "matching value" }, false, true],
-      [true, "hidden", { conditionField: "non-matching value" }, false, false],
-      [false, "hidden", { conditionField: "matching value" }, false, true],
-      [false, "hidden", { conditionField: "non-matching value" }, false, true]
-    ].forEach(
-      ([hasCondition, widget, values, expectedVisible, expectedHasData]) => {
-        // @ts-ignore
-        it(`${isIf(expectedVisible)} visible if the condition ${isIf(
-          // @ts-ignore
-          hasCondition
-          // @ts-ignore
-        )} existing and value is a ${values.conditionField}`, () => {
-          const condition: FieldValueCondition = {
-            field:  "conditionField",
-            equals: "matching value"
-          }
-          const field = makeWebsiteConfigField()
-          // @ts-ignore
-          field.widget = widget
-          if (hasCondition) {
-            field.condition = condition
-          }
-          // @ts-ignore
-          expect(fieldIsVisible(field, values)).toBe(expectedVisible)
-          // @ts-ignore
-          expect(fieldHasData(field, values)).toBe(expectedHasData)
-        })
+    const condition: FieldValueCondition = {
+      field:  "conditionField",
+      equals: "matching value"
+    }
+    const conditionCases = [
+      [true, { conditionField: "matching value" }, true],
+      [true, { conditionField: "non-matching value" }, false],
+      [false, { conditionField: "matching value" }, true],
+      [false, { conditionField: "non-matching value" }, true]
+    ] as const
+    test.each(conditionCases)(
+      "When field has condition, is visible iff condition is met",
+      (hasCondition, values, isMet) => {
+        const field = makeWebsiteConfigField()
+        field.widget = WidgetVariant.Text
+        if (hasCondition) {
+          field.condition = condition
+        }
+        // Only visible if condition is met
+        expect(fieldIsVisible(field, values)).toBe(isMet)
+        // Only has data if condition is met
+        expect(fieldHasData(field, values)).toBe(isMet)
+      }
+    )
+
+    test.each(conditionCases)(
+      "Hidden field is never visible, but has data iff condition is met",
+      (hasCondition, values, isMet) => {
+        const field = makeWebsiteConfigField()
+        field.widget = WidgetVariant.Hidden
+        if (hasCondition) {
+          field.condition = condition
+        }
+        // Only visible if condition is met
+        expect(fieldIsVisible(field, values)).toBe(false)
+        // Only has data if condition is met
+        expect(fieldHasData(field, values)).toBe(isMet)
       }
     )
   })
@@ -661,7 +668,15 @@ describe("site_content", () => {
         const expectedResult = expAddField ?
           [DEFAULT_TITLE_FIELD, randomField] :
           fields
-        // @ts-ignore
+        /**
+         * configItem has type Repeatable... | Singleton...
+         * And `addDefaultFields` is overloaded with one signature for each.
+         * Its implementation (but no declared overload) accepts the union.
+         * TS only considers the delcarations, not the implementation.
+         * We could add a declaration for the union, but we never need it
+         * except in this test.
+         */
+        // @ts-expect-error See above
         expect(addDefaultFields(configItem).fields).toEqual(expectedResult)
       })
     })

@@ -119,7 +119,7 @@ describe("SingletonsContentListing", () => {
     const { wrapper } = await render()
     const tabLinks = wrapper.find("NavLink")
     act(() => {
-      // @ts-ignore
+      // @ts-expect-error Not mocking whole event
       tabLinks.at(tabIndexToSelect).prop("onClick")({
         preventDefault: helper.sandbox.stub()
       })
@@ -171,7 +171,7 @@ describe("SingletonsContentListing", () => {
       sinon.assert.notCalled(contentDetailStub)
       const tabLink = wrapper.find("NavLink").at(tabIndexToSelect)
       act(() => {
-        // @ts-ignore
+        // @ts-expect-error Not mocking whole event
         tabLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
       })
       wrapper.update()

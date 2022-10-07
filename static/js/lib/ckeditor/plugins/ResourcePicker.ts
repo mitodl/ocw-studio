@@ -20,7 +20,6 @@ export default class ResourcePicker extends Plugin {
   init(): void {
     const editor = this.editor
 
-    // @ts-ignore
     const { openResourcePicker } =
       this.editor.config.get(CKEDITOR_RESOURCE_UTILS) ?? {}
 

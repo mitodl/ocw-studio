@@ -46,11 +46,10 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
           filter:      TABLE_ELS,
           replacement: (content: string, node: Turndown.Node): string => {
             const name = node.nodeName.toLowerCase()
-            const attributes = (node as HTMLElement).hasAttributes() ?
+            const el = node as HTMLElement
+            const attributes = el.hasAttributes() ?
               buildAttrsString(
-                //@ts-ignore
-                Array.from(node.attributes).map(
-                  //@ts-ignore
+                Array.from(el.attributes).map(
                   attr => `${attr.name}="${attr.value}"`
                 )
               ) :

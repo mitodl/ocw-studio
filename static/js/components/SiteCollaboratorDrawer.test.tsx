@@ -1,4 +1,5 @@
 import sinon, { SinonStub } from "sinon"
+import { ReactWrapper } from "enzyme"
 import { act } from "react-dom/test-utils"
 
 import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
@@ -15,13 +16,33 @@ import {
   siteApiCollaboratorsUrl
 } from "../lib/urls"
 
-import { Website, WebsiteCollaborator } from "../types/websites"
+import {
+  Website,
+  WebsiteCollaborator,
+  WebsiteCollaboratorFormData
+} from "../types/websites"
+
+const simulateClickSubmit = (
+  wrapper: ReactWrapper,
+  stubs: FormikStubs,
+  data: WebsiteCollaboratorFormData
+) => {
+  const onSubmit = wrapper.prop("onSubmit")
+  if (typeof onSubmit !== "function") {
+    throw new Error("onSubmit should be a function")
+  }
+  return act(async () => {
+    onSubmit(data, stubs)
+  })
+}
+
+type FormikStubs = Record<string, SinonStub>
 
 describe("SiteCollaboratorDrawerTest", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     website: Website,
-    formikStubs: { [key: string]: SinonStub },
+    formikStubs: FormikStubs,
     editCollaboratorStub: SinonStub,
     addCollaboratorStub: SinonStub,
     toggleVisibilityStub: SinonStub,
@@ -40,7 +61,6 @@ describe("SiteCollaboratorDrawerTest", () => {
       setStatus:     sinon.stub()
     }
     render = helper.configureRenderer(
-      // @ts-ignore
       SiteCollaboratorDrawer,
       {
         collaborator:     null,
@@ -91,17 +111,9 @@ describe("SiteCollaboratorDrawerTest", () => {
       )
       const { wrapper } = await render({ collaborator })
       const form = wrapper.find("SiteCollaboratorForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            role: ROLE_EDITOR
-          },
-          // @ts-ignore
-          formikStubs
-        )
-      })
+
+      await simulateClickSubmit(form, formikStubs, { role: ROLE_EDITOR })
+
       sinon.assert.calledOnce(editCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
       sinon.assert.calledOnce(toggleVisibilityStub)
@@ -125,17 +137,9 @@ describe("SiteCollaboratorDrawerTest", () => {
       )
       const { wrapper } = await render({ collaborator })
       const form = wrapper.find("SiteCollaboratorForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            role: ROLE_EDITOR
-          },
-          // @ts-ignore
-          formikStubs
-        )
-      })
+
+      await simulateClickSubmit(form, formikStubs, { role: ROLE_EDITOR })
+
       sinon.assert.calledOnce(editCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
         ...errorResp.errors
@@ -159,17 +163,7 @@ describe("SiteCollaboratorDrawerTest", () => {
       )
       const { wrapper } = await render({ collaborator })
       const form = wrapper.find("SiteCollaboratorForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            role: ROLE_EDITOR
-          },
-          // @ts-ignore
-          formikStubs
-        )
-      })
+      await simulateClickSubmit(form, formikStubs, { role: ROLE_EDITOR })
       sinon.assert.calledOnce(editCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setStatus, errorMsg)
       sinon.assert.notCalled(toggleVisibilityStub)
@@ -190,17 +184,9 @@ describe("SiteCollaboratorDrawerTest", () => {
       )
       const { wrapper } = await render()
       const form = wrapper.find("SiteCollaboratorForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            email: "test@mit.edu",
-            role:  ROLE_EDITOR
-          },
-          // @ts-ignore
-          formikStubs
-        )
+      await simulateClickSubmit(form, formikStubs, {
+        role:  ROLE_EDITOR,
+        email: "test@mit.edu"
       })
       sinon.assert.calledOnce(addCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
@@ -221,17 +207,9 @@ describe("SiteCollaboratorDrawerTest", () => {
       )
       const { wrapper } = await render()
       const form = wrapper.find("SiteCollaboratorForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            email: "oops@mit.edu",
-            role:  ROLE_EDITOR
-          },
-          // @ts-ignore
-          formikStubs
-        )
+      await simulateClickSubmit(form, formikStubs, {
+        role:  ROLE_EDITOR,
+        email: "oops@mit.edu"
       })
       sinon.assert.calledOnce(addCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
@@ -251,17 +229,9 @@ describe("SiteCollaboratorDrawerTest", () => {
       )
       const { wrapper } = await render()
       const form = wrapper.find("SiteCollaboratorForm")
-      const onSubmit = form.prop("onSubmit")
-      await act(async () => {
-        // @ts-ignore
-        onSubmit(
-          {
-            email: "oops@mit.edu",
-            role:  ROLE_EDITOR
-          },
-          // @ts-ignore
-          formikStubs
-        )
+      await simulateClickSubmit(form, formikStubs, {
+        role:  ROLE_EDITOR,
+        email: "oops@mit.edu"
       })
       sinon.assert.calledOnce(addCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setStatus, errorMsg)

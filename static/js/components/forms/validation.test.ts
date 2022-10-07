@@ -8,7 +8,6 @@ import {
   makeSingletonConfigItem,
   makeWebsiteConfigField
 } from "../../util/factories/websites"
-import { isIf } from "../../test_util"
 
 import {
   ConfigItem,
@@ -48,20 +47,31 @@ describe("form validation utils", () => {
         widget:   WidgetVariant.String
       }
 
-      //
-      ;[
-        [null, true, false, true],
-        [titleField, true, true, true],
-        [null, false, false, false]
-      ].forEach(([field, isRepeatable, fieldIncluded, expAddedTitleField]) => {
-        it(`validates correctly if 'title' field ${isIf(
-          fieldIncluded
-        )} included, config item ${isIf(
-          isRepeatable
-        )} repeatable`, async () => {
+      it.each([
+        {
+          field:              null,
+          isRepeatable:       true,
+          expAddedTitleField: true,
+          desc:               "'title' is NOT included, config IS repeatable"
+        },
+        {
+          field:              titleField,
+          isRepeatable:       true,
+          expAddedTitleField: true,
+          desc:               "'title' IS included, config IS repeatable"
+        },
+        {
+          field:              null,
+          isRepeatable:       false,
+          expAddedTitleField: false,
+          desc:               "'title' is NOT included, config is NOT repeatable"
+        }
+      ])(
+        `validates correctly if $desc`,
+        async ({ field, isRepeatable, expAddedTitleField }) => {
+          // @ts-expect-error Unsure the ts error here; possibly types on getContentSchema are wrong
           configItem = {
             ...(isRepeatable ? repeatableConfigItem : singletonConfigItem),
-            // @ts-ignore
             fields: field ? [field] : []
           }
           const schema = getContentSchema(configItem, {})
@@ -77,8 +87,8 @@ describe("form validation utils", () => {
               new yup.ValidationError("Title is a required field")
             )
           }
-        })
-      })
+        }
+      )
     })
 
     it("should skip validation for fields which aren't visible", () => {

@@ -69,7 +69,6 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           editor.current.execute(ResourceCommandMap[variant], uuid)
         }
 
-        // @ts-ignore
         editor.current.editing.view.focus()
       }
     },

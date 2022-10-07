@@ -60,7 +60,7 @@ turndownService.options.emDelimiter = "*"
 // see here for details:
 // https://github.com/domchristie/turndown/issues/293
 //
-// @ts-ignore also typing for `rules.blankRule` is incorrect
+// @ts-expect-error also typing for `rules.blankRule` is incorrect
 turndownService.rules.blankRule.replacement = (
   content: string,
   node: Turndown.Node,
@@ -97,10 +97,9 @@ turndownService.rules.array.find(rule => rule.filter === "li")!.replacement = (
     .replace(/\n/gm, "\n    ") // indent
 
   let prefix = `${options.bulletListMarker} `
-  const parent = node.parentNode
+  const parent = node.parentElement
   if (parent && parent.nodeName === "OL") {
-    // @ts-ignore
-    const start: string = parent.getAttribute("start")
+    const start = parent.getAttribute("start")
     const index = Array.prototype.indexOf.call(parent.children, node)
     prefix = `${start ? Number(start) + index : index + 1}. `
   }

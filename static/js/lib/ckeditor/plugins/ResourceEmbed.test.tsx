@@ -14,7 +14,6 @@ describe("ResourceEmbed plugin", () => {
 
   it("should take in and return 'resource' shortcode", async () => {
     const editor = await getEditor("{{< resource 1234567890 >}}")
-    // @ts-ignore
     expect(editor.getData()).toBe('{{< resource uuid="1234567890" >}}')
   })
 

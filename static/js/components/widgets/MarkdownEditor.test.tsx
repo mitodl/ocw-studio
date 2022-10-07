@@ -113,7 +113,7 @@ describe("MarkdownEditor", () => {
     const wrapper = render()
     const editor = wrapper.find("CKEditor").prop("config")
     const el = document.createElement("div")
-    // @ts-ignore
+    // @ts-expect-error CKEditor types are a work in progress
     editor[CKEDITOR_RESOURCE_UTILS].renderResource("resource-uuid", el)
     wrapper.update()
     expect(
@@ -132,7 +132,7 @@ describe("MarkdownEditor", () => {
     ({ embed, hasTool }) => {
       const wrapper = render({ embed })
       const editorConfig = wrapper.find("CKEditor").prop("config")
-      // @ts-ignore
+      // @ts-expect-error CKEditor types are a work in progress
       expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_EMBED)).toBe(
         hasTool
       )
@@ -147,7 +147,7 @@ describe("MarkdownEditor", () => {
     ({ link, hasTool }) => {
       const wrapper = render({ link })
       const editorConfig = wrapper.find("CKEditor").prop("config")
-      // @ts-ignore
+      // @ts-expect-error CKEditor types are a work in progress
       expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_LINK)).toBe(
         hasTool
       )
@@ -162,7 +162,7 @@ describe("MarkdownEditor", () => {
         link:  ["resource", "page"]
       })
       const editor = wrapper.find("CKEditor").prop("config")
-      // @ts-ignore
+      // @ts-expect-error CKEditor types are a work in progress
       editor[CKEDITOR_RESOURCE_UTILS].openResourcePicker(resourceNodeType)
       wrapper.update()
       expect(
@@ -192,7 +192,7 @@ describe("MarkdownEditor", () => {
 
         const data = "some data"
         const editor = { getData: sandbox.stub().returns(data) }
-        // @ts-ignore
+        // @ts-expect-error CKEditor types are a work in progress
         ckWrapper.prop("onChange")(null, editor)
         if (hasOnChange) {
           sinon.assert.calledOnceWithExactly(onChangeStub, {

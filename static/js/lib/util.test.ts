@@ -1,3 +1,4 @@
+import casual from "casual"
 import { ActionPromiseValue } from "redux-query"
 
 import {
@@ -11,57 +12,87 @@ import {
 } from "./util"
 
 describe("util", () => {
-  [
-    [200, false],
-    [299, false],
-    [300, false],
-    [400, true],
-    [500, true]
-  ].forEach(([status, expResult]) => {
-    it(`isErrorResponse returns ${String(expResult)} when status=${String(
-      status
-    )}`, () => {
+  it.each([
+    { status: 200, isError: false },
+    { status: 299, isError: false },
+    { status: 300, isError: false },
+    { status: 400, isError: true },
+    { status: 500, isError: true }
+  ])(
+    "isErrorResponse returns $isError when status=$status",
+    ({ status, isError }) => {
       const response: ActionPromiseValue<any> = {
-        // @ts-ignore
-        status: status,
-        body:   {}
+        status:   status,
+        body:     {},
+        duration: casual.integer()
       }
-      // @ts-ignore
-      expect(isErrorStatusCode(status)).toStrictEqual(expResult)
-      expect(isErrorResponse(response)).toStrictEqual(expResult)
-    })
-  })
+      expect(isErrorStatusCode(status)).toStrictEqual(isError)
+      expect(isErrorResponse(response)).toStrictEqual(isError)
+    }
+  )
 
   const errorMsg = "some error"
-  ;[
-    [null, null, "no data"],
-    [{}, null, "empty data"],
-    [errorMsg, errorMsg, "an error string"],
-    [[errorMsg, "other errors"], errorMsg, "error strings as a list"],
-    [{ field1: errorMsg }, { field1: errorMsg }, "an error object"],
-    [{ errors: errorMsg }, errorMsg, "a namespaced error message as a string"],
-    [{ errors: [errorMsg] }, errorMsg, "a namespaced message as a list"],
-    [
-      { errors: { field1: errorMsg } },
-      { field1: errorMsg },
-      "a namespaced error object"
-    ]
-  ].forEach(([respData, expResult, desc]) => {
-    it(`getResponseBodyError should return the appropriate error data when it receives ${desc}`, () => {
-      const resp = respData ? { body: respData } : null
-      // @ts-ignore
+  it.each([
+    {
+      responseData:   null,
+      expectedResult: null,
+      desc:           "no data"
+    },
+    {
+      responseData:   {},
+      expectedResult: null,
+      desc:           "empty data"
+    },
+    {
+      responseData:   errorMsg,
+      expectedResult: errorMsg,
+      desc:           "an error string"
+    },
+    {
+      responseData:   [errorMsg, "other errors"],
+      expectedResult: errorMsg,
+      desc:           "error strings as a list"
+    },
+    {
+      responseData:   { field1: errorMsg },
+      expectedResult: { field1: errorMsg },
+      desc:           "an error object"
+    },
+    {
+      responseData:   { errors: errorMsg },
+      expectedResult: errorMsg,
+      desc:           "a namespaced error message as a string"
+    },
+    {
+      responseData:   { errors: [errorMsg] },
+      expectedResult: errorMsg,
+      desc:           "a namespaced message as a list"
+    },
+    {
+      responseData:   { errors: { field1: errorMsg } },
+      expectedResult: { field1: errorMsg },
+      desc:           "a namespaced error object"
+    }
+  ])(
+    "getResponseBodyError should return the appropriate error data when it receives $desc",
+    ({ responseData, expectedResult }) => {
+      const resp = responseData ?
+        {
+          body:     responseData,
+          status:   casual.integer(),
+          duration: casual.integer()
+        } :
+        null
+
       const result = getResponseBodyError(resp)
-      expect(result).toStrictEqual(expResult)
-    })
-  })
+      expect(result).toStrictEqual(expectedResult)
+    }
+  )
 
   it(`getResponseBodyError should return null when it receives an empty response`, () => {
-    // @ts-ignore
-    let result = getResponseBodyError(null)
-    expect(result).toBeNull()
-    // @ts-ignore
-    result = getResponseBodyError({})
-    expect(result).toBeNull()
+    expect(getResponseBodyError(null)).toBeNull()
+    // @ts-expect-error Legacy test... Unsure if a responsive without a body is actually possible.
+    expect(getResponseBodyError({})).toBeNull()
   })
   ;[
     [

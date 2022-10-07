@@ -3,13 +3,14 @@ import { act, renderHook } from "@testing-library/react-hooks"
 import { Website } from "../types/websites"
 import { makeWebsites } from "../util/factories/websites"
 import { formatWebsiteOptions, useWebsiteSelectOptions } from "./websites"
-import { debouncedFetch } from "../lib/api/util"
+import * as apiUtils from "../lib/api/util"
 import { siteApiListingUrl } from "../lib/urls"
 
 jest.mock("../lib/api/util", () => ({
   ...jest.requireActual("../lib/api/util"),
   debouncedFetch: jest.fn()
 }))
+const debouncedFetch = jest.mocked(apiUtils.debouncedFetch)
 
 describe("website hooks", () => {
   describe("useWebsiteSelectOptions", () => {
@@ -17,9 +18,10 @@ describe("website hooks", () => {
 
     beforeEach(() => {
       websites = makeWebsites()
-      // @ts-ignore
-      debouncedFetch.mockReturnValue({
-        json: () => ({ results: websites })
+
+      // @ts-expect-error Not mocking all the properties on Response
+      debouncedFetch.mockResolvedValue({
+        json: async () => ({ results: websites })
       })
       global.mockFetch.mockReturnValue({
         json: () => ({ results: websites })
@@ -27,7 +29,6 @@ describe("website hooks", () => {
     })
 
     afterEach(() => {
-      // @ts-ignore
       debouncedFetch.mockReset()
     })
 

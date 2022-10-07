@@ -21,7 +21,6 @@ describe("ResourceEmbed plugin", () => {
     async shortcode => {
       const md = `{{< ${shortcode} >}}`
       const editor = await getEditor(md)
-      // @ts-ignore
       expect(editor.getData()).toBe(md)
     }
   )
@@ -31,7 +30,6 @@ describe("ResourceEmbed plugin", () => {
     async shortcode => {
       const md1 = `{{< /${shortcode} >}}`
       const editor1 = await getEditor(md1)
-      // @ts-ignore
       expect(editor1.getData()).toBe(md1)
 
       /**
@@ -41,7 +39,6 @@ describe("ResourceEmbed plugin", () => {
        */
       const md2 = `{{</ ${shortcode} >}}`
       const editor2 = await getEditor(md2)
-      // @ts-ignore
       expect(editor2.getData()).toBe(md1)
     }
   )
@@ -52,7 +49,6 @@ describe("ResourceEmbed plugin", () => {
       const md = `{{< ${shortcode} arguments "and chemistry H{{< sub 2 >}}0" >}}`
       const expected = `{{< ${shortcode} "arguments" "and chemistry H{{< sub 2 >}}0" >}}`
       const editor = await getEditor(md)
-      // @ts-ignore
       expect(editor.getData()).toBe(expected)
     }
   )
@@ -63,14 +59,12 @@ describe("ResourceEmbed plugin", () => {
       const md = `{{< ${shortcode} foo=123 html="<for some reason/>" >}}`
       const expected = `{{< ${shortcode} foo="123" html="<for some reason/>" >}}`
       const editor = await getEditor(md)
-      // @ts-ignore
       expect(editor.getData()).toBe(expected)
     }
   )
 
   test("should support a quiz example", async () => {
     const editor = await getEditor(quizTestMD)
-    // @ts-ignore
     expect(editor.getData()).toBe(quizTestMD)
   })
 })

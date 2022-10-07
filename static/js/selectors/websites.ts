@@ -35,7 +35,6 @@ export const getWebsiteListingCursor = createSelector(
       (offset: number): WebsiteListingResponse => {
         const response = listing[offset] ?? {}
         const names = response?.results ?? []
-        // @ts-ignore
         const sites = names.map(websiteDetailCursor)
 
         return {

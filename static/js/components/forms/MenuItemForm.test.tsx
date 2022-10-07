@@ -1,5 +1,6 @@
 import React from "react"
 import { shallow } from "enzyme"
+import { Formik, FormikProps } from "formik"
 
 import MenuItemForm from "./MenuItemForm"
 import { defaultFormikChildProps } from "../../test_util"
@@ -27,18 +28,13 @@ describe("MenuItemForm", () => {
 
   const renderInnerForm = (
     formProps: { [key: string]: any },
-    formikChildProps: { [key: string]: any } = {}
+    formikChildProps: Partial<FormikProps<any>>
   ) => {
     const wrapper = renderForm(formProps || {})
-    return (
-      wrapper
-        .find("Formik")
-        // @ts-ignore
-        .renderProp("children")({
-          ...defaultFormikChildProps,
-          ...formikChildProps
-        })
-    )
+    return wrapper.find(Formik).renderProp("children")({
+      ...defaultFormikChildProps,
+      ...formikChildProps
+    })
   }
 
   it("calls the onSubmit method", () => {
@@ -106,10 +102,10 @@ describe("MenuItemForm", () => {
     expect(internalBtn.prop("value")).toEqual(LinkType.Internal)
     expect(externalBtn.prop("checked")).toBe(false)
     expect(externalBtn.prop("value")).toEqual(LinkType.External)
-    // @ts-ignore
+    // @ts-expect-error Not going to simulate the event
     externalBtn.prop("onChange")()
     expect(setFieldValueStub).toBeCalledWith("menuItemType", LinkType.External)
-    // @ts-ignore
+    // @ts-expect-error Not going to simulate the event
     internalBtn.prop("onChange")()
     expect(setFieldValueStub).toBeCalledWith("menuItemType", LinkType.Internal)
   })
@@ -179,7 +175,7 @@ describe("MenuItemForm", () => {
     const fakeEvent = {
       target: { value: { content: "abc", website: "ignored" } }
     }
-    // @ts-ignore
+    // @ts-expect-error Not using a full event
     relationField.prop("onChange")(fakeEvent)
     expect(setFieldValueStub).toBeCalledWith("internalLink", "abc")
   })
