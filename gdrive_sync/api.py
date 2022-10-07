@@ -342,16 +342,11 @@ def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[Dict]:
 
 def get_pdf_title(drive_file: DriveFile) -> str:
     """Get the title of a PDF from its metadata, if available"""
-    try:
-        pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
-        pdf_reader = PyPDF2.PdfReader(pdf_file)
-        pdf_metadata = pdf_reader.metadata
-        if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
-            return pdf_metadata["/Title"]
-    except PyPDF2.errors.PdfReadError:
-        log.exception("The file %s is not a valid PDF", drive_file.name)
-        drive_file.sync_error = f"Could not create a resource from Google Drive file {drive_file.name} because it is not a valid PDF"
-        raise
+    pdf_file = io.BytesIO(GDriveStreamReader(drive_file).read())
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    pdf_metadata = pdf_reader.metadata
+    if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
+        return pdf_metadata["/Title"]
     return drive_file.name
 
 
@@ -414,6 +409,13 @@ def create_gdrive_resource_content(drive_file: DriveFile):
             resource.save()
         drive_file.resource = resource
         drive_file.update_status(DriveFileStatus.COMPLETE)
+    except PyPDF2.errors.PdfReadError:
+        log.exception(
+            "Could not create a resource from Google Drive file %s because it is not a valid PDF",
+            drive_file.file_id,
+        )
+        drive_file.sync_error = f"Could not create a resource from Google Drive file {drive_file.name} because it is not a valid PDF"
+        drive_file.update_status(DriveFileStatus.FAILED)
     except:  # pylint:disable=bare-except
         log.exception("Error creating resource for drive file %s", drive_file.file_id)
         drive_file.sync_error = (
