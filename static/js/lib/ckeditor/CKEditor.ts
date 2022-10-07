@@ -15,7 +15,7 @@ import TablePlugin from "@ckeditor/ckeditor5-table/src/table"
 import TableToolbarPlugin from "@ckeditor/ckeditor5-table/src/tabletoolbar"
 import CodeBlockPlugin from "@ckeditor/ckeditor5-code-block/src/codeblock"
 import CodePlugin from "@ckeditor/ckeditor5-basic-styles/src/code"
-import Mathematics from 'ckeditor5-math/src/math'
+import Mathematics from "ckeditor5-math/src/math"
 import MathSyntax from "./plugins/MathSyntax"
 
 import { editor } from "@ckeditor/ckeditor5-core"
@@ -61,7 +61,6 @@ const SUPPORTED_PROGRAMMING_LANGUAGES = [
   { language: "typescript", label: "TypeScript" },
   { language: "xml", label: "XML" }
 ]
-
 
 export const FullEditorConfig = {
   plugins: [
@@ -126,8 +125,8 @@ export const FullEditorConfig = {
     defaultHeadings: { rows: 1 }
   },
   math: {
-    engine:          'mathjax',
-    outputType:      'script',
+    engine:          "mathjax",
+    outputType:      "script",
     forceOutputType: false,
     enablePreview:   true
   },
@@ -170,8 +169,8 @@ export const MinimalEditorConfig = {
     ]
   },
   math: {
-    engine:          'mathjax',
-    outputType:      'script',
+    engine:          "mathjax",
+    outputType:      "script",
     forceOutputType: false,
     enablePreview:   true
   },

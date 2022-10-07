@@ -51,9 +51,10 @@ export function markdownTest(
   expect(html2md(md2html(markdown))).toBe(outputMarkdown)
 }
 
-export function htmlConvertContainsTest(editor: editor.Editor,
+export function htmlConvertContainsTest(
+  editor: editor.Editor,
   markdown: string,
-  html: string,
+  html: string
 ): void {
   const { md2html, html2md } = getConverters(editor)
 
