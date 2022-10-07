@@ -76,7 +76,7 @@ turndownService.rules.blankRule.replacement = (
 
   if (matchingRules.length === 1) {
     const [rule] = matchingRules
-    return rule.replacement!(content, node, options)
+    return rule.replacement?.(content, node, options)
   } else {
     return "\n\n"
   }
@@ -86,7 +86,11 @@ turndownService.rules.blankRule.replacement = (
 // extra spaces to the beginning of a list item. So it maps
 // "<ul><li>item</li></ul>" -> "-   item" instead of "- item"
 // see https://github.com/domchristie/turndown/issues/291
-turndownService.rules.array.find(rule => rule.filter === "li")!.replacement = (
+const itemRule = turndownService.rules.array.find(rule => rule.filter === "li")
+if (!itemRule) {
+  throw new Error("Expected rule to exist.")
+}
+itemRule.replacement = (
   content: string,
   node: Turndown.Node,
   options: Turndown.Options

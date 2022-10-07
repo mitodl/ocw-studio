@@ -41,7 +41,7 @@ describe("MenuItemForm", () => {
     const wrapper = renderForm()
 
     wrapper.prop("onSubmit")()
-    expect(onSubmitStub).toBeCalledTimes(1)
+    expect(onSubmitStub).toHaveBeenCalledTimes(1)
     const innerWrapper = renderInnerForm({}, {})
     const submitBtn = innerWrapper.find("button.cyan-button")
     expect(submitBtn.prop("type")).toEqual("submit")
@@ -104,10 +104,16 @@ describe("MenuItemForm", () => {
     expect(externalBtn.prop("value")).toEqual(LinkType.External)
     // @ts-expect-error Not going to simulate the event
     externalBtn.prop("onChange")()
-    expect(setFieldValueStub).toBeCalledWith("menuItemType", LinkType.External)
+    expect(setFieldValueStub).toHaveBeenCalledWith(
+      "menuItemType",
+      LinkType.External
+    )
     // @ts-expect-error Not going to simulate the event
     internalBtn.prop("onChange")()
-    expect(setFieldValueStub).toBeCalledWith("menuItemType", LinkType.Internal)
+    expect(setFieldValueStub).toHaveBeenCalledWith(
+      "menuItemType",
+      LinkType.Internal
+    )
   })
 
   it("renders an internal link dropdown if the 'internal' radio is selected", () => {
@@ -177,6 +183,6 @@ describe("MenuItemForm", () => {
     }
     // @ts-expect-error Not using a full event
     relationField.prop("onChange")(fakeEvent)
-    expect(setFieldValueStub).toBeCalledWith("internalLink", "abc")
+    expect(setFieldValueStub).toHaveBeenCalledWith("internalLink", "abc")
   })
 })

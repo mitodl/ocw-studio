@@ -46,7 +46,7 @@ describe("FileUploadField", () => {
         .simulate("change", {
           target: { name: fileFieldName, files: [mockFile] }
         })
-      expect(onChangeStub).toBeCalledWith({
+      expect(onChangeStub).toHaveBeenCalledWith({
         target: {
           name:  fileFieldName,
           value: mockFile

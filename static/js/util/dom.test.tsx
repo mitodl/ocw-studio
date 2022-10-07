@@ -61,7 +61,7 @@ describe("scrollToError", () => {
     }
   }
 
-  it("it scrolls to and focuses the first matching div in container", () => {
+  it("scrolls to and focuses the first matching div in container", () => {
     mockMatchMedia()
     const { containers, spies } = getTestPage()
 
@@ -78,7 +78,7 @@ describe("scrollToError", () => {
     expect(spies.div1c.focus).toHaveBeenCalledTimes(1)
   })
 
-  it("it smoothly scrolls to center by default", () => {
+  it("smoothly scrolls to center by default", () => {
     mockMatchMedia()
     const { containers, spies } = getTestPage()
 
@@ -90,7 +90,7 @@ describe("scrollToError", () => {
     expect(spies.div1b.focus).toHaveBeenCalledWith({ preventScroll: true })
   })
 
-  it("it respects (prefers-reduced-motion: reduce)", () => {
+  it("respects (prefers-reduced-motion: reduce)", () => {
     const matchMedia = mockMatchMedia()
     const { containers, spies } = getTestPage()
 
@@ -105,7 +105,7 @@ describe("scrollToError", () => {
     expect(spies.div1b.focus).toHaveBeenCalledWith({ preventScroll: true })
   })
 
-  it("it does not error when no element is found", () => {
+  it("does not error when no element is found", () => {
     const matchMedia = mockMatchMedia()
     const { containers } = getTestPage()
 

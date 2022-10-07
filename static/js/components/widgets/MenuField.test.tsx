@@ -102,7 +102,7 @@ describe("MenuField", () => {
     formShowBtn.prop("onClick")({ preventDefault: preventDefaultStub })
     wrapper.update()
     if (menuItem) {
-      expect(preventDefaultStub).toBeCalledTimes(1)
+      expect(preventDefaultStub).toHaveBeenCalledTimes(1)
     }
     const itemFormPanel = wrapper.find("BasicModal")
     expect(itemFormPanel.prop("isVisible")).toBe(true)
@@ -157,7 +157,7 @@ describe("MenuField", () => {
     // @ts-expect-error Not simulating the whole event
     deleteBtn.prop("onClick")({ preventDefault: preventDefaultStub })
     wrapper.update()
-    expect(preventDefaultStub).toBeCalledTimes(1)
+    expect(preventDefaultStub).toHaveBeenCalledTimes(1)
     const removeDialog = wrapper.find("Dialog")
     expect(removeDialog.prop("open")).toBe(true)
     removeDialog.prop("onAccept")()
