@@ -58,6 +58,6 @@ export function htmlConvertContainsTest(
 ): void {
   const { md2html, html2md } = getConverters(editor)
 
-  expect(md2html(markdown)).toContain(html)
-  expect(html2md(html)).toContain(markdown)
+  expect(md2html(markdown)).toBe(html)
+  expect(html2md(html)).toBe(markdown)
 }

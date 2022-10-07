@@ -6,70 +6,52 @@ import MathSyntax from "./MathSyntax"
 
 const getEditor = createTestEditor([MathSyntax, Markdown])
 
-describe("Conversion to and from html for Inline mode", () => {
-  const math = String.raw`\\(E=mc^2\\)`
-  const markdown = (start: string, mid: string, end: string) =>
-    String.raw`${start ?? ""}This is a ${mid ?? ""}text markdown${end ?? ""}`
-  const scriptTag = '<script type="math/tex">E=mc^2</script>'
-  const htmlString = (start: string, mid: string, end: string) =>
-    `<p>${start ?? ""}This is a ${mid ?? ""}text markdown${end ?? ""}</p>`
-  let editor: editor.Editor
+const display = { name: "display", start: "\\\\[", end: "\\\\]", scriptType: "math/tex; mode=display" }
+const inline = { name: "display", start: "\\\\[", end: "\\\\]", scriptType: "math/tex; mode=display" }
+const modes = [display, inline]
 
-  beforeAll(async () => {
-    editor = await getEditor()
+const scriptify = (mode: { scriptType: string }, math: string): string =>  `<script type="${mode.scriptType}">${math}</script>`
+
+describe.each(modes)("MathSyntax converstion to/from $mode", mode => {
+  test.each([
+    {
+      at:   "start",
+      html: (m: string) => `<p>${m} and then MIDDLE text and the END</p>`,
+      md:   (m: string) => `${m} and then MIDDLE text and the END`
+    },
+    {
+      at:   "middle",
+      html: (m: string) => `<p>START and then ${m} text and the END</p>`,
+      md:   (m: string) => `START and then ${m} text and the END`
+    },
+    {
+      at:   "end",
+      html: (m: string) => `<p>START and then MIDDLE text and the ${m}</p>`,
+      md:   (m: string) => `START and then MIDDLE text and the ${m}`
+    }
+  ])("converts math to/from markdown at the $at of text", async get => {
+    const editor = await getEditor()
+    const math = "x^2 + y^2 = z^2"
+    const md = get.md(mode.start + math + mode.end)
+    const html = get.html(scriptify(mode, math))
+    await htmlConvertContainsTest(editor, md, html)
   })
 
-  it.each([
-    {
-      markdownTestString: markdown(math, "", ""),
-      htmlTestString:     htmlString(scriptTag, "", "")
-    },
-    {
-      markdownTestString: markdown("", math, ""),
-      htmlTestString:     htmlString("", scriptTag, "")
-    },
-    {
-      markdownTestString: markdown("", "", math),
-      htmlTestString:     htmlString("", "", scriptTag)
-    }
-  ])(
-    "Should check script tag in multiple positions, inline mode",
-    async ({ markdownTestString, htmlTestString }) => {
-      htmlConvertContainsTest(editor, markdownTestString, htmlTestString)
-    }
-  )
+  test.each([
+    "1 + 1 < 3",
+    "1 + 1 > 0"
+  ])("It converts '%p' correctly", async math => {
+    const editor = await getEditor()
+    const md = mode.start + math + mode.end
+    const html = `<p>${scriptify(mode, math)}</p>`
+    await htmlConvertContainsTest(editor, md, html)
+  })
 })
 
-describe("Conversion to and from html for Display mode", () => {
-  const math = String.raw`\\[E=mc^2\\]`
-  const markdown = (start: string, mid: string, end: string) =>
-    String.raw`${start ?? ""}This is a ${mid ?? ""}text markdown${end ?? ""}`
-  const scriptTag = '<script type="math/tex; mode=display">E=mc^2</script>'
-  const htmlString = (start: string, mid: string, end: string) =>
-    `<p>${start ?? ""}This is a ${mid ?? ""}text markdown${end ?? ""}</p>`
-  let editor: editor.Editor
-
-  beforeAll(async () => {
-    editor = await getEditor()
-  })
-
-  it.each([
-    {
-      markdownTestString: markdown(math, "", ""),
-      htmlTestString:     htmlString(scriptTag, "", "")
-    },
-    {
-      markdownTestString: markdown("", math, ""),
-      htmlTestString:     htmlString("", scriptTag, "")
-    },
-    {
-      markdownTestString: markdown("", "", math),
-      htmlTestString:     htmlString("", "", scriptTag)
-    }
-  ])(
-    "Should check script tag in multiple positions, display mode",
-    async ({ markdownTestString, htmlTestString }) => {
-      htmlConvertContainsTest(editor, markdownTestString, htmlTestString)
-    }
-  )
+test("Display math with new lines", async () => {
+  const editor = await getEditor()
+  const math = String.raw`\begin{align} 1 + 1 = & 2 \\ x + y = & z \end{align}`
+  const md = String.raw`\\[${math}\\]`
+  const html = `<p>${scriptify(display, math)}</p>`
+  await htmlConvertContainsTest(editor, md, html)
 })
