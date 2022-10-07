@@ -5,9 +5,9 @@ from datetime import timedelta
 import pytest
 from botocore.exceptions import ClientError
 from googleapiclient.http import MediaDownloadProgress
-from PyPDF2.errors import PdfReadError
 from mitol.common.utils import now_in_utc
 from moto import mock_s3
+from PyPDF2.errors import PdfReadError
 from requests import HTTPError
 
 from gdrive_sync import api
