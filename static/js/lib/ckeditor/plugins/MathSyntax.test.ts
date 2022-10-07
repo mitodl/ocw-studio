@@ -1,7 +1,7 @@
 /* eslint-disable prefer-template */
 import { editor } from "@ckeditor/ckeditor5-core"
 import Markdown from "./Markdown"
-import { createTestEditor, htmlConvertContainsTest } from "./test_util"
+import { createTestEditor, getConverters, htmlConvertContainsTest } from "./test_util"
 import MathSyntax from "./MathSyntax"
 
 const getEditor = createTestEditor([MathSyntax, Markdown])
@@ -50,8 +50,14 @@ describe.each(modes)("MathSyntax converstion to/from $mode", mode => {
 
 test("Display math with new lines", async () => {
   const editor = await getEditor()
-  const math = String.raw`\begin{align} 1 + 1 = & 2 \\ x + y = & z \end{align}`
+  const { md2html, html2md } = getConverters(editor)
+  const math = String.raw`\begin{align} 1 + 1 = & 2 \\\\ x + y = & z \end{align}`
   const md = String.raw`\\[${math}\\]`
-  const html = `<p>${scriptify(display, math)}</p>`
-  await htmlConvertContainsTest(editor, md, html)
+  const html = `<p>${scriptify(
+    display,
+    String.raw`\begin{align} 1 + 1 = & 2 \\ x + y = & z \end{align}`
+  )}</p>`
+
+  expect(html2md(md2html(md))).toBe(md)
+  expect(md2html(html2md(html))).toBe(html)
 })

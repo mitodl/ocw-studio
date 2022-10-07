@@ -87,10 +87,10 @@ export const FullEditorConfig = {
     ResourceLink,
     ResourceLinkMarkdownSyntax,
     TableMarkdownSyntax,
+    MathSyntax, // Needs to go before MarkdownListSyntax
     MarkdownListSyntax,
     LegacyShortcodes,
     Mathematics,
-    MathSyntax,
     Markdown,
     DisallowNestedTables
   ],

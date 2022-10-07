@@ -2,6 +2,10 @@ import { ShowdownExtension } from "showdown"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 
+const doubleLonelySlash = (s: string) => {
+  return s.replace(/\\\\/g, String.raw`\\\\`)
+}
+
 class MathSyntax extends MarkdownSyntaxPlugin {
   static get pluginName(): string {
     return "MathSyntax"
@@ -33,10 +37,9 @@ class MathSyntax extends MarkdownSyntaxPlugin {
          *    script tag during output extension.
          *  2. Additionally, I was having issues with math at the END of a line
          *     when using only a lang extension. Never fully understood why.
-         * We need to convert mathjax \(\) to script tags.
          *
-         * Why use BOTH lang and output extensions?
-         * Why use BOTH for mathjax? Because we want inputs like
+         * Why use BOTH lang and output extensions for mathjax?
+         * Because we want inputs like
          *
          * Added an extra backlash to make it work with ocw-hugo-themes
          */
@@ -85,12 +88,13 @@ class MathSyntax extends MarkdownSyntaxPlugin {
           },
           replacement: (_content: string, node): string => {
             // Use node.textContent not _content because we want
-            // the unescaped version. E.g., \frac{1}{2}, not \\frac{1}
+            // the unescaped version. E.g., \frac{1}{2}, not \\frac{1}{2}
             const script = node as HTMLScriptElement
             const isDisplayMode = script.type.includes("mode=display")
+            const text = doubleLonelySlash(node.textContent ?? "")
             return isDisplayMode ?
-              String.raw`\\[${node.textContent}\\]` :
-              String.raw`\\(${node.textContent}\\)`
+              String.raw`\\[${text}\\]` :
+              String.raw`\\(${text}\\)`
           }
         }
       }
