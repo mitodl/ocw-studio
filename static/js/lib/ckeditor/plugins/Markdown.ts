@@ -110,8 +110,8 @@ export default class Markdown extends MarkdownConfigPlugin {
       )}</${el}>`
     }
 
-    function md2html(md: string): string {
-      const html = converter
+    const unvalidatedMd2html = (md: string): string => {
+      return converter
         .makeHtml(md)
         .replace(TD_CONTENT_REGEX, (_match, contents) =>
           formatTableCell("td", _match, contents)
@@ -119,8 +119,6 @@ export default class Markdown extends MarkdownConfigPlugin {
         .replace(TH_CONTENT_REGEX, (_match, contents) =>
           formatTableCell("th", _match, contents)
         )
-      console.log(html)
-      return html
     }
 
     const unvalidatedHtml2md = this.turndown
