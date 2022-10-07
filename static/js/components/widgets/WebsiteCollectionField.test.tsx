@@ -3,10 +3,7 @@ import IntegrationTestHelper, {
 } from "../../util/integration_test_helper_old"
 import WebsiteCollectionField from "./WebsiteCollectionField"
 
-import {
-  formatWebsiteOptions,
-  useWebsiteSelectOptions
-} from "../../hooks/websites"
+import * as websiteHooks from "../../hooks/websites"
 import { Website } from "../../types/websites"
 import { makeWebsites } from "../../util/factories/websites"
 import { triggerSortableSelect } from "./test_util"
@@ -17,6 +14,9 @@ jest.mock("../../hooks/websites", () => ({
   ...jest.requireActual("../../hooks/websites"),
   useWebsiteSelectOptions: jest.fn()
 }))
+const useWebsiteSelectOptions = jest.mocked(
+  websiteHooks.useWebsiteSelectOptions
+)
 
 describe("WebsiteCollectionField", () => {
   let helper: IntegrationTestHelper,
@@ -34,8 +34,7 @@ describe("WebsiteCollectionField", () => {
       value: []
     })
     websites = makeWebsites()
-    websiteOptions = formatWebsiteOptions(websites, "name")
-    // @ts-ignore
+    websiteOptions = websiteHooks.formatWebsiteOptions(websites, "name")
     useWebsiteSelectOptions.mockReturnValue({
       options:     websiteOptions,
       loadOptions: jest.fn()

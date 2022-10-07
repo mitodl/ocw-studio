@@ -26,7 +26,6 @@ import {
 } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
-  // @ts-ignore
   ...jest.requireActual("react-router-dom"),
   useRouteMatch: () => mockUseRouteMatch()
 }))
@@ -44,6 +43,7 @@ jest.mock("./SingletonsContentListing", () => ({
 import MockRepeatable from "./RepeatableContentListing"
 import MockSingletons from "./SingletonsContentListing"
 import { DEFAULT_TITLE_FIELD } from "../lib/site_content"
+import { assertNotNil } from "../test_util"
 
 describe("SiteContentListing", () => {
   let helper: IntegrationTestHelper,
@@ -57,7 +57,7 @@ describe("SiteContentListing", () => {
     repeatableConfigItem = makeRepeatableConfigItem("repeatable_test_content")
     singletonsConfigItem = makeSingletonsConfigItem("singleton_test_content")
     website = makeWebsiteDetail()
-    // @ts-ignore
+    assertNotNil(website.starter)
     website.starter = {
       ...website.starter,
       config: {
@@ -86,45 +86,45 @@ describe("SiteContentListing", () => {
     })
   })
 
-  //
-  ;[
-    ["repeatable", MockRepeatable],
-    ["singleton", MockSingletons]
-  ].forEach(([name, child]) => {
-    it(`renders ${name} with the correct props`, async () => {
+  const childCases = [
+    { name: "repeatable", child: MockRepeatable },
+    { name: "singleton", child: MockSingletons }
+  ]
+
+  it.each(childCases)(
+    `renders $name with the correct props`,
+    async ({ child }) => {
       const configItem =
         child === MockRepeatable ? repeatableConfigItem : singletonsConfigItem
 
-      // @ts-ignore
       const params = { name: website.name, contentType: configItem.name }
       mockUseRouteMatch.mockImplementation(() => ({
         params
       }))
       const { wrapper } = await render()
-      // @ts-ignore
+
       const listing = wrapper.find(child)
       expect(listing.exists()).toBe(true)
       expect(listing.props()).toEqual({
         configItem
       })
-    })
+    }
+  )
 
-    it("sets an appropriate title", async () => {
-      const configItem =
-        child === MockRepeatable ? repeatableConfigItem : singletonsConfigItem
+  it.each(childCases)("sets an appropriate title", async ({ child, name }) => {
+    const configItem =
+      child === MockRepeatable ? repeatableConfigItem : singletonsConfigItem
 
-      // @ts-ignore
-      const params = { name: website.name, contentType: configItem.name }
-      mockUseRouteMatch.mockImplementation(() => ({
-        params
-      }))
-      const { wrapper } = await render()
-      expect(wrapper.find("DocumentTitle").prop("title")).toBe(
-        name === "repeatable" ?
-          `OCW Studio | ${website.title} | Repeatable Test Contents` :
-          `OCW Studio | ${website.title} | Singleton Test Content`
-      )
-    })
+    const params = { name: website.name, contentType: configItem.name }
+    mockUseRouteMatch.mockImplementation(() => ({
+      params
+    }))
+    const { wrapper } = await render()
+    expect(wrapper.find("DocumentTitle").prop("title")).toBe(
+      name === "repeatable" ?
+        `OCW Studio | ${website.title} | Repeatable Test Contents` :
+        `OCW Studio | ${website.title} | Singleton Test Content`
+    )
   })
 
   it("modifies config item fields before passing them on RepeatableContentListing", async () => {

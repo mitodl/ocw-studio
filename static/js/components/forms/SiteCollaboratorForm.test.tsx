@@ -8,11 +8,12 @@ import SiteCollaboratorForm, {
   roleValidation
 } from "./SiteCollaboratorForm"
 import { EDITABLE_ROLES } from "../../constants"
-import { defaultFormikChildProps } from "../../test_util"
+import { assertInstanceOf, defaultFormikChildProps } from "../../test_util"
 import { makeWebsiteCollaborator } from "../../util/factories/websites"
 
 import { WebsiteCollaborator } from "../../types/websites"
 import { Option } from "../widgets/SelectField"
+import { Formik, FormikProps } from "formik"
 
 describe("SiteCollaboratorForm", () => {
   let sandbox,
@@ -30,19 +31,14 @@ describe("SiteCollaboratorForm", () => {
     )
 
   const renderInnerForm = (
-    formikChildProps: { [key: string]: any },
+    formikChildProps: Partial<FormikProps<any>>,
     collaborator: WebsiteCollaborator | null
   ) => {
     const wrapper = renderForm(collaborator)
-    return (
-      wrapper
-        .find("Formik")
-        // @ts-ignore
-        .renderProp("children")({
-          ...defaultFormikChildProps,
-          ...formikChildProps
-        })
-    )
+    return wrapper.find(Formik).renderProp("children")({
+      ...defaultFormikChildProps,
+      ...formikChildProps
+    })
   }
 
   beforeEach(() => {
@@ -55,11 +51,9 @@ describe("SiteCollaboratorForm", () => {
     it("passes onSubmit to Formik", () => {
       const wrapper = renderForm(null)
       expect(wrapper.props().onSubmit).toBe(onSubmitStub)
-      const props = wrapper.find("Formik").props()
+      const props = wrapper.find(Formik).props()
       expect(props.onSubmit).toBe(onSubmitStub)
-      // @ts-ignore
       expect(props.validationSchema.fields.role).toBeDefined()
-      // @ts-ignore
       expect(props.validationSchema.fields.email).toBeDefined()
     })
 
@@ -109,18 +103,15 @@ describe("SiteCollaboratorForm", () => {
 
     it("passes onSubmit to Formik", () => {
       const wrapper = renderForm(collaborator)
-      const props = wrapper.find("Formik").props()
+      const props = wrapper.find(Formik).props()
       expect(props.onSubmit).toBe(onSubmitStub)
-      // @ts-ignore
       expect(props.validationSchema.fields.role).toBeDefined()
-      // @ts-ignore
       expect(props.validationSchema.fields.email).toBeUndefined()
     })
 
     it("has current role selected", () => {
       const wrapper = renderForm(collaborator)
-      const props = wrapper.find("Formik").props()
-      //@ts-ignore
+      const props = wrapper.find(Formik).props()
       expect(props.initialValues.role).toBe(collaborator.role)
     })
 
@@ -151,8 +142,7 @@ describe("SiteCollaboratorForm", () => {
           await collaboratorValidation.validateAt("role", "")
         ).rejects.toThrow()
       } catch (error) {
-        expect(error).toBeInstanceOf(yup.ValidationError)
-        // @ts-ignore
+        assertInstanceOf(error, yup.ValidationError)
         expect(error.errors).toStrictEqual(["Role is a required field"])
       }
     })
@@ -163,8 +153,7 @@ describe("SiteCollaboratorForm", () => {
           await collaboratorValidation.validateAt("email", { email: "" })
         ).rejects.toThrow()
       } catch (error) {
-        expect(error).toBeInstanceOf(yup.ValidationError)
-        // @ts-ignore
+        assertInstanceOf(error, yup.ValidationError)
         expect(error.errors).toStrictEqual(["Email is a required field"])
       }
     })
@@ -177,8 +166,7 @@ describe("SiteCollaboratorForm", () => {
           })
         ).rejects.toThrow()
       } catch (error) {
-        expect(error).toBeInstanceOf(yup.ValidationError)
-        // @ts-ignore
+        assertInstanceOf(error, yup.ValidationError)
         expect(error.errors).toStrictEqual(["Email must be a valid email"])
       }
     })
@@ -189,8 +177,7 @@ describe("SiteCollaboratorForm", () => {
           await collaboratorValidation.validateAt("role", "admin")
         ).rejects.toThrow()
       } catch (error) {
-        expect(error).toBeInstanceOf(yup.ValidationError)
-        // @ts-ignore
+        assertInstanceOf(error, yup.ValidationError)
         expect(error.errors).toStrictEqual(["Role is a required field"])
       }
     })

@@ -7,7 +7,7 @@ import ResourcePickerDialog, { TabIds } from "./ResourcePickerDialog"
 import IntegrationTestHelper, {
   TestRenderer
 } from "../../util/integration_test_helper_old"
-import { useDebouncedState } from "../../hooks/state"
+import * as hooksState from "../../hooks/state"
 import { useState } from "react"
 import {
   makeWebsiteContentDetail,
@@ -22,23 +22,25 @@ import { ResourceType } from "../../constants"
 import Dialog from "../Dialog"
 import WebsiteContext from "../../context/Website"
 import { Website } from "../../types/websites"
+import origResourcePickerListing from "./ResourcePickerListing"
+import { assertNotNil } from "../../test_util"
 
 jest.mock("../../hooks/state")
-
-function ResourcePickerListing() {
-  return <div>mock</div>
-}
+const useDebouncedState = jest.mocked(hooksState.useDebouncedState)
 
 // mock this, otherwise it makes requests and whatnot
-jest.mock("./ResourcePickerListing", () => ({
-  __esModule: true,
-  default:    ResourcePickerListing
-}))
+jest.mock("./ResourcePickerListing", () => {
+  const ResourcePickerListing = jest.fn(() => <div>mock</div>)
+  return {
+    __esModule: true,
+    default:    ResourcePickerListing
+  }
+})
+const ResourcePickerListing = jest.mocked(origResourcePickerListing)
 
 const focusResource = (wrapper: ReactWrapper, resource: WebsiteContent) => {
   act(() => {
-    // @ts-ignore
-    wrapper.find("ResourcePickerListing").prop("focusResource")(resource)
+    wrapper.find(ResourcePickerListing).prop("focusResource")(resource)
   })
   wrapper.update()
 }
@@ -61,7 +63,8 @@ describe("ResourcePickerDialog", () => {
     resource = makeWebsiteContentDetail()
 
     setStub = helper.sandbox.stub()
-    // @ts-ignore
+
+    // @ts-expect-error The implementation return is missing some props on DebouncedFn
     useDebouncedState.mockReturnValue(["", setStub])
 
     render = helper.configureRenderer(
@@ -236,7 +239,7 @@ describe("ResourcePickerDialog", () => {
 
   it("should pass filter string to picker, when filter is set", async () => {
     const setStub = helper.sandbox.stub()
-    // @ts-ignore
+    // @ts-expect-error The implementation return is missing some props on DebouncedFn
     useDebouncedState.mockImplementation((initial, _ms) => {
       // this is just to un-debounce to make testing easier
       const [state, setState] = useState(initial)
@@ -253,14 +256,16 @@ describe("ResourcePickerDialog", () => {
     const { wrapper } = await render()
 
     act(() => {
-      wrapper.find("input.filter-input").prop("onChange")!({
-        // @ts-ignore
+      const onChange = wrapper.find("input.filter-input").prop("onChange")
+      assertNotNil(onChange)
+      onChange({
+        // @ts-expect-error Not simulating the whole event
         currentTarget: { value: "new filter" }
       })
     })
     wrapper.update()
 
-    expect(wrapper.find("ResourcePickerListing").prop("filter")).toEqual(
+    expect(wrapper.find(ResourcePickerListing).prop("filter")).toEqual(
       "new filter"
     )
   })

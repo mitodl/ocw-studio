@@ -35,7 +35,7 @@ export default function SortableItem<T>(props: Props<T>): JSX.Element {
     <div
       className="d-flex my-3"
       ref={setNodeRef}
-      // @ts-ignore unfortunately unavoidable because of library types :/
+      // @ts-expect-error unfortunately unavoidable because of library types :/
       style={style}
       {...attributes}
       {...listeners}

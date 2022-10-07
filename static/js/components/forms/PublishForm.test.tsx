@@ -7,6 +7,7 @@ import PublishForm, { websiteUrlValidation } from "./PublishForm"
 import { PublishingEnv } from "../../constants"
 import { assertInstanceOf, defaultFormikChildProps } from "../../test_util"
 import { makeWebsiteDetail } from "../../util/factories/websites"
+import { Formik, FormikProps } from "formik"
 
 describe("PublishForm", () => {
   let sandbox, onSubmitStub: SinonStub
@@ -24,19 +25,14 @@ describe("PublishForm", () => {
     )
 
   const renderInnerForm = (
-    formikChildProps: { [key: string]: any },
+    formikChildProps: Partial<FormikProps<any>>,
     wrapperProps: { [key: string]: any }
   ) => {
     const wrapper = renderForm(wrapperProps)
-    return (
-      wrapper
-        .find("Formik")
-        // @ts-ignore
-        .renderProp("children")({
-          ...defaultFormikChildProps,
-          ...formikChildProps
-        })
-    )
+    return wrapper.find(Formik).renderProp("children")({
+      ...defaultFormikChildProps,
+      ...formikChildProps
+    })
   }
 
   beforeEach(() => {

@@ -5,10 +5,11 @@ import { ValidationError } from "yup"
 
 import { SiteForm, websiteValidation } from "./SiteForm"
 import { makeWebsiteStarter } from "../../util/factories/websites"
-import { defaultFormikChildProps } from "../../test_util"
+import { assertInstanceOf, defaultFormikChildProps } from "../../test_util"
 
 import { WebsiteStarter } from "../../types/websites"
 import { Option } from "../widgets/SelectField"
+import { Formik } from "formik"
 
 describe("SiteForm", () => {
   let sandbox, onSubmitStub: SinonStub, websiteStarters: Array<WebsiteStarter>
@@ -20,15 +21,10 @@ describe("SiteForm", () => {
 
   const renderInnerForm = (formikChildProps: { [key: string]: any }) => {
     const wrapper = renderForm()
-    return (
-      wrapper
-        .find("Formik")
-        // @ts-ignore
-        .renderProp("children")({
-          ...defaultFormikChildProps,
-          ...formikChildProps
-        })
-    )
+    return wrapper.find(Formik).renderProp("children")({
+      ...defaultFormikChildProps,
+      ...formikChildProps
+    })
   }
 
   beforeEach(() => {
@@ -40,9 +36,8 @@ describe("SiteForm", () => {
   it("passes onSubmit to Formik", () => {
     const wrapper = renderForm()
 
-    const props = wrapper.find("Formik").props()
+    const props = wrapper.find(Formik).props()
     expect(props.onSubmit).toBe(onSubmitStub)
-    // @ts-ignore
     expect(props.validationSchema).toBe(websiteValidation)
   })
 
@@ -65,8 +60,7 @@ describe("SiteForm", () => {
           await websiteValidation.validateAt("title", { title: "" })
         ).rejects.toThrow()
       } catch (error) {
-        expect(error).toBeInstanceOf(ValidationError)
-        // @ts-ignore
+        assertInstanceOf(error, ValidationError)
         expect(error.errors).toStrictEqual(["Title is a required field"])
       }
     })
@@ -78,8 +72,8 @@ describe("SiteForm", () => {
           })
         ).rejects.toThrow()
       } catch (error) {
+        assertInstanceOf(error, ValidationError)
         expect(error).toBeInstanceOf(ValidationError)
-        // @ts-ignore
         expect(error.errors).toStrictEqual([
           "Only alphanumeric characters, periods, dashes, or underscores allowed"
         ])

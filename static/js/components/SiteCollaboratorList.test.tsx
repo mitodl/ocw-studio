@@ -19,6 +19,7 @@ import IntegrationTestHelper, {
 import WebsiteContext from "../context/Website"
 
 import { Website, WebsiteCollaborator } from "../types/websites"
+import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
 
 describe("SiteCollaboratorList", () => {
   let helper: IntegrationTestHelper,
@@ -90,25 +91,21 @@ describe("SiteCollaboratorList", () => {
       .simulate("click")
 
     act(() => {
-      // @ts-ignore
       wrapper
         .find("button.dropdown-item")
         .at(0)
         .simulate("click")
     })
     wrapper.update()
-    const component = wrapper.find("SiteCollaboratorDrawer")
+    const component = wrapper.find(SiteCollaboratorDrawer)
     expect(component.prop("collaborator")).toBe(collaborators[0])
     expect(component.prop("visibility")).toBe(true)
 
     act(() => {
-      // @ts-ignore
       component.prop("toggleVisibility")()
     })
     wrapper.update()
-    expect(wrapper.find("SiteCollaboratorDrawer").prop("visibility")).toBe(
-      false
-    )
+    expect(wrapper.find(SiteCollaboratorDrawer).prop("visibility")).toBe(false)
   })
 
   it("the delete collaborator dialog works as expected", async () => {
@@ -155,21 +152,18 @@ describe("SiteCollaboratorList", () => {
     const { wrapper } = await render()
     const addLink = wrapper.find("button").at(0)
     act(() => {
-      // @ts-ignore
+      // @ts-expect-error Not simulating whole event
       addLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
     })
     wrapper.update()
-    const component = wrapper.find("SiteCollaboratorDrawer")
+    const component = wrapper.find(SiteCollaboratorDrawer)
     expect(component.prop("collaborator")).toBe(null)
     expect(component.prop("visibility")).toBe(true)
 
     act(() => {
-      // @ts-ignore
       component.prop("toggleVisibility")()
     })
     wrapper.update()
-    expect(wrapper.find("SiteCollaboratorDrawer").prop("visibility")).toBe(
-      false
-    )
+    expect(wrapper.find(SiteCollaboratorDrawer).prop("visibility")).toBe(false)
   })
 })

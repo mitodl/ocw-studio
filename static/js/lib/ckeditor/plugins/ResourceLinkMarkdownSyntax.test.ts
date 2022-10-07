@@ -33,7 +33,6 @@ describe("ResourceLink plugin", () => {
     const md = '{{% resource_link "1234567890" "link text" %}}'
     const editor = await getEditor(md)
 
-    // @ts-ignore
     expect(editor.getData()).toBe(md)
   })
 
@@ -41,7 +40,6 @@ describe("ResourceLink plugin", () => {
     const md =
       '{{% resource_link "1234-5678" "link text" "some-header-id" %}}{{% resource_link "link-this-here-uuid" "Title of the Link" "some-heading-id" %}}'
     const editor = await getEditor(md)
-    // @ts-ignore
     expect(editor.getData()).toBe(md)
 
     markdownTest(

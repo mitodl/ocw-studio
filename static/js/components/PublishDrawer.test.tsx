@@ -1,11 +1,12 @@
 import React from "react"
+import { ReactWrapper } from "enzyme"
 import moment from "moment"
 import sinon, { SinonStub } from "sinon"
 import { act } from "react-dom/test-utils"
 import { isEmpty } from "ramda"
 
 import { siteApiActionUrl, siteApiDetailUrl } from "../lib/urls"
-import { assertInstanceOf, shouldIf } from "../test_util"
+import { assertInstanceOf, assertNotNil, shouldIf } from "../test_util"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import IntegrationTestHelperOld, {
   TestRenderer
@@ -21,6 +22,25 @@ import userEvent from "@testing-library/user-event"
 import { waitFor, screen } from "@testing-library/react"
 import * as dom from "@testing-library/dom"
 import _ from "lodash"
+
+const simulateClickRadio = (wrapper: ReactWrapper, idx: number) =>
+  act(async () => {
+    const onChange = wrapper
+      .find("input[type='radio']")
+      .at(idx)
+      .prop("onChange")
+    assertNotNil(onChange)
+    // @ts-expect-error Not simulating the whole event
+    onChange({ target: { checked: true } })
+  })
+
+const simulateClickPublish = (wrapper: ReactWrapper, action: string) =>
+  act(async () => {
+    const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
+    assertNotNil(onChange)
+    // @ts-expect-error Not mocking whole object
+    onChange({ target: { checked: true } })
+  })
 
 describe("PublishDrawer", () => {
   let helper: IntegrationTestHelperOld,
@@ -66,30 +86,30 @@ describe("PublishDrawer", () => {
     helper.cleanup()
   })
 
-  //
-  ;[
-    [
-      "staging",
-      "preview",
-      "has_unpublished_draft",
-      "Staging",
-      "draft_url",
-      "draft_publish_date",
-      "draft_publish_status",
-      0
-    ],
-    [
-      "production",
-      "publish",
-      "has_unpublished_live",
-      "Production",
-      "live_url",
-      "publish_date",
-      "live_publish_status",
-      1
-    ]
-  ].forEach(
-    ([
+  describe.each([
+    {
+      action:             "staging",
+      api:                "preview",
+      unpublishedField:   "has_unpublished_draft",
+      label:              "Staging",
+      urlField:           "draft_url",
+      publishDateField:   "draft_publish_date",
+      publishStatusField: "draft_publish_status",
+      idx:                0
+    },
+    {
+      action:             "production",
+      api:                "publish",
+      unpublishedField:   "has_unpublished_live",
+      label:              "Production",
+      urlField:           "live_url",
+      publishDateField:   "publish_date",
+      publishStatusField: "live_publish_status",
+      idx:                1
+    }
+  ])(
+    "$action",
+    ({
       action,
       api,
       unpublishedField,
@@ -98,215 +118,168 @@ describe("PublishDrawer", () => {
       publishDateField,
       publishStatusField,
       idx
-    ]) => {
-      describe(action, () => {
-        [true, false].forEach(visible => {
-          it(`renders inside a Modal when visibility=${visible}`, async () => {
-            const { wrapper } = await render({ visibility: visible })
-            expect(wrapper.find("Modal").prop("isOpen")).toEqual(visible)
-            expect(wrapper.find("Modal").prop("toggle")).toEqual(
+    }) => {
+      [true, false].forEach(visible => {
+        it(`renders inside a Modal when visibility=${visible}`, async () => {
+          const { wrapper } = await render({ visibility: visible })
+          expect(wrapper.find("Modal").prop("isOpen")).toEqual(visible)
+          expect(wrapper.find("Modal").prop("toggle")).toEqual(
+            toggleVisibilityStub
+          )
+          if (visible) {
+            expect(wrapper.find("ModalHeader").prop("toggle")).toEqual(
               toggleVisibilityStub
             )
-            if (visible) {
-              expect(wrapper.find("ModalHeader").prop("toggle")).toEqual(
-                toggleVisibilityStub
-              )
-            }
-          })
+          }
         })
+      })
 
-        it("renders the date and url", async () => {
-          const { wrapper } = await render()
-          await act(async () => {
-            // @ts-expect-error
-            wrapper
-              .find("input[type='radio']")
-              // @ts-expect-error
-              .at(idx)
-              // @ts-expect-error
-              .prop("onChange")({ target: { checked: true } })
-          })
-          wrapper.update()
-          expect(wrapper.find(".publish-option-description").text()).toContain(
-            `Last updated: ${moment(website[publishDateField]).format(
-              "dddd, MMMM D h:mma ZZ"
-            )}`
-          )
-          expect(
-            wrapper.find(".publish-option-description a").prop("href")
-          ).toBe(website[urlField])
-          expect(
-            wrapper.find(".publish-option-description a").prop("target")
-          ).toBe("_blank")
-          expect(wrapper.find(".publish-option-description a").text()).toBe(
-            website[urlField]
-          )
-        })
+      it("renders the date and url", async () => {
+        const { wrapper } = await render()
+        await simulateClickRadio(wrapper, idx)
+        wrapper.update()
+        expect(wrapper.find(".publish-option-description").text()).toContain(
+          `Last updated: ${moment(website[publishDateField]).format(
+            "dddd, MMMM D h:mma ZZ"
+          )}`
+        )
+        expect(wrapper.find(".publish-option-description a").prop("href")).toBe(
+          website[urlField]
+        )
+        expect(
+          wrapper.find(".publish-option-description a").prop("target")
+        ).toBe("_blank")
+        expect(wrapper.find(".publish-option-description a").text()).toBe(
+          website[urlField]
+        )
+      })
 
-        it("renders the publish status", async () => {
-          const { wrapper } = await render()
-          await act(async () => {
-            // @ts-expect-error
-            wrapper
-              .find("input[type='radio']")
-              // @ts-expect-error
-              .at(idx)
-              // @ts-expect-error
-              .prop("onChange")({ target: { checked: true } })
-          })
-          wrapper.update()
-          expect(wrapper.find("PublishStatusIndicator").prop("status")).toBe(
-            website[publishStatusField]
-          )
-          expect(
-            wrapper.find(".publish-option-description a").prop("href")
-          ).toBe(website[urlField])
-          expect(wrapper.find(".publish-option-description a").text()).toBe(
-            website[urlField]
-          )
-        })
+      it("renders the publish status", async () => {
+        const { wrapper } = await render()
+        await simulateClickRadio(wrapper, idx)
+        wrapper.update()
+        expect(wrapper.find("PublishStatusIndicator").prop("status")).toBe(
+          website[publishStatusField]
+        )
+        expect(wrapper.find(".publish-option-description a").prop("href")).toBe(
+          website[urlField]
+        )
+        expect(wrapper.find(".publish-option-description a").text()).toBe(
+          website[urlField]
+        )
+      })
 
-        it("renders a message if there is no date", async () => {
-          website[publishDateField] = null
-          const { wrapper } = await render()
-          await act(async () => {
-            // @ts-expect-error
-            wrapper
-              .find("input[type='radio']")
-              // @ts-expect-error
-              .at(idx)
-              // @ts-expect-error
-              .prop("onChange")({ target: { checked: true } })
-          })
-          wrapper.update()
-          expect(wrapper.find(".publish-option-description").text()).toContain(
-            "Last updated: never published"
-          )
-        })
+      it("renders a message if there is no date", async () => {
+        website[publishDateField] = null
+        const { wrapper } = await render()
+        await simulateClickRadio(wrapper, idx)
+        wrapper.update()
+        expect(wrapper.find(".publish-option-description").text()).toContain(
+          "Last updated: never published"
+        )
+      })
 
-        it("has an option with the right label", async () => {
-          const { wrapper } = await render()
-          await act(async () => {
-            // @ts-expect-error
-            wrapper
-              .find("input[type='radio']")
-              // @ts-expect-error
-              .at(idx)
-              // @ts-expect-error
-              .prop("onChange")({ target: { checked: true } })
-          })
-          wrapper.update()
-          expect(
-            wrapper
-              .find(".publish-option label")
-              // @ts-expect-error
-              .at(idx)
-              .text()
-          ).toBe(label)
-        })
+      it("has an option with the right label", async () => {
+        const { wrapper } = await render()
+        await simulateClickRadio(wrapper, idx)
+        wrapper.update()
+        expect(
+          wrapper
+            .find(".publish-option label")
+            .at(idx)
+            .text()
+        ).toBe(label)
+      })
 
-        it("disables the button if there is no unpublished content", async () => {
-          website[unpublishedField] = false
-          const { wrapper } = await render()
-          await act(async () => {
-            const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
-            // @ts-expect-error
-            onChange({ target: { checked: true } })
-          })
-          wrapper.update()
-          expect(wrapper.find(".btn-publish").prop("disabled")).toBe(true)
-        })
+      it("disables the button if there is no unpublished content", async () => {
+        website[unpublishedField] = false
+        const { wrapper } = await render()
+        await simulateClickPublish(wrapper, action)
+        wrapper.update()
+        expect(wrapper.find(".btn-publish").prop("disabled")).toBe(true)
+      })
 
-        it("render only the preview button if user is not an admin", async () => {
-          website["is_admin"] = false
+      it("render only the preview button if user is not an admin", async () => {
+        website["is_admin"] = false
+        const { wrapper } = await render()
+        expect(wrapper.find(`#publish-${action}`).exists()).toBe(
+          action === "staging" ? true : false
+        )
+      })
+
+      it("renders a message about unpublished content", async () => {
+        website[unpublishedField] = true
+        const { wrapper } = await render()
+
+        wrapper.update()
+        expect(wrapper.find(".publish-option-description").text()).toContain(
+          "You have unpublished changes."
+        )
+      })
+      ;[[], ["error 1", "error2"]].forEach(warnings => {
+        it(`${shouldIf(
+          warnings && !isEmpty(warnings)
+        )} render a warning about missing content`, async () => {
+          website["content_warnings"] = warnings
           const { wrapper } = await render()
-          expect(wrapper.find(`#publish-${action}`).exists()).toBe(
-            action === "staging" ? true : false
+          const warningText = wrapper.find(".publish-warnings")
+          expect(warningText.exists()).toBe(!isEmpty(warnings))
+          warnings.forEach(warning =>
+            expect(warningText.text()).toContain(warning)
           )
         })
+      })
 
-        it("renders a message about unpublished content", async () => {
-          website[unpublishedField] = true
-          const { wrapper } = await render()
-          await act(async () => {
-            const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
-            // @ts-expect-error
-            onChange({ target: { checked: true } })
-          })
-          wrapper.update()
-          expect(wrapper.find(".publish-option-description").text()).toContain(
-            "You have unpublished changes."
-          )
+      it("publish button sends the expected request", async () => {
+        const actionStub = helper.mockPostRequest(
+          siteApiActionUrl
+            .param({
+              name:   website.name,
+              action: api
+            })
+            .toString(),
+          {
+            url_path: website.url_path
+          }
+        )
+        const { wrapper } = await render()
+        await simulateClickPublish(wrapper, action)
+        wrapper.update()
+        expect(
+          wrapper
+            .find("PublishForm")
+            .find(".btn-publish")
+            .prop("disabled")
+        ).toBeFalsy()
+        await act(async () => {
+          wrapper
+            .find("PublishForm")
+            .find(".btn-publish")
+            .simulate("submit")
         })
-        ;[[], ["error 1", "error2"]].forEach(warnings => {
-          it(`${shouldIf(
-            warnings && !isEmpty(warnings)
-          )} render a warning about missing content`, async () => {
-            website["content_warnings"] = warnings
-            const { wrapper } = await render()
-            const warningText = wrapper.find(".publish-warnings")
-            expect(warningText.exists()).toBe(!isEmpty(warnings))
-            warnings.forEach(warning =>
-              expect(warningText.text()).toContain(warning)
-            )
-          })
-        })
-
-        it("publish button sends the expected request", async () => {
-          const actionStub = helper.mockPostRequest(
-            siteApiActionUrl
-              .param({
-                name:   website.name,
-                action: api
-              })
-              .toString(),
-            {
+        sinon.assert.calledOnceWithExactly(
+          actionStub,
+          `/api/websites/${website.name}/${api}/`,
+          "POST",
+          {
+            body: {
               url_path: website.url_path
-            }
-          )
-          const { wrapper } = await render()
-          await act(async () => {
-            const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
-            // @ts-expect-error
-            onChange({ target: { checked: true } })
-          })
-          wrapper.update()
-          expect(
-            wrapper
-              .find("PublishForm")
-              .find(".btn-publish")
-              .prop("disabled")
-          ).toBeFalsy()
-          await act(async () => {
-            wrapper
-              .find("PublishForm")
-              .find(".btn-publish")
-              .simulate("submit")
-          })
-          sinon.assert.calledOnceWithExactly(
-            actionStub,
-            `/api/websites/${website.name}/${api}/`,
-            "POST",
-            {
-              body: {
-                url_path: website.url_path
-              },
-              headers:     { "X-CSRFTOKEN": "" },
-              credentials: undefined
-            }
-          )
-          sinon.assert.calledOnceWithExactly(
-            refreshWebsiteStub,
-            `/api/websites/${website.name}/`,
-            "GET",
-            {
-              body:        undefined,
-              headers:     undefined,
-              credentials: undefined
-            }
-          )
-          sinon.assert.calledOnceWithExactly(toggleVisibilityStub)
-        })
+            },
+            headers:     { "X-CSRFTOKEN": "" },
+            credentials: undefined
+          }
+        )
+        sinon.assert.calledOnceWithExactly(
+          refreshWebsiteStub,
+          `/api/websites/${website.name}/`,
+          "GET",
+          {
+            body:        undefined,
+            headers:     undefined,
+            credentials: undefined
+          }
+        )
+        sinon.assert.calledOnceWithExactly(toggleVisibilityStub)
       })
     }
   )

@@ -1,4 +1,5 @@
 import React from "react"
+import { last } from "lodash"
 import { Formik, Form, ErrorMessage, Field, FormikHelpers } from "formik"
 import * as yup from "yup"
 
@@ -42,10 +43,7 @@ const PublishForm: React.FC<Props> = ({
   option
 }) => {
   const initialValues: SiteFormValues = {
-    // @ts-expect-error
-    url_path: website.url_path ?
-      website.url_path.split("/").pop() :
-      website.url_suggestion
+    url_path: last(website.url_path?.split("/")) ?? website.url_suggestion
   }
 
   const fullUrl =

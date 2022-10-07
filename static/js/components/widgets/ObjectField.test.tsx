@@ -16,6 +16,7 @@ import {
 import { SiteFormValues } from "../../types/forms"
 
 jest.mock("../../lib/site_content")
+const mockSiteContent = siteContent as jest.Mocked<typeof siteContent>
 
 describe("ObjectField", () => {
   let render: any,
@@ -29,8 +30,7 @@ describe("ObjectField", () => {
       widget: WidgetVariant.Object
     }) as ObjectConfigField
 
-    // @ts-ignore
-    siteContent.fieldIsVisible.mockReturnValue(true)
+    mockSiteContent.fieldIsVisible.mockReturnValue(true)
 
     const otherContent = makeWebsiteContentDetail()
     contentContext = [otherContent]
@@ -78,14 +78,16 @@ describe("ObjectField", () => {
   //
   ;[true, false].forEach(isVisible => {
     it(`should hide fields which are ${isVisible ? "" : "not "}visible`, () => {
-      // @ts-ignore
-      siteContent.fieldIsVisible.mockReturnValue(isVisible)
+      mockSiteContent.fieldIsVisible.mockReturnValue(isVisible)
       const wrapper = render()
       expect(wrapper.find("SiteContentField")).toHaveLength(
         isVisible ? field.fields.length : 0
       )
       for (const innerField of field.fields) {
-        expect(siteContent.fieldIsVisible).toBeCalledWith(innerField, values)
+        expect(mockSiteContent.fieldIsVisible).toBeCalledWith(
+          innerField,
+          values
+        )
       }
     })
   })

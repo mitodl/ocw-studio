@@ -24,7 +24,7 @@ export default function configureStore(initialState?: ReduxState) {
       window.__REDUX_DEVTOOLS_EXTENSION__ ?
         window.__REDUX_DEVTOOLS_EXTENSION__() :
         (f: any) => f
-      // @ts-ignore
+      // @ts-expect-error Unsure why this is an error
     )(createStore)
   } else {
     createStoreWithMiddleware = compose(applyMiddleware(...COMMON_MIDDLEWARE))(

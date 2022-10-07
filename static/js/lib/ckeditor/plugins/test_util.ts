@@ -7,7 +7,7 @@ class ClassicTestEditor extends ClassicEditorBase {}
 
 export const createTestEditor = (plugins: any[]) => async (
   initialData = ""
-): Promise<editor.Editor> => {
+): Promise<editor.Editor & { getData(): string }> => {
   const editor = await ClassicTestEditor.create(initialData, {
     plugins
   })

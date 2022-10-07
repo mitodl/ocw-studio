@@ -300,7 +300,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
       internalItems: menuItems,
       hugoItems:     hugoItems
     })
-    // @ts-ignore
+    // @ts-expect-error the type of onChange is not quite right
     onChange({ target: { value: hugoItems, name } })
   }
 
@@ -353,7 +353,6 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     </div>
   )
 
-  // @ts-ignore
   const onSubmitMenuItem = ({
     values,
     hideModal

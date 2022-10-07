@@ -12,11 +12,13 @@ import {
 import IntegrationTestHelper, {
   TestRenderer
 } from "../../util/integration_test_helper_old"
-import { useWebsite } from "../../context/Website"
+import * as websiteContext from "../../context/Website"
 import ResourcePickerListing from "./ResourcePickerListing"
 import { ResourceType } from "../../constants"
+import { assertNotNil } from "../../test_util"
 
 jest.mock("../../context/Website")
+const useWebsite = jest.mocked(websiteContext.useWebsite)
 
 const apiResponse = (results: WebsiteContentListItem[]) => ({
   results,
@@ -53,7 +55,7 @@ describe("ResourcePickerListing", () => {
     })
 
     website = makeWebsiteDetail()
-    // @ts-ignore
+
     useWebsite.mockReturnValue(website)
 
     contentListingItems = {
@@ -163,9 +165,8 @@ describe("ResourcePickerListing", () => {
   })
 
   it("should display an image for images", async () => {
-    // @ts-ignore
+    assertNotNil(contentListingItems.videos[0].metadata)
     contentListingItems.videos[0].metadata.resourcetype = ResourceType.Image
-    // @ts-ignore
     contentListingItems.videos[0].file = "/path/to/image.jpg"
     const { wrapper } = await render()
     expect(
@@ -178,9 +179,8 @@ describe("ResourcePickerListing", () => {
   })
 
   it("should display a thumbnail for videos", async () => {
-    // @ts-ignore
+    assertNotNil(contentListingItems.videos[0].metadata)
     contentListingItems.videos[0].metadata.resourcetype = ResourceType.Video
-    // @ts-ignore
     contentListingItems.videos[0].metadata.video_files = {
       video_thumbnail_file: "/path/to/image.jpg"
     }

@@ -1,15 +1,29 @@
-import { FormikState } from "formik"
+import { FormikProps } from "formik"
 import * as R from "ramda"
 
-export const defaultFormikChildProps: FormikState<any> = {
-  values:       {},
-  errors:       {},
-  touched:      {},
-  isSubmitting: false,
-  isValidating: false,
-  status:       null,
-  submitCount:  0
+const throwProxyHandler: ProxyHandler<Record<string | symbol, unknown>> = {
+  get(target, prop) {
+    if (Object.prototype.hasOwnProperty.call(target, prop)) {
+      return target[prop]
+    }
+    throw new Error(
+      `${prop.toString()} not implemented; add it if you need it. `
+    )
+  }
 }
+// @ts-expect-error This does not current supply all the formik child props
+export const defaultFormikChildProps: FormikProps<any> = new Proxy(
+  {
+    values:       {},
+    errors:       {},
+    touched:      {},
+    isSubmitting: false,
+    isValidating: false,
+    status:       null,
+    submitCount:  0
+  },
+  throwProxyHandler
+)
 
 export const isIf = (
   tf: any // eslint-disable-line

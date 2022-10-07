@@ -15,7 +15,7 @@ export interface SiteFormValues {
   starter: number | null
 }
 
-type Props = {
+type SiteFormProps = {
   onSubmit: (
     values: any,
     formikHelpers: FormikHelpers<any>
@@ -46,7 +46,7 @@ export const websiteValidation = yup.object().shape({
 export const SiteForm = ({
   onSubmit,
   websiteStarters
-}: Props): JSX.Element | null => {
+}: SiteFormProps): JSX.Element | null => {
   const defaultWebsiteStarter =
     websiteStarters.find(obj => obj.status === WebsiteStarterStatus.Default) ||
     (websiteStarters.length > 0 ? websiteStarters[0] : null)
@@ -113,3 +113,5 @@ export const SiteForm = ({
     </Formik>
   )
 }
+
+export { SiteFormProps }

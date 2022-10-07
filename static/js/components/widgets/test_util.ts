@@ -1,5 +1,6 @@
 import { ReactWrapper } from "enzyme"
 import { act } from "react-dom/test-utils"
+import { assertNotNil } from "../../test_util"
 
 /**
  * A little helper function to find the SelectField
@@ -10,9 +11,10 @@ import { act } from "react-dom/test-utils"
  */
 export async function triggerSortableSelect(wrapper: ReactWrapper, value: any) {
   await act(async () => {
-    // @ts-ignore
-    wrapper.find("SelectField").prop("onChange")({
-      // @ts-ignore
+    const onChange = wrapper.find("SelectField").prop("onChange")
+    assertNotNil(onChange)
+    onChange({
+      // @ts-expect-error Not simnulating the whole event
       target: { value }
     })
   })
