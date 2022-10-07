@@ -86,8 +86,8 @@ class MathSyntax extends MarkdownSyntaxPlugin {
           replacement: (_content: string, node): string => {
             // Use node.textContent not _content because we want
             // the unescaped version. E.g., \frac{1}{2}, not \\frac{1}
-            // @ts-ignore
-            const isDisplayMode = node.type.includes("mode=display")
+            const script = node as HTMLScriptElement
+            const isDisplayMode = script.type.includes("mode=display")
             return isDisplayMode ?
               String.raw`\\[${node.textContent}\\]` :
               String.raw`\\(${node.textContent}\\)`
