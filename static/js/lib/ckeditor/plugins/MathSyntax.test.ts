@@ -1,16 +1,29 @@
-/* eslint-disable prefer-template */
-import { editor } from "@ckeditor/ckeditor5-core"
 import Markdown from "./Markdown"
-import { createTestEditor, getConverters, htmlConvertContainsTest } from "./test_util"
+import {
+  createTestEditor,
+  getConverters,
+  htmlConvertContainsTest
+} from "./test_util"
 import MathSyntax from "./MathSyntax"
 
 const getEditor = createTestEditor([MathSyntax, Markdown])
 
-const display = { name: "display", start: "\\\\[", end: "\\\\]", scriptType: "math/tex; mode=display" }
-const inline = { name: "display", start: "\\\\[", end: "\\\\]", scriptType: "math/tex; mode=display" }
+const display = {
+  name:       "display",
+  start:      "\\\\[",
+  end:        "\\\\]",
+  scriptType: "math/tex; mode=display"
+}
+const inline = {
+  name:       "display",
+  start:      "\\\\[",
+  end:        "\\\\]",
+  scriptType: "math/tex; mode=display"
+}
 const modes = [display, inline]
 
-const scriptify = (mode: { scriptType: string }, math: string): string =>  `<script type="${mode.scriptType}">${math}</script>`
+const scriptify = (mode: { scriptType: string }, math: string): string =>
+  `<script type="${mode.scriptType}">${math}</script>`
 
 describe.each(modes)("MathSyntax converstion to/from $mode", mode => {
   test.each([
@@ -37,14 +50,23 @@ describe.each(modes)("MathSyntax converstion to/from $mode", mode => {
     await htmlConvertContainsTest(editor, md, html)
   })
 
-  test.each([
-    "1 + 1 < 3",
-    "1 + 1 > 0"
-  ])("It converts '%p' correctly", async math => {
+  test.each(["1 + 1 < 3", "1 + 1 > 0"])(
+    "It converts '%p' correctly",
+    async math => {
+      const editor = await getEditor()
+      const md = mode.start + math + mode.end
+      const html = `<p>${scriptify(mode, math)}</p>`
+      await htmlConvertContainsTest(editor, md, html)
+    }
+  )
+
+  test("It treats non-breaking spaces as spaces", async () => {
     const editor = await getEditor()
+    const { html2md } = getConverters(editor)
+    const math = "x   +   y"
     const md = mode.start + math + mode.end
-    const html = `<p>${scriptify(mode, math)}</p>`
-    await htmlConvertContainsTest(editor, md, html)
+    const html = `<p>${scriptify(mode, "x \u00A0 + \u00A0 y")}</p>`
+    expect(html2md(html)).toEqual(md)
   })
 })
 

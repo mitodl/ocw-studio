@@ -2,8 +2,24 @@ import { ShowdownExtension } from "showdown"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 
-const doubleLonelySlash = (s: string) => {
-  return s.replace(/\\\\/g, String.raw`\\\\`)
+const prepareTexForMarkdown = (s: string) => {
+  return (
+    s
+      /**
+       * CKEditor seems to be adding non-breaking spaces to the HTML sometimes.
+       * We don't want these converted into HTML &nbsp; entities in the
+       * markdown
+       */
+      .replace(/[^\S\r\n]/g, " ")
+      /**
+       * In TeX, a double backslash "\\" represents a newline. Markdown allows
+       *  escaping a backslash. So in Markdown, a double backslash is equivalent
+       *  to a single backslash.
+       *
+       *  So replace all double backslashes with a quadruple backslash.
+       */
+      .replace(/\\\\/g, String.raw`\\\\`)
+  )
 }
 
 class MathSyntax extends MarkdownSyntaxPlugin {
@@ -91,7 +107,7 @@ class MathSyntax extends MarkdownSyntaxPlugin {
             // the unescaped version. E.g., \frac{1}{2}, not \\frac{1}{2}
             const script = node as HTMLScriptElement
             const isDisplayMode = script.type.includes("mode=display")
-            const text = doubleLonelySlash(node.textContent ?? "")
+            const text = prepareTexForMarkdown(node.textContent ?? "")
             return isDisplayMode ?
               String.raw`\\[${text}\\]` :
               String.raw`\\(${text}\\)`
