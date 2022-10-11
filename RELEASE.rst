@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.77.0
+--------------
+
+- Replace `@ts-ignore` with `@ts-expect-error`, and remove most of them (#1520)
+
 Version 0.76.0 (Released October 06, 2022)
 --------------
 
