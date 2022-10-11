@@ -127,7 +127,7 @@ export const FullEditorConfig = {
   math: {
     engine:          "mathjax",
     outputType:      "script",
-    forceOutputType: false,
+    forceOutputType: true,
     enablePreview:   true
   },
   language: "en"
@@ -161,18 +161,11 @@ export const MinimalEditorConfig = {
       "bulletedList",
       "numberedList",
       "blockQuote",
-      "math",
       "undo",
       "redo",
       ADD_RESOURCE_LINK,
       ADD_RESOURCE_EMBED
     ]
-  },
-  math: {
-    engine:          "mathjax",
-    outputType:      "script",
-    forceOutputType: false,
-    enablePreview:   true
   },
   language: "en"
 }
