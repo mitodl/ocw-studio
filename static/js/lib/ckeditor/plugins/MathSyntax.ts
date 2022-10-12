@@ -54,10 +54,9 @@ class MathSyntax extends MarkdownSyntaxPlugin {
          *  2. Additionally, I was having issues with math at the END of a line
          *     when using only a lang extension. Never fully understood why.
          *
-         * Why use BOTH lang and output extensions for mathjax?
-         * Because we want inputs like
-         *
-         * Added an extra backlash to make it work with ocw-hugo-themes
+         * Added an extra backlash to make it work with ocw-hugo-themes, where
+         * markdown allows escaping parentheses, so literal `\(` must be entered
+         * as `\\(`.
          */
         {
           type:    "lang",
