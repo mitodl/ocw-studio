@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.77.1
+--------------
+
+- Add ckeditor5 math plugin (#1522)
+
 Version 0.77.0 (Released October 11, 2022)
 --------------
 
