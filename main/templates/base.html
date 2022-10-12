@@ -15,6 +15,30 @@
     <script type="text/javascript">
     var SETTINGS = {{ js_settings_json|safe }};
     </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script>
+    window.MathJax = {
+      TeX: {
+        equationNumbers: {
+          autoNumber: "AMS"
+        }
+      },
+      displayAlign: "left",
+      displayIndent: "2em",
+      menuSettings: {
+        zoom: "Double-Click",
+        mpContext: true,
+        mpMouse: true
+      },
+      errorSettings: {
+        message: ["[Math Error]"]
+      }
+    }
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+    </script>
+
     {% load render_bundle %}
     {% render_bundle 'style' %}
     <title>{% block title %}{% endblock %}</title>
