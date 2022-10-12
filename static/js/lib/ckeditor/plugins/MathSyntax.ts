@@ -44,8 +44,8 @@ class MathSyntax extends MarkdownSyntaxPlugin {
          *  1. *Math at beginning of lines*: If a line begins with math, then
          *    that math should be included in the output html p tags:
          *
-         *    md:   `\(E=mc^2\) is cool`
-         *    html: <p><script type="math/tex">\(E=mc^2\)</script> is cool </p>
+         *    md:   `\(E=mc^2\) math at beginning`
+         *    html: <p><script type="math/tex">\(E=mc^2\)</script> math at beginning</p>
          *
          *    But Showdown treats <script> elements as block: They won't begin
          *    a paragraph. So we can't convert to a script tag in the lang
