@@ -9,5 +9,5 @@ tar zxf *.tar.gz
 # make replibyte executable
 chmod +x replibyte
 
-# make it accessible from everywhere
-mv replibyte /usr/local/bin/
+# copy replibyte to the output folder
+mv replibyte $PWD/replibyte/
