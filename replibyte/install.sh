@@ -8,6 +8,3 @@ tar zxf *.tar.gz
 
 # make replibyte executable
 chmod +x replibyte
-
-# copy replibyte to the output folder
-mv ocw-studio/replibyte/replibyte replibyte/
