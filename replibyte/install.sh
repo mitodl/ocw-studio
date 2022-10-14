@@ -10,4 +10,4 @@ tar zxf *.tar.gz
 chmod +x replibyte
 
 # copy replibyte to the output folder
-mv replibyte $PWD/replibyte/
+mv ocw-studio/replibyte/replibyte replibyte/
