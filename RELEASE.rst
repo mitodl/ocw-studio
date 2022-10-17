@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.78.0
+--------------
+
+- upgrade version of ocw-course-publisher (#1526)
+
 Version 0.77.1 (Released October 13, 2022)
 --------------
 
