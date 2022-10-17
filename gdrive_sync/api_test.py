@@ -52,13 +52,13 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def mock_service(mocker):
-    """Mock google drive service """
+    """Mock google drive service"""
     return mocker.patch("gdrive_sync.api.get_drive_service")
 
 
 @pytest.fixture
 def mock_get_s3_content_type(mocker):
-    """Mock gdrive_sync.api.get_s3_content_type """
+    """Mock gdrive_sync.api.get_s3_content_type"""
     mocker.patch(
         "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
     )
@@ -473,6 +473,19 @@ def test_walk_gdrive_folder(mocker):
     )  # parent, subfolder1, subfolder1_1, subfolder2
 
 
+@pytest.fixture
+def mock_gdrive_pdf(mocker):
+    """Mock reading the metadata of a PDF file with blank metadata"""
+    mocker.patch(
+        "gdrive_sync.api.GDriveStreamReader",
+        return_value=mocker.Mock(read=mocker.Mock(return_value=b"fake_bytes")),
+    )
+    mocker.patch(
+        "gdrive_sync.api.PyPDF2.PdfReader",
+        return_value=mocker.Mock(metadata={}),
+    )
+
+
 @pytest.mark.parametrize(
     "mime_type", ["application/pdf", "application/vnd.ms-powerpoint"]
 )
@@ -506,7 +519,9 @@ def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
         assert drive_file.resource == content
 
 
-def test_create_gdrive_resource_content_forbidden_name(mock_get_s3_content_type):
+def test_create_gdrive_resource_content_forbidden_name(
+    mock_get_s3_content_type, mock_gdrive_pdf
+):
     """content for a google drive file with a forbidden name should have its filename attribute modified"""
     drive_file = DriveFileFactory.create(
         name=f"{CONTENT_FILENAMES_FORBIDDEN[0]}.pdf",
@@ -519,6 +534,48 @@ def test_create_gdrive_resource_content_forbidden_name(mock_get_s3_content_type)
         drive_file.resource.filename
         == f"{CONTENT_FILENAMES_FORBIDDEN[0]}-{CONTENT_TYPE_RESOURCE}"
     )
+
+
+def test_gdrive_pdf_failure(mock_get_s3_content_type, mocker):
+    """Non-valid PDFs should raise an error"""
+    mocker.patch(
+        "gdrive_sync.api.GDriveStreamReader",
+        return_value=mocker.Mock(read=mocker.Mock(return_value=b"fake_bytes")),
+    )
+    mock_log = mocker.patch("gdrive_sync.api.log.exception")
+    drive_file = DriveFileFactory.create(
+        name="mylecturenotes123.pdf",
+        s3_key="test/path/mylecturenotes123.pdf",
+        mime_type="application/pdf",
+    )
+    create_gdrive_resource_content(drive_file)
+    drive_file.refresh_from_db()
+    assert drive_file.status == DriveFileStatus.FAILED
+    mock_log.assert_called_once_with(
+        "Could not create a resource from Google Drive file %s because it is not a valid PDF",
+        drive_file.file_id,
+    )
+
+
+@pytest.mark.parametrize("mytitle", ["", "MyTitle"])
+def test_create_gdrive_pdf(mock_get_s3_content_type, mocker, mytitle):
+    """PDFs that have a non-blank title in the metadata should use that title in the resource"""
+    mocker.patch(
+        "gdrive_sync.api.GDriveStreamReader",
+        return_value=mocker.Mock(read=mocker.Mock(return_value=b"fake_bytes")),
+    )
+    mocker.patch(
+        "gdrive_sync.api.PyPDF2.PdfReader",
+        return_value=mocker.Mock(metadata={"/Title": mytitle}),
+    )
+    drive_file = DriveFileFactory.create(
+        name="mylecturenotes123.pdf",
+        s3_key="test/path/mylecturenotes123.pdf",
+        mime_type="application/pdf",
+    )
+    create_gdrive_resource_content(drive_file)
+    drive_file.refresh_from_db()
+    assert drive_file.resource.title == mytitle if mytitle != "" else drive_file.name
 
 
 def test_create_gdrive_resource_content_update(mock_get_s3_content_type):
@@ -559,7 +616,7 @@ def test_create_gdrive_resource_content_error(mocker):
 @pytest.mark.parametrize("region", [None, "us-west-1"])
 @pytest.mark.parametrize("role_name", [None, "test-role"])
 def test_transcode_gdrive_video(settings, mocker, account_id, region, role_name):
-    """ transcode_gdrive_video should create Video object and call create_media_convert_job"""
+    """transcode_gdrive_video should create Video object and call create_media_convert_job"""
     settings.AWS_ACCOUNT_ID = account_id
     settings.AWS_REGION = region
     settings.AWS_ROLE_NAME = role_name
@@ -580,7 +637,7 @@ def test_transcode_gdrive_video(settings, mocker, account_id, region, role_name)
     [VideoJobStatus.CREATED, VideoJobStatus.CREATED, VideoJobStatus.FAILED],
 )
 def test_transcode_gdrive_video_prior_job(settings, mocker, prior_status):
-    """ create_media_convert_job should be called only if the prior job failed"""
+    """create_media_convert_job should be called only if the prior job failed"""
     settings.AWS_ACCOUNT_ID = "accountABC"
     settings.AWS_REGION = "us-east-1"
     settings.AWS_ROLE_NAME = "roleDEF"
