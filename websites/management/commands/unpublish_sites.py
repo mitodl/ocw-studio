@@ -4,7 +4,7 @@ import json
 from django.conf import settings
 from django.db.models import Q
 
-from content_sync.api import trigger_unpublished_removal
+from content_sync import api
 from main.management.commands.filter import WebsiteFilterCommand
 from users.models import User
 from websites.constants import (
@@ -24,39 +24,30 @@ class Command(WebsiteFilterCommand):
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
-        parser.add_argument(
-            "--course-ids",
-            nargs="+",
-            dest="course_ids",
-            help="List of course webpages to be unpublished",
-        )
 
         parser.add_argument(
             "--user",
             dest="user",
-            help="Username (email address) for unpublishing courses",
+            help="Email address of user that will unpublish courses",
+            required=True,
         )
-
-    def check_email(self, email_id):
-        try:
-            user = User.objects.get(email__exact=email_id)
-            return user
-        except User.DoesNotExist:
-            return None
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
-        if not options["course_ids"]:
+        if not self.filter_list:
             self.stdout.write("Please provide a list of course ids to unpublish.")
-        elif not options["user"]:
-            self.stdout.write("Please provide a username to unpublish courses.")
-        elif not self.check_email(options["user"]):
-            self.stdout.write(
-                "Please provide a valid username (email address) to unpublish courses."
-            )
         else:
-            user_id = self.check_email(options["user"])
-            websites = Website.objects.filter(name__in=options["course_ids"])
+            user_id = User.objects.filter(email__exact=options["user"]).first()
+            if not user_id:
+                self.stderr.write(
+                    "Please provide a valid email address for an existing user to unpublish courses."
+                )
+                return
+            websites = Website.objects.filter(
+                Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
+            )
+            unpublished_count = 0
+            unpublished_names = []
             for website in websites:
                 ocw_www_dependencies = WebsiteContent.objects.filter(
                     (
@@ -117,9 +108,17 @@ class Command(WebsiteFilterCommand):
                             )
                         )
                 else:  # unpublish
-                    self.stdout.write("Unpublishing " + website.name)
+                    unpublished_count += 1
+                    unpublished_names.append(website.name)
                     Website.objects.filter(pk=website.pk).update(
                         unpublish_status=PUBLISH_STATUS_NOT_STARTED,
                         last_unpublished_by=user_id,
                     )
-                    trigger_unpublished_removal(website)
+                    site_pipeline = api.get_site_pipeline(website)
+                    site_pipeline.pause_pipeline(VERSION_LIVE)
+            self.stdout.write(str(unpublished_count) + " course sites were unpublished")
+            if unpublished_count > 0:
+                self.stdout.write(
+                    "The following course sites were unpublished: "
+                    + str(unpublished_names)
+                )
