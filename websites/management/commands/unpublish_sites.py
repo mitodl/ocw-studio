@@ -116,7 +116,12 @@ class Command(WebsiteFilterCommand):
                     )
                     site_pipeline = api.get_site_pipeline(website)
                     site_pipeline.pause_pipeline(VERSION_LIVE)
-            self.stdout.write(str(unpublished_count) + " course sites were unpublished")
+            removal_pipeline = api.get_unpublished_removal_pipeline()
+            removal_pipeline.unpause()
+            removal_pipeline.trigger()
+            self.stdout.write(
+                str(unpublished_count) + " course sites were unpublished."
+            )
             if unpublished_count > 0:
                 self.stdout.write(
                     "The following course sites were unpublished: "
