@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.78.1
+--------------
+
+- Adding management command to unpublish list of course sites (#1529)
+- Pt/read title from pdf metadata (#1516)
+
 Version 0.78.0 (Released October 18, 2022)
 --------------
 
