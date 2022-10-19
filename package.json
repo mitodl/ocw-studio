@@ -80,7 +80,7 @@
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.6",
     "eslint": "^7.32.0",
-    "eslint-config-mitodl": "git+ssh://git@github.com:mitodl/eslint-config.git#ts",
+    "eslint-config-mitodl": "git+https://github.com/mitodl/eslint-config.git#ts",
     "eslint-plugin-jest": "^27.1.1",
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-react-hooks": "^4.2.0",

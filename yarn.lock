@@ -6216,9 +6216,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-config-mitodl@git+ssh://git@github.com:mitodl/eslint-config.git#ts":
+"eslint-config-mitodl@git+https://github.com/mitodl/eslint-config.git#ts":
   version: 0.2.1
-  resolution: "eslint-config-mitodl@git+ssh://git@github.com:mitodl/eslint-config.git#commit=e9f51554d306eca3ea239ce8cdd0e2c143c3db86"
+  resolution: "eslint-config-mitodl@https://github.com/mitodl/eslint-config.git#commit=e9f51554d306eca3ea239ce8cdd0e2c143c3db86"
   dependencies:
     "@typescript-eslint/parser": ^5.39.0
     babel-eslint: ^10.1.0
@@ -10650,7 +10650,7 @@ __metadata:
     enzyme: ^3.11.0
     enzyme-adapter-react-16: ^1.15.6
     eslint: ^7.32.0
-    eslint-config-mitodl: "git+ssh://git@github.com:mitodl/eslint-config.git#ts"
+    eslint-config-mitodl: "git+https://github.com/mitodl/eslint-config.git#ts"
     eslint-plugin-jest: ^27.1.1
     eslint-plugin-react: ^7.24.0
     eslint-plugin-react-hooks: ^4.2.0
