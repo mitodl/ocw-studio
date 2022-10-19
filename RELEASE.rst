@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.78.1
+Version 0.78.1 (Released October 19, 2022)
 --------------
 
 - Adding management command to unpublish list of course sites (#1529)
