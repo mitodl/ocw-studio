@@ -80,7 +80,7 @@
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.6",
     "eslint": "^7.32.0",
-    "eslint-config-mitodl": "^0.2.1",
+    "eslint-config-mitodl": "git+ssh://git@github.com:mitodl/eslint-config.git#ts",
     "eslint-plugin-jest": "^27.1.1",
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-react-hooks": "^4.2.0",
@@ -168,8 +168,7 @@
     "> 1%"
   ],
   "resolutions": {
-    "turndown": "7.0.0",
-    "eslint-config-mitodl": "portal:/Users/cchudzicki/dev/eslint-config"
+    "turndown": "7.0.0"
   },
   "packageManager": "yarn@3.1.0"
 }
