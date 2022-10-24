@@ -1,6 +1,9 @@
+from pathlib import Path
+
 import boto3
 from django.conf import settings
 from django.core.management import BaseCommand
+from django.utils.text import slugify
 
 from gdrive_sync.models import DriveFile
 from main.utils import get_dirpath_and_filename
@@ -32,7 +35,12 @@ class Command(BaseCommand):
         obj = WebsiteContent.objects.get(text_id=options["text_id"])
         df = DriveFile.objects.get(resource=obj)
         s3 = boto3.resource("s3")
-        new_filename = options["new_filename"]
+        # slugify just the provided name and then make the extensions lowercase
+        filepath = Path(options["new_filename"])
+        basename = str(options["new_filename"]).rstrip("".join(filepath.suffixes))
+        new_filename = slugify(basename)
+        if filepath.suffixes:
+            new_filename += "".join(filepath.suffixes).lower()
         df_path = df.s3_key.split("/")
         df_path[-1] = new_filename
         new_key = "/".join(df_path)
@@ -43,3 +51,5 @@ class Command(BaseCommand):
         df.s3_key = new_key
         obj.file = new_key
         obj.filename = get_dirpath_and_filename(new_filename)[1]
+        df.save()
+        obj.save()
