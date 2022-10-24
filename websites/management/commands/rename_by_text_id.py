@@ -37,7 +37,7 @@ class Command(BaseCommand):
         s3 = boto3.resource("s3")
         # slugify just the provided name and then make the extensions lowercase
         filepath = Path(options["new_filename"])
-        basename = str(options["new_filename"]).rstrip("".join(filepath.suffixes))
+        basename = options["new_filename"].rstrip("".join(filepath.suffixes))
         new_filename = slugify(basename)
         if filepath.suffixes:
             new_filename += "".join(filepath.suffixes).lower()
