@@ -31,12 +31,11 @@ class Command(BaseCommand):
         obj = WebsiteContent.objects.get(text_id=options["text_id"])
         df = DriveFile.objects.get(resource=obj)
         s3 = boto3.resource("s3")
-        bucket = s3.Bucket(settings.AWS_PUBLISH_BUCKET_NAME)
         df_path = df.s3_key.split("/")
         df_path[-1] = options["new_filename"]
         new_key = "/".join(df_path)
-        s3.Object(settings.AWS_PUBLISH_BUCKET_NAME, new_key).copy_from(
-            CopySource=df.s3_key
+        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
+            CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + df.s3_key
         )
-        s3.Object(settings.AWS_PUBLISH_BUCKET_NAME, df.s3_key).delete()
+        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, df.s3_key).delete()
         df.s3_key = new_key
