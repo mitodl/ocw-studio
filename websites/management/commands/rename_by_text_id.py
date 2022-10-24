@@ -1,6 +1,7 @@
 import boto3
 from django.conf import settings
 from django.core.management import BaseCommand
+from django.utils.text import slugify
 
 from gdrive_sync.models import DriveFile
 from websites.models import WebsiteContent
@@ -31,8 +32,9 @@ class Command(BaseCommand):
         obj = WebsiteContent.objects.get(text_id=options["text_id"])
         df = DriveFile.objects.get(resource=obj)
         s3 = boto3.resource("s3")
+        new_filename = slugify(options["new_filename"])
         df_path = df.s3_key.split("/")
-        df_path[-1] = options["new_filename"]
+        df_path[-1] = new_filename
         new_key = "/".join(df_path)
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
             CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + df.s3_key
