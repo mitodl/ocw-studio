@@ -36,6 +36,6 @@ describe("SortableItem", () => {
     const deleteButton = wrapper.find(".material-icons").at(1)
     expect(deleteButton.text()).toBe("remove_circle_outline")
     deleteButton.simulate("click")
-    expect(deleteStub).toBeCalledWith("item-id")
+    expect(deleteStub).toHaveBeenCalledWith("item-id")
   })
 })

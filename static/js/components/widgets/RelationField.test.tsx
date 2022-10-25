@@ -329,7 +329,7 @@ describe("RelationField", () => {
         // @ts-expect-error Not fully simulating the event
         select.prop("onChange")(fakeEvent)
       })
-      expect(onChangeStub).toBeCalledWith({
+      expect(onChangeStub).toHaveBeenCalledWith({
         target: {
           name:  expectedName,
           value: {
@@ -381,14 +381,14 @@ describe("RelationField", () => {
           })
           .param({ name: website.name })
           .toString()
-      expect(debouncedFetch).toBeCalledTimes(2)
-      expect(debouncedFetch).toBeCalledWith(
+      expect(debouncedFetch).toHaveBeenCalledTimes(2)
+      expect(debouncedFetch).toHaveBeenCalledWith(
         "relationfield",
         300,
         urlForSearch(searchString1),
         { credentials: "include" }
       )
-      expect(debouncedFetch).toBeCalledWith(
+      expect(debouncedFetch).toHaveBeenCalledWith(
         "relationfield",
         300,
         urlForSearch(searchString2),
@@ -435,7 +435,7 @@ describe("RelationField", () => {
     })
   })
 
-  it("should display an error message ", async () => {
+  it("should display an error message", async () => {
     global.mockFetch.mockClear()
     const fakeResponse = {
       results:  undefined,

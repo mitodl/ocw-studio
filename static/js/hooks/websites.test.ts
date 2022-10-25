@@ -37,7 +37,7 @@ describe("website hooks", () => {
       await act(async () => {
         await waitForNextUpdate()
       })
-      expect(global.fetch).toBeCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         siteApiListingUrl
           .query({ offset: 0 })
           .param({ search: "" })
@@ -60,7 +60,7 @@ describe("website hooks", () => {
         await act(async () => {
           await waitForNextUpdate()
         })
-        expect(global.fetch).toBeCalledWith(
+        expect(global.fetch).toHaveBeenCalledWith(
           siteApiListingUrl
             .query({ offset: 0 })
             .param({ search: "" })
@@ -78,7 +78,7 @@ describe("website hooks", () => {
         await waitForNextUpdate()
         await result.current.loadOptions("search string", cb)
       })
-      expect(debouncedFetch).toBeCalledWith(
+      expect(debouncedFetch).toHaveBeenCalledWith(
         "website-collection",
         300,
         siteApiListingUrl
@@ -87,7 +87,7 @@ describe("website hooks", () => {
           .toString(),
         { credentials: "include" }
       )
-      expect(cb).toBeCalledWith(formatWebsiteOptions(websites, "uuid"))
+      expect(cb).toHaveBeenCalledWith(formatWebsiteOptions(websites, "uuid"))
     })
   })
 })

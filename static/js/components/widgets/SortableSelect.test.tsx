@@ -82,7 +82,7 @@ describe("SortableSelect", () => {
   it("should allow adding another element", async () => {
     const { wrapper } = await render()
     await triggerSortableSelect(wrapper, newOptions[0].label)
-    expect(onChange).toBeCalledWith([newOptions[0].label])
+    expect(onChange).toHaveBeenCalledWith([newOptions[0].label])
     expect(wrapper.find("SelectField").prop("value")).toBeUndefined()
   })
 
@@ -102,6 +102,10 @@ describe("SortableSelect", () => {
         over:   { id: value[0].id }
       } as any)
     })
-    expect(onChange).toBeCalledWith([value[2].id, value[0].id, value[1].id])
+    expect(onChange).toHaveBeenCalledWith([
+      value[2].id,
+      value[0].id,
+      value[1].id
+    ])
   })
 })

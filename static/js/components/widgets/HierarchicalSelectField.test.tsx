@@ -184,8 +184,8 @@ describe("HierarchicalSelectField", () => {
       const event = { preventDefault: jest.fn() }
       // @ts-expect-error Not simulating the whole event
       button.prop("onClick")(event)
-      expect(event.preventDefault).toBeCalled()
-      expect(onChangeStub).toBeCalledWith({
+      expect(event.preventDefault).toHaveBeenCalled()
+      expect(onChangeStub).toHaveBeenCalledWith({
         target: {
           name,
           value: [value[valueIndex === 0 ? 1 : 0]]
@@ -209,8 +209,8 @@ describe("HierarchicalSelectField", () => {
       // @ts-expect-error Not simulating the whole event
       wrapper.find(".add").prop("onClick")(event)
 
-      expect(event.preventDefault).toBeCalled()
-      expect(onChangeStub).toBeCalledWith({
+      expect(event.preventDefault).toHaveBeenCalled()
+      expect(onChangeStub).toHaveBeenCalledWith({
         target: {
           value: sortBy(duplicate ? value : [...value, ["Topic2"]]),
           name
@@ -229,8 +229,8 @@ describe("HierarchicalSelectField", () => {
     // @ts-expect-error Not simulating the whole event
     wrapper.find(".add").prop("onClick")(event)
 
-    expect(event.preventDefault).toBeCalled()
-    expect(onChangeStub).not.toBeCalled()
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(onChangeStub).not.toHaveBeenCalled()
   })
 
   describe("calcOptions", () => {

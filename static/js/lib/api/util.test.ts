@@ -18,7 +18,7 @@ describe("api utility functions", () => {
     // - the fourth has a different key so it should get its own wait
     // - and the fifth is executed after the other sharedWait calls have resolved,
     // so it should start with a clean slate
-    expect(wait).toBeCalledTimes(3)
+    expect(wait).toHaveBeenCalledTimes(3)
   })
 
   it("debounces and fetches", async () => {
@@ -31,7 +31,7 @@ describe("api utility functions", () => {
       debouncedFetch("key", 30, "url3", { credentials: "omit" })
     ])
 
-    expect(global.fetch).toBeCalledTimes(1)
+    expect(global.fetch).toHaveBeenCalledTimes(1)
     // only the last set of arguments should be passed to fetch
     expect(global.fetch).toHaveBeenCalledWith("url3", {
       credentials: "omit"

@@ -84,7 +84,7 @@ describe("ObjectField", () => {
         isVisible ? field.fields.length : 0
       )
       for (const innerField of field.fields) {
-        expect(mockSiteContent.fieldIsVisible).toBeCalledWith(
+        expect(mockSiteContent.fieldIsVisible).toHaveBeenCalledWith(
           innerField,
           values
         )

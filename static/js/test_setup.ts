@@ -50,7 +50,6 @@ declare global {
 }
 
 // cleanup after each test run
-// eslint-disable-next-line mocha/no-top-level-hooks
 afterEach(function() {
   /**
    * Clear all mock call counts between tests.

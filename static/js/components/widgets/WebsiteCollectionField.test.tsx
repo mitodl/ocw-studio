@@ -47,7 +47,7 @@ describe("WebsiteCollectionField", () => {
 
   it("should pass published=true to the useWebsiteSelectOptions", async () => {
     await render()
-    expect(useWebsiteSelectOptions).toBeCalledWith("url_path", true)
+    expect(useWebsiteSelectOptions).toHaveBeenCalledWith("url_path", true)
   })
 
   it("should pass things down to SortableSelect", async () => {
@@ -69,7 +69,7 @@ describe("WebsiteCollectionField", () => {
     const { wrapper } = await render()
     wrapper.update()
     await triggerSortableSelect(wrapper, websites[0].name)
-    expect(onChange).toBeCalledWith({
+    expect(onChange).toHaveBeenCalledWith({
       target: {
         name:  "test-site-collection",
         value: [
