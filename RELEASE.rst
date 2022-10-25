@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.78.2
+--------------
+
+- update yarn install (#1541)
+- Bump moment from 2.29.1 to 2.29.4 (#1531)
+- Bump terser from 5.12.1 to 5.15.1 (#1530)
+- Bump protobuf from 3.17.3 to 3.18.3 (#1508)
+- Bump oauthlib from 3.1.1 to 3.2.1 (#1485)
+
 Version 0.78.1 (Released October 19, 2022)
 --------------
 
