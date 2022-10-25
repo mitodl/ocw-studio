@@ -79,7 +79,7 @@ jobs:
         - -exc
         - |
           cd ocw-hugo-themes
-          yarn install --pure-lockfile
+          yarn install --immutable
           npm run build:webpack
           npm run build:githash
           mkdir -p ./base-theme/static/static/
