@@ -1,11 +1,11 @@
 from pathlib import Path
 
-import boto3
 from django.conf import settings
 from django.core.management import BaseCommand
 from django.utils.text import slugify
 
 from gdrive_sync.models import DriveFile
+from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename
 from websites.models import WebsiteContent
 
@@ -34,7 +34,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         obj = WebsiteContent.objects.get(text_id=options["text_id"])
         df = DriveFile.objects.get(resource=obj)
-        s3 = boto3.resource("s3")
+        s3 = get_boto3_resource("s3")
         # slugify just the provided name and then make the extensions lowercase
         filepath = Path(options["new_filename"])
         basename = options["new_filename"].rstrip("".join(filepath.suffixes))
