@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.78.2
+Version 0.78.2 (Released October 26, 2022)
 --------------
 
 - update yarn install (#1541)
