@@ -469,7 +469,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((resource-base-url))", resource_base_url or "")
                 .replace(
                     "((ocw-hugo-themes-sentry-dsn))",
-                    settings.OCW_HUGO_THEMES_SENTRY_DSN,
+                    settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
                 )
             )
             self.upsert_config(config_str, pipeline_name)
@@ -674,7 +674,7 @@ class MassBuildSitesPipeline(
                 ),
             )
             .replace(
-                "((ocw-hugo-themes-sentry-dsn))", settings.OCW_HUGO_THEMES_SENTRY_DSN
+                "((ocw-hugo-themes-sentry-dsn))", settings.OCW_HUGO_THEMES_SENTRY_DSN or ""
             )
         )
         self.upsert_config(config_str, self.PIPELINE_NAME)
