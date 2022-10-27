@@ -467,7 +467,10 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
                 )
                 .replace("((resource-base-url))", resource_base_url or "")
-                .replace("((ocw-hugo-themes-sentry-dsn))", settings.OCW_HUGO_THEMES_SENTRY_DSN)
+                .replace(
+                    "((ocw-hugo-themes-sentry-dsn))",
+                    settings.OCW_HUGO_THEMES_SENTRY_DSN,
+                )
             )
             self.upsert_config(config_str, pipeline_name)
 
@@ -670,7 +673,9 @@ class MassBuildSitesPipeline(
                     and self.PROJECTS_BRANCH == settings.GITHUB_WEBHOOK_BRANCH
                 ),
             )
-            .replace("((ocw-hugo-themes-sentry-dsn))", settings.OCW_HUGO_THEMES_SENTRY_DSN)
+            .replace(
+                "((ocw-hugo-themes-sentry-dsn))", settings.OCW_HUGO_THEMES_SENTRY_DSN
+            )
         )
         self.upsert_config(config_str, self.PIPELINE_NAME)
 
