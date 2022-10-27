@@ -674,7 +674,8 @@ class MassBuildSitesPipeline(
                 ),
             )
             .replace(
-                "((ocw-hugo-themes-sentry-dsn))", settings.OCW_HUGO_THEMES_SENTRY_DSN or ""
+                "((ocw-hugo-themes-sentry-dsn))",
+                settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
             )
         )
         self.upsert_config(config_str, self.PIPELINE_NAME)
