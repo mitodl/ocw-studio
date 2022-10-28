@@ -517,7 +517,7 @@ def rename_file(obj_text_id, obj_new_filename):
         )
         if dependencies:
             log.error(
-                f"Not renaming file due to dependencies in existing content: %s",
+                "Not renaming file due to dependencies in existing content: %s",
                 dependencies,
             )
         else:
