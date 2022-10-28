@@ -491,6 +491,7 @@ def update_sync_status(website: Website, sync_datetime: datetime):
     website.save()
 
 
+@transaction.atomic
 def rename_file(obj_text_id, obj_new_filename):
     """Rename the file on S3 associated with the WebsiteContent object to a new filename."""
     obj = WebsiteContent.objects.get(text_id=obj_text_id)
@@ -508,33 +509,35 @@ def rename_file(obj_text_id, obj_new_filename):
     new_key = "/".join(df_path)
     # check if an object with the new filename already exists in this course
     existing_obj = WebsiteContent.objects.filter(Q(website=site) & Q(file=new_key))
-    rename = False
     if existing_obj:
+        old_obj = existing_obj.first()
+        if old_obj == obj:
+            log.error("New filename is the same as the existing filename.")
+            return
         dependencies = WebsiteContent.objects.filter(
             Q(website=site)
             & Q(type=CONTENT_TYPE_PAGE)
-            & Q(markdown__icontains=existing_obj.first().text_id),
+            & Q(markdown__icontains=old_obj.text_id),
         )
         if dependencies:
             log.error(
                 "Not renaming file due to dependencies in existing content: %s",
                 dependencies,
             )
+            return
         else:
             log.info("Found existing file with same name. Overwriting it.")
-            existing_obj.first().delete()
-            log.info(existing_obj)
-            rename = True
-    else:
-        rename = True
-    if rename:
-        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
-            CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + df.s3_key
-        )
-        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, df.s3_key).delete()
-        df.s3_key = new_key
-        obj.file = new_key
-        obj.filename = get_dirpath_and_filename(new_filename)[1]
-        df.save()
-        obj.save()
-        log.info("File successfully renamed.\n")
+            # change filename of object to be deleted to prevent key collision while Django database updates
+            old_obj.filename = "random_temp_filler" * 3
+            old_obj.delete()
+
+    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
+        CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + df.s3_key
+    )
+    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, df.s3_key).delete()
+    df.s3_key = new_key
+    obj.file = new_key
+    obj.filename = get_dirpath_and_filename(new_filename)[1]
+    df.save()
+    obj.save()
+    log.info("File successfully renamed.\n")
