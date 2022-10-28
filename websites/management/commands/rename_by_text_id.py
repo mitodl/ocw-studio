@@ -1,14 +1,8 @@
-from pathlib import Path
-
 from django.conf import settings
 from django.core.management import BaseCommand
 from django.utils.text import slugify
 
 from gdrive_sync.api import rename_file
-from gdrive_sync.models import DriveFile
-from main.s3_utils import get_boto3_resource
-from main.utils import get_dirpath_and_filename
-from websites.models import WebsiteContent
 
 
 class Command(BaseCommand):
