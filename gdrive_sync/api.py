@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Iterable, Optional
 
 import PyPDF2
@@ -29,6 +30,7 @@ from gdrive_sync.constants import (
 )
 from gdrive_sync.models import DriveFile
 from main.s3_utils import get_boto3_resource
+from main.utils import get_dirpath_and_filename
 from videos.api import create_media_convert_job
 from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
@@ -485,3 +487,28 @@ def update_sync_status(website: Website, sync_datetime: datetime):
     website.sync_status = new_status
     website.sync_errors = (website.sync_errors or []) + errors
     website.save()
+
+
+def rename_file(obj_text_id, obj_new_filename):
+    """Rename the file on S3 associated with the WebsiteContent object to a new filename."""
+    obj = WebsiteContent.objects.get(text_id=obj_text_id)
+    df = DriveFile.objects.get(resource=obj)
+    s3 = get_boto3_resource("s3")
+    # slugify just the provided name and then make the extensions lowercase
+    filepath = Path(obj_new_filename)
+    basename = obj_new_filename.rstrip("".join(filepath.suffixes))
+    new_filename = slugify(basename)
+    if filepath.suffixes:
+        new_filename += "".join(filepath.suffixes).lower()
+    df_path = df.s3_key.split("/")
+    df_path[-1] = new_filename
+    new_key = "/".join(df_path)
+    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
+        CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + df.s3_key
+    )
+    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, df.s3_key).delete()
+    df.s3_key = new_key
+    obj.file = new_key
+    obj.filename = get_dirpath_and_filename(new_filename)[1]
+    df.save()
+    obj.save()
