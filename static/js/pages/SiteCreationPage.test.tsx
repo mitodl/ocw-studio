@@ -95,8 +95,8 @@ describe("SiteCreationPage", () => {
       sinon.assert.calledOnce(createWebsiteStub)
       expect(formikStubs.setSubmitting).toHaveBeenCalledTimes(1)
       expect(formikStubs.setSubmitting).toHaveBeenCalledWith(false)
-      expect(historyPushStub).toBeCalledTimes(1)
-      expect(historyPushStub).toBeCalledWith(
+      expect(historyPushStub).toHaveBeenCalledTimes(1)
+      expect(historyPushStub).toHaveBeenCalledWith(
         siteDetailUrl.param({ name: website.name }).toString()
       )
     })
@@ -126,7 +126,7 @@ describe("SiteCreationPage", () => {
         short_id: undefined,
         starter:  undefined
       })
-      expect(historyPushStub).not.toBeCalled()
+      expect(historyPushStub).not.toHaveBeenCalled()
     })
 
     it("that sets a status if the API request fails with a string error message", async () => {

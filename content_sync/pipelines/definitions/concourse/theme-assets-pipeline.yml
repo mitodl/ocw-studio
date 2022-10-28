@@ -31,7 +31,7 @@ jobs:
         - -exc
         - |
           cd ocw-hugo-themes
-          yarn install --pure-lockfile
+          yarn install --immutable
           npm run build:webpack
           npm run build:githash
   - task: copy-s3-buckets

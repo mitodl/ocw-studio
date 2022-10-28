@@ -166,8 +166,8 @@ export class Shortcode {
     const interior = s.slice(3, -3)
     const isClosingMatch = interior.match(Shortcode.IS_CLOSING_REGEXP)
     // IS_CLOSING_REGEXP will always match, hence the non-null assertion !
-    const isClosing = isClosingMatch!.groups!.isClosing === "/"
-    const nameAndArgs = interior.slice(isClosingMatch![0].length)
+    const isClosing = isClosingMatch?.groups?.isClosing === "/"
+    const nameAndArgs = interior.slice(isClosingMatch?.[0].length ?? 0)
 
     const [nameMatch, ...argMatches] = nameAndArgs.matchAll(
       Shortcode.ARG_REGEXP

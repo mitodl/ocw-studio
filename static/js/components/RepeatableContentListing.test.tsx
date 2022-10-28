@@ -211,7 +211,7 @@ describe("RepeatableContentListing", () => {
     filterInput.simulate("change", event)
     jest.runAllTimers()
     wrapper.update()
-    expect(spy).toBeCalledWith("?q=my-search-string")
+    expect(spy).toHaveBeenCalledWith("?q=my-search-string")
   })
 
   it("should show each content item with edit links", async () => {
@@ -448,7 +448,7 @@ describe("RepeatableContentListing", () => {
         apiResponse
       )
       await render({ website })
-      expect(spyUseInterval).toBeCalledTimes(2)
+      expect(spyUseInterval).toHaveBeenCalledTimes(2)
       await spyUseInterval.mock.calls[0][0]()
 
       if (shouldUpdate) {
@@ -461,7 +461,7 @@ describe("RepeatableContentListing", () => {
     })
   })
 
-  test("should have a route for the EditorDrawer component ", async () => {
+  test("should have a route for the EditorDrawer component", async () => {
     const { wrapper } = await render()
     const listing = wrapper.find(RepeatableContentListing)
     const route = listing.find(Route)

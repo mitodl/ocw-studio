@@ -20,7 +20,7 @@ x-environment:
 networks:
   default-network:
     driver: bridge
-  minio-network:
+  concourse-network:
     driver: bridge
     ipam:
       driver: default
@@ -34,7 +34,9 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres  # pragma: allowlist secret
     networks:
-     - default-network
+      default-network:
+      concourse-network:
+        ipv4_address: 10.1.0.103
 
   redis:
     image: redis:6.0.10
@@ -42,7 +44,7 @@ services:
       - "6379"
     networks:
      - default-network
-     - minio-network
+     - concourse-network
 
   nginx:
     image: nginx:1.22.0
@@ -58,7 +60,7 @@ services:
       - s3
     networks:
       default-network:
-      minio-network:
+      concourse-network:
         ipv4_address: 10.1.0.102
 
   web:
@@ -84,7 +86,7 @@ services:
       - redis
     networks:
       - default-network
-      - minio-network
+      - concourse-network
 
   watch:
     image: node:16.15.0
@@ -116,7 +118,7 @@ services:
       - redis
     networks:
       - default-network
-      - minio-network
+      - concourse-network
 
   concourse-db:
     image: postgres:11.6
@@ -160,7 +162,7 @@ services:
       - s3
     networks:
       default-network:
-      minio-network:
+      concourse-network:
         ipv4_address: 10.1.0.101
 
   s3:
@@ -181,7 +183,7 @@ services:
       retries: 3
     networks:
       default-network:
-      minio-network:
+      concourse-network:
         ipv4_address: 10.1.0.100
   create-buckets:
     image: minio/mc
@@ -210,4 +212,4 @@ services:
       /usr/bin/mc version enable minio/$AWS_ARTIFACTS_BUCKET_NAME;
       "
     networks:
-      - minio-network
+      - concourse-network

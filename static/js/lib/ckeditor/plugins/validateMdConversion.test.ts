@@ -30,17 +30,17 @@ const md = {
 }
 
 describe("validateHtml2md", () => {
-  it("Does nothing when ", async () => {
+  it("Does nothing when", async () => {
     const { md2html } = getConverters(await getEditor())
     const shouldNotError = () =>
       validateHtml2md(md.oneTable, html.oneTable, md2html)
-    expect(shouldNotError).not.toThrowError()
+    expect(shouldNotError).not.toThrow()
   })
 
   it("Errors when", async () => {
     const { md2html } = getConverters(await getEditor())
     const shouldError = () =>
       validateHtml2md(md.oneTable, html.twoTable, md2html)
-    expect(shouldError).toThrowError(/Markdown conversion error/)
+    expect(shouldError).toThrow(/Markdown conversion error/)
   })
 })
