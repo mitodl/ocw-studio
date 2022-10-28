@@ -11,6 +11,7 @@ import PyPDF2
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils.text import slugify
 from google.oauth2.service_account import (  # pylint:disable=no-name-in-module
     Credentials as ServiceAccountCredentials,
@@ -36,6 +37,7 @@ from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
 from websites.api import get_valid_new_filename
 from websites.constants import (
+    CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
@@ -492,6 +494,7 @@ def update_sync_status(website: Website, sync_datetime: datetime):
 def rename_file(obj_text_id, obj_new_filename):
     """Rename the file on S3 associated with the WebsiteContent object to a new filename."""
     obj = WebsiteContent.objects.get(text_id=obj_text_id)
+    site = obj.website
     df = DriveFile.objects.get(resource=obj)
     s3 = get_boto3_resource("s3")
     # slugify just the provided name and then make the extensions lowercase
@@ -503,12 +506,35 @@ def rename_file(obj_text_id, obj_new_filename):
     df_path = df.s3_key.split("/")
     df_path[-1] = new_filename
     new_key = "/".join(df_path)
-    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
-        CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + df.s3_key
-    )
-    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, df.s3_key).delete()
-    df.s3_key = new_key
-    obj.file = new_key
-    obj.filename = get_dirpath_and_filename(new_filename)[1]
-    df.save()
-    obj.save()
+    # check if an object with the new filename already exists in this course
+    existing_obj = WebsiteContent.objects.filter(Q(website=site) & Q(file=new_key))
+    rename = False
+    if existing_obj:
+        dependencies = WebsiteContent.objects.filter(
+            Q(website=site)
+            & Q(type=CONTENT_TYPE_PAGE)
+            & Q(markdown__icontains=existing_obj.first().text_id),
+        )
+        if dependencies:
+            log.error(
+                f"Not renaming file due to dependencies in existing content: %s",
+                dependencies,
+            )
+        else:
+            log.info("Found existing file with same name. Overwriting it.")
+            existing_obj.first().delete()
+            log.info(existing_obj)
+            rename = True
+    else:
+        rename = True
+    if rename:
+        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
+            CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + df.s3_key
+        )
+        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, df.s3_key).delete()
+        df.s3_key = new_key
+        obj.file = new_key
+        obj.filename = get_dirpath_and_filename(new_filename)[1]
+        df.save()
+        obj.save()
+        log.info("File successfully renamed.\n")

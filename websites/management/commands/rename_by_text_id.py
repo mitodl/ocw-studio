@@ -28,4 +28,3 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         rename_file(options["text_id"], options["new_filename"])
-        self.stdout.write("File successfully renamed.\n")
