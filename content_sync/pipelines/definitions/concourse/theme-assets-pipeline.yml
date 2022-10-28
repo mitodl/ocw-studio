@@ -17,7 +17,7 @@ jobs:
     config:
       platform: linux
       image_resource:
-        type: docker-image
+        type: registry-image
         source: {repository: mitodl/ocw-course-publisher, tag: 0.3}
       inputs:
       - name: ocw-hugo-themes
@@ -47,7 +47,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ((minio-root-password))
       # END DEV-ONLY
       image_resource:
-        type: docker-image
+        type: registry-image
         source: {repository: amazon/aws-cli, tag: latest}
       run:
         path: sh
@@ -64,7 +64,7 @@ jobs:
     config:
       platform: linux
       image_resource:
-        type: docker-image
+        type: registry-image
         source: {repository: curlimages/curl}
       run:
         path: curl
@@ -81,7 +81,7 @@ jobs:
     config:
       platform: linux
       image_resource:
-        type: docker-image
+        type: registry-image
         source: {repository: curlimages/curl}
       run:
         path: curl

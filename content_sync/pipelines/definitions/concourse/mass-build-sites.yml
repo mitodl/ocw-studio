@@ -1,12 +1,12 @@
 ---
 resource_types:
   - name: http-resource
-    type: docker-image
+    type: registry-image
     source:
       repository: jgriff/http-resource
       tag: latest
   - name: s3-resource-iam
-    type: docker-image
+    type: registry-image
     source:
       repository: governmentpaas/s3-resource
       tag: latest
@@ -37,7 +37,7 @@ resources:
 task-config: &webhook-config
   platform: linux
   image_resource:
-    type: docker-image
+    type: registry-image
     source: {repository: curlimages/curl}
 # END ONLINE-ONLY
 jobs:
@@ -65,7 +65,7 @@ jobs:
     config:
       platform: linux
       image_resource:
-        type: docker-image
+        type: registry-image
         source: {repository: mitodl/ocw-course-publisher, tag: 0.3}
       inputs:
       - name: ocw-hugo-themes
@@ -91,7 +91,7 @@ jobs:
     config:
       platform: linux
       image_resource:
-        type: docker-image
+        type: registry-image
         source: {repository: bash, tag: latest}
       outputs:
         - name: publishable_sites
@@ -121,7 +121,7 @@ jobs:
     config:
       platform: linux
       image_resource:
-        type: docker-image
+        type: registry-image
         source: {repository: mitodl/ocw-course-publisher, tag: 0.3}
       inputs:
         - name: publishable_sites
@@ -140,7 +140,7 @@ jobs:
             if [[ "$GIT_KEY" != "" ]]
             then
               echo $GIT_KEY > $CURDIR/git.key
-              sed -i -E "s/(-----BEGIN[^-]+-----)(.+)(-----END[^-]+-----)/-----BEGINSSHKEY-----\2\-----ENDSSHKEY-----/" git.key  
+              sed -i -E "s/(-----BEGIN[^-]+-----)(.+)(-----END[^-]+-----)/-----BEGINSSHKEY-----\2\-----ENDSSHKEY-----/" git.key
               sed -i -E "s/\s/\n/g" git.key
               sed -i -E "s/SSHKEY/ OPENSSH PRIVATE KEY/g" git.key
               chmod 400 $CURDIR/git.key
@@ -271,7 +271,7 @@ jobs:
     config:
       platform: linux
       image_resource:
-        type: docker-image
+        type: registry-image
         source: {repository: curlimages/curl}
       run:
         path: curl

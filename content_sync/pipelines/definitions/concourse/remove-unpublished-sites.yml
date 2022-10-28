@@ -1,19 +1,19 @@
 ---
 resource_types:
   - name: http-resource
-    type: docker-image
+    type: registry-image
     source:
       repository: jgriff/http-resource
       tag: latest
   - name: s3-resource-iam
-    type: docker-image
+    type: registry-image
     source:
       repository: governmentpaas/s3-resource
       tag: latest
 task-config: &webhook-config
   platform: linux
   image_resource:
-    type: docker-image
+    type: registry-image
     source: {repository: curlimages/curl}
 jobs:
 - name: remove-unpublished-sites
@@ -25,7 +25,7 @@ jobs:
     config:
       platform: linux
       image_resource:
-        type: docker-image
+        type: registry-image
         source: {repository: bash, tag: latest}
       outputs:
         - name: unpublishable_sites
@@ -51,7 +51,7 @@ jobs:
       config:
         platform: linux
         image_resource:
-          type: docker-image
+          type: registry-image
           source: {repository: curlimages/curl}
         run:
           path: curl
@@ -96,7 +96,7 @@ jobs:
       config:
         platform: linux
         image_resource:
-          type: docker-image
+          type: registry-image
           source: {repository: amazon/aws-cli, tag: latest}
         run:
           path: sh
@@ -131,7 +131,7 @@ jobs:
       config:
         platform: linux
         image_resource:
-          type: docker-image
+          type: registry-image
           source: {repository: curlimages/curl}
         run:
           path: curl
