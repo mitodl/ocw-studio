@@ -327,7 +327,7 @@ jobs:
           STATIC_API_BASE_URL: ((static-api-base-url))
           OCW_IMPORT_STARTER_SLUG: ((ocw-import-starter-slug))
           SITEMAP_DOMAIN: ((sitemap-domain))
-          OCW_HUGO_THEMES_SENTRY_DSN: ((ocw-hugo-themes-sentry-dsn))
+          SENTRY_DSN: ((ocw-hugo-themes-sentry-dsn))
           # START DEV-ONLY
           RESOURCE_BASE_URL: ((resource-base-url))
           # END DEV-ONLY
