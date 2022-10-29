@@ -491,7 +491,6 @@ def update_sync_status(website: Website, sync_datetime: datetime):
     website.save()
 
 
-@transaction.atomic
 def rename_file(obj_text_id, obj_new_filename):
     """Rename the file on S3 associated with the WebsiteContent object to a new filename."""
     obj = WebsiteContent.objects.get(text_id=obj_text_id)
@@ -527,9 +526,8 @@ def rename_file(obj_text_id, obj_new_filename):
             return
         else:
             log.info("Found existing file with same name. Overwriting it.")
-            # change filename of object to be deleted to prevent key collision while Django database updates
-            old_obj.filename = "random_temp_filler" * 3
-            old_obj.delete()
+            with transaction.atomic():
+                old_obj.delete()
 
     s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
         CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + df.s3_key
