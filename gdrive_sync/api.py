@@ -532,13 +532,16 @@ def rename_file(obj_text_id, obj_new_filename):
             backend = get_sync_backend(site)
             backend.sync_all_content_to_backend()
 
-    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
-        CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + df.s3_key
-    )
-    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, df.s3_key).delete()
+    old_key = df.s3_key
     df.s3_key = new_key
     obj.file = new_key
     obj.filename = get_dirpath_and_filename(new_filename)[1]
     df.save()
     obj.save()
+
+    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
+        CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + old_key
+    )
+    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, old_key).delete()
+
     log.info("File successfully renamed.\n")
