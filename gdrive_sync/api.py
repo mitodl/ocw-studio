@@ -501,8 +501,7 @@ def rename_file(obj_text_id, obj_new_filename):
     s3 = get_boto3_resource("s3")
     # slugify just the provided name and then make the extensions lowercase
     filepath = Path(obj_new_filename)
-    basename = obj_new_filename.rstrip("".join(filepath.suffixes))
-    new_filename = slugify(basename)
+    new_filename = slugify(obj_new_filename.rstrip("".join(filepath.suffixes)))
     if filepath.suffixes:
         new_filename += "".join(filepath.suffixes).lower()
     df_path = df.s3_key.split("/")
