@@ -1,18 +1,18 @@
 ---
 resource_types:
   - name: http-resource
-    type: docker-image
+    type: registry-image
     source:
       repository: jgriff/http-resource
       tag: latest
   - name: s3-resource-iam
-    type: docker-image
+    type: registry-image
     source:
       repository: governmentpaas/s3-resource
       tag: latest
   # START NON-DEV
   - name: slack-alert
-    type: docker-image
+    type: registry-image
     source:
       repository: arbourd/concourse-slack-alert-resource
       tag: v0.15.0
@@ -101,7 +101,7 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
-            # START NON-DEV  
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
@@ -119,7 +119,7 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "errored"
                     }
-            # START NON-DEV  
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
@@ -137,7 +137,7 @@ jobs:
                       "version": "((pipeline_name))",
                       "status": "aborted"
                     }
-            # START NON-DEV  
+            # START NON-DEV
             - put: slack-webhook
               timeout: 1m
               params:
@@ -333,7 +333,7 @@ jobs:
         config:
           platform: linux
           image_resource:
-            type: docker-image
+            type: registry-image
             source: {repository: mitodl/ocw-course-publisher, tag: 0.3}
           inputs:
             - name: ocw-hugo-themes
@@ -419,14 +419,14 @@ jobs:
             - name: course-markdown
           platform: linux
           image_resource:
-            type: docker-image
+            type: registry-image
             source: {repository: amazon/aws-cli, tag: latest}
           run:
             path: sh
             args:
             - -exc
             - |
-              aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))              
+              aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))
               aws s3((cli-endpoint-url)) sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
         # START DEV-ONLY
         on_success:
@@ -506,7 +506,7 @@ jobs:
         config:
           platform: linux
           image_resource:
-            type: docker-image
+            type: registry-image
             source: {repository: curlimages/curl}
           run:
             path: curl
