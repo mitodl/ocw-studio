@@ -612,6 +612,10 @@
     "YT_UPLOAD_LIMIT": {
       "description": "Max Youtube uploads allowed per day",
       "required": false
+    },
+    "OCW_HUGO_THEMES_SENTRY_DSN": {
+      "description": "The sentry DSN that will be used in ocw-hugo-themes",
+      "required": false
     }
   },
   "keywords": [

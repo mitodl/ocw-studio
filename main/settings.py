@@ -1132,3 +1132,8 @@ SITEMAP_DOMAIN = get_string(
     default="ocw.mit.edu",
     description="The domain to be used in Hugo builds for fully qualified URLs in the sitemap",
 )
+OCW_HUGO_THEMES_SENTRY_DSN = get_string(
+    name="OCW_HUGO_THEMES_SENTRY_DSN",
+    required=False,
+    description="The sentry DSN that will be used in ocw-hugo-themes",
+)
