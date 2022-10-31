@@ -19,6 +19,7 @@ from google.oauth2.service_account import (  # pylint:disable=no-name-in-module
 from googleapiclient.discovery import Resource, build
 from googleapiclient.http import MediaIoBaseDownload
 
+from content_sync.api import get_sync_backend
 from content_sync.decorators import retry_on_failure
 from gdrive_sync.constants import (
     DRIVE_FOLDER_FILES,
@@ -491,6 +492,7 @@ def update_sync_status(website: Website, sync_datetime: datetime):
     website.save()
 
 
+@transaction.atomic
 def rename_file(obj_text_id, obj_new_filename):
     """Rename the file on S3 associated with the WebsiteContent object to a new filename."""
     obj = WebsiteContent.objects.get(text_id=obj_text_id)
@@ -526,8 +528,9 @@ def rename_file(obj_text_id, obj_new_filename):
             return
         else:
             log.info("Found existing file with same name. Overwriting it.")
-            with transaction.atomic():
-                old_obj.delete()
+            old_obj.delete()
+            backend = get_sync_backend(site)
+            backend.sync_all_content_to_backend()
 
     s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
         CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + df.s3_key
