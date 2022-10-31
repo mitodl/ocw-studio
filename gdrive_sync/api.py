@@ -512,24 +512,22 @@ def rename_file(obj_text_id, obj_new_filename):
     if existing_obj:
         old_obj = existing_obj.first()
         if old_obj == obj:
-            log.error("New filename is the same as the existing filename.")
-            return
+            raise Exception("New filename is the same as the existing filename.")
         dependencies = WebsiteContent.objects.filter(
             Q(website=site)
             & Q(type=CONTENT_TYPE_PAGE)
             & Q(markdown__icontains=old_obj.text_id),
         )
         if dependencies:
-            log.error(
-                "Not renaming file due to dependencies in existing content: %s",
-                dependencies,
+            raise Exception(
+                "Not renaming file due to dependencies in existing content: "
+                + str(dependencies)
             )
-            return
-        else:
-            log.info("Found existing file with same name. Overwriting it.")
-            old_obj.delete()
-            backend = get_sync_backend(site)
-            backend.sync_all_content_to_backend()
+
+        log.info("Found existing file with same name. Overwriting it.")
+        old_obj.delete()
+        backend = get_sync_backend(site)
+        backend.sync_all_content_to_backend()
 
     old_key = df.s3_key
     df.s3_key = new_key
