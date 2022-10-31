@@ -543,5 +543,3 @@ def rename_file(obj_text_id, obj_new_filename):
         CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + old_key
     )
     s3.Object(settings.AWS_STORAGE_BUCKET_NAME, old_key).delete()
-
-    log.info("File successfully renamed.\n")
