@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.79.0
+--------------
+
+- Management Command for Renaming Files on S3 (#1538)
+- Bump nokogiri from 1.13.6 to 1.13.9 in /docs (#1537)
+- ocw hugo themes sentry dsn added  (#1548)
+- Use registry-image in concourse pipelines (#1553)
+- name offline site zip with short_id instead of name (#1546)
+
 Version 0.78.3 (Released November 01, 2022)
 --------------
 
