@@ -4,12 +4,14 @@ import json
 import logging
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Iterable, Optional
 
 import PyPDF2
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils.text import slugify
 from google.oauth2.service_account import (  # pylint:disable=no-name-in-module
     Credentials as ServiceAccountCredentials,
@@ -17,6 +19,7 @@ from google.oauth2.service_account import (  # pylint:disable=no-name-in-module
 from googleapiclient.discovery import Resource, build
 from googleapiclient.http import MediaIoBaseDownload
 
+from content_sync.api import get_sync_backend
 from content_sync.decorators import retry_on_failure
 from gdrive_sync.constants import (
     DRIVE_FOLDER_FILES,
@@ -29,11 +32,13 @@ from gdrive_sync.constants import (
 )
 from gdrive_sync.models import DriveFile
 from main.s3_utils import get_boto3_resource
+from main.utils import get_dirpath_and_filename
 from videos.api import create_media_convert_job
 from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
 from websites.api import get_valid_new_filename
 from websites.constants import (
+    CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
@@ -485,3 +490,53 @@ def update_sync_status(website: Website, sync_datetime: datetime):
     website.sync_status = new_status
     website.sync_errors = (website.sync_errors or []) + errors
     website.save()
+
+
+@transaction.atomic
+def rename_file(obj_text_id, obj_new_filename):
+    """Rename the file on S3 associated with the WebsiteContent object to a new filename."""
+    obj = WebsiteContent.objects.get(text_id=obj_text_id)
+    site = obj.website
+    df = DriveFile.objects.get(resource=obj)
+    s3 = get_boto3_resource("s3")
+    # slugify just the provided name and then make the extensions lowercase
+    filepath = Path(obj_new_filename)
+    new_filename = slugify(obj_new_filename.rstrip("".join(filepath.suffixes)))
+    if filepath.suffixes:
+        new_filename += "".join(filepath.suffixes).lower()
+    df_path = df.s3_key.split("/")
+    df_path[-1] = new_filename
+    new_key = "/".join(df_path)
+    # check if an object with the new filename already exists in this course
+    existing_obj = WebsiteContent.objects.filter(Q(website=site) & Q(file=new_key))
+    if existing_obj:
+        old_obj = existing_obj.first()
+        if old_obj == obj:
+            raise Exception("New filename is the same as the existing filename.")
+        dependencies = WebsiteContent.objects.filter(
+            Q(website=site)
+            & Q(type=CONTENT_TYPE_PAGE)
+            & Q(markdown__icontains=old_obj.text_id),
+        )
+        if dependencies:
+            raise Exception(
+                "Not renaming file due to dependencies in existing content: "
+                + str(dependencies)
+            )
+
+        log.info("Found existing file with same name. Overwriting it.")
+        old_obj.delete()
+        backend = get_sync_backend(site)
+        backend.sync_all_content_to_backend()
+
+    old_key = df.s3_key
+    df.s3_key = new_key
+    obj.file = new_key
+    obj.filename = get_dirpath_and_filename(new_filename)[1]
+    df.save()
+    obj.save()
+
+    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_key).copy_from(
+        CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + old_key
+    )
+    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, old_key).delete()
