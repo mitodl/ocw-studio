@@ -781,7 +781,7 @@ def test_gdrive_stream_reader(mocker, mock_service, chunk_size):
         assert bytes_read == b"".join(expected_bytes[i : i + chunk_size])
 
 
-def test_rename_file(mocker):
+def test_rename_file(mocker, settings):
     """rename_file should update the WebsiteContent and DriveFile objects with a new file path"""
     content = WebsiteContentFactory.create(
         file="test/path/old_name.pdf", text_id="abc-123"
@@ -790,6 +790,7 @@ def test_rename_file(mocker):
         website=content.website, s3_key="test/path/old_name.pdf", resource=content
     )
     mocker.patch("main.s3_utils.boto3")
+    settings.AWS_STORAGE_BUCKET_NAME = "test-bucket"
     rename_file("abc-123", "new_name.pdf")
     content.refresh_from_db()
     drive_file.refresh_from_db()
