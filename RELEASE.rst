@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.78.3 (Released November 01, 2022)
+--------------
+
+- give db service a static ip on the concourse network, and appropriately rename it from minio-network to concourse-network (#1540)
+- Update eslint-config-mitodl (#1536)
+
 Version 0.78.2 (Released October 26, 2022)
 --------------
 
