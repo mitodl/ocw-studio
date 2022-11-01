@@ -16,6 +16,7 @@ from gdrive_sync.api import (
     gdrive_root_url,
     get_resource_type,
     process_file_result,
+    rename_file,
     transcode_gdrive_video,
     update_sync_status,
     walk_gdrive_folder,
@@ -778,3 +779,19 @@ def test_gdrive_stream_reader(mocker, mock_service, chunk_size):
         bytes_idx += chunk_size
         assert reader.downloader._chunksize == chunk_size
         assert bytes_read == b"".join(expected_bytes[i : i + chunk_size])
+
+
+def test_rename_file(mocker):
+    """rename_file should update the WebsiteContent and DriveFile objects with a new file path"""
+    content = WebsiteContentFactory.create(
+        file="test/path/old_name.pdf", text_id="abc-123"
+    )
+    drive_file = DriveFileFactory.create(
+        website=content.website, s3_key="test/path/old_name.pdf", resource=content
+    )
+    mocker.patch("main.s3_utils.boto3")
+    rename_file("abc-123", "new_name.pdf")
+    content.refresh_from_db()
+    drive_file.refresh_from_db()
+    assert content.file == "test/path/new_name.pdf"
+    assert drive_file.s3_key == "test/path/new_name.pdf"
