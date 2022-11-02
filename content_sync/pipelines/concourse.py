@@ -439,7 +439,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace(
                     "((ocw-import-starter-slug))", settings.OCW_COURSE_STARTER_SLUG
                 )
-                .replace("((ocw-course-starter-slug))", settings.OCW_COURSE_STARTER_SLUG)
+                .replace(
+                    "((ocw-course-starter-slug))", settings.OCW_COURSE_STARTER_SLUG
+                )
                 .replace("((ocw-studio-bucket))", storage_bucket_name or "")
                 .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
                 .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
