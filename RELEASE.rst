@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.79.0
+Version 0.79.0 (Released November 02, 2022)
 --------------
 
 - Management Command for Renaming Files on S3 (#1538)
