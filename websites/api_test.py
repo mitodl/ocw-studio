@@ -180,7 +180,7 @@ def test_is_ocw_site(settings):
     """is_ocw_site() should return expected bool value for a website"""
     settings.OCW_COURSE_STARTER_SLUG = "ocw-course-v2"
     ocw_site = WebsiteFactory.create(
-        starter=WebsiteStarterFactory.create(slug="ocw-course")
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
     )
     other_site = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(slug="not-ocw-course")

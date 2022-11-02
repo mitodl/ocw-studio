@@ -322,7 +322,7 @@ def test_website_content_detail_serializer_with_url_format():
 @pytest.mark.parametrize("is_resource", [True, False])
 def test_website_content_detail_serializer_youtube_ocw(settings, is_resource):
     """WebsiteContent serializers should conditionally fill in youtube thumbnail metadata"""
-    settings.OCW_COURSE_STARTER_SLUG = "ocw-course-v2"
+    settings.OCW_COURSE_STARTER_SLUG = "course"
     starter = WebsiteStarter.objects.get(slug=settings.OCW_COURSE_STARTER_SLUG)
     website = WebsiteFactory.create(starter=starter)
     youtube_id = "abc123"
