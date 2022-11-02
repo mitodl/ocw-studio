@@ -992,6 +992,12 @@ OCW_IMPORT_STARTER_SLUG = get_string(
     description="The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
     required=False,
 )
+OCW_COURSE_STARTER_SLUG = get_string(
+    name="OCW_COURSE_STARTER_SLUG",
+    default="course",
+    description="The slug of the WebsiteStarter currently used for OCW course sites",
+    required=False,
+)
 OCW_GTM_ACCOUNT_ID = get_string(
     name="OCW_GTM_ACCOUNT_ID",
     default=None,

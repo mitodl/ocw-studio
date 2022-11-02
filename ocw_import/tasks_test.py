@@ -39,7 +39,7 @@ SINGLE_COURSE_PATHS = [
 def test_import_ocw2hugo_course_paths(mocker, paths, course_starter, settings):
     """ mock_import_course should be called from task with correct kwargs """
     mock_import_course = mocker.patch("ocw_import.tasks.import_ocw2hugo_course")
-    settings.OCW_IMPORT_STARTER_SLUG = "course"
+    settings.OCW_COURSE_STARTER_SLUG = "ocw-course-v2"
     import_ocw2hugo_course_paths.delay(paths, MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX)
     if not paths:
         mock_import_course.assert_not_called()

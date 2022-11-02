@@ -24,7 +24,7 @@ class Command(BaseCommand):
         return (
             (
                 "localdev/configs/ocw-course-site-config.yml",
-                settings.OCW_IMPORT_STARTER_SLUG,
+                settings.OCW_COURSE_STARTER_SLUG,
             ),
             ("localdev/configs/omnibus-site-config.yml", OMNIBUS_STARTER_SLUG),
             ("localdev/configs/ocw-www.yml", OCW_WWW_STARTER_SLUG),

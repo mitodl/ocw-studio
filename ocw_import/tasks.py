@@ -31,7 +31,7 @@ def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
     if not paths:
         return
     course_site_starter_id = (
-        WebsiteStarter.objects.filter(slug=settings.OCW_IMPORT_STARTER_SLUG)
+        WebsiteStarter.objects.filter(slug=settings.OCW_COURSE_STARTER_SLUG)
         .values_list("id", flat=True)
         .get()
     )

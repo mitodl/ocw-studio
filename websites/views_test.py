@@ -84,7 +84,7 @@ def file_upload():
 @pytest.mark.parametrize("filter_by_type", [True, False])
 def test_websites_endpoint_list(drf_client, filter_by_type, websites, settings):
     """Test new websites endpoint for lists"""
-    website_type = settings.OCW_IMPORT_STARTER_SLUG if filter_by_type else None
+    website_type = settings.OCW_COURSE_STARTER_SLUG if filter_by_type else None
     filter_by_type = website_type is not None
     now = now_in_utc()
 
@@ -105,7 +105,7 @@ def test_websites_endpoint_list(drf_client, filter_by_type, websites, settings):
     ):
         assert resp.data.get("results")[idx]["uuid"] == str(site.uuid)
         assert resp.data.get("results")[idx]["starter"]["slug"] == (
-            settings.OCW_IMPORT_STARTER_SLUG if filter_by_type else site.starter.slug
+            settings.OCW_COURSE_STARTER_SLUG if filter_by_type else site.starter.slug
         )
         assert resp.data.get("results")[idx][
             "first_published_to_production"
@@ -492,7 +492,7 @@ def test_websites_endpoint_sorting(drf_client, websites, settings):
     drf_client.force_login(superuser)
     resp = drf_client.get(
         reverse("websites_api-list"),
-        {"sort": "title", "type": settings.OCW_IMPORT_STARTER_SLUG},
+        {"sort": "title", "type": settings.OCW_COURSE_STARTER_SLUG},
     )
     for idx, course in enumerate(sorted(websites.courses, key=lambda site: site.title)):
         assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
