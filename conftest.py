@@ -39,7 +39,7 @@ def mocked_celery(mocker):
 @pytest.mark.django_db
 def course_starter(settings):
     """Returns the 'course'-type WebsiteStarter that is seeded in a data migration"""
-    return WebsiteStarter.objects.get(slug=settings.OCW_IMPORT_STARTER_SLUG)
+    return WebsiteStarter.objects.get(slug=settings.OCW_COURSE_STARTER_SLUG)
 
 
 @pytest.fixture()

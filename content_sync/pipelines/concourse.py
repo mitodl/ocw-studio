@@ -437,7 +437,10 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((ocw-studio-url))", branch_vars["ocw_studio_url"] or "")
                 .replace("((static-api-base-url))", static_api_url)
                 .replace(
-                    "((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG
+                    "((ocw-import-starter-slug))", settings.OCW_COURSE_STARTER_SLUG
+                )
+                .replace(
+                    "((ocw-course-starter-slug))", settings.OCW_COURSE_STARTER_SLUG
                 )
                 .replace("((ocw-studio-bucket))", storage_bucket_name or "")
                 .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
@@ -644,7 +647,8 @@ class MassBuildSitesPipeline(
                 else self.PROJECTS_BRANCH,
             )
             .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
-            .replace("((ocw-import-starter-slug))", settings.OCW_IMPORT_STARTER_SLUG)
+            .replace("((ocw-import-starter-slug))", settings.OCW_COURSE_STARTER_SLUG)
+            .replace("((ocw-course-starter-slug))", settings.OCW_COURSE_STARTER_SLUG)
             .replace("((ocw-studio-url))", template_vars["ocw_studio_url"] or "")
             .replace("((static-api-base-url))", template_vars["static_api_url"] or "")
             .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME or "")

@@ -278,6 +278,10 @@
       "description": "The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
       "required": false
     },
+    "OCW_COURSE_STARTER_SLUG": {
+      "description": "The slug of the WebsiteStarter currently used for OCW course sites",
+      "required": false
+    },
     "OCW_NEXT_SEARCH_WEBHOOK_KEY": {
       "description": "Open discussions webhook key",
       "required": false

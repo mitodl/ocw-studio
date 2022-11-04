@@ -105,6 +105,7 @@ def pipeline_settings(settings, request):
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
     settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
     settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
+    settings.OCW_COURSE_STARTER_SLUG = "another_custom_slug"
     settings.OCW_NEXT_SEARCH_WEBHOOK_KEY = "abc123"
     settings.OPEN_DISCUSSIONS_URL = "https://open.mit.edu"
     if env == "dev":
@@ -332,6 +333,7 @@ def test_upsert_website_pipelines(
     assert f"{hugo_projects_path}.git" in config_str
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
+    assert settings.OCW_COURSE_STARTER_SLUG in config_str
     assert api_url in config_str
 
     storage_bucket_name = expected_template_vars["storage_bucket_name"]

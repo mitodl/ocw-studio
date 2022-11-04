@@ -188,7 +188,7 @@ def fetch_website(filter_value: str) -> Website:
 
 def is_ocw_site(website: Website) -> bool:
     """Return true if the site is an OCW site"""
-    return website.starter and website.starter.slug == settings.OCW_IMPORT_STARTER_SLUG
+    return website.starter and website.starter.slug == settings.OCW_COURSE_STARTER_SLUG
 
 
 def update_youtube_thumbnail(website_id: str, metadata: Dict, overwrite=False):

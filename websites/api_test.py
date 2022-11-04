@@ -178,9 +178,9 @@ def test_websitestarter_autogen_slug_unique(existing_slugs, exp_result_slug):
 
 def test_is_ocw_site(settings):
     """is_ocw_site() should return expected bool value for a website"""
-    settings.OCW_IMPORT_STARTER_SLUG = "ocw-course"
+    settings.OCW_COURSE_STARTER_SLUG = "ocw-course-v2"
     ocw_site = WebsiteFactory.create(
-        starter=WebsiteStarterFactory.create(slug="ocw-course")
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
     )
     other_site = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(slug="not-ocw-course")
