@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.79.1
+Version 0.79.1 (Released November 07, 2022)
 --------------
 
 - use OCW_COURSE_STARTER_SLUG in pipelines (#1560)
