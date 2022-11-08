@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.80.0
+--------------
+
+- sentry-dsn added in theme assets pipeline (#1563)
+
 Version 0.79.1 (Released November 07, 2022)
 --------------
 
