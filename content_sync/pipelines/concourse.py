@@ -524,6 +524,10 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
                 "((cli-endpoint-url))",
                 f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
             )
+            .replace(
+                "((ocw-hugo-themes-sentry-dsn))",
+                settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
+            )
         )
         self.upsert_config(config_str, self.PIPELINE_NAME)
 
