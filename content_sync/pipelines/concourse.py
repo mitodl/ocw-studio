@@ -523,7 +523,8 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
             .replace(
                 "((cli-endpoint-url))",
                 f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
-            ).replace(
+            )
+            .replace(
                 "((ocw-hugo-themes-sentry-dsn))",
                 settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
             )
