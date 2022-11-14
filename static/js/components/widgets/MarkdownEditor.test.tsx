@@ -38,7 +38,7 @@ jest.mock("@ckeditor/ckeditor5-react", () => ({
 }))
 
 const render = (props = {}) =>
-  shallow(<MarkdownEditor link={[]} embed={[]} {...props} />)
+  shallow(<MarkdownEditor allowedHtml={[]} link={[]} embed={[]} {...props} />)
 
 describe("MarkdownEditor", () => {
   let sandbox: SinonSandbox

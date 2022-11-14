@@ -110,4 +110,43 @@ describe("ResourceLink plugin", () => {
     )}">{{&lt; sup 2 &gt;}}</a> Woof</p>`
     markdownTest(editor, md, html)
   })
+
+  it.each([
+    {
+      allowedHtml: ["sup"],
+      sup:         (x: string) => `<sup>${x}</sup>`
+    },
+    {
+      allowedHtml: [""],
+      sup:         (x: string) => x
+    }
+  ])(
+    "Preserves superscripts in the link title iff sub tag is permitted",
+    async ({ allowedHtml, sup }) => {
+      const editor = await getEditor("", {
+        "markdown-config": { allowedHtml }
+      })
+      const { md2html, html2md } = getConverters(editor)
+
+      const html = `<p>Dogs <sup>x</sup> <a class="resource-link" data-uuid="${encode(
+        "uuid123"
+      )}">Einstein says E=mc<sup>2</sup></a> Woof</p>`
+
+      const md =
+        'Dogs <sup>x</sup> {{% resource_link "uuid123" "Einstein says E=mc<sup>2</sup>" %}} Woof'
+      /**
+       * md -> html always keeps extra tags
+       */
+      expect(md2html(md)).toBe(html)
+
+      /**
+       * html -> md only keeps extra tags if specified by allowedHtml
+       */
+      expect(html2md(html)).toBe(
+        `Dogs ${sup("x")} {{% resource_link "uuid123" "Einstein says E=mc${sup(
+          "2"
+        )}" %}} Woof`
+      )
+    }
+  )
 })

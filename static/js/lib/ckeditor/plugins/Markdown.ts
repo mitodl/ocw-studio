@@ -72,6 +72,26 @@ const TH_CONTENT_REGEX = /<th(?!ead).*?>([\S\s]*?)<\/th>/g
 
 const BASE_TURNDOWN_RULES = [...turndownService.rules.array]
 
+const BASE_TURNDOWN_KEEP = [
+  // @ts-expect-error `_keep` is not part of Turndown's public API, see `resetTurndownKeep` for more.
+  ...turndownService.rules._keep
+]
+/**
+ * By default, Turndown does not keep any HTML tags when converting from html -> md.
+ * We can tell turndown to keep some tags via a `turndown.keep(tags)`. Subsequent
+ * calls to `keep` ADD more tags that turndown should keep.
+ *
+ * Howevver, Turndown has no public API to remove tags from the keep list after
+ * they have been added.
+ *
+ * All of these machinations are only necessary because CKEditor's GFM plugin
+ * uses a single global turndown instance.
+ */
+const resetTurndownKeep = () => {
+  // @ts-expect-error `_keep` is not part of Turndown's public API, see `resetTurndownKeep` for more.
+  turndownService.rules._keep = [...BASE_TURNDOWN_KEEP]
+}
+
 /**
  * Plugin implementing Markdown for CKEditor
  *
@@ -82,10 +102,16 @@ const BASE_TURNDOWN_RULES = [...turndownService.rules.array]
 export default class Markdown extends MarkdownConfigPlugin {
   turndownRules: Turndown.Rule[]
 
+  allowedHtml: (keyof HTMLElementTagNameMap)[]
+
   constructor(editor: editor.Editor) {
     super(editor)
 
-    const { showdownExtensions, turndownRules } = this.getMarkdownConfig()
+    const {
+      showdownExtensions,
+      turndownRules,
+      allowedHtml
+    } = this.getMarkdownConfig()
 
     const converter = new Converter({
       extensions: showdownExtensions
@@ -98,6 +124,7 @@ export default class Markdown extends MarkdownConfigPlugin {
       turndownService.addRule(name, rule)
     )
     this.turndownRules = [...turndownService.rules.array]
+    this.allowedHtml = allowedHtml
 
     function formatTableCell(
       el: string,
@@ -153,6 +180,9 @@ export default class Markdown extends MarkdownConfigPlugin {
   turndown = (html: string) => {
     try {
       turndownService.rules.array = this.turndownRules
+
+      resetTurndownKeep()
+      turndownService.keep(this.allowedHtml)
       return turndownService.turndown(html)
     } finally {
       turndownService.rules.array = BASE_TURNDOWN_RULES

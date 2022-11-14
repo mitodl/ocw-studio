@@ -93,4 +93,21 @@ describe("Multiple Markdown CKEditors", () => {
     expect(cat.html2md(paragraph)).toBe("meowmeowmeow!")
     expect(dog.html2md(paragraph)).toBe("woofwoofwoof!")
   })
+
+  test("Separate editors can use conflicting allowedHtml lists", async () => {
+    const subEditor = await createTestEditor([Markdown], {
+      "markdown-config": { allowedHtml: ["sub"] }
+    })()
+    const supEditor = await createTestEditor([Markdown], {
+      "markdown-config": { allowedHtml: ["sup"] }
+    })()
+
+    const sub = getConverters(subEditor)
+    const sup = getConverters(supEditor)
+
+    const paragraph = "<p>Hello world sub<sub>123</sub> sup<sup>abc</sup>!</p>"
+
+    expect(sub.html2md(paragraph)).toBe("Hello world sub<sub>123</sub> supabc!")
+    expect(sup.html2md(paragraph)).toBe("Hello world sub123 sup<sup>abc</sup>!")
+  })
 })
