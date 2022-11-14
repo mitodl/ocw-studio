@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.81.0
+--------------
+
+- add site_short_id to JSON file serializer (#1566)
+
 Version 0.80.0 (Released November 09, 2022)
 --------------
 
