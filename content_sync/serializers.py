@@ -143,6 +143,7 @@ class JsonFileSerializer(BaseContentFileSerializer):
         metadata = website_content.metadata
         if website_content.type == CONTENT_TYPE_METADATA:
             metadata["site_uid"] = str(website_content.website.uuid)
+            metadata["site_short_id"] = str(website_content.website.short_id)
 
         return json.dumps(
             self.serialize_contents(metadata, website_content.title),
