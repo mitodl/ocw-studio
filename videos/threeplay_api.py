@@ -105,7 +105,7 @@ def threeplay_order_transcript_request(video_id: int, threeplay_video_id: int) -
     if response:
         return response.json()
     else:
-        return {}
+        raise Exception("3Play transcript request failed for video_id " + str(video_id))
 
 
 def threeplay_remove_tags(threeplay_video_id: int):
