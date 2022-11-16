@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.81.1
+Version 0.81.1 (Released November 16, 2022)
 --------------
 
 - Raising an error when 3Play transcript submission fails (#1569)
