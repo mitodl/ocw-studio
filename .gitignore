@@ -118,6 +118,8 @@ celerybeat-schedule
 !.yarn/sdks
 !.yarn/versions
 
+docker-compose.override.yml
+
 # Minio
 s3/
 
