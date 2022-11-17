@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.81.2
+Version 0.81.2 (Released November 17, 2022)
 --------------
 
 - Update docker-compose to work with Apple Silicon (#1572)
