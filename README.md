@@ -1,7 +1,9 @@
 # ocw_studio
+
 OCW Studio manages deployments for OCW courses.
 
 **SECTIONS**
+
 1. [Initial Setup](#initial-setup)
 1. [Testing and Formatting](#testing-and-formatting)
 1. [Importing OCW course sites](#importing-ocw-course-sites)
@@ -12,7 +14,7 @@ OCW Studio manages deployments for OCW courses.
 
 ocw_studio follows the same [initial setup steps outlined in the common ODL web app guide](https://github.com/mitodl/handbook/blob/master/common-web-app-guide.md).
 Run through those steps **including the addition of `/etc/hosts` aliases and the optional step for running the
-`createsuperuser` command**. 
+`createsuperuser` command**.
 
 In addition, you should create a starter with `slug=ocw-www` through the admin interface with config data taken from the `ocw-www` starter on RC or production. Then, you should go to the `/sites` UI and create a new site with `name=ocw-www` using the `ocw-www` starter.
 
@@ -24,7 +26,7 @@ docker-compose run web python manage.py override_site_config
 
 ### Testing Touchstone login with SAML via SSOCircle
 
-*Note: Testing with ShibTest instead of SSOCircle fails unless python-saml3 is downgraded to 1.2.6 and `use="signing"` is removed from the `KeyDescriptor` tag of the SP metadata*
+_Note: Testing with ShibTest instead of SSOCircle fails unless python-saml3 is downgraded to 1.2.6 and `use="signing"` is removed from the `KeyDescriptor` tag of the SP metadata_
 
 - NOTE: your app's BASE_URL hostname and the x509 FQDN must match, additionally SSOCircle enforces an requirement that this value be unique per user, so you'll need to pick a hostname no one else on our team is using
 - Create an X.509 certificate & key with the following command, picking a unique FQDN for yourself (e.g. MYNAME.ocw-studio.odl.local):
@@ -48,10 +50,11 @@ docker-compose run web python manage.py override_site_config
   # The value for SOCIAL_AUTH_SAML_IDP_X509 comes from https://idp.ssocircle.com/meta-idp.xml:
   SOCIAL_AUTH_SAML_IDP_X509=<get value from https://idp.ssocircle.com/meta-idp.xml>
   ```
-- Go to `http://MYNAME.ocw-studio.odl.local:8043/saml/metadata/` and copy the XML response  
+- Go to `http://MYNAME.ocw-studio.odl.local:8043/saml/metadata/` and copy the XML response
 - Register & login for a free account at `ssocircle.net`, the email that you use to register will be used as your social-auth identifier.
 
-  *SSOCircle free accounts are limited to three concurrent sessions. See https://www.ssocircle.com/en/portfolio/publicidp/idp-pricing/*
+  _SSOCircle free accounts are limited to three concurrent sessions. See https://www.ssocircle.com/en/portfolio/publicidp/idp-pricing/_
+
 - After confirming your registration, go to https://idp.ssocircle.com/sso/hos/ManageSPMetadata.jsp
   - Click `Add new Service Provider`
   - Enter your FQDN as the FQDN
@@ -67,17 +70,18 @@ docker-compose run web python manage.py override_site_config
 ### Commits
 
 To ensure commits to github are safe, you should install the following first:
+
 ```
 pip install pre_commit
 pre-commit install
 ```
 
 To automatically install precommit hooks when cloning a repo, you can run this:
+
 ```
 git config --global init.templateDir ~/.git-template
 pre-commit init-templatedir ~/.git-template
 ```
-
 
 # Testing and Formatting
 
@@ -154,13 +158,12 @@ npm run fmt
 
 You can also try `npm run fmt:check` to see if any files need to be reformatted.
 
-
 # Defining local starter projects and site configs
 
 This project includes some tools that simplify development with starter projects and site configs. These tools allow you to do the following:
+
 - Define entire starter projects within this repo and load them into your database
 - Override the site config for starters with a particular `slug` value
-
 
 # Enabling GitHub integration
 
@@ -169,10 +172,10 @@ You can enable git integration so that website content will be synced with GitHu
 - Create an organization within Github
 - Create a Github personal access token, with all `repo` permissions
 - Add the following to your .env file:
-    ```
-    CONTENT_SYNC_BACKEND=content_sync.backends.github.GithubBackend
-    GIT_ORGANIZATION=<your_organization>
-    ```
+  ```
+  CONTENT_SYNC_BACKEND=content_sync.backends.github.GithubBackend
+  GIT_ORGANIZATION=<your_organization>
+  ```
 - If you need to use a custom git domain, add `GIT_API_URL=<your_domain>/api/v3`
 - If you would like git commits to be anonymized, add `FEATURE_GIT_ANONYMOUS_COMMITS=True`
 
@@ -182,26 +185,26 @@ Both options have a base rate limit of 5K/hour, but a github app will allow for 
 
 If you wish to authenticate using a personal access token, create one in Github then set the following
 in your .env file:
-   ```
-   GIT_TOKEN=<your_token>
-   ```
 
-If you wish to use a github app, 
+```
+GIT_TOKEN=<your_token>
+```
+
+If you wish to use a github app,
 [create one for your organization](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app):
- - The homepage url can be anything
- - You do not need a callback url or webhook url (disable webhooks)
- - For Repository Permissions, choose "read/write" permission for "Administration", "Contents", "Pull Requests", "Commit Statuses"
- - After it is created, add the "App ID" to your .env file:
-   ```
-   GITHUB_APP_ID=<app id>
-   ```
- - Generate a private key. A pem file will download. You need to use the content of this file in your .env file:
-   ```
-   GITHUB_APP_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\nMIIEpQ......\n-----END RSA PRIVATE KEY-----
-   ```
- - Install the app (follow instructions in link above) to your organization for "All repositories"   
-   
 
+- The homepage url can be anything
+- You do not need a callback url or webhook url (disable webhooks)
+- For Repository Permissions, choose "read/write" permission for "Administration", "Contents", "Pull Requests", "Commit Statuses"
+- After it is created, add the "App ID" to your .env file:
+  ```
+  GITHUB_APP_ID=<app id>
+  ```
+- Generate a private key. A pem file will download. You need to use the content of this file in your .env file:
+  ```
+  GITHUB_APP_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\nMIIEpQ......\n-----END RSA PRIVATE KEY-----
+  ```
+- Install the app (follow instructions in link above) to your organization for "All repositories"
 
 # Local S3 emulation with Minio
 
@@ -231,53 +234,57 @@ as a standard AWS configuration. the `RESOURCE_BASE_URL` keys are for use with t
 and running any of the management commands that upsert pipelines, these values will be used for the `RESOURCE_BASE_URL` env variable when building sites.
 
 In sites that support resource upload, you should be able to upload anything except videos to Google Drive using the RC Google Drive credentials, then
-in your site click "Sync w/ Google Drive."  If you visit http://localhost:9001 in your web browser, you should be brought to the Minio control panel.
+in your site click "Sync w/ Google Drive." If you visit http://localhost:9001 in your web browser, you should be brought to the Minio control panel.
 You can log into this with whatever you set `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` to. Inside, you should be able to browse the files you uploaded
 to the bucket. Videos are not currently supported locally beacuse of the transcoding service that is normally used with this. The preview and publish
 buckets are exposed via nginx locally at http://localhost:8044 and http://localhost:8045 respectively.
 
 In order to complete your local development setup, you will need to follow the instructions below to configure a Concourse docker container so you
 can run pipelines and have them push their output to your Minio S3 buckets. The `OCW_HUGO_THEMES_BRANCH` and `OCW_HUGO_PROJECTS_BRANCH` settings will
-control the branch of each of these repos that are pulled down in pipelines that build sites.  If you are debugging an issue with a specific branch,
+control the branch of each of these repos that are pulled down in pipelines that build sites. If you are debugging an issue with a specific branch,
 This is where you want to change them before you run a command that pushes up a pipeline like `docker-compose exec web ./manage.py backpopulate_pipelines --filter etc...`
 
 Note that you may also want to set `OCW_STUDIO_LIVE_URL=https://localhost:8045/`and `OCW_STUDIO_DRAFT_URL=http://localhost:8045/` in your `.env` file so that the URLs
 in the publish drawer will point to your Minio published content. If you do this, you will likely need to also set `STATIC_API_BASE_URL` to https://ocw.mit.edu like above.
 Usually the best way to get started getting content into your local instance of `ocw-studio` is to dump and restore the production database to your local instance.
-One side effect of doing this is that the `ocw-www` site in production has a bunch of different sites linked to it via various course lists.  When building `ocw-www`,
+One side effect of doing this is that the `ocw-www` site in production has a bunch of different sites linked to it via various course lists. When building `ocw-www`,
 Hugo will attempt to fetch static JSON data related to these linked courses and will encounter errors if it cannot fetch them. To avoid this, make sure `STATIC_API_BASE_URL`
 is set as detailed above. If `STATIC_API_BASE_URL` is not set, it will fall back to `OCW_STUDIO_DRAFT_URL` or `OCW_STUDIO_LIVE_URL` depending on the context of the pipeline.
 So, if you have this set to a URL where the courses referenced in your `ocw-www` site's course lists haven't been published, you will have issues.
 
-
 # Enabling Concourse-CI integration
+
 Concourse-CI integration is enabled by default to create and trigger publishing pipelines, but you
 will need to follow some additional steps before it is fully functional.
+
 - Set up Github integration as described above
 - Set up a Concourse-CI instance with a team, username, and password
 - Add the following to your .env file:
-    ``` 
-    AWS_PREVIEW_BUCKET_NAME=<S3 bucket for draft content>
-    AWS_PUBLISH_BUCKET_NAME=<S3 bucket for live content>
-    GIT_DOMAIN=<root domain for github repos, ie github.com>
-    ROOT_WEBSITE_NAME=<Website.name for the website that should be the 'home page'> 
 
-    CONCOURSE_URL=<The URL of your Concourse-CI instance>
-    CONCOURSE_TEAM=<Concourse-CI team, defaults to "ocw">
-    CONCOURSE_USERNAME=<Concourse-CI username>
-    CONCOURSE_PASSWORD=<Concourse-CI password>
-    CONCOURSE_IS_PRIVATE_REPO=<True if repo is private, False otherwise>
-    API_BEARER_TOKEN=<some hard to guess string>
-    ```
+  ```
+  AWS_PREVIEW_BUCKET_NAME=<S3 bucket for draft content>
+  AWS_PUBLISH_BUCKET_NAME=<S3 bucket for live content>
+  GIT_DOMAIN=<root domain for github repos, ie github.com>
+  ROOT_WEBSITE_NAME=<Website.name for the website that should be the 'home page'>
+
+  CONCOURSE_URL=<The URL of your Concourse-CI instance>
+  CONCOURSE_TEAM=<Concourse-CI team, defaults to "ocw">
+  CONCOURSE_USERNAME=<Concourse-CI username>
+  CONCOURSE_PASSWORD=<Concourse-CI password>
+  CONCOURSE_IS_PRIVATE_REPO=<True if repo is private, False otherwise>
+  API_BEARER_TOKEN=<some hard to guess string>
+  ```
+
 - Draft and live pipelines should then be created for every new `Website` based on a `WebsiteStarter` with `source=github` and a valid github `path`.
 - There are also several management commands for Concourse-CI pipelines:
   - `backpopulate_pipelines`: to create/update pipelines for all or some existing `Websites` (filters available)
   - `trigger_pipelines <version>`: to manually trigger the draft or live pipeline for all or some existing `Websites` (filters available)
-- If you wish to disable concourse integration, set `CONTENT_SYNC_PIPELINE_BACKEND=` in your .env file. 
+- If you wish to disable concourse integration, set `CONTENT_SYNC_PIPELINE_BACKEND=` in your .env file.
 
 ### Running a Local Concourse Docker Container
+
 You will need to set the following .env variables for the concourse docker container:
- 
+
 ```python
 CONCOURSE_URL=http://concourse:8080
 CONCOURSE_PASSWORD=test
@@ -286,7 +293,7 @@ CONCOURSE_TEAM=main
 ```
 
 When you spin up `ocw-studio` with `docker-compose up`, the Concourse container will come up with everything else.
-The concourse UI will be available for login at http://concourse:8080 (You should  add `127.0.0.1 concourse` to your hosts file.)
+The concourse UI will be available for login at http://concourse:8080 (You should add `127.0.0.1 concourse` to your hosts file.)
 When you create a new website or run one of the various management commands that push pipelines up to Concourse, they will go to
 your local instance instead. The pipeline templates with the `-dev` suffix are used when `settings.ENVIRONMENT` is set to "dev."
 
@@ -298,45 +305,54 @@ pipeline to your local Concourse instance. You will then need to log into Concou
 This will place theme assets into the bucket you have configured at `AWS_ARTIFACTS_BUCKET_NAME` that your site pipelines can
 reference. If you have already existing sites that don't have their pipelines pushed up into your local Concourse yet, you will
 need to run `docker-compose exec web ./manage.py backpopulate_pipelines` and use the `--filter` or `--filter-json` arguments to
-specify the sites to push up pipelines for.  The mass build sites pipeline can be pushed up with `docker-compose exec web ./manage.py upsert_mass_build_pipeline`.
+specify the sites to push up pipelines for. The mass build sites pipeline can be pushed up with `docker-compose exec web ./manage.py upsert_mass_build_pipeline`.
 Beware that when testing the mass build pipeline locally, you will likely need to limit the amount of sites in your local instance
 as with only one dockerized worker publishing the entire OCW site will take a very long time.
 
+# Running OCW Studio on Apple Silicon
+
+Currently, the default Docker image for Concourse is not compatible with Apple Silicon. Therefore, run the following command prior to running `docker-compose up`:
+
+```
+cp docker-compose-arm64.yml docker-compose.override.yml
+```
 
 # Enabling YouTube integration
+
 - Create a new project at https://console.cloud.google.com/apis/dashboard
-  - Save the project ID in your ``.env`` file as ``YT_PROJECT_ID``
-- Create an OAuth client ID for the project (type: ``Web application``)
+  - Save the project ID in your `.env` file as `YT_PROJECT_ID`
+- Create an OAuth client ID for the project (type: `Web application`)
   - Add an authorized Javascript origin (ie `https://<your_domain>/`)
   - Add an authorized redirect URI: `https://<your_domain>/api/youtube-tokens/`
   - You may need to create an oauth consent screen if prompted; make sure to publish it.
-  - Save your client ID and client secret in your ``.env`` file (as ``YT_CLIENT_ID`` and ``YT_CLIENT_SECRET``)
+  - Save your client ID and client secret in your `.env` file (as `YT_CLIENT_ID` and `YT_CLIENT_SECRET`)
 - Enable the YouTube Data API v3 for your project
-- Go to `https://<your_domain>/api/youtube-tokens/`.  
-- You should be prompted to choose a Google account.  Choose an account that has upload permissions for your Youtube channel.
-- You will then be prompted to choose an account or brand account.  Choose whichever is appropriate.
-- After clicking through these and allowing any requested permissions, you should be redirected back to an API response containing values for YT_ACCESS_TOKEN and YT_REFRESH_TOKEN.  Add these to your .env file.
-
+- Go to `https://<your_domain>/api/youtube-tokens/`.
+- You should be prompted to choose a Google account. Choose an account that has upload permissions for your Youtube channel.
+- You will then be prompted to choose an account or brand account. Choose whichever is appropriate.
+- After clicking through these and allowing any requested permissions, you should be redirected back to an API response containing values for YT_ACCESS_TOKEN and YT_REFRESH_TOKEN. Add these to your .env file.
 
 # Enabling Google Drive integration
+
 With Google Drive integration enabled, a folder on the specified Team Drive will be created for each new website.
 The folder will have the same name as the short_id of the website. Under this folder will be 3 subfolders:
 `files`, `files_final`, `videos_final`. Videos should be uploaded to `videos_final`, everything else should be uploaded
-to `files_final`. The `files` folder is just for temporary storage. 
+to `files_final`. The `files` folder is just for temporary storage.
 
 If this integration is enabled, manual resource creation and file uploads will no longer be possible. Files must
 be uploaded to Google Drive first, and then the "Sync w/Google Drive" button will import and create resources for them.
 
 - Add the following to your .env file:
-    ``` 
-    AWS_STORAGE_BUCKET_NAME=The S3 bucket to upload google drive files to. Also populate AWS authentication settings.
-    DRIVE_SHARED_ID=The id of your Google Team Drive
-    DRIVE_SERVICE_ACCOUNT_CREDS=The required Google service account credentials in JSON format.
-    DRIVE_IMPORT_RECENT_FILES_SECONDS=Optional, default 3600. The frequency to check for new/updated files.
-    DRIVE_UPLOADS_PARENT_FOLDER_ID=Optional, the folder id in the team drive where course folders should go.
-   ```
-  
+
+  ```
+  AWS_STORAGE_BUCKET_NAME=The S3 bucket to upload google drive files to. Also populate AWS authentication settings.
+  DRIVE_SHARED_ID=The id of your Google Team Drive
+  DRIVE_SERVICE_ACCOUNT_CREDS=The required Google service account credentials in JSON format.
+  DRIVE_IMPORT_RECENT_FILES_SECONDS=Optional, default 3600. The frequency to check for new/updated files.
+  DRIVE_UPLOADS_PARENT_FOLDER_ID=Optional, the folder id in the team drive where course folders should go.
+  ```
+
 - If your site configuration for resources has a non-standard field name for type, add the following to your .env file:
-    ``` 
-    RESOURCE_TYPE_FIELDS=resourcetype,filetype,<your_custom_field_name>
-    ```
+  ```
+  RESOURCE_TYPE_FIELDS=resourcetype,filetype,<your_custom_field_name>
+  ```
