@@ -180,7 +180,7 @@ jobs:
               # END ONLINE-ONLY
               # START OFFLINE-ONLY
               echo "PULLING IN STATIC RESOURCES FOR $NAME" > /dev/tty
-              STUDIO_S3_RESULT=$(aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH ./content/static_resources --only-show-errors) || STUDIO_S3_RESULT=1
+              STUDIO_S3_RESULT=$(aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH ./content/static_resources --exclude "*.mp4" --only-show-errors) || STUDIO_S3_RESULT=1
               if [[ $STUDIO_S3_RESULT == 1 ]]
               then
                 echo "SYNCING s3://((ocw-studio-bucket))/$S3_PATH to ./content/static_resources FAILED FOR $NAME" > /dev/tty
