@@ -337,7 +337,7 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
             sites = sites.exclude(unpublish_status__isnull=False)
         # If a starter has been specified by the query, only return sites made with that starter
         if starter:
-            sites = sites.filter(starter=WebsiteStarter.objects.get(name=starter))
+            sites = sites.filter(starter=WebsiteStarter.objects.get(slug=starter))
         sites = sites.prefetch_related("starter").order_by("name")
         serializer = WebsiteMassBuildSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
