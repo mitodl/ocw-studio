@@ -15,6 +15,7 @@ import {
   ADD_RESOURCE_EMBED,
   ADD_RESOURCE_LINK,
   CKEDITOR_RESOURCE_UTILS,
+  MARKDOWN_CONFIG_KEY,
   RESOURCE_EMBED,
   RESOURCE_LINK
 } from "../../lib/ckeditor/plugins/constants"
@@ -55,7 +56,7 @@ describe("MarkdownEditor", () => {
   ;[
     [true, MinimalEditorConfig],
     [false, FullEditorConfig]
-  ].forEach(([minimal, expectedComponent]) => {
+  ].forEach(([minimal, expectedConfig]) => {
     [
       ["value", "value"],
       [null, ""]
@@ -66,14 +67,23 @@ describe("MarkdownEditor", () => {
         const wrapper = render({
           minimal,
           value,
-          embed: ["resource"],
-          link:  ["page"]
+          /**
+           * The settings below make MarkdownEditor render the full FullEditorConfig.
+           * MarkdownEditor dynamically changes the config a bit, e.g., to remove
+           * resource link / resource embed if link/embed are empty.
+           */
+          embed:       ["resource"],
+          link:        ["page"],
+          allowedHtml: ["sub", "sup"]
         })
-        const ckWrapper = wrapper.find("CKEditor")
+        const ckWrapper = wrapper.find(CKEditor)
         expect(ckWrapper.prop("editor")).toBe(ClassicEditor)
-        expect(
-          omit([CKEDITOR_RESOURCE_UTILS], ckWrapper.prop("config"))
-        ).toEqual(expectedComponent)
+
+        const config = omit(
+          [CKEDITOR_RESOURCE_UTILS, MARKDOWN_CONFIG_KEY],
+          ckWrapper.prop("config")
+        )
+        expect(config).toEqual(expectedConfig)
         expect(ckWrapper.prop("data")).toBe(expectedPropValue)
       })
     })
@@ -151,6 +161,22 @@ describe("MarkdownEditor", () => {
       expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_LINK)).toBe(
         hasTool
       )
+    }
+  )
+
+  it.each([
+    { tool: "superscript", tag: "sup", allowedHtml: ["sup"], hasTool: true },
+    { tool: "superscript", tag: "sup", allowedHtml: [], hasTool: false },
+    { tool: "subscript", tag: "sub", allowedHtml: ["sub"], hasTool: true },
+    { tool: "subscript", tag: "sub", allowedHtml: [], hasTool: false }
+  ])(
+    "includes $toolbar if and only if $tag is allowed. Allowed html: $allowedHtml",
+    ({ tool, hasTool, allowedHtml }) => {
+      const wrapper = render({ minimal: false, allowedHtml })
+      const ckWrapper = wrapper.find(CKEditor)
+      const items = (ckWrapper.prop("config") as any).toolbar.items
+
+      expect(items.includes(tool)).toBe(hasTool)
     }
   )
 

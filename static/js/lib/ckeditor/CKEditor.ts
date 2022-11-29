@@ -25,7 +25,11 @@ import { editor } from "@ckeditor/ckeditor5-core"
 import Markdown from "./plugins/Markdown"
 import ResourceEmbed from "./plugins/ResourceEmbed"
 import ResourcePicker from "./plugins/ResourcePicker"
-import { ADD_RESOURCE_EMBED, ADD_RESOURCE_LINK } from "./plugins/constants"
+import {
+  ADD_RESOURCE_EMBED,
+  ADD_RESOURCE_LINK,
+  MARKDOWN_CONFIG_KEY
+} from "./plugins/constants"
 import ResourceLink from "@mitodl/ckeditor5-resource-link/src/link"
 import { RESOURCE_LINK_COMMAND } from "@mitodl/ckeditor5-resource-link/src/constants"
 import ResourceLinkMarkdownSyntax, {

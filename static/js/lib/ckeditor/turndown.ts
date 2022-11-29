@@ -111,3 +111,33 @@ itemRule.replacement = (
     prefix + content + (node.nextSibling && !/\n$/.test(content) ? "\n" : "")
   )
 }
+
+const BASE_TURNDOWN_RULES = [...turndownService.rules.array]
+const BASE_TURNDOWN_KEEP = [
+  // @ts-expect-error `_keep` is not part of Turndown's public API, see `resetTurndownKeep` for more.
+  ...turndownService.rules._keep
+]
+const BASE_TURNDOWN_KEEP_REPLACEMENT = turndownService.rules.keepReplacement
+
+/**
+ * CKEditor's markdown plugin uses a single Turndown instance. We occasionally
+ * want to reset it to its initial state (e.g., for different editor instances).
+ */
+export const resetTurndownService = () => {
+  turndownService.rules.array = [...BASE_TURNDOWN_RULES]
+
+  /**
+   * By default, Turndown does not keep any HTML tags when converting from html -> md.
+   * We can tell turndown to keep some tags via a `turndown.keep(tags)`. Subsequent
+   * calls to `keep` ADD more tags that turndown should keep.
+   *
+   * Howevver, Turndown has no public API to remove tags from the keep list after
+   * they have been added.
+   *
+   * All of these machinations are only necessary because CKEditor's GFM plugin
+   * uses a single global turndown instance.
+   */
+  // @ts-expect-error `_keep` is not part of Turndown's public API, see `resetTurndownKeep` for more.
+  turndownService.rules._keep = [...BASE_TURNDOWN_KEEP]
+  turndownService.options.keepReplacement = BASE_TURNDOWN_KEEP_REPLACEMENT
+}
