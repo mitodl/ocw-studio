@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.82.0
+--------------
+
+- Issue slack alert when theme assets pipeline fails (#1576)
+- use slug and not name (#1582)
+
 Version 0.81.3 (Released November 29, 2022)
 --------------
 
