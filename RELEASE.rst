@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.82.0
+Version 0.82.0 (Released November 29, 2022)
 --------------
 
 - change slack-webhook to slack-url var (#1585)
