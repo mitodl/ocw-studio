@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.81.3
+Version 0.81.3 (Released November 29, 2022)
 --------------
 
 - filter out mp4 files in the offline mass-build-sites (#1579)
