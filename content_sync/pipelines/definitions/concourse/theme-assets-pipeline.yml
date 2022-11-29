@@ -13,7 +13,7 @@ resources:
   type: slack-alert
   check_every: never
   source:
-    url: ((slack-webhook))
+    url: ((slack-url))
     disabled: false
   # END NON-DEV
 - name: ocw-hugo-themes
