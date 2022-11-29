@@ -1,5 +1,21 @@
 ---
+resource_types:
+ # START NON-DEV
+  - name: slack-alert
+    type: registry-image
+    source:
+      repository: arbourd/concourse-slack-alert-resource
+      tag: v0.15.0
+  # END NON-DEV
 resources:
+  # START NON-DEV
+- name: slack-webhook
+  type: slack-alert
+  check_every: never
+  source:
+    url: ((slack-webhook))
+    disabled: false
+  # END NON-DEV
 - name: ocw-hugo-themes
   type: git
   source:
@@ -94,3 +110,27 @@ jobs:
           - 'Fastly-Key: ((fastly_live.api_token))'((purge_header))
           - https://api.fastly.com/service/((fastly_live.service_id))/purge/ocw-hugo-themes
   # END NON-DEV
+  # START NON-DEV
+  on_failure:
+    try:
+      do:
+      - put: slack-webhook
+        timeout: 1m
+        params:
+          alert_type: failed
+          text: |
+            Failed to build theme assets.
+            
+            Append `((atc-search-params))` to the url below for more details.
+  on_abort:
+    try:
+      do:
+      - put: slack-webhook
+        timeout: 1m
+        params:
+          alert_type: aborted
+          text: |
+            User aborted while building theme assets.
+            
+            Append `((atc-search-params))` to the url below for more details.
+   # END NON-DEV

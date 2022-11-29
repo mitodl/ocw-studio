@@ -528,6 +528,7 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
                 "((ocw-hugo-themes-sentry-dsn))",
                 settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
             )
+            .replace("((atc-search-params))", self.instance_vars)
         )
         self.upsert_config(config_str, self.PIPELINE_NAME)
 
