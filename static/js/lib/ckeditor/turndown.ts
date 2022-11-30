@@ -144,15 +144,15 @@ export const resetTurndownService = () => {
  * When converting HTML -> MD, Turndown generally ignores HTML tags that have no
  * markdown equivalent. (E.g., "span", "div", "sup", "sub", ...). This behavior
  * can be customized in two ways:
- *  1. its `keep` method tells Turndown which rules to keep
- *  2. its `keepReplacement` function tells Turndown HOW to replace those tags
+ *  1. turndown's `keep` method tells Turndown which rules to keep
+ *  2. turndown's `keepReplacement` option tells Turndown HOW to replace those tags
  *
- * The default behavior of `keepReplacement` has two drawbacks.
+ * The default behavior of `keepReplacement` has two drawbacks:
  *
  * Issue #1
  * -----------
- * The default behavior can result in HTML tags beginning a markdown line that would
- * otherwise be a Markdown paragraph. For example:
+ * The default behavior can result in HTML tags beginning a markdown line that
+ * would otherwise be a Markdown paragraph. For example:
  * ```js
  * const tds = new TurndownService()
  * tds.keep(["sup"])
@@ -185,6 +185,8 @@ class TurndownHtmlHelpers {
    *  - ensures that the child content of an inline HTML node is also converted, which
    *    we need in case the child content contains shortcode.
    *  - ensures that an inline HTML tag never begins a line of Markdown.
+   *
+   * Should be used alongside {@link TurndownHtmlHelpers.turndown}
    */
   keepReplacer: Turndown.ReplacementFunction = (content, node) => {
     /**
@@ -212,6 +214,13 @@ class TurndownHtmlHelpers {
     return `<raw_html_follows/>${clone.outerHTML}`
   }
 
+  /**
+   * Convert HTML to markdown and insert a zero-width space before any HTML
+   * tag that begins what would otherwise be a Markdown paragraph. Should
+   * be used alongside {@link TurndownHtmlHelpers.keepReplacer}.
+   *
+   * See {@link TurndownHtmlHelpers} for more details.
+   */
   turndown = (html: string) =>
     this.turndownInstance
       .turndown(html)
