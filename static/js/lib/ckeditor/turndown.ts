@@ -211,7 +211,7 @@ class TurndownHtmlHelpers {
      * To address Issue #1, we'll mark places where HTML is inserted. Later, we
      * can remove all the markings except the ones that begin a new line.
      */
-    return `<raw_html_follows/>${clone.outerHTML}`
+    return `<raw_inline_html/>${clone.outerHTML}`
   }
 
   /**
@@ -224,8 +224,8 @@ class TurndownHtmlHelpers {
   turndown = (html: string) =>
     this.turndownInstance
       .turndown(html)
-      .replace(/^[ ]*<raw_html_follows\/>/g, "\u200b")
-      .replace(/<raw_html_follows\/>/g, "")
+      .replace(/^[ ]*<raw_inline_html\/>/g, "\u200b")
+      .replace(/<raw_inline_html\/>/g, "")
 }
 
 export const turndownHtmlHelpers = new TurndownHtmlHelpers(turndownService)
