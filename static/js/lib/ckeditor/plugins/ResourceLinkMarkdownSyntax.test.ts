@@ -149,4 +149,27 @@ describe("ResourceLink plugin", () => {
       )
     }
   )
+
+  /**
+   * It seems that this scenario cannot actually be constructed in CKEditor.
+   * CKEditor treats subscripts, subscripts, links, and resource links as
+   * attributes on a text node, not as some sort of tree structure (like html)
+   * with nesting. It's unclear how the conversion order from "attributes on
+   * text node" to an HTML tree is performed, but it seems that resource_link
+   * always ends up on the outside.
+   *
+   * Still, nice that this works.
+   */
+  it("Preserves resource links inside superscripts if sup enabled", async () => {
+    const editor = await getEditor("", {
+      "markdown-config": { allowedHtml: ["sup"] }
+    })
+    const md =
+      'Cool reference<sup>{{% resource_link "uuid123" "\\[1\\]" %}}</sup>'
+    const html = `<p>Cool reference<sup><a class="resource-link" data-uuid="${encode(
+      "uuid123"
+    )}">[1]</a></sup></p>`
+
+    markdownTest(editor, md, html)
+  })
 })

@@ -12,8 +12,7 @@ import { MARKDOWN_CONFIG_KEY } from "./constants"
 export default abstract class MarkdownConfigPlugin extends Plugin {
   static defaults = {
     showdownExtensions: [],
-    turndownRules:      [],
-    allowedHtml:        []
+    turndownRules:      []
   }
 
   constructor(editor: editor.Editor) {

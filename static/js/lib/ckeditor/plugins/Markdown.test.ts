@@ -111,3 +111,40 @@ describe("Multiple Markdown CKEditors", () => {
     expect(sup.html2md(paragraph)).toBe("Hello world sub123 sup<sup>abc</sup>!")
   })
 })
+
+describe("Handling of raw HTML", () => {
+  const getEditor = createTestEditor([Markdown], {
+    "markdown-config": { allowedHtml: ["sup"] }
+  })
+
+  test("When raw HTML is allowed, its content is converted to markdown", async () => {
+    const editor = await getEditor()
+
+    const html =
+      '<p>Hello world <sup><a href="https://mit.edu">mit</a></sup>!</p>'
+    const markdown = "Hello world <sup>[mit](https://mit.edu)</sup>!"
+    markdownTest(editor, markdown, html)
+  })
+
+  test("Raw HTML at the beginning of a line gets an extra zwsp", async () => {
+    const editor = await getEditor()
+    const { md2html, html2md } = getConverters(editor)
+
+    const html = "<p><sup>1</sup> First <strong>important</strong> footnote</p>"
+    const md = "\u200b<sup>1</sup> First **important** footnote"
+    expect(html2md(html)).toBe(md)
+    expect(md2html(md)).toBe(
+      "<p>\u200b<sup>1</sup> First <strong>important</strong> footnote</p>"
+    )
+  })
+
+  test("Raw block HTML throws errors, for now", async () => {
+    const editor = await getEditor("", {
+      "markdown-config": { allowedHtml: ["div"] }
+    })
+    const { html2md } = getConverters(editor)
+
+    const html = "<p>Hello world!</p> <div>mit</div>"
+    expect(() => html2md(html)).toThrow()
+  })
+})

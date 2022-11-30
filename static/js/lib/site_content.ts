@@ -20,7 +20,6 @@ import {
   BaseConfigItem,
   ConfigField,
   EditableConfigItem,
-  MarkdownConfigField,
   RepeatableConfigItem,
   SingletonConfigItem,
   StringConfigField,

@@ -6,7 +6,11 @@ import { editor } from "@ckeditor/ckeditor5-core"
 import MarkdownConfigPlugin from "./MarkdownConfigPlugin"
 import { ATTRIBUTE_REGEX } from "./constants"
 
-import { resetTurndownService, turndownService } from "../turndown"
+import {
+  resetTurndownService,
+  turndownService,
+  turndownHtmlHelpers
+} from "../turndown"
 import Turndown from "turndown"
 import { buildAttrsString } from "./util"
 import { validateHtml2md } from "./validateMdConversion"
@@ -159,9 +163,10 @@ export default class Markdown extends MarkdownConfigPlugin {
     try {
       turndownService.rules.array = this.turndownRules
 
+      turndownService.rules.keepReplacement = turndownHtmlHelpers.keepReplacer
       turndownService.keep(this.allowedHtml)
 
-      return turndownService.turndown(html)
+      return turndownHtmlHelpers.turndown(html)
     } finally {
       resetTurndownService()
     }

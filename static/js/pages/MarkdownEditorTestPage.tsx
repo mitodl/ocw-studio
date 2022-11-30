@@ -64,6 +64,7 @@ function MarkdownEditorTestWrapper(props: Props) {
           minimal={minimal}
           embed={[]}
           link={[]}
+          allowedHtml={[]}
         />
       </div>
       <div className="w-75 m-auto">
