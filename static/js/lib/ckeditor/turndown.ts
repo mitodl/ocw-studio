@@ -205,13 +205,13 @@ class TurndownHtmlHelpers {
      * This addresses Issue #2 above.
      */
     const clone = el.cloneNode() as HTMLElement
-    clone.innerHTML = this.turndown(el.innerHTML)
+    clone.innerHTML = this.turndownInstance.turndown(el.innerHTML)
 
     /**
      * To address Issue #1, we'll mark places where HTML is inserted. Later, we
      * can remove all the markings except the ones that begin a new line.
      */
-    return `<raw_inline_html/>${clone.outerHTML}`
+    return `<raw_inline></raw_inline>${clone.outerHTML}`
   }
 
   /**
@@ -224,8 +224,8 @@ class TurndownHtmlHelpers {
   turndown = (html: string) =>
     this.turndownInstance
       .turndown(html)
-      .replace(/^[ ]*<raw_inline_html\/>/g, "\u200b")
-      .replace(/<raw_inline_html\/>/g, "")
+      .replace(/^[ ]*<raw_inline><\/raw_inline>/g, "\u200b")
+      .replace(/<raw_inline><\/raw_inline>/g, "")
 }
 
 export const turndownHtmlHelpers = new TurndownHtmlHelpers(turndownService)

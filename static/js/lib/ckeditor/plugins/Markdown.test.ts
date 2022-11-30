@@ -147,4 +147,23 @@ describe("Handling of raw HTML", () => {
     const html = "<p>Hello world!</p> <div>mit</div>"
     expect(() => html2md(html)).toThrow()
   })
+
+  /**
+   * This is different from Turndown's default behavior.
+   */
+  test("Disallowed children of allowed tags are not included", async () => {
+    const editor = await getEditor("", {
+      "markdown-config": { allowedHtml: ["sup", "span"] }
+    })
+    const { html2md } = getConverters(editor)
+
+    const html = `
+    <p>
+    hello <sup><span>meow</span><script>alert("maliciousness")</script></sup> world
+    </p>
+    `
+    expect(html2md(html)).toBe(
+      'hello <sup><span>meow</span>alert("maliciousness")</sup> world'
+    )
+  })
 })
