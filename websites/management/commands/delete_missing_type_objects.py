@@ -10,7 +10,11 @@ class Command(BaseCommand):
     help = __doc__
 
     def handle(self, *args, **options):
-        for content in WebsiteContent.objects.all(force_visibility=True).filter(
+        missing_type_content = WebsiteContent.objects.all(force_visibility=True).filter(
             type=""
-        ):
+        )
+        for content in missing_type_content:
             content.delete(force_policy=HARD_DELETE)
+        self.stdout.write(
+            str(len(missing_type_content)) + " objects with missing type deleted.\n"
+        )
