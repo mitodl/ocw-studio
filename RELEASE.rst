@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.82.1
+--------------
+
+- hardcode github action to ubuntu-20.04, see if it passes ci tests (#1591)
+- Adding management command to delete objects with missing type (#1587)
+
 Version 0.82.0 (Released November 29, 2022)
 --------------
 
