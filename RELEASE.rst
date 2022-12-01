@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.82.2
+--------------
+
+- Subscripts and superscripts (#1588)
+
 Version 0.82.1 (Released December 01, 2022)
 --------------
 
