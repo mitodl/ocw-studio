@@ -18,7 +18,8 @@ import {
   ResourceCommandMap,
   ResourceDialogMode,
   ADD_RESOURCE_EMBED,
-  RESOURCE_LINK
+  RESOURCE_LINK,
+  MARKDOWN_CONFIG_KEY
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
@@ -31,6 +32,7 @@ export interface Props {
   minimal?: boolean
   embed: string[]
   link: string[]
+  allowedHtml: string[]
 }
 
 type RenderQueueEntry = [string, HTMLElement]
@@ -41,7 +43,7 @@ type RenderQueueEntry = [string, HTMLElement]
  * pass minimal: true to get a minimal version.
  */
 export default function MarkdownEditor(props: Props): JSX.Element {
-  const { link, embed, value, name, onChange, minimal } = props
+  const { link, embed, value, name, onChange, minimal, allowedHtml } = props
   const throwSynchronously = useThrowSynchronously()
 
   const editor = useRef<editor.Editor>()
@@ -100,6 +102,12 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       if (item === ADD_RESOURCE_EMBED) {
         return embed.length > 0
       }
+      if (item === "superscript") {
+        return allowedHtml.includes("sup")
+      }
+      if (item === "subscript") {
+        return allowedHtml.includes("sub")
+      }
       return true
     }
 
@@ -128,10 +136,13 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         toolbar: {
           ...FullEditorConfig.toolbar,
           items: FullEditorConfig.toolbar.items.filter(toolbarItemsFilter)
+        },
+        [MARKDOWN_CONFIG_KEY]: {
+          allowedHtml
         }
       }
     }
-  }, [minimal, renderResource, openResourcePicker, link, embed])
+  }, [minimal, renderResource, openResourcePicker, link, embed, allowedHtml])
 
   const onChangeCB = useCallback(
     (_event: any, editor: any) => {

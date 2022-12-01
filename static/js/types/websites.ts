@@ -53,6 +53,7 @@ export interface MarkdownConfigField extends ConfigFieldBaseProps {
   minimal?: boolean
   link?: string[]
   embed?: string[]
+  allowed_html?: string[]
 }
 
 export interface FileConfigField extends ConfigFieldBaseProps {

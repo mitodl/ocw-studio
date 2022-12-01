@@ -5,11 +5,17 @@ import { MarkdownDataProcessor } from "./Markdown"
 
 class ClassicTestEditor extends ClassicEditorBase {}
 
-export const createTestEditor = (plugins: any[]) => async (
-  initialData = ""
+export const createTestEditor = (
+  plugins: unknown[],
+  remainingConfig: Record<string, unknown> = {}
+) => async (
+  initialData = "",
+  configOverrides: Record<string, unknown> = {}
 ): Promise<editor.Editor & { getData(): string }> => {
   const editor = await ClassicTestEditor.create(initialData, {
-    plugins
+    plugins,
+    ...remainingConfig,
+    ...configOverrides
   })
   return editor
 }
