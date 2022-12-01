@@ -224,7 +224,7 @@ class TurndownHtmlHelpers {
   turndown = (html: string) =>
     this.turndownInstance
       .turndown(html)
-      .replace(/^[ ]*<raw_inline><\/raw_inline>/g, "\u200b")
+      .replace(/(^|(?<=\n))[ ]*<raw_inline><\/raw_inline>/g, "\u200b")
       .replace(/<raw_inline><\/raw_inline>/g, "")
 }
 

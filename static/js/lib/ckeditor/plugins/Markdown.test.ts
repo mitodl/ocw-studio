@@ -126,17 +126,25 @@ describe("Handling of raw HTML", () => {
     markdownTest(editor, markdown, html)
   })
 
-  test("Raw HTML at the beginning of a line gets an extra zwsp", async () => {
-    const editor = await getEditor()
-    const { md2html, html2md } = getConverters(editor)
+  test.each([
+    {
+      html: "<p><sup>1</sup> First <strong>important</strong> footnote</p>",
+      md:   "\u200b<sup>1</sup> First **important** footnote"
+    },
+    {
+      html:
+        "<p>cat</p><p><sup>1</sup> First <strong>important</strong> footnote</p>",
+      md: "cat\n\n\u200b<sup>1</sup> First **important** footnote"
+    }
+  ])(
+    "Raw HTML at the beginning of a line gets an extra zwsp",
+    async ({ html, md }) => {
+      const editor = await getEditor()
+      const { html2md } = getConverters(editor)
 
-    const html = "<p><sup>1</sup> First <strong>important</strong> footnote</p>"
-    const md = "\u200b<sup>1</sup> First **important** footnote"
-    expect(html2md(html)).toBe(md)
-    expect(md2html(md)).toBe(
-      "<p>\u200b<sup>1</sup> First <strong>important</strong> footnote</p>"
-    )
-  })
+      expect(html2md(html)).toBe(md)
+    }
+  )
 
   test("Raw block HTML throws errors, for now", async () => {
     const editor = await getEditor("", {
