@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.82.1
+Version 0.82.1 (Released December 01, 2022)
 --------------
 
 - mb/ubuntu_version_2 (#1594)
