@@ -24,7 +24,6 @@ field:
     label: str()
     name: str()
     minimal: bool(required=False)
-    allowed_html: list(str(), required=False)
     required: bool(required=False)
     help: str(required=False)
     fields: list(include('field'), required=False)

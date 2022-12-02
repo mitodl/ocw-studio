@@ -25,7 +25,6 @@ export default abstract class MarkdownSyntaxPlugin extends MarkdownConfigPlugin 
   loadMarkdownSyntax(): void {
     const currentConfig = this.getMarkdownConfig()
     const newConfig = {
-      ...currentConfig,
       showdownExtensions: [
         ...currentConfig.showdownExtensions,
         this.showdownExtension

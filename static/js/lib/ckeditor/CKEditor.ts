@@ -1,8 +1,6 @@
 import EssentialsPlugin from "@ckeditor/ckeditor5-essentials/src/essentials"
 import AutoformatPlugin from "@ckeditor/ckeditor5-autoformat/src/autoformat"
 import BoldPlugin from "@ckeditor/ckeditor5-basic-styles/src/bold"
-import SubscriptPlugin from "@ckeditor/ckeditor5-basic-styles/src/subscript"
-import SuperscriptPlugin from "@ckeditor/ckeditor5-basic-styles/src/superscript"
 import ItalicPlugin from "@ckeditor/ckeditor5-basic-styles/src/italic"
 import BlockQuotePlugin from "@ckeditor/ckeditor5-block-quote/src/blockquote"
 import HeadingPlugin from "@ckeditor/ckeditor5-heading/src/heading"
@@ -88,8 +86,6 @@ export const FullEditorConfig = {
     ResourcePicker,
     ResourceLink,
     ResourceLinkMarkdownSyntax,
-    SubscriptPlugin,
-    SuperscriptPlugin,
     TableMarkdownSyntax,
     MathSyntax, // Needs to go before MarkdownListSyntax
     MarkdownListSyntax,
@@ -104,8 +100,6 @@ export const FullEditorConfig = {
       "|",
       "bold",
       "italic",
-      "subscript",
-      "superscript",
       "link",
       "bulletedList",
       "numberedList",

@@ -10,7 +10,6 @@ import {
   RESOURCE_LINK
 } from "@mitodl/ckeditor5-resource-link/src/constants"
 import { Shortcode, escapeShortcodes } from "./util"
-import { turndownService } from "../turndown"
 
 export const encodeShortcodeArgs = (...args: (string | undefined)[]) =>
   encodeURIComponent(JSON.stringify(args))
@@ -77,22 +76,15 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             )
           },
           replacement: (_content: string, node: Turndown.Node): string => {
-            const anchor = node as HTMLAnchorElement
-            const [uuid, fragment] = decodeShortcodeArgs(
-              anchor.getAttribute("data-uuid") as string
+            const [uuid, anchor] = decodeShortcodeArgs(
+              (node as any).getAttribute("data-uuid") as string
             )
 
-            const text = turndownService
-              .turndown(anchor.innerHTML)
-              /**
-               * When turndown converts innerHTML to markdown, it will convert
-               * `{{&lt;` to `{{\<`. So we need to unescape that.
-               */
-              .replace(/{{\\</g, "{{<")
+            const text = node.textContent
 
             if (text === null) return ""
 
-            return Shortcode.resourceLink(uuid, text, fragment).toHugo()
+            return Shortcode.resourceLink(uuid, text, anchor).toHugo()
           }
         }
       }
