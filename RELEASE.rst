@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.82.2
+Version 0.82.2 (Released December 02, 2022)
 --------------
 
 - Revert "Subscripts and superscripts (#1588)" (#1597)
