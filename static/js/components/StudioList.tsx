@@ -77,7 +77,7 @@ export function StudioListItem(props: ListItemProps): JSX.Element {
         <div className="d-flex flex-row align-items-center justify-content-between">
           <div className="d-flex flex-column flex-grow-1">
             {to ? (
-              <Link className="title" to={{...location, pathname: to}}>
+              <Link className="title" to={{ ...location, pathname: to }}>
                 {title}
               </Link>
             ) : (
