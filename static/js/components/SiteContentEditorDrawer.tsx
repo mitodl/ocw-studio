@@ -50,16 +50,14 @@ export default function SiteContentEditorDrawer(
   const { search } = useLocation()
 
   const closeDrawer = useCallback(() => {
-    const queryParams = new URLSearchParams(search)
     const initialLocation = history.location
-    history.push(
+    history.push({...history.location, pathname:
       siteContentListingUrl
         .param({
           name:        website.name,
           contentType: configItem.name
         })
-        .query(queryParams)
-        .toString()
+        .toString()}
     )
     if (history.location !== initialLocation) {
       /**

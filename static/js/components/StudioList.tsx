@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import OutsideClickHandler from "react-outside-click-handler"
 import classNames from "classnames"
 
@@ -45,6 +45,8 @@ export function StudioListItem(props: ListItemProps): JSX.Element {
 
   const [menuOpen, setMenuOpen] = useState(false)
 
+  const location = useLocation()
+
   const openMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault()
@@ -75,7 +77,7 @@ export function StudioListItem(props: ListItemProps): JSX.Element {
         <div className="d-flex flex-row align-items-center justify-content-between">
           <div className="d-flex flex-column flex-grow-1">
             {to ? (
-              <Link className="title" to={to}>
+              <Link className="title" to={{...location, pathname: to}}>
                 {title}
               </Link>
             ) : (
