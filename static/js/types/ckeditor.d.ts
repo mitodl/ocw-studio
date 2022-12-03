@@ -26,10 +26,6 @@ declare module '@ckeditor/ckeditor5-basic-styles/src/italic';
 
 declare module '@ckeditor/ckeditor5-basic-styles/src/bold';
 
-declare module '@ckeditor/ckeditor5-basic-styles/src/superscript';
-
-declare module '@ckeditor/ckeditor5-basic-styles/src/subscript';
-
 declare module '@ckeditor/ckeditor5-basic-styles/src/underline';
 
 declare module '@ckeditor/ckeditor5-autoformat/src/autoformat';

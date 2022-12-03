@@ -2,7 +2,8 @@ import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
 import { editor } from "@ckeditor/ckeditor5-core"
 
 import { MarkdownConfig } from "../../../types/ckeditor_markdown"
-import { MARKDOWN_CONFIG_KEY } from "./constants"
+
+const MARKDOWN_CONFIG_KEY = "markdown-config"
 
 /**
  * Abstract class providing functionality to get and set the
@@ -10,11 +11,6 @@ import { MARKDOWN_CONFIG_KEY } from "./constants"
  * syntax rules need to inherit from this plugin.
  */
 export default abstract class MarkdownConfigPlugin extends Plugin {
-  static defaults = {
-    showdownExtensions: [],
-    turndownRules:      []
-  }
-
   constructor(editor: editor.Editor) {
     super(editor)
   }
@@ -23,9 +19,12 @@ export default abstract class MarkdownConfigPlugin extends Plugin {
    * Returns the Markdown configuration set on this.editor
    */
   getMarkdownConfig(): MarkdownConfig {
-    const provided = this.editor.config.get(MARKDOWN_CONFIG_KEY)
-
-    return { ...MarkdownConfigPlugin.defaults, ...provided }
+    return (
+      this.editor.config.get(MARKDOWN_CONFIG_KEY) ?? {
+        showdownExtensions: [],
+        turndownRules:      []
+      }
+    )
   }
 
   /**
