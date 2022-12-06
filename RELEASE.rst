@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.82.3
+Version 0.82.3 (Released December 06, 2022)
 --------------
 
 - Fix Routing in OCW Studio (#1600)
