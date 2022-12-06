@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react"
-import { useHistory, useLocation, useParams } from "react-router-dom"
+import { useHistory, useParams } from "react-router-dom"
 
 import { useWebsite } from "../context/Website"
 import { hasMainContentField } from "../lib/site_content"
@@ -47,20 +47,18 @@ export default function SiteContentEditorDrawer(
   const [dirty, setDirty] = useState<boolean>(false)
 
   const history = useHistory()
-  const { search } = useLocation()
 
   const closeDrawer = useCallback(() => {
-    const queryParams = new URLSearchParams(search)
     const initialLocation = history.location
-    history.push(
-      siteContentListingUrl
+    history.push({
+      ...history.location,
+      pathname: siteContentListingUrl
         .param({
           name:        website.name,
           contentType: configItem.name
         })
-        .query(queryParams)
         .toString()
-    )
+    })
     if (history.location !== initialLocation) {
       /**
        * Closing the modal is actually irrelevant in our current setup because
@@ -69,7 +67,7 @@ export default function SiteContentEditorDrawer(
        */
       setDrawerState(createModalState("closed"))
     }
-  }, [website.name, configItem.name, search, history])
+  }, [website.name, configItem.name, history])
 
   const labelSingular = configItem.label_singular ?? singular(configItem.label)
 
