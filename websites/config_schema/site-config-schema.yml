@@ -44,6 +44,7 @@ field:
     levels: list(include('level'), required=False)
     sortable: bool(required=False)
     cross_site: bool(required=False)
+    published: bool(required=False)
 ---
 field_condition:
     field: str()

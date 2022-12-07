@@ -74,7 +74,8 @@ const RELATION_EXTRA_PROPS = [
   "filter",
   "website",
   "sortable",
-  "cross_site"
+  "cross_site",
+  "published"
 ]
 const MENU_EXTRA_PROPS = ["collections"]
 const HIERARCHICAL_SELECT_EXTRA_PROPS = ["options_map", "levels"]

@@ -280,6 +280,27 @@ describe("RelationField", () => {
     })
   })
 
+  describe("published option", () => {
+    it.each([true, false])(
+      "should not filter on published site content if 'published' is not set",
+      async filterByPublished => {
+        await render({ published: filterByPublished, value: [] })
+        expect(global.fetch).toHaveBeenCalledWith(
+          siteApiContentListingUrl
+            .query({
+              detailed_list:   true,
+              content_context: true,
+              type:            "page",
+              ...(filterByPublished ? { published: true } : {})
+            })
+            .param({ name: website.name })
+            .toString(),
+          { credentials: "include" }
+        )
+      }
+    )
+  })
+
   //
   ;[true, false].forEach(multiple => {
     it(`should pass the 'multiple===${multiple}' down to the SelectField`, async () => {
