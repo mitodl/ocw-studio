@@ -41,7 +41,6 @@ interface Props {
   contentContext: WebsiteContent[] | null
   onChange: (event: any) => void
   cross_site?: boolean
-  published?: boolean
 }
 /* eslint-enable camelcase */
 
@@ -70,8 +69,7 @@ export default function RelationField(props: Props): JSX.Element {
     valuesToOmit,
     onChange,
     sortable,
-    cross_site: crossSite,
-    published
+    cross_site: crossSite
   } = props
 
   const [options, setOptions] = useState<Option[]>(
@@ -179,7 +177,7 @@ export default function RelationField(props: Props): JSX.Element {
       const url = siteApiContentListingUrl
         .query({
           detailed_list:   true,
-          ...(crossSite || published ? { published: true } : {}),
+          ...(crossSite ? { published: true } : {}),
           content_context: true,
           ...(search ? { search } : {}),
           ...(filter &&
@@ -245,8 +243,7 @@ export default function RelationField(props: Props): JSX.Element {
       filter,
       focusedWebsite,
       setContentToWebsite,
-      crossSite,
-      published
+      crossSite
     ]
   )
 
