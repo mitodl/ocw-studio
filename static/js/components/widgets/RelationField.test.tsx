@@ -172,7 +172,8 @@ describe("RelationField", () => {
               detailed_list:   true,
               content_context: true,
               type:            "page",
-              ...(withResourcetypeFilter ? { resourcetype: "Image" } : {})
+              ...(withResourcetypeFilter ? { resourcetype: "Image" } : {}),
+              ...(websiteNameProp ? { published: true } : {})
             })
             .toString()
           expect(global.fetch).toHaveBeenCalledTimes(1)
@@ -195,19 +196,22 @@ describe("RelationField", () => {
       ).toEqual(formatWebsiteOptions(websites, "name"))
     })
 
-    it.each([true, false])(
-      "should not filter on published if cross_site is not set",
-      async isCrossSite => {
-        await render({ cross_site: isCrossSite, value: [] })
+    it.each(["ocw-www", null])(
+      "should not filter on published if website is not set",
+      async websiteName => {
+        await render({
+          ...(websiteName ? { website: websiteName } : {}),
+          value: []
+        })
         expect(global.fetch).toHaveBeenCalledWith(
           siteApiContentListingUrl
             .query({
               detailed_list:   true,
               content_context: true,
               type:            "page",
-              ...(isCrossSite ? { published: true } : {})
+              ...(websiteName ? { published: true } : {})
             })
-            .param({ name: website.name })
+            .param({ name: websiteName || website.name })
             .toString(),
           { credentials: "include" }
         )
