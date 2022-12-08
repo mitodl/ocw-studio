@@ -12,6 +12,7 @@ from videos.apps import VideoApp
 from videos.constants import (
     DESTINATION_ARCHIVE,
     DESTINATION_YOUTUBE,
+    VIDEO_DOWNLOAD_PATTERN,
     VideoFileStatus,
     VideoJobStatus,
     VideoStatus,
@@ -20,8 +21,6 @@ from videos.models import Video, VideoFile, VideoJob
 
 
 log = logging.getLogger(__name__)
-
-VIDEO_DOWNLOAD_PATTERN = "_360p_16_9."
 
 
 def prepare_video_download_file(video: Video):
@@ -40,7 +39,14 @@ def prepare_video_download_file(video: Video):
         ]
     ).strip("/")
     if new_s3_key != video_file.s3_key:
-        move_s3_object(video_file.s3_key, new_s3_key)
+        move_s3_object(
+            video_file.s3_key,
+            new_s3_key,
+            {
+                "Metadata": {"ContentDisposition": "attachment"},
+                "MetadataDirective": "REPLACE",
+            },
+        )
         video_file.s3_key = new_s3_key
         video_file.save()
     content = DriveFile.objects.get(video=video).resource
