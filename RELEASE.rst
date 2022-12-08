@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.82.4
+--------------
+
+- update content dispositions (#1380)
+
 Version 0.82.3 (Released December 06, 2022)
 --------------
 
