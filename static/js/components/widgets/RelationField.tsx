@@ -130,9 +130,10 @@ export default function RelationField(props: Props): JSX.Element {
 
   const contextWebsite = useWebsite()
 
-  // if website: websitename param is set, then we want to use the context
+  // if website: websitename param is not set, then we want to use the context
   // website, else we want to use the cursor to fetch the specified website
   const websiteName = props.website ? props.website : contextWebsite.name
+  const publishedOnly = props.website || props.cross_site ? true : false
 
   const filterContentListing = useCallback(
     (results: WebsiteContent[]) => {
@@ -177,7 +178,7 @@ export default function RelationField(props: Props): JSX.Element {
       const url = siteApiContentListingUrl
         .query({
           detailed_list:   true,
-          ...(crossSite ? { published: true } : {}),
+          ...(publishedOnly ? { published: true } : {}),
           content_context: true,
           ...(search ? { search } : {}),
           ...(filter &&
@@ -243,7 +244,8 @@ export default function RelationField(props: Props): JSX.Element {
       filter,
       focusedWebsite,
       setContentToWebsite,
-      crossSite
+      crossSite,
+      publishedOnly
     ]
   )
 
