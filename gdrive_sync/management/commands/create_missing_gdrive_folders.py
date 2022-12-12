@@ -8,7 +8,7 @@ from websites.models import Website
 
 
 class Command(BaseCommand):
-    """Creates a gdrive folder for video uploads for websites that don't already have one"""
+    """Creates a Google drive folder for websites that don't already have one"""
 
     help = __doc__
 
@@ -67,7 +67,7 @@ class Command(BaseCommand):
             task = create_gdrive_folders_chunked.delay(short_ids, chunk_size=chunk_size)
 
             self.stdout.write(
-                f"Started celery task {task} to upsert pipelines for {len(short_ids)} sites."
+                f"Started celery task {task} to create Google drive folders for {len(short_ids)} sites."
             )
             if is_verbose:
                 self.stdout.write(f"{','.join(short_ids)}")
