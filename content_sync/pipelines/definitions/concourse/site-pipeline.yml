@@ -428,8 +428,14 @@ jobs:
             args:
             - -exc
             - |
-              aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) course-markdown/public
-              aws s3((cli-endpoint-url)) sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name)) --delete
+              if [ -z "((base-url))" ]
+              then
+                aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))
+                aws s3((cli-endpoint-url)) sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
+              else
+                aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) course-markdown/public
+                aws s3((cli-endpoint-url)) sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name)) --delete
+              fi
         # START DEV-ONLY
         on_success:
           try:
