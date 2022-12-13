@@ -28,6 +28,12 @@ class Command(BaseCommand):
             action="store_true",
             help="Delete existing theme assets pipelines first",
         )
+        parser.add_argument(
+            "-t",
+            "--themes-branch",
+            dest="themes_branch",
+            help="The branch of ocw-hugo-themes to build against",
+        )
 
     def handle(self, *args, **options):
 
@@ -40,6 +46,7 @@ class Command(BaseCommand):
         is_verbose = options["verbosity"] > 1
         unpause = options["unpause"]
         delete_all = options["delete_all"]
+        themes_branch = options["themes_branch"]
 
         if is_verbose:
             self.stdout.write("Upserting theme assets pipeline")
@@ -55,7 +62,7 @@ class Command(BaseCommand):
             else:
                 self.stdout.error("No pipeline api configured")
 
-        task = upsert_theme_assets_pipeline.delay(unpause=unpause)
+        task = upsert_theme_assets_pipeline.delay(unpause=unpause, themes_branch=themes_branch)
         self.stdout.write(f"Started celery task {task} to upsert theme assets pipeline")
         self.stdout.write("Waiting on task...")
 

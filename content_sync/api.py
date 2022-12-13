@@ -52,11 +52,11 @@ def get_site_pipeline(website: Website, api: Optional[object] = None) -> BasePip
 
 
 @is_publish_pipeline_enabled
-def get_theme_assets_pipeline(api: Optional[object] = None) -> BasePipeline:
+def get_theme_assets_pipeline(themes_branch: Optional[str] = None, api: Optional[object] = None) -> BasePipeline:
     """ Get the configured theme asset pipeline """
     return import_string(
         f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.ThemeAssetsPipeline"
-    )(api=api)
+    )(themes_branch=themes_branch, api=api)
 
 
 @is_publish_pipeline_enabled
