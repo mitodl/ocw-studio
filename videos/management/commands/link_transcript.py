@@ -1,3 +1,5 @@
+"""Management command to link the video resource with the UUID video_uuid to the captions resource with captions_uuid and downloadable transcript with transcript_uuid"""
+
 from django.core.management import BaseCommand
 
 from websites.models import WebsiteContent
