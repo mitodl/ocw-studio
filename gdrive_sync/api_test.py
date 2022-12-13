@@ -133,7 +133,7 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     drive_file = DriveFileFactory.create(
         name="A (Test) File!.ext",
         s3_key=current_s3_key,
-        mime_type="video/mp4" if is_video else "text/html",
+        mime_type="video/mp4" if is_video else "application/pdf",
         drive_path=f"website/{DRIVE_FOLDER_VIDEOS_FINAL if is_video else DRIVE_FOLDER_FILES_FINAL}",
     )
     api.stream_to_s3(drive_file)
