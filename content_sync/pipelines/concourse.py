@@ -495,7 +495,7 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
         self.BRANCH = themes_branch or get_theme_branch()
-        self.set_instance_vars({"branch": settings.GITHUB_WEBHOOK_BRANCH})
+        self.set_instance_vars({"branch": self.BRANCH})
 
     def upsert_pipeline(self):
         """Upsert the theme assets pipeline"""
