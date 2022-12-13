@@ -90,14 +90,11 @@ def check_mandatory_settings(mandatory_settings):
         )
 
 
-def move_s3_object(from_path, to_path, extra_args=None):
+def move_s3_object(from_path, to_path):
     """Move an S3 object from one path to another"""
     s3 = get_boto3_resource("s3")
     bucket = settings.AWS_STORAGE_BUCKET_NAME
-    if not extra_args:
-        extra_args = {}
-
-    extra_args["ACL"] = "public-read"
+    extra_args = {"ACL": "public-read"}
     s3.meta.client.copy(
         {"Bucket": bucket, "Key": from_path}, bucket, to_path, extra_args
     )
