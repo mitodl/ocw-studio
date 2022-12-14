@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.82.4
+--------------
+
+- clean publish for individual sites (#1611)
+- Revert "update content dispositions (#1380)" (#1615)
+- Fixing typo in GDrive creation management command (#1610)
+- Modify RelationField to filter out unpublished content if the website property is present (#1604)
+- update content dispositions (#1380)
+
 Version 0.82.3 (Released December 06, 2022)
 --------------
 
