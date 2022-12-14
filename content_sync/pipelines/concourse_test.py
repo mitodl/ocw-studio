@@ -528,7 +528,7 @@ def test_upsert_pipeline(
         "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
     api = PipelineApi("http://test.edu", "test", "test", "myteam")
-    pipeline = ThemeAssetsPipeline(api)
+    pipeline = ThemeAssetsPipeline(api=api)
     pipeline.upsert_pipeline()
     mock_get.assert_any_call(url_path)
     mock_put_headers.assert_any_call(
