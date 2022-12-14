@@ -62,7 +62,9 @@ class Command(BaseCommand):
             else:
                 self.stdout.error("No pipeline api configured")
 
-        task = upsert_theme_assets_pipeline.delay(unpause=unpause, themes_branch=themes_branch)
+        task = upsert_theme_assets_pipeline.delay(
+            unpause=unpause, themes_branch=themes_branch
+        )
         self.stdout.write(f"Started celery task {task} to upsert theme assets pipeline")
         self.stdout.write("Waiting on task...")
 
