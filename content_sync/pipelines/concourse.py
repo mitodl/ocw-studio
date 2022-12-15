@@ -491,11 +491,13 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
         "SEARCH_API_URL",
     ]
 
-    def __init__(self, api: Optional[PipelineApi] = None):
+    def __init__(
+        self, themes_branch: Optional[str] = None, api: Optional[PipelineApi] = None
+    ):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
-        self.BRANCH = get_theme_branch()
-        self.set_instance_vars({"branch": settings.GITHUB_WEBHOOK_BRANCH})
+        self.BRANCH = themes_branch or get_theme_branch()
+        self.set_instance_vars({"branch": self.BRANCH})
 
     def upsert_pipeline(self):
         """Upsert the theme assets pipeline"""

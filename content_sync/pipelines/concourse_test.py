@@ -511,7 +511,7 @@ def test_upsert_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists
 ):  # pylint:disable=too-many-locals
     """ Test upserting the theme assets pipeline """
-    instance_vars = f"%7B%22branch%22%3A%20%22{settings.GITHUB_WEBHOOK_BRANCH}%22%7D"
+    instance_vars = f"%7B%22branch%22%3A%20%22{get_theme_branch()}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={instance_vars}"
 
     if not pipeline_exists:
@@ -528,7 +528,7 @@ def test_upsert_pipeline(
         "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
     api = PipelineApi("http://test.edu", "test", "test", "myteam")
-    pipeline = ThemeAssetsPipeline(api)
+    pipeline = ThemeAssetsPipeline(api=api)
     pipeline.upsert_pipeline()
     mock_get.assert_any_call(url_path)
     mock_put_headers.assert_any_call(
