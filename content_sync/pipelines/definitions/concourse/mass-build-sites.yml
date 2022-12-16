@@ -11,6 +11,12 @@ resource_types:
       repository: governmentpaas/s3-resource
       tag: latest
 resources:
+  - name: slack-webhook
+    type: slack-alert
+    check_every: never
+    source:
+      url: ((slack-url))
+      disabled: false
   - name: ocw-hugo-themes
     type: git
     source:
@@ -33,6 +39,7 @@ resources:
       bucket: ((artifacts-bucket))
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
   # END ONLINE-ONLY
+
 # START ONLINE-ONLY
 task-config: &webhook-config
   platform: linux
@@ -40,6 +47,34 @@ task-config: &webhook-config
     type: registry-image
     source: {repository: curlimages/curl}
 # END ONLINE-ONLY
+
+task-purge-cdn-cache: &task-purge-cdn-cache
+  task: clear-cdn-cache
+  timeout: 1m
+  attempts: 3
+  config:
+    platform: linux
+    image_resource:
+      type: registry-image
+      source: {repository: curlimages/curl}
+    # START NON-DEV
+    run:
+      path: curl
+      args:
+        - -f
+        - -X
+        - POST
+        - -H
+        - 'Fastly-Key: ((fastly_((version)).api_token))'
+        - -H
+        - 'Fastly-Soft-Purge: 1'
+        - https://api.fastly.com/service/((fastly_((version)).service_id))/purge_all
+    # END NON-DEV
+    # START DEV-ONLY
+      path: echo
+      args: [Skipping cdn cache purge (this is a dev environment)]
+    # END DEV-ONLY
+
 jobs:
 - name: mass-publish
   serial: true
@@ -265,26 +300,28 @@ jobs:
               echo "ALL BUILDS SUCCEEDED" > /dev/tty
               exit 0
             fi
+    # START ONLINE-ONLY
+    on_failure:
+      try:
+        do:
+         - << : *task-purge-cdn-cache
+    # END ONLINE-ONLY
   # START ONLINE-ONLY
-  # START NON-DEV
-  - task: clear-cdn-cache
-    timeout: 1m
-    attempts: 3
-    config:
-      platform: linux
-      image_resource:
-        type: registry-image
-        source: {repository: curlimages/curl}
-      run:
-        path: curl
-        args:
-          - -f
-          - -X
-          - POST
-          - -H
-          - 'Fastly-Key: ((fastly_((version)).api_token))'
-          - -H
-          - 'Fastly-Soft-Purge: 1'
-          - https://api.fastly.com/service/((fastly_((version)).service_id))/purge_all
-  # END NON-DEV
+  - << : *task-purge-cdn-cache
   # END ONLINE-ONLY
+  on_failure:
+    try:
+      do:
+      - put: slack-webhook
+        timeout: 1m
+        params:
+          alert_type: failed
+          text: Mass publish has failed. See Concourse ui (link below) for details.
+  on_abort:
+    try:
+      do:
+      - put: slack-webhook
+        timeout: 1m
+        params:
+          alert_type: aborted
+          text: User aborted during mass publish. See Concourse ui (link below) for details.
