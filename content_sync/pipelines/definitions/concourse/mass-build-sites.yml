@@ -57,8 +57,8 @@ task-purge-cdn-cache: &task-purge-cdn-cache
     image_resource:
       type: registry-image
       source: {repository: curlimages/curl}
-    # START NON-DEV
     run:
+      # START NON-DEV
       path: curl
       args:
         - -f
