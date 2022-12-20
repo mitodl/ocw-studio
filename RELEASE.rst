@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.83.0
+--------------
+
+- purge cache on build failures; add alerts (#1623)
+- update ckeditor to v35 (#1618)
+- themes branch argument for theme assets build (#1616)
+
 Version 0.82.4 (Released December 20, 2022)
 --------------
 
