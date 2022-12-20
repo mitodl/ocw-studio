@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.82.4
+Version 0.82.4 (Released December 20, 2022)
 --------------
 
 - clean publish for individual sites (#1611)
