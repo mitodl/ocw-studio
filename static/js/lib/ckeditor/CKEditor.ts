@@ -20,7 +20,7 @@ import CodePlugin from "@ckeditor/ckeditor5-basic-styles/src/code"
 import Mathematics from "ckeditor5-math/src/math"
 import MathSyntax from "./plugins/MathSyntax"
 
-import { editor } from "@ckeditor/ckeditor5-core"
+import { Editor } from "@ckeditor/ckeditor5-core"
 
 import Markdown from "./plugins/Markdown"
 import ResourceEmbed from "./plugins/ResourceEmbed"
@@ -177,7 +177,7 @@ export const MinimalEditorConfig = {
 }
 
 export const insertResourceLink = (
-  editor: editor.Editor,
+  editor: Editor,
   uuid: string,
   title: string
 ) => {

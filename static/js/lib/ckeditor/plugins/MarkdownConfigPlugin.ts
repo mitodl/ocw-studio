@@ -1,5 +1,5 @@
 import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
-import { editor } from "@ckeditor/ckeditor5-core"
+import { Editor } from "@ckeditor/ckeditor5-core"
 
 import { MarkdownConfig } from "../../../types/ckeditor_markdown"
 import { MARKDOWN_CONFIG_KEY } from "./constants"
@@ -15,7 +15,7 @@ export default abstract class MarkdownConfigPlugin extends Plugin {
     turndownRules:      []
   }
 
-  constructor(editor: editor.Editor) {
+  constructor(editor: Editor) {
     super(editor)
   }
 

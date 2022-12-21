@@ -1,4 +1,4 @@
-import { editor } from "@ckeditor/ckeditor5-core"
+import { Editor } from "@ckeditor/ckeditor5-core"
 import Showdown from "showdown"
 
 import MarkdownConfigPlugin from "./MarkdownConfigPlugin"
@@ -10,7 +10,7 @@ import { TurndownRule } from "../../../types/ckeditor_markdown"
  * a syntax plugin inheriting from this class.
  */
 export default abstract class MarkdownSyntaxPlugin extends MarkdownConfigPlugin {
-  constructor(editor: editor.Editor) {
+  constructor(editor: Editor) {
     super(editor)
     this.loadMarkdownSyntax()
   }

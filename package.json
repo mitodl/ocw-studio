@@ -44,7 +44,7 @@
     "@testing-library/react": "12",
     "@testing-library/react-hooks": "^7.0.1",
     "@testing-library/user-event": "^14.1.1",
-    "@types/ckeditor__ckeditor5-core": "^11.0.3",
+    "@types/ckeditor__ckeditor5-core": "^33.0.3",
     "@types/enzyme": "^3.10.9",
     "@types/enzyme-adapter-react-16": "^1.0.6",
     "@types/history": "4.7.11",

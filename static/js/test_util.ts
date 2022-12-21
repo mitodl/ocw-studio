@@ -88,6 +88,11 @@ export const getMockEditor = () => ({
     view: {
       focus: jest.fn()
     }
+  },
+  model: {
+    schema: {
+      addAttributeCheck: jest.fn()
+    }
   }
 })
 

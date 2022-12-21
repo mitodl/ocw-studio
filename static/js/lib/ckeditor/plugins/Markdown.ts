@@ -1,7 +1,7 @@
 import HtmlDataProcessor from "@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor"
 import { Converter } from "showdown"
 import GFMDataProcessor from "@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor"
-import { editor } from "@ckeditor/ckeditor5-core"
+import { Editor } from "@ckeditor/ckeditor5-core"
 
 import MarkdownConfigPlugin from "./MarkdownConfigPlugin"
 import { ATTRIBUTE_REGEX } from "./constants"
@@ -86,7 +86,7 @@ export default class Markdown extends MarkdownConfigPlugin {
 
   allowedHtml: (keyof HTMLElementTagNameMap)[]
 
-  constructor(editor: editor.Editor) {
+  constructor(editor: Editor) {
     super(editor)
 
     const {
