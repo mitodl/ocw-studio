@@ -1,6 +1,6 @@
 import { ShowdownExtension } from "showdown"
 import CKPlugin from "@ckeditor/ckeditor5-core/src/plugin"
-import { editor } from "@ckeditor/ckeditor5-core"
+import { Editor } from "@ckeditor/ckeditor5-core"
 
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
@@ -84,7 +84,7 @@ class LegacyShortcodeEditing extends CKPlugin {
     return "LegacyShortcodeEditing"
   }
 
-  constructor(editor: editor.Editor) {
+  constructor(editor: Editor) {
     super(editor)
   }
 

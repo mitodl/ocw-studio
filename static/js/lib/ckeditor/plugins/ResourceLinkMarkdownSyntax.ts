@@ -1,6 +1,6 @@
 import Turndown from "turndown"
 import Showdown from "showdown"
-import { editor } from "@ckeditor/ckeditor5-core"
+import { Editor } from "@ckeditor/ckeditor5-core"
 
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
@@ -36,7 +36,7 @@ const RESOURCE_LINK_SHORTCODE_REGEX = Shortcode.regex("resource_link", true)
  * 'link' plugin.
  */
 export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
-  constructor(editor: editor.Editor) {
+  constructor(editor: Editor) {
     super(editor)
   }
 

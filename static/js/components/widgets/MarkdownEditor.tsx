@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from "react"
 import { CKEditor } from "@ckeditor/ckeditor5-react"
-import { editor } from "@ckeditor/ckeditor5-core"
+import { Editor } from "@ckeditor/ckeditor5-core"
 import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
 import CKEditorInspector from "@ckeditor/ckeditor5-inspector"
 
@@ -46,8 +46,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const { link, embed, value, name, onChange, minimal, allowedHtml } = props
   const throwSynchronously = useThrowSynchronously()
 
-  const editor = useRef<editor.Editor>()
-  const setEditorRef = useCallback(editorInstance => {
+  const editor = useRef<Editor>()
+  const onReady = useCallback((editorInstance: Editor) => {
     editor.current = editorInstance
     if (process.env.NODE_ENV === "development" && editor.current) {
       CKEditorInspector.attach(editor)

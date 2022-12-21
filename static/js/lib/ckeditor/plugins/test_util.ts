@@ -1,5 +1,5 @@
 import ClassicEditorBase from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
-import { editor } from "@ckeditor/ckeditor5-core"
+import { Editor } from "@ckeditor/ckeditor5-core"
 import { html_beautify as htmlBeautify } from "js-beautify"
 import { MarkdownDataProcessor } from "./Markdown"
 
@@ -11,7 +11,7 @@ export const createTestEditor = (
 ) => async (
   initialData = "",
   configOverrides: Record<string, unknown> = {}
-): Promise<editor.Editor & { getData(): string }> => {
+): Promise<Editor & { getData(): string }> => {
   const editor = await ClassicTestEditor.create(initialData, {
     plugins,
     ...remainingConfig,
@@ -20,7 +20,7 @@ export const createTestEditor = (
   return editor
 }
 
-export function getConverters(editor: editor.Editor) {
+export function getConverters(editor: Editor) {
   const { md2html, html2md } = (editor.data
     .processor as unknown) as MarkdownDataProcessor
 
@@ -28,7 +28,7 @@ export function getConverters(editor: editor.Editor) {
 }
 
 export function markdownTest(
-  editor: editor.Editor,
+  editor: Editor,
   markdown: string,
   html: string,
   finalMarkdown?: string
@@ -58,7 +58,7 @@ export function markdownTest(
 }
 
 export function htmlConvertContainsTest(
-  editor: editor.Editor,
+  editor: Editor,
   markdown: string,
   html: string
 ): void {
