@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.83.1
+--------------
+
+- Cc/disallow simul subsup (#1627)
+- Subscripts and superscripts (#1588) (#1617)
+
 Version 0.83.0 (Released December 21, 2022)
 --------------
 
