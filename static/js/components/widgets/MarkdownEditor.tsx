@@ -50,7 +50,16 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const editor = useRef<Editor>()
   const onReady = useCallback((editorInstance: Editor) => {
     editor.current = editorInstance
-    if (process.env.NODE_ENV === "development" && editor.current) {
+    if (!editor.current) {
+      /**
+       * It is unclear to me why this happens.
+       * It seems like when our MarkdownEditor opens, an editor is created,
+       * immediately destroyed, onReady is called (with null), and then
+       * re-created, and onReady is called again (with real editor)
+       */
+      return
+    }
+    if (process.env.NODE_ENV === "development") {
       CKEditorInspector.attach(editor)
     }
     editor.current.model.schema.addAttributeCheck(checkNotSubAndSup)
