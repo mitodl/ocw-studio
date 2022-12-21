@@ -9,6 +9,7 @@ import {
   MinimalEditorConfig,
   insertResourceLink
 } from "../../lib/ckeditor/CKEditor"
+import { checkNotSubAndSup } from "../../lib/ckeditor/attributeChecks"
 import EmbeddedResource from "./EmbeddedResource"
 import {
   ADD_RESOURCE_LINK,
@@ -52,6 +53,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     if (process.env.NODE_ENV === "development" && editor.current) {
       CKEditorInspector.attach(editor)
     }
+    editor.current.model.schema.addAttributeCheck(checkNotSubAndSup)
   }, [])
 
   const [resourcePickerMode, setResourcePickerMode] = useState<
@@ -174,7 +176,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         editor={ClassicEditor}
         config={editorConfig}
         data={value ?? ""}
-        onReady={setEditorRef}
+        onReady={onReady}
         onChange={onChangeCB}
         onError={throwSynchronously}
       />
