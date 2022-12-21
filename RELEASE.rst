@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.83.0
+Version 0.83.0 (Released December 21, 2022)
 --------------
 
 - purge cache on build failures; add alerts (#1623)
