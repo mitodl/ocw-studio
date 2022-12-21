@@ -429,18 +429,20 @@ describe("site_content", () => {
         embed:   ["resource"]
       })
       expect(widgetExtraProps(field)).toStrictEqual({
-        minimal: false,
-        link:    ["resource", "page"],
-        embed:   ["resource"]
+        minimal:     false,
+        link:        ["resource", "page"],
+        embed:       ["resource"],
+        allowedHtml: []
       })
     })
 
     it("sets minimal = true for markdown fields by default", () => {
       const field = makeWebsiteConfigField({ widget: WidgetVariant.Markdown })
       expect(widgetExtraProps(field)).toStrictEqual({
-        minimal: true,
-        link:    [],
-        embed:   []
+        minimal:     true,
+        link:        [],
+        embed:       [],
+        allowedHtml: []
       })
     })
 

@@ -9,4 +9,5 @@ export interface TurndownRule {
 export interface MarkdownConfig {
   showdownExtensions: Array<() => Showdown.ShowdownExtension[]>
   turndownRules: TurndownRule[]
+  allowedHtml: (keyof HTMLElementTagNameMap)[]
 }

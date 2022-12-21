@@ -93,4 +93,85 @@ describe("Multiple Markdown CKEditors", () => {
     expect(cat.html2md(paragraph)).toBe("meowmeowmeow!")
     expect(dog.html2md(paragraph)).toBe("woofwoofwoof!")
   })
+
+  test("Separate editors can use conflicting allowedHtml lists", async () => {
+    const subEditor = await createTestEditor([Markdown], {
+      "markdown-config": { allowedHtml: ["sub"] }
+    })()
+    const supEditor = await createTestEditor([Markdown], {
+      "markdown-config": { allowedHtml: ["sup"] }
+    })()
+
+    const sub = getConverters(subEditor)
+    const sup = getConverters(supEditor)
+
+    const paragraph = "<p>Hello world sub<sub>123</sub> sup<sup>abc</sup>!</p>"
+
+    expect(sub.html2md(paragraph)).toBe("Hello world sub<sub>123</sub> supabc!")
+    expect(sup.html2md(paragraph)).toBe("Hello world sub123 sup<sup>abc</sup>!")
+  })
+})
+
+describe("Handling of raw HTML", () => {
+  const getEditor = createTestEditor([Markdown], {
+    "markdown-config": { allowedHtml: ["sup"] }
+  })
+
+  test("When raw HTML is allowed, its content is converted to markdown", async () => {
+    const editor = await getEditor()
+
+    const html =
+      '<p>Hello world <sup><a href="https://mit.edu">mit</a></sup>!</p>'
+    const markdown = "Hello world <sup>[mit](https://mit.edu)</sup>!"
+    markdownTest(editor, markdown, html)
+  })
+
+  test.each([
+    {
+      html: "<p><sup>1</sup> First <strong>important</strong> footnote</p>",
+      md:   "\u200b<sup>1</sup> First **important** footnote"
+    },
+    {
+      html:
+        "<p>cat</p><p><sup>1</sup> First <strong>important</strong> footnote</p>",
+      md: "cat\n\n\u200b<sup>1</sup> First **important** footnote"
+    }
+  ])(
+    "Raw HTML at the beginning of a line gets an extra zwsp",
+    async ({ html, md }) => {
+      const editor = await getEditor()
+      const { html2md } = getConverters(editor)
+
+      expect(html2md(html)).toBe(md)
+    }
+  )
+
+  test("Raw block HTML throws errors, for now", async () => {
+    const editor = await getEditor("", {
+      "markdown-config": { allowedHtml: ["div"] }
+    })
+    const { html2md } = getConverters(editor)
+
+    const html = "<p>Hello world!</p> <div>mit</div>"
+    expect(() => html2md(html)).toThrow()
+  })
+
+  /**
+   * This is different from Turndown's default behavior.
+   */
+  test("Disallowed children of allowed tags are not included", async () => {
+    const editor = await getEditor("", {
+      "markdown-config": { allowedHtml: ["sup", "span"] }
+    })
+    const { html2md } = getConverters(editor)
+
+    const html = `
+    <p>
+    hello <sup><span>meow</span><script>alert("maliciousness")</script></sup> world
+    </p>
+    `
+    expect(html2md(html)).toBe(
+      'hello <sup><span>meow</span>alert("maliciousness")</sup> world'
+    )
+  })
 })

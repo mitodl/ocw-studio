@@ -6,7 +6,11 @@ import { editor } from "@ckeditor/ckeditor5-core"
 import MarkdownConfigPlugin from "./MarkdownConfigPlugin"
 import { ATTRIBUTE_REGEX } from "./constants"
 
-import { turndownService } from "../turndown"
+import {
+  resetTurndownService,
+  turndownService,
+  turndownHtmlHelpers
+} from "../turndown"
 import Turndown from "turndown"
 import { buildAttrsString } from "./util"
 import { validateHtml2md } from "./validateMdConversion"
@@ -70,8 +74,6 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
 const TD_CONTENT_REGEX = /<td.*?>([\S\s]*?)<\/td>/g
 const TH_CONTENT_REGEX = /<th(?!ead).*?>([\S\s]*?)<\/th>/g
 
-const BASE_TURNDOWN_RULES = [...turndownService.rules.array]
-
 /**
  * Plugin implementing Markdown for CKEditor
  *
@@ -82,10 +84,16 @@ const BASE_TURNDOWN_RULES = [...turndownService.rules.array]
 export default class Markdown extends MarkdownConfigPlugin {
   turndownRules: Turndown.Rule[]
 
+  allowedHtml: (keyof HTMLElementTagNameMap)[]
+
   constructor(editor: editor.Editor) {
     super(editor)
 
-    const { showdownExtensions, turndownRules } = this.getMarkdownConfig()
+    const {
+      showdownExtensions,
+      turndownRules,
+      allowedHtml
+    } = this.getMarkdownConfig()
 
     const converter = new Converter({
       extensions: showdownExtensions
@@ -93,11 +101,12 @@ export default class Markdown extends MarkdownConfigPlugin {
 
     converter.setFlavor("github")
 
-    turndownService.rules.array = [...BASE_TURNDOWN_RULES]
+    resetTurndownService()
     turndownRules.forEach(({ name, rule }) =>
       turndownService.addRule(name, rule)
     )
     this.turndownRules = [...turndownService.rules.array]
+    this.allowedHtml = allowedHtml
 
     function formatTableCell(
       el: string,
@@ -153,9 +162,13 @@ export default class Markdown extends MarkdownConfigPlugin {
   turndown = (html: string) => {
     try {
       turndownService.rules.array = this.turndownRules
-      return turndownService.turndown(html)
+
+      turndownService.rules.keepReplacement = turndownHtmlHelpers.keepReplacer
+      turndownService.keep(this.allowedHtml)
+
+      return turndownHtmlHelpers.turndown(html)
     } finally {
-      turndownService.rules.array = BASE_TURNDOWN_RULES
+      resetTurndownService()
     }
   }
 
