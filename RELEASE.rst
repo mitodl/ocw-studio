@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.83.1
+Version 0.83.1 (Released December 22, 2022)
 --------------
 
 - abort onReady if no editor (#1629)
