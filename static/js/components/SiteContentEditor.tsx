@@ -101,6 +101,13 @@ export default function SiteContentEditor(
     })
   }
 
+  if (shouldLoadContent && queryTuple[0].lastUpdated === undefined) {
+    /**
+     * We need to load the content, but the content has not yet loaded.
+     */
+    return null
+  }
+
   if (isPending || (editorState.editing() && !content)) {
     return null
   }
