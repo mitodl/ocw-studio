@@ -6,10 +6,6 @@ import SuperscriptPlugin from "@ckeditor/ckeditor5-basic-styles/src/superscript"
 import ItalicPlugin from "@ckeditor/ckeditor5-basic-styles/src/italic"
 import BlockQuotePlugin from "@ckeditor/ckeditor5-block-quote/src/blockquote"
 import HeadingPlugin from "@ckeditor/ckeditor5-heading/src/heading"
-import ImagePlugin from "@ckeditor/ckeditor5-image/src/image"
-import ImageCaptionPlugin from "@ckeditor/ckeditor5-image/src/imagecaption"
-import ImageStylePlugin from "@ckeditor/ckeditor5-image/src/imagestyle"
-import ImageToolbarPlugin from "@ckeditor/ckeditor5-image/src/imagetoolbar"
 import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
 import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
@@ -74,10 +70,6 @@ export const FullEditorConfig = {
     CodePlugin,
     BlockQuotePlugin,
     HeadingPlugin,
-    ImagePlugin,
-    ImageCaptionPlugin,
-    ImageStylePlugin,
-    ImageToolbarPlugin,
     LinkPlugin,
     ListPlugin,
     ParagraphPlugin,
@@ -119,9 +111,6 @@ export const FullEditorConfig = {
       ADD_RESOURCE_LINK,
       ADD_RESOURCE_EMBED
     ]
-  },
-  image: {
-    toolbar: ["imageStyle:full", "imageStyle:side", "|", "imageTextAlternative"]
   },
   codeBlock: {
     languages: SUPPORTED_PROGRAMMING_LANGUAGES
