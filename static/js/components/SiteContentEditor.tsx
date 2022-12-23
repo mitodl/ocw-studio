@@ -78,10 +78,11 @@ export default function SiteContentEditor(
     content = props.content
   }
 
-  const shouldLoadContent = !props.content && loadContent
+  const shouldLoadContent =
+    !props.content && loadContent && editorState.editing()
 
   const queryTuple = useRequest(
-    shouldLoadContent && editorState.editing() ?
+    shouldLoadContent ?
       websiteContentDetailRequest(
         { name: site.name, textId: editorState.wrapped },
         needsContentContext(configItem.fields)
@@ -92,7 +93,7 @@ export default function SiteContentEditor(
     getWebsiteContentDetailCursor
   )
 
-  if (shouldLoadContent && editorState.editing()) {
+  if (shouldLoadContent) {
     isPending = queryTuple[0].isPending
 
     content = websiteContentDetailSelector({
