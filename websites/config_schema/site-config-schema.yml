@@ -12,6 +12,7 @@ content_item:
     folder: str(required=False)
     files: list(include('inner_content_item'), required=False)
     slug: str(required=False)
+    isSortable: bool(required=False)
 ---
 inner_content_item:
     name: str()
