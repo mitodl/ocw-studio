@@ -336,23 +336,28 @@ def test_upsert_website_pipelines(
     assert settings.OCW_COURSE_STARTER_SLUG in config_str
     assert api_url in config_str
 
+    # Check various s3 syncs
     storage_bucket_name = expected_template_vars["storage_bucket_name"]
+    assert (
+        f"aws s3 {expected_endpoint_prefix}sync s3://{storage_bucket_name}/{website.s3_path} ./static-resources"
+        in config_str
+    )
     if home_page:
         assert (
-            f"s3 {expected_endpoint_prefix}sync s3://{storage_bucket_name}/{website.name} s3://{bucket}/{website.name} --metadata site-id={website.name}"
-            in config_str
-        )
-        assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/public s3://{bucket}/ --metadata site-id={website.name}"
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/ --metadata site-id={website.name}"
             in config_str
         )
     else:
         assert (
-            f"s3 {expected_endpoint_prefix}sync s3://{storage_bucket_name}/courses/{website.name} course-markdown/public"
+            f"aws s3 {expected_endpoint_prefix}sync s3://{bucket}/static ./static"
             in config_str
         )
         assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/public s3://{bucket}/{website.url_path} --metadata site-id={website.name} --delete"
+            f"aws s3 {expected_endpoint_prefix}sync build-course-offline/ s3://{bucket}/{website.url_path} --exclude='*' --include='{website.short_id}.zip' --metadata site-id={website.name}"
+            in config_str
+        )
+        assert (
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/{website.url_path} --metadata site-id={website.name} --delete"
             in config_str
         )
 

@@ -317,7 +317,27 @@ jobs:
                 alert_type: aborted
                 text: "User Aborted while getting course-markdown : ((pipeline_name))/((site-name))"
             # END NON-DEV
-      - task: build-course-task
+      - task: static-resources
+        timeout: 40m
+        attempts: 3
+        # START DEV-ONLY
+        params:
+          AWS_ACCESS_KEY_ID: ((minio-root-user))
+          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+        # END DEV-ONLY
+        config:
+          outputs:
+            - name: static-resources
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: amazon/aws-cli, tag: latest}
+          run:
+            path: sh
+            args:
+            - -exc
+            - aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) ./static-resources
+      - task: build-course-offline
         timeout: 20m
         attempts: 3
         params:
@@ -331,6 +351,8 @@ jobs:
           SENTRY_DSN: ((ocw-hugo-themes-sentry-dsn))
           # START DEV-ONLY
           RESOURCE_BASE_URL: ((resource-base-url))
+          AWS_ACCESS_KEY_ID: ((minio-root-user))
+          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
           # END DEV-ONLY
         config:
           platform: linux
@@ -339,20 +361,42 @@ jobs:
             source: {repository: mitodl/ocw-course-publisher, tag: 0.3}
           inputs:
             - name: ocw-hugo-themes
-            - name: course-markdown
             - name: ocw-hugo-projects
+            - name: course-markdown
+            - name: static-resources
             - name: webpack-json
           outputs:
             - name: course-markdown
             - name: ocw-hugo-themes
+            - name: build-course-offline
           run:
             dir: course-markdown
             path: sh
             args:
             - -exc
             - |
-              cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
-              hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/ ((build-drafts))
+              if [ -f "../ocw-hugo-projects/((config-slug))/config-offline.yaml" ];
+              then
+                cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
+                mkdir -p ./content/static_resources
+                mkdir -p ./static/static_resources
+                if [ ! -z "$(ls -A ../static-resources)" ];
+                then
+                  find ../static-resources ! -name '*.mp4' -type f | xargs cp -t ./content/static_resources
+                fi
+                HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
+                if [ $HTML_COUNT != 0 ];
+                then
+                  mv ./content/static_resources/*.html ./static/static_resources
+                fi
+                touch ./content/static_resources/_index.md
+                hugo --config ../ocw-hugo-projects/((config-slug))/config-offline.yaml --themesDir ../ocw-hugo-themes/ ((build-drafts)) --destination output-offline
+                cd output-offline
+                aws s3((cli-endpoint-url)) sync s3://((ocw-bucket))/static ./static
+                zip ../../build-course-offline/((short-id)).zip -r ./
+              else
+                echo "Offline configuration not found for site type ((config-slug))"
+              fi
         on_failure:
           try:
             do:
@@ -408,7 +452,184 @@ jobs:
                 alert_type: aborted
                 text: "User Aborted during build-course-task : ((pipeline_name))/((site-name))"
             # END NON-DEV
-      - task: copy-s3-buckets
+      - task: upload-offline-build
+        timeout: 40m
+        attempts: 3
+        # START DEV-ONLY
+        params:
+          AWS_ACCESS_KEY_ID: ((minio-root-user))
+          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+        # END DEV-ONLY
+        config:
+          inputs:
+            - name: build-course-offline
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: amazon/aws-cli, tag: latest}
+          run:
+            path: sh
+            args:
+            - -exc
+            - aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((ocw-bucket))/((base-url)) --exclude='*' --include='((short-id)).zip' --metadata site-id=((site-name))
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on upload-offline-build : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error during upload-offline-build : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted during upload-offline-build : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+      - task: build-course-online
+        timeout: 20m
+        attempts: 3
+        params:
+          API_BEARER_TOKEN: ((api-token))
+          GTM_ACCOUNT_ID: ((gtm-account-id))
+          OCW_STUDIO_BASE_URL: ((ocw-studio-url))
+          STATIC_API_BASE_URL: ((static-api-base-url))
+          OCW_IMPORT_STARTER_SLUG: ((ocw-import-starter-slug))
+          OCW_COURSE_STARTER_SLUG: ((ocw-course-starter-slug))
+          SITEMAP_DOMAIN: ((sitemap-domain))
+          SENTRY_DSN: ((ocw-hugo-themes-sentry-dsn))
+          # START DEV-ONLY
+          RESOURCE_BASE_URL: ((resource-base-url))
+          AWS_ACCESS_KEY_ID: ((minio-root-user))
+          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+          # END DEV-ONLY
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: mitodl/ocw-course-publisher, tag: 0.3}
+          inputs:
+            - name: ocw-hugo-themes
+            - name: ocw-hugo-projects
+            - name: course-markdown
+            - name: build-course-offline
+            - name: static-resources
+            - name: webpack-json
+          outputs:
+            - name: course-markdown
+            - name: ocw-hugo-themes
+          run:
+            dir: course-markdown
+            path: sh
+            args:
+            - -exc
+            - |
+              cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
+              hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/ ((build-drafts)) --destination output-online
+              cp -r -n ../static-resources/. ./output-online
+              if [ -f "../build-course-offline/((short-id)).zip" ];
+              then
+                cp ../build-course-offline/((short-id)).zip  ./output-online
+              fi
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on build-course-online : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error during build-course-online : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted during build-course-online : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+      - task: upload-online-build
         timeout: 40m
         attempts: 3
         # START DEV-ONLY
@@ -427,15 +648,7 @@ jobs:
             path: sh
             args:
             - -exc
-            - |
-              if [ -z "((base-url))" ]
-              then
-                aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) s3://((ocw-bucket))/((site-url)) --metadata site-id=((site-name))
-                aws s3((cli-endpoint-url)) sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))
-              else
-                aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) course-markdown/public
-                aws s3((cli-endpoint-url)) sync course-markdown/public s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name)) --delete
-              fi
+            - aws s3((cli-endpoint-url)) sync course-markdown/output-online s3://((ocw-bucket))/((base-url)) --metadata site-id=((site-name))((delete))
         # START DEV-ONLY
         on_success:
           try:

@@ -445,7 +445,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((ocw-studio-bucket))", storage_bucket_name or "")
                 .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
                 .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
-                .replace("((ocw-site-repo))", self.WEBSITE.short_id)
+                .replace("((short-id))", self.WEBSITE.short_id)
                 .replace("((ocw-site-repo-branch))", branch)
                 .replace("((config-slug))", self.WEBSITE.starter.slug)
                 .replace("((s3-path))", self.WEBSITE.s3_path)
@@ -473,6 +473,12 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace(
                     "((ocw-hugo-themes-sentry-dsn))",
                     settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
+                )
+                .replace(
+                    "((delete))",
+                    ""
+                    if self.WEBSITE.name == settings.ROOT_WEBSITE_NAME
+                    else " --delete",
                 )
             )
             self.upsert_config(config_str, pipeline_name)
