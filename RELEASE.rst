@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.84.0
+--------------
+
+- skip syncing offline build if no offline config exists (#1637)
+- add offline build to single course pipeline (#1630)
+
 Version 0.83.1 (Released December 22, 2022)
 --------------
 
