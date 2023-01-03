@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.84.0
+--------------
+
+- add offline build to single course pipeline (#1630)
+
 Version 0.83.1 (Released December 22, 2022)
 --------------
 
