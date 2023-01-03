@@ -463,6 +463,7 @@ jobs:
         config:
           inputs:
             - name: build-course-offline
+            - name: ocw-hugo-projects
           platform: linux
           image_resource:
             type: registry-image
@@ -471,7 +472,13 @@ jobs:
             path: sh
             args:
             - -exc
-            - aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((ocw-bucket))/((base-url)) --exclude='*' --include='((short-id)).zip' --metadata site-id=((site-name))
+            - |
+              if [ -f "../ocw-hugo-projects/((config-slug))/config-offline.yaml" ];
+              then
+                aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((ocw-bucket))/((base-url)) --exclude='*' --include='((short-id)).zip' --metadata site-id=((site-name))
+              else
+                echo "Offline configuration not found for site type ((config-slug))"
+              fi
         on_failure:
           try:
             do:
