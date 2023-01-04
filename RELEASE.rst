@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.84.0
+Version 0.84.0 (Released January 04, 2023)
 --------------
 
 - skip syncing offline build if no offline config exists (#1637)
