@@ -95,7 +95,7 @@
     "jest-when": "^3.5.1",
     "js-beautify": "^1.14.0",
     "lodash": "^4.17.21",
-    "luxon": "^2.0.2",
+    "luxon": "^2.5.2",
     "mathjax": "^3.2.2",
     "mini-css-extract-plugin": "^0.10.0",
     "pluralize": "^8.0.0",
