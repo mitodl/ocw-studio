@@ -34,7 +34,6 @@
     "@ckeditor/ckeditor5-widget": "^35.4.0",
     "@dnd-kit/core": "^3.1.1",
     "@dnd-kit/sortable": "^4.0.0",
-    "@mitodl/ckeditor5-resource-link": "^35.4.0-rc1",
     "@reduxjs/toolkit": "^1.8.1",
     "@sentry/react": "^7.13.0",
     "@swc/core": "^1.2.95",

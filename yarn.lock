@@ -1489,17 +1489,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mitodl/ckeditor5-resource-link@npm:^35.4.0-rc1":
-  version: 35.4.0-rc1
-  resolution: "@mitodl/ckeditor5-resource-link@npm:35.4.0-rc1"
-  dependencies:
-    "@ckeditor/ckeditor5-ui": ^35.4.0
-    ckeditor5: ^35.4.0
-    lodash-es: ^4.17.15
-  checksum: 20247c36f73b988f702df9eb0a7135eba0ffa358b912839261c030099ba2916c0d150afcdaaf00e437bd68443cb11f72fe6630c09fc15a2fc300be4a9fc3388f
-  languageName: node
-  linkType: hard
-
 "@mrmlnc/readdir-enhanced@npm:^2.2.1":
   version: 2.2.1
   resolution: "@mrmlnc/readdir-enhanced@npm:2.2.1"
@@ -10587,7 +10576,6 @@ __metadata:
     "@ckeditor/ckeditor5-widget": ^35.4.0
     "@dnd-kit/core": ^3.1.1
     "@dnd-kit/sortable": ^4.0.0
-    "@mitodl/ckeditor5-resource-link": ^35.4.0-rc1
     "@reduxjs/toolkit": ^1.8.1
     "@sentry/react": ^7.13.0
     "@swc/core": ^1.2.95
