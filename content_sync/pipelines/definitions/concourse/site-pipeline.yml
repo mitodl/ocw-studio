@@ -513,7 +513,7 @@ jobs:
               hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --themesDir ../ocw-hugo-themes/ ((build-drafts)) --destination output
               cp -r -n ../course-resources/. ./output
               cd output
-              mkdir ./static_shared
+              mkdir -p ./static_shared
               cp -r -n ../../static-shared/. ./static_shared
               zip ./((short-id)).zip -r ./
               rm -rf ./static_shared
