@@ -168,7 +168,7 @@ export const resetTurndownService = () => {
  * ------------
  * The default behavior is that the *content* of an HTML tag is not converted
  * to Markdown. This is problematic for tags that contain shortcode HTML. For
- * example, `<sup><a class="resource-link" data-uuid ... >2</a></sup>` should
+ * example, `<sup><a href="RESOURCE_LINK_HREF"... >2</a></sup>` should
  * really needs its content to be converted to markdown in order for Hugo to
  * recognize it as a shortcode.
  */

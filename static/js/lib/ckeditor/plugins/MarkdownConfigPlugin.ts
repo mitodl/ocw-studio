@@ -1,5 +1,4 @@
-import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
-import { Editor } from "@ckeditor/ckeditor5-core"
+import { Editor, Plugin } from "@ckeditor/ckeditor5-core"
 
 import { MarkdownConfig } from "../../../types/ckeditor_markdown"
 import { MARKDOWN_CONFIG_KEY } from "./constants"

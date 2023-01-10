@@ -6,9 +6,9 @@ import CKEditorInspector from "@ckeditor/ckeditor5-inspector"
 
 import {
   FullEditorConfig,
-  MinimalEditorConfig,
-  insertResourceLink
+  MinimalEditorConfig
 } from "../../lib/ckeditor/CKEditor"
+import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
 import { checkNotSubAndSup } from "../../lib/ckeditor/attributeChecks"
 import EmbeddedResource from "./EmbeddedResource"
 import {
@@ -16,14 +16,17 @@ import {
   CKEResourceNodeType,
   CKEDITOR_RESOURCE_UTILS,
   RenderResourceFunc,
-  ResourceCommandMap,
+  RESOURCE_EMBED_COMMAND,
   ResourceDialogMode,
   ADD_RESOURCE_EMBED,
   RESOURCE_LINK,
-  MARKDOWN_CONFIG_KEY
+  MARKDOWN_CONFIG_KEY,
+  RESOURCE_LINK_CONFIG_KEY
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
+import { useWebsite } from "../../context/Website"
+import { siteContentDetailUrl } from "../../lib/urls"
 
 export interface Props {
   value?: string
@@ -46,10 +49,12 @@ type RenderQueueEntry = [string, HTMLElement]
 export default function MarkdownEditor(props: Props): JSX.Element {
   const { link, embed, value, name, onChange, minimal, allowedHtml } = props
   const throwSynchronously = useThrowSynchronously()
+  const website = useWebsite()
 
   const editor = useRef<Editor>()
   const onReady = useCallback((editorInstance: Editor) => {
     editor.current = editorInstance
+    window.editor = editor.current
     if (!editor.current) {
       /**
        * It is unclear to me why this happens.
@@ -77,9 +82,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           // we pass the title down because we want to set that as the
           // default text in the link, in the case where we're not adding
           // the link attribute to existing text.
-          insertResourceLink(editor.current, uuid, title)
+          const resourceLink = editor.current.plugins.get(ResourceLink)
+          resourceLink.insertResourceLink(uuid, title)
         } else {
-          editor.current.execute(ResourceCommandMap[variant], uuid)
+          editor.current.execute(RESOURCE_EMBED_COMMAND, uuid)
         }
 
         editor.current.editing.view.focus()
@@ -121,6 +127,16 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       }
       return true
     }
+    const resourceLink = {
+      [RESOURCE_LINK_CONFIG_KEY]: {
+        hrefTemplate: `${location.origin}${
+          siteContentDetailUrl.param({
+            name:        website.name,
+            contentType: "resource"
+          }).pathname
+        }`
+      }
+    }
 
     if (minimal) {
       return {
@@ -132,7 +148,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         toolbar: {
           ...MinimalEditorConfig.toolbar,
           items: MinimalEditorConfig.toolbar.items.filter(toolbarItemsFilter)
-        }
+        },
+        ...resourceLink
       }
     } else {
       // this render function is stuck into the editor config
@@ -150,10 +167,19 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         },
         [MARKDOWN_CONFIG_KEY]: {
           allowedHtml
-        }
+        },
+        ...resourceLink
       }
     }
-  }, [minimal, renderResource, openResourcePicker, link, embed, allowedHtml])
+  }, [
+    minimal,
+    renderResource,
+    openResourcePicker,
+    link,
+    embed,
+    allowedHtml,
+    website.name
+  ])
 
   const onChangeCB = useCallback(
     (_event: any, editor: any) => {

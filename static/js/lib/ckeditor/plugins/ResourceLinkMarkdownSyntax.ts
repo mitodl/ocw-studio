@@ -1,22 +1,14 @@
 import Turndown from "turndown"
 import Showdown from "showdown"
 import { Editor } from "@ckeditor/ckeditor5-core"
+import invariant from "tiny-invariant"
 
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 
-import {
-  RESOURCE_LINK_CKEDITOR_CLASS,
-  RESOURCE_LINK
-} from "@mitodl/ckeditor5-resource-link/src/constants"
 import { Shortcode, escapeShortcodes } from "./util"
 import { turndownService } from "../turndown"
-
-export const encodeShortcodeArgs = (...args: (string | undefined)[]) =>
-  encodeURIComponent(JSON.stringify(args))
-
-const decodeShortcodeArgs = (encoded: string) =>
-  JSON.parse(decodeURIComponent(encoded))
+import { RESOURCE_LINK_CONFIG_KEY } from "./constants"
 
 const RESOURCE_LINK_SHORTCODE_REGEX = Shortcode.regex("resource_link", true)
 
@@ -32,20 +24,51 @@ const RESOURCE_LINK_SHORTCODE_REGEX = Shortcode.regex("resource_link", true)
  * The first argument is the uuid of the resource to which we're linking, and
  * the second argument is that text that should be rendered inside of the link.
  *
- * The ResourceEmbed plugin itself is provided via our fork of CKEditor's
- * 'link' plugin.
  */
 export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
-  constructor(editor: Editor) {
-    super(editor)
-  }
+  hrefTemplate: string
 
   static get pluginName(): string {
     return "ResourceLinkMarkdownSyntax"
   }
 
+  constructor(editor: Editor) {
+    super(editor)
+    this.hrefTemplate = editor.config.get(RESOURCE_LINK_CONFIG_KEY).hrefTemplate
+    this.validateConfig()
+  }
+
+  private validateConfig() {
+    invariant(this.hrefTemplate !== undefined, "hrefTemplate is undefined")
+    try {
+      this.makeResourceLinkHref("fake-uuid", "fake-fragment")
+    } catch (err) {
+      console.error("The hrefTemplate is invalid:")
+      throw err
+    }
+  }
+
+  isResourceLinkHref = (href?: string): boolean => {
+    if (!href) return false
+    return href.includes("?ocw_resource_link_uuid=")
+  }
+
+  makeResourceLinkHref = (uuid: string, fragment = "") => {
+    const href = new URL(this.hrefTemplate.replace(/:uuid/g, uuid))
+    href.searchParams.set("ocw_resource_link_uuid", uuid)
+    href.searchParams.set("ocw_resource_link_fragment", fragment)
+    return href.toString()
+  }
+
+  removeResourceLinkQueryParams = (href: string): string => {
+    const url = new URL(href)
+    url.searchParams.delete("ocw_resource_link_uuid")
+    url.searchParams.delete("ocw_resource_link_fragment")
+    return url.toString()
+  }
+
   get showdownExtension() {
-    return function resourceExtension(): Showdown.ShowdownExtension[] {
+    return (): Showdown.ShowdownExtension[] => {
       return [
         {
           type:    "lang",
@@ -53,12 +76,13 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
           replace: (s: string) => {
             const shortcode = Shortcode.fromString(s)
             const uuid = shortcode.get(0)
+            if (!uuid) {
+              throw new Error("resource_link shortcode must have a uuid")
+            }
             const text = escapeShortcodes(shortcode.get(1) ?? "")
-            const fragment = shortcode.get(2)
-            const encoded = fragment ?
-              encodeShortcodeArgs(uuid, fragment) :
-              encodeShortcodeArgs(uuid)
-            return `<a class="${RESOURCE_LINK_CKEDITOR_CLASS}" data-uuid="${encoded}">${text}</a>`
+            const fragment = shortcode.get(2) ?? ""
+            const href = this.makeResourceLinkHref(uuid, fragment)
+            return `<a href="${href}">${text}</a>`
           }
         }
       ]
@@ -68,19 +92,22 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
   get turndownRules(): TurndownRule[] {
     return [
       {
-        name: RESOURCE_LINK,
+        name: `${ResourceLinkMarkdownSyntax.pluginName}-turndown`,
         rule: {
-          filter: function(node) {
-            return (
-              node.nodeName === "A" &&
-              node.className === RESOURCE_LINK_CKEDITOR_CLASS
-            )
+          filter: node => {
+            if (node.nodeName !== "A") return false
+            const anchor = node as HTMLAnchorElement
+            return this.isResourceLinkHref(anchor.href)
           },
           replacement: (_content: string, node: Turndown.Node): string => {
             const anchor = node as HTMLAnchorElement
-            const [uuid, fragment] = decodeShortcodeArgs(
-              anchor.getAttribute("data-uuid") as string
-            )
+            const url = new URL(anchor.href)
+            const search = new URLSearchParams(url.search)
+            const uuid = search.get("ocw_resource_link_uuid")
+            const hash = search.get("ocw_resource_link_fragment") ?? ""
+            if (!uuid) {
+              throw new Error("ocw_resource_link_uuid not found in URL")
+            }
 
             const text = turndownService
               .turndown(anchor.innerHTML)
@@ -90,9 +117,7 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
                */
               .replace(/{{\\</g, "{{<")
 
-            if (text === null) return ""
-
-            return Shortcode.resourceLink(uuid, text, fragment).toHugo()
+            return Shortcode.resourceLink(uuid, text, hash).toHugo()
           }
         }
       }
