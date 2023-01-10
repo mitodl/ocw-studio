@@ -230,7 +230,7 @@ jobs:
               # END OFFLINE-ONLY
               echo "RUNNING HUGO BUILD FOR $NAME" > /dev/tty
               # START ONLINE-ONLY
-              HUGO_RESULT=$(hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl $PREFIX/$BASE_URL --themesDir ../ocw-hugo-themes/ ((build-drafts)) --quiet) || HUGO_RESULT=1
+              HUGO_RESULT=$(hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --themesDir ../ocw-hugo-themes/ ((build-drafts)) --quiet) || HUGO_RESULT=1
               # END ONLINE-ONLY
               # START OFFLINE-ONLY
               HUGO_RESULT=$(hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config-offline.yaml --themesDir ../ocw-hugo-themes/ ((build-drafts)) --quiet) || HUGO_RESULT=1
