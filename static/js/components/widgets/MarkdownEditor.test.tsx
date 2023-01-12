@@ -23,7 +23,7 @@ import ResourcePickerDialog from "../../components/widgets/ResourcePickerDialog"
 import { getMockEditor } from "../../test_util"
 import { useWebsite } from "../../context/Website"
 import { makeWebsiteDetail } from "../../util/factories/websites"
-import ResourceLinkUI from "../../lib/ckeditor/plugins/ResourceLinkUI"
+import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
 
 jest.mock("../../lib/ckeditor/CKEditor", () => {
   const originalModule = jest.requireActual("../../lib/ckeditor/CKEditor")
@@ -130,7 +130,7 @@ describe("MarkdownEditor", () => {
     const editor = getMockEditor()
     const resourceLinkPlugin = { createResourceLink: jest.fn() }
     editor.plugins.get.mockImplementation((val: unknown) => {
-      if (val === ResourceLinkUI) return resourceLinkPlugin
+      if (val === ResourceLink) return resourceLinkPlugin
       return null
     })
     editorComponent.prop("onReady")(editor)
