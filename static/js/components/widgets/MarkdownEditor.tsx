@@ -54,7 +54,6 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const editor = useRef<Editor>()
   const onReady = useCallback((editorInstance: Editor) => {
     editor.current = editorInstance
-    window.editor = editor.current
     if (!editor.current) {
       /**
        * It is unclear to me why this happens.

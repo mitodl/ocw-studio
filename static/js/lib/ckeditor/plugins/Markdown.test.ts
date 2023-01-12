@@ -47,7 +47,7 @@ describe("Multiple Markdown CKEditors", () => {
     get turndownRules(): TurndownRule[] {
       return [
         {
-          name: this.plugin_name,
+          name: this.pluginName,
           rule: {
             filter:      "p",
             replacement: content => {
