@@ -150,15 +150,28 @@ export default function RepeatableContentListing(props: {
   const pages = usePagination(listing.count ?? 0)
 
   const DynamicStudioListName = isSortable ? SortableStudioList : StudioList
-  const wrapSortableItem = (isSortable: boolean, child: React.ReactNode, item: WebsiteContentListItem) => {
+  const dynamicStudioListProps = isSortable ?
+    {
+      handleDragEnd: handleDragEnd,
+      attribute:     "text_id"
+    } :
+    {}
+  const wrapSortableItem = (
+    isSortable: boolean,
+    child: React.ReactNode,
+    item: WebsiteContentListItem
+  ) => {
     if (isSortable) {
-      return <SortableItem
-        deleteItem={() => null}
-        key={item.text_id}
-        id={item.text_id}
-        item={item.text_id}>
-        {child}
-      </SortableItem>
+      return (
+        <SortableItem
+          deleteItem={() => null}
+          key={item.text_id}
+          id={item.text_id}
+          item={item.text_id}
+        >
+          {child}
+        </SortableItem>
+      )
     }
     return child
   }
@@ -201,7 +214,7 @@ export default function RepeatableContentListing(props: {
               className="btn cyan-button add flex-shrink-0"
               to={siteContentNewUrl
                 .param({
-                  name: website.name,
+                  name:        website.name,
                   contentType: configItem.name
                 })
                 .query(searchParams)
@@ -212,22 +225,26 @@ export default function RepeatableContentListing(props: {
           )}
         </div>
       </div>
-      <SortableStudioList handleDragEnd={handleDragEnd} attribute="text_id">
-        {listing.results.map((item: WebsiteContentListItem) => (
-          wrapSortableItem(isSortable ?? false, <StudioListItem
-            key={item.text_id}
-            to={siteContentDetailUrl
-              .param({
-                name: website.name,
-                contentType: configItem.name,
-                uuid: item.text_id
-              })
-              .toString()}
-            title={item.title ?? ""}
-            subtitle={`Updated ${formatUpdatedOn(item)}`}
-          />, item)
-        ))}
-      </SortableStudioList>
+      <DynamicStudioListName {...dynamicStudioListProps}>
+        {listing.results.map((item: WebsiteContentListItem) =>
+          wrapSortableItem(
+            isSortable ?? false,
+            <StudioListItem
+              key={item.text_id}
+              to={siteContentDetailUrl
+                .param({
+                  name:        website.name,
+                  contentType: configItem.name,
+                  uuid:        item.text_id
+                })
+                .toString()}
+              title={item.title ?? ""}
+              subtitle={`Updated ${formatUpdatedOn(item)}`}
+            />,
+            item
+          )
+        )}
+      </DynamicStudioListName>
       <PaginationControls previous={pages.previous} next={pages.next} />
       <Route
         path={[

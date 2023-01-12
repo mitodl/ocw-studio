@@ -40,15 +40,21 @@ export default function SortableItem<T>(props: Props<T>): JSX.Element {
       style={style}
       {...attributes}
       {...listeners}
-    >{children ? children : <>
-        <span className="material-icons">drag_indicator</span>
-        <div className="title">{title}</div>
-        <span
-          className="material-icons ml-auto gray-button hover"
-          onClick={deleteItemCB}
-        >
-        remove_circle_outline
-        </span></>}
+    >
+      {children ? (
+        children
+      ) : (
+        <>
+          <span className="material-icons">drag_indicator</span>
+          <div className="title">{title}</div>
+          <span
+            className="material-icons ml-auto gray-button hover"
+            onClick={deleteItemCB}
+          >
+            remove_circle_outline
+          </span>
+        </>
+      )}
     </div>
   )
 }

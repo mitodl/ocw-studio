@@ -14,7 +14,6 @@ interface SortableListProps {
   children: React.ReactNode
   attribute: string
   handleDragEnd: (event: DragEndEvent) => void
-
 }
 
 /**
@@ -37,7 +36,8 @@ export function SortableStudioList(props: SortableListProps): JSX.Element {
         handleDragEnd={handleDragEnd}
         items={React.Children.map(children, item => item?.key) || []}
         generateItemUUID={x => x}
-      >{children}
+      >
+        {children}
       </SortWrapper>
     </StudioList>
   )
