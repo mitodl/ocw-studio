@@ -5,6 +5,8 @@ import { useSelector, useStore } from "react-redux"
 import { requestAsync } from "redux-query"
 import useInterval from "@use-it/interval"
 import { isNil } from "ramda"
+import { DragEndEvent } from "@dnd-kit/core"
+import { arrayMove } from "@dnd-kit/sortable"
 
 import DriveSyncStatusIndicator from "./DriveSyncStatusIndicator"
 import PaginationControls from "./PaginationControls"
@@ -25,12 +27,13 @@ import {
   RepeatableConfigItem,
   WebsiteContentListItem
 } from "../types/websites"
-import { StudioList, StudioListItem } from "./StudioList"
+import { StudioList, StudioListItem, SortableStudioList } from "./StudioList"
 import { useURLParamFilter, usePagination } from "../hooks/search"
 import { singular } from "pluralize"
 import SiteContentEditorDrawer from "./SiteContentEditorDrawer"
 import { useWebsite } from "../context/Website"
 import { formatUpdatedOn } from "../util/websites"
+import SortableItem from "./SortableItem"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -38,7 +41,9 @@ export default function RepeatableContentListing(props: {
   const store = useStore()
   const { configItem } = props
   const isResource = configItem.name === "resource"
+  const { isSortable } = configItem
   const website = useWebsite()
+  const onChange = item => console.log(item)
 
   const getListingParams = useCallback(
     (search: string): ContentListingParams => {
@@ -73,6 +78,25 @@ export default function RepeatableContentListing(props: {
 
   const [{ isPending: syncIsPending }, syncWebsiteContent] = useMutation(() =>
     syncWebsiteContentMutation(website.name)
+  )
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
+
+      if (over && active.id !== over.id) {
+        const valueToUse = listing.results.map(item => item.text_id)
+
+        const movedArray = arrayMove(
+          valueToUse,
+          valueToUse.indexOf(active.id),
+          valueToUse.indexOf(over.id)
+        )
+        //@ts-ignore
+        onChange(movedArray)
+      }
+    },
+    [onChange, listing]
   )
 
   useInterval(
@@ -125,6 +149,20 @@ export default function RepeatableContentListing(props: {
 
   const pages = usePagination(listing.count ?? 0)
 
+  const DynamicStudioListName = isSortable ? SortableStudioList : StudioList
+  const wrapSortableItem = (isSortable: boolean, child: React.ReactNode, item: WebsiteContentListItem) => {
+    if (isSortable) {
+      return <SortableItem
+        deleteItem={() => null}
+        key={item.text_id}
+        id={item.text_id}
+        item={item.text_id}>
+        {child}
+      </SortableItem>
+    }
+    return child
+  }
+
   return (
     <>
       <div className="d-flex flex-direction-row align-items-center justify-content-between py-3">
@@ -163,7 +201,7 @@ export default function RepeatableContentListing(props: {
               className="btn cyan-button add flex-shrink-0"
               to={siteContentNewUrl
                 .param({
-                  name:        website.name,
+                  name: website.name,
                   contentType: configItem.name
                 })
                 .query(searchParams)
@@ -174,22 +212,22 @@ export default function RepeatableContentListing(props: {
           )}
         </div>
       </div>
-      <StudioList>
+      <SortableStudioList handleDragEnd={handleDragEnd} attribute="text_id">
         {listing.results.map((item: WebsiteContentListItem) => (
-          <StudioListItem
+          wrapSortableItem(isSortable ?? false, <StudioListItem
             key={item.text_id}
             to={siteContentDetailUrl
               .param({
-                name:        website.name,
+                name: website.name,
                 contentType: configItem.name,
-                uuid:        item.text_id
+                uuid: item.text_id
               })
               .toString()}
             title={item.title ?? ""}
             subtitle={`Updated ${formatUpdatedOn(item)}`}
-          />
+          />, item)
         ))}
-      </StudioList>
+      </SortableStudioList>
       <PaginationControls previous={pages.previous} next={pages.next} />
       <Route
         path={[

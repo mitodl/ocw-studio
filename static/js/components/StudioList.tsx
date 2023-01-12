@@ -4,9 +4,17 @@ import OutsideClickHandler from "react-outside-click-handler"
 import classNames from "classnames"
 
 import Card from "./Card"
-
+import SortWrapper from "./SortWrapper"
+import { DragEndEvent } from "@dnd-kit/core"
 interface ListProps {
   children: React.ReactNode
+}
+
+interface SortableListProps {
+  children: React.ReactNode
+  attribute: string
+  handleDragEnd: (event: DragEndEvent) => void
+
 }
 
 /**
@@ -19,6 +27,20 @@ export function StudioList(props: ListProps): JSX.Element {
   const { children } = props
 
   return <ul className="studio-list">{children}</ul>
+}
+
+export function SortableStudioList(props: SortableListProps): JSX.Element {
+  const { children, handleDragEnd } = props
+  return (
+    <StudioList>
+      <SortWrapper
+        handleDragEnd={handleDragEnd}
+        items={React.Children.map(children, item => item?.key) || []}
+        generateItemUUID={x => x}
+      >{children}
+      </SortWrapper>
+    </StudioList>
+  )
 }
 
 type MenuOption = [string, (event: React.MouseEvent<HTMLButtonElement>) => void]

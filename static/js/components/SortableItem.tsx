@@ -6,11 +6,12 @@ interface Props<T> {
   item: T
   id: string
   deleteItem: (item: T) => void
-  title: string
+  title?: string
+  children?: React.ReactNode
 }
 
 export default function SortableItem<T>(props: Props<T>): JSX.Element {
-  const { item, deleteItem, id, title } = props
+  const { item, deleteItem, id, title, children } = props
 
   const {
     attributes,
@@ -39,15 +40,15 @@ export default function SortableItem<T>(props: Props<T>): JSX.Element {
       style={style}
       {...attributes}
       {...listeners}
-    >
-      <span className="material-icons">drag_indicator</span>
-      <div className="title">{title}</div>
-      <span
-        className="material-icons ml-auto gray-button hover"
-        onClick={deleteItemCB}
-      >
+    >{children ? children : <>
+        <span className="material-icons">drag_indicator</span>
+        <div className="title">{title}</div>
+        <span
+          className="material-icons ml-auto gray-button hover"
+          onClick={deleteItemCB}
+        >
         remove_circle_outline
-      </span>
+        </span></>}
     </div>
   )
 }

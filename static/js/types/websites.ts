@@ -179,6 +179,8 @@ export type SingletonsConfigItem = BaseConfigItem & {
 export type RepeatableConfigItem = BaseConfigItem & {
   category: string
   folder: string
+  isSortable?: boolean
+  onChange?: (item: WebsiteContent) => void
   fields: ConfigField[]
 }
 
