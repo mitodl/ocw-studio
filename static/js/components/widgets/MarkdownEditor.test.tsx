@@ -23,7 +23,7 @@ import ResourcePickerDialog from "../../components/widgets/ResourcePickerDialog"
 import { getMockEditor } from "../../test_util"
 import { useWebsite } from "../../context/Website"
 import { makeWebsiteDetail } from "../../util/factories/websites"
-import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
+import ResourceLinkUI from "../../lib/ckeditor/plugins/ResourceLinkUI"
 
 jest.mock("../../lib/ckeditor/CKEditor", () => {
   const originalModule = jest.requireActual("../../lib/ckeditor/CKEditor")
@@ -31,7 +31,7 @@ jest.mock("../../lib/ckeditor/CKEditor", () => {
   return {
     __esModule:         true,
     ...originalModule,
-    insertResourceLink: jest.fn()
+    createResourceLink: jest.fn()
   }
 })
 jest.mock("../../context/Website", () => {
@@ -122,21 +122,21 @@ describe("MarkdownEditor", () => {
     }
   )
 
-  it("should delegate to ResourceLink.insertResourceLink when inserting a link", async () => {
+  it("should delegate to ResourceLink.createResourceLink when inserting a link", async () => {
     const wrapper = render({ link: ["page"] })
     const editorComponent = wrapper.find<{ onReady:(e: unknown) => void }>(
       CKEditor
     )
     const editor = getMockEditor()
-    const resourceLinkPlugin = { insertResourceLink: jest.fn() }
+    const resourceLinkPlugin = { createResourceLink: jest.fn() }
     editor.plugins.get.mockImplementation((val: unknown) => {
-      if (val === ResourceLink) return resourceLinkPlugin
+      if (val === ResourceLinkUI) return resourceLinkPlugin
       return null
     })
     editorComponent.prop("onReady")(editor)
     const picker = wrapper.find(ResourcePickerDialog)
     picker.prop("insertEmbed")("best-uuid-ever", "some title", "resourceLink")
-    expect(resourceLinkPlugin.insertResourceLink).toHaveBeenCalledWith(
+    expect(resourceLinkPlugin.createResourceLink).toHaveBeenCalledWith(
       "best-uuid-ever",
       "some title"
     )

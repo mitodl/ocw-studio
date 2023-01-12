@@ -83,7 +83,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           // default text in the link, in the case where we're not adding
           // the link attribute to existing text.
           const resourceLink = editor.current.plugins.get(ResourceLink)
-          resourceLink.insertResourceLink(uuid, title)
+          resourceLink.createResourceLink(uuid, title)
         } else {
           editor.current.execute(RESOURCE_EMBED_COMMAND, uuid)
         }

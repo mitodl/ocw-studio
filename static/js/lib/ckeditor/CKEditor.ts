@@ -25,7 +25,6 @@ import ResourceEmbed from "./plugins/ResourceEmbed"
 import ResourcePicker from "./plugins/ResourcePicker"
 import { ADD_RESOURCE_EMBED, ADD_RESOURCE_LINK } from "./plugins/constants"
 import ResourceLink from "./plugins/ResourceLink"
-import ResourceLinkMarkdownSyntax from "./plugins/ResourceLinkMarkdownSyntax"
 import DisallowNestedTables from "./plugins/DisallowNestedTables"
 import TableMarkdownSyntax from "./plugins/TableMarkdownSyntax"
 import MarkdownListSyntax from "./plugins/MarkdownListSyntax"
@@ -74,7 +73,6 @@ export const FullEditorConfig = {
     ImageStylePlugin,
     ImageToolbarPlugin,
     LinkPlugin,
-    ResourceLink,
     ListPlugin,
     ParagraphPlugin,
     TablePlugin,
@@ -82,7 +80,7 @@ export const FullEditorConfig = {
     CodeBlockPlugin,
     ResourceEmbed,
     ResourcePicker,
-    ResourceLinkMarkdownSyntax,
+    ResourceLink,
     SubscriptPlugin,
     SuperscriptPlugin,
     TableMarkdownSyntax,
@@ -148,7 +146,6 @@ export const MinimalEditorConfig = {
     ResourceEmbed,
     ResourcePicker,
     ResourceLink,
-    ResourceLinkMarkdownSyntax,
     MarkdownListSyntax,
     Markdown,
     LegacyShortcodes

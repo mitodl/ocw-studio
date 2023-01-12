@@ -26,8 +26,8 @@ const getEditor = createTestEditor(
     }
   }
 )
-const href = (uuid: string, fragment = "") =>
-  `https://fake.mit.edu/${uuid}?ocw_resource_link_uuid=${uuid}&ocw_resource_link_fragment=${fragment}`
+const href = (uuid: string, suffix = "") =>
+  `https://fake.mit.edu/${uuid}?ocw_resource_link_uuid=${uuid}&ocw_resource_link_suffix=${suffix}`
 
 describe("ResourceLinkMarkdownSyntax plugin", () => {
   afterEach(() => {
