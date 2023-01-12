@@ -56,7 +56,7 @@ export default class ResourceLinkUI extends Plugin {
       actionsView.editButtonView.isEnabled = false
       const previewEl = actionsView.previewButtonView.element
       if (previewEl instanceof HTMLAnchorElement) {
-        previewEl.href = this.syntax.removeResourceLinkQueryParams(href)
+        previewEl.href = this.syntax.makePreviewHref(href)
       }
       actionsView.previewButtonView.element
     } else {

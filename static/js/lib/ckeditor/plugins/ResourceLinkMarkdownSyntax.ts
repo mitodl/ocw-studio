@@ -77,7 +77,11 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
     return href.toString()
   }
 
-  removeResourceLinkQueryParams = (href: string): string => {
+  /**
+   * Strip resource-link-specific query params from a URL. (Those query params
+   * are an implementation detail ahd should not be visible in UI.)
+   */
+  makePreviewHref = (href: string): string => {
     const url = new URL(href)
     url.searchParams.delete(queryKeys.uuid)
     url.searchParams.delete(queryKeys.suffix)
