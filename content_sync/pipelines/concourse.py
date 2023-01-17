@@ -445,7 +445,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((ocw-studio-bucket))", storage_bucket_name or "")
                 .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
                 .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
-                .replace("((ocw-site-repo))", self.WEBSITE.short_id)
+                .replace("((short-id))", self.WEBSITE.short_id)
                 .replace("((ocw-site-repo-branch))", branch)
                 .replace("((config-slug))", self.WEBSITE.starter.slug)
                 .replace("((s3-path))", self.WEBSITE.s3_path)
@@ -474,6 +474,12 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     "((ocw-hugo-themes-sentry-dsn))",
                     settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
                 )
+                .replace(
+                    "((delete))",
+                    ""
+                    if self.WEBSITE.name == settings.ROOT_WEBSITE_NAME
+                    else " --delete",
+                )
             )
             self.upsert_config(config_str, pipeline_name)
 
@@ -491,11 +497,13 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
         "SEARCH_API_URL",
     ]
 
-    def __init__(self, api: Optional[PipelineApi] = None):
+    def __init__(
+        self, themes_branch: Optional[str] = None, api: Optional[PipelineApi] = None
+    ):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
-        self.BRANCH = get_theme_branch()
-        self.set_instance_vars({"branch": settings.GITHUB_WEBHOOK_BRANCH})
+        self.BRANCH = themes_branch or get_theme_branch()
+        self.set_instance_vars({"branch": self.BRANCH})
 
     def upsert_pipeline(self):
         """Upsert the theme assets pipeline"""

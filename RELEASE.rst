@@ -1,6 +1,35 @@
 Release Notes
 =============
 
+Version 0.84.0 (Released January 04, 2023)
+--------------
+
+- skip syncing offline build if no offline config exists (#1637)
+- add offline build to single course pipeline (#1630)
+
+Version 0.83.1 (Released December 22, 2022)
+--------------
+
+- abort onReady if no editor (#1629)
+- Cc/disallow simul subsup (#1627)
+- Subscripts and superscripts (#1588) (#1617)
+
+Version 0.83.0 (Released December 21, 2022)
+--------------
+
+- purge cache on build failures; add alerts (#1623)
+- update ckeditor to v35 (#1618)
+- themes branch argument for theme assets build (#1616)
+
+Version 0.82.4 (Released December 20, 2022)
+--------------
+
+- clean publish for individual sites (#1611)
+- Revert "update content dispositions (#1380)" (#1615)
+- Fixing typo in GDrive creation management command (#1610)
+- Modify RelationField to filter out unpublished content if the website property is present (#1604)
+- update content dispositions (#1380)
+
 Version 0.82.3 (Released December 06, 2022)
 --------------
 

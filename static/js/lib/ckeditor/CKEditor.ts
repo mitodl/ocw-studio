@@ -1,6 +1,8 @@
 import EssentialsPlugin from "@ckeditor/ckeditor5-essentials/src/essentials"
 import AutoformatPlugin from "@ckeditor/ckeditor5-autoformat/src/autoformat"
 import BoldPlugin from "@ckeditor/ckeditor5-basic-styles/src/bold"
+import SubscriptPlugin from "@ckeditor/ckeditor5-basic-styles/src/subscript"
+import SuperscriptPlugin from "@ckeditor/ckeditor5-basic-styles/src/superscript"
 import ItalicPlugin from "@ckeditor/ckeditor5-basic-styles/src/italic"
 import BlockQuotePlugin from "@ckeditor/ckeditor5-block-quote/src/blockquote"
 import HeadingPlugin from "@ckeditor/ckeditor5-heading/src/heading"
@@ -18,7 +20,7 @@ import CodePlugin from "@ckeditor/ckeditor5-basic-styles/src/code"
 import Mathematics from "ckeditor5-math/src/math"
 import MathSyntax from "./plugins/MathSyntax"
 
-import { editor } from "@ckeditor/ckeditor5-core"
+import { Editor } from "@ckeditor/ckeditor5-core"
 
 import Markdown from "./plugins/Markdown"
 import ResourceEmbed from "./plugins/ResourceEmbed"
@@ -86,6 +88,8 @@ export const FullEditorConfig = {
     ResourcePicker,
     ResourceLink,
     ResourceLinkMarkdownSyntax,
+    SubscriptPlugin,
+    SuperscriptPlugin,
     TableMarkdownSyntax,
     MathSyntax, // Needs to go before MarkdownListSyntax
     MarkdownListSyntax,
@@ -100,6 +104,8 @@ export const FullEditorConfig = {
       "|",
       "bold",
       "italic",
+      "subscript",
+      "superscript",
       "link",
       "bulletedList",
       "numberedList",
@@ -171,7 +177,7 @@ export const MinimalEditorConfig = {
 }
 
 export const insertResourceLink = (
-  editor: editor.Editor,
+  editor: Editor,
   uuid: string,
   title: string
 ) => {

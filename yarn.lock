@@ -558,73 +558,73 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-adapter-ckfinder@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-adapter-ckfinder@npm:31.1.0"
+"@ckeditor/ckeditor5-adapter-ckfinder@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-adapter-ckfinder@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
-  checksum: 7580ffb58c1164c18b5ef3b6f36a10b9f651f00b0ebf9534df0d7b4f19754702480e876fba7f4a89eb8018b01f9a4e465503c031d7180ebde4ea67602902f553
+    ckeditor5: ^35.4.0
+  checksum: 8ab0e6afd30123b252a647bf2d9e406b6796144685e3b9739ab6b91a00c4eb0fe7c633b08aec86f2ebab9598fac4cebf2ab862ce7e0c43c50a969756c1fbb8fb
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-autoformat@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-autoformat@npm:31.1.0"
+"@ckeditor/ckeditor5-autoformat@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-autoformat@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
-  checksum: 81e2c6aa06247b4f99520fa5cff84ddd98667a34582e44dcdbe218aff1ef87ca1aaf155b28d88ebe51456617cf9aa542e931db308b67b2694f7ecc4959bee212
+    ckeditor5: ^35.4.0
+  checksum: 13e6a5482e65170fa385ca1b9e71a16dfba0172da596fe114882f298e5af57d28a9aefc6586792935aef955eb28868d08f0f04e87ebe7e31b7305ad82aad0b36
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-basic-styles@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-basic-styles@npm:31.1.0"
+"@ckeditor/ckeditor5-basic-styles@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-basic-styles@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
-  checksum: 3f05415c8e35bfae647fdb525f82259b4175b635624578dc8f1698eaa64878be1548b3841eb21c6703653c345f6c3ea9bee76d4900dabc42e639365e1a2a46d5
+    ckeditor5: ^35.4.0
+  checksum: 0d9bd293191e70ba8050284cfe75b09d5cece26b6bf529b1abc213e99137289c173d5f50841c9dc0bb1cbd6ebd5ea9d6a4eb535b57234a56db945a0ecf958a23
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-block-quote@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-block-quote@npm:31.1.0"
+"@ckeditor/ckeditor5-block-quote@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-block-quote@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
-  checksum: 9c5a5be9942b7fcd0386dca995073cafb624b66e9cc8ac8b4d1ff25be4a28fc2833487c26284eab245f261074082e49898ce0252d601e88233514d6b15a5b08b
+    ckeditor5: ^35.4.0
+  checksum: c3577c42a12edeaed86255a6da685a794cb8da3e46caca8eb2d69ffa8556709eaa0f34b5c1a45823e21ca9a7ddc7a62635a3e1fc3df919da3f01ce469f783b00
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-clipboard@npm:^31.0.0, @ckeditor/ckeditor5-clipboard@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-clipboard@npm:31.1.0"
+"@ckeditor/ckeditor5-clipboard@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-clipboard@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-core": ^31.1.0
-    "@ckeditor/ckeditor5-engine": ^31.1.0
-    "@ckeditor/ckeditor5-utils": ^31.1.0
-    "@ckeditor/ckeditor5-widget": ^31.1.0
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-engine": ^35.4.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
+    "@ckeditor/ckeditor5-widget": ^35.4.0
     lodash-es: ^4.17.11
-  checksum: 55e436d1d405aa2aeed8f78195d2357cde6e01468f311bd5b594a442f4dd112285861495a268cef7ec2d48235052592b76fbed11f2343846b2bed1cf75d45d07
+  checksum: 41840cfeea37d01df888029cef36446ccdbd4f128f15fb1c83db9f1002eed28f20114dd0f31b40dc769b29aca34727b1b77049858b02f1dfdb2de8c082b0667a
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-code-block@npm:31.0.0":
-  version: 31.0.0
-  resolution: "@ckeditor/ckeditor5-code-block@npm:31.0.0"
+"@ckeditor/ckeditor5-code-block@npm:35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-code-block@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.0.0
-  checksum: c3b8368d8f9e67d592fec64d0e139918a1d7b7a90844d572d152ddb1c3a4ae0403d42145f466eb4640e27f63fa92695a2d41aeac5558647ad65284b336afba37
+    ckeditor5: ^35.4.0
+  checksum: 4e3f76298778bbb317eb074c3bf056a57e6f9d1ed62ff8bad2779c5cf67ba33b0195fe97e41c0fc5c6a5d4893c6e78f8d6dbd86b146d5516b7f969ab457ddc71
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-core@npm:^31.0.0, @ckeditor/ckeditor5-core@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-core@npm:31.1.0"
+"@ckeditor/ckeditor5-core@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-core@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-engine": ^31.1.0
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-    "@ckeditor/ckeditor5-utils": ^31.1.0
+    "@ckeditor/ckeditor5-engine": ^35.4.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
     lodash-es: ^4.17.15
-  checksum: 0c8ec5d89604bf11be5a8a8502c6679030084b2cc7b98176ca85ee318999ff10886deb69e61f58d0dc0725e7a0d41629a47838c8c0651f6a9acd6ac3eef73f85
+  checksum: 008d17291da980fe8841b1345a387081a8223f88df5f02f4ae50fa439e00b0eff4c883fbb52e763f962cad18e262fdcbbe90fb148e9938da4d7300f5b083d87f
   languageName: node
   linkType: hard
 
@@ -673,139 +673,132 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-easy-image@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-easy-image@npm:31.1.0"
+"@ckeditor/ckeditor5-easy-image@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-easy-image@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
-  checksum: 21ad263c70a6c39a2fd0b9b6882fcd2d4e9db636ef1784e42f2fb7a2e00a9c37cac2bf8b551a95fd25e08b04cf52fca4b748bbc3b4c3a2f743176ab1d02cf487
+    ckeditor5: ^35.4.0
+  checksum: 4995b49644a133e938d0f59f915ed6592fb9550a616555cac813c6799d422b3225a6362ea5fb60108179fa9b66f644b135cdeb1f78f7af6133a24bc892c5f477
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-editor-classic@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-editor-classic@npm:31.1.0"
+"@ckeditor/ckeditor5-editor-classic@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-editor-classic@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
+    ckeditor5: ^35.4.0
     lodash-es: ^4.17.15
-  checksum: 131cf6198aef28b1910c902fa99f6aa7d0167d14b1c99af7c460b87812273e81602e98140a664a83fa8cf685b8b6e5317ec68aa04a857fedd32c9e9b884534a5
+  checksum: 43bdff3de6e148f9c1f63102750fcd05c299f211f708adfc71911952a877aae6ece5c71bcf083bce35d9fc33123aa67faf078595796f12203ad48d5c6f73cecf
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-engine@npm:^31.0.0, @ckeditor/ckeditor5-engine@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-engine@npm:31.1.0"
+"@ckeditor/ckeditor5-engine@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-engine@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-utils": ^31.1.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
     lodash-es: ^4.17.15
-  checksum: 536f9645219084c8c869173bf1050c465d690bbc1ca486a730d5bd7cf2988bce4d1e5898fc264c1ca7b9eac475e2367e59fdb3a0c95deb749cf2cfbfed59a4f3
+  checksum: 8a8454011d43d00327d9375849d1f8c98def9238f4360447988f4b9f05d66361f73705e8f7da4aa9e3d318eecd0623ea7b0cbab42de485d24358f2e41c0a8edf
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-enter@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-enter@npm:31.1.0"
+"@ckeditor/ckeditor5-enter@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-enter@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-core": ^31.1.0
-    "@ckeditor/ckeditor5-engine": ^31.1.0
-    "@ckeditor/ckeditor5-utils": ^31.1.0
-  checksum: b90c1535a125e57d2ed8a0ef572027b7845e8cbbd9447a3d67e8c74da5b18e288a31d5bc2e441c6827ccb4680f7373de44ef3fbbadca6dc65925598e7fbf3ab4
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-engine": ^35.4.0
+  checksum: 4c77b182fbc2a807fe633472d401f55df505c86e655362e1bc5eec374986d688079331aa5e27e044726ead15db880f09f690746984121a5df19dfc14d72a33ef
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-essentials@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-essentials@npm:31.1.0"
+"@ckeditor/ckeditor5-essentials@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-essentials@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
-  checksum: 02ac0b33f8c888c903f8e944f24620d711448c36e0d057f6da475c4a7161c21d68c4b3c7455f6d36474f7b39448f434014995b99c0fb70411dbfaacf71826fae
+    ckeditor5: ^35.4.0
+  checksum: beb10f938c1b42bd50143d47847aa61239dc5f93eb47eef32518a33d05351699ed4f03e418139c9b1dc2dc3517dc02f6fa6c59557f3b4eeafa387d7de6bf9d06
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-heading@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-heading@npm:31.1.0"
+"@ckeditor/ckeditor5-heading@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-heading@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
-  checksum: 91078cd834c1818b593fdaa06cc76e08cc5ffab5ff1c452ba790001a5e722505a705d1711dfe7141812c10208b75ee9e6b7303f7121f74603bf2f4bb8b271b72
+    ckeditor5: ^35.4.0
+  checksum: f40c24d358015bacc72b36a2fcf8e64efed225da967e3fbdf4965d1f795573e5772d9bda73bab6cfd8130fe814b57820efbad9213d788eb285842fe1ddaf6e75
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-image@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-image@npm:31.1.0"
+"@ckeditor/ckeditor5-image@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-image@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-    ckeditor5: ^31.1.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    ckeditor5: ^35.4.0
     lodash-es: ^4.17.15
-  checksum: 482853dec7e52fcfa166794a8297919719b56220316f17de6c9fe220f44be370a7178637b91449125e7a8cc8f8cdb6ed7738e21805f74047c10369535e3ea4bf
+  checksum: 71a4421bcc00d0f6c10f76ba309a47f85017bf16aeede24a4ff94766581d8fd00742a0b07bdbfe4ebfcff9399fded87440677ae30c264f78e6446a1c1d9f4e68
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-inspector@npm:^2.2.2":
-  version: 2.3.0
-  resolution: "@ckeditor/ckeditor5-inspector@npm:2.3.0"
-  checksum: e833b8392a77495581452cff1a411107e44ea8f985d827add805674b65e6b800ea2de24851d24d38fa29a4426e284ea0c5de420caef20169aaff2dd941856946
-  languageName: node
-  linkType: hard
-
-"@ckeditor/ckeditor5-inspector@npm:^3.1.1":
+"@ckeditor/ckeditor5-inspector@npm:^3.0.0, @ckeditor/ckeditor5-inspector@npm:^3.1.1":
   version: 3.1.1
   resolution: "@ckeditor/ckeditor5-inspector@npm:3.1.1"
   checksum: 88586be562f2840e18a2380d264e302c9c676f5f0dc8e3750b1472df8b12c44f38076b63f1298030e8a9224da7dea0a1feb62c91527fa7862772debd3945fec6
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-link@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-link@npm:31.1.0"
+"@ckeditor/ckeditor5-link@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-link@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-    ckeditor5: ^31.1.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    ckeditor5: ^35.4.0
     lodash-es: ^4.17.15
-  checksum: df9ef70a37c59bcd3b795bb73768e6b9e0ec165f6006c15e57e165f6df009f9aeb184a03e72d86db57bdbce1a79b84e2a15cc4c1ae5ecdfbaca70ca27d904509
+  checksum: d36e466f9d86ba492b64ff6a4c46891aee5d9c5c2f09ed4ddf2aa7a4b93d84e1f27805804b40fbc001477bd1539e71e1af1b67647b793df992a1853d6116f1f7
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-list@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-list@npm:31.1.0"
+"@ckeditor/ckeditor5-list@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-list@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
-  checksum: c763363da93406236f7ef6cb6771f30dcb8e80465416d8de1ee97864fc394b0e8b83a3157f2cf77a40b644846e0e2ba081f42c709d5a35403fa9b39ca6a8e205
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    ckeditor5: ^35.4.0
+  checksum: ccd1aebc8b90a870560a52966299439e7554cf5f3cebff1755dec9bcc3fe3d91ae8c0d532e6560f88d477d88edff6a899a96de5b3d841014a86b70b0309505df
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-markdown-gfm@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-markdown-gfm@npm:31.1.0"
+"@ckeditor/ckeditor5-markdown-gfm@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-markdown-gfm@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
-    marked: 1.1.1
+    ckeditor5: ^35.4.0
+    marked: 4.0.12
     turndown: ^6.0.0
     turndown-plugin-gfm: ^1.0.2
-  checksum: 92cb4e339c6591684237088cbba8037a71fc88f7f394a4dea31bb762da097685b1dbb1c5f53d66d0f447996635482e4ddde59d6b0b2e37ab49bff21bffe6489c
+  checksum: 75048ba4189617e3d55da2a9683a997a88886c6851ff8a17e89e251d627ddd8d7243a22070f9eccae148d61931da13b0afa83f6e50f9a03b987bb17fe423f93c
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-media-embed@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-media-embed@npm:31.1.0"
+"@ckeditor/ckeditor5-media-embed@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-media-embed@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-    ckeditor5: ^31.1.0
-  checksum: 8d080ee39b771f70f1053e3139ea292b312b028f41fdcdcefe8ffa9f79534ae58e09f49d6b54552f2aee48f62675c7d64b2d1559d759874e66f194ef341cb2cb
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    ckeditor5: ^35.4.0
+  checksum: 2f2fa61c80651d489d46e210d8c89f6185b03cbeda1b52bc1968ed021aa541eb17f2c841551786bbfbe53896ecd539ffd0249d9be7e1c44b9ce09141e3d45172
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-paragraph@npm:^31.0.0, @ckeditor/ckeditor5-paragraph@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-paragraph@npm:31.1.0"
+"@ckeditor/ckeditor5-paragraph@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-paragraph@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-core": ^31.1.0
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-    "@ckeditor/ckeditor5-utils": ^31.1.0
-  checksum: 1ae6521d28fd0c9b4651824513070903b6f6353089741f4cf62c53e588bb94a4fd3b40b9b2761e70f1ea56f39751cf9d9cd1a2b53f60421139592b3bde2d2a60
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
+  checksum: d24958f6995368fb5cac36b209fb93c9d08beef44d4bae415f3f8c339cfbb19ba91836e2b2072a0ab6bc9f7620391b8f2c5ad033703f32b39972b20c83b598b1
   languageName: node
   linkType: hard
 
@@ -820,102 +813,102 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-select-all@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-select-all@npm:31.1.0"
+"@ckeditor/ckeditor5-select-all@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-select-all@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-core": ^31.1.0
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-    "@ckeditor/ckeditor5-utils": ^31.1.0
-  checksum: 65653fd439e0005bedde577600933f2bfa0edf814b75940b9a56379d434ef2364c927f33a3698a708284365d0ee79a1508d44a219108ca8c0f69d30b2b9e4f7a
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
+  checksum: 1bebb1cfe66741573187a36fd922bd7f2b7275e3d4d78d0494a2c915fb2d9be4361f87903654b3b8da7debd9f804f0df659df1753adcb949e130015f00e24fc1
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-table@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-table@npm:31.1.0"
+"@ckeditor/ckeditor5-table@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-table@npm:35.4.0"
   dependencies:
-    ckeditor5: ^31.1.0
+    ckeditor5: ^35.4.0
     lodash-es: ^4.17.15
-  checksum: f9c1a6fc1d3f9eb21201d9f3f4cb9c7399beeb1fa4a8920c1cca6dc19186776dddfaf8efe50a35ceb54ab9cb0f7ceb423e7d69b1f3b2a127370e3c9c059ab39d
+  checksum: a860951711bfda77639926c52c3659cfbfd336c472f447d487c7aa4cb220e5958ffdd311bfa2978744dc3188c756bf7c8a0ca38337efd638169fb2eb4fb2605a
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-theme-lark@npm:^31.0.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-theme-lark@npm:31.1.0"
+"@ckeditor/ckeditor5-theme-lark@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-theme-lark@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-  checksum: 57c16ea400d98f6c82f86f1a82cf8e7598711eb82120ddd99d17dca58377b8adc6de426d5fb92a7db12859afd29bcab537f17d39795000755af7d8ac433c9f99
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+  checksum: ffc430fff71d7cd003a74962b32892de61ee7200d57de44f7257f35c530f943062bad53bd45d14c4f689ca049dee4711bd79d3410422d7bb0d618a602e63f50f
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-typing@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-typing@npm:31.1.0"
+"@ckeditor/ckeditor5-typing@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-typing@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-core": ^31.1.0
-    "@ckeditor/ckeditor5-engine": ^31.1.0
-    "@ckeditor/ckeditor5-utils": ^31.1.0
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-engine": ^35.4.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
     lodash-es: ^4.17.15
-  checksum: 286b710ae382ee92a51d98e86f6573b3b1f0008f9d670c06a75bffd8b23d9220e2076afc99bbb643595607973b91493e2f36f5bc285b0558ecdb75694cb82ba6
+  checksum: 59659a0c253ed2fb38e3ce9268ae8907d5854cb08de27d3a227a35ca8a5a4226bfa7b6723b6c09f151864702ff58f11f8e44968e54f917e54d27ba03023584a0
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-ui@npm:^31.0.0, @ckeditor/ckeditor5-ui@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-ui@npm:31.1.0"
+"@ckeditor/ckeditor5-ui@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-ui@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-core": ^31.1.0
-    "@ckeditor/ckeditor5-utils": ^31.1.0
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
     lodash-es: ^4.17.15
-  checksum: 367561bba9403bd0d24c637a1f62d3594fc526eba54b61de0edc0ffd89d9a9ed4c6ea182d22cdfe472d8a2ced3c513d81a9d00ddfc6ac7d9fd1c73c428cd63e4
+  checksum: c5401797c850c7a216e84b6aa76887b2445fbf6930cdce480108acd944a695981709e764b3b206b07073f4abd1170c8f67fd0f1c16b91e6eb40bec6d7afd6271
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-undo@npm:^31.0.0, @ckeditor/ckeditor5-undo@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-undo@npm:31.1.0"
+"@ckeditor/ckeditor5-undo@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-undo@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-core": ^31.1.0
-    "@ckeditor/ckeditor5-engine": ^31.1.0
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-  checksum: 2895dc84077ac35cf6545f0d366208aaff013692088051b7a455dd7a9f02d777cbf0bd1c88db52e8d93ede0232ad4a8ecfae6d4500a00fd34fcd0bcb26832b9f
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-engine": ^35.4.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+  checksum: f502b043532c0e8338ae0205a9faa1427456fbd50301a630b237db8afcf2984371ef96c6b1a6334ac7a420285489957954407dfff8d30523e708562d4bb2af6a
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-upload@npm:^31.0.0, @ckeditor/ckeditor5-upload@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-upload@npm:31.1.0"
+"@ckeditor/ckeditor5-upload@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-upload@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-core": ^31.1.0
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-    "@ckeditor/ckeditor5-utils": ^31.1.0
-  checksum: fca03adc25290147abd6ecb5b4526f7d28cea9f2069d86b45e3a02ee25065791a12156f9e32dff87ac0431908b70e953f36c41e344ba9355cff8deaa970a2369
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
+  checksum: b62d3d8e1c504e31e614d85b77ded4c37f5ec75c5e58ffa566038c46409b036eaf91dd58883b8bd7b97b9c9e0e5aa3a38077f3618851aff4642c9facfcf287c9
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-utils@npm:^31.0.0, @ckeditor/ckeditor5-utils@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-utils@npm:31.1.0"
+"@ckeditor/ckeditor5-utils@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-utils@npm:35.4.0"
   dependencies:
     lodash-es: ^4.17.15
-  checksum: 88bfe2a20f80271aa32095dcbc320ba26462e0a6640864bef5ca9889a6dbbc3c72a93e83d1385671ce00df009d995660b20850c6c59f8f82d7e1c30d3f247189
+  checksum: d0dd1b225cb880c06993fdb4cb8b472e686c46cc9ba3010f76018e156b9af68e24793e5d6218ea54bf70ea242c976c1700e8527ef46a1e69befa49ffac64944a
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-widget@npm:^31.0.0, @ckeditor/ckeditor5-widget@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "@ckeditor/ckeditor5-widget@npm:31.1.0"
+"@ckeditor/ckeditor5-widget@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "@ckeditor/ckeditor5-widget@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-core": ^31.1.0
-    "@ckeditor/ckeditor5-engine": ^31.1.0
-    "@ckeditor/ckeditor5-enter": ^31.1.0
-    "@ckeditor/ckeditor5-typing": ^31.1.0
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-    "@ckeditor/ckeditor5-utils": ^31.1.0
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-engine": ^35.4.0
+    "@ckeditor/ckeditor5-enter": ^35.4.0
+    "@ckeditor/ckeditor5-typing": ^35.4.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
     lodash-es: ^4.17.15
-  checksum: bca2c99ef0b791a145e1ddf99029581adf752c8b90517f2b21caba02cc3c7787fcfe632fdd9d33f74b8f619026f7f8f9d10ead5b6b5a02533a3e269807fcb609
+  checksum: 21eec7a4b812849c1d36dddd7b2d8cdb87af32b0d280dbbd4f630cac4d2403a00ba90811abe9dffedc52b31b4440111b26f1cd6c44ba9178ac143d997980717f
   languageName: node
   linkType: hard
 
@@ -1496,14 +1489,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mitodl/ckeditor5-resource-link@npm:^31.0.0":
-  version: 31.0.0
-  resolution: "@mitodl/ckeditor5-resource-link@npm:31.0.0"
+"@mitodl/ckeditor5-resource-link@npm:^35.4.0-rc1":
+  version: 35.4.0-rc1
+  resolution: "@mitodl/ckeditor5-resource-link@npm:35.4.0-rc1"
   dependencies:
-    "@ckeditor/ckeditor5-ui": ^31.0.0
-    ckeditor5: ^31.0.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    ckeditor5: ^35.4.0
     lodash-es: ^4.17.15
-  checksum: 5592269f869174d8f857595dfddffaa96fc1ddaeef7eca3f364a6964324ed1fe9106bedf83410c00b0abdf5ebe67c2045975666684adcae4999678eba3bbdae9
+  checksum: 20247c36f73b988f702df9eb0a7135eba0ffa358b912839261c030099ba2916c0d150afcdaaf00e437bd68443cb11f72fe6630c09fc15a2fc300be4a9fc3388f
   languageName: node
   linkType: hard
 
@@ -2084,12 +2077,12 @@ __metadata:
   linkType: hard
 
 "@types/ckeditor__ckeditor5-cloud-services@npm:*":
-  version: 29.0.3
-  resolution: "@types/ckeditor__ckeditor5-cloud-services@npm:29.0.3"
+  version: 29.0.4
+  resolution: "@types/ckeditor__ckeditor5-cloud-services@npm:29.0.4"
   dependencies:
     "@types/ckeditor__ckeditor5-core": "*"
     "@types/ckeditor__ckeditor5-utils": "*"
-  checksum: c20359af56f00fe26d02ed09fadfbd459cb9ac1e13b2d529409119bab35ecff6c21965db0d6c7a42282c4c904ea888cc38292b9f48339e7076c37574874cbb61
+  checksum: f941b37effafc41423c50dca8467ca8f714d8e4fb1e4300aa8d98e0e0970f538e52e6ae0de5d790c1b0edb95c6f6ac67a0e460c142cc09f1de276bb84418f308
   languageName: node
   linkType: hard
 
@@ -2115,9 +2108,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/ckeditor__ckeditor5-core@npm:*":
-  version: 33.0.2
-  resolution: "@types/ckeditor__ckeditor5-core@npm:33.0.2"
+"@types/ckeditor__ckeditor5-core@npm:*, @types/ckeditor__ckeditor5-core@npm:^33.0.3":
+  version: 33.0.3
+  resolution: "@types/ckeditor__ckeditor5-core@npm:33.0.3"
   dependencies:
     "@types/ckeditor__ckeditor5-alignment": "*"
     "@types/ckeditor__ckeditor5-autosave": "*"
@@ -2147,27 +2140,17 @@ __metadata:
     "@types/ckeditor__ckeditor5-upload": "*"
     "@types/ckeditor__ckeditor5-utils": "*"
     "@types/ckeditor__ckeditor5-word-count": "*"
-  checksum: 1af81248282ef3cc10625599f9a9b4be46465281963c3262bde5fc704bc8c805f573e42ede86044ac60584e57eb0d0f942d922a599c44c6df8de359ad5117d6f
-  languageName: node
-  linkType: hard
-
-"@types/ckeditor__ckeditor5-core@npm:^11.0.3":
-  version: 11.0.10
-  resolution: "@types/ckeditor__ckeditor5-core@npm:11.0.10"
-  dependencies:
-    "@types/ckeditor__ckeditor5-engine": "*"
-    "@types/ckeditor__ckeditor5-utils": "*"
-  checksum: 830c34efd03c11093224ab19bb123c2287e68bdab1189050366297039b4e454469ae452ba31b7002143f816d2d904380944111bd83af636d69e4170168bd2282
+  checksum: 06117c03bf072be8a803b38e328fc3c22e73d597d76cfdcdde0efd39c52bdea427d8aeee3328176cde4d7f0bf8e2a5e4f9111ae2d35b967a5cb6595168f9b1dd
   languageName: node
   linkType: hard
 
 "@types/ckeditor__ckeditor5-engine@npm:*":
-  version: 32.0.8
-  resolution: "@types/ckeditor__ckeditor5-engine@npm:32.0.8"
+  version: 32.0.11
+  resolution: "@types/ckeditor__ckeditor5-engine@npm:32.0.11"
   dependencies:
     "@types/ckeditor__ckeditor5-engine": "*"
     "@types/ckeditor__ckeditor5-utils": "*"
-  checksum: e7e9a41bf52e1f7e02a336535ec62722392f2cfec319d00f878dd4ed10beb076e890a0721f71ad41b859e5b2bc1b241a9f5678295f5eadf86648f4a92c51c5b8
+  checksum: 7baf8658976e93354d536f0962caf014429e333be2151c10b84dda03934979931d013c11dee93c45219bc6d6dc2d8a64b0c8ffcca8f23138c8eb1073f5566887
   languageName: node
   linkType: hard
 
@@ -2202,14 +2185,14 @@ __metadata:
   linkType: hard
 
 "@types/ckeditor__ckeditor5-font@npm:*":
-  version: 33.0.0
-  resolution: "@types/ckeditor__ckeditor5-font@npm:33.0.0"
+  version: 33.0.1
+  resolution: "@types/ckeditor__ckeditor5-font@npm:33.0.1"
   dependencies:
     "@types/ckeditor__ckeditor5-core": "*"
     "@types/ckeditor__ckeditor5-engine": "*"
     "@types/ckeditor__ckeditor5-ui": "*"
     "@types/ckeditor__ckeditor5-utils": "*"
-  checksum: 17052df7c33a7a6683dedc43b54d473171f89ccbdad92ba767a6af359323689f47a8c62118e91c669585b06b23a79768423ad11fadca38df676a5e77fac5376e
+  checksum: e822652ed22fc65c4c40000f8b634f8f26081f38eca162894d88511131e3f8b78c073d191a059f376d3122fe9b1db6a99473709e48e07ddb7c86b3fcdf1cf2f6
   languageName: node
   linkType: hard
 
@@ -2270,8 +2253,8 @@ __metadata:
   linkType: hard
 
 "@types/ckeditor__ckeditor5-link@npm:*":
-  version: 32.0.1
-  resolution: "@types/ckeditor__ckeditor5-link@npm:32.0.1"
+  version: 32.0.4
+  resolution: "@types/ckeditor__ckeditor5-link@npm:32.0.4"
   dependencies:
     "@types/ckeditor__ckeditor5-clipboard": "*"
     "@types/ckeditor__ckeditor5-core": "*"
@@ -2280,7 +2263,7 @@ __metadata:
     "@types/ckeditor__ckeditor5-typing": "*"
     "@types/ckeditor__ckeditor5-ui": "*"
     "@types/ckeditor__ckeditor5-utils": "*"
-  checksum: bfa5d2bc00d4f6f3974bb3ca4f47e53a960ac91d09cdb1144bcbec0879a9955a8376d1175a038f1ed30b80a5317a7b8ba35913b32c80dc3baf4bdf4857d89cc0
+  checksum: efb9848dd300c8e39a867df3bce8c8e859919ce12570c98d72ec8d744ceb2c7aa7b478d7a3cc0d5b9229f137819ef234ba87fd1fad9ba145c0af26306ec156da
   languageName: node
   linkType: hard
 
@@ -2392,25 +2375,25 @@ __metadata:
   linkType: hard
 
 "@types/ckeditor__ckeditor5-typing@npm:*":
-  version: 32.0.0
-  resolution: "@types/ckeditor__ckeditor5-typing@npm:32.0.0"
+  version: 32.0.1
+  resolution: "@types/ckeditor__ckeditor5-typing@npm:32.0.1"
   dependencies:
     "@types/ckeditor__ckeditor5-core": "*"
     "@types/ckeditor__ckeditor5-engine": "*"
     "@types/ckeditor__ckeditor5-utils": "*"
-  checksum: 66d4abd287b3efa1697c4cdc4ae9b2dcbff77fa07e84560e9a0882cfa09d5a68a4ef5ac4883a8326e2d1bc38d2b2f52065ed79710d881130af103c3d5042d5fa
+  checksum: ae452707dc722eb5f87345a79cd5935b0835d5190d8f27986df74b6c25f902d8383de090304bd0dd27074442d50735119e73043ab05aba98bfdd0f9ad79e2532
   languageName: node
   linkType: hard
 
 "@types/ckeditor__ckeditor5-ui@npm:*":
-  version: 32.0.0
-  resolution: "@types/ckeditor__ckeditor5-ui@npm:32.0.0"
+  version: 32.0.2
+  resolution: "@types/ckeditor__ckeditor5-ui@npm:32.0.2"
   dependencies:
     "@types/ckeditor__ckeditor5-core": "*"
     "@types/ckeditor__ckeditor5-engine": "*"
     "@types/ckeditor__ckeditor5-ui": "*"
     "@types/ckeditor__ckeditor5-utils": "*"
-  checksum: 241f4483fb44d505b1b8be917cef519a1273a102ddc091c4394d0e13709a036205b2068ab547ccad290bb47baeea7cbf299ec984e760567b5f239f3190d60931
+  checksum: b8d771d9a2868b815b572af261ad0f05505e08074ac8168ffdcbe49acda32c79ff882dd6222eff2aa6e86b62eb1258f9ab211e3edfc28eae4ea287ccc9da77a9
   languageName: node
   linkType: hard
 
@@ -2436,18 +2419,18 @@ __metadata:
   linkType: hard
 
 "@types/ckeditor__ckeditor5-utils@npm:*":
-  version: 28.0.11
-  resolution: "@types/ckeditor__ckeditor5-utils@npm:28.0.11"
+  version: 28.0.14
+  resolution: "@types/ckeditor__ckeditor5-utils@npm:28.0.14"
   dependencies:
     "@types/ckeditor__ckeditor5-core": "*"
     "@types/ckeditor__ckeditor5-engine": "*"
-  checksum: ac627cbdf3a2429837f139b9afbc58b28e460d17932043c86a40f9a6ab18fecc7085501d77f83cda9bfb0144d5e02ecee1c6bcd44c229af8debf12cf30c051fc
+  checksum: 10577bf72c5f43c2256b0b431600c3e95c385b0a92b37682d60c523db6884813632a706b78e03e8aa24acd101f7e8c57132e9750b0104ff72a2cb755dd41f846
   languageName: node
   linkType: hard
 
 "@types/ckeditor__ckeditor5-widget@npm:*":
-  version: 33.0.0
-  resolution: "@types/ckeditor__ckeditor5-widget@npm:33.0.0"
+  version: 33.0.1
+  resolution: "@types/ckeditor__ckeditor5-widget@npm:33.0.1"
   dependencies:
     "@types/ckeditor__ckeditor5-core": "*"
     "@types/ckeditor__ckeditor5-engine": "*"
@@ -2455,7 +2438,7 @@ __metadata:
     "@types/ckeditor__ckeditor5-typing": "*"
     "@types/ckeditor__ckeditor5-ui": "*"
     "@types/ckeditor__ckeditor5-utils": "*"
-  checksum: ab54e2d529f25262777abda882888d7d0cc1b6ab8a600dc18e4cc800446567c3747f567cc6c2a57a9f51767bacb2ea4124fc7d0e94d642a00daf68c92ae51cae
+  checksum: e0215fc44be6149a2f5c85be10a332b354946ec094aa7d8ba9355e10f47c00bd19b22d951f12b6df9239c2f41a7bda4c5c4430a0f5ee6c2139a6d8da1fec4863
   languageName: node
   linkType: hard
 
@@ -4622,39 +4605,39 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ckeditor5-math@npm:31.0.0":
-  version: 31.0.0
-  resolution: "ckeditor5-math@npm:31.0.0"
+"ckeditor5-math@npm:35.4.0":
+  version: 35.4.0
+  resolution: "ckeditor5-math@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-clipboard": ^31.0.0
-    "@ckeditor/ckeditor5-core": ^31.0.0
-    "@ckeditor/ckeditor5-engine": ^31.0.0
-    "@ckeditor/ckeditor5-inspector": ^2.2.2
-    "@ckeditor/ckeditor5-ui": ^31.0.0
-    "@ckeditor/ckeditor5-undo": ^31.0.0
-    "@ckeditor/ckeditor5-utils": ^31.0.0
-    "@ckeditor/ckeditor5-widget": ^31.0.0
-  checksum: 66c5321b0c1c4d91166ea3bb44172bddddb059f07a4b0b4815c751fe3f959a6f5196b1586ff1c0b9d0686195e7f324d147f5c5689e3ad4a6cb5d144b1fff7746
+    "@ckeditor/ckeditor5-clipboard": ^35.4.0
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-engine": ^35.4.0
+    "@ckeditor/ckeditor5-inspector": ^3.0.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    "@ckeditor/ckeditor5-undo": ^35.4.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
+    "@ckeditor/ckeditor5-widget": ^35.4.0
+  checksum: e263a39453f833e1b2d772a38811376cbd3226c20fc60899aa9c02f1722c1c72f02d2c361726c7b19310750d47eacc72f974bb67b260fd435927be50ce7f0e9a
   languageName: node
   linkType: hard
 
-"ckeditor5@npm:^31.0.0, ckeditor5@npm:^31.1.0":
-  version: 31.1.0
-  resolution: "ckeditor5@npm:31.1.0"
+"ckeditor5@npm:^35.4.0":
+  version: 35.4.0
+  resolution: "ckeditor5@npm:35.4.0"
   dependencies:
-    "@ckeditor/ckeditor5-clipboard": ^31.1.0
-    "@ckeditor/ckeditor5-core": ^31.1.0
-    "@ckeditor/ckeditor5-engine": ^31.1.0
-    "@ckeditor/ckeditor5-enter": ^31.1.0
-    "@ckeditor/ckeditor5-paragraph": ^31.1.0
-    "@ckeditor/ckeditor5-select-all": ^31.1.0
-    "@ckeditor/ckeditor5-typing": ^31.1.0
-    "@ckeditor/ckeditor5-ui": ^31.1.0
-    "@ckeditor/ckeditor5-undo": ^31.1.0
-    "@ckeditor/ckeditor5-upload": ^31.1.0
-    "@ckeditor/ckeditor5-utils": ^31.1.0
-    "@ckeditor/ckeditor5-widget": ^31.1.0
-  checksum: 8acff1829876dceb718fc06ce46619dff8bfcde930ed0e3a387a7aab7453f35910d41631d98c2ad7f15fafda76acbc0e3b95232d37b0a3073a4741754bc2a1ff
+    "@ckeditor/ckeditor5-clipboard": ^35.4.0
+    "@ckeditor/ckeditor5-core": ^35.4.0
+    "@ckeditor/ckeditor5-engine": ^35.4.0
+    "@ckeditor/ckeditor5-enter": ^35.4.0
+    "@ckeditor/ckeditor5-paragraph": ^35.4.0
+    "@ckeditor/ckeditor5-select-all": ^35.4.0
+    "@ckeditor/ckeditor5-typing": ^35.4.0
+    "@ckeditor/ckeditor5-ui": ^35.4.0
+    "@ckeditor/ckeditor5-undo": ^35.4.0
+    "@ckeditor/ckeditor5-upload": ^35.4.0
+    "@ckeditor/ckeditor5-utils": ^35.4.0
+    "@ckeditor/ckeditor5-widget": ^35.4.0
+  checksum: 62673f8a8aaccde86963df8b1551eda3ccfff2cb9996dcb518111786efde85d6f0615f8b9754ad0ee4dc4bd5fd0ed59c82f57cdd579d51881a7c8bed19733946
   languageName: node
   linkType: hard
 
@@ -9785,12 +9768,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"marked@npm:1.1.1":
-  version: 1.1.1
-  resolution: "marked@npm:1.1.1"
+"marked@npm:4.0.12":
+  version: 4.0.12
+  resolution: "marked@npm:4.0.12"
   bin:
-    marked: bin/marked
-  checksum: 441bea8ee14ec7c4c717c4335c8666e0617595333cab6bfffb99e43e7d5c6c9cb4d4342ba3fb9ee2f4cf55761f46eb78bb49f46b745bbc9c5af7c0252a831f4c
+    marked: bin/marked.js
+  checksum: 7575117f85a8986652f3ac8b8a7b95056c4c5fce01a1fc76dc4c7960412cb4c9bd9da8133487159b6b3ff84f52b543dfe9a36f826a5f358892b5ec4b6824f192
   languageName: node
   linkType: hard
 
@@ -10577,34 +10560,34 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "ocw_studio@workspace:."
   dependencies:
-    "@ckeditor/ckeditor5-adapter-ckfinder": ^31.0.0
-    "@ckeditor/ckeditor5-autoformat": ^31.0.0
-    "@ckeditor/ckeditor5-basic-styles": ^31.0.0
-    "@ckeditor/ckeditor5-block-quote": ^31.0.0
-    "@ckeditor/ckeditor5-code-block": 31.0.0
-    "@ckeditor/ckeditor5-core": ^31.0.0
+    "@ckeditor/ckeditor5-adapter-ckfinder": ^35.4.0
+    "@ckeditor/ckeditor5-autoformat": ^35.4.0
+    "@ckeditor/ckeditor5-basic-styles": ^35.4.0
+    "@ckeditor/ckeditor5-block-quote": ^35.4.0
+    "@ckeditor/ckeditor5-code-block": 35.4.0
+    "@ckeditor/ckeditor5-core": ^35.4.0
     "@ckeditor/ckeditor5-dev-utils": ^26.1.0
     "@ckeditor/ckeditor5-dev-webpack-plugin": ^26.1.0
-    "@ckeditor/ckeditor5-easy-image": ^31.0.0
-    "@ckeditor/ckeditor5-editor-classic": ^31.0.0
-    "@ckeditor/ckeditor5-engine": ^31.0.0
-    "@ckeditor/ckeditor5-essentials": ^31.0.0
-    "@ckeditor/ckeditor5-heading": ^31.0.0
-    "@ckeditor/ckeditor5-image": ^31.0.0
+    "@ckeditor/ckeditor5-easy-image": ^35.4.0
+    "@ckeditor/ckeditor5-editor-classic": ^35.4.0
+    "@ckeditor/ckeditor5-engine": ^35.4.0
+    "@ckeditor/ckeditor5-essentials": ^35.4.0
+    "@ckeditor/ckeditor5-heading": ^35.4.0
+    "@ckeditor/ckeditor5-image": ^35.4.0
     "@ckeditor/ckeditor5-inspector": ^3.1.1
-    "@ckeditor/ckeditor5-link": ^31.0.0
-    "@ckeditor/ckeditor5-list": ^31.0.0
-    "@ckeditor/ckeditor5-markdown-gfm": ^31.0.0
-    "@ckeditor/ckeditor5-media-embed": ^31.0.0
-    "@ckeditor/ckeditor5-paragraph": ^31.0.0
+    "@ckeditor/ckeditor5-link": ^35.4.0
+    "@ckeditor/ckeditor5-list": ^35.4.0
+    "@ckeditor/ckeditor5-markdown-gfm": ^35.4.0
+    "@ckeditor/ckeditor5-media-embed": ^35.4.0
+    "@ckeditor/ckeditor5-paragraph": ^35.4.0
     "@ckeditor/ckeditor5-react": ^3.0.3
-    "@ckeditor/ckeditor5-table": ^31.0.0
-    "@ckeditor/ckeditor5-theme-lark": ^31.0.0
-    "@ckeditor/ckeditor5-upload": ^31.0.0
-    "@ckeditor/ckeditor5-widget": ^31.0.0
+    "@ckeditor/ckeditor5-table": ^35.4.0
+    "@ckeditor/ckeditor5-theme-lark": ^35.4.0
+    "@ckeditor/ckeditor5-upload": ^35.4.0
+    "@ckeditor/ckeditor5-widget": ^35.4.0
     "@dnd-kit/core": ^3.1.1
     "@dnd-kit/sortable": ^4.0.0
-    "@mitodl/ckeditor5-resource-link": ^31.0.0
+    "@mitodl/ckeditor5-resource-link": ^35.4.0-rc1
     "@reduxjs/toolkit": ^1.8.1
     "@sentry/react": ^7.13.0
     "@swc/core": ^1.2.95
@@ -10614,7 +10597,7 @@ __metadata:
     "@testing-library/react": 12
     "@testing-library/react-hooks": ^7.0.1
     "@testing-library/user-event": ^14.1.1
-    "@types/ckeditor__ckeditor5-core": ^11.0.3
+    "@types/ckeditor__ckeditor5-core": ^33.0.3
     "@types/enzyme": ^3.10.9
     "@types/enzyme-adapter-react-16": ^1.0.6
     "@types/history": 4.7.11
@@ -10643,7 +10626,7 @@ __metadata:
     autoprefixer: 9
     bootstrap: 4
     casual: ^1.6.2
-    ckeditor5-math: 31.0.0
+    ckeditor5-math: 35.4.0
     classnames: ^2.3.1
     core-js: ^3.16.0
     css-loader: ^4.2.1

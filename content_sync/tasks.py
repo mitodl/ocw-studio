@@ -156,9 +156,9 @@ def upsert_pipelines(
 
 
 @app.task(acks_late=True)
-def upsert_theme_assets_pipeline(unpause=False) -> bool:
+def upsert_theme_assets_pipeline(unpause=False, themes_branch=None) -> bool:
     """ Upsert the theme assets pipeline """
-    pipeline = api.get_theme_assets_pipeline()
+    pipeline = api.get_theme_assets_pipeline(themes_branch=themes_branch)
     pipeline.upsert_pipeline()
     if unpause:
         pipeline.unpause()

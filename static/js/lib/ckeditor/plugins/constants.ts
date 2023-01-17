@@ -10,6 +10,8 @@ export const RESOURCE_LINK = "resourceLink"
 
 export const RESOURCE_EMBED_COMMAND = "insertResourceEmbed"
 
+export const MARKDOWN_CONFIG_KEY = "markdown-config"
+
 import { RESOURCE_LINK_COMMAND } from "@mitodl/ckeditor5-resource-link/src/constants"
 import TurndownService from "turndown"
 

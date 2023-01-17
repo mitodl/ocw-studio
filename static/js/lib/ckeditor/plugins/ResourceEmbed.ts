@@ -3,7 +3,7 @@ import CKEPlugin from "@ckeditor/ckeditor5-core/src/plugin"
 import Turndown from "turndown"
 import Showdown from "showdown"
 import { toWidget } from "@ckeditor/ckeditor5-widget/src/utils"
-import { editor } from "@ckeditor/ckeditor5-core"
+import { Editor } from "@ckeditor/ckeditor5-core"
 import Command from "@ckeditor/ckeditor5-core/src/command"
 
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
@@ -23,7 +23,7 @@ const RESOURCE_SHORTCODE_REGEX = Shortcode.regex("resource", false)
  * Class for defining Markdown conversion rules for ResourceEmbed
  */
 class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
-  constructor(editor: editor.Editor) {
+  constructor(editor: Editor) {
     super(editor)
   }
 
@@ -79,7 +79,7 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
  * node into the editor.
  */
 class InsertResourceEmbedCommand extends Command {
-  constructor(editor: editor.Editor) {
+  constructor(editor: Editor) {
     super(editor)
   }
 
@@ -107,7 +107,7 @@ class InsertResourceEmbedCommand extends Command {
  * deserialization rules for it.
  */
 class ResourceEmbedEditing extends CKEPlugin {
-  constructor(editor: editor.Editor) {
+  constructor(editor: Editor) {
     super(editor)
   }
 
