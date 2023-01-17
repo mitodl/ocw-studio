@@ -54,6 +54,7 @@ export default class ResourceLinkUI extends Plugin {
     if (this.syntax.isResourceLinkHref(href)) {
       actionsView.editButtonView.label = ""
       actionsView.editButtonView.isEnabled = false
+      actionsView.editButtonView.isVisible = false
       const previewEl = actionsView.previewButtonView.element
       if (previewEl instanceof HTMLAnchorElement) {
         previewEl.href = this.syntax.makePreviewHref(href)
@@ -62,6 +63,7 @@ export default class ResourceLinkUI extends Plugin {
     } else {
       actionsView.editButtonView.label = this.originalEditinkLabel
       actionsView.editButtonView.isEnabled = true
+      actionsView.editButtonView.isVisible = true
     }
   }
 

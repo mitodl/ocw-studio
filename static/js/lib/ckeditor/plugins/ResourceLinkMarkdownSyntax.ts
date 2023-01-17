@@ -66,8 +66,15 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
 
   isResourceLinkHref = (href?: string): boolean => {
     if (!href) return false
-    const url = new URL(href)
-    return url.searchParams.has(queryKeys.uuid)
+    try {
+      const url = new URL(href)
+      return url.searchParams.has(queryKeys.uuid)
+    } catch (err) {
+      /**
+       * Invalid URLs like "mit.edu" are allowed but are not resource link URLs
+       */
+      return false
+    }
   }
 
   makeResourceLinkHref = (uuid: string, suffix = "") => {

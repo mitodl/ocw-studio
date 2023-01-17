@@ -77,9 +77,7 @@ export default class ResourceLink extends Plugin {
        * If the selection is not collapsed, we apply the link to the selected
        * text.
        */
-      this.editor.execute("link", {
-        linkHref: this.syntax.makeResourceLinkHref(uuid)
-      })
+      this.editor.execute("link", this.syntax.makeResourceLinkHref(uuid))
     }
   }
 }
