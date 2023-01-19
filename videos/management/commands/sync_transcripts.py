@@ -1,4 +1,4 @@
-"""Management command to link the video resource with the UUID video_uuid to the captions resource with captions_uuid and downloadable transcript with transcript_uuid"""
+"""Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""
 
 from django.core.management import BaseCommand
 
@@ -13,23 +13,16 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument(
-            "--video_uuid",
-            dest="video_uuid",
-            help="text_id of video resource object to be updated",
+            "--from_course",
+            dest="from_course",
+            help="",
             required=True,
         )
 
         parser.add_argument(
-            "--captions_uuid",
-            dest="captions_uuid",
+            "--to_course",
+            dest="to_course",
             help="text_id of captions resource object to be linked",
-            required=True,
-        )
-
-        parser.add_argument(
-            "--transcript_uuid",
-            dest="transcript_uuid",
-            help="text_id of downloadable transcript PDF resource object to be linked",
             required=True,
         )
 
@@ -44,4 +37,4 @@ class Command(BaseCommand):
             "video_transcript_file"
         ] = transcript.drivefile_set.first().s3_key
         video.save()
-        self.stdout.write("Captions and transcript successfully linked to video.\n")
+        self.stdout.write("Captions and transcripts successfully synced.\n")
