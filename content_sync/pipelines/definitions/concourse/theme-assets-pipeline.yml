@@ -120,6 +120,7 @@ jobs:
           alert_type: failed
           text: |
             Failed to build theme assets.
+
             Append `((atc-search-params))` to the url below for more details.
   on_abort:
     try:
@@ -130,5 +131,6 @@ jobs:
           alert_type: aborted
           text: |
             User aborted while building theme assets.
+
             Append `((atc-search-params))` to the url below for more details.
    # END NON-DEV
