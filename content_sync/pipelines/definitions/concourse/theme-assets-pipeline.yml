@@ -34,7 +34,7 @@ jobs:
       platform: linux
       image_resource:
         type: registry-image
-        source: {repository: mitodl/ocw-course-publisher, tag: 0.3}
+        source: {repository: mitodl/ocw-course-publisher, tag: 0.4}
       inputs:
       - name: ocw-hugo-themes
       outputs:
@@ -120,7 +120,7 @@ jobs:
           alert_type: failed
           text: |
             Failed to build theme assets.
-            
+
             Append `((atc-search-params))` to the url below for more details.
   on_abort:
     try:
@@ -131,6 +131,6 @@ jobs:
           alert_type: aborted
           text: |
             User aborted while building theme assets.
-            
+
             Append `((atc-search-params))` to the url below for more details.
    # END NON-DEV
