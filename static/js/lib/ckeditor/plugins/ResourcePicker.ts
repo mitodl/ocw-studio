@@ -1,10 +1,10 @@
 import Plugin from "@ckeditor/ckeditor5-core/src/plugin"
 import ButtonView from "@ckeditor/ckeditor5-ui/src/button/buttonview"
-import { RESOURCE_LINK } from "@mitodl/ckeditor5-resource-link/src/constants"
 
 import {
   ADD_RESOURCE_EMBED,
   ADD_RESOURCE_LINK,
+  RESOURCE_LINK,
   CKEDITOR_RESOURCE_UTILS,
   RESOURCE_EMBED
 } from "./constants"

@@ -12,7 +12,8 @@ export const RESOURCE_EMBED_COMMAND = "insertResourceEmbed"
 
 export const MARKDOWN_CONFIG_KEY = "markdown-config"
 
-import { RESOURCE_LINK_COMMAND } from "@mitodl/ckeditor5-resource-link/src/constants"
+export const RESOURCE_LINK_CONFIG_KEY = "resource-link-config"
+
 import TurndownService from "turndown"
 
 /**
@@ -22,14 +23,6 @@ import TurndownService from "turndown"
  * CKEResourceNodeType
  */
 export type CKEResourceNodeType = typeof RESOURCE_LINK | typeof RESOURCE_EMBED
-
-/**
- * Map resource node type to the corresponding embed command
- */
-export const ResourceCommandMap: Record<CKEResourceNodeType, string> = {
-  [RESOURCE_LINK]:  RESOURCE_LINK_COMMAND,
-  [RESOURCE_EMBED]: RESOURCE_EMBED_COMMAND
-}
 
 /**
  * A 'resource renderer'

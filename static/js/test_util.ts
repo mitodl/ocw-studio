@@ -93,6 +93,9 @@ export const getMockEditor = () => ({
     schema: {
       addAttributeCheck: jest.fn()
     }
+  },
+  plugins: {
+    get: jest.fn()
   }
 })
 

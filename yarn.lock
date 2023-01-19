@@ -1489,17 +1489,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mitodl/ckeditor5-resource-link@npm:^35.4.0-rc1":
-  version: 35.4.0-rc1
-  resolution: "@mitodl/ckeditor5-resource-link@npm:35.4.0-rc1"
-  dependencies:
-    "@ckeditor/ckeditor5-ui": ^35.4.0
-    ckeditor5: ^35.4.0
-    lodash-es: ^4.17.15
-  checksum: 20247c36f73b988f702df9eb0a7135eba0ffa358b912839261c030099ba2916c0d150afcdaaf00e437bd68443cb11f72fe6630c09fc15a2fc300be4a9fc3388f
-  languageName: node
-  linkType: hard
-
 "@mrmlnc/readdir-enhanced@npm:^2.2.1":
   version: 2.2.1
   resolution: "@mrmlnc/readdir-enhanced@npm:2.2.1"
@@ -5395,13 +5384,6 @@ __metadata:
   version: 0.7.0
   resolution: "dedent@npm:0.7.0"
   checksum: 87de191050d9a40dd70cad01159a0bcf05ecb59750951242070b6abf9569088684880d00ba92a955b4058804f16eeaf91d604f283929b4f614d181cd7ae633d2
-  languageName: node
-  linkType: hard
-
-"deep-diff@npm:^0.3.5":
-  version: 0.3.8
-  resolution: "deep-diff@npm:0.3.8"
-  checksum: 8a0fb6cbe468e50211836f8daa1c14798b2d7436bfbcb7d8eb0902e0d61bf1dfd48d5b9edd46a10596182b90ad25f87461b8e55111ff9257b6067ad0676f79c9
   languageName: node
   linkType: hard
 
@@ -10587,7 +10569,6 @@ __metadata:
     "@ckeditor/ckeditor5-widget": ^35.4.0
     "@dnd-kit/core": ^3.1.1
     "@dnd-kit/sortable": ^4.0.0
-    "@mitodl/ckeditor5-resource-link": ^35.4.0-rc1
     "@reduxjs/toolkit": ^1.8.1
     "@sentry/react": ^7.13.0
     "@swc/core": ^1.2.95
@@ -10671,7 +10652,6 @@ __metadata:
     react-test-renderer: ^16.13.1
     reactstrap: ^8.9.0
     redux: ^4.0.5
-    redux-logger: ^3.0.6
     redux-query: ^3.4.2
     redux-query-interface-superagent: ^3.4.2
     redux-query-react: ^3.4.2
@@ -10685,6 +10665,7 @@ __metadata:
     style-loader: ^3.2.1
     svg-inline-loader: ^0.8.2
     swc-loader: ^0.1.15
+    tiny-invariant: ^1.3.1
     turndown: ^7.0.0
     typescript: ^4.5.2
     url: ^0.11.0
@@ -12399,15 +12380,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"redux-logger@npm:^3.0.6":
-  version: 3.0.6
-  resolution: "redux-logger@npm:3.0.6"
-  dependencies:
-    deep-diff: ^0.3.5
-  checksum: c40f63c44c6475cf6374ae0eaa810d913f142614cb80692a0beacaf135c5dc3eb3e2cdd4296f01446ba48cb69b82e81363b84d829f1f6659382c991022a814ac
-  languageName: node
-  linkType: hard
-
 "redux-query-interface-superagent@npm:^3.4.2":
   version: 3.4.2
   resolution: "redux-query-interface-superagent@npm:3.4.2"
@@ -14100,6 +14072,13 @@ __metadata:
   version: 1.2.0
   resolution: "tiny-invariant@npm:1.2.0"
   checksum: e09a718a7c4a499ba592cdac61f015d87427a0867ca07f50c11fd9b623f90cdba18937b515d4a5e4f43dac92370498d7bdaee0d0e7a377a61095e02c4a92eade
+  languageName: node
+  linkType: hard
+
+"tiny-invariant@npm:^1.3.1":
+  version: 1.3.1
+  resolution: "tiny-invariant@npm:1.3.1"
+  checksum: 872dbd1ff20a21303a2fd20ce3a15602cfa7fcf9b228bd694a52e2938224313b5385a1078cb667ed7375d1612194feaca81c4ecbe93121ca1baebe344de4f84c
   languageName: node
   linkType: hard
 

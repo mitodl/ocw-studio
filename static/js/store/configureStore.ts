@@ -1,5 +1,4 @@
 import { compose, createStore, applyMiddleware } from "redux"
-import { createLogger } from "redux-logger"
 import { queryMiddleware } from "redux-query"
 
 import { makeRequest } from "./network_interface"
@@ -20,7 +19,7 @@ export default function configureStore(initialState?: ReduxState) {
   let createStoreWithMiddleware
   if (process.env.NODE_ENV !== "production" && !global._testing) {
     createStoreWithMiddleware = compose(
-      applyMiddleware(...COMMON_MIDDLEWARE, createLogger()),
+      applyMiddleware(...COMMON_MIDDLEWARE),
       window.__REDUX_DEVTOOLS_EXTENSION__ ?
         window.__REDUX_DEVTOOLS_EXTENSION__() :
         (f: any) => f

@@ -1,28 +1,35 @@
 jest.mock("@ckeditor/ckeditor5-utils/src/version")
+jest.mock("@ckeditor/ckeditor5-link/src/linkui")
 
-import ResourceLink from "@mitodl/ckeditor5-resource-link/src/link"
+import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
+
 import Markdown from "./Markdown"
 import { createTestEditor, markdownTest, getConverters } from "./test_util"
 import { turndownService } from "../turndown"
 
-import { RESOURCE_LINK } from "@mitodl/ckeditor5-resource-link/src/constants"
-import ResourceLinkMarkdownSyntax, {
-  encodeShortcodeArgs as encode
-} from "./ResourceLinkMarkdownSyntax"
+import { RESOURCE_LINK, RESOURCE_LINK_CONFIG_KEY } from "./constants"
+import ResourceLinkMarkdownSyntax from "./ResourceLinkMarkdownSyntax"
 import Paragraph from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import LegacyShortcodes from "./LegacyShortcodes"
 
-const getEditor = createTestEditor([
-  Paragraph,
-  ResourceLink,
-  ResourceLinkMarkdownSyntax,
-  LegacyShortcodes,
-  Markdown
-])
+const getEditor = createTestEditor(
+  [
+    Paragraph,
+    LinkPlugin,
+    ResourceLinkMarkdownSyntax,
+    LegacyShortcodes,
+    Markdown
+  ],
+  {
+    [RESOURCE_LINK_CONFIG_KEY]: {
+      hrefTemplate: "https://fake.mit.edu/:uuid"
+    }
+  }
+)
+const href = (uuid: string, suffix = "") =>
+  `https://fake.mit.edu/${uuid}?ocw_resource_link_uuid=${uuid}&ocw_resource_link_suffix=${suffix}`
 
-jest.mock("@mitodl/ckeditor5-resource-link/src/linkui")
-
-describe("ResourceLink plugin", () => {
+describe("ResourceLinkMarkdownSyntax plugin", () => {
   afterEach(() => {
     turndownService.rules.array = turndownService.rules.array.filter(
       (rule: any) => rule.name !== RESOURCE_LINK
@@ -36,7 +43,7 @@ describe("ResourceLink plugin", () => {
     expect(editor.getData()).toBe(md)
   })
 
-  it("should not mash an anchor hash thingy", async () => {
+  it("should serialize to and from markdown (with fragment)", async () => {
     const md =
       '{{% resource_link "1234-5678" "link text" "some-header-id" %}}{{% resource_link "link-this-here-uuid" "Title of the Link" "some-heading-id" %}}'
     const editor = await getEditor(md)
@@ -45,32 +52,26 @@ describe("ResourceLink plugin", () => {
     markdownTest(
       editor,
       '{{% resource_link "1234-5678" "link text" "#some-header-id" %}}',
-      `<p><a class="resource-link" data-uuid="${encode(
-        "1234-5678",
-        "#some-header-id"
-      )}">link text</a></p>`
+      `<p><a href="${href("1234-5678", "%23some-header-id")}">link text</a></p>`
     )
   })
 
-  it("should serialize to and from markdown", async () => {
+  it("should serialize to and from markdown (without fragment)", async () => {
     const editor = await getEditor("")
     markdownTest(
       editor,
       '{{% resource_link "asdfasdfasdfasdf" "text here" %}}',
-      `<p><a class="resource-link" data-uuid="${encode(
-        "asdfasdfasdfasdf"
-      )}">text here</a></p>`
+      `<p><a href="${href("asdfasdfasdfasdf")}">text here</a></p>`
     )
   })
 
   it("displays quotes properly", async () => {
     const editor = await getEditor("")
+    const text = 'not "escaped" in the html'
     markdownTest(
       editor,
       '{{% resource_link "asdfasdfasdfasdf" "not \\"escaped\\" in the html" %}}',
-      `<p><a class="resource-link" data-uuid="${encode(
-        "asdfasdfasdfasdf"
-      )}">not "escaped" in the html</a></p>`
+      `<p><a href="${href("asdfasdfasdfasdf")}">${text}</a></p>`
     )
   })
 
@@ -79,9 +80,7 @@ describe("ResourceLink plugin", () => {
     markdownTest(
       editor,
       'dogs {{% resource_link "uuid1" "woof" %}} cats {{% resource_link "uuid2" "meow" %}}, cool',
-      `<p>dogs <a class="resource-link" data-uuid="${encode(
-        "uuid1"
-      )}">woof</a> cats <a class="resource-link" data-uuid="${encode(
+      `<p>dogs <a href="${href("uuid1")}">woof</a> cats <a href="${href(
         "uuid2"
       )}">meow</a>, cool</p>`
     )
@@ -96,16 +95,14 @@ describe("ResourceLink plugin", () => {
     // shortcode argument.
     const { md2html } = getConverters(editor)
     expect(md2html(md)).toBe(
-      `<p>Dogs <a class="resource-link" data-uuid="${encode(
-        "uuid123"
-      )}">bark bark</a> Woof</p>`
+      `<p>Dogs <a href="${href("uuid123")}">bark bark</a> Woof</p>`
     )
   })
 
   it("Treats legacy shortcodes in link text as literal text", async () => {
     const editor = await getEditor("")
     const md = 'Dogs {{% resource_link "uuid123" "{{< sup 2 >}}" %}} Woof'
-    const html = `<p>Dogs <a class="resource-link" data-uuid="${encode(
+    const html = `<p>Dogs <a href="${href(
       "uuid123"
     )}">{{&lt; sup 2 &gt;}}</a> Woof</p>`
     markdownTest(editor, md, html)
@@ -128,7 +125,7 @@ describe("ResourceLink plugin", () => {
       })
       const { md2html, html2md } = getConverters(editor)
 
-      const html = `<p>Dogs <sup>x</sup> <a class="resource-link" data-uuid="${encode(
+      const html = `<p>Dogs <sup>x</sup> <a href="${href(
         "uuid123"
       )}">Einstein says E=mc<sup>2</sup></a> Woof</p>`
 
@@ -166,7 +163,7 @@ describe("ResourceLink plugin", () => {
     })
     const md =
       'Cool reference<sup>{{% resource_link "uuid123" "\\[1\\]" %}}</sup>'
-    const html = `<p>Cool reference<sup><a class="resource-link" data-uuid="${encode(
+    const html = `<p>Cool reference<sup><a href="${href(
       "uuid123"
     )}">[1]</a></sup></p>`
 
