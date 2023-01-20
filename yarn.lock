@@ -2595,10 +2595,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/luxon@npm:^2.0.5":
-  version: 2.3.1
-  resolution: "@types/luxon@npm:2.3.1"
-  checksum: e75928929aaf4e8796dcbdccd23a2dda029f637db01f5b06c7a72033ae106966df716e179ee41711280d782bd851228810643bce9bffc4ff62ae906e94ee1df2
+"@types/luxon@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "@types/luxon@npm:3.2.0"
+  checksum: 051bfbf841c6ce98728df6538342ce4aaddfcf0ec6e8b473e0195dcfc3ba6b1fe4b3ce17f2ba6d25344f41cb70032c1debe96da9e384e5f6e639665c1e6d368c
   languageName: node
   linkType: hard
 
@@ -9655,10 +9655,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"luxon@npm:^2.0.2":
-  version: 2.3.1
-  resolution: "luxon@npm:2.3.1"
-  checksum: ce5eec873a0172a0956618531e28010e8d8319a8b3a836b893d0f92239413a1fc5f77841ca24988e27bd61e8b2748e160e9dfcb13e92d7f031c1e31ad1c8ae91
+"luxon@npm:^3.2.1":
+  version: 3.2.1
+  resolution: "luxon@npm:3.2.1"
+  checksum: 3fa3def2c5f5d3032b4c46220c4da8aeb467ac979888fc9d2557adcd22195f93516b4ad5909a75862bec8dc6ddc0953b0f38e6d2f4a8ab8450ddc531a83cf20d
   languageName: node
   linkType: hard
 
@@ -10586,7 +10586,7 @@ __metadata:
     "@types/jest-when": ^2.7.3
     "@types/js-beautify": ^1.13.2
     "@types/lodash": ^4.14.172
-    "@types/luxon": ^2.0.5
+    "@types/luxon": ^3.2.0
     "@types/node": ^16.4.11
     "@types/pluralize": ^0.0.29
     "@types/ramda": ^0.27.44
@@ -10629,7 +10629,7 @@ __metadata:
     jest-when: ^3.5.1
     js-beautify: ^1.14.0
     lodash: ^4.17.21
-    luxon: ^2.0.2
+    luxon: ^3.2.1
     mathjax: ^3.2.2
     mini-css-extract-plugin: ^0.10.0
     pluralize: ^8.0.0
