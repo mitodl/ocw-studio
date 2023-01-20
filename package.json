@@ -52,7 +52,7 @@
     "@types/jest-when": "^2.7.3",
     "@types/js-beautify": "^1.13.2",
     "@types/lodash": "^4.14.172",
-    "@types/luxon": "^2.0.5",
+    "@types/luxon": "^3.2.0",
     "@types/node": "^16.4.11",
     "@types/pluralize": "^0.0.29",
     "@types/ramda": "^0.27.44",

@@ -2606,10 +2606,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/luxon@npm:^2.0.5":
-  version: 2.3.1
-  resolution: "@types/luxon@npm:2.3.1"
-  checksum: e75928929aaf4e8796dcbdccd23a2dda029f637db01f5b06c7a72033ae106966df716e179ee41711280d782bd851228810643bce9bffc4ff62ae906e94ee1df2
+"@types/luxon@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "@types/luxon@npm:3.2.0"
+  checksum: 051bfbf841c6ce98728df6538342ce4aaddfcf0ec6e8b473e0195dcfc3ba6b1fe4b3ce17f2ba6d25344f41cb70032c1debe96da9e384e5f6e639665c1e6d368c
   languageName: node
   linkType: hard
 
@@ -10605,7 +10605,7 @@ __metadata:
     "@types/jest-when": ^2.7.3
     "@types/js-beautify": ^1.13.2
     "@types/lodash": ^4.14.172
-    "@types/luxon": ^2.0.5
+    "@types/luxon": ^3.2.0
     "@types/node": ^16.4.11
     "@types/pluralize": ^0.0.29
     "@types/ramda": ^0.27.44
