@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.84.1 (Released January 23, 2023)
+--------------
+
+- Resource links without forking CKEditor's Link Plugin (#1643)
+
 Version 0.84.0 (Released January 04, 2023)
 --------------
 
