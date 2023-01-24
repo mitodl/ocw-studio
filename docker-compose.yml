@@ -151,7 +151,7 @@ services:
       - default-network
 
   concourse:
-    image: concourse/concourse:7.7.1
+    image: concourse/concourse:7.9.0
     command: quickstart
     privileged: true
     depends_on: [concourse-db]
