@@ -558,7 +558,7 @@ jobs:
           platform: linux
           image_resource:
             type: registry-image
-            source: {repository: mitodl/ocw-course-publisher, tag: 0.3}
+            source: {repository: mitodl/ocw-course-publisher, tag: 0.4}
           inputs:
             - name: ocw-hugo-themes
             - name: ocw-hugo-projects
