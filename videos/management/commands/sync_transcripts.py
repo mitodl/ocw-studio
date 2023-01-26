@@ -67,11 +67,12 @@ class Command(BaseCommand):
             + " transcripts successfully synced.\n"
         )
 
-    def courses_to_youtube_dict(self, courses):
+    def courses_to_youtube_dict(self, videos):
+        """Create a dictionary mapping YouTube IDs to captions/transcripts"""
         youtube_dict = {}
-        for course in courses:
-            youtube_dict[course.metadata["video_metadata"]["youtube_id"]] = (
-                course.metadata["video_files"]["video_captions_file"],
-                course.metadata["video_files"]["video_transcript_file"],
+        for video in videos:
+            youtube_dict[video.metadata["video_metadata"]["youtube_id"]] = (
+                video.metadata["video_files"]["video_captions_file"],
+                video.metadata["video_files"]["video_transcript_file"],
             )
         return youtube_dict
