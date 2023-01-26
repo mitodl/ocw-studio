@@ -52,6 +52,9 @@ class Command(BaseCommand):
                 ):
                     captions_ctr += 1
                     self.stdout.write("Captions found in source course. Syncing.\n")
+                    source_captions = WebsiteContent.objects.get(
+                        file=from_course_youtube[video][0]
+                    )
             if to_course_youtube[video][1] is None:  # missing transcript
                 self.stdout.write("Missing transcript: " + video + "\n")
                 if (
@@ -60,6 +63,9 @@ class Command(BaseCommand):
                 ):
                     transcript_ctr += 1
                     self.stdout.write("Transcript found in source course. Syncing.\n")
+                    source_transcript = WebsiteContent.objects.get(
+                        file=from_course_youtube[video][1]
+                    )
         self.stdout.write(
             str(captions_ctr)
             + " captions and "
