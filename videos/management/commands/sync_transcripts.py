@@ -1,8 +1,13 @@
 """Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""
+import re
+from copy import deepcopy
 
+from django.conf import settings
 from django.core.management import BaseCommand
 from django.db.models import Q
 
+from main.s3_utils import get_boto3_resource
+from main.utils import get_dirpath_and_filename, get_file_extension
 from websites.models import Website, WebsiteContent
 
 
@@ -55,6 +60,7 @@ class Command(BaseCommand):
                     source_captions = WebsiteContent.objects.get(
                         file=from_course_youtube[video][0]
                     )
+
             if to_course_youtube[video][1] is None:  # missing transcript
                 self.stdout.write("Missing transcript: " + video + "\n")
                 if (
@@ -82,3 +88,30 @@ class Command(BaseCommand):
                 video.metadata["video_files"]["video_transcript_file"],
             )
         return youtube_dict
+
+    def update_metadata(self, source_obj, new_uid, new_s3_path):
+        """Generate updated metadata for new object"""
+        new_metadata = deepcopy(source_obj.metadata)
+        new_metadata["uid"] = new_uid
+        new_metadata["file"] = new_s3_path
+        return new_metadata
+
+    def copy_obj_s3(self, source_obj, dest_course):
+        """Copy source_obj to the S3 bucket of dest_course"""
+        s3 = get_boto3_resource("s3")
+        uuid_re = re.compile(
+            "^[0-9A-F]{8}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{12}_", re.I
+        )
+        old_filename_dir, new_filename = get_dirpath_and_filename(str(source_obj.file))
+        # remove legacy UUID from filename if it exists
+        new_filename = re.split(uuid_re, new_filename)
+        if len(new_filename) == 1:
+            new_filename = new_filename[0]
+        else:
+            new_filename = new_filename[1]
+        new_filename_ext = get_file_extension(str(source_obj.file))
+        if new_filename_ext == "vtt":
+            new_filename += "_captions"
+        elif new_filename_ext == "pdf":
+            new_filename += "_transcript"
+        # return new_s3_path
