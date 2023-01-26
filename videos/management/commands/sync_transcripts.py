@@ -1,6 +1,7 @@
 """Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""
 import re
 from copy import deepcopy
+from uuid import uuid4
 
 from django.conf import settings
 from django.core.management import BaseCommand
@@ -60,6 +61,7 @@ class Command(BaseCommand):
                     source_captions = WebsiteContent.objects.get(
                         file=from_course_youtube[video][0]
                     )
+                    self.create_new_content(source_captions, to_course)
 
             if to_course_youtube[video][1] is None:  # missing transcript
                 self.stdout.write("Missing transcript: " + video + "\n")
@@ -72,6 +74,8 @@ class Command(BaseCommand):
                     source_transcript = WebsiteContent.objects.get(
                         file=from_course_youtube[video][1]
                     )
+                    self.create_new_content(source_transcript, to_course)
+
         self.stdout.write(
             str(captions_ctr)
             + " captions and "
@@ -90,7 +94,7 @@ class Command(BaseCommand):
         return youtube_dict
 
     def update_metadata(self, source_obj, new_uid, new_s3_path):
-        """Generate updated metadata for new object"""
+        """Generate updated metadata for new WebsiteContent object"""
         new_metadata = deepcopy(source_obj.metadata)
         new_metadata["uid"] = new_uid
         new_metadata["file"] = new_s3_path
@@ -115,3 +119,22 @@ class Command(BaseCommand):
         elif new_filename_ext == "pdf":
             new_filename += "_transcript"
         # return new_s3_path
+
+    def create_new_content(self, source_obj, to_course):
+        """Create new WebsiteContent object from source_obj in to_course"""
+        new_text_id = str(uuid4())
+        new_s3_loc = self.copy_obj_s3(source_obj, to_course)
+        new_obj_metadata = self.update_metadata(source_obj, new_text_id, new_s3_loc)
+        new_obj = WebsiteContent.objects.get_or_create(
+            website=to_course,
+            text_id=new_text_id,
+            defaults={
+                "metadata": new_obj_metadata,
+                "title": source_obj.title,
+                "type": source_obj.type,
+                "file": new_s3_loc,
+                "dirpath": get_dirpath_and_filename(new_s3_loc)[0],
+                "filename": get_dirpath_and_filename(new_s3_loc)[1],
+            },
+        )
+        new_obj.save()
