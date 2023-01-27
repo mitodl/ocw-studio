@@ -46,47 +46,45 @@ class Command(BaseCommand):
         to_course_videos = WebsiteContent.objects.filter(
             Q(website__name=to_course.name) & Q(metadata__resourcetype="Video")
         )
-        from_course_youtube = self.courses_to_youtube_dict(from_course_videos)
-        to_course_youtube = self.courses_to_youtube_dict(to_course_videos)
+        from_course_videos = self.courses_to_youtube_dict(from_course_videos)
+        to_course_videos = self.courses_to_youtube_dict(to_course_videos)
         captions_ctr, transcript_ctr = 0, 0
-        for video in to_course_youtube:
-            if to_course_youtube[video][0] is None:  # missing captions
+        for video in to_course_videos:
+            if to_course_videos[video][0] is None:  # missing captions
                 self.stdout.write("Missing captions: " + video + "\n")
                 if (
-                    video in from_course_youtube
-                    and from_course_youtube[video][0] is not None
+                    video in from_course_videos
+                    and from_course_videos[video][0] is not None
                 ):
                     captions_ctr += 1
                     self.stdout.write("Captions found in source course. Syncing.\n")
                     source_captions = WebsiteContent.objects.get(
-                        file=from_course_youtube[video][0]
+                        file=from_course_videos[video][0]
                     )
                     new_captions = self.create_new_content(source_captions, to_course)
-                    video_obj = to_course_youtube[video][2]
-                    video_obj.metadata["video_files"]["video_captions_file"] = str(
-                        new_captions.file
-                    )
-                    video_obj.save()
+                    to_course_videos[video][2].metadata["video_files"][
+                        "video_captions_file"
+                    ] = str(new_captions.file)
+                    to_course_videos[video][2].save()
 
-            if to_course_youtube[video][1] is None:  # missing transcript
+            if to_course_videos[video][1] is None:  # missing transcript
                 self.stdout.write("Missing transcript: " + video + "\n")
                 if (
-                    video in from_course_youtube
-                    and from_course_youtube[video][1] is not None
+                    video in from_course_videos
+                    and from_course_videos[video][1] is not None
                 ):
                     transcript_ctr += 1
                     self.stdout.write("Transcript found in source course. Syncing.\n")
                     source_transcript = WebsiteContent.objects.get(
-                        file=from_course_youtube[video][1]
+                        file=from_course_videos[video][1]
                     )
                     new_transcript = self.create_new_content(
                         source_transcript, to_course
                     )
-                    video_obj = to_course_youtube[video][2]
-                    video_obj.metadata["video_files"]["video_transcript_file"] = str(
-                        new_transcript.file
-                    )
-                    video_obj.save()
+                    to_course_videos[video][2].metadata["video_files"][
+                        "video_transcript_file"
+                    ] = str(new_transcript.file)
+                    to_course_videos[video][2].save()
 
         self.stdout.write(
             str(captions_ctr)
