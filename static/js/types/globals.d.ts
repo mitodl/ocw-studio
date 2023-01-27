@@ -20,11 +20,12 @@ export declare global {
 
   declare var SETTINGS: SETTINGS
 
+  declare var RELEASE_YEAR: string
+
   declare var _testing: boolean
 
   // eslint-disable-next-line @typescript-eslint/ban-types
   declare var __REDUX_DEVTOOLS_EXTENSION__: Function
 
   declare var __webpack_public_path__: string
-
 }

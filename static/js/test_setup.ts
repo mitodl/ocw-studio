@@ -28,6 +28,7 @@ const _createSettings = (): typeof SETTINGS => ({
 })
 
 global.SETTINGS = _createSettings()
+global.RELEASE_YEAR = "2023"
 global._testing = true
 
 beforeEach(() => {

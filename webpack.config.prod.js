@@ -51,6 +51,9 @@ module.exports = Object.assign(prodConfig, {
     new CKEditorWebpackPlugin({
       language: "en",
       addMainLanguageTranslationsToAllAssets: true
+    }),
+    new webpack.DefinePlugin({
+      RELEASE_YEAR: JSON.stringify(new Date().getUTCFullYear())
     })
   ],
   optimization: {
