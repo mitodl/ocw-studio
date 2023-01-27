@@ -9,6 +9,7 @@ from mitol.common.models import TimestampedModel
 from gdrive_sync.constants import (
     DRIVE_API_RESOURCES,
     DRIVE_FOLDER_VIDEOS_FINAL,
+    RESOURCE_S3_PREFIX,
     DriveFileStatus,
 )
 from videos.models import Video
@@ -80,6 +81,7 @@ class DriveFile(TimestampedModel):
         key_sections = [
             prefix,
             self.website.name,
+            RESOURCE_S3_PREFIX,
             self.file_id if self.is_video() else None,
             f"{basename}{ext}",
         ]

@@ -12,6 +12,7 @@ DRIVE_FOLDER_FILES = "files"
 DRIVE_FILE_FIELDS = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, webContentLink, trashed, parents)"
 DRIVE_MIMETYPE_FOLDER = "application/vnd.google-apps.folder"
 
+RESOURCE_S3_PREFIX = "static_resources"
 
 VALID_TEXT_FILE_TYPES = [
     ".pdf",
