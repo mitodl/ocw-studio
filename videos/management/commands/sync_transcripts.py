@@ -61,7 +61,12 @@ class Command(BaseCommand):
                     source_captions = WebsiteContent.objects.get(
                         file=from_course_youtube[video][0]
                     )
-                    self.create_new_content(source_captions, to_course)
+                    new_captions = self.create_new_content(source_captions, to_course)
+                    video_obj = to_course_youtube[video][2]
+                    video_obj.metadata["video_files"]["video_captions_file"] = str(
+                        new_captions.file
+                    )
+                    video_obj.save()
 
             if to_course_youtube[video][1] is None:  # missing transcript
                 self.stdout.write("Missing transcript: " + video + "\n")
@@ -74,7 +79,14 @@ class Command(BaseCommand):
                     source_transcript = WebsiteContent.objects.get(
                         file=from_course_youtube[video][1]
                     )
-                    self.create_new_content(source_transcript, to_course)
+                    new_transcript = self.create_new_content(
+                        source_transcript, to_course
+                    )
+                    video_obj = to_course_youtube[video][2]
+                    video_obj.metadata["video_files"]["video_transcript_file"] = str(
+                        new_transcript.file
+                    )
+                    video_obj.save()
 
         self.stdout.write(
             str(captions_ctr)
@@ -90,6 +102,7 @@ class Command(BaseCommand):
             youtube_dict[video.metadata["video_metadata"]["youtube_id"]] = (
                 video.metadata["video_files"]["video_captions_file"],
                 video.metadata["video_files"]["video_transcript_file"],
+                video,
             )
         return youtube_dict
 
@@ -106,7 +119,7 @@ class Command(BaseCommand):
         uuid_re = re.compile(
             "^[0-9A-F]{8}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{12}_", re.I
         )
-        old_filename_dir, new_filename = get_dirpath_and_filename(str(source_obj.file))
+        _, new_filename = get_dirpath_and_filename(str(source_obj.file))
         # remove legacy UUID from filename if it exists
         new_filename = re.split(uuid_re, new_filename)
         if len(new_filename) == 1:
@@ -118,7 +131,11 @@ class Command(BaseCommand):
             new_filename += "_captions"
         elif new_filename_ext == "pdf":
             new_filename += "_transcript"
-        # return new_s3_path
+        new_s3_path = dest_course.s3_path + "/" + new_filename + "." + new_filename_ext
+        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_s3_path).copy_from(
+            CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + str(source_obj.file)
+        )
+        return new_s3_path
 
     def create_new_content(self, source_obj, to_course):
         """Create new WebsiteContent object from source_obj in to_course"""
@@ -136,5 +153,6 @@ class Command(BaseCommand):
                 "dirpath": get_dirpath_and_filename(new_s3_loc)[0],
                 "filename": get_dirpath_and_filename(new_s3_loc)[1],
             },
-        )
+        )[0]
         new_obj.save()
+        return new_obj
