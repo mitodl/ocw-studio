@@ -5,7 +5,7 @@ export default function Footer(): JSX.Element {
     <footer>
       <div className="p-4">
         <div className="float-left">
-          &copy;2021 Massachusetts Institute of Technology
+          &copy;{new Date().getFullYear()} Massachusetts Institute of Technology
         </div>
         <div className="float-right">
           <a href="/privacy-policy">Privacy Policy</a>
