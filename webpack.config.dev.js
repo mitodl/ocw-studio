@@ -16,24 +16,27 @@ const insertHotReload = (host, port, entries) =>
 
 const devConfig = Object.assign({}, config, {
   context: __dirname,
-  mode: "development",
+  mode:    "development",
   devtool: "inline-source-map",
-  output: {
-    path: path.resolve("./static/bundles/"),
+  output:  {
+    path:     path.resolve("./static/bundles/"),
     filename: "[name].js"
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new BundleTracker({ filename: "./webpack-stats.json" }),
     new CKEditorWebpackPlugin({
-      language: "en",
+      language:                               "en",
       addMainLanguageTranslationsToAllAssets: true
-    })
+    }),
+    new webpack.DefinePlugin({
+      RELEASE_YEAR: JSON.stringify(new Date().getUTCFullYear())
+    }),
   ],
   optimization: {
-    moduleIds: 'named',
+    moduleIds:   'named',
     splitChunks: {
-      name: "common",
+      name:      "common",
       minChunks: 2
     },
     emitOnErrors: true
@@ -45,12 +48,12 @@ devConfig.module.rules = [
   {
     // this regex is necessary to explicitly exclude ckeditor stuff
     test: /static\/scss\/.+(\.css$|\.scss$)/,
-    use: [
+    use:  [
       { loader: "style-loader" },
       { loader: "css-loader?url=false" },
       { loader: "postcss-loader" },
       {
-        loader: "sass-loader",
+        loader:  "sass-loader",
         options: {
           sassOptions: { quietDeps: true },
         },
