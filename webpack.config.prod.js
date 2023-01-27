@@ -11,14 +11,14 @@ prodConfig.module.rules = [
   {
     // this regex is necessary to explicitly exclude ckeditor stuff
     test: /static\/scss\/.+(\.css$|\.scss$)/,
-    use:  [
+    use: [
       {
         loader: MiniCssExtractPlugin.loader
       },
       "css-loader?url=false",
       "postcss-loader",
       {
-        loader:  "sass-loader",
+        loader: "sass-loader",
         options: {
           sassOptions: { quietDeps: true },
         },
@@ -29,11 +29,11 @@ prodConfig.module.rules = [
 
 module.exports = Object.assign(prodConfig, {
   context: __dirname,
-  mode:    "production",
-  output:  {
-    path:               path.resolve("./static/bundles/"),
-    filename:           "[name]-[chunkhash].js",
-    chunkFilename:      "[id]-[chunkhash].js",
+  mode: "production",
+  output: {
+    path: path.resolve("./static/bundles/"),
+    filename: "[name]-[chunkhash].js",
+    chunkFilename: "[id]-[chunkhash].js",
     crossOriginLoading: "anonymous"
   },
 
@@ -49,7 +49,7 @@ module.exports = Object.assign(prodConfig, {
       filename: "[name]-[contenthash].css"
     }),
     new CKEditorWebpackPlugin({
-      language:                               "en",
+      language: "en",
       addMainLanguageTranslationsToAllAssets: true
     }),
     new webpack.DefinePlugin({
