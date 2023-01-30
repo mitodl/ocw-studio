@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Version 0.85.0
+--------------
+
+- consolidate shared static resources (#1657)
+- Adding management command to sync captions/transcripts for any videos missing them from one course to another (#1612)
+- Setting copyright date to auto-update (#1660)
+- Update concourse to v7.9.0 (#1653)
+- Update README.md (#1654)
+- Updating pipeline definitions to point at ocw-course-publisher v0.4 (#1647)
+- Bump decode-uri-component from 0.2.0 to 0.2.2 (#1603)
+- Bump loader-utils from 1.4.0 to 1.4.2 (#1573)
+- Bump json5 from 1.0.1 to 1.0.2 (#1639)
+- Bump luxon from 2.3.1 to ~2.5.2~ 3.2.1 (#1640)
+
 Version 0.84.1 (Released January 23, 2023)
 --------------
 
