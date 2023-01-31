@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.85.0
+Version 0.85.0 (Released January 31, 2023)
 --------------
 
 - consolidate shared static resources (#1657)
