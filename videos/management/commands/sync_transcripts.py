@@ -129,9 +129,9 @@ class Command(BaseCommand):
             new_filename += "_captions"
         elif new_filename_ext == "pdf":
             new_filename += "_transcript"
-        new_s3_path = dest_course.s3_path + "/" + new_filename + "." + new_filename_ext
+        new_s3_path = f"{dest_course.s3_path.rstrip('/')}/{new_filename.lstrip('/')}.{new_filename_ext}"
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_s3_path).copy_from(
-            CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + str(source_obj.file)
+            CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME.rstrip('/')}/{str(source_obj.file).lstrip('/')}"
         )
         return new_s3_path
 
