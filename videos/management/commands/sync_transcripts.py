@@ -47,44 +47,84 @@ class Command(BaseCommand):
             Q(website__name=to_course.name) & Q(metadata__resourcetype="Video")
         )
         from_course_videos = self.courses_to_youtube_dict(from_course_videos)
-        to_course_videos = self.courses_to_youtube_dict(to_course_videos)
+        to_course_videos_dict = self.courses_to_youtube_dict(to_course_videos)
         captions_ctr, transcript_ctr = 0, 0
         for video in to_course_videos:
-            if to_course_videos[video][0] is None:  # missing captions
-                self.stdout.write("Missing captions: " + video + "\n")
+            video_youtube_id = video.metadata["video_metadata"]["youtube_id"]
+            if (
+                video.metadata["video_files"]["video_captions_file"] is None
+            ):  # missing captions
+                self.stdout.write("Missing captions: " + video_youtube_id + "\n")
                 if (
-                    video in from_course_videos
-                    and from_course_videos[video][0] is not None
+                    video_youtube_id in to_course_videos_dict
+                ):  # captions exist in course
+                    captions_ctr += 1
+                    self.stdout.write(
+                        "Captions found in destination course. Syncing.\n"
+                    )
+                    source_captions = WebsiteContent.objects.filter(
+                        Q(website__name=to_course.name)
+                        & Q(metadata__file=to_course_videos_dict[video_youtube_id][0])
+                    ).first()
+                    if not source_captions.is_page_content:
+                        source_captions.is_page_content = True
+                        source_captions.save()
+                    video.metadata["video_files"]["video_captions_file"] = str(
+                        source_captions.file
+                    )
+                    video.save()
+
+                elif (  # create a new captions object
+                    video_youtube_id in from_course_videos
                 ):
                     captions_ctr += 1
                     self.stdout.write("Captions found in source course. Syncing.\n")
                     source_captions = WebsiteContent.objects.get(
-                        file=from_course_videos[video][0]
+                        file=from_course_videos[video_youtube_id][0]
                     )
                     new_captions = self.create_new_content(source_captions, to_course)
-                    to_course_videos[video][2].metadata["video_files"][
-                        "video_captions_file"
-                    ] = str(new_captions.file)
-                    to_course_videos[video][2].save()
+                    video.metadata["video_files"]["video_captions_file"] = str(
+                        new_captions.file
+                    )
+                    video.save()
 
-            if to_course_videos[video][1] is None:  # missing transcript
-                self.stdout.write("Missing transcript: " + video + "\n")
+            if (
+                video.metadata["video_files"]["video_transcript_file"] is None
+            ):  # missing transcript
+                self.stdout.write("Missing transcript: " + video_youtube_id + "\n")
                 if (
-                    video in from_course_videos
-                    and from_course_videos[video][1] is not None
+                    video_youtube_id in to_course_videos_dict
+                ):  # transcript exists in course
+                    transcript_ctr += 1
+                    self.stdout.write(
+                        "Transcript found in destination course. Syncing.\n"
+                    )
+                    source_transcript = WebsiteContent.objects.filter(
+                        Q(website__name=to_course.name)
+                        & Q(metadata__file=to_course_videos_dict[video_youtube_id][1])
+                    ).first()
+                    if not source_transcript.is_page_content:
+                        source_transcript.is_page_content = True
+                        source_transcript.save()
+                    video.metadata["video_files"]["video_transcript_file"] = str(
+                        source_transcript.file
+                    )
+                    video.save()
+                elif (  # create a new transcript object
+                    video_youtube_id in from_course_videos
                 ):
                     transcript_ctr += 1
                     self.stdout.write("Transcript found in source course. Syncing.\n")
                     source_transcript = WebsiteContent.objects.get(
-                        file=from_course_videos[video][1]
+                        file=from_course_videos[video_youtube_id][1]
                     )
                     new_transcript = self.create_new_content(
                         source_transcript, to_course
                     )
-                    to_course_videos[video][2].metadata["video_files"][
-                        "video_transcript_file"
-                    ] = str(new_transcript.file)
-                    to_course_videos[video][2].save()
+                    video.metadata["video_files"]["video_transcript_file"] = str(
+                        new_transcript.file
+                    )
+                    video.save()
 
         self.stdout.write(
             str(captions_ctr)
@@ -97,11 +137,18 @@ class Command(BaseCommand):
         """Create a dictionary mapping YouTube IDs to captions/transcripts"""
         youtube_dict = {}
         for video in videos:
-            youtube_dict[video.metadata["video_metadata"]["youtube_id"]] = (
-                video.metadata["video_files"]["video_captions_file"],
-                video.metadata["video_files"]["video_transcript_file"],
-                video,
-            )
+            youtube_id = video.metadata["video_metadata"]["youtube_id"]
+            captions_file = video.metadata["video_files"]["video_captions_file"]
+            transcript_file = video.metadata["video_files"]["video_transcript_file"]
+            if youtube_id in youtube_dict and (
+                youtube_dict[youtube_id][0] not in [None, captions_file]
+                or youtube_dict[youtube_id][1] not in [None, transcript_file]
+            ):
+                raise ValueError(
+                    "Conflicting YouTube ID <-> captions/transcript match in source course."
+                )
+            if (captions_file is not None) and (transcript_file is not None):
+                youtube_dict[youtube_id] = (captions_file, transcript_file)
         return youtube_dict
 
     def update_metadata(self, source_obj, new_uid, new_s3_path):
@@ -150,6 +197,7 @@ class Command(BaseCommand):
                 "file": new_s3_loc,
                 "dirpath": get_dirpath_and_filename(new_s3_loc)[0],
                 "filename": get_dirpath_and_filename(new_s3_loc)[1],
+                "is_page_content": True,
             },
         )[0]
         new_obj.save()
