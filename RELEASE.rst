@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.85.1
+Version 0.85.1 (Released February 06, 2023)
 --------------
 
 - Fixing S3 paths in captions/transcript sync (#1665)
