@@ -47,10 +47,11 @@ class Command(BaseCommand):
             Q(website__name=to_course.name) & Q(metadata__resourcetype="Video")
         )
         from_course_videos = self.courses_to_youtube_dict(from_course_videos)
-        to_course_videos_dict = self.courses_to_youtube_dict(to_course_videos)
-        captions_ctr, transcript_ctr = 0, 0
+        ctr = [0, 0]  # captions and transcript counters
         for video in to_course_videos:
             video_youtube_id = video.metadata["video_metadata"]["youtube_id"]
+            # refresh query each time
+            to_course_videos_dict = self.courses_to_youtube_dict(to_course_videos)
             if (
                 video.metadata["video_files"]["video_captions_file"] is None
             ):  # missing captions
@@ -58,7 +59,7 @@ class Command(BaseCommand):
                 if (
                     video_youtube_id in to_course_videos_dict
                 ):  # captions exist in course
-                    captions_ctr += 1
+                    ctr[0] += 1
                     self.stdout.write(
                         "Captions found in destination course. Syncing.\n"
                     )
@@ -77,7 +78,7 @@ class Command(BaseCommand):
                 elif (  # create a new captions object
                     video_youtube_id in from_course_videos
                 ):
-                    captions_ctr += 1
+                    ctr[0] += 1
                     self.stdout.write("Captions found in source course. Syncing.\n")
                     source_captions = WebsiteContent.objects.get(
                         file=from_course_videos[video_youtube_id][0]
@@ -95,7 +96,7 @@ class Command(BaseCommand):
                 if (
                     video_youtube_id in to_course_videos_dict
                 ):  # transcript exists in course
-                    transcript_ctr += 1
+                    ctr[1] += 1
                     self.stdout.write(
                         "Transcript found in destination course. Syncing.\n"
                     )
@@ -113,7 +114,7 @@ class Command(BaseCommand):
                 elif (  # create a new transcript object
                     video_youtube_id in from_course_videos
                 ):
-                    transcript_ctr += 1
+                    ctr[1] += 1
                     self.stdout.write("Transcript found in source course. Syncing.\n")
                     source_transcript = WebsiteContent.objects.get(
                         file=from_course_videos[video_youtube_id][1]
@@ -127,9 +128,9 @@ class Command(BaseCommand):
                     video.save()
 
         self.stdout.write(
-            str(captions_ctr)
+            str(ctr[0])
             + " captions and "
-            + str(transcript_ctr)
+            + str(ctr[1])
             + " transcripts successfully synced.\n"
         )
 
@@ -141,8 +142,8 @@ class Command(BaseCommand):
             captions_file = video.metadata["video_files"]["video_captions_file"]
             transcript_file = video.metadata["video_files"]["video_transcript_file"]
             if youtube_id in youtube_dict and (
-                youtube_dict[youtube_id][0] not in [None, captions_file]
-                or youtube_dict[youtube_id][1] not in [None, transcript_file]
+                captions_file not in [None, youtube_dict[youtube_id][0]]
+                or transcript_file not in [None, youtube_dict[youtube_id][1]]
             ):
                 raise ValueError(
                     "Conflicting YouTube ID <-> captions/transcript match in source course."
@@ -176,7 +177,7 @@ class Command(BaseCommand):
             new_filename += "_captions"
         elif new_filename_ext == "pdf":
             new_filename += "_transcript"
-        new_s3_path = f"{dest_course.s3_path.rstrip('/')}/{new_filename.lstrip('/')}.{new_filename_ext}"
+        new_s3_path = f"/{dest_course.s3_path.rstrip('/').lstrip('/')}/{new_filename.lstrip('/')}.{new_filename_ext}"
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_s3_path).copy_from(
             CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME.rstrip('/')}/{str(source_obj.file).lstrip('/')}"
         )
