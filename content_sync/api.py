@@ -44,7 +44,9 @@ def get_pipeline_api() -> BasePipeline:
 
 
 @is_publish_pipeline_enabled
-def get_site_pipeline(website: Website, hugo_args: Optional[str] = "", api: Optional[object] = None) -> BasePipeline:
+def get_site_pipeline(
+    website: Website, hugo_args: Optional[str] = "", api: Optional[object] = None
+) -> BasePipeline:
     """ Get the configured sync publishing pipeline """
     return import_string(
         f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"

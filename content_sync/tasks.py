@@ -139,7 +139,12 @@ def upsert_website_pipeline_batch(
 
 @app.task(bind=True)
 def upsert_pipelines(
-    self, website_names: List[str], chunk_size=500, create_backend=False, unpause=False, hugo_args=""
+    self,
+    website_names: List[str],
+    chunk_size=500,
+    create_backend=False,
+    unpause=False,
+    hugo_args="",
 ):
     """ Chunk and group batches of pipeline upserts for a specified list of websites"""
     tasks = []
@@ -149,7 +154,10 @@ def upsert_pipelines(
     ):
         tasks.append(
             upsert_website_pipeline_batch.s(
-                website_subset, create_backend=create_backend, unpause=unpause, hugo_args=hugo_args
+                website_subset,
+                create_backend=create_backend,
+                unpause=unpause,
+                hugo_args=hugo_args,
             )
         )
     raise self.replace(celery.group(tasks))
