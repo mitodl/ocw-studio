@@ -576,7 +576,7 @@ jobs:
             - -exc
             - |
               cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
-              hugo --config ../ocw-hugo-projects/((config-slug))/config.yaml --baseUrl /((base-url)) --themesDir ../ocw-hugo-themes/ ((build-drafts)) --destination output-online
+              hugo ((hugo-args))
               cp -r -n ../static-resources/. ./output-online
               if [ -f "../build-course-offline/((short-id)).zip" ];
               then
