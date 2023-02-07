@@ -20,8 +20,8 @@ from requests import HTTPError
 
 from content_sync.constants import (
     DEV_ENDPOINT_URL,
-    TARGET_ONLINE,
     TARGET_OFFLINE,
+    TARGET_ONLINE,
     VERSION_DRAFT,
     VERSION_LIVE,
 )
