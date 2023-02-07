@@ -140,7 +140,9 @@ def get_theme_branch():
     )
 
 
-def get_hugo_arg_string(base_url, starter_slug, pipeine_group, build_target, override_args):
+def get_hugo_arg_string(
+    base_url, starter_slug, pipeine_group, build_target, override_args
+):
     """
     Builds a string of arguments to be passed to the hugo command inserted into pipelines
 

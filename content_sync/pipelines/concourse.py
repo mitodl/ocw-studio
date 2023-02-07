@@ -18,7 +18,13 @@ from concoursepy.api import Api
 from django.conf import settings
 from requests import HTTPError
 
-from content_sync.constants import DEV_ENDPOINT_URL, TARGET_ONLINE, TARGET_OFFLINE, VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import (
+    DEV_ENDPOINT_URL,
+    TARGET_ONLINE,
+    TARGET_OFFLINE,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+)
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
     BaseGeneralPipeline,
@@ -429,10 +435,18 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = ""
             hugo_args_online = get_hugo_arg_string(
-                base_url, self.WEBSITE.starter.slug, pipeline_name, TARGET_ONLINE, self.HUGO_ARGS
+                base_url,
+                self.WEBSITE.starter.slug,
+                pipeline_name,
+                TARGET_ONLINE,
+                self.HUGO_ARGS,
             )
             hugo_args_offline = get_hugo_arg_string(
-                base_url, self.WEBSITE.starter.slug, pipeline_name, TARGET_OFFLINE, self.HUGO_ARGS
+                base_url,
+                self.WEBSITE.starter.slug,
+                pipeline_name,
+                TARGET_OFFLINE,
+                self.HUGO_ARGS,
             )
             config_str = (
                 self.get_pipeline_definition("definitions/concourse/site-pipeline.yml")
