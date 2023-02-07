@@ -437,7 +437,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             config_str = (
                 self.get_pipeline_definition("definitions/concourse/site-pipeline.yml")
                 .replace("((hugo-args-online))", hugo_args_online)
-                .replace("((hugo-args-offline", hugo_args_offline)
+                .replace("((hugo-args-offline))", hugo_args_offline)
                 .replace("((markdown-uri))", markdown_uri)
                 .replace("((git-private-key-var))", private_key_var)
                 .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
