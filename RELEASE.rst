@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.85.2
+--------------
+
+- Update Missing Captions/Transcripts (#1670)
+- add recursive redirects to the draft and live locations in the nginx config for local development (#1668)
+
 Version 0.85.1 (Released February 06, 2023)
 --------------
 
