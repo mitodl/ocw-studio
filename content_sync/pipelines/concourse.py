@@ -30,6 +30,7 @@ from content_sync.pipelines.base import (
 )
 from content_sync.utils import (
     check_mandatory_settings,
+    get_hugo_arg_string,
     get_template_vars,
     get_theme_branch,
     strip_dev_lines,
@@ -340,7 +341,12 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         "OCW_GTM_ACCOUNT_ID",
     ]
 
-    def __init__(self, website: Website, hugo_args: Optional[str], api: Optional[PipelineApi] = None):
+    def __init__(
+        self,
+        website: Website,
+        hugo_args: Optional[str],
+        api: Optional[PipelineApi] = None,
+    ):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
         self.WEBSITE = website
@@ -385,17 +391,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             if settings.CONCOURSE_HARD_PURGE
             else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
         )
-
-        hugo_args = {
-            "--config": f"../ocw-hugo-projects/{self.WEBSITE.starter.slug}/config.yaml",
-            "--baseUrl": f"/{base_url}",
-            "--themesDir": "../ocw-hugo-themes/",
-            "--destination": "output-online"}
-        if self.HUGO_ARGS:
-            hugo_arg_overrides = iter(self.HUGO_ARGS.split(" "))
-            for arg in hugo_arg_overrides:
-                hugo_args[arg] = next(hugo_arg_overrides)
-
         for branch_vars in [
             {
                 "branch": settings.GIT_BRANCH_PREVIEW,
@@ -433,12 +428,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             else:
                 markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = ""
-            build_drafts = " --buildDrafts" if pipeline_name == VERSION_DRAFT else ""
-            hugo_arg_strings = []
-            for hugo_arg_key, hugo_arg_value in hugo_args.items():
-                hugo_arg_strings.append(f"{hugo_arg_key} {hugo_arg_value}")
-            hugo_arg_string = f"{' '.join(hugo_arg_strings)}{build_drafts}"
-
+            hugo_arg_string = get_hugo_arg_string(
+                base_url, self.WEBSITE.starter.slug, pipeline_name, self.HUGO_ARGS
+            )
             config_str = (
                 self.get_pipeline_definition("definitions/concourse/site-pipeline.yml")
                 .replace("((hugo-args))", hugo_arg_string)

@@ -17,6 +17,7 @@ from content_sync.constants import (
     ONLINE_END,
     ONLINE_START,
     START_TAG_PREFIX,
+    VERSION_DRAFT,
 )
 from main.s3_utils import get_boto3_resource
 from main.utils import is_dev
@@ -135,6 +136,41 @@ def get_theme_branch():
         if is_dev()
         else github_webhook_branch
     )
+
+
+def get_hugo_arg_string(base_url, starter_slug, pipeline_name, override_args):
+    """
+    Builds a string of arguments to be passed to the hugo command inserted into pipelines
+
+    Args:
+        base_url (str): The default base_url to pass to the --baseUrl argument
+        starter_slug (str): The slug of the starter to get the Hugo config from
+        pipeline_name (str): The base name of the pipeline
+        override_args (str): A string of arg overrides passed when executing a pipeline management command
+
+    Returns:
+        str: A string of arguments that can be appended to the hugo command in a pipeline
+    """
+    build_drafts = " --buildDrafts" if pipeline_name == VERSION_DRAFT else ""
+    hugo_args = {
+        "--config": f"../ocw-hugo-projects/{starter_slug}/config.yaml",
+        "--baseUrl": f"/{base_url}",
+        "--themesDir": "../ocw-hugo-themes/",
+        "--destination": "output-online",
+    }
+    if override_args:
+        override_arg_iterator = iter(override_args.split(" "))
+        for arg in override_arg_iterator:
+            next_arg = next(override_arg_iterator)
+            if arg.startswith("-") and not next_arg.startswith("-"):
+                hugo_args[arg] = next_arg
+            else:
+                hugo_args[arg] = ""
+    hugo_arg_strings = []
+    for hugo_arg_key, hugo_arg_value in hugo_args.items():
+        value = f" {hugo_arg_value}"
+        hugo_arg_strings.append(f"{hugo_arg_key}{value}")
+    return f"{' '.join(hugo_arg_strings)}{build_drafts}"
 
 
 def check_matching_tags(pipeline_config, start_tag, end_tag):
