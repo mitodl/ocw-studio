@@ -85,7 +85,7 @@ pre-commit init-templatedir ~/.git-template
 
 # Testing and Formatting
 
-Writing tests, running the test suite, and formatting code follows the same steps that are outlined in [the common ODL web app guide](https://github.com/mitodl/handbook/blob/master/common-web-app-guide.md#testing-and-formatting).
+Writing tests, running the test suite, and formatting code follows the same steps that are outlined in [the common ODL web app guide](https://mitodl.github.io/handbook/how-to/common-web-app-guide.html#testing-and-formatting).
 Below are some steps that may be particular to this project.
 
 ## JS/CSS Tests and Linting
