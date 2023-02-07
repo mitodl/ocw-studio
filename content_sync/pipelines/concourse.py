@@ -18,7 +18,7 @@ from concoursepy.api import Api
 from django.conf import settings
 from requests import HTTPError
 
-from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import DEV_ENDPOINT_URL, TARGET_ONLINE, TARGET_OFFLINE, VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
     BaseGeneralPipeline,
@@ -428,12 +428,16 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             else:
                 markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = ""
-            hugo_arg_string = get_hugo_arg_string(
-                base_url, self.WEBSITE.starter.slug, pipeline_name, self.HUGO_ARGS
+            hugo_args_online = get_hugo_arg_string(
+                base_url, self.WEBSITE.starter.slug, pipeline_name, TARGET_ONLINE, self.HUGO_ARGS
+            )
+            hugo_args_offline = get_hugo_arg_string(
+                base_url, self.WEBSITE.starter.slug, pipeline_name, TARGET_OFFLINE, self.HUGO_ARGS
             )
             config_str = (
                 self.get_pipeline_definition("definitions/concourse/site-pipeline.yml")
-                .replace("((hugo-args))", hugo_arg_string)
+                .replace("((hugo-args-online))", hugo_args_online)
+                .replace("((hugo-args-offline", hugo_args_offline)
                 .replace("((markdown-uri))", markdown_uri)
                 .replace("((git-private-key-var))", private_key_var)
                 .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
@@ -467,7 +471,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((api-token))", settings.API_BEARER_TOKEN or "")
                 .replace("((theme-deployed-trigger))", theme_deployed_trigger)
                 .replace("((theme-created-trigger))", theme_created_trigger)
-                .replace("((build-drafts))", build_drafts)
                 .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
                 .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
                 .replace(

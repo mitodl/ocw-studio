@@ -1,6 +1,8 @@
 """Constants for content_sync"""
 VERSION_LIVE = "live"
 VERSION_DRAFT = "draft"
+TARGET_ONLINE = "online"
+TARGET_OFFLINE = "offline"
 START_TAG_PREFIX = "# START "
 END_TAG_PREFIX = "# END "
 DEV_START = f"{START_TAG_PREFIX}DEV-ONLY"

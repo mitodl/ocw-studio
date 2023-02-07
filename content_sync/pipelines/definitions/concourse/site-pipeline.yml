@@ -392,7 +392,7 @@ jobs:
                 fi
                 touch ./content/static_resources/_index.md
                 aws s3((cli-endpoint-url)) sync s3://((ocw-bucket))/static_shared ./static/static_shared
-                hugo --config ../ocw-hugo-projects/((config-slug))/config-offline.yaml --themesDir ../ocw-hugo-themes/ ((build-drafts)) --destination output-offline
+                hugo ((hugo-args-offline))
                 cd output-offline
                 zip ../../build-course-offline/((short-id)).zip -r ./
               else
@@ -576,7 +576,7 @@ jobs:
             - -exc
             - |
               cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
-              hugo ((hugo-args))
+              hugo ((hugo-args-online))
               cp -r -n ../static-resources/. ./output-online
               if [ -f "../build-course-offline/((short-id)).zip" ];
               then

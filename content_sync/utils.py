@@ -17,6 +17,8 @@ from content_sync.constants import (
     ONLINE_END,
     ONLINE_START,
     START_TAG_PREFIX,
+    TARGET_OFFLINE,
+    TARGET_ONLINE,
     VERSION_DRAFT,
 )
 from main.s3_utils import get_boto3_resource
@@ -138,25 +140,27 @@ def get_theme_branch():
     )
 
 
-def get_hugo_arg_string(base_url, starter_slug, pipeline_name, override_args):
+def get_hugo_arg_string(base_url, starter_slug, pipeine_group, build_target, override_args):
     """
     Builds a string of arguments to be passed to the hugo command inserted into pipelines
 
     Args:
         base_url (str): The default base_url to pass to the --baseUrl argument
         starter_slug (str): The slug of the starter to get the Hugo config from
-        pipeline_name (str): The base name of the pipeline
+        pipeline_group (str): The group of the pipeline (draft / live)
+        build_target (str): The build target (online / offline)
         override_args (str): A string of arg overrides passed when executing a pipeline management command
 
     Returns:
         str: A string of arguments that can be appended to the hugo command in a pipeline
     """
-    build_drafts = " --buildDrafts" if pipeline_name == VERSION_DRAFT else ""
+    build_drafts = " --buildDrafts" if pipeine_group == VERSION_DRAFT else ""
+    config_suffix = "-offline" if build_target == TARGET_OFFLINE else ""
     hugo_args = {
-        "--config": f"../ocw-hugo-projects/{starter_slug}/config.yaml",
-        "--baseUrl": f"/{base_url}",
+        "--config": f"../ocw-hugo-projects/{starter_slug}/config{config_suffix}.yaml",
+        "--baseUrl": f"/{base_url}" if build_target == TARGET_ONLINE else "/",
         "--themesDir": "../ocw-hugo-themes/",
-        "--destination": "output-online",
+        "--destination": f"output-{build_target}",
     }
     if override_args:
         override_arg_iterator = iter(override_args.split(" "))
@@ -164,6 +168,9 @@ def get_hugo_arg_string(base_url, starter_slug, pipeline_name, override_args):
             next_arg = next(override_arg_iterator)
             if arg.startswith("-") and not next_arg.startswith("-"):
                 hugo_args[arg] = next_arg
+                # If the build target is offline, / is the only value that makes sense for --baseUrl
+                if arg == "--baseUrl" and build_target == TARGET_OFFLINE:
+                    hugo_args[arg] = "/"
             else:
                 hugo_args[arg] = ""
     hugo_arg_strings = []
