@@ -72,6 +72,7 @@ def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments
     projects_branch: Optional[str] = None,
     starter: Optional[str] = None,
     offline: Optional[bool] = None,
+    hugo_args: Optional[str] = None,
 ) -> object:
     """Get the mass build sites pipeline if the backend has one"""
     return import_string(
@@ -84,6 +85,7 @@ def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments
         projects_branch=projects_branch,
         starter=starter,
         offline=offline,
+        hugo_args=hugo_args,
     )
 
 

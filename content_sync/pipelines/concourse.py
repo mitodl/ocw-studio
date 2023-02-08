@@ -434,18 +434,35 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             else:
                 markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = ""
+            starter_slug = self.WEBSITE.starter.slug
+            base_hugo_args = {
+                "--config": f"../ocw-hugo-projects/{starter_slug}/config.yaml",
+                "--themesDir": "../ocw-hugo-themes/",
+            }
+            base_online_args = base_hugo_args.copy()
+            base_online_args.update(
+                {
+                    "--baseUrl": f"/{base_url}",
+                    "--destination": "output-online",
+                }
+            )
+            base_offline_args = base_hugo_args.copy()
+            base_offline_args.update(
+                {
+                    "--baseUrl": "/",
+                    "--destination": "output-offline",
+                }
+            )
             hugo_args_online = get_hugo_arg_string(
-                base_url,
-                self.WEBSITE.starter.slug,
-                pipeline_name,
                 TARGET_ONLINE,
+                pipeline_name,
+                base_online_args,
                 self.HUGO_ARGS,
             )
             hugo_args_offline = get_hugo_arg_string(
-                base_url,
-                self.WEBSITE.starter.slug,
-                pipeline_name,
                 TARGET_OFFLINE,
+                pipeline_name,
+                base_offline_args,
                 self.HUGO_ARGS,
             )
             config_str = (
@@ -583,6 +600,7 @@ class MassBuildSitesPipeline(
         projects_branch: Optional[str] = None,
         starter: Optional[str] = None,
         offline: Optional[bool] = None,
+        hugo_args: Optional[str] = None,
     ):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
@@ -610,6 +628,7 @@ class MassBuildSitesPipeline(
         )
         self.STARTER = starter
         self.OFFLINE = offline
+        self.HUGO_ARGS = hugo_args
         self.set_instance_vars(
             {
                 "version": version,
@@ -665,11 +684,34 @@ class MassBuildSitesPipeline(
                     "resource_base_url": settings.RESOURCE_BASE_URL_LIVE,
                 }
             )
+        base_hugo_args = {
+            "--config": "../ocw-hugo-projects/$STARTER_SLUG/config.yaml",
+            "--themesDir": "../ocw-hugo-themes/",
+            "--quiet": "",
+        }
+        base_online_args = base_hugo_args.copy()
+        base_online_args.update({"--baseUrl": "$PREFIX/$BASE_URL"})
+        base_offline_args = base_hugo_args.copy()
+        base_offline_args.update({"--baseUrl": "/"})
+        hugo_args_online = get_hugo_arg_string(
+            TARGET_ONLINE,
+            self.VERSION,
+            base_online_args,
+            self.HUGO_ARGS,
+        )
+        hugo_args_offline = get_hugo_arg_string(
+            TARGET_OFFLINE,
+            self.VERSION,
+            base_online_args,
+            self.HUGO_ARGS,
+        )
 
         config_str = (
             self.get_pipeline_definition(
                 "definitions/concourse/mass-build-sites.yml", offline=self.OFFLINE
             )
+            .replace("((hugo-args-online))", hugo_args_online)
+            .replace("((hugo-args-offline))", hugo_args_offline)
             .replace("((markdown-uri))", markdown_uri)
             .replace("((git-private-key-var))", private_key_var)
             .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)

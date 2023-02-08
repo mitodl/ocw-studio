@@ -63,6 +63,13 @@ class Command(BaseCommand):
             action="store_true",
             help="Upserts an alternate version of the pipeline to mass-build-sites-offline",
         )
+        parser.add_argument(
+            "-hu",
+            "--hugo_args",
+            dest="hugo_args",
+            default="",
+            help="If specified, override Hugo command line arguments with supplied args",
+        )
 
     def handle(self, *args, **options):
 
@@ -79,6 +86,7 @@ class Command(BaseCommand):
         projects_branch = options["projects-branch"]
         starter = options["starter"]
         offline = options["offline"]
+        hugo_args = options["hugo_args"]
         start = now_in_utc()
 
         if delete_all:
@@ -98,6 +106,7 @@ class Command(BaseCommand):
                 projects_branch=projects_branch,
                 starter=starter,
                 offline=offline,
+                hugo_args=hugo_args,
             )
             pipeline.upsert_pipeline()
             self.stdout.write(f"Created {version} mass build pipeline")

@@ -140,46 +140,42 @@ def get_theme_branch():
     )
 
 
-def get_hugo_arg_string(
-    base_url, starter_slug, pipeine_group, build_target, override_args
-):
+def get_hugo_arg_string(build_target, pipeline_name, default_args, override_args=None):
     """
     Builds a string of arguments to be passed to the hugo command inserted into pipelines
 
     Args:
-        base_url (str): The default base_url to pass to the --baseUrl argument
-        starter_slug (str): The slug of the starter to get the Hugo config from
-        pipeline_group (str): The group of the pipeline (draft / live)
         build_target (str): The build target (online / offline)
-        override_args (str): A string of arg overrides passed when executing a pipeline management command
+        pipeline_name (str): The name of the pipeline (draft / live)
+        default_args (dict): A dictionary of default args for the given context
+        override_args (str): (Optional) A string of arg overrides passed when executing a pipeline management command
 
     Returns:
         str: A string of arguments that can be appended to the hugo command in a pipeline
     """
-    build_drafts = " --buildDrafts" if pipeine_group == VERSION_DRAFT else ""
-    config_suffix = "-offline" if build_target == TARGET_OFFLINE else ""
-    hugo_args = {
-        "--config": f"../ocw-hugo-projects/{starter_slug}/config{config_suffix}.yaml",
-        "--baseUrl": f"/{base_url}" if build_target == TARGET_ONLINE else "/",
-        "--themesDir": "../ocw-hugo-themes/",
-        "--destination": f"output-{build_target}",
-    }
+    hugo_args = default_args.copy()
+    if pipeline_name == VERSION_DRAFT:
+        default_args["--buildDrafts"] = ""
     if override_args:
-        override_arg_iterator = iter(override_args.split(" "))
-        for arg in override_arg_iterator:
-            next_arg = next(override_arg_iterator)
+        split_override_args = override_args.split(" ")
+        for index, arg in enumerate(split_override_args):
+            next_arg = (
+                split_override_args[index + 1]
+                if (index < len(split_override_args) - 1)
+                else ""
+            )
             if arg.startswith("-") and not next_arg.startswith("-"):
                 hugo_args[arg] = next_arg
                 # If the build target is offline, / is the only value that makes sense for --baseUrl
                 if arg == "--baseUrl" and build_target == TARGET_OFFLINE:
                     hugo_args[arg] = "/"
-            else:
+            elif arg.startswith("-"):
                 hugo_args[arg] = ""
     hugo_arg_strings = []
     for hugo_arg_key, hugo_arg_value in hugo_args.items():
-        value = f" {hugo_arg_value}"
+        value = f" {hugo_arg_value}" if hugo_arg_value != "" else ""
         hugo_arg_strings.append(f"{hugo_arg_key}{value}")
-    return f"{' '.join(hugo_arg_strings)}{build_drafts}"
+    return " ".join(hugo_arg_strings)
 
 
 def check_matching_tags(pipeline_config, start_tag, end_tag):
