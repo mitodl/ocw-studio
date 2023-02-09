@@ -18,7 +18,6 @@ from content_sync.constants import (
     ONLINE_START,
     START_TAG_PREFIX,
     TARGET_OFFLINE,
-    TARGET_ONLINE,
     VERSION_DRAFT,
 )
 from main.s3_utils import get_boto3_resource

@@ -350,7 +350,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
     def __init__(
         self,
         website: Website,
-        hugo_args: Optional[str],
+        hugo_args: Optional[str] = None,
         api: Optional[PipelineApi] = None,
     ):
         """Initialize the pipeline API instance"""
