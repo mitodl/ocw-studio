@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.85.2
+Version 0.85.2 (Released February 09, 2023)
 --------------
 
 - Update Missing Captions/Transcripts (#1670)
