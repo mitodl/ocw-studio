@@ -277,9 +277,10 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
 
 @pytest.mark.parametrize("create_backend", [True, False])
 @pytest.mark.parametrize("unpause", [True, False])
+@pytest.mark.parametrize("hugo_args", [None, "--baseUrl /"])
 @pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
 def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
-    mocker, mocked_celery, create_backend, unpause, chunk_size, chunks
+    mocker, mocked_celery, create_backend, unpause, hugo_args, chunk_size, chunks
 ):
     """upsert_pipelines calls upsert_pipeline_batch with correct arguments"""
     websites = WebsiteFactory.create_batch(3)
@@ -290,14 +291,21 @@ def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
             website_names,
             create_backend=create_backend,
             unpause=unpause,
+            hugo_args=hugo_args,
             chunk_size=chunk_size,
         )
     mock_batch.assert_any_call(
-        website_names[0:chunk_size], create_backend=create_backend, unpause=unpause
+        website_names[0:chunk_size],
+        create_backend=create_backend,
+        unpause=unpause,
+        hugo_args=hugo_args,
     )
     if chunks > 1:
         mock_batch.assert_any_call(
-            website_names[chunk_size:], create_backend=create_backend, unpause=unpause
+            website_names[chunk_size:],
+            create_backend=create_backend,
+            unpause=unpause,
+            hugo_args=hugo_args,
         )
 
 
@@ -326,9 +334,10 @@ def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
 
 @pytest.mark.parametrize("create_backend", [True, False])
 @pytest.mark.parametrize("unpause", [True, False])
+@pytest.mark.parametrize("hugo_args", [None, "--baseUrl /"])
 @pytest.mark.parametrize("check_limit", [True, False])
 def test_upsert_website_pipeline_batch(
-    mocker, settings, create_backend, unpause, check_limit
+    mocker, settings, create_backend, unpause, hugo_args, check_limit
 ):
     """upsert_website_pipeline_batch should make the expected function calls"""
     settings.GITHUB_RATE_LIMIT_CHECK = check_limit
@@ -338,10 +347,13 @@ def test_upsert_website_pipeline_batch(
     websites = WebsiteFactory.create_batch(2)
     website_names = sorted([website.name for website in websites])
     tasks.upsert_website_pipeline_batch(
-        website_names, create_backend=create_backend, unpause=unpause
+        website_names,
+        create_backend=create_backend,
+        unpause=unpause,
+        hugo_args=hugo_args,
     )
-    mock_get_pipeline.assert_any_call(websites[0], api=None)
-    mock_get_pipeline.assert_any_call(websites[1], api=mocker.ANY)
+    mock_get_pipeline.assert_any_call(websites[0], hugo_args=hugo_args, api=None)
+    mock_get_pipeline.assert_any_call(websites[1], hugo_args=hugo_args, api=mocker.ANY)
     if create_backend:
         for website in websites:
             mock_get_backend.assert_any_call(website)
