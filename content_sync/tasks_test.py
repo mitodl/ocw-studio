@@ -336,7 +336,7 @@ def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
 @pytest.mark.parametrize("unpause", [True, False])
 @pytest.mark.parametrize("hugo_args", [None, "--baseUrl /"])
 @pytest.mark.parametrize("check_limit", [True, False])
-def test_upsert_website_pipeline_batch(
+def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments
     mocker, settings, create_backend, unpause, hugo_args, check_limit
 ):
     """upsert_website_pipeline_batch should make the expected function calls"""
