@@ -154,7 +154,7 @@ def get_hugo_arg_string(build_target, pipeline_name, default_args, override_args
     """
     hugo_args = default_args.copy()
     if pipeline_name == VERSION_DRAFT:
-        default_args["--buildDrafts"] = ""
+        hugo_args["--buildDrafts"] = ""
     if override_args:
         split_override_args = override_args.split(" ")
         for index, arg in enumerate(split_override_args):

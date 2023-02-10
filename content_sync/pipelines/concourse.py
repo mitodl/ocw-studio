@@ -435,13 +435,11 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = ""
             starter_slug = self.WEBSITE.starter.slug
-            base_hugo_args = {
-                "--config": f"../ocw-hugo-projects/{starter_slug}/config.yaml",
-                "--themesDir": "../ocw-hugo-themes/",
-            }
+            base_hugo_args = {"--themesDir": "../ocw-hugo-themes/"}
             base_online_args = base_hugo_args.copy()
             base_online_args.update(
                 {
+                    "--config": f"../ocw-hugo-projects/{starter_slug}/config.yaml",
                     "--baseUrl": f"/{base_url}",
                     "--destination": "output-online",
                 }
@@ -449,6 +447,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             base_offline_args = base_hugo_args.copy()
             base_offline_args.update(
                 {
+                    "--config": f"../ocw-hugo-projects/{starter_slug}/config-offline.yaml",
                     "--baseUrl": "/",
                     "--destination": "output-offline",
                 }
@@ -685,14 +684,23 @@ class MassBuildSitesPipeline(
                 }
             )
         base_hugo_args = {
-            "--config": "../ocw-hugo-projects/$STARTER_SLUG/config.yaml",
             "--themesDir": "../ocw-hugo-themes/",
             "--quiet": "",
         }
         base_online_args = base_hugo_args.copy()
-        base_online_args.update({"--baseUrl": "$PREFIX/$BASE_URL"})
+        base_online_args.update(
+            {
+                "--baseUrl": "$PREFIX/$BASE_URL",
+                "--config": "../ocw-hugo-projects/$STARTER_SLUG/config.yaml",
+            }
+        )
         base_offline_args = base_hugo_args.copy()
-        base_offline_args.update({"--baseUrl": "/"})
+        base_offline_args.update(
+            {
+                "--baseUrl": "/",
+                "--config": "../ocw-hugo-projects/$STARTER_SLUG/config-offline.yaml",
+            }
+        )
         hugo_args_online = get_hugo_arg_string(
             TARGET_ONLINE,
             self.VERSION,
