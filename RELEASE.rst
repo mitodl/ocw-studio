@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.85.3
+Version 0.85.3 (Released February 10, 2023)
 --------------
 
 - Updating testing and formatting link (#1672)
