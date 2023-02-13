@@ -5,18 +5,30 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_s3
 
-from content_sync.constants import DEV_END, DEV_START, NON_DEV_END, NON_DEV_START
+from content_sync.constants import (
+    DEV_END,
+    DEV_START,
+    NON_DEV_END,
+    NON_DEV_START,
+    TARGET_OFFLINE,
+    TARGET_ONLINE,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+)
 from content_sync.test_constants import (
     EVEN_TAGS_TEST_FILE,
     EXPECTED_REMAINING_STRING_DEV,
     EXPECTED_REMAINING_STRING_NON_DEV,
     UNEVEN_TAGS_TEST_FILE,
+    TEST_DEFAULT_HUGO_ARGS,
+    HUGO_ARG_TEST_OVERRIDES,
 )
 from content_sync.utils import (
     check_matching_tags,
     get_destination_filepath,
     get_destination_url,
     move_s3_object,
+    get_hugo_arg_string,
     strip_lines_between,
 )
 from main.s3_utils import get_boto3_client
@@ -151,6 +163,30 @@ def test_move_s3_object(settings):
     with pytest.raises(ClientError):
         client.get_object(Bucket=MOCK_BUCKET_NAME, Key=from_path)
     assert client.get_object(Bucket=MOCK_BUCKET_NAME, Key=to_path) is not None
+
+
+@pytest.mark.parametrize("build_target", [TARGET_OFFLINE, TARGET_ONLINE])
+@pytest.mark.parametrize("pipeline_name", [VERSION_DRAFT, VERSION_LIVE])
+@pytest.mark.parametrize("default_args", [TEST_DEFAULT_HUGO_ARGS])
+@pytest.mark.parametrize("override_args", HUGO_ARG_TEST_OVERRIDES)
+def test_get_hugo_arg_string(build_target, pipeline_name, default_args, override_args):
+    """get_hugo_arg_string should return a string that can be passed to the hugo executable with the appropriate overrides if specified"""
+    override_string = override_args["input"]
+    expected_overrides = override_args["output"]
+    arg_string = get_hugo_arg_string(
+        build_target, pipeline_name, default_args, override_string
+    )
+    for key in default_args.keys():
+        value = default_args[key]
+        expected_string = f"{key} {value}" if value != "" else key
+        if not key in expected_overrides:
+            assert expected_string in arg_string
+        else:
+            assert expected_string not in arg_string
+    for key in expected_overrides.keys():
+        value = expected_overrides[key]
+        expected_string = f"{key} {value}" if value != "" else key
+        assert expected_string in arg_string
 
 
 def test_check_matching_tags():
