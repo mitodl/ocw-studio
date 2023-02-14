@@ -19,16 +19,16 @@ from content_sync.test_constants import (
     EVEN_TAGS_TEST_FILE,
     EXPECTED_REMAINING_STRING_DEV,
     EXPECTED_REMAINING_STRING_NON_DEV,
-    UNEVEN_TAGS_TEST_FILE,
-    TEST_DEFAULT_HUGO_ARGS,
     HUGO_ARG_TEST_OVERRIDES,
+    TEST_DEFAULT_HUGO_ARGS,
+    UNEVEN_TAGS_TEST_FILE,
 )
 from content_sync.utils import (
     check_matching_tags,
     get_destination_filepath,
     get_destination_url,
-    move_s3_object,
     get_hugo_arg_string,
+    move_s3_object,
     strip_lines_between,
 )
 from main.s3_utils import get_boto3_client
