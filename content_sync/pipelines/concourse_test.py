@@ -349,7 +349,7 @@ def test_upsert_website_pipelines(
         )
     else:
         assert (
-            f"aws s3 {expected_endpoint_prefix}sync s3://{bucket}/static ./static"
+            f"aws s3 {expected_endpoint_prefix}sync s3://{bucket}/static_shared ./static/static_shared"
             in config_str
         )
         assert (
