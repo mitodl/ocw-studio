@@ -86,7 +86,8 @@ def upload_youtube_videos(self):
 @app.task
 def start_transcript_job(video_id: int):
     """
-    Use threeplay api to order a transcript for video
+    If there are existing captions or transcript, associate them with the video;
+    otherwise, use the 3Play API to order a new transcript for video
     """
 
     video = Video.objects.filter(pk=video_id).last()
@@ -103,19 +104,41 @@ def start_transcript_job(video_id: int):
 
     if video_resource:
         title = video_resource.title
+        video_filename = video_resource.filename
     else:
         title = video.source_key.split("/")[-1]
+        video_filename = title
 
-    response = threeplay_api.threeplay_upload_video_request(
-        folder_name, youtube_id, title
-    )
+    captions = WebsiteContent.objects.filter(
+        Q(website=video.website) & Q(filename=f"{video_filename}_captions")
+    ).first()
 
-    threeplay_file_id = response.get("data").get("id")
+    transcript = WebsiteContent.objects.filter(
+        Q(website=video.website) & Q(filename=f"{video_filename}_transcript")
+    ).first()
 
-    if threeplay_file_id:
-        threeplay_api.threeplay_order_transcript_request(video.id, threeplay_file_id)
-        video.status = VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
+    if captions or transcript:  # check for existing captions or transcript
+        if captions:
+            video.metadata["video_files"]["video_captions_file"] = str(captions.file)
+        if transcript:
+            video.metadata["video_files"]["video_transcript_file"] = str(
+                transcript.file
+            )
         video.save()
+
+    else:  # if none, request a transcript through the 3Play API
+        response = threeplay_api.threeplay_upload_video_request(
+            folder_name, youtube_id, title
+        )
+
+        threeplay_file_id = response.get("data").get("id")
+
+        if threeplay_file_id:
+            threeplay_api.threeplay_order_transcript_request(
+                video.id, threeplay_file_id
+            )
+            video.status = VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
+            video.save()
 
 
 @app.task
