@@ -23,6 +23,7 @@ class Command(WebsiteFilterCommand):
             "--type",
             dest="type",
             help="Only update metadata of this_type (default = resource)",
+            required=True,
         )
         parser.add_argument(
             "-ud",
@@ -36,6 +37,7 @@ class Command(WebsiteFilterCommand):
             "--source",
             dest="source",
             help="Only update metadata for websites that are based on this source",
+            required=True,
         )
 
     def handle(self, *args, **options):
