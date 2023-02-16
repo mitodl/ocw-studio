@@ -29,7 +29,7 @@ export default function UnpublishDialog(props: {
       return
     } else {
       if (isErrorStatusCode(response.status)) {
-        setError(`Something went wrong while fetching website dependencies. ${response.body}`)
+        setError(`Something went wrong while fetching website dependencies: ${JSON.stringify(response.body)}`)
       } else {
         setSiteDependencies(response.body.site_dependencies)
       }
@@ -44,7 +44,7 @@ export default function UnpublishDialog(props: {
       return
     } else {
       if (isErrorStatusCode(response.status)) {
-        setError(`Something went wrong while unpublishing the website. ${response.body}`)
+        setError(`Something went wrong while unpublishing the website: ${JSON.stringify(response.body)}`)
       } else {
           setSiteUnpublishedMsg(response.body)
           setIsSiteUnpublished(true)
