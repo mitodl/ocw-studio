@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.86.0 (Released February 15, 2023)
+--------------
+
+- remove static folder from offline builds (#1680)
+
 Version 0.85.3 (Released February 10, 2023)
 --------------
 
