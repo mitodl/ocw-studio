@@ -12,7 +12,6 @@ export default function Dropdown(props: {
   
   const { websiteName, dropdownBtnID, materialIcon, dropdownMenu } = props;
 
-  // if dropdown menu list is empty then return null so dropdown doesn'tshow
   if(!dropdownMenu.length){
     return null;
   } 
