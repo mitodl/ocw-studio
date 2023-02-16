@@ -426,10 +426,14 @@ AWS_PUBLISH_BUCKET_NAME = get_string(
     name="AWS_PUBLISH_BUCKET_NAME", default=None, description="S3 publish bucket name."
 )
 AWS_OFFLINE_PREVIEW_BUCKET_NAME = get_string(
-    name="AWS_OFFLINE_PREVIEW_BUCKET_NAME", default=None, description="S3 offline preview bucket name."
+    name="AWS_OFFLINE_PREVIEW_BUCKET_NAME",
+    default=None,
+    description="S3 offline preview bucket name.",
 )
 AWS_OFFLINE_PUBLISH_BUCKET_NAME = get_string(
-    name="AWS_OFFLINE_PUBLISH_BUCKET_NAME", default=None, description="S3 offline publish bucket name."
+    name="AWS_OFFLINE_PUBLISH_BUCKET_NAME",
+    default=None,
+    description="S3 offline publish bucket name.",
 )
 AWS_QUERYSTRING_AUTH = get_bool(
     name="AWS_QUERYSTRING_AUTH",
