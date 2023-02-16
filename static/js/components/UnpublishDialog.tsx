@@ -18,9 +18,8 @@ export default function UnpublishDialog(props: {
   const [siteUnpublishedMsg, setSiteUnpublishedMsg] = useState("")
   const [error, setError] = useState("")
 
+  const [ { isPending }, unpublishGet ] = useMutation(() => websiteUnpublishAction(websiteName, "GET"))
   const handleUnpublishGet = async () => {
-    
-    const [ { isPending }, unpublishGet ] = useMutation(() => websiteUnpublishAction(websiteName, "GET"))
     
     if (isPending) {
       return
@@ -37,12 +36,8 @@ export default function UnpublishDialog(props: {
     }
   }
 
+  const [ { isFinished }, unpublishPost ] = useMutation(() => websiteUnpublishAction(websiteName, "POST"))
   const handleUnpublishPost = async () => {
-    const [ { isPending }, unpublishPost ] = useMutation(() => websiteUnpublishAction(websiteName, "POST"))
-    
-    if (isPending) {
-      return
-    }
 
     const response = await unpublishPost()
     if (!response) {
