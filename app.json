@@ -43,6 +43,14 @@
       "description": "S3 publish bucket name.",
       "required": false
     },
+    "AWS_OFFLINE_PREVIEW_BUCKET_NAME": {
+      "description": "S3 offline preview bucket name.",
+      "required": false
+    },
+    "AWS_OFFLINE_PUBLISH_BUCKET_NAME": {
+      "description": "S3 offline publish bucket name.",
+      "required": false
+    },
     "AWS_QUERYSTRING_AUTH": {
       "description": "Enables querystring auth for S3 urls",
       "required": false
