@@ -238,6 +238,7 @@ def test_update_youtube_statuses(
     youtube_video_files_processing,
     youtube_video_files_new,
     is_enabled,
+    mocked_celery,
 ):
     """
     Test that the correct number of YouTubeVideo objects have their statuses updated to the correct value.
@@ -253,13 +254,18 @@ def test_update_youtube_statuses(
     for video_file in youtube_video_files_processing:
         drive_file = DriveFileFactory.create(video=video_file.video)
         create_gdrive_resource_content(drive_file)
-    update_youtube_statuses()
+    mock_transcript_job = mocker.patch("videos.tasks.start_transcript_job.s")
+    if is_enabled:
+        with pytest.raises(mocked_celery.replace_exception_class):
+            update_youtube_statuses.delay()
+    else:
+        update_youtube_statuses.delay()
     assert VideoFile.objects.filter(
         destination_status=YouTubeStatus.PROCESSED, status=VideoFileStatus.COMPLETE
     ).count() == (3 if is_enabled else 0)
     if is_enabled:
         mock_youtube.assert_called_once()
-        mock_transcript_job = mocker.patch("videos.tasks.start_transcript_job.s")
+
         for video_file in youtube_video_files_processing:
             mock_mail_youtube_upload_success.assert_any_call(video_file)
             assert video_file.video.drivefile_set.first().resource.metadata == {
