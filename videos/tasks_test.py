@@ -124,11 +124,7 @@ def test_upload_youtube_videos(
         "status": {"uploadStatus": "uploaded"},
     }
 
-    if is_enabled:
-        with pytest.raises(mocked_celery.replace_exception_class):
-            upload_youtube_videos.delay()
-    else:
-        upload_youtube_videos.delay()
+    upload_youtube_videos.delay()
     assert mock_uploader.call_count == (min(3, max_uploads) if is_enabled else 0)
     assert mock_youtube.call_count == (1 if is_enabled else 0)
     if is_enabled:
@@ -189,7 +185,7 @@ def test_upload_youtube_quota_exceeded(mocker, youtube_video_files_new, msg, sta
         assert video_file.destination_id is None
 
 
-def test_start_transcript_job(mocker, settings):
+def test_start_transcript_job(mocker, settings, mocked_celery):
     """test start_transcript_job"""
     youtube_id = "test"
     threeplay_file_id = 1
@@ -218,6 +214,8 @@ def test_start_transcript_job(mocker, settings):
     WebsiteContentFactory.create(
         website=video.website, metadata={"youtube_id": youtube_id}, title=title
     )
+
+    update_youtube_statuses.delay()
 
     start_transcript_job(video.id)
 
