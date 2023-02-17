@@ -230,6 +230,7 @@ def test_start_transcript_job(mocker, settings):
     )
 
 
+# pylint:disable=no-value-for-parameter
 @pytest.mark.parametrize("is_enabled", [True, False])
 def test_update_youtube_statuses(
     settings,
