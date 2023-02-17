@@ -211,8 +211,11 @@ def test_start_transcript_job(mocker, settings, mocked_celery):
     )
 
     title = "title"
+
     WebsiteContentFactory.create(
-        website=video.website, metadata={"youtube_id": youtube_id}, title=title
+        website=video.website,
+        metadata={"video_metadata": {"youtube_id": youtube_id}},
+        title=title,
     )
 
     update_youtube_statuses.delay()
