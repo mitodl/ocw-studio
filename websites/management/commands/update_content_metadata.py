@@ -22,8 +22,8 @@ class Command(WebsiteFilterCommand):
             "-t",
             "--type",
             dest="type",
-            default="resource",
             help="Only update metadata of this_type (default = resource)",
+            required=True,
         )
         parser.add_argument(
             "-ud",
@@ -36,8 +36,8 @@ class Command(WebsiteFilterCommand):
             "-s",
             "--source",
             dest="source",
-            default="studio",
-            help=f"Only update metadata for websites that are based on this source (default=studio)",
+            help="Only update metadata for websites that are based on this source",
+            required=True,
         )
 
     def handle(self, *args, **options):
@@ -58,10 +58,12 @@ class Command(WebsiteFilterCommand):
         if source_str:
             content_qset = content_qset.filter(website__source=source_str)
 
-        self.stdout.write(
-            f"Update {type_str} metadata for websites based on starter {starter_str}, source={source_str}"
+        confirmation = input(
+            f"Update {type_str} metadata for websites based on starter {starter_str}, source={source_str}, Press y for yes and anything else for no"
         )
-
+        if confirmation not in ("y", "Y"):
+            self.stdout.write("Exiting out")
+            return
         base_metadata = SiteConfig(
             WebsiteStarter.objects.get(slug=starter_str).config
         ).generate_item_metadata(
