@@ -2,7 +2,6 @@ import React, { useCallback, useState } from "react"
 import { MaterialIcons } from "../types/common"
 import { WebsiteDropdown } from "../types/websites"
 
-
 export default function Dropdown(props: {
   websiteName: string
   dropdownBtnID: string
@@ -62,10 +61,13 @@ export default function Dropdown(props: {
         <i className="material-icons">{materialIcon}</i>
       </button>
       {menuOpen ? (
-        <div className="dropdown-menu right show" aria-labelledby={dropdownBtnID}>
+        <div
+          className="dropdown-menu right show"
+          aria-labelledby={dropdownBtnID}
+        >
           {dropdownMenu.map((menu: WebsiteDropdown) => (
             <button
-              onClick={e=>dropdownMenuBtnOnClickHandler(e, menu.clickHandler)}
+              onClick={e => dropdownMenuBtnOnClickHandler(e, menu.clickHandler)}
               className="dropdown-item"
               type="button"
               key={menu.id}

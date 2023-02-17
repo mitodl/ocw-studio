@@ -181,7 +181,7 @@ export const websitePublishAction = (
 
 export const websiteUnpublishAction = (
   name: string,
-  method: string,
+  method: string
 ): QueryConfig => {
   return {
     url:     siteApiUnpublishUrl.param({ name }).toString(),
@@ -190,7 +190,7 @@ export const websiteUnpublishAction = (
       headers: {
         "X-CSRFTOKEN": getCookie("csrftoken") || ""
       }
-    },
+    }
   }
 }
 

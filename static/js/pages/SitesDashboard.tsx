@@ -22,7 +22,6 @@ import { useURLParamFilter, usePagination } from "../hooks/search"
 import { usePermission } from "../hooks/permissions"
 import { Permission } from "../constants"
 
-
 function getListingParams(search: string): WebsiteListingParams {
   const qsParams = new URLSearchParams(search)
   const offset = Number(qsParams.get("offset") ?? 0)
@@ -47,9 +46,13 @@ export default function SitesDashboard(): JSX.Element {
   const canAddSites = usePermission(Permission.CanAddWebsite)
 
   const websiteDropdownMenuList: WebsiteDropdown[] = [
-    { id:           "1", label:        "Unpublish", clickHandler: (websiteName: string) => {
-      setShowUnpublishDialog(websiteName)
-    } }
+    {
+      id:           "1",
+      label:        "Unpublish",
+      clickHandler: (websiteName: string) => {
+        setShowUnpublishDialog(websiteName)
+      }
+    }
   ]
 
   return (
@@ -95,18 +98,27 @@ export default function SitesDashboard(): JSX.Element {
                   websiteName={site.name}
                   dropdownBtnID={`${site.uuid}_DropdownMenuButton`}
                   materialIcon={MaterialIcons.MoreVert}
-                  dropdownMenu={(site.publish_date && !site.unpublished) ? websiteDropdownMenuList : websiteDropdownMenuList.filter(item => item.id !== "1")} />
+                  dropdownMenu={
+                    site.publish_date && !site.unpublished ?
+                      websiteDropdownMenuList :
+                      websiteDropdownMenuList.filter(item => item.id !== "1")
+                  }
+                />
               </div>
             </StudioListItem>
-
           ))}
         </StudioList>
         <PaginationControls previous={pages.previous} next={pages.next} />
       </div>
 
-      {showUnpublishDialog ? <UnpublishDialog websiteName={showUnpublishDialog} closeDialog={() => {
-        setShowUnpublishDialog("")
-      }} /> : null}
+      {showUnpublishDialog ? (
+        <UnpublishDialog
+          websiteName={showUnpublishDialog}
+          closeDialog={() => {
+            setShowUnpublishDialog("")
+          }}
+        />
+      ) : null}
     </div>
   )
 }
