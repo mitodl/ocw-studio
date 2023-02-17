@@ -45,9 +45,11 @@ export default function SitesDashboard(): JSX.Element {
   const pages = usePagination(listing.count ?? 0)
 
   const canAddSites = usePermission(Permission.CanAddWebsite)
-  
-  let websiteDropdownMenuList: WebsiteDropdown[] = [
-    { id: "1", label: "Unpublish", clickHandler: (websiteName: string) => {setShowUnpublishDialog(websiteName)} }
+
+  const websiteDropdownMenuList: WebsiteDropdown[] = [
+    { id:           "1", label:        "Unpublish", clickHandler: (websiteName: string) => {
+      setShowUnpublishDialog(websiteName)
+    } }
   ]
 
   return (
@@ -89,10 +91,10 @@ export default function SitesDashboard(): JSX.Element {
                 ) : (
                   <div className="text-dark">Draft</div>
                 )}
-                <Dropdown  
-                  websiteName={site.name} 
-                  dropdownBtnID={`${site.uuid}_DropdownMenuButton`} 
-                  materialIcon={MaterialIcons.More_vert} 
+                <Dropdown
+                  websiteName={site.name}
+                  dropdownBtnID={`${site.uuid}_DropdownMenuButton`}
+                  materialIcon={MaterialIcons.MoreVert}
                   dropdownMenu={(site.publish_date && !site.unpublished) ? websiteDropdownMenuList : websiteDropdownMenuList.filter(item => item.id !== "1")} />
               </div>
             </StudioListItem>
@@ -102,7 +104,9 @@ export default function SitesDashboard(): JSX.Element {
         <PaginationControls previous={pages.previous} next={pages.next} />
       </div>
 
-      {showUnpublishDialog ? <UnpublishDialog websiteName={showUnpublishDialog} closeDialog={() => {setShowUnpublishDialog("")}} /> : null}
+      {showUnpublishDialog ? <UnpublishDialog websiteName={showUnpublishDialog} closeDialog={() => {
+        setShowUnpublishDialog("")
+      }} /> : null}
     </div>
   )
 }

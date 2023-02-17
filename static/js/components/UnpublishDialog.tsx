@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { Button, Modal, ModalBody, ModalHeader, ModalFooter } from "reactstrap"
 import { useMutation } from "redux-query-react"
 
@@ -10,16 +10,14 @@ export default function UnpublishDialog(props: {
   websiteName: string,
   closeDialog: () => void
   }): JSX.Element {
-
   const { websiteName, closeDialog } = props
   const [isSiteUnpublished, setIsSiteUnpublished] = useState(false)
   const [siteUnpublishedMsg, setSiteUnpublishedMsg] = useState("")
   const [error, setError] = useState("")
 
 
-  const [ { isPending }, unpublishPost ] = useMutation(() => websiteUnpublishAction(websiteName, "POST"))
+  const [{ isPending }, unpublishPost] = useMutation(() => websiteUnpublishAction(websiteName, "POST"))
   const handleUnpublishPost = async () => {
-
     if (isPending) {
       return
     }
@@ -31,8 +29,8 @@ export default function UnpublishDialog(props: {
       if (isErrorStatusCode(response.status)) {
         setError(`Something went wrong while unpublishing the website: ${JSON.stringify(response.body)}`)
       } else {
-          setSiteUnpublishedMsg(response.body)
-          setIsSiteUnpublished(true)
+        setSiteUnpublishedMsg(response.body)
+        setIsSiteUnpublished(true)
       }
     }
   }
@@ -43,7 +41,7 @@ export default function UnpublishDialog(props: {
     </button>
   )
 
-  if(!isSiteUnpublished){
+  if (!isSiteUnpublished) {
     return (
       <Modal
         isOpen={true}
@@ -53,11 +51,11 @@ export default function UnpublishDialog(props: {
           Confirmation required
         </ModalHeader>
         <ModalBody>
-          {!error ? 
+          {!error ?
             <div>
               Are you sure you want to unpublish this site?
-            </div>
-          : <div className="form-error">{error}</div> }
+            </div> :
+            <div className="form-error">{error}</div> }
         </ModalBody>
         <ModalFooter>
           <Button color="secondary" onClick={closeDialog}>
@@ -83,6 +81,6 @@ export default function UnpublishDialog(props: {
           Close
         </Button>
       </ModalFooter>
-    </Modal> 
+    </Modal>
   )
 }

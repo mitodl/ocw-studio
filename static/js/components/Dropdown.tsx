@@ -9,13 +9,8 @@ export default function Dropdown(props: {
   materialIcon: MaterialIcons
   dropdownMenu: WebsiteDropdown[]
 }): JSX.Element | null {
-  
-  const { websiteName, dropdownBtnID, materialIcon, dropdownMenu } = props;
+  const { websiteName, dropdownBtnID, materialIcon, dropdownMenu } = props
 
-  if(!dropdownMenu.length){
-    return null;
-  } 
-  
   const [menuOpen, setMenuOpen] = useState(false)
 
   const openMenu = useCallback(
@@ -39,15 +34,19 @@ export default function Dropdown(props: {
   )
 
   const dropdownMenuBtnOnClickHandler = useCallback(
-    (e: React.MouseEvent, clickHandler: Function) => {
+    (e: React.MouseEvent, clickHandler: (...args: any[]) => void) => {
       if (e) {
         e.preventDefault()
       }
       clickHandler(websiteName)
       closeMenu(e)
     },
-    [setMenuOpen]
+    [closeMenu, websiteName]
   )
+
+  if (!dropdownMenu.length) {
+    return null
+  }
 
   return (
     <div className="dropdown">
@@ -55,7 +54,7 @@ export default function Dropdown(props: {
         className="transparent-button"
         type="button"
         id={dropdownBtnID}
-        onClick={menuOpen ? closeMenu: openMenu}
+        onClick={menuOpen ? closeMenu : openMenu}
         data-toggle="dropdown"
         aria-haspopup="true"
         aria-expanded={menuOpen}
@@ -63,10 +62,10 @@ export default function Dropdown(props: {
         <i className="material-icons">{materialIcon}</i>
       </button>
       {menuOpen ? (
-          <div className="dropdown-menu right show" aria-labelledby={dropdownBtnID}>
+        <div className="dropdown-menu right show" aria-labelledby={dropdownBtnID}>
           {dropdownMenu.map((menu: WebsiteDropdown) => (
             <button
-              onClick={(e)=>dropdownMenuBtnOnClickHandler(e, menu.clickHandler)}
+              onClick={e=>dropdownMenuBtnOnClickHandler(e, menu.clickHandler)}
               className="dropdown-item"
               type="button"
               key={menu.id}
@@ -74,7 +73,7 @@ export default function Dropdown(props: {
               {menu.label}
             </button>
           ))}
-          </div>
+        </div>
       ) : null}
     </div>
   )

@@ -320,5 +320,5 @@ export type WebsiteContentModalState = ModalState<string>
 export type WebsiteDropdown = {
   id: string
   label: string
-  clickHandler: Function
+  clickHandler: (...args: any[]) => void
 }
