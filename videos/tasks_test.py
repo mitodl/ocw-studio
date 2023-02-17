@@ -123,7 +123,6 @@ def test_upload_youtube_videos(
         "id": "".join([choice(string.ascii_lowercase) for n in range(8)]),
         "status": {"uploadStatus": "uploaded"},
     }
-    mock_transcript_job = mocker.patch("videos.tasks.start_transcript_job.s")
 
     if is_enabled:
         with pytest.raises(mocked_celery.replace_exception_class):
@@ -139,7 +138,6 @@ def test_upload_youtube_videos(
             assert video_file.destination_id is not None
             assert video_file.destination_status == YouTubeStatus.UPLOADED
             assert video_file.status == VideoFileStatus.UPLOADED
-            mock_transcript_job.assert_any_call(video_file.video.id)
 
 
 def test_upload_youtube_videos_error(mocker, youtube_video_files_new):
@@ -191,8 +189,7 @@ def test_upload_youtube_quota_exceeded(mocker, youtube_video_files_new, msg, sta
         assert video_file.destination_id is None
 
 
-@pytest.mark.parametrize("video_resource", [True, False])
-def test_start_transcript_job(mocker, settings, video_resource):
+def test_start_transcript_job(mocker, settings):
     """test start_transcript_job"""
     youtube_id = "test"
     threeplay_file_id = 1
@@ -217,13 +214,10 @@ def test_start_transcript_job(mocker, settings, video_resource):
         "videos.tasks.threeplay_api.threeplay_order_transcript_request"
     )
 
-    if video_resource:
-        title = "title"
-        WebsiteContentFactory.create(
-            website=video.website, metadata={"youtube_id": youtube_id}, title=title
-        )
-    else:
-        title = "file"
+    title = "title"
+    WebsiteContentFactory.create(
+        website=video.website, metadata={"youtube_id": youtube_id}, title=title
+    )
 
     start_transcript_job(video.id)
 
@@ -263,6 +257,7 @@ def test_update_youtube_statuses(
     ).count() == (3 if is_enabled else 0)
     if is_enabled:
         mock_youtube.assert_called_once()
+        mock_transcript_job = mocker.patch("videos.tasks.start_transcript_job.s")
         for video_file in youtube_video_files_processing:
             mock_mail_youtube_upload_success.assert_any_call(video_file)
             assert video_file.video.drivefile_set.first().resource.metadata == {
@@ -277,6 +272,7 @@ def test_update_youtube_statuses(
                 "image": "",
                 "license": "default_license_specificed_in_config",
             }
+            mock_transcript_job.assert_any_call(video_file.video.id)
     else:
         mock_youtube.assert_not_called()
         mock_mail_youtube_upload_success.assert_not_called()

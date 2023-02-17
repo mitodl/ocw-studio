@@ -56,7 +56,6 @@ def upload_youtube_videos(self):
     if yt_queue.count() == 0:
         return
     youtube = YouTubeApi()
-    group_tasks = []
 
     for video_file in yt_queue:
         error_msg = None
@@ -65,7 +64,6 @@ def upload_youtube_videos(self):
             video_file.destination_id = response["id"]
             video_file.destination_status = response["status"]["uploadStatus"]
             video_file.status = VideoFileStatus.UPLOADED
-            group_tasks.append(start_transcript_job.s(video_file.video.id))
         except HttpError as error:
             error_msg = error.content.decode("utf-8")
             if API_QUOTA_ERROR_MSG in error_msg:
@@ -78,9 +76,6 @@ def upload_youtube_videos(self):
         video_file.save()
         if error_msg:
             mail_youtube_upload_failure(video_file)
-
-    if group_tasks:
-        raise self.replace(celery.group(group_tasks))
 
 
 @app.task
@@ -102,21 +97,22 @@ def start_transcript_job(video_id: int):
         .first()
     )
 
-    if video_resource:
-        title = video_resource.title
-        video_filename = video_resource.filename
-    else:
-        title = video.source_key.split("/")[-1]
-        video_filename = title
-    log.exception(f"video filename: {video_filename}")
+    title = video_resource.title
+    video_filename = video_resource.filename
+
+    debug_file = open("debug_output.txt", "a")
+    debug_file.write(f"video filename: {video_filename}\n")
+
     captions = WebsiteContent.objects.filter(
         Q(website=video.website) & Q(filename=f"{video_filename}_captions")
     ).first()
-    log.exception(f"captions: {captions}")
+    debug_file.write(f"captions: {captions}\n")
     transcript = WebsiteContent.objects.filter(
         Q(website=video.website) & Q(filename=f"{video_filename}_transcript")
     ).first()
-    log.exception(f"transcript: {transcript}")
+    debug_file.write(f"transcript: {transcript}\n")
+    debug_file.close()
+
     if captions or transcript:  # check for existing captions or transcript
         if captions:
             video_resource.metadata["video_files"]["video_captions_file"] = str(
@@ -143,9 +139,9 @@ def start_transcript_job(video_id: int):
             video.save()
 
 
-@app.task
-@single_task(timeout=settings.YT_STATUS_UPDATE_FREQUENCY, raise_block=False)
-def update_youtube_statuses():
+@app.task(bind=True)
+@single_task(timeout=settings.YT_STATUS_UPDATE_FREQUENCY)
+def update_youtube_statuses(self):
     """
     Update the status of recently uploaded YouTube videos if complete
     """
@@ -157,6 +153,7 @@ def update_youtube_statuses():
     if videos_processing.count() == 0:
         return
     youtube = YouTubeApi()
+    group_tasks = []
     for video_file in videos_processing:
         try:
             with transaction.atomic():
@@ -180,7 +177,9 @@ def update_youtube_statuses():
                         YT_THUMBNAIL_IMG.format(video_id=video_file.destination_id),
                     )
                     resource.save()
+                    group_tasks.append(start_transcript_job.s(video_file.video.id))
             mail_youtube_upload_success(video_file)
+
         except IndexError:
             # Video might be a dupe or deleted, mark it as failed and continue to next one.
             video_file.status = VideoFileStatus.FAILED
@@ -200,6 +199,9 @@ def update_youtube_statuses():
                 error.content.decode("utf-8"),
             )
             mail_youtube_upload_failure(video_file)
+
+    if group_tasks:
+        raise self.replace(celery.group(group_tasks))
 
 
 @app.task(acks_late=True)
