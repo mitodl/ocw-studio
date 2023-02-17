@@ -103,7 +103,8 @@ jobs:
           args:
           - -exc
           - |
-            aws s3((cli-endpoint-url)) rm s3://((ocw-bucket))/((.:site.site_url))/ --recursive
+            aws s3((cli-endpoint-url)) rm s3://((web-bucket))/((.:site.site_url))/ --recursive
+            aws s3((cli-endpoint-url)) rm s3://((offline-bucket))/((.:site.site_url))/ --recursive
       on_failure:
         try:
           task: webhook
