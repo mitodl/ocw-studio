@@ -108,23 +108,25 @@ def start_transcript_job(video_id: int):
     else:
         title = video.source_key.split("/")[-1]
         video_filename = title
-
+    log.exception(f"video filename: {video_filename}")
     captions = WebsiteContent.objects.filter(
         Q(website=video.website) & Q(filename=f"{video_filename}_captions")
     ).first()
-
+    log.exception(f"captions: {captions}")
     transcript = WebsiteContent.objects.filter(
         Q(website=video.website) & Q(filename=f"{video_filename}_transcript")
     ).first()
-
+    log.exception(f"transcript: {transcript}")
     if captions or transcript:  # check for existing captions or transcript
         if captions:
-            video.metadata["video_files"]["video_captions_file"] = str(captions.file)
+            video_resource.metadata["video_files"]["video_captions_file"] = str(
+                captions.file
+            )
         if transcript:
-            video.metadata["video_files"]["video_transcript_file"] = str(
+            video_resource.metadata["video_files"]["video_transcript_file"] = str(
                 transcript.file
             )
-        video.save()
+        video_resource.save()
 
     else:  # if none, request a transcript through the 3Play API
         response = threeplay_api.threeplay_upload_video_request(
