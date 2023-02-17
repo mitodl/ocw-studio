@@ -17,6 +17,8 @@ from content_sync.constants import (
     ONLINE_END,
     ONLINE_START,
     START_TAG_PREFIX,
+    TARGET_OFFLINE,
+    VERSION_DRAFT,
 )
 from main.s3_utils import get_boto3_resource
 from main.utils import is_dev
@@ -135,6 +137,44 @@ def get_theme_branch():
         if is_dev()
         else github_webhook_branch
     )
+
+
+def get_hugo_arg_string(build_target, pipeline_name, default_args, override_args=None):
+    """
+    Builds a string of arguments to be passed to the hugo command inserted into pipelines
+
+    Args:
+        build_target (str): The build target (online / offline)
+        pipeline_name (str): The name of the pipeline (draft / live)
+        default_args (dict): A dictionary of default args for the given context
+        override_args (str): (Optional) A string of arg overrides passed when executing a pipeline management command
+
+    Returns:
+        str: A string of arguments that can be appended to the hugo command in a pipeline
+    """
+    hugo_args = default_args.copy()
+    if pipeline_name == VERSION_DRAFT:
+        hugo_args["--buildDrafts"] = ""
+    if override_args:
+        split_override_args = override_args.split(" ")
+        for index, arg in enumerate(split_override_args):
+            next_arg = (
+                split_override_args[index + 1]
+                if (index < len(split_override_args) - 1)
+                else ""
+            )
+            if arg.startswith("-") and not next_arg.startswith("-"):
+                hugo_args[arg] = next_arg
+                # If the build target is offline, / is the only value that makes sense for --baseUrl
+                if arg == "--baseUrl" and build_target == TARGET_OFFLINE:
+                    hugo_args[arg] = "/"
+            elif arg.startswith("-"):
+                hugo_args[arg] = ""
+    hugo_arg_strings = []
+    for hugo_arg_key, hugo_arg_value in hugo_args.items():
+        value = f" {hugo_arg_value}" if hugo_arg_value != "" else ""
+        hugo_arg_strings.append(f"{hugo_arg_key}{value}")
+    return " ".join(hugo_arg_strings)
 
 
 def check_matching_tags(pipeline_config, start_tag, end_tag):

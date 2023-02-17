@@ -112,7 +112,7 @@ def upsert_website_publishing_pipeline(website_name: str):
 
 @app.task(acks_late=True)
 def upsert_website_pipeline_batch(
-    website_names: List[str], create_backend=False, unpause=False
+    website_names: List[str], create_backend=False, unpause=False, hugo_args=""
 ):
     """ Create/update publishing pipelines for multiple websites"""
     api_instance = None
@@ -123,7 +123,7 @@ def upsert_website_pipeline_batch(
             api.throttle_git_backend_calls(backend)
             backend.create_website_in_backend()
             backend.sync_all_content_to_backend()
-        pipeline = api.get_site_pipeline(website, api=api_instance)
+        pipeline = api.get_site_pipeline(website, hugo_args=hugo_args, api=api_instance)
         if not api_instance:
             # Keep using the same api instance to minimize multiple authentication calls
             api_instance = pipeline.api
@@ -138,8 +138,13 @@ def upsert_website_pipeline_batch(
 
 
 @app.task(bind=True)
-def upsert_pipelines(
-    self, website_names: List[str], chunk_size=500, create_backend=False, unpause=False
+def upsert_pipelines(  # pylint: disable=too-many-arguments
+    self,
+    website_names: List[str],
+    chunk_size=500,
+    create_backend=False,
+    unpause=False,
+    hugo_args="",
 ):
     """ Chunk and group batches of pipeline upserts for a specified list of websites"""
     tasks = []
@@ -149,7 +154,10 @@ def upsert_pipelines(
     ):
         tasks.append(
             upsert_website_pipeline_batch.s(
-                website_subset, create_backend=create_backend, unpause=unpause
+                website_subset,
+                create_backend=create_backend,
+                unpause=unpause,
+                hugo_args=hugo_args,
             )
         )
     raise self.replace(celery.group(tasks))

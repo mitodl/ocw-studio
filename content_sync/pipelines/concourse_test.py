@@ -597,7 +597,7 @@ def test_upsert_mass_build_pipeline(
         stripped_prefix = prefix[1:] if prefix.startswith("/") else prefix
     else:
         stripped_prefix = ""
-    build_drafts = "--buildDrafts" if version == VERSION_DRAFT else ""
+    build_drafts = " --buildDrafts" if version == VERSION_DRAFT else ""
     endpoint_url = (
         " --endpoint-url http://10.1.0.100:9000"
         if settings.ENVIRONMENT == "dev"
@@ -658,7 +658,7 @@ def test_upsert_mass_build_pipeline(
     if offline:
         assert "PULLING IN STATIC RESOURCES FOR $NAME" in config_str
         assert "touch ./content/static_resources/_index.md" in config_str
-        assert f"HUGO_RESULT=$(hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --themesDir ../ocw-hugo-themes/ {build_drafts} --quiet) || HUGO_RESULT=1"
+        assert f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseUrl / --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"
         if settings.ENVIRONMENT == "dev":
             assert (
                 f"STUDIO_S3_RESULT=$(aws s3{endpoint_url} sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH ./content/static_resources --exclude *.mp4 --only-show-errors) || STUDIO_S3_RESULT=1"
@@ -670,7 +670,7 @@ def test_upsert_mass_build_pipeline(
             in config_str
         )
         assert (
-            f"HUGO_RESULT=$(hugo --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml --baseUrl $PREFIX/$BASE_URL --themesDir ../ocw-hugo-themes/ {build_drafts} --quiet) || HUGO_RESULT=1"
+            f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseUrl $PREFIX/$BASE_URL --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"
             in config_str
         )
         assert (

@@ -44,11 +44,13 @@ def get_pipeline_api() -> BasePipeline:
 
 
 @is_publish_pipeline_enabled
-def get_site_pipeline(website: Website, api: Optional[object] = None) -> BasePipeline:
+def get_site_pipeline(
+    website: Website, hugo_args: Optional[str] = "", api: Optional[object] = None
+) -> BasePipeline:
     """ Get the configured sync publishing pipeline """
     return import_string(
         f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"
-    )(website, api=api)
+    )(website, hugo_args=hugo_args, api=api)
 
 
 @is_publish_pipeline_enabled
@@ -70,6 +72,7 @@ def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments
     projects_branch: Optional[str] = None,
     starter: Optional[str] = None,
     offline: Optional[bool] = None,
+    hugo_args: Optional[str] = None,
 ) -> object:
     """Get the mass build sites pipeline if the backend has one"""
     return import_string(
@@ -82,6 +85,7 @@ def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments
         projects_branch=projects_branch,
         starter=starter,
         offline=offline,
+        hugo_args=hugo_args,
     )
 
 

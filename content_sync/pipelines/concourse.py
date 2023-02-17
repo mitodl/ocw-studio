@@ -18,7 +18,13 @@ from concoursepy.api import Api
 from django.conf import settings
 from requests import HTTPError
 
-from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import (
+    DEV_ENDPOINT_URL,
+    TARGET_OFFLINE,
+    TARGET_ONLINE,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+)
 from content_sync.decorators import retry_on_failure
 from content_sync.pipelines.base import (
     BaseGeneralPipeline,
@@ -30,6 +36,7 @@ from content_sync.pipelines.base import (
 )
 from content_sync.utils import (
     check_mandatory_settings,
+    get_hugo_arg_string,
     get_template_vars,
     get_theme_branch,
     strip_dev_lines,
@@ -340,11 +347,17 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         "OCW_GTM_ACCOUNT_ID",
     ]
 
-    def __init__(self, website: Website, api: Optional[PipelineApi] = None):
+    def __init__(
+        self,
+        website: Website,
+        hugo_args: Optional[str] = None,
+        api: Optional[PipelineApi] = None,
+    ):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
         self.WEBSITE = website
         self.BRANCH = get_theme_branch()
+        self.HUGO_ARGS = hugo_args
         self.set_instance_vars({"site": self.WEBSITE.name})
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals
@@ -421,10 +434,40 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             else:
                 markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = ""
-            build_drafts = "--buildDrafts" if pipeline_name == VERSION_DRAFT else ""
-
+            starter_slug = self.WEBSITE.starter.slug
+            base_hugo_args = {"--themesDir": "../ocw-hugo-themes/"}
+            base_online_args = base_hugo_args.copy()
+            base_online_args.update(
+                {
+                    "--config": f"../ocw-hugo-projects/{starter_slug}/config.yaml",
+                    "--baseUrl": f"/{base_url}",
+                    "--destination": "output-online",
+                }
+            )
+            base_offline_args = base_hugo_args.copy()
+            base_offline_args.update(
+                {
+                    "--config": f"../ocw-hugo-projects/{starter_slug}/config-offline.yaml",
+                    "--baseUrl": "/",
+                    "--destination": "output-offline",
+                }
+            )
+            hugo_args_online = get_hugo_arg_string(
+                TARGET_ONLINE,
+                pipeline_name,
+                base_online_args,
+                self.HUGO_ARGS,
+            )
+            hugo_args_offline = get_hugo_arg_string(
+                TARGET_OFFLINE,
+                pipeline_name,
+                base_offline_args,
+                self.HUGO_ARGS,
+            )
             config_str = (
                 self.get_pipeline_definition("definitions/concourse/site-pipeline.yml")
+                .replace("((hugo-args-online))", hugo_args_online)
+                .replace("((hugo-args-offline))", hugo_args_offline)
                 .replace("((markdown-uri))", markdown_uri)
                 .replace("((git-private-key-var))", private_key_var)
                 .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
@@ -458,7 +501,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((api-token))", settings.API_BEARER_TOKEN or "")
                 .replace("((theme-deployed-trigger))", theme_deployed_trigger)
                 .replace("((theme-created-trigger))", theme_created_trigger)
-                .replace("((build-drafts))", build_drafts)
                 .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
                 .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
                 .replace(
@@ -557,6 +599,7 @@ class MassBuildSitesPipeline(
         projects_branch: Optional[str] = None,
         starter: Optional[str] = None,
         offline: Optional[bool] = None,
+        hugo_args: Optional[str] = None,
     ):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
@@ -584,6 +627,7 @@ class MassBuildSitesPipeline(
         )
         self.STARTER = starter
         self.OFFLINE = offline
+        self.HUGO_ARGS = hugo_args
         self.set_instance_vars(
             {
                 "version": version,
@@ -639,11 +683,43 @@ class MassBuildSitesPipeline(
                     "resource_base_url": settings.RESOURCE_BASE_URL_LIVE,
                 }
             )
+        base_hugo_args = {
+            "--themesDir": "../ocw-hugo-themes/",
+            "--quiet": "",
+        }
+        base_online_args = base_hugo_args.copy()
+        base_online_args.update(
+            {
+                "--baseUrl": "$PREFIX/$BASE_URL",
+                "--config": "../ocw-hugo-projects/$STARTER_SLUG/config.yaml",
+            }
+        )
+        base_offline_args = base_hugo_args.copy()
+        base_offline_args.update(
+            {
+                "--baseUrl": "/",
+                "--config": "../ocw-hugo-projects/$STARTER_SLUG/config-offline.yaml",
+            }
+        )
+        hugo_args_online = get_hugo_arg_string(
+            TARGET_ONLINE,
+            self.VERSION,
+            base_online_args,
+            self.HUGO_ARGS,
+        )
+        hugo_args_offline = get_hugo_arg_string(
+            TARGET_OFFLINE,
+            self.VERSION,
+            base_online_args,
+            self.HUGO_ARGS,
+        )
 
         config_str = (
             self.get_pipeline_definition(
                 "definitions/concourse/mass-build-sites.yml", offline=self.OFFLINE
             )
+            .replace("((hugo-args-online))", hugo_args_online)
+            .replace("((hugo-args-offline))", hugo_args_offline)
             .replace("((markdown-uri))", markdown_uri)
             .replace("((git-private-key-var))", private_key_var)
             .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)

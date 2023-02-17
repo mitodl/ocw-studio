@@ -192,14 +192,15 @@ def test_get_pipeline_api(settings, mocker):
     import_string_mock.assert_called_once_with()
 
 
+@pytest.mark.parametrize("hugo_args", [None, "--baseUrl /"])
 @pytest.mark.parametrize("pipeline_api", [None, {}])
-def test_get_site_pipeline(settings, mocker, pipeline_api):
+def test_get_site_pipeline(settings, mocker, hugo_args, pipeline_api):
     """ Verify that get_site_pipeline() imports the pipeline class based on settings.py """
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     import_string_mock = mocker.patch("content_sync.pipelines.concourse.SitePipeline")
     website = WebsiteFactory.create()
-    api.get_site_pipeline(website, api=pipeline_api)
-    import_string_mock.assert_any_call(website, api=pipeline_api)
+    api.get_site_pipeline(website, hugo_args=hugo_args, api=pipeline_api)
+    import_string_mock.assert_any_call(website, hugo_args=hugo_args, api=pipeline_api)
 
 
 @pytest.mark.parametrize("prepublish", [True, False])

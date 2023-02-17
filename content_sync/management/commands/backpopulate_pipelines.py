@@ -19,6 +19,13 @@ class Command(WebsiteFilterCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
+            "-hu",
+            "--hugo_args",
+            dest="hugo_args",
+            default="",
+            help="If specified, override Hugo command line arguments with supplied args",
+        )
+        parser.add_argument(
             "-s",
             "--starter",
             dest="starter",
@@ -69,6 +76,7 @@ class Command(WebsiteFilterCommand):
 
         self.stdout.write("Creating website pipelines")
 
+        hugo_args = options["hugo_args"]
         starter_str = options["starter"]
         source_str = options["source"]
         chunk_size = int(options["chunk_size"])
@@ -112,6 +120,7 @@ class Command(WebsiteFilterCommand):
             chunk_size=chunk_size,
             create_backend=create_backend,
             unpause=unpause,
+            hugo_args=hugo_args,
         )
 
         self.stdout.write(
