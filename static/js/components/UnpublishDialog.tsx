@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { Button, Modal, ModalBody, ModalHeader, ModalFooter } from "reactstrap"
 import { useMutation } from "redux-query-react"
-import ReactJson from "react-json-view"
 
 import { websiteUnpublishAction} from "../query-configs/websites"
 import { isErrorStatusCode } from "../lib/util"
@@ -13,31 +12,17 @@ export default function UnpublishDialog(props: {
   }): JSX.Element {
 
   const { websiteName, closeDialog } = props
-  const [siteDependencies, setSiteDependencies] = useState(null)
   const [isSiteUnpublished, setIsSiteUnpublished] = useState(false)
   const [siteUnpublishedMsg, setSiteUnpublishedMsg] = useState("")
   const [error, setError] = useState("")
 
-  const [ { isPending }, unpublishGet ] = useMutation(() => websiteUnpublishAction(websiteName, "GET"))
-  const handleUnpublishGet = async () => {
-    
+
+  const [ { isPending }, unpublishPost ] = useMutation(() => websiteUnpublishAction(websiteName, "POST"))
+  const handleUnpublishPost = async () => {
+
     if (isPending) {
       return
     }
-    const response = await unpublishGet()
-    if (!response) {
-      return
-    } else {
-      if (isErrorStatusCode(response.status)) {
-        setError(`Something went wrong while fetching website dependencies: ${JSON.stringify(response.body)}`)
-      } else {
-        setSiteDependencies(response.body.site_dependencies)
-      }
-    }
-  }
-
-  const [ { isFinished }, unpublishPost ] = useMutation(() => websiteUnpublishAction(websiteName, "POST"))
-  const handleUnpublishPost = async () => {
 
     const response = await unpublishPost()
     if (!response) {
@@ -52,10 +37,6 @@ export default function UnpublishDialog(props: {
     }
   }
 
-  useEffect(() => {
-    handleUnpublishGet()
-  }, []);
-
   const closeBtn = (
     <button className="close" onClick={closeDialog}>
       &times;
@@ -67,22 +48,14 @@ export default function UnpublishDialog(props: {
       <Modal
         isOpen={true}
         toggle={closeDialog}
-        size="lg"
       >
         <ModalHeader toggle={closeDialog} close={closeBtn}>
-          Are you sure you want to unpublish this site?
+          Confirmation required
         </ModalHeader>
         <ModalBody>
           {!error ? 
             <div>
-              {!siteDependencies ? "Loading Dependencies..." :
-                <ReactJson
-                  name={`Dependecies of ${websiteName}'`}
-                  src={siteDependencies}
-                  iconStyle="square"
-                  displayDataTypes={false}
-                  collapsed={1}
-                  enableClipboard={false} />}
+              Are you sure you want to unpublish this site?
             </div>
           : <div className="form-error">{error}</div> }
         </ModalBody>
