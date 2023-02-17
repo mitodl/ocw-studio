@@ -40,9 +40,9 @@ from websites.utils import get_dict_query_field, set_dict_field
 log = logging.getLogger()
 
 
-@app.task(bind=True)
+@app.task
 @single_task(timeout=settings.YT_UPLOAD_FREQUENCY, raise_block=False)
-def upload_youtube_videos(self):
+def upload_youtube_videos():
     """
     Upload public videos one at a time to YouTube (if not already there) until the daily maximum is reached.
     """
@@ -99,19 +99,12 @@ def start_transcript_job(video_id: int):
 
     title = video_resource.title
     video_filename = video_resource.filename
-
-    debug_file = open("debug_output.txt", "a")
-    debug_file.write(f"video filename: {video_filename}\n")
-
     captions = WebsiteContent.objects.filter(
         Q(website=video.website) & Q(filename=f"{video_filename}_captions")
     ).first()
-    debug_file.write(f"captions: {captions}\n")
     transcript = WebsiteContent.objects.filter(
         Q(website=video.website) & Q(filename=f"{video_filename}_transcript")
     ).first()
-    debug_file.write(f"transcript: {transcript}\n")
-    debug_file.close()
 
     if captions or transcript:  # check for existing captions or transcript
         if captions:
@@ -140,7 +133,7 @@ def start_transcript_job(video_id: int):
 
 
 @app.task(bind=True)
-@single_task(timeout=settings.YT_STATUS_UPDATE_FREQUENCY)
+@single_task(timeout=settings.YT_STATUS_UPDATE_FREQUENCY, raise_block=False)
 def update_youtube_statuses(self):
     """
     Update the status of recently uploaded YouTube videos if complete
