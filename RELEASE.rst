@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.86.1 (Released February 21, 2023)
+--------------
+
+- change offline mass build webpack output to be stored in static_shared (#1687)
+- Removed default arguments for source and resource  and added confirmation before updating content metadata command (#1451)
+
 Version 0.86.0 (Released February 15, 2023)
 --------------
 
