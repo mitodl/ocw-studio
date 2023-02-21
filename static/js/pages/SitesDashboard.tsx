@@ -36,7 +36,9 @@ export default function SitesDashboard(): JSX.Element {
   const { listingParams, searchInput, setSearchInput } = useURLParamFilter(
     getListingParams
   )
-  const [, fetchWebsiteContentListing] = useRequest(websiteListingRequest(listingParams))
+  const [, fetchWebsiteContentListing] = useRequest(
+    websiteListingRequest(listingParams)
+  )
 
   const listing: WebsiteListingResponse = useSelector(getWebsiteListingCursor)(
     listingParams.offset
@@ -55,7 +57,7 @@ export default function SitesDashboard(): JSX.Element {
     }
   ]
 
-  const unpublishSuccessCallback = () =>{
+  const unpublishSuccessCallback = () => {
     fetchWebsiteContentListing()
   }
 

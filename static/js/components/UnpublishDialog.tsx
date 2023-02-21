@@ -55,7 +55,9 @@ export default function UnpublishDialog(props: {
         </ModalHeader>
         <ModalBody>
           {!error ? (
-            <div>Are you sure you want to unpublish <b>{websiteName}</b>?</div>
+            <div>
+              Are you sure you want to unpublish <b>{websiteName}</b>?
+            </div>
           ) : (
             <div className="form-error">{error}</div>
           )}
