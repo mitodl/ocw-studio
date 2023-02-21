@@ -100,6 +100,11 @@ def pipeline_settings(settings, request):
     """ Default settings for pipelines"""
     env = request.param
     settings.ENVIRONMENT = env
+    settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket_test"
+    settings.AWS_PREVIEW_BUCKET_NAME = "draft_bucket_test"
+    settings.AWS_PUBLISH_BUCKET_NAME = "live_bucket_test"
+    settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME = "draft_offline_bucket_test"
+    settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME = "live_offline_bucket_test"
     settings.GITHUB_WEBHOOK_BRANCH = "main"
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
