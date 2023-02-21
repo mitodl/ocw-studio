@@ -36,7 +36,7 @@ export default function SitesDashboard(): JSX.Element {
   const { listingParams, searchInput, setSearchInput } = useURLParamFilter(
     getListingParams
   )
-  useRequest(websiteListingRequest(listingParams))
+  const [, fetchWebsiteContentListing] = useRequest(websiteListingRequest(listingParams))
 
   const listing: WebsiteListingResponse = useSelector(getWebsiteListingCursor)(
     listingParams.offset
@@ -54,6 +54,10 @@ export default function SitesDashboard(): JSX.Element {
       }
     }
   ]
+
+  const unpublishSuccessCallback = () =>{
+    fetchWebsiteContentListing()
+  }
 
   return (
     <div className="px-4 dashboard">
@@ -114,6 +118,7 @@ export default function SitesDashboard(): JSX.Element {
       {showUnpublishDialog ? (
         <UnpublishDialog
           websiteName={showUnpublishDialog}
+          successCallback={unpublishSuccessCallback}
           closeDialog={() => {
             setShowUnpublishDialog("")
           }}

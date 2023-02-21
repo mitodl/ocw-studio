@@ -7,9 +7,10 @@ import { isErrorStatusCode } from "../lib/util"
 
 export default function UnpublishDialog(props: {
   websiteName: string
+  successCallback: () => void
   closeDialog: () => void
 }): JSX.Element {
-  const { websiteName, closeDialog } = props
+  const { websiteName, successCallback, closeDialog } = props
   const [isSiteUnpublished, setIsSiteUnpublished] = useState(false)
   const [siteUnpublishedMsg, setSiteUnpublishedMsg] = useState("")
   const [error, setError] = useState("")
@@ -35,6 +36,7 @@ export default function UnpublishDialog(props: {
       } else {
         setSiteUnpublishedMsg(response.body)
         setIsSiteUnpublished(true)
+        successCallback()
       }
     }
   }
@@ -53,7 +55,7 @@ export default function UnpublishDialog(props: {
         </ModalHeader>
         <ModalBody>
           {!error ? (
-            <div>Are you sure you want to unpublish this site?</div>
+            <div>Are you sure you want to unpublish <b>{websiteName}</b>?</div>
           ) : (
             <div className="form-error">{error}</div>
           )}
