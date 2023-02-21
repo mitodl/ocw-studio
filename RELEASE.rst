@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.86.1
+Version 0.86.1 (Released February 21, 2023)
 --------------
 
 - change offline mass build webpack output to be stored in static_shared (#1687)
