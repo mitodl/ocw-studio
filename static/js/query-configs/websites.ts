@@ -22,6 +22,7 @@ import {
   siteApiListingUrl,
   siteApiDetailUrl,
   siteApiActionUrl,
+  siteApiUnpublishUrl,
   siteApiContentListingUrl,
   siteApiContentDetailUrl,
   siteApiContentUrl,
@@ -175,6 +176,21 @@ export const websitePublishAction = (
       }
     },
     body: payload
+  }
+}
+
+export const websiteUnpublishAction = (
+  name: string,
+  method: string
+): QueryConfig => {
+  return {
+    url:     siteApiUnpublishUrl.param({ name }).toString(),
+    options: {
+      method:  method,
+      headers: {
+        "X-CSRFTOKEN": getCookie("csrftoken") || ""
+      }
+    }
   }
 }
 

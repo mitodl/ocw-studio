@@ -292,7 +292,7 @@ class WebsiteViewSet(
                 trigger_unpublished_removal(website)
                 return Response(
                     status=200,
-                    data="Site has been unpublished and 'remove-unpublished-sites' pipeline has been triggered.",
+                    data="The site has been submitted for unpublishing.",
                 )
         except Exception as exc:  # pylint: disable=broad-except
             log.exception("Error unpublishing %s", name)

@@ -316,3 +316,9 @@ export enum LinkType {
  * content ID when we're editing existing content.
  */
 export type WebsiteContentModalState = ModalState<string>
+
+export type WebsiteDropdown = {
+  id: string
+  label: string
+  clickHandler: (...args: any[]) => void
+}
