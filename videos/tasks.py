@@ -34,7 +34,7 @@ from websites.api import is_ocw_site, videos_missing_captions
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.messages import VideoTranscriptingCompleteMessage
 from websites.models import Website, WebsiteContent
-from websites.utils import get_dict_query_field, set_dict_field
+from websites.utils import get_dict_field, get_dict_query_field, set_dict_field
 
 
 log = logging.getLogger()
@@ -84,7 +84,6 @@ def start_transcript_job(video_id: int):
     If there are existing captions or transcript, associate them with the video;
     otherwise, use the 3Play API to order a new transcript for video
     """
-
     video = Video.objects.filter(pk=video_id).last()
     folder_name = video.website.short_id
     youtube_id = video.youtube_id()
@@ -97,29 +96,24 @@ def start_transcript_job(video_id: int):
         .first()
     )
 
-    title = video_resource.title
-    video_filename = video_resource.filename
-    captions = WebsiteContent.objects.filter(
-        Q(website=video.website) & Q(filename=f"{video_filename}_captions")
-    ).first()
-    transcript = WebsiteContent.objects.filter(
-        Q(website=video.website) & Q(filename=f"{video_filename}_transcript")
-    ).first()
+    captions, transcript = video.caption_transcript_resources()
 
     if captions or transcript:  # check for existing captions or transcript
         if captions:
-            video_resource.metadata["video_files"]["video_captions_file"] = str(
-                captions.file
+            set_dict_field(
+                video_resource.metadata, settings.YT_FIELD_CAPTIONS, captions.file.name
             )
         if transcript:
-            video_resource.metadata["video_files"]["video_transcript_file"] = str(
-                transcript.file
+            set_dict_field(
+                video_resource.metadata,
+                settings.YT_FIELD_TRANSCRIPT,
+                transcript.file.name,
             )
         video_resource.save()
 
     else:  # if none, request a transcript through the 3Play API
         response = threeplay_api.threeplay_upload_video_request(
-            folder_name, youtube_id, title
+            folder_name, youtube_id, video_resource.title
         )
 
         threeplay_file_id = response.get("data").get("id")
@@ -236,26 +230,36 @@ def delete_s3_objects(
 def update_transcripts_for_video(video_id: int):
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
-    if threeplay_api.update_transcripts_for_video(video):
-        first_transcript_download = False
+    captions, transcript = video.caption_transcript_resources()
+    has_threeplay_update = (
+        False
+        if captions or transcript
+        else threeplay_api.update_transcripts_for_video(video)
+    )
+    if not captions and not transcript and not has_threeplay_update:
+        return
 
-        if video.status != VideoStatus.COMPLETE:
-            video.status = VideoStatus.COMPLETE
-            video.save()
+    first_transcript_download = False
+
+    if video.status != VideoStatus.COMPLETE:
+        video.status = VideoStatus.COMPLETE
+        video.save()
+        if has_threeplay_update:
             first_transcript_download = True
 
-        website = video.website
-        if is_ocw_site(website):
-            search_fields = {}
-            search_fields[
-                get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)
-            ] = RESOURCE_TYPE_VIDEO
-            search_fields[
-                get_dict_query_field("metadata", settings.YT_FIELD_ID)
-            ] = video.youtube_id()
+    website = video.website
+    if is_ocw_site(website):
+        search_fields = {}
+        search_fields[
+            get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)
+        ] = RESOURCE_TYPE_VIDEO
+        search_fields[
+            get_dict_query_field("metadata", settings.YT_FIELD_ID)
+        ] = video.youtube_id()
 
-            for video_resource in website.websitecontent_set.filter(**search_fields):
-                metadata = video_resource.metadata
+        for video_resource in website.websitecontent_set.filter(**search_fields):
+            metadata = video_resource.metadata
+            if has_threeplay_update:
                 set_dict_field(
                     metadata,
                     settings.YT_FIELD_TRANSCRIPT,
@@ -277,12 +281,42 @@ def update_transcripts_for_video(video_id: int):
                     ),
                 )
                 video_resource.save()
+            else:
+                if captions:
+                    current_value = get_dict_field(
+                        video_resource.metadata, settings.YT_FIELD_CAPTIONS
+                    )
+                    new_value = captions.file.name.replace(
+                        video.website.s3_path, video.website.url_path
+                    )
+                    if current_value != new_value:
+                        set_dict_field(
+                            video_resource.metadata,
+                            settings.YT_FIELD_CAPTIONS,
+                            captions.file.name.replace(
+                                video.website.s3_path, video.website.url_path
+                            ),
+                        )
+                        video_resource.save()
+                if transcript:
+                    current_value = get_dict_field(
+                        video_resource.metadata, settings.YT_FIELD_TRANSCRIPT
+                    )
+                    new_value = transcript.file.name.replace(
+                        video.website.s3_path, video.website.url_path
+                    )
+                    if current_value != new_value:
+                        set_dict_field(
+                            video_resource.metadata,
+                            settings.YT_FIELD_TRANSCRIPT,
+                            transcript.file.name.replace(
+                                video.website.s3_path, video.website.url_path
+                            ),
+                        )
+                        video_resource.save()
 
-                if (
-                    first_transcript_download
-                    and len(videos_missing_captions(website)) == 0
-                ):
-                    mail_transcripts_complete_notification(website)
+            if first_transcript_download and len(videos_missing_captions(website)) == 0:
+                mail_transcripts_complete_notification(website)
 
 
 @app.task(acks_late=True)
