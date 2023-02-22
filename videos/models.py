@@ -1,16 +1,20 @@
 """Video models"""
+from typing import Tuple
+
 from django.db import models
 from django.db.models import CASCADE
 from mitol.common.models import TimestampedModel
 
+from main import settings
 from videos.constants import (
     DESTINATION_YOUTUBE,
     VideoFileStatus,
     VideoJobStatus,
     VideoStatus,
 )
-from websites.models import Website
+from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
+from websites.utils import get_dict_query_field
 
 
 class Video(TimestampedModel):
@@ -37,6 +41,29 @@ class Video(TimestampedModel):
             return youtube_videofile.destination_id
         else:
             return None
+
+    def caption_transcript_resources(self) -> Tuple[WebsiteContent, WebsiteContent]:
+        """Search for and return the video's caption resource and transcript resource if either exists"""
+        youtube_id = self.youtube_id()
+
+        query_youtube_id_field = get_dict_query_field("metadata", settings.YT_FIELD_ID)
+        video_resource = (
+            WebsiteContent.objects.filter(website=self.website)
+            .filter(models.Q(**{query_youtube_id_field: youtube_id}))
+            .first()
+        )
+        if video_resource:
+            video_filename = video_resource.filename
+            captions = WebsiteContent.objects.filter(
+                models.Q(website=self.website)
+                & models.Q(filename=f"{video_filename}_captions")
+            ).first()
+            transcript = WebsiteContent.objects.filter(
+                models.Q(website=self.website)
+                & models.Q(filename=f"{video_filename}_transcript")
+            ).first()
+            return captions, transcript
+        return None, None
 
     source_key = models.CharField(max_length=2048, unique=True)
     website = models.ForeignKey(Website, on_delete=CASCADE, related_name="videos")

@@ -41,7 +41,7 @@ from videos.youtube import API_QUOTA_ERROR_MSG
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.messages import VideoTranscriptingCompleteMessage
-from websites.utils import get_dict_field
+from websites.utils import get_dict_field, set_dict_field
 
 
 # pylint:disable=unused-argument,redefined-outer-name
@@ -123,13 +123,8 @@ def test_upload_youtube_videos(
         "id": "".join([choice(string.ascii_lowercase) for n in range(8)]),
         "status": {"uploadStatus": "uploaded"},
     }
-    mock_transcript_job = mocker.patch("videos.tasks.start_transcript_job.s")
 
-    if is_enabled:
-        with pytest.raises(mocked_celery.replace_exception_class):
-            upload_youtube_videos.delay()
-    else:
-        upload_youtube_videos.delay()
+    upload_youtube_videos.delay()
     assert mock_uploader.call_count == (min(3, max_uploads) if is_enabled else 0)
     assert mock_youtube.call_count == (1 if is_enabled else 0)
     if is_enabled:
@@ -139,7 +134,6 @@ def test_upload_youtube_videos(
             assert video_file.destination_id is not None
             assert video_file.destination_status == YouTubeStatus.UPLOADED
             assert video_file.status == VideoFileStatus.UPLOADED
-            mock_transcript_job.assert_any_call(video_file.video.id)
 
 
 def test_upload_youtube_videos_error(mocker, youtube_video_files_new):
@@ -191,12 +185,14 @@ def test_upload_youtube_quota_exceeded(mocker, youtube_video_files_new, msg, sta
         assert video_file.destination_id is None
 
 
-@pytest.mark.parametrize("video_resource", [True, False])
-def test_start_transcript_job(mocker, settings, video_resource):
+@pytest.mark.parametrize("caption_exists", [True, False])
+@pytest.mark.parametrize("transcript_exists", [True, False])
+def test_start_transcript_job(mocker, settings, caption_exists, transcript_exists):
     """test start_transcript_job"""
     youtube_id = "test"
     threeplay_file_id = 1
-    settings.YT_FIELD_ID = "youtube_id"
+    settings.YT_FIELD_ID = "video_metadata.youtube_id"
+    title = "title"
 
     video_file = VideoFileFactory.create(
         status=VideoStatus.CREATED,
@@ -208,6 +204,28 @@ def test_start_transcript_job(mocker, settings, video_resource):
     video.source_key = "the/file"
     video.save()
 
+    video_content = WebsiteContentFactory.create(
+        website=video.website,
+        metadata={"video_metadata": {"youtube_id": youtube_id}},
+        title=title,
+    )
+
+    base_path = f"/some/path/to/{video_content.filename}"
+
+    if caption_exists:
+        WebsiteContentFactory.create(
+            website=video.website,
+            filename=f"{video_content.filename}_captions",
+            file=f"{base_path}_captions.srt",
+        )
+
+    if transcript_exists:
+        WebsiteContentFactory.create(
+            website=video.website,
+            filename=f"{video_content.filename}_transcript",
+            file=f"{base_path}_transcript.pdf",
+        )
+
     mock_threeplay_upload_video_request = mocker.patch(
         "videos.tasks.threeplay_api.threeplay_upload_video_request",
         return_value={"data": {"id": threeplay_file_id}},
@@ -217,31 +235,36 @@ def test_start_transcript_job(mocker, settings, video_resource):
         "videos.tasks.threeplay_api.threeplay_order_transcript_request"
     )
 
-    if video_resource:
-        title = "title"
-        WebsiteContentFactory.create(
-            website=video.website, metadata={"youtube_id": youtube_id}, title=title
-        )
-    else:
-        title = "file"
-
     start_transcript_job(video.id)
 
-    mock_threeplay_upload_video_request.assert_called_once_with(
-        video.website.short_id, youtube_id, title
+    video_content.refresh_from_db()
+    assert get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS) == (
+        f"{base_path}_captions.srt" if caption_exists else None
     )
-    mock_order_transcript_request_request.assert_called_once_with(
-        video.id, threeplay_file_id
+    assert get_dict_field(video_content.metadata, settings.YT_FIELD_TRANSCRIPT) == (
+        f"{base_path}_transcript.pdf" if transcript_exists else None
     )
+
+    if not transcript_exists and not caption_exists:
+        mock_threeplay_upload_video_request.assert_called_once_with(
+            video.website.short_id, youtube_id, title
+        )
+        mock_order_transcript_request_request.assert_called_once_with(
+            video.id, threeplay_file_id
+        )
+    else:
+        mock_threeplay_upload_video_request.assert_not_called()
+        mock_order_transcript_request_request.assert_not_called()
 
 
 @pytest.mark.parametrize("is_enabled", [True, False])
-def test_update_youtube_statuses(
+def test_update_youtube_statuses(  # pylint:disable=too-many-arguments
     settings,
     mocker,
     youtube_video_files_processing,
     youtube_video_files_new,
     is_enabled,
+    mocked_celery,
 ):
     """
     Test that the correct number of YouTubeVideo objects have their statuses updated to the correct value.
@@ -257,12 +280,18 @@ def test_update_youtube_statuses(
     for video_file in youtube_video_files_processing:
         drive_file = DriveFileFactory.create(video=video_file.video)
         create_gdrive_resource_content(drive_file)
-    update_youtube_statuses()
+    mock_transcript_job = mocker.patch("videos.tasks.start_transcript_job.s")
+    if is_enabled:
+        with pytest.raises(mocked_celery.replace_exception_class):
+            update_youtube_statuses.delay()
+    else:
+        update_youtube_statuses.delay()
     assert VideoFile.objects.filter(
         destination_status=YouTubeStatus.PROCESSED, status=VideoFileStatus.COMPLETE
     ).count() == (3 if is_enabled else 0)
     if is_enabled:
         mock_youtube.assert_called_once()
+
         for video_file in youtube_video_files_processing:
             mock_mail_youtube_upload_success.assert_any_call(video_file)
             assert video_file.video.drivefile_set.first().resource.metadata == {
@@ -277,6 +306,7 @@ def test_update_youtube_statuses(
                 "image": "",
                 "license": "default_license_specificed_in_config",
             }
+            mock_transcript_job.assert_any_call(video_file.video.id)
     else:
         mock_youtube.assert_not_called()
         mock_mail_youtube_upload_success.assert_not_called()
@@ -294,7 +324,7 @@ def test_update_youtube_statuses_api_quota_exceeded(
             MockHttpErrorResponse(403), str.encode(API_QUOTA_ERROR_MSG, "utf-8")
         ),
     )
-    update_youtube_statuses()
+    update_youtube_statuses.delay()
     mock_video_status.assert_called_once()
 
 
@@ -310,7 +340,7 @@ def test_update_youtube_statuses_http_error(mocker, youtube_video_files_processi
         "videos.tasks.mail_youtube_upload_failure"
     )
     mock_log = mocker.patch("videos.tasks.log.exception")
-    update_youtube_statuses()
+    update_youtube_statuses.delay()
     for video_file in youtube_video_files_processing:
         mock_video_status.assert_any_call(video_file.destination_id)
         mock_log.assert_any_call(
@@ -331,7 +361,7 @@ def test_update_youtube_statuses_index_error(mocker, youtube_video_files_process
     mock_mail_youtube_upload_failure = mocker.patch(
         "videos.tasks.mail_youtube_upload_failure"
     )
-    update_youtube_statuses()
+    update_youtube_statuses.delay()
     for video_file in youtube_video_files_processing:
         mock_log.assert_any_call(
             "Status of YouTube video not found: youtube_id %s",
@@ -343,7 +373,7 @@ def test_update_youtube_statuses_index_error(mocker, youtube_video_files_process
 def test_update_youtube_statuses_no_videos(mocker):
     """Youtube API should not be instantiated if there are no videos to process"""
     mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
-    update_youtube_statuses()
+    update_youtube_statuses.delay()
     mock_youtube.assert_not_called()
 
 
@@ -536,6 +566,79 @@ def test_update_transcripts_for_updated_videos(mocker):
     updated_files_mock.assert_called_once()
     update_transcript_mock.assert_called_once_with(video_file.video.id)
     remove_tags_mock.assert_called_once_with(6737396)
+
+
+@pytest.mark.parametrize(
+    "caption_exists, transcript_exists",
+    [
+        [True, False],
+        [False, True],
+    ],
+)
+def test_update_transcripts_for_video_no_3play(
+    mocker, caption_exists, transcript_exists
+):
+    """if there are caption/transcript resources, avoid calling 3play"""
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    resource = WebsiteContentFactory.create(website=video.website, metadata={})
+    metadata = resource.metadata
+    base_path = f"{resource.website.s3_path}/{resource.filename}"
+
+    if caption_exists:
+        WebsiteContentFactory.create(
+            website=video.website,
+            filename=f"{resource.filename}_captions",
+            file=f"{base_path}_captions.srt",
+        )
+
+    if transcript_exists:
+        WebsiteContentFactory.create(
+            website=video.website,
+            filename=f"{resource.filename}_transcript",
+            file=f"{base_path}_transcript.pdf",
+        )
+
+    set_dict_field(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
+    set_dict_field(metadata, settings.YT_FIELD_ID, "expected_id")
+    set_dict_field(
+        metadata,
+        settings.YT_FIELD_CAPTIONS,
+        (f"{base_path}_captions.srt" if caption_exists else None),
+    )
+    set_dict_field(
+        metadata,
+        settings.YT_FIELD_TRANSCRIPT,
+        (f"{base_path}_transcript.pdf" if transcript_exists else None),
+    )
+    resource.save()
+
+    if caption_exists:
+        assert video.caption_transcript_resources()[0] is not None
+    if transcript_exists:
+        assert video.caption_transcript_resources()[1] is not None
+
+    mock_3play = mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
+
+    update_transcripts_for_video(video.id)
+    resource.refresh_from_db()
+
+    mock_3play.assert_not_called()
+
+    assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) == (
+        f"{video.website.url_path}/{resource.filename}_captions.srt"
+        if caption_exists
+        else None
+    )
+    assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) == (
+        f"{video.website.url_path}/{resource.filename}_transcript.pdf"
+        if transcript_exists
+        else None
+    )
 
 
 def test_attempt_to_update_missing_transcripts(mocker):
