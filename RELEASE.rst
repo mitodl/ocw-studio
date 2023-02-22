@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.86.2
+--------------
+
+- feat: unpublish sites (#1684)
+- allow overriding hugo build arguments (#1674)
+
 Version 0.86.1 (Released February 21, 2023)
 --------------
 
