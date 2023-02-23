@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.86.2
+Version 0.86.2 (Released February 23, 2023)
 --------------
 
 - Make sure there is a preceding slash on transcript/caption urls (#1693)
