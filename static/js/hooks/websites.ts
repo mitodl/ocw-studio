@@ -57,16 +57,22 @@ export function useWebsiteContent(
  * The `labelField` argument indicates what field of the Website
  * you'd like to show to the user.
  *
+ * The `additionalLabelField` argument indicates the field of the Website
+ * shown in brackets next to `labelField`. Only shown if its not empty.
+ *
  * The `valueField` argument indicates what field on the Website
  * you'd like to use for a user-readable label.
  */
 export const formatWebsiteOptions = (
   websites: Website[],
   labelField: string,
+  additionalLabelField: string,
   valueField: string
 ): Option[] =>
   websites.map(website => ({
-    label: website[labelField],
+    label: additionalLabelField ?
+      `${website[labelField]} (${website["short_id"]})` :
+      website[labelField],
     value: website[valueField]
   }))
 
@@ -87,6 +93,7 @@ interface ReturnProps {
  */
 export function useWebsiteSelectOptions(
   labelField = "title",
+  additionalLabelField = "",
   valueField = "uuid",
   published: boolean | undefined = undefined
 ): ReturnProps {
@@ -119,7 +126,12 @@ export function useWebsiteSelectOptions(
       }
       const json: WebsiteListingResponse = await response.json()
       const { results } = json
-      const options = formatWebsiteOptions(results, labelField, valueField)
+      const options = formatWebsiteOptions(
+        results,
+        labelField,
+        additionalLabelField,
+        valueField
+      )
       setOptions(current =>
         uniqBy(option => option.value, [...current, ...options])
       )
@@ -127,7 +139,7 @@ export function useWebsiteSelectOptions(
         callback(options)
       }
     },
-    [setOptions, labelField, valueField, published]
+    [setOptions, labelField, additionalLabelField, valueField, published]
   )
 
   // on startup we want to fetch options initially so defaultOptions can

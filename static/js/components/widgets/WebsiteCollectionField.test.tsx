@@ -14,6 +14,7 @@ jest.mock("../../hooks/websites", () => ({
   ...jest.requireActual("../../hooks/websites"),
   useWebsiteSelectOptions: jest.fn()
 }))
+const { formatWebsiteOptions } = websiteHooks
 const useWebsiteSelectOptions = jest.mocked(
   websiteHooks.useWebsiteSelectOptions
 )
@@ -34,8 +35,7 @@ describe("WebsiteCollectionField", () => {
       value: []
     })
     websites = makeWebsites()
-    websiteOptions = formatWebsiteOptions(websites, "title", "name")
-    // @ts-ignore
+    websiteOptions = formatWebsiteOptions(websites, "title", "short_id", "name")
     useWebsiteSelectOptions.mockReturnValue({
       options:     websiteOptions,
       loadOptions: jest.fn()
@@ -48,7 +48,12 @@ describe("WebsiteCollectionField", () => {
 
   it("should pass published=true to the useWebsiteSelectOptions", async () => {
     await render()
-    expect(useWebsiteSelectOptions).toBeCalledWith("short_id", "url_path", true)
+    expect(useWebsiteSelectOptions).toHaveBeenCalledWith(
+      "title",
+      "short_id",
+      "url_path",
+      true
+    )
   })
 
   it("should pass things down to SortableSelect", async () => {

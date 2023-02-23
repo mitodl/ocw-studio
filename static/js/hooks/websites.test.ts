@@ -45,7 +45,7 @@ describe("website hooks", () => {
         { credentials: "include" }
       )
       expect(result.current.options).toEqual(
-        formatWebsiteOptions(websites, "title", "uuid")
+        formatWebsiteOptions(websites, "title", "short_id", "uuid")
       )
     })
 
@@ -55,7 +55,7 @@ describe("website hooks", () => {
         published
       )} if you pass the option`, async () => {
         const { waitForNextUpdate } = renderHook(() =>
-          useWebsiteSelectOptions("title", "uuid", published)
+          useWebsiteSelectOptions("title", "short_id", "uuid", published)
         )
         await act(async () => {
           await waitForNextUpdate()
@@ -87,7 +87,9 @@ describe("website hooks", () => {
           .toString(),
         { credentials: "include" }
       )
-      expect(cb).toBeCalledWith(formatWebsiteOptions(websites, "title", "uuid"))
+      expect(cb).toHaveBeenCalledWith(
+        formatWebsiteOptions(websites, "title", "short_id", "uuid")
+      )
     })
   })
 })

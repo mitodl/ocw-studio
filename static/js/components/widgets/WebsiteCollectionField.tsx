@@ -37,6 +37,7 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
   )
 
   const { options, loadOptions } = useWebsiteSelectOptions(
+    "title",
     "short_id",
     "url_path",
     true

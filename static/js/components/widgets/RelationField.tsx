@@ -119,7 +119,7 @@ export default function RelationField(props: Props): JSX.Element {
   const {
     options: websiteOptions,
     loadOptions: loadWebsiteOptions
-  } = useWebsiteSelectOptions("title", "name")
+  } = useWebsiteSelectOptions("title", "short_id", "name")
   const [focusedWebsite, setFocusedWebsite] = useState<string | null>(null)
   const setFocusedWebsiteCB = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
