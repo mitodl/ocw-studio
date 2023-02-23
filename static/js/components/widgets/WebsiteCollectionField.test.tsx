@@ -14,7 +14,7 @@ jest.mock("../../hooks/websites", () => ({
   ...jest.requireActual("../../hooks/websites"),
   useWebsiteSelectOptions: jest.fn()
 }))
-const { formatWebsiteOptions } = websiteHooks
+
 const useWebsiteSelectOptions = jest.mocked(
   websiteHooks.useWebsiteSelectOptions
 )
@@ -35,7 +35,12 @@ describe("WebsiteCollectionField", () => {
       value: []
     })
     websites = makeWebsites()
-    websiteOptions = formatWebsiteOptions(websites, "title", "short_id", "name")
+    websiteOptions = websiteHooks.formatWebsiteOptions(
+      websites,
+      "title",
+      "short_id",
+      "name"
+    )
     useWebsiteSelectOptions.mockReturnValue({
       options:     websiteOptions,
       loadOptions: jest.fn()
