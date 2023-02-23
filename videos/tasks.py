@@ -248,7 +248,7 @@ def update_transcripts_for_video(video_id: int):
             first_transcript_download = True
 
     website = video.website
-    if is_ocw_site(website):
+    if is_ocw_site(website):  # pylint: disable=too-many-nested-blocks
         search_fields = {}
         search_fields[
             get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)
@@ -282,38 +282,25 @@ def update_transcripts_for_video(video_id: int):
                 )
                 video_resource.save()
             else:
-                if captions:
-                    current_value = get_dict_field(
-                        video_resource.metadata, settings.YT_FIELD_CAPTIONS
-                    )
-                    new_value = captions.file.name.replace(
-                        video.website.s3_path, video.website.url_path
-                    )
-                    if current_value != new_value:
-                        set_dict_field(
-                            video_resource.metadata,
-                            settings.YT_FIELD_CAPTIONS,
-                            captions.file.name.replace(
+                for (resource, meta_field) in [
+                    (captions, settings.YT_FIELD_CAPTIONS),
+                    (transcript, settings.YT_FIELD_TRANSCRIPT),
+                ]:
+                    if resource:
+                        current_value = get_dict_field(
+                            video_resource.metadata, meta_field
+                        )
+                        new_value = urljoin(
+                            "/",
+                            resource.file.name.replace(
                                 video.website.s3_path, video.website.url_path
                             ),
                         )
-                        video_resource.save()
-                if transcript:
-                    current_value = get_dict_field(
-                        video_resource.metadata, settings.YT_FIELD_TRANSCRIPT
-                    )
-                    new_value = transcript.file.name.replace(
-                        video.website.s3_path, video.website.url_path
-                    )
-                    if current_value != new_value:
-                        set_dict_field(
-                            video_resource.metadata,
-                            settings.YT_FIELD_TRANSCRIPT,
-                            transcript.file.name.replace(
-                                video.website.s3_path, video.website.url_path
-                            ),
-                        )
-                        video_resource.save()
+                        if current_value != new_value:
+                            set_dict_field(
+                                video_resource.metadata, meta_field, new_value
+                            )
+                            video_resource.save()
 
             if first_transcript_download and len(videos_missing_captions(website)) == 0:
                 mail_transcripts_complete_notification(website)
