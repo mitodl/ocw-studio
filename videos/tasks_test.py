@@ -630,12 +630,12 @@ def test_update_transcripts_for_video_no_3play(
     mock_3play.assert_not_called()
 
     assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) == (
-        f"{video.website.url_path}/{resource.filename}_captions.srt"
+        f"/{video.website.url_path}/{resource.filename}_captions.srt"
         if caption_exists
         else None
     )
     assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) == (
-        f"{video.website.url_path}/{resource.filename}_transcript.pdf"
+        f"/{video.website.url_path}/{resource.filename}_transcript.pdf"
         if transcript_exists
         else None
     )
