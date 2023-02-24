@@ -244,27 +244,33 @@ jobs:
               echo "STARTING S3 SYNC FOR $NAME" > /dev/tty
               # START OFFLINE-ONLY
               cd $CURDIR/$SHORT_ID/public
-              zip $SHORT_ID.zip -r ./
-              PUBLISH_S3_RESULT=$(aws s3((cli-endpoint-url)) sync ./ s3://((ocw-bucket))$PREFIX/$BASE_URL --exclude="*" --include="$SHORT_ID.zip" --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1
+              PUBLISH_S3_RESULT=$(aws s3((cli-endpoint-url)) sync ./ s3://((offline-bucket))$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1
               if [[ $PUBLISH_S3_RESULT == 1 ]]
               then
-                echo "SYNCING $SHORT_ID.zip to s3://((ocw-bucket))$PREFIX/$SITE_URL failed for $NAME" > /dev/tty
+                echo "SYNCING $SHORT_ID to s3://((offline-bucket))$PREFIX/$SITE_URL failed for $NAME" > /dev/tty
+                return 1
+              fi
+              zip $SHORT_ID.zip -r ./
+              PUBLISH_S3_RESULT=$(aws s3((cli-endpoint-url)) sync ./ s3://((web-bucket))$PREFIX/$BASE_URL --exclude="*" --include="$SHORT_ID.zip" --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1
+              if [[ $PUBLISH_S3_RESULT == 1 ]]
+              then
+                echo "SYNCING $SHORT_ID.zip to s3://((web-bucket))$PREFIX/$SITE_URL failed for $NAME" > /dev/tty
                 return 1
               fi
               rm $SHORT_ID.zip
               cd $CURDIR
               # END OFFLINE-ONLY
               # START ONLINE-ONLY
-              STUDIO_S3_RESULT=$(aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH s3://((ocw-bucket))$PREFIX/$SITE_URL --metadata site-id=$NAME --only-show-errors) || STUDIO_S3_RESULT=1
+              STUDIO_S3_RESULT=$(aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH s3://((web-bucket))$PREFIX/$SITE_URL --metadata site-id=$NAME --only-show-errors) || STUDIO_S3_RESULT=1
               if [[ $STUDIO_S3_RESULT == 1 ]]
               then
-                echo "SYNCING s3://((ocw-studio-bucket))/$S3_PATH to s3://((ocw-bucket))$PREFIX/$SITE_URL FAILED FOR $NAME" > /dev/tty
+                echo "SYNCING s3://((ocw-studio-bucket))/$S3_PATH to s3://((web-bucket))$PREFIX/$SITE_URL FAILED FOR $NAME" > /dev/tty
                 return 1
               fi
-              PUBLISH_S3_RESULT=$(aws s3((cli-endpoint-url)) sync $SHORT_ID/public s3://((ocw-bucket))$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1
+              PUBLISH_S3_RESULT=$(aws s3((cli-endpoint-url)) sync $SHORT_ID/public s3://((web-bucket))$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1
               if [[ $PUBLISH_S3_RESULT == 1 ]]
               then
-                echo "SYNCING $SHORT_ID/public to s3://((ocw-bucket))$PREFIX/$SITE_URL failed for $NAME" > /dev/tty
+                echo "SYNCING $SHORT_ID/public to s3://((web-bucket))$PREFIX/$SITE_URL failed for $NAME" > /dev/tty
                 return 1
               fi
               # START NON-DEV

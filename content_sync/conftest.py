@@ -43,6 +43,8 @@ def required_concourse_settings(settings):
     settings.CONCOURSE_TEAM = "ocwtest"
     settings.AWS_PREVIEW_BUCKET_NAME = "preview_bucket"
     settings.AWS_PUBLISH_BUCKET_NAME = "publish_bucket"
+    settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME = "offline_preview_bucket"
+    settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME = "offline_publish_bucket"
     settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket"
     settings.GIT_BRANCH_PREVIEW = "preview"
     settings.GIT_BRANCH_RELEASE = "release"

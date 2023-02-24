@@ -217,6 +217,8 @@ services:
       AWS_STORAGE_BUCKET_NAME: $AWS_STORAGE_BUCKET_NAME
       AWS_PREVIEW_BUCKET_NAME: $AWS_PREVIEW_BUCKET_NAME
       AWS_PUBLISH_BUCKET_NAME: $AWS_PUBLISH_BUCKET_NAME
+      AWS_OFFLINE_PREVIEW_BUCKET_NAME: $AWS_OFFLINE_PREVIEW_BUCKET_NAME
+      AWS_OFFLINE_PUBLISH_BUCKET_NAME: $AWS_OFFLINE_PUBLISH_BUCKET_NAME
       AWS_ARTIFACTS_BUCKET_NAME: $AWS_ARTIFACTS_BUCKET_NAME
     restart: on-failure
     entrypoint: >
@@ -228,6 +230,10 @@ services:
       /usr/bin/mc policy set public minio/$AWS_PREVIEW_BUCKET_NAME;
       /usr/bin/mc mb minio/$AWS_PUBLISH_BUCKET_NAME;
       /usr/bin/mc policy set public minio/$AWS_PUBLISH_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_OFFLINE_PREVIEW_BUCKET_NAME;
+      /usr/bin/mc policy set public minio/$AWS_OFFLINE_PREVIEW_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_OFFLINE_PUBLISH_BUCKET_NAME;
+      /usr/bin/mc policy set public minio/$AWS_OFFLINE_PUBLISH_BUCKET_NAME;
       /usr/bin/mc mb minio/$AWS_ARTIFACTS_BUCKET_NAME;
       /usr/bin/mc policy set public minio/$AWS_ARTIFACTS_BUCKET_NAME;
       /usr/bin/mc version enable minio/$AWS_ARTIFACTS_BUCKET_NAME;

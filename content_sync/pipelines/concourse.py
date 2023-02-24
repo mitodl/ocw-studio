@@ -338,6 +338,8 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
     MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
         "AWS_PREVIEW_BUCKET_NAME",
         "AWS_PUBLISH_BUCKET_NAME",
+        "AWS_OFFLINE_PREVIEW_BUCKET_NAME",
+        "AWS_OFFLINE_PUBLISH_BUCKET_NAME",
         "AWS_STORAGE_BUCKET_NAME",
         "GIT_BRANCH_PREVIEW",
         "GIT_BRANCH_RELEASE",
@@ -422,10 +424,12 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             storage_bucket_name = branch_vars["storage_bucket_name"]
             artifacts_bucket = branch_vars["artifacts_bucket_name"]
             if branch == settings.GIT_BRANCH_PREVIEW:
-                destination_bucket = branch_vars["preview_bucket_name"]
+                web_bucket = branch_vars["preview_bucket_name"]
+                offline_bucket = branch_vars["offline_preview_bucket_name"]
                 resource_base_url = branch_vars["resource_base_url_draft"]
             elif branch == settings.GIT_BRANCH_RELEASE:
-                destination_bucket = branch_vars["publish_bucket_name"]
+                web_bucket = branch_vars["publish_bucket_name"]
+                offline_bucket = branch_vars["offline_publish_bucket_name"]
                 resource_base_url = branch_vars["resource_base_url_live"]
 
             if settings.CONCOURSE_IS_PRIVATE_REPO:
@@ -472,7 +476,8 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((git-private-key-var))", private_key_var)
                 .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
                 .replace("((artifacts-bucket))", artifacts_bucket or "")
-                .replace("((ocw-bucket))", destination_bucket or "")
+                .replace("((web-bucket))", web_bucket or "")
+                .replace("((offline-bucket))", offline_bucket or "")
                 .replace("((ocw-hugo-themes-branch))", ocw_hugo_themes_branch)
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
                 .replace("((ocw-hugo-projects-branch))", ocw_hugo_projects_branch)
@@ -605,6 +610,8 @@ class MassBuildSitesPipeline(
         self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
             "AWS_PREVIEW_BUCKET_NAME",
             "AWS_PUBLISH_BUCKET_NAME",
+            "AWS_OFFLINE_PREVIEW_BUCKET_NAME",
+            "AWS_OFFLINE_PUBLISH_BUCKET_NAME",
             "AWS_STORAGE_BUCKET_NAME",
             "GIT_BRANCH_PREVIEW",
             "GIT_BRANCH_RELEASE",
@@ -665,7 +672,8 @@ class MassBuildSitesPipeline(
                     or settings.OCW_STUDIO_DRAFT_URL
                     if is_dev()
                     else settings.OCW_STUDIO_DRAFT_URL,
-                    "destination_bucket": template_vars["preview_bucket_name"],
+                    "web_bucket": template_vars["preview_bucket_name"],
+                    "offline_bucket": template_vars["offline_preview_bucket_name"],
                     "build_drafts": "--buildDrafts",
                     "resource_base_url": settings.RESOURCE_BASE_URL_DRAFT,
                 }
@@ -678,7 +686,8 @@ class MassBuildSitesPipeline(
                     or settings.OCW_STUDIO_LIVE_URL
                     if is_dev()
                     else settings.OCW_STUDIO_LIVE_URL,
-                    "destination_bucket": template_vars["publish_bucket_name"],
+                    "web_bucket": template_vars["publish_bucket_name"],
+                    "offline_bucket": template_vars["offline_publish_bucket_name"],
                     "build_drafts": "",
                     "resource_base_url": settings.RESOURCE_BASE_URL_LIVE,
                 }
@@ -710,7 +719,7 @@ class MassBuildSitesPipeline(
         hugo_args_offline = get_hugo_arg_string(
             TARGET_OFFLINE,
             self.VERSION,
-            base_online_args,
+            base_offline_args,
             self.HUGO_ARGS,
         )
 
@@ -726,7 +735,8 @@ class MassBuildSitesPipeline(
             .replace(
                 "((artifacts-bucket))", template_vars["artifacts_bucket_name"] or ""
             )
-            .replace("((ocw-bucket))", template_vars["destination_bucket"] or "")
+            .replace("((web-bucket))", template_vars["web_bucket"] or "")
+            .replace("((offline-bucket))", template_vars["offline_bucket"] or "")
             .replace("((ocw-hugo-themes-branch))", self.THEMES_BRANCH)
             .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
             .replace(
@@ -795,13 +805,15 @@ class UnpublishedSiteRemovalPipeline(
         Create or update the concourse pipeline
         """
         template_vars = get_template_vars()
-        destination_bucket = template_vars["publish_bucket_name"]
+        web_bucket = template_vars["publish_bucket_name"]
+        offline_bucket = template_vars["offline_publish_bucket_name"]
 
         config_str = (
             self.get_pipeline_definition(
                 "definitions/concourse/remove-unpublished-sites.yml"
             )
-            .replace("((ocw-bucket))", destination_bucket)
+            .replace("((web-bucket))", web_bucket)
+            .replace("((offline-bucket))", offline_bucket)
             .replace("((ocw-studio-url))", template_vars["ocw_studio_url"] or "")
             .replace("((version))", VERSION_LIVE)
             .replace("((api-token))", settings.API_BEARER_TOKEN or "")

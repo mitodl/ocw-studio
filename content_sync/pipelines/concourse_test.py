@@ -100,6 +100,11 @@ def pipeline_settings(settings, request):
     """ Default settings for pipelines"""
     env = request.param
     settings.ENVIRONMENT = env
+    settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket_test"
+    settings.AWS_PREVIEW_BUCKET_NAME = "draft_bucket_test"
+    settings.AWS_PUBLISH_BUCKET_NAME = "live_bucket_test"
+    settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME = "draft_offline_bucket_test"
+    settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME = "live_offline_bucket_test"
     settings.GITHUB_WEBHOOK_BRANCH = "main"
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
@@ -112,8 +117,10 @@ def pipeline_settings(settings, request):
         settings.AWS_ACCESS_KEY_ID = "minio_root_user"
         settings.AWS_SECRET_ACCESS_KEY = "minio_root_password"
         settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket_dev"
-        settings.AWS_DRAFT_BUCKET_NAME = "draft_bucket_dev"
-        settings.AWS_LIVE_BUCKET_NAME = "live_bucket_dev"
+        settings.AWS_PREVIEW_BUCKET_NAME = "draft_bucket_dev"
+        settings.AWS_PUBLISH_BUCKET_NAME = "live_bucket_dev"
+        settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME = "draft_offline_bucket_dev"
+        settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME = "live_offline_bucket_dev"
         settings.AWS_ARTIFACTS_BUCKET_NAME = "artifact_buckets_dev"
         settings.OCW_HUGO_THEMES_BRANCH = "themes_dev"
         settings.OCW_HUGO_PROJECTS_BRANCH = "projects_dev"
@@ -322,10 +329,12 @@ def test_upsert_website_pipelines(
     if version == VERSION_DRAFT:
         _, kwargs = mock_put_headers.call_args_list[0]
         bucket = expected_template_vars["preview_bucket_name"]
+        offline_bucket = expected_template_vars["offline_preview_bucket_name"]
         api_url = settings.OCW_STUDIO_DRAFT_URL
     else:
         _, kwargs = mock_put_headers.call_args_list[1]
         bucket = expected_template_vars["publish_bucket_name"]
+        offline_bucket = expected_template_vars["offline_publish_bucket_name"]
         api_url = settings.OCW_STUDIO_LIVE_URL
 
     config_str = json.dumps(kwargs)
@@ -354,6 +363,10 @@ def test_upsert_website_pipelines(
         )
         assert (
             f"aws s3 {expected_endpoint_prefix}sync build-course-offline/ s3://{bucket}/{website.url_path} --exclude='*' --include='{website.short_id}.zip' --metadata site-id={website.name}"
+            in config_str
+        )
+        assert (
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-offline/ s3://{offline_bucket}/{website.url_path} --metadata site-id={website.name}"
             in config_str
         )
         assert (
@@ -639,9 +652,11 @@ def test_upsert_mass_build_pipeline(
     _, kwargs = mock_put_headers.call_args_list[0]
     if version == VERSION_DRAFT:
         bucket = expected_template_vars["preview_bucket_name"]
+        offline_bucket = expected_template_vars["offline_preview_bucket_name"]
         static_api_url = settings.OCW_STUDIO_DRAFT_URL
     elif version == VERSION_LIVE:
         bucket = expected_template_vars["publish_bucket_name"]
+        offline_bucket = expected_template_vars["offline_publish_bucket_name"]
         static_api_url = settings.OCW_STUDIO_LIVE_URL
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
@@ -659,6 +674,15 @@ def test_upsert_mass_build_pipeline(
         assert "PULLING IN STATIC RESOURCES FOR $NAME" in config_str
         assert "touch ./content/static_resources/_index.md" in config_str
         assert f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseUrl / --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"
+        assert (
+            f"PUBLISH_S3_RESULT=$(aws s3{endpoint_url} sync ./ s3://{offline_bucket}$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1"
+            in config_str
+        )
+        assert (
+            f"PUBLISH_S3_RESULT=$(aws s3{endpoint_url} sync ./ s3://{bucket}$PREFIX/$BASE_URL"
+            in config_str
+        )
+        assert "$SHORT_ID.zip" in config_str
         if settings.ENVIRONMENT == "dev":
             assert (
                 f"STUDIO_S3_RESULT=$(aws s3{endpoint_url} sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH ./content/static_resources --exclude *.mp4 --only-show-errors) || STUDIO_S3_RESULT=1"
@@ -675,6 +699,10 @@ def test_upsert_mass_build_pipeline(
         )
         assert (
             f"STUDIO_S3_RESULT=$(aws s3{endpoint_url} sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH s3://{bucket}$PREFIX/$SITE_URL --metadata site-id=$NAME --only-show-errors) || STUDIO_S3_RESULT=1"
+            in config_str
+        )
+        assert (
+            f"PUBLISH_S3_RESULT=$(aws s3{endpoint_url} sync $SHORT_ID/public s3://{bucket}$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1"
             in config_str
         )
         if settings.ENVIRONMENT != "dev":

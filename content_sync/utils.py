@@ -108,6 +108,8 @@ def get_template_vars():
     base_vars = {
         "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
         "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
+        "offline_preview_bucket_name": settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME,
+        "offline_publish_bucket_name": settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME,
         "storage_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
         "artifacts_bucket_name": "ol-eng-artifacts",
     }
