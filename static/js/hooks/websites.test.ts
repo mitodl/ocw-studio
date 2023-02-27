@@ -45,6 +45,25 @@ describe("website hooks", () => {
         { credentials: "include" }
       )
       expect(result.current.options).toEqual(
+        formatWebsiteOptions(websites, "title", "", "uuid")
+      )
+    })
+
+    it("should fetch options with additional Label on startup by default", async () => {
+      const { result, waitForNextUpdate } = renderHook(() =>
+        useWebsiteSelectOptions("title", "short_id", "uuid")
+      )
+      await act(async () => {
+        await waitForNextUpdate()
+      })
+      expect(global.fetch).toHaveBeenCalledWith(
+        siteApiListingUrl
+          .query({ offset: 0 })
+          .param({ search: "" })
+          .toString(),
+        { credentials: "include" }
+      )
+      expect(result.current.options).toEqual(
         formatWebsiteOptions(websites, "title", "short_id", "uuid")
       )
     })
@@ -55,7 +74,7 @@ describe("website hooks", () => {
         published
       )} if you pass the option`, async () => {
         const { waitForNextUpdate } = renderHook(() =>
-          useWebsiteSelectOptions("title", "short_id", "uuid", published)
+          useWebsiteSelectOptions("title", "", "uuid", published)
         )
         await act(async () => {
           await waitForNextUpdate()
@@ -88,7 +107,7 @@ describe("website hooks", () => {
         { credentials: "include" }
       )
       expect(cb).toHaveBeenCalledWith(
-        formatWebsiteOptions(websites, "title", "short_id", "uuid")
+        formatWebsiteOptions(websites, "title", "", "uuid")
       )
     })
   })

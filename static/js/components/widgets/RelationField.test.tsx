@@ -103,7 +103,7 @@ describe("RelationField", () => {
 
     websites = makeWebsites()
     useWebsiteSelectOptions.mockReturnValue({
-      options:     formatWebsiteOptions(websites, "title", "short_id", "name"),
+      options:     formatWebsiteOptions(websites, "title", "", "name"),
       loadOptions: jest.fn()
     })
   })

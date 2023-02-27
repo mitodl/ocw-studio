@@ -38,7 +38,7 @@ describe("WebsiteCollectionField", () => {
     websiteOptions = websiteHooks.formatWebsiteOptions(
       websites,
       "title",
-      "short_id",
+      "",
       "name"
     )
     useWebsiteSelectOptions.mockReturnValue({

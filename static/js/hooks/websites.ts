@@ -71,7 +71,7 @@ export const formatWebsiteOptions = (
 ): Option[] =>
   websites.map(website => ({
     label: additionalLabelField ?
-      `${website[labelField]} (${website["short_id"]})` :
+      `${website[labelField]} (${website[additionalLabelField]})` :
       website[labelField],
     value: website[valueField]
   }))
