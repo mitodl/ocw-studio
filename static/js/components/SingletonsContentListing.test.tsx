@@ -56,9 +56,9 @@ describe("SingletonsContentListing", () => {
     })
     website = makeWebsiteDetail()
     singletonConfigItems = [
-      makeSingletonConfigItem('textId-1'),
-      makeSingletonConfigItem('textId-2'),
-      makeSingletonConfigItem('textId-3')
+      makeSingletonConfigItem("textId-1"),
+      makeSingletonConfigItem("textId-2"),
+      makeSingletonConfigItem("textId-3")
     ]
     configItem = {
       ...makeSingletonsConfigItem(),
