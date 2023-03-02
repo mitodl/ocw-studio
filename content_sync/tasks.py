@@ -406,35 +406,34 @@ def update_websites_in_root(self):
     if settings.ROOT_WEBSITE_NAME:
         dirpath = "content/websites"
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        # Get all sites, minus any sites that have never been successfully published
+        sites = Website.objects.exclude(
+            Q(**{"draft_publish_date__isnull": True}) & Q(**{"publish_date__isnull": True})
+        )
+        sites = Website.objects.exclude(Q(url_path__isnull=True))
+        # Exclude the root website
+        sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
+        for site in sites:
+            site_metadata = WebsiteContent.objects.get(
+                website=site, type="sitemetadata"
+            ).metadata
+            # We want this content to show up in lists, but not render pages
+            site_metadata["_build"] = {
+                "list": True,
+                "render": False
+            }
+            # Set the content to draft if the site has been unpublished
+            site_metadata["draft"] = True if site.unpublish_status is not None else False
+            # Carry over url_path for proper linking
+            site_metadata["url_path"] = site.url_path
+            WebsiteContent.objects.update_or_create(
+                website=root_website,
+                type="website",
+                title=site.title,
+                dirpath=dirpath,
+                filename=site.short_id,
+                is_page_content=True,
+                defaults={"title": site.title, "metadata": site_metadata}
+            )
         for version in [VERSION_DRAFT, VERSION_LIVE]:
-            publish_date_field = (
-                "publish_date" if version == VERSION_LIVE else "draft_publish_date"
-            )
-            # Get all sites, minus any sites that have never been successfully published
-            sites = Website.objects.exclude(
-                Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
-            )
-            # Exclude the root website
-            sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
-            # For live builds, exclude previously published sites that have been unpublished
-            if version == VERSION_LIVE:
-                sites = sites.exclude(unpublish_status__isnull=False)
-            for site in sites:
-                site_metadata = WebsiteContent.objects.get(
-                    website=site, type="sitemetadata"
-                ).metadata
-                site_metadata["_build"] = {
-                    "list": True,
-                    "render": False
-                }
-                site_metadata["url_path"] = site.url_path
-                WebsiteContent.objects.update_or_create(
-                    website=root_website,
-                    type="website",
-                    title=site.title,
-                    dirpath=dirpath,
-                    filename=site.short_id,
-                    is_page_content=True,
-                    defaults={"title": site.title, "metadata": site_metadata}
-                )
             api.trigger_publish(root_website.name, version)
