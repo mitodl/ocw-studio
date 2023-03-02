@@ -23,7 +23,8 @@ from websites.constants import (
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUSES_FINAL,
 )
-from websites.models import Website
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from websites.models import Website, WebsiteContent
 
 
 log = logging.getLogger(__name__)
@@ -392,3 +393,48 @@ def check_incomplete_publish_build_statuses():
             log.exception(
                 "Error updating publishing status for website %s", website.name
             )
+
+
+@app.task(bind=True)
+@single_task(timeout=9999, raise_block=False)
+def update_websites_in_root(self):
+    """
+    Get all websites published to draft / live at least once, and for each one:
+        - Create or update a WebsiteContent object in the website denoted by settings.ROOT_WEBSITE_NAME
+        - Publish the content to draft / live branch of the root website in the Git backend
+    """
+    if settings.ROOT_WEBSITE_NAME:
+        dirpath = "content/websites"
+        root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        for version in [VERSION_DRAFT, VERSION_LIVE]:
+            publish_date_field = (
+                "publish_date" if version == VERSION_LIVE else "draft_publish_date"
+            )
+            # Get all sites, minus any sites that have never been successfully published
+            sites = Website.objects.exclude(
+                Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
+            )
+            # Exclude the root website
+            sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
+            # For live builds, exclude previously published sites that have been unpublished
+            if version == VERSION_LIVE:
+                sites = sites.exclude(unpublish_status__isnull=False)
+            for site in sites:
+                site_metadata = WebsiteContent.objects.get(
+                    website=site, type="sitemetadata"
+                ).metadata
+                site_metadata["_build"] = {
+                    "list": True,
+                    "render": False
+                }
+                site_metadata["url_path"] = site.url_path
+                WebsiteContent.objects.update_or_create(
+                    website=root_website,
+                    type="website",
+                    title=site.title,
+                    dirpath=dirpath,
+                    filename=site.short_id,
+                    is_page_content=True,
+                    defaults={"title": site.title, "metadata": site_metadata}
+                )
+            api.trigger_publish(root_website.name, version)
