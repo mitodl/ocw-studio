@@ -408,7 +408,8 @@ def update_websites_in_root(self):
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
         # Get all sites, minus any sites that have never been successfully published
         sites = Website.objects.exclude(
-            Q(**{"draft_publish_date__isnull": True}) & Q(**{"publish_date__isnull": True})
+            Q(**{"draft_publish_date__isnull": True})
+            & Q(**{"publish_date__isnull": True})
         )
         sites = Website.objects.exclude(Q(url_path__isnull=True))
         # Exclude the root website
@@ -418,12 +419,11 @@ def update_websites_in_root(self):
                 website=site, type="sitemetadata"
             ).metadata
             # We want this content to show up in lists, but not render pages
-            site_metadata["_build"] = {
-                "list": True,
-                "render": False
-            }
+            site_metadata["_build"] = {"list": True, "render": False}
             # Set the content to draft if the site has been unpublished
-            site_metadata["draft"] = True if site.unpublish_status is not None else False
+            site_metadata["draft"] = (
+                True if site.unpublish_status is not None else False
+            )
             # Carry over url_path for proper linking
             site_metadata["url_path"] = site.url_path
             WebsiteContent.objects.update_or_create(
@@ -433,7 +433,7 @@ def update_websites_in_root(self):
                 dirpath=dirpath,
                 filename=site.short_id,
                 is_page_content=True,
-                defaults={"title": site.title, "metadata": site_metadata}
+                defaults={"title": site.title, "metadata": site_metadata},
             )
         for version in [VERSION_DRAFT, VERSION_LIVE]:
             api.trigger_publish(root_website.name, version)
