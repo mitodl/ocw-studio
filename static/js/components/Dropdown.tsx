@@ -1,14 +1,14 @@
 import React, { useCallback, useState } from "react"
 import { MaterialIcons } from "../types/common"
-import { WebsiteDropdown } from "../types/websites"
+import { WebsiteDropdown, WebsiteInitials } from "../types/websites"
 
 export default function Dropdown(props: {
-  websiteName: string
+  website?: WebsiteInitials
   dropdownBtnID: string
   materialIcon: MaterialIcons
   dropdownMenu: WebsiteDropdown[]
 }): JSX.Element | null {
-  const { websiteName, dropdownBtnID, materialIcon, dropdownMenu } = props
+  const { website, dropdownBtnID, materialIcon, dropdownMenu } = props
 
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -37,10 +37,10 @@ export default function Dropdown(props: {
       if (e) {
         e.preventDefault()
       }
-      clickHandler(websiteName)
+      clickHandler(website || null)
       closeMenu(e)
     },
-    [closeMenu, websiteName]
+    [closeMenu, website]
   )
 
   if (!dropdownMenu.length) {

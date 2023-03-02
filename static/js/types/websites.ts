@@ -322,3 +322,9 @@ export type WebsiteDropdown = {
   label: string
   clickHandler: (...args: any[]) => void
 }
+
+export interface WebsiteInitials {
+  name: string
+  title: string
+  short_id: string
+}

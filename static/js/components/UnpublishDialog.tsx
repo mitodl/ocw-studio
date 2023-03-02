@@ -5,18 +5,20 @@ import { useMutation } from "redux-query-react"
 import { websiteUnpublishAction } from "../query-configs/websites"
 import { isErrorStatusCode } from "../lib/util"
 
+import { WebsiteInitials } from "../types/websites"
+
 export default function UnpublishDialog(props: {
-  websiteName: string
+  website: WebsiteInitials
   successCallback: () => void
   closeDialog: () => void
 }): JSX.Element {
-  const { websiteName, successCallback, closeDialog } = props
+  const { website, successCallback, closeDialog } = props
   const [isSiteUnpublished, setIsSiteUnpublished] = useState(false)
   const [siteUnpublishedMsg, setSiteUnpublishedMsg] = useState("")
   const [error, setError] = useState("")
 
   const [{ isPending }, unpublishPost] = useMutation(() =>
-    websiteUnpublishAction(websiteName, "POST")
+    websiteUnpublishAction(website.name, "POST")
   )
   const handleUnpublishPost = async () => {
     if (isPending) {
@@ -56,7 +58,11 @@ export default function UnpublishDialog(props: {
         <ModalBody>
           {!error ? (
             <div>
-              Are you sure you want to unpublish <b>{websiteName}</b>?
+              Are you sure you want to unpublish{" "}
+              <b>
+                {website.title} ({website.short_id})
+              </b>
+              ?
             </div>
           ) : (
             <div className="form-error">{error}</div>
