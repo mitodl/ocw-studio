@@ -352,11 +352,13 @@ def test_upsert_website_pipelines(
         in config_str
     )
     if home_page:
+        assert f"cp -r -n ../static-resources/. ./output-online/{website.name}" in config_str
         assert (
             f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/ --metadata site-id={website.name}"
             in config_str
         )
     else:
+        assert "cp -r -n ../static-resources/. ./output-online/" in config_str
         assert (
             f"aws s3 {expected_endpoint_prefix}sync s3://{bucket}/static_shared ./static/static_shared"
             in config_str

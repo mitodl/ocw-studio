@@ -384,10 +384,12 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
 
         if self.WEBSITE.name == settings.ROOT_WEBSITE_NAME:
             base_url = ""
+            static_resources_subdirectory = self.WEBSITE.get_url_path()
             theme_created_trigger = "true"
             theme_deployed_trigger = "false"
         else:
             base_url = self.WEBSITE.get_url_path()
+            static_resources_subdirectory = ""
             theme_created_trigger = "false"
             theme_deployed_trigger = "true"
         hugo_projects_url = urljoin(
@@ -517,6 +519,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
                 )
                 .replace("((resource-base-url))", resource_base_url or "")
+                .replace("((static-resources-subdirectory))", static_resources_subdirectory)
                 .replace(
                     "((ocw-hugo-themes-sentry-dsn))",
                     settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
