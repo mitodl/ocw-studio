@@ -410,7 +410,7 @@ def update_websites_in_root_website(self):
         Q(**{"draft_publish_date__isnull": True})
         & Q(**{"publish_date__isnull": True})
     )
-    sites = Website.objects.exclude(Q(url_path__isnull=True))
+    sites = sites.exclude(Q(url_path__isnull=True))
     # Exclude the root website
     sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
     for site in sites:
