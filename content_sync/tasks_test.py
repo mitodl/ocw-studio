@@ -25,6 +25,7 @@ from websites.constants import (
     PUBLISH_STATUS_SUCCEEDED,
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.models import WebsiteContent
 
 
 pytestmark = pytest.mark.django_db
@@ -673,3 +674,34 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
     else:
         mock_pipeline_trigger.assert_not_called()
         mock_pipeline_unpause.assert_not_called()
+
+
+def test_update_websites_in_root_website(mocker):
+    """
+    The update_websites_in_root_website task should create WebsiteContent objects of type website, tied to the root website
+
+    It should not touch websites that have not been published, and at the end should trigger draft / live publish of the root website
+    """
+    mock_trigger_publish = mocker.patch("content_sync.api.trigger_publish")
+    root_website = WebsiteFactory.create(name="ocw-www")
+    WebsiteFactory.create_batch(2, draft_publish_date=None, publish_date=None)
+    published_sites = WebsiteFactory.create_batch(
+        4,
+        has_unpublished_live=False,
+        has_unpublished_draft=False,
+        live_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        draft_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        latest_build_id_live=1,
+        latest_build_id_draft=2,
+    )
+    for site in published_sites:
+        WebsiteContentFactory.create(website=site, type="sitemetadata")
+    tasks.update_websites_in_root_website()
+    website_content = WebsiteContent.objects.filter(website=root_website)
+    assert website_content.count() == 4
+    mock_trigger_publish.assert_has_calls(
+        [
+            mocker.call(root_website.name, VERSION_DRAFT),
+            mocker.call(root_website.name, VERSION_LIVE),
+        ]
+    )
