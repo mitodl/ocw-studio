@@ -519,7 +519,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
                 )
                 .replace("((resource-base-url))", resource_base_url or "")
-                .replace("((static-resources-subdirectory))", static_resources_subdirectory)
+                .replace(
+                    "((static-resources-subdirectory))", static_resources_subdirectory
+                )
                 .replace(
                     "((ocw-hugo-themes-sentry-dsn))",
                     settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
