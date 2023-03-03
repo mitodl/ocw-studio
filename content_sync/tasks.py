@@ -396,7 +396,9 @@ def check_incomplete_publish_build_statuses():
 
 
 @app.task(bind=True)
-@single_task(timeout=settings.UPDATE_WEBSITES_IN_ROOT_WEBSITE_FREQUENCY, raise_block=False)
+@single_task(
+    timeout=settings.UPDATE_WEBSITES_IN_ROOT_WEBSITE_FREQUENCY, raise_block=False
+)
 def update_websites_in_root_website(self):
     """
     Get all websites published to draft / live at least once, and for each one:
@@ -407,8 +409,7 @@ def update_websites_in_root_website(self):
     root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
     # Get all sites, minus any sites that have never been successfully published
     sites = Website.objects.exclude(
-        Q(**{"draft_publish_date__isnull": True})
-        & Q(**{"publish_date__isnull": True})
+        Q(**{"draft_publish_date__isnull": True}) & Q(**{"publish_date__isnull": True})
     )
     sites = sites.exclude(Q(url_path__isnull=True))
     # Exclude the root website
@@ -420,9 +421,7 @@ def update_websites_in_root_website(self):
         # We want this content to show up in lists, but not render pages
         site_metadata["_build"] = {"list": True, "render": False}
         # Set the content to draft if the site has been unpublished
-        site_metadata["draft"] = (
-            True if site.unpublish_status is not None else False
-        )
+        site_metadata["draft"] = True if site.unpublish_status is not None else False
         # Carry over url_path for proper linking
         site_metadata["url_path"] = site.url_path
         WebsiteContent.objects.update_or_create(
