@@ -36,22 +36,29 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
     [onChange, websiteMap, name]
   )
 
+  const optionsWithoutShortID = useWebsiteSelectOptions(
+    "title",
+    "",
+    "url_path",
+    true
+  ).options
+
+  useEffect(() => {
+    setWebsiteMap(cur => {
+      const newMap = new Map(cur)
+      optionsWithoutShortID.forEach(({ value, label }) => {
+        newMap.set(value, label)
+      })
+      return newMap
+    })
+  }, [optionsWithoutShortID, setWebsiteMap])
+
   const { options, loadOptions } = useWebsiteSelectOptions(
     "title",
     "short_id",
     "url_path",
     true
   )
-
-  useEffect(() => {
-    setWebsiteMap(cur => {
-      const newMap = new Map(cur)
-      options.forEach(({ value, label }) => {
-        newMap.set(value, label)
-      })
-      return newMap
-    })
-  }, [options, setWebsiteMap])
 
   const isOptionDisabled = useCallback(
     (option: Option) => {
