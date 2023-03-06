@@ -579,7 +579,7 @@ jobs:
             - |
               cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
               hugo ((hugo-args-online))
-              cp -r -n ../static-resources/. ./output-online
+              cp -r -n ../static-resources/. ./output-online/((static-resources-subdirectory))
               if [ -f "../build-course-offline/((short-id)).zip" ];
               then
                 cp ../build-course-offline/((short-id)).zip  ./output-online
