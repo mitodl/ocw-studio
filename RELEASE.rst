@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.87.0
+--------------
+
+- Fix static resources path for root website (#1707)
+- fix: site title and short_id shown on unpublish dialog (#1701)
+- update example env file (#1697)
+- mirror drive s3 upload (#1690)
+
 Version 0.86.2 (Released February 23, 2023)
 --------------
 
