@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.87.0
+Version 0.87.0 (Released March 06, 2023)
 --------------
 
 - Fix static resources path for root website (#1707)
