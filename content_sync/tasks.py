@@ -433,5 +433,8 @@ def update_websites_in_root_website(self):
             is_page_content=True,
             defaults={"title": site.title, "metadata": site_metadata},
         )
-    for version in [VERSION_DRAFT, VERSION_LIVE]:
-        api.trigger_publish(root_website.name, version)
+    website_content = WebsiteContent.objects.filter(
+        website=root_website, type="website"
+    )
+    github_api = github.GithubApiWrapper(website=root_website)
+    github_api.upsert_content_files(website_content)

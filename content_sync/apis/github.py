@@ -35,7 +35,12 @@ from users.models import User
 from websites.api import get_valid_new_slug
 from websites.config_schema.api import validate_raw_site_config
 from websites.constants import STARTER_SOURCE_GITHUB
-from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.models import (
+    Website,
+    WebsiteContent,
+    WebsiteContentQuerySet,
+    WebsiteStarter,
+)
 from websites.site_config_api import SiteConfig
 
 
@@ -169,7 +174,7 @@ class GithubApiWrapper:
     Github API wrapper class
     """
 
-    def __init__(self, website: Website, site_config: Optional[SiteConfig]):
+    def __init__(self, website: Website, site_config: Optional[SiteConfig] = None):
         """ Initialize the Github API backend for a specific website"""
         self.website = website
         self.site_config = site_config or SiteConfig(self.website.starter.config)
@@ -308,20 +313,23 @@ class GithubApiWrapper:
             **kwargs,
         )
 
-    def upsert_content_files(self):
-        """ Commit all website content, with 1 commit per user """
-        for user_id in (
+    def upsert_content_files(self, query_set: Optional[WebsiteContentQuerySet] = None):
+        """ Commit all website content, with 1 commit per user, optionally filtering with a QuerySet """
+        content_files = query_set.values_list("updated_by", flat=True).distinct() or (
             WebsiteContent.objects.all_with_deleted()
             .filter(website=self.website)
             .values_list("updated_by", flat=True)
             .distinct()
-        ):
-            self.upsert_content_files_for_user(user_id)
+        )
+        for user_id in content_files:
+            self.upsert_content_files_for_user(user_id, query_set)
 
     @retry_on_failure
-    def upsert_content_files_for_user(self, user_id=None) -> Optional[Commit]:
+    def upsert_content_files_for_user(
+        self, user_id=None, query_set: Optional[WebsiteContentQuerySet] = None
+    ) -> Optional[Commit]:
         """
-        Upsert multiple WebsiteContent objects to github in one commit
+        Upsert multiple WebsiteContent objects to github in one commit, optionally filtering with a QuerySet
         """
         unsynced_states = ContentSyncState.objects.filter(
             Q(content__website=self.website) & Q(content__updated_by=user_id)
@@ -329,6 +337,8 @@ class GithubApiWrapper:
             Q(current_checksum=F("synced_checksum"), content__deleted__isnull=True)
             & Q(synced_checksum__isnull=False)
         )
+        if query_set:
+            unsynced_states = unsynced_states.filter(content__in=query_set)
         modified_element_list = []
         synced_results = []
 
