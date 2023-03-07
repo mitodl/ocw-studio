@@ -235,10 +235,13 @@ def test_import_recent_files_videos(
                 )
         else:  # chained tasks should be run
             mock_process_func.assert_any_call(LIST_VIDEO_RESPONSES[i]["files"][0]["id"])
-            assert tracker.last_dt == datetime.strptime(
-                LIST_VIDEO_RESPONSES[0]["files"][0]["modifiedTime"],
-                "%Y-%m-%dT%H:%M:%S.%fZ",
-            ).replace(tzinfo=pytz.utc)
+            assert (
+                tracker.last_dt
+                == datetime.strptime(
+                    LIST_VIDEO_RESPONSES[0]["files"][0]["modifiedTime"],
+                    "%Y-%m-%dT%H:%M:%S.%fZ",
+                ).replace(tzinfo=pytz.utc)
+            )
             mock_sync_content_task.assert_any_call(website.name)
         if (
             not parent_folder or parent_folder_in_ancestors
