@@ -23,7 +23,6 @@ from websites.constants import (
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUSES_FINAL,
 )
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from websites.models import Website, WebsiteContent
 
 
