@@ -684,10 +684,6 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = "UTC"
 
 CELERY_BEAT_SCHEDULE = {
-    "import-gdrive-files": {
-        "task": "gdrive_sync.tasks.import_recent_files",
-        "schedule": DRIVE_IMPORT_RECENT_FILES_SECONDS,
-    },
     "update-youtube-statuses": {
         "task": "videos.tasks.update_youtube_statuses",
         "schedule": YT_STATUS_UPDATE_FREQUENCY,
@@ -709,6 +705,12 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,
     },
 }
+
+if DRIVE_IMPORT_RECENT_FILES_SECONDS is not None:
+    CELERY_BEAT_SCHEDULE["import-gdrive-files"] = {
+        "task": "gdrive_sync.tasks.import_recent_files",
+        "schedule": DRIVE_IMPORT_RECENT_FILES_SECONDS,
+    }
 
 # django cache back-ends
 CACHES = {
