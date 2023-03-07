@@ -398,7 +398,7 @@ def check_incomplete_publish_build_statuses():
 @single_task(
     timeout=settings.UPDATE_WEBSITES_IN_ROOT_WEBSITE_FREQUENCY, raise_block=False
 )
-def update_websites_in_root_website(self):
+def update_websites_in_root_website(self):  # pylint:disable=unused-argument
     """
     Get all websites published to draft / live at least once, and for each one:
         - Create or update a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
