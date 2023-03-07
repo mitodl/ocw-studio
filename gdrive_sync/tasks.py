@@ -53,7 +53,10 @@ def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-
     Query the Drive API for recently uploaded or modified files and process them
     if they are in folders that match Website short_ids or names.
     """
-    if not api.is_gdrive_enabled():
+    if (
+        not api.is_gdrive_enabled()
+        or settings.DRIVE_IMPORT_RECENT_FILES_SECONDS is None
+    ):
         return
     if last_dt and isinstance(last_dt, str):
         # Dates get serialized into strings when passed to celery tasks
@@ -178,7 +181,7 @@ def create_gdrive_folders_batch(short_ids: List[str]):
 
 @app.task(bind=True)
 def create_gdrive_folders_chunked(self, short_ids: List[str], chunk_size=500):
-    """ Chunk and group batches of calls to create google drive folders for sites """
+    """Chunk and group batches of calls to create google drive folders for sites"""
     tasks = []
     for website_subset in chunks(
         sorted(short_ids),
