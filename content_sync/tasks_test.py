@@ -682,6 +682,8 @@ def test_update_websites_in_root_website(mocker):
 
     It should not touch websites that have not been published, and at the end should trigger draft / live publish of the root website
     """
+    mock_github_api_wrapper = mocker.patch("content_sync.apis.github.GithubApiWrapper")
+    mock_github_api = mock_github_api_wrapper.return_value
     root_website = WebsiteFactory.create(name="ocw-www")
     WebsiteFactory.create_batch(2, draft_publish_date=None, publish_date=None)
     published_sites = WebsiteFactory.create_batch(
@@ -700,5 +702,10 @@ def test_update_websites_in_root_website(mocker):
             WebsiteContentFactory.create(website=site, type="page")
         )
     tasks.update_websites_in_root_website()
-    website_content = WebsiteContent.objects.filter(website=root_website)
+    website_content = WebsiteContent.objects.filter(
+        website=root_website, type="website"
+    )
     assert website_content.count() == 4
+    mock_github_api_wrapper.assert_called_once_with(website=root_website)
+    upserted_content = mock_github_api.upsert_content_files.call_args[0][0]
+    assert set(website_content).difference(set(upserted_content)) == set()
