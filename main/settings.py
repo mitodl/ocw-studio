@@ -477,7 +477,7 @@ DRIVE_SHARED_ID = get_string(
 )
 DRIVE_IMPORT_RECENT_FILES_SECONDS = get_int(
     name="DRIVE_IMPORT_RECENT_FILES_SECONDS",
-    default=3600,
+    default=None,
     description=(
         "The frequency to check for new google drive files/videos, in seconds"
     ),
