@@ -676,14 +676,12 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
         mock_pipeline_unpause.assert_not_called()
 
 
-def test_update_websites_in_root_website(mocker):
+def test_update_websites_in_root_website(api_mock, mocker):
     """
     The update_websites_in_root_website task should create WebsiteContent objects of type website, tied to the root website
 
     It should not touch websites that have not been published, and at the end should trigger draft / live publish of the root website
     """
-    mock_github_api_wrapper = mocker.patch("content_sync.apis.github.GithubApiWrapper")
-    mock_github_api = mock_github_api_wrapper.return_value
     root_website = WebsiteFactory.create(name="ocw-www")
     WebsiteFactory.create_batch(2, draft_publish_date=None, publish_date=None)
     published_sites = WebsiteFactory.create_batch(
@@ -701,11 +699,19 @@ def test_update_websites_in_root_website(mocker):
         unrelated_content.append(
             WebsiteContentFactory.create(website=site, type="page")
         )
-    tasks.update_websites_in_root_website()
+    tasks.update_websites_in_root_website.delay()
     website_content = WebsiteContent.objects.filter(
         website=root_website, type="website"
     )
     assert website_content.count() == 4
-    mock_github_api_wrapper.assert_called_once_with(website=root_website)
-    upserted_content = mock_github_api.upsert_content_files.call_args[0][0]
+    api_mock.get_sync_backend.assert_called_once_with(website=root_website)
+    mock_backend = api_mock.get_sync_backend.return_value
+    upserted_content = mock_backend.sync_all_content_to_backend.call_args[1][
+        "query_set"
+    ]
     assert set(website_content).difference(set(upserted_content)) == set()
+    publish_website_calls = [
+        mocker.call(root_website.name, VERSION_DRAFT, trigger_pipeline=False),
+        mocker.call(root_website.name, VERSION_LIVE, trigger_pipeline=False),
+    ]
+    api_mock.publish_website.assert_has_calls(publish_website_calls)

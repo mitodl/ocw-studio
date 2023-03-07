@@ -398,42 +398,46 @@ def check_incomplete_publish_build_statuses():
 @single_task(
     timeout=settings.UPDATE_WEBSITES_IN_ROOT_WEBSITE_FREQUENCY, raise_block=False
 )
-def update_websites_in_root_website():
+def update_websites_in_root_website(self):
     """
     Get all websites published to draft / live at least once, and for each one:
         - Create or update a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
         - Publish the content to draft / live branch of the root website in the Git backend
     """
-    dirpath = "content/websites"
-    root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
-    # Get all sites, minus any sites that have never been successfully published
-    sites = Website.objects.exclude(
-        Q(**{"draft_publish_date__isnull": True}) & Q(**{"publish_date__isnull": True})
-    )
-    sites = sites.exclude(Q(url_path__isnull=True))
-    # Exclude the root website
-    sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
-    for site in sites:
-        site_metadata = WebsiteContent.objects.get(
-            website=site, type="sitemetadata"
-        ).metadata
-        # We want this content to show up in lists, but not render pages
-        site_metadata["_build"] = {"list": True, "render": False}
-        # Set the content to draft if the site has been unpublished
-        site_metadata["draft"] = site.unpublish_status is not None
-        # Carry over url_path for proper linking
-        site_metadata["url_path"] = site.url_path
-        WebsiteContent.objects.update_or_create(
-            website=root_website,
-            type="website",
-            title=site.title,
-            dirpath=dirpath,
-            filename=site.short_id,
-            is_page_content=True,
-            defaults={"title": site.title, "metadata": site_metadata},
+    if settings.CONTENT_SYNC_BACKEND:
+        dirpath = "content/websites"
+        root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        # Get all sites, minus any sites that have never been successfully published
+        sites = Website.objects.exclude(
+            Q(**{"draft_publish_date__isnull": True})
+            & Q(**{"publish_date__isnull": True})
         )
-    website_content = WebsiteContent.objects.filter(
-        website=root_website, type="website"
-    )
-    github_api = github.GithubApiWrapper(website=root_website)
-    github_api.upsert_content_files(website_content)
+        sites = sites.exclude(Q(url_path__isnull=True))
+        # Exclude the root website
+        sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
+        for site in sites:
+            site_metadata = WebsiteContent.objects.get(
+                website=site, type="sitemetadata"
+            ).metadata
+            # We want this content to show up in lists, but not render pages
+            site_metadata["_build"] = {"list": True, "render": False}
+            # Set the content to draft if the site has been unpublished
+            site_metadata["draft"] = site.unpublish_status is not None
+            # Carry over url_path for proper linking
+            site_metadata["url_path"] = site.url_path
+            WebsiteContent.objects.update_or_create(
+                website=root_website,
+                type="website",
+                title=site.title,
+                dirpath=dirpath,
+                filename=site.short_id,
+                is_page_content=True,
+                defaults={"title": site.title, "metadata": site_metadata},
+            )
+        website_content = WebsiteContent.objects.filter(
+            website=root_website, type="website"
+        )
+        backend = api.get_sync_backend(website=root_website)
+        backend.sync_all_content_to_backend(query_set=website_content)
+        api.publish_website(root_website.name, VERSION_DRAFT, trigger_pipeline=False)
+        api.publish_website(root_website.name, VERSION_LIVE, trigger_pipeline=False)
