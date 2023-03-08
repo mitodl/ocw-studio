@@ -439,5 +439,7 @@ def update_websites_in_root_website(self):  # pylint:disable=unused-argument
         )
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend(query_set=website_content)
-        api.publish_website(root_website.name, VERSION_DRAFT, trigger_pipeline=False)
-        api.publish_website(root_website.name, VERSION_LIVE, trigger_pipeline=False)
+        if not root_website.has_unpublished_draft:
+            api.publish_website(root_website.name, VERSION_DRAFT, trigger_pipeline=False)
+        if not root_website.has_unpublished_live:
+            api.publish_website(root_website.name, VERSION_LIVE, trigger_pipeline=False)
