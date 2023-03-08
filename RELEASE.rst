@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.87.1
+Version 0.87.1 (Released March 08, 2023)
 --------------
 
 - Remove automatic sync of Google Drive to Studio (#1709)
