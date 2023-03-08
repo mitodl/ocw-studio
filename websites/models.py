@@ -1,4 +1,5 @@
 """ websites models """
+from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 import json
 import logging
 import re
@@ -293,6 +294,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     objects = SafeDeleteManager(WebsiteContentQuerySet)
     all_objects = SafeDeleteAllManager(WebsiteContentQuerySet)
     deleted_objects = SafeDeleteDeletedManager(WebsiteContentQuerySet)
+    bulk_objects = BulkUpdateOrCreateQuerySet.as_manager()
 
     def upload_file_to(self, filename):
         """Return the appropriate filepath for an upload"""

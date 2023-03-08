@@ -407,6 +407,8 @@ def update_websites_in_root_website(self):  # pylint:disable=unused-argument
     if settings.CONTENT_SYNC_BACKEND:
         dirpath = "content/websites"
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        has_unpublished_draft = root_website.has_unpublished_draft
+        has_unpublished_live = root_website.has_unpublished_live
         # Get all sites, minus any sites that have never been successfully published
         sites = Website.objects.exclude(
             Q(**{"draft_publish_date__isnull": True})
@@ -415,31 +417,41 @@ def update_websites_in_root_website(self):  # pylint:disable=unused-argument
         sites = sites.exclude(Q(url_path__isnull=True))
         # Exclude the root website
         sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
-        for site in sites:
-            site_metadata = WebsiteContent.objects.get(
-                website=site, type="sitemetadata"
-            ).metadata
-            # We want this content to show up in lists, but not render pages
-            site_metadata["_build"] = {"list": True, "render": False}
-            # Set the content to draft if the site has been unpublished
-            site_metadata["draft"] = site.unpublish_status is not None
-            # Carry over url_path for proper linking
-            site_metadata["url_path"] = site.url_path
-            WebsiteContent.objects.update_or_create(
-                website=root_website,
-                type="website",
-                title=site.title,
-                dirpath=dirpath,
-                filename=site.short_id,
-                is_page_content=True,
-                defaults={"title": site.title, "metadata": site_metadata},
-            )
+        fields = [
+            "website",
+            "type",
+            "title",
+            "dirpath",
+            "filename",
+            "is_page_content",
+            "metadata"
+        ]
+        with WebsiteContent.bulk_objects.bulk_update_or_create_context(fields, match_field="filename", batch_size=100) as bulk_update:
+            for site in sites:
+                site_metadata = WebsiteContent.objects.get(
+                    website=site, type="sitemetadata"
+                ).metadata
+                # We want this content to show up in lists, but not render pages
+                site_metadata["_build"] = {"list": True, "render": False}
+                # Set the content to draft if the site has been unpublished
+                site_metadata["draft"] = site.unpublish_status is not None
+                # Carry over url_path for proper linking
+                site_metadata["url_path"] = site.url_path
+                bulk_update.queue(WebsiteContent(
+                    website=root_website,
+                    type="website",
+                    title=site.title,
+                    dirpath=dirpath,
+                    filename=site.short_id,
+                    is_page_content=True,
+                    metadata=site_metadata
+                ))
         website_content = WebsiteContent.objects.filter(
             website=root_website, type="website"
         )
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend(query_set=website_content)
-        if not root_website.has_unpublished_draft:
+        if not has_unpublished_draft:
             api.publish_website(root_website.name, VERSION_DRAFT, trigger_pipeline=False)
-        if not root_website.has_unpublished_live:
+        if not has_unpublished_live:
             api.publish_website(root_website.name, VERSION_LIVE, trigger_pipeline=False)
