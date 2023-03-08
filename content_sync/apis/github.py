@@ -315,12 +315,15 @@ class GithubApiWrapper:
 
     def upsert_content_files(self, query_set: Optional[WebsiteContentQuerySet] = None):
         """ Commit all website content, with 1 commit per user, optionally filtering with a QuerySet """
-        content_files = query_set.values_list("updated_by", flat=True).distinct() or (
-            WebsiteContent.objects.all_with_deleted()
-            .filter(website=self.website)
-            .values_list("updated_by", flat=True)
-            .distinct()
-        )
+        if query_set:
+            content_files = query_set.values_list("updated_by", flat=True).distinct()
+        else:
+            content_files =  (
+                WebsiteContent.objects.all_with_deleted()
+                .filter(website=self.website)
+                .values_list("updated_by", flat=True)
+                .distinct()
+            )
         for user_id in content_files:
             self.upsert_content_files_for_user(user_id, query_set)
 
