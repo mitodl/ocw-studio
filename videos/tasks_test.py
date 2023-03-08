@@ -185,9 +185,12 @@ def test_upload_youtube_quota_exceeded(mocker, youtube_video_files_new, msg, sta
         assert video_file.destination_id is None
 
 
+@pytest.mark.parametrize("wrong_caption_type", [True, False])
 @pytest.mark.parametrize("caption_exists", [True, False])
 @pytest.mark.parametrize("transcript_exists", [True, False])
-def test_start_transcript_job(mocker, settings, caption_exists, transcript_exists):
+def test_start_transcript_job(
+    mocker, settings, caption_exists, transcript_exists, wrong_caption_type
+):
     """test start_transcript_job"""
     youtube_id = "test"
     threeplay_file_id = 1
@@ -212,11 +215,18 @@ def test_start_transcript_job(mocker, settings, caption_exists, transcript_exist
 
     base_path = f"/some/path/to/{video_content.filename}"
 
-    if caption_exists:
+    if wrong_caption_type:
         WebsiteContentFactory.create(
             website=video.website,
             filename=f"{video_content.filename}_captions",
             file=f"{base_path}_captions.srt",
+        )
+
+    if caption_exists:
+        WebsiteContentFactory.create(
+            website=video.website,
+            filename=f"{video_content.filename}_captions",
+            file=f"{base_path}_captions.vtt",
         )
 
     if transcript_exists:
@@ -239,7 +249,7 @@ def test_start_transcript_job(mocker, settings, caption_exists, transcript_exist
 
     video_content.refresh_from_db()
     assert get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS) == (
-        f"{base_path}_captions.srt" if caption_exists else None
+        f"{base_path}_captions.vtt" if caption_exists else None
     )
     assert get_dict_field(video_content.metadata, settings.YT_FIELD_TRANSCRIPT) == (
         f"{base_path}_transcript.pdf" if transcript_exists else None
@@ -593,7 +603,7 @@ def test_update_transcripts_for_video_no_3play(
         WebsiteContentFactory.create(
             website=video.website,
             filename=f"{resource.filename}_captions",
-            file=f"{base_path}_captions.srt",
+            file=f"{base_path}_captions.vtt",
         )
 
     if transcript_exists:
@@ -608,7 +618,7 @@ def test_update_transcripts_for_video_no_3play(
     set_dict_field(
         metadata,
         settings.YT_FIELD_CAPTIONS,
-        (f"{base_path}_captions.srt" if caption_exists else None),
+        (f"{base_path}_captions.vtt" if caption_exists else None),
     )
     set_dict_field(
         metadata,
@@ -630,7 +640,7 @@ def test_update_transcripts_for_video_no_3play(
     mock_3play.assert_not_called()
 
     assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) == (
-        f"/{video.website.url_path}/{resource.filename}_captions.srt"
+        f"/{video.website.url_path}/{resource.filename}_captions.vtt"
         if caption_exists
         else None
     )

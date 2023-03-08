@@ -6,6 +6,7 @@ from django.db.models import CASCADE
 from mitol.common.models import TimestampedModel
 
 from main import settings
+from main.utils import get_file_extension
 from videos.constants import (
     DESTINATION_YOUTUBE,
     VideoFileStatus,
@@ -18,7 +19,7 @@ from websites.utils import get_dict_query_field
 
 
 class Video(TimestampedModel):
-    """ Video object"""
+    """Video object"""
 
     def upload_file_to(self, filename):
         """Return the appropriate filepath for an upload"""
@@ -57,7 +58,13 @@ class Video(TimestampedModel):
             captions = WebsiteContent.objects.filter(
                 models.Q(website=self.website)
                 & models.Q(filename=f"{video_filename}_captions")
-            ).first()
+            )
+            captions = [
+                caption
+                for caption in captions
+                if get_file_extension(str(caption.file)) in set(["vtt", "webvtt"])
+            ]
+            captions = captions[0] if captions else None
             transcript = WebsiteContent.objects.filter(
                 models.Q(website=self.website)
                 & models.Q(filename=f"{video_filename}_transcript")
@@ -82,7 +89,7 @@ class Video(TimestampedModel):
 
 
 class VideoFile(TimestampedModel):
-    """ Video file created by AWS MediaConvert"""
+    """Video file created by AWS MediaConvert"""
 
     video = models.ForeignKey(Video, on_delete=CASCADE, related_name="videofiles")
     s3_key = models.CharField(null=False, blank=False, max_length=2048, unique=True)
@@ -98,7 +105,7 @@ class VideoFile(TimestampedModel):
 
 
 class VideoJob(TimestampedModel):
-    """ MediaConvert job id per video"""
+    """MediaConvert job id per video"""
 
     job_id = models.CharField(max_length=50, primary_key=True)
     video = models.ForeignKey(Video, on_delete=CASCADE)
