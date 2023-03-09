@@ -395,19 +395,13 @@ def check_incomplete_publish_build_statuses():
 
 
 @app.task(bind=True)
-@single_task(
-    timeout=settings.UPDATE_WEBSITES_IN_ROOT_WEBSITE_FREQUENCY, raise_block=False
-)
 def update_websites_in_root_website(self):  # pylint:disable=unused-argument
     """
-    Get all websites published to draft / live at least once, and for each one:
-        - Create or update a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
-        - Publish the content to draft / live branch of the root website in the Git backend
+    Get all websites published to draft / live at least once, and for each one create or update
+    a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
     """
     if settings.CONTENT_SYNC_BACKEND:
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
-        has_unpublished_draft = root_website.has_unpublished_draft
-        has_unpublished_live = root_website.has_unpublished_live
         # Get all sites, minus any sites that have never been successfully published
         sites = Website.objects.exclude(
             Q(**{"draft_publish_date__isnull": True})
@@ -455,12 +449,6 @@ def update_websites_in_root_website(self):  # pylint:disable=unused-argument
         )
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend(query_set=website_content)
-        if not has_unpublished_draft:
-            api.publish_website(
-                root_website.name, VERSION_DRAFT, trigger_pipeline=False
-            )
-        if not has_unpublished_live:
-            api.publish_website(root_website.name, VERSION_LIVE, trigger_pipeline=False)
 
 
 @app.task(bind=True)

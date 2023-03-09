@@ -541,10 +541,6 @@
       "description": "The frequency to check for videos tagged as updated in 3play",
       "required": false
     },
-    "UPDATE_WEBSITES_IN_ROOT_WEBSITE_FREQUENCY": {
-      "description": "The frequency to update website metadata content in the root website",
-      "required": false
-    },
     "USE_X_FORWARDED_HOST": {
       "description": "Set HOST header to original domain accessed by user",
       "required": false

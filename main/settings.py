@@ -619,12 +619,6 @@ UPDATE_MISSING_TRANSCRIPT_FREQUENCY = get_int(
     description="The frequency to check for transcripts for published videos with blank transcripts",
 )
 
-UPDATE_WEBSITES_IN_ROOT_WEBSITE_FREQUENCY = get_int(
-    name="UPDATE_WEBSITES_IN_ROOT_WEBSITE_FREQUENCY",
-    default=120,
-    description="The frequency to update website metadata content in the root website",
-)
-
 # Publish status settings
 PUBLISH_STATUS_WAIT_TIME = get_int(
     name="PUBLISH_STATUS_WAIT_TIME",
@@ -707,10 +701,6 @@ CELERY_BEAT_SCHEDULE = {
         "task": "videos.tasks.attempt_to_update_missing_transcripts",
         "schedule": UPDATE_MISSING_TRANSCRIPT_FREQUENCY,
     },
-    # "update-websites-in-root-website": {
-    #     "task": "content_sync.tasks.update_websites_in_root_website",
-    #     "schedule": UPDATE_WEBSITES_IN_ROOT_WEBSITE_FREQUENCY,
-    # },
     "check_incomplete_publish_build_statuses": {
         "task": "content_sync.tasks.check_incomplete_publish_build_statuses",
         "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,

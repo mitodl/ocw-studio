@@ -676,11 +676,11 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
         mock_pipeline_unpause.assert_not_called()
 
 
-def test_update_websites_in_root_website(api_mock, mocker):
+def test_update_websites_in_root_website(api_mock):
     """
     The update_websites_in_root_website task should create WebsiteContent objects of type website, tied to the root website
 
-    It should not touch websites that have not been published, and at the end should trigger draft / live publish of the root website
+    It should not touch websites that have not been published or have been unpublished
     """
     root_website = WebsiteFactory.create(name="ocw-www")
     WebsiteFactory.create_batch(2, draft_publish_date=None, publish_date=None)
@@ -710,8 +710,3 @@ def test_update_websites_in_root_website(api_mock, mocker):
         "query_set"
     ]
     assert set(website_content).difference(set(upserted_content)) == set()
-    publish_website_calls = [
-        mocker.call(root_website.name, VERSION_DRAFT, trigger_pipeline=False),
-        mocker.call(root_website.name, VERSION_LIVE, trigger_pipeline=False),
-    ]
-    api_mock.publish_website.assert_has_calls(publish_website_calls)
