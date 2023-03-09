@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.87.2
+--------------
+
+- Allow only vtt and webvtt extensions for pre-existing captions (#1711)
+
 Version 0.87.1 (Released March 08, 2023)
 --------------
 
