@@ -318,7 +318,7 @@ class GithubApiWrapper:
         if query_set:
             content_files = query_set.values_list("updated_by", flat=True).distinct()
         else:
-            content_files =  (
+            content_files = (
                 WebsiteContent.objects.all_with_deleted()
                 .filter(website=self.website)
                 .values_list("updated_by", flat=True)

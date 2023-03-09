@@ -97,7 +97,9 @@ class GithubBackend(BaseSyncBackend):
             [path for path in self.api.get_all_file_paths("/") if path not in sitepaths]
         )
 
-    def sync_all_content_to_backend(self,  query_set: Optional[WebsiteContentQuerySet] = None) -> Commit:
+    def sync_all_content_to_backend(
+        self, query_set: Optional[WebsiteContentQuerySet] = None
+    ) -> Commit:
         """
         Sync all the website's files to Github in one commit
         """

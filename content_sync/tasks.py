@@ -13,7 +13,7 @@ from requests import HTTPError
 
 from content_sync import api
 from content_sync.apis import github
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from main.celery import app
@@ -405,7 +405,6 @@ def update_websites_in_root_website(self):  # pylint:disable=unused-argument
         - Publish the content to draft / live branch of the root website in the Git backend
     """
     if settings.CONTENT_SYNC_BACKEND:
-        dirpath = "content/websites"
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
         has_unpublished_draft = root_website.has_unpublished_draft
         has_unpublished_live = root_website.has_unpublished_live
@@ -424,34 +423,87 @@ def update_websites_in_root_website(self):  # pylint:disable=unused-argument
             "dirpath",
             "filename",
             "is_page_content",
-            "metadata"
+            "metadata",
         ]
-        with WebsiteContent.bulk_objects.bulk_update_or_create_context(fields, match_field="filename", batch_size=100) as bulk_update:
-            for site in sites:
+        with WebsiteContent.bulk_objects.bulk_update_or_create_context(
+            fields, match_field="filename", batch_size=100
+        ) as bulk_update:
+            for website in sites:
                 site_metadata = WebsiteContent.objects.get(
-                    website=site, type="sitemetadata"
+                    website=website, type="sitemetadata"
                 ).metadata
                 # We want this content to show up in lists, but not render pages
                 site_metadata["_build"] = {"list": True, "render": False}
-                # Set the content to draft if the site has been unpublished
-                site_metadata["draft"] = site.unpublish_status is not None
+                # Set the content to draft if the site has not been published or is unpublished
+                if website.unpublish_status is not None or website.publish_date is None:
+                    site_metadata["draft"] = True
                 # Carry over url_path for proper linking
-                site_metadata["url_path"] = site.url_path
-                bulk_update.queue(WebsiteContent(
-                    website=root_website,
-                    type="website",
-                    title=site.title,
-                    dirpath=dirpath,
-                    filename=site.short_id,
-                    is_page_content=True,
-                    metadata=site_metadata
-                ))
+                site_metadata["url_path"] = website.url_path
+                bulk_update.queue(
+                    WebsiteContent(
+                        website=root_website,
+                        type="website",
+                        title=website.title,
+                        dirpath=WEBSITE_LISTING_DIRPATH,
+                        filename=website.short_id,
+                        is_page_content=True,
+                        metadata=site_metadata,
+                    )
+                )
         website_content = WebsiteContent.objects.filter(
             website=root_website, type="website"
         )
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend(query_set=website_content)
         if not has_unpublished_draft:
-            api.publish_website(root_website.name, VERSION_DRAFT, trigger_pipeline=False)
+            api.publish_website(
+                root_website.name, VERSION_DRAFT, trigger_pipeline=False
+            )
         if not has_unpublished_live:
             api.publish_website(root_website.name, VERSION_LIVE, trigger_pipeline=False)
+
+
+@app.task(bind=True)
+def update_website_in_root_website(
+    self, website, version
+):  # pylint:disable=unused-argument
+    """Create or update a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME"""
+    if (
+        website.name != settings.ROOT_WEBSITE_NAME
+        and WebsiteContent.objects.filter(website=website, type="sitemetadata").exists()
+    ):
+        root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        site_metadata = WebsiteContent.objects.get(
+            website=website, type="sitemetadata"
+        ).metadata
+        # We want this content to show up in lists, but not render pages
+        site_metadata["_build"] = {"list": True, "render": False}
+        # Set the content to draft if the site has not been published or is unpublished
+        publish_date = (
+            website.publish_date
+            if version == VERSION_LIVE
+            else website.draft_publish_date
+        )
+        if website.unpublish_status is not None or publish_date is None:
+            site_metadata["draft"] = True
+        # Carry over url_path for proper linking
+        site_metadata["url_path"] = website.url_path
+        root_has_unpublished = (
+            root_website.has_unpublished_live
+            if version == VERSION_LIVE
+            else root_website.has_unpublished_draft
+        )
+        WebsiteContent.objects.update_or_create(
+            website=root_website,
+            type="website",
+            title=website.title,
+            dirpath=WEBSITE_LISTING_DIRPATH,
+            filename=website.short_id,
+            is_page_content=True,
+            defaults={
+                "title": website.title,
+                "metadata": site_metadata
+            }
+        )
+        if not root_has_unpublished:
+            api.publish_website(root_website.name, version, trigger_pipeline=False)
