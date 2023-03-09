@@ -1,5 +1,4 @@
 """ websites models """
-from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 import json
 import logging
 import re
@@ -9,6 +8,7 @@ from urllib.parse import urljoin, urlparse
 from uuid import uuid4
 
 import yaml
+from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
