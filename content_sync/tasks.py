@@ -488,10 +488,7 @@ def update_website_in_root_website(
             dirpath=WEBSITE_LISTING_DIRPATH,
             filename=website.short_id,
             is_page_content=True,
-            defaults={
-                "title": website.title,
-                "metadata": site_metadata
-            }
+            defaults={"title": website.title, "metadata": site_metadata},
         )
         if not root_has_unpublished:
             api.publish_website(root_website.name, version, trigger_pipeline=False)
