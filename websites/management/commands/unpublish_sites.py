@@ -6,6 +6,7 @@ from django.db.models import Q
 
 from content_sync import api
 from content_sync.constants import VERSION_LIVE
+from content_sync.tasks import remove_website_in_root_website
 from main.management.commands.filter import WebsiteFilterCommand
 from users.models import User
 from websites.constants import (
@@ -16,7 +17,6 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.serializers import WebsiteBasicSerializer, WebsiteContentSerializer
-from content_sync.tasks import remove_website_in_root_website
 
 
 class Command(WebsiteFilterCommand):
