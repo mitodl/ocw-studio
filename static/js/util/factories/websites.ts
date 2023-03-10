@@ -2,6 +2,8 @@ import casual from "casual"
 import { cloneDeep, times } from "lodash"
 
 import incrementer from "../incrementer"
+import * as fakeData from "../fake_data"
+
 import {
   ROLE_ADMIN,
   ROLE_EDITOR,
@@ -150,7 +152,7 @@ export const makeSingletonConfigItem = (
   name?: string
 ): SingletonConfigItem => ({
   fields: cloneDeep(exampleFields),
-  name:   name || casual.word,
+  name:   name || fakeData.uniqueWord(),
   label:  casual.word,
   file:   casual.word
 })
