@@ -467,12 +467,7 @@ def update_website_in_root_website(
         # We want this content to show up in lists, but not render pages
         site_metadata["_build"] = {"list": True, "render": False}
         # Set the content to draft if the site has not been published or is unpublished
-        publish_date = (
-            website.publish_date
-            if version == VERSION_LIVE
-            else website.draft_publish_date
-        )
-        if website.unpublish_status is not None or publish_date is None:
+        if website.unpublish_status is not None or version != VERSION_LIVE:
             site_metadata["draft"] = True
         # Carry over url_path for proper linking
         site_metadata["url_path"] = website.url_path
@@ -481,7 +476,10 @@ def update_website_in_root_website(
             if version == VERSION_LIVE
             else root_website.has_unpublished_draft
         )
-        WebsiteContent.objects.update_or_create(
+        (
+            website_content,
+            created,
+        ) = WebsiteContent.objects.update_or_create(  # pylint:disable=unused-argument
             website=root_website,
             type="website",
             title=website.title,
@@ -489,6 +487,10 @@ def update_website_in_root_website(
             filename=website.short_id,
             is_page_content=True,
             defaults={"title": website.title, "metadata": site_metadata},
+        )
+        backend = api.get_sync_backend(website=root_website)
+        backend.sync_all_content_to_backend(
+            query_set=WebsiteContent.objects.filter(text_id=website_content.text_id)
         )
         if not root_has_unpublished:
             api.publish_website(root_website.name, version, trigger_pipeline=False)
