@@ -1,4 +1,4 @@
-""" Backpopulate website pipelines"""
+""" Update websites in the root website """
 from django.conf import settings
 from django.core.management import CommandError
 from mitol.common.utils.datetime import now_in_utc
