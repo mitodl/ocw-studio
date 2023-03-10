@@ -394,8 +394,8 @@ def check_incomplete_publish_build_statuses():
             )
 
 
-@app.task(bind=True)
-def update_websites_in_root_website(self):  # pylint:disable=unused-argument
+@app.task(acks_late=True)
+def update_websites_in_root_website():
     """
     Get all websites published to draft / live at least once, and for each one create or update
     a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
@@ -451,10 +451,8 @@ def update_websites_in_root_website(self):  # pylint:disable=unused-argument
         backend.sync_all_content_to_backend(query_set=website_content)
 
 
-@app.task(bind=True)
-def update_website_in_root_website(
-    self, website, version
-):  # pylint:disable=unused-argument
+@app.task()
+def update_website_in_root_website(website, version):
     """Create or update a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME"""
     if (
         website.name != settings.ROOT_WEBSITE_NAME
@@ -479,7 +477,7 @@ def update_website_in_root_website(
         (
             website_content,
             created,
-        ) = WebsiteContent.objects.update_or_create(  # pylint:disable=unused-argument
+        ) = WebsiteContent.objects.update_or_create(  # pylint:disable=unused-variable
             website=root_website,
             type="website",
             title=website.title,
