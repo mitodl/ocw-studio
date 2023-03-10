@@ -334,8 +334,8 @@ def test_upsert_content_files(mocker, mock_api_wrapper, db_data):
     mock_api_wrapper.upsert_content_files()
     assert patched_upsert_for_user.call_count == (expected_num_users + 1)
     for user in db_data.users:
-        patched_upsert_for_user.assert_any_call(user.id)
-    patched_upsert_for_user.assert_any_call(None)
+        patched_upsert_for_user.assert_any_call(user.id, None)
+    patched_upsert_for_user.assert_any_call(None, None)
 
 
 def test_upsert_content_files_for_user(
