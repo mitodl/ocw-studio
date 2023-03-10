@@ -678,7 +678,7 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
 
 def test_update_websites_in_root_website(api_mock):
     """
-    The update_websites_in_root_website task should create WebsiteContent objects of type website, tied to the root website
+    The update_websites_in_root_website task should update or create WebsiteContent objects of type website, tied to the root website
 
     It should not touch websites that have not been published or have been unpublished
     """
@@ -699,7 +699,7 @@ def test_update_websites_in_root_website(api_mock):
         unrelated_content.append(
             WebsiteContentFactory.create(website=site, type="page")
         )
-    tasks.update_websites_in_root_website.delay()
+    tasks.update_websites_in_root_website()
     website_content = WebsiteContent.objects.filter(
         website=root_website, type="website"
     )
@@ -710,3 +710,44 @@ def test_update_websites_in_root_website(api_mock):
         "query_set"
     ]
     assert set(website_content).difference(set(upserted_content)) == set()
+
+
+def test_update_website_in_root_website(api_mock, mocker):
+    """
+    The update_website_in_root_website task should update or create a single WebsiteContent objects of type website, tied to the root website
+
+    It should not touch websites that have not been published or have been unpublished
+    """
+    root_website = WebsiteFactory.create(name="ocw-www")
+    WebsiteFactory.create_batch(2, draft_publish_date=None, publish_date=None)
+    published_site = WebsiteFactory.create(
+        name="published-site",
+        has_unpublished_live=False,
+        has_unpublished_draft=False,
+        live_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        draft_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        latest_build_id_live=1,
+        latest_build_id_draft=2,
+    )
+    unpublished_site = WebsiteFactory.create(name="unpublished-site")
+    WebsiteContentFactory.create(website=published_site, type="sitemetadata")
+    WebsiteContentFactory.create(website=published_site, type="page")
+    # Assume this content has been published for testing purposes
+    root_website.has_unpublished_draft = False
+    root_website.has_unpublished_live = False
+    root_website.save()
+    for version in [VERSION_DRAFT, VERSION_LIVE]:
+        tasks.update_website_in_root_website(published_site, version)
+        tasks.update_website_in_root_website(unpublished_site, version)
+    website_content = WebsiteContent.objects.filter(
+        website=root_website, type="website"
+    )
+    assert website_content.count() == 1
+    api_mock.get_sync_backend.assert_has_calls([mocker.call(website=root_website)])
+    mock_backend = api_mock.get_sync_backend.return_value
+    for call in mock_backend.sync_all_content_to_backend.call_args_list:
+        content = call[1]["query_set"].first()
+        assert content in website_content
+    api_mock.publish_website.assert_called_once_with(
+        root_website.name, VERSION_DRAFT, trigger_pipeline=False
+    )
