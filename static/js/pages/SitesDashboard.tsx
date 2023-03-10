@@ -12,7 +12,7 @@ import {
 } from "../query-configs/websites"
 import { getWebsiteListingCursor } from "../selectors/websites"
 import { newSiteUrl, siteDetailUrl } from "../lib/urls"
-import { Website, WebsiteDropdown } from "../types/websites"
+import { Website, WebsiteDropdown, WebsiteInitials } from "../types/websites"
 import { MaterialIcons } from "../types/common"
 import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 import { StudioList, StudioListItem } from "../components/StudioList"
@@ -31,7 +31,10 @@ function getListingParams(search: string): WebsiteListingParams {
 }
 
 export default function SitesDashboard(): JSX.Element {
-  const [showUnpublishDialog, setShowUnpublishDialog] = useState("")
+  const [
+    websiteToUnpublish,
+    setWebsiteToUnpublish
+  ] = useState<WebsiteInitials | null>(null)
 
   const { listingParams, searchInput, setSearchInput } = useURLParamFilter(
     getListingParams
@@ -51,8 +54,8 @@ export default function SitesDashboard(): JSX.Element {
     {
       id:           "1",
       label:        "Unpublish",
-      clickHandler: (websiteName: string) => {
-        setShowUnpublishDialog(websiteName)
+      clickHandler: (website: WebsiteInitials) => {
+        setWebsiteToUnpublish(website)
       }
     }
   ]
@@ -101,7 +104,11 @@ export default function SitesDashboard(): JSX.Element {
                   <div className="text-dark">Draft</div>
                 )}
                 <Dropdown
-                  websiteName={site.name}
+                  website={{
+                    name:     site.name,
+                    title:    site.title,
+                    short_id: site.short_id
+                  }}
                   dropdownBtnID={`${site.uuid}_DropdownMenuButton`}
                   materialIcon={MaterialIcons.MoreVert}
                   dropdownMenu={
@@ -117,12 +124,12 @@ export default function SitesDashboard(): JSX.Element {
         <PaginationControls previous={pages.previous} next={pages.next} />
       </div>
 
-      {showUnpublishDialog ? (
+      {websiteToUnpublish ? (
         <UnpublishDialog
-          websiteName={showUnpublishDialog}
+          website={websiteToUnpublish}
           successCallback={unpublishSuccessCallback}
           closeDialog={() => {
-            setShowUnpublishDialog("")
+            setWebsiteToUnpublish(null)
           }}
         />
       ) : null}

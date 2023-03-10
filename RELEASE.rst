@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.87.1 (Released March 08, 2023)
+--------------
+
+- Remove automatic sync of Google Drive to Studio (#1709)
+
+Version 0.87.0 (Released March 06, 2023)
+--------------
+
+- Fix static resources path for root website (#1707)
+- fix: site title and short_id shown on unpublish dialog (#1701)
+- update example env file (#1697)
+- mirror drive s3 upload (#1690)
+
 Version 0.86.2 (Released February 23, 2023)
 --------------
 

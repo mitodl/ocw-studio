@@ -24,7 +24,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.86.2"
+VERSION = "0.87.1"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -477,7 +477,7 @@ DRIVE_SHARED_ID = get_string(
 )
 DRIVE_IMPORT_RECENT_FILES_SECONDS = get_int(
     name="DRIVE_IMPORT_RECENT_FILES_SECONDS",
-    default=3600,
+    default=None,
     description=(
         "The frequency to check for new google drive files/videos, in seconds"
     ),
@@ -684,10 +684,6 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = "UTC"
 
 CELERY_BEAT_SCHEDULE = {
-    "import-gdrive-files": {
-        "task": "gdrive_sync.tasks.import_recent_files",
-        "schedule": DRIVE_IMPORT_RECENT_FILES_SECONDS,
-    },
     "update-youtube-statuses": {
         "task": "videos.tasks.update_youtube_statuses",
         "schedule": YT_STATUS_UPDATE_FREQUENCY,
@@ -709,6 +705,12 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,
     },
 }
+
+if DRIVE_IMPORT_RECENT_FILES_SECONDS is not None:
+    CELERY_BEAT_SCHEDULE["import-gdrive-files"] = {
+        "task": "gdrive_sync.tasks.import_recent_files",
+        "schedule": DRIVE_IMPORT_RECENT_FILES_SECONDS,
+    }
 
 # django cache back-ends
 CACHES = {

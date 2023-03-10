@@ -61,7 +61,7 @@ def mock_gdrive_files(mocker):
 @pytest.mark.parametrize("shared_id", [None, "testDrive"])
 @pytest.mark.parametrize("drive_creds", [None, '{"key": "value"}'])
 def test_create_gdrive_folders(settings, mocker, shared_id, drive_creds):
-    """ Folder should be created if settings are present"""
+    """Folder should be created if settings are present"""
     settings.DRIVE_SHARED_ID = shared_id
     settings.DRIVE_SERVICE_ACCOUNT_CREDS = drive_creds
     mock_create_folder = mocker.patch("gdrive_sync.tasks.api.create_gdrive_folders")
@@ -138,6 +138,7 @@ def test_import_recent_files_videos(
     """import_recent_files should created expected video objects and call s3 tasks"""
     mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     settings.DRIVE_SHARED_ID = "test_drive"
+    settings.DRIVE_IMPORT_RECENT_FILES_SECONDS = 3600
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = parent_folder
     website = WebsiteFactory.create()
     DriveFileFactory.create(
@@ -266,6 +267,7 @@ def test_import_recent_files_nonvideos(
     mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     settings.DRIVE_SHARED_ID = "test_drive"
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
+    settings.DRIVE_IMPORT_RECENT_FILES_SECONDS = 3600
     website = WebsiteFactory.create()
 
     parent_tree_responses = [
@@ -332,6 +334,14 @@ def test_import_recent_files_nonvideos(
 def test_import_recent_files_disabled(mocker, settings):
     """import_recent_files should do nothing if google drive integration is disabled"""
     settings.DRIVE_SHARED_ID = None
+    mock_query = mocker.patch("gdrive_sync.tasks.api.query_files")
+    import_recent_files.delay()
+    mock_query.assert_not_called()
+
+
+def test_import_recent_files_not_automatic(mocker, settings):
+    """import_recent_files should do nothing if DRIVE_IMPORT_RECENT_FILES_SECONDS is None"""
+    settings.DRIVE_IMPORT_RECENT_FILES_SECONDS = None
     mock_query = mocker.patch("gdrive_sync.tasks.api.query_files")
     import_recent_files.delay()
     mock_query.assert_not_called()
