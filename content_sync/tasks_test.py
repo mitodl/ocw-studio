@@ -719,7 +719,6 @@ def test_update_website_in_root_website(api_mock, mocker):
     It should not touch websites that have not been published or have been unpublished
     """
     root_website = WebsiteFactory.create(name="ocw-www")
-    WebsiteFactory.create_batch(2, draft_publish_date=None, publish_date=None)
     published_site = WebsiteFactory.create(
         name="published-site",
         has_unpublished_live=False,
@@ -751,3 +750,32 @@ def test_update_website_in_root_website(api_mock, mocker):
     api_mock.publish_website.assert_called_once_with(
         root_website.name, VERSION_DRAFT, trigger_pipeline=False
     )
+
+
+def test_remove_website_in_root_website(api_mock):  # pylint: disable=unused-argument
+    """
+    The remove_website_in_root_website task should remove a single WebsiteContent objects of type website, tied to the root website
+    """
+    root_website = WebsiteFactory.create(name="ocw-www")
+    published_site = WebsiteFactory.create(
+        name="published-site",
+        has_unpublished_live=False,
+        has_unpublished_draft=False,
+        live_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        draft_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        latest_build_id_live=1,
+        latest_build_id_draft=2,
+    )
+    WebsiteContentFactory.create(website=published_site, type="sitemetadata")
+    # Assume this content has been published for testing purposes
+    root_website.has_unpublished_draft = False
+    root_website.has_unpublished_live = False
+    root_website.save()
+    for version in [VERSION_DRAFT, VERSION_LIVE]:
+        tasks.update_website_in_root_website(published_site, version)
+    website_content = WebsiteContent.objects.filter(
+        website=root_website, type="website"
+    )
+    assert website_content.count() == 1
+    tasks.remove_website_in_root_website(published_site)
+    assert website_content.count() == 0

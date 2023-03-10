@@ -16,6 +16,7 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.serializers import WebsiteBasicSerializer, WebsiteContentSerializer
+from content_sync.tasks import remove_website_in_root_website
 
 
 class Command(WebsiteFilterCommand):
@@ -117,6 +118,7 @@ class Command(WebsiteFilterCommand):
                 )
                 site_pipeline = api.get_site_pipeline(website)
                 site_pipeline.pause_pipeline(VERSION_LIVE)
+                remove_website_in_root_website(website)
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
         removal_pipeline.trigger()
