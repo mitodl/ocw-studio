@@ -653,8 +653,12 @@ def test_trigger_mass_build(settings, mocker, backend, version):
 @pytest.mark.parametrize("backend", ["concourse", None])
 def test_trigger_unpublished_removal(settings, mocker, backend):
     """trigger_unpublished_removal should call trigger_pipeline_build if enabled"""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
+    mock_remove_website_in_root_website = mocker.patch(
+        "content_sync.tasks.remove_website_in_root_website"
+    )
     mock_pipeline_unpause = mocker.patch(
         "content_sync.pipelines.concourse.BaseUnpublishedSiteRemovalPipeline.unpause_pipeline"
     )
@@ -667,6 +671,7 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
     pipeline_name = BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME
     site = WebsiteFactory.create()
     tasks.trigger_unpublished_removal.delay(site.name)
+    mock_remove_website_in_root_website.assert_called_once_with(site)
     if backend == "concourse":
         mock_pipeline_pause.assert_called_once_with(VERSION_LIVE)
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
