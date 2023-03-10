@@ -476,8 +476,8 @@ def update_website_in_root_website(website, version):
         )
         (
             website_content,
-            created,
-        ) = WebsiteContent.objects.update_or_create(  # pylint:disable=unused-variable
+            created,  # pylint:disable=unused-variable
+        ) = WebsiteContent.objects.update_or_create(
             website=root_website,
             type="website",
             title=website.title,
