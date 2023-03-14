@@ -482,7 +482,6 @@ def update_website_in_root_website(website, version):
         ) = WebsiteContent.objects.update_or_create(
             website=root_website,
             type="website",
-            title=website.title,
             dirpath=WEBSITE_LISTING_DIRPATH,
             filename=website.short_id,
             is_page_content=True,
