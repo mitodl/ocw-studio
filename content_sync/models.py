@@ -9,7 +9,7 @@ from websites.models import WebsiteContent
 class ContentSyncState(TimestampedModel):
     """ Data model for tracking the sync state of website content """
 
-    bulk_objects = BulkUpdateOrCreateQuerySet.as_manager()
+    objects = BulkUpdateOrCreateQuerySet.as_manager()
 
     content = models.OneToOneField(
         WebsiteContent,

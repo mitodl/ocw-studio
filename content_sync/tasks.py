@@ -451,7 +451,7 @@ def update_websites_in_root_website():
         website_content = WebsiteContent.objects.filter(
             website=root_website, type="website"
         )
-        with ContentSyncState.bulk_objects.bulk_update_or_create_context(
+        with ContentSyncState.objects.bulk_update_or_create_context(
             ["content", "current_checksum"], match_field="content", batch_size=100
         ) as bulk_update:
             for content in website_content:
@@ -513,3 +513,5 @@ def remove_website_in_root_website(website):
             is_page_content=True,
         )
         website_content.delete()
+        backend = api.get_sync_backend(website=root_website)
+        backend.sync_all_content_to_backend()
