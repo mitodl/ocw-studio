@@ -449,6 +449,15 @@ def update_websites_in_root_website():
         website_content = WebsiteContent.objects.filter(
             website=root_website, type="website"
         )
+        with ContentSyncState.bulk_objects.bulk_update_or_create_context(
+            ["content", "current_checksum"], match_field="content", batch_size=100
+        ) as bulk_update:
+            for content in website_content:
+                bulk_update.queue(
+                    ContentSyncState(
+                        content=content, current_checksum=content.calculate_checksum()
+                    )
+                )
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend(query_set=website_content)
 
