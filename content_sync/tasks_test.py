@@ -757,7 +757,7 @@ def test_update_website_in_root_website(api_mock, mocker):
     )
 
 
-def test_remove_website_in_root_website(api_mock):  # pylint: disable=unused-argument
+def test_remove_website_in_root_website(api_mock):
     """
     The remove_website_in_root_website task should remove a single WebsiteContent objects of type website, tied to the root website
     """
@@ -784,3 +784,5 @@ def test_remove_website_in_root_website(api_mock):  # pylint: disable=unused-arg
     assert website_content.count() == 1
     tasks.remove_website_in_root_website(published_site)
     assert website_content.count() == 0
+    api_mock.get_sync_backend.assert_any_call(website=root_website)
+    api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_any_call()
