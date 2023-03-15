@@ -479,13 +479,16 @@ def update_website_in_root_website(website, version):
         (
             website_content,
             created,  # pylint:disable=unused-variable
-        ) = WebsiteContent.objects.update_or_create(
+        ) = WebsiteContent.all_objects.update_or_create(
             website=root_website,
-            type="website",
             dirpath=WEBSITE_LISTING_DIRPATH,
             filename=website.short_id,
-            is_page_content=True,
-            defaults={"title": website.title, "metadata": site_metadata},
+            defaults={
+                "title": website.title,
+                "type": "website",
+                "is_page_content": True,
+                "metadata": site_metadata,
+            },
         )
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend(
