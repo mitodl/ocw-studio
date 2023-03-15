@@ -7,14 +7,14 @@ import django.db.models.manager
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('content_sync', '0004_content_not_nullable'),
+        ("content_sync", "0004_content_not_nullable"),
     ]
 
     operations = [
         migrations.AlterModelManagers(
-            name='contentsyncstate',
+            name="contentsyncstate",
             managers=[
-                ('bulk_objects', django.db.models.manager.Manager()),
+                ("bulk_objects", django.db.models.manager.Manager()),
             ],
         ),
     ]
