@@ -17,7 +17,11 @@ from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from main.celery import app
-from websites.api import reset_publishing_fields, update_website_status
+from websites.api import (
+    get_website_in_root_website_metadata,
+    reset_publishing_fields,
+    update_website_status,
+)
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
@@ -425,16 +429,14 @@ def update_websites_in_root_website():
             fields, match_field="filename", batch_size=100
         ) as bulk_update:
             for website in sites:
-                site_metadata = WebsiteContent.objects.get(
-                    website=website, type="sitemetadata"
-                ).metadata
-                # We want this content to show up in lists, but not render pages
-                site_metadata["_build"] = {"list": True, "render": False}
-                # Set the content to draft if the site has not been published or is unpublished
-                if website.unpublish_status is not None or website.publish_date is None:
-                    site_metadata["draft"] = True
-                # Carry over url_path for proper linking
-                site_metadata["url_path"] = website.url_path
+                version = (
+                    VERSION_DRAFT
+                    if (
+                        website.draft_publish_date is not None
+                        and website.publish_date is None
+                    )
+                    else VERSION_LIVE
+                )
                 bulk_update.queue(
                     WebsiteContent(
                         website=root_website,
@@ -443,7 +445,7 @@ def update_websites_in_root_website():
                         dirpath=WEBSITE_LISTING_DIRPATH,
                         filename=website.short_id,
                         is_page_content=True,
-                        metadata=site_metadata,
+                        metadata=get_website_in_root_website_metadata(website, version),
                     )
                 )
         website_content = WebsiteContent.objects.filter(
@@ -470,16 +472,6 @@ def update_website_in_root_website(website, version):
         and WebsiteContent.objects.filter(website=website, type="sitemetadata").exists()
     ):
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
-        site_metadata = WebsiteContent.objects.get(
-            website=website, type="sitemetadata"
-        ).metadata
-        # We want this content to show up in lists, but not render pages
-        site_metadata["_build"] = {"list": True, "render": False}
-        # Set the content to draft if the site has not been published or is unpublished
-        if website.unpublish_status is not None or version != VERSION_LIVE:
-            site_metadata["draft"] = True
-        # Carry over url_path for proper linking
-        site_metadata["url_path"] = website.url_path
         root_has_unpublished = (
             root_website.has_unpublished_live
             if version == VERSION_LIVE
@@ -496,7 +488,7 @@ def update_website_in_root_website(website, version):
                 "title": website.title,
                 "type": "website",
                 "is_page_content": True,
-                "metadata": site_metadata,
+                "metadata": get_website_in_root_website_metadata(website, version),
             },
         )
         backend = api.get_sync_backend(website=root_website)

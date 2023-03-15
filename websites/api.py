@@ -13,7 +13,7 @@ from magic import Magic
 from mitol.common.utils import max_or_none, now_in_utc
 from mitol.mail.api import get_message_sender
 
-from content_sync.constants import VERSION_DRAFT
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from main.utils import NestableKeyTextTransform
 from users.models import User
 from videos.constants import (
@@ -420,3 +420,21 @@ def sync_website_title(content: WebsiteContent):
     if title:
         content.website.title = title
         content.website.save()
+
+
+def get_website_in_root_website_metadata(website, version):
+    """Get a dict of metadata for website type WebsiteContent objects"""
+    # Start with the sitemetadata WebsiteContent for the given Website
+    site_metadata = WebsiteContent.objects.get(
+        website=website, type="sitemetadata"
+    ).metadata
+    # We want this content to show up in lists, but not render pages
+    site_metadata["_build"] = {"list": True, "render": False}
+    # Set the content to draft if the site has not been published or is unpublished
+    if website.unpublish_status is not None or (
+        version != VERSION_LIVE and website.publish_date is not None
+    ):
+        site_metadata["draft"] = True
+    # Carry over url_path for proper linking
+    site_metadata["url_path"] = website.url_path
+    return site_metadata
