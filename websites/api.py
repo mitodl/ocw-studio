@@ -423,7 +423,16 @@ def sync_website_title(content: WebsiteContent):
 
 
 def get_website_in_root_website_metadata(website, version):
-    """Get a dict of metadata for website type WebsiteContent objects"""
+    """
+    Get a dict of metadata for website type WebsiteContent objects
+    
+    Args:
+        website (Website): The Website to get the metadata object for
+        version (string): The version (draft / live) that the metadata will be used with
+
+    Returns:
+        dict: A dict of metadata keys to be used with a WebsiteContent object of type "website"
+    """
     # Start with the sitemetadata WebsiteContent for the given Website
     site_metadata = WebsiteContent.objects.get(
         website=website, type="sitemetadata"

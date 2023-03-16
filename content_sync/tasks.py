@@ -466,7 +466,13 @@ def update_websites_in_root_website():
 
 @app.task(acks_late=True)
 def update_website_in_root_website(website, version):
-    """Create or update a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME"""
+    """
+    Create or update a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
+    
+    Args:
+        website (Website): The Website to look up
+        version (string): The version (draft / live)
+    """
     if (
         website.name != settings.ROOT_WEBSITE_NAME
         and WebsiteContent.objects.filter(website=website, type="sitemetadata").exists()
@@ -501,7 +507,12 @@ def update_website_in_root_website(website, version):
 
 @app.task(acks_late=True)
 def remove_website_in_root_website(website):
-    """Delete a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME"""
+    """
+    Delete a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
+    
+    Args:
+        website (Website): The Website look up
+    """
     if website.name != settings.ROOT_WEBSITE_NAME:
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
         website_content = WebsiteContent.objects.get(
