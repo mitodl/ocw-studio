@@ -468,7 +468,7 @@ def update_websites_in_root_website():
 def update_website_in_root_website(website, version):
     """
     Create or update a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
-    
+
     Args:
         website (Website): The Website to look up
         version (string): The version (draft / live)
@@ -509,7 +509,7 @@ def update_website_in_root_website(website, version):
 def remove_website_in_root_website(website):
     """
     Delete a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
-    
+
     Args:
         website (Website): The Website look up
     """
