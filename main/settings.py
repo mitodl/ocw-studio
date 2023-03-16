@@ -141,6 +141,7 @@ INSTALLED_APPS = (
     "social_django",
     "robots",
     "anymail",
+    "bulk_update_or_create",
     # Put our apps after this point
     "main",
     "users",

@@ -3,7 +3,7 @@ import abc
 from typing import Any, Optional
 
 from content_sync.models import ContentSyncState
-from websites.models import Website
+from websites.models import Website, WebsiteContentQuerySet
 from websites.site_config_api import SiteConfig
 
 
@@ -101,11 +101,14 @@ class BaseSyncBackend(abc.ABC):
         """ Delete any git repo files without corresponding WebsiteContent objects"""
         ...
 
-    def sync_all_content_to_backend(self):
-        """ Sync all content for the website """
-        for sync_state in ContentSyncState.objects.filter(
-            content__website=self.website
-        ):
+    def sync_all_content_to_backend(
+        self, query_set: Optional[WebsiteContentQuerySet] = None
+    ):
+        """ Sync all content for the website, optionally filtering based on a WebsiteContentQuerySet """
+        sync_states = ContentSyncState.objects.filter(content__website=self.website)
+        if query_set:
+            sync_states = sync_states.filter(content__in=query_set)
+        for sync_state in sync_states:
             self.sync_content_to_backend(sync_state)
 
     @abc.abstractmethod

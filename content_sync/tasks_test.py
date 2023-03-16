@@ -25,6 +25,7 @@ from websites.constants import (
     PUBLISH_STATUS_SUCCEEDED,
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.models import WebsiteContent
 
 
 pytestmark = pytest.mark.django_db
@@ -652,8 +653,12 @@ def test_trigger_mass_build(settings, mocker, backend, version):
 @pytest.mark.parametrize("backend", ["concourse", None])
 def test_trigger_unpublished_removal(settings, mocker, backend):
     """trigger_unpublished_removal should call trigger_pipeline_build if enabled"""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
+    mock_remove_website_in_root_website = mocker.patch(
+        "content_sync.tasks.remove_website_in_root_website"
+    )
     mock_pipeline_unpause = mocker.patch(
         "content_sync.pipelines.concourse.BaseUnpublishedSiteRemovalPipeline.unpause_pipeline"
     )
@@ -666,6 +671,7 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
     pipeline_name = BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME
     site = WebsiteFactory.create()
     tasks.trigger_unpublished_removal.delay(site.name)
+    mock_remove_website_in_root_website.assert_called_once_with(site)
     if backend == "concourse":
         mock_pipeline_pause.assert_called_once_with(VERSION_LIVE)
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
@@ -673,3 +679,110 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
     else:
         mock_pipeline_trigger.assert_not_called()
         mock_pipeline_unpause.assert_not_called()
+
+
+def test_update_websites_in_root_website(api_mock):
+    """
+    The update_websites_in_root_website task should update or create WebsiteContent objects of type website, tied to the root website
+
+    It should not touch websites that have not been published or have been unpublished
+    """
+    root_website = WebsiteFactory.create(name="ocw-www")
+    WebsiteFactory.create_batch(2, draft_publish_date=None, publish_date=None)
+    published_sites = WebsiteFactory.create_batch(
+        4,
+        has_unpublished_live=False,
+        has_unpublished_draft=False,
+        live_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        draft_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        latest_build_id_live=1,
+        latest_build_id_draft=2,
+    )
+    unrelated_content = []
+    for site in published_sites:
+        WebsiteContentFactory.create(website=site, type="sitemetadata")
+        unrelated_content.append(
+            WebsiteContentFactory.create(website=site, type="page")
+        )
+    tasks.update_websites_in_root_website()
+    website_content = WebsiteContent.objects.filter(
+        website=root_website, type="website"
+    )
+    assert website_content.count() == 4
+    api_mock.get_sync_backend.assert_called_once_with(website=root_website)
+    mock_backend = api_mock.get_sync_backend.return_value
+    upserted_content = mock_backend.sync_all_content_to_backend.call_args[1][
+        "query_set"
+    ]
+    assert set(website_content).difference(set(upserted_content)) == set()
+
+
+def test_update_website_in_root_website(api_mock, mocker):
+    """
+    The update_website_in_root_website task should update or create a single WebsiteContent objects of type website, tied to the root website
+
+    It should not touch websites that have not been published or have been unpublished
+    """
+    root_website = WebsiteFactory.create(name="ocw-www")
+    published_site = WebsiteFactory.create(
+        name="published-site",
+        has_unpublished_live=False,
+        has_unpublished_draft=False,
+        live_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        draft_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        latest_build_id_live=1,
+        latest_build_id_draft=2,
+    )
+    unpublished_site = WebsiteFactory.create(name="unpublished-site")
+    WebsiteContentFactory.create(website=published_site, type="sitemetadata")
+    WebsiteContentFactory.create(website=published_site, type="page")
+    # Assume this content has been published for testing purposes
+    root_website.has_unpublished_draft = False
+    root_website.has_unpublished_live = False
+    root_website.save()
+    for version in [VERSION_DRAFT, VERSION_LIVE]:
+        tasks.update_website_in_root_website(published_site, version)
+        tasks.update_website_in_root_website(unpublished_site, version)
+    website_content = WebsiteContent.objects.filter(
+        website=root_website, type="website"
+    )
+    assert website_content.count() == 1
+    api_mock.get_sync_backend.assert_has_calls([mocker.call(website=root_website)])
+    mock_backend = api_mock.get_sync_backend.return_value
+    for call in mock_backend.sync_all_content_to_backend.call_args_list:
+        content = call[1]["query_set"].first()
+        assert content in website_content
+    api_mock.publish_website.assert_called_once_with(
+        root_website.name, VERSION_DRAFT, trigger_pipeline=False
+    )
+
+
+def test_remove_website_in_root_website(api_mock):
+    """
+    The remove_website_in_root_website task should remove a single WebsiteContent objects of type website, tied to the root website
+    """
+    root_website = WebsiteFactory.create(name="ocw-www")
+    published_site = WebsiteFactory.create(
+        name="published-site",
+        has_unpublished_live=False,
+        has_unpublished_draft=False,
+        live_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        draft_publish_status=PUBLISH_STATUS_SUCCEEDED,
+        latest_build_id_live=1,
+        latest_build_id_draft=2,
+    )
+    WebsiteContentFactory.create(website=published_site, type="sitemetadata")
+    # Assume this content has been published for testing purposes
+    root_website.has_unpublished_draft = False
+    root_website.has_unpublished_live = False
+    root_website.save()
+    for version in [VERSION_DRAFT, VERSION_LIVE]:
+        tasks.update_website_in_root_website(published_site, version)
+    website_content = WebsiteContent.objects.filter(
+        website=root_website, type="website"
+    )
+    assert website_content.count() == 1
+    tasks.remove_website_in_root_website(published_site)
+    assert website_content.count() == 0
+    api_mock.get_sync_backend.assert_any_call(website=root_website)
+    api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_any_call()

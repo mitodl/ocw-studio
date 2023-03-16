@@ -20,7 +20,7 @@ from content_sync.decorators import check_sync_state
 from content_sync.models import ContentSyncState
 from content_sync.serializers import deserialize_file_to_website_content
 from content_sync.utils import get_destination_filepath
-from websites.models import Website, WebsiteContent
+from websites.models import Website, WebsiteContent, WebsiteContentQuerySet
 
 
 log = logging.getLogger(__name__)
@@ -97,11 +97,13 @@ class GithubBackend(BaseSyncBackend):
             [path for path in self.api.get_all_file_paths("/") if path not in sitepaths]
         )
 
-    def sync_all_content_to_backend(self) -> Commit:
+    def sync_all_content_to_backend(
+        self, query_set: Optional[WebsiteContentQuerySet] = None
+    ) -> Commit:
         """
         Sync all the website's files to Github in one commit
         """
-        return self.api.upsert_content_files()
+        return self.api.upsert_content_files(query_set=query_set)
 
     def delete_content_in_backend(self, sync_state: ContentSyncState) -> Commit:
         """
