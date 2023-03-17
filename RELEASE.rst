@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.87.3
+--------------
+
+- publish websites in root website (#1705)
+- Fakhar/1646 exclude assests offline (#1713)
+- Fix: Flaky Frontend Test (#1700)
+
 Version 0.87.2 (Released March 13, 2023)
 --------------
 
