@@ -15,7 +15,7 @@ class Command(BaseCommand):
     """Check for WebContent with missing caption/transcripts, and syncs via 3play API"""
 
     help = __doc__
-    
+
     def __init__(self):
         super().__init__()
         self.transcript_base_url = (
@@ -25,7 +25,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         content_videos = WebsiteContent.objects.filter(
-            Q(metadata__resourcetype="Video") & ( 
+            Q(metadata__resourcetype="Video") & (
                 Q(metadata__video_files__video_captions_file=None) |
                 Q(metadata__video_files__video_transcript_file=None)
             )
@@ -33,15 +33,15 @@ class Command(BaseCommand):
 
         for video in content_videos:
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
-            
+
             new_captions_obj = self.create_new_captions(video, youtube_id)
             video.metadata['video_files']['video_captions_file'] = str(new_captions_obj.file)
             video.save()
-       
-    
+
     def create_new_captions(self, video, youtube_id):
+        """Fetches and Creates new caption/ Transcript using 3play API"""
         threeplay_transcript_json = threeplay_transcript_api_request(youtube_id)
-        
+
         if (
             threeplay_transcript_json.get("data")
             and len(threeplay_transcript_json.get("data")) > 0
@@ -49,15 +49,15 @@ class Command(BaseCommand):
         ):
             transcript_id = threeplay_transcript_json["data"][0].get("id")
             media_file_id = threeplay_transcript_json["data"][0].get("media_file_id")
-            
+
             url = self.transcript_base_url.format(media_file_id, transcript_id, settings.THREEPLAY_PROJECT_ID)
             pdf_url = url + "&format_id=46"
             pdf_response = fetch_file(pdf_url)
-            
+
             if pdf_response:
                 pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
                 self.create_new_content(pdf_file, video, youtube_id)
-            
+
             url = self.transcript_base_url.format(media_file_id, transcript_id, settings.THREEPLAY_PROJECT_ID)
             webvtt_url = url + "&format_id=51"
             webvtt_response = fetch_file(webvtt_url)
@@ -68,21 +68,21 @@ class Command(BaseCommand):
 
             video.save()
             return True
-        
+
         return False
 
     def generate_metadata(self, youtube_id, new_uid, new_s3_path, file_content):
         """Generate new metadata for new VTT WebsiteContent object"""
         file_ext = get_file_extension(file_content)
-        title = '3play caption file' 
+        title = '3play caption file'
         file_type = 'application/x-subrip'
         resource_type = "Other"
-        
+
         if file_ext == 'pdf':
-            title = '3play transcript file' 
+            title = '3play transcript file'
             file_type = 'application/pdf'
             resource_type = "Document"
-        
+
         return (title, {
             'uid': new_uid,
             'file': new_s3_path,
@@ -101,12 +101,12 @@ class Command(BaseCommand):
         """Generates S3 path for the file"""
         _, new_filename = get_dirpath_and_filename(file_content.name)
         new_filename_ext = get_file_extension(file_content.name)
-        
+
         if new_filename_ext == "webvtt":
             new_filename += "_captions"
         elif new_filename_ext == "pdf":
             new_filename += "_transcript"
-            
+
         new_s3_path = f"/{video.website.s3_path.rstrip('/').lstrip('/')}/{new_filename.lstrip('/')}.{new_filename_ext}"
 
         return new_s3_path
@@ -130,5 +130,5 @@ class Command(BaseCommand):
             },
         )[0]
         new_obj.save()
-        
+
         return new_obj
