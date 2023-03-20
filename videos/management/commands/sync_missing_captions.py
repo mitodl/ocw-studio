@@ -19,15 +19,16 @@ class Command(BaseCommand):
     def __init__(self):
         super().__init__()
         self.transcript_base_url = (
-                "https://static.3playmedia.com/p/files/{media_file_id}/threeplay_transcripts/"
-                "{transcript_id}?project_id={project_id}"
-            )
+            "https://static.3playmedia.com/p/files/{media_file_id}/threeplay_transcripts/"
+            "{transcript_id}?project_id={project_id}"
+        )
 
     def handle(self, *args, **options):
         content_videos = WebsiteContent.objects.filter(
-            Q(metadata__resourcetype="Video") & (
-                Q(metadata__video_files__video_captions_file=None) |
-                Q(metadata__video_files__video_transcript_file=None)
+            Q(metadata__resourcetype="Video")
+            & (
+                Q(metadata__video_files__video_captions_file=None)
+                | Q(metadata__video_files__video_transcript_file=None)
             )
         )
 
@@ -35,7 +36,9 @@ class Command(BaseCommand):
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
 
             new_captions_obj = self.create_new_captions(video, youtube_id)
-            video.metadata['video_files']['video_captions_file'] = str(new_captions_obj.file)
+            video.metadata["video_files"]["video_captions_file"] = str(
+                new_captions_obj.file
+            )
             video.save()
 
     def create_new_captions(self, video, youtube_id):
@@ -50,7 +53,9 @@ class Command(BaseCommand):
             transcript_id = threeplay_transcript_json["data"][0].get("id")
             media_file_id = threeplay_transcript_json["data"][0].get("media_file_id")
 
-            url = self.transcript_base_url.format(media_file_id, transcript_id, settings.THREEPLAY_PROJECT_ID)
+            url = self.transcript_base_url.format(
+                media_file_id, transcript_id, settings.THREEPLAY_PROJECT_ID
+            )
             pdf_url = url + "&format_id=46"
             pdf_response = fetch_file(pdf_url)
 
@@ -58,7 +63,9 @@ class Command(BaseCommand):
                 pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
                 self.create_new_content(pdf_file, video, youtube_id)
 
-            url = self.transcript_base_url.format(media_file_id, transcript_id, settings.THREEPLAY_PROJECT_ID)
+            url = self.transcript_base_url.format(
+                media_file_id, transcript_id, settings.THREEPLAY_PROJECT_ID
+            )
             webvtt_url = url + "&format_id=51"
             webvtt_response = fetch_file(webvtt_url)
 
@@ -74,28 +81,31 @@ class Command(BaseCommand):
     def generate_metadata(self, youtube_id, new_uid, new_s3_path, file_content):
         """Generate new metadata for new VTT WebsiteContent object"""
         file_ext = get_file_extension(file_content)
-        title = '3play caption file'
-        file_type = 'application/x-subrip'
+        title = "3play caption file"
+        file_type = "application/x-subrip"
         resource_type = "Other"
 
-        if file_ext == 'pdf':
-            title = '3play transcript file'
-            file_type = 'application/pdf'
+        if file_ext == "pdf":
+            title = "3play transcript file"
+            file_type = "application/pdf"
             resource_type = "Document"
 
-        return (title, {
-            'uid': new_uid,
-            'file': new_s3_path,
-            'title': title,
-            'license': 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
-            'ocw_type': 'OCWFile',
-            'file_type': file_type,
-            'description': '',
-            'video_files': {'video_thumbnail_file': None},
-            'resourcetype': resource_type,
-            'video_metadata': {'youtube_id': youtube_id},
-            'learning_resource_types': []
-        })
+        return (
+            title,
+            {
+                "uid": new_uid,
+                "file": new_s3_path,
+                "title": title,
+                "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+                "ocw_type": "OCWFile",
+                "file_type": file_type,
+                "description": "",
+                "video_files": {"video_thumbnail_file": None},
+                "resourcetype": resource_type,
+                "video_metadata": {"youtube_id": youtube_id},
+                "learning_resource_types": [],
+            },
+        )
 
     def generate_s3_path(self, file_content, video):
         """Generates S3 path for the file"""
@@ -115,7 +125,9 @@ class Command(BaseCommand):
         """Create new WebsiteContent object for caption or transcript using 3play response"""
         new_text_id = str(uuid4())
         new_s3_loc = self.generate_s3_path(file_content, video)
-        title, new_obj_metadata = self.generate_metadata(youtube_id, new_text_id, new_s3_loc, file_content)
+        title, new_obj_metadata = self.generate_metadata(
+            youtube_id, new_text_id, new_s3_loc, file_content
+        )
         new_obj = WebsiteContent.objects.get_or_create(
             website=video.website,
             text_id=new_text_id,
