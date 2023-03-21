@@ -2,12 +2,23 @@ import React, { useCallback, useEffect, useState } from "react"
 
 import SortableSelect, { SortableItem } from "./SortableSelect"
 import { Option } from "./SelectField"
-import { useWebsiteSelectOptions } from "../../hooks/websites"
+import { useWebsiteSelectOptions, WebsiteOption } from "../../hooks/websites"
+import _ from "lodash"
 
 interface Props {
   name: string
   onChange: (event: any) => void
   value: SortableItem[]
+}
+
+export function formatOptionsLabelWithShortId(
+  options: WebsiteOption[]
+): WebsiteOption[] {
+  const formattedOptions = _.cloneDeep(options)
+  formattedOptions.forEach(e => {
+    e.label = `${e.label} (${e.shortId})`
+  })
+  return formattedOptions
 }
 
 export default function WebsiteCollectionField(props: Props): JSX.Element {
@@ -55,13 +66,15 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
     [value]
   )
 
+  const formattedOptions = formatOptionsLabelWithShortId(options)
+
   return (
     <SortableSelect
       name={name}
       value={value}
       onChange={onChangeShim}
-      options={options}
-      defaultOptions={options}
+      options={formattedOptions}
+      defaultOptions={formattedOptions}
       loadOptions={loadOptions}
       isOptionDisabled={isOptionDisabled}
     />
