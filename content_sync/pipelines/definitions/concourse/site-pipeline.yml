@@ -383,7 +383,7 @@ jobs:
                 mkdir -p ./static/static_shared
                 if [ ! -z "$(ls -A ../static-resources)" ];
                 then
-                  find ../static-resources ! -name '*.mp4' ! -name '*.js.map' -type f | xargs cp -t ./content/static_resources
+                  find ../static-resources ! -name '*.mp4' -type f | xargs cp -t ./content/static_resources
                 fi
                 HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
                 if [ $HTML_COUNT != 0 ];
