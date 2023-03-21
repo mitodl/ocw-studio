@@ -690,7 +690,7 @@ def test_upsert_mass_build_pipeline(
         assert "$SHORT_ID.zip" in config_str
         if settings.ENVIRONMENT == "dev":
             assert (
-                f"STUDIO_S3_RESULT=$(aws s3{endpoint_url} sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH ./content/static_resources --exclude *.mp4 --exclude *.js.map --only-show-errors) || STUDIO_S3_RESULT=1"
+                f"STUDIO_S3_RESULT=$(aws s3{endpoint_url} sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH ./content/static_resources --exclude *.mp4 --only-show-errors) || STUDIO_S3_RESULT=1"
                 in config_str
             )
     else:
