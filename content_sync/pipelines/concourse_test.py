@@ -363,7 +363,7 @@ def test_upsert_website_pipelines(
     else:
         assert "cp -r -n ../static-resources/. ./output-online/" in config_str
         assert (
-            f"aws s3 {expected_endpoint_prefix}sync s3://{bucket}/static_shared ./static/static_shared"
+            f"aws s3 {expected_endpoint_prefix}sync s3://{bucket}/static_shared --exclude *.js.map ./static/static_shared"
             in config_str
         )
         assert (
