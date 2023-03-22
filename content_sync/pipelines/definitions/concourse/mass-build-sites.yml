@@ -118,7 +118,8 @@ jobs:
           npm run build:webpack
           npm run build:githash
           mkdir -p ./base-theme/static/static_shared/
-          cp -r ./base-theme/dist/static_shared/* ./base-theme/static/static_shared/
+          find ./base-theme/dist/static_shared/* ! -name '*.js.map' -type f | xargs cp -t ./base-theme/static/static_shared/
+          
   # END OFFLINE-ONLY
   - task: get-sites
     timeout: 2m
@@ -215,7 +216,7 @@ jobs:
               # END ONLINE-ONLY
               # START OFFLINE-ONLY
               echo "PULLING IN STATIC RESOURCES FOR $NAME" > /dev/tty
-              STUDIO_S3_RESULT=$(aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH ./content/static_resources --exclude *.mp4 --exclude *.js.map --only-show-errors) || STUDIO_S3_RESULT=1
+              STUDIO_S3_RESULT=$(aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/$S3_PATH ./content/static_resources --exclude *.mp4 --only-show-errors) || STUDIO_S3_RESULT=1
               if [[ $STUDIO_S3_RESULT == 1 ]]
               then
                 echo "SYNCING s3://((ocw-studio-bucket))/$S3_PATH to ./content/static_resources FAILED FOR $NAME" > /dev/tty
