@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.88.0
+Version 0.88.0 (Released March 22, 2023)
 --------------
 
 - Revert "feat: show short_id in course list dropdown (#1715)" (#1721)
