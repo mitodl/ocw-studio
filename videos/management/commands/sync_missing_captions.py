@@ -12,7 +12,6 @@ from videos.utils import generate_s3_path
 from websites.models import WebsiteContent
 
 
-
 class Command(BaseCommand):
     """Check for WebContent with missing caption/transcripts, and syncs via 3play API"""
 
@@ -25,9 +24,21 @@ class Command(BaseCommand):
             "{transcript_id}?project_id={project_id}"
         )
         self.extension_map = {
-            'vtt': {'ext': 'captions', 'file_type': 'application/x-subrip', "resource_type": 'Other'},
-            'webvtt': {'ext': 'captions', 'file_type': 'application/x-subrip', "resource_type": 'Other'},
-            'pdf': {'ext': 'transcript', 'file_type': 'application/pdf', "resource_type": 'Document'},
+            "vtt": {
+                "ext": "captions",
+                "file_type": "application/x-subrip",
+                "resource_type": "Other",
+            },
+            "webvtt": {
+                "ext": "captions",
+                "file_type": "application/x-subrip",
+                "resource_type": "Other",
+            },
+            "pdf": {
+                "ext": "transcript",
+                "file_type": "application/pdf",
+                "resource_type": "Document",
+            },
         }
 
     def handle(self, *args, **options):
@@ -99,10 +110,10 @@ class Command(BaseCommand):
                 "title": title,
                 "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
                 "ocw_type": "OCWFile",
-                "file_type": file_ext['file_type'],
+                "file_type": file_ext["file_type"],
                 "description": "",
                 "video_files": {"video_thumbnail_file": None},
-                "resourcetype": file_ext['resource_type'],
+                "resourcetype": file_ext["resource_type"],
                 "video_metadata": {"youtube_id": youtube_id},
                 "learning_resource_types": [],
             },

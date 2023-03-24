@@ -11,6 +11,7 @@ from main.utils import get_dirpath_and_filename
 from websites.models import Website, WebsiteContent
 from videos.utils import generate_s3_path
 
+
 class Command(BaseCommand):
     """Sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""
 
