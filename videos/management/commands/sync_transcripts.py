@@ -19,31 +19,20 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--use-course",
-            dest="use_course",
-            help="Helps determine whether to use 3play or a course to sync missing transcripts",
-        )
-
-        parser.add_argument(
             "--from_course",
             dest="from_course",
             help="name or short_id of course to use as source for sync",
-            required="--use-course" in sys.argv,
+            required=True,
         )
 
         parser.add_argument(
             "--to_course",
             dest="to_course",
             help="name or short_id of course to use as destination for sync",
-            required="--use-course" in sys.argv,
+            required=True,
         )
 
     def handle(self, *args, **options):
-        if options.get('use_course'):
-            self.sync_from_course(options)
-
-    def sync_from_course(self, options):
-        """ Syncs new Websitecontent with existing legacy course"""
         from_course = Website.objects.get(
             Q(short_id=options["from_course"]) | Q(name=options["from_course"])
         )
