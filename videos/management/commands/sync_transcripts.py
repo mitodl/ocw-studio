@@ -1,5 +1,6 @@
 """Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""
 import re
+import sys
 from copy import deepcopy
 from uuid import uuid4
 
@@ -10,7 +11,7 @@ from django.db.models import Q
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension
 from websites.models import Website, WebsiteContent
-
+from videos.utils import generate_s3_path
 
 class Command(BaseCommand):
     """Sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""
@@ -18,22 +19,31 @@ class Command(BaseCommand):
     help = __doc__
 
     def add_arguments(self, parser):
-
+        parser.add_argument(
+            "--use-course",
+            dest="use_course",
+            help="Helps determine whether to use 3play or a course to sync missing transcripts",
+        )
+        
         parser.add_argument(
             "--from_course",
             dest="from_course",
             help="name or short_id of course to use as source for sync",
-            required=True,
+            required="--use-course" in sys.argv,
         )
 
         parser.add_argument(
             "--to_course",
             dest="to_course",
             help="name or short_id of course to use as destination for sync",
-            required=True,
+            required="--use-course" in sys.argv,
         )
 
     def handle(self, *args, **options):
+        if options.get('use_course'):
+            self.sync_from_course(options)
+    
+    def sync_from_course(self, options):
         from_course = Website.objects.get(
             Q(short_id=options["from_course"]) | Q(name=options["from_course"])
         )
@@ -46,8 +56,10 @@ class Command(BaseCommand):
         to_course_videos = WebsiteContent.objects.filter(
             Q(website__name=to_course.name) & Q(metadata__resourcetype="Video")
         )
+        
         from_course_videos = self.courses_to_youtube_dict(from_course_videos)
         ctr = [0, 0]  # captions and transcript counters
+        
         for video in to_course_videos:
             video_youtube_id = video.metadata["video_metadata"]["youtube_id"]
             # refresh query each time
@@ -162,22 +174,7 @@ class Command(BaseCommand):
     def copy_obj_s3(self, source_obj, dest_course):
         """Copy source_obj to the S3 bucket of dest_course"""
         s3 = get_boto3_resource("s3")
-        uuid_re = re.compile(
-            "^[0-9A-F]{8}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{12}_", re.I
-        )
-        _, new_filename = get_dirpath_and_filename(str(source_obj.file))
-        # remove legacy UUID from filename if it exists
-        new_filename = re.split(uuid_re, new_filename)
-        if len(new_filename) == 1:
-            new_filename = new_filename[0]
-        else:
-            new_filename = new_filename[1]
-        new_filename_ext = get_file_extension(str(source_obj.file))
-        if new_filename_ext == "vtt":
-            new_filename += "_captions"
-        elif new_filename_ext == "pdf":
-            new_filename += "_transcript"
-        new_s3_path = f"/{dest_course.s3_path.rstrip('/').lstrip('/')}/{new_filename.lstrip('/')}.{new_filename_ext}"
+        new_s3_path = generate_s3_path(source_obj, dest_course)
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_s3_path).copy_from(
             CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME.rstrip('/')}/{str(source_obj.file).lstrip('/')}"
         )

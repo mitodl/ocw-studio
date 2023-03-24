@@ -10,6 +10,8 @@ from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
 from websites.models import WebsiteContent
 
+from videos.utils import generate_s3_path
+
 
 class Command(BaseCommand):
     """Check for WebContent with missing caption/transcripts, and syncs via 3play API"""
@@ -22,6 +24,11 @@ class Command(BaseCommand):
             "https://static.3playmedia.com/p/files/{media_file_id}/threeplay_transcripts/"
             "{transcript_id}?project_id={project_id}"
         )
+        self.extension_map = {
+            'vtt': {'ext': 'captions', 'file_type': 'application/x-subrip', "resource_type": 'Other'},
+            'webvtt': {'ext': 'captions', 'file_type': 'application/x-subrip', "resource_type": 'Other'},
+            'pdf': {'ext': 'transcript', 'file_type': 'application/pdf', "resource_type": 'Document'},
+        }
 
     def handle(self, *args, **options):
         content_videos = WebsiteContent.objects.filter(
@@ -78,17 +85,10 @@ class Command(BaseCommand):
 
         return False
 
-    def generate_metadata(self, youtube_id, new_uid, new_s3_path, file_content):
+    def generate_metadata(self, youtube_id, new_uid, new_s3_path, file_content, video):
         """Generate new metadata for new VTT WebsiteContent object"""
-        file_ext = get_file_extension(file_content)
-        title = "3play caption file"
-        file_type = "application/x-subrip"
-        resource_type = "Other"
-
-        if file_ext == "pdf":
-            title = "3play transcript file"
-            file_type = "application/pdf"
-            resource_type = "Document"
+        file_ext = self.extension_map[get_file_extension(file_content)]
+        title = f"{video.title} {file_ext['ext']}"
 
         return (
             title,
@@ -98,35 +98,21 @@ class Command(BaseCommand):
                 "title": title,
                 "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
                 "ocw_type": "OCWFile",
-                "file_type": file_type,
+                "file_type": file_ext['file_type'],
                 "description": "",
                 "video_files": {"video_thumbnail_file": None},
-                "resourcetype": resource_type,
+                "resourcetype": file_ext['resource_type'],
                 "video_metadata": {"youtube_id": youtube_id},
                 "learning_resource_types": [],
             },
         )
 
-    def generate_s3_path(self, file_content, video):
-        """Generates S3 path for the file"""
-        _, new_filename = get_dirpath_and_filename(file_content.name)
-        new_filename_ext = get_file_extension(file_content.name)
-
-        if new_filename_ext == "webvtt":
-            new_filename += "_captions"
-        elif new_filename_ext == "pdf":
-            new_filename += "_transcript"
-
-        new_s3_path = f"/{video.website.s3_path.rstrip('/').lstrip('/')}/{new_filename.lstrip('/')}.{new_filename_ext}"
-
-        return new_s3_path
-
     def create_new_content(self, file_content, video, youtube_id):
         """Create new WebsiteContent object for caption or transcript using 3play response"""
         new_text_id = str(uuid4())
-        new_s3_loc = self.generate_s3_path(file_content, video)
+        new_s3_loc = generate_s3_path(file_content, video.website)
         title, new_obj_metadata = self.generate_metadata(
-            youtube_id, new_text_id, new_s3_loc, file_content
+            youtube_id, new_text_id, new_s3_loc, file_content, video
         )
         new_obj = WebsiteContent.objects.get_or_create(
             website=video.website,
