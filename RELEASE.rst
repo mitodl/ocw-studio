@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.88.0 (Released March 22, 2023)
+--------------
+
+- Revert "feat: show short_id in course list dropdown (#1715)" (#1721)
+- Revert "Fakhar/1646 exclude assests offline (#1713)" (#1718)
+- feat: show short_id in course list dropdown (#1715)
+- publish websites in root website (#1705)
+- Fakhar/1646 exclude assests offline (#1713)
+- Fix: Flaky Frontend Test (#1700)
+
 Version 0.87.2 (Released March 13, 2023)
 --------------
 
