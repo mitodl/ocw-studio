@@ -8,9 +8,9 @@ from django.db.models import Q
 
 from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
+from videos.utils import generate_s3_path
 from websites.models import WebsiteContent
 
-from videos.utils import generate_s3_path
 
 
 class Command(BaseCommand):
@@ -68,7 +68,7 @@ class Command(BaseCommand):
 
             if pdf_response:
                 pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
-                self.create_new_content(pdf_file, video, youtube_id)
+                self.create_new_content(pdf_file, video)
 
             url = self.transcript_base_url.format(
                 media_file_id, transcript_id, settings.THREEPLAY_PROJECT_ID
@@ -78,18 +78,19 @@ class Command(BaseCommand):
 
             if webvtt_response:
                 vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
-                self.create_new_content(vtt_file, video, youtube_id)
+                self.create_new_content(vtt_file, video)
 
             video.save()
             return True
 
         return False
 
-    def generate_metadata(self, youtube_id, new_uid, new_s3_path, file_content, video):
+    def generate_metadata(self, new_uid, new_s3_path, file_content, video):
         """Generate new metadata for new VTT WebsiteContent object"""
         file_ext = self.extension_map[get_file_extension(file_content)]
         title = f"{video.title} {file_ext['ext']}"
-
+        youtube_id = video.metadata["video_metadata"]["youtube_id"]
+        
         return (
             title,
             {
@@ -107,12 +108,12 @@ class Command(BaseCommand):
             },
         )
 
-    def create_new_content(self, file_content, video, youtube_id):
+    def create_new_content(self, file_content, video):
         """Create new WebsiteContent object for caption or transcript using 3play response"""
         new_text_id = str(uuid4())
         new_s3_loc = generate_s3_path(file_content, video.website)
         title, new_obj_metadata = self.generate_metadata(
-            youtube_id, new_text_id, new_s3_loc, file_content, video
+            new_text_id, new_s3_loc, file_content, video
         )
         new_obj = WebsiteContent.objects.get_or_create(
             website=video.website,

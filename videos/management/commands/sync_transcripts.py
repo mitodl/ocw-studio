@@ -1,5 +1,4 @@
 """Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""
-import re
 import sys
 from copy import deepcopy
 from uuid import uuid4
@@ -9,7 +8,7 @@ from django.core.management import BaseCommand
 from django.db.models import Q
 
 from main.s3_utils import get_boto3_resource
-from main.utils import get_dirpath_and_filename, get_file_extension
+from main.utils import get_dirpath_and_filename
 from websites.models import Website, WebsiteContent
 from videos.utils import generate_s3_path
 
@@ -24,7 +23,7 @@ class Command(BaseCommand):
             dest="use_course",
             help="Helps determine whether to use 3play or a course to sync missing transcripts",
         )
-        
+
         parser.add_argument(
             "--from_course",
             dest="from_course",
@@ -42,8 +41,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if options.get('use_course'):
             self.sync_from_course(options)
-    
+
     def sync_from_course(self, options):
+        """ Syncs new Websitecontent with existing legacy course"""
         from_course = Website.objects.get(
             Q(short_id=options["from_course"]) | Q(name=options["from_course"])
         )
@@ -56,10 +56,10 @@ class Command(BaseCommand):
         to_course_videos = WebsiteContent.objects.filter(
             Q(website__name=to_course.name) & Q(metadata__resourcetype="Video")
         )
-        
+
         from_course_videos = self.courses_to_youtube_dict(from_course_videos)
         ctr = [0, 0]  # captions and transcript counters
-        
+
         for video in to_course_videos:
             video_youtube_id = video.metadata["video_metadata"]["youtube_id"]
             # refresh query each time

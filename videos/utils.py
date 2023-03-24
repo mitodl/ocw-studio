@@ -1,14 +1,15 @@
 """Video utils"""
 import re
+
 from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.models import WebsiteContent
 
 
-def generate_s3_path(self, file_or_webcontent, website):
+def generate_s3_path(file_or_webcontent, website):
     """Generates S3 path for the file"""
     if isinstance(file_or_webcontent, WebsiteContent):
         file_or_webcontent = file_or_webcontent.file
-        
+
     _, new_filename = get_dirpath_and_filename(file_or_webcontent.name)
     new_filename = clean_uuid_filename(new_filename)
     new_filename_ext = get_file_extension(file_or_webcontent.name)
