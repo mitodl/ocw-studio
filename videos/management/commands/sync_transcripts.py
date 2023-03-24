@@ -1,5 +1,4 @@
 """Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""
-import sys
 from copy import deepcopy
 from uuid import uuid4
 

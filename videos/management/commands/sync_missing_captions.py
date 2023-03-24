@@ -90,7 +90,7 @@ class Command(BaseCommand):
         file_ext = self.extension_map[get_file_extension(file_content)]
         title = f"{video.title} {file_ext['ext']}"
         youtube_id = video.metadata["video_metadata"]["youtube_id"]
-        
+
         return (
             title,
             {
