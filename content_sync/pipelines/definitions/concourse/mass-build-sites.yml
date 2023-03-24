@@ -118,7 +118,7 @@ jobs:
           npm run build:webpack
           npm run build:githash
           mkdir -p ./base-theme/static/static_shared/
-          cp -r ./base-theme/dist/static_shared/* ./base-theme/static/static_shared/
+          find ./base-theme/dist/static_shared/* ! -name '*.js.map' -type f | xargs cp -t ./base-theme/static/static_shared/
   # END OFFLINE-ONLY
   - task: get-sites
     timeout: 2m
