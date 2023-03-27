@@ -628,6 +628,10 @@
     "OCW_HUGO_THEMES_SENTRY_DSN": {
       "description": "The sentry DSN that will be used in ocw-hugo-themes",
       "required": false
+    },
+    "OCW_HUGO_THEMES_SENTRY_ENV": {
+      "description": "The sentry ENV that will be used in ocw-hugo-themes",
+      "required": true
     }
   },
   "keywords": [
