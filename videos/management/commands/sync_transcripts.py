@@ -8,8 +8,8 @@ from django.db.models import Q
 
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename
-from websites.models import Website, WebsiteContent
 from videos.utils import generate_s3_path
+from websites.models import Website, WebsiteContent
 
 
 class Command(BaseCommand):
