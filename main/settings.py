@@ -1157,7 +1157,7 @@ OCW_HUGO_THEMES_SENTRY_DSN = get_string(
     description="The sentry DSN that will be used in ocw-hugo-themes",
 )
 OCW_HUGO_THEMES_SENTRY_ENV = get_string(
-    name="OCW_HUGO_THEMES_SENTRY_DSN",
+    name="OCW_HUGO_THEMES_SENTRY_ENV",
     default="qa",
     description="The sentry ENV that will be used in ocw-hugo-themes",
 )
