@@ -8,6 +8,8 @@ amqp==5.0.9
     # via kombu
 asgiref==3.2.10
     # via django
+async-timeout==4.0.2
+    # via redis
 attrs==21.2.0
     # via pytest
 backcall==0.2.0
@@ -283,7 +285,7 @@ pyyaml==5.4
     # via
     #   -r requirements.in
     #   yamale
-redis==3.5.3
+redis==4.5.3
     # via
     #   -r requirements.in
     #   django-redis
