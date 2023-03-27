@@ -818,12 +818,13 @@ def test_find_missing_files(deleted_drive_files_count):
 
 @pytest.mark.parametrize("with_resource", [False, True])
 @pytest.mark.parametrize("is_used_in_content", [False, True])
-def test_delete_drive_file(with_resource, is_used_in_content):
+def test_delete_drive_file(mocker, with_resource, is_used_in_content):
     """delete_drive_file should delete the file and resource only if resource is not being used"""
+    mocker.patch("main.s3_utils.boto3")
     website = WebsiteFactory.create()
     drive_file = DriveFileFactory.create(website=website)
-    if with_resource:
 
+    if with_resource:
         resource = WebsiteContentFactory.create(
             text_id="7d3df94e-e8dd-40bc-97f2-18e793d5ce25",
             type=CONTENT_TYPE_RESOURCE,
