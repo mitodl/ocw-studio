@@ -37,6 +37,7 @@ from videos.constants import VideoJobStatus, VideoStatus
 from videos.factories import VideoFactory, VideoJobFactory
 from websites.constants import (
     CONTENT_FILENAMES_FORBIDDEN,
+    CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
@@ -796,3 +797,60 @@ def test_rename_file(mocker, settings):
     drive_file.refresh_from_db()
     assert content.file == "test/path/new_name.pdf"
     assert drive_file.s3_key == "test/path/new_name.pdf"
+
+
+@pytest.mark.parametrize("deleted_drive_files_count", [0, 5, 10])
+def test_find_missing_files(deleted_drive_files_count):
+    """find_missing_files should return files that are missing from files param."""
+    website = WebsiteFactory.create()
+    drive_files = DriveFileFactory.create_batch(10, website=website)
+    deleted_drive_files = drive_files[:deleted_drive_files_count]
+    existing_drive_files = drive_files[deleted_drive_files_count:]
+    files = [{"id": file.file_id} for file in existing_drive_files]
+
+    missing_files_result = api.find_missing_files(files, website)
+
+    deleted_file_ids = [file.file_id for file in deleted_drive_files]
+    missing_files_result_ids = [file.file_id for file in missing_files_result]
+    assert len(deleted_drive_files) == len(missing_files_result)
+    assert all([file_id in deleted_file_ids for file_id in missing_files_result_ids])
+
+
+@pytest.mark.parametrize("with_resource", [False, True])
+@pytest.mark.parametrize("is_used_in_content", [False, True])
+def test_delete_drive_file(with_resource, is_used_in_content):
+    """delete_drive_file should delete the file and resource only if resource is not being used"""
+    website = WebsiteFactory.create()
+    drive_file = DriveFileFactory.create(website=website)
+    if with_resource:
+
+        resource = WebsiteContentFactory.create(
+            text_id="7d3df94e-e8dd-40bc-97f2-18e793d5ce25",
+            type=CONTENT_TYPE_RESOURCE,
+            website=website,
+        )
+        drive_file.resource = resource
+        drive_file.save()
+
+        if is_used_in_content:
+            content = WebsiteContentFactory.create(
+                type=CONTENT_TYPE_PAGE,
+                markdown=f'{{{{% resource_link "{resource.text_id}" "{resource.filename}" %}}}}',
+                website=website,
+            )
+
+    api.delete_drive_file(drive_file)
+
+    drive_file_exists = DriveFile.objects.filter(file_id=drive_file.file_id).exists()
+    if with_resource:
+        resource_exists = WebsiteContent.objects.filter(pk=resource.id).exists()
+
+    if with_resource and is_used_in_content:
+        assert WebsiteContent.objects.filter(pk=content.id).exists()
+        assert resource_exists
+        assert drive_file_exists
+    elif with_resource:
+        assert not drive_file_exists
+        assert not resource_exists
+    else:
+        assert not drive_file_exists

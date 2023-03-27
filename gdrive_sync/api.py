@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, Optional
 
+import dateutil
 import PyPDF2
 from botocore.exceptions import ClientError
 from django.conf import settings
@@ -121,6 +122,81 @@ def query_files(query: str, fields: str) -> Iterable[Dict]:
             yield file_obj
 
 
+def _get_or_create_drive_file(
+    file_obj: Dict, drive_path: str, website: Website, sync_date: Optional[datetime]
+) -> Optional[DriveFile]:
+    """
+    Determines if `file_obj` is a new or updated file and returns a new or updated
+    DriveFile respectively.
+    Returns None if no change is detected.
+    """
+    existing_file = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
+    if (
+        existing_file
+        and existing_file.checksum == file_obj.get("md5Checksum", "")
+        and existing_file.name == file_obj.get("name")
+        and existing_file.status
+        in (
+            DriveFileStatus.COMPLETE,
+            DriveFileStatus.UPLOADING,
+            DriveFileStatus.UPLOAD_COMPLETE,
+            DriveFileStatus.TRANSCODING,
+        )
+    ):
+        # For inexplicable reasons, sometimes Google Drive continuously updates
+        # the modifiedTime of files, so only update the DriveFile if the checksum or name changed,
+        # and the status indicates that the file processing is not complete or in progress.
+        return
+
+    file_data = {
+        "drive_path": drive_path,
+        "name": file_obj.get("name"),
+        "website": website,
+        "mime_type": file_obj.get("mimeType"),
+        "checksum": file_obj.get("md5Checksum"),
+        "modified_time": file_obj.get("modifiedTime"),
+        "created_time": file_obj.get("createdTime"),
+        "download_link": file_obj.get("webContentLink"),
+        "sync_error": None,
+        "sync_dt": sync_date,
+    }
+
+    if existing_file:
+        for k, v in file_data.items():
+            setattr(existing_file, k, v)
+        existing_file.save()
+        drive_file = existing_file
+    else:
+        existing_file_same_path = DriveFile.objects.filter(
+            drive_path=drive_path,
+            name=file_obj.get("name"),
+            website=website,
+        ).first()
+
+        file_data.update({"file_id": file_obj.get("id")})
+
+        if existing_file_same_path:
+            if (
+                dateutil.parser.parse(file_obj.get("createdTime"))
+                < existing_file_same_path.created_time
+            ):
+                return existing_file_same_path
+            # A drive file already exists on the same path.
+            # We'll detach the resource from this one and attach it
+            # to a new DriveFile.
+            file_data.update(
+                {
+                    "resource": existing_file_same_path.resource,
+                }
+            )
+            existing_file_same_path.resource = None
+            existing_file_same_path.save()
+            delete_drive_file(existing_file_same_path)
+
+        drive_file = DriveFile.objects.create(**file_data)
+    return drive_file
+
+
 def get_parent_tree(parents):
     """Return a list of parent folders"""
     service = get_drive_service()
@@ -164,40 +240,14 @@ def process_file_result(
             and file_obj.get("webContentLink") is not None
             and file_obj.get("md5Checksum") is not None
         )
+
         if website and processable:
-            existing_file = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
-            if (
-                existing_file
-                and existing_file.checksum == file_obj.get("md5Checksum", "")
-                and existing_file.name == file_obj.get("name")
-                and existing_file.status
-                in (
-                    DriveFileStatus.COMPLETE,
-                    DriveFileStatus.UPLOADING,
-                    DriveFileStatus.UPLOAD_COMPLETE,
-                    DriveFileStatus.TRANSCODING,
-                )
-            ):
-                # For inexplicable reasons, sometimes Google Drive continuously updates
-                # the modifiedTime of files, so only update the DriveFile if the checksum or name changed,
-                # and the status indicates that the file processing is not complete or in progress.
-                return
-            drive_file, _ = DriveFile.objects.update_or_create(
-                file_id=file_obj.get("id"),
-                defaults={
-                    "name": file_obj.get("name"),
-                    "mime_type": file_obj.get("mimeType"),
-                    "checksum": file_obj.get("md5Checksum"),
-                    "modified_time": file_obj.get("modifiedTime"),
-                    "created_time": file_obj.get("createdTime"),
-                    "download_link": file_obj.get("webContentLink"),
-                    "drive_path": "/".join(
-                        [folder.get("name") for folder in folder_tree]
-                    ),
-                    "website": website,
-                    "sync_error": None,
-                    "sync_dt": sync_date,
-                },
+            drive_path = "/".join([folder.get("name") for folder in folder_tree])
+            drive_file = _get_or_create_drive_file(
+                file_obj=file_obj,
+                drive_path=drive_path,
+                website=website,
+                sync_date=sync_date,
             )
             return drive_file
     return None
@@ -492,6 +542,21 @@ def update_sync_status(website: Website, sync_datetime: datetime):
     website.save()
 
 
+def _get_content_dependencies(drive_file: DriveFile) -> Iterable[WebsiteContent]:
+    """
+    Returns WebsiteContent of type page that use `drive_file`.
+    """
+    if drive_file.resource is None:
+        return []
+
+    dependencies = WebsiteContent.objects.filter(
+        Q(website=drive_file.website)
+        & Q(type=CONTENT_TYPE_PAGE)
+        & Q(markdown__icontains=drive_file.resource.text_id),
+    )
+    return list(dependencies)
+
+
 @transaction.atomic
 def rename_file(obj_text_id, obj_new_filename):
     """Rename the file on S3 associated with the WebsiteContent object to a new filename."""
@@ -513,11 +578,7 @@ def rename_file(obj_text_id, obj_new_filename):
         old_obj = existing_obj.first()
         if old_obj == obj:
             raise Exception("New filename is the same as the existing filename.")
-        dependencies = WebsiteContent.objects.filter(
-            Q(website=site)
-            & Q(type=CONTENT_TYPE_PAGE)
-            & Q(markdown__icontains=old_obj.text_id),
-        )
+        dependencies = _get_content_dependencies(old_obj)
         if dependencies:
             raise Exception(
                 "Not renaming file due to dependencies in existing content: "
@@ -540,3 +601,44 @@ def rename_file(obj_text_id, obj_new_filename):
         CopySource=settings.AWS_STORAGE_BUCKET_NAME + "/" + old_key
     )
     s3.Object(settings.AWS_STORAGE_BUCKET_NAME, old_key).delete()
+
+
+def find_missing_files(
+    gDriveFiles: Iterable[Dict], website: Website
+) -> Iterable[DriveFile]:
+    """
+    Finds files that exist in the database but not in gDriveFiles. Uses the file_id attribute.
+
+    Args:
+        gDriveFiles (Iterable[Dict]): List of GDrive files, as returned by the files API.
+        website (Website): The website being synced.
+
+    Returns:
+        Iterable[DriveFile]: DriveFile objects that exist in our database but not in `gDriveFiles`.
+    """
+    gdrive_file_ids = list(map(lambda f: f["id"], gDriveFiles))
+    drive_files = DriveFile.objects.filter(website=website)
+    return [file for file in drive_files if file.file_id not in gdrive_file_ids]
+
+
+def delete_drive_file(drive_file: DriveFile):
+    """
+    Deletes `drive_file` only if it is not being used in a page type content.
+
+    Args:
+        drive_file (DriveFile): A drive file.
+    """
+    dependencies = _get_content_dependencies(drive_file)
+
+    if dependencies:
+        error_message = f"Cannot delete file {drive_file} because it is being used by {dependencies}."
+        log.error(error_message)
+        drive_file.sync_error = error_message
+        drive_file.save()
+        return
+
+    log.info("Deleting file %s", drive_file)
+    if drive_file.resource:
+        log.info("Deleting resource %s", drive_file.resource)
+        drive_file.resource.delete()
+    drive_file.delete()

@@ -1,7 +1,7 @@
 """gdrive_sync tasks"""
 import logging
 from datetime import datetime
-from typing import List
+from typing import Dict, List, Tuple
 
 import celery
 import pytz
@@ -44,6 +44,17 @@ def process_drive_file(drive_file_id: str):
         api.create_gdrive_resource_content(drive_file)
     except:  # pylint:disable=bare-except
         log.exception("Error processing DriveFile %s", drive_file_id)
+
+
+@app.task()
+def delete_drive_file(drive_file_id: str):
+    """
+    Delete the DriveFile if it is not being used in website page content.
+    See api.delete_drive_file for details.
+    """
+    drive_file = DriveFile.objects.filter(file_id=drive_file_id).first()
+    if drive_file:
+        api.delete_drive_file(drive_file)
 
 
 @app.task(bind=True)
@@ -100,18 +111,17 @@ def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-
         raise self.replace(celery.group(workflow))
 
 
-@app.task(bind=True, acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=30)
-@single_task(30)
-def import_website_files(self, name: str):
-    """Query the Drive API for all children of a website folder and import the files"""
-    if not api.is_gdrive_enabled():
-        return
-    website = Website.objects.get(name=name)
-    website.sync_status = WebsiteSyncStatus.PROCESSING
-    website.synced_on = now_in_utc()
-    website.sync_errors = []
+def _get_gdrive_files(website: Website) -> Tuple[Dict[str, List[Dict]], List[str]]:
+    """
+    Returns a tuple (files, errors).
+
+    `files` is a dict where keys are subfolder names and value is a
+    list of file objects.
+    `errors` is a list of errors while fetching files.
+    """
     errors = []
-    tasks = []
+    gDriveSubfolderFiles = {}
+
     for subfolder in [DRIVE_FOLDER_FILES_FINAL, DRIVE_FOLDER_VIDEOS_FINAL]:
         try:
             query = f'parents = "{website.gdrive_folder}" and name="{subfolder}" and mimeType = "{DRIVE_MIMETYPE_FOLDER}" and not trashed'
@@ -123,38 +133,79 @@ def import_website_files(self, name: str):
                 log.error("%s for %s", error_msg, website.short_id)
                 errors.append(error_msg)
                 continue
-            for gdfile in api.walk_gdrive_folder(
-                subfolder_list[0]["id"],
-                DRIVE_FILE_FIELDS,
-            ):
-                try:
-                    drive_file = api.process_file_result(
-                        gdfile, sync_date=website.synced_on
-                    )
-                    if drive_file:
-                        tasks.append(process_drive_file.s(drive_file.file_id))
-                except:  # pylint:disable=bare-except
-                    errors.append(f"Error processing gdrive file {gdfile.get('name')}")
-                    log.exception(
-                        "Error processing gdrive file %s for %s",
-                        gdfile.get("name"),
-                        website.short_id,
-                    )
+
+            gDriveSubfolderFiles[subfolder] = list(
+                api.walk_gdrive_folder(
+                    subfolder_list[0]["id"],
+                    DRIVE_FILE_FIELDS,
+                )
+            )
         except:  # pylint:disable=bare-except
             error_msg = f"An error occurred when querying the {subfolder} google drive subfolder"
             errors.append(error_msg)
             log.exception("%s for %s", error_msg, website.short_id)
+
+    return gDriveSubfolderFiles, errors
+
+
+@app.task(bind=True, acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=30)
+@single_task(30)
+def import_website_files(self, name: str):
+    """Query the Drive API for all children of a website folder and import the files"""
+    if not api.is_gdrive_enabled():
+        return
+    website = Website.objects.get(name=name)
+    website.sync_status = WebsiteSyncStatus.PROCESSING
+    website.synced_on = now_in_utc()
+    website.sync_errors = []
+
+    gDriveSubfolderFiles, errors = _get_gdrive_files(website)
+
+    deleted_drive_files = api.find_missing_files(
+        sum(gDriveSubfolderFiles.values(), []), website
+    )
+    delete_file_tasks = [
+        delete_drive_file.si(drive_file.file_id) for drive_file in deleted_drive_files
+    ]
+
+    file_tasks = []
+    for gDriveFiles in gDriveSubfolderFiles.values():
+        for gdfile in gDriveFiles:
+            try:
+                drive_file = api.process_file_result(
+                    gdfile, sync_date=website.synced_on
+                )
+                if drive_file:
+                    file_tasks.append(process_drive_file.s(drive_file.file_id))
+            except:  # pylint:disable=bare-except
+                errors.append(f"Error processing gdrive file {gdfile.get('name')}")
+                log.exception(
+                    "Error processing gdrive file %s for %s",
+                    gdfile.get("name"),
+                    website.short_id,
+                )
     website.sync_errors = errors
     website.save()
 
-    if tasks:
+    workflow_steps = []
+
+    if file_tasks:
         # Import the files first, then sync the website for those files in git
-        file_steps = chord(
-            celery.group(*tasks),
+        step = chord(
+            celery.group(*file_tasks),
             update_website_status.si(website.pk, website.synced_on),
         )
-        website_step = sync_website_content.si(name)
-        workflow = chain(file_steps, website_step)
+        workflow_steps.append(step)
+
+    if delete_file_tasks:
+        step = chord(celery.group(*delete_file_tasks), chord_finisher.si())
+        workflow_steps.append(step)
+
+    if workflow_steps:
+        step = sync_website_content.si(name)
+        workflow_steps.append(step)
+
+        workflow = chain(*workflow_steps)
         raise self.replace(celery.group(workflow))
     update_website_status(website.pk, website.synced_on)
 

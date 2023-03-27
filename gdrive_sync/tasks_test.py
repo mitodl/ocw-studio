@@ -19,6 +19,7 @@ from gdrive_sync.factories import DriveApiQueryTrackerFactory, DriveFileFactory
 from gdrive_sync.models import DriveFile
 from gdrive_sync.tasks import (
     create_gdrive_folders_batch,
+    delete_drive_file,
     import_recent_files,
     import_website_files,
     process_drive_file,
@@ -479,3 +480,11 @@ def test_process_drive_file(mocker, is_video, has_error):
     assert mock_transcode.call_count == (1 if is_video and not has_error else 0)
     assert mock_create_resource.call_count == (0 if has_error else 1)
     assert mock_log.call_count == (1 if has_error else 0)
+
+
+def test_delete_drive_file(mocker):
+    """Task delete_drive_file should delegate the delete action to api.delete_drive_file."""
+    drive_file = DriveFileFactory.create()
+    mock_delete_drive_file = mocker.patch("gdrive_sync.api.delete_drive_file")
+    delete_drive_file.delay(drive_file.file_id)
+    mock_delete_drive_file.assert_called_once_with(drive_file)
