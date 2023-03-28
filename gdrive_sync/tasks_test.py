@@ -445,6 +445,19 @@ def test_import_website_files_processing_error(
     assert sorted(website.sync_errors) == sorted(sync_errors)
 
 
+def test_import_website_files_delete_missing(mocker, mocked_celery):
+    """Missing files should be deleted on sync"""
+    mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
+    website = WebsiteFactory.create()
+    drive_files = DriveFileFactory.create_batch(2, website=website)
+    mock_delete_drive_file = mocker.patch("gdrive_sync.tasks.delete_drive_file.si")
+    with pytest.raises(mocked_celery.replace_exception_class):
+        import_website_files.delay(website.name)
+    assert mock_delete_drive_file.call_count == 2
+    for drive_file in drive_files:
+        mock_delete_drive_file.assert_any_call(drive_file.file_id)
+
+
 def test_update_website_status(mocker):
     """Calling the update_website_status task should call api.update_sync_status with args"""
     website = WebsiteFactory.create()

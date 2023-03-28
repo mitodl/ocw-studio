@@ -438,6 +438,61 @@ def test_process_file_result_update(settings, mocker, status, same_checksum, sam
     )
 
 
+@pytest.mark.parametrize("duplicates_count", [1, 2, 3])
+def test_process_file_result_name_duplicates(settings, mocker, duplicates_count):
+    """
+    Files with duplicate names should be treated in the following manner:
+
+    - If file name already exists in db and drive only has one file with that name,
+      the old drive file is deleted and replaced with a new file.
+    - If file name already exists in db and drive has multiple files with the same name,
+      new drive file is created.
+    """
+    settings.DRIVE_SHARED_ID = "test_drive"
+    settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
+    mocker.patch("main.s3_utils.boto3")
+    website = WebsiteFactory.create()
+    parent_tree = [
+        {
+            "id": "parent",
+            "name": "ancestor_exists",
+        },
+        {
+            "id": "websiteId",
+            "name": website.short_id,
+        },
+        {
+            "id": "subFolderId",
+            "name": DRIVE_FOLDER_FILES_FINAL,
+        },
+    ]
+    mocker.patch(
+        "gdrive_sync.api.get_parent_tree",
+        return_value=parent_tree,
+    )
+    drive_file = DriveFileFactory.create(
+        file_id="old_file_id",
+        website=website,
+        drive_path="/".join([section["name"] for section in parent_tree]),
+    )
+    file_result = {
+        "id": "y5grfCTHr_12JCgxaoHrGve",
+        "name": drive_file.name,
+        "mimeType": "image/jpeg",
+        "parents": ["subFolderId"],
+        "webContentLink": "http://link",
+        "createdTime": "2021-07-28T00:06:40.439Z",
+        "modifiedTime": "2021-07-29T14:25:19.375Z",
+        "md5Checksum": "check-sum-",
+        "trashed": False,
+    }
+    process_file_result(file_result, name_occurrence_count=duplicates_count)
+    count = DriveFile.objects.filter(name=drive_file.name).count()
+    assert count == (1 if duplicates_count == 1 else 2)
+    if duplicates_count == 1:
+        assert DriveFile.objects.filter(pk=drive_file.file_id).first() is None
+
+
 def test_walk_gdrive_folder(mocker):
     """walk_gdrive_folder should yield all expected files"""
     files = [

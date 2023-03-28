@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, Optional
 
-import dateutil
 import PyPDF2
 from botocore.exceptions import ClientError
 from django.conf import settings
@@ -123,7 +122,11 @@ def query_files(query: str, fields: str) -> Iterable[Dict]:
 
 
 def _get_or_create_drive_file(
-    file_obj: Dict, drive_path: str, website: Website, sync_date: Optional[datetime]
+    file_obj: Dict,
+    drive_path: str,
+    website: Website,
+    sync_date: Optional[datetime],
+    replace_file_with_the_same_name: bool = True,
 ) -> Optional[DriveFile]:
     """
     Determines if `file_obj` is a new or updated file and returns a new or updated
@@ -175,12 +178,7 @@ def _get_or_create_drive_file(
 
         file_data.update({"file_id": file_obj.get("id")})
 
-        if existing_file_same_path:
-            if (
-                dateutil.parser.parse(file_obj.get("createdTime"))
-                < existing_file_same_path.created_time
-            ):
-                return existing_file_same_path
+        if replace_file_with_the_same_name and existing_file_same_path:
             # A drive file already exists on the same path.
             # We'll detach the resource from this one and attach it
             # to a new DriveFile.
@@ -215,7 +213,9 @@ def get_parent_tree(parents):
 
 
 def process_file_result(
-    file_obj: Dict, sync_date: Optional[datetime] = None
+    file_obj: Dict,
+    sync_date: Optional[datetime] = None,
+    name_occurrence_count: int = 1,
 ) -> Optional[DriveFile]:
     """Convert an API file response into a DriveFile object"""
     parents = file_obj.get("parents")
@@ -248,6 +248,7 @@ def process_file_result(
                 drive_path=drive_path,
                 website=website,
                 sync_date=sync_date,
+                replace_file_with_the_same_name=name_occurrence_count == 1,
             )
             return drive_file
     return None
@@ -638,7 +639,13 @@ def delete_drive_file(drive_file: DriveFile):
         return
 
     log.info("Deleting file %s", drive_file)
+
     if drive_file.resource:
         log.info("Deleting resource %s", drive_file.resource)
         drive_file.resource.delete()
+
+    if drive_file.video:
+        log.info("Deleting video %s", drive_file.video)
+        drive_file.video.delete()
+
     drive_file.delete()

@@ -1,5 +1,6 @@
 """gdrive_sync tasks"""
 import logging
+from collections import Counter
 from datetime import datetime
 from typing import Dict, List, Tuple
 
@@ -170,10 +171,13 @@ def import_website_files(self, name: str):
 
     file_tasks = []
     for gDriveFiles in gDriveSubfolderFiles.values():
+        occurrences = Counter([file.get("name") for file in gDriveFiles])
         for gdfile in gDriveFiles:
             try:
                 drive_file = api.process_file_result(
-                    gdfile, sync_date=website.synced_on
+                    gdfile,
+                    sync_date=website.synced_on,
+                    name_occurrence_count=occurrences[gdfile.get("name")],
                 )
                 if drive_file:
                     file_tasks.append(process_drive_file.s(drive_file.file_id))
