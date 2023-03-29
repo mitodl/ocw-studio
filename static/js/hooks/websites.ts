@@ -78,7 +78,7 @@ interface ReturnProps {
   options: WebsiteOption[]
   loadOptions: (
     inputValue: string,
-    callback?: (options: Option[]) => void
+    callback?: (options: WebsiteOption[]) => void
   ) => Promise<void>
 }
 

@@ -66,6 +66,21 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
     [value]
   )
 
+  // Intercept search results, format and return it.
+  const loadFormattedOptions = useCallback(
+    (
+      inputValue: string,
+      callback?: (options: WebsiteOption[]) => void
+    ): Promise<void> => {
+      return loadOptions(inputValue, (options: WebsiteOption[]) => {
+        if (callback) {
+          callback(formatOptionsLabelWithShortId(options))
+        }
+      })
+    },
+    [loadOptions]
+  )
+
   const formattedOptions = formatOptionsLabelWithShortId(options)
 
   return (
@@ -75,7 +90,7 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
       onChange={onChangeShim}
       options={formattedOptions}
       defaultOptions={formattedOptions}
-      loadOptions={loadOptions}
+      loadOptions={loadFormattedOptions}
       isOptionDisabled={isOptionDisabled}
     />
   )
