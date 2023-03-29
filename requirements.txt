@@ -59,7 +59,7 @@ click-repl==0.2.0
     # via celery
 concoursepy==0.0.20
     # via -r requirements.in
-cryptography==3.3.2
+cryptography==39.0.1
     # via
     #   pyopenssl
     #   social-auth-core
@@ -312,7 +312,6 @@ sentry-sdk==1.4.3
 six==1.15.0
     # via
     #   click-repl
-    #   cryptography
     #   django-compat
     #   django-server-status
     #   google-auth
