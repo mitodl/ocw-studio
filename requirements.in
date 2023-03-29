@@ -5,6 +5,7 @@ celery>=5.2.2
 concoursepy
 dj-database-url
 django-anymail[mailgun]==8.4
+django-bulk-update-or-create
 django-guardian
 django-hijack
 django-hijack-admin

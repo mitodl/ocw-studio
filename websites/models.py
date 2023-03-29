@@ -8,6 +8,7 @@ from urllib.parse import urljoin, urlparse
 from uuid import uuid4
 
 import yaml
+from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
@@ -293,6 +294,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     objects = SafeDeleteManager(WebsiteContentQuerySet)
     all_objects = SafeDeleteAllManager(WebsiteContentQuerySet)
     deleted_objects = SafeDeleteDeletedManager(WebsiteContentQuerySet)
+    bulk_objects = BulkUpdateOrCreateQuerySet.as_manager()
 
     def upload_file_to(self, filename):
         """Return the appropriate filepath for an upload"""

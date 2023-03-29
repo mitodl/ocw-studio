@@ -13,17 +13,21 @@ from requests import HTTPError
 
 from content_sync import api
 from content_sync.apis import github
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from main.celery import app
-from websites.api import reset_publishing_fields, update_website_status
+from websites.api import (
+    get_website_in_root_website_metadata,
+    reset_publishing_fields,
+    update_website_status,
+)
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUSES_FINAL,
 )
-from websites.models import Website
+from websites.models import Website, WebsiteContent
 
 
 log = logging.getLogger(__name__)
@@ -186,8 +190,10 @@ def trigger_mass_build(version: str) -> bool:
 @app.task(acks_late=True)
 def trigger_unpublished_removal(website_name: str) -> bool:
     """Trigger the unpublished site removal pipeline and pause the specified site pipeline"""
+    website = Website.objects.get(name=website_name)
+    remove_website_in_root_website(website)
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        site_pipeline = api.get_site_pipeline(Website.objects.get(name=website_name))
+        site_pipeline = api.get_site_pipeline(website)
         site_pipeline.pause_pipeline(VERSION_LIVE)
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
@@ -392,3 +398,131 @@ def check_incomplete_publish_build_statuses():
             log.exception(
                 "Error updating publishing status for website %s", website.name
             )
+
+
+@app.task(acks_late=True)
+def update_websites_in_root_website():
+    """
+    Get all websites published to draft / live at least once, and for each one create or update
+    a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
+    """
+    if settings.CONTENT_SYNC_BACKEND:
+        root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        # Get all sites, minus any sites that have never been successfully published
+        sites = Website.objects.exclude(
+            Q(**{"draft_publish_date__isnull": True})
+            & Q(**{"publish_date__isnull": True})
+        )
+        sites = sites.exclude(Q(url_path__isnull=True))
+        # Exclude the root website
+        sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
+        fields = [
+            "website",
+            "type",
+            "title",
+            "dirpath",
+            "filename",
+            "is_page_content",
+            "metadata",
+        ]
+        with WebsiteContent.bulk_objects.bulk_update_or_create_context(
+            fields, match_field="filename", batch_size=100
+        ) as bulk_update:
+            for website in sites:
+                version = (
+                    VERSION_DRAFT
+                    if (
+                        website.draft_publish_date is not None
+                        and website.publish_date is None
+                    )
+                    else VERSION_LIVE
+                )
+                bulk_update.queue(
+                    WebsiteContent(
+                        website=root_website,
+                        type="website",
+                        title=website.title,
+                        dirpath=WEBSITE_LISTING_DIRPATH,
+                        filename=website.short_id,
+                        is_page_content=True,
+                        metadata=get_website_in_root_website_metadata(website, version),
+                    )
+                )
+        website_content = WebsiteContent.objects.filter(
+            website=root_website, type="website"
+        )
+        with ContentSyncState.objects.bulk_update_or_create_context(
+            ["content", "current_checksum"], match_field="content", batch_size=100
+        ) as bulk_update:
+            for content in website_content:
+                bulk_update.queue(
+                    ContentSyncState(
+                        content=content, current_checksum=content.calculate_checksum()
+                    )
+                )
+        backend = api.get_sync_backend(website=root_website)
+        backend.sync_all_content_to_backend(query_set=website_content)
+
+
+@app.task(acks_late=True)
+def update_website_in_root_website(website, version):
+    """
+    Create or update a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
+
+    Args:
+        website (Website): The Website to look up
+        version (string): The version (draft / live)
+    """
+    if (
+        website.name != settings.ROOT_WEBSITE_NAME
+        and WebsiteContent.objects.filter(website=website, type="sitemetadata").exists()
+    ):
+        root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        root_has_unpublished = (
+            root_website.has_unpublished_live
+            if version == VERSION_LIVE
+            else root_website.has_unpublished_draft
+        )
+        (
+            website_content,
+            created,  # pylint:disable=unused-variable
+        ) = WebsiteContent.all_objects.update_or_create(
+            website=root_website,
+            dirpath=WEBSITE_LISTING_DIRPATH,
+            filename=website.short_id,
+            defaults={
+                "title": website.title,
+                "type": "website",
+                "is_page_content": True,
+                "metadata": get_website_in_root_website_metadata(website, version),
+            },
+        )
+        backend = api.get_sync_backend(website=root_website)
+        backend.sync_all_content_to_backend(
+            query_set=WebsiteContent.objects.filter(text_id=website_content.text_id)
+        )
+        if not root_has_unpublished:
+            api.publish_website(root_website.name, version, trigger_pipeline=False)
+
+
+@app.task(acks_late=True)
+def remove_website_in_root_website(website):
+    """
+    Delete a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
+
+    Args:
+        website (Website): The Website look up
+    """
+    if website.name != settings.ROOT_WEBSITE_NAME:
+        root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        website_content = WebsiteContent.objects.get(
+            website=root_website,
+            type="website",
+            title=website.title,
+            dirpath=WEBSITE_LISTING_DIRPATH,
+            filename=website.short_id,
+            is_page_content=True,
+        )
+        website_content.delete()
+        backend = api.get_sync_backend(website=root_website)
+        backend.sync_all_content_to_backend()
