@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.88.1 (Released April 03, 2023)
+--------------
+
+- Exclude JS Map assets from builds (#1720)
+- Bump cookiejar from 2.1.3 to 2.1.4 (#1655)
+- Bump certifi from 2020.6.20 to 2022.12.7 (#1606)
+- Bump nokogiri from 1.13.9 to 1.13.10 in /docs (#1605)
+
 Version 0.88.0 (Released March 22, 2023)
 --------------
 
