@@ -147,8 +147,8 @@ def get_token():
         try:
             app = GithubIntegration(
                 settings.GITHUB_APP_ID,
-                default_backend().load_pem_private_key(  # pylint:disable=no-value-for-parameter
-                    settings.GITHUB_APP_PRIVATE_KEY, None
+                default_backend().load_pem_private_key(
+                    settings.GITHUB_APP_PRIVATE_KEY, None, False
                 ),
                 **(
                     {"base_url": settings.GIT_API_URL}

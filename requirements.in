@@ -3,6 +3,7 @@ django
 boto3==1.18.7
 celery>=5.2.2
 concoursepy
+cryptography>=39.0.1
 dj-database-url
 django-anymail[mailgun]==8.4
 django-bulk-update-or-create
@@ -13,7 +14,7 @@ django-redis==5.2.0
 djangorestframework==3.12.2
 django-robots
 django-safedelete==1.0.0
-django-server-status
+django-server-status>=0.7.3
 django-storages
 django-webpack-loader
 google-api-python-client>=2.58.0
@@ -37,10 +38,10 @@ social-auth-core>=4
 social-auth-core[saml]>=4
 social-auth-app-django>=4
 uwsgi
+pyOpenSSL>=23.1.1
 pyyaml
 tqdm
 yamale
 django-model-utils==4.2.0
-
 google-api-python-client
 google-auth
