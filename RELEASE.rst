@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.88.1
+Version 0.88.1 (Released April 03, 2023)
 --------------
 
 - Exclude JS Map assets from builds (#1720)
