@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.89.0
+--------------
+
+- Bump cryptography from 3.3.2 to 39.0.1 (#1676)
+- feat: show short_id in course list select (#1727)
+
 Version 0.88.1 (Released April 03, 2023)
 --------------
 
