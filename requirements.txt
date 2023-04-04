@@ -31,12 +31,9 @@ cachetools==4.2.2
     #   google-auth
     #   premailer
 celery==5.2.2
-    # via
-    #   -r requirements.in
-    #   django-server-status
+    # via -r requirements.in
 certifi==2022.12.7
     # via
-    #   elasticsearch
     #   requests
     #   sentry-sdk
 cffi==1.14.2
@@ -59,9 +56,9 @@ click-repl==0.2.0
     # via celery
 concoursepy==0.0.20
     # via -r requirements.in
-cryptography==3.3.2
+cryptography==39.0.1
     # via
-    #   pyopenssl
+    #   -r requirements.in
     #   social-auth-core
 cssselect==1.1.0
     # via premailer
@@ -121,8 +118,6 @@ django-robots==4.0
     # via -r requirements.in
 django-safedelete==1.0.0
     # via -r requirements.in
-django-server-status==0.6.0
-    # via -r requirements.in
 django-storages==1.11.1
     # via -r requirements.in
 django-webpack-loader==1.1.0
@@ -135,8 +130,6 @@ djangorestframework==3.12.2
     #   drf-extensions
 drf-extensions==0.7.0
     # via -r requirements.in
-elasticsearch==7.8.1
-    # via django-server-status
 factory-boy==3.2.0
     # via mitol-django-common
 faker==8.10.0
@@ -181,9 +174,7 @@ jmespath==0.10.0
     #   boto3
     #   botocore
 kombu==5.2.3
-    # via
-    #   celery
-    #   django-server-status
+    # via celery
 lxml==4.9.1
     # via
     #   premailer
@@ -229,9 +220,7 @@ protobuf==3.18.3
     #   google-api-core
     #   googleapis-common-protos
 psycopg2==2.8.5
-    # via
-    #   -r requirements.in
-    #   django-server-status
+    # via -r requirements.in
 ptyprocess==0.6.0
     # via pexpect
 py==1.10.0
@@ -254,8 +243,6 @@ pyjwt==2.4.0
     #   social-auth-core
 pynacl==1.4.0
     # via pygithub
-pyopenssl==17.5.0
-    # via django-server-status
 pyparsing==2.4.7
     # via
     #   httplib2
@@ -287,7 +274,6 @@ redis==3.5.3
     # via
     #   -r requirements.in
     #   django-redis
-    #   django-server-status
 requests==2.24.0
     # via
     #   -r requirements.in
@@ -312,15 +298,12 @@ sentry-sdk==1.4.3
 six==1.15.0
     # via
     #   click-repl
-    #   cryptography
     #   django-compat
-    #   django-server-status
     #   google-auth
     #   google-auth-httplib2
     #   html5lib
     #   isodate
     #   pynacl
-    #   pyopenssl
     #   python-dateutil
     #   social-auth-app-django
     #   traitlets
@@ -359,7 +342,6 @@ uritemplate==3.0.1
 urllib3==1.25.10
     # via
     #   botocore
-    #   elasticsearch
     #   requests
     #   sentry-sdk
 uwsgi==2.0.19.1

@@ -134,7 +134,6 @@ INSTALLED_APPS = (
     "guardian",
     "hijack",
     "hijack_admin",
-    "server_status",
     "safedelete",
     # django-robots
     "rest_framework",
