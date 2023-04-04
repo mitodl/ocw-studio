@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.89.0
+--------------
+
+- feat: show short_id in course list select (#1727)
+
 Version 0.88.1 (Released April 03, 2023)
 --------------
 
