@@ -4,26 +4,21 @@ from datetime import datetime
 from typing import List
 
 import celery
-import pytz
 from celery import chain, chord
-from dateutil.parser import parse
-from django.conf import settings
 from mitol.common.utils import chunks, now_in_utc
 
 from content_sync.decorators import single_task
 from content_sync.tasks import sync_website_content
 from gdrive_sync import api
 from gdrive_sync.constants import (
-    DRIVE_API_FILES,
     DRIVE_FILE_FIELDS,
     DRIVE_FOLDER_FILES_FINAL,
     DRIVE_FOLDER_VIDEOS_FINAL,
     DRIVE_MIMETYPE_FOLDER,
     WebsiteSyncStatus,
 )
-from gdrive_sync.models import DriveApiQueryTracker, DriveFile
+from gdrive_sync.models import DriveFile
 from main.celery import app
-from main.tasks import chord_finisher
 from websites.models import Website
 
 

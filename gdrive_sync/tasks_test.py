@@ -1,22 +1,16 @@
 """Tests for gdrive_sync tasks"""
-from datetime import datetime
 
 import pytest
-import pytz
 from mitol.common.utils import now_in_utc
 
 from gdrive_sync import tasks
-from gdrive_sync.conftest import LIST_FILE_RESPONSES, LIST_VIDEO_RESPONSES
+from gdrive_sync.conftest import LIST_FILE_RESPONSES
 from gdrive_sync.constants import (
-    DRIVE_API_FILES,
-    DRIVE_FILE_FIELDS,
     DRIVE_FOLDER_FILES_FINAL,
     DRIVE_FOLDER_VIDEOS_FINAL,
-    DriveFileStatus,
     WebsiteSyncStatus,
 )
-from gdrive_sync.factories import DriveApiQueryTrackerFactory, DriveFileFactory
-from gdrive_sync.models import DriveFile
+from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.tasks import (
     create_gdrive_folders_batch,
     import_website_files,
