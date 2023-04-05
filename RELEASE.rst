@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.89.1
+--------------
+
+- Bump redis from 3.5.3 to 4.4.4 (#1729)
+- Bump webpack from 5.71.0 to 5.76.0 (#1714)
+- Bump ipython from 7.31.1 to 8.10.0 (#1678)
+- Bump oauthlib from 3.2.1 to 3.2.2 (#1673)
+- Bump http-cache-semantics from 4.1.0 to 4.1.1 (#1669)
+- Bump activesupport from 6.0.6 to 6.0.6.1 in /docs (#1663)
+- Bump ua-parser-js from 0.7.31 to 0.7.35 (#1734)
+
 Version 0.89.0 (Released April 05, 2023)
 --------------
 
