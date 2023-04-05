@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.89.0
+Version 0.89.0 (Released April 05, 2023)
 --------------
 
 - Bump cryptography from 3.3.2 to 39.0.1 (#1676)
