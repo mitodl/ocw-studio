@@ -35,20 +35,20 @@
       "description": "AWS Account ID",
       "required": false
     },
-    "AWS_PREVIEW_BUCKET_NAME": {
-      "description": "S3 preview bucket name.",
-      "required": false
-    },
-    "AWS_PUBLISH_BUCKET_NAME": {
-      "description": "S3 publish bucket name.",
-      "required": false
-    },
     "AWS_OFFLINE_PREVIEW_BUCKET_NAME": {
       "description": "S3 offline preview bucket name.",
       "required": false
     },
     "AWS_OFFLINE_PUBLISH_BUCKET_NAME": {
       "description": "S3 offline publish bucket name.",
+      "required": false
+    },
+    "AWS_PREVIEW_BUCKET_NAME": {
+      "description": "S3 preview bucket name.",
+      "required": false
+    },
+    "AWS_PUBLISH_BUCKET_NAME": {
+      "description": "S3 publish bucket name.",
       "required": false
     },
     "AWS_QUERYSTRING_AUTH": {
@@ -278,16 +278,24 @@
       "description": "If false, disables the node_modules cache to fix yarn install",
       "value": "false"
     },
+    "OCW_COURSE_STARTER_SLUG": {
+      "description": "The slug of the WebsiteStarter currently used for OCW course sites",
+      "required": false
+    },
     "OCW_GTM_ACCOUNT_ID": {
       "description": "The Google Tag Manager account ID to use in OCW site build pipelines",
       "required": false
     },
-    "OCW_IMPORT_STARTER_SLUG": {
-      "description": "The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
+    "OCW_HUGO_THEMES_SENTRY_DSN": {
+      "description": "The sentry DSN that will be used in ocw-hugo-themes",
       "required": false
     },
-    "OCW_COURSE_STARTER_SLUG": {
-      "description": "The slug of the WebsiteStarter currently used for OCW course sites",
+    "OCW_HUGO_THEMES_SENTRY_ENV": {
+      "description": "The sentry ENV that will be used in ocw-studio",
+      "required": false
+    },
+    "OCW_IMPORT_STARTER_SLUG": {
+      "description": "The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
       "required": false
     },
     "OCW_NEXT_SEARCH_WEBHOOK_KEY": {
@@ -623,10 +631,6 @@
     },
     "YT_UPLOAD_LIMIT": {
       "description": "Max Youtube uploads allowed per day",
-      "required": false
-    },
-    "OCW_HUGO_THEMES_SENTRY_DSN": {
-      "description": "The sentry DSN that will be used in ocw-hugo-themes",
       "required": false
     }
   },
