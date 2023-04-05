@@ -127,10 +127,6 @@
       "description": "The log level for django",
       "required": false
     },
-    "DRIVE_IMPORT_RECENT_FILES_SECONDS": {
-      "description": "The frequency to check for new google drive files/videos, in seconds",
-      "required": false
-    },
     "DRIVE_S3_UPLOAD_PREFIX": {
       "description": "Prefix to be used for S3 keys of files uploaded from Google Drive",
       "required": false

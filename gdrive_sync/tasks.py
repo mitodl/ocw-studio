@@ -46,60 +46,6 @@ def process_drive_file(drive_file_id: str):
         log.exception("Error processing DriveFile %s", drive_file_id)
 
 
-@app.task(bind=True)
-@single_task(timeout=settings.DRIVE_IMPORT_RECENT_FILES_SECONDS, raise_block=False)
-def import_recent_files(self, last_dt: str = None):  # pylint: disable=too-many-locals
-    """
-    Query the Drive API for recently uploaded or modified files and process them
-    if they are in folders that match Website short_ids or names.
-    """
-    if (
-        not api.is_gdrive_enabled()
-        or settings.DRIVE_IMPORT_RECENT_FILES_SECONDS is None
-    ):
-        return
-    if last_dt and isinstance(last_dt, str):
-        # Dates get serialized into strings when passed to celery tasks
-        last_dt = parse(last_dt).replace(tzinfo=pytz.UTC)
-    file_token_obj, _ = DriveApiQueryTracker.objects.get_or_create(
-        api_call=DRIVE_API_FILES
-    )
-    query = "(not trashed and not mimeType = 'application/vnd.google-apps.folder')"
-    last_checked = last_dt or file_token_obj.last_dt
-    if last_checked:
-        dt_str = last_checked.strftime("%Y-%m-%dT%H:%M:%S.%f")
-        query += f" and (modifiedTime > '{dt_str}' or createdTime > '{dt_str}')"
-
-    tasks = []
-    website_names = set()
-    for gdfile in api.query_files(query=query, fields=DRIVE_FILE_FIELDS):
-        try:
-            drive_file = api.process_file_result(gdfile)
-            if drive_file:
-                maxLastTime = datetime.strptime(
-                    max(gdfile.get("createdTime"), gdfile.get("modifiedTime")),
-                    "%Y-%m-%dT%H:%M:%S.%fZ",
-                ).replace(tzinfo=pytz.utc)
-                if not last_checked or maxLastTime > last_checked:
-                    last_checked = maxLastTime
-                tasks.append(process_drive_file.s(drive_file.file_id))
-                website_names.add(drive_file.website.name)
-        except:  # pylint:disable=bare-except
-            log.exception("Error processing google drive file %s", gdfile.get("id"))
-
-    file_token_obj.last_dt = last_checked
-    file_token_obj.save()
-
-    if tasks:
-        # Import the files first, then sync the websites for those files in git
-        file_steps = chord(celery.group(*tasks), chord_finisher.si())
-        website_steps = [
-            sync_website_content.si(website_name) for website_name in website_names
-        ]
-        workflow = chain(file_steps, celery.group(website_steps))
-        raise self.replace(celery.group(workflow))
-
-
 @app.task(bind=True, acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=30)
 @single_task(30)
 def import_website_files(self, name: str):
@@ -129,7 +75,7 @@ def import_website_files(self, name: str):
             ):
                 try:
                     drive_file = api.process_file_result(
-                        gdfile, sync_date=website.synced_on
+                        gdfile, website, sync_date=website.synced_on
                     )
                     if drive_file:
                         tasks.append(process_drive_file.s(drive_file.file_id))

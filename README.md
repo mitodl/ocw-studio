@@ -350,7 +350,6 @@ be uploaded to Google Drive first, and then the "Sync w/Google Drive" button wil
   AWS_STORAGE_BUCKET_NAME=The S3 bucket to upload Google Drive files to. Also populate AWS authentication settings.
   DRIVE_SHARED_ID=The id of your Google Team Drive
   DRIVE_SERVICE_ACCOUNT_CREDS=The required Google service account credentials in JSON format.
-  DRIVE_IMPORT_RECENT_FILES_SECONDS=Optional, default None (meaning no automatic sync from Google Drive to Studio). The frequency to check for new/updated files.
   DRIVE_UPLOADS_PARENT_FOLDER_ID=Optional, the folder id in the team drive where course folders should go.
   ```
 
