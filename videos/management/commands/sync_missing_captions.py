@@ -1,7 +1,6 @@
 """Management command to sync captions and transcripts for any videos missing them from 3play API"""
 from uuid import uuid4
 
-from django.conf import settings
 from django.core.files import File
 from django.core.management import BaseCommand
 from django.db.models import Q
