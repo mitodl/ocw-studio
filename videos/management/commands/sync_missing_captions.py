@@ -52,14 +52,12 @@ class Command(BaseCommand):
 
         for video in content_videos:
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
-
-            new_captions_obj = self.create_new_captions(video, youtube_id)
-            video.metadata["video_files"]["video_captions_file"] = str(
-                new_captions_obj.file
+            self.stdout.write(
+                f"[*] Parsing\nCourse: {video.website}\nVideo: {video.title}"
             )
-            video.save()
+            self.fetch_and_update_content(video, youtube_id)
 
-    def create_new_captions(self, video, youtube_id):
+    def fetch_and_update_content(self, video, youtube_id):
         """Fetches and Creates new caption/ Transcript using 3play API"""
         threeplay_transcript_json = threeplay_transcript_api_request(youtube_id)
 
@@ -72,33 +70,35 @@ class Command(BaseCommand):
             media_file_id = threeplay_transcript_json["data"][0].get("media_file_id")
 
             url = self.transcript_base_url.format(
-                media_file_id, transcript_id, settings.THREEPLAY_PROJECT_ID
+                media_file_id=media_file_id, transcript_id=transcript_id, project_id=2
             )
             pdf_url = url + "&format_id=46"
             pdf_response = fetch_file(pdf_url)
 
             if pdf_response:
                 pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
-                self.create_new_content(pdf_file, video)
+                new_filepath = self.create_new_content(pdf_file, video)
+                video.metadata["video_files"]["video_transcript_file"] = new_filepath
 
             url = self.transcript_base_url.format(
-                media_file_id, transcript_id, settings.THREEPLAY_PROJECT_ID
+                media_file_id=media_file_id, transcript_id=transcript_id, project_id=2
             )
             webvtt_url = url + "&format_id=51"
             webvtt_response = fetch_file(webvtt_url)
 
             if webvtt_response:
                 vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
-                self.create_new_content(vtt_file, video)
+                new_filepath = self.create_new_content(vtt_file, video)
+                video.metadata["video_files"]["video_captions_file"] = new_filepath
 
+            self.stdout.write(
+                f"[!] Captions and Transcripts Updated!\nCourse: {video.website}\nVideo: {video.title}"
+            )
             video.save()
-            return True
-
-        return False
 
     def generate_metadata(self, new_uid, new_s3_path, file_content, video):
         """Generate new metadata for new VTT WebsiteContent object"""
-        file_ext = self.extension_map[get_file_extension(file_content)]
+        file_ext = self.extension_map[get_file_extension(str(file_content))]
         title = f"{video.title} {file_ext['ext']}"
         youtube_id = video.metadata["video_metadata"]["youtube_id"]
 
@@ -126,19 +126,23 @@ class Command(BaseCommand):
         title, new_obj_metadata = self.generate_metadata(
             new_text_id, new_s3_loc, file_content, video
         )
+        dirpath, filename = get_dirpath_and_filename(new_s3_loc)
+
+        defaults = {
+            "metadata": new_obj_metadata,
+            "title": title,
+            "type": "resource",
+            "file": file_content,
+            "text_id": new_text_id,
+        }
+
         new_obj = WebsiteContent.objects.get_or_create(
             website=video.website,
-            text_id=new_text_id,
-            defaults={
-                "metadata": new_obj_metadata,
-                "title": title,
-                "type": "resource",
-                "file": file_content,
-                "dirpath": get_dirpath_and_filename(new_s3_loc)[0],
-                "filename": get_dirpath_and_filename(new_s3_loc)[1],
-                "is_page_content": True,
-            },
+            filename=filename,
+            dirpath=dirpath,
+            is_page_content=True,
+            defaults=defaults,
         )[0]
         new_obj.save()
 
-        return new_obj
+        return new_s3_loc
