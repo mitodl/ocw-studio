@@ -438,15 +438,11 @@ def test_process_file_result_update(settings, mocker, status, same_checksum, sam
     )
 
 
-@pytest.mark.parametrize("duplicates_count", [1, 2, 3])
-def test_process_file_result_name_duplicates(settings, mocker, duplicates_count):
+@pytest.mark.parametrize("replace_file", [True, False])
+def test_process_file_result_replace_file(settings, mocker, replace_file):
     """
-    Files with duplicate names should be treated in the following manner:
-
-    - If file name already exists in db and drive only has one file with that name,
-      the old drive file is deleted and replaced with a new file.
-    - If file name already exists in db and drive has multiple files with the same name,
-      new drive file is created.
+    If replace_file is True, the file on the same path should be replaced with the new file.
+    Otherwise, a new file should be created.
     """
     settings.DRIVE_SHARED_ID = "test_drive"
     settings.DRIVE_UPLOADS_PARENT_FOLDER_ID = "parent"
@@ -486,10 +482,10 @@ def test_process_file_result_name_duplicates(settings, mocker, duplicates_count)
         "md5Checksum": "check-sum-",
         "trashed": False,
     }
-    process_file_result(file_result, name_occurrence_count=duplicates_count)
+    process_file_result(file_result, replace_file=replace_file)
     count = DriveFile.objects.filter(name=drive_file.name).count()
-    assert count == (1 if duplicates_count == 1 else 2)
-    if duplicates_count == 1:
+    assert count == (1 if replace_file else 2)
+    if replace_file:
         assert DriveFile.objects.filter(pk=drive_file.file_id).first() is None
 
 

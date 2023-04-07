@@ -121,7 +121,7 @@ def _get_gdrive_files(website: Website) -> Tuple[Dict[str, List[Dict]], List[str
     `errors` is a list of errors while fetching files.
     """
     errors = []
-    gDriveSubfolderFiles = {}
+    gdrive_subfolder_files = {}
 
     for subfolder in [DRIVE_FOLDER_FILES_FINAL, DRIVE_FOLDER_VIDEOS_FINAL]:
         try:
@@ -135,7 +135,7 @@ def _get_gdrive_files(website: Website) -> Tuple[Dict[str, List[Dict]], List[str
                 errors.append(error_msg)
                 continue
 
-            gDriveSubfolderFiles[subfolder] = list(
+            gdrive_subfolder_files[subfolder] = list(
                 api.walk_gdrive_folder(
                     subfolder_list[0]["id"],
                     DRIVE_FILE_FIELDS,
@@ -146,7 +146,7 @@ def _get_gdrive_files(website: Website) -> Tuple[Dict[str, List[Dict]], List[str
             errors.append(error_msg)
             log.exception("%s for %s", error_msg, website.short_id)
 
-    return gDriveSubfolderFiles, errors
+    return gdrive_subfolder_files, errors
 
 
 @app.task(bind=True, acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=30)
@@ -160,24 +160,24 @@ def import_website_files(self, name: str):
     website.synced_on = now_in_utc()
     website.sync_errors = []
 
-    gDriveSubfolderFiles, errors = _get_gdrive_files(website)
+    gdrive_subfolder_files, errors = _get_gdrive_files(website)
 
     deleted_drive_files = api.find_missing_files(
-        sum(gDriveSubfolderFiles.values(), []), website
+        sum(gdrive_subfolder_files.values(), []), website
     )
     delete_file_tasks = [
         delete_drive_file.si(drive_file.file_id) for drive_file in deleted_drive_files
     ]
 
     file_tasks = []
-    for gDriveFiles in gDriveSubfolderFiles.values():
-        occurrences = Counter([file.get("name") for file in gDriveFiles])
-        for gdfile in gDriveFiles:
+    for gdrive_files in gdrive_subfolder_files.values():
+        occurrences = Counter([file.get("name") for file in gdrive_files])
+        for gdfile in gdrive_files:
             try:
                 drive_file = api.process_file_result(
                     gdfile,
                     sync_date=website.synced_on,
-                    name_occurrence_count=occurrences[gdfile.get("name")],
+                    replace_file=occurrences[gdfile.get("name")] == 1,
                 )
                 if drive_file:
                     file_tasks.append(process_drive_file.s(drive_file.file_id))
@@ -195,10 +195,7 @@ def import_website_files(self, name: str):
 
     if file_tasks:
         # Import the files first, then sync the website for those files in git
-        step = chord(
-            celery.group(*file_tasks),
-            update_website_status.si(website.pk, website.synced_on),
-        )
+        step = chord(celery.group(*file_tasks), chord_finisher.si())
         workflow_steps.append(step)
 
     if delete_file_tasks:
@@ -206,11 +203,12 @@ def import_website_files(self, name: str):
         workflow_steps.append(step)
 
     if workflow_steps:
-        step = sync_website_content.si(name)
-        workflow_steps.append(step)
-
+        workflow_steps.append(update_website_status.si(website.pk, website.synced_on))
+        workflow_steps.append(sync_website_content.si(name))
         workflow = chain(*workflow_steps)
+
         raise self.replace(celery.group(workflow))
+
     update_website_status(website.pk, website.synced_on)
 
 

@@ -126,19 +126,19 @@ def _get_or_create_drive_file(
     drive_path: str,
     website: Website,
     sync_date: Optional[datetime],
-    replace_file_with_the_same_name: bool = True,
+    replace_file: bool = True,
 ) -> Optional[DriveFile]:
     """
     Determines if `file_obj` is a new or updated file and returns a new or updated
     DriveFile respectively.
     Returns None if no change is detected.
     """
-    existing_file = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
+    existing_file_same_id = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
     if (
-        existing_file
-        and existing_file.checksum == file_obj.get("md5Checksum", "")
-        and existing_file.name == file_obj.get("name")
-        and existing_file.status
+        existing_file_same_id
+        and existing_file_same_id.checksum == file_obj.get("md5Checksum", "")
+        and existing_file_same_id.name == file_obj.get("name")
+        and existing_file_same_id.status
         in (
             DriveFileStatus.COMPLETE,
             DriveFileStatus.UPLOADING,
@@ -164,11 +164,11 @@ def _get_or_create_drive_file(
         "sync_dt": sync_date,
     }
 
-    if existing_file:
+    if existing_file_same_id:
         for k, v in file_data.items():
-            setattr(existing_file, k, v)
-        existing_file.save()
-        drive_file = existing_file
+            setattr(existing_file_same_id, k, v)
+        existing_file_same_id.save()
+        drive_file = existing_file_same_id
     else:
         existing_file_same_path = DriveFile.objects.filter(
             drive_path=drive_path,
@@ -178,7 +178,7 @@ def _get_or_create_drive_file(
 
         file_data.update({"file_id": file_obj.get("id")})
 
-        if replace_file_with_the_same_name and existing_file_same_path:
+        if replace_file and existing_file_same_path:
             # A drive file already exists on the same path.
             # We'll detach the resource from this one and attach it
             # to a new DriveFile.
@@ -215,9 +215,22 @@ def get_parent_tree(parents):
 def process_file_result(
     file_obj: Dict,
     sync_date: Optional[datetime] = None,
-    name_occurrence_count: int = 1,
+    replace_file: Optional[bool] = True,
 ) -> Optional[DriveFile]:
-    """Convert an API file response into a DriveFile object"""
+    """
+    Convert an API file response into a DriveFile object.
+
+    Args:
+        file_obj (dict): A GDrive file object.
+        sync_date (datetime, optional): Time of sync. Defaults to None.
+        replace_file (bool, optional):
+            Whether or not to replace the file that has the same internal path as file_obj.
+            Defaults to True.
+
+    Returns:
+        Optional[DriveFile]: A DriveFile object that corresponds to `file_obj`.
+            None for files that are ineligible or have not changed.
+    """
     parents = file_obj.get("parents")
     if parents:
         folder_tree = get_parent_tree(parents)
@@ -248,7 +261,7 @@ def process_file_result(
                 drive_path=drive_path,
                 website=website,
                 sync_date=sync_date,
-                replace_file_with_the_same_name=name_occurrence_count == 1,
+                replace_file=replace_file,
             )
             return drive_file
     return None
