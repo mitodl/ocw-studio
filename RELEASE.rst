@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.89.2
+--------------
+
+- [Google Drive] Remove Import Files Task and Make Manual Sync Robust to Changing Folder Name (#1735)
+- Added OCW_HUGO_THEMES_SENTRY_ENV to ocw-studio (#1725)
+
 Version 0.89.1 (Released April 06, 2023)
 --------------
 
