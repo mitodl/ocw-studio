@@ -391,7 +391,7 @@ jobs:
                   mv ./content/static_resources/*.html ./static/static_resources
                 fi
                 touch ./content/static_resources/_index.md
-                aws s3((cli-endpoint-url)) sync s3://((web-bucket))/static_shared ./static/static_shared --exclude *.js.map
+                grep -o -E "\"/.*?\"" webpack.json | tr -d '"' | xargs -I {} aws s3((cli-endpoint-url)) sync s3://((web-bucket)){} ./static{} --exclude *.js.map --recursive
                 hugo ((hugo-args-offline))
                 cd output-offline
                 zip ../../build-course-offline/((short-id)).zip -r ./
