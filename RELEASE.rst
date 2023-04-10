@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.89.2
+Version 0.89.2 (Released April 10, 2023)
 --------------
 
 - [Google Drive] Remove Import Files Task and Make Manual Sync Robust to Changing Folder Name (#1735)
