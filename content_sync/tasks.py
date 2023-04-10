@@ -1,6 +1,7 @@
 """ Content sync tasks """
 import logging
 from datetime import timedelta
+import os
 from typing import List, Optional
 
 import celery
@@ -8,12 +9,21 @@ from django.conf import settings
 from django.db.models import F, Q
 from django.utils.module_loading import import_string
 from github.GithubException import RateLimitExceededException
+from main.s3_utils import get_boto3_resource
+from main.settings import AWS_STORAGE_BUCKET_NAME
 from mitol.common.utils import chunks, now_in_utc
 from requests import HTTPError
 
 from content_sync import api
 from content_sync.apis import github
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
+from content_sync.constants import (
+    ARCHIVE_URL_PREFIX,
+    LEGACY_VIDEO_IMPORT_S3_BUCKET,
+    LEGACY_VIDEO_IMPORT_S3_PATH,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+    WEBSITE_LISTING_DIRPATH,
+)
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from main.celery import app
@@ -528,13 +538,27 @@ def remove_website_in_root_website(website):
         backend.sync_all_content_to_backend()
 
 @app.task(acks_late=True)
-def upsert_website_pipeline_batch(
-    website_names: List[str]
-):
+def backpopulate_legacy_videos_batch(website_names: List[str]):
     """ Populate archive videos from batches of legacy websites """
     for website_name in website_names:
         website = Website.objects.get(name=website_name)
-        
+        videos = WebsiteContent.objects.filter(
+            website=website, metadata__video_files__archive_url__isnull=False
+        )
+        for video in videos:
+            archive_url = video.metadata["video_files"]["archive_url"]
+            archive_path = archive_url.replace(ARCHIVE_URL_PREFIX, "")
+            extra_args = {"ACL": "public-read"}
+            source_s3_path = os.path.join(
+                LEGACY_VIDEO_IMPORT_S3_PATH, archive_path
+            ).lstrip("/")
+            s3 = get_boto3_resource("s3")
+            s3.meta.client.copy(
+                {"Bucket": LEGACY_VIDEO_IMPORT_S3_BUCKET, "Key": source_s3_path},
+                AWS_STORAGE_BUCKET_NAME,
+                website.url_path,
+                extra_args,
+            )
     return True
 
 
@@ -551,7 +575,7 @@ def backpopulate_legacy_videos(  # pylint: disable=too-many-arguments
         chunk_size=chunk_size,
     ):
         tasks.append(
-            upsert_website_pipeline_batch.s(
+            backpopulate_legacy_videos_batch.s(
                 website_subset,
             )
         )
