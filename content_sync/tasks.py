@@ -526,3 +526,33 @@ def remove_website_in_root_website(website):
         website_content.delete()
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend()
+
+@app.task(acks_late=True)
+def upsert_website_pipeline_batch(
+    website_names: List[str]
+):
+    """ Populate archive videos from batches of legacy websites """
+    for website_name in website_names:
+        website = Website.objects.get(name=website_name)
+        
+    return True
+
+
+@app.task(bind=True)
+def backpopulate_legacy_videos(  # pylint: disable=too-many-arguments
+    self,
+    website_names: List[str],
+    chunk_size=500,
+):
+    """ Chunk and group batches of legacy video backpopulate tasks for a specified list of websites"""
+    tasks = []
+    for website_subset in chunks(
+        sorted(website_names),
+        chunk_size=chunk_size,
+    ):
+        tasks.append(
+            upsert_website_pipeline_batch.s(
+                website_subset,
+            )
+        )
+    raise self.replace(celery.group(tasks))
