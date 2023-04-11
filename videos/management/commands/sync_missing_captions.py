@@ -1,17 +1,19 @@
 """Management command to sync captions and transcripts for any videos missing them from 3play API"""
 from uuid import uuid4
 
+from django.conf import settings
 from django.core.files import File
-from django.core.management import BaseCommand
 from django.db.models import Q
 
+from main.management.commands.filter import WebsiteFilterCommand
 from main.utils import get_dirpath_and_filename, get_file_extension
+from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
 from videos.utils import generate_s3_path
 from websites.models import WebsiteContent
 
 
-class Command(BaseCommand):
+class Command(WebsiteFilterCommand):
     """Check for WebContent with missing caption/transcripts, and syncs via 3play API"""
 
     help = __doc__
@@ -41,6 +43,8 @@ class Command(BaseCommand):
         }
 
     def handle(self, *args, **options):
+        super().handle(*args, **options)
+
         content_videos = WebsiteContent.objects.filter(
             Q(metadata__resourcetype="Video")
             & (
@@ -48,16 +52,15 @@ class Command(BaseCommand):
                 | Q(metadata__video_files__video_transcript_file=None)
             )
         )
+        if self.filter_list:
+            content_videos = self.filter_website_contents(content_videos)
 
         for video in content_videos:
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
-            self.stdout.write(
-                f"[*] Parsing\nCourse: {video.website}\nVideo: {video.title}"
-            )
             self.fetch_and_update_content(video, youtube_id)
 
     def fetch_and_update_content(self, video, youtube_id):
-        """Fetches and Creates new caption/ Transcript using 3play API"""
+        """Fetches captions/transcripts and creates new WebsiteContent object using 3play API"""
         threeplay_transcript_json = threeplay_transcript_api_request(youtube_id)
 
         if (
@@ -69,31 +72,39 @@ class Command(BaseCommand):
             media_file_id = threeplay_transcript_json["data"][0].get("media_file_id")
 
             url = self.transcript_base_url.format(
-                media_file_id=media_file_id, transcript_id=transcript_id, project_id=2
+                media_file_id=media_file_id,
+                transcript_id=transcript_id,
+                project_id=settings.THREEPLAY_PROJECT_ID,
             )
-            pdf_url = url + "&format_id=46"
+            pdf_url = url + f"&format_id={PDF_FORMAT_ID}"
             pdf_response = fetch_file(pdf_url)
 
             if pdf_response:
                 pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
                 new_filepath = self.create_new_content(pdf_file, video)
                 video.metadata["video_files"]["video_transcript_file"] = new_filepath
+                self.stdout.write(f"Transcript updated for course, {video.website}")
 
             url = self.transcript_base_url.format(
-                media_file_id=media_file_id, transcript_id=transcript_id, project_id=2
+                media_file_id=media_file_id,
+                transcript_id=transcript_id,
+                project_id=settings.THREEPLAY_PROJECT_ID,
             )
-            webvtt_url = url + "&format_id=51"
+            webvtt_url = url + f"&format_id={WEBVTT_FORMAT_ID}"
             webvtt_response = fetch_file(webvtt_url)
 
             if webvtt_response:
                 vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
                 new_filepath = self.create_new_content(vtt_file, video)
                 video.metadata["video_files"]["video_captions_file"] = new_filepath
+                self.stdout.write(f"Captions updated for course, {video.website}")
 
-            self.stdout.write(
-                f"[!] Captions and Transcripts Updated!\nCourse: {video.website}\nVideo: {video.title}"
-            )
             video.save()
+            return
+
+        self.stdout.write(
+            f"Captions and transcripts not found in 3play for course, {video.website}"
+        )
 
     def generate_metadata(self, new_uid, new_s3_path, file_content, video):
         """Generate new metadata for new VTT WebsiteContent object"""
