@@ -27,13 +27,6 @@ from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from main.celery import app
 from main.s3_utils import get_boto3_resource
-from main.settings import (
-    AWS_OFFLINE_PREVIEW_BUCKET_NAME,
-    AWS_OFFLINE_PUBLISH_BUCKET_NAME,
-    AWS_PREVIEW_BUCKET_NAME,
-    AWS_PUBLISH_BUCKET_NAME,
-    AWS_STORAGE_BUCKET_NAME,
-)
 from websites.api import (
     get_website_in_root_website_metadata,
     reset_publishing_fields,
@@ -546,9 +539,12 @@ def remove_website_in_root_website(website):
 
 
 @app.task(acks_late=True)
-def backpopulate_legacy_videos_batch(website_names: List[str]):
+def backpopulate_legacy_videos_batch(
+    website_names: List[str],
+):  # pylint:disable=too-many-locals
     """ Populate archive videos from batches of legacy websites """
     error_messages = ""
+    s3 = get_boto3_resource("s3")
     for website_name in website_names:
         website = Website.objects.get(name=website_name)
         videos = WebsiteContent.objects.filter(website=website).exclude(
@@ -568,17 +564,16 @@ def backpopulate_legacy_videos_batch(website_names: List[str]):
                 offline_destination_s3_path = os.path.join(
                     website.url_path, "static_resources", os.path.basename(archive_path)
                 )
-                s3 = get_boto3_resource("s3")
                 try:
                     s3.Object(LEGACY_VIDEO_IMPORT_S3_BUCKET, source_s3_path).load()
                     online_destination_buckets = [
-                        AWS_STORAGE_BUCKET_NAME,
-                        AWS_PREVIEW_BUCKET_NAME,
-                        AWS_PUBLISH_BUCKET_NAME,
+                        settings.AWS_STORAGE_BUCKET_NAME,
+                        settings.AWS_PREVIEW_BUCKET_NAME,
+                        settings.AWS_PUBLISH_BUCKET_NAME,
                     ]
                     offline_destination_buckets = [
-                        AWS_OFFLINE_PREVIEW_BUCKET_NAME,
-                        AWS_OFFLINE_PUBLISH_BUCKET_NAME,
+                        settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME,
+                        settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME,
                     ]
                     for destination_bucket in online_destination_buckets:
                         s3.meta.client.copy(
@@ -600,7 +595,7 @@ def backpopulate_legacy_videos_batch(website_names: List[str]):
                             offline_destination_s3_path,
                             extra_args,
                         )
-                except botocore.exceptions.ClientError as e:
+                except botocore.exceptions.ClientError:
                     error_message = f"Could not find {source_s3_path} in {LEGACY_VIDEO_IMPORT_S3_BUCKET}"
                     log.error(error_message)
                     if error_messages != "":
