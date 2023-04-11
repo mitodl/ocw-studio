@@ -2,9 +2,9 @@
 from django.conf import settings
 from django.core.management import CommandError
 from django.db.models import Q
-from content_sync.tasks import backpopulate_legacy_videos
 from mitol.common.utils.datetime import now_in_utc
 
+from content_sync.tasks import backpopulate_legacy_videos
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.constants import WEBSITE_SOURCE_OCW_IMPORT
 from websites.models import Website
