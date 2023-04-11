@@ -27,7 +27,13 @@ from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from main.celery import app
 from main.s3_utils import get_boto3_resource
-from main.settings import AWS_STORAGE_BUCKET_NAME
+from main.settings import (
+    AWS_OFFLINE_PREVIEW_BUCKET_NAME,
+    AWS_OFFLINE_PUBLISH_BUCKET_NAME,
+    AWS_PREVIEW_BUCKET_NAME,
+    AWS_PUBLISH_BUCKET_NAME,
+    AWS_STORAGE_BUCKET_NAME,
+)
 from websites.api import (
     get_website_in_root_website_metadata,
     reset_publishing_fields,
@@ -556,21 +562,44 @@ def backpopulate_legacy_videos_batch(website_names: List[str]):
                 source_s3_path = os.path.join(
                     LEGACY_VIDEO_IMPORT_S3_PATH, archive_path
                 ).lstrip("/")
-                destination_s3_path = os.path.join(
+                online_destination_s3_path = os.path.join(
                     website.url_path, os.path.basename(archive_path)
+                )
+                offline_destination_s3_path = os.path.join(
+                    website.url_path, "static_resources", os.path.basename(archive_path)
                 )
                 s3 = get_boto3_resource("s3")
                 try:
                     s3.Object(LEGACY_VIDEO_IMPORT_S3_BUCKET, source_s3_path).load()
-                    s3.meta.client.copy(
-                        {
-                            "Bucket": LEGACY_VIDEO_IMPORT_S3_BUCKET,
-                            "Key": source_s3_path,
-                        },
+                    online_destination_buckets = [
                         AWS_STORAGE_BUCKET_NAME,
-                        destination_s3_path,
-                        extra_args,
-                    )
+                        AWS_PREVIEW_BUCKET_NAME,
+                        AWS_PUBLISH_BUCKET_NAME,
+                    ]
+                    offline_destination_buckets = [
+                        AWS_OFFLINE_PREVIEW_BUCKET_NAME,
+                        AWS_OFFLINE_PUBLISH_BUCKET_NAME,
+                    ]
+                    for destination_bucket in online_destination_buckets:
+                        s3.meta.client.copy(
+                            {
+                                "Bucket": LEGACY_VIDEO_IMPORT_S3_BUCKET,
+                                "Key": source_s3_path,
+                            },
+                            destination_bucket,
+                            online_destination_s3_path,
+                            extra_args,
+                        )
+                    for destination_bucket in offline_destination_buckets:
+                        s3.meta.client.copy(
+                            {
+                                "Bucket": LEGACY_VIDEO_IMPORT_S3_BUCKET,
+                                "Key": source_s3_path,
+                            },
+                            destination_bucket,
+                            offline_destination_s3_path,
+                            extra_args,
+                        )
                 except botocore.exceptions.ClientError as e:
                     error_message = f"Could not find {source_s3_path} in {LEGACY_VIDEO_IMPORT_S3_BUCKET}"
                     log.error(error_message)
