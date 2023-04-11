@@ -118,7 +118,7 @@ jobs:
           npm run build:webpack
           npm run build:githash
           mkdir -p ./base-theme/static/static_shared/
-          cp -r ./base-theme/dist/static_shared/* ./base-theme/static/static_shared/
+          grep -o -E "/(\w|\d|\.|-)+\"" ../webpack-json/webpack.json | tr -d '"'| sed 's#^/##g' | xargs -I {} cp -r ./base-theme/dist/static_shared/{} ./base-theme/static/static_shared/{}
           find ./base-theme/static/static_shared -name "*.js.map" -type f -delete
           
   # END OFFLINE-ONLY
