@@ -17,8 +17,6 @@ from content_sync import api
 from content_sync.apis import github
 from content_sync.constants import (
     ARCHIVE_URL_PREFIX,
-    LEGACY_VIDEO_IMPORT_S3_BUCKET,
-    LEGACY_VIDEO_IMPORT_S3_PATH,
     VERSION_DRAFT,
     VERSION_LIVE,
     WEBSITE_LISTING_DIRPATH,
@@ -540,6 +538,8 @@ def remove_website_in_root_website(website):
 
 @app.task(acks_late=True)
 def backpopulate_archive_videos_batch(
+    bucket,
+    prefix,
     website_names: List[str],
 ):  # pylint:disable=too-many-locals
     """ Populate archive videos from batches of legacy websites """
@@ -556,7 +556,7 @@ def backpopulate_archive_videos_batch(
                 archive_path = archive_url.replace(ARCHIVE_URL_PREFIX, "")
                 extra_args = {"ACL": "public-read"}
                 source_s3_path = os.path.join(
-                    LEGACY_VIDEO_IMPORT_S3_PATH, archive_path
+                    prefix, archive_path
                 ).lstrip("/")
                 online_destination_s3_path = os.path.join(
                     website.url_path, os.path.basename(archive_path)
@@ -565,7 +565,7 @@ def backpopulate_archive_videos_batch(
                     website.url_path, "static_resources", os.path.basename(archive_path)
                 )
                 try:
-                    s3.Object(LEGACY_VIDEO_IMPORT_S3_BUCKET, source_s3_path).load()
+                    s3.Object(bucket, source_s3_path).load()
                     online_destination_buckets = [
                         settings.AWS_STORAGE_BUCKET_NAME,
                         settings.AWS_PREVIEW_BUCKET_NAME,
@@ -578,7 +578,7 @@ def backpopulate_archive_videos_batch(
                     for destination_bucket in online_destination_buckets:
                         s3.meta.client.copy(
                             {
-                                "Bucket": LEGACY_VIDEO_IMPORT_S3_BUCKET,
+                                "Bucket": bucket,
                                 "Key": source_s3_path,
                             },
                             destination_bucket,
@@ -588,7 +588,7 @@ def backpopulate_archive_videos_batch(
                     for destination_bucket in offline_destination_buckets:
                         s3.meta.client.copy(
                             {
-                                "Bucket": LEGACY_VIDEO_IMPORT_S3_BUCKET,
+                                "Bucket": bucket,
                                 "Key": source_s3_path,
                             },
                             destination_bucket,
@@ -596,7 +596,7 @@ def backpopulate_archive_videos_batch(
                             extra_args,
                         )
                 except botocore.exceptions.ClientError:
-                    error_message = f"Could not find {source_s3_path} in {LEGACY_VIDEO_IMPORT_S3_BUCKET}"
+                    error_message = f"Could not find {source_s3_path} in {bucket}"
                     log.error(error_message)
                     if error_messages != "":
                         error_messages += ", "
@@ -607,6 +607,8 @@ def backpopulate_archive_videos_batch(
 @app.task(bind=True)
 def backpopulate_archive_videos(  # pylint: disable=too-many-arguments
     self,
+    bucket: str,
+    prefix: str,
     website_names: List[str],
     chunk_size=500,
 ):
@@ -618,6 +620,8 @@ def backpopulate_archive_videos(  # pylint: disable=too-many-arguments
     ):
         tasks.append(
             backpopulate_archive_videos_batch.s(
+                bucket,
+                prefix,
                 website_subset,
             )
         )

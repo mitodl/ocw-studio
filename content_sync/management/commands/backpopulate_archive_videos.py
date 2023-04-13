@@ -18,6 +18,20 @@ class Command(WebsiteFilterCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
+            "-b",
+            "--bucket",
+            dest="bucket",
+            required=True,
+            help="Bucket containing archive videos",
+        )
+        parser.add_argument(
+            "-p",
+            "--prefix",
+            dest="prefix",
+            default="",
+            help="The key prefix before the path section of the URL found in the metadata.video_files.archive_url property on WebsiteContent objects",
+        )
+        parser.add_argument(
             "-ch",
             "--chunks",
             dest="chunk_size",
@@ -28,6 +42,8 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
+        bucket = options["bucket"]
+        prefix = options["prefix"]
         chunk_size = int(options["chunk_size"])
         is_verbose = options["verbosity"] > 1
 
@@ -49,6 +65,8 @@ class Command(WebsiteFilterCommand):
 
         start = now_in_utc()
         task = backpopulate_archive_videos.delay(
+            bucket=bucket,
+            prefix=prefix,
             website_names,
             chunk_size=chunk_size,
         )

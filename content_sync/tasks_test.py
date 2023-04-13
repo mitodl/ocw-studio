@@ -13,7 +13,6 @@ from requests import HTTPError
 
 from content_sync import tasks
 from content_sync.constants import (
-    LEGACY_VIDEO_IMPORT_S3_BUCKET,
     VERSION_DRAFT,
     VERSION_LIVE,
 )
@@ -796,8 +795,9 @@ def test_remove_website_in_root_website(api_mock):
 
 
 @mock_s3
+@pytest.mark.parametrize("prefix", ["a/prefix", "a/prefix/", "/a/prefix", "/a/prefix/", ""])
 def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
-    mocker, settings
+    mocker, settings, prefix
 ):
     """upsert_website_pipeline_batch should make the expected function calls"""
     # Fake the s3 settings
@@ -810,15 +810,17 @@ def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
     settings.OFFLINE_PREVIEW_BUCKET_NAME = "offline_preview_bucket"
     settings.OFFLINE_PUBLISH_BUCKET_NAME = "offline_publish_bucket"
     # Create our fake bucket
-    conn = get_boto3_resource("s3")
-    conn.create_bucket(Bucket=LEGACY_VIDEO_IMPORT_S3_BUCKET)
-    test_bucket = conn.Bucket(name=LEGACY_VIDEO_IMPORT_S3_BUCKET)
+    s3 = get_boto3_resource("s3")
+    test_bucket_name = "test_bucket"
+    s3.create_bucket(Bucket=test_bucket_name)
+    test_bucket = s3.Bucket(name=test_bucket_name)
     mock_get_boto_3_resource = mocker.patch("content_sync.tasks.get_boto3_resource")
     mock_s3_resource = mock_get_boto_3_resource.return_value
     # Create mock Websites and WebsiteContent
     websites = WebsiteFactory.create_batch(2)
     website_names = sorted([website.name for website in websites])
     for site in websites:
+        s3_path = os.path.join(prefix, site.name).lstrip("/")
         WebsiteContentFactory.create(
             website=site,
             type="resource",
@@ -829,16 +831,17 @@ def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
             },
         )
         test_bucket.put_object(
-            Key=f"OcwExport/InternetArchive/{site.name}/test_video.mp4"
+            Key=f"{s3_path}/test_video.mp4"
         )
-    tasks.backpopulate_archive_videos_batch(website_names)
+    tasks.backpopulate_archive_videos_batch(test_bucket_name, prefix, website_names)
     # Assert that the proper calls were done to copy the video into the various S3 locations
     # mock_get_boto_3_resource.assert_called_once_with("s3")
     extra_args = {"ACL": "public-read"}
     for site in websites:
+        s3_path = os.path.join(prefix, site.name).lstrip("/")
         source_arg = {
-            "Bucket": LEGACY_VIDEO_IMPORT_S3_BUCKET,
-            "Key": f"OcwExport/InternetArchive/{site.name}/test_video.mp4",
+            "Bucket": test_bucket_name,
+            "Key": f"{s3_path}/test_video.mp4",
         }
         online_destination_s3_path = os.path.join(site.url_path, "test_video.mp4")
         offline_destination_s3_path = os.path.join(
@@ -876,16 +879,20 @@ def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
         )
 
 
+@pytest.mark.parametrize("prefix", ["/a/prefix", ""])
 @pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
 def test_backpopulate_archive_videos(  # pylint:disable=too-many-arguments, unused-argument
-    mocker, mocked_celery, chunk_size, chunks
+    mocker, mocked_celery, prefix, chunk_size, chunks
 ):
     """backpopulate_archive_videos calls backpopulate_archive_videos_batch with correct arguments"""
+    test_bucket_name = "test_bucket"
     websites = WebsiteFactory.create_batch(3)
     website_names = sorted([website.name for website in websites])
     mock_batch = mocker.patch("content_sync.tasks.backpopulate_archive_videos_batch.s")
     with pytest.raises(TabError):
         tasks.backpopulate_archive_videos.delay(
+            test_bucket_name,
+            prefix,
             website_names,
             chunk_size=chunk_size,
         )
