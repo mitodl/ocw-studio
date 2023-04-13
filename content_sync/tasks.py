@@ -555,9 +555,7 @@ def backpopulate_archive_videos_batch(
             if archive_url:
                 archive_path = archive_url.replace(ARCHIVE_URL_PREFIX, "")
                 extra_args = {"ACL": "public-read"}
-                source_s3_path = os.path.join(
-                    prefix, archive_path
-                ).lstrip("/")
+                source_s3_path = os.path.join(prefix, archive_path).lstrip("/")
                 online_destination_s3_path = os.path.join(
                     website.url_path, os.path.basename(archive_path)
                 )

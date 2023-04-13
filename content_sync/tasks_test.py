@@ -795,7 +795,9 @@ def test_remove_website_in_root_website(api_mock):
 
 
 @mock_s3
-@pytest.mark.parametrize("prefix", ["a/prefix", "a/prefix/", "/a/prefix", "/a/prefix/", ""])
+@pytest.mark.parametrize(
+    "prefix", ["a/prefix", "a/prefix/", "/a/prefix", "/a/prefix/", ""]
+)
 def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments, too-many-locals
     mocker, settings, prefix
 ):
@@ -830,9 +832,7 @@ def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
                 }
             },
         )
-        test_bucket.put_object(
-            Key=f"{s3_path}/test_video.mp4"
-        )
+        test_bucket.put_object(Key=f"{s3_path}/test_video.mp4")
     tasks.backpopulate_archive_videos_batch(test_bucket_name, prefix, website_names)
     # Assert that the proper calls were done to copy the video into the various S3 locations
     # mock_get_boto_3_resource.assert_called_once_with("s3")
