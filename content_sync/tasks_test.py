@@ -894,9 +894,13 @@ def test_backpopulate_archive_videos(  # pylint:disable=too-many-arguments, unus
             chunk_size=chunk_size,
         )
     mock_batch.assert_any_call(
+        test_bucket_name,
+        prefix,
         website_names[0:chunk_size],
     )
     if chunks > 1:
         mock_batch.assert_any_call(
+            test_bucket_name,
+            prefix,
             website_names[chunk_size:],
         )
