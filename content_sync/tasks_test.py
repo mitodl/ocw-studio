@@ -796,7 +796,7 @@ def test_remove_website_in_root_website(api_mock):
 
 @mock_s3
 @pytest.mark.parametrize("prefix", ["a/prefix", "a/prefix/", "/a/prefix", "/a/prefix/", ""])
-def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
+def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments, too-many-locals
     mocker, settings, prefix
 ):
     """upsert_website_pipeline_batch should make the expected function calls"""
