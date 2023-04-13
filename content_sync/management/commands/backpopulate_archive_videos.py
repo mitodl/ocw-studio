@@ -65,8 +65,8 @@ class Command(WebsiteFilterCommand):
 
         start = now_in_utc()
         task = backpopulate_archive_videos.delay(
-            bucket=bucket,
-            prefix=prefix,
+            bucket,
+            prefix,
             website_names,
             chunk_size=chunk_size,
         )
