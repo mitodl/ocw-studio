@@ -12,10 +12,7 @@ from pytest import fixture
 from requests import HTTPError
 
 from content_sync import tasks
-from content_sync.constants import (
-    VERSION_DRAFT,
-    VERSION_LIVE,
-)
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.factories import ContentSyncStateFactory
 from content_sync.pipelines.base import (
     BaseMassBuildSitesPipeline,
