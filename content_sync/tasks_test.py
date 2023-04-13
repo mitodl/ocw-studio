@@ -796,7 +796,7 @@ def test_remove_website_in_root_website(api_mock):
 
 
 @mock_s3
-def test_backpopulate_legacy_videos_batch(  # pylint:disable=too-many-arguments
+def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
     mocker, settings
 ):
     """upsert_website_pipeline_batch should make the expected function calls"""
@@ -831,7 +831,7 @@ def test_backpopulate_legacy_videos_batch(  # pylint:disable=too-many-arguments
         test_bucket.put_object(
             Key=f"OcwExport/InternetArchive/{site.name}/test_video.mp4"
         )
-    tasks.backpopulate_legacy_videos_batch(website_names)
+    tasks.backpopulate_archive_videos_batch(website_names)
     # Assert that the proper calls were done to copy the video into the various S3 locations
     # mock_get_boto_3_resource.assert_called_once_with("s3")
     extra_args = {"ACL": "public-read"}
@@ -877,15 +877,15 @@ def test_backpopulate_legacy_videos_batch(  # pylint:disable=too-many-arguments
 
 
 @pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
-def test_backpopulate_legacy_videos(  # pylint:disable=too-many-arguments, unused-argument
+def test_backpopulate_archive_videos(  # pylint:disable=too-many-arguments, unused-argument
     mocker, mocked_celery, chunk_size, chunks
 ):
-    """backpopulate_legacy_videos calls backpopulate_legacy_videos_batch with correct arguments"""
+    """backpopulate_archive_videos calls backpopulate_archive_videos_batch with correct arguments"""
     websites = WebsiteFactory.create_batch(3)
     website_names = sorted([website.name for website in websites])
-    mock_batch = mocker.patch("content_sync.tasks.backpopulate_legacy_videos_batch.s")
+    mock_batch = mocker.patch("content_sync.tasks.backpopulate_archive_videos_batch.s")
     with pytest.raises(TabError):
-        tasks.backpopulate_legacy_videos.delay(
+        tasks.backpopulate_archive_videos.delay(
             website_names,
             chunk_size=chunk_size,
         )

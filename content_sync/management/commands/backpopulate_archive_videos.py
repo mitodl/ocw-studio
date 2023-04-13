@@ -4,7 +4,7 @@ from django.core.management import CommandError
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.tasks import backpopulate_legacy_videos
+from content_sync.tasks import backpopulate_archive_videos
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.constants import WEBSITE_SOURCE_OCW_IMPORT
 from websites.models import Website
@@ -48,7 +48,7 @@ class Command(WebsiteFilterCommand):
             )
 
         start = now_in_utc()
-        task = backpopulate_legacy_videos.delay(
+        task = backpopulate_archive_videos.delay(
             website_names,
             chunk_size=chunk_size,
         )

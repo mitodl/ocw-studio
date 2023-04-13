@@ -539,7 +539,7 @@ def remove_website_in_root_website(website):
 
 
 @app.task(acks_late=True)
-def backpopulate_legacy_videos_batch(
+def backpopulate_archive_videos_batch(
     website_names: List[str],
 ):  # pylint:disable=too-many-locals
     """ Populate archive videos from batches of legacy websites """
@@ -605,7 +605,7 @@ def backpopulate_legacy_videos_batch(
 
 
 @app.task(bind=True)
-def backpopulate_legacy_videos(  # pylint: disable=too-many-arguments
+def backpopulate_archive_videos(  # pylint: disable=too-many-arguments
     self,
     website_names: List[str],
     chunk_size=500,
@@ -617,7 +617,7 @@ def backpopulate_legacy_videos(  # pylint: disable=too-many-arguments
         chunk_size=chunk_size,
     ):
         tasks.append(
-            backpopulate_legacy_videos_batch.s(
+            backpopulate_archive_videos_batch.s(
                 website_subset,
             )
         )
