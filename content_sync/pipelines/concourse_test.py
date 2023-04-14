@@ -363,8 +363,7 @@ def test_upsert_website_pipelines(
     else:
         assert "cp -r -n ../static-resources/. ./output-online/" in config_str
         assert (
-            f"grep -o -E '/(\\w|\\d|\\.|-)+\"' ../webpack-json/webpack.json | tr -d '\"'| sed 's#^/##g' | xargs -I {{}} aws s3{expected_endpoint_prefix} sync s3://{bucket}/static_shared ./static/static_shared --exclude *.js.map --include {{}}"
-            in config_str
+            "mv ../build-artifacts/static_shared ./static/static_shared" in config_str
         )
         assert (
             f"aws s3 {expected_endpoint_prefix}sync build-course-offline/ s3://{bucket}/{website.url_path} --exclude='*' --include='{website.short_id}.zip' --metadata site-id={website.name}"

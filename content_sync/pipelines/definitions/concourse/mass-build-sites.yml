@@ -96,6 +96,28 @@ jobs:
     trigger: ((trigger))
     # END NON-DEV
   # START OFFLINE-ONLY
+  - task: filter-webpack-artifacts
+    timeout: 10m
+    attempts: 3
+    params:
+      RESOURCE_BASE_URL: ((resource-base-url))
+      AWS_ACCESS_KEY_ID: ((minio-root-user))
+      AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: {repository: mitodl/ocw-course-publisher, tag: 0.4}
+      inputs:
+        - name: webpack-json
+      outputs:
+        - name: build-artifacts
+      run:
+        path: sh
+        args:
+        - -exc
+        - |
+          jq 'recurse | select(type=="string")' ./webpack-json/webpack.json | tr -d '"' | xargs -I {} cp ./base-theme/dist{} ./build-artifacts{}
   - task: build-ocw-hugo-themes
     config:
       platform: linux
@@ -104,6 +126,7 @@ jobs:
         source: {repository: mitodl/ocw-course-publisher, tag: 0.4}
       inputs:
       - name: ocw-hugo-themes
+      - name: build-artifacts
       outputs:
       - name: ocw-hugo-themes
       params:
@@ -118,7 +141,7 @@ jobs:
           npm run build:webpack
           npm run build:githash
           mkdir -p ./base-theme/static/static_shared/
-          grep -o -E "/(\w|\d|\.|-)+\"" ../webpack-json/webpack.json | tr -d '"'| sed 's#^/##g' | xargs -I {} cp -r ./base-theme/dist/static_shared/{} ./base-theme/static/static_shared/{}
+          mv ../build-artifacts/ ./base-theme/static/
           find ./base-theme/static/static_shared -name "*.js.map" -type f -delete
           
   # END OFFLINE-ONLY
