@@ -20,6 +20,7 @@ from gdrive_sync.constants import (
 )
 from gdrive_sync.models import DriveFile
 from main.celery import app
+from main.tasks import chord_finisher
 from websites.models import Website
 
 
@@ -117,6 +118,7 @@ def import_website_files(self, name: str):
             try:
                 drive_file = api.process_file_result(
                     gdfile,
+                    website=website,
                     sync_date=website.synced_on,
                     replace_file=occurrences[gdfile.get("name")] == 1,
                 )

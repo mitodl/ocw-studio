@@ -482,7 +482,7 @@ def test_process_file_result_replace_file(settings, mocker, replace_file):
         "md5Checksum": "check-sum-",
         "trashed": False,
     }
-    process_file_result(file_result, replace_file=replace_file)
+    process_file_result(file_result, website=website, replace_file=replace_file)
     count = DriveFile.objects.filter(name=drive_file.name).count()
     assert count == (1 if replace_file else 2)
     if replace_file:
