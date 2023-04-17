@@ -376,7 +376,7 @@ def test_process_file_result(
         "trashed": False,
     }
     correct_folder = is_video or (not is_video and not in_video_folder)
-    process_file_result(file_result)
+    process_file_result(file_result, website)
     drive_file = DriveFile.objects.filter(file_id=file_result["id"]).first()
     file_exists = drive_file is not None
     assert file_exists is (correct_folder and link is not None and checksum is not None)
@@ -424,7 +424,7 @@ def test_process_file_result_update(settings, mocker, status, same_checksum, sam
         "md5Checksum": drive_file.checksum if same_checksum else "new-check-sum",
         "trashed": False,
     }
-    result = process_file_result(file_result)
+    result = process_file_result(file_result, website)
     assert (result is None) is (
         same_name
         and same_checksum

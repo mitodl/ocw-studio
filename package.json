@@ -137,7 +137,7 @@
     "url-assembler": "^2.1.1",
     "url-loader": "^4.1.1",
     "waait": "^1.0.5",
-    "webpack": "^5.51.1",
+    "webpack": "^5.76.0",
     "webpack-bundle-tracker": "^1.2.0",
     "webpack-cli": "^4.8.0",
     "webpack-dev-middleware": "^5.0.0",

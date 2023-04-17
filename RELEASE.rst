@@ -1,6 +1,47 @@
 Release Notes
 =============
 
+Version 0.89.2 (Released April 10, 2023)
+--------------
+
+- [Google Drive] Remove Import Files Task and Make Manual Sync Robust to Changing Folder Name (#1735)
+- Added OCW_HUGO_THEMES_SENTRY_ENV to ocw-studio (#1725)
+
+Version 0.89.1 (Released April 06, 2023)
+--------------
+
+- Bump redis from 3.5.3 to 4.4.4 (#1729)
+- Bump webpack from 5.71.0 to 5.76.0 (#1714)
+- Bump ipython from 7.31.1 to 8.10.0 (#1678)
+- Bump oauthlib from 3.2.1 to 3.2.2 (#1673)
+- Bump http-cache-semantics from 4.1.0 to 4.1.1 (#1669)
+- Bump activesupport from 6.0.6 to 6.0.6.1 in /docs (#1663)
+- Bump ua-parser-js from 0.7.31 to 0.7.35 (#1734)
+
+Version 0.89.0 (Released April 05, 2023)
+--------------
+
+- Bump cryptography from 3.3.2 to 39.0.1 (#1676)
+- feat: show short_id in course list select (#1727)
+
+Version 0.88.1 (Released April 03, 2023)
+--------------
+
+- Exclude JS Map assets from builds (#1720)
+- Bump cookiejar from 2.1.3 to 2.1.4 (#1655)
+- Bump certifi from 2020.6.20 to 2022.12.7 (#1606)
+- Bump nokogiri from 1.13.9 to 1.13.10 in /docs (#1605)
+
+Version 0.88.0 (Released March 22, 2023)
+--------------
+
+- Revert "feat: show short_id in course list dropdown (#1715)" (#1721)
+- Revert "Fakhar/1646 exclude assests offline (#1713)" (#1718)
+- feat: show short_id in course list dropdown (#1715)
+- publish websites in root website (#1705)
+- Fakhar/1646 exclude assests offline (#1713)
+- Fix: Flaky Frontend Test (#1700)
+
 Version 0.87.2 (Released March 13, 2023)
 --------------
 

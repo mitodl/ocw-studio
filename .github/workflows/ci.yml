@@ -107,11 +107,6 @@ jobs:
           SECRET_KEY: "secret"  # pragma: allowlist secret
           CONTENT_SYNC_BACKEND:
 
-      - name: Upload coverage to CodeCov
-        uses: codecov/codecov-action@v1
-        with:
-          file: ./coverage.xml
-
   frontend-tests:
     runs-on: ubuntu-20.04
     steps:
@@ -156,6 +151,3 @@ jobs:
 
       - name: Webpack build
         run: npm run build
-
-      - name: Upload test coverage to CodeCov
-        uses: codecov/codecov-action@v1
