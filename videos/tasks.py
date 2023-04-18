@@ -112,7 +112,7 @@ def start_transcript_job(video_id: int):
         video_resource.save()
 
     # if none and video is not already submitted, request a transcript through the 3Play API
-    elif video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
+    else:
         response = threeplay_api.threeplay_upload_video_request(
             folder_name, youtube_id, video_resource.title
         )
