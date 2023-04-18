@@ -55,6 +55,10 @@ class Command(WebsiteFilterCommand):
         if self.filter_list:
             content_videos = self.filter_website_contents(content_videos)
 
+        if not content_videos:
+            self.stdout.write("No courses found")
+            return
+
         for video in content_videos:
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
             self.fetch_and_update_content(video, youtube_id)
