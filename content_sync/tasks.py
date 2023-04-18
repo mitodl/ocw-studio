@@ -1,8 +1,10 @@
 """ Content sync tasks """
 import logging
+import os
 from datetime import timedelta
 from typing import List, Optional
 
+import botocore
 import celery
 from django.conf import settings
 from django.db.models import F, Q
@@ -13,10 +15,16 @@ from requests import HTTPError
 
 from content_sync import api
 from content_sync.apis import github
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
+from content_sync.constants import (
+    ARCHIVE_URL_PREFIX,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+    WEBSITE_LISTING_DIRPATH,
+)
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from main.celery import app
+from main.s3_utils import get_boto3_resource
 from websites.api import (
     get_website_in_root_website_metadata,
     reset_publishing_fields,
@@ -526,3 +534,93 @@ def remove_website_in_root_website(website):
         website_content.delete()
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend()
+
+
+@app.task(acks_late=True)
+def backpopulate_archive_videos_batch(
+    bucket,
+    prefix,
+    website_names: List[str],
+):  # pylint:disable=too-many-locals
+    """ Populate archive videos from batches of legacy websites """
+    error_messages = ""
+    s3 = get_boto3_resource("s3")
+    for website_name in website_names:
+        website = Website.objects.get(name=website_name)
+        videos = WebsiteContent.objects.filter(website=website).exclude(
+            metadata__video_files__archive_url__isnull=True
+        )
+        for video in videos:
+            archive_url = video.metadata["video_files"]["archive_url"]
+            if archive_url:
+                archive_path = archive_url.replace(ARCHIVE_URL_PREFIX, "")
+                extra_args = {"ACL": "public-read"}
+                source_s3_path = os.path.join(prefix, archive_path).lstrip("/")
+                online_destination_s3_path = os.path.join(
+                    website.url_path, os.path.basename(archive_path)
+                )
+                offline_destination_s3_path = os.path.join(
+                    website.url_path, "static_resources", os.path.basename(archive_path)
+                )
+                try:
+                    s3.Object(bucket, source_s3_path).load()
+                    online_destination_buckets = [
+                        settings.AWS_STORAGE_BUCKET_NAME,
+                        settings.AWS_PREVIEW_BUCKET_NAME,
+                        settings.AWS_PUBLISH_BUCKET_NAME,
+                    ]
+                    offline_destination_buckets = [
+                        settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME,
+                        settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME,
+                    ]
+                    for destination_bucket in online_destination_buckets:
+                        s3.meta.client.copy(
+                            {
+                                "Bucket": bucket,
+                                "Key": source_s3_path,
+                            },
+                            destination_bucket,
+                            online_destination_s3_path,
+                            extra_args,
+                        )
+                    for destination_bucket in offline_destination_buckets:
+                        s3.meta.client.copy(
+                            {
+                                "Bucket": bucket,
+                                "Key": source_s3_path,
+                            },
+                            destination_bucket,
+                            offline_destination_s3_path,
+                            extra_args,
+                        )
+                except botocore.exceptions.ClientError:
+                    error_message = f"Could not find {source_s3_path} in {bucket}"
+                    log.error(error_message)
+                    if error_messages != "":
+                        error_messages += ", "
+                    error_messages += error_message
+    return error_messages if error_messages else True
+
+
+@app.task(bind=True)
+def backpopulate_archive_videos(  # pylint: disable=too-many-arguments
+    self,
+    bucket: str,
+    prefix: str,
+    website_names: List[str],
+    chunk_size=500,
+):
+    """ Chunk and group batches of legacy video backpopulate tasks for a specified list of websites"""
+    tasks = []
+    for website_subset in chunks(
+        sorted(website_names),
+        chunk_size=chunk_size,
+    ):
+        tasks.append(
+            backpopulate_archive_videos_batch.s(
+                bucket,
+                prefix,
+                website_subset,
+            )
+        )
+    raise self.replace(celery.group(tasks))
