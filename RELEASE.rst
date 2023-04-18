@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.90.0
+--------------
+
+- use a safer strategy for filtering out mp4 files in the offline builds in the single site pipeline (#1742)
+- remove codecov (#1747)
+
 Version 0.89.2 (Released April 10, 2023)
 --------------
 
