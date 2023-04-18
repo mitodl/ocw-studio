@@ -1,4 +1,4 @@
-""" Backpopulate website pipelines"""
+""" Backpopulate legacy videos """
 from django.conf import settings
 from django.core.management import CommandError
 from django.db.models import Q

@@ -798,7 +798,7 @@ def test_remove_website_in_root_website(api_mock):
 def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments, too-many-locals
     mocker, settings, prefix
 ):
-    """upsert_website_pipeline_batch should make the expected function calls"""
+    """ backpopulate_archive_videos_batch should push up videos to S3 """
     # Fake the s3 settings
     settings.ENVIRONMENT = "test"
     settings.AWS_ACCESS_KEY_ID = "abc"
