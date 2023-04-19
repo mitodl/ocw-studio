@@ -13,6 +13,7 @@ from gdrive_sync.constants import (
 from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.tasks import (
     create_gdrive_folders_batch,
+    delete_drive_file,
     import_website_files,
     process_drive_file,
     update_website_status,
@@ -201,6 +202,19 @@ def test_import_website_files_processing_error(
     assert sorted(website.sync_errors) == sorted(sync_errors)
 
 
+def test_import_website_files_delete_missing(mocker, mocked_celery):
+    """Missing files should be deleted on sync"""
+    mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
+    website = WebsiteFactory.create()
+    drive_files = DriveFileFactory.create_batch(2, website=website)
+    mock_delete_drive_file = mocker.patch("gdrive_sync.tasks.delete_drive_file.si")
+    with pytest.raises(mocked_celery.replace_exception_class):
+        import_website_files.delay(website.name)
+    assert mock_delete_drive_file.call_count == 2
+    for drive_file in drive_files:
+        mock_delete_drive_file.assert_any_call(drive_file.file_id)
+
+
 def test_update_website_status(mocker):
     """Calling the update_website_status task should call api.update_sync_status with args"""
     website = WebsiteFactory.create()
@@ -236,3 +250,11 @@ def test_process_drive_file(mocker, is_video, has_error):
     assert mock_transcode.call_count == (1 if is_video and not has_error else 0)
     assert mock_create_resource.call_count == (0 if has_error else 1)
     assert mock_log.call_count == (1 if has_error else 0)
+
+
+def test_delete_drive_file(mocker):
+    """Task delete_drive_file should delegate the delete action to api.delete_drive_file."""
+    drive_file = DriveFileFactory.create()
+    mock_delete_drive_file = mocker.patch("gdrive_sync.api.delete_drive_file")
+    delete_drive_file.delay(drive_file.file_id)
+    mock_delete_drive_file.assert_called_once_with(drive_file)
