@@ -170,7 +170,6 @@ class Command(WebsiteFilterCommand):
             "metadata": new_obj_metadata,
             "title": title,
             "type": "resource",
-            # "file": file_content,
             "text_id": new_text_id,
         }
 
