@@ -6,6 +6,7 @@ from django.core.files import File
 from django.db.models import Q
 
 from main.management.commands.filter import WebsiteFilterCommand
+from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
@@ -26,7 +27,7 @@ class Command(WebsiteFilterCommand):
         )
         self.captions_updated = 0
         self.transcripts_updated = 0
-        
+
         self.extension_map = {
             "vtt": {
                 "ext": "captions",
@@ -65,8 +66,10 @@ class Command(WebsiteFilterCommand):
         for video in content_videos:
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
             self.fetch_and_update_content(video, youtube_id)
-        
-        self.stdout.write(f'Total {self.captions_updated} captions and {self.transcripts_updated} transcripts updated!')
+
+        self.stdout.write(
+            f"Total {self.captions_updated} captions and {self.transcripts_updated} transcripts updated!"
+        )
 
     def fetch_and_update_content(self, video, youtube_id):
         """Fetches captions/transcripts and creates new WebsiteContent object using 3play API"""
@@ -77,9 +80,11 @@ class Command(WebsiteFilterCommand):
             or len(threeplay_transcript_json.get("data")) == 0
             or threeplay_transcript_json.get("data")[0].get("status") != "complete"
         ):
-            self.stdout.write(f"Captions and transcripts not found in 3play for course, {video.website}")
+            self.stdout.write(
+                f"Captions and transcripts not found in 3play for course, {video.website}"
+            )
             return
-        
+
         transcript_id = threeplay_transcript_json["data"][0].get("id")
         media_file_id = threeplay_transcript_json["data"][0].get("media_file_id")
 
@@ -142,10 +147,20 @@ class Command(WebsiteFilterCommand):
             },
         )
 
+    def upload_to_s3(self, file_content, video):
+        """Uploads the captions/transcript file to the S3 bucket"""
+        s3 = get_boto3_resource("s3")
+        new_s3_loc = generate_s3_path(file_content, video.website)
+        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_s3_loc).upload_fileobj(
+            file_content
+        )
+
+        return new_s3_loc
+
     def create_new_content(self, file_content, video):
         """Create new WebsiteContent object for caption or transcript using 3play response"""
         new_text_id = str(uuid4())
-        new_s3_loc = generate_s3_path(file_content, video.website)
+        new_s3_loc = self.upload_to_s3(file_content, video)
         title, new_obj_metadata = self.generate_metadata(
             new_text_id, new_s3_loc, file_content, video
         )
@@ -155,7 +170,7 @@ class Command(WebsiteFilterCommand):
             "metadata": new_obj_metadata,
             "title": title,
             "type": "resource",
-            "file": file_content,
+            # "file": file_content,
             "text_id": new_text_id,
         }
 
