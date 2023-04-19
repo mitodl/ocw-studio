@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.90.0
+--------------
+
+- missing this one period messed up the pathing (#1750)
+- Revert "use a safer strategy for filtering out mp4 files in the offline builds in the single site pipeline (#1742)" (#1749)
+- feat: update drive sync and allow file deletion (#1724)
+- backpopulate archive videos (#1743)
+- use a safer strategy for filtering out mp4 files in the offline builds in the single site pipeline (#1742)
+- remove codecov (#1747)
+
 Version 0.89.2 (Released April 10, 2023)
 --------------
 
