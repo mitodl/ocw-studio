@@ -1,6 +1,7 @@
 """ Content sync tasks """
 import logging
 import os
+import re
 from datetime import timedelta
 from typing import List, Optional
 
@@ -16,7 +17,7 @@ from requests import HTTPError
 from content_sync import api
 from content_sync.apis import github
 from content_sync.constants import (
-    ARCHIVE_URL_PREFIX,
+    ARCHIVE_URL_PREFIX_REGEX,
     VERSION_DRAFT,
     VERSION_LIVE,
     WEBSITE_LISTING_DIRPATH,
@@ -553,7 +554,7 @@ def backpopulate_archive_videos_batch(
         for video in videos:
             archive_url = video.metadata["video_files"]["archive_url"]
             if archive_url:
-                archive_path = archive_url.replace(ARCHIVE_URL_PREFIX, "")
+                archive_path = re.sub(ARCHIVE_URL_PREFIX_REGEX, "", archive_url)
                 extra_args = {"ACL": "public-read"}
                 source_s3_path = os.path.join(prefix, archive_path).lstrip("/")
                 online_destination_s3_path = os.path.join(

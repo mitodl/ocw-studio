@@ -1,5 +1,6 @@
 """ Content sync task tests """
 import os
+import random
 from datetime import timedelta
 
 import pytest
@@ -816,16 +817,18 @@ def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
     mock_get_boto_3_resource = mocker.patch("content_sync.tasks.get_boto3_resource")
     mock_s3_resource = mock_get_boto_3_resource.return_value
     # Create mock Websites and WebsiteContent
-    websites = WebsiteFactory.create_batch(2)
+    websites = WebsiteFactory.create_batch(4)
     website_names = sorted([website.name for website in websites])
     for site in websites:
         s3_path = os.path.join(prefix, site.name).lstrip("/")
+        random_bool = bool(random.getrandbits(1))
+        protocol = "http" if random_bool else "https"
         WebsiteContentFactory.create(
             website=site,
             type="resource",
             metadata={
                 "video_files": {
-                    "archive_url": f"https://archive.org/download/{site.name}/test_video.mp4"
+                    "archive_url": f"{protocol}://archive.org/download/{site.name}/test_video.mp4"
                 }
             },
         )
