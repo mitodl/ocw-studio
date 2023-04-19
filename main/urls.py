@@ -25,7 +25,6 @@ from main.views import public_index, restricted_index
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("status/", include("server_status.urls")),
     path("robots.txt", include("robots.urls")),
     path("", include("social_django.urls", namespace="social")),
     url(r"^hijack/", include("hijack.urls", namespace="hijack")),

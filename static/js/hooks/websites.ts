@@ -16,6 +16,13 @@ import { debouncedFetch } from "../lib/api/util"
 import { QueryState } from "redux-query"
 
 /**
+ * A SelectField Option that is specific to websites.
+ */
+export interface WebsiteOption extends Option {
+  shortId: string
+}
+
+/**
  * Hook for fetching and accessing a WebsiteContent object
  * given a uuid. As easy as:
  *
@@ -60,17 +67,18 @@ export function useWebsiteContent(
 export const formatWebsiteOptions = (
   websites: Website[],
   valueField: string
-): Option[] =>
+): WebsiteOption[] =>
   websites.map(website => ({
-    label: website.title,
-    value: website[valueField]
+    label:   website.title,
+    shortId: website.short_id,
+    value:   website[valueField]
   }))
 
 interface ReturnProps {
-  options: Option[]
+  options: WebsiteOption[]
   loadOptions: (
     inputValue: string,
-    callback?: (options: Option[]) => void
+    callback?: (options: WebsiteOption[]) => void
   ) => Promise<void>
 }
 
@@ -85,10 +93,13 @@ export function useWebsiteSelectOptions(
   valueField = "uuid",
   published: boolean | undefined = undefined
 ): ReturnProps {
-  const [options, setOptions] = useState<Option[]>([])
+  const [options, setOptions] = useState<WebsiteOption[]>([])
 
   const loadOptions = useCallback(
-    async (inputValue: string, callback?: (options: Option[]) => void) => {
+    async (
+      inputValue: string,
+      callback?: (options: WebsiteOption[]) => void
+    ) => {
       const url = siteApiListingUrl
         .query({ offset: 0 })
         .param({ search: inputValue })

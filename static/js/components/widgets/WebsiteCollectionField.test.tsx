@@ -1,13 +1,14 @@
 import IntegrationTestHelper, {
   TestRenderer
 } from "../../util/integration_test_helper_old"
-import WebsiteCollectionField from "./WebsiteCollectionField"
+import WebsiteCollectionField, {
+  formatOptionsLabelWithShortId
+} from "./WebsiteCollectionField"
 
 import * as websiteHooks from "../../hooks/websites"
 import { Website } from "../../types/websites"
 import { makeWebsites } from "../../util/factories/websites"
 import { triggerSortableSelect } from "./test_util"
-import { Option } from "./SelectField"
 import SortableSelect from "./SortableSelect"
 
 jest.mock("../../hooks/websites", () => ({
@@ -23,7 +24,8 @@ describe("WebsiteCollectionField", () => {
     render: TestRenderer,
     onChange: jest.Mock,
     websites: Website[],
-    websiteOptions: Option[]
+    websiteOptions: websiteHooks.WebsiteOption[],
+    selectWebsiteOptions: websiteHooks.WebsiteOption[]
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -35,6 +37,7 @@ describe("WebsiteCollectionField", () => {
     })
     websites = makeWebsites()
     websiteOptions = websiteHooks.formatWebsiteOptions(websites, "name")
+    selectWebsiteOptions = formatOptionsLabelWithShortId(websiteOptions)
     useWebsiteSelectOptions.mockReturnValue({
       options:     websiteOptions,
       loadOptions: jest.fn()
@@ -61,8 +64,8 @@ describe("WebsiteCollectionField", () => {
     })
     const sortableSelect = wrapper.find(SortableSelect)
     expect(sortableSelect.prop("value")).toStrictEqual(value)
-    expect(sortableSelect.prop("options")).toStrictEqual(websiteOptions)
-    expect(sortableSelect.prop("defaultOptions")).toStrictEqual(websiteOptions)
+    expect(sortableSelect.prop("options")).toEqual(selectWebsiteOptions)
+    expect(sortableSelect.prop("defaultOptions")).toEqual(selectWebsiteOptions)
   })
 
   it("should let the user add a website, with UUID and title", async () => {

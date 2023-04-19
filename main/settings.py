@@ -24,7 +24,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.88.0"
+VERSION = "0.89.2"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -134,7 +134,6 @@ INSTALLED_APPS = (
     "guardian",
     "hijack",
     "hijack_admin",
-    "server_status",
     "safedelete",
     # django-robots
     "rest_framework",
@@ -476,13 +475,6 @@ DRIVE_SHARED_ID = get_string(
     default=None,
     description="ID of the Shared Drive (a.k.a. Team Drive). This is equal to the top-level folder ID.",
 )
-DRIVE_IMPORT_RECENT_FILES_SECONDS = get_int(
-    name="DRIVE_IMPORT_RECENT_FILES_SECONDS",
-    default=None,
-    description=(
-        "The frequency to check for new google drive files/videos, in seconds"
-    ),
-)
 DRIVE_S3_UPLOAD_PREFIX = get_string(
     name="DRIVE_S3_UPLOAD_PREFIX",
     default="gdrive_uploads",
@@ -706,12 +698,6 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,
     },
 }
-
-if DRIVE_IMPORT_RECENT_FILES_SECONDS is not None:
-    CELERY_BEAT_SCHEDULE["import-gdrive-files"] = {
-        "task": "gdrive_sync.tasks.import_recent_files",
-        "schedule": DRIVE_IMPORT_RECENT_FILES_SECONDS,
-    }
 
 # django cache back-ends
 CACHES = {
@@ -1155,4 +1141,9 @@ OCW_HUGO_THEMES_SENTRY_DSN = get_string(
     name="OCW_HUGO_THEMES_SENTRY_DSN",
     required=False,
     description="The sentry DSN that will be used in ocw-hugo-themes",
+)
+OCW_HUGO_THEMES_SENTRY_ENV = get_string(
+    name="OCW_HUGO_THEMES_SENTRY_ENV",
+    default="qa",
+    description="The sentry ENV that will be used in ocw-studio",
 )

@@ -139,7 +139,7 @@ def get_parent_tree(parents):
 
 
 def process_file_result(
-    file_obj: Dict, sync_date: Optional[datetime] = None
+    file_obj: Dict, website: Website, sync_date: Optional[datetime] = None
 ) -> Optional[DriveFile]:
     """Convert an API file response into a DriveFile object"""
     parents = file_obj.get("parents")
@@ -155,7 +155,6 @@ def process_file_result(
             return
 
         folder_names = [folder["name"] for folder in folder_tree]
-        website = Website.objects.filter(short_id__in=folder_names).first()
         in_video_folder = DRIVE_FOLDER_VIDEOS_FINAL in folder_names
         in_file_folder = DRIVE_FOLDER_FILES_FINAL in folder_names
         is_video = file_obj["mimeType"].lower().startswith("video/")

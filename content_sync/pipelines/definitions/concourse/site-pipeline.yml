@@ -381,17 +381,15 @@ jobs:
                 mkdir -p ./content/static_resources
                 mkdir -p ./static/static_resources
                 mkdir -p ./static/static_shared
-                if [ ! -z "$(ls -A ../static-resources)" ];
-                then
-                  find ../static-resources ! -name '*.mp4' -type f | xargs cp -t ./content/static_resources
-                fi
+                cp -r ../static-resources ./content/static_resources
+                find ./content/static_resources -name "*.mp4" -type f -delete
                 HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
                 if [ $HTML_COUNT != 0 ];
                 then
                   mv ./content/static_resources/*.html ./static/static_resources
                 fi
                 touch ./content/static_resources/_index.md
-                aws s3((cli-endpoint-url)) sync s3://((web-bucket))/static_shared ./static/static_shared
+                aws s3((cli-endpoint-url)) sync s3://((web-bucket))/static_shared ./static/static_shared --exclude *.js.map
                 hugo ((hugo-args-offline))
                 cd output-offline
                 zip ../../build-course-offline/((short-id)).zip -r ./
