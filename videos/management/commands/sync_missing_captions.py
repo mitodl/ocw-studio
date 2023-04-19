@@ -24,6 +24,9 @@ class Command(WebsiteFilterCommand):
             "https://static.3playmedia.com/p/files/{media_file_id}/threeplay_transcripts/"
             "{transcript_id}?project_id={project_id}"
         )
+        self.captions_updated = 0
+        self.transcripts_updated = 0
+        
         self.extension_map = {
             "vtt": {
                 "ext": "captions",
@@ -62,19 +65,26 @@ class Command(WebsiteFilterCommand):
         for video in content_videos:
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
             self.fetch_and_update_content(video, youtube_id)
+        
+        self.stdout.write(f'Total {self.captions_updated} captions and {self.transcripts_updated} transcripts updated!')
 
     def fetch_and_update_content(self, video, youtube_id):
         """Fetches captions/transcripts and creates new WebsiteContent object using 3play API"""
         threeplay_transcript_json = threeplay_transcript_api_request(youtube_id)
 
         if (
-            threeplay_transcript_json.get("data")
-            and len(threeplay_transcript_json.get("data")) > 0
-            and threeplay_transcript_json.get("data")[0].get("status") == "complete"
+            not threeplay_transcript_json.get("data")
+            or len(threeplay_transcript_json.get("data")) == 0
+            or threeplay_transcript_json.get("data")[0].get("status") != "complete"
         ):
-            transcript_id = threeplay_transcript_json["data"][0].get("id")
-            media_file_id = threeplay_transcript_json["data"][0].get("media_file_id")
+            self.stdout.write(f"Captions and transcripts not found in 3play for course, {video.website}")
+            return
+        
+        transcript_id = threeplay_transcript_json["data"][0].get("id")
+        media_file_id = threeplay_transcript_json["data"][0].get("media_file_id")
 
+        # If transcript does not exist
+        if not video.metadata["video_files"]["video_transcript_file"]:
             url = self.transcript_base_url.format(
                 media_file_id=media_file_id,
                 transcript_id=transcript_id,
@@ -87,8 +97,11 @@ class Command(WebsiteFilterCommand):
                 pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
                 new_filepath = self.create_new_content(pdf_file, video)
                 video.metadata["video_files"]["video_transcript_file"] = new_filepath
+                self.transcripts_updated += 1
                 self.stdout.write(f"Transcript updated for course, {video.website}")
 
+        # If captions does not exist
+        if not video.metadata["video_files"]["video_captions_file"]:
             url = self.transcript_base_url.format(
                 media_file_id=media_file_id,
                 transcript_id=transcript_id,
@@ -101,14 +114,10 @@ class Command(WebsiteFilterCommand):
                 vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
                 new_filepath = self.create_new_content(vtt_file, video)
                 video.metadata["video_files"]["video_captions_file"] = new_filepath
+                self.captions_updated += 1
                 self.stdout.write(f"Captions updated for course, {video.website}")
 
-            video.save()
-            return
-
-        self.stdout.write(
-            f"Captions and transcripts not found in 3play for course, {video.website}"
-        )
+        video.save()
 
     def generate_metadata(self, new_uid, new_s3_path, file_content, video):
         """Generate new metadata for new VTT WebsiteContent object"""
