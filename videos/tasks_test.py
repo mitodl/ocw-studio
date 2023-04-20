@@ -202,6 +202,8 @@ def test_start_transcript_job(
         destination=DESTINATION_YOUTUBE,
         destination_id=youtube_id,
     )
+    # if transcript_exists:
+    #     video_file.status=VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
 
     video = video_file.video
     video.source_key = "the/file"
@@ -244,6 +246,8 @@ def test_start_transcript_job(
     mock_order_transcript_request_request = mocker.patch(
         "videos.tasks.threeplay_api.threeplay_order_transcript_request"
     )
+    if transcript_exists:
+        video_file.status = VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
 
     start_transcript_job(video.id)
 
@@ -254,20 +258,14 @@ def test_start_transcript_job(
     assert get_dict_field(video_content.metadata, settings.YT_FIELD_TRANSCRIPT) == (
         f"{base_path}_transcript.pdf" if transcript_exists else None
     )
-
+    
     if not transcript_exists and not caption_exists:
-        if (
-            threeplay_file_id
-            and video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
-        ):
-            mock_order_transcript_request_request.assert_called_once_with(
-                video.id, threeplay_file_id
-            )
-        else:
-            mock_threeplay_upload_video_request.assert_called_once_with(
-                video.website.short_id, youtube_id, title
-            )
-            mock_order_transcript_request_request.assert_not_called()
+        mock_threeplay_upload_video_request.assert_called_once_with(
+            video.website.short_id, youtube_id, title
+        )
+        mock_order_transcript_request_request.assert_called_once_with(
+            video.id, threeplay_file_id
+        )
     else:
         mock_threeplay_upload_video_request.assert_not_called()
         mock_order_transcript_request_request.assert_not_called()
