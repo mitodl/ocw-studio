@@ -258,7 +258,7 @@ def test_start_transcript_job(
     assert get_dict_field(video_content.metadata, settings.YT_FIELD_TRANSCRIPT) == (
         f"{base_path}_transcript.pdf" if transcript_exists else None
     )
-    
+
     if not transcript_exists and not caption_exists:
         mock_threeplay_upload_video_request.assert_called_once_with(
             video.website.short_id, youtube_id, title
