@@ -202,8 +202,6 @@ def test_start_transcript_job(
         destination=DESTINATION_YOUTUBE,
         destination_id=youtube_id,
     )
-    # if transcript_exists:
-    #     video_file.status=VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
 
     video = video_file.video
     video.source_key = "the/file"
