@@ -3,6 +3,7 @@ import logging
 import os
 from datetime import timedelta
 from typing import List, Optional
+from urllib.parse import urlparse
 
 import botocore
 import celery
@@ -15,12 +16,7 @@ from requests import HTTPError
 
 from content_sync import api
 from content_sync.apis import github
-from content_sync.constants import (
-    ARCHIVE_URL_PREFIX,
-    VERSION_DRAFT,
-    VERSION_LIVE,
-    WEBSITE_LISTING_DIRPATH,
-)
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from main.celery import app
@@ -553,7 +549,10 @@ def backpopulate_archive_videos_batch(
         for video in videos:
             archive_url = video.metadata["video_files"]["archive_url"]
             if archive_url:
-                archive_path = archive_url.replace(ARCHIVE_URL_PREFIX, "")
+                archive_path = urlparse(archive_url).path
+                archive_path, filename = os.path.split(archive_path)
+                parent_folder = archive_path.split("/")[-1:][0]
+                archive_path = os.path.join(parent_folder, filename)
                 extra_args = {"ACL": "public-read"}
                 source_s3_path = os.path.join(prefix, archive_path).lstrip("/")
                 online_destination_s3_path = os.path.join(
