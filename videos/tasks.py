@@ -119,7 +119,10 @@ def start_transcript_job(video_id: int):
 
         threeplay_file_id = response.get("data").get("id")
 
-        if threeplay_file_id and video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
+        if (
+            threeplay_file_id
+            and video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
+        ):
             threeplay_api.threeplay_order_transcript_request(
                 video.id, threeplay_file_id
             )
