@@ -16,11 +16,7 @@ from requests import HTTPError
 
 from content_sync import api
 from content_sync.apis import github
-from content_sync.constants import (
-    VERSION_DRAFT,
-    VERSION_LIVE,
-    WEBSITE_LISTING_DIRPATH,
-)
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
 from main.celery import app
