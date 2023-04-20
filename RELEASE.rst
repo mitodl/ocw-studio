@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.90.0
+Version 0.90.0 (Released April 20, 2023)
 --------------
 
 - missing this one period messed up the pathing (#1750)
