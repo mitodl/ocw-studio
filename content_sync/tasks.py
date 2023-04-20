@@ -17,7 +17,6 @@ from requests import HTTPError
 from content_sync import api
 from content_sync.apis import github
 from content_sync.constants import (
-    ARCHIVE_URL_PREFIX_REGEX,
     VERSION_DRAFT,
     VERSION_LIVE,
     WEBSITE_LISTING_DIRPATH,
