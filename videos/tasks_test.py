@@ -256,16 +256,18 @@ def test_start_transcript_job(
     )
 
     if not transcript_exists and not caption_exists:
-        mock_threeplay_upload_video_request.assert_called_once_with(
-            video.website.short_id, youtube_id, title
-        )
-        mock_order_transcript_request_request.assert_called_once_with(
-            video.id, threeplay_file_id
-        )
+        if threeplay_file_id and video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
+            mock_order_transcript_request_request.assert_called_once_with(
+                video.id, threeplay_file_id
+            )
+        else:
+            mock_threeplay_upload_video_request.assert_called_once_with(
+                video.website.short_id, youtube_id, title
+            )
+            mock_order_transcript_request_request.assert_not_called()
     else:
         mock_threeplay_upload_video_request.assert_not_called()
         mock_order_transcript_request_request.assert_not_called()
-
 
 @pytest.mark.parametrize("is_enabled", [True, False])
 def test_update_youtube_statuses(  # pylint:disable=too-many-arguments
