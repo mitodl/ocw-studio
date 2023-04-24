@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.90.1
+Version 0.90.1 (Released April 24, 2023)
 --------------
 
 - support irregular values in archive_url in backpopulate_archive_videos (#1756)
