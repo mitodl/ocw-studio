@@ -286,7 +286,7 @@ def test_start_transcript_job(
         mock_order_transcript_request_request.assert_not_called()
 
 
-# pylint: disable=unused-argument
+# pylint:disable=unused-argument,redefined-outer-name
 def test_threeplay_submission_called_once_per_video(mocker, settings):
     """
     Test that the threeplay_submission function is called only once per video.
