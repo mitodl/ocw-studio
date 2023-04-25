@@ -48,6 +48,34 @@ from websites.utils import get_dict_field, set_dict_field
 pytestmark = pytest.mark.django_db
 
 
+def create_video(youtube_id, title):
+    """
+    Creates video file with the given youtube_id and title.
+    """
+    video_file = VideoFileFactory.create(
+        status=VideoStatus.CREATED,
+        destination=DESTINATION_YOUTUBE,
+        destination_id=youtube_id,
+    )
+
+    video = video_file.video
+    video.source_key = "the/file"
+    video.save()
+
+    return video
+
+
+def create_content(website, youtube_id, title):
+    """
+    Creates website content with the given website, YouTube ID, and title.
+    """
+    return WebsiteContentFactory.create(
+        website=website,
+        metadata={"video_metadata": {"youtube_id": youtube_id}},
+        title=title,
+    )
+
+
 def set_nested_dicts(obj, field_path, value):
     """Set the value of a potentially nested dict path"""
     fields = field_path.split(".")
@@ -255,34 +283,6 @@ def test_start_transcript_job(
         )
     else:
         mock_order_transcript_request_request.assert_not_called()
-
-
-def create_video(youtube_id, title):
-    """
-    Creates video file with the given youtube_id and title.
-    """
-    video_file = VideoFileFactory.create(
-        status=VideoStatus.CREATED,
-        destination=DESTINATION_YOUTUBE,
-        destination_id=youtube_id,
-    )
-
-    video = video_file.video
-    video.source_key = "the/file"
-    video.save()
-
-    return video
-
-
-def create_content(website, youtube_id, title):
-    """
-    Creates website content with the given website, YouTube ID, and title.
-    """
-    return WebsiteContentFactory.create(
-        website=website,
-        metadata={"video_metadata": {"youtube_id": youtube_id}},
-        title=title,
-    )
 
 
 # pylint: disable=unused-argument
