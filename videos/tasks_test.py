@@ -184,6 +184,8 @@ def test_upload_youtube_quota_exceeded(mocker, youtube_video_files_new, msg, sta
         assert video_file.destination_status is None
         assert video_file.destination_id is None
 
+
+# pylint: disable=unused-argument
 def test_threeplay_submission_called_once_per_video(mocker, settings):
     """
     Test that the threeplay_submission function is called only once per video.
