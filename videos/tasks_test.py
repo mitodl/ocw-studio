@@ -259,7 +259,7 @@ def test_start_transcript_job(
     mock_order_transcript_request_request = mocker.patch(
         "videos.tasks.threeplay_api.threeplay_order_transcript_request"
     )
-    
+
     start_transcript_job(video.id)
 
     video_content.refresh_from_db()
