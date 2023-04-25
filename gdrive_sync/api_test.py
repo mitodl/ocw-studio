@@ -37,8 +37,12 @@ from videos.constants import VideoJobStatus, VideoStatus
 from videos.factories import VideoFactory, VideoJobFactory
 from websites.constants import (
     CONTENT_FILENAMES_FORBIDDEN,
+    CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
+    CONTENT_TYPE_RESOURCE_LIST,
+    CONTENT_TYPE_VIDEO_GALLERY,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -868,8 +872,88 @@ def test_find_missing_files(deleted_drive_files_count):
 
 
 @pytest.mark.parametrize("with_resource", [False, True])
-@pytest.mark.parametrize("is_used_in_content", [False, True])
-def test_delete_drive_file(mocker, with_resource, is_used_in_content):
+@pytest.mark.parametrize(
+    "content_data",
+    [
+        [],
+        [
+            {
+                "type": CONTENT_TYPE_PAGE,
+                "markdown": r'{{% resource_link "7d3df94e-e8dd-40bc-97f2-18e793d5ce25" "filename" %}}',
+                "metadata": {},
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_RESOURCE_LIST,
+                "markdown": r"",
+                "metadata": {
+                    "resources": {"content": ["7d3df94e-e8dd-40bc-97f2-18e793d5ce25"]}
+                },
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_METADATA,
+                "markdown": r"",
+                "metadata": {
+                    "course_image": {"content": "7d3df94e-e8dd-40bc-97f2-18e793d5ce25"}
+                },
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_METADATA,
+                "markdown": r"",
+                "metadata": {
+                    "course_image_thumbnail": {
+                        "content": "7d3df94e-e8dd-40bc-97f2-18e793d5ce25"
+                    }
+                },
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_VIDEO_GALLERY,
+                "markdown": r"",
+                "metadata": {
+                    "videos": {"content": ["7d3df94e-e8dd-40bc-97f2-18e793d5ce25"]}
+                },
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_NAVMENU,
+                "markdown": r"",
+                "metadata": {
+                    "leftnav": [{"identifier": "7d3df94e-e8dd-40bc-97f2-18e793d5ce25"}]
+                },
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_PAGE,
+                "markdown": r'{{% resource_link "7d3df94e-e8dd-40bc-97f2-18e793d5ce25" "filename" %}}',
+                "metadata": {},
+            },
+            {
+                "type": CONTENT_TYPE_METADATA,
+                "markdown": r"",
+                "metadata": {
+                    "course_image": {"content": "7d3df94e-e8dd-40bc-97f2-18e793d5ce25"}
+                },
+            },
+            {
+                "type": CONTENT_TYPE_RESOURCE_LIST,
+                "markdown": r"",
+                "metadata": {
+                    "resources": {"content": ["7d3df94e-e8dd-40bc-97f2-18e793d5ce25"]}
+                },
+            },
+        ],
+    ],
+)
+def test_delete_drive_file(mocker, with_resource, content_data):
     """delete_drive_file should delete the file and resource only if resource is not being used"""
     mocker.patch("main.s3_utils.boto3")
     website = WebsiteFactory.create()
@@ -884,12 +968,15 @@ def test_delete_drive_file(mocker, with_resource, is_used_in_content):
         drive_file.resource = resource
         drive_file.save()
 
-        if is_used_in_content:
-            content = WebsiteContentFactory.create(
-                type=CONTENT_TYPE_PAGE,
-                markdown=f'{{{{% resource_link "{resource.text_id}" "{resource.filename}" %}}}}',
-                website=website,
-            )
+    contents = [
+        WebsiteContentFactory.create(
+            type=content["type"],
+            markdown=content["markdown"],
+            metadata=content["metadata"],
+            website=website,
+        )
+        for content in content_data
+    ]
 
     api.delete_drive_file(drive_file)
 
@@ -897,8 +984,9 @@ def test_delete_drive_file(mocker, with_resource, is_used_in_content):
     if with_resource:
         resource_exists = WebsiteContent.objects.filter(pk=resource.id).exists()
 
-    if with_resource and is_used_in_content:
-        assert WebsiteContent.objects.filter(pk=content.id).exists()
+    if with_resource and contents:
+        for content in contents:
+            assert WebsiteContent.objects.filter(pk=content.id).exists()
         assert resource_exists
         assert drive_file_exists
     elif with_resource:

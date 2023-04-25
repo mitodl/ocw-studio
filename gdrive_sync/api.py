@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from datetime import datetime
+from functools import reduce
 from pathlib import Path
 from typing import Dict, Iterable, Optional
 
@@ -38,8 +39,12 @@ from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
 from websites.api import get_valid_new_filename
 from websites.constants import (
+    CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
+    CONTENT_TYPE_RESOURCE_LIST,
+    CONTENT_TYPE_VIDEO_GALLERY,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -556,18 +561,61 @@ def update_sync_status(website: Website, sync_datetime: datetime):
     website.save()
 
 
-def _get_content_dependencies(drive_file: DriveFile) -> Iterable[WebsiteContent]:
+def _get_content_dependencies(
+    drive_file: DriveFile, types: Iterable[str] = (CONTENT_TYPE_PAGE,)
+) -> Iterable[WebsiteContent]:
     """
-    Returns WebsiteContent of type page that use `drive_file`.
+    Find and return WebsiteContent that make use of `drive_file` through
+    `drive_file.resource`.
+
+    Only supports CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE_LIST, CONTENT_TYPE_VIDEO_GALLERY,
+    CONTENT_TYPE_METADATA, and CONTENT_TYPE_NAVMENU. Returns empty for any other type.
+
+    Args:
+        drive_file (DriveFile): A DriveFile whose dependencies are to be found.
+        types (Iterable[str], optional): Types of content to search through.
+            Defaults to (CONTENT_TYPE_PAGE,).
+
+    Returns:
+        Iterable[WebsiteContent]: A list of WebsiteContent that makes use of `drive_file`
+            directly/indirectly.
     """
-    if drive_file.resource is None:
+
+    if drive_file.resource is None or not types:
         return []
 
-    dependencies = WebsiteContent.objects.filter(
-        Q(website=drive_file.website)
-        & Q(type=CONTENT_TYPE_PAGE)
-        & Q(markdown__icontains=drive_file.resource.text_id),
-    )
+    filters = []
+    resource_id = drive_file.resource.text_id
+
+    # What lookup to use for what type of content.
+    resource_lookups = {
+        CONTENT_TYPE_PAGE: ["markdown__icontains"],
+        CONTENT_TYPE_RESOURCE_LIST: ["metadata__resources__content__contains"],
+        CONTENT_TYPE_VIDEO_GALLERY: ["metadata__videos__content__contains"],
+        CONTENT_TYPE_METADATA: [
+            "metadata__course_image_thumbnail__content",
+            "metadata__course_image__content",
+        ],
+        CONTENT_TYPE_NAVMENU: ["metadata__leftnav__contains"],
+    }
+
+    resource_lookup_values = {CONTENT_TYPE_NAVMENU: [{"identifier": resource_id}]}
+
+    for content_type in types:
+        filters.extend(
+            [
+                Q(type=content_type)
+                & Q(**{lookup: resource_lookup_values.get(content_type, resource_id)})
+                for lookup in resource_lookups.get(content_type, [])
+            ]
+        )
+
+    if not filters:
+        return []
+
+    query = Q(website=drive_file.website) & reduce(lambda x, y: x | y, filters)
+    dependencies = WebsiteContent.objects.filter(query)
+
     return list(dependencies)
 
 
@@ -642,7 +690,16 @@ def delete_drive_file(drive_file: DriveFile):
     Args:
         drive_file (DriveFile): A drive file.
     """
-    dependencies = _get_content_dependencies(drive_file)
+    dependencies = _get_content_dependencies(
+        drive_file,
+        types=[
+            CONTENT_TYPE_PAGE,
+            CONTENT_TYPE_METADATA,
+            CONTENT_TYPE_RESOURCE_LIST,
+            CONTENT_TYPE_VIDEO_GALLERY,
+            CONTENT_TYPE_NAVMENU,
+        ],
+    )
 
     if dependencies:
         error_message = f"Cannot delete file {drive_file} because it is being used by {dependencies}."
