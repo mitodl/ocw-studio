@@ -185,67 +185,6 @@ def test_upload_youtube_quota_exceeded(mocker, youtube_video_files_new, msg, sta
         assert video_file.destination_id is None
 
 
-def create_video(youtube_id, title):
-    """
-    Creates video file with the given youtube_id and title.
-    """
-    video_file = VideoFileFactory.create(
-        status=VideoStatus.CREATED,
-        destination=DESTINATION_YOUTUBE,
-        destination_id=youtube_id,
-    )
-
-    video = video_file.video
-    video.source_key = "the/file"
-    video.save()
-
-    return video
-
-
-def create_content(website, youtube_id, title):
-    """
-    Creates website content with the given website, YouTube ID, and title.
-    """
-    return WebsiteContentFactory.create(
-        website=website,
-        metadata={"video_metadata": {"youtube_id": youtube_id}},
-        title=title,
-    )
-
-
-# pylint: disable=unused-argument
-def test_threeplay_submission_called_once_per_video(mocker, settings):
-    """
-    Test that the threeplay_submission function is called only once per video.
-    """
-    youtube_id = "test"
-    threeplay_file_id = 1
-    settings.YT_FIELD_ID = "video_metadata.youtube_id"
-    title = "title"
-
-    video = create_video(youtube_id, title)
-    video_content = create_content(video.website, youtube_id, title)
-
-    mock_threeplay_upload_video_request = mocker.patch(
-        "videos.tasks.threeplay_api.threeplay_upload_video_request",
-        return_value={"data": {"id": 1}},
-    )
-
-    mock_order_transcript_request_request = mocker.patch(
-        "videos.tasks.threeplay_api.threeplay_order_transcript_request"
-    )
-
-    start_transcript_job(video.id)
-    start_transcript_job(video.id)
-
-    if video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
-        mock_order_transcript_request_request.assert_called_once_with(
-            video.id, threeplay_file_id
-        )
-    else:
-        mock_order_transcript_request_request.assert_not_called()
-
-
 @pytest.mark.parametrize("wrong_caption_type", [True, False])
 @pytest.mark.parametrize("caption_exists", [True, False])
 @pytest.mark.parametrize("transcript_exists", [True, False])
@@ -310,6 +249,67 @@ def test_start_transcript_job(
     mock_threeplay_upload_video_request.assert_called_once_with(
         video.website.short_id, youtube_id, title
     )
+    if video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
+        mock_order_transcript_request_request.assert_called_once_with(
+            video.id, threeplay_file_id
+        )
+    else:
+        mock_order_transcript_request_request.assert_not_called()
+
+
+def create_video(youtube_id, title):
+    """
+    Creates video file with the given youtube_id and title.
+    """
+    video_file = VideoFileFactory.create(
+        status=VideoStatus.CREATED,
+        destination=DESTINATION_YOUTUBE,
+        destination_id=youtube_id,
+    )
+
+    video = video_file.video
+    video.source_key = "the/file"
+    video.save()
+
+    return video
+
+
+def create_content(website, youtube_id, title):
+    """
+    Creates website content with the given website, YouTube ID, and title.
+    """
+    return WebsiteContentFactory.create(
+        website=website,
+        metadata={"video_metadata": {"youtube_id": youtube_id}},
+        title=title,
+    )
+
+
+# pylint: disable=unused-argument
+def test_threeplay_submission_called_once_per_video(mocker, settings):
+    """
+    Test that the threeplay_submission function is called only once per video.
+    """
+    youtube_id = "test"
+    threeplay_file_id = 1
+    settings.YT_FIELD_ID = "video_metadata.youtube_id"
+    title = "title"
+
+    video = create_video(youtube_id, title)
+    video_content = create_content(video.website, youtube_id, title)
+
+    mock_threeplay_upload_video_request = mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_upload_video_request",
+        return_value={"data": {"id": 1}},
+    )
+
+    mock_order_transcript_request_request = mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_order_transcript_request"
+    )
+
+    start_transcript_job(video.id)
+    start_transcript_job(video.id)
+
     if video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
         mock_order_transcript_request_request.assert_called_once_with(
             video.id, threeplay_file_id
