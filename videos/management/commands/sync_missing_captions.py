@@ -81,7 +81,7 @@ class Command(WebsiteFilterCommand):
             or threeplay_transcript_json.get("data")[0].get("status") != "complete"
         ):
             self.stdout.write(
-                f"Captions and transcripts not found in 3play for course, {video.website}"
+                f"Captions and transcripts not found in 3play for video, {video.title} and course {video.website.short_id}"
             )
             return
 
@@ -103,7 +103,9 @@ class Command(WebsiteFilterCommand):
                 new_filepath = self.create_new_content(pdf_file, video)
                 video.metadata["video_files"]["video_transcript_file"] = new_filepath
                 self.transcripts_updated += 1
-                self.stdout.write(f"Transcript updated for course, {video.website}")
+                self.stdout.write(
+                    f"Transcript updated for video, {video.title} and course {video.website.short_id}"
+                )
 
         # If captions does not exist
         if not video.metadata["video_files"]["video_captions_file"]:
@@ -120,7 +122,9 @@ class Command(WebsiteFilterCommand):
                 new_filepath = self.create_new_content(vtt_file, video)
                 video.metadata["video_files"]["video_captions_file"] = new_filepath
                 self.captions_updated += 1
-                self.stdout.write(f"Captions updated for course, {video.website}")
+                self.stdout.write(
+                    f"Captions updated for video, {video.title} and course {video.website.short_id}"
+                )
 
         video.save()
 
