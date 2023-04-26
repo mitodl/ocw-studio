@@ -67,7 +67,7 @@ def create_video(youtube_id, title):
 
 def create_content(website, youtube_id, title):
     """
-    Creates website content with the given website, YouTube ID, and title.
+    Creates website content with the given website, youtube_id, and title.
     """
     return WebsiteContentFactory.create(
         website=website,
