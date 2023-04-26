@@ -257,4 +257,6 @@ def test_delete_drive_file(mocker):
     drive_file = DriveFileFactory.create()
     mock_delete_drive_file = mocker.patch("gdrive_sync.api.delete_drive_file")
     delete_drive_file.delay(drive_file.file_id, drive_file.website.synced_on)
-    mock_delete_drive_file.assert_called_once_with(drive_file, sync_datetime=drive_file.website.synced_on)
+    mock_delete_drive_file.assert_called_once_with(
+        drive_file, sync_datetime=drive_file.website.synced_on
+    )
