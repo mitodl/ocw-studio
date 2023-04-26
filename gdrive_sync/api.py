@@ -39,11 +39,15 @@ from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
 from websites.api import get_valid_new_filename
 from websites.constants import (
+    CONTENT_TYPE_COURSE_COLLECTION,
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
+    CONTENT_TYPE_PROMOS,
     CONTENT_TYPE_RESOURCE,
+    CONTENT_TYPE_RESOURCE_COLLECTION,
     CONTENT_TYPE_RESOURCE_LIST,
+    CONTENT_TYPE_STORIES,
     CONTENT_TYPE_VIDEO_GALLERY,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
@@ -569,12 +573,14 @@ def _get_content_dependencies(
     `drive_file.resource`.
 
     Only supports CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE_LIST, CONTENT_TYPE_VIDEO_GALLERY,
-    CONTENT_TYPE_METADATA, and CONTENT_TYPE_NAVMENU. Returns empty for any other type.
+    CONTENT_TYPE_METADATA, CONTENT_TYPE_NAVMENU, CONTENT_TYPE_STORIES, CONTENT_TYPE_PROMOS,
+    CONTENT_TYPE_COURSE_COLLECTION, and CONTENT_TYPE_RESOURCE_COLLECTION.
+    Returns empty for any other type.
 
     Args:
         drive_file (DriveFile): A DriveFile whose dependencies are to be found.
         types (Iterable[str], optional): Types of content to search through.
-            Defaults to (CONTENT_TYPE_PAGE,).
+            Defaults to (CONTENT_TYPE_PAGE,) for legacy reasons.
 
     Returns:
         Iterable[WebsiteContent]: A list of WebsiteContent that makes use of `drive_file`
@@ -585,10 +591,12 @@ def _get_content_dependencies(
         return []
 
     filters = []
+
     resource_id = drive_file.resource.text_id
 
     # What lookup to use for what type of content.
     resource_lookups = {
+        # course
         CONTENT_TYPE_PAGE: ["markdown__icontains"],
         CONTENT_TYPE_RESOURCE_LIST: ["metadata__resources__content__contains"],
         CONTENT_TYPE_VIDEO_GALLERY: ["metadata__videos__content__contains"],
@@ -597,9 +605,17 @@ def _get_content_dependencies(
             "metadata__course_image__content",
         ],
         CONTENT_TYPE_NAVMENU: ["metadata__leftnav__contains"],
+        # www
+        CONTENT_TYPE_STORIES: ["metadata__image__content"],
+        CONTENT_TYPE_PROMOS: ["metadata__image__content"],
+        CONTENT_TYPE_COURSE_COLLECTION: ["metadata__contains"],
     }
 
-    resource_lookup_values = {CONTENT_TYPE_NAVMENU: [{"identifier": resource_id}]}
+    # values for the lookups when resource_id alone is not enough
+    resource_lookup_values = {
+        CONTENT_TYPE_NAVMENU: [{"identifier": resource_id}],
+        CONTENT_TYPE_COURSE_COLLECTION: {"cover-image": {"content": resource_id}},
+    }
 
     for content_type in types:
         filters.extend(
@@ -610,10 +626,35 @@ def _get_content_dependencies(
             ]
         )
 
-    if not filters:
+    query = None
+
+    if filters:
+        query = Q(website=drive_file.website) & reduce(lambda x, y: x | y, filters)
+
+    # filters for resource references outside of the same website
+    cross_site_filters = []
+
+    if CONTENT_TYPE_RESOURCE_COLLECTION in types:
+        cross_site_filters.append(
+            Q(type=CONTENT_TYPE_RESOURCE_COLLECTION)
+            & Q(
+                metadata__resources__content__contains=[
+                    [resource_id, drive_file.website.url_path]
+                ]
+            )
+        )
+
+    if cross_site_filters:
+        cross_site_query = reduce(lambda x, y: x | y, cross_site_filters)
+
+        if query:
+            query |= cross_site_query
+        else:
+            query = cross_site_query
+
+    if not query:
         return []
 
-    query = Q(website=drive_file.website) & reduce(lambda x, y: x | y, filters)
     dependencies = WebsiteContent.objects.filter(query)
 
     return list(dependencies)
@@ -698,6 +739,10 @@ def delete_drive_file(drive_file: DriveFile):
             CONTENT_TYPE_RESOURCE_LIST,
             CONTENT_TYPE_VIDEO_GALLERY,
             CONTENT_TYPE_NAVMENU,
+            CONTENT_TYPE_RESOURCE_COLLECTION,
+            CONTENT_TYPE_STORIES,
+            CONTENT_TYPE_PROMOS,
+            CONTENT_TYPE_COURSE_COLLECTION,
         ],
     )
 

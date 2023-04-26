@@ -1,5 +1,18 @@
 """Common functions and variables for gdrive_sync tests"""
 
+from websites.constants import (
+    CONTENT_TYPE_COURSE_COLLECTION,
+    CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_NAVMENU,
+    CONTENT_TYPE_PAGE,
+    CONTENT_TYPE_PROMOS,
+    CONTENT_TYPE_RESOURCE_COLLECTION,
+    CONTENT_TYPE_RESOURCE_LIST,
+    CONTENT_TYPE_STORIES,
+    CONTENT_TYPE_VIDEO_GALLERY,
+)
+
+
 LIST_VIDEO_RESPONSES = [
     {
         "nextPageToken": "~!!~AI9FV7Tc4k5BiAr1Ckwyu",
@@ -84,3 +97,125 @@ LIST_FILE_RESPONSES = [
         ]
     },
 ]
+
+
+__RESOURCE_ID = "7d3df94e-e8dd-40bc-97f2-18e793d5ce26"
+__WEBSITE_URL = "courses/test-site"
+RESOURCE_REFERENCES_TEST_DATA = {
+    "resource_id": __RESOURCE_ID,
+    "website_url": __WEBSITE_URL,
+    "contents": [
+        [],
+        [
+            {
+                "type": CONTENT_TYPE_PAGE,
+                "markdown": f'{{{{% resource_link "{__RESOURCE_ID}" "filename" %}}}}',
+                "metadata": {},
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_RESOURCE_LIST,
+                "markdown": r"",
+                "metadata": {"resources": {"content": [__RESOURCE_ID]}},
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_METADATA,
+                "markdown": r"",
+                "metadata": {"course_image": {"content": __RESOURCE_ID}},
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_METADATA,
+                "markdown": r"",
+                "metadata": {"course_image_thumbnail": {"content": __RESOURCE_ID}},
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_VIDEO_GALLERY,
+                "markdown": r"",
+                "metadata": {"videos": {"content": [__RESOURCE_ID]}},
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_RESOURCE_COLLECTION,
+                "markdown": r"",
+                "metadata": {
+                    "resources": {
+                        "content": [
+                            [
+                                __RESOURCE_ID,
+                                __WEBSITE_URL,
+                            ]
+                        ]
+                    }
+                },
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_COURSE_COLLECTION,
+                "markdown": r"",
+                "metadata": {
+                    "cover-image": {
+                        "content": __RESOURCE_ID,
+                        "website": "ocw-www",
+                    }
+                },
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_STORIES,
+                "markdown": r"",
+                "metadata": {
+                    "image": {
+                        "content": __RESOURCE_ID,
+                        "website": "ocw-www",
+                    }
+                },
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_PROMOS,
+                "markdown": r"",
+                "metadata": {
+                    "image": {
+                        "content": __RESOURCE_ID,
+                        "website": "ocw-www",
+                    }
+                },
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_NAVMENU,
+                "markdown": r"",
+                "metadata": {"leftnav": [{"identifier": __RESOURCE_ID}]},
+            }
+        ],
+        [
+            {
+                "type": CONTENT_TYPE_PAGE,
+                "markdown": f'{{{{% resource_link "{__RESOURCE_ID}" "filename" %}}}}',
+                "metadata": {},
+            },
+            {
+                "type": CONTENT_TYPE_METADATA,
+                "markdown": r"",
+                "metadata": {"course_image": {"content": __RESOURCE_ID}},
+            },
+            {
+                "type": CONTENT_TYPE_RESOURCE_LIST,
+                "markdown": r"",
+                "metadata": {"resources": {"content": [__RESOURCE_ID]}},
+            },
+        ],
+    ],
+}

@@ -21,7 +21,7 @@ from gdrive_sync.api import (
     update_sync_status,
     walk_gdrive_folder,
 )
-from gdrive_sync.conftest import LIST_VIDEO_RESPONSES
+from gdrive_sync.conftest import LIST_VIDEO_RESPONSES, RESOURCE_REFERENCES_TEST_DATA
 from gdrive_sync.constants import (
     DRIVE_FILE_FIELDS,
     DRIVE_FOLDER_FILES_FINAL,
@@ -37,12 +37,7 @@ from videos.constants import VideoJobStatus, VideoStatus
 from videos.factories import VideoFactory, VideoJobFactory
 from websites.constants import (
     CONTENT_FILENAMES_FORBIDDEN,
-    CONTENT_TYPE_METADATA,
-    CONTENT_TYPE_NAVMENU,
-    CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
-    CONTENT_TYPE_RESOURCE_LIST,
-    CONTENT_TYPE_VIDEO_GALLERY,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -871,97 +866,21 @@ def test_find_missing_files(deleted_drive_files_count):
     assert all([file_id in deleted_file_ids for file_id in missing_files_result_ids])
 
 
+@pytest.mark.parametrize("resource_id", [RESOURCE_REFERENCES_TEST_DATA["resource_id"]])
+@pytest.mark.parametrize("website_url", [RESOURCE_REFERENCES_TEST_DATA["website_url"]])
 @pytest.mark.parametrize("with_resource", [False, True])
-@pytest.mark.parametrize(
-    "content_data",
-    [
-        [],
-        [
-            {
-                "type": CONTENT_TYPE_PAGE,
-                "markdown": r'{{% resource_link "7d3df94e-e8dd-40bc-97f2-18e793d5ce25" "filename" %}}',
-                "metadata": {},
-            }
-        ],
-        [
-            {
-                "type": CONTENT_TYPE_RESOURCE_LIST,
-                "markdown": r"",
-                "metadata": {
-                    "resources": {"content": ["7d3df94e-e8dd-40bc-97f2-18e793d5ce25"]}
-                },
-            }
-        ],
-        [
-            {
-                "type": CONTENT_TYPE_METADATA,
-                "markdown": r"",
-                "metadata": {
-                    "course_image": {"content": "7d3df94e-e8dd-40bc-97f2-18e793d5ce25"}
-                },
-            }
-        ],
-        [
-            {
-                "type": CONTENT_TYPE_METADATA,
-                "markdown": r"",
-                "metadata": {
-                    "course_image_thumbnail": {
-                        "content": "7d3df94e-e8dd-40bc-97f2-18e793d5ce25"
-                    }
-                },
-            }
-        ],
-        [
-            {
-                "type": CONTENT_TYPE_VIDEO_GALLERY,
-                "markdown": r"",
-                "metadata": {
-                    "videos": {"content": ["7d3df94e-e8dd-40bc-97f2-18e793d5ce25"]}
-                },
-            }
-        ],
-        [
-            {
-                "type": CONTENT_TYPE_NAVMENU,
-                "markdown": r"",
-                "metadata": {
-                    "leftnav": [{"identifier": "7d3df94e-e8dd-40bc-97f2-18e793d5ce25"}]
-                },
-            }
-        ],
-        [
-            {
-                "type": CONTENT_TYPE_PAGE,
-                "markdown": r'{{% resource_link "7d3df94e-e8dd-40bc-97f2-18e793d5ce25" "filename" %}}',
-                "metadata": {},
-            },
-            {
-                "type": CONTENT_TYPE_METADATA,
-                "markdown": r"",
-                "metadata": {
-                    "course_image": {"content": "7d3df94e-e8dd-40bc-97f2-18e793d5ce25"}
-                },
-            },
-            {
-                "type": CONTENT_TYPE_RESOURCE_LIST,
-                "markdown": r"",
-                "metadata": {
-                    "resources": {"content": ["7d3df94e-e8dd-40bc-97f2-18e793d5ce25"]}
-                },
-            },
-        ],
-    ],
-)
-def test_delete_drive_file(mocker, with_resource, content_data):
+@pytest.mark.parametrize("content_data", RESOURCE_REFERENCES_TEST_DATA["contents"])
+def test_delete_drive_file(
+    mocker, resource_id, website_url, with_resource, content_data
+):
     """delete_drive_file should delete the file and resource only if resource is not being used"""
     mocker.patch("main.s3_utils.boto3")
-    website = WebsiteFactory.create()
+    website = WebsiteFactory.create(url_path=website_url)
     drive_file = DriveFileFactory.create(website=website)
 
     if with_resource:
         resource = WebsiteContentFactory.create(
-            text_id="7d3df94e-e8dd-40bc-97f2-18e793d5ce25",
+            text_id=resource_id,
             type=CONTENT_TYPE_RESOURCE,
             website=website,
         )
