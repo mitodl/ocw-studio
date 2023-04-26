@@ -1273,3 +1273,95 @@ jobs:
                 alert_type: aborted
                 text: "User Aborted during upload-offline-build : ((pipeline_name))/((site-name))"
             # END NON-DEV
+      # START NON-DEV
+      - task: clear-cdn-cache
+        timeout: 5m
+        attempts: 3
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: curlimages/curl}
+          run:
+            path: curl
+            args:
+              - -f
+              - -X
+              - POST
+              - -H
+              - 'Fastly-Key: ((fastly.api_token))'((purge_header))
+              - https://api.fastly.com/service/((fastly.service_id))/((purge-url))
+        on_success:
+          try:
+            do:
+              - put: open-discussions-webhook
+                timeout: 1m
+                attempts: 3
+                params:
+                  text: |
+                    {
+                      "webhook_key": "((open-webhook-key))",
+                      "prefix": "((site-url))/",
+                      "version": "((pipeline_name))"
+                    }
+              - put: ocw-studio-webhook
+                timeout: 1m
+                attempts: 3
+                params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "succeeded"
+                    }
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on clear-cdn-cache : ((pipeline_name))/((site-name))"
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error during clear-cdn-cache : ((pipeline_name))/((site-name))"
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted during clear-cdn-cache : ((pipeline_name))/((site-name))"
+      # END NON-DEV
