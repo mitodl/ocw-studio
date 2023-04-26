@@ -289,7 +289,7 @@ def test_start_transcript_job(
 # pylint:disable=unused-variable
 def test_threeplay_submission_called_once_per_video(mocker, settings):
     """
-    Test that the threeplay_submission function is called only once per video.
+    Test that the threeplay_order_transcript_request function is called only once per video.
     """
     youtube_id = "test"
     threeplay_file_id = 1
