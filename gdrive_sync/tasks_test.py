@@ -212,7 +212,7 @@ def test_import_website_files_delete_missing(mocker, mocked_celery):
         import_website_files.delay(website.name)
     assert mock_delete_drive_file.call_count == 2
     for drive_file in drive_files:
-        mock_delete_drive_file.assert_any_call(drive_file.file_id)
+        mock_delete_drive_file.assert_any_call(drive_file.file_id, mocker.ANY)
 
 
 def test_update_website_status(mocker):
@@ -257,4 +257,4 @@ def test_delete_drive_file(mocker):
     drive_file = DriveFileFactory.create()
     mock_delete_drive_file = mocker.patch("gdrive_sync.api.delete_drive_file")
     delete_drive_file.delay(drive_file.file_id, drive_file.website.synced_on)
-    mock_delete_drive_file.assert_called_once_with(drive_file)
+    mock_delete_drive_file.assert_called_once_with(drive_file, sync_datetime=drive_file.website.synced_on)
