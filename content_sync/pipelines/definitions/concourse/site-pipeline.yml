@@ -101,6 +101,60 @@ jobs:
               }
       - get: site-hash
         trigger: false
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on get site-hash : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting site-hash : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting site-hash : ((pipeline_name))/((site-name))"
+            # END NON-DEV
       - get: webpack-json
         trigger: false
         on_failure:
@@ -557,6 +611,63 @@ jobs:
             - |
               echo $RANDOM | md5sum | head -c 20 > ./hash.txt
               aws s3((cli-endpoint-url)) cp ./hash.txt s3://((artifacts-bucket))/ocw-site-hashes/((short-id))/hash.txt --metadata site-id=((site-name))
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on upload-site-hash : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error during upload-site-hash : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted during upload-site-hash : ((pipeline_name))/((site-name))"
+            # END NON-DEV
       # START NON-DEV
       - task: clear-cdn-cache
         timeout: 5m
@@ -655,6 +766,60 @@ jobs:
       - get: site-hash
         passed: [build-online-ocw-site]
         trigger: true
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on get site-hash : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting site-hash : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting site-hash : ((pipeline_name))/((site-name))"
+            # END NON-DEV
       - get: webpack-json
         passed: [build-online-ocw-site]
         trigger: false
