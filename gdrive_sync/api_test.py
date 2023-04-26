@@ -891,7 +891,7 @@ def test_delete_drive_file(mocker, with_resource, is_used_in_content):
                 website=website,
             )
 
-    api.delete_drive_file(drive_file)
+    api.delete_drive_file(drive_file, sync_datetime=website.synced_on)
 
     drive_file_exists = DriveFile.objects.filter(file_id=drive_file.file_id).exists()
     if with_resource:

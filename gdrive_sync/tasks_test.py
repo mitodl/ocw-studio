@@ -256,5 +256,5 @@ def test_delete_drive_file(mocker):
     """Task delete_drive_file should delegate the delete action to api.delete_drive_file."""
     drive_file = DriveFileFactory.create()
     mock_delete_drive_file = mocker.patch("gdrive_sync.api.delete_drive_file")
-    delete_drive_file.delay(drive_file.file_id)
+    delete_drive_file.delay(drive_file.file_id, drive_file.website.synced_on)
     mock_delete_drive_file.assert_called_once_with(drive_file)
