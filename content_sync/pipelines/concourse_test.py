@@ -444,7 +444,7 @@ def test_upsert_website_pipelines_invalid_starter(mocker, mock_auth, source, pat
 @pytest.mark.parametrize("version", ["live", "draft"])
 def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
     """The correct requests should be made to trigger a pipeline build"""
-    job_name = "build-ocw-site"
+    job_name = "build-online-ocw-site"
     mock_get = mocker.patch(
         "content_sync.pipelines.concourse.PipelineApi.get",
         return_value={"config": {"jobs": [{"name": job_name}]}},
