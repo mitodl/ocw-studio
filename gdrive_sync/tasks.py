@@ -108,7 +108,8 @@ def import_website_files(self, name: str):
         sum(gdrive_subfolder_files.values(), []), website
     )
     delete_file_tasks = [
-        delete_drive_file.si(drive_file.file_id, website.synced_on) for drive_file in deleted_drive_files
+        delete_drive_file.si(drive_file.file_id, website.synced_on)
+        for drive_file in deleted_drive_files
     ]
 
     file_tasks = []

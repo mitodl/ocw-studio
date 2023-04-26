@@ -189,7 +189,7 @@ def _get_or_create_drive_file(
             )
             existing_file_same_path.resource = None
             existing_file_same_path.save()
-            delete_drive_file(existing_file_same_path)
+            delete_drive_file(existing_file_same_path, sync_date)
 
         drive_file = DriveFile.objects.create(**file_data)
     return drive_file
