@@ -25,8 +25,18 @@ class Command(WebsiteFilterCommand):
             "https://static.3playmedia.com/p/files/{media_file_id}/threeplay_transcripts/"
             "{transcript_id}?project_id={project_id}"
         )
-        self.captions_updated = 0
-        self.transcripts_updated = 0
+
+        self.missing_results = 0
+        summary_boilerplate = {
+            "total": 0,
+            "missing": 0,
+            "updated": 0,
+            "missing_details": [],
+        }
+        self.summary = {
+            "captions": summary_boilerplate.copy(),
+            "transcripts": summary_boilerplate.copy(),
+        }
 
         self.extension_map = {
             "vtt": {
@@ -67,8 +77,17 @@ class Command(WebsiteFilterCommand):
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
             self.fetch_and_update_content(video, youtube_id)
 
+        for item_type, details in self.summary.items():
+            self.stdout.write(
+                f"Updated {details['updated']}/{details['total']} {item_type}, missing ({details['missing']}) details are listed below,"
+            )
+            for youtube_id, course in details["missing_details"]:
+                self.stdout.write(f"{youtube_id} of course {course}")
+
         self.stdout.write(
-            f"Total {self.captions_updated} captions and {self.transcripts_updated} transcripts updated!"
+            f"\nCaptions: {self.summary['captions']['updated']} updated, {self.summary['captions']['missing']} missing, {self.summary['captions']['total']} total\n"
+            f"Transcripts: {self.summary['transcripts']['updated']} updated, {self.summary['transcripts']['missing']} missing, {self.summary['transcripts']['total']} total\n"
+            f"Found captions or transcripts for {len(content_videos) - self.missing_results}/{len(content_videos)} videos"
         )
 
     def fetch_and_update_content(self, video, youtube_id):
@@ -80,6 +99,7 @@ class Command(WebsiteFilterCommand):
             or len(threeplay_transcript_json.get("data")) == 0
             or threeplay_transcript_json.get("data")[0].get("status") != "complete"
         ):
+            self.missing_results += 1
             self.stdout.write(
                 f"Captions and transcripts not found in 3play for video, {video.title} and course {video.website.short_id}"
             )
@@ -97,14 +117,20 @@ class Command(WebsiteFilterCommand):
             )
             pdf_url = url + f"&format_id={PDF_FORMAT_ID}"
             pdf_response = fetch_file(pdf_url)
+            self.summary["transcripts"]["total"] += 1
 
             if pdf_response:
                 pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
                 new_filepath = self.create_new_content(pdf_file, video)
                 video.metadata["video_files"]["video_transcript_file"] = new_filepath
-                self.transcripts_updated += 1
+                self.summary["transcripts"]["updated"] += 1
                 self.stdout.write(
                     f"Transcript updated for video, {video.title} and course {video.website.short_id}"
+                )
+            else:
+                self.summary["transcripts"]["missing"] += 1
+                self.summary["transcripts"]["missing_details"].append(
+                    (youtube_id, video.website.short_id)
                 )
 
         # If captions does not exist
@@ -116,14 +142,20 @@ class Command(WebsiteFilterCommand):
             )
             webvtt_url = url + f"&format_id={WEBVTT_FORMAT_ID}"
             webvtt_response = fetch_file(webvtt_url)
+            self.summary["captions"]["total"] += 1
 
             if webvtt_response:
                 vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
                 new_filepath = self.create_new_content(vtt_file, video)
                 video.metadata["video_files"]["video_captions_file"] = new_filepath
-                self.captions_updated += 1
+                self.summary["captions"]["updated"] += 1
                 self.stdout.write(
                     f"Captions updated for video, {video.title} and course {video.website.short_id}"
+                )
+            else:
+                self.summary["captions"]["missing"] += 1
+                self.summary["captions"]["missing_details"].append(
+                    (youtube_id, video.website.short_id)
                 )
 
         video.save()
