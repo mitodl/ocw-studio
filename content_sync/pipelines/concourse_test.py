@@ -368,7 +368,7 @@ def test_upsert_website_pipelines(
             in config_str
         )
         assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-offline/ s3://{offline_bucket}/{website.url_path} --metadata site-id={website.name}((delete))"
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-offline/ s3://{offline_bucket}/{website.url_path} --metadata site-id={website.name}"
             in config_str
         )
         assert (
