@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.91.0
+Version 0.91.0 (Released April 27, 2023)
 --------------
 
 - fix: delete file error messages are not shown on the frontend (#1762)
