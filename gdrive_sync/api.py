@@ -189,7 +189,7 @@ def _get_or_create_drive_file(
             )
             existing_file_same_path.resource = None
             existing_file_same_path.save()
-            delete_drive_file(existing_file_same_path)
+            delete_drive_file(existing_file_same_path, sync_date)
 
         drive_file = DriveFile.objects.create(**file_data)
     return drive_file
@@ -635,7 +635,7 @@ def find_missing_files(
     return [file for file in drive_files if file.file_id not in gdrive_file_ids]
 
 
-def delete_drive_file(drive_file: DriveFile):
+def delete_drive_file(drive_file: DriveFile, sync_datetime: datetime):
     """
     Deletes `drive_file` only if it is not being used in a page type content.
 
@@ -646,8 +646,9 @@ def delete_drive_file(drive_file: DriveFile):
 
     if dependencies:
         error_message = f"Cannot delete file {drive_file} because it is being used by {dependencies}."
-        log.error(error_message)
+        log.info(error_message)
         drive_file.sync_error = error_message
+        drive_file.sync_dt = sync_datetime
         drive_file.save()
         return
 

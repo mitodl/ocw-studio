@@ -44,14 +44,14 @@ def process_drive_file(drive_file_id: str):
 
 
 @app.task()
-def delete_drive_file(drive_file_id: str):
+def delete_drive_file(drive_file_id: str, sync_datetime: datetime):
     """
     Delete the DriveFile if it is not being used in website page content.
     See api.delete_drive_file for details.
     """
     drive_file = DriveFile.objects.filter(file_id=drive_file_id).first()
     if drive_file:
-        api.delete_drive_file(drive_file)
+        api.delete_drive_file(drive_file, sync_datetime=sync_datetime)
 
 
 def _get_gdrive_files(website: Website) -> Tuple[Dict[str, List[Dict]], List[str]]:
@@ -108,7 +108,8 @@ def import_website_files(self, name: str):
         sum(gdrive_subfolder_files.values(), []), website
     )
     delete_file_tasks = [
-        delete_drive_file.si(drive_file.file_id) for drive_file in deleted_drive_files
+        delete_drive_file.si(drive_file.file_id, website.synced_on)
+        for drive_file in deleted_drive_files
     ]
 
     file_tasks = []
