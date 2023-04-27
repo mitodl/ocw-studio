@@ -111,14 +111,18 @@ def start_transcript_job(video_id: int):
             )
         video_resource.save()
 
-    else:  # if none, request a transcript through the 3Play API
+    # if none and video is not already submitted, request a transcript through the 3Play API
+    else:
         response = threeplay_api.threeplay_upload_video_request(
             folder_name, youtube_id, video_resource.title
         )
 
         threeplay_file_id = response.get("data").get("id")
 
-        if threeplay_file_id:
+        if (
+            threeplay_file_id
+            and video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
+        ):
             threeplay_api.threeplay_order_transcript_request(
                 video.id, threeplay_file_id
             )
@@ -164,7 +168,8 @@ def update_youtube_statuses(self):
                         YT_THUMBNAIL_IMG.format(video_id=video_file.destination_id),
                     )
                     resource.save()
-                    group_tasks.append(start_transcript_job.s(video_file.video.id))
+                    if video_file.status == VideoFileStatus.COMPLETE:
+                        group_tasks.append(start_transcript_job.s(video_file.video.id))
             mail_youtube_upload_success(video_file)
 
         except IndexError:
