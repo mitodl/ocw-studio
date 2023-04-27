@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.90.2
+--------------
+
+- fix: duplicate 3play submissions (#1736)
+- Sync missing captions and transcripts (#1717)
+- add s3 folder to dockerignore (#1761)
+
 Version 0.90.1 (Released April 24, 2023)
 --------------
 
