@@ -502,7 +502,7 @@ jobs:
             - |
               if [ -f "ocw-hugo-projects/((config-slug))/config-offline.yaml" ];
               then
-                aws s3((cli-endpoint-url)) sync course-markdown/output-offline/ s3://((offline-bucket))/((base-url)) --metadata site-id=((site-name))
+                aws s3((cli-endpoint-url)) sync course-markdown/output-offline/ s3://((offline-bucket))/((base-url)) --metadata site-id=((site-name))((delete))
                 aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((web-bucket))/((base-url)) --exclude='*' --include='((short-id)).zip' --metadata site-id=((site-name))
               else
                 echo "Offline configuration not found for site type ((config-slug))"
