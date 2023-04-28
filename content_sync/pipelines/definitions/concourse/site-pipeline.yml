@@ -337,6 +337,30 @@ jobs:
             args:
             - -exc
             - aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) ./static-resources
+      - task: filter-webpack-artifacts
+        timeout: 10m
+        attempts: 3
+        params:
+        # START DEV-ONLY
+          RESOURCE_BASE_URL: ((resource-base-url))
+          AWS_ACCESS_KEY_ID: ((minio-root-user))
+          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+        # END DEV-ONLY
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: mitodl/ocw-course-publisher, tag: 0.4}
+          inputs:
+            - name: webpack-json
+          outputs:
+            - name: build-artifacts
+          run:
+            path: sh
+            args:
+            - -exc
+            - |
+              jq 'recurse | select(type=="string")' ./webpack-json/webpack.json | tr -d '"' | xargs -I {} aws s3((cli-endpoint-url)) cp s3://((web-bucket)){} ./build-artifacts/{} --exclude *.js.map
       - task: build-course-offline
         timeout: 20m
         attempts: 3
@@ -365,6 +389,7 @@ jobs:
             - name: course-markdown
             - name: static-resources
             - name: webpack-json
+            - name: build-artifacts
           outputs:
             - name: course-markdown
             - name: ocw-hugo-themes
@@ -389,7 +414,7 @@ jobs:
                   mv ./content/static_resources/*.html ./static/static_resources
                 fi
                 touch ./content/static_resources/_index.md
-                aws s3((cli-endpoint-url)) sync s3://((web-bucket))/static_shared ./static/static_shared --exclude *.js.map
+                mv ../build-artifacts/static_shared ./static/
                 hugo ((hugo-args-offline))
                 cd output-offline
                 zip ../../build-course-offline/((short-id)).zip -r ./
@@ -475,7 +500,7 @@ jobs:
             - |
               if [ -f "ocw-hugo-projects/((config-slug))/config-offline.yaml" ];
               then
-                aws s3((cli-endpoint-url)) sync course-markdown/output-offline/ s3://((offline-bucket))/((base-url)) --metadata site-id=((site-name))
+                aws s3((cli-endpoint-url)) sync course-markdown/output-offline/ s3://((offline-bucket))/((base-url)) --metadata site-id=((site-name))((delete))
                 aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((web-bucket))/((base-url)) --exclude='*' --include='((short-id)).zip' --metadata site-id=((site-name))
               else
                 echo "Offline configuration not found for site type ((config-slug))"

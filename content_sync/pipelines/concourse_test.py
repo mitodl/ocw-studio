@@ -362,16 +362,13 @@ def test_upsert_website_pipelines(
         )
     else:
         assert "cp -r -n ../static-resources/. ./output-online/" in config_str
-        assert (
-            f"aws s3 {expected_endpoint_prefix}sync s3://{bucket}/static_shared ./static/static_shared --exclude *.js.map"
-            in config_str
-        )
+        assert "mv ../build-artifacts/static_shared ./static/" in config_str
         assert (
             f"aws s3 {expected_endpoint_prefix}sync build-course-offline/ s3://{bucket}/{website.url_path} --exclude='*' --include='{website.short_id}.zip' --metadata site-id={website.name}"
             in config_str
         )
         assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-offline/ s3://{offline_bucket}/{website.url_path} --metadata site-id={website.name}"
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-offline/ s3://{offline_bucket}/{website.url_path} --metadata site-id={website.name} --delete"
             in config_str
         )
         assert (
@@ -680,7 +677,7 @@ def test_upsert_mass_build_pipeline(
         assert "touch ./content/static_resources/_index.md" in config_str
         assert f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseUrl / --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"
         assert (
-            f"PUBLISH_S3_RESULT=$(aws s3{endpoint_url} sync ./ s3://{offline_bucket}$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1"
+            f"PUBLISH_S3_RESULT=$(aws s3{endpoint_url} sync ./ s3://{offline_bucket}$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors $DELETE) || PUBLISH_S3_RESULT=1"
             in config_str
         )
         assert (
