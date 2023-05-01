@@ -1068,7 +1068,7 @@ jobs:
                 mv ../build-artifacts/static_shared ./static/
                 hugo ((hugo-args-offline))
                 cd output-offline
-                zip ../../build-course-offline/((short-id)).zip -r ./
+                zip ../../build-course-offline/((short-id)).zip -r -x "*.mp4" ./
               else
                 echo "Offline configuration not found for site type ((config-slug))"
               fi
