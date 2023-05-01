@@ -5,6 +5,10 @@ resource_types:
     source:
       repository: jgriff/http-resource
       tag: latest
+  - name: keyval
+    type: registry-image
+    source:
+      repository: ghcr.io/cludden/concourse-keyval-resource
   # START NON-DEV
   - name: slack-alert
     type: registry-image
@@ -24,16 +28,9 @@ resources:
       # END DEV-ONLY
       bucket: ((artifacts-bucket))
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
-  - name: site-hash
-    type: s3
-    source:
-      # START DEV-ONLY
-      endpoint: ((endpoint-url))
-      access_key_id: ((minio-root-user))
-      secret_access_Key: ((minio-root-password))
-      # END DEV-ONLY
-      bucket: ((artifacts-bucket))
-      versioned_file: ocw-site-hashes/((short-id))/hash.txt
+  - name: offline-build-gate
+    type: keyval
+    check_every: never
   - name: course-markdown
     type: git
     check_every: never
@@ -93,62 +90,6 @@ jobs:
                 "version": "((pipeline_name))",
                 "status": "started"
               }
-      - get: site-hash
-        trigger: false
-        on_failure:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "errored"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: failed
-                text: "Failed on get site-hash : ((pipeline_name))/((site-name))"
-            # END NON-DEV
-        on_error:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "errored"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: errored
-                text: "Concourse System Error while getting site-hash : ((pipeline_name))/((site-name))"
-            # END NON-DEV
-        on_abort:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "aborted"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: aborted
-                text: "User Aborted while getting site-hash : ((pipeline_name))/((site-name))"
-            # END NON-DEV
       - get: webpack-json
         trigger: false
         on_failure:
@@ -585,32 +526,15 @@ jobs:
                 alert_type: aborted
                 text: "User Aborted during copy-s3-buckets : ((pipeline_name))/((site-name))"
             # END NON-DEV
-      - task: upload-site-hash
-        timeout: 40m
-        attempts: 3
-        # START DEV-ONLY
+      - put: offline-build-gate
         params:
-          AWS_ACCESS_KEY_ID: ((minio-root-user))
-          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
-        # END DEV-ONLY
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: amazon/aws-cli, tag: latest}
-          run:
-            path: sh
-            args:
-            - -exc
-            - |
-              echo $RANDOM | md5sum | head -c 20 > ./hash.txt
-              aws s3((cli-endpoint-url)) cp ./hash.txt s3://((artifacts-bucket))/ocw-site-hashes/((short-id))/hash.txt --metadata site-id=((site-name))
+          mapping: |
+            timestamp = now()
         on_failure:
           try:
             do:
             - put: ocw-studio-webhook
               timeout: 1m
-              attempts: 3
               params:
                   text: |
                     {
@@ -622,14 +546,13 @@ jobs:
               timeout: 1m
               params:
                 alert_type: failed
-                text: "Failed on upload-site-hash : ((pipeline_name))/((site-name))"
+                text: "Failed on put offline-build-gate : ((pipeline_name))/((site-name))"
             # END NON-DEV
         on_error:
           try:
             do:
             - put: ocw-studio-webhook
               timeout: 1m
-              attempts: 3
               params:
                   text: |
                     {
@@ -641,14 +564,13 @@ jobs:
               timeout: 1m
               params:
                 alert_type: errored
-                text: "Concourse System Error during upload-site-hash : ((pipeline_name))/((site-name))"
+                text: "Concourse System Error while putting offline-build-gate : ((pipeline_name))/((site-name))"
             # END NON-DEV
         on_abort:
           try:
             do:
             - put: ocw-studio-webhook
               timeout: 1m
-              attempts: 3
               params:
                   text: |
                     {
@@ -660,7 +582,7 @@ jobs:
               timeout: 1m
               params:
                 alert_type: aborted
-                text: "User Aborted during upload-site-hash : ((pipeline_name))/((site-name))"
+                text: "User Aborted while putting offline-build-gate : ((pipeline_name))/((site-name))"
             # END NON-DEV
       # START NON-DEV
       - task: clear-cdn-cache
@@ -757,7 +679,7 @@ jobs:
   - name: build-offline-ocw-site
     serial: true
     plan:
-      - get: site-hash
+      - get: offline-build-gate
         passed: [build-online-ocw-site]
         trigger: true
         on_failure:
@@ -776,7 +698,7 @@ jobs:
               timeout: 1m
               params:
                 alert_type: failed
-                text: "Failed on get site-hash : ((pipeline_name))/((site-name))"
+                text: "Failed on get offline-build-gate : ((pipeline_name))/((site-name))"
             # END NON-DEV
         on_error:
           try:
@@ -794,7 +716,7 @@ jobs:
               timeout: 1m
               params:
                 alert_type: errored
-                text: "Concourse System Error while getting site-hash : ((pipeline_name))/((site-name))"
+                text: "Concourse System Error while getting offline-build-gate : ((pipeline_name))/((site-name))"
             # END NON-DEV
         on_abort:
           try:
@@ -812,7 +734,7 @@ jobs:
               timeout: 1m
               params:
                 alert_type: aborted
-                text: "User Aborted while getting site-hash : ((pipeline_name))/((site-name))"
+                text: "User Aborted while getting offline-build-gate : ((pipeline_name))/((site-name))"
             # END NON-DEV
       - get: webpack-json
         passed: [build-online-ocw-site]
