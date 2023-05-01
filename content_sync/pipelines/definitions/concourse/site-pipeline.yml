@@ -526,64 +526,6 @@ jobs:
                 alert_type: aborted
                 text: "User Aborted during copy-s3-buckets : ((pipeline_name))/((site-name))"
             # END NON-DEV
-      - put: offline-build-gate
-        params:
-          mapping: |
-            timestamp = now()
-        on_failure:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "errored"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: failed
-                text: "Failed on put offline-build-gate : ((pipeline_name))/((site-name))"
-            # END NON-DEV
-        on_error:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "errored"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: errored
-                text: "Concourse System Error while putting offline-build-gate : ((pipeline_name))/((site-name))"
-            # END NON-DEV
-        on_abort:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "aborted"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: aborted
-                text: "User Aborted while putting offline-build-gate : ((pipeline_name))/((site-name))"
-            # END NON-DEV
       # START NON-DEV
       - task: clear-cdn-cache
         timeout: 5m
@@ -676,6 +618,64 @@ jobs:
                 alert_type: aborted
                 text: "User Aborted during clear-cdn-cache : ((pipeline_name))/((site-name))"
       # END NON-DEV
+      - put: offline-build-gate
+        params:
+          mapping: |
+            timestamp = now()
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on put offline-build-gate : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while putting offline-build-gate : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while putting offline-build-gate : ((pipeline_name))/((site-name))"
+            # END NON-DEV
   - name: build-offline-ocw-site
     serial: true
     plan:
