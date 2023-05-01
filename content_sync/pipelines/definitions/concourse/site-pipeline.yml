@@ -454,7 +454,7 @@ jobs:
             path: sh
             args:
             - -exc
-            - aws s3((cli-endpoint-url)) sync course-markdown/output-online s3://((web-bucket))/((base-url)) --exclude='((short-id)).zip' --metadata site-id=((site-name))((delete))
+            - aws s3((cli-endpoint-url)) sync course-markdown/output-online s3://((web-bucket))/((base-url)) --metadata site-id=((site-name))((delete))
         # START DEV-ONLY
         on_success:
           try:
