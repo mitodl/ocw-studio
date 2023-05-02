@@ -1065,10 +1065,10 @@ jobs:
                   mv ./content/static_resources/*.html ./static/static_resources
                 fi
                 touch ./content/static_resources/_index.md
-                mv ../build-artifacts/static_shared ./static/
+                cp -r ../build-artifacts/static_shared/. ./static/static_shared/
                 hugo ((hugo-args-offline))
                 cd output-offline
-                zip ../../build-course-offline/((short-id)).zip -r -x "*.mp4" ./
+                zip -r ../../build-course-offline/((short-id)).zip ./ -x \*.mp4
               else
                 echo "Offline configuration not found for site type ((config-slug))"
               fi
