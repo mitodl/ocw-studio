@@ -357,14 +357,17 @@ def test_upsert_website_pipelines(
             in config_str
         )
         assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/ --exclude='{website.short_id}.zip' --metadata site-id={website.name}"
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/ --metadata site-id={website.name}"
             in config_str
         )
     else:
         assert "cp -r -n ../static-resources/. ./output-online/" in config_str
-        assert "mv ../build-artifacts/static_shared ./static/" in config_str
         assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/{website.url_path} --exclude='{website.short_id}.zip' --metadata site-id={website.name} --delete"
+            "cp -r ../build-artifacts/static_shared/. ./static/static_shared/"
+            in config_str
+        )
+        assert (
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/{website.url_path} --metadata site-id={website.name} --delete"
             in config_str
         )
 
