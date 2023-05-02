@@ -571,7 +571,7 @@ describe("form validation utils", () => {
       })
       ;["", null, undefined].forEach(val => {
         it("null values in non-required string fields are valid", async () => {
-          let [configItem, name] = makeObjectConfigItem({ name: val })
+          let [configItem] = makeObjectConfigItem({})
           configItem = {
             ...repeatableConfigItem,
             fields: [
@@ -583,9 +583,12 @@ describe("form validation utils", () => {
             ]
           }
 
-          const schema = getContentSchema(configItem, { name })
+          const schema = getContentSchema(configItem, {})
           expect(
-            schema.isValidSync({ ...defaultFormValues, [name]: val })
+            schema.isValidSync({
+              ...defaultFormValues,
+              [partialField.name]: val
+            })
           ).toBeTruthy()
         })
       })
