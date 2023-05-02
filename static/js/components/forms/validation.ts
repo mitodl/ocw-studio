@@ -114,7 +114,10 @@ export const getFieldSchema = (
     break
   }
   case WidgetVariant.String: {
-    schema = yup.string().nullable().transform(val => val === null ? undefined : val)
+    schema = yup
+      .string()
+      .nullable()
+      .transform(val => (val === null ? undefined : val))
     break
   }
   case WidgetVariant.Text:
