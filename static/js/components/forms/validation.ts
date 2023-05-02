@@ -113,7 +113,10 @@ export const getFieldSchema = (
     schema = minMax(yup.array(), field)
     break
   }
-  case WidgetVariant.String:
+  case WidgetVariant.String: {
+    schema = yup.string().nullable().transform(val => val === null ? undefined : val)
+    break
+  }
   case WidgetVariant.Text:
   case WidgetVariant.Markdown:
   default:
