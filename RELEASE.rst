@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.91.1
+--------------
+
+- Static_Shared Historical artifacts removed (#1730)
+
 Version 0.91.0 (Released April 27, 2023)
 --------------
 
