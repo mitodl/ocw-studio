@@ -569,6 +569,29 @@ describe("form validation utils", () => {
           })
         ).resolves.toBeTruthy()
       })
+      ;["", null, undefined].forEach(val => {
+        it("null values in non-required string fields are valid", async () => {
+          let [configItem] = makeObjectConfigItem({})
+          configItem = {
+            ...repeatableConfigItem,
+            fields: [
+              {
+                ...partialField,
+                widget:   WidgetVariant.String,
+                required: false
+              }
+            ]
+          }
+
+          const schema = getContentSchema(configItem, {})
+          expect(
+            schema.isValidSync({
+              ...defaultFormValues,
+              [partialField.name]: val
+            })
+          ).toBeTruthy()
+        })
+      })
 
       it("should skip validation on sub-fields which don't have data to send", async () => {
         const [configItem, name] = makeObjectConfigItem({ required: true })
