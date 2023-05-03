@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.91.2
+Version 0.91.2 (Released May 03, 2023)
 --------------
 
 - Accept null strings in fields (#1769)
