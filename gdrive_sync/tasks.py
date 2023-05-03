@@ -2,7 +2,7 @@
 import logging
 from collections import Counter
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import celery
 from celery import chain, chord
@@ -32,15 +32,46 @@ log = logging.getLogger(__name__)
 
 @app.task()
 def process_drive_file(drive_file_id: str):
-    """Run the necessary functions for processing a drive file"""
+    """
+    Run the necessary functions for processing a drive file
+
+    Returns:
+        drive_file_id (str | None): Returns the `drive_file_id`, None
+            if something goes wrong.
+    """
     drive_file = DriveFile.objects.get(file_id=drive_file_id)
     try:
         api.stream_to_s3(drive_file)
         if drive_file.is_video():
             api.transcode_gdrive_video(drive_file)
-        api.create_gdrive_resource_content(drive_file)
+        return drive_file_id
     except:  # pylint:disable=bare-except
         log.exception("Error processing DriveFile %s", drive_file_id)
+
+    return None
+
+
+@app.task()
+def create_gdrive_resource_content_batch(drive_file_ids: List[Optional[str]]):
+    """
+    Creates WebsiteContent resources from a Google Drive files identified by `drive_file_ids`.
+
+    `drive_file_ids` are expected to be results from `process_drive_file` tasks.
+    """
+    for drive_file_id in drive_file_ids:
+        if drive_file_id is None:
+            continue
+
+        try:
+            drive_file = DriveFile.objects.get(file_id=drive_file_id)
+        except DriveFile.DoesNotExist as exc:
+            log.exception(
+                "Attempted to create resource for drive file %s which does not exist.",
+                drive_file_id,
+                exc_info=exc,
+            )
+        else:
+            api.create_gdrive_resource_content(drive_file)
 
 
 @app.task()
@@ -138,8 +169,9 @@ def import_website_files(self, name: str):
     workflow_steps = []
 
     if file_tasks:
-        # Import the files first, then sync the website for those files in git
-        step = chord(celery.group(*file_tasks), chord_finisher.si())
+        step = chord(
+            celery.group(*file_tasks), create_gdrive_resource_content_batch.s()
+        )
         workflow_steps.append(step)
 
     if delete_file_tasks:

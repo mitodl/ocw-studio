@@ -426,6 +426,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
         resource_type = get_resource_type(drive_file)
         resource = drive_file.resource
         basename, extension = os.path.splitext(drive_file.name)
+        basename = f"{basename}_{extension.lstrip('.')}"
         if not resource:
             site_config = SiteConfig(drive_file.website.starter.config)
             config_item = site_config.find_item_by_name(name=CONTENT_TYPE_RESOURCE)

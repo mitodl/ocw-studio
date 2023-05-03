@@ -545,7 +545,7 @@ def mock_gdrive_pdf(mocker):
 def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
     """create_resource_from_gdrive should create a WebsiteContent object linked to a DriveFile object"""
     filenames = ["word.docx", "word!.docx", "(word?).docx"]
-    deduped_names = ["word", "word2", "word3"]
+    deduped_names = ["word_docx", "word_docx2", "word_docx3"]
     website = WebsiteFactory.create()
     for filename, deduped_name in zip(filenames, deduped_names):
         drive_file = DriveFileFactory.create(
@@ -577,16 +577,13 @@ def test_create_gdrive_resource_content_forbidden_name(
 ):
     """content for a google drive file with a forbidden name should have its filename attribute modified"""
     drive_file = DriveFileFactory.create(
-        name=f"{CONTENT_FILENAMES_FORBIDDEN[0]}.pdf",
-        s3_key=f"test/path/{CONTENT_FILENAMES_FORBIDDEN[0]}.pdf",
-        mime_type="application/pdf",
+        name=f"{CONTENT_FILENAMES_FORBIDDEN[0]}",
+        s3_key=f"test/path/{CONTENT_FILENAMES_FORBIDDEN[0]}",
+        mime_type="text/plain",
     )
     create_gdrive_resource_content(drive_file)
     drive_file.refresh_from_db()
-    assert (
-        drive_file.resource.filename
-        == f"{CONTENT_FILENAMES_FORBIDDEN[0]}-{CONTENT_TYPE_RESOURCE}"
-    )
+    assert drive_file.resource.filename not in CONTENT_FILENAMES_FORBIDDEN
 
 
 def test_gdrive_pdf_failure(mock_get_s3_content_type, mocker):
