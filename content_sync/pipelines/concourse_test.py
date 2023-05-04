@@ -356,9 +356,7 @@ def test_upsert_website_pipelines(
             f"cp -r -n ../static-resources/. ./output-online/{website.name}"
             in config_str
         )
-        assert (
-            f"rm -rf ./output-online/{website.name}/*.mp4" in config_str
-        )
+        assert f"rm -rf ./output-online/{website.name}/*.mp4" in config_str
         assert (
             f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/ --metadata site-id={website.name}"
             in config_str
@@ -369,9 +367,7 @@ def test_upsert_website_pipelines(
             "cp -r ../build-artifacts/static_shared/. ./static/static_shared/"
             in config_str
         )
-        assert (
-            f"rm -rf ./output-online/*.mp4" in config_str
-        )
+        assert f"rm -rf ./output-online/*.mp4" in config_str
         assert (
             f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/{website.url_path} --metadata site-id={website.name} --delete"
             in config_str
