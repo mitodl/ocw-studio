@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.91.3
+--------------
+
+- separate online and offline parts of site-pipeline into separate jobs (#1763)
+
 Version 0.91.2 (Released May 03, 2023)
 --------------
 
