@@ -5,11 +5,10 @@ resource_types:
     source:
       repository: jgriff/http-resource
       tag: latest
-  - name: s3-resource-iam
+  - name: keyval
     type: registry-image
     source:
-      repository: governmentpaas/s3-resource
-      tag: latest
+      repository: ghcr.io/cludden/concourse-keyval-resource
   # START NON-DEV
   - name: slack-alert
     type: registry-image
@@ -19,7 +18,7 @@ resource_types:
   # END NON-DEV
 resources:
   - name: webpack-json
-    type: s3-resource-iam
+    type: s3
     check_every: never
     source:
       # START DEV-ONLY
@@ -29,6 +28,9 @@ resources:
       # END DEV-ONLY
       bucket: ((artifacts-bucket))
       versioned_file: ocw-hugo-themes/((ocw-hugo-themes-branch))/webpack.json
+  - name: offline-build-gate
+    type: keyval
+    check_every: never
   - name: course-markdown
     type: git
     check_every: never
@@ -75,7 +77,7 @@ resources:
       disabled: false
   # END NON-DEV
 jobs:
-  - name: build-ocw-site
+  - name: build-online-ocw-site
     serial: true
     plan:
       - try:
@@ -337,231 +339,6 @@ jobs:
             args:
             - -exc
             - aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) ./static-resources
-      - task: filter-webpack-artifacts
-        timeout: 10m
-        attempts: 3
-        params:
-        # START DEV-ONLY
-          RESOURCE_BASE_URL: ((resource-base-url))
-          AWS_ACCESS_KEY_ID: ((minio-root-user))
-          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
-        # END DEV-ONLY
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: mitodl/ocw-course-publisher, tag: 0.4}
-          inputs:
-            - name: webpack-json
-          outputs:
-            - name: build-artifacts
-          run:
-            path: sh
-            args:
-            - -exc
-            - |
-              jq 'recurse | select(type=="string")' ./webpack-json/webpack.json | tr -d '"' | xargs -I {} aws s3((cli-endpoint-url)) cp s3://((web-bucket)){} ./build-artifacts/{} --exclude *.js.map
-      - task: build-course-offline
-        timeout: 20m
-        attempts: 3
-        params:
-          API_BEARER_TOKEN: ((api-token))
-          GTM_ACCOUNT_ID: ((gtm-account-id))
-          OCW_STUDIO_BASE_URL: ((ocw-studio-url))
-          STATIC_API_BASE_URL: ((static-api-base-url))
-          OCW_IMPORT_STARTER_SLUG: ((ocw-import-starter-slug))
-          OCW_COURSE_STARTER_SLUG: ((ocw-course-starter-slug))
-          SITEMAP_DOMAIN: ((sitemap-domain))
-          SENTRY_DSN: ((ocw-hugo-themes-sentry-dsn))
-          # START DEV-ONLY
-          RESOURCE_BASE_URL: ((resource-base-url))
-          AWS_ACCESS_KEY_ID: ((minio-root-user))
-          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
-          # END DEV-ONLY
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: mitodl/ocw-course-publisher, tag: 0.4}
-          inputs:
-            - name: ocw-hugo-themes
-            - name: ocw-hugo-projects
-            - name: course-markdown
-            - name: static-resources
-            - name: webpack-json
-            - name: build-artifacts
-          outputs:
-            - name: course-markdown
-            - name: ocw-hugo-themes
-            - name: build-course-offline
-          run:
-            dir: course-markdown
-            path: sh
-            args:
-            - -exc
-            - |
-              if [ -f "../ocw-hugo-projects/((config-slug))/config-offline.yaml" ];
-              then
-                cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
-                mkdir -p ./content/static_resources
-                mkdir -p ./static/static_resources
-                mkdir -p ./static/static_shared
-                cp -r ../static-resources/. ./content/static_resources
-                find ./content/static_resources -name "*.mp4" -type f -delete
-                HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
-                if [ $HTML_COUNT != 0 ];
-                then
-                  mv ./content/static_resources/*.html ./static/static_resources
-                fi
-                touch ./content/static_resources/_index.md
-                mv ../build-artifacts/static_shared ./static/
-                hugo ((hugo-args-offline))
-                cd output-offline
-                zip ../../build-course-offline/((short-id)).zip -r ./
-              else
-                echo "Offline configuration not found for site type ((config-slug))"
-              fi
-        on_failure:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              attempts: 3
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "errored"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: failed
-                text: "Failed on build-course-task : ((pipeline_name))/((site-name))"
-            # END NON-DEV
-        on_error:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "errored"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: errored
-                text: "Concourse System Error during build-course-task : ((pipeline_name))/((site-name))"
-            # END NON-DEV
-        on_abort:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "aborted"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: aborted
-                text: "User Aborted during build-course-task : ((pipeline_name))/((site-name))"
-            # END NON-DEV
-      - task: upload-offline-build
-        timeout: 40m
-        attempts: 3
-        # START DEV-ONLY
-        params:
-          AWS_ACCESS_KEY_ID: ((minio-root-user))
-          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
-        # END DEV-ONLY
-        config:
-          inputs:
-            - name: course-markdown
-            - name: build-course-offline
-            - name: ocw-hugo-projects
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: {repository: amazon/aws-cli, tag: latest}
-          run:
-            path: sh
-            args:
-            - -exc
-            - |
-              if [ -f "ocw-hugo-projects/((config-slug))/config-offline.yaml" ];
-              then
-                aws s3((cli-endpoint-url)) sync course-markdown/output-offline/ s3://((offline-bucket))/((base-url)) --metadata site-id=((site-name))((delete))
-                aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((web-bucket))/((base-url)) --exclude='*' --include='((short-id)).zip' --metadata site-id=((site-name))
-              else
-                echo "Offline configuration not found for site type ((config-slug))"
-              fi
-        on_failure:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              attempts: 3
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "errored"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: failed
-                text: "Failed on upload-offline-build : ((pipeline_name))/((site-name))"
-            # END NON-DEV
-        on_error:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              attempts: 3
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "errored"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: errored
-                text: "Concourse System Error during upload-offline-build : ((pipeline_name))/((site-name))"
-            # END NON-DEV
-        on_abort:
-          try:
-            do:
-            - put: ocw-studio-webhook
-              timeout: 1m
-              attempts: 3
-              params:
-                  text: |
-                    {
-                      "version": "((pipeline_name))",
-                      "status": "aborted"
-                    }
-            # START NON-DEV
-            - put: slack-webhook
-              timeout: 1m
-              params:
-                alert_type: aborted
-                text: "User Aborted during upload-offline-build : ((pipeline_name))/((site-name))"
-            # END NON-DEV
       - task: build-course-online
         timeout: 20m
         attempts: 3
@@ -588,7 +365,6 @@ jobs:
             - name: ocw-hugo-themes
             - name: ocw-hugo-projects
             - name: course-markdown
-            - name: build-course-offline
             - name: static-resources
             - name: webpack-json
           outputs:
@@ -603,10 +379,7 @@ jobs:
               cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
               hugo ((hugo-args-online))
               cp -r -n ../static-resources/. ./output-online/((static-resources-subdirectory))
-              if [ -f "../build-course-offline/((short-id)).zip" ];
-              then
-                cp ../build-course-offline/((short-id)).zip  ./output-online
-              fi
+              rm -r ./output-online/((static-resources-subdirectory))/*.mp4
         on_failure:
           try:
             do:
@@ -752,6 +525,693 @@ jobs:
               params:
                 alert_type: aborted
                 text: "User Aborted during copy-s3-buckets : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+      # START NON-DEV
+      - task: clear-cdn-cache
+        timeout: 5m
+        attempts: 3
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: curlimages/curl}
+          run:
+            path: curl
+            args:
+              - -f
+              - -X
+              - POST
+              - -H
+              - 'Fastly-Key: ((fastly.api_token))'((purge_header))
+              - https://api.fastly.com/service/((fastly.service_id))/((purge-url))
+        on_success:
+          try:
+            do:
+              - put: open-discussions-webhook
+                timeout: 1m
+                attempts: 3
+                params:
+                  text: |
+                    {
+                      "webhook_key": "((open-webhook-key))",
+                      "prefix": "((site-url))/",
+                      "version": "((pipeline_name))"
+                    }
+              - put: ocw-studio-webhook
+                timeout: 1m
+                attempts: 3
+                params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "succeeded"
+                    }
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on clear-cdn-cache : ((pipeline_name))/((site-name))"
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error during clear-cdn-cache : ((pipeline_name))/((site-name))"
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted during clear-cdn-cache : ((pipeline_name))/((site-name))"
+      # END NON-DEV
+      - put: offline-build-gate
+        params:
+          mapping: |
+            timestamp = now()
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on put offline-build-gate : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while putting offline-build-gate : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while putting offline-build-gate : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+  - name: build-offline-ocw-site
+    serial: true
+    plan:
+      - get: offline-build-gate
+        passed: [build-online-ocw-site]
+        trigger: true
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on get offline-build-gate : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting offline-build-gate : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting offline-build-gate : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+      - get: webpack-json
+        passed: [build-online-ocw-site]
+        trigger: false
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on get webpack-json : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting webpack-json : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting webpack-json : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+      - get: ocw-hugo-themes
+        passed: [build-online-ocw-site]
+        trigger: false
+        timeout: 5m
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed to get ocw-hugo-themes : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting ocw-hugo-themes : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting ocw-hugo-themes : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+      - get: ocw-hugo-projects
+        passed: [build-online-ocw-site]
+        trigger: false
+        timeout: 5m
+        attempts: 3
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed to get ocw-hugo-projects : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting ocw-hugo-projects : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting ocw-hugo-projects : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+      - get: course-markdown
+        passed: [build-online-ocw-site]
+        trigger: false
+        timeout: 5m
+        attempts: 3
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed to get course-markdown : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error while getting course-markdown : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted while getting course-markdown : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+      - task: static-resources
+        timeout: 40m
+        attempts: 3
+        # START DEV-ONLY
+        params:
+          AWS_ACCESS_KEY_ID: ((minio-root-user))
+          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+        # END DEV-ONLY
+        config:
+          outputs:
+            - name: static-resources
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: amazon/aws-cli, tag: latest}
+          run:
+            path: sh
+            args:
+            - -exc
+            - aws s3((cli-endpoint-url)) sync s3://((ocw-studio-bucket))/((s3-path)) ./static-resources
+      - task: filter-webpack-artifacts
+        timeout: 10m
+        attempts: 3
+        params:
+        # START DEV-ONLY
+          RESOURCE_BASE_URL: ((resource-base-url))
+          AWS_ACCESS_KEY_ID: ((minio-root-user))
+          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+        # END DEV-ONLY
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: mitodl/ocw-course-publisher, tag: 0.4}
+          inputs:
+            - name: webpack-json
+          outputs:
+            - name: build-artifacts
+          run:
+            path: sh
+            args:
+            - -exc
+            - |
+              jq 'recurse | select(type=="string")' ./webpack-json/webpack.json | tr -d '"' | xargs -I {} aws s3((cli-endpoint-url)) cp s3://((web-bucket)){} ./build-artifacts/{} --exclude *.js.map
+      - task: build-course-offline
+        timeout: 20m
+        attempts: 3
+        params:
+          API_BEARER_TOKEN: ((api-token))
+          GTM_ACCOUNT_ID: ((gtm-account-id))
+          OCW_STUDIO_BASE_URL: ((ocw-studio-url))
+          STATIC_API_BASE_URL: ((static-api-base-url))
+          OCW_IMPORT_STARTER_SLUG: ((ocw-import-starter-slug))
+          OCW_COURSE_STARTER_SLUG: ((ocw-course-starter-slug))
+          SITEMAP_DOMAIN: ((sitemap-domain))
+          SENTRY_DSN: ((ocw-hugo-themes-sentry-dsn))
+          # START DEV-ONLY
+          RESOURCE_BASE_URL: ((resource-base-url))
+          AWS_ACCESS_KEY_ID: ((minio-root-user))
+          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+          # END DEV-ONLY
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: mitodl/ocw-course-publisher, tag: 0.4}
+          inputs:
+            - name: ocw-hugo-themes
+            - name: ocw-hugo-projects
+            - name: course-markdown
+            - name: static-resources
+            - name: webpack-json
+            - name: build-artifacts
+          outputs:
+            - name: course-markdown
+            - name: ocw-hugo-themes
+            - name: build-course-offline
+          run:
+            dir: course-markdown
+            path: sh
+            args:
+            - -exc
+            - |
+              if [ -f "../ocw-hugo-projects/((config-slug))/config-offline.yaml" ];
+              then
+                cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
+                mkdir -p ./content/static_resources
+                mkdir -p ./static/static_resources
+                mkdir -p ./static/static_shared
+                cp -r ../static-resources/. ./content/static_resources
+                HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
+                if [ $HTML_COUNT != 0 ];
+                then
+                  mv ./content/static_resources/*.html ./static/static_resources
+                fi
+                touch ./content/static_resources/_index.md
+                cp -r ../build-artifacts/static_shared/. ./static/static_shared/
+                hugo ((hugo-args-offline))
+                cd output-offline
+                zip -r ../../build-course-offline/((short-id)).zip ./ -x \*.mp4
+              else
+                echo "Offline configuration not found for site type ((config-slug))"
+              fi
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on build-course-task : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error during build-course-task : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted during build-course-task : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+      - task: upload-offline-build
+        timeout: 40m
+        attempts: 3
+        # START DEV-ONLY
+        params:
+          AWS_ACCESS_KEY_ID: ((minio-root-user))
+          AWS_SECRET_ACCESS_KEY: ((minio-root-password))
+        # END DEV-ONLY
+        config:
+          inputs:
+            - name: course-markdown
+            - name: build-course-offline
+            - name: ocw-hugo-projects
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: {repository: amazon/aws-cli, tag: latest}
+          run:
+            path: sh
+            args:
+            - -exc
+            - |
+              if [ -f "ocw-hugo-projects/((config-slug))/config-offline.yaml" ];
+              then
+                aws s3((cli-endpoint-url)) sync course-markdown/output-offline/ s3://((offline-bucket))/((base-url)) --metadata site-id=((site-name))((delete))
+                aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((web-bucket))/((base-url)) --exclude='*' --include='((short-id)).zip' --metadata site-id=((site-name))
+              else
+                echo "Offline configuration not found for site type ((config-slug))"
+              fi
+        on_failure:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: failed
+                text: "Failed on upload-offline-build : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_error:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "errored"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: errored
+                text: "Concourse System Error during upload-offline-build : ((pipeline_name))/((site-name))"
+            # END NON-DEV
+        on_abort:
+          try:
+            do:
+            - put: ocw-studio-webhook
+              timeout: 1m
+              attempts: 3
+              params:
+                  text: |
+                    {
+                      "version": "((pipeline_name))",
+                      "status": "aborted"
+                    }
+            # START NON-DEV
+            - put: slack-webhook
+              timeout: 1m
+              params:
+                alert_type: aborted
+                text: "User Aborted during upload-offline-build : ((pipeline_name))/((site-name))"
             # END NON-DEV
       # START NON-DEV
       - task: clear-cdn-cache

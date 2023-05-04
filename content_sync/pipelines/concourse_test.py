@@ -362,17 +362,21 @@ def test_upsert_website_pipelines(
         )
     else:
         assert "cp -r -n ../static-resources/. ./output-online/" in config_str
-        assert "mv ../build-artifacts/static_shared ./static/" in config_str
+        assert (
+            "cp -r ../build-artifacts/static_shared/. ./static/static_shared/"
+            in config_str
+        )
+        assert (
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/{website.url_path} --metadata site-id={website.name} --delete"
+            in config_str
+        )
+
         assert (
             f"aws s3 {expected_endpoint_prefix}sync build-course-offline/ s3://{bucket}/{website.url_path} --exclude='*' --include='{website.short_id}.zip' --metadata site-id={website.name}"
             in config_str
         )
         assert (
             f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-offline/ s3://{offline_bucket}/{website.url_path} --metadata site-id={website.name} --delete"
-            in config_str
-        )
-        assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/{website.url_path} --metadata site-id={website.name} --delete"
             in config_str
         )
 
@@ -444,7 +448,7 @@ def test_upsert_website_pipelines_invalid_starter(mocker, mock_auth, source, pat
 @pytest.mark.parametrize("version", ["live", "draft"])
 def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
     """The correct requests should be made to trigger a pipeline build"""
-    job_name = "build-ocw-site"
+    job_name = "build-online-ocw-site"
     mock_get = mocker.patch(
         "content_sync.pipelines.concourse.PipelineApi.get",
         return_value={"config": {"jobs": [{"name": job_name}]}},
