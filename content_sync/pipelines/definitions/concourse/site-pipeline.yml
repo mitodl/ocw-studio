@@ -378,8 +378,8 @@ jobs:
             - |
               cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
               hugo ((hugo-args-online))
-              cp -r -n ../static-resources/. ./output-online/((static-resources-subdirectory))
-              rm -r ./output-online/((static-resources-subdirectory))/*.mp4
+              cp -r -n ../static-resources/. ./output-online((static-resources-subdirectory))
+              rm -rf ./output-online((static-resources-subdirectory))*.mp4
         on_failure:
           try:
             do:
