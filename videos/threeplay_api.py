@@ -147,6 +147,8 @@ def fetch_file(source_url: str) -> BytesIO:
 
     file = BytesIO()
     file.write(response.content)
+    file.seek(0)
+
     return file
 
 
