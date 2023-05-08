@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.92.0
+--------------
+
+- move back to governmentpaas/s3-resource for webpack-json for the time being (#1780)
+- fix: IntegrityError - duplicate key while creating resources (#1770)
+- fix static-resources-subdirectory pathing (#1777)
+- separate online and offline parts of site-pipeline into separate jobs (#1763)
+
 Version 0.91.2 (Released May 03, 2023)
 --------------
 
