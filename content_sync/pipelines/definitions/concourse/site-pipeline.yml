@@ -9,6 +9,11 @@ resource_types:
     type: registry-image
     source:
       repository: ghcr.io/cludden/concourse-keyval-resource
+  - name: s3-resource-iam
+    type: registry-image
+    source:
+      repository: governmentpaas/s3-resource
+      tag: latest
   # START NON-DEV
   - name: slack-alert
     type: registry-image
@@ -18,7 +23,7 @@ resource_types:
   # END NON-DEV
 resources:
   - name: webpack-json
-    type: s3
+    type: s3-resource-iam
     check_every: never
     source:
       # START DEV-ONLY
