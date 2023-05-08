@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.92.0
+Version 0.92.0 (Released May 08, 2023)
 --------------
 
 - move back to governmentpaas/s3-resource for webpack-json for the time being (#1780)
