@@ -317,8 +317,6 @@ Currently, the default Docker image for Concourse is not compatible with Apple S
 cp docker-compose-arm64.yml docker-compose.override.yml
 ```
 
-Note: we are currently using concourse v7.7.1 on Apple Silicon and concourse v7.9.0 on Intel architectures.
-
 # Enabling YouTube integration
 
 - Create a new project at https://console.cloud.google.com/apis/dashboard
