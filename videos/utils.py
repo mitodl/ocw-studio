@@ -2,8 +2,8 @@
 A collection of helper functions for generating s3 file paths and filenames.
 This module provides several utility functions that simplify the task of working with file path and name generation
 """
-import re
 import os
+import re
 
 from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.models import WebsiteContent
