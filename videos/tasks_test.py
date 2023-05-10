@@ -48,6 +48,34 @@ from websites.utils import get_dict_field, set_dict_field
 pytestmark = pytest.mark.django_db
 
 
+def create_video(youtube_id, title):
+    """
+    Creates video file with the given youtube_id and title.
+    """
+    video_file = VideoFileFactory.create(
+        status=VideoStatus.CREATED,
+        destination=DESTINATION_YOUTUBE,
+        destination_id=youtube_id,
+    )
+
+    video = video_file.video
+    video.source_key = "the/file"
+    video.save()
+
+    return video
+
+
+def create_content(website, youtube_id, title):
+    """
+    Creates website content with the given website, youtube_id, and title.
+    """
+    return WebsiteContentFactory.create(
+        website=website,
+        metadata={"video_metadata": {"youtube_id": youtube_id}},
+        title=title,
+    )
+
+
 def set_nested_dicts(obj, field_path, value):
     """Set the value of a potentially nested dict path"""
     fields = field_path.split(".")
@@ -197,21 +225,8 @@ def test_start_transcript_job(
     settings.YT_FIELD_ID = "video_metadata.youtube_id"
     title = "title"
 
-    video_file = VideoFileFactory.create(
-        status=VideoStatus.CREATED,
-        destination=DESTINATION_YOUTUBE,
-        destination_id=youtube_id,
-    )
-
-    video = video_file.video
-    video.source_key = "the/file"
-    video.save()
-
-    video_content = WebsiteContentFactory.create(
-        website=video.website,
-        metadata={"video_metadata": {"youtube_id": youtube_id}},
-        title=title,
-    )
+    video = create_video(youtube_id, title)
+    video_content = create_content(video.website, youtube_id, title)
 
     base_path = f"/some/path/to/{video_content.filename}"
 
@@ -255,15 +270,52 @@ def test_start_transcript_job(
         f"{base_path}_transcript.pdf" if transcript_exists else None
     )
 
-    if not transcript_exists and not caption_exists:
-        mock_threeplay_upload_video_request.assert_called_once_with(
-            video.website.short_id, youtube_id, title
-        )
+    if transcript_exists or caption_exists:
+        mock_threeplay_upload_video_request.assert_not_called()
+        mock_order_transcript_request_request.assert_not_called()
+        return
+
+    mock_threeplay_upload_video_request.assert_called_once_with(
+        video.website.short_id, youtube_id, title
+    )
+    if video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
         mock_order_transcript_request_request.assert_called_once_with(
             video.id, threeplay_file_id
         )
     else:
-        mock_threeplay_upload_video_request.assert_not_called()
+        mock_order_transcript_request_request.assert_not_called()
+
+
+# pylint:disable=unused-variable
+def test_threeplay_submission_called_once_per_video(mocker, settings):
+    """
+    Test that the threeplay_order_transcript_request function is called only once per video.
+    """
+    youtube_id = "test"
+    threeplay_file_id = 1
+    settings.YT_FIELD_ID = "video_metadata.youtube_id"
+    title = "title"
+
+    video = create_video(youtube_id, title)
+    video_content = create_content(video.website, youtube_id, title)
+
+    mock_threeplay_upload_video_request = mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_upload_video_request",
+        return_value={"data": {"id": 1}},
+    )
+
+    mock_order_transcript_request_request = mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_order_transcript_request"
+    )
+
+    start_transcript_job(video.id)
+    start_transcript_job(video.id)
+
+    if video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
+        mock_order_transcript_request_request.assert_called_once_with(
+            video.id, threeplay_file_id
+        )
+    else:
         mock_order_transcript_request_request.assert_not_called()
 
 

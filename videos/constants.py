@@ -11,6 +11,9 @@ YT_THUMBNAIL_IMG = "https://img.youtube.com/vi/{video_id}/default.jpg"
 YT_MAX_LENGTH_TITLE = 100
 YT_MAX_LENGTH_DESCRIPTION = 5000
 
+PDF_FORMAT_ID = 46
+WEBVTT_FORMAT_ID = 51
+
 
 class VideoStatus:
     """Simple class for possible VideoFile statuses"""

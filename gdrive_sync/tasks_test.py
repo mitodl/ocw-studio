@@ -13,6 +13,7 @@ from gdrive_sync.constants import (
 from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.tasks import (
     create_gdrive_folders_batch,
+    create_gdrive_resource_content_batch,
     delete_drive_file,
     import_website_files,
     process_drive_file,
@@ -212,7 +213,7 @@ def test_import_website_files_delete_missing(mocker, mocked_celery):
         import_website_files.delay(website.name)
     assert mock_delete_drive_file.call_count == 2
     for drive_file in drive_files:
-        mock_delete_drive_file.assert_any_call(drive_file.file_id)
+        mock_delete_drive_file.assert_any_call(drive_file.file_id, mocker.ANY)
 
 
 def test_update_website_status(mocker):
@@ -241,20 +242,38 @@ def test_process_drive_file(mocker, is_video, has_error):
         side_effect=[(Exception("No bucket") if has_error else None)],
     )
     mock_transcode = mocker.patch("gdrive_sync.tasks.api.transcode_gdrive_video")
-    mock_create_resource = mocker.patch(
-        "gdrive_sync.tasks.api.create_gdrive_resource_content"
-    )
+
     mock_log = mocker.patch("gdrive_sync.tasks.log.exception")
     process_drive_file.delay(drive_file.file_id)
     assert mock_stream_s3.call_count == 1
     assert mock_transcode.call_count == (1 if is_video and not has_error else 0)
-    assert mock_create_resource.call_count == (0 if has_error else 1)
     assert mock_log.call_count == (1 if has_error else 0)
+
+
+@pytest.mark.parametrize("drive_file_count", [0, 5])
+def test_create_gdrive_resource_content_batch(mocker, drive_file_count):
+    """This batch task should call create_gdrive_resource_content for each valid file."""
+    mock_create_resource = mocker.patch(
+        "gdrive_sync.tasks.api.create_gdrive_resource_content"
+    )
+
+    drive_files = DriveFileFactory.create_batch(drive_file_count)
+    drive_file_ids = [drive_file.file_id for drive_file in drive_files] + [
+        None,
+        "an_id_that_does_not_exist",
+    ]
+
+    create_gdrive_resource_content_batch.delay(drive_file_ids)
+    assert mock_create_resource.call_count == len(drive_files)
+    for drive_file in drive_files:
+        mock_create_resource.assert_any_call(drive_file)
 
 
 def test_delete_drive_file(mocker):
     """Task delete_drive_file should delegate the delete action to api.delete_drive_file."""
     drive_file = DriveFileFactory.create()
     mock_delete_drive_file = mocker.patch("gdrive_sync.api.delete_drive_file")
-    delete_drive_file.delay(drive_file.file_id)
-    mock_delete_drive_file.assert_called_once_with(drive_file)
+    delete_drive_file.delay(drive_file.file_id, drive_file.website.synced_on)
+    mock_delete_drive_file.assert_called_once_with(
+        drive_file, sync_datetime=drive_file.website.synced_on
+    )

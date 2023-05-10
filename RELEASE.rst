@@ -1,6 +1,32 @@
 Release Notes
 =============
 
+Version 0.92.0 (Released May 08, 2023)
+--------------
+
+- move back to governmentpaas/s3-resource for webpack-json for the time being (#1780)
+- fix: IntegrityError - duplicate key while creating resources (#1770)
+- fix static-resources-subdirectory pathing (#1777)
+- separate online and offline parts of site-pipeline into separate jobs (#1763)
+
+Version 0.91.2 (Released May 03, 2023)
+--------------
+
+- Accept null strings in fields (#1769)
+
+Version 0.91.1 (Released May 02, 2023)
+--------------
+
+- Static_Shared Historical artifacts removed (#1730)
+
+Version 0.91.0 (Released April 27, 2023)
+--------------
+
+- fix: delete file error messages are not shown on the frontend (#1762)
+- fix: duplicate 3play submissions (#1736)
+- Sync missing captions and transcripts (#1717)
+- add s3 folder to dockerignore (#1761)
+
 Version 0.90.1 (Released April 24, 2023)
 --------------
 
