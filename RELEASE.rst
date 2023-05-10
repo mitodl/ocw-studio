@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.92.2
+--------------
+
+- Incorrect files path for Sync missing captions (#1792)
+
 Version 0.92.1 (Released May 10, 2023)
 --------------
 
