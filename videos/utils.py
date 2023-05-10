@@ -23,9 +23,9 @@ def generate_s3_path(file_or_webcontent, website):
     elif new_filename_ext == "pdf":
         new_filename += "_transcript"
 
-    new_filename = f"{new_filename.strip(os.sep)}.{new_filename_ext}"
+    new_filename = f"{new_filename.strip(os.path.sep)}.{new_filename_ext}"
 
-    return os.path.join(website.s3_path.strip(os.sep), new_filename)
+    return os.path.join(website.s3_path.strip(os.path.sep), new_filename)
 
 
 def clean_uuid_filename(filename):
