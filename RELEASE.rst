@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.92.1
+--------------
+
+- Sync missing captions - File seek(0) (#1772)
+- config: Add renovate config for ocw-studio (#1774)
+
 Version 0.92.0 (Released May 08, 2023)
 --------------
 
