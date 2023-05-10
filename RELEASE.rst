@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.92.1
+Version 0.92.1 (Released May 10, 2023)
 --------------
 
 - Sync missing captions - File seek(0) (#1772)
