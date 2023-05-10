@@ -25,7 +25,7 @@ def generate_s3_path(file_or_webcontent, website):
 
     new_filename = f"{new_filename.strip('/')}.{new_filename_ext}"
 
-    return os.path.join(website.s3_path.strip("/"), new_filename)
+    return os.path.join(website.s3_path.strip(os.sep), new_filename)
 
 
 def clean_uuid_filename(filename):
