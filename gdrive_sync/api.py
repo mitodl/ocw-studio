@@ -712,6 +712,7 @@ def rename_file(obj_text_id, obj_new_filename):
                 + str(dependencies)
             )
 
+        log.info("Found existing file with same name. Overwriting it.")
         old_obj.delete()
         backend = get_sync_backend(site)
         backend.sync_all_content_to_backend()

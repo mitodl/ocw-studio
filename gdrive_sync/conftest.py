@@ -1,6 +1,5 @@
 """Common functions and variables for gdrive_sync tests"""
 
-
 LIST_VIDEO_RESPONSES = [
     {
         "nextPageToken": "~!!~AI9FV7Tc4k5BiAr1Ckwyu",
