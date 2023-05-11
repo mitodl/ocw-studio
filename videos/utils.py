@@ -2,7 +2,6 @@
 A collection of helper functions for generating s3 file paths and filenames.
 This module provides several utility functions that simplify the task of working with file path and name generation
 """
-import os
 import re
 
 from main.utils import get_dirpath_and_filename, get_file_extension
@@ -23,9 +22,7 @@ def generate_s3_path(file_or_webcontent, website):
     elif new_filename_ext == "pdf":
         new_filename += "_transcript"
 
-    new_filename = f"{new_filename.strip(os.path.sep)}.{new_filename_ext}"
-
-    return os.path.join(website.s3_path.strip(os.path.sep), new_filename)
+    return f"/{website.s3_path.rstrip('/').lstrip('/')}/{new_filename.lstrip('/')}.{new_filename_ext}"
 
 
 def clean_uuid_filename(filename):
