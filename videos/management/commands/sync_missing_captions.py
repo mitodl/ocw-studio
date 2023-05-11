@@ -191,7 +191,7 @@ class Command(WebsiteFilterCommand):
             file_content
         )
 
-        return new_s3_loc
+        return f"/{new_s3_loc}"
 
     def create_new_content(self, file_content, video):
         """Create new WebsiteContent object for caption or transcript using 3play response"""
