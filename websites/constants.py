@@ -11,9 +11,6 @@ CONTENT_TYPE_INSTRUCTOR = "instructor"
 CONTENT_TYPE_METADATA = "sitemetadata"
 CONTENT_TYPE_NAVMENU = "navmenu"
 CONTENT_TYPE_COURSE_LIST = "course-lists"
-CONTENT_TYPE_STORIES = "stories"
-CONTENT_TYPE_PROMOS = "promos"
-CONTENT_TYPE_COURSE_COLLECTION = "course-collection"
 
 
 COURSE_PAGE_LAYOUTS = ["instructor_insights"]

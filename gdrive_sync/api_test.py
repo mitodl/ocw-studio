@@ -1,6 +1,7 @@
 """gdrive_sync.api tests"""
 import json
 from datetime import timedelta
+from typing import Iterable, Optional, Tuple
 
 import pytest
 from botocore.exceptions import ClientError
@@ -21,7 +22,7 @@ from gdrive_sync.api import (
     update_sync_status,
     walk_gdrive_folder,
 )
-from gdrive_sync.conftest import LIST_VIDEO_RESPONSES, RESOURCE_REFERENCES_TEST_DATA
+from gdrive_sync.conftest import LIST_VIDEO_RESPONSES
 from gdrive_sync.constants import (
     DRIVE_FILE_FIELDS,
     DRIVE_FOLDER_FILES_FINAL,
@@ -42,9 +43,11 @@ from websites.constants import (
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
+    WebsiteStarterStatus,
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
-from websites.models import WebsiteContent
+from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.site_config_api import ConfigItem, SiteConfig
 
 
 pytestmark = pytest.mark.django_db
@@ -863,50 +866,113 @@ def test_find_missing_files(deleted_drive_files_count):
     assert all([file_id in deleted_file_ids for file_id in missing_files_result_ids])
 
 
-@pytest.mark.parametrize("resource_id", [RESOURCE_REFERENCES_TEST_DATA["resource_id"]])
-@pytest.mark.parametrize("website_url", [RESOURCE_REFERENCES_TEST_DATA["website_url"]])
+@pytest.fixture
+def all_starters_items_fields() -> Iterable[Tuple[WebsiteStarter, ConfigItem, dict]]:
+    """All fields from all starters."""
+    all_starters = list(
+        WebsiteStarter.objects.filter(status__in=WebsiteStarterStatus.ALLOWED_STATUSES)
+    )
+    data = []
+    for starter in all_starters:
+        for item in SiteConfig(starter.config).iter_items():
+            for field in item.fields:
+                data.append((starter, item, field))
+
+    return data
+
+
+def _generate_related_content_data(
+    starter: WebsiteStarter, field: dict, resource_id: str, website: Website
+) -> Optional[dict]:
+    """
+    A utility method to create data for WebsiteContent for `field` that references
+    `resource_id`.
+
+    Returns `None` for any unrelated field.
+    """
+    if starter != website.starter and not field.get("cross_site", False):
+        return
+
+    if field.get("widget") == "markdown" and (
+        CONTENT_TYPE_RESOURCE in field.get("link", [])
+        or CONTENT_TYPE_RESOURCE in field.get("embed", [])
+    ):
+        return {
+            "markdown": f'{{{{% resource_link "{resource_id}" "filename" %}}}}',
+            "metadata": {},
+        }
+    elif (
+        field.get("widget") == "relation"
+        and field.get("collection") == CONTENT_TYPE_RESOURCE
+    ):
+        value = (
+            resource_id
+            if not field.get("cross_site", False)
+            else [resource_id, website.url_path]
+        )
+
+        if field.get("multiple", False):
+            content = [value]
+        else:
+            content = value
+
+        return {"markdown": "", "metadata": {field["name"]: {"content": content}}}
+    elif field.get("widget") == "menu":
+        return {
+            "markdown": r"",
+            "metadata": {field["name"]: [{"identifier": resource_id}]},
+        }
+
+
 @pytest.mark.parametrize("with_resource", [False, True])
-@pytest.mark.parametrize("content_data", RESOURCE_REFERENCES_TEST_DATA["contents"])
+@pytest.mark.parametrize("is_used_in_content", [False, True])
 def test_delete_drive_file(
-    mocker, resource_id, website_url, with_resource, content_data
+    mocker, with_resource, is_used_in_content, all_starters_items_fields
 ):
     """delete_drive_file should delete the file and resource only if resource is not being used"""
     mocker.patch("main.s3_utils.boto3")
-    website = WebsiteFactory.create(url_path=website_url)
-    drive_file = DriveFileFactory.create(website=website)
 
-    if with_resource:
-        resource = WebsiteContentFactory.create(
-            text_id=resource_id,
-            type=CONTENT_TYPE_RESOURCE,
-            website=website,
-        )
-        drive_file.resource = resource
-        drive_file.save()
+    for starter, item, field in all_starters_items_fields:
+        website = WebsiteFactory.create()
+        drive_file = DriveFileFactory.create(website=website)
 
-    contents = [
-        WebsiteContentFactory.create(
-            type=content["type"],
-            markdown=content["markdown"],
-            metadata=content["metadata"],
-            website=website,
-        )
-        for content in content_data
-    ]
+        content_data = None
+        if with_resource:
+            resource = WebsiteContentFactory.create(
+                type=CONTENT_TYPE_RESOURCE,
+                website=website,
+            )
+            drive_file.resource = resource
+            drive_file.save()
 
-    api.delete_drive_file(drive_file, sync_datetime=website.synced_on)
+        if with_resource and is_used_in_content:
+            content_data = _generate_related_content_data(
+                starter,
+                field,
+                resource.text_id,
+                website,
+            )
+            if content_data:
+                content = WebsiteContentFactory.create(
+                    **content_data,
+                    type=item.name,
+                    website=website,
+                )
 
-    drive_file_exists = DriveFile.objects.filter(file_id=drive_file.file_id).exists()
-    if with_resource:
-        resource_exists = WebsiteContent.objects.filter(pk=resource.id).exists()
+        api.delete_drive_file(drive_file, sync_datetime=website.synced_on)
 
-    if with_resource and contents:
-        for content in contents:
+        drive_file_exists = DriveFile.objects.filter(
+            file_id=drive_file.file_id
+        ).exists()
+        if with_resource:
+            resource_exists = WebsiteContent.objects.filter(pk=resource.id).exists()
+
+        if with_resource and content_data:
             assert WebsiteContent.objects.filter(pk=content.id).exists()
-        assert resource_exists
-        assert drive_file_exists
-    elif with_resource:
-        assert not drive_file_exists
-        assert not resource_exists
-    else:
-        assert not drive_file_exists
+            assert resource_exists
+            assert drive_file_exists
+        elif with_resource:
+            assert not drive_file_exists
+            assert not resource_exists
+        else:
+            assert not drive_file_exists

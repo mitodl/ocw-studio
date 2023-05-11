@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, Iterator, Optional, Tuple
 
 import PyPDF2
 from botocore.exceptions import ClientError
@@ -39,23 +39,15 @@ from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
 from websites.api import get_valid_new_filename
 from websites.constants import (
-    CONTENT_TYPE_COURSE_COLLECTION,
-    CONTENT_TYPE_METADATA,
-    CONTENT_TYPE_NAVMENU,
-    CONTENT_TYPE_PAGE,
-    CONTENT_TYPE_PROMOS,
     CONTENT_TYPE_RESOURCE,
-    CONTENT_TYPE_RESOURCE_COLLECTION,
-    CONTENT_TYPE_RESOURCE_LIST,
-    CONTENT_TYPE_STORIES,
-    CONTENT_TYPE_VIDEO_GALLERY,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
+    WebsiteStarterStatus,
 )
-from websites.models import Website, WebsiteContent
-from websites.site_config_api import SiteConfig
+from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.site_config_api import ConfigField, ConfigItem, SiteConfig
 from websites.utils import get_valid_base_filename
 
 
@@ -566,97 +558,128 @@ def update_sync_status(website: Website, sync_datetime: datetime):
     website.save()
 
 
-def _get_content_dependencies(
-    drive_file: DriveFile, types: Iterable[str] = (CONTENT_TYPE_PAGE,)
-) -> Iterable[WebsiteContent]:
+def __iter_all_config_items(website: Website) -> Iterator[Tuple[bool, ConfigItem]]:
+    """
+    Yields ConfigItem for all active starters.
+
+    Args:
+        website (Website): The website being scanned.
+
+    Yields:
+        Iterator[Tuple[bool, ConfigItem]]: A generator where yield[0] indicates whether or not the ConfigItem
+            yield[1] belongs to the starter of `website`.
+    """
+    # Assume the starter of websites without a starter to be the course starter.
+    website_starter_slug = (
+        website.starter.slug if website.starter else settings.OCW_COURSE_STARTER_SLUG
+    )
+    all_starters = WebsiteStarter.objects.filter(
+        status__in=WebsiteStarterStatus.ALLOWED_STATUSES
+    )
+
+    for starter in all_starters:
+        for item in SiteConfig(starter.config).iter_items():
+            yield website_starter_slug == starter.slug, item
+
+
+def __iter_related_fields(
+    item: ConfigItem, only_cross_site: bool
+) -> Iterator[ConfigField]:
+    """
+    Yields ConfigField for each field in `item`.
+
+    Args:
+        item (ConfigItem): The ConfigItem being scanned.
+        only_cross_site (bool): Whether or not to yield only cross site fields.
+
+    Yields:
+        Iterator[ConfigField]: A generator that yields ConfigField.
+    """
+    for field in item.fields:
+        if not only_cross_site or field.get("cross_site", False):
+            yield ConfigField(field)
+
+
+def __get_field_filter(field: dict, resource_id: str, website: Website) -> Optional[Q]:
+    """
+    Generates an appropriate Q expression to filter a field for a resource usage.
+    """
+    q = None
+
+    if field.get("widget") == "markdown" and (
+        CONTENT_TYPE_RESOURCE in field.get("link", [])
+        or CONTENT_TYPE_RESOURCE in field.get("embed", [])
+    ):
+        q = Q(markdown__icontains=resource_id)
+    elif (
+        field.get("widget") == "relation"
+        and field.get("collection") == CONTENT_TYPE_RESOURCE
+    ):
+        lookup_args = ["metadata", field["name"], "content"]
+
+        if field.get("multiple", False):
+            lookup_args.append("contains")
+
+        lookup = "__".join(lookup_args)
+
+        value = (
+            resource_id
+            if not field.get("cross_site", False)
+            else [[resource_id, website.url_path]]
+        )
+
+        q = Q(**{lookup: value})
+    elif field.get("widget") == "menu":
+        lookup = "__".join(("metadata", field.get("name"), "contains"))
+        q = Q(**{lookup: [{"identifier": resource_id}]})
+
+    return q
+
+
+def _get_content_dependencies(drive_file: DriveFile) -> Iterable[WebsiteContent]:
     """
     Find and return WebsiteContent that make use of `drive_file` through
     `drive_file.resource`.
 
-    Only supports CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE_LIST, CONTENT_TYPE_VIDEO_GALLERY,
-    CONTENT_TYPE_METADATA, CONTENT_TYPE_NAVMENU, CONTENT_TYPE_STORIES, CONTENT_TYPE_PROMOS,
-    CONTENT_TYPE_COURSE_COLLECTION, and CONTENT_TYPE_RESOURCE_COLLECTION.
-    Returns empty for any other type.
-
     Args:
         drive_file (DriveFile): A DriveFile whose dependencies are to be found.
-        types (Iterable[str], optional): Types of content to search through.
-            Defaults to (CONTENT_TYPE_PAGE,) for legacy reasons.
 
     Returns:
         Iterable[WebsiteContent]: A list of WebsiteContent that makes use of `drive_file`
             directly/indirectly.
     """
-
-    if drive_file.resource is None or not types:
+    if drive_file.resource is None:
         return []
+
+    website = drive_file.website
+    resource_id = drive_file.resource.text_id
 
     filters = []
 
-    resource_id = drive_file.resource.text_id
+    for is_website_config, config_item in __iter_all_config_items(website):
+        for config_field in __iter_related_fields(
+            config_item, only_cross_site=not is_website_config
+        ):
+            field = config_field.field
+            field_q = __get_field_filter(field, resource_id, website)
 
-    # What lookup to use for what type of content.
-    resource_lookups = {
-        # course
-        CONTENT_TYPE_PAGE: ["markdown__icontains"],
-        CONTENT_TYPE_RESOURCE_LIST: ["metadata__resources__content__contains"],
-        CONTENT_TYPE_VIDEO_GALLERY: ["metadata__videos__content__contains"],
-        CONTENT_TYPE_METADATA: [
-            "metadata__course_image_thumbnail__content",
-            "metadata__course_image__content",
-        ],
-        CONTENT_TYPE_NAVMENU: ["metadata__leftnav__contains"],
-        # www
-        CONTENT_TYPE_STORIES: ["metadata__image__content"],
-        CONTENT_TYPE_PROMOS: ["metadata__image__content"],
-        CONTENT_TYPE_COURSE_COLLECTION: ["metadata__contains"],
-    }
+            if field_q is None:
+                continue
 
-    # values for the lookups when resource_id alone is not enough
-    resource_lookup_values = {
-        CONTENT_TYPE_NAVMENU: [{"identifier": resource_id}],
-        CONTENT_TYPE_COURSE_COLLECTION: {"cover-image": {"content": resource_id}},
-    }
+            q = Q(type=config_item.name) & field_q
 
-    for content_type in types:
-        filters.extend(
-            [
-                Q(type=content_type)
-                & Q(**{lookup: resource_lookup_values.get(content_type, resource_id)})
-                for lookup in resource_lookups.get(content_type, [])
-            ]
-        )
+            if not field.get("cross_site", False):
+                q = Q(website=website) & q
 
-    query = None
+            filters.append(q)
 
-    if filters:
-        query = Q(website=drive_file.website) & reduce(lambda x, y: x | y, filters)
-
-    # filters for resource references outside of the same website
-    cross_site_filters = []
-
-    if CONTENT_TYPE_RESOURCE_COLLECTION in types:
-        cross_site_filters.append(
-            Q(type=CONTENT_TYPE_RESOURCE_COLLECTION)
-            & Q(
-                metadata__resources__content__contains=[
-                    [resource_id, drive_file.website.url_path]
-                ]
-            )
-        )
-
-    if cross_site_filters:
-        cross_site_query = reduce(lambda x, y: x | y, cross_site_filters)
-
-        if query:
-            query |= cross_site_query
-        else:
-            query = cross_site_query
-
-    if not query:
+    if not filters:
         return []
 
+    query = reduce(lambda x, y: x | y, filters)
     dependencies = WebsiteContent.objects.filter(query)
+
+    print(dependencies.query)
 
     return list(dependencies)
 
@@ -689,7 +712,6 @@ def rename_file(obj_text_id, obj_new_filename):
                 + str(dependencies)
             )
 
-        log.info("Found existing file with same name. Overwriting it.")
         old_obj.delete()
         backend = get_sync_backend(site)
         backend.sync_all_content_to_backend()
@@ -732,20 +754,7 @@ def delete_drive_file(drive_file: DriveFile, sync_datetime: datetime):
     Args:
         drive_file (DriveFile): A drive file.
     """
-    dependencies = _get_content_dependencies(
-        drive_file,
-        types=[
-            CONTENT_TYPE_PAGE,
-            CONTENT_TYPE_METADATA,
-            CONTENT_TYPE_RESOURCE_LIST,
-            CONTENT_TYPE_VIDEO_GALLERY,
-            CONTENT_TYPE_NAVMENU,
-            CONTENT_TYPE_RESOURCE_COLLECTION,
-            CONTENT_TYPE_STORIES,
-            CONTENT_TYPE_PROMOS,
-            CONTENT_TYPE_COURSE_COLLECTION,
-        ],
-    )
+    dependencies = _get_content_dependencies(drive_file)
 
     if dependencies:
         error_message = f"Cannot delete file {drive_file} because it is being used by {dependencies}."
