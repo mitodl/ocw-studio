@@ -27,6 +27,7 @@ def generate_s3_path(file_or_webcontent, website):
 
     return os.path.join(website.s3_path.strip(os.path.sep), new_filename)
 
+
 def clean_uuid_filename(filename):
     """Removes UUID from filename"""
     uuid = "^[0-9A-F]{8}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{12}_"

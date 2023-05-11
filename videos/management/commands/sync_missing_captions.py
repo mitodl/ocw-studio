@@ -12,9 +12,9 @@ from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
 from videos.utils import generate_s3_path
-from websites.models import WebsiteContent
 from websites.constants import RESOURCE_TYPE_VIDEO
-from websites.utils import set_dict_field, get_dict_field
+from websites.models import WebsiteContent
+from websites.utils import get_dict_field, set_dict_field
 
 
 class Command(WebsiteFilterCommand):
