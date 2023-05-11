@@ -679,8 +679,6 @@ def _get_content_dependencies(drive_file: DriveFile) -> Iterable[WebsiteContent]
     query = reduce(lambda x, y: x | y, filters)
     dependencies = WebsiteContent.objects.filter(query)
 
-    print(dependencies.query)
-
     return list(dependencies)
 
 
