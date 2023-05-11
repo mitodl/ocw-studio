@@ -4,6 +4,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.files import File
 from django.db.models import Q
+from safedelete.models import HARD_DELETE
 
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_resource
@@ -12,6 +13,8 @@ from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
 from videos.utils import generate_s3_path
 from websites.models import WebsiteContent
+from websites.constants import RESOURCE_TYPE_VIDEO
+from websites.utils import set_dict_field, get_dict_field
 
 
 class Command(WebsiteFilterCommand):
@@ -56,24 +59,40 @@ class Command(WebsiteFilterCommand):
             },
         }
 
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--delete-existing",
+            action="store_true",
+            dest="delete_existing",
+            help="Deletes existing captions and transcripts refernece and objects",
+            default=False,
+        )
+
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        content_videos = WebsiteContent.objects.filter(
-            Q(metadata__resourcetype="Video")
-            & (
+        website_content = WebsiteContent.objects.all()
+        if self.filter_list:
+            website_content = self.filter_website_contents(website_content)
+
+            if website_content and options["delete_existing"]:
+                self.delete_existing_captions(website_content)
+
+        if not website_content:
+            self.stdout.write("No videos found with missing captions and transcripts")
+            return
+
+        website_content = website_content.filter(
+            metadata__resourcetype=RESOURCE_TYPE_VIDEO
+        )
+        if not options["delete_existing"]:
+            website_content = website_content.filter(
                 Q(metadata__video_files__video_captions_file=None)
                 | Q(metadata__video_files__video_transcript_file=None)
             )
-        )
-        if self.filter_list:
-            content_videos = self.filter_website_contents(content_videos)
 
-        if not content_videos:
-            self.stdout.write("No courses found")
-            return
-
-        for video in content_videos:
+        for video in website_content:
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
             self.fetch_and_update_content(video, youtube_id)
 
@@ -87,7 +106,7 @@ class Command(WebsiteFilterCommand):
         self.stdout.write(
             f"\nCaptions: {self.summary['captions']['updated']} updated, {self.summary['captions']['missing']} missing, {self.summary['captions']['total']} total\n"
             f"Transcripts: {self.summary['transcripts']['updated']} updated, {self.summary['transcripts']['missing']} missing, {self.summary['transcripts']['total']} total\n"
-            f"Found captions or transcripts for {len(content_videos) - self.missing_results}/{len(content_videos)} videos"
+            f"Found captions or transcripts for {len(website_content) - self.missing_results}/{len(website_content)} videos"
         )
 
     def fetch_and_update_content(self, video, youtube_id):
@@ -219,3 +238,45 @@ class Command(WebsiteFilterCommand):
         new_obj.save()
 
         return new_s3_loc
+
+    def delete_existing_captions(self, website_content):
+        """
+        This method deletes and nullifies (None) existing captions and transcript objects from s3 and video resources
+        """
+        captions_transcripts = website_content.filter(
+            Q(filename__icontains="_captions") | Q(filename__icontains="_transcript")
+        )
+        videos = website_content.filter(Q(metadata__resourcetype=RESOURCE_TYPE_VIDEO))
+
+        captions_transcripts.delete(HARD_DELETE)
+        websites = set()
+
+        for video in videos:
+            self.delete_files_from_s3(video)
+            set_dict_field(video.metadata, "video_files.video_captions_file", None)
+            set_dict_field(video.metadata, "video_files.video_transcript_file", None)
+            video.save()
+            websites.add(video.website.title)
+
+        self.stdout.write(
+            f"Captions and transcripts file data has been cleared for all videos of following websites:\n{websites}"
+        )
+
+    def delete_files_from_s3(self, video):
+        """
+        This method deletes captions and transcripts files from the s3
+        """
+        s3 = get_boto3_resource("s3")
+        captions_path = get_dict_field(
+            video.metadata, "video_files.video_captions_file"
+        )
+        if captions_path:
+            s3.Object(settings.AWS_STORAGE_BUCKET_NAME, captions_path).delete()
+            self.stdout.write(f"Captions file deleted from s3 for {video.title}")
+
+        transcript_path = get_dict_field(
+            video.metadata, "video_files.video_transcript_file"
+        )
+        if transcript_path:
+            s3.Object(settings.AWS_STORAGE_BUCKET_NAME, transcript_path).delete()
+            self.stdout.write(f"Transcript file deleted from s3 for {video.title}")
