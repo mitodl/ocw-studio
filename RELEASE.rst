@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.92.2
+--------------
+
+- Fix S3 path for missing captions (#1797)
+- Revert "Incorrect files path for Sync missing captions (#1792)" (#1795)
+- Updating concourse to v7.9.1 (#1788)
+- Incorrect files path for Sync missing captions (#1792)
+
 Version 0.92.1 (Released May 10, 2023)
 --------------
 
