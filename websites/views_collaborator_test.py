@@ -59,7 +59,10 @@ def test_websites_collaborators_endpoint_list_permissions(
                 kwargs={"parent_lookup_website": website.name},
             )
         )
-        assert resp.data.get("results") == expected_results
+        received_results = sorted(
+            resp.data.get("results"), key=lambda user: (user["name"], user["user_id"])
+        )
+        assert received_results == expected_results
 
 
 def test_websites_collaborators_endpoint_list_permission_denied(
@@ -77,7 +80,7 @@ def test_websites_collaborators_endpoint_list_permission_denied(
 
 
 def test_websites_collaborators_endpoint_list_create(drf_client, permission_groups):
-    """ An admin should be able to add a new collaborator"""
+    """An admin should be able to add a new collaborator"""
     website = permission_groups.websites[0]
     collaborator = UserFactory.create()
     drf_client.force_login(permission_groups.site_admin)
@@ -102,7 +105,7 @@ def test_websites_collaborators_endpoint_list_create(drf_client, permission_grou
 def test_websites_collaborators_endpoint_list_create_only_once(
     drf_client, permission_groups
 ):
-    """ An admin should not be able to add a new collaborator if already present"""
+    """An admin should not be able to add a new collaborator if already present"""
     website = permission_groups.websites[0]
     drf_client.force_login(permission_groups.site_admin)
     resp = drf_client.post(
@@ -125,7 +128,7 @@ def test_websites_collaborators_endpoint_list_create_only_once(
 def test_websites_collaborators_endpoint_list_create_bad_group(
     drf_client, permission_groups, role
 ):
-    """ An admin should not be able to add a new collaborator to a global/nonexistent group"""
+    """An admin should not be able to add a new collaborator to a global/nonexistent group"""
     collaborator = UserFactory.create()
     drf_client.force_login(permission_groups.site_admin)
     resp = drf_client.post(
@@ -142,7 +145,7 @@ def test_websites_collaborators_endpoint_list_create_bad_group(
 def test_websites_collaborators_endpoint_list_create_bad_user(
     drf_client, permission_groups
 ):
-    """ An admin should not be able to add a global admin, website owner, or nonexistent user to a group"""
+    """An admin should not be able to add a global admin, website owner, or nonexistent user to a group"""
     drf_client.force_login(permission_groups.site_admin)
     website = permission_groups.websites[0]
     for [email, error] in [
@@ -177,7 +180,7 @@ def test_websites_collaborators_endpoint_list_create_bad_user(
 def test_websites_collaborators_endpoint_detail_create_missing_data(
     drf_client, permission_groups, missing, error
 ):
-    """ A validation error should be raised if role or email is missing """
+    """A validation error should be raised if role or email is missing"""
     website = permission_groups.websites[0]
     data = {
         "email": UserFactory.create().email,
@@ -198,7 +201,7 @@ def test_websites_collaborators_endpoint_detail_create_missing_data(
 
 
 def test_websites_collaborators_endpoint_detail(drf_client, permission_groups):
-    """ An admin should be able to view a collaborator detail"""
+    """An admin should be able to view a collaborator detail"""
     website = permission_groups.websites[0]
     drf_client.force_login(permission_groups.global_admin)
     for [user, role] in [
@@ -234,7 +237,7 @@ def test_websites_collaborators_endpoint_detail(drf_client, permission_groups):
 def test_websites_collaborators_endpoint_detail_denied(
     drf_client, permission_groups, method
 ):
-    """ An editor should not be able to view/edit/delete a collaborator detail"""
+    """An editor should not be able to view/edit/delete a collaborator detail"""
     drf_client.force_login(permission_groups.site_editor)
     request_func = getattr(drf_client, method)
     resp = request_func(
@@ -250,7 +253,7 @@ def test_websites_collaborators_endpoint_detail_denied(
 
 
 def test_websites_collaborators_endpoint_detail_modify(drf_client, permission_groups):
-    """ An admin should be able to switch a collaborator from editor to admin"""
+    """An admin should be able to switch a collaborator from editor to admin"""
     website = permission_groups.websites[0]
     drf_client.force_login(permission_groups.site_admin)
     resp = drf_client.patch(
@@ -277,7 +280,7 @@ def test_websites_collaborators_endpoint_detail_modify(drf_client, permission_gr
 def test_websites_collaborators_endpoint_detail_modify_admin_denied(
     drf_client, permission_groups
 ):
-    """ An admin should not be able to modify a global admin or website owner"""
+    """An admin should not be able to modify a global admin or website owner"""
     website = permission_groups.websites[0]
     drf_client.force_login(permission_groups.site_admin)
     for user in [permission_groups.global_admin, website.owner]:
@@ -299,7 +302,7 @@ def test_websites_collaborators_endpoint_detail_modify_admin_denied(
 def test_websites_collaborators_endpoint_detail_modify_missing_data(
     drf_client, permission_groups
 ):
-    """ A validation error should be raised if role is missing from a patch request"""
+    """A validation error should be raised if role is missing from a patch request"""
     website = permission_groups.websites[0]
     drf_client.force_login(permission_groups.site_admin)
 
@@ -320,7 +323,7 @@ def test_websites_collaborators_endpoint_detail_modify_missing_data(
 def test_websites_collaborators_endpoint_detail_modify_nonadmin_denied(
     drf_client, permission_groups
 ):
-    """ An editor or unaffiliated user should not be able to modify any collaborator"""
+    """An editor or unaffiliated user should not be able to modify any collaborator"""
     website = permission_groups.websites[0]
     for client_user in (permission_groups.site_editor, UserFactory.create()):
         drf_client.force_login(client_user)
@@ -340,7 +343,7 @@ def test_websites_collaborators_endpoint_detail_modify_nonadmin_denied(
 
 
 def test_websites_collaborators_endpoint_detail_delete(drf_client, permission_groups):
-    """ An admin should be able to remove a collaborator """
+    """An admin should be able to remove a collaborator"""
     website = permission_groups.websites[0]
     drf_client.force_login(permission_groups.site_admin)
     resp = drf_client.delete(
@@ -367,7 +370,7 @@ def test_websites_collaborators_endpoint_detail_delete(drf_client, permission_gr
 def test_websites_collaborators_endpoint_detail_delete_denied(
     drf_client, permission_groups
 ):
-    """ An admin should not be able to remove a global admin or owner """
+    """An admin should not be able to remove a global admin or owner"""
     website = permission_groups.websites[0]
     for user in (permission_groups.global_admin, website.owner):
         drf_client.force_login(permission_groups.site_admin)
