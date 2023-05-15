@@ -414,7 +414,7 @@ def get_pdf_title(drive_file: DriveFile) -> str:
     with io.BytesIO(GDriveStreamReader(drive_file).read()) as pdf_file:
         pdf_reader = PyPDF2.PdfReader(pdf_file)
         pdf_metadata = pdf_reader.metadata
-        if "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
+        if pdf_metadata and "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
             return pdf_metadata["/Title"]
         return drive_file.name
 

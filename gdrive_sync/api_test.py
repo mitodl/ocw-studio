@@ -628,6 +628,26 @@ def test_create_gdrive_pdf(mock_get_s3_content_type, mocker, mytitle):
     assert drive_file.resource.title == mytitle if mytitle != "" else drive_file.name
 
 
+def test_create_gdrive_pdf_no_metadata(mock_get_s3_content_type, mocker):
+    """PDFs that have missing metadata should use the file name for the resource title"""
+    mocker.patch(
+        "gdrive_sync.api.GDriveStreamReader",
+        return_value=mocker.Mock(read=mocker.Mock(return_value=b"fake_bytes")),
+    )
+    mocker.patch(
+        "gdrive_sync.api.PyPDF2.PdfReader",
+        return_value=mocker.Mock(metadata=None),
+    )
+    drive_file = DriveFileFactory.create(
+        name="mylecturenotes123.pdf",
+        s3_key="test/path/mylecturenotes123.pdf",
+        mime_type="application/pdf",
+    )
+    create_gdrive_resource_content(drive_file)
+    drive_file.refresh_from_db()
+    assert drive_file.resource.title == drive_file.name
+
+
 def test_create_gdrive_resource_content_update(mock_get_s3_content_type):
     """create_resource_from_gdrive should update a WebsiteContent object linked to a DriveFile object"""
     content = WebsiteContentFactory.create(file="test/path/old.doc")
