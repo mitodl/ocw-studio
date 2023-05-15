@@ -496,7 +496,7 @@ class WebsiteStarter(TimestampedModel):
 
         for starter in all_starters:
             for item in SiteConfig(starter.config).iter_items():
-                yield website.starter.slug == starter.slug, item
+                yield website.starter == starter, item
 
     def __str__(self):
         return f"name='{self.name}', source={self.source}, commit={self.commit}"
