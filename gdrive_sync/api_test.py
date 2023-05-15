@@ -1,7 +1,6 @@
 """gdrive_sync.api tests"""
 import json
 from datetime import timedelta
-from typing import Iterable, Optional, Tuple
 
 import pytest
 from botocore.exceptions import ClientError
@@ -22,7 +21,11 @@ from gdrive_sync.api import (
     update_sync_status,
     walk_gdrive_folder,
 )
-from gdrive_sync.conftest import LIST_VIDEO_RESPONSES
+from gdrive_sync.conftest import (
+    LIST_VIDEO_RESPONSES,
+    all_starters_items_fields,
+    generate_related_content_data,
+)
 from gdrive_sync.constants import (
     DRIVE_FILE_FIELDS,
     DRIVE_FOLDER_FILES_FINAL,
@@ -43,11 +46,9 @@ from websites.constants import (
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
-    WebsiteStarterStatus,
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
-from websites.models import Website, WebsiteContent, WebsiteStarter
-from websites.site_config_api import ConfigItem, SiteConfig
+from websites.models import WebsiteContent
 
 
 pytestmark = pytest.mark.django_db
@@ -866,73 +867,13 @@ def test_find_missing_files(deleted_drive_files_count):
     assert all([file_id in deleted_file_ids for file_id in missing_files_result_ids])
 
 
-@pytest.fixture
-def all_starters_items_fields() -> Iterable[Tuple[WebsiteStarter, ConfigItem, dict]]:
-    """All fields from all starters."""
-    all_starters = list(
-        WebsiteStarter.objects.filter(status__in=WebsiteStarterStatus.ALLOWED_STATUSES)
-    )
-    data = []
-    for starter in all_starters:
-        for item in SiteConfig(starter.config).iter_items():
-            for field in item.fields:
-                data.append((starter, item, field))
-
-    return data
-
-
-def _generate_related_content_data(
-    starter: WebsiteStarter, field: dict, resource_id: str, website: Website
-) -> Optional[dict]:
-    """
-    A utility method to create data for WebsiteContent for `field` that references
-    `resource_id`.
-
-    Returns `None` for any unrelated field.
-    """
-    if starter != website.starter and not field.get("cross_site", False):
-        return
-
-    if field.get("widget") == "markdown" and (
-        CONTENT_TYPE_RESOURCE in field.get("link", [])
-        or CONTENT_TYPE_RESOURCE in field.get("embed", [])
-    ):
-        return {
-            "markdown": f'{{{{% resource_link "{resource_id}" "filename" %}}}}',
-            "metadata": {},
-        }
-    elif (
-        field.get("widget") == "relation"
-        and field.get("collection") == CONTENT_TYPE_RESOURCE
-    ):
-        value = (
-            resource_id
-            if not field.get("cross_site", False)
-            else [resource_id, website.url_path]
-        )
-
-        if field.get("multiple", False):
-            content = [value]
-        else:
-            content = value
-
-        return {"markdown": "", "metadata": {field["name"]: {"content": content}}}
-    elif field.get("widget") == "menu":
-        return {
-            "markdown": r"",
-            "metadata": {field["name"]: [{"identifier": resource_id}]},
-        }
-
-
 @pytest.mark.parametrize("with_resource", [False, True])
 @pytest.mark.parametrize("is_used_in_content", [False, True])
-def test_delete_drive_file(
-    mocker, with_resource, is_used_in_content, all_starters_items_fields
-):
+def test_delete_drive_file(mocker, with_resource, is_used_in_content):
     """delete_drive_file should delete the file and resource only if resource is not being used"""
     mocker.patch("main.s3_utils.boto3")
 
-    for starter, item, field in all_starters_items_fields:
+    for starter, item, field in all_starters_items_fields():
         website = WebsiteFactory.create()
         drive_file = DriveFileFactory.create(website=website)
 
@@ -946,7 +887,7 @@ def test_delete_drive_file(
             drive_file.save()
 
         if with_resource and is_used_in_content:
-            content_data = _generate_related_content_data(
+            content_data = generate_related_content_data(
                 starter,
                 field,
                 resource.text_id,

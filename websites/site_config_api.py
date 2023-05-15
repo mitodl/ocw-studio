@@ -51,6 +51,20 @@ class ConfigItem:
         """Returns True if this config item has a file target"""
         return "file" in self.item
 
+    def iter_fields(self, only_cross_site: bool = False) -> Iterator["ConfigField"]:
+        """
+        Yields ConfigField for each field.
+
+        Args:
+            only_cross_site (bool): Whether or not to yield only cross site fields.
+
+        Yields:
+            Iterator[ConfigField]: A generator that yields ConfigField.
+        """
+        for field in self.fields:
+            if not only_cross_site or field.get("cross_site", False):
+                yield ConfigField(field)
+
 
 @dataclass
 class ConfigField:

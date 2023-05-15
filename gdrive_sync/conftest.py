@@ -1,5 +1,12 @@
 """Common functions and variables for gdrive_sync tests"""
 
+from typing import Iterable, Optional, Tuple
+
+from websites.constants import CONTENT_TYPE_RESOURCE, WebsiteStarterStatus
+from websites.models import Website, WebsiteStarter
+from websites.site_config_api import ConfigItem, SiteConfig
+
+
 LIST_VIDEO_RESPONSES = [
     {
         "nextPageToken": "~!!~AI9FV7Tc4k5BiAr1Ckwyu",
@@ -84,3 +91,60 @@ LIST_FILE_RESPONSES = [
         ]
     },
 ]
+
+
+def all_starters_items_fields() -> Iterable[Tuple[WebsiteStarter, ConfigItem, dict]]:
+    """All fields from all starters."""
+    all_starters = list(
+        WebsiteStarter.objects.filter(status__in=WebsiteStarterStatus.ALLOWED_STATUSES)
+    )
+    data = []
+    for starter in all_starters:
+        for item in SiteConfig(starter.config).iter_items():
+            for field in item.fields:
+                data.append((starter, item, field))
+
+    return data
+
+
+def generate_related_content_data(
+    starter: WebsiteStarter, field: dict, resource_id: str, website: Website
+) -> Optional[dict]:
+    """
+    A utility method to create data for WebsiteContent for `field` that references
+    `resource_id`.
+
+    Returns `None` for any unrelated field.
+    """
+    if starter != website.starter and not field.get("cross_site", False):
+        return
+
+    if field.get("widget") == "markdown" and (
+        CONTENT_TYPE_RESOURCE in field.get("link", [])
+        or CONTENT_TYPE_RESOURCE in field.get("embed", [])
+    ):
+        return {
+            "markdown": f'{{{{% resource_link "{resource_id}" "filename" %}}}}',
+            "metadata": {},
+        }
+    elif (
+        field.get("widget") == "relation"
+        and field.get("collection") == CONTENT_TYPE_RESOURCE
+    ):
+        value = (
+            resource_id
+            if not field.get("cross_site", False)
+            else [resource_id, website.url_path]
+        )
+
+        if field.get("multiple", False):
+            content = [value]
+        else:
+            content = value
+
+        return {"markdown": "", "metadata": {field["name"]: {"content": content}}}
+    elif field.get("widget") == "menu":
+        return {
+            "markdown": r"",
+            "metadata": {field["name"]: [{"identifier": resource_id}]},
+        }
