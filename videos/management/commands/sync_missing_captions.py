@@ -191,7 +191,7 @@ class Command(WebsiteFilterCommand):
             file_content
         )
 
-        return new_s3_loc
+        return f"/{new_s3_loc}"
 
     def create_new_content(self, file_content, video):
         """Create new WebsiteContent object for caption or transcript using 3play response"""
@@ -200,7 +200,7 @@ class Command(WebsiteFilterCommand):
         title, new_obj_metadata = self.generate_metadata(
             new_text_id, new_s3_loc, file_content, video
         )
-        dirpath, filename = get_dirpath_and_filename(new_s3_loc)
+        filename = get_dirpath_and_filename(new_s3_loc)[1]
 
         defaults = {
             "metadata": new_obj_metadata,
@@ -212,7 +212,7 @@ class Command(WebsiteFilterCommand):
         new_obj = WebsiteContent.objects.get_or_create(
             website=video.website,
             filename=filename,
-            dirpath=dirpath,
+            dirpath="content/resources",
             is_page_content=True,
             defaults=defaults,
         )[0]
