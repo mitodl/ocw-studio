@@ -10,7 +10,7 @@ from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
-from videos.utils import generate_s3_path
+from videos.utils import generate_s3_path, get_content_dirpath
 from websites.models import WebsiteContent
 
 
@@ -200,19 +200,21 @@ class Command(WebsiteFilterCommand):
         title, new_obj_metadata = self.generate_metadata(
             new_text_id, new_s3_loc, file_content, video
         )
+        collection_type = "resource"
         filename = get_dirpath_and_filename(new_s3_loc)[1]
+        dirpath = get_content_dirpath("ocw-course-v2", collection_type)
 
         defaults = {
             "metadata": new_obj_metadata,
             "title": title,
-            "type": "resource",
+            "type": collection_type,
             "text_id": new_text_id,
         }
 
         new_obj = WebsiteContent.objects.get_or_create(
             website=video.website,
             filename=filename,
-            dirpath="content/resources",
+            dirpath=dirpath,
             is_page_content=True,
             defaults=defaults,
         )[0]
