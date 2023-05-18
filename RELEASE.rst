@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.93.0
+--------------
+
+- Sync missing captions - Fixed incorrect file paths (#1809)
+- fix: should not delete resources that are being used in a site (#1759)
+- Process PDFs with missing metadata (#1808)
+- Fixing test result sort order (#1805)
+- Fix S3 path for missing captions (#1797)
+- Revert "Incorrect files path for Sync missing captions (#1792)" (#1795)
+- Updating concourse to v7.9.1 (#1788)
+- Incorrect files path for Sync missing captions (#1792)
+
 Version 0.92.1 (Released May 10, 2023)
 --------------
 
