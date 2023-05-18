@@ -42,6 +42,7 @@ jobs:
       params:
         SEARCH_API_URL: ((search-api-url))
         SENTRY_DSN: ((ocw-hugo-themes-sentry-dsn))
+        SENTRY_ENV: ((ocw-hugo-themes-sentry-env))
       run:
         path: sh
         args:
