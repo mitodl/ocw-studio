@@ -362,8 +362,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         self.BRANCH = get_theme_branch()
         self.HUGO_ARGS = hugo_args
         self.set_instance_vars({"site": self.WEBSITE.name})
+        self.noindex = False
 
-    def upsert_pipeline(self):  # pylint:disable=too-many-locals
+    def upsert_pipeline(self):  # pylint:disable=too-many-locals,too-many-statements
         """
         Create or update a concourse pipeline for the given Website
         """
@@ -440,8 +441,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 or settings.ENV_NAME not in PRODUCTION_NAMES
             ):
                 self.noindex = "true"
-            else:
-                self.noindex = "false"
             if settings.CONCOURSE_IS_PRIVATE_REPO:
                 markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = "\n      private_key: ((git-private-key))"

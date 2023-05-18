@@ -2,7 +2,6 @@
 import json
 from html import unescape
 from urllib.parse import quote, urljoin
-from main.constants import PRODUCTION_NAMES
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -21,6 +20,7 @@ from content_sync.pipelines.concourse import (
     UnpublishedSiteRemovalPipeline,
 )
 from content_sync.utils import get_template_vars, get_theme_branch
+from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
