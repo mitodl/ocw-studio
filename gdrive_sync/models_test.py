@@ -1,8 +1,13 @@
 """Tests for gdrive_sync.models"""
 import pytest
 
+from gdrive_sync.conftest import (
+    all_starters_items_fields,
+    generate_related_content_data,
+)
 from gdrive_sync.factories import DriveFileFactory
-from websites.factories import WebsiteFactory
+from websites.constants import CONTENT_TYPE_RESOURCE
+from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
 @pytest.mark.django_db
@@ -32,3 +37,35 @@ def test_get_valid_s3_key():
         name="(file).PnG", mime_type="image/png", s3_key=None
     )
     assert file_4.get_valid_s3_key() == f"{site_prefix}/{file_4.website.name}/file.png"
+
+
+@pytest.mark.django_db
+def test_get_content_dependencies():
+    """get_content_dependencies should return content that uses `drive_file.resource`."""
+    for starter, item, field in all_starters_items_fields():
+        website = WebsiteFactory.create()
+        resource = WebsiteContentFactory.create(
+            type=CONTENT_TYPE_RESOURCE,
+            website=website,
+        )
+        drive_file = DriveFileFactory.create(website=website, resource=resource)
+
+        content_data = generate_related_content_data(
+            starter,
+            field,
+            resource.text_id,
+            website,
+        )
+        if content_data:
+            content = WebsiteContentFactory.create(
+                **content_data,
+                type=item.name,
+                website=website,
+            )
+
+        dependencies = drive_file.get_content_dependencies()
+
+        if content_data:
+            assert len(dependencies) != 0 and dependencies[0] == content
+        else:
+            assert len(dependencies) == 0

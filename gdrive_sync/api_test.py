@@ -21,7 +21,11 @@ from gdrive_sync.api import (
     update_sync_status,
     walk_gdrive_folder,
 )
-from gdrive_sync.conftest import LIST_VIDEO_RESPONSES
+from gdrive_sync.conftest import (
+    LIST_VIDEO_RESPONSES,
+    all_starters_items_fields,
+    generate_related_content_data,
+)
 from gdrive_sync.constants import (
     DRIVE_FILE_FIELDS,
     DRIVE_FOLDER_FILES_FINAL,
@@ -37,7 +41,6 @@ from videos.constants import VideoJobStatus, VideoStatus
 from videos.factories import VideoFactory, VideoJobFactory
 from websites.constants import (
     CONTENT_FILENAMES_FORBIDDEN,
-    CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
@@ -889,37 +892,48 @@ def test_find_missing_files(deleted_drive_files_count):
 def test_delete_drive_file(mocker, with_resource, is_used_in_content):
     """delete_drive_file should delete the file and resource only if resource is not being used"""
     mocker.patch("main.s3_utils.boto3")
-    website = WebsiteFactory.create()
-    drive_file = DriveFileFactory.create(website=website)
 
-    if with_resource:
-        resource = WebsiteContentFactory.create(
-            text_id="7d3df94e-e8dd-40bc-97f2-18e793d5ce25",
-            type=CONTENT_TYPE_RESOURCE,
-            website=website,
-        )
-        drive_file.resource = resource
-        drive_file.save()
+    for starter, item, field in all_starters_items_fields():
+        website = WebsiteFactory.create()
+        drive_file = DriveFileFactory.create(website=website)
 
-        if is_used_in_content:
-            content = WebsiteContentFactory.create(
-                type=CONTENT_TYPE_PAGE,
-                markdown=f'{{{{% resource_link "{resource.text_id}" "{resource.filename}" %}}}}',
+        content_data = None
+        if with_resource:
+            resource = WebsiteContentFactory.create(
+                type=CONTENT_TYPE_RESOURCE,
                 website=website,
             )
+            drive_file.resource = resource
+            drive_file.save()
 
-    api.delete_drive_file(drive_file, sync_datetime=website.synced_on)
+        if with_resource and is_used_in_content:
+            content_data = generate_related_content_data(
+                starter,
+                field,
+                resource.text_id,
+                website,
+            )
+            if content_data:
+                content = WebsiteContentFactory.create(
+                    **content_data,
+                    type=item.name,
+                    website=website,
+                )
 
-    drive_file_exists = DriveFile.objects.filter(file_id=drive_file.file_id).exists()
-    if with_resource:
-        resource_exists = WebsiteContent.objects.filter(pk=resource.id).exists()
+        api.delete_drive_file(drive_file, sync_datetime=website.synced_on)
 
-    if with_resource and is_used_in_content:
-        assert WebsiteContent.objects.filter(pk=content.id).exists()
-        assert resource_exists
-        assert drive_file_exists
-    elif with_resource:
-        assert not drive_file_exists
-        assert not resource_exists
-    else:
-        assert not drive_file_exists
+        drive_file_exists = DriveFile.objects.filter(
+            file_id=drive_file.file_id
+        ).exists()
+        if with_resource:
+            resource_exists = WebsiteContent.objects.filter(pk=resource.id).exists()
+
+        if with_resource and content_data:
+            assert WebsiteContent.objects.filter(pk=content.id).exists()
+            assert resource_exists
+            assert drive_file_exists
+        elif with_resource:
+            assert not drive_file_exists
+            assert not resource_exists
+        else:
+            assert not drive_file_exists

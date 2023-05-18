@@ -3,7 +3,7 @@ import json
 import logging
 import re
 from hashlib import sha256
-from typing import Dict
+from typing import Dict, Iterator, Tuple
 from urllib.parse import urljoin, urlparse
 from uuid import uuid4
 
@@ -37,7 +37,7 @@ from websites.constants import (
     WEBSITE_STARTER_STATUS_CHOICES,
     WebsiteStarterStatus,
 )
-from websites.site_config_api import SiteConfig
+from websites.site_config_api import ConfigItem, SiteConfig
 from websites.utils import (
     get_dict_field,
     permissions_group_name_for_role,
@@ -472,6 +472,31 @@ class WebsiteStarter(TimestampedModel):
             has_unpublished_live=True,
             has_unpublished_draft=True,
         )
+
+    @staticmethod
+    def iter_all_config_items(website: Website) -> Iterator[Tuple[bool, ConfigItem]]:
+        """
+        Yields ConfigItem for all active starters.
+
+        Args:
+            website (Website): The website being scanned.
+
+        Yields:
+            Iterator[Tuple[bool, ConfigItem]]: A generator where yield[0] indicates whether or not the ConfigItem
+                yield[1] belongs to the starter of `website`.
+        """
+        if website.starter is None:
+            raise Exception(
+                f"Website {website} does not have a starter. Cannot iterate config."
+            )
+
+        all_starters = WebsiteStarter.objects.filter(
+            status__in=WebsiteStarterStatus.ALLOWED_STATUSES
+        )
+
+        for starter in all_starters:
+            for item in SiteConfig(starter.config).iter_items():
+                yield website.starter == starter, item
 
     def __str__(self):
         return f"name='{self.name}', source={self.source}, commit={self.commit}"

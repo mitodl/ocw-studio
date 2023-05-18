@@ -1,8 +1,11 @@
 """ Models for gdrive_sync """
 import os
+from functools import reduce
+from typing import Iterable
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils.text import slugify
 from mitol.common.models import TimestampedModel
 
@@ -13,7 +16,8 @@ from gdrive_sync.constants import (
 )
 from videos.models import Video
 from websites.api import find_available_name
-from websites.models import Website, WebsiteContent
+from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.utils import resource_reference_field_filter
 
 
 class DriveApiQueryTracker(TimestampedModel):
@@ -95,6 +99,50 @@ class DriveFile(TimestampedModel):
             max_length=4096,
             extension=ext,
         )
+
+    def get_content_dependencies(self) -> Iterable[WebsiteContent]:
+        """
+        Find and return WebsiteContent that make use of this file through
+        `self.resource`.
+
+        Returns:
+            Iterable[WebsiteContent]: A list of WebsiteContent that makes use of this file
+                directly/indirectly.
+        """
+        if self.resource is None:
+            return []
+
+        website = self.website
+        resource_id = self.resource.text_id
+
+        filters = []
+
+        for is_website_config, config_item in WebsiteStarter.iter_all_config_items(
+            website
+        ):
+            for config_field in config_item.iter_fields(
+                only_cross_site=not is_website_config
+            ):
+                field = config_field.field
+                field_q = resource_reference_field_filter(field, resource_id, website)
+
+                if field_q is None:
+                    continue
+
+                q = Q(type=config_item.name) & field_q
+
+                if not field.get("cross_site", False):
+                    q = Q(website=website) & q
+
+                filters.append(q)
+
+        if not filters:
+            return []
+
+        query = reduce(lambda x, y: x | y, filters)
+        dependencies = WebsiteContent.objects.filter(query)
+
+        return list(dependencies)
 
     @property
     def s3_prefix(self):

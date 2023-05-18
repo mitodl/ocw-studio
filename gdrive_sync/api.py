@@ -38,7 +38,6 @@ from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
 from websites.api import get_valid_new_filename
 from websites.constants import (
-    CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
@@ -557,21 +556,6 @@ def update_sync_status(website: Website, sync_datetime: datetime):
     website.save()
 
 
-def _get_content_dependencies(drive_file: DriveFile) -> Iterable[WebsiteContent]:
-    """
-    Returns WebsiteContent of type page that use `drive_file`.
-    """
-    if drive_file.resource is None:
-        return []
-
-    dependencies = WebsiteContent.objects.filter(
-        Q(website=drive_file.website)
-        & Q(type=CONTENT_TYPE_PAGE)
-        & Q(markdown__icontains=drive_file.resource.text_id),
-    )
-    return list(dependencies)
-
-
 @transaction.atomic
 def rename_file(obj_text_id, obj_new_filename):
     """Rename the file on S3 associated with the WebsiteContent object to a new filename."""
@@ -593,7 +577,7 @@ def rename_file(obj_text_id, obj_new_filename):
         old_obj = existing_obj.first()
         if old_obj == obj:
             raise Exception("New filename is the same as the existing filename.")
-        dependencies = _get_content_dependencies(old_obj)
+        dependencies = old_obj.get_content_dependencies()
         if dependencies:
             raise Exception(
                 "Not renaming file due to dependencies in existing content: "
@@ -643,7 +627,7 @@ def delete_drive_file(drive_file: DriveFile, sync_datetime: datetime):
     Args:
         drive_file (DriveFile): A drive file.
     """
-    dependencies = _get_content_dependencies(drive_file)
+    dependencies = drive_file.get_content_dependencies()
 
     if dependencies:
         error_message = f"Cannot delete file {drive_file} because it is being used by {dependencies}."

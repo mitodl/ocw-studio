@@ -1,5 +1,7 @@
 """Websites utils"""
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
+from django.db.models import Q
 
 from websites import constants
 
@@ -47,3 +49,41 @@ def get_valid_base_filename(filename: str, content_type: str) -> str:
     if filename in constants.CONTENT_FILENAMES_FORBIDDEN:
         return f"{filename}-{content_type}"
     return filename
+
+
+def resource_reference_field_filter(
+    field: dict, resource_id: str, website: "Website"
+) -> Optional[Q]:
+    """
+    Generates an appropriate Q expression to filter a field for a resource usage.
+    """
+    q = None
+
+    if field.get("widget") == "markdown" and (
+        constants.CONTENT_TYPE_RESOURCE in field.get("link", [])
+        or constants.CONTENT_TYPE_RESOURCE in field.get("embed", [])
+    ):
+        q = Q(markdown__icontains=resource_id)
+    elif (
+        field.get("widget") == "relation"
+        and field.get("collection") == constants.CONTENT_TYPE_RESOURCE
+    ):
+        lookup_args = ["metadata", field["name"], "content"]
+
+        if field.get("multiple", False):
+            lookup_args.append("contains")
+
+        lookup = "__".join(lookup_args)
+
+        value = (
+            resource_id
+            if not field.get("cross_site", False)
+            else [[resource_id, website.url_path]]
+        )
+
+        q = Q(**{lookup: value})
+    elif field.get("widget") == "menu":
+        lookup = "__".join(("metadata", field.get("name"), "contains"))
+        q = Q(**{lookup: [{"identifier": resource_id}]})
+
+    return q
