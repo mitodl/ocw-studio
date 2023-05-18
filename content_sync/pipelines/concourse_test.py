@@ -2,6 +2,7 @@
 import json
 from html import unescape
 from urllib.parse import quote, urljoin
+from main.constants import PRODUCTION_NAMES
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -97,7 +98,7 @@ def mock_auth(mocker):
 
 @pytest.fixture(scope="function", params=["test", "dev"])
 def pipeline_settings(settings, request):
-    """ Default settings for pipelines"""
+    """Default settings for pipelines"""
     env = request.param
     settings.ENVIRONMENT = env
     settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket_test"
@@ -113,6 +114,7 @@ def pipeline_settings(settings, request):
     settings.OCW_COURSE_STARTER_SLUG = "another_custom_slug"
     settings.OCW_NEXT_SEARCH_WEBHOOK_KEY = "abc123"
     settings.OPEN_DISCUSSIONS_URL = "https://open.mit.edu"
+    settings.ENV_NAME = "production"
     if env == "dev":
         settings.AWS_ACCESS_KEY_ID = "minio_root_user"
         settings.AWS_SECRET_ACCESS_KEY = "minio_root_password"
@@ -127,12 +129,13 @@ def pipeline_settings(settings, request):
         settings.STATIC_API_BASE_URL = "https://ocw.mit.edu"
         settings.RESOURCE_BASE_URL_DRAFT = "https://draft.ocw.mit.edu"
         settings.RESOURCE_BASE_URL_LIVE = "https://live.ocw.mit.edu"
+        settings.ENV_NAME = "rc"
 
 
 @pytest.mark.parametrize("stream", [True, False])
 @pytest.mark.parametrize("iterator", [True, False])
 def test_api_get_with_headers(mocker, mock_auth, stream, iterator):
-    """ PipelineApi.get_with_headers function should work as expected """
+    """PipelineApi.get_with_headers function should work as expected"""
     mock_text = '[{"test": "output"}]' if iterator else '{"test": "output"}'
     stream_output = ["yielded"]
     mocker.patch(
@@ -159,7 +162,7 @@ def test_api_get_with_headers(mocker, mock_auth, stream, iterator):
 @pytest.mark.parametrize("status_code", [200, 401])
 @pytest.mark.parametrize("ok_response", [True, False])
 def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
-    """ PipelineApi.put_with_headers function should work as expected """
+    """PipelineApi.put_with_headers function should work as expected"""
     mock_auth = mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_response = mocker.Mock(
         status_code=status_code, headers={"X-Test": "header_value"}
@@ -191,7 +194,7 @@ def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
 @pytest.mark.parametrize("status_code", [200, 403])
 @pytest.mark.parametrize("ok_response", [True, False])
 def test_api_delete(mocker, mock_auth, status_code, ok_response):
-    """ PipelineApi.delete function should work as expected """
+    """PipelineApi.delete function should work as expected"""
     mock_auth = mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_response = mocker.Mock(
         status_code=status_code, headers={"X-Test": "header_value"}
@@ -338,7 +341,11 @@ def test_upsert_website_pipelines(
         api_url = settings.OCW_STUDIO_LIVE_URL
 
     config_str = json.dumps(kwargs)
-
+    if version == VERSION_DRAFT or settings.ENV_NAME not in PRODUCTION_NAMES:
+        expected_noindex = "true"
+    else:
+        expected_noindex = "false"
+    assert expected_noindex == pipeline.noindex
     assert f"{hugo_projects_path}.git" in config_str
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
@@ -536,7 +543,7 @@ def test_get_build_status(mocker, mock_auth):
 def test_upsert_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists
 ):  # pylint:disable=too-many-locals
-    """ Test upserting the theme assets pipeline """
+    """Test upserting the theme assets pipeline"""
     instance_vars = f"%7B%22branch%22%3A%20%22{get_theme_branch()}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={instance_vars}"
 
