@@ -7,6 +7,7 @@ import re
 
 from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.models import WebsiteContent
+from websites.models import WebsiteStarter
 
 
 def generate_s3_path(file_or_webcontent, website):
@@ -33,3 +34,12 @@ def clean_uuid_filename(filename):
     uuid = "^[0-9A-F]{8}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{12}_"
     uuid_re = re.compile(uuid, re.I)
     return re.split(uuid_re, filename)[-1]
+
+
+def get_content_dirpath(slug, collection_type):
+    """Return folder path for the content based on collection type"""
+    starter = WebsiteStarter.objects.get(slug=slug)
+    for collection in starter.config["collections"]:
+        if collection["name"] != collection_type:
+            continue
+        return collection["folder"]
