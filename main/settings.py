@@ -1152,6 +1152,6 @@ OCW_HUGO_THEMES_SENTRY_ENV = get_string(
 ENV_NAME = get_string(
     name="ENV_NAME",
     default="rc",
-    description="Name of environment from Heroku or other de",
+    description="Name of environment from Heroku or other deployment",
     required=False,
 )
