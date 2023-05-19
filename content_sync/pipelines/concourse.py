@@ -362,7 +362,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         self.BRANCH = get_theme_branch()
         self.HUGO_ARGS = hugo_args
         self.set_instance_vars({"site": self.WEBSITE.name})
-        self.noindex = "false"
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals,too-many-statements
         """
@@ -439,7 +438,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 branch == settings.GIT_BRANCH_PREVIEW
                 or settings.ENV_NAME not in PRODUCTION_NAMES
             ):
-                self.noindex = "true"
+                noindex = "true"
+            else:
+                noindex = "false"
             if settings.CONCOURSE_IS_PRIVATE_REPO:
                 markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = "\n      private_key: ((git-private-key))"
@@ -538,7 +539,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     if self.WEBSITE.name == settings.ROOT_WEBSITE_NAME
                     else " --delete",
                 )
-                .replace("((noindex))", self.noindex)
+                .replace("((noindex))", noindex)
             )
             self.upsert_config(config_str, pipeline_name)
 

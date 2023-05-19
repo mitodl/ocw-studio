@@ -342,15 +342,16 @@ def test_upsert_website_pipelines(
         api_url = settings.OCW_STUDIO_LIVE_URL
 
     config_str = json.dumps(kwargs)
-    if version == VERSION_DRAFT:
-        config_str.replace("release", "preview")
-        pipeline.upsert_config(config_str, VERSION_DRAFT)
-    if (version == VERSION_DRAFT) or (settings.ENV_NAME not in PRODUCTION_NAMES):
-        expected_noindex = "true"
-    else:
-        expected_noindex = "false"
 
-    assert expected_noindex == pipeline.noindex
+    # if "NOINDEX" in config_str and (
+    #     "preview" in config_str or settings.ENV_NAME not in PRODUCTION_NAMES
+    # ):
+    if "preview" in config_str or settings.ENV_NAME not in PRODUCTION_NAMES:
+        expected_noindex = '\\"NOINDEX\\": true'
+    else:
+        expected_noindex = '\\"NOINDEX\\": false'
+
+    assert expected_noindex in config_str
     assert f"{hugo_projects_path}.git" in config_str
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
