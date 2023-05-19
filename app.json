@@ -143,6 +143,10 @@
       "description": "Gdrive folder for video uploads",
       "required": false
     },
+    "ENV_NAME": {
+      "description": "Name of environment from Heroku or other deployment",
+      "required": false
+    },
     "FIELD_METADATA_TITLE": {
       "description": "The site metadata field for title",
       "required": false
