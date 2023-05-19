@@ -362,7 +362,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         self.BRANCH = get_theme_branch()
         self.HUGO_ARGS = hugo_args
         self.set_instance_vars({"site": self.WEBSITE.name})
-        self.noindex = False
+        self.noindex = "false"
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals,too-many-statements
         """
@@ -435,7 +435,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 web_bucket = branch_vars["publish_bucket_name"]
                 offline_bucket = branch_vars["offline_publish_bucket_name"]
                 resource_base_url = branch_vars["resource_base_url_live"]
-
             if (
                 branch == settings.GIT_BRANCH_PREVIEW
                 or settings.ENV_NAME not in PRODUCTION_NAMES

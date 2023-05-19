@@ -114,7 +114,6 @@ def pipeline_settings(settings, request):
     settings.OCW_COURSE_STARTER_SLUG = "another_custom_slug"
     settings.OCW_NEXT_SEARCH_WEBHOOK_KEY = "abc123"
     settings.OPEN_DISCUSSIONS_URL = "https://open.mit.edu"
-    settings.ENV_NAME = "production"
     if env == "dev":
         settings.AWS_ACCESS_KEY_ID = "minio_root_user"
         settings.AWS_SECRET_ACCESS_KEY = "minio_root_password"
@@ -129,7 +128,6 @@ def pipeline_settings(settings, request):
         settings.STATIC_API_BASE_URL = "https://ocw.mit.edu"
         settings.RESOURCE_BASE_URL_DRAFT = "https://draft.ocw.mit.edu"
         settings.RESOURCE_BASE_URL_LIVE = "https://live.ocw.mit.edu"
-        settings.ENV_NAME = "rc"
 
 
 @pytest.mark.parametrize("stream", [True, False])
@@ -261,6 +259,7 @@ def test_upsert_website_pipeline_missing_settings(settings):
         SitePipeline(website)
 
 
+@pytest.mark.parametrize("env_name", ["production", "rc"])
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
 @pytest.mark.parametrize("home_page", [True, False])
 @pytest.mark.parametrize("pipeline_exists", [True, False])
@@ -276,6 +275,7 @@ def test_upsert_website_pipelines(
     pipeline_exists,
     hard_purge,
     with_api,
+    env_name,
 ):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements
     """The correct concourse API args should be made for a website"""
     # Set AWS expectations based on environment
@@ -284,7 +284,7 @@ def test_upsert_website_pipelines(
     expected_endpoint_prefix = (
         "--endpoint-url http://10.1.0.100:9000 " if env == "dev" else ""
     )
-
+    settings.ENV_NAME = env_name
     settings.CONCOURSE_HARD_PURGE = hard_purge
 
     hugo_projects_path = "https://github.com/org/repo"
@@ -319,6 +319,7 @@ def test_upsert_website_pipelines(
         "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
     existing_api = PipelineApi("a", "b", "c", "d") if with_api else None
+
     pipeline = SitePipeline(website, api=existing_api)
     assert (pipeline.api == existing_api) is with_api
     pipeline.upsert_pipeline()
@@ -341,10 +342,14 @@ def test_upsert_website_pipelines(
         api_url = settings.OCW_STUDIO_LIVE_URL
 
     config_str = json.dumps(kwargs)
-    if version == VERSION_DRAFT or settings.ENV_NAME not in PRODUCTION_NAMES:
+    if version == VERSION_DRAFT:
+        config_str.replace("release", "preview")
+        pipeline.upsert_config(config_str, VERSION_DRAFT)
+    if (version == VERSION_DRAFT) or (settings.ENV_NAME not in PRODUCTION_NAMES):
         expected_noindex = "true"
     else:
         expected_noindex = "false"
+
     assert expected_noindex == pipeline.noindex
     assert f"{hugo_projects_path}.git" in config_str
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
