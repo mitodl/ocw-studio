@@ -342,7 +342,10 @@ def test_upsert_website_pipelines(
 
     config_str = json.dumps(kwargs)
 
-    if "preview" in config_str or settings.ENV_NAME not in PRODUCTION_NAMES:
+    if (
+        settings.GIT_BRANCH_PREVIEW in config_str
+        or settings.ENV_NAME not in PRODUCTION_NAMES
+    ):
         expected_noindex = '\\"NOINDEX\\": true'
     else:
         expected_noindex = '\\"NOINDEX\\": false'
