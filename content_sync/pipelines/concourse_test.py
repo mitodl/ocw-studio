@@ -319,7 +319,6 @@ def test_upsert_website_pipelines(
         "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
     existing_api = PipelineApi("a", "b", "c", "d") if with_api else None
-
     pipeline = SitePipeline(website, api=existing_api)
     assert (pipeline.api == existing_api) is with_api
     pipeline.upsert_pipeline()
@@ -343,9 +342,6 @@ def test_upsert_website_pipelines(
 
     config_str = json.dumps(kwargs)
 
-    # if "NOINDEX" in config_str and (
-    #     "preview" in config_str or settings.ENV_NAME not in PRODUCTION_NAMES
-    # ):
     if "preview" in config_str or settings.ENV_NAME not in PRODUCTION_NAMES:
         expected_noindex = '\\"NOINDEX\\": true'
     else:
