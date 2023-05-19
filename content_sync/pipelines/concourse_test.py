@@ -20,6 +20,7 @@ from content_sync.pipelines.concourse import (
     UnpublishedSiteRemovalPipeline,
 )
 from content_sync.utils import get_template_vars, get_theme_branch
+from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
@@ -97,7 +98,7 @@ def mock_auth(mocker):
 
 @pytest.fixture(scope="function", params=["test", "dev"])
 def pipeline_settings(settings, request):
-    """ Default settings for pipelines"""
+    """Default settings for pipelines"""
     env = request.param
     settings.ENVIRONMENT = env
     settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket_test"
@@ -132,7 +133,7 @@ def pipeline_settings(settings, request):
 @pytest.mark.parametrize("stream", [True, False])
 @pytest.mark.parametrize("iterator", [True, False])
 def test_api_get_with_headers(mocker, mock_auth, stream, iterator):
-    """ PipelineApi.get_with_headers function should work as expected """
+    """PipelineApi.get_with_headers function should work as expected"""
     mock_text = '[{"test": "output"}]' if iterator else '{"test": "output"}'
     stream_output = ["yielded"]
     mocker.patch(
@@ -159,7 +160,7 @@ def test_api_get_with_headers(mocker, mock_auth, stream, iterator):
 @pytest.mark.parametrize("status_code", [200, 401])
 @pytest.mark.parametrize("ok_response", [True, False])
 def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
-    """ PipelineApi.put_with_headers function should work as expected """
+    """PipelineApi.put_with_headers function should work as expected"""
     mock_auth = mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_response = mocker.Mock(
         status_code=status_code, headers={"X-Test": "header_value"}
@@ -191,7 +192,7 @@ def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
 @pytest.mark.parametrize("status_code", [200, 403])
 @pytest.mark.parametrize("ok_response", [True, False])
 def test_api_delete(mocker, mock_auth, status_code, ok_response):
-    """ PipelineApi.delete function should work as expected """
+    """PipelineApi.delete function should work as expected"""
     mock_auth = mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_response = mocker.Mock(
         status_code=status_code, headers={"X-Test": "header_value"}
@@ -258,6 +259,7 @@ def test_upsert_website_pipeline_missing_settings(settings):
         SitePipeline(website)
 
 
+@pytest.mark.parametrize("env_name", ["production", "rc"])
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
 @pytest.mark.parametrize("home_page", [True, False])
 @pytest.mark.parametrize("pipeline_exists", [True, False])
@@ -273,6 +275,7 @@ def test_upsert_website_pipelines(
     pipeline_exists,
     hard_purge,
     with_api,
+    env_name,
 ):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements
     """The correct concourse API args should be made for a website"""
     # Set AWS expectations based on environment
@@ -281,7 +284,7 @@ def test_upsert_website_pipelines(
     expected_endpoint_prefix = (
         "--endpoint-url http://10.1.0.100:9000 " if env == "dev" else ""
     )
-
+    settings.ENV_NAME = env_name
     settings.CONCOURSE_HARD_PURGE = hard_purge
 
     hugo_projects_path = "https://github.com/org/repo"
@@ -339,6 +342,15 @@ def test_upsert_website_pipelines(
 
     config_str = json.dumps(kwargs)
 
+    if (
+        settings.GIT_BRANCH_PREVIEW in config_str
+        or settings.ENV_NAME not in PRODUCTION_NAMES
+    ):
+        expected_noindex = '\\"NOINDEX\\": true'
+    else:
+        expected_noindex = '\\"NOINDEX\\": false'
+
+    assert expected_noindex in config_str
     assert f"{hugo_projects_path}.git" in config_str
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
@@ -536,7 +548,7 @@ def test_get_build_status(mocker, mock_auth):
 def test_upsert_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists
 ):  # pylint:disable=too-many-locals
-    """ Test upserting the theme assets pipeline """
+    """Test upserting the theme assets pipeline"""
     instance_vars = f"%7B%22branch%22%3A%20%22{get_theme_branch()}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/ocw-theme-assets/config?vars={instance_vars}"
 

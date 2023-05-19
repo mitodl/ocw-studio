@@ -44,6 +44,7 @@ from content_sync.utils import (
     strip_offline_lines,
     strip_online_lines,
 )
+from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.models import Website
@@ -74,7 +75,7 @@ class PipelineApi(Api, BasePipelineApi):
 
     @retry_on_failure
     def auth(self):
-        """ Same as the base class but with retries and support for concourse 7.7"""
+        """Same as the base class but with retries and support for concourse 7.7"""
         if self.has_username_and_passwd:
             self.ATC_AUTH = None
             session = self._set_new_session()
@@ -201,7 +202,7 @@ class PipelineApi(Api, BasePipelineApi):
 
 
 class GeneralPipeline(BaseGeneralPipeline):
-    """ Base class for a Concourse pipeline """
+    """Base class for a Concourse pipeline"""
 
     MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS
     PIPELINE_NAME = None
@@ -295,14 +296,14 @@ class GeneralPipeline(BaseGeneralPipeline):
         return self.api.abort_build(build_id)
 
     def unpause(self):
-        """ Use self.PIPELINE_NAME as input to the unpause_pipeline function"""
+        """Use self.PIPELINE_NAME as input to the unpause_pipeline function"""
         if self.PIPELINE_NAME:
             self.unpause_pipeline(self.PIPELINE_NAME)
         else:
             raise ValueError("No default name specified for this pipeline")
 
     def trigger(self) -> int:
-        """ Use self.PIPELINE_NAME as input to the trigger_pipeline_build function"""
+        """Use self.PIPELINE_NAME as input to the trigger_pipeline_build function"""
         if self.PIPELINE_NAME:
             return self.trigger_pipeline_build(self.PIPELINE_NAME)
         else:
@@ -362,7 +363,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         self.HUGO_ARGS = hugo_args
         self.set_instance_vars({"site": self.WEBSITE.name})
 
-    def upsert_pipeline(self):  # pylint:disable=too-many-locals
+    def upsert_pipeline(self):  # pylint:disable=too-many-locals,too-many-statements
         """
         Create or update a concourse pipeline for the given Website
         """
@@ -433,7 +434,13 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 web_bucket = branch_vars["publish_bucket_name"]
                 offline_bucket = branch_vars["offline_publish_bucket_name"]
                 resource_base_url = branch_vars["resource_base_url_live"]
-
+            if (
+                branch == settings.GIT_BRANCH_PREVIEW
+                or settings.ENV_NAME not in PRODUCTION_NAMES
+            ):
+                noindex = "true"
+            else:
+                noindex = "false"
             if settings.CONCOURSE_IS_PRIVATE_REPO:
                 markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
                 private_key_var = "\n      private_key: ((git-private-key))"
@@ -532,6 +539,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     if self.WEBSITE.name == settings.ROOT_WEBSITE_NAME
                     else " --delete",
                 )
+                .replace("((noindex))", noindex)
             )
             self.upsert_config(config_str, pipeline_name)
 

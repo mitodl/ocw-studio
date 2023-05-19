@@ -19,6 +19,7 @@ from mitol.common.envs import (
     init_app_settings,
 )
 
+from main.constants import PRODUCTION_NAMES
 from main.sentry import init_sentry
 
 
@@ -156,7 +157,7 @@ INSTALLED_APPS = (
     "mitol.mail.apps.MailApp",
 )
 
-if ENVIRONMENT not in {"prod", "production"}:
+if ENVIRONMENT not in PRODUCTION_NAMES:
     INSTALLED_APPS += ("localdev",)
 
 DISABLE_WEBPACK_LOADER_STATS = get_bool(
@@ -1146,4 +1147,11 @@ OCW_HUGO_THEMES_SENTRY_ENV = get_string(
     name="OCW_HUGO_THEMES_SENTRY_ENV",
     default="qa",
     description="The sentry ENV that will be used in ocw-studio",
+)
+
+ENV_NAME = get_string(
+    name="ENV_NAME",
+    default="rc",
+    description="Name of environment from Heroku or other deployment",
+    required=False,
 )
