@@ -689,6 +689,7 @@ class MassBuildSitesPipeline(
                     "offline_bucket": template_vars["offline_preview_bucket_name"],
                     "build_drafts": "--buildDrafts",
                     "resource_base_url": settings.RESOURCE_BASE_URL_DRAFT,
+                    "noindex": "true",
                 }
             )
         elif self.VERSION == VERSION_LIVE:
@@ -703,6 +704,9 @@ class MassBuildSitesPipeline(
                     "offline_bucket": template_vars["offline_publish_bucket_name"],
                     "build_drafts": "",
                     "resource_base_url": settings.RESOURCE_BASE_URL_LIVE,
+                    "noindex": "true"
+                    if settings.ENV_NAME not in PRODUCTION_NAMES
+                    else "false",
                 }
             )
         base_hugo_args = {
@@ -793,6 +797,7 @@ class MassBuildSitesPipeline(
                 "((ocw-hugo-themes-sentry-dsn))",
                 settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
             )
+            .replace("((noindex))", template_vars["noindex"])
         )
         self.upsert_config(config_str, self.PIPELINE_NAME)
 
