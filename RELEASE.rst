@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.93.1
+Version 0.93.1 (Released May 22, 2023)
 --------------
 
 - Adding NOINDEX Variable Definition to Concourse Pipelines (#1813)
