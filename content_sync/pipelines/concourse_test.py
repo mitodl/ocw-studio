@@ -608,7 +608,7 @@ def test_upsert_mass_build_pipeline(
     prefix,
     starter,
     offline,
-):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements
+):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements,too-many-branches
     """The mass build pipeline should have expected configuration"""
     expected_template_vars = get_template_vars()
     hugo_projects_path = "https://github.com/org/repo"
