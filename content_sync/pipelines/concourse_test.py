@@ -608,7 +608,7 @@ def test_upsert_mass_build_pipeline(
     prefix,
     starter,
     offline,
-):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements
+):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements,too-many-branches
     """The mass build pipeline should have expected configuration"""
     expected_template_vars = get_template_vars()
     hugo_projects_path = "https://github.com/org/repo"
@@ -690,6 +690,14 @@ def test_upsert_mass_build_pipeline(
     assert f'\\"branch\\": \\"{projects_branch}\\"' in config_str
     assert f"{hugo_projects_path}.git" in config_str
     assert static_api_url in config_str
+    if (
+        version == VERSION_DRAFT in config_str
+        or settings.ENV_NAME not in PRODUCTION_NAMES
+    ):
+        expected_noindex = '\\"NOINDEX\\": true'
+    else:
+        expected_noindex = '\\"NOINDEX\\": false'
+    assert expected_noindex in config_str
     if offline:
         assert "PULLING IN STATIC RESOURCES FOR $NAME" in config_str
         assert "touch ./content/static_resources/_index.md" in config_str
