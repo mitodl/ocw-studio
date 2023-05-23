@@ -590,7 +590,7 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
             )
             .replace(
                 "((ocw-hugo-themes-sentry-env))",
-                settings.OCW_HUGO_THEMES_SENTRY_ENV or "",
+                settings.ENVIRONMENT or "",
             )
             .replace("((atc-search-params))", self.instance_vars)
         )
