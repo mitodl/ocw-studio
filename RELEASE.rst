@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.93.2
+Version 0.93.2 (Released May 23, 2023)
 --------------
 
 - template noindex variable into mass-build-sites pipeline (#1817)
