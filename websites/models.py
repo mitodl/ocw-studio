@@ -476,7 +476,7 @@ class WebsiteStarter(TimestampedModel):
     @staticmethod
     def iter_all_config_items(website: Website) -> Iterator[Tuple[bool, ConfigItem]]:
         """
-        Yields ConfigItem for all active starters.
+        Yields ConfigItem for all starters.
 
         Args:
             website (Website): The website being scanned.
@@ -490,9 +490,7 @@ class WebsiteStarter(TimestampedModel):
                 f"Website {website} does not have a starter. Cannot iterate config."
             )
 
-        all_starters = WebsiteStarter.objects.filter(
-            status__in=WebsiteStarterStatus.ALLOWED_STATUSES
-        )
+        all_starters = WebsiteStarter.objects.all()
 
         for starter in all_starters:
             for item in SiteConfig(starter.config).iter_items():
