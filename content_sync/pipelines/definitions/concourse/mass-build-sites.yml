@@ -151,6 +151,7 @@ jobs:
       SITEMAP_DOMAIN: ((sitemap-domain))
       PREFIX: ((prefix))
       SENTRY_DSN: ((ocw-hugo-themes-sentry-dsn))
+      NOINDEX: ((noindex))
       # START DEV-ONLY
       AWS_ACCESS_KEY_ID: ((minio-root-user))
       AWS_SECRET_ACCESS_KEY: ((minio-root-password))
