@@ -43,7 +43,7 @@ abstract class ModalStateVariant<T> {
  * related to the content being edited.
  */
 export class Editing<T> extends ModalStateVariant<T> {
-  state: "editing" = "editing"
+  state = "editing" as const
   /**
    * The value wrapped in the Editing state
    */
@@ -58,14 +58,14 @@ export class Editing<T> extends ModalStateVariant<T> {
  * Adding state, for when new content is being created.
  */
 class Adding<T> extends ModalStateVariant<T> {
-  state: "adding" = "adding"
+  state = "adding" as const
 }
 
 /**
  * Closed state, for when the drawer is closed and deactivated.
  */
 class Closed<T> extends ModalStateVariant<T> {
-  state: "closed" = "closed"
+  state = "closed" as const
 }
 
 /**
