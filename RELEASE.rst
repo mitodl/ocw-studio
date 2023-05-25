@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.93.3
+--------------
+
+- Use all starters (#1818)
+
 Version 0.93.2 (Released May 23, 2023)
 --------------
 
