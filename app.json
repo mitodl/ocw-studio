@@ -290,10 +290,6 @@
       "description": "The sentry DSN that will be used in ocw-hugo-themes",
       "required": false
     },
-    "OCW_HUGO_THEMES_SENTRY_ENV": {
-      "description": "The sentry ENV that will be used in ocw-studio",
-      "required": false
-    },
     "OCW_IMPORT_STARTER_SLUG": {
       "description": "The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
       "required": false
