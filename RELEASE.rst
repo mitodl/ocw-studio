@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.93.4
+--------------
+
+- SENTRY_ENV added to the themes-pipelines (#1811)
+
 Version 0.93.3 (Released May 25, 2023)
 --------------
 
