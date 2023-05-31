@@ -60,7 +60,7 @@ click-repl==0.2.0
     # via celery
 concoursepy==0.0.20
     # via -r requirements.in
-cryptography==39.0.1
+cryptography==39.0.2
     # via
     #   -r requirements.in
     #   social-auth-core
