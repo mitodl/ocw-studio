@@ -701,7 +701,7 @@ def test_upsert_mass_build_pipeline(
     if offline:
         assert "PULLING IN STATIC RESOURCES FOR $NAME" in config_str
         assert "touch ./content/static_resources/_index.md" in config_str
-        assert f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseUrl / --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"
+        assert f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseURL / --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"
         assert (
             f"PUBLISH_S3_RESULT=$(aws s3{endpoint_url} sync ./ s3://{offline_bucket}$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors $DELETE) || PUBLISH_S3_RESULT=1"
             in config_str
@@ -722,7 +722,7 @@ def test_upsert_mass_build_pipeline(
             in config_str
         )
         assert (
-            f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseUrl $PREFIX/$BASE_URL --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"
+            f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseURL $PREFIX/$BASE_URL --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"
             in config_str
         )
         assert (

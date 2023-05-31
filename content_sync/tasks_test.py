@@ -281,7 +281,7 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
 
 @pytest.mark.parametrize("create_backend", [True, False])
 @pytest.mark.parametrize("unpause", [True, False])
-@pytest.mark.parametrize("hugo_args", [None, "--baseUrl /"])
+@pytest.mark.parametrize("hugo_args", [None, "--baseURL /"])
 @pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
 def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
     mocker, mocked_celery, create_backend, unpause, hugo_args, chunk_size, chunks
@@ -338,7 +338,7 @@ def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
 
 @pytest.mark.parametrize("create_backend", [True, False])
 @pytest.mark.parametrize("unpause", [True, False])
-@pytest.mark.parametrize("hugo_args", [None, "--baseUrl /"])
+@pytest.mark.parametrize("hugo_args", [None, "--baseURL /"])
 @pytest.mark.parametrize("check_limit", [True, False])
 def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments
     mocker, settings, create_backend, unpause, hugo_args, check_limit
