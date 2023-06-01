@@ -225,7 +225,7 @@ export default class ResourceEmbed extends CKEPlugin {
     return "ResourceEmbed"
   }
 
-  static get requires(): typeof CKEPlugin[] {
+  static get requires(): (typeof CKEPlugin)[] {
     return [ResourceEmbedEditing, ResourceMarkdownSyntax]
   }
 }

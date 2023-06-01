@@ -149,11 +149,13 @@ class LegacyShortcodeEditing extends CKPlugin {
             attrs[DATA_ARGUMENTS] = dataArguments
           }
 
-          return viewWriter.createRawElement("span", attrs, function(
-            el: HTMLElement
-          ) {
-            el.innerHTML = shortcode
-          })
+          return viewWriter.createRawElement(
+            "span",
+            attrs,
+            function(el: HTMLElement) {
+              el.innerHTML = shortcode
+            }
+          )
         }
       })
 
@@ -186,7 +188,7 @@ class LegacyShortcodeEditing extends CKPlugin {
 }
 
 export default class LegacyShortcodes extends CKPlugin {
-  static get requires(): typeof CKPlugin[] {
+  static get requires(): (typeof CKPlugin)[] {
     return [LegacyShortcodeEditing, LegacyShortcodeSyntax]
   }
 }

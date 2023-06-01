@@ -188,12 +188,9 @@ describe("RelationField", () => {
   describe("cross_site option", () => {
     it("should present default options for websites", async () => {
       const { wrapper } = await render({ cross_site: true, value: [] })
-      expect(
-        wrapper
-          .find("SelectField")
-          .at(0)
-          .prop("defaultOptions")
-      ).toEqual(formatWebsiteOptions(websites, "name"))
+      expect(wrapper.find("SelectField").at(0).prop("defaultOptions")).toEqual(
+        formatWebsiteOptions(websites, "name")
+      )
     })
 
     it.each(["ocw-www", null])(
@@ -221,13 +218,10 @@ describe("RelationField", () => {
     it("should let the user pick a website and then content within that website", async () => {
       const { wrapper } = await render({ cross_site: true, value: [] })
       await act(async () => {
-        wrapper
-          .find(SelectField)
-          .at(0)
-          .prop("onChange")({
+        wrapper.find(SelectField).at(0).prop("onChange")({
           // @ts-expect-error Not fully simulating event
-            target: { value: "new-uuid" }
-          })
+          target: { value: "new-uuid" }
+        })
         wrapper.update()
       })
 
@@ -249,12 +243,7 @@ describe("RelationField", () => {
       )
 
       // UI now shows content
-      expect(
-        wrapper
-          .find("SelectField")
-          .at(1)
-          .prop("options")
-      ).toEqual(
+      expect(wrapper.find("SelectField").at(1).prop("options")).toEqual(
         contentListingItems.map(item => ({
           value: item.text_id,
           label: item.title

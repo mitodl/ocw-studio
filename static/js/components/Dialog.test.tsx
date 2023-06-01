@@ -38,31 +38,15 @@ describe("Dialog", () => {
     const wrapper = render({ open: true, headerContent, bodyContent })
     expect(wrapper.find("Modal").prop("isOpen")).toBe(true)
     expect(wrapper.find("Modal").prop("toggle")).toBe(onCancelStub)
-    expect(
-      wrapper
-        .find("ModalBody")
-        .childAt(0)
-        .text()
-    ).toBe("Body")
-    expect(
-      wrapper
-        .find("ModalHeader")
-        .childAt(0)
-        .text()
-    ).toBe(headerContent)
+    expect(wrapper.find("ModalBody").childAt(0).text()).toBe("Body")
+    expect(wrapper.find("ModalHeader").childAt(0).text()).toBe(headerContent)
 
-    const cancelButton = wrapper
-      .find("ModalFooter")
-      .find("Button")
-      .at(0)
+    const cancelButton = wrapper.find("ModalFooter").find("Button").at(0)
     expect(cancelButton.childAt(0).text()).toBe("Cancel")
     cancelButton.simulate("click")
     sinon.assert.calledOnce(onCancelStub)
 
-    const okButton = wrapper
-      .find("ModalFooter")
-      .find("Button")
-      .at(1)
+    const okButton = wrapper.find("ModalFooter").find("Button").at(1)
     expect(okButton.childAt(0).text()).toBe("OK")
     okButton.simulate("click")
     sinon.assert.calledOnce(onAcceptStub)
@@ -82,16 +66,10 @@ describe("Dialog", () => {
     })
     expect(wrapper.find("Modal").prop("isOpen")).toBe(false)
 
-    const cancelButton = wrapper
-      .find("ModalFooter")
-      .find("Button")
-      .at(0)
+    const cancelButton = wrapper.find("ModalFooter").find("Button").at(0)
     expect(cancelButton.childAt(0).text()).toBe(cancelText)
 
-    const okButton = wrapper
-      .find("ModalFooter")
-      .find("Button")
-      .at(1)
+    const okButton = wrapper.find("ModalFooter").find("Button").at(1)
     expect(okButton.childAt(0).text()).toBe(acceptText)
   })
 

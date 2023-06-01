@@ -5,24 +5,23 @@ import { MarkdownDataProcessor } from "./Markdown"
 
 class ClassicTestEditor extends ClassicEditorBase {}
 
-export const createTestEditor = (
-  plugins: unknown[],
-  remainingConfig: Record<string, unknown> = {}
-) => async (
-  initialData = "",
-  configOverrides: Record<string, unknown> = {}
-): Promise<Editor & { getData(): string }> => {
-  const editor = await ClassicTestEditor.create(initialData, {
-    plugins,
-    ...remainingConfig,
-    ...configOverrides
-  })
-  return editor
-}
+export const createTestEditor =
+  (plugins: unknown[], remainingConfig: Record<string, unknown> = {}) =>
+    async (
+      initialData = "",
+      configOverrides: Record<string, unknown> = {}
+    ): Promise<Editor & { getData(): string }> => {
+      const editor = await ClassicTestEditor.create(initialData, {
+        plugins,
+        ...remainingConfig,
+        ...configOverrides
+      })
+      return editor
+    }
 
 export function getConverters(editor: Editor) {
-  const { md2html, html2md } = (editor.data
-    .processor as unknown) as MarkdownDataProcessor
+  const { md2html, html2md } = editor.data
+    .processor as unknown as MarkdownDataProcessor
 
   return { md2html, html2md }
 }
@@ -35,8 +34,8 @@ export function markdownTest(
 ): void {
   // grab showdown and turndown functions defined by Markdown plugin
   // and passed to the MarkdownDataProcessor
-  const { md2html, html2md } = (editor.data
-    .processor as unknown) as MarkdownDataProcessor
+  const { md2html, html2md } = editor.data
+    .processor as unknown as MarkdownDataProcessor
 
   const outputMarkdown = finalMarkdown ?? markdown
 

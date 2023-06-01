@@ -21,18 +21,11 @@ interface Props {
 }
 
 export const roleValidation = {
-  role: yup
-    .string()
-    .label("Role")
-    .required()
+  role: yup.string().label("Role").required()
 }
 
 export const emailValidation = {
-  email: yup
-    .string()
-    .email()
-    .label("Email")
-    .required()
+  email: yup.string().email().label("Email").required()
 }
 
 const getInitialValues = (

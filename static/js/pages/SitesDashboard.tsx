@@ -31,14 +31,11 @@ function getListingParams(search: string): WebsiteListingParams {
 }
 
 export default function SitesDashboard(): JSX.Element {
-  const [
-    websiteToUnpublish,
-    setWebsiteToUnpublish
-  ] = useState<WebsiteInitials | null>(null)
+  const [websiteToUnpublish, setWebsiteToUnpublish] =
+    useState<WebsiteInitials | null>(null)
 
-  const { listingParams, searchInput, setSearchInput } = useURLParamFilter(
-    getListingParams
-  )
+  const { listingParams, searchInput, setSearchInput } =
+    useURLParamFilter(getListingParams)
   const [, fetchWebsiteContentListing] = useRequest(
     websiteListingRequest(listingParams)
   )

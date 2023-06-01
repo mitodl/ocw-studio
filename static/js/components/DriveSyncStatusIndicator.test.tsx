@@ -79,21 +79,13 @@ describe("DriveSyncStatusIndicator", () => {
       expect(drawer.prop("isVisible")).toBe(true)
 
       syncErrors.forEach((error: string, idx: number) => {
-        expect(
-          drawer
-            .find("li")
-            .at(idx)
-            .text()
-        ).toBe(error)
+        expect(drawer.find("li").at(idx).text()).toBe(error)
       })
       expect(drawer.find("li").length).toBe(syncErrors.length)
       if (syncErrors.length === 0) {
-        expect(
-          drawer
-            .find(".sync-success")
-            .at(0)
-            .text()
-        ).toContain("The latest Google Drive sync was successful.")
+        expect(drawer.find(".sync-success").at(0).text()).toContain(
+          "The latest Google Drive sync was successful."
+        )
       }
       expect(drawer.find(".sync-time").text()).toContain(
         moment(website.synced_on).format("dddd, MMMM D h:mma ZZ")

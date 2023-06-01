@@ -38,10 +38,7 @@ describe("website hooks", () => {
         await waitForNextUpdate()
       })
       expect(global.fetch).toHaveBeenCalledWith(
-        siteApiListingUrl
-          .query({ offset: 0 })
-          .param({ search: "" })
-          .toString(),
+        siteApiListingUrl.query({ offset: 0 }).param({ search: "" }).toString(),
         { credentials: "include" }
       )
       expect(result.current.options).toEqual(

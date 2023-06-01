@@ -30,30 +30,28 @@ export default function SiteCollaboratorList(): JSX.Element | null {
 
   const [deleteModal, setDeleteModal] = useState(false)
   const [editVisibility, setEditVisibility] = useState<boolean>(false)
-  const [
-    selectedCollaborator,
-    setSelectedCollaborator
-  ] = useState<WebsiteCollaborator | null>(null)
+  const [selectedCollaborator, setSelectedCollaborator] =
+    useState<WebsiteCollaborator | null>(null)
 
   const closeDeleteModal = useCallback(() => setDeleteModal(false), [])
   const openDeleteModal = useCallback(() => setDeleteModal(true), [])
   const toggleEditVisibility = () => setEditVisibility(!editVisibility)
 
-  const startEdit = (collaborator: WebsiteCollaborator | null) => (
-    event: ReactMouseEvent<HTMLButtonElement>
-  ) => {
-    event.preventDefault()
-    setSelectedCollaborator(collaborator)
-    setEditVisibility(true)
-  }
+  const startEdit =
+    (collaborator: WebsiteCollaborator | null) =>
+      (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.preventDefault()
+        setSelectedCollaborator(collaborator)
+        setEditVisibility(true)
+      }
 
-  const startDelete = (collaborator: WebsiteCollaborator) => (
-    event: ReactMouseEvent<HTMLButtonElement>
-  ) => {
-    event.preventDefault()
-    setSelectedCollaborator(collaborator)
-    openDeleteModal()
-  }
+  const startDelete =
+    (collaborator: WebsiteCollaborator) =>
+      (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.preventDefault()
+        setSelectedCollaborator(collaborator)
+        openDeleteModal()
+      }
 
   const [deleteQueryState, deleteCollaborator] = useMutation(
     (): QueryConfig => {

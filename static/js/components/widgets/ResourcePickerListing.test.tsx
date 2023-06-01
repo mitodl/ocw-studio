@@ -156,12 +156,9 @@ describe("ResourcePickerListing", () => {
       focusedResource: contentListingItems.videos[0]
     })
 
-    expect(
-      wrapper
-        .find(".resource-item")
-        .at(0)
-        .prop("className")
-    ).toBe("resource-item focused")
+    expect(wrapper.find(".resource-item").at(0).prop("className")).toBe(
+      "resource-item focused"
+    )
   })
 
   it("should display an image for images", async () => {
@@ -169,13 +166,9 @@ describe("ResourcePickerListing", () => {
     contentListingItems.videos[0].metadata.resourcetype = ResourceType.Image
     contentListingItems.videos[0].file = "/path/to/image.jpg"
     const { wrapper } = await render()
-    expect(
-      wrapper
-        .find(".resource-item")
-        .at(0)
-        .find("img")
-        .prop("src")
-    ).toBe("/path/to/image.jpg")
+    expect(wrapper.find(".resource-item").at(0).find("img").prop("src")).toBe(
+      "/path/to/image.jpg"
+    )
   })
 
   it("should display a thumbnail for videos", async () => {
@@ -185,13 +178,9 @@ describe("ResourcePickerListing", () => {
       video_thumbnail_file: "/path/to/image.jpg"
     }
     const { wrapper } = await render()
-    expect(
-      wrapper
-        .find(".resource-item")
-        .at(0)
-        .find("img")
-        .prop("src")
-    ).toBe("/path/to/image.jpg")
+    expect(wrapper.find(".resource-item").at(0).find("img").prop("src")).toBe(
+      "/path/to/image.jpg"
+    )
   })
 
   it("should fetch and display pages", async () => {
@@ -258,12 +247,9 @@ describe("ResourcePickerListing", () => {
     async singleColumn => {
       const { wrapper } = await render({ singleColumn })
       expect(
-        wrapper.find(".resource-picker-listing .resource-item").map(el =>
-          el
-            .find("h4")
-            .text()
-            .includes("Updated")
-        )
+        wrapper
+          .find(".resource-picker-listing .resource-item")
+          .map(el => el.find("h4").text().includes("Updated"))
       ).toStrictEqual([singleColumn, singleColumn])
     }
   )

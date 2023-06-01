@@ -24,9 +24,7 @@ export const repeatableTitle = (contenttype: string): string =>
   pluralize(singletonTitle(contenttype))
 
 export const singletonTitle = (contenttype: string): string =>
-  words(contenttype)
-    .map(capitalize)
-    .join(" ")
+  words(contenttype).map(capitalize).join(" ")
 
 export default function SiteContentListing(): JSX.Element | null {
   const website = useWebsite()

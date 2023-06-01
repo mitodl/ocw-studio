@@ -27,26 +27,16 @@ export type MenuItemFormValues = {
 }
 
 const schema = yup.object().shape({
-  menuItemTitle: yup
-    .string()
-    .required()
-    .label("Title"),
-  menuItemType: yup.mixed().oneOf([LinkType.Internal, LinkType.External]),
-  externalLink: yup
-    .string()
-    .label("External link")
-    .url()
-    .when("menuItemType", {
-      is:   LinkType.External,
-      then: yup.string().required()
-    }),
-  internalLink: yup
-    .string()
-    .label("Internal link")
-    .when("menuItemType", {
-      is:   LinkType.Internal,
-      then: yup.string().required()
-    })
+  menuItemTitle: yup.string().required().label("Title"),
+  menuItemType:  yup.mixed().oneOf([LinkType.Internal, LinkType.External]),
+  externalLink:  yup.string().label("External link").url().when("menuItemType", {
+    is:   LinkType.External,
+    then: yup.string().required()
+  }),
+  internalLink: yup.string().label("Internal link").when("menuItemType", {
+    is:   LinkType.Internal,
+    then: yup.string().required()
+  })
 })
 
 const emptyInitialValues: MenuItemFormValues = {

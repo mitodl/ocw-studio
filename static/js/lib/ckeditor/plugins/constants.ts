@@ -60,7 +60,8 @@ export const TABLE_ALLOWED_ATTRS: string[] = ["colspan", "rowspan"]
  * an equals sign followed by a single or double quote. The regex ends
  * with a double quote and captures anything in between the quotes.
  */
-export const ATTRIBUTE_REGEX = /(\S+)=["']?((?:.(?!["']?\s+(?:\S+)=|\s*\/?[>"']))+.)["']?/g
+export const ATTRIBUTE_REGEX =
+  /(\S+)=["']?((?:.(?!["']?\s+(?:\S+)=|\s*\/?[>"']))+.)["']?/g
 
 export const LEGACY_SHORTCODES = [
   "quiz_choice",

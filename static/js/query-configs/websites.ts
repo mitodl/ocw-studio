@@ -117,11 +117,8 @@ export const websiteDetailRequest = (name: string): QueryConfig => ({
 })
 
 export const websiteStatusRequest = (name: string): QueryConfig => ({
-  queryKey: `publish-status-${name}`,
-  url:      siteApiDetailUrl
-    .param({ name })
-    .query({ only_status: true })
-    .toString(),
+  queryKey:  `publish-status-${name}`,
+  url:       siteApiDetailUrl.param({ name }).query({ only_status: true }).toString(),
   transform: (body: WebsiteStatus) => ({
     websiteDetails: body
   }),
@@ -351,15 +348,8 @@ export const websiteContentListingRequest = (
   requestDetailedList: boolean,
   requestContentContext: boolean
 ): QueryConfig => {
-  const {
-    name,
-    type,
-    resourcetype,
-    offset,
-    pageContent,
-    search,
-    published
-  } = listingParams
+  const { name, type, resourcetype, offset, pageContent, search, published } =
+    listingParams
   const url = siteApiContentListingUrl
     .param({ name })
     .query(

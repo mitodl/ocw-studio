@@ -69,9 +69,8 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
   const { options_map: optionsMap, levels, value, onChange, name } = props
 
   const defaultValue = times(levels.length, () => null)
-  const [selection, setSelection] = useState<HierarchicalSelection>(
-    defaultValue
-  )
+  const [selection, setSelection] =
+    useState<HierarchicalSelection>(defaultValue)
 
   const setSelectedValueFor = useCallback(
     (levelIdx: number, selected: string) => {
@@ -123,11 +122,10 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
     [name, onChange, value]
   )
 
-  const options = useMemo(() => calcOptions(optionsMap, selection, levels), [
-    optionsMap,
-    selection,
-    levels
-  ])
+  const options = useMemo(
+    () => calcOptions(optionsMap, selection, levels),
+    [optionsMap, selection, levels]
+  )
 
   return (
     <div className="hierarchical-select">

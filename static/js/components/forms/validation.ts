@@ -25,10 +25,7 @@ setLocale({
   }
 })
 
-const defaultTitleFieldSchema = yup
-  .string()
-  .required()
-  .label("Title")
+const defaultTitleFieldSchema = yup.string().required().label("Title")
 
 const minMax = (
   schema: ArraySchema<any>,
