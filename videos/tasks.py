@@ -170,7 +170,8 @@ def update_youtube_statuses(self):
                     resource.save()
                     if video_file.status == VideoFileStatus.COMPLETE:
                         group_tasks.append(start_transcript_job.s(video_file.video.id))
-            mail_youtube_upload_success(video_file)
+            if video_file.status == VideoFileStatus.COMPLETE:
+                mail_youtube_upload_success(video_file)
 
         except IndexError:
             # Video might be a dupe or deleted, mark it as failed and continue to next one.
