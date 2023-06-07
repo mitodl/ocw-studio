@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.94.0
+Version 0.94.0 (Released June 07, 2023)
 --------------
 
 - fix: too many upload success emails (#1827)
