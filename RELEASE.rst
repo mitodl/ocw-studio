@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.94.0
+--------------
+
+- fix: too many upload success emails (#1827)
+- Fix a linting issue for renovate (#1823)
+
 Version 0.93.4 (Released May 31, 2023)
 --------------
 
