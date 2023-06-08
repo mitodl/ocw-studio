@@ -132,9 +132,8 @@ describe("Handling of raw HTML", () => {
       md:   "\u200b<sup>1</sup> First **important** footnote"
     },
     {
-      html:
-        "<p>cat</p><p><sup>1</sup> First <strong>important</strong> footnote</p>",
-      md: "cat\n\n\u200b<sup>1</sup> First **important** footnote"
+      html: "<p>cat</p><p><sup>1</sup> First <strong>important</strong> footnote</p>",
+      md:   "cat\n\n\u200b<sup>1</sup> First **important** footnote"
     }
   ])(
     "Raw HTML at the beginning of a line gets an extra zwsp",

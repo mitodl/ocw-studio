@@ -116,10 +116,8 @@ export default function RelationField(props: Props): JSX.Element {
   // In order to support the crossSite option we need to be able to fetch
   // websites (to show as options in the select field) and we need to store
   // a currently-selected website.
-  const {
-    options: websiteOptions,
-    loadOptions: loadWebsiteOptions
-  } = useWebsiteSelectOptions("name")
+  const { options: websiteOptions, loadOptions: loadWebsiteOptions } =
+    useWebsiteSelectOptions("name")
   const [focusedWebsite, setFocusedWebsite] = useState<string | null>(null)
   const setFocusedWebsiteCB = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {

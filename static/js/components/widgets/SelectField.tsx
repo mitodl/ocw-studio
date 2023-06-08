@@ -41,9 +41,9 @@ export default function SelectField(props: Props): JSX.Element {
       const eventValue = multiple ?
         newValue.map((option: Option) => option.value) :
         newValue.value
-      onChange({ target: { value: eventValue, name } } as ChangeEvent<
-        HTMLSelectElement
-      >)
+      onChange({
+        target: { value: eventValue, name }
+      } as ChangeEvent<HTMLSelectElement>)
     },
     [name, multiple, onChange]
   )

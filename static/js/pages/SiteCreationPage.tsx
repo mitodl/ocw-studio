@@ -24,10 +24,9 @@ export default function SiteCreationPage({
   history
 }: Props): JSX.Element | null {
   const [starterQueryState] = useRequest(websiteStartersRequest())
-  const [
-    createWebsiteQueryState,
-    createWebsite
-  ] = useMutation((payload: NewWebsitePayload) => websiteMutation(payload))
+  const [createWebsiteQueryState, createWebsite] = useMutation(
+    (payload: NewWebsitePayload) => websiteMutation(payload)
+  )
 
   const onSubmitForm = async (
     values: SiteFormValues,

@@ -21,24 +21,9 @@ describe("FileUploadField", () => {
       const wrapper = shallow(
         <FileUploadField name={fileFieldName} onChange={onChangeStub} />
       )
-      expect(
-        wrapper
-          .find("input")
-          .at(0)
-          .prop("type")
-      ).toBe("file")
-      expect(
-        wrapper
-          .find("input")
-          .at(0)
-          .prop("name")
-      ).toBe(fileFieldName)
-      expect(
-        wrapper
-          .find("input")
-          .at(1)
-          .prop("value")
-      ).toBe(fileFieldName)
+      expect(wrapper.find("input").at(0).prop("type")).toBe("file")
+      expect(wrapper.find("input").at(0).prop("name")).toBe(fileFieldName)
+      expect(wrapper.find("input").at(1).prop("value")).toBe(fileFieldName)
       expect(wrapper.find(".current-file")).toHaveLength(0)
       wrapper
         .find("input")
@@ -66,12 +51,7 @@ describe("FileUploadField", () => {
           value={`https://aws.com/32629a023dc541288e430392b51e7b61_${currentFile}`}
         />
       )
-      expect(
-        wrapper
-          .find(".current-file")
-          .find("a")
-          .text()
-      ).toBe(currentFile)
+      expect(wrapper.find(".current-file").find("a").text()).toBe(currentFile)
     })
   })
 })

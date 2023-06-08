@@ -47,7 +47,8 @@ export default class IntegrationTestHelper {
 
     this.scrollIntoViewStub = this.sandbox.stub()
     window.HTMLDivElement.prototype.scrollIntoView = this.scrollIntoViewStub
-    window.HTMLFieldSetElement.prototype.scrollIntoView = this.scrollIntoViewStub
+    window.HTMLFieldSetElement.prototype.scrollIntoView =
+      this.scrollIntoViewStub
     this.wrapper = null
     this.browserHistory.listen(location => {
       this.currentLocation = location

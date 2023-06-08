@@ -101,8 +101,7 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
               label: "Course Description",
               name: "description",
               widget: WidgetVariant.Markdown,
-              help:
-                "A description of the course that will be shown on the course site home page."
+              help: "A description of the course that will be shown on the course site home page."
             },
             {
               label: "Tags",

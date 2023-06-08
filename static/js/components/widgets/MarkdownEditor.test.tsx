@@ -163,12 +163,9 @@ describe("MarkdownEditor", () => {
     // @ts-expect-error CKEditor types are a work in progress
     editor[CKEDITOR_RESOURCE_UTILS].renderResource("resource-uuid", el)
     wrapper.update()
-    expect(
-      wrapper
-        .find("EmbeddedResource")
-        .at(0)
-        .prop("uuid")
-    ).toEqual("resource-uuid")
+    expect(wrapper.find("EmbeddedResource").at(0).prop("uuid")).toEqual(
+      "resource-uuid"
+    )
   })
 
   it.each([
@@ -228,12 +225,9 @@ describe("MarkdownEditor", () => {
       // @ts-expect-error CKEditor types are a work in progress
       editor[CKEDITOR_RESOURCE_UTILS].openResourcePicker(resourceNodeType)
       wrapper.update()
-      expect(
-        wrapper
-          .find("ResourcePickerDialog")
-          .at(0)
-          .prop("mode")
-      ).toBe(resourceNodeType)
+      expect(wrapper.find("ResourcePickerDialog").at(0).prop("mode")).toBe(
+        resourceNodeType
+      )
     })
   })
 

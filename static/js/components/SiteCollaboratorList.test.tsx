@@ -85,16 +85,10 @@ describe("SiteCollaboratorList", () => {
 
   it("the edit collaborator icon sets correct state and opens the modal", async () => {
     const { wrapper } = await render()
-    wrapper
-      .find(".transparent-button")
-      .at(0)
-      .simulate("click")
+    wrapper.find(".transparent-button").at(0).simulate("click")
 
     act(() => {
-      wrapper
-        .find("button.dropdown-item")
-        .at(0)
-        .simulate("click")
+      wrapper.find("button.dropdown-item").at(0).simulate("click")
     })
     wrapper.update()
     const component = wrapper.find(SiteCollaboratorDrawer)
@@ -121,27 +115,17 @@ describe("SiteCollaboratorList", () => {
       {}
     )
     const { wrapper } = await render()
-    wrapper
-      .find(".transparent-button")
-      .at(0)
-      .simulate("click")
+    wrapper.find(".transparent-button").at(0).simulate("click")
     wrapper.update()
     act(() => {
-      wrapper
-        .find("button.dropdown-item")
-        .at(1)
-        .simulate("click")
+      wrapper.find("button.dropdown-item").at(1).simulate("click")
     })
     wrapper.update()
     const dialog = wrapper.find("Dialog")
     expect(dialog.prop("open")).toBe(true)
     expect(dialog.prop("bodyContent")).toContain(collaborators[0].name)
     act(() => {
-      dialog
-        .find("ModalFooter")
-        .find("button")
-        .at(1)
-        .simulate("click")
+      dialog.find("ModalFooter").find("button").at(1).simulate("click")
     })
     wrapper.update()
     sinon.assert.calledOnce(deleteCollaboratorStub)

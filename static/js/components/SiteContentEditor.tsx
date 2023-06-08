@@ -58,18 +58,14 @@ export default function SiteContentEditor(
   const refreshWebsiteStatus = () =>
     store.dispatch(requestAsync(websiteStatusRequest(site.name)))
 
-  const [
-    { isPending: addIsPending },
-    addWebsiteContent
-  ] = useMutation((payload: NewWebsiteContentPayload) =>
-    createWebsiteContentMutation(site.name, payload)
+  const [{ isPending: addIsPending }, addWebsiteContent] = useMutation(
+    (payload: NewWebsiteContentPayload) =>
+      createWebsiteContentMutation(site.name, payload)
   )
 
-  const [
-    { isPending: editIsPending },
-    editWebsiteContent
-  ] = useMutation((payload: EditWebsiteContentPayload | FormData, id: string) =>
-    editWebsiteContentMutation({ name: site.name, textId: id }, payload)
+  const [{ isPending: editIsPending }, editWebsiteContent] = useMutation(
+    (payload: EditWebsiteContentPayload | FormData, id: string) =>
+      editWebsiteContentMutation({ name: site.name, textId: id }, payload)
   )
 
   let isPending = false,

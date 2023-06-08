@@ -16,13 +16,10 @@ const simulateSelectValue = (
   idx: number
 ) => {
   return act(() => {
-    wrapper
-      .find(SelectField)
-      .at(idx)
-      .prop("onChange")({
+    wrapper.find(SelectField).at(idx).prop("onChange")({
       // @ts-expect-error not simulating whole event
-        target: { value }
-      })
+      target: { value }
+    })
   })
 }
 
@@ -108,12 +105,9 @@ describe("HierarchicalSelectField", () => {
 
     for (let idx = 0; idx < levels.length; ++idx) {
       simulateSelectValue(wrapper, selectPath[idx].value, idx)
-      expect(
-        wrapper
-          .find("SelectField")
-          .at(idx)
-          .prop("value")
-      ).toBe(selectPath[idx].value)
+      expect(wrapper.find("SelectField").at(idx).prop("value")).toBe(
+        selectPath[idx].value
+      )
     }
   })
 
@@ -123,19 +117,9 @@ describe("HierarchicalSelectField", () => {
       simulateSelectValue(wrapper, selectPath[idx].value, idx)
     }
     simulateSelectValue(wrapper, "Topic2", 0)
-    expect(
-      wrapper
-        .find("SelectField")
-        .at(0)
-        .prop("value")
-    ).toBe("Topic2")
+    expect(wrapper.find("SelectField").at(0).prop("value")).toBe("Topic2")
     for (let idx = 1; idx < levels.length; ++idx) {
-      expect(
-        wrapper
-          .find("SelectField")
-          .at(idx)
-          .prop("value")
-      ).toBeNull()
+      expect(wrapper.find("SelectField").at(idx).prop("value")).toBeNull()
     }
   })
 
@@ -146,19 +130,11 @@ describe("HierarchicalSelectField", () => {
     }
     const lastIdx = levels.length - 1
     simulateSelectValue(wrapper, "potato", lastIdx)
-    expect(
-      wrapper
-        .find("SelectField")
-        .at(lastIdx)
-        .prop("value")
-    ).toBe("potato")
+    expect(wrapper.find("SelectField").at(lastIdx).prop("value")).toBe("potato")
     for (let idx = 0; idx < lastIdx; ++idx) {
-      expect(
-        wrapper
-          .find("SelectField")
-          .at(idx)
-          .prop("value")
-      ).toBe(selectPath[idx].value)
+      expect(wrapper.find("SelectField").at(idx).prop("value")).toBe(
+        selectPath[idx].value
+      )
     }
   })
 

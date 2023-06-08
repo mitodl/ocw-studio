@@ -406,9 +406,8 @@ describe("Shortcode", () => {
 
     it.each([
       {
-        name: "some_shortcode",
-        text:
-          "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}} {{< /some_shortcode xyz >}}",
+        name:     "some_shortcode",
+        text:     "a {{< some_shortcode xyz >}} b {{< some_shortcode_two 123 >}} {{< /some_shortcode xyz >}}",
         expected: ["{{< some_shortcode xyz >}}", "{{< /some_shortcode xyz >}}"]
       },
       {

@@ -8,14 +8,11 @@ import PromptConfirmationModal, {
  * Wrapper around BrowserRouter that uses a custom getUserConfirmation modal
  * instead of the default window.confirm.
  */
-const CustomConfirmBrowserRouter: React.FC<Omit<
-  BrowserRouterProps,
-  "getUserConfirmation"
->> = props => {
-  const [
-    getUserConfirmation,
-    setGetUserConfirmation
-  ] = useState<GetUserConfirmation | null>(null)
+const CustomConfirmBrowserRouter: React.FC<
+  Omit<BrowserRouterProps, "getUserConfirmation">
+> = props => {
+  const [getUserConfirmation, setGetUserConfirmation] =
+    useState<GetUserConfirmation | null>(null)
   return (
     <>
       {getUserConfirmation && (

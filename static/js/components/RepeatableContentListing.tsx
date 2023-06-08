@@ -59,9 +59,8 @@ export default function RepeatableContentListing(props: {
     [website, configItem]
   )
 
-  const { listingParams, searchInput, setSearchInput } = useURLParamFilter(
-    getListingParams
-  )
+  const { listingParams, searchInput, setSearchInput } =
+    useURLParamFilter(getListingParams)
 
   const [, fetchWebsiteContentListing] = useRequest(
     websiteContentListingRequest(listingParams, false, false)

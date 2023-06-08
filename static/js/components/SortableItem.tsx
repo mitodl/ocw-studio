@@ -12,15 +12,10 @@ interface Props<T> {
 export default function SortableItem<T>(props: Props<T>): JSX.Element {
   const { item, deleteItem, id, title } = props
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition
-  } = useSortable({
-    id
-  })
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id
+    })
 
   const style = {
     transform: CSS.Transform.toString(transform),

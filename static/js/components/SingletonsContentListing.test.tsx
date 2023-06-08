@@ -106,12 +106,7 @@ describe("SingletonsContentListing", () => {
     for (let i = 1; i < tabLinks.length; i++) {
       expect(tabLinks.at(i).prop("className")).toEqual("")
     }
-    expect(
-      tabContents
-        .at(0)
-        .find("SiteContentEditor")
-        .exists()
-    ).toBe(true)
+    expect(tabContents.at(0).find("SiteContentEditor").exists()).toBe(true)
   })
 
   it("should have working tabs", async () => {
@@ -181,10 +176,7 @@ describe("SingletonsContentListing", () => {
         singletonConfigItems[tabIndexToSelect].fields
       )
       expect(
-        wrapper
-          .find("SiteContentEditor")
-          .at(tabIndexToSelect)
-          .prop("content")
+        wrapper.find("SiteContentEditor").at(tabIndexToSelect).prop("content")
       ).toBe(newContent)
       wrapper.find("SiteContentEditor").forEach((editorWrapper, idx) => {
         if (idx !== tabIndexToSelect) {
@@ -277,21 +269,13 @@ describe("SingletonsContentListing", () => {
 
     act(() => editor.prop("setDirty")(true))
 
-    expect(
-      wrapper
-        .update()
-        .find(ConfirmDiscardChanges)
-        .prop("when")
-    ).toBe(true)
+    expect(wrapper.update().find(ConfirmDiscardChanges).prop("when")).toBe(true)
 
     window.mockConfirm.mockReturnValue(true)
     helper.browserHistory.push("/pages")
     await flushEventQueue()
-    expect(
-      wrapper
-        .update()
-        .find(ConfirmDiscardChanges)
-        .prop("when")
-    ).toBe(false)
+    expect(wrapper.update().find(ConfirmDiscardChanges).prop("when")).toBe(
+      false
+    )
   })
 })

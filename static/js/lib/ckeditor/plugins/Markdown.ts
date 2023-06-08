@@ -89,11 +89,8 @@ export default class Markdown extends MarkdownConfigPlugin {
   constructor(editor: Editor) {
     super(editor)
 
-    const {
-      showdownExtensions,
-      turndownRules,
-      allowedHtml
-    } = this.getMarkdownConfig()
+    const { showdownExtensions, turndownRules, allowedHtml } =
+      this.getMarkdownConfig()
 
     const converter = new Converter({
       extensions: showdownExtensions
