@@ -370,7 +370,7 @@ def test_upsert_website_pipelines(
         )
         assert f"rm -rf ./output-online/{website.name}/*.mp4" in config_str
         assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/ --metadata site-id={website.name}"
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/ --exclude='{website.short_id}.zip' --exclude='{website.short_id}-video.zip' --metadata site-id={website.name}"
             in config_str
         )
     else:
@@ -381,12 +381,16 @@ def test_upsert_website_pipelines(
         )
         assert "rm -rf ./output-online/*.mp4" in config_str
         assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/{website.url_path} --metadata site-id={website.name} --delete"
+            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/{website.url_path} --exclude='{website.short_id}.zip' --exclude='{website.short_id}-video.zip' --metadata site-id={website.name} --delete"
             in config_str
         )
 
         assert (
             f"aws s3 {expected_endpoint_prefix}sync build-course-offline/ s3://{bucket}/{website.url_path} --exclude='*' --include='{website.short_id}.zip' --metadata site-id={website.name}"
+            in config_str
+        )
+        assert (
+            f"aws s3 {expected_endpoint_prefix}sync build-course-offline/ s3://{bucket}/{website.url_path} --exclude='*' --include='{website.short_id}-video.zip' --metadata site-id={website.name}"
             in config_str
         )
         assert (
