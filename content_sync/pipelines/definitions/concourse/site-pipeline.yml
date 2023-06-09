@@ -1020,7 +1020,7 @@ jobs:
             - |
               jq 'recurse | select(type=="string")' ./webpack-json/webpack.json | tr -d '"' | xargs -I {} aws s3((cli-endpoint-url)) cp s3://((web-bucket)){} ./build-artifacts/{} --exclude *.js.map
       - task: build-course-offline
-        timeout: 20m
+        timeout: 90m
         attempts: 3
         params:
           API_BEARER_TOKEN: ((api-token))
