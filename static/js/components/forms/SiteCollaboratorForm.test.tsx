@@ -93,12 +93,7 @@ describe("SiteCollaboratorForm", () => {
         { isSubmitting: false, status: "whatever" },
         null
       )
-      expect(
-        form
-          .find("button")
-          .at(1)
-          .prop("onClick")
-      ).toBe(onCancelStub)
+      expect(form.find("button").at(1).prop("onClick")).toBe(onCancelStub)
     })
 
     it("passes onSubmit to Formik", () => {

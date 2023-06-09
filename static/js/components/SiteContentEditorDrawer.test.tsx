@@ -91,19 +91,11 @@ describe("SiteContentEditorDrawer", () => {
 
     expect(wrapper.find(ConfirmDiscardChanges).prop("when")).toBe(false)
     act(() => siteContentEditor.prop("setDirty")(true))
-    expect(
-      wrapper
-        .update()
-        .find(ConfirmDiscardChanges)
-        .prop("when")
-    ).toBe(true)
+    expect(wrapper.update().find(ConfirmDiscardChanges).prop("when")).toBe(true)
     act(() => siteContentEditor.prop("setDirty")(false))
-    expect(
-      wrapper
-        .update()
-        .find(ConfirmDiscardChanges)
-        .prop("when")
-    ).toBe(false)
+    expect(wrapper.update().find(ConfirmDiscardChanges).prop("when")).toBe(
+      false
+    )
   })
 
   describe("closing the drawer", () => {
@@ -143,12 +135,7 @@ describe("SiteContentEditorDrawer", () => {
           closeFrom
         })
 
-        expect(
-          wrapper
-            .update()
-            .find(BasicModal)
-            .prop("isVisible")
-        ).toBe(true)
+        expect(wrapper.update().find(BasicModal).prop("isVisible")).toBe(true)
         expect(helper.browserHistory.location).toBe(initialLocation)
       }
     )
@@ -165,12 +152,7 @@ describe("SiteContentEditorDrawer", () => {
         })
 
         expect(initialLocation.pathname).toBe("/")
-        expect(
-          wrapper
-            .update()
-            .find(BasicModal)
-            .prop("isVisible")
-        ).toBe(false)
+        expect(wrapper.update().find(BasicModal).prop("isVisible")).toBe(false)
         expect(helper.browserHistory.location.pathname).toBe(
           `/sites/${website.name}/type/resource/`
         )
@@ -189,12 +171,7 @@ describe("SiteContentEditorDrawer", () => {
       })
 
       expect(initialLocation.pathname).toBe("/")
-      expect(
-        wrapper
-          .update()
-          .find(BasicModal)
-          .prop("isVisible")
-      ).toBe(false)
+      expect(wrapper.update().find(BasicModal).prop("isVisible")).toBe(false)
       expect(helper.browserHistory.location.pathname).toBe(
         `/sites/${website.name}/type/resource/`
       )

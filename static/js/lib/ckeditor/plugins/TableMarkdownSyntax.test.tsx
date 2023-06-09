@@ -116,8 +116,8 @@ describe("table shortcodes", () => {
 
   it("ignores attributes on table cells that are not in the whitelist", async () => {
     const editor = await getEditor("")
-    const { md2html, html2md } = (editor.data
-      .processor as unknown) as MarkdownDataProcessor
+    const { md2html, html2md } = editor.data
+      .processor as unknown as MarkdownDataProcessor
     let html = `<table>
       <thead>
         <tr>
@@ -167,8 +167,8 @@ describe("table shortcodes", () => {
     "html2md should add newlines on table cell content when appropriate",
     async (html, md) => {
       const editor = await getEditor("")
-      const { html2md } = (editor.data
-        .processor as unknown) as MarkdownDataProcessor
+      const { html2md } = editor.data
+        .processor as unknown as MarkdownDataProcessor
       expect(html2md(html)).toBe(md)
     }
   )

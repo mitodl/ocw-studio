@@ -47,13 +47,11 @@ export const objectToFormData = (
 
 export const filenameFromPath = (filepath: string): string => {
   const basename = filepath.split("/").pop() || ""
-  const UUID = /^[0-9A-F]{8}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{12}/i
+  const UUID =
+    /^[0-9A-F]{8}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{12}/i
   if (UUID.test(basename)) {
     if (basename.includes("_")) {
-      return basename
-        .split("_")
-        .slice(1)
-        .join("_")
+      return basename.split("_").slice(1).join("_")
     }
   }
   return basename
@@ -68,7 +66,8 @@ export const addToMapList = <TKey, TValue>(
   map.set(key, [...list, value])
 }
 
-const uuid4regex = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+const uuid4regex =
+  /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
 
 export const isUuid4 = (strToTest: string): boolean =>
   uuid4regex.test(strToTest)

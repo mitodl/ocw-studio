@@ -22,12 +22,7 @@ describe("SortableItem", () => {
 
   it("should display the title and a drag handle", () => {
     const wrapper = renderItem()
-    expect(
-      wrapper
-        .find(".material-icons")
-        .at(0)
-        .text()
-    ).toBe("drag_indicator")
+    expect(wrapper.find(".material-icons").at(0).text()).toBe("drag_indicator")
     expect(wrapper.find(".title").text()).toBe("A TITLE")
   })
 

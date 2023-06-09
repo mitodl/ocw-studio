@@ -24,11 +24,7 @@ type SiteFormProps = {
 }
 
 export const websiteValidation = yup.object().shape({
-  title: yup
-    .string()
-    .label("Title")
-    .trim()
-    .required(),
+  title:    yup.string().label("Title").trim().required(),
   short_id: yup
     .string()
     .label("Short ID")

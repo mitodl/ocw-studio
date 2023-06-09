@@ -183,12 +183,7 @@ describe("PublishDrawer", () => {
         const { wrapper } = await render()
         await simulateClickRadio(wrapper, idx)
         wrapper.update()
-        expect(
-          wrapper
-            .find(".publish-option label")
-            .at(idx)
-            .text()
-        ).toBe(label)
+        expect(wrapper.find(".publish-option label").at(idx).text()).toBe(label)
       })
 
       it("disables the button if there is no unpublished content", async () => {
@@ -246,16 +241,10 @@ describe("PublishDrawer", () => {
         await simulateClickPublish(wrapper, action)
         wrapper.update()
         expect(
-          wrapper
-            .find("PublishForm")
-            .find(".btn-publish")
-            .prop("disabled")
+          wrapper.find("PublishForm").find(".btn-publish").prop("disabled")
         ).toBeFalsy()
         await act(async () => {
-          wrapper
-            .find("PublishForm")
-            .find(".btn-publish")
-            .simulate("submit")
+          wrapper.find("PublishForm").find(".btn-publish").simulate("submit")
         })
         sinon.assert.calledOnceWithExactly(
           actionStub,

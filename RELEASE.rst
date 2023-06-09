@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.94.0 (Released June 07, 2023)
+--------------
+
+- fix: too many upload success emails (#1827)
+- Fix a linting issue for renovate (#1823)
+
+Version 0.93.4 (Released May 31, 2023)
+--------------
+
+- SENTRY_ENV added to the themes-pipelines (#1811)
+
 Version 0.93.3 (Released May 25, 2023)
 --------------
 

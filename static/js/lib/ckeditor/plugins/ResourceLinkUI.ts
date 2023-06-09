@@ -40,7 +40,8 @@ export default class ResourceLinkUI extends Plugin {
     this.contextualBalloon.on("change:visibleView", () => {
       if (this.contextualBalloon.visibleView === this.linkUI.actionsView) {
         if (this.originalEditinkLabel === undefined) {
-          this.originalEditinkLabel = this.linkUI.actionsView.editButtonView.label
+          this.originalEditinkLabel =
+            this.linkUI.actionsView.editButtonView.label
         }
         this.modifyLinkUI()
       }

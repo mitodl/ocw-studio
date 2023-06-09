@@ -224,10 +224,7 @@ describe("ResourcePickerDialog", () => {
     async ({ resourcetype, contentType, singleColumn, index }) => {
       const { wrapper } = await render({ mode: RESOURCE_LINK })
       act(() => {
-        wrapper
-          .find(NavLink)
-          .at(index)
-          .simulate("click")
+        wrapper.find(NavLink).at(index).simulate("click")
       })
       wrapper.update()
       const listing = wrapper.find(ResourcePickerListing)

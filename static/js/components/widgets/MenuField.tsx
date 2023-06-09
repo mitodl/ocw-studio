@@ -285,10 +285,8 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     [setModalState]
   )
 
-  const [
-    itemToRemove,
-    setItemToRemove
-  ] = useState<InternalSortableMenuItem | null>(null)
+  const [itemToRemove, setItemToRemove] =
+    useState<InternalSortableMenuItem | null>(null)
 
   const closeRemoveDialog = useCallback(() => {
     setItemToRemove(null)

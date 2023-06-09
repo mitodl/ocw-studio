@@ -439,6 +439,47 @@ def test_update_youtube_statuses_no_videos(mocker):
     mock_youtube.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "youtube_status",
+    [
+        getattr(YouTubeStatus, field)
+        for field in dir(YouTubeStatus)
+        if not field.startswith("__")
+    ],
+)
+@pytest.mark.parametrize(
+    "file_status",
+    [
+        getattr(VideoFileStatus, field)
+        for field in dir(VideoFileStatus)
+        if not field.startswith("__")
+    ],
+)
+def test_mail_youtube_upload_success_trigger(mocker, youtube_status, file_status):
+    """mail_youtube_upload_success should only be triggered once during the various status transitions."""
+    mock_mail_success = mocker.patch("videos.tasks.mail_youtube_upload_success")
+    mock_video_status = mocker.patch("videos.tasks.YouTubeApi.video_status")
+    mock_video_status.return_value = youtube_status
+
+    VideoFileFactory.create(
+        id=1,
+        status=file_status,
+        destination_status=youtube_status,
+        destination=DESTINATION_YOUTUBE,
+    )
+
+    update_youtube_statuses.delay()
+
+    # The following is the combination of statuses that moves the VideoFile
+    # from 'Uploaded' to 'Complete' state. This is when the email should be sent.
+    should_email = (
+        youtube_status == YouTubeStatus.PROCESSED
+        and file_status == VideoFileStatus.UPLOADED
+    )
+
+    assert mock_mail_success.call_count == (1 if should_email else 0)
+
+
 @pytest.mark.parametrize("is_enabled", [True, False])
 def test_remove_youtube_video(
     settings, mocker, youtube_video_files_processing, is_enabled

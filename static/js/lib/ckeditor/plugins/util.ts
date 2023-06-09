@@ -48,7 +48,7 @@ const ensureEncasedInQuotes = (text: string, singleQuotes = false) => {
   return q + text + q
 }
 
-export function buildAttrsString(attrs: RegExpMatchArray | null): string {
+export function buildAttrsString(attrs: string[] | null): string {
   return attrs ?
     attrs
       .map(attr =>

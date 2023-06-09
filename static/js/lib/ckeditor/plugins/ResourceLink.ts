@@ -63,7 +63,8 @@ export default class ResourceLink extends Plugin {
        *  - [range.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_model_range-Range.html#member-isCollapsed)
        */
       this.editor.model.change(writer => {
-        const insertPosition = this.editor.model.document.selection.getFirstPosition()
+        const insertPosition =
+          this.editor.model.document.selection.getFirstPosition()
         writer.insertText(
           title,
           {

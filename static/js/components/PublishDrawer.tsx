@@ -62,11 +62,9 @@ const PublishingOption: React.FC<PublishingOptionProps> = props => {
   const { publishingEnv, selected, onSelect, website, onPublishSuccess } = props
   const publishingInfo = getPublishingInfo(website, publishingEnv)
 
-  const [
-    { isPending },
-    publish
-  ] = useMutation((payload: WebsitePublishPayload) =>
-    websitePublishAction(website.name, publishingEnv, payload)
+  const [{ isPending }, publish] = useMutation(
+    (payload: WebsitePublishPayload) =>
+      websitePublishAction(website.name, publishingEnv, payload)
   )
 
   const handlePublish: OnSubmitPublish = async (payload, helpers) => {

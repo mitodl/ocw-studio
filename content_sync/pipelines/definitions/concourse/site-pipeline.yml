@@ -460,7 +460,7 @@ jobs:
             path: sh
             args:
             - -exc
-            - aws s3((cli-endpoint-url)) sync course-markdown/output-online s3://((web-bucket))/((base-url)) --metadata site-id=((site-name))((delete))
+            - aws s3((cli-endpoint-url)) sync course-markdown/output-online s3://((web-bucket))/((base-url)) --exclude='((short-id)).zip' --exclude='((short-id))-video.zip' --metadata site-id=((site-name))((delete))
         # START DEV-ONLY
         on_success:
           try:
@@ -1065,17 +1065,32 @@ jobs:
                 mkdir -p ./content/static_resources
                 mkdir -p ./static/static_resources
                 mkdir -p ./static/static_shared
+                mkdir -p ../videos
                 cp -r ../static-resources/. ./content/static_resources
                 HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
                 if [ $HTML_COUNT != 0 ];
                 then
                   mv ./content/static_resources/*.html ./static/static_resources
                 fi
+                MP4_COUNT="$(ls -1 ./content/static_resources/*.mp4 2>/dev/null | wc -l)"
+                if [ $MP4_COUNT != 0 ];
+                then
+                  mv ./content/static_resources/*.mp4 ../videos
+                fi
                 touch ./content/static_resources/_index.md
                 cp -r ../build-artifacts/static_shared/. ./static/static_shared/
                 hugo ((hugo-args-offline))
                 cd output-offline
-                zip -r ../../build-course-offline/((short-id)).zip ./ -x \*.mp4
+                zip -r ../../build-course-offline/((short-id)).zip ./
+                rm -rf ./*
+                cd ..
+                if [ $MP4_COUNT != 0 ];
+                then
+                  mv ../videos/* ./content/static_resources
+                fi
+                hugo ((hugo-args-offline))
+                cd output-offline
+                zip -r ../../build-course-offline/((short-id))-video.zip ./
               else
                 echo "Offline configuration not found for site type ((config-slug))"
               fi
@@ -1160,6 +1175,7 @@ jobs:
               then
                 aws s3((cli-endpoint-url)) sync course-markdown/output-offline/ s3://((offline-bucket))/((base-url)) --metadata site-id=((site-name))((delete))
                 aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((web-bucket))/((base-url)) --exclude='*' --include='((short-id)).zip' --metadata site-id=((site-name))
+                aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((web-bucket))/((base-url)) --exclude='*' --include='((short-id))-video.zip' --metadata site-id=((site-name))
               else
                 echo "Offline configuration not found for site type ((config-slug))"
               fi

@@ -69,9 +69,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     editor.current.model.schema.addAttributeCheck(checkNotSubAndSup)
   }, [])
 
-  const [resourcePickerMode, setResourcePickerMode] = useState<
-    ResourceDialogMode
-  >(RESOURCE_LINK)
+  const [resourcePickerMode, setResourcePickerMode] =
+    useState<ResourceDialogMode>(RESOURCE_LINK)
   const [isResourcePickerOpen, setIsResourcePickerOpen] = useState(false)
 
   const addResourceEmbed = useCallback(
