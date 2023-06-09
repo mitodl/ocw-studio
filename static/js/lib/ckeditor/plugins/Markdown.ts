@@ -39,7 +39,6 @@ import { validateHtml2md } from "./validateMdConversion"
  * https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-markdown-gfm/src/gfmdataprocessor.js
  */
 export class MarkdownDataProcessor extends GFMDataProcessor {
-  _htmlDP: typeof HtmlDataProcessor
   md2html: (s: string) => string
   html2md: (s: string) => string
 

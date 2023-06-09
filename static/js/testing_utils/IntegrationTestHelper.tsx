@@ -25,6 +25,8 @@ import { siteApiDetailUrl } from "../lib/urls"
 import WebsiteContext from "../context/Website"
 import { makeWebsiteDetail } from "../util/factories/websites"
 
+jest.mock("../store/network_interface")
+
 export type ReduxPatch = DeepPartial<ReduxState>
 
 // Exported for use in integration_test_helper_old. Remove export once that's gone.

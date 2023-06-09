@@ -43,6 +43,20 @@ import { createModalState } from "../types/modal_state"
 import SiteContentForm from "./forms/SiteContentForm"
 import { FormikHelpers } from "formik"
 
+jest.mock("formik", () => {
+  const formik = jest.requireActual("formik")
+  return {
+    __esModule: true,
+    ...formik
+  }
+})
+jest.mock("../lib/site_content", () => {
+  return {
+    __esModule: true,
+    ...jest.requireActual("../lib/site_content")
+  }
+})
+
 jest.mock("./forms/validation")
 const getContentSchema = jest.mocked(validationFuncs.getContentSchema)
 

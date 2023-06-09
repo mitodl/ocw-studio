@@ -58,7 +58,12 @@ declare module '@ckeditor/ckeditor5-markdown-gfm/src/html2markdown/html2markdown
   export const turndownService: import("turndown")
 }
 
-declare module '@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor';
+declare module '@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor' {
+  export default class GFMDataProcessor {
+    _htmlDP: any
+    constructor(document: DocumentFragment)
+  }
+}
 
 declare module '@ckeditor/ckeditor5-react';
 
