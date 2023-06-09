@@ -366,7 +366,7 @@ jobs:
           platform: linux
           image_resource:
             type: registry-image
-            source: {repository: mitodl/ocw-course-publisher, tag: 0.5}
+            source: {repository: mitodl/ocw-course-publisher, tag: 0.6}
           inputs:
             - name: ocw-hugo-themes
             - name: ocw-hugo-projects
@@ -1008,7 +1008,7 @@ jobs:
           platform: linux
           image_resource:
             type: registry-image
-            source: {repository: mitodl/ocw-course-publisher, tag: 0.5}
+            source: {repository: mitodl/ocw-course-publisher, tag: 0.6}
           inputs:
             - name: webpack-json
           outputs:
@@ -1041,7 +1041,7 @@ jobs:
           platform: linux
           image_resource:
             type: registry-image
-            source: {repository: mitodl/ocw-course-publisher, tag: 0.5}
+            source: {repository: mitodl/ocw-course-publisher, tag: 0.6}
           inputs:
             - name: ocw-hugo-themes
             - name: ocw-hugo-projects

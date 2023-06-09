@@ -101,7 +101,7 @@ jobs:
       platform: linux
       image_resource:
         type: registry-image
-        source: {repository: mitodl/ocw-course-publisher, tag: 0.5}
+        source: {repository: mitodl/ocw-course-publisher, tag: 0.6}
       inputs:
       - name: ocw-hugo-themes
       outputs:
@@ -161,7 +161,7 @@ jobs:
       platform: linux
       image_resource:
         type: registry-image
-        source: {repository: mitodl/ocw-course-publisher, tag: 0.5}
+        source: {repository: mitodl/ocw-course-publisher, tag: 0.6}
       inputs:
         - name: publishable_sites
         - name: ocw-hugo-projects
