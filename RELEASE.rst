@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.94.1
+Version 0.94.1 (Released June 12, 2023)
 --------------
 
 - up timeout on offline build to 90 minutes (#1840)
