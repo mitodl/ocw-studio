@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as ContribUserAdmin
 from django.utils.translation import gettext_lazy as _
-from hijack_admin.admin import HijackUserAdminMixin
+from hijack.contrib.admin import HijackUserAdminMixin
 from mitol.common.admin import TimestampedModelAdmin
 
 from users.models import User
@@ -35,7 +35,6 @@ class UserAdmin(ContribUserAdmin, TimestampedModelAdmin, HijackUserAdminMixin):
         "name",
         "is_staff",
         "last_login",
-        "hijack_field",
     )
 
     add_fieldsets = (

@@ -1,19 +1,19 @@
 """ Urls for video"""
-from django.conf.urls import url
+from django.urls import re_path
 
 from videos.views import TranscodeJobView, TranscriptJobView, YoutubeTokensView
 
 
 urlpatterns = [
-    url(
+    re_path(
         r"api/transcode-jobs/$",
         TranscodeJobView.as_view(),
         name="transcode_jobs",
     ),
-    url(
+    re_path(
         r"api/transcription-jobs/$",
         TranscriptJobView.as_view(),
         name="transcript_jobs",
     ),
-    url(r"api/youtube-tokens/", YoutubeTokensView.as_view(), name="yt_tokens"),
+    re_path(r"api/youtube-tokens/", YoutubeTokensView.as_view(), name="yt_tokens"),
 ]
