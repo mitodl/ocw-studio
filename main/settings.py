@@ -64,7 +64,6 @@ init_app_settings(namespace="OCW_STUDIO", site_name="OCW Studio")
 SITE_NAME = get_site_name()
 
 import_settings_modules(
-    globals(),
     "mitol.common.settings.base",
     "mitol.common.settings.webpack",
     "mitol.mail.settings.email",
@@ -123,7 +122,7 @@ WEBPACK_LOADER = {
 AUTH_USER_MODEL = "users.User"
 
 # Application definition
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -131,10 +130,9 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-    "compat",
     "guardian",
     "hijack",
-    "hijack_admin",
+    "hijack.contrib.admin",
     "safedelete",
     # django-robots
     "rest_framework",
@@ -155,10 +153,10 @@ INSTALLED_APPS = (
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
     "mitol.mail.apps.MailApp",
-)
+]
 
 if ENVIRONMENT not in PRODUCTION_NAMES:
-    INSTALLED_APPS += ("localdev",)
+    INSTALLED_APPS.append("localdev")
 
 DISABLE_WEBPACK_LOADER_STATS = get_bool(
     name="DISABLE_WEBPACK_LOADER_STATS",
@@ -166,9 +164,9 @@ DISABLE_WEBPACK_LOADER_STATS = get_bool(
     description="Disabled webpack loader stats",
 )
 if not DISABLE_WEBPACK_LOADER_STATS:
-    INSTALLED_APPS += ("webpack_loader",)
+    INSTALLED_APPS.append("webpack_loader")
 
-MIDDLEWARE = (
+MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -178,12 +176,13 @@ MIDDLEWARE = (
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.sites.middleware.CurrentSiteMiddleware",
     "main.middleware.CachelessAPIMiddleware",
-)
+    "hijack.middleware.HijackUserMiddleware",
+]
 
 # enable the nplusone profiler only in debug mode
 if DEBUG:
-    INSTALLED_APPS += ("nplusone.ext.django",)
-    MIDDLEWARE += ("nplusone.ext.django.NPlusOneMiddleware",)
+    INSTALLED_APPS.append("nplusone.ext.django")
+    MIDDLEWARE.append("nplusone.ext.django.NPlusOneMiddleware")
 
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 
@@ -210,7 +209,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "main.wsgi.application"
-
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
@@ -742,10 +741,10 @@ MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS = get_int(
 )
 
 if MIDDLEWARE_FEATURE_FLAG_QS_PREFIX:
-    MIDDLEWARE = MIDDLEWARE + (
+    MIDDLEWARE.append([
         "main.middleware.QueryStringFeatureFlagMiddleware",
         "main.middleware.CookieFeatureFlagMiddleware",
-    )
+    ])
 
 THREEPLAY_API_KEY = get_string(
     name="THREEPLAY_API_KEY",
@@ -773,9 +772,9 @@ S3_TRANSCRIPTS_PREFIX = get_string(
 
 # django debug toolbar only in debug mode
 if DEBUG:
-    INSTALLED_APPS += ("debug_toolbar",)
+    INSTALLED_APPS.append("debug_toolbar")
     # it needs to be enabled before other middlewares
-    MIDDLEWARE = ("debug_toolbar.middleware.DebugToolbarMiddleware",) + MIDDLEWARE
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
 
 AUTHENTICATION_BACKENDS = (
