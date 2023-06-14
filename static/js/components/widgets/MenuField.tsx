@@ -28,6 +28,7 @@ interface MenuFieldProps {
 export type HugoItem = {
   identifier: string
   name: string
+  pageRef?: string
   url?: string
   weight: number
   parent?: string
@@ -86,13 +87,25 @@ const internalItemToHugo = (
   siblingIdx: number,
   parent: string | null
 ): HugoItem => {
-  return {
+  const hugoItem: HugoItem = {
     identifier: item.id,
     name:       item.text,
-    weight:     (siblingIdx + 1) * 10,
-    ...(item.targetUrl ? { url: item.targetUrl } : {}),
-    ...(parent ? { parent: parent } : {})
+    weight:     (siblingIdx + 1) * 10
   }
+  if (parent) {
+    hugoItem.parent = parent
+  }
+  if (item.targetUrl) {
+    if (isExternalLinkId(item.id)) {
+      //use "url" for external links
+      hugoItem.url = item.targetUrl
+    } else {
+      //use "pageRef" for internal links
+      hugoItem.pageRef = item.targetUrl
+    }
+  }
+
+  return hugoItem
 }
 
 /**
