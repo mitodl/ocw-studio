@@ -72,7 +72,7 @@ EXAMPLE_MENU_FILE_YAML = f"""mainmenu:
   - identifier: {EXAMPLE_UUIDS[0]}
     name: Page 1
     weight: 0
-    url: content/page-1.md
+    pageRef: content/page-1.md
   - identifier: 'external-12345'
     name: Ext Link
     weight: 10
@@ -204,7 +204,7 @@ def test_hugo_menu_yaml_serialize(omnibus_config):
     parsed_serialized_data = yaml.load(serialized_data, Loader=yaml.SafeLoader)
     assert parsed_serialized_data == {
         "mainmenu": [
-            {**example_menu_data[0], "url": "/path/to/myfile"},
+            {**example_menu_data[0], "pageRef": "/path/to/myfile"},
             example_menu_data[1],
         ]
     }

@@ -259,9 +259,9 @@ def _untransform_hugo_menu_data(
             updated_menu_item = menu_item.copy()
             if (
                 is_valid_uuid(updated_menu_item["identifier"])
-                and "url" in updated_menu_item
+                and "pageRef" in updated_menu_item
             ):
-                del updated_menu_item["url"]
+                del updated_menu_item["pageRef"]
             result_menu_items.append(updated_menu_item)
         transformed_menu_fields[field_name] = result_menu_items
     return {**data, **transformed_menu_fields}
