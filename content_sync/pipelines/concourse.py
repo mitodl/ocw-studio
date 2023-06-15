@@ -453,7 +453,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             base_online_args.update(
                 {
                     "--config": f"../ocw-hugo-projects/{starter_slug}/config.yaml",
-                    "--baseUrl": f"/{base_url}",
+                    "--baseURL": f"/{base_url}",
                     "--destination": "output-online",
                 }
             )
@@ -461,7 +461,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             base_offline_args.update(
                 {
                     "--config": f"../ocw-hugo-projects/{starter_slug}/config-offline.yaml",
-                    "--baseUrl": "/",
+                    "--baseURL": "/",
                     "--destination": "output-offline",
                 }
             )
@@ -720,14 +720,14 @@ class MassBuildSitesPipeline(
         base_online_args = base_hugo_args.copy()
         base_online_args.update(
             {
-                "--baseUrl": "$PREFIX/$BASE_URL",
+                "--baseURL": "$PREFIX/$BASE_URL",
                 "--config": "../ocw-hugo-projects/$STARTER_SLUG/config.yaml",
             }
         )
         base_offline_args = base_hugo_args.copy()
         base_offline_args.update(
             {
-                "--baseUrl": "/",
+                "--baseURL": "/",
                 "--config": "../ocw-hugo-projects/$STARTER_SLUG/config-offline.yaml",
             }
         )
