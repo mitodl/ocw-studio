@@ -167,8 +167,8 @@ def get_hugo_arg_string(build_target, pipeline_name, default_args, override_args
             )
             if arg.startswith("-") and not next_arg.startswith("-"):
                 hugo_args[arg] = next_arg
-                # If the build target is offline, / is the only value that makes sense for --baseUrl
-                if arg == "--baseUrl" and build_target == TARGET_OFFLINE:
+                # If the build target is offline, / is the only value that makes sense for --baseURL
+                if arg == "--baseURL" and build_target == TARGET_OFFLINE:
                     hugo_args[arg] = "/"
             elif arg.startswith("-"):
                 hugo_args[arg] = ""
