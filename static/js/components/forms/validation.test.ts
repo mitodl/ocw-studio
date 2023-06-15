@@ -18,6 +18,13 @@ import {
   WidgetVariant
 } from "../../types/websites"
 
+jest.mock("../../lib/site_content", () => {
+  return {
+    __esModule: true,
+    ...jest.requireActual("../../lib/site_content")
+  }
+})
+
 describe("form validation utils", () => {
   describe("website content validation", () => {
     const repeatableConfigItem = makeRepeatableConfigItem()

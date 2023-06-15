@@ -18,6 +18,8 @@ import { getQueries } from "../lib/redux_query"
 import * as networkInterfaceFuncs from "../store/network_interface"
 import { getInitialState } from "../testing_utils/IntegrationTestHelper"
 
+jest.mock("../store/network_interface")
+
 /**
  * Avoid using this for new tests. Prefer `IntegrationTestHelper.tsx` instead.
  */

@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.94.1 (Released June 12, 2023)
+--------------
+
+- up timeout on offline build to 90 minutes (#1840)
+- ZIPs with and without videos (#1836)
+- Update linting, formatting (#1831)
+- update typescript to 4.9.5 (#1830)
+- fix @types/react versions (#1828)
+
 Version 0.94.0 (Released June 07, 2023)
 --------------
 

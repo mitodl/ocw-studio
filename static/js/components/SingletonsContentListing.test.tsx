@@ -32,6 +32,13 @@ function mocko() {
   return <div>mock</div>
 }
 
+jest.mock("../lib/site_content", () => {
+  return {
+    __esModule: true,
+    ...jest.requireActual("../lib/site_content")
+  }
+})
+
 jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
   default:    mocko

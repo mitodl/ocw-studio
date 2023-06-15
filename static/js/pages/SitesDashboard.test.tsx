@@ -12,6 +12,13 @@ import { Website } from "../types/websites"
 import PaginationControls from "../components/PaginationControls"
 import * as searchHooks from "../hooks/search"
 
+jest.mock("../hooks/search", () => {
+  return {
+    __esModule: true,
+    ...jest.requireActual("../hooks/search")
+  }
+})
+
 describe("SitesDashboard", () => {
   let helper: IntegrationTestHelper,
     response: WebsiteListingResponse,
