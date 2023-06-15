@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.95.0
+--------------
+
+- enhancement: upgrade publisher (#1826)
+- chore(deps): lock file maintenance (#1789)
+- Delete PR Template
+- update swc (#1842)
+
 Version 0.94.1 (Released June 12, 2023)
 --------------
 
