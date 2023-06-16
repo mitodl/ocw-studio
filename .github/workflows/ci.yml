@@ -56,6 +56,12 @@ jobs:
 
       - name: Lint
         run: pylint ./**/*.py
+        env:
+          MAILGUN_SENDER_DOMAIN: 'fake.example.com'
+          MAILGUN_KEY: 'fake'
+          OCW_STUDIO_BASE_URL: 'http://localhost:8043/'
+          SOCIAL_AUTH_SAML_LOGIN_URL: 'fake.example.com/login/saml/'
+          SECRET_KEY: "secret"  # pragma: allowlist secret
 
       - name: Black
         run: black --check .
