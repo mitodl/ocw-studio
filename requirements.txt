@@ -60,8 +60,6 @@ click-plugins==1.1.1
     # via celery
 click-repl==0.2.0
     # via celery
-concoursepy==0.0.20
-    # via -r requirements.in
 coreapi==2.3.3
     # via djoser
 coreschema==0.0.4
@@ -178,6 +176,8 @@ iniconfig==1.1.1
     # via pytest
 ipython==8.10.0
     # via -r requirements.in
+isodate==0.6.1
+    # via python3-saml
 itypes==1.2.0
     # via coreapi
 jedi==0.17.2
@@ -191,7 +191,10 @@ jmespath==0.10.0
 kombu==5.3.0
     # via celery
 lxml==4.9.1
-    # via premailer
+    # via
+    #   premailer
+    #   python3-saml
+    #   xmlsec
 markupsafe==2.1.3
     # via jinja2
 matplotlib-inline==0.1.3
@@ -213,6 +216,8 @@ oauthlib==3.2.2
     # via
     #   requests-oauthlib
     #   social-auth-core
+ol-concoursepy==0.0.41
+    # via -r requirements.in
 packaging==21.0
     # via pytest
 parso==0.7.1
@@ -277,6 +282,8 @@ python-magic==0.4.24
     # via -r requirements.in
 python3-openid==3.2.0
     # via social-auth-core
+python3-saml==1.15.0
+    # via social-auth-core
 pytz==2021.1
     # via
     #   django
@@ -293,11 +300,11 @@ redis==4.5.5
 requests==2.31.0
     # via
     #   -r requirements.in
-    #   concoursepy
     #   coreapi
     #   django-anymail
     #   google-api-core
     #   mitol-django-common
+    #   ol-concoursepy
     #   premailer
     #   pygithub
     #   requests-oauthlib
@@ -319,6 +326,7 @@ six==1.15.0
     #   google-auth
     #   google-auth-httplib2
     #   html5lib
+    #   isodate
     #   pynacl
     #   python-dateutil
     #   social-auth-app-django
@@ -329,14 +337,16 @@ social-auth-app-django==4.0.0
     #   -r requirements.in
     #   djoser
     #   mitol-django-authentication
-social-auth-core==4.4.2
-    # via social-auth-app-django
+social-auth-core[saml]==4.4.2
+    # via
+    #   -r requirements.in
+    #   social-auth-app-django
 soupsieve==2.1
     # via beautifulsoup4
 sqlparse==0.3.1
     # via django
 sseclient-py==1.7
-    # via concoursepy
+    # via ol-concoursepy
 stack-data==0.6.2
     # via ipython
 text-unidecode==1.3
@@ -380,6 +390,8 @@ webencodings==0.5.1
     # via html5lib
 wrapt==1.15.0
     # via deprecated
+xmlsec==1.3.13
+    # via python3-saml
 yamale==3.0.8
     # via -r requirements.in
 
