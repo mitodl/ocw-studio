@@ -19,7 +19,7 @@ pytestmark = pytest.mark.django_db
 
 
 def test_is_global_admin(permission_groups):
-    """ Global admin users should be identified correctly """
+    """Global admin users should be identified correctly"""
     superuser = UserFactory.create(is_superuser=True)
     for user in [permission_groups.global_admin, superuser]:
         assert permissions.is_global_admin(user) is True
@@ -32,7 +32,7 @@ def test_is_global_admin(permission_groups):
 
 
 def test_is_site_admin(permission_groups):
-    """ Any website-specific or global admin users should be identified correctly """
+    """Any website-specific or global admin users should be identified correctly"""
     website = permission_groups.websites[0]
     superuser = UserFactory.create(is_superuser=True)
     for user in [
@@ -114,7 +114,7 @@ def test_editor_can_preview_website(mocker, permission_groups):
 
 
 def test_can_create_website(mocker, permission_groups):
-    """ Only global admins and global authors can create new websites """
+    """Only global admins and global authors can create new websites"""
     for user in [
         permission_groups.global_admin,
         permission_groups.global_author,
@@ -138,7 +138,7 @@ def test_can_create_website(mocker, permission_groups):
 
 
 def test_cannot_delete_website(mocker, permission_groups):
-    """ No one can delete websites """
+    """No one can delete websites"""
     for website in permission_groups.websites:
         for user in [
             permission_groups.global_admin,
@@ -173,7 +173,7 @@ def test_author_cannot_view_edit_other_website(mocker, permission_groups, method
 
 
 def test_can_publish_website(mocker, permission_groups):
-    """ Test that only appropriate users can publish a website """
+    """Test that only appropriate users can publish a website"""
     website = permission_groups.websites[0]
     for [user, has_perm] in [
         [permission_groups.global_admin, True],
@@ -193,7 +193,7 @@ def test_can_publish_website(mocker, permission_groups):
 
 @pytest.mark.parametrize("method", ["GET", "PATCH", "POST", "DELETE"])
 def test_can_change_collaborators_website(mocker, permission_groups, method):
-    """ Test that only appropriate users can view/modify website collaborators"""
+    """Test that only appropriate users can view/modify website collaborators"""
     website = permission_groups.websites[0]
     collaborator = permission_groups.site_editor
     # This assumes the WebsiteContent API view will be nested via DRF extensions
@@ -234,7 +234,7 @@ def test_can_change_collaborators_website(mocker, permission_groups, method):
 
 
 def test_can_create_website_content(mocker, permission_groups):
-    """ Verify that website admins and editors can create content"""
+    """Verify that website admins and editors can create content"""
     website = permission_groups.websites[0]
 
     # This assumes the WebsiteContent API view will be nested via DRF extensions
@@ -349,7 +349,7 @@ def test_admins_can_delete_any_website_content(mocker, permission_groups):
 
 
 def test_setup_website_groups_permissions():
-    """ Permissions should be assigned as expected """
+    """Permissions should be assigned as expected"""
     owner, admin, editor = UserFactory.create_batch(3)
     website = WebsiteFactory.create(owner=owner)
 
@@ -378,7 +378,7 @@ def test_setup_website_groups_permissions():
 
 
 def test_assign_group_permissions_error():
-    """ An exception should be raised if an invalid permission is used"""
+    """An exception should be raised if an invalid permission is used"""
     website = WebsiteFactory.create()
     bad_perm = "fake_perm_website"
     with pytest.raises(Permission.DoesNotExist) as exc:

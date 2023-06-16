@@ -570,10 +570,8 @@ def test_delete_s3_objects(settings):
 @pytest.mark.parametrize(
     "initial_status", [VideoStatus.SUBMITTED_FOR_TRANSCRIPTION, VideoStatus.COMPLETE]
 )
-@pytest.mark.parametrize(
-    "other_incomplete_video", [True, False]
-)
-def test_update_transcripts_for_video( # pylint: disable=too-many-arguments
+@pytest.mark.parametrize("other_incomplete_video", [True, False])
+def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments
     settings,
     mocker,
     update_transcript_return_value,

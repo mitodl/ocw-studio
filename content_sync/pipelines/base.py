@@ -4,7 +4,7 @@ from typing import List
 
 
 class BasePipelineApi(abc.ABC):
-    """ Base class for a pipeline API"""
+    """Base class for a pipeline API"""
 
     @abc.abstractmethod
     def list_pipelines(self, names: List[str] = None):
@@ -18,7 +18,7 @@ class BasePipelineApi(abc.ABC):
 
 
 class BasePipeline(abc.ABC):
-    """ Base class for a pipeline """
+    """Base class for a pipeline"""
 
     @staticmethod
     @abc.abstractmethod
@@ -66,26 +66,26 @@ class BasePipeline(abc.ABC):
 
 
 class BaseGeneralPipeline(BasePipeline):
-    """ Base class for general pipelines """
+    """Base class for general pipelines"""
 
 
 class BaseSitePipeline(BasePipeline):
-    """ Base class for site-specific publishing """
+    """Base class for site-specific publishing"""
 
 
 class BaseMassBuildSitesPipeline(BasePipeline):
-    """ Base class for mass site building """
+    """Base class for mass site building"""
 
     PIPELINE_NAME = "mass-build-sites"
 
 
 class BaseThemeAssetsPipeline(BasePipeline):
-    """ Base class for theme asset publishing """
+    """Base class for theme asset publishing"""
 
     PIPELINE_NAME = "ocw-theme-assets"
 
 
 class BaseUnpublishedSiteRemovalPipeline(BasePipeline):
-    """ Base class for removing unpublished sites """
+    """Base class for removing unpublished sites"""
 
     PIPELINE_NAME = "remove-unpublished-sites"

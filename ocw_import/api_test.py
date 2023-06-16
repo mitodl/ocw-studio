@@ -43,7 +43,7 @@ TEST_OCW2HUGO_PATH = get_ocw2hugo_path("./test_ocw2hugo")
 
 @mock_s3
 def test_import_ocw2hugo_course_content(mocker, settings):
-    """ import_ocw2hugo_course should create a new website plus content"""
+    """import_ocw2hugo_course should create a new website plus content"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
@@ -59,7 +59,9 @@ def test_import_ocw2hugo_course_content(mocker, settings):
     assert website.starter == website_starter
     assert website.source == WEBSITE_SOURCE_OCW_IMPORT
     assert website.short_id == "1.050-fall-2007"
-    with open(f"{TEST_OCW2HUGO_PATH}/{name}/data/course_legacy.json", "r", encoding="utf-8") as infile:
+    with open(
+        f"{TEST_OCW2HUGO_PATH}/{name}/data/course_legacy.json", "r", encoding="utf-8"
+    ) as infile:
         assert json.dumps(website.metadata, sort_keys=True) == json.dumps(
             json.load(infile), sort_keys=True
         )
@@ -133,7 +135,9 @@ def test_import_ocw2hugo_sitemetadata_legacy(
     """Make sure we handle importing levels, term, and year in a legacy format"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    with open(f"test_ocw2hugo/{name}/data/course_legacy.json", encoding="utf-8") as course_json_file:
+    with open(
+        f"test_ocw2hugo/{name}/data/course_legacy.json", encoding="utf-8"
+    ) as course_json_file:
         course_json = json.load(course_json_file)
 
     level_dict = {"level": "name of level", "url": "ignore"}
@@ -152,7 +156,7 @@ def test_import_ocw2hugo_sitemetadata_legacy(
 
 @mock_s3
 def test_import_ocw2hugo_course_metadata(settings, root_website):
-    """ import_ocw2hugo_course should also populate site metadata"""
+    """import_ocw2hugo_course should also populate site metadata"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
@@ -254,7 +258,7 @@ def test_import_ocw2hugo_course_gdrive(mocker, settings, gdrive_enabled):
 
 @mock_s3
 def test_import_ocw2hugo_course_bad_date(mocker, settings):
-    """ Website publish date should be null if the JSON date can't be parsed """
+    """Website publish date should be null if the JSON date can't be parsed"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
@@ -266,7 +270,7 @@ def test_import_ocw2hugo_course_bad_date(mocker, settings):
 
 @mock_s3
 def test_import_ocw2hugo_course_noncourse(settings):
-    """ Website should not be created for a non-course """
+    """Website should not be created for a non-course"""
     setup_s3(settings)
     name = "biology"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
@@ -276,7 +280,7 @@ def test_import_ocw2hugo_course_noncourse(settings):
 
 @mock_s3
 def test_import_ocw2hugo_course_log_exception(mocker, settings):
-    """ Log an exception if the website cannot be saved/updated """
+    """Log an exception if the website cannot be saved/updated"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
@@ -289,7 +293,7 @@ def test_import_ocw2hugo_course_log_exception(mocker, settings):
 
 @mock_s3
 def test_import_ocw2hugo_content_log_exception(mocker, settings):
-    """ Log an exception if the website content cannot be saved/updated """
+    """Log an exception if the website content cannot be saved/updated"""
     setup_s3(settings)
     name = "1-201j-transportation-systems-analysis-demand-and-economics-fall-2008"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
@@ -314,7 +318,7 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     ],
 )
 def test_get_short_id(course_num, term, year, expected_id):
-    """ get_short_id should return expected values, or raise an error if no course number"""
+    """get_short_id should return expected values, or raise an error if no course number"""
     metadata = {"primary_course_number": course_num, "term": term, "year": year}
     if expected_id:
         website = WebsiteFactory.create(short_id=expected_id)
@@ -335,7 +339,7 @@ def test_get_short_id(course_num, term, year, expected_id):
 
 @mock_s3
 def test_import_ocw2hugo_menu(settings, mocker):
-    """ Website publish date should be null if the JSON date can't be parsed """
+    """Website publish date should be null if the JSON date can't be parsed"""
     uuid4_hex = "a" * 32
     mocker.patch("uuid.uuid4").return_value.hex = uuid4_hex
     setup_s3(settings)
@@ -387,7 +391,7 @@ def test_import_ocw2hugo_menu(settings, mocker):
 
 @mock_s3
 def test_import_ocw2hugo_video_gallery(mocker, settings):
-    """ Website publish date should be null if the JSON date can't be parsed """
+    """Website publish date should be null if the JSON date can't be parsed"""
     setup_s3(settings)
     name = "es-s41-speak-italian-with-your-mouth-full-spring-2012"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
@@ -471,7 +475,7 @@ def test_update_ocw2hugo_course(mocker, website_exists):
     ],
 )
 def test_get_learning_resource_types(content_json, resource_types):
-    """ Test get_learning_resource_types """
+    """Test get_learning_resource_types"""
     result = get_learning_resource_types(content_json)
     assert result == resource_types
 
@@ -549,13 +553,10 @@ def test_update_ocw2hugo_course_content(
             assert resource.metadata["description"] == "original description"
             assert resource.metadata["image_metadata"]["image-alt"] == "original alt"
     else:
-        assert (
-            WebsiteContent.objects.filter(
-                website=website,
-                text_id="35806cc1-1f73-e1dd-f902-580c83d1566f",
-            ).count()
-            == (1 if create_new_content else 0)
-        )
+        assert WebsiteContent.objects.filter(
+            website=website,
+            text_id="35806cc1-1f73-e1dd-f902-580c83d1566f",
+        ).count() == (1 if create_new_content else 0)
 
 
 class TestUpdateContentFromS3Data:

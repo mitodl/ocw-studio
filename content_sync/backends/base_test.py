@@ -10,7 +10,7 @@ from websites.factories import WebsiteFactory
 
 
 class _ImplementedBackend(BaseSyncBackend):
-    """ Not implemented """
+    """Not implemented"""
 
     def backend_exists(self):
         ...
@@ -52,17 +52,17 @@ class _ImplementedBackend(BaseSyncBackend):
 
 
 class _NotImplementedBackend(BaseSyncBackend):
-    """ Not implemented """
+    """Not implemented"""
 
 
 def test_base_sync_backend_subclass_implemented(mocker):
-    """ Verify BaseSyncBackend doesn't unimplemented subclasses """
+    """Verify BaseSyncBackend doesn't unimplemented subclasses"""
     # no errors
     _ImplementedBackend(mocker.Mock())
 
 
 def test_base_sync_backend_subclass_not_implemented(mocker):
-    """ Verify BaseSyncBackend doesn't unimplemented subclasses """
+    """Verify BaseSyncBackend doesn't unimplemented subclasses"""
     with pytest.raises(TypeError):
         _NotImplementedBackend(  # pylint: disable=abstract-class-instantiated
             mocker.Mock()
@@ -70,7 +70,7 @@ def test_base_sync_backend_subclass_not_implemented(mocker):
 
 
 def test_sync_content_to_backend_create(mocker):
-    """ Verify that sync_content_to_backend calls the create method based on the state """
+    """Verify that sync_content_to_backend calls the create method based on the state"""
     mock_create_content_in_backend = mocker.patch.object(
         _ImplementedBackend, "create_content_in_backend", return_value=None
     )
@@ -83,7 +83,7 @@ def test_sync_content_to_backend_create(mocker):
 
 
 def test_sync_content_to_backend_update(mocker):
-    """ Verify that sync_content_to_backend calls the update method based on the state """
+    """Verify that sync_content_to_backend calls the update method based on the state"""
     mock_update_content_in_backend = mocker.patch.object(
         _ImplementedBackend, "update_content_in_backend", return_value=None
     )
@@ -96,7 +96,7 @@ def test_sync_content_to_backend_update(mocker):
 
 
 def test_sync_content_to_backend_delete(mocker):
-    """ Verify that sync_content_to_backend calls the delete method based on the state """
+    """Verify that sync_content_to_backend calls the delete method based on the state"""
     mock_delete_content_in_backend = mocker.patch.object(
         _ImplementedBackend, "delete_content_in_backend", return_value=None
     )
@@ -110,7 +110,7 @@ def test_sync_content_to_backend_delete(mocker):
 
 @pytest.mark.django_db
 def test_sync_all_content_to_backend(mocker):
-    """ Verify that sync_all_content_to_backend calls sync_content_to_backend for each piece of content """
+    """Verify that sync_all_content_to_backend calls sync_content_to_backend for each piece of content"""
     mock_sync_content_to_backend = mocker.patch.object(
         _ImplementedBackend, "sync_content_to_backend", return_value=None
     )

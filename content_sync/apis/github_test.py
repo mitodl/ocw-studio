@@ -77,7 +77,7 @@ GITHUB_APP_INSTALLATIONS = """[
 
 @pytest.fixture(autouse=True)
 def mock_github_integration(mocker):
-    """ Mock the github app request"""
+    """Mock the github app request"""
     mock_get = mocker.patch("content_sync.apis.github.requests.get")
     mock_get.return_value.status_code = 200
     mock_get.return_value.json.return_value = json.loads(GITHUB_APP_INSTALLATIONS)
@@ -133,7 +133,7 @@ def mock_api_wrapper(settings, mocker, db_data):
 
 @pytest.fixture
 def mock_github(mocker):
-    """ Return a mock Github class"""
+    """Return a mock Github class"""
     return mocker.patch("content_sync.apis.github.Github")
 
 
@@ -202,7 +202,7 @@ def test_create_repo(mock_api_wrapper, kwargs):
 
 
 def test_create_repo_slow_api(mocker, mock_api_wrapper, mock_branches):
-    """ Test that the create_repo function will be retried if it fails initially"""
+    """Test that the create_repo function will be retried if it fails initially"""
     mock_api_wrapper.org.create_repo.side_effect = [
         GithubException(status=404, data={}, headers={}),
         GithubException(status=429, data={}, headers={}),
@@ -214,7 +214,7 @@ def test_create_repo_slow_api(mocker, mock_api_wrapper, mock_branches):
 
 
 def test_create_repo_broken_api(mock_api_wrapper):
-    """ Test that the create_repo function fails if the Github API repeatedly fails basic calls"""
+    """Test that the create_repo function fails if the Github API repeatedly fails basic calls"""
     mock_api_wrapper.org.create_repo.side_effect = GithubException(
         status=404, data={}, headers={}
     )
@@ -683,7 +683,7 @@ def test_custom_github_url(mocker, settings, git_url):
 
 
 def test_create_repo_new(mocker, mock_api_wrapper, mock_branches):
-    """ Test that the create_repo function completes without errors and calls expected api functions"""
+    """Test that the create_repo function completes without errors and calls expected api functions"""
     mock_api_wrapper.org.create_repo.return_value = mocker.Mock(
         default_branch=settings.GIT_BRANCH_MAIN,
         get_branches=mocker.Mock(return_value=mock_branches[0:1]),
@@ -702,7 +702,7 @@ def test_create_repo_new(mocker, mock_api_wrapper, mock_branches):
 
 
 def test_create_repo_again(mocker, mock_api_wrapper):
-    """ Test that the create_repo function will try retrieving a repo if api.create_repo fails"""
+    """Test that the create_repo function will try retrieving a repo if api.create_repo fails"""
     mock_log = mocker.patch("content_sync.apis.github.log.debug")
     mock_api_wrapper.org.create_repo.side_effect = GithubException(
         status=422, data={}, headers={}
@@ -718,7 +718,7 @@ def test_create_repo_again(mocker, mock_api_wrapper):
 def test_create_backend_custom_default_branch(
     settings, mocker, mock_api_wrapper, mock_branches
 ):
-    """ Test that the create_backend function creates a custom default branch name """
+    """Test that the create_backend function creates a custom default branch name"""
     settings.GIT_BRANCH_MAIN = "testing"
     mock_api_wrapper.org.create_repo.return_value = mocker.Mock(
         default_branch="main", get_branches=mocker.Mock(return_value=mock_branches[0:1])
@@ -731,7 +731,7 @@ def test_create_backend_custom_default_branch(
 def test_create_backend_two_branches_already_exist(
     mocker, mock_api_wrapper, mock_branches
 ):
-    """ Test that the create_backend function only creates branches that don't exist """
+    """Test that the create_backend function only creates branches that don't exist"""
     mock_api_wrapper.org.create_repo.return_value = mocker.Mock(
         default_branch=settings.GIT_BRANCH_MAIN,
         get_branches=mocker.Mock(return_value=mock_branches[0:2]),

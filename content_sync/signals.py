@@ -14,5 +14,5 @@ from websites.models import WebsiteContent
 def upsert_content_sync_state(
     sender, instance, created, **kwargs
 ):  # pylint: disable=unused-argument
-    """ Create/update the sync state """
+    """Create/update the sync state"""
     api.upsert_content_sync_state(instance)

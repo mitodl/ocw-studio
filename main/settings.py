@@ -209,7 +209,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "main.wsgi.application"
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
@@ -331,7 +331,8 @@ LOGGING = {
                 "[%(asctime)s] %(levelname)s %(process)d [%(name)s] "
                 "%(filename)s:%(lineno)d - "
                 f"[{HOSTNAME}] - %(message)s"
-            ), "datefmt": "%Y-%m-%d %H:%M:%S",
+            ),
+            "datefmt": "%Y-%m-%d %H:%M:%S",
         }
     },
     "handlers": {
@@ -740,10 +741,12 @@ MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS = get_int(
 )
 
 if MIDDLEWARE_FEATURE_FLAG_QS_PREFIX:
-    MIDDLEWARE.append([
-        "main.middleware.QueryStringFeatureFlagMiddleware",
-        "main.middleware.CookieFeatureFlagMiddleware",
-    ])
+    MIDDLEWARE.append(
+        [
+            "main.middleware.QueryStringFeatureFlagMiddleware",
+            "main.middleware.CookieFeatureFlagMiddleware",
+        ]
+    )
 
 THREEPLAY_API_KEY = get_string(
     name="THREEPLAY_API_KEY",

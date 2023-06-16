@@ -16,7 +16,7 @@ from websites.models import WebsiteContent
 
 
 class Command(WebsiteFilterCommand):
-    """ Fix WebsiteContent files that are missing the Website name in their paths"""
+    """Fix WebsiteContent files that are missing the Website name in their paths"""
 
     help = __doc__
 

@@ -11,7 +11,7 @@ from websites.models import Website
 
 
 class Command(WebsiteFilterCommand):
-    """ Backpopulate legacy videos """
+    """Backpopulate legacy videos"""
 
     help = __doc__
 

@@ -8,7 +8,7 @@ from content_sync.pipelines.base import BaseUnpublishedSiteRemovalPipeline
 
 
 class Command(BaseCommand):
-    """ Management command for upserting the remove-unpublished-sites pipeline """
+    """Management command for upserting the remove-unpublished-sites pipeline"""
 
     help = __doc__
 

@@ -14,12 +14,12 @@ TEST_OCW2HUGO_PREFIX = ""
 
 
 def get_ocw2hugo_path(path):
-    """ get the path to ocw-to-hugo test data """
+    """get the path to ocw-to-hugo test data"""
     return f"{path}/{TEST_OCW2HUGO_PREFIX}"
 
 
 def get_ocw2hugo_files(path):
-    """ get the files from an ocw-to-hugo test data directory """
+    """get the files from an ocw-to-hugo test data directory"""
     return [
         f
         for f in glob.glob(get_ocw2hugo_path(path) + "**/*", recursive=True)

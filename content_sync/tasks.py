@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 
 @app.task(acks_late=True)
 def sync_content(content_sync_id: str):
-    """ Sync a piece of content """
+    """Sync a piece of content"""
     try:
         sync_state = ContentSyncState.objects.get(id=content_sync_id)
     except ContentSyncState.DoesNotExist:
@@ -90,7 +90,7 @@ def sync_unsynced_websites(
 
 @app.task(acks_late=True)
 def create_website_backend(website_name: str):
-    """ Create a backend for a website """
+    """Create a backend for a website"""
     try:
         website = Website.objects.get(name=website_name)
     except Website.DoesNotExist:
@@ -105,7 +105,7 @@ def create_website_backend(website_name: str):
 
 @app.task(acks_late=True)
 def upsert_website_publishing_pipeline(website_name: str):
-    """ Create/update a pipeline for previewing & publishing a website """
+    """Create/update a pipeline for previewing & publishing a website"""
     try:
         website = Website.objects.get(name=website_name)
     except Website.DoesNotExist:
@@ -122,7 +122,7 @@ def upsert_website_publishing_pipeline(website_name: str):
 def upsert_website_pipeline_batch(
     website_names: List[str], create_backend=False, unpause=False, hugo_args=""
 ):
-    """ Create/update publishing pipelines for multiple websites"""
+    """Create/update publishing pipelines for multiple websites"""
     api_instance = None
     for website_name in website_names:
         website = Website.objects.get(name=website_name)
@@ -154,7 +154,7 @@ def upsert_pipelines(  # pylint: disable=too-many-arguments
     unpause=False,
     hugo_args="",
 ):
-    """ Chunk and group batches of pipeline upserts for a specified list of websites"""
+    """Chunk and group batches of pipeline upserts for a specified list of websites"""
     tasks = []
     for website_subset in chunks(
         sorted(website_names),
@@ -173,7 +173,7 @@ def upsert_pipelines(  # pylint: disable=too-many-arguments
 
 @app.task(acks_late=True)
 def upsert_theme_assets_pipeline(unpause=False, themes_branch=None) -> bool:
-    """ Upsert the theme assets pipeline """
+    """Upsert the theme assets pipeline"""
     pipeline = api.get_theme_assets_pipeline(themes_branch=themes_branch)
     pipeline.upsert_pipeline()
     if unpause:
@@ -208,7 +208,7 @@ def trigger_unpublished_removal(website_name: str) -> bool:
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_task(10)
 def sync_website_content(website_name: str):
-    """ Commit any unsynced files to the backend for a website """
+    """Commit any unsynced files to the backend for a website"""
     try:
         website = Website.objects.get(name=website_name)
     except Website.DoesNotExist:
@@ -259,7 +259,7 @@ def publish_website_batch(
     prepublish: Optional[bool] = False,
     trigger_pipeline: Optional[bool] = True,
 ) -> bool:
-    """ Call api.publish_website for a batch of websites"""
+    """Call api.publish_website for a batch of websites"""
     result = True
     if trigger_pipeline and settings.CONTENT_SYNC_PIPELINE_BACKEND:
         pipeline_api = import_string(
@@ -538,7 +538,7 @@ def backpopulate_archive_videos_batch(
     prefix,
     website_names: List[str],
 ):  # pylint:disable=too-many-locals
-    """ Populate archive videos from batches of legacy websites """
+    """Populate archive videos from batches of legacy websites"""
     error_messages = ""
     s3 = get_boto3_resource("s3")
     for website_name in website_names:
@@ -609,7 +609,7 @@ def backpopulate_archive_videos(  # pylint: disable=too-many-arguments
     website_names: List[str],
     chunk_size=500,
 ):
-    """ Chunk and group batches of legacy video backpopulate tasks for a specified list of websites"""
+    """Chunk and group batches of legacy video backpopulate tasks for a specified list of websites"""
     tasks = []
     for website_subset in chunks(
         sorted(website_names),

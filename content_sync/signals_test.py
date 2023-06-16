@@ -9,7 +9,7 @@ pytestmark = pytest.mark.django_db
 
 
 def test_create_content_sync_state(mocker):
-    """ Test that the create_content_sync_state signal makes the correct call """
+    """Test that the create_content_sync_state signal makes the correct call"""
     mock_api = mocker.patch("content_sync.signals.api", autospec=True)
     content = WebsiteContentFactory.create()
     mock_api.upsert_content_sync_state.assert_called_once_with(content)

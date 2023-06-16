@@ -21,7 +21,7 @@ from websites.utils import resource_reference_field_filter
 
 
 class DriveApiQueryTracker(TimestampedModel):
-    """ Object for tracking the last google drive api call for a certain resource"""
+    """Object for tracking the last google drive api call for a certain resource"""
 
     api_call = models.CharField(
         null=False,
@@ -35,7 +35,7 @@ class DriveApiQueryTracker(TimestampedModel):
 
 
 class DriveFile(TimestampedModel):
-    """ Model representation of a Google drive file"""
+    """Model representation of a Google drive file"""
 
     file_id = models.CharField(
         primary_key=True, null=False, blank=False, max_length=128
@@ -63,7 +63,7 @@ class DriveFile(TimestampedModel):
     sync_dt = models.DateTimeField(null=True, blank=True)
 
     def update_status(self, status):
-        """ Update the DriveFile status"""
+        """Update the DriveFile status"""
         self.status = status
         self.save()
 

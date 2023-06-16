@@ -11,7 +11,7 @@ from websites.models import WebsiteStarter
 
 
 class Command(BaseCommand):
-    """ Overrides locally-stored site configs based on a YAML file in this repo """
+    """Overrides locally-stored site configs based on a YAML file in this repo"""
 
     help = __doc__
 

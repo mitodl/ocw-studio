@@ -9,7 +9,7 @@ from content_sync.pipelines.base import BaseMassBuildSitesPipeline
 
 
 class Command(BaseCommand):
-    """ Management command for upserting the mass build pipeline """
+    """Management command for upserting the mass build pipeline"""
 
     help = __doc__
 
