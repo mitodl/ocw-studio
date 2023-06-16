@@ -884,7 +884,7 @@ def test_find_missing_files(deleted_drive_files_count):
     deleted_file_ids = [file.file_id for file in deleted_drive_files]
     missing_files_result_ids = [file.file_id for file in missing_files_result]
     assert len(deleted_drive_files) == len(missing_files_result)
-    assert all([file_id in deleted_file_ids for file_id in missing_files_result_ids])
+    assert all(file_id in deleted_file_ids for file_id in missing_files_result_ids)
 
 
 @pytest.mark.parametrize("with_resource", [False, True])

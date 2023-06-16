@@ -121,7 +121,7 @@ def resumable_upload(request, max_retries=10):
         try:
             _, response = request.next_chunk()
             if response is not None and "id" not in response:
-                raise YouTubeUploadException("YouTube upload failed: %s" % response)
+                raise YouTubeUploadException(f"YouTube upload failed: {response}")
         except HttpError as e:
             if e.resp.status in retry_statuses:
                 error = e
@@ -210,16 +210,16 @@ class YouTubeApi:
 
         """
         original_name = videofile.video.source_key.split("/")[-1]
-        request_body = dict(
-            snippet=dict(
-                title=truncate_words(
+        request_body = {
+            "snippet": {
+                "title": truncate_words(
                     strip_bad_chars(original_name), YT_MAX_LENGTH_TITLE
                 ),
-                description="",
-                categoryId=settings.YT_CATEGORY_ID,
-            ),
-            status=dict(privacyStatus=privacy),
-        )
+                "description": "",
+                "categoryId": settings.YT_CATEGORY_ID,
+            },
+            "status": {"privacyStatus": privacy},
+        }
 
         with Reader(settings.AWS_STORAGE_BUCKET_NAME, videofile.s3_key) as s3_stream:
             request = self.client.videos().insert(

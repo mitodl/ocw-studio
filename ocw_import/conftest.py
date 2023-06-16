@@ -44,7 +44,7 @@ def setup_s3(settings):
     test_bucket.objects.all().delete()
     for file in get_ocw2hugo_files("./test_ocw2hugo"):
         file_key = file.replace("./test_ocw2hugo/", "")
-        with open(file, "r") as f:
+        with open(file, "r", encoding="utf-8") as f:
             test_bucket.put_object(Key=file_key, Body=f.read())
 
 
@@ -72,7 +72,7 @@ def setup_s3_tmpdir(settings, tmpdir, courses=None):
     test_bucket.objects.all().delete()
     for file in get_ocw2hugo_files(tmpdir):
         file_key = file.replace(f"{tmpdir}/", "")
-        with open(file, "r") as f:
+        with open(file, "r", encoding="utf-8") as f:
             test_bucket.put_object(Key=file_key, Body=f.read())
 
 

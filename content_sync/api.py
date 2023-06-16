@@ -26,7 +26,7 @@ log = logging.getLogger()
 def upsert_content_sync_state(content: WebsiteContent):
     """ Create or update the content sync state """
     ContentSyncState.objects.update_or_create(
-        content=content, defaults=dict(current_checksum=content.calculate_checksum())
+        content=content, defaults={"current_checksum": content.calculate_checksum()}
     )
 
 

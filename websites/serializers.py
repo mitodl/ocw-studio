@@ -607,7 +607,7 @@ class WebsiteContentCreateSerializer(
         user = self.user_from_request()
         added_context_data = {
             field: self.context[field]
-            for field in {"is_page_content", "filename", "dirpath", "text_id"}
+            for field in ["is_page_content", "filename", "dirpath", "text_id"]
             if field in self.context
         }
         if validated_data.get("type") == CONTENT_TYPE_RESOURCE:

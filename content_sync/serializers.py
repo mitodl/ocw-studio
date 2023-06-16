@@ -29,14 +29,12 @@ class BaseContentFileSerializer(abc.ABC):
     @abc.abstractmethod
     def serialize(self, website_content: WebsiteContent) -> str:
         """Serializes WebsiteContent data into file contents"""
-        ...
 
     @abc.abstractmethod
     def deserialize(
         self, website: Website, filepath: str, file_contents: str
     ) -> WebsiteContent:
         """Deserializes file contents and upserts those contents as a WebsiteContent object"""
-        ...
 
     def deserialize_data_file(
         self, website: Website, filepath: str, parsed_file_data: dict
@@ -184,7 +182,7 @@ class YamlFileSerializer(BaseContentFileSerializer):
 def _has_menu_fields(config_item: ConfigItem) -> bool:
     """Returns True if the config item has any fields with the 'menu' widget"""
     return any(
-        [field for field in config_item.fields if field["widget"] == CONTENT_MENU_FIELD]
+        field for field in config_item.fields if field["widget"] == CONTENT_MENU_FIELD
     )
 
 
