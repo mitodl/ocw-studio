@@ -62,10 +62,7 @@ jobs:
         run: pip install -r requirements.txt -r test_requirements.txt
 
       - name: Lint
-        run: pwd | xargs pylint
-        env:
-          PYTHONPATH: "."
-          DJANGO_SETTINGS_MODULE: "main.settings"
+        run: pylint ./**/*.py
 
       - name: Black
         run: black --check .
