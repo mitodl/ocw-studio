@@ -7,7 +7,7 @@ from django.db import migrations
 
 
 def chunked_iterator(queryset):
-    """ Chunked iteration over a queryset to avoid loading it all into memory """
+    """Chunked iteration over a queryset to avoid loading it all into memory"""
     paginator = Paginator(queryset, 100)
     for page in range(1, paginator.num_pages + 1):
         for obj in paginator.page(page).object_list:
@@ -15,7 +15,7 @@ def chunked_iterator(queryset):
 
 
 def backpopulate_content_sync_states(apps, schema_editor):
-    """ Backpopulate ContentSyncState for existing WebsiteContent records """
+    """Backpopulate ContentSyncState for existing WebsiteContent records"""
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     ContentSyncState = apps.get_model("content_sync", "ContentSyncState")
 

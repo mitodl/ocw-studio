@@ -9,7 +9,7 @@ from main.management.commands.filter import WebsiteFilterCommand
 
 
 class Command(WebsiteFilterCommand):
-    """ Update website WebsiteContent objects in the root website denoted by settings.ROOT_WEBSITE_NAME """
+    """Update website WebsiteContent objects in the root website denoted by settings.ROOT_WEBSITE_NAME"""
 
     help = __doc__
 

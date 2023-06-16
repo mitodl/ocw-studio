@@ -78,7 +78,8 @@ def basic_site_config(settings):
 def site_config_yml(settings):
     """Fixture that returns the contents of the example site config YAML file in the resource directory"""
     with open(
-        os.path.join(settings.BASE_DIR, SCHEMA_RESOURCES_DIR, SCHEMA_CONFIG_FILE), encoding="utf-8"
+        os.path.join(settings.BASE_DIR, SCHEMA_RESOURCES_DIR, SCHEMA_CONFIG_FILE),
+        encoding="utf-8",
     ) as f:
         return f.read().strip()
 
@@ -114,7 +115,7 @@ def site_config_singleton_only(basic_site_config):
 
 @pytest.fixture()
 def ocw_site(parsed_site_config):
-    """ OCW Course site with metadata"""
+    """OCW Course site with metadata"""
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(config=parsed_site_config),
         not_published=True,

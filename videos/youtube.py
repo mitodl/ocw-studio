@@ -43,7 +43,7 @@ class YouTubeUploadException(Exception):
 
 
 def is_youtube_enabled() -> bool:
-    """ Returns True if youtube is enabled """
+    """Returns True if youtube is enabled"""
     return (
         settings.YT_ACCESS_TOKEN
         and settings.YT_REFRESH_TOKEN
@@ -137,7 +137,7 @@ def resumable_upload(request, max_retries=10):
                 raise YouTubeUploadException(
                     "Retried YouTube upload 10x, giving up"
                 ) from error
-            sleep_time = 2 ** retry
+            sleep_time = 2**retry
             time.sleep(sleep_time)
 
     return response
@@ -341,7 +341,7 @@ class YouTubeApi:
 
 
 def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
-    """ Update YouTube video metadata via the API """
+    """Update YouTube video metadata via the API"""
     if not is_youtube_enabled() or not is_ocw_site(website):
         return
     query_id_field = get_dict_query_field("metadata", settings.YT_FIELD_ID)

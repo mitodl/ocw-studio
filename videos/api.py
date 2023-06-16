@@ -59,7 +59,7 @@ def create_media_convert_job(video: Video):
     with open(
         os.path.join(settings.BASE_DIR, f"{VideoApp.name}/config/mediaconvert.json"),
         "r",
-        encoding="utf-8"
+        encoding="utf-8",
     ) as job_template:
         job_dict = json.loads(job_template.read())
         job_dict["UserMetadata"]["filter"] = settings.VIDEO_TRANSCODE_QUEUE

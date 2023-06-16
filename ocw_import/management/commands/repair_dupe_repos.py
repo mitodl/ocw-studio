@@ -11,7 +11,7 @@ from websites.models import Website
 
 
 class Command(WebsiteFilterCommand):
-    """  Fix sites that have been assigned a new repo on every import"""
+    """Fix sites that have been assigned a new repo on every import"""
 
     help = __doc__
 

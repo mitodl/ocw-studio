@@ -37,7 +37,7 @@ SINGLE_COURSE_PATHS = [
     "paths", [["1-050-mechanical-engineering", "3-34-transportation-systems"], [], None]
 )
 def test_import_ocw2hugo_course_paths(mocker, paths, course_starter, settings):
-    """ mock_import_course should be called from task with correct kwargs """
+    """mock_import_course should be called from task with correct kwargs"""
     mock_import_course = mocker.patch("ocw_import.tasks.import_ocw2hugo_course")
     settings.OCW_COURSE_STARTER_SLUG = "course"
     import_ocw2hugo_course_paths.delay(paths, MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX)
@@ -58,7 +58,7 @@ def test_import_ocw2hugo_course_paths(mocker, paths, course_starter, settings):
 )
 @pytest.mark.parametrize("create_new_content", [True, False])
 def test_update_ocw2hugo_course_paths(mocker, paths, create_new_content):
-    """ update_ocw2hugo_course should be called from task with correct kwargs """
+    """update_ocw2hugo_course should be called from task with correct kwargs"""
     mock_update_course = mocker.patch("ocw_import.tasks.update_ocw2hugo_course")
     update_ocw2hugo_course_paths.delay(
         paths,
@@ -116,7 +116,7 @@ def test_import_ocw2hugo_courses(
 
 @mock_s3
 def test_import_ocw2hugo_courses_no_bucket(settings, mocker):
-    """ import_ocw2hugo_courses should throw an error if a bucket is not specified """
+    """import_ocw2hugo_courses should throw an error if a bucket is not specified"""
     setup_s3(settings)
     mock_import_paths = mocker.patch("ocw_import.tasks.import_ocw2hugo_course_paths.si")
     course_paths = list(
@@ -137,7 +137,7 @@ def test_import_ocw2hugo_courses_no_bucket(settings, mocker):
 
 
 def test_import_ocw2hugo_courses_no_filter(mocker):
-    """ import_ocw2hugo_courses should throw an error if course_paths is not specified """
+    """import_ocw2hugo_courses should throw an error if course_paths is not specified"""
     mock_import_paths = mocker.patch("ocw_import.tasks.import_ocw2hugo_course_paths.si")
     with pytest.raises(TypeError):
         import_ocw2hugo_courses.delay(  # pylint:disable=no-value-for-parameter
@@ -186,7 +186,7 @@ def test_update_ocw_resource_data(
 
 
 def test_import_ocw2hugo_courses_missing_required_fields(mocker):
-    """ update_ocw2hugo_course_paths should be called zero times if required fields are missing """
+    """update_ocw2hugo_course_paths should be called zero times if required fields are missing"""
     mock_update_paths = mocker.patch("ocw_import.tasks.update_ocw2hugo_course_paths.si")
     with pytest.raises(TypeError):
         update_ocw_resource_data.delay(  # pylint:disable=no-value-for-parameter

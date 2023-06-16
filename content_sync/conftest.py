@@ -36,7 +36,7 @@ def github_content_file(mocker):
 
 @pytest.fixture(autouse=True)
 def required_concourse_settings(settings):
-    """ Other required settings for concourse pipelines """
+    """Other required settings for concourse pipelines"""
     settings.CONCOURSE_URL = "http://localconcourse.edu"
     settings.CONCOURSE_USERNAME = "test"
     settings.CONCOURSE_PASSWORD = "pass"  # pragma: allowlist secret

@@ -9,7 +9,7 @@ from content_sync.tasks import upsert_theme_assets_pipeline
 
 
 class Command(BaseCommand):
-    """ Backpopulate the theme pipeline """
+    """Backpopulate the theme pipeline"""
 
     help = __doc__
 

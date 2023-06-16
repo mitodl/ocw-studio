@@ -21,7 +21,7 @@ from main.utils import (
     ],
 )
 def test_is_valid_uuid(uuid_to_test, is_valid):
-    """ is_valid_uuid should return True for a valid UUID, false otherwise """
+    """is_valid_uuid should return True for a valid UUID, false otherwise"""
     assert is_valid_uuid(uuid_to_test) is is_valid
 
 
@@ -90,7 +90,7 @@ def test_are_equivalent_paths(filepath1, filepath2, exp_result):
     "key, is_valid", [["unit-test-me", True], ["wrong-key", False]]
 )
 def test_valid_key(mocker, key, is_valid):
-    """ valid_key should return True for a valid key, false otherwise """
+    """valid_key should return True for a valid key, false otherwise"""
     mock_request = mocker.Mock(
         body=b'{"foo":"bar"}',
         headers={"X-Hub-Signature": "sha1=6a4e7673fa9c3afbb2860ae03ac2082958313a9c"},
@@ -102,5 +102,5 @@ def test_valid_key(mocker, key, is_valid):
     "text, truncated", [["Hello world", "Hello___"], ["HelloWorld", "HelloW___"]]
 )
 def test_truncate_words(text, truncated):
-    """ truncate_words returns expected result"""
+    """truncate_words returns expected result"""
     assert truncate_words(text, 9, suffix="___") == truncated

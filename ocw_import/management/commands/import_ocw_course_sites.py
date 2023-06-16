@@ -12,7 +12,7 @@ from ocw_import.tasks import import_ocw2hugo_courses
 
 
 class Command(WebsiteFilterCommand):
-    """ Import OCW course sites and content via ocw2hugo output """
+    """Import OCW course sites and content via ocw2hugo output"""
 
     help = __doc__
 

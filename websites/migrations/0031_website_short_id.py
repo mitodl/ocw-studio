@@ -7,7 +7,7 @@ from websites.api import find_available_name
 
 
 def backpopulate_short_id(apps, schema_editor):
-    """ Backpopulate short_id field """
+    """Backpopulate short_id field"""
     Website = apps.get_model("websites", "Website")
     ContentSyncState = apps.get_model("content_sync", "ContentSyncState")
     website_qset = Website.objects.values("uuid", "name", "metadata")

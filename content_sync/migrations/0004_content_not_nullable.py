@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 
 def remove_null_content(apps, schema_editor):
-    """ Remove ContentSyncStates where content is None """
+    """Remove ContentSyncStates where content is None"""
     ContentSyncState = apps.get_model("content_sync", "ContentSyncState")
     ContentSyncState.objects.filter(content=None).delete()
 

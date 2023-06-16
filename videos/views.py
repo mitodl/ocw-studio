@@ -23,12 +23,12 @@ log = logging.getLogger()
 
 
 class TranscodeJobView(GenericAPIView):
-    """ Webhook endpoint for MediaConvert transcode job notifications from Cloudwatch"""
+    """Webhook endpoint for MediaConvert transcode job notifications from Cloudwatch"""
 
     permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):  # pylint: disable=unused-argument
-        """ Update Video and VideoFile objects based on request body """
+        """Update Video and VideoFile objects based on request body"""
         message = json.loads(request.body)
         if message.get("SubscribeURL"):
             # Confirm the subscription
@@ -45,12 +45,12 @@ class TranscodeJobView(GenericAPIView):
 
 
 class TranscriptJobView(GenericAPIView):
-    """ Webhook endpoint for transcript completion notifications from 3play"""
+    """Webhook endpoint for transcript completion notifications from 3play"""
 
     permission_classes = (AllowAny,)
 
     def post(self, request, *args, **kwargs):  # pylint: disable=unused-argument
-        """ Update transcripts """
+        """Update transcripts"""
         video_id = request.query_params.get("video_id")
         api_key = request.query_params.get("callback_key")
 

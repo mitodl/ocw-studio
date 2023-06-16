@@ -1,4 +1,4 @@
-black==20.8b1
+black==22.6.0
 bpython
 ddt
 django-debug-toolbar

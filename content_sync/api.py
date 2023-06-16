@@ -24,20 +24,20 @@ log = logging.getLogger()
 
 
 def upsert_content_sync_state(content: WebsiteContent):
-    """ Create or update the content sync state """
+    """Create or update the content sync state"""
     ContentSyncState.objects.update_or_create(
         content=content, defaults={"current_checksum": content.calculate_checksum()}
     )
 
 
 def get_sync_backend(website: Website) -> BaseSyncBackend:
-    """ Get the configured sync backend """
+    """Get the configured sync backend"""
     return import_string(settings.CONTENT_SYNC_BACKEND)(website)
 
 
 @is_publish_pipeline_enabled
 def get_pipeline_api() -> BasePipeline:
-    """ Get the base backend pipeline """
+    """Get the base backend pipeline"""
     return import_string(
         f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.PipelineApi"
     )()
@@ -47,7 +47,7 @@ def get_pipeline_api() -> BasePipeline:
 def get_site_pipeline(
     website: Website, hugo_args: Optional[str] = "", api: Optional[object] = None
 ) -> BasePipeline:
-    """ Get the configured sync publishing pipeline """
+    """Get the configured sync publishing pipeline"""
     return import_string(
         f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"
     )(website, hugo_args=hugo_args, api=api)
@@ -57,7 +57,7 @@ def get_site_pipeline(
 def get_theme_assets_pipeline(
     themes_branch: Optional[str] = None, api: Optional[object] = None
 ) -> BasePipeline:
-    """ Get the configured theme asset pipeline """
+    """Get the configured theme asset pipeline"""
     return import_string(
         f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.ThemeAssetsPipeline"
     )(themes_branch=themes_branch, api=api)
@@ -99,26 +99,26 @@ def get_unpublished_removal_pipeline(api: Optional[object] = None) -> object:
 
 @is_sync_enabled
 def sync_content(sync_state: ContentSyncState):
-    """ Sync a piece of content based on its sync state """
+    """Sync a piece of content based on its sync state"""
     backend = get_sync_backend(sync_state.content.website)
     backend.sync_content_to_backend(sync_state)
 
 
 @is_sync_enabled
 def create_website_backend(website: Website):
-    """ Create the backend for a website"""
+    """Create the backend for a website"""
     tasks.create_website_backend.delay(website.name)
 
 
 @is_sync_enabled
 def update_website_backend(website: Website):
-    """ Update the backend content for a website"""
+    """Update the backend content for a website"""
     tasks.sync_website_content.delay(website.name)
 
 
 @is_sync_enabled
 def trigger_publish(website_name: str, version: str):
-    """ Publish the website on the backend"""
+    """Publish the website on the backend"""
     if version == VERSION_DRAFT:
         tasks.publish_website_backend_draft.delay(website_name)
     else:
@@ -134,7 +134,7 @@ def trigger_unpublished_removal(website: Website):
 def sync_github_website_starters(
     url: str, files: List[str], commit: Optional[str] = None
 ):
-    """ Sync website starters from github """
+    """Sync website starters from github"""
     tasks.sync_github_site_configs.delay(url, files, commit=commit)
 
 

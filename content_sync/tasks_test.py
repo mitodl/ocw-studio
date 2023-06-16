@@ -46,12 +46,12 @@ def api_mock(mocker, settings):
 
 @fixture
 def log_mock(mocker):
-    """ Return a mocked log object"""
+    """Return a mocked log object"""
     return mocker.patch("content_sync.tasks.log")
 
 
 def test_sync_content(api_mock, log_mock):
-    """ Verify the sync_content task calls the corresponding API method """
+    """Verify the sync_content task calls the corresponding API method"""
     sync_state = ContentSyncStateFactory.create()
     tasks.sync_content.delay(sync_state.id)
 
@@ -60,7 +60,7 @@ def test_sync_content(api_mock, log_mock):
 
 
 def test_sync_content_not_exists(api_mock, log_mock):
-    """ Verify the sync_content task does not call the corresponding API method """
+    """Verify the sync_content task does not call the corresponding API method"""
     tasks.sync_content.delay(12354)
     log_mock.debug.assert_called_once_with(
         "Attempted to sync ContentSyncState that doesn't exist: id=%s",
@@ -80,7 +80,7 @@ def test_create_website_backend(api_mock, log_mock):
 
 
 def test_create_website_backend_not_exists(api_mock, log_mock):
-    """ Verify the create_website_backend task does not call API and backend methods """
+    """Verify the create_website_backend task does not call API and backend methods"""
     tasks.create_website_backend.delay("fakesite")
 
     log_mock.debug.assert_called_once_with(
@@ -220,7 +220,7 @@ def test_sync_all_websites_rate_limit_exceeded(settings, api_mock):
 
 
 def test_publish_website_backend_draft(api_mock):
-    """Verify that the appropriate backend calls are made by the publish_website_backend_draft task """
+    """Verify that the appropriate backend calls are made by the publish_website_backend_draft task"""
     website = WebsiteFactory.create()
     tasks.publish_website_backend_draft(website.name)
     api_mock.publish_website.assert_called_once_with(website.name, VERSION_DRAFT)
@@ -254,7 +254,7 @@ def test_publish_website_backend_live_error(mocker, api_mock):
 
 
 def test_sync_github_site_configs(mocker):
-    """ sync_github_site_configs should call apis.github.sync_starter_configs with same args, kwargs"""
+    """sync_github_site_configs should call apis.github.sync_starter_configs with same args, kwargs"""
     mock_git = mocker.patch("content_sync.tasks.github")
     args = "https://github.com/testorg/testconfigs", ["site1/studio.yaml"]
     kwargs = {"commit": "abc123"}
@@ -263,14 +263,14 @@ def test_sync_github_site_configs(mocker):
 
 
 def test_upsert_web_publishing_pipeline(api_mock):
-    """ upsert_web_publishing_pipeline should call api.get_site_pipeline"""
+    """upsert_web_publishing_pipeline should call api.get_site_pipeline"""
     website = WebsiteFactory.create()
     tasks.upsert_website_publishing_pipeline.delay(website.name)
     api_mock.get_site_pipeline.assert_called_once_with(website)
 
 
 def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
-    """ upsert_web_publishing_pipeline should log a debug message if the website doesn't exist"""
+    """upsert_web_publishing_pipeline should log a debug message if the website doesn't exist"""
     tasks.upsert_website_publishing_pipeline.delay("fake")
     log_mock.debug.assert_called_once_with(
         "Attempted to create pipeline for Website that doesn't exist: name=%s",
@@ -798,7 +798,7 @@ def test_remove_website_in_root_website(api_mock):
 def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments, too-many-locals
     mocker, settings, prefix
 ):
-    """ backpopulate_archive_videos_batch should push up videos to S3 """
+    """backpopulate_archive_videos_batch should push up videos to S3"""
     # Fake the s3 settings
     settings.ENVIRONMENT = "test"
     settings.AWS_ACCESS_KEY_ID = "abc"

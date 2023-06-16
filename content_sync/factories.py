@@ -4,7 +4,7 @@ from factory.django import DjangoModelFactory
 
 
 class ContentSyncStateFactory(DjangoModelFactory):
-    """ Factory for ContentSyncState """
+    """Factory for ContentSyncState"""
 
     content = factory.SubFactory("websites.factories.WebsiteContentFactory")
 

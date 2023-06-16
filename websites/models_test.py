@@ -39,7 +39,7 @@ pytestmark = pytest.mark.django_db
     ],
 )
 def test_websitecontent_calculate_checksum(metadata, markdown, dirpath, exp_checksum):
-    """ Verify calculate_checksum() returns the expected sha256 checksum """
+    """Verify calculate_checksum() returns the expected sha256 checksum"""
     content = WebsiteContentFactory.build(
         markdown=markdown,
         metadata=metadata,
@@ -238,12 +238,12 @@ def test_website_s3_path(name, root_url, expected_path):
 
 
 def test_website_url_path_from_metadata_no_starter():
-    """ None should be returned for a site without a starter"""
+    """None should be returned for a site without a starter"""
     assert WebsiteFactory.build(starter=None).url_path_from_metadata() is None
 
 
 def test_website_url_path_from_metadata_no_format():
-    """ Website.name should be returned for a site without site-url-format in starter config"""
+    """Website.name should be returned for a site without site-url-format in starter config"""
     starter = WebsiteStarterFactory.create(
         config={WEBSITE_CONFIG_ROOT_URL_PATH_KEY: "sites"}
     )
@@ -252,7 +252,7 @@ def test_website_url_path_from_metadata_no_format():
 
 
 def test_website_url_path_from_metadata_published(ocw_site):
-    """ Website.name should be returned for a that's already been published"""
+    """Website.name should be returned for a that's already been published"""
     ocw_site.publish_date = now_in_utc()
     assert ocw_site.url_path_from_metadata() == ocw_site.name
 
@@ -261,7 +261,7 @@ def test_website_url_path_from_metadata_published(ocw_site):
     "missing_keys", [[], ["course_nr", "year"], ["term"], ["title", "year"]]
 )
 def test_website_url_path_from_metadata(missing_keys):
-    """ The expected url should be returned based on starter config format and supplied metadata"""
+    """The expected url should be returned based on starter config format and supplied metadata"""
     metadata = {
         "course_nr": "1.1",
         "title": "My Course",

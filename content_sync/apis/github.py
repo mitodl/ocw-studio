@@ -51,7 +51,7 @@ GIT_DATA_FILEPATH = "filepath"
 
 @dataclass
 class SyncResult:
-    """ The result of syncing a file to github """
+    """The result of syncing a file to github"""
 
     sync_id: int
     filepath: str
@@ -142,7 +142,7 @@ def get_app_installation_id(app: GithubIntegration) -> Optional[str]:
 
 
 def get_token():
-    """ Get a github token for requests """
+    """Get a github token for requests"""
     if settings.GITHUB_APP_ID and settings.GITHUB_APP_PRIVATE_KEY:
         try:
             app = GithubIntegration(
@@ -175,7 +175,7 @@ class GithubApiWrapper:
     """
 
     def __init__(self, website: Website, site_config: Optional[SiteConfig] = None):
-        """ Initialize the Github API backend for a specific website"""
+        """Initialize the Github API backend for a specific website"""
         self.website = website
         self.site_config = site_config or SiteConfig(self.website.starter.config)
         self.repo = None
@@ -314,7 +314,7 @@ class GithubApiWrapper:
         )
 
     def upsert_content_files(self, query_set: Optional[WebsiteContentQuerySet] = None):
-        """ Commit all website content, with 1 commit per user, optionally filtering with a QuerySet """
+        """Commit all website content, with 1 commit per user, optionally filtering with a QuerySet"""
         if query_set:
             content_files = query_set.values_list("updated_by", flat=True).distinct()
         else:
