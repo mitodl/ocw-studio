@@ -58,6 +58,7 @@ jobs:
         run: pwd | xargs pylint
         env:
           PYTHONPATH: "."
+          DJANGO_SETTINGS_MODULE: "main.settings"
 
       - name: Black
         run: black --check .
