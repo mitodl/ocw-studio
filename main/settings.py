@@ -216,7 +216,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 DEFAULT_DATABASE_CONFIG = dj_database_url.parse(
     get_string(
         name="DATABASE_URL",
-        default="sqlite:///{0}".format(os.path.join(BASE_DIR, "db.sqlite3")),
+        default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
         description="The connection url to the Postgres database",
         required=True,
         write_app_json=False,
@@ -330,9 +330,8 @@ LOGGING = {
             "format": (
                 "[%(asctime)s] %(levelname)s %(process)d [%(name)s] "
                 "%(filename)s:%(lineno)d - "
-                "[{hostname}] - %(message)s"
-            ).format(hostname=HOSTNAME),
-            "datefmt": "%Y-%m-%d %H:%M:%S",
+                f"[{HOSTNAME}] - %(message)s"
+            ), "datefmt": "%Y-%m-%d %H:%M:%S",
         }
     },
     "handlers": {

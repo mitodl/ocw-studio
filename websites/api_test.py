@@ -524,4 +524,4 @@ def test_get_content_warnings(
         and not has_truncatable_text
         and not is_draft
     ):
-        assert warnings == []
+        assert not warnings

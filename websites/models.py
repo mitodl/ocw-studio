@@ -486,7 +486,7 @@ class WebsiteStarter(TimestampedModel):
                 yield[1] belongs to the starter of `website`.
         """
         if website.starter is None:
-            raise Exception(
+            raise ValidationError(
                 f"Website {website} does not have a starter. Cannot iterate config."
             )
 

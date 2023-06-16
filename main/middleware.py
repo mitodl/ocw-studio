@@ -22,10 +22,7 @@ class QueryStringFeatureFlagMiddleware(MiddlewareMixin):
         Returns:
             str: the full key value
         """
-        return "{prefix}_FEATURE_{suffix}".format(
-            prefix=settings.MIDDLEWARE_FEATURE_FLAG_QS_PREFIX,
-            suffix=suffix,
-        )
+        return f"{settings.MIDDLEWARE_FEATURE_FLAG_QS_PREFIX}_FEATURE_{suffix}"
 
     @classmethod
     def encode_feature_flags(cls, data):

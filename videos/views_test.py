@@ -45,7 +45,7 @@ def test_transcode_jobs_success(settings, drf_client, video_group):
     video = video_group.video
     video_job = video_group.video_job
     with open(
-        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json", "r"
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json", "r", encoding="utf-8"
     ) as infile:
         data = json.loads(
             infile.read()
@@ -70,7 +70,7 @@ def test_transcode_jobs_failure(settings, drf_client, video_group):
     """TranscodeJobView should process MediaConvert failure notification appropriately"""
     video = video_group.video
     video_job = video_group.video_job
-    with open(f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_error.json", "r") as infile:
+    with open(f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_error.json", "r", encoding="utf-8") as infile:
         data = json.loads(
             infile.read()
             .replace("AWS_ACCOUNT_ID", settings.AWS_ACCOUNT_ID)
@@ -89,7 +89,7 @@ def test_transcode_jobs_failure(settings, drf_client, video_group):
 def test_transcode_jobs_wrong_account(drf_client):
     """TranscodeJobView should raise a PermissionDenied if the AWS account id does not match"""
     with open(
-        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json", "r"
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json", "r", encoding="utf-8"
     ) as infile:
         data = json.loads(infile.read().replace("AWS_ACCOUNT_ID", "other_account_id"))
     response = drf_client.post(reverse("transcode_jobs"), data=data)
@@ -99,7 +99,7 @@ def test_transcode_jobs_wrong_account(drf_client):
 def test_transcode_jobs_subscribe(settings, mocker, drf_client):
     """TranscodeJobView should confirm a subcsription request"""
     mock_get = mocker.patch("videos.views.requests.get")
-    with open(f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", "r") as infile:
+    with open(f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", "r", encoding="utf-8") as infile:
         data = json.loads(
             infile.read()
             .replace("AWS_ACCOUNT_ID", settings.AWS_ACCOUNT_ID)
@@ -113,7 +113,7 @@ def test_transcode_jobs_subscribe(settings, mocker, drf_client):
 def test_transcode_jobs_subscribe_denied(settings, mocker, drf_client):
     """TranscodeJobView should deny a subscription request if the account id is wrong"""
     mock_get = mocker.patch("videos.views.requests.get")
-    with open(f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", "r") as infile:
+    with open(f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", "r", encoding="utf-8") as infile:
         data = json.loads(
             infile.read()
             .replace("AWS_ACCOUNT_ID", "other_account")

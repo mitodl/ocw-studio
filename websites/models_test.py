@@ -276,14 +276,11 @@ def test_website_url_path_from_metadata(missing_keys):
         }
     )
     website = WebsiteFactory.create(starter=starter, not_published=True)
-    expected_url_path = "{course_nr}-{title}-{term}-{year}".format(
-        course_nr=(
-            "1-1" if metadata.get("course_nr") is not None else "[meta:course_nr]"
-        ),
-        title=("my-course" if metadata.get("title") is not None else "[meta:title]"),
-        term=("fall" if metadata.get("term") is not None else "[meta:term]"),
-        year=metadata.get("year", "[meta:year]"),
-    )
+    course_nr = "1-1" if metadata.get("course_nr") is not None else "[meta:course_nr]"
+    title = "my-course" if metadata.get("title") is not None else "[meta:title]"
+    term = "fall" if metadata.get("term") is not None else "[meta:term]"
+    year = metadata.get("year", "[meta:year]")
+    expected_url_path = f"{course_nr}-{title}-{term}-{year}"
     assert website.url_path_from_metadata(metadata) == expected_url_path
 
 

@@ -22,7 +22,7 @@ class WebsiteStarterFactory(DjangoModelFactory):
     path = factory.Faker("uri")
     name = factory.Faker("domain_word")
     status = FuzzyChoice(constants.WebsiteStarterStatus.ALL_STATUSES)
-    slug = factory.Sequence(lambda n: "starter-%x" % n)
+    slug = factory.Sequence(lambda n: f"starter-{n}")
     source = FuzzyChoice(constants.STARTER_SOURCES)
     commit = factory.Faker("md5")
     config = factory.LazyAttribute(
@@ -39,10 +39,10 @@ class WebsiteStarterFactory(DjangoModelFactory):
 class WebsiteFactory(DjangoModelFactory):
     """Factory for Website"""
 
-    title = factory.Sequence(lambda n: "Site %s" % n)
-    name = factory.Sequence(lambda n: "site-name-%s" % n)
-    url_path = factory.Sequence(lambda n: "courses/site-path-%s" % n)
-    short_id = factory.Sequence(lambda n: "site-shortid-%s" % n)
+    title = factory.Sequence(lambda n: f"Site {n}")
+    name = factory.Sequence(lambda n: f"site-name-{n}")
+    url_path = factory.Sequence(lambda n: f"courses/site-path-{n}")
+    short_id = factory.Sequence(lambda n: f"site-shortid-{n}")
     metadata = factory.Faker("json")
     publish_date = factory.Faker("date_time", tzinfo=pytz.utc)
     first_published_to_production = factory.Faker("date_time", tzinfo=pytz.utc)
@@ -57,7 +57,7 @@ class WebsiteFactory(DjangoModelFactory):
 
     class Params:
         with_url_path = factory.Trait(
-            url_path=factory.Sequence(lambda n: "courses/site-path-%s" % n)
+            url_path=factory.Sequence(lambda n: f"courses/site-path-{n}")
         )
         published = factory.Trait(
             publish_date=factory.Faker("past_datetime", tzinfo=pytz.utc),
@@ -95,11 +95,11 @@ class WebsiteFactory(DjangoModelFactory):
 class WebsiteContentFactory(DjangoModelFactory):
     """Factory for WebsiteContent"""
 
-    title = factory.Sequence(lambda n: "OCW Site Content %s" % n)
+    title = factory.Sequence(lambda n: f"OCW Site Content {n}")
     type = FuzzyChoice([constants.CONTENT_TYPE_PAGE, constants.CONTENT_TYPE_RESOURCE])
     markdown = factory.Faker("text")
     metadata = factory.LazyAttribute(lambda _: {})
-    filename = factory.Sequence(lambda n: "my-file-%s" % n)
+    filename = factory.Sequence(lambda n: f"my-file-{n}")
     dirpath = factory.Faker("uri_path", deep=2)
     website = factory.SubFactory(WebsiteFactory)
 

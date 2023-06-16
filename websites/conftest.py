@@ -78,7 +78,7 @@ def basic_site_config(settings):
 def site_config_yml(settings):
     """Fixture that returns the contents of the example site config YAML file in the resource directory"""
     with open(
-        os.path.join(settings.BASE_DIR, SCHEMA_RESOURCES_DIR, SCHEMA_CONFIG_FILE)
+        os.path.join(settings.BASE_DIR, SCHEMA_RESOURCES_DIR, SCHEMA_CONFIG_FILE), encoding="utf-8"
     ) as f:
         return f.read().strip()
 

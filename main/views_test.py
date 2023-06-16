@@ -48,7 +48,7 @@ def test_webpack_url(mocker, settings, client):
     ],
 )  # pylint: disable=too-many-arguments
 @pytest.mark.parametrize("is_gdrive_enabled", [True, False])
-def test_react_page(
+def test_react_page( # pylint: disable=too-many-arguments
     settings,
     mocker,
     client,

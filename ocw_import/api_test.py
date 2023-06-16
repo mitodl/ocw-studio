@@ -59,7 +59,7 @@ def test_import_ocw2hugo_course_content(mocker, settings):
     assert website.starter == website_starter
     assert website.source == WEBSITE_SOURCE_OCW_IMPORT
     assert website.short_id == "1.050-fall-2007"
-    with open(f"{TEST_OCW2HUGO_PATH}/{name}/data/course_legacy.json", "r") as infile:
+    with open(f"{TEST_OCW2HUGO_PATH}/{name}/data/course_legacy.json", "r", encoding="utf-8") as infile:
         assert json.dumps(website.metadata, sort_keys=True) == json.dumps(
             json.load(infile), sort_keys=True
         )
@@ -133,7 +133,7 @@ def test_import_ocw2hugo_sitemetadata_legacy(
     """Make sure we handle importing levels, term, and year in a legacy format"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    with open(f"test_ocw2hugo/{name}/data/course_legacy.json") as course_json_file:
+    with open(f"test_ocw2hugo/{name}/data/course_legacy.json", encoding="utf-8") as course_json_file:
         course_json = json.load(course_json_file)
 
     level_dict = {"level": "name of level", "url": "ignore"}

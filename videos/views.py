@@ -34,7 +34,7 @@ class TranscodeJobView(GenericAPIView):
             # Confirm the subscription
             if settings.AWS_ACCOUNT_ID not in message.get("TopicArn", ""):
                 raise PermissionDenied
-            requests.get(message.get("SubscribeURL"))
+            requests.get(message.get("SubscribeURL"), timeout=60)
         else:
             if settings.AWS_ACCOUNT_ID != message.get("account", ""):
                 raise PermissionDenied
