@@ -2,6 +2,7 @@
 ignore=.git
 ignore-paths=^.*/migrations/.*$, ^node_modules
 load-plugins = pylint_django
+django-settings-module = main.settings
 
 [BASIC]
 # Allow django's urlpatterns, and our log preference
