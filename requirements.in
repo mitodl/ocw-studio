@@ -2,7 +2,6 @@ beautifulsoup4
 django==3.2.19
 boto3==1.26.153
 celery>=5.3.0
-ol-concoursepy==0.0.41
 cryptography>=39.0.1
 dj-database-url
 django-anymail[mailgun]==10.0
@@ -21,6 +20,8 @@ google-auth-oauthlib>=0.5.2
 mitol-django-authentication==1.6.0
 mitol-django-common==2.7.0
 mitol-django-mail==3.3.0
+ol-concoursepy==0.0.41
+ol-concourse==0.4.2
 drf-extensions
 ipython
 newrelic
