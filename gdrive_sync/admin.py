@@ -40,6 +40,7 @@ class DriveFileAdmin(TimestampedModelAdmin):
         "file_id",
         "drive_path",
         "modified_time",
+        "size",
         "created_time",
         "download_link",
     ]
