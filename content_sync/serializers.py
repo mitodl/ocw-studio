@@ -205,7 +205,7 @@ def _transform_hugo_menu_data(
     website_content: WebsiteContent, site_config: SiteConfig
 ) -> dict:
     """
-    Adds 'url' property to internal links in menu data.
+    Adds 'pageRef' property to internal links in menu data.
 
     Returns the dict of all values that will be serialized to the target file, including the transformed
     "menu" fields.
@@ -224,10 +224,10 @@ def _transform_hugo_menu_data(
         result_menu_items = []
         for menu_item in field_data:
             updated_menu_item = menu_item
-            # Add/update the 'url' value if this is an internal link
+            # Add/update the 'pageRef' value if this is an internal link
             if menu_item["identifier"] in uuid_content_map:
                 menu_item_content = uuid_content_map[menu_item["identifier"]]
-                updated_menu_item["url"] = get_destination_url(
+                updated_menu_item["pageRef"] = get_destination_url(
                     menu_item_content, site_config
                 )
             result_menu_items.append(updated_menu_item)
@@ -259,9 +259,9 @@ def _untransform_hugo_menu_data(
             updated_menu_item = menu_item.copy()
             if (
                 is_valid_uuid(updated_menu_item["identifier"])
-                and "url" in updated_menu_item
+                and "pageRef" in updated_menu_item
             ):
-                del updated_menu_item["url"]
+                del updated_menu_item["pageRef"]
             result_menu_items.append(updated_menu_item)
         transformed_menu_fields[field_name] = result_menu_items
     return {**data, **transformed_menu_fields}
