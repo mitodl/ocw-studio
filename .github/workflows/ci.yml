@@ -61,6 +61,7 @@ jobs:
         run: pylint ./**/*.py
         env:
           DJANGO_SETTINGS_MODULE: "main.settings"
+          PYTHONPATH: "."
 
       - name: Black
         run: black --check .
