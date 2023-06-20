@@ -192,7 +192,7 @@ def test_get_pipeline_api(settings, mocker):
     import_string_mock.assert_called_once_with()
 
 
-@pytest.mark.parametrize("hugo_args", [None, "--baseUrl /"])
+@pytest.mark.parametrize("hugo_args", [None, "--baseURL /"])
 @pytest.mark.parametrize("pipeline_api", [None, {}])
 def test_get_site_pipeline(settings, mocker, hugo_args, pipeline_api):
     """ Verify that get_site_pipeline() imports the pipeline class based on settings.py """

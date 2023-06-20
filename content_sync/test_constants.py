@@ -14,20 +14,20 @@ qux: line 4"""
 TEST_DEFAULT_HUGO_ARGS = {
     "--themesDir": "../ocw-hugo-themes",
     "--quiet": "",
-    "--baseUrl": "/courses/course-1",
+    "--baseURL": "/courses/course-1",
     "--config": "../ocw-hugo-projects/ocw-course-v2/config.yaml",
 }
 HUGO_ARG_TEST_OVERRIDES = [
     {"input": "--verbose", "output": {"--verbose": ""}},
-    {"input": "--baseUrl / --verbose", "output": {"--baseUrl": "/", "--verbose": ""}},
+    {"input": "--baseURL / --verbose", "output": {"--baseURL": "/", "--verbose": ""}},
     {
-        "input": "--baseUrl / --verbose --debug",
-        "output": {"--baseUrl": "/", "--verbose": "", "--debug": ""},
+        "input": "--baseURL / --verbose --debug",
+        "output": {"--baseURL": "/", "--verbose": "", "--debug": ""},
     },
     {
-        "input": "--baseUrl / --verbose --debug --destination ./test_output",
+        "input": "--baseURL / --verbose --debug --destination ./test_output",
         "output": {
-            "--baseUrl": "/",
+            "--baseURL": "/",
             "--verbose": "",
             "--debug": "",
             "--destination": "./test_output",
