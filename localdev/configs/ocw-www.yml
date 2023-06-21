@@ -200,6 +200,12 @@ collections:
           - Video
           - Document
           - Other
+      - label: Size
+        name: file_size
+        widget: hidden
+        required: false
+        default: null
+        help: The size of the file resource in bytes
       - label: File
         name: file
         widget: file
