@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gdrive_sync', '0007_gdrive_sync_status'),
+        ("gdrive_sync", "0007_gdrive_sync_status"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='drivefile',
-            name='size',
+            model_name="drivefile",
+            name="size",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
     ]
