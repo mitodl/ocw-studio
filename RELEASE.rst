@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.95.1
+Version 0.95.1 (Released June 21, 2023)
 --------------
 
 - Use pageRef with new internal navigation menu items (#1845)
