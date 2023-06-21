@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.95.1
+--------------
+
+- Use pageRef with new internal navigation menu items (#1845)
+- chore: upgrade actions' versions (#1843)
+- chore(deps): update akhileshns/heroku-deploy digest to 9fd0f9f (#1799)
+
 Version 0.95.0 (Released June 21, 2023)
 --------------
 
