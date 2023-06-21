@@ -78,7 +78,7 @@
           "widget": "string"
         },
         {
-          "label": "File Size",
+          "label": "Size",
           "name": "file_size",
           "required": false,
           "widget": "hidden"
