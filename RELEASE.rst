@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.95.0
+Version 0.95.0 (Released June 21, 2023)
 --------------
 
 - enhancement: upgrade publisher (#1826)
