@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.96.0
+--------------
+
+- GDrive File Size Sync (#1851)
+
 Version 0.95.1 (Released June 21, 2023)
 --------------
 
