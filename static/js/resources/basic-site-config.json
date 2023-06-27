@@ -78,6 +78,12 @@
           "widget": "string"
         },
         {
+          "label": "Size",
+          "name": "file_size",
+          "required": false,
+          "widget": "hidden"
+        },
+        {
           "default": "default_license_specificed_in_config",
           "label": "License",
           "name": "license",

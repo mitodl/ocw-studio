@@ -359,6 +359,7 @@ def test_update_youtube_statuses(  # pylint:disable=too-many-arguments
             assert video_file.video.drivefile_set.first().resource.metadata == {
                 "resourcetype": "Video",
                 "file_type": video_file.video.drivefile_set.first().mime_type,
+                "file_size": video_file.video.drivefile_set.first().size,
                 "video_files": {
                     "video_thumbnail_file": YT_THUMBNAIL_IMG.format(
                         video_id=video_file.destination_id

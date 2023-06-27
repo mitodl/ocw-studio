@@ -50,6 +50,7 @@ class DriveFile(TimestampedModel):
         default=DriveFileStatus.CREATED,
         max_length=50,
     )
+    size = models.PositiveIntegerField(null=True, blank=True)
     modified_time = models.DateTimeField(null=True, blank=True)
     created_time = models.DateTimeField(null=True, blank=True)
     drive_path = models.CharField(null=False, max_length=2048)
