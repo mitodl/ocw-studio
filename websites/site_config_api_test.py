@@ -190,11 +190,7 @@ def test_generate_item_metadata(  # pylint: disable=too-many-arguments
         **class_data,
     }
     site_config = SiteConfig(parsed_site_config)
-    values = (
-        {"resourcetype": resource_type, "file_type": file_type}
-        if values
-        else {}
-    )
+    values = {"resourcetype": resource_type, "file_type": file_type} if values else {}
     assert (
         site_config.generate_item_metadata(
             "resource", cls, use_defaults=use_defaults, values=values

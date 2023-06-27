@@ -568,7 +568,8 @@ def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
         assert content.dirpath == "content/resource"
         assert content.filename == deduped_name
         assert (
-            content.metadata["file_size"] is not None and content.metadata["file_size"] >= 0
+            content.metadata["file_size"] is not None
+            and content.metadata["file_size"] >= 0
         )
         assert content.metadata["resourcetype"] == RESOURCE_TYPE_DOCUMENT
         assert content.metadata["file_type"] == mime_type
