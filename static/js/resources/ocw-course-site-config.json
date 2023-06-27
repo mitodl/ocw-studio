@@ -86,14 +86,6 @@
           "widget": "hidden"
         },
         {
-          "default": null,
-          "help": "The size of the file resource in bytes",
-          "label": "Size",
-          "name": "file_size",
-          "required": false,
-          "widget": "hidden"
-        },
-        {
           "label": "File",
           "name": "file",
           "widget": "file"

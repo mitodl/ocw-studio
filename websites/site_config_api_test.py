@@ -166,11 +166,10 @@ def test_find_file_field(basic_site_config, content_type, field_name):
 @pytest.mark.parametrize("cls", [None, WebsiteContent])
 @pytest.mark.parametrize("resource_type", [None, "Image"])
 @pytest.mark.parametrize("file_type", [None, "image/png"])
-@pytest.mark.parametrize("file_size", [100, 1000])
 @pytest.mark.parametrize("use_defaults", [True, False])
 @pytest.mark.parametrize("values", [True, False])
 def test_generate_item_metadata(  # pylint: disable=too-many-arguments
-    parsed_site_config, cls, resource_type, file_type, file_size, use_defaults, values
+    parsed_site_config, cls, resource_type, file_type, use_defaults, values
 ):
     """generate_item_metadata should return the expected dict"""
     class_data = {} if cls else {"title": "", "file": ""}
@@ -179,7 +178,6 @@ def test_generate_item_metadata(  # pylint: disable=too-many-arguments
         "description": "",
         "resourcetype": (resource_type or "") if values else "",
         "file_type": (file_type or "") if values else "",
-        "file_size": (file_size or "") if values else "",
         "learning_resource_types": [],
         "license": default_license if use_defaults else "",
         "image_metadata": {"image-alt": "", "caption": "", "credit": ""},
@@ -193,7 +191,7 @@ def test_generate_item_metadata(  # pylint: disable=too-many-arguments
     }
     site_config = SiteConfig(parsed_site_config)
     values = (
-        {"resourcetype": resource_type, "file_type": file_type, "file_size": file_size}
+        {"resourcetype": resource_type, "file_type": file_type}
         if values
         else {}
     )

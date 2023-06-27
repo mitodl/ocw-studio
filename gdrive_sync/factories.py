@@ -33,7 +33,7 @@ class DriveFileFactory(DjangoModelFactory):
     modified_time = factory.Faker("date_time", tzinfo=pytz.utc)
     created_time = factory.Faker("date_time", tzinfo=pytz.utc)
     drive_path = factory.Faker("uri_path")
-    size = factory.Faker("pyint", min_value=1, max_value=9999)
+    size = factory.Faker("pyint", min_value=0, max_value=9999)
     website = factory.SubFactory(WebsiteFactory)
 
     class Meta:
