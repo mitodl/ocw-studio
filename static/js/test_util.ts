@@ -178,9 +178,11 @@ export const withFakeLocation = async (
   cb: () => Promise<void> | void
 ): Promise<void> => {
   const originalLocation = window.location
+  // @ts-expect-error We're deleting a required property, but we're about to re-assign it.
+  delete window.location
   try {
+    // copying an object with spread converts getters/setters to normal properties
     window.location = { ...originalLocation }
-  } catch (err) {
     await cb()
   } finally {
     window.location = originalLocation

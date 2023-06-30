@@ -54,28 +54,27 @@ describe("Prompting for authentication", () => {
   ])(
     "prompts for authentication when APIs reject with auth errors",
     async () => {
-      const { result, setMockWebsiteResponse, website, user } = await setup()
-
-      setMockWebsiteResponse(authRejectionBody, 403)
-
-      const siteLink = await waitFor(() => result.getByText(website.title))
-      await act(() => user.click(siteLink))
-
-      const dialog = await waitFor(() => result.getByRole("dialog"))
-
-      expect(dialog).toHaveTextContent("Session Expired")
-      expect(dialog).toHaveTextContent("Please log in and try again.")
-
       await withFakeLocation(async () => {
+        const { result, setMockWebsiteResponse, website, user } = await setup()
+
+        setMockWebsiteResponse(authRejectionBody, 403)
+
+        const siteLink = await waitFor(() => result.getByText(website.title))
+        await act(() => user.click(siteLink))
+
+        const dialog = await waitFor(() => result.getByRole("dialog"))
+
+        expect(dialog).toHaveTextContent("Session Expired")
+        expect(dialog).toHaveTextContent("Please log in and try again.")
         const goToLogin = dom.queryByText(dialog, "Go to Login")
         assertInstanceOf(goToLogin, HTMLButtonElement)
         await act(() => user.click(goToLogin))
-        await waitFor(() => {
-          expect(window.location.href).toBe("/login/saml/?idp=default")
-        })
+        expect(window.location.href).toBe("/login/saml/?idp=default")
+        result.unmount()
       })
 
-      result.unmount()
+      // Test is inside a callback. Let's make sure it actually ran.
+      expect.assertions(3)
     }
   )
 
