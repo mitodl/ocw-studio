@@ -77,6 +77,11 @@ EXAMPLE_MENU_FILE_YAML = f"""mainmenu:
     name: Ext Link
     weight: 10
     url: http://example.com
+  - identifier: {EXAMPLE_UUIDS[0]}
+    name: Page 1 url and pageRef
+    weight: 20
+    pageRef: content/page-1.md
+    url: content/page-1.md
 """
 
 
@@ -89,6 +94,11 @@ def get_example_menu_data():
             "weight": 10,
             "identifier": "external-12345",
             "url": "http://example.com",
+        },
+        {
+            "name": "Page 1 url and pageRef",
+            "weight": 20,
+            "identifier": EXAMPLE_UUIDS[0],
         },
     ]
 
@@ -206,6 +216,7 @@ def test_hugo_menu_yaml_serialize(omnibus_config):
         "mainmenu": [
             {**example_menu_data[0], "pageRef": "/path/to/myfile"},
             example_menu_data[1],
+            {**example_menu_data[2], "pageRef": "/path/to/myfile"},
         ]
     }
 
