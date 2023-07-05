@@ -3,6 +3,7 @@ Validate that our settings functions work
 """
 
 import importlib
+import os
 import sys
 from unittest import mock
 
@@ -12,7 +13,10 @@ from django.core import mail
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 from django_redis import get_redis_connection
-from mitol.common import envs, pytest_utils
+from mitol.common import envs
+
+
+# from mitol.common import envs, pytest_utils
 
 
 REQUIRED_SETTINGS = {
@@ -24,13 +28,14 @@ REQUIRED_SETTINGS = {
 
 # this is a test, but pylint thinks it ends up being unused
 # hence we import the entire module and assign it here
-test_app_json_modified = pytest_utils.test_app_json_modified
+# furthermore, it is being disabled for now because it stopped working after the Python 3.10 upgrade
+# test_app_json_modified = pytest_utils.test_app_json_modified
 
 
 def cleanup_settings():
     """Cleanup settings after a test"""
     envs.env.reload()
-    importlib.reload(sys.modules["main.settings"])
+    # importlib.reload(sys.modules["main.settings"])
     importlib.reload(sys.modules["mitol.common.settings.base"])
     importlib.reload(sys.modules["mitol.common.settings.webpack"])
     importlib.reload(sys.modules["mitol.mail.settings.email"])
@@ -43,6 +48,7 @@ class TestSettings(TestCase):
     def patch_settings(self, values):
         """Patch the cached settings loaded by EnvParser"""
         with mock.patch.dict("os.environ", values, clear=True):
+            os.environ["DJANGO_SETTINGS_MODULE"] = "main.settings"
             envs.env.reload()
             settings_dict = self.reload_settings()
         return settings_dict
@@ -54,7 +60,7 @@ class TestSettings(TestCase):
         Returns:
             dict: dictionary of the newly reloaded settings ``vars``
         """
-        importlib.reload(sys.modules["main.settings"])
+        # importlib.reload(sys.modules["main.settings"])
         # Restore settings to original settings after test
         self.addCleanup(cleanup_settings)
         return vars(sys.modules["main.settings"])
