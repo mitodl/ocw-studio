@@ -584,8 +584,8 @@ def test_create_gdrive_resource_content_forbidden_name(
 ):
     """content for a google drive file with a forbidden name should have its filename attribute modified"""
     drive_file = DriveFileFactory.create(
-        name=f"{CONTENT_FILENAMES_FORBIDDEN[0]}",
-        s3_key=f"test/path/{CONTENT_FILENAMES_FORBIDDEN[0]}",
+        name=f"{CONTENT_FILENAMES_FORBIDDEN[0]}.txt",
+        s3_key=f"test/path/{CONTENT_FILENAMES_FORBIDDEN[0]}.txt",
         mime_type="text/plain",
     )
     create_gdrive_resource_content(drive_file)
