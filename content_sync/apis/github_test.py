@@ -642,11 +642,14 @@ def test_get_app_installation_id(settings, mocker, mock_rsa_key, app_id, install
     )
     assert installation_id == install_id
 
+
 @pytest.mark.parametrize(
     "app_id,install_id",
     [[None, None]],
 )
-def test_invalid_app_installation_id(settings, mocker, mock_rsa_key, app_id, install_id):
+def test_invalid_app_installation_id(
+    settings, mocker, mock_rsa_key, app_id, install_id
+):
     """Should return the installation id based on matching app id returned in a response from Github"""
     settings.GITHUB_APP_ID = app_id
     settings.GITHUB_APP_PRIVATE_KEY = mock_rsa_key
