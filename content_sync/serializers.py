@@ -230,6 +230,9 @@ def _transform_hugo_menu_data(
                 updated_menu_item["pageRef"] = get_destination_url(
                     menu_item_content, site_config
                 )
+                # deletes 'url' property, if also present in legacy data
+                if "url" in updated_menu_item:
+                    del updated_menu_item["url"]
             result_menu_items.append(updated_menu_item)
         transformed_menu_fields[field_name] = result_menu_items
     return {**website_content.metadata, **transformed_menu_fields}
@@ -239,7 +242,7 @@ def _untransform_hugo_menu_data(
     data: dict, filepath: str, site_config: SiteConfig
 ) -> dict:
     """
-    Removes 'url' property from internal links in serialized menu data.
+    Removes 'pageRef' property from internal links in serialized menu data.
 
     Returns the dict of all values that will be deserialized to website content, including the transformed
     "menu" fields.
@@ -262,6 +265,9 @@ def _untransform_hugo_menu_data(
                 and "pageRef" in updated_menu_item
             ):
                 del updated_menu_item["pageRef"]
+                # deletes 'url' property, if also present in legacy data
+                if "url" in updated_menu_item:
+                    del updated_menu_item["url"]
             result_menu_items.append(updated_menu_item)
         transformed_menu_fields[field_name] = result_menu_items
     return {**data, **transformed_menu_fields}
