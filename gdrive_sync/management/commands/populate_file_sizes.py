@@ -78,7 +78,7 @@ class Command(WebsiteFilterCommand):
 
     @property
     def is_verbose(self):
-        """Whether or not verbose login is enabled."""
+        """Whether or not verbose logging is enabled."""
         return self._verbosity > 1
 
     def log_verbose(self, message: str):
