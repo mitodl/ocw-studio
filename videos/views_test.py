@@ -115,7 +115,7 @@ def test_transcode_jobs_subscribe(settings, mocker, drf_client):
         )
     response = drf_client.post(reverse("transcode_jobs"), data=data)
     assert response.status_code == 200
-    mock_get.assert_called_once_with(data["SubscribeURL"])
+    mock_get.assert_called_once_with(data["SubscribeURL"], timeout=60)
 
 
 def test_transcode_jobs_subscribe_denied(settings, mocker, drf_client):
