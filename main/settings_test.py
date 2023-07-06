@@ -26,16 +26,13 @@ REQUIRED_SETTINGS = {
 }
 
 
-# this is a test, but pylint thinks it ends up being unused
-# hence we import the entire module and assign it here
-# furthermore, it is being disabled for now because it stopped working after the Python 3.10 upgrade
+# TODO: Figure out why this test now always fails because it thinks app.json has been modified
 # test_app_json_modified = pytest_utils.test_app_json_modified
 
 
 def cleanup_settings():
     """Cleanup settings after a test"""
     envs.env.reload()
-    # importlib.reload(sys.modules["main.settings"])
     importlib.reload(sys.modules["mitol.common.settings.base"])
     importlib.reload(sys.modules["mitol.common.settings.webpack"])
     importlib.reload(sys.modules["mitol.mail.settings.email"])
@@ -60,7 +57,6 @@ class TestSettings(TestCase):
         Returns:
             dict: dictionary of the newly reloaded settings ``vars``
         """
-        # importlib.reload(sys.modules["main.settings"])
         # Restore settings to original settings after test
         self.addCleanup(cleanup_settings)
         return vars(sys.modules["main.settings"])
