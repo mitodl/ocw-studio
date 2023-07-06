@@ -26,7 +26,7 @@ REQUIRED_SETTINGS = {
 }
 
 
-# TODO: Figure out why this test now always fails because it thinks app.json has been modified
+# TODO: Figure out why this test now always fails because it thinks app.json has been modified #pylint: disable=fixme
 # test_app_json_modified = pytest_utils.test_app_json_modified
 
 
