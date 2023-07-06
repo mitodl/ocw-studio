@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.96.1
+--------------
+
+- Remove url property from menu items if pageRef is set (#1857)
+- chore(deps): lock file maintenance (#1850)
+- fix a useless test (#1849)
+
 Version 0.96.0 (Released July 05, 2023)
 --------------
 
