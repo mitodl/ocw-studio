@@ -58,7 +58,7 @@ click-plugins==1.1.1
     # via celery
 click-repl==0.2.0
     # via celery
-concoursepy==0.0.20
+concoursepy==0.0.40
     # via -r requirements.in
 cryptography==39.0.1
     # via
