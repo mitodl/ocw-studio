@@ -345,7 +345,7 @@ typing-extensions==4.3.0
     # via pypdf2
 uritemplate==3.0.1
     # via google-api-python-client
-urllib3==1.25.10
+urllib3==1.26.5
     # via
     #   botocore
     #   requests
