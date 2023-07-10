@@ -82,7 +82,7 @@ deprecated==1.2.14
     # via pygithub
 dj-database-url==2.0.0
     # via -r requirements.in
-django==3.2.19
+django==3.2.20
     # via
     #   -r requirements.in
     #   dj-database-url
