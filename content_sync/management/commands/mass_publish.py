@@ -12,7 +12,7 @@ from websites.models import Website
 
 
 class Command(WebsiteFilterCommand):
-    """ Publish live or draft versions of multiple sites  """
+    """Publish live or draft versions of multiple sites"""
 
     help = __doc__
 

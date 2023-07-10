@@ -122,11 +122,7 @@ def find_available_name(
         name_base = initial_filename_base[
             0 : len(initial_filename_base) - chars_to_truncate
         ]
-        kwargs = {
-            f"{fieldname}__regex": r"{name_base}[0-9]+{extension}".format(
-                name_base=name_base, extension=extension
-            )
-        }
+        kwargs = {f"{fieldname}__regex": rf"{name_base}[0-9]+{extension}"}
         # Find names that match the namebase and have a numerical suffix, then find the max suffix
         existing_names = website_content_qset.filter(**kwargs).values_list(
             fieldname, flat=True

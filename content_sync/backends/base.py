@@ -8,7 +8,7 @@ from websites.site_config_api import SiteConfig
 
 
 class BaseSyncBackend(abc.ABC):
-    """ Base class for syncing backends """
+    """Base class for syncing backends"""
 
     # NOTE: concrete implementations of this will probably want to
     #       initialize a client object for the backing service (e.g. ghapi)
@@ -88,7 +88,7 @@ class BaseSyncBackend(abc.ABC):
     # NOTE: This will be fired for every piece of content that is created, changed, or deleted in the database
     #       See content_sync/signals.py for details.
     def sync_content_to_backend(self, sync_state: ContentSyncState):
-        """ Sync a given piece of content given its ContentSyncState """
+        """Sync a given piece of content given its ContentSyncState"""
         if not sync_state.synced_checksum:
             self.create_content_in_backend(sync_state)
         elif sync_state.content.deleted:
@@ -98,13 +98,13 @@ class BaseSyncBackend(abc.ABC):
 
     @abc.abstractmethod
     def delete_orphaned_content_in_backend(self):
-        """ Delete any git repo files without corresponding WebsiteContent objects"""
+        """Delete any git repo files without corresponding WebsiteContent objects"""
         ...
 
     def sync_all_content_to_backend(
         self, query_set: Optional[WebsiteContentQuerySet] = None
     ):
-        """ Sync all content for the website, optionally filtering based on a WebsiteContentQuerySet """
+        """Sync all content for the website, optionally filtering based on a WebsiteContentQuerySet"""
         sync_states = ContentSyncState.objects.filter(content__website=self.website)
         if query_set:
             sync_states = sync_states.filter(content__in=query_set)

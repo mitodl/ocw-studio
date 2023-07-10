@@ -78,15 +78,12 @@ def test_websitecontent_autogen_filename_unique(
 
     exclude_text_id = contents[0].text_id if exclude_content and contents else None
 
-    assert (
-        get_valid_new_filename(
-            website_pk=website.pk,
-            dirpath=dirpath,
-            filename_base=filename_base,
-            exclude_text_id=exclude_text_id,
-        )
-        == (exp_result_filename if not exclude_content else filename_base)
-    )
+    assert get_valid_new_filename(
+        website_pk=website.pk,
+        dirpath=dirpath,
+        filename_base=filename_base,
+        exclude_text_id=exclude_text_id,
+    ) == (exp_result_filename if not exclude_content else filename_base)
 
 
 @pytest.mark.parametrize(
@@ -524,4 +521,4 @@ def test_get_content_warnings(
         and not has_truncatable_text
         and not is_draft
     ):
-        assert warnings == []
+        assert not warnings

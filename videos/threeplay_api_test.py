@@ -33,7 +33,9 @@ def test_threeplay_updated_media_file_request(mocker, settings):
     threeplay_updated_media_file_request()
 
     mock_get_call.assert_called_once_with(
-        "https://api.3playmedia.com/v3/files", {"label": "updated", "api_key": "key"}
+        "https://api.3playmedia.com/v3/files",
+        {"label": "updated", "api_key": "key"},
+        timeout=60,
     )
 
 
@@ -46,7 +48,9 @@ def test_threeplay_remove_tags(mocker, settings):
     threeplay_remove_tags(12345)
 
     mock_patch_call.assert_called_once_with(
-        "https://api.3playmedia.com/v3/files/12345", {"label": "", "api_key": "key"}
+        "https://api.3playmedia.com/v3/files/12345",
+        {"label": "", "api_key": "key"},
+        timeout=60,
     )
 
 
@@ -61,6 +65,7 @@ def test_threeplay_transcript_api_request(mocker, settings):
     mock_get_call.assert_called_once_with(
         "https://api.3playmedia.com/v3/transcripts",
         {"media_file_reference_id": "youtube_id", "api_key": "key"},
+        timeout=60,
     )
 
 
@@ -164,7 +169,9 @@ def test_get_folder_request(mocker, settings):
     response = get_folder("short_id")
 
     mock_get_call.assert_called_once_with(
-        "https://api.3playmedia.com/v3/batches/", {"name": "short_id", "api_key": "key"}
+        "https://api.3playmedia.com/v3/batches/",
+        {"name": "short_id", "api_key": "key"},
+        timeout=60,
     )
     assert response == mock_get_call.return_value.json()
 
@@ -177,7 +184,9 @@ def test_create_folder_request(mocker, settings):
     response = create_folder("short_id")
 
     mock_post_call.assert_called_once_with(
-        "https://api.3playmedia.com/v3/batches/", {"name": "short_id", "api_key": "key"}
+        "https://api.3playmedia.com/v3/batches/",
+        {"name": "short_id", "api_key": "key"},
+        timeout=60,
     )
     assert response == mock_post_call.return_value.json()
 
@@ -204,7 +213,9 @@ def test_get_or_create_folder(mocker, settings, get_folder_response):
         assert response == 1
     else:
         mock_post_call.assert_called_once_with(
-            "https://api.3playmedia.com/v3/batches/", {"name": "name", "api_key": "key"}
+            "https://api.3playmedia.com/v3/batches/",
+            {"name": "name", "api_key": "key"},
+            timeout=60,
         )
         assert response == 2
 
@@ -229,7 +240,7 @@ def test_threeplay_upload_video_request(mocker, settings):
 
     assert result == mock_post_call.return_value.json()
     mock_post_call.assert_called_once_with(
-        "https://api.3playmedia.com/v3/files/", payload
+        "https://api.3playmedia.com/v3/files/", payload, timeout=60
     )
 
 
@@ -258,5 +269,7 @@ def test_threeplay_order_transcript_request(mocker, settings, threeplay_callback
 
     assert result == mock_post_call.return_value.json()
     mock_post_call.assert_called_once_with(
-        "https://api.3playmedia.com/v3/transcripts/order/transcription", payload
+        "https://api.3playmedia.com/v3/transcripts/order/transcription",
+        payload,
+        timeout=60,
     )

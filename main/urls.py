@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls import include, url
+from django.conf.urls import include
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.views import LogoutView
@@ -27,7 +27,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("robots.txt", include("robots.urls")),
     path("", include("social_django.urls", namespace="social")),
-    url(r"^hijack/", include("hijack.urls", namespace="hijack")),
+    re_path(r"^hijack/", include("hijack.urls", namespace="hijack")),
     # Example view
     re_path("^$", public_index, name="main-index"),
     path("login/", public_index, name="login"),

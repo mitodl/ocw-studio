@@ -29,7 +29,7 @@ def mock_api_funcs(settings, mocker):
 
 
 def test_upsert_content_sync_state_create():
-    """ Verify that upsert_content_sync_state creates a ContentSyncState record for the content """
+    """Verify that upsert_content_sync_state creates a ContentSyncState record for the content"""
     with mute_signals(post_save):
         content = WebsiteContentFactory.create(markdown="abc")
 
@@ -47,7 +47,7 @@ def test_upsert_content_sync_state_create():
 
 
 def test_upsert_content_sync_state_update(settings):
-    """ Verify that upsert_content_sync_state updates a ContentSyncState record for the content """
+    """Verify that upsert_content_sync_state updates a ContentSyncState record for the content"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
     content = WebsiteContentFactory.create(markdown="abc")
     abc_checksum = content.calculate_checksum()
@@ -72,7 +72,7 @@ def test_upsert_content_sync_state_update(settings):
 
 
 def test_get_sync_backend(settings, mocker):
-    """ Verify that get_sync_backend() imports the backend based on settings.py """
+    """Verify that get_sync_backend() imports the backend based on settings.py"""
     settings.CONTENT_SYNC_BACKEND = "custom.backend.Backend"
     import_string_mock = mocker.patch("content_sync.api.import_string")
     website = WebsiteFactory.create()
@@ -82,7 +82,7 @@ def test_get_sync_backend(settings, mocker):
 
 
 def test_sync_content_enabled(settings, mocker):
-    """ Verify sync_content runs if sync is enabled """
+    """Verify sync_content runs if sync is enabled"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.SampleBackend"
     mocker.patch("content_sync.api.is_sync_enabled", return_value=True)
     log_mock = mocker.patch("content_sync.api.log")
@@ -99,7 +99,7 @@ def test_sync_content_enabled(settings, mocker):
 
 
 def test_sync_content_disabled(settings, mocker):
-    """ Verify sync_content doesn't run anything if sync is disabled """
+    """Verify sync_content doesn't run anything if sync is disabled"""
     settings.CONTENT_SYNC_BACKEND = None
     mocker.patch("content_sync.api.is_sync_enabled", return_value=False)
     get_sync_backend_mock = mocker.patch("content_sync.api.get_sync_backend")
@@ -176,7 +176,7 @@ def test_trigger_unpublished_removal(settings, mocker):
 
 
 def test_sync_github_website_starters(mocker):
-    """ Sync website starters from github """
+    """Sync website starters from github"""
     mock_task = mocker.patch("content_sync.api.tasks.sync_github_site_configs.delay")
     args = "https://github.com/testorg/testconfigs", ["site1/studio.yaml"]
     kwargs = {"commit": "abc123"}
@@ -185,7 +185,7 @@ def test_sync_github_website_starters(mocker):
 
 
 def test_get_pipeline_api(settings, mocker):
-    """ Verify that get_pipeline_api() imports the pipeline api class based on settings.py """
+    """Verify that get_pipeline_api() imports the pipeline api class based on settings.py"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     import_string_mock = mocker.patch("content_sync.pipelines.concourse.PipelineApi")
     api.get_pipeline_api()
@@ -195,7 +195,7 @@ def test_get_pipeline_api(settings, mocker):
 @pytest.mark.parametrize("hugo_args", [None, "--baseURL /"])
 @pytest.mark.parametrize("pipeline_api", [None, {}])
 def test_get_site_pipeline(settings, mocker, hugo_args, pipeline_api):
-    """ Verify that get_site_pipeline() imports the pipeline class based on settings.py """
+    """Verify that get_site_pipeline() imports the pipeline class based on settings.py"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     import_string_mock = mocker.patch("content_sync.pipelines.concourse.SitePipeline")
     website = WebsiteFactory.create()

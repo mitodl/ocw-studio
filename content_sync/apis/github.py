@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 import requests
 import yaml
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import F, Q
@@ -51,7 +52,7 @@ GIT_DATA_FILEPATH = "filepath"
 
 @dataclass
 class SyncResult:
-    """ The result of syncing a file to github """
+    """The result of syncing a file to github"""
 
     sync_id: int
     filepath: str
@@ -142,14 +143,22 @@ def get_app_installation_id(app: GithubIntegration) -> Optional[str]:
 
 
 def get_token():
-    """ Get a github token for requests """
+    """Get a github token for requests"""
     if settings.GITHUB_APP_ID and settings.GITHUB_APP_PRIVATE_KEY:
         try:
+            private_key = (
+                default_backend()
+                .load_pem_private_key(settings.GITHUB_APP_PRIVATE_KEY, None, False)
+                .private_bytes(
+                    serialization.Encoding.PEM,
+                    serialization.PrivateFormat.PKCS8,
+                    serialization.NoEncryption(),
+                )
+                .decode()
+            )
             app = GithubIntegration(
                 settings.GITHUB_APP_ID,
-                default_backend().load_pem_private_key(
-                    settings.GITHUB_APP_PRIVATE_KEY, None, False
-                ),
+                private_key,
                 **(
                     {"base_url": settings.GIT_API_URL}
                     if settings.GIT_API_URL is not None
@@ -175,7 +184,7 @@ class GithubApiWrapper:
     """
 
     def __init__(self, website: Website, site_config: Optional[SiteConfig] = None):
-        """ Initialize the Github API backend for a specific website"""
+        """Initialize the Github API backend for a specific website"""
         self.website = website
         self.site_config = site_config or SiteConfig(self.website.starter.config)
         self.repo = None
@@ -314,7 +323,7 @@ class GithubApiWrapper:
         )
 
     def upsert_content_files(self, query_set: Optional[WebsiteContentQuerySet] = None):
-        """ Commit all website content, with 1 commit per user, optionally filtering with a QuerySet """
+        """Commit all website content, with 1 commit per user, optionally filtering with a QuerySet"""
         if query_set:
             content_files = query_set.values_list("updated_by", flat=True).distinct()
         else:

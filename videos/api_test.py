@@ -63,11 +63,13 @@ def test_create_media_convert_job(settings, mocker):
 
 
 def test_process_video_outputs(mocker):
-    """ Based on transcoder output, three new video files should be created"""
+    """Based on transcoder output, three new video files should be created"""
     mock_prepare_download = mocker.patch("videos.api.prepare_video_download_file")
     video = VideoFactory.create()
     with open(
-        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json", "r"
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json",
+        "r",
+        encoding="utf-8",
     ) as infile:
         outputs = json.loads(infile.read())["detail"]["outputGroupDetails"]
         process_video_outputs(video, outputs)
@@ -124,7 +126,9 @@ def test_update_video_job_success(mocker, raises_exception):
     mock_log = mocker.patch("videos.api.log.exception")
     video_job = VideoJobFactory.create(status=VideoJobStatus.CREATED)
     with open(
-        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json", "r"
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json",
+        "r",
+        encoding="utf-8",
     ) as infile:
         data = json.loads(infile.read())["detail"]
     update_video_job(video_job, data)
@@ -139,7 +143,9 @@ def test_update_video_job_error(mocker):
     """The video job should be updated as expected if the transcode job failed"""
     mock_log = mocker.patch("videos.api.log.error")
     video_job = VideoJobFactory.create()
-    with open(f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_error.json", "r") as infile:
+    with open(
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_error.json", "r", encoding="utf-8"
+    ) as infile:
         data = json.loads(infile.read())["detail"]
     update_video_job(video_job, data)
     video_job.refresh_from_db()

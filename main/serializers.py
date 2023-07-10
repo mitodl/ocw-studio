@@ -23,7 +23,7 @@ class RequestUserSerializerMixin:
     """
 
     def user_from_request(self):
-        """ Get the user from the request context """
+        """Get the user from the request context"""
         request = self.context.get("request")
         if request and hasattr(request, "user") and isinstance(request.user, User):
             return request.user

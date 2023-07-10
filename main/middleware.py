@@ -22,10 +22,7 @@ class QueryStringFeatureFlagMiddleware(MiddlewareMixin):
         Returns:
             str: the full key value
         """
-        return "{prefix}_FEATURE_{suffix}".format(
-            prefix=settings.MIDDLEWARE_FEATURE_FLAG_QS_PREFIX,
-            suffix=suffix,
-        )
+        return f"{settings.MIDDLEWARE_FEATURE_FLAG_QS_PREFIX}_FEATURE_{suffix}"
 
     @classmethod
     def encode_feature_flags(cls, data):
@@ -124,10 +121,10 @@ class CookieFeatureFlagMiddleware(MiddlewareMixin):
 
 
 class CachelessAPIMiddleware(MiddlewareMixin):
-    """ Add Cache-Control header to API responses"""
+    """Add Cache-Control header to API responses"""
 
     def process_response(self, request, response):
-        """ Add a Cache-Control header to an API response """
+        """Add a Cache-Control header to an API response"""
         if request.path.startswith("/api/"):
             response["Cache-Control"] = "private, no-store"
         return response

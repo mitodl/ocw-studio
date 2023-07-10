@@ -21,7 +21,7 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def github(settings, mocker, mock_branches):
-    """ Create a github backend for a website """
+    """Create a github backend for a website"""
     settings.GIT_TOKEN = "faketoken"
     settings.GIT_ORGANIZATION = "fake_org"
     mock_github_api = mocker.patch(
@@ -56,7 +56,7 @@ def test_backend_exists(github, exists):
 
 
 def test_create_website_in_backend(github):
-    """ Test that the create_website_in_backend function completes without errors and calls expected api functions"""
+    """Test that the create_website_in_backend function completes without errors and calls expected api functions"""
     github.backend.create_website_in_backend()
     github.api.create_repo.assert_called_once()
 
@@ -213,7 +213,7 @@ def test_sync_all_content_to_db(mocker, github, patched_file_deserialize, ref, p
 
 
 def test_delete_orphaned_content_in_backend(github):
-    """ delete_orphaned_content_in_backend should call batch_delete_files with correct paths"""
+    """delete_orphaned_content_in_backend should call batch_delete_files with correct paths"""
     prior_path = "content/old/pages/1.md"
     content = github.backend.website.websitecontent_set.all()
     ContentSyncState.objects.filter(content=content[2]).update(

@@ -8,7 +8,7 @@ from websites.site_config_api import SiteConfig
 
 
 class Command(WebsiteFilterCommand):
-    """ Update content metadata for websites based on a specific starter """
+    """Update content metadata for websites based on a specific starter"""
 
     help = __doc__
 

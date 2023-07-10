@@ -14,7 +14,7 @@ LOCAL_STARTERS_DIR = "localdev/starters/"
 
 
 class Command(BaseCommand):
-    """ Scans the starter project directory in the local filesystem and creates/updates relevant db records """
+    """Scans the starter project directory in the local filesystem and creates/updates relevant db records"""
 
     help = __doc__
 

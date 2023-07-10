@@ -66,7 +66,7 @@ def validate_slug(value):
 
 
 class Website(TimestampedModel):
-    """ Class for a generic website """
+    """Class for a generic website"""
 
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=SET_NULL)
     uuid = models.UUIDField(primary_key=True, default=uuid4)
@@ -150,7 +150,7 @@ class Website(TimestampedModel):
 
     @property
     def unpublished(self):
-        """ Indicate whether or not site has been unpublished"""
+        """Indicate whether or not site has been unpublished"""
         return self.unpublish_status is not None
 
     # Google Drive fields
@@ -161,21 +161,21 @@ class Website(TimestampedModel):
 
     @property
     def admin_group(self):
-        """ Get the admin group """
+        """Get the admin group"""
         return Group.objects.filter(
             name=permissions_group_name_for_role(constants.ROLE_ADMINISTRATOR, self)
         ).first()
 
     @property
     def editor_group(self):
-        """ Get the editor group """
+        """Get the editor group"""
         return Group.objects.filter(
             name=permissions_group_name_for_role(constants.ROLE_EDITOR, self)
         ).first()
 
     @property
     def collaborators(self):
-        """ Get all site collaborators """
+        """Get all site collaborators"""
         return (
             list(self.admin_group.user_set.all())
             + [self.owner]
@@ -233,7 +233,7 @@ class Website(TimestampedModel):
         )
 
     def url_path_from_metadata(self, metadata: Dict = None):
-        """ Get the url path based on site config and metadata"""
+        """Get the url path based on site config and metadata"""
         if self.starter is None:
             return None
         site_config = SiteConfig(self.starter.config)
@@ -261,7 +261,7 @@ class Website(TimestampedModel):
 
     @property
     def s3_path(self):
-        """ Get the S3 object path for uploaded files"""
+        """Get the S3 object path for uploaded files"""
         site_config = SiteConfig(self.starter.config)
         url_parts = [
             site_config.root_url_path,
@@ -285,11 +285,11 @@ class Website(TimestampedModel):
 
 
 class WebsiteContentQuerySet(TimestampedModelQuerySet, SafeDeleteQueryset):
-    """ Queryset for WebsiteContent """
+    """Queryset for WebsiteContent"""
 
 
 class WebsiteContent(TimestampedModel, SafeDeleteModel):
-    """ Class for a content component of a website"""
+    """Class for a content component of a website"""
 
     objects = SafeDeleteManager(WebsiteContentQuerySet)
     all_objects = SafeDeleteAllManager(WebsiteContentQuerySet)
@@ -349,7 +349,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     )
 
     def calculate_checksum(self) -> str:
-        """ Returns a calculated checksum of the content """
+        """Returns a calculated checksum of the content"""
         return sha256(
             "\n".join(
                 [
@@ -424,7 +424,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
 
 
 class WebsiteStarter(TimestampedModel):
-    """ Represents a starter project that contains config/templates/etc. for the desired static site """
+    """Represents a starter project that contains config/templates/etc. for the desired static site"""
 
     path = models.CharField(
         max_length=256,
@@ -486,7 +486,7 @@ class WebsiteStarter(TimestampedModel):
                 yield[1] belongs to the starter of `website`.
         """
         if website.starter is None:
-            raise Exception(
+            raise ValidationError(
                 f"Website {website} does not have a starter. Cannot iterate config."
             )
 

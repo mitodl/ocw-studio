@@ -9,7 +9,7 @@ from websites.models import WebsiteContent
 
 
 class Command(WebsiteFilterCommand):
-    """ Update departments metadata for website(s)"""
+    """Update departments metadata for website(s)"""
 
     help = __doc__
 
