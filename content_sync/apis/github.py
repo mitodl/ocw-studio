@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 import requests
 import yaml
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import F, Q
@@ -145,11 +146,19 @@ def get_token():
     """Get a github token for requests"""
     if settings.GITHUB_APP_ID and settings.GITHUB_APP_PRIVATE_KEY:
         try:
+            private_key = (
+                default_backend()
+                .load_pem_private_key(settings.GITHUB_APP_PRIVATE_KEY, None, False)
+                .private_bytes(
+                    serialization.Encoding.PEM,
+                    serialization.PrivateFormat.PKCS8,
+                    serialization.NoEncryption(),
+                )
+                .decode()
+            )
             app = GithubIntegration(
                 settings.GITHUB_APP_ID,
-                default_backend().load_pem_private_key(
-                    settings.GITHUB_APP_PRIVATE_KEY, None, False
-                ),
+                private_key,
                 **(
                     {"base_url": settings.GIT_API_URL}
                     if settings.GIT_API_URL is not None
