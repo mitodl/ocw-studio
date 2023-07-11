@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.97.0
+--------------
+
+- don't generate or sync zips for the root website (#1865)
+- Python 3.10 / Django 3.2 upgrade (#1844)
+- chore(deps): lock file maintenance (#1860)
+
 Version 0.96.1 (Released July 06, 2023)
 --------------
 
