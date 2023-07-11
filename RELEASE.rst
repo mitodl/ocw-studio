@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.97.0
+--------------
+
+- Python 3.10 / Django 3.2 upgrade (#1844)
+- chore(deps): lock file maintenance (#1860)
+
 Version 0.96.1 (Released July 06, 2023)
 --------------
 
