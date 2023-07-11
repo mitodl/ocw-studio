@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.97.0
+Version 0.97.0 (Released July 11, 2023)
 --------------
 
 - don't generate or sync zips for the root website (#1865)
