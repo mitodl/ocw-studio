@@ -27,7 +27,7 @@ def fetch_content_file_size(
         # Some of our video resources are directly linked to YT videos, and their
         # downloadable content is in an archive url.
         file_url = content.metadata["video_files"]["archive_url"]
-        response = requests.request("HEAD", file_url, headers={}, data={})
+        response = requests.request("HEAD", file_url, headers={}, data={}, timeout=30)
         size = response.headers.get("Content-Length")
 
     return size
