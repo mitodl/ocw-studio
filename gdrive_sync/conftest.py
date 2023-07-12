@@ -152,7 +152,7 @@ def generate_related_content_data(
         }
 
 
-def setup_s3_test_file_bucket(settings, file_key):
+def setup_s3_test_file_bucket(settings, file_key: str) -> "s3.Bucket":
     """
     Setup a mock s3 service with a fake file and a bucket.
 

@@ -33,7 +33,7 @@ def fetch_content_file_size(
     return size
 
 
-def fetch_drive_file_size(drive_file: DriveFile, bucket: "s3.Bucket"):
+def fetch_drive_file_size(drive_file: DriveFile, bucket: "s3.Bucket") -> Optional[int]:
     """Return the size (in bytes) of the file associated with `drive_file.s3_key`."""
     size = None
     file_key = drive_file.s3_key

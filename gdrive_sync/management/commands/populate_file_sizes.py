@@ -1,18 +1,9 @@
 """Populate file_size meta field for resources."""
-from typing import Optional
-
-import requests
-from django.conf import settings
-from django.core.management import CommandError
 from django.db.models import Q
 
-from content_sync.api import upsert_content_sync_state
-from gdrive_sync.models import DriveFile
 from gdrive_sync.tasks import populate_file_sizes_bulk
 from main.management.commands.filter import WebsiteFilterCommand
-from main.s3_utils import get_boto3_resource
-from websites.constants import CONTENT_TYPE_RESOURCE
-from websites.models import Website, WebsiteContent
+from websites.models import Website
 
 
 class Command(WebsiteFilterCommand):
@@ -23,7 +14,7 @@ class Command(WebsiteFilterCommand):
 
     ./manage.py populate_file_sizes
     ./manage.py populate_file_sizes --filter course-id
-    ./manage.py populate_file_sizes --filter course-id --verbosity 2 --override-existing
+    ./manage.py populate_file_sizes --filter course-id --override-existing
     """
 
     help = __doc__
@@ -50,14 +41,14 @@ class Command(WebsiteFilterCommand):
 
         website_names = list(website_queryset.values_list("name", flat=True))
 
-        self.stdout.write(f"Scheduling populate_file_sizes_bulk...")
+        self.stdout.write("Scheduling populate_file_sizes_bulk...")
 
         task = populate_file_sizes_bulk.delay(
             website_names, options["override_existing"]
         )
 
-        self.stdout.write(f"Waiting on task...")
+        self.stdout.write("Waiting on task...")
 
         task.get()
 
-        self.stdout.write(f"Done")
+        self.stdout.write("Done")
