@@ -2,6 +2,7 @@
 
 import pytest
 from mitol.common.utils import now_in_utc
+from moto import mock_s3
 
 from gdrive_sync import tasks
 from gdrive_sync.conftest import LIST_FILE_RESPONSES
@@ -280,9 +281,12 @@ def test_delete_drive_file(mocker):
     )
 
 
+@mock_s3
 @pytest.mark.parametrize("override_existing", [True, False])
-def test_populate_file_sizes_for_content(mocker, override_existing):
+def test_populate_file_sizes_for_content(settings, mocker, override_existing):
     """populate_file_sizes should populate file sizes for website's content."""
+    settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket"
+
     NEW_FILE_SIZE = 1234
     mock_fetch_content_file_size = mocker.patch(
         "gdrive_sync.utils.fetch_content_file_size"
@@ -314,9 +318,12 @@ def test_populate_file_sizes_for_content(mocker, override_existing):
         )
 
 
+@mock_s3
 @pytest.mark.parametrize("override_existing", [True, False])
-def test_populate_file_sizes_for_drive_file(mocker, override_existing):
+def test_populate_file_sizes_for_drive_file(settings, mocker, override_existing):
     """populate_file_sizes should populate file sizes for drive files associated with content."""
+    settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket"
+
     NEW_FILE_SIZE = 1234
     mock_fetch_content_file_size = mocker.patch(
         "gdrive_sync.utils.fetch_drive_file_size"
