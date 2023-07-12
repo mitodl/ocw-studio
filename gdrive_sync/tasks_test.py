@@ -16,10 +16,13 @@ from gdrive_sync.tasks import (
     create_gdrive_resource_content_batch,
     delete_drive_file,
     import_website_files,
+    populate_file_sizes,
+    populate_file_sizes_bulk,
     process_drive_file,
     update_website_status,
 )
-from websites.factories import WebsiteFactory
+from websites.constants import CONTENT_TYPE_RESOURCE
+from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
 pytestmark = pytest.mark.django_db
@@ -277,3 +280,90 @@ def test_delete_drive_file(mocker):
     mock_delete_drive_file.assert_called_once_with(
         drive_file, sync_datetime=drive_file.website.synced_on
     )
+
+
+@pytest.mark.parametrize("override_existing", [True, False])
+def test_populate_file_sizes_for_content(mocker, override_existing):
+    """populate_file_sizes should populate file sizes for website's content."""
+    NEW_FILE_SIZE = 1234
+    mock_fetch_content_file_size = mocker.patch(
+        "gdrive_sync.utils.fetch_content_file_size"
+    )
+    mock_fetch_content_file_size.return_value = NEW_FILE_SIZE
+
+    website = WebsiteFactory.create()
+
+    contents = WebsiteContentFactory.create_batch(
+        2, website=website, type=CONTENT_TYPE_RESOURCE, metadata={}
+    )
+    existing_size_contents = WebsiteContentFactory.create_batch(
+        2, website=website, type=CONTENT_TYPE_RESOURCE, metadata={"file_size": 321}
+    )
+
+    populate_file_sizes.delay(website.name, override_existing)
+
+    for content in contents:
+        content.refresh_from_db()
+        assert content.metadata["file_size"] == NEW_FILE_SIZE
+
+    for content in existing_size_contents:
+        content.refresh_from_db()
+        assert (
+            content.metadata["file_size"] == NEW_FILE_SIZE
+            if override_existing
+            else content.metadata["file_size"] is not None
+            and content.metadata["file_size"] != NEW_FILE_SIZE
+        )
+
+
+@pytest.mark.parametrize("override_existing", [True, False])
+def test_populate_file_sizes_for_drive_file(mocker, override_existing):
+    """populate_file_sizes should populate file sizes for drive files associated with content."""
+    NEW_FILE_SIZE = 1234
+    mock_fetch_content_file_size = mocker.patch(
+        "gdrive_sync.utils.fetch_drive_file_size"
+    )
+    mock_fetch_content_file_size.return_value = NEW_FILE_SIZE
+
+    website = WebsiteFactory.create()
+
+    content = WebsiteContentFactory.create(
+        website=website, type=CONTENT_TYPE_RESOURCE, metadata={}
+    )
+
+    drive_files = [
+        DriveFileFactory.create(resource=content, website=website, size=None),
+        DriveFileFactory.create(resource=content, website=website, size=None),
+    ]
+    existing_size_drive_files = [
+        DriveFileFactory.create(resource=content, website=website, size=321),
+        DriveFileFactory.create(resource=content, website=website, size=321),
+    ]
+
+    populate_file_sizes.delay(website.name, override_existing)
+
+    for drive_file in drive_files:
+        drive_file.refresh_from_db()
+        assert drive_file.size == NEW_FILE_SIZE
+
+    for drive_file in existing_size_drive_files:
+        drive_file.refresh_from_db()
+        assert (
+            drive_file.size == NEW_FILE_SIZE
+            if override_existing
+            else drive_file.size is not None and drive_file.size != NEW_FILE_SIZE
+        )
+
+
+@pytest.mark.parametrize("override_existing", [True, False])
+def test_populate_file_sizes_bulk_delegates(mocker, mocked_celery, override_existing):
+    """Task populate_file_sizes_bulk should delegate each website to a populate_file_sizes task."""
+    mock_populate_file_sizes = mocker.patch("gdrive_sync.tasks.populate_file_sizes.si")
+    websites = WebsiteFactory.create_batch(3)
+    website_names = [website.name for website in websites]
+    with pytest.raises(mocked_celery.replace_exception_class):
+        populate_file_sizes_bulk.delay(website_names, override_existing)
+
+    assert mock_populate_file_sizes.call_count == 3
+    for name in website_names:
+        mock_populate_file_sizes.assert_any_call(name, override_existing)

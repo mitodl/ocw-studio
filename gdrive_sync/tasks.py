@@ -6,11 +6,13 @@ from typing import Dict, List, Optional, Tuple
 
 import celery
 from celery import chain, chord
+from django.conf import settings
 from mitol.common.utils import chunks, now_in_utc
 
+from content_sync.api import upsert_content_sync_state
 from content_sync.decorators import single_task
 from content_sync.tasks import sync_website_content
-from gdrive_sync import api
+from gdrive_sync import api, utils
 from gdrive_sync.constants import (
     DRIVE_FILE_FIELDS,
     DRIVE_FOLDER_FILES_FINAL,
@@ -20,8 +22,10 @@ from gdrive_sync.constants import (
 )
 from gdrive_sync.models import DriveFile
 from main.celery import app
+from main.s3_utils import get_boto3_resource
 from main.tasks import chord_finisher
-from websites.models import Website
+from websites.constants import CONTENT_TYPE_RESOURCE
+from websites.models import Website, WebsiteContent
 
 
 # pylint:disable=unused-argument, raising-format-tuple
@@ -226,3 +230,79 @@ def update_website_status(website_pk: str, sync_dt: datetime):
     Update the website gdrive sync status
     """
     api.update_sync_status(Website.objects.get(pk=website_pk), sync_dt)
+
+
+@app.task
+def populate_file_sizes(website_name: str, override_existing: bool = False):
+    """Populate all resource content of `website` with the `file_size` metadata field."""
+    website = Website.objects.get(name=website_name)
+    log.info("Starting file size population for %s.", website_name)
+
+    updated_drive_files = []
+    updated_contents = []
+
+    s3 = get_boto3_resource("s3")
+    bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
+
+    for content in website.websitecontent_set.filter(type=CONTENT_TYPE_RESOURCE):
+        if not override_existing and content.metadata.get("file_size"):
+            continue
+        try:
+            content.metadata["file_size"] = utils.fetch_content_file_size(
+                content, bucket=bucket
+            )
+        except Exception as ex:  # pylint:disable=broad-except
+            log.warning("Could not fetch file size for %s. %s", content, ex)
+            content.metadata["file_size"] = None
+        else:
+            if content.metadata["file_size"] is None:
+                log.info("Content %s has no file associated with it.", content)
+
+        log.debug(
+            "WebsiteContent %s now has file_size %s.",
+            content,
+            content.metadata["file_size"],
+        )
+
+        drive_files = content.drivefile_set.all()
+        for drive_file in drive_files:
+            if not override_existing and drive_file.size:
+                continue
+
+            try:
+                drive_file.size = utils.fetch_drive_file_size(drive_file, bucket)
+            except Exception as ex:  # pylint:disable=broad-except
+                log.warning("Could not fetch file size for %s. %s", drive_file, ex)
+            else:
+                if drive_file.size is None:
+                    log.info("DriveFile %s has no file associated to it.", drive_file)
+
+            log.debug("DriveFile %s now has size %s.", drive_file, drive_file.size)
+
+        updated_drive_files.extend(drive_files)
+        updated_contents.append(content)
+
+    DriveFile.objects.bulk_update(updated_drive_files, ["size"])
+    WebsiteContent.objects.bulk_update(updated_contents, ["metadata"])
+
+    # bulk_update does not call pre/post_save signals.
+    # So we'll do the sync state update ourselves.
+    for content in updated_contents:
+        upsert_content_sync_state(content)
+
+    website.has_unpublished_draft = True
+    website.has_unpublished_live = True
+    website.save()
+
+
+@app.task(bind=True)
+def populate_file_sizes_bulk(
+    self, website_names: List[str], override_existing: bool = False
+):
+    """Run populate_file_sizes for `website_names` sequentially."""
+    sub_tasks = [
+        populate_file_sizes.si(name, override_existing) for name in website_names
+    ]
+    task_chain = chain(*sub_tasks)
+    workflow = chord(task_chain, chord_finisher.si())
+    raise self.replace(workflow)

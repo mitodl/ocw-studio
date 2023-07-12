@@ -2,6 +2,8 @@
 
 from typing import Iterable, Optional, Tuple
 
+import boto3
+
 from websites.constants import CONTENT_TYPE_RESOURCE, WebsiteStarterStatus
 from websites.models import Website, WebsiteStarter
 from websites.site_config_api import ConfigItem, SiteConfig
@@ -148,3 +150,20 @@ def generate_related_content_data(
             "markdown": r"",
             "metadata": {field["name"]: [{"identifier": resource_id}]},
         }
+
+
+def setup_s3_test_file_bucket(settings, file_key):
+    """
+    Setup a mock s3 service with a fake file and a bucket.
+
+    Returns the bucket.
+    """
+    mock_bucket = settings.AWS_STORAGE_BUCKET_NAME
+
+    s3 = boto3.resource("s3", region_name="us-east-1")
+    s3.create_bucket(Bucket=mock_bucket)
+    bucket = s3.Bucket(mock_bucket)
+    file_content = "This is the content of the fake file."
+    bucket.put_object(Key=file_key, Body=file_content)
+
+    return bucket
