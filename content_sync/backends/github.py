@@ -34,7 +34,7 @@ class GithubBackend(BaseSyncBackend):
     IGNORED_PATHS = {"README.md"}
 
     def __init__(self, website: Website):
-        """ Initialize the Github API backend for a specific website"""
+        """Initialize the Github API backend for a specific website"""
         super().__init__(website)
         self.api = GithubApiWrapper(self.website, self.site_config)
 
@@ -84,7 +84,7 @@ class GithubBackend(BaseSyncBackend):
         return self.api.upsert_content_file(content)
 
     def delete_orphaned_content_in_backend(self):
-        """ Delete any git repo files without corresponding WebsiteContent objects"""
+        """Delete any git repo files without corresponding WebsiteContent objects"""
         sitepaths = []
         for content in self.website.websitecontent_set.iterator():
             sitepaths.append(get_destination_filepath(content, self.site_config))

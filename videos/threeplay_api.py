@@ -18,7 +18,7 @@ def get_folder(name: str) -> dict:
     """3play data request to get folders by name"""
     payload = {"name": name, "api_key": settings.THREEPLAY_API_KEY}
     url = "https://api.3playmedia.com/v3/batches/"
-    response = requests.get(url, payload)
+    response = requests.get(url, payload, timeout=60)
     if response:
         return response.json()
     else:
@@ -29,7 +29,7 @@ def create_folder(name: str) -> dict:
     """3play data request to create folder"""
     payload = {"name": name, "api_key": settings.THREEPLAY_API_KEY}
     url = "https://api.3playmedia.com/v3/batches/"
-    response = requests.post(url, payload)
+    response = requests.post(url, payload, timeout=60)
     if response:
         return response.json()
     else:
@@ -53,7 +53,7 @@ def threeplay_updated_media_file_request() -> dict:
     """3play data request to get files with 'updated' tag"""
     payload = {"label": "updated", "api_key": settings.THREEPLAY_API_KEY}
     url = "https://api.3playmedia.com/v3/files"
-    response = requests.get(url, payload)
+    response = requests.get(url, payload, timeout=60)
     if response:
         return response.json()
     else:
@@ -76,7 +76,7 @@ def threeplay_upload_video_request(
         "batch_id": folder_id,
     }
     url = "https://api.3playmedia.com/v3/files/"
-    response = requests.post(url, payload)
+    response = requests.post(url, payload, timeout=60)
     if response:
         return response.json()
     else:
@@ -101,18 +101,20 @@ def threeplay_order_transcript_request(video_id: int, threeplay_video_id: int) -
 
         payload["callback"] = callback_url
 
-    response = requests.post(url, payload)
+    response = requests.post(url, payload, timeout=60)
     if response:
         return response.json()
     else:
-        raise Exception("3Play transcript request failed for video_id " + str(video_id))
+        raise ConnectionError(
+            "3Play transcript request failed for video_id " + str(video_id)
+        )
 
 
 def threeplay_remove_tags(threeplay_video_id: int):
     """3play patch to remove tag from video file"""
     payload = {"label": "", "api_key": settings.THREEPLAY_API_KEY}
     url = f"https://api.3playmedia.com/v3/files/{threeplay_video_id}"
-    requests.patch(url, payload)
+    requests.patch(url, payload, timeout=60)
 
 
 def threeplay_transcript_api_request(youtube_id: str) -> dict:
@@ -122,7 +124,7 @@ def threeplay_transcript_api_request(youtube_id: str) -> dict:
         "api_key": settings.THREEPLAY_API_KEY,
     }
     url = "https://api.3playmedia.com/v3/transcripts"
-    response = requests.get(url, payload)
+    response = requests.get(url, payload, timeout=60)
     if response:
         return response.json()
     else:
@@ -132,7 +134,7 @@ def threeplay_transcript_api_request(youtube_id: str) -> dict:
 def fetch_file(source_url: str) -> BytesIO:
     """Fetch transcript file from 3play site"""
 
-    response = requests.get(source_url)
+    response = requests.get(source_url, timeout=60)
 
     if (
         response.status_code != 200

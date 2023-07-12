@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Version 0.97.0 (Released July 11, 2023)
+--------------
+
+- don't generate or sync zips for the root website (#1865)
+- Python 3.10 / Django 3.2 upgrade (#1844)
+- chore(deps): lock file maintenance (#1860)
+
+Version 0.96.1 (Released July 06, 2023)
+--------------
+
+- Remove url property from menu items if pageRef is set (#1857)
+- chore(deps): lock file maintenance (#1850)
+- fix a useless test (#1849)
+
 Version 0.96.0 (Released July 05, 2023)
 --------------
 

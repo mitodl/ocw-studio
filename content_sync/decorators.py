@@ -40,7 +40,7 @@ def retry_on_failure(func: F) -> F:
 
 
 def is_sync_enabled(func: Callable) -> Callable:
-    """ Returns True if the sync is enabled """
+    """Returns True if the sync is enabled"""
 
     def wrapper(*args, **kwargs):
         if settings.CONTENT_SYNC_BACKEND:
@@ -51,7 +51,7 @@ def is_sync_enabled(func: Callable) -> Callable:
 
 
 def is_publish_pipeline_enabled(func: Callable) -> Callable:
-    """ Returns True if the publishing pipeline is enabled """
+    """Returns True if the publishing pipeline is enabled"""
 
     def wrapper(*args, **kwargs):
         if settings.CONTENT_SYNC_PIPELINE_BACKEND:

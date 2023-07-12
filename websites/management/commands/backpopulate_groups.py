@@ -8,7 +8,7 @@ from websites.permissions import create_global_groups, setup_website_groups_perm
 
 
 class Command(WebsiteFilterCommand):
-    """ Backpopulate website groups and permissions """
+    """Backpopulate website groups and permissions"""
 
     help = "Backpopulate website groups and permissions"
 

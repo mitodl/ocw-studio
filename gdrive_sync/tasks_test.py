@@ -225,9 +225,7 @@ def test_update_website_status(mocker):
     now = now_in_utc()
     mock_update_sync_status = mocker.patch("gdrive_sync.tasks.api.update_sync_status")
     update_website_status.delay(website.pk, now)
-    mock_update_sync_status.assert_called_once_with(
-        website, now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    )
+    mock_update_sync_status.assert_called_once_with(website, now)
 
 
 @pytest.mark.parametrize("has_error", [True, False])

@@ -509,11 +509,11 @@ def test_websites_endpoint_publish_sorting(
     if published:
         assert resp.data.get("count") == 5
         expected_uids = [
-            site.uuid.__str__() for site in (*websites.courses, *websites.noncourses)
+            str(site.uuid) for site in (*websites.courses, *websites.noncourses)
         ]
     else:
         assert resp.data.get("count") == 4
-        expected_uids = [site.uuid.__str__() for site in websites.not_published]
+        expected_uids = [str(site.uuid) for site in websites.not_published]
     assert sorted([site["uuid"] for site in resp.data["results"]]) == sorted(
         expected_uids
     )
@@ -564,7 +564,7 @@ def test_website_endpoint_empty_search(drf_client):
     WebsiteFactory.create()
     WebsiteFactory.create()
     resp = drf_client.get(reverse("websites_api-list"), {"search": ""})
-    expected_uuids = sorted([site.uuid.__str__() for site in Website.objects.all()])
+    expected_uuids = sorted([str(site.uuid) for site in Website.objects.all()])
     assert expected_uuids == sorted([site["uuid"] for site in resp.data["results"]])
 
 

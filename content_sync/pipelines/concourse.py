@@ -539,6 +539,10 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                     if self.WEBSITE.name == settings.ROOT_WEBSITE_NAME
                     else " --delete",
                 )
+                .replace(
+                    "((is-root-website))",
+                    str(self.WEBSITE.name == settings.ROOT_WEBSITE_NAME),
+                )
                 .replace("((noindex))", noindex)
             )
             self.upsert_config(config_str, pipeline_name)

@@ -88,7 +88,7 @@ def check_mandatory_settings(mandatory_settings):
             missing_settings.append(setting_name)
     if missing_settings:
         raise ImproperlyConfigured(
-            "The following settings are missing: {}".format(", ".join(missing_settings))
+            f"The following settings are missing: {', '.join(missing_settings)}"
         )
 
 

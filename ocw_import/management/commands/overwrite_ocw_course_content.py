@@ -6,7 +6,7 @@ from ocw_import.tasks import update_ocw_resource_data
 
 
 class Command(WebsiteFilterCommand):
-    """ Import OCW course sites and content via ocw2hugo output """
+    """Import OCW course sites and content via ocw2hugo output"""
 
     help = __doc__
 

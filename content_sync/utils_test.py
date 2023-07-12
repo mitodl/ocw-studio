@@ -195,12 +195,12 @@ def test_check_matching_tags():
         os.path.dirname(__file__), UNEVEN_TAGS_TEST_FILE
     )
     even_tags_test_file = os.path.join(os.path.dirname(__file__), EVEN_TAGS_TEST_FILE)
-    with open(uneven_tags_test_file) as test_config_file:
+    with open(uneven_tags_test_file, encoding="utf-8") as test_config_file:
         test_config = test_config_file.read()
         with pytest.raises(ValueError):
             check_matching_tags(test_config, DEV_START, DEV_END)
         assert check_matching_tags(test_config, NON_DEV_START, NON_DEV_END) is True
-    with open(even_tags_test_file) as test_config_file:
+    with open(even_tags_test_file, encoding="utf-8") as test_config_file:
         test_config = test_config_file.read()
         assert check_matching_tags(test_config, DEV_START, DEV_END) is True
         assert check_matching_tags(test_config, NON_DEV_START, NON_DEV_END) is True
@@ -216,7 +216,7 @@ def test_check_matching_tags():
 def test_strip_lines_between(start_tag, end_tag, expected):
     """check that strip_lines_between strips the expected content"""
     even_tags_test_file = os.path.join(os.path.dirname(__file__), EVEN_TAGS_TEST_FILE)
-    with open(even_tags_test_file) as test_config_file:
+    with open(even_tags_test_file, encoding="utf-8") as test_config_file:
         test_config = test_config_file.read()
         assert expected == strip_lines_between(test_config, start_tag, end_tag)
 
@@ -236,7 +236,7 @@ def test_strip_lines_between(start_tag, end_tag, expected):
 def test_bad_tags(start_tag, end_tag):
     """make sure errors are thrown if a bad combination of start_tag and end_tag are passed"""
     even_tags_test_file = os.path.join(os.path.dirname(__file__), EVEN_TAGS_TEST_FILE)
-    with open(even_tags_test_file) as test_config_file:
+    with open(even_tags_test_file, encoding="utf-8") as test_config_file:
         test_config = test_config_file.read()
         with pytest.raises(ValueError):
             check_matching_tags(test_config, start_tag, end_tag)

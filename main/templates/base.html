@@ -3,7 +3,7 @@
   <head>
     {% spaceless %}
     {% load static %}
-    {% load hijack_tags %}
+    {% load hijack %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="{% static 'images/favicon.ico' %}" />
@@ -49,7 +49,6 @@
     {% endspaceless %}
   </head>
   <body class="{% block bodyclass %}{% endblock %}">
-    {% hijack_notification %}
     {% block content %}
     {% endblock %}
   </body>

@@ -578,10 +578,10 @@ def rename_file(obj_text_id, obj_new_filename):
     if existing_obj:
         old_obj = existing_obj.first()
         if old_obj == obj:
-            raise Exception("New filename is the same as the existing filename.")
+            raise ValueError("New filename is the same as the existing filename.")
         dependencies = old_obj.get_content_dependencies()
         if dependencies:
-            raise Exception(
+            raise ValueError(
                 "Not renaming file due to dependencies in existing content: "
                 + str(dependencies)
             )

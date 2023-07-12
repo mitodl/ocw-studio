@@ -12,7 +12,7 @@ from websites.models import Website
 
 
 class Command(WebsiteFilterCommand):
-    """ Backpopulate website pipelines """
+    """Backpopulate website pipelines"""
 
     help = __doc__
 

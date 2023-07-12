@@ -444,11 +444,12 @@ jobs:
       - task: upload-online-build
         timeout: 40m
         attempts: 3
-        # START DEV-ONLY
         params:
+          IS_ROOT_WEBSITE: ((is-root-website))
+          # START DEV-ONLY
           AWS_ACCESS_KEY_ID: ((minio-root-user))
           AWS_SECRET_ACCESS_KEY: ((minio-root-password))
-        # END DEV-ONLY
+          # END DEV-ONLY
         config:
           inputs:
             - name: course-markdown
@@ -460,7 +461,13 @@ jobs:
             path: sh
             args:
             - -exc
-            - aws s3((cli-endpoint-url)) sync course-markdown/output-online s3://((web-bucket))/((base-url)) --exclude='((short-id)).zip' --exclude='((short-id))-video.zip' --metadata site-id=((site-name))((delete))
+            - |
+              if [ "$IS_ROOT_WEBSITE" = true ];
+              then
+                aws s3((cli-endpoint-url)) sync course-markdown/output-online s3://((web-bucket))/((base-url)) --metadata site-id=((site-name))((delete))
+              else
+                aws s3((cli-endpoint-url)) sync course-markdown/output-online s3://((web-bucket))/((base-url)) --exclude='((short-id)).zip' --exclude='((short-id))-video.zip' --metadata site-id=((site-name))((delete))
+              fi
         # START DEV-ONLY
         on_success:
           try:
@@ -1032,6 +1039,7 @@ jobs:
           SITEMAP_DOMAIN: ((sitemap-domain))
           SENTRY_DSN: ((ocw-hugo-themes-sentry-dsn))
           NOINDEX: ((noindex))
+          IS_ROOT_WEBSITE: ((is-root-website))
           # START DEV-ONLY
           RESOURCE_BASE_URL: ((resource-base-url))
           AWS_ACCESS_KEY_ID: ((minio-root-user))
@@ -1080,17 +1088,20 @@ jobs:
                 touch ./content/static_resources/_index.md
                 cp -r ../build-artifacts/static_shared/. ./static/static_shared/
                 hugo ((hugo-args-offline))
-                cd output-offline
-                zip -r ../../build-course-offline/((short-id)).zip ./
-                rm -rf ./*
-                cd ..
-                if [ $MP4_COUNT != 0 ];
+                if [ "$IS_ROOT_WEBSITE" = false ];
                 then
-                  mv ../videos/* ./content/static_resources
+                  cd output-offline
+                  zip -r ../../build-course-offline/((short-id)).zip ./
+                  rm -rf ./*
+                  cd ..
+                  if [ $MP4_COUNT != 0 ];
+                  then
+                    mv ../videos/* ./content/static_resources
+                  fi
+                  hugo ((hugo-args-offline))
+                  cd output-offline
+                  zip -r ../../build-course-offline/((short-id))-video.zip ./
                 fi
-                hugo ((hugo-args-offline))
-                cd output-offline
-                zip -r ../../build-course-offline/((short-id))-video.zip ./
               else
                 echo "Offline configuration not found for site type ((config-slug))"
               fi
@@ -1152,11 +1163,12 @@ jobs:
       - task: upload-offline-build
         timeout: 40m
         attempts: 3
-        # START DEV-ONLY
         params:
+          IS_ROOT_WEBSITE: ((is-root-website))
+          # START DEV-ONLY
           AWS_ACCESS_KEY_ID: ((minio-root-user))
           AWS_SECRET_ACCESS_KEY: ((minio-root-password))
-        # END DEV-ONLY
+          # END DEV-ONLY
         config:
           inputs:
             - name: course-markdown
@@ -1174,8 +1186,11 @@ jobs:
               if [ -f "ocw-hugo-projects/((config-slug))/config-offline.yaml" ];
               then
                 aws s3((cli-endpoint-url)) sync course-markdown/output-offline/ s3://((offline-bucket))/((base-url)) --metadata site-id=((site-name))((delete))
-                aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((web-bucket))/((base-url)) --exclude='*' --include='((short-id)).zip' --metadata site-id=((site-name))
-                aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((web-bucket))/((base-url)) --exclude='*' --include='((short-id))-video.zip' --metadata site-id=((site-name))
+                if [ "$IS_ROOT_WEBSITE" = false ];
+                then
+                  aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((web-bucket))/((base-url)) --exclude='*' --include='((short-id)).zip' --metadata site-id=((site-name))
+                  aws s3((cli-endpoint-url)) sync build-course-offline/ s3://((web-bucket))/((base-url)) --exclude='*' --include='((short-id))-video.zip' --metadata site-id=((site-name))
+                fi
               else
                 echo "Offline configuration not found for site type ((config-slug))"
               fi

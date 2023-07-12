@@ -7,7 +7,7 @@ from websites.models import WebsiteContent
 
 
 class ContentSyncState(TimestampedModel):
-    """ Data model for tracking the sync state of website content """
+    """Data model for tracking the sync state of website content"""
 
     objects = BulkUpdateOrCreateQuerySet.as_manager()
 
@@ -25,9 +25,9 @@ class ContentSyncState(TimestampedModel):
 
     @property
     def is_synced(self) -> bool:
-        """ Returns True if the content is up-to-date """
+        """Returns True if the content is up-to-date"""
         return self.current_checksum == self.synced_checksum
 
     def __str__(self):  # pragma: no cover
-        """ Returns a string representation of the state """
+        """Returns a string representation of the state"""
         return f"Sync State for content: {self.content.title if self.content else None}"

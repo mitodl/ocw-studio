@@ -12,7 +12,7 @@ def news(request):
     # This view should only be triggered at build-time for ocw-www so there is no need to cache here
     news_url = "https://www.ocw-openmatters.org/feed/"
 
-    resp = requests.get(news_url)
+    resp = requests.get(news_url, timeout=60)
     resp.raise_for_status()
     root = ET.fromstring(resp.content.decode())
     items = rss_to_json(root)

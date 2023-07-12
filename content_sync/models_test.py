@@ -12,7 +12,7 @@ from content_sync.models import ContentSyncState
     ],
 )
 def test_contentsyncstate_is_synced(current_checksum, synced_checksum, expected):
-    """ Verify ContentSyncState.is_synced returns True only if both checksums match """
+    """Verify ContentSyncState.is_synced returns True only if both checksums match"""
     sync_state = ContentSyncState(
         current_checksum=current_checksum,
         synced_checksum=synced_checksum,

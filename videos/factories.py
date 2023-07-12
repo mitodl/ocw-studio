@@ -10,7 +10,7 @@ from websites.factories import WebsiteFactory
 
 
 class VideoFactory(DjangoModelFactory):
-    """ Factory for Video model"""
+    """Factory for Video model"""
 
     source_key = factory.Sequence(
         lambda n: f"{settings.DRIVE_S3_UPLOAD_PREFIX}/{n}/file_{n}"
