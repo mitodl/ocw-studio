@@ -16,6 +16,25 @@ import requests
 import yaml
 from concoursepy.api import Api
 from django.conf import settings
+from ol_concourse.lib.constants import REGISTRY_IMAGE
+from ol_concourse.lib.models.pipeline import (
+    AnonymousResource,
+    Command,
+    DoStep,
+    GetStep,
+    Identifier,
+    Input,
+    Job,
+    Output,
+    Pipeline,
+    PutStep,
+    RegistryImage,
+    Resource,
+    TaskConfig,
+    TaskStep,
+    TryStep,
+)
+from ol_concourse.lib.resource_types import slack_notification_resource
 from requests import HTTPError
 
 from content_sync.constants import (
@@ -57,6 +76,79 @@ MANDATORY_CONCOURSE_SETTINGS = [
     "CONCOURSE_USERNAME",
     "CONCOURSE_PASSWORD",
 ]
+
+
+PURGE_HEADER = (
+    ""
+    if settings.CONCOURSE_HARD_PURGE
+    else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
+)
+
+SLACK_ALERT_RESOURCE = Resource(
+    name="slack-alert",
+    type=slack_notification_resource.__name__,
+    check_every="never",
+    source={"url": "((slack-url))", "disabled": "false"},
+)
+
+OCW_COURSE_PUBLISHER_REGISTRY_IMAGE = AnonymousResource(
+    type=REGISTRY_IMAGE,
+    source=RegistryImage(repository="mitodl/ocw-course-publisher", tag="0.6"),
+)
+
+AWS_CLI_REGISTRY_IMAGE = AnonymousResource(
+    type=REGISTRY_IMAGE, source=RegistryImage(repository="amazon/aws-cli", tag="latest")
+)
+
+CURL_REGISTRY_IMAGE = AnonymousResource(
+    type=REGISTRY_IMAGE, source=RegistryImage(repository="curlimages/curl")
+)
+
+
+class ClearCdnCacheStep(TaskStep):
+    def __init__(self, fastly_var: str):
+        super().__init__(
+            task=Identifier("clear-cdn-cache-draft"),
+            timeout="5m",
+            attempts=3,
+            config=TaskConfig(
+                platform="linux",
+                image_resource=CURL_REGISTRY_IMAGE,
+                run=Command(
+                    path="sh",
+                    args=[
+                        "-f",
+                        "-X",
+                        "POST",
+                        "-H",
+                        f"Fastly-Key: (({fastly_var}.api_token))'{PURGE_HEADER}",
+                        f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/ocw-hugo-themes",
+                    ],
+                ),
+            ),
+        )
+
+
+class OcwHugoThemesResource(Resource):
+    def __init__(self, branch: str):
+        super().__init__(
+            name="ocw-hugo-themes",
+            type="git",
+            source={"uri": OCW_HUGO_THEMES_GIT, "branch": branch},
+        )
+
+
+class SlackAlertStep(TryStep):
+    def __init__(self, alert_type: str, text: str):
+        super().__init__(
+            try_=DoStep(
+                do=PutStep(
+                    put=SLACK_ALERT_RESOURCE.name,
+                    timeout="1m",
+                    params={"alert_type": alert_type, "text": text},
+                )
+            )
+        )
 
 
 class PipelineApi(Api, BasePipelineApi):
@@ -572,40 +664,100 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
     def upsert_pipeline(self):
         """Upsert the theme assets pipeline"""
         template_vars = get_template_vars()
-        purge_header = (
-            ""
-            if settings.CONCOURSE_HARD_PURGE
-            else "\n          - -H\n          - 'Fastly-Soft-Purge: 1'"
+
+        ocw_hugo_themes_resource = OcwHugoThemesResource(branch=self.BRANCH)
+        cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
+        resource_types = []
+        resources = [ocw_hugo_themes_resource]
+        tasks = [
+            GetStep(get=ocw_hugo_themes_resource.name, trigger=(not is_dev())),
+            TaskStep(
+                task=Identifier("build-ocw-hugo-themes"),
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
+                    inputs=[Input(name=ocw_hugo_themes_resource.name)],
+                    outputs=[Output(name=ocw_hugo_themes_resource.name)],
+                    params={
+                        "SEARCH_API_URL": settings.SEARCH_API_URL,
+                        "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
+                        "SENTRY_ENV": settings.ENVIRONMENT or "",
+                    },
+                    run=Command(
+                        path="sh",
+                        args=[
+                            "-exc",
+                            """
+                            cd ocw-hugo-themes
+                            yarn install --immutable
+                            npm run build:webpack
+                            npm run build:githash
+                            """,
+                        ],
+                    ),
+                ),
+            ),
+            TaskStep(
+                task=Identifier("copy-s3-buckets"),
+                timeout="20m",
+                attempts=3,
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=AWS_CLI_REGISTRY_IMAGE,
+                    inputs=[Input(name=ocw_hugo_themes_resource.name)],
+                    params=(
+                        {}
+                        if not is_dev()
+                        else {
+                            "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID or "",
+                            "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY
+                            or "",
+                        }
+                    ),
+                    run=Command(
+                        path="sh",
+                        args=[
+                            "-exc",
+                            f"""
+                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/dist s3://{template_vars["preview_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/dist s3://{template_vars["publish_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/static s3://{template_vars["preview_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/static s3://{template_vars["publish_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/data/webpack.json s3://{template_vars["artifacts_bucket_name"]}/ocw-hugo-themes/{self.BRANCH}/webpack.json --metadata site-id=ocw-hugo-themes
+                            """,
+                        ],
+                    ),
+                ),
+            ),
+        ]
+        job = Job(name="build-theme-assets", serial=True)
+        if not is_dev():
+            resource_types.append(slack_notification_resource)
+            resources.append(SLACK_ALERT_RESOURCE)
+            tasks.append(ClearCdnCacheStep(fastly_var="fastly_draft"))
+            tasks.append(ClearCdnCacheStep(fastly_var="fastly_live"))
+            job.on_failure = SlackAlertStep(
+                alert_type="failed",
+                text=f"""
+                Failed to build theme assets.
+
+                Append `{self.instance_vars}` to the url below for more details.
+                """,
+            )
+            job.on_abort = SlackAlertStep(
+                alert_type="aborted",
+                text=f"""
+                User aborted while building theme assets.
+
+                Append `{self.instance_vars}` to the url below for more details.
+                """,
+            )
+
+        job.plan = tasks
+        pipeline = Pipeline(
+            resource_types=resource_types, resources=resources, jobs=[job]
         )
-        config_str = (
-            self.get_pipeline_definition(
-                "definitions/concourse/theme-assets-pipeline.yml"
-            )
-            .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
-            .replace("((ocw-hugo-themes-branch))", self.BRANCH)
-            .replace("((search-api-url))", settings.SEARCH_API_URL)
-            .replace("((ocw-bucket-draft))", template_vars["preview_bucket_name"] or "")
-            .replace("((ocw-bucket-live))", template_vars["publish_bucket_name"] or "")
-            .replace(
-                "((artifacts-bucket))", template_vars["artifacts_bucket_name"] or ""
-            )
-            .replace("((purge_header))", purge_header)
-            .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
-            .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
-            .replace(
-                "((cli-endpoint-url))",
-                f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
-            )
-            .replace(
-                "((ocw-hugo-themes-sentry-dsn))",
-                settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
-            )
-            .replace(
-                "((ocw-hugo-themes-sentry-env))",
-                settings.ENVIRONMENT or "",
-            )
-            .replace("((atc-search-params))", self.instance_vars)
-        )
+        config_str = pipeline.json(indent=2)
         self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
