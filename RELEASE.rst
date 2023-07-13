@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.97.1
+Version 0.97.1 (Released July 13, 2023)
 --------------
 
 - make drivefile size a BigInteger (#1875)
