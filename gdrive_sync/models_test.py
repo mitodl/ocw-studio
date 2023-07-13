@@ -69,3 +69,12 @@ def test_get_content_dependencies():
             assert len(dependencies) != 0 and dependencies[0] == content
         else:
             assert len(dependencies) == 0
+
+
+@pytest.mark.django_db
+def test_drivefile_allows_large_files():
+    """
+    Ensure database column can store large file sizes, e.g., bigger than int4.
+    """
+    fifty_GB = 5e10
+    DriveFileFactory.create(size=fifty_GB)
