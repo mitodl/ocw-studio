@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.97.1
+--------------
+
+- make drivefile size a BigInteger (#1875)
+- chore(deps): lock file maintenance (#1866)
+
 Version 0.97.0 (Released July 11, 2023)
 --------------
 
