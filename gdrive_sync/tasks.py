@@ -304,5 +304,4 @@ def populate_file_sizes_bulk(
         populate_file_sizes.si(name, override_existing) for name in website_names
     ]
     task_chain = chain(*sub_tasks)
-    workflow = chord(task_chain, chord_finisher.si())
-    raise self.replace(workflow)
+    raise self.replace(task_chain)
