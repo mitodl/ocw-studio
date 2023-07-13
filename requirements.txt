@@ -217,7 +217,7 @@ oauthlib==3.2.2
     # via
     #   requests-oauthlib
     #   social-auth-core
-ol-concourse==0.4.3
+ol-concourse==0.4.4
     # via -r requirements.in
 ol-concoursepy==0.0.41
     # via -r requirements.in
