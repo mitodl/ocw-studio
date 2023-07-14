@@ -22,6 +22,7 @@ def fetch_content_file_size(
     )
 
     if file_key:
+        file_key = file_key.strip("/")
         size = bucket.Object(file_key).content_length
     elif content.metadata.get("video_files", {}).get("archive_url"):
         # Some of our video resources are directly linked to YT videos, and their
