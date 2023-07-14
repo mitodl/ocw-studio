@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.98.0
+--------------
+
+- chore: create populate_file_sizes command (#1861)
+
 Version 0.97.1 (Released July 13, 2023)
 --------------
 
