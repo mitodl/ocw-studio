@@ -422,6 +422,127 @@ class GeneralPipeline(BaseGeneralPipeline):
         raise NotImplementedError("Choose a more specific pipeline class")
 
 
+class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
+    """
+    Concourse-CI pipeline for publishing theme assets
+    """
+
+    PIPELINE_NAME = BaseThemeAssetsPipeline.PIPELINE_NAME
+    BRANCH = settings.GITHUB_WEBHOOK_BRANCH
+
+    MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
+        "GITHUB_WEBHOOK_BRANCH",
+        "SEARCH_API_URL",
+    ]
+
+    def __init__(
+        self, themes_branch: Optional[str] = None, api: Optional[PipelineApi] = None
+    ):
+        """Initialize the pipeline API instance"""
+        super().__init__(api=api)
+        self.BRANCH = themes_branch or get_theme_branch()
+        self.set_instance_vars({"branch": self.BRANCH})
+
+    def upsert_pipeline(self):
+        """Upsert the theme assets pipeline"""
+        template_vars = get_template_vars()
+
+        ocw_hugo_themes_resource = OcwHugoThemesResource(branch=self.BRANCH)
+        cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
+        resource_types = []
+        resources = [ocw_hugo_themes_resource]
+        tasks = [
+            GetStep(get=ocw_hugo_themes_resource.name, trigger=(not is_dev())),
+            TaskStep(
+                task=Identifier("build-ocw-hugo-themes"),
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
+                    inputs=[Input(name=ocw_hugo_themes_resource.name)],
+                    outputs=[Output(name=ocw_hugo_themes_resource.name)],
+                    params={
+                        "SEARCH_API_URL": settings.SEARCH_API_URL,
+                        "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
+                        "SENTRY_ENV": settings.ENVIRONMENT or "",
+                    },
+                    run=Command(
+                        path="sh",
+                        args=[
+                            "-exc",
+                            """
+                            cd ocw-hugo-themes
+                            yarn install --immutable
+                            npm run build:webpack
+                            npm run build:githash
+                            """,
+                        ],
+                    ),
+                ),
+            ),
+            TaskStep(
+                task=Identifier("copy-s3-buckets"),
+                timeout="20m",
+                attempts=3,
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=AWS_CLI_REGISTRY_IMAGE,
+                    inputs=[Input(name=ocw_hugo_themes_resource.name)],
+                    params=(
+                        {}
+                        if not is_dev()
+                        else {
+                            "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID or "",
+                            "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY
+                            or "",
+                        }
+                    ),
+                    run=Command(
+                        path="sh",
+                        args=[
+                            "-exc",
+                            f"""
+                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/dist s3://{template_vars["preview_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/dist s3://{template_vars["publish_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/static s3://{template_vars["preview_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/static s3://{template_vars["publish_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/data/webpack.json s3://{template_vars["artifacts_bucket_name"]}/ocw-hugo-themes/{self.BRANCH}/webpack.json --metadata site-id=ocw-hugo-themes
+                            """,
+                        ],
+                    ),
+                ),
+            ),
+        ]
+        job = Job(name="build-theme-assets", serial=True)
+        if not is_dev():
+            resource_types.append(slack_notification_resource)
+            resources.append(SLACK_ALERT_RESOURCE)
+            tasks.append(ClearCdnCacheStep(fastly_var="fastly_draft"))
+            tasks.append(ClearCdnCacheStep(fastly_var="fastly_live"))
+            job.on_failure = SlackAlertStep(
+                alert_type="failed",
+                text=f"""
+                Failed to build theme assets.
+
+                Append `{self.instance_vars}` to the url below for more details.
+                """,
+            )
+            job.on_abort = SlackAlertStep(
+                alert_type="aborted",
+                text=f"""
+                User aborted while building theme assets.
+
+                Append `{self.instance_vars}` to the url below for more details.
+                """,
+            )
+
+        job.plan = tasks
+        pipeline = Pipeline(
+            resource_types=resource_types, resources=resources, jobs=[job]
+        )
+        config_str = pipeline.json(indent=2)
+        self.upsert_config(config_str, self.PIPELINE_NAME)
+
+
 class SitePipeline(BaseSitePipeline, GeneralPipeline):
     """
     Concourse-CI publishing pipeline, dependent on a Github backend, for individual sites
@@ -638,127 +759,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((noindex))", noindex)
             )
             self.upsert_config(config_str, pipeline_name)
-
-
-class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
-    """
-    Concourse-CI pipeline for publishing theme assets
-    """
-
-    PIPELINE_NAME = BaseThemeAssetsPipeline.PIPELINE_NAME
-    BRANCH = settings.GITHUB_WEBHOOK_BRANCH
-
-    MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
-        "GITHUB_WEBHOOK_BRANCH",
-        "SEARCH_API_URL",
-    ]
-
-    def __init__(
-        self, themes_branch: Optional[str] = None, api: Optional[PipelineApi] = None
-    ):
-        """Initialize the pipeline API instance"""
-        super().__init__(api=api)
-        self.BRANCH = themes_branch or get_theme_branch()
-        self.set_instance_vars({"branch": self.BRANCH})
-
-    def upsert_pipeline(self):
-        """Upsert the theme assets pipeline"""
-        template_vars = get_template_vars()
-
-        ocw_hugo_themes_resource = OcwHugoThemesResource(branch=self.BRANCH)
-        cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
-        resource_types = []
-        resources = [ocw_hugo_themes_resource]
-        tasks = [
-            GetStep(get=ocw_hugo_themes_resource.name, trigger=(not is_dev())),
-            TaskStep(
-                task=Identifier("build-ocw-hugo-themes"),
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                    inputs=[Input(name=ocw_hugo_themes_resource.name)],
-                    outputs=[Output(name=ocw_hugo_themes_resource.name)],
-                    params={
-                        "SEARCH_API_URL": settings.SEARCH_API_URL,
-                        "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
-                        "SENTRY_ENV": settings.ENVIRONMENT or "",
-                    },
-                    run=Command(
-                        path="sh",
-                        args=[
-                            "-exc",
-                            """
-                            cd ocw-hugo-themes
-                            yarn install --immutable
-                            npm run build:webpack
-                            npm run build:githash
-                            """,
-                        ],
-                    ),
-                ),
-            ),
-            TaskStep(
-                task=Identifier("copy-s3-buckets"),
-                timeout="20m",
-                attempts=3,
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=AWS_CLI_REGISTRY_IMAGE,
-                    inputs=[Input(name=ocw_hugo_themes_resource.name)],
-                    params=(
-                        {}
-                        if not is_dev()
-                        else {
-                            "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID or "",
-                            "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY
-                            or "",
-                        }
-                    ),
-                    run=Command(
-                        path="sh",
-                        args=[
-                            "-exc",
-                            f"""
-                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/dist s3://{template_vars["preview_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/dist s3://{template_vars["publish_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/static s3://{template_vars["preview_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/static s3://{template_vars["publish_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/data/webpack.json s3://{template_vars["artifacts_bucket_name"]}/ocw-hugo-themes/{self.BRANCH}/webpack.json --metadata site-id=ocw-hugo-themes
-                            """,
-                        ],
-                    ),
-                ),
-            ),
-        ]
-        job = Job(name="build-theme-assets", serial=True)
-        if not is_dev():
-            resource_types.append(slack_notification_resource)
-            resources.append(SLACK_ALERT_RESOURCE)
-            tasks.append(ClearCdnCacheStep(fastly_var="fastly_draft"))
-            tasks.append(ClearCdnCacheStep(fastly_var="fastly_live"))
-            job.on_failure = SlackAlertStep(
-                alert_type="failed",
-                text=f"""
-                Failed to build theme assets.
-
-                Append `{self.instance_vars}` to the url below for more details.
-                """,
-            )
-            job.on_abort = SlackAlertStep(
-                alert_type="aborted",
-                text=f"""
-                User aborted while building theme assets.
-
-                Append `{self.instance_vars}` to the url below for more details.
-                """,
-            )
-
-        job.plan = tasks
-        pipeline = Pipeline(
-            resource_types=resource_types, resources=resources, jobs=[job]
-        )
-        config_str = pipeline.json(indent=2)
-        self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
 class MassBuildSitesPipeline(
