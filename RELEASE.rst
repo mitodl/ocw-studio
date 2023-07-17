@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.98.0
+--------------
+
+- fix: strip '/' from keys in populate_file_sizes (#1879)
+- chore: create populate_file_sizes command (#1861)
+
 Version 0.97.1 (Released July 13, 2023)
 --------------
 
