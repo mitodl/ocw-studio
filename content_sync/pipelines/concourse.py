@@ -1029,7 +1029,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 step_description="build-course-online task step",
             )
             clear_cdn_cache_online_step = ClearCdnCacheStep(fastly_var="fastly")
-            offline_build_gate_step = PutStepWithErrorHandling(
+            offline_build_gate_put_step = PutStepWithErrorHandling(
                 put=ocw_hugo_themes_resource.name,
                 params={
                     "mapping": json.dumps({
@@ -1061,10 +1061,22 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             ]
             if not is_dev():
                 online_tasks.append(clear_cdn_cache_online_step)
-            online_tasks.append(offline_build_gate_step)
+            online_tasks.append(offline_build_gate_put_step)
             online_job = Job(
                 name=Identifier("build-online-ocw-site"), serial=True, plan=online_tasks
             )
+
+            offline_build_gate_get_step = GetStepWithErrorHandling(
+                get=offline_build_gate_resource.name,
+                passed=[
+                    online_job.name
+                ],
+                trigger=True,
+                pipeline_name=pipeline_name,
+                site_name=self.WEBSITE.name,
+                step_description="build-course-online task step",
+            )
+            
             pipeline = Pipeline(
                 resource_types=resource_types, resources=resources, jobs=[online_job]
             )
