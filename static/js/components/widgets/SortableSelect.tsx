@@ -41,34 +41,20 @@ export default function SortableSelect(props: Props) {
     name,
     isOptionDisabled
   } = props
-
-  const [focusedContent, setFocusedContent] = useState<string | undefined>(
-    undefined
-  )
-
   /**
    * Callback for adding a new item to the field value in the sortable UI. If
    * there is an item 'focused' in the UI (i.e. the user has selected it in the
    * SelectField) then we add that to the current value and call the change
    * shim.
    */
-  const addFocusedItem = useCallback(
-    (event: SyntheticEvent<HTMLButtonElement>) => {
-      event.preventDefault()
-
-      if (focusedContent) {
-        onChange(value.map(item => item.id).concat(focusedContent))
-        setFocusedContent(undefined)
+  const addItem = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      const content = event.target.value;
+      if (content) {
+        onChange(value.map(item => item.id).concat(content))
       }
     },
-    [focusedContent, setFocusedContent, onChange, value]
-  )
-
-  const setFocusedContentCB = useCallback(
-    (event: ChangeEvent<HTMLSelectElement>) => {
-      setFocusedContent(event.target.value)
-    },
-    [setFocusedContent]
+    [onChange, value]
   )
 
   const handleDragEnd = useCallback(
@@ -102,24 +88,15 @@ export default function SortableSelect(props: Props) {
 
   return (
     <>
-      <div className="d-flex">
-        <SelectField
-          name={name}
-          value={focusedContent}
-          onChange={setFocusedContentCB}
-          options={options}
-          loadOptions={loadOptions}
-          defaultOptions={defaultOptions}
-          isOptionDisabled={isOptionDisabled}
-        />
-        <button
-          className="px-4 ml-3 btn cyan-button"
-          disabled={focusedContent === undefined}
-          onClick={addFocusedItem}
-        >
-          Add
-        </button>
-      </div>
+      <SelectField
+        name={name}
+        value={null}
+        onChange={addItem}
+        options={options}
+        loadOptions={loadOptions}
+        defaultOptions={defaultOptions}
+        isOptionDisabled={isOptionDisabled}
+      />
       <SortWrapper
         handleDragEnd={handleDragEnd}
         items={value.map(item => item.id)}
