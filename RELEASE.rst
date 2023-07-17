@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.98.0
+Version 0.98.0 (Released July 17, 2023)
 --------------
 
 - fix: strip '/' from keys in populate_file_sizes (#1879)
