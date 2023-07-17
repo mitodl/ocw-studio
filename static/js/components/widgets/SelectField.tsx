@@ -1,4 +1,4 @@
-import React, { useCallback, ChangeEvent } from "react"
+import React, { useCallback, ChangeEvent, useState } from "react"
 import Select from "react-select"
 import AsyncSelect from "react-select/async"
 import { isNil } from "ramda"
@@ -28,9 +28,11 @@ export default function SelectField(props: Props): JSX.Element {
     options,
     loadOptions,
     defaultOptions,
-    placeholder,
+    placeholder: initialPlaceholder,
     isOptionDisabled
   } = props
+  const [searchText, setSearchText] = useState("");
+  const [placeholder, setPlaceholder] = useState("");
   const multiple = props.multiple ?? false
   const selectOptions = options.map(option =>
     typeof option === "string" ? { label: option, value: option } : option
@@ -74,21 +76,38 @@ export default function SelectField(props: Props): JSX.Element {
     selected = isNil(value) ? null : getSelectOption(value)
   }
 
+  const handleInputChanged = useCallback((input) => {
+    setSearchText(input)
+  }, [setSearchText])
+
+  const handleMenuClosed = useCallback(
+    () => setPlaceholder(searchText)
+  , [setPlaceholder, searchText])
+
+  const handleFocus = useCallback(
+    () => setSearchText(placeholder ?? "")
+  , [setSearchText, placeholder])
+  
   const commonSelectOptions = {
     className:   "w-100 form-input",
     value:       selected,
     isMulti:     multiple,
-    onChange:    changeHandler,
     options:     selectOptions,
-    placeholder: placeholder || null,
+    placeholder: placeholder || initialPlaceholder || null,
+    inputValue: searchText,
+    blurInputOnSelect: true,
+    onChange:    changeHandler,
+    onInputChange: handleInputChanged,
+    onMenuClose: handleMenuClosed,
+    onFocus: handleFocus,
+    isOptionDisabled,
     styles:      {
       control: (base: any) => ({
         ...base,
         border:    0,
         boxShadow: "none"
       })
-    },
-    isOptionDisabled
+    }
   }
 
   return loadOptions ? (
