@@ -270,9 +270,9 @@ class SlackAlertStep(TryStep):
         )
 
 class ClearCdnCacheStep(TaskStep):
-    def __init__(self, fastly_var: str):
+    def __init__(self, name: str, fastly_var: str, purge_url: str):
         super().__init__(
-            task=Identifier("clear-cdn-cache-draft"),
+            task=Identifier(name),
             timeout="5m",
             attempts=3,
             config=TaskConfig(
@@ -286,7 +286,7 @@ class ClearCdnCacheStep(TaskStep):
                         "POST",
                         "-H",
                         f"Fastly-Key: (({fastly_var}.api_token))'{PURGE_HEADER}",
-                        f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/ocw-hugo-themes",
+                        f"https://api.fastly.com/service/(({fastly_var}.service_id))/{purge_url}",
                     ],
                 ),
             ),
@@ -672,8 +672,20 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
         if not is_dev():
             resource_types.append(slack_notification_resource)
             resources.append(SLACK_ALERT_RESOURCE)
-            tasks.append(ClearCdnCacheStep(fastly_var="fastly_draft"))
-            tasks.append(ClearCdnCacheStep(fastly_var="fastly_live"))
+            tasks.append(
+                ClearCdnCacheStep(
+                    name="clear-cdn-cache-draft",
+                    fastly_var="fastly_draft",
+                    purge_url="purge/ocw-hugo-themes"
+                )
+            )
+            tasks.append(
+                ClearCdnCacheStep(
+                    name="clear-cdn-cache-live",
+                    fastly_var="fastly_live",
+                    purge_url="purge/ocw-hugo-themes"
+                )
+            )
             job.on_failure = SlackAlertStep(
                 alert_type="failed",
                 text=f"""
@@ -771,6 +783,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             if settings.CONCOURSE_HARD_PURGE
             else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
         )
+        purge_url = f"purge/{self.WEBSITE.name}"
         for branch_vars in [
             {
                 "branch": settings.GIT_BRANCH_PREVIEW,
@@ -1028,7 +1041,11 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 site_name=self.WEBSITE.name,
                 step_description="build-course-online task step",
             )
-            clear_cdn_cache_online_step = ClearCdnCacheStep(fastly_var="fastly")
+            clear_cdn_cache_online_step = ClearCdnCacheStep(
+                name="clear-cdn-cache",
+                fastly_var="fastly",
+                purge_url=purge_url
+            )
             offline_build_gate_put_step = PutStepWithErrorHandling(
                 put=ocw_hugo_themes_resource.name,
                 params={
