@@ -151,7 +151,6 @@ OPEN_DISCUSSIONS_RESOURCE = Resource(
 
 # Resource Generators
 
-
 class GitResource(Resource):
     def __init__(self, name: Identifier, uri: str, branch: str):
         super().__init__(
@@ -159,7 +158,6 @@ class GitResource(Resource):
             type="git",
             source={"uri": uri, "branch": branch},
         )
-
 
 class OcwStudioWebhookResource(Resource):
     def __init__(self, ocw_studio_url: str, site_name: str, api_token: str):
@@ -178,9 +176,7 @@ class OcwStudioWebhookResource(Resource):
             },
         )
 
-
 # Step Generators
-
 
 def add_error_handling(
     step: Step, pipeline_name: str, site_name: str, step_description: str
@@ -223,7 +219,6 @@ def add_error_handling(
         )
     )
 
-
 class GetStepWithErrorHandling(GetStep):
     def __init__(
         self, pipeline_name: str, site_name: str, step_description: str, **kwargs
@@ -235,7 +230,6 @@ class GetStepWithErrorHandling(GetStep):
             site_name=site_name,
             step_description=step_description,
         )
-
 
 class PutStepWithErrorHandling(PutStep):
     def __init__(
@@ -249,7 +243,6 @@ class PutStepWithErrorHandling(PutStep):
             step_description=step_description,
         )
 
-
 class TaskStepWithErrorHandling(TaskStep):
     def __init__(
         self, pipeline_name: str, site_name: str, step_description: str, **kwargs
@@ -261,7 +254,6 @@ class TaskStepWithErrorHandling(TaskStep):
             site_name=site_name,
             step_description=step_description,
         )
-
 
 class SlackAlertStep(TryStep):
     def __init__(self, alert_type: str, text: str):
@@ -276,7 +268,6 @@ class SlackAlertStep(TryStep):
                 ]
             )
         )
-
 
 class ClearCdnCacheStep(TaskStep):
     def __init__(self, fastly_var: str):
@@ -301,7 +292,6 @@ class ClearCdnCacheStep(TaskStep):
             ),
         )
 
-
 class OcwStudioWebhookStep(TryStep):
     def __init__(self, pipeline_name: str, status: str):
         super().__init__(
@@ -314,7 +304,6 @@ class OcwStudioWebhookStep(TryStep):
                 },
             )
         )
-
 
 class PipelineApi(Api, BasePipelineApi):
     """
@@ -1039,6 +1028,18 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 site_name=self.WEBSITE.name,
                 step_description="build-course-online task step",
             )
+            clear_cdn_cache_online_step = ClearCdnCacheStep(fastly_var="fastly")
+            offline_build_gate_step = PutStepWithErrorHandling(
+                put=ocw_hugo_themes_resource.name,
+                params={
+                    "mapping": json.dumps({
+                        "timestamp": "now()"
+                    })
+                },
+                pipeline_name=pipeline_name,
+                site_name=self.WEBSITE.name,
+                step_description="offline-build-gate task step",
+            )
             if is_dev():
                 build_course_online_step.params["RESOURCE_BASE_URL"] = (
                     resource_base_url or ""
@@ -1049,7 +1050,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 build_course_online_step.params["AWS_SECRET_ACCESS_KEY"] = (
                     settings.AWS_SECRET_ACCESS_KEY or ""
                 )
-
             online_tasks = [
                 ocw_studio_webhook_started_step,
                 webpack_json_get_step,
@@ -1059,6 +1059,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 static_resources_step,
                 build_course_online_step,
             ]
+            if not is_dev():
+                online_tasks.append(clear_cdn_cache_online_step)
+            online_tasks.append(offline_build_gate_step)
             online_job = Job(
                 name=Identifier("build-online-ocw-site"), serial=True, plan=online_tasks
             )
