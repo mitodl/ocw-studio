@@ -86,16 +86,21 @@ export default function SortableSelect(props: Props) {
     [onChange, value]
   )
 
+  const isOptionSelected = useCallback(
+    (option) => Boolean(value.find((item) => item.id === option.value)),
+    [value]
+  )
+
   return (
     <>
       <SelectField
         name={name}
-        value={null}
         onChange={addItem}
         options={options}
         loadOptions={loadOptions}
         defaultOptions={defaultOptions}
         isOptionDisabled={isOptionDisabled}
+        isOptionSelected={isOptionSelected}
       />
       <SortWrapper
         handleDragEnd={handleDragEnd}

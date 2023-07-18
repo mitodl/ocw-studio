@@ -10,7 +10,7 @@ export interface Option {
 
 interface Props {
   name: string
-  value: null | undefined | string | string[]
+  value?: null | undefined | string | string[]
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void
   multiple?: boolean
   options: Array<string | Option>
@@ -18,6 +18,7 @@ interface Props {
   placeholder?: string
   defaultOptions?: Option[]
   isOptionDisabled?: (option: Option) => boolean
+  isOptionSelected?: (option: Option) => boolean
 }
 
 export default function SelectField(props: Props): JSX.Element {
@@ -29,7 +30,8 @@ export default function SelectField(props: Props): JSX.Element {
     loadOptions,
     defaultOptions,
     placeholder: initialPlaceholder,
-    isOptionDisabled
+    isOptionDisabled,
+    isOptionSelected
   } = props
   const [searchText, setSearchText] = useState("");
   const [placeholder, setPlaceholder] = useState("");
@@ -96,11 +98,13 @@ export default function SelectField(props: Props): JSX.Element {
     placeholder: placeholder || initialPlaceholder || null,
     inputValue: searchText,
     blurInputOnSelect: true,
+    hideSelectedOptions: true,
     onChange:    changeHandler,
     onInputChange: handleInputChanged,
     onMenuClose: handleMenuClosed,
     onFocus: handleFocus,
     isOptionDisabled,
+    isOptionSelected,
     styles:      {
       control: (base: any) => ({
         ...base,
