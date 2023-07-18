@@ -79,7 +79,10 @@ export default function SelectField(props: Props): JSX.Element {
   }
 
   const handleInputChanged = useCallback(
-    input => {
+    (input, reason) => {
+      if (reason.action === "menu-close" || reason.action === "input-blur") {
+        return
+      }
       setSearchText(input)
     },
     [setSearchText]
@@ -90,7 +93,7 @@ export default function SelectField(props: Props): JSX.Element {
     [setPlaceholder, searchText]
   )
 
-  const handleFocus = useCallback(
+  const handleMenuOpen = useCallback(
     () => setSearchText(placeholder ?? ""),
     [setSearchText, placeholder]
   )
@@ -107,7 +110,7 @@ export default function SelectField(props: Props): JSX.Element {
     onChange:            changeHandler,
     onInputChange:       handleInputChanged,
     onMenuClose:         handleMenuClosed,
-    onFocus:             handleFocus,
+    onMenuOpen:          handleMenuOpen,
     isOptionDisabled,
     isOptionSelected,
     styles:              {
