@@ -36,9 +36,9 @@ social-auth-core>=4
 social-auth-core[saml]>=4
 social-auth-app-django>=4
 uwsgi
-pyyaml
+pyyaml==6.0.1
 tqdm
-yamale
+yamale==4.0.4
 django-model-utils==4.2.0
 google-api-python-client
 google-auth
