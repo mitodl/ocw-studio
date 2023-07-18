@@ -1,11 +1,18 @@
 import React, { useCallback, ChangeEvent, useState } from "react"
 import Select from "react-select"
-import AsyncSelect from "react-select/async"
 import { isNil } from "ramda"
+import {
+  AsyncPaginate,
+  LoadOptions as SelectLoadOptions
+} from "react-select-async-paginate"
 
 export interface Option {
   label: string
   value: string
+}
+
+export interface Additional {
+  callback?: (options: Option[]) => void
 }
 
 interface Props {
@@ -14,7 +21,7 @@ interface Props {
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void
   multiple?: boolean
   options: Array<string | Option>
-  loadOptions?: (s: string, cb: (options: Option[]) => void) => void
+  loadOptions?: SelectLoadOptions<Option, Option[], Additional | undefined>
   placeholder?: string
   defaultOptions?: Option[]
   isOptionDisabled?: (option: Option) => boolean
@@ -123,7 +130,7 @@ export default function SelectField(props: Props): JSX.Element {
   }
 
   return loadOptions ? (
-    <AsyncSelect
+    <AsyncPaginate
       {...commonSelectOptions}
       loadOptions={loadOptions}
       defaultOptions={defaultOptions}

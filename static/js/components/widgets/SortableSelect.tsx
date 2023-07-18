@@ -1,14 +1,10 @@
-import React, {
-  ChangeEvent,
-  SyntheticEvent,
-  useCallback,
-  useState
-} from "react"
-import SelectField, { Option } from "./SelectField"
+import React, { ChangeEvent, useCallback } from "react"
+import SelectField, { Additional, Option } from "./SelectField"
 import { default as SortableItemComponent } from "../SortableItem"
 import SortWrapper from "../SortWrapper"
 import { DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
+import { LoadOptions } from "react-select-async-paginate"
 
 export interface SortableItem {
   // the UUID for this item
@@ -24,10 +20,7 @@ interface Props {
   options: Option[]
   defaultOptions?: Option[]
   name: string
-  loadOptions: (
-    inputValue: string,
-    callback: (options: Option[]) => void
-  ) => void
+  loadOptions: LoadOptions<Option, Option[], Additional | undefined>
   isOptionDisabled?: (option: Option) => boolean
 }
 

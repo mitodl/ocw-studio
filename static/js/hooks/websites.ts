@@ -1,7 +1,7 @@
 import { useRequest } from "redux-query-react"
 import { uniqBy } from "ramda"
 
-import { Option } from "../components/widgets/SelectField"
+import { Additional, Option } from "../components/widgets/SelectField"
 import { useWebsite } from "../context/Website"
 import {
   websiteContentDetailRequest,
@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from "react"
 import { siteApiListingUrl } from "../lib/urls"
 import { debouncedFetch } from "../lib/api/util"
 import { QueryState } from "redux-query"
+import { LoadOptions } from "react-select-async-paginate"
 
 /**
  * A SelectField Option that is specific to websites.
@@ -76,10 +77,11 @@ export const formatWebsiteOptions = (
 
 interface ReturnProps {
   options: WebsiteOption[]
-  loadOptions: (
-    inputValue: string,
-    callback?: (options: WebsiteOption[]) => void
-  ) => Promise<void>
+  loadOptions: LoadOptions<
+    WebsiteOption,
+    WebsiteOption[],
+    Additional | undefined
+  >
 }
 
 /**
@@ -98,10 +100,11 @@ export function useWebsiteSelectOptions(
   const loadOptions = useCallback(
     async (
       inputValue: string,
-      callback?: (options: WebsiteOption[]) => void
+      loadedOptions: WebsiteOption[],
+      additional?: Additional
     ) => {
       const url = siteApiListingUrl
-        .query({ offset: 0 })
+        .query({ offset: loadedOptions.length })
         .param({ search: inputValue })
         .param(published !== undefined ? { published } : {})
         .toString()
@@ -113,7 +116,8 @@ export function useWebsiteSelectOptions(
       // if we're not operating in callback-mode then we can use a plain fetch
       // instead (which lets us sidestep an issue with debouncedFetch calls
       // running on component mount)
-      const response = callback ?
+      console.log("callback", additional?.callback)
+      const response = additional?.callback ?
         await debouncedFetch("website-collection", 300, url, {
           credentials: "include"
         }) :
@@ -121,16 +125,27 @@ export function useWebsiteSelectOptions(
 
       if (!response) {
         // this happens if this fetch was ignored in favor of a later fetch
-        return
+        return {
+          options: []
+        }
       }
       const json: WebsiteListingResponse = await response.json()
       const { results } = json
+      const paginationValues = {
+        hasMore:    Boolean(json.next),
+        additional: undefined
+      }
+
       const options = formatWebsiteOptions(results, valueField)
       setOptions(current =>
         uniqBy(option => option.value, [...current, ...options])
       )
-      if (callback) {
-        callback(options)
+      if (additional?.callback) {
+        additional.callback(options)
+      }
+      return {
+        options,
+        ...paginationValues
       }
     },
     [setOptions, valueField, published]
@@ -141,7 +156,7 @@ export function useWebsiteSelectOptions(
   useEffect(() => {
     let mounted = true
     if (mounted) {
-      loadOptions("")
+      loadOptions("", [], {})
     }
     return () => {
       mounted = false
