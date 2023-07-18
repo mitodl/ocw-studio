@@ -49,7 +49,7 @@ export default function SortableSelect(props: Props) {
    */
   const addItem = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
-      const content = event.target.value;
+      const content = event.target.value
       if (content) {
         onChange(value.map(item => item.id).concat(content))
       }
@@ -87,7 +87,7 @@ export default function SortableSelect(props: Props) {
   )
 
   const isOptionSelected = useCallback(
-    (option) => Boolean(value.find((item) => item.id === option.value)),
+    option => Boolean(value.find(item => item.id === option.value)),
     [value]
   )
 

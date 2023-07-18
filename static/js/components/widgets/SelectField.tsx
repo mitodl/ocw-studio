@@ -33,8 +33,8 @@ export default function SelectField(props: Props): JSX.Element {
     isOptionDisabled,
     isOptionSelected
   } = props
-  const [searchText, setSearchText] = useState("");
-  const [placeholder, setPlaceholder] = useState("");
+  const [searchText, setSearchText] = useState("")
+  const [placeholder, setPlaceholder] = useState("")
   const multiple = props.multiple ?? false
   const selectOptions = options.map(option =>
     typeof option === "string" ? { label: option, value: option } : option
@@ -78,34 +78,39 @@ export default function SelectField(props: Props): JSX.Element {
     selected = isNil(value) ? null : getSelectOption(value)
   }
 
-  const handleInputChanged = useCallback((input) => {
-    setSearchText(input)
-  }, [setSearchText])
+  const handleInputChanged = useCallback(
+    input => {
+      setSearchText(input)
+    },
+    [setSearchText]
+  )
 
   const handleMenuClosed = useCallback(
-    () => setPlaceholder(searchText)
-  , [setPlaceholder, searchText])
+    () => setPlaceholder(searchText),
+    [setPlaceholder, searchText]
+  )
 
   const handleFocus = useCallback(
-    () => setSearchText(placeholder ?? "")
-  , [setSearchText, placeholder])
-  
+    () => setSearchText(placeholder ?? ""),
+    [setSearchText, placeholder]
+  )
+
   const commonSelectOptions = {
-    className:   "w-100 form-input",
-    value:       selected,
-    isMulti:     multiple,
-    options:     selectOptions,
-    placeholder: placeholder || initialPlaceholder || null,
-    inputValue: searchText,
-    blurInputOnSelect: true,
+    className:           "w-100 form-input",
+    value:               selected,
+    isMulti:             multiple,
+    options:             selectOptions,
+    placeholder:         placeholder || initialPlaceholder || null,
+    inputValue:          searchText,
+    blurInputOnSelect:   true,
     hideSelectedOptions: true,
-    onChange:    changeHandler,
-    onInputChange: handleInputChanged,
-    onMenuClose: handleMenuClosed,
-    onFocus: handleFocus,
+    onChange:            changeHandler,
+    onInputChange:       handleInputChanged,
+    onMenuClose:         handleMenuClosed,
+    onFocus:             handleFocus,
     isOptionDisabled,
     isOptionSelected,
-    styles:      {
+    styles:              {
       control: (base: any) => ({
         ...base,
         border:    0,
