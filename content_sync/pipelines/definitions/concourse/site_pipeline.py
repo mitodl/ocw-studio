@@ -16,6 +16,7 @@ from ol_concourse.lib.resource_types import slack_notification_resource
 from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     WEBPACK_JSON_S3_IDENTIFIER,
+    WEBPACK_ARTIFACTS_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
@@ -61,7 +62,6 @@ class SitePipelineDefinition(Pipeline):
     online_site_job_identifier = Identifier("online-site-job")
     build_online_site_identifier = Identifier("build-online-site")
     upload_online_build_identifier = Identifier("upload-online-build")
-    build_artifacts_identifier = Identifier("build-artifacts")
     filter_webpack_artifacts_identifier = Identifier("filter-webpack-artifacts")
     offline_site_job_identifier = Identifier("offline-site-job")
     build_offline_site_identifier = Identifier("build-offline-site")
@@ -446,12 +446,12 @@ class SitePipelineDefinition(Pipeline):
                 platform="linux",
                 image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
                 inputs=[Input(name=WEBPACK_JSON_S3_IDENTIFIER)],
-                outputs=[Output(name=self.build_artifacts_identifier)],
+                outputs=[Output(name=WEBPACK_ARTIFACTS_IDENTIFIER)],
                 run=Command(
                     path="sh",
                     args=[
                         "-exc",
-                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_JSON_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{CLI_ENDPOINT_URL} cp s3://{self.web_bucket}{{}} ./{self.build_artifacts_identifier}/{{}} --exclude *.js.map",
+                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_JSON_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{CLI_ENDPOINT_URL} cp s3://{self.web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",
                     ],
                 ),
             ),
@@ -484,7 +484,7 @@ class SitePipelineDefinition(Pipeline):
         mv ./content/static_resources/*.mp4 ../videos
         fi
         touch ./content/static_resources/_index.md
-        cp -r ../{self.build_artifacts_identifier}/static_shared/. ./static/static_shared/
+        cp -r ../{WEBPACK_ARTIFACTS_IDENTIFIER}/static_shared/. ./static/static_shared/
         hugo {self.hugo_args_offline}
         """
         if not self.is_root_website:
@@ -526,7 +526,7 @@ class SitePipelineDefinition(Pipeline):
                     Input(name=SITE_CONTENT_GIT_IDENTIFIER),
                     Input(name=STATIC_RESOURCES_S3_IDENTIFIER),
                     Input(name=WEBPACK_JSON_S3_IDENTIFIER),
-                    Input(name=self.build_artifacts_identifier),
+                    Input(name=WEBPACK_ARTIFACTS_IDENTIFIER),
                 ],
                 outputs=[
                     Output(name=SITE_CONTENT_GIT_IDENTIFIER),
