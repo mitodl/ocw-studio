@@ -2,7 +2,7 @@ from django.conf import settings
 from ol_concourse.lib.models.pipeline import Identifier, Resource
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.pipelines.definitions.concourse.identifiers import (
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,

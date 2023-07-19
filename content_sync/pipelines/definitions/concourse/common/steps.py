@@ -13,14 +13,14 @@ from ol_concourse.lib.models.pipeline import (
     TryStep,
 )
 
-from content_sync.pipelines.definitions.concourse.identifiers import (
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
 )
-from content_sync.pipelines.definitions.concourse.image_resources import (
+from content_sync.pipelines.definitions.concourse.common.image_resources import (
     CURL_REGISTRY_IMAGE,
 )
-from content_sync.pipelines.definitions.concourse.resources import SlackAlertResource
+from content_sync.pipelines.definitions.concourse.common.resources import SlackAlertResource
 from main.utils import is_dev
 
 

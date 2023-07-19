@@ -14,22 +14,29 @@ from ol_concourse.lib.models.pipeline import (
 from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_ENDPOINT_URL
-from content_sync.pipelines.definitions.concourse.image_resources import (
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    WEBPACK_JSON_S3_IDENTIFIER,
+    OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+    SITE_CONTENT_GIT_IDENTIFIER,
+    STATIC_RESOURCES_S3_IDENTIFIER,
+)
+from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
-from content_sync.pipelines.definitions.concourse.resource_types import (
+from content_sync.pipelines.definitions.concourse.common.resource_types import (
     HttpResourceType,
     KeyvalResourceType,
     S3IamResourceType,
 )
-from content_sync.pipelines.definitions.concourse.resources import (
+from content_sync.pipelines.definitions.concourse.common.resources import (
     GitResource,
     OcwStudioWebhookResource,
     OpenDiscussionsResource,
     SlackAlertResource,
 )
-from content_sync.pipelines.definitions.concourse.steps import (
+from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
     GetStepWithErrorHandling,
     OcwStudioWebhookStep,
@@ -50,11 +57,6 @@ class SitePipelineDefinition(Pipeline):
     keyval_resource_type = KeyvalResourceType()
     s3_iam_resource_type = S3IamResourceType()
 
-    webpack_json_identifier = Identifier("webpack-json")
-    ocw_hugo_themes_identifier = Identifier("ocw-hugo-themes")
-    ocw_hugo_projects_identifier = Identifier("ocw-hugo-projects")
-    site_content_identifier = Identifier("site-content")
-    static_resources_identifier = Identifier("static-resources")
     offline_build_gate_identifier = Identifier("offline-build-gate")
     online_site_job_identifier = Identifier("online-site-job")
     build_online_site_identifier = Identifier("build-online-site")
@@ -162,12 +164,12 @@ class SitePipelineDefinition(Pipeline):
 
     def get_resources(self):
         webpack_json_resource = Resource(
-            name=self.webpack_json_identifier,
+            name=WEBPACK_JSON_S3_IDENTIFIER,
             type=self.s3_iam_resource_type.name,
             check_every="never",
             source={
                 "bucket": (self.artifacts_bucket or ""),
-                "versioned_file": f"{self.ocw_hugo_themes_identifier}/{self.ocw_hugo_themes_branch}/webpack.json",
+                "versioned_file": f"{OCW_HUGO_THEMES_GIT_IDENTIFIER}/{self.ocw_hugo_themes_branch}/webpack.json",
             },
         )
         if is_dev():
@@ -184,12 +186,12 @@ class SitePipelineDefinition(Pipeline):
             check_every="never",
         )
         ocw_hugo_themes_resource = GitResource(
-            name=self.ocw_hugo_themes_identifier,
+            name=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             uri=OCW_HUGO_THEMES_GIT,
             branch=self.ocw_hugo_projects_branch,
         )
         ocw_hugo_projects_resource = GitResource(
-            name=self.ocw_hugo_projects_identifier,
+            name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
             uri=self.ocw_hugo_projects_url,
             branch=self.ocw_hugo_projects_branch,
         )
@@ -204,7 +206,7 @@ class SitePipelineDefinition(Pipeline):
                 "uri"
             ] = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.site.short_id}.git"
         site_content_resource = Resource(
-            name=self.site_content_identifier,
+            name=SITE_CONTENT_GIT_IDENTIFIER,
             type="git",
             check_every="never",
             source=site_content_resource_source,
@@ -229,61 +231,61 @@ class SitePipelineDefinition(Pipeline):
 
     def get_base_tasks(self, offline: bool):
         webpack_json_get_step = GetStepWithErrorHandling(
-            get=self.webpack_json_identifier,
+            get=WEBPACK_JSON_S3_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
             pipeline_name=self.pipeline_name,
             site_name=self.site.name,
-            step_description=f"{self.webpack_json_identifier} get step",
+            step_description=f"{WEBPACK_JSON_S3_IDENTIFIER} get step",
         )
         ocw_hugo_themes_get_step = GetStepWithErrorHandling(
-            get=self.ocw_hugo_themes_identifier,
+            get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
             pipeline_name=self.pipeline_name,
             site_name=self.site.name,
-            step_description=f"{self.ocw_hugo_themes_identifier} get step",
+            step_description=f"{OCW_HUGO_THEMES_GIT_IDENTIFIER} get step",
         )
         ocw_hugo_projects_get_step = GetStepWithErrorHandling(
-            get=self.ocw_hugo_projects_identifier,
+            get=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
             pipeline_name=self.pipeline_name,
             site_name=self.site.name,
-            step_description=f"{self.ocw_hugo_projects_identifier} get step",
+            step_description=f"{OCW_HUGO_PROJECTS_GIT_IDENTIFIER} get step",
         )
         site_content_get_step = GetStepWithErrorHandling(
-            get=self.site_content_identifier,
+            get=SITE_CONTENT_GIT_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
             pipeline_name=self.pipeline_name,
             site_name=self.site.name,
-            step_description=f"{self.site_content_identifier} get step",
+            step_description=f"{SITE_CONTENT_GIT_IDENTIFIER} get step",
         )
         static_resources_step = TaskStepWithErrorHandling(
-            task=self.static_resources_identifier,
+            task=STATIC_RESOURCES_S3_IDENTIFIER,
             timeout="40m",
             attempts=3,
             params={},
             config=TaskConfig(
                 platform="linux",
                 image_resource=AWS_CLI_REGISTRY_IMAGE,
-                outputs=[Output(name=self.static_resources_identifier)],
+                outputs=[Output(name=STATIC_RESOURCES_S3_IDENTIFIER)],
                 run=Command(
                     path="sh",
                     args=[
                         "-exc",
-                        f"aws s3{CLI_ENDPOINT_URL} sync s3://{self.storage_bucket_name}/{self.site.s3_path} ./{self.static_resources_identifier}",
+                        f"aws s3{CLI_ENDPOINT_URL} sync s3://{self.storage_bucket_name}/{self.site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}",
                     ],
                 ),
             ),
             pipeline_name=self.pipeline_name,
             site_name=self.site.name,
-            step_description=f"{self.static_resources_identifier} s3 sync to container",
+            step_description=f"{STATIC_RESOURCES_S3_IDENTIFIER} s3 sync to container",
         )
         if is_dev():
             static_resources_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -330,25 +332,25 @@ class SitePipelineDefinition(Pipeline):
                 platform="linux",
                 image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
                 inputs=[
-                    Input(name=self.ocw_hugo_themes_identifier),
-                    Input(name=self.ocw_hugo_projects_identifier),
-                    Input(name=self.site_content_identifier),
-                    Input(name=self.static_resources_identifier),
-                    Input(name=self.webpack_json_identifier),
+                    Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
+                    Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
+                    Input(name=SITE_CONTENT_GIT_IDENTIFIER),
+                    Input(name=STATIC_RESOURCES_S3_IDENTIFIER),
+                    Input(name=WEBPACK_JSON_S3_IDENTIFIER),
                 ],
                 outputs=[
-                    Output(name=self.site_content_identifier),
-                    Output(name=self.ocw_hugo_themes_identifier),
+                    Output(name=SITE_CONTENT_GIT_IDENTIFIER),
+                    Output(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
                 ],
                 run=Command(
-                    dir=self.site_content_identifier,
+                    dir=SITE_CONTENT_GIT_IDENTIFIER,
                     path="sh",
                     args=[
                         "-exc",
                         f"""
-                        cp ../{self.webpack_json_identifier}/webpack.json ../{self.ocw_hugo_themes_identifier}/base-theme/data
+                        cp ../{WEBPACK_JSON_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
                         hugo {self.hugo_args_online}
-                        cp -r -n ../{self.static_resources_identifier}/. ./output-online{self.static_resources_subdirectory}
+                        cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{self.static_resources_subdirectory}
                         rm -rf ./output-online{self.static_resources_subdirectory}*.mp4
                         """,
                     ],
@@ -367,9 +369,9 @@ class SitePipelineDefinition(Pipeline):
                 "AWS_SECRET_ACCESS_KEY"
             ] = settings.AWS_SECRET_ACCESS_KEY
         if self.is_root_website:
-            online_sync_command = f"aws s3{CLI_ENDPOINT_URL} sync {self.site_content_identifier}/output-online s3://{self.web_bucket}/{self.base_url} --metadata site-id={self.site.name}{self.delete_flag}"
+            online_sync_command = f"aws s3{CLI_ENDPOINT_URL} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{self.web_bucket}/{self.base_url} --metadata site-id={self.site.name}{self.delete_flag}"
         else:
-            online_sync_command = f"aws s3{CLI_ENDPOINT_URL} sync {self.site_content_identifier}/output-online s3://{self.web_bucket}/{self.base_url} --exclude='{self.site.short_id}.zip' --exclude='{self.site.short_id}-video.zip' --metadata site-id={self.site.name}{self.delete_flag}"
+            online_sync_command = f"aws s3{CLI_ENDPOINT_URL} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{self.web_bucket}/{self.base_url} --exclude='{self.site.short_id}.zip' --exclude='{self.site.short_id}-video.zip' --metadata site-id={self.site.name}{self.delete_flag}"
         upload_online_build_step = TaskStepWithErrorHandling(
             task=self.upload_online_build_identifier,
             timeout="40m",
@@ -377,7 +379,7 @@ class SitePipelineDefinition(Pipeline):
             config=TaskConfig(
                 platform="linux",
                 image_resource=AWS_CLI_REGISTRY_IMAGE,
-                inputs=[Input(name=self.site_content_identifier)],
+                inputs=[Input(name=SITE_CONTENT_GIT_IDENTIFIER)],
                 run=Command(path="sh", args=["-exc", online_sync_command]),
             ),
             pipeline_name=self.pipeline_name,
@@ -443,13 +445,13 @@ class SitePipelineDefinition(Pipeline):
             config=TaskConfig(
                 platform="linux",
                 image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                inputs=[Input(name=self.webpack_json_identifier)],
+                inputs=[Input(name=WEBPACK_JSON_S3_IDENTIFIER)],
                 outputs=[Output(name=self.build_artifacts_identifier)],
                 run=Command(
                     path="sh",
                     args=[
                         "-exc",
-                        f"jq 'recurse | select(type==\"string\")' ./{self.webpack_json_identifier}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{CLI_ENDPOINT_URL} cp s3://{self.web_bucket}{{}} ./{self.build_artifacts_identifier}/{{}} --exclude *.js.map",
+                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_JSON_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{CLI_ENDPOINT_URL} cp s3://{self.web_bucket}{{}} ./{self.build_artifacts_identifier}/{{}} --exclude *.js.map",
                     ],
                 ),
             ),
@@ -465,12 +467,12 @@ class SitePipelineDefinition(Pipeline):
                 "AWS_SECRET_ACCESS_KEY"
             ] = settings.AWS_SECRET_ACCESS_KEY
         build_offline_site_command = f"""
-        cp ../{self.webpack_json_identifier}/webpack.json ../{self.ocw_hugo_themes_identifier}/base-theme/data
+        cp ../{WEBPACK_JSON_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
         mkdir -p ./content/static_resources
         mkdir -p ./static/static_resources
         mkdir -p ./static/static_shared
         mkdir -p ../videos
-        cp -r ../{self.static_resources_identifier}/. ./content/static_resources
+        cp -r ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./content/static_resources
         HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
         if [ $HTML_COUNT != 0 ];
         then
@@ -519,20 +521,20 @@ class SitePipelineDefinition(Pipeline):
                 platform="linux",
                 image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
                 inputs=[
-                    Input(name=self.ocw_hugo_themes_identifier),
-                    Input(name=self.ocw_hugo_projects_identifier),
-                    Input(name=self.site_content_identifier),
-                    Input(name=self.static_resources_identifier),
-                    Input(name=self.webpack_json_identifier),
+                    Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
+                    Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
+                    Input(name=SITE_CONTENT_GIT_IDENTIFIER),
+                    Input(name=STATIC_RESOURCES_S3_IDENTIFIER),
+                    Input(name=WEBPACK_JSON_S3_IDENTIFIER),
                     Input(name=self.build_artifacts_identifier),
                 ],
                 outputs=[
-                    Output(name=self.site_content_identifier),
-                    Output(name=self.ocw_hugo_themes_identifier),
+                    Output(name=SITE_CONTENT_GIT_IDENTIFIER),
+                    Output(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
                     Output(name=self.build_offline_site_identifier),
                 ],
                 run=Command(
-                    dir=self.site_content_identifier,
+                    dir=SITE_CONTENT_GIT_IDENTIFIER,
                     path="sh",
                     args=[
                         "-exc",
@@ -555,7 +557,7 @@ class SitePipelineDefinition(Pipeline):
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
         offline_sync_commands = [
-            f"aws s3{CLI_ENDPOINT_URL} sync {self.site_content_identifier}/output-offline/ s3://{self.offline_bucket}/{self.base_url} --metadata site-id={self.site.name}{self.delete_flag}"
+            f"aws s3{CLI_ENDPOINT_URL} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{self.offline_bucket}/{self.base_url} --metadata site-id={self.site.name}{self.delete_flag}"
         ]
         if not self.is_root_website:
             offline_sync_commands.append(
@@ -570,9 +572,9 @@ class SitePipelineDefinition(Pipeline):
                 platform="linux",
                 image_resource=AWS_CLI_REGISTRY_IMAGE,
                 inputs=[
-                    Input(name=self.site_content_identifier),
+                    Input(name=SITE_CONTENT_GIT_IDENTIFIER),
                     Input(name=self.build_offline_site_identifier),
-                    Input(name=self.ocw_hugo_projects_identifier),
+                    Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
                 ],
                 run=Command(path="sh", args=["-exc", offline_sync_command]),
             ),
