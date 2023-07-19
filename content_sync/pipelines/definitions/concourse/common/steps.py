@@ -28,6 +28,17 @@ from main.utils import is_dev
 def add_error_handling(
     step: Step, step_description: str, pipeline_name: str, instance_vars: str
 ):
+    """
+    Add error handling steps to any Step-like object
+
+    Args:
+        step(Step): The Step-like object to add the error handling steps to
+        step_description(str): A description of the step at which the failure occurred
+        instance_vars(str): A query string of the instance vars from the pipeline to build a URL with
+
+    Returns:
+        None
+    """
     concourse_base_url = settings.CONCOURSE_URL
     concourse_team = settings.CONCOURSE_TEAM
     concourse_path = f"/teams/{concourse_team}/pipelines/{pipeline_name}{instance_vars}"
@@ -66,6 +77,9 @@ def add_error_handling(
 
 
 class GetStepWithErrorHandling(GetStep):
+    """
+    Extends GetStep and adds error handling
+    """
     def __init__(
         self, step_description: str, pipeline_name: str, instance_vars: str, **kwargs
     ):
@@ -79,6 +93,9 @@ class GetStepWithErrorHandling(GetStep):
 
 
 class PutStepWithErrorHandling(PutStep):
+    """
+    Extends PutStep and adds error handling
+    """
     def __init__(
         self, step_description: str, pipeline_name: str, instance_vars: str, **kwargs
     ):
@@ -92,6 +109,9 @@ class PutStepWithErrorHandling(PutStep):
 
 
 class TaskStepWithErrorHandling(TaskStep):
+    """
+    Extends TaskStep and adds error handling
+    """
     def __init__(
         self, step_description: str, pipeline_name: str, instance_vars: str, **kwargs
     ):
@@ -105,6 +125,13 @@ class TaskStepWithErrorHandling(TaskStep):
 
 
 class SlackAlertStep(TryStep):
+    """
+    A PutStep to concourse-slack-alert-resource wrapped in a TryStep
+
+    Args:
+        alert_type(str): The alert type (started, success, failed, aborted, errored)
+        text(str): The text to display inside the alert
+    """
     def __init__(self, alert_type: str, text: str, **kwargs):
         super().__init__(
             try_=DoStep(
@@ -121,6 +148,15 @@ class SlackAlertStep(TryStep):
 
 
 class ClearCdnCacheStep(TaskStep):
+    """
+    A TaskStep using the curlimages/curl Docker image that sends an
+    API request to Fastly to clear the cache for a given URL
+
+    Args:
+        name(str): The name to use as the Identifier for the task argument
+        fastly_var(str): The name of the var to pull Fastly properties from
+        purge_url(str): The URL to purge from the cache
+    """
     def __init__(self, name: str, fastly_var: str, purge_url: str, **kwargs):
         curl_args = [
             "-f",
@@ -148,6 +184,13 @@ class ClearCdnCacheStep(TaskStep):
 
 
 class OcwStudioWebhookStep(TryStep):
+    """
+    A PutStep to the ocw-studio api resource that sets a status on a given pipeline
+
+    Args:
+        pipeline_name(str): The name of the pipeline to set the status on
+        status: (str): The status to set on the pipeline (failed, errored, succeeded)
+    """
     def __init__(self, pipeline_name: str, status: str, **kwargs):
         super().__init__(
             try_=PutStep(
@@ -163,6 +206,13 @@ class OcwStudioWebhookStep(TryStep):
 
 
 class OpenDiscussionsWebhookStep(TryStep):
+    """
+    A PutStep to the open-discussions api resource that refreshes the search index for a given site_url and version
+
+    Args:
+        site_url(str): The url path of the site
+        pipeline_name(str): The pipeline name to use as the version (draft / live)
+    """
     def __init__(self, site_url: str, pipeline_name: str, **kwargs):
         super().__init__(
             try_=PutStep(
