@@ -13,21 +13,22 @@ from ol_concourse.lib.models.pipeline import (
 from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_ENDPOINT_URL
-from content_sync.pipelines.definitions.concourse.image_resources import (
+from content_sync.pipelines.definitions.concourse.common.identifiers import OCW_HUGO_THEMES_GIT_IDENTIFIER
+from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
-from content_sync.pipelines.definitions.concourse.resource_types import (
+from content_sync.pipelines.definitions.concourse.common.resource_types import (
     HttpResourceType,
     KeyvalResourceType,
     S3IamResourceType,
 )
-from content_sync.pipelines.definitions.concourse.resources import (
+from content_sync.pipelines.definitions.concourse.common.resources import (
     GitResource,
     OpenDiscussionsResource,
     SlackAlertResource,
 )
-from content_sync.pipelines.definitions.concourse.steps import (
+from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
     SlackAlertStep,
 )
@@ -43,12 +44,11 @@ class ThemeAssetsPipelineDefinition(Pipeline):
     keyval_resource_type = KeyvalResourceType()
     s3_iam_resource_type = S3IamResourceType()
 
-    build_theme_assets_job_identifier = Identifier("build-theme-assets")
-    ocw_hugo_themes_identifier = Identifier("ocw-hugo-themes")
-    build_ocw_hugo_themes_identifier = Identifier("build-ocw-hugo-themes")
-    copy_s3_buckets_identifier = Identifier("copy-s3-buckets")
-    clear_cdn_cache_draft_identifier = Identifier("clear-cdn-cache-draft")
-    clear_cdn_cache_live_identifier = Identifier("clear-cdn-cache-live")
+    build_theme_assets_job_identifier = Identifier("build-theme-assets-job")
+    build_ocw_hugo_themes_identifier = Identifier("build-ocw-hugo-themes-task")
+    upload_theme_assets_task = Identifier("upload-theme-assets-task")
+    clear_draft_cdn_cache_task_identifier = Identifier("clear-draft-cdn-cache-task")
+    clear_cdn_cache_live_identifier = Identifier("clear-live-cdn-cache-task")
 
     open_discussions_resource = OpenDiscussionsResource()
     slack_resource = SlackAlertResource()
@@ -67,7 +67,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         base = super()
         base.__init__(**kwargs)
         ocw_hugo_themes_resource = GitResource(
-            name=self.ocw_hugo_themes_identifier,
+            name=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             uri=OCW_HUGO_THEMES_GIT,
             branch=ocw_hugo_themes_branch,
         )
@@ -75,7 +75,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         resources = [ocw_hugo_themes_resource]
         tasks = [
             GetStep(
-                get=self.ocw_hugo_themes_identifier,
+                get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
                 trigger=(not is_dev()),
             ),
             TaskStep(
@@ -83,8 +83,8 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                 config=TaskConfig(
                     platform="linux",
                     image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                    inputs=[Input(name=self.ocw_hugo_themes_identifier)],
-                    outputs=[Output(name=self.ocw_hugo_themes_identifier)],
+                    inputs=[Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER)],
+                    outputs=[Output(name=OCW_HUGO_THEMES_GIT_IDENTIFIER)],
                     params={
                         "SEARCH_API_URL": settings.SEARCH_API_URL,
                         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
@@ -111,7 +111,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                 config=TaskConfig(
                     platform="linux",
                     image_resource=AWS_CLI_REGISTRY_IMAGE,
-                    inputs=[Input(name=self.ocw_hugo_themes_identifier)],
+                    inputs=[Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER)],
                     params=(
                         {}
                         if not is_dev()
