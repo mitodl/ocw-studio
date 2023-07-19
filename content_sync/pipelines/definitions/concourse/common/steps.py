@@ -108,7 +108,7 @@ class TaskStepWithErrorHandling(TaskStep):
 
 class SlackAlertStep(TryStep):
     def __init__(
-        self, slack_alert_resource: SlackAlertResource, alert_type: str, text: str
+        self, slack_alert_resource: SlackAlertResource, alert_type: str, text: str, **kwargs
     ):
         super().__init__(
             try_=DoStep(
@@ -119,12 +119,13 @@ class SlackAlertStep(TryStep):
                         params={"alert_type": alert_type, "text": text},
                     )
                 ]
-            )
+            ),
+            **kwargs
         )
 
 
 class ClearCdnCacheStep(TaskStep):
-    def __init__(self, name: str, fastly_var: str, purge_url: str):
+    def __init__(self, name: str, fastly_var: str, purge_url: str, **kwargs):
         super().__init__(
             task=Identifier(name),
             timeout="5m",
@@ -144,11 +145,12 @@ class ClearCdnCacheStep(TaskStep):
                     ],
                 ),
             ),
+            **kwargs
         )
 
 
 class OcwStudioWebhookStep(TryStep):
-    def __init__(self, pipeline_name: str, status: str):
+    def __init__(self, pipeline_name: str, status: str, **kwargs):
         super().__init__(
             try_=PutStep(
                 put=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
@@ -157,12 +159,13 @@ class OcwStudioWebhookStep(TryStep):
                 params={
                     "text": json.dumps({"version": pipeline_name, "status": status})
                 },
-            )
+            ),
+            **kwargs
         )
 
 
 class OpenDiscussionsWebhookStep(TryStep):
-    def __init__(self, site_url: str, pipeline_name: str):
+    def __init__(self, site_url: str, pipeline_name: str, **kwargs):
         super().__init__(
             try_=PutStep(
                 put=OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
@@ -177,5 +180,6 @@ class OpenDiscussionsWebhookStep(TryStep):
                         }
                     )
                 },
-            )
+            ),
+            **kwargs
         )
