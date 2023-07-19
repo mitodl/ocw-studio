@@ -163,7 +163,7 @@ class SitePipelineDefinition(Pipeline):
         return resource_types
 
     def get_resources(self):
-        webpack_json_resource = Resource(
+        webpack_manifest_resource = Resource(
             name=WEBPACK_MANIFEST_S3_IDENTIFIER,
             type=self.s3_iam_resource_type.name,
             check_every="never",
@@ -173,7 +173,7 @@ class SitePipelineDefinition(Pipeline):
             },
         )
         if is_dev():
-            webpack_json_resource.source.update(
+            webpack_manifest_resource.source.update(
                 {
                     "endpoint": DEV_ENDPOINT_URL,
                     "access_key_id": (settings.AWS_ACCESS_KEY_ID or ""),
@@ -217,7 +217,7 @@ class SitePipelineDefinition(Pipeline):
             api_token=settings.API_BEARER_TOKEN or "",
         )
         resources = [
-            webpack_json_resource,
+            webpack_manifest_resource,
             offline_build_gate_resource,
             site_content_resource,
             ocw_hugo_themes_resource,
@@ -230,7 +230,7 @@ class SitePipelineDefinition(Pipeline):
         return resources
 
     def get_base_tasks(self, offline: bool):
-        webpack_json_get_step = GetStepWithErrorHandling(
+        webpack_manifest_get_step = GetStepWithErrorHandling(
             get=WEBPACK_MANIFEST_S3_IDENTIFIER,
             trigger=False,
             timeout="5m",
@@ -296,7 +296,7 @@ class SitePipelineDefinition(Pipeline):
             )
         tasks = []
         get_steps = [
-            webpack_json_get_step,
+            webpack_manifest_get_step,
             ocw_hugo_themes_get_step,
             ocw_hugo_projects_get_step,
             site_content_get_step,
