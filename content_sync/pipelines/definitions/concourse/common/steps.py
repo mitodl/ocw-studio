@@ -25,13 +25,6 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
 from main.utils import is_dev
 
 
-PURGE_HEADER = (
-    ""
-    if settings.CONCOURSE_HARD_PURGE
-    else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
-)
-
-
 def add_error_handling(
     step: Step, step_description: str, pipeline_name: str, instance_vars: str
 ):
@@ -129,6 +122,18 @@ class SlackAlertStep(TryStep):
 
 class ClearCdnCacheStep(TaskStep):
     def __init__(self, name: str, fastly_var: str, purge_url: str, **kwargs):
+        curl_args = [
+            "-f",
+            "-X",
+            "POST",
+            "-H",
+            f"Fastly-Key: '(({fastly_var}.api_token))'",
+        ]
+        if settings.CONCOURSE_HARD_PURGE:
+            curl_args.extend(["-H", "'Fastly-Soft-Purge: 1'"])
+        curl_args.append(
+            f"https://api.fastly.com/service/(({fastly_var}.service_id))/{purge_url}"
+        )
         super().__init__(
             task=Identifier(name),
             timeout="5m",
@@ -136,17 +141,7 @@ class ClearCdnCacheStep(TaskStep):
             config=TaskConfig(
                 platform="linux",
                 image_resource=CURL_REGISTRY_IMAGE,
-                run=Command(
-                    path="sh",
-                    args=[
-                        "-f",
-                        "-X",
-                        "POST",
-                        "-H",
-                        f"Fastly-Key: (({fastly_var}.api_token))'{PURGE_HEADER}",
-                        f"https://api.fastly.com/service/(({fastly_var}.service_id))/{purge_url}",
-                    ],
-                ),
+                run=Command(path="sh", args=curl_args),
             ),
             **kwargs,
         )
