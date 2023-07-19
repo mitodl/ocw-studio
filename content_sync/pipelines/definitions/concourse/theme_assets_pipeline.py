@@ -48,7 +48,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
 
     build_theme_assets_job_identifier = Identifier("build-theme-assets-job")
     build_ocw_hugo_themes_identifier = Identifier("build-ocw-hugo-themes-task")
-    upload_theme_assets_task = Identifier("upload-theme-assets-task")
+    upload_theme_assets_task_identifier = Identifier("upload-theme-assets-task")
     clear_draft_cdn_cache_task_identifier = Identifier("clear-draft-cdn-cache-task")
     clear_cdn_cache_live_identifier = Identifier("clear-live-cdn-cache-task")
 
@@ -107,7 +107,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                 ),
             ),
             TaskStep(
-                task=self.copy_s3_buckets_identifier,
+                task=self.upload_theme_assets_task_identifier,
                 timeout="20m",
                 attempts=3,
                 config=TaskConfig(
