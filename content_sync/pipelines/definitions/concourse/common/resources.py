@@ -11,6 +11,11 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 
 
 class SlackAlertResource(Resource):
+    """
+    A Resource using the version of concourse-slack-notification specified by ol-concourse
+
+    It sends messages to a Slack channel
+    """
     def __init__(self, **kwargs):
         super().__init__(
             name=SLACK_ALERT_RESOURCE_IDENTIFIER,
@@ -23,6 +28,9 @@ class SlackAlertResource(Resource):
 
 
 class OpenDiscussionsResource(Resource):
+    """
+    A Resource that uses the http-resource ResourceType to trigger API calls to open-discussions
+    """
     def __init__(self, **kwargs):
         super().__init__(
             name=OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
@@ -42,6 +50,9 @@ class OpenDiscussionsResource(Resource):
 
 
 class GitResource(Resource):
+    """
+    A Resource for interacting with git repositories
+    """
     def __init__(self, name: Identifier, uri: str, branch: str, **kwagrs):
         super().__init__(
             name=name, icon="git", type="git", source={"uri": uri, "branch": branch}, **kwagrs
@@ -49,6 +60,14 @@ class GitResource(Resource):
 
 
 class OcwStudioWebhookResource(Resource):
+    """
+    A Resource for making API calls ocw-studio to set a Website's status
+
+    args:
+        ocw_studio_url(str): The URL to the instance of ocw-studio to POST to
+        site_name(str): The name of the site the status is in reference to
+        api_token(str): The ocw-studio API token
+    """
     def __init__(self, ocw_studio_url: str, site_name: str, api_token: str, **kwargs):
         super().__init__(
             name=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
