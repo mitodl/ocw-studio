@@ -15,7 +15,7 @@ from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
-    WEBPACK_JSON_S3_IDENTIFIER,
+    WEBPACK_MANIFEST_S3_IDENTIFIER,
     WEBPACK_ARTIFACTS_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
@@ -164,7 +164,7 @@ class SitePipelineDefinition(Pipeline):
 
     def get_resources(self):
         webpack_json_resource = Resource(
-            name=WEBPACK_JSON_S3_IDENTIFIER,
+            name=WEBPACK_MANIFEST_S3_IDENTIFIER,
             type=self.s3_iam_resource_type.name,
             check_every="never",
             source={
@@ -231,13 +231,13 @@ class SitePipelineDefinition(Pipeline):
 
     def get_base_tasks(self, offline: bool):
         webpack_json_get_step = GetStepWithErrorHandling(
-            get=WEBPACK_JSON_S3_IDENTIFIER,
+            get=WEBPACK_MANIFEST_S3_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
             pipeline_name=self.pipeline_name,
             site_name=self.site.name,
-            step_description=f"{WEBPACK_JSON_S3_IDENTIFIER} get step",
+            step_description=f"{WEBPACK_MANIFEST_S3_IDENTIFIER} get step",
         )
         ocw_hugo_themes_get_step = GetStepWithErrorHandling(
             get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -336,7 +336,7 @@ class SitePipelineDefinition(Pipeline):
                     Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
                     Input(name=SITE_CONTENT_GIT_IDENTIFIER),
                     Input(name=STATIC_RESOURCES_S3_IDENTIFIER),
-                    Input(name=WEBPACK_JSON_S3_IDENTIFIER),
+                    Input(name=WEBPACK_MANIFEST_S3_IDENTIFIER),
                 ],
                 outputs=[
                     Output(name=SITE_CONTENT_GIT_IDENTIFIER),
@@ -348,7 +348,7 @@ class SitePipelineDefinition(Pipeline):
                     args=[
                         "-exc",
                         f"""
-                        cp ../{WEBPACK_JSON_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
+                        cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
                         hugo {self.hugo_args_online}
                         cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{self.static_resources_subdirectory}
                         rm -rf ./output-online{self.static_resources_subdirectory}*.mp4
@@ -445,13 +445,13 @@ class SitePipelineDefinition(Pipeline):
             config=TaskConfig(
                 platform="linux",
                 image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                inputs=[Input(name=WEBPACK_JSON_S3_IDENTIFIER)],
+                inputs=[Input(name=WEBPACK_MANIFEST_S3_IDENTIFIER)],
                 outputs=[Output(name=WEBPACK_ARTIFACTS_IDENTIFIER)],
                 run=Command(
                     path="sh",
                     args=[
                         "-exc",
-                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_JSON_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{CLI_ENDPOINT_URL} cp s3://{self.web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",
+                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{CLI_ENDPOINT_URL} cp s3://{self.web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",
                     ],
                 ),
             ),
@@ -467,7 +467,7 @@ class SitePipelineDefinition(Pipeline):
                 "AWS_SECRET_ACCESS_KEY"
             ] = settings.AWS_SECRET_ACCESS_KEY
         build_offline_site_command = f"""
-        cp ../{WEBPACK_JSON_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
+        cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
         mkdir -p ./content/static_resources
         mkdir -p ./static/static_resources
         mkdir -p ./static/static_shared
@@ -525,7 +525,7 @@ class SitePipelineDefinition(Pipeline):
                     Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
                     Input(name=SITE_CONTENT_GIT_IDENTIFIER),
                     Input(name=STATIC_RESOURCES_S3_IDENTIFIER),
-                    Input(name=WEBPACK_JSON_S3_IDENTIFIER),
+                    Input(name=WEBPACK_MANIFEST_S3_IDENTIFIER),
                     Input(name=WEBPACK_ARTIFACTS_IDENTIFIER),
                 ],
                 outputs=[
