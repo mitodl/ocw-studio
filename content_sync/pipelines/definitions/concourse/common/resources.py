@@ -14,6 +14,7 @@ class SlackAlertResource(Resource):
     def __init__(self, **kwargs):
         super().__init__(
             name=SLACK_ALERT_RESOURCE_IDENTIFIER,
+            icon="slack",
             type=slack_notification_resource().name,
             check_every="never",
             source={"url": "((slack-url))", "disabled": "false"},
@@ -25,6 +26,7 @@ class OpenDiscussionsResource(Resource):
     def __init__(self, **kwargs):
         super().__init__(
             name=OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
+            icon="cloud-search",
             type=HTTP_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",
             source={
@@ -42,7 +44,7 @@ class OpenDiscussionsResource(Resource):
 class GitResource(Resource):
     def __init__(self, name: Identifier, uri: str, branch: str, **kwagrs):
         super().__init__(
-            name=name, type="git", source={"uri": uri, "branch": branch}, **kwagrs
+            name=name, icon="git", type="git", source={"uri": uri, "branch": branch}, **kwagrs
         )
 
 
@@ -50,6 +52,7 @@ class OcwStudioWebhookResource(Resource):
     def __init__(self, ocw_studio_url: str, site_name: str, api_token: str, **kwargs):
         super().__init__(
             name=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
+            icon="language-python",
             type=HTTP_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",
             source={
