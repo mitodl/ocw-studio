@@ -18,9 +18,19 @@ RUN adduser --disabled-password --gecos "" mitodl
 RUN mkdir /var/media && chown -R mitodl:mitodl /var/media
 
 # Install project packages
-COPY requirements.txt /tmp/requirements.txt
-COPY test_requirements.txt /tmp/test_requirements.txt
-RUN pip install -r requirements.txt -r test_requirements.txt
+ENV  \
+  # poetry:
+  POETRY_VERSION=1.5.1 \
+  POETRY_VIRTUALENVS_CREATE=false \
+  POETRY_CACHE_DIR='/tmp/cache/poetry' \
+  POETRY_HOME='/usr/local/bin/poetry' 
+
+# Install poetry & dependencies
+RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=${POETRY_VERSION} python3 -
+ENV PATH="$PATH:$POETRY_HOME/venv/bin"
+COPY pyproject.toml poetry.lock /src/
+WORKDIR /src
+RUN poetry install
 
 # Add project
 COPY . /src

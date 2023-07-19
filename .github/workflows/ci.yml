@@ -45,20 +45,24 @@ jobs:
       - name: Apt install
         run: cat Aptfile | sudo xargs apt-get install
 
+      - name: Install poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.5.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10.12"
-          cache: 'pip'
-          cache-dependency-path: |
-            **/requirements.txt
-            **/test_requirements.txt
+          cache: 'poetry'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt -r test_requirements.txt
+        run: poetry install --no-interaction
 
       - name: Lint
-        run: pylint ./**/*.py
+        run: poetry run pylint ./**/*.py
         env:
           DJANGO_SETTINGS_MODULE: "main.settings"
           PYTHONPATH: "."
@@ -69,10 +73,10 @@ jobs:
           SECRET_KEY: "secret"  # pragma: allowlist secret
 
       - name: Black
-        run: black --check .
+        run: poetry run black --check .
 
       - name: Import sorting (isort)
-        run: isort -c .
+        run: poetry run isort -c .
 
       # Configurations required for elasticsearch.
       - name: Configure sysctl limits
@@ -92,7 +96,7 @@ jobs:
           export MEDIA_ROOT="$(mktemp -d)"
           sudo mkdir /var/media
           sudo chown -R $USER:$USER /var/media
-          ./scripts/test/python_tests.sh
+          poetry run ./scripts/test/python_tests.sh
         env:
           OCW_STUDIO_DB_DISABLE_SSL: 'True'
           OCW_STUDIO_SECURE_SSL_REDIRECT: 'False'
