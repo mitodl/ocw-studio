@@ -55,6 +55,12 @@ from content_sync.pipelines.base import (
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
 )
+from content_sync.pipelines.definitions.concourse.site_pipeline import (
+    SitePipelineDefinition,
+)
+from content_sync.pipelines.definitions.concourse.theme_assets_pipeline import (
+    ThemeAssetsPipelineDefinition,
+)
 from content_sync.utils import (
     check_mandatory_settings,
     get_hugo_arg_string,
@@ -78,255 +84,6 @@ MANDATORY_CONCOURSE_SETTINGS = [
     "CONCOURSE_USERNAME",
     "CONCOURSE_PASSWORD",
 ]
-
-
-PURGE_HEADER = (
-    ""
-    if settings.CONCOURSE_HARD_PURGE
-    else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
-)
-
-# Identifiers
-
-OCW_STUDIO_WEBHOOK_IDENTIFIER = Identifier("ocw-studio-webhook")
-
-# Resource Types
-
-HTTP_RESOURCE_TYPE = ResourceType(
-    name=Identifier("http-resource"),
-    type=REGISTRY_IMAGE,
-    source={"repository": "jgriff/http-resource", "tag": "latest"},
-)
-
-KEYVAL_RESOURCE_TYPE = ResourceType(
-    name=Identifier("keyval"),
-    type=REGISTRY_IMAGE,
-    source={"repository": "ghcr.io/cludden/concourse-keyval-resource", "tag": "latest"},
-)
-
-S3_IAM_RESOURCE_TYPE = ResourceType(
-    name=Identifier("s3-resource-iam"),
-    type=REGISTRY_IMAGE,
-    source={"repository": "governmentpaas/s3-resource", "tag": "latest"},
-)
-
-# Image Resources
-
-OCW_COURSE_PUBLISHER_REGISTRY_IMAGE = AnonymousResource(
-    type=REGISTRY_IMAGE,
-    source=RegistryImage(repository="mitodl/ocw-course-publisher", tag="0.6"),
-)
-
-AWS_CLI_REGISTRY_IMAGE = AnonymousResource(
-    type=REGISTRY_IMAGE, source=RegistryImage(repository="amazon/aws-cli", tag="latest")
-)
-
-CURL_REGISTRY_IMAGE = AnonymousResource(
-    type=REGISTRY_IMAGE, source=RegistryImage(repository="curlimages/curl")
-)
-
-# Static Resources
-
-SLACK_ALERT_RESOURCE = Resource(
-    name=Identifier("slack-alert"),
-    type=slack_notification_resource.__name__,
-    check_every="never",
-    source={"url": "((slack-url))", "disabled": "false"},
-)
-
-OPEN_DISCUSSIONS_RESOURCE = Resource(
-    name=Identifier("open-discussions-webhook"),
-    type=HTTP_RESOURCE_TYPE.name,
-    check_every="never",
-    source={
-        "url": f"{settings.OPEN_DISCUSSIONS_URL}/api/v0/ocw_next_webhook/",
-        "method": "POST",
-        "out_only": True,
-        "headers": {
-            "Content-Type": "application/json",
-        },
-    },
-)
-
-# Resource Generators
-
-
-class GitResource(Resource):
-    def __init__(self, name: Identifier, uri: str, branch: str):
-        super().__init__(
-            name=name,
-            type="git",
-            source={"uri": uri, "branch": branch},
-        )
-
-
-class OcwStudioWebhookResource(Resource):
-    def __init__(self, ocw_studio_url: str, site_name: str, api_token: str):
-        super().__init__(
-            name=OCW_STUDIO_WEBHOOK_IDENTIFIER,
-            type=HTTP_RESOURCE_TYPE.name,
-            check_every="never",
-            source={
-                "url": f"{ocw_studio_url}/api/websites/{site_name}/pipeline_status/",
-                "method": "POST",
-                "out_only": True,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {api_token}",
-                },
-            },
-        )
-
-
-# Step Generators
-
-
-def add_error_handling(
-    step: Step, pipeline_name: str, site_name: str, step_description: str
-):
-    on_failure_steps = [
-        OcwStudioWebhookStep(pipeline_name=pipeline_name, status="failed")
-    ]
-    on_error_steps = [
-        OcwStudioWebhookStep(pipeline_name=pipeline_name, status="errored")
-    ]
-    on_abort_steps = [
-        OcwStudioWebhookStep(pipeline_name=pipeline_name, status="errored")
-    ]
-    if not is_dev():
-        on_failure_steps.append(
-            SlackAlertStep(
-                alert_type="failed",
-                text=f"Failed - {step_description} : {pipeline_name}/{site_name}",
-            )
-        )
-        on_error_steps.append(
-            SlackAlertStep(
-                alert_type="errored",
-                text=f"Concourse system error - {step_description} : {pipeline_name}/{site_name}",
-            )
-        )
-        on_abort_steps.append(
-            SlackAlertStep(
-                alert_type="errored",
-                text=f"Concourse system error - {step_description} : {pipeline_name}/{site_name}",
-            )
-        )
-    step.on_failure = TryStep(try_=DoStep(do=on_failure_steps))
-    step.on_error = TryStep(try_=DoStep(do=on_error_steps))
-    step.on_abort = TryStep(try_=DoStep(do=on_abort_steps))
-
-
-class GetStepWithErrorHandling(GetStep):
-    def __init__(
-        self, pipeline_name: str, site_name: str, step_description: str, **kwargs
-    ):
-        super().__init__(**kwargs)
-        add_error_handling(
-            self,
-            pipeline_name=pipeline_name,
-            site_name=site_name,
-            step_description=step_description,
-        )
-
-
-class PutStepWithErrorHandling(PutStep):
-    def __init__(
-        self, pipeline_name: str, site_name: str, step_description: str, **kwargs
-    ):
-        super().__init__(**kwargs)
-        add_error_handling(
-            self,
-            pipeline_name=pipeline_name,
-            site_name=site_name,
-            step_description=step_description,
-        )
-
-
-class TaskStepWithErrorHandling(TaskStep):
-    def __init__(
-        self, pipeline_name: str, site_name: str, step_description: str, **kwargs
-    ):
-        super().__init__(**kwargs)
-        add_error_handling(
-            self,
-            pipeline_name=pipeline_name,
-            site_name=site_name,
-            step_description=step_description,
-        )
-
-
-class SlackAlertStep(TryStep):
-    def __init__(self, alert_type: str, text: str):
-        super().__init__(
-            try_=DoStep(
-                do=[
-                    PutStep(
-                        put=SLACK_ALERT_RESOURCE.name,
-                        timeout="1m",
-                        params={"alert_type": alert_type, "text": text},
-                    )
-                ]
-            )
-        )
-
-
-class ClearCdnCacheStep(TaskStep):
-    def __init__(self, name: str, fastly_var: str, purge_url: str):
-        super().__init__(
-            task=Identifier(name),
-            timeout="5m",
-            attempts=3,
-            config=TaskConfig(
-                platform="linux",
-                image_resource=CURL_REGISTRY_IMAGE,
-                run=Command(
-                    path="sh",
-                    args=[
-                        "-f",
-                        "-X",
-                        "POST",
-                        "-H",
-                        f"Fastly-Key: (({fastly_var}.api_token))'{PURGE_HEADER}",
-                        f"https://api.fastly.com/service/(({fastly_var}.service_id))/{purge_url}",
-                    ],
-                ),
-            ),
-        )
-
-
-class OcwStudioWebhookStep(TryStep):
-    def __init__(self, pipeline_name: str, status: str):
-        super().__init__(
-            try_=PutStep(
-                put=OCW_STUDIO_WEBHOOK_IDENTIFIER,
-                timeout="1m",
-                attempts=3,
-                params={
-                    "text": json.dumps({"version": pipeline_name, "status": status})
-                },
-            )
-        )
-
-
-class OpenDiscussionsWebhookStep(TryStep):
-    def __init__(self, site_url: str, pipeline_name: str):
-        super().__init__(
-            try_=PutStep(
-                put=OPEN_DISCUSSIONS_RESOURCE.name,
-                timeout="1m",
-                attempts=3,
-                params={
-                    "text": json.dumps(
-                        {
-                            "webhook_key": settings.OCW_NEXT_SEARCH_WEBHOOK_KEY,
-                            "prefix": f"{site_url}/",
-                            "version": pipeline_name,
-                        }
-                    )
-                },
-            )
-        )
 
 
 class PipelineApi(Api, BasePipelineApi):
@@ -625,113 +382,15 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
         """Upsert the theme assets pipeline"""
         template_vars = get_template_vars()
 
-        ocw_hugo_themes_resource = GitResource(
-            name="ocw-hugo-themes", uri=OCW_HUGO_THEMES_GIT, branch=self.BRANCH
+        pipeline_definition = ThemeAssetsPipelineDefinition(
+            artifacts_bucket=template_vars["artifacts_bucket_name"],
+            preview_bucket=template_vars["preview_bucket_name"],
+            publish_bucket=template_vars["publish_bucket_name"],
+            ocw_hugo_themes_branch=self.BRANCH,
         )
-        cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
-        resource_types = []
-        resources = [ocw_hugo_themes_resource]
-        tasks = [
-            GetStep(get=ocw_hugo_themes_resource.name, trigger=(not is_dev())),
-            TaskStep(
-                task=Identifier("build-ocw-hugo-themes"),
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                    inputs=[Input(name=ocw_hugo_themes_resource.name)],
-                    outputs=[Output(name=ocw_hugo_themes_resource.name)],
-                    params={
-                        "SEARCH_API_URL": settings.SEARCH_API_URL,
-                        "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
-                        "SENTRY_ENV": settings.ENVIRONMENT or "",
-                    },
-                    run=Command(
-                        path="sh",
-                        args=[
-                            "-exc",
-                            """
-                            cd ocw-hugo-themes
-                            yarn install --immutable
-                            npm run build:webpack
-                            npm run build:githash
-                            """,
-                        ],
-                    ),
-                ),
-            ),
-            TaskStep(
-                task=Identifier("copy-s3-buckets"),
-                timeout="20m",
-                attempts=3,
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=AWS_CLI_REGISTRY_IMAGE,
-                    inputs=[Input(name=ocw_hugo_themes_resource.name)],
-                    params=(
-                        {}
-                        if not is_dev()
-                        else {
-                            "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID or "",
-                            "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY
-                            or "",
-                        }
-                    ),
-                    run=Command(
-                        path="sh",
-                        args=[
-                            "-exc",
-                            f"""
-                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/dist s3://{template_vars["preview_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/dist s3://{template_vars["publish_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/static s3://{template_vars["preview_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/static s3://{template_vars["publish_bucket_name"]} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{cli_endpoint_url} cp ocw-hugo-themes/base-theme/data/webpack.json s3://{template_vars["artifacts_bucket_name"]}/ocw-hugo-themes/{self.BRANCH}/webpack.json --metadata site-id=ocw-hugo-themes
-                            """,
-                        ],
-                    ),
-                ),
-            ),
-        ]
-        job = Job(name="build-theme-assets", serial=True)
-        if not is_dev():
-            resource_types.append(slack_notification_resource)
-            resources.append(SLACK_ALERT_RESOURCE)
-            tasks.append(
-                ClearCdnCacheStep(
-                    name="clear-cdn-cache-draft",
-                    fastly_var="fastly_draft",
-                    purge_url="purge/ocw-hugo-themes",
-                )
-            )
-            tasks.append(
-                ClearCdnCacheStep(
-                    name="clear-cdn-cache-live",
-                    fastly_var="fastly_live",
-                    purge_url="purge/ocw-hugo-themes",
-                )
-            )
-            job.on_failure = SlackAlertStep(
-                alert_type="failed",
-                text=f"""
-                Failed to build theme assets.
-
-                Append `{self.instance_vars}` to the url below for more details.
-                """,
-            )
-            job.on_abort = SlackAlertStep(
-                alert_type="aborted",
-                text=f"""
-                User aborted while building theme assets.
-
-                Append `{self.instance_vars}` to the url below for more details.
-                """,
-            )
-
-        job.plan = tasks
-        pipeline = Pipeline(
-            resource_types=resource_types, resources=resources, jobs=[job]
-        )
-        config_str = pipeline.json(indent=2)
+        config_str = pipeline_definition.json(indent=2)
+        # TODO: remove this workaround once try_ is rendered as try
+        config_str = config_str.replace('"try_":', '"try":')
         self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
@@ -797,11 +456,10 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             base_url = self.WEBSITE.get_url_path()
             static_resources_subdirectory = "/"
             delete_flag = " --delete"
-        hugo_projects_url = urljoin(
+        ocw_hugo_projects_url = urljoin(
             f"{starter_path_url.scheme}://{starter_path_url.netloc}",
             f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
         )
-        purge_url = f"purge/{self.WEBSITE.name}"
         for branch_vars in [
             {
                 "branch": settings.GIT_BRANCH_PREVIEW,
@@ -821,32 +479,27 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             },
         ]:
             branch_vars.update(get_template_vars())
-            branch = branch_vars["branch"]
+            site_content_branch = branch_vars["branch"]
             pipeline_name = branch_vars["pipeline_name"]
             static_api_url = branch_vars["static_api_url"]
             storage_bucket_name = branch_vars["storage_bucket_name"]
             artifacts_bucket = branch_vars["artifacts_bucket_name"]
-            if branch == settings.GIT_BRANCH_PREVIEW:
+            ocw_studio_url = branch_vars["ocw_studio_url"]
+            if site_content_branch == settings.GIT_BRANCH_PREVIEW:
                 web_bucket = branch_vars["preview_bucket_name"]
                 offline_bucket = branch_vars["offline_preview_bucket_name"]
                 resource_base_url = branch_vars["resource_base_url_draft"]
-            elif branch == settings.GIT_BRANCH_RELEASE:
+            elif site_content_branch == settings.GIT_BRANCH_RELEASE:
                 web_bucket = branch_vars["publish_bucket_name"]
                 offline_bucket = branch_vars["offline_publish_bucket_name"]
                 resource_base_url = branch_vars["resource_base_url_live"]
             if (
-                branch == settings.GIT_BRANCH_PREVIEW
+                site_content_branch == settings.GIT_BRANCH_PREVIEW
                 or settings.ENV_NAME not in PRODUCTION_NAMES
             ):
                 noindex = "true"
             else:
                 noindex = "false"
-            if settings.CONCOURSE_IS_PRIVATE_REPO:
-                markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
-                private_key_var = "\n      private_key: ((git-private-key))"
-            else:
-                markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
-                private_key_var = ""
             starter_slug = self.WEBSITE.starter.slug
             base_hugo_args = {"--themesDir": "../ocw-hugo-themes/"}
             base_online_args = base_hugo_args.copy()
@@ -877,541 +530,30 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 base_offline_args,
                 self.HUGO_ARGS,
             )
-            cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
 
-            # Define resource types list
-            resource_types = [
-                HTTP_RESOURCE_TYPE,
-                KEYVAL_RESOURCE_TYPE,
-                S3_IAM_RESOURCE_TYPE,
-            ]
-            if not is_dev():
-                resource_types.append(slack_notification_resource)
-
-            # Define resources
-            webpack_json_resource = Resource(
-                name=Identifier("webpack-json"),
-                type=S3_IAM_RESOURCE_TYPE.name,
-                check_every="never",
-                source={
-                    "bucket": (artifacts_bucket or ""),
-                    "versioned_file": f"ocw-hugo-themes/{ocw_hugo_themes_branch}/webpack.json",
-                },
-            )
-            if is_dev():
-                webpack_json_resource.source.update(
-                    {
-                        "endpoint": DEV_ENDPOINT_URL,
-                        "access_key_id": (settings.AWS_ACCESS_KEY_ID or ""),
-                        "secret_access_key": (settings.AWS_SECRET_ACCESS_KEY or ""),
-                    }
-                )
-            offline_build_gate_resource = Resource(
-                name=Identifier("offline-build-gate"),
-                type=KEYVAL_RESOURCE_TYPE.name,
-                check_every="never",
-            )
-            course_markdown_resource = Resource(
-                name=Identifier("course-markdown"),
-                type="git",
-                check_every="never",
-                source={"uri": f"{markdown_uri}{private_key_var}", "branch": branch},
-            )
-            ocw_hugo_themes_resource = GitResource(
-                name=Identifier("ocw-hugo-themes"),
-                uri=OCW_HUGO_THEMES_GIT,
-                branch=ocw_hugo_projects_branch,
-            )
-            ocw_hugo_projects_resource = GitResource(
-                name=Identifier("ocw-hugo-projects"),
-                uri=hugo_projects_url,
-                branch=ocw_hugo_projects_branch,
-            )
-            ocw_studio_webhook_resource = OcwStudioWebhookResource(
-                ocw_studio_url=(branch_vars["ocw_studio_url"] or ""),
-                site_name=self.WEBSITE.name,
-                api_token=settings.API_BEARER_TOKEN or "",
-            )
-            # Define resources list
-            resources = [
-                webpack_json_resource,
-                offline_build_gate_resource,
-                course_markdown_resource,
-                ocw_hugo_themes_resource,
-                ocw_hugo_projects_resource,
-                ocw_studio_webhook_resource,
-            ]
-            if not is_dev():
-                resources.append(OPEN_DISCUSSIONS_RESOURCE)
-                resources.append(SLACK_ALERT_RESOURCE)
-
-            # Define online build job tasks
-            ocw_studio_webhook_started_step = OcwStudioWebhookStep(
-                pipeline_name=pipeline_name, status="started"
-            )
-            webpack_json_get_step_online = GetStepWithErrorHandling(
-                get=webpack_json_resource.name,
-                trigger=False,
-                timeout="5m",
-                attempts=3,
+            pipeline_definition = SitePipelineDefinition(
+                site=self.WEBSITE,
+                is_root_website=is_root_website,
+                base_url=base_url,
+                site_content_branch=site_content_branch,
                 pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="webpack-json get step",
+                static_api_url=static_api_url,
+                storage_bucket_name=storage_bucket_name,
+                artifacts_bucket=artifacts_bucket,
+                web_bucket=web_bucket,
+                offline_bucket=offline_bucket,
+                resource_base_url=resource_base_url,
+                static_resources_subdirectory=static_resources_subdirectory,
+                noindex=noindex,
+                ocw_studio_url=ocw_studio_url,
+                ocw_hugo_themes_branch=ocw_hugo_projects_branch,
+                ocw_hugo_projects_url=ocw_hugo_projects_url,
+                ocw_hugo_projects_branch=ocw_hugo_projects_branch,
+                hugo_args_online=hugo_args_online,
+                hugo_args_offline=hugo_args_offline,
+                delete_flag=delete_flag,
             )
-            ocw_hugo_themes_get_step_online = GetStepWithErrorHandling(
-                get=ocw_hugo_themes_resource.name,
-                trigger=False,
-                timeout="5m",
-                attempts=3,
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="ocw-hugo-themes get step",
-            )
-            ocw_hugo_projects_get_step_online = GetStepWithErrorHandling(
-                get=ocw_hugo_projects_resource.name,
-                trigger=False,
-                timeout="5m",
-                attempts=3,
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="ocw-hugo-projects get step",
-            )
-            course_markdown_get_step_online = GetStepWithErrorHandling(
-                get=course_markdown_resource.name,
-                trigger=False,
-                timeout="5m",
-                attempts=3,
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="course-markdown get step",
-            )
-            static_resources_identifier_online = Identifier("static-resources")
-            static_resources_step_online = TaskStepWithErrorHandling(
-                task=Identifier("static-resources"),
-                timeout="40m",
-                attempts=3,
-                params={},
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=AWS_CLI_REGISTRY_IMAGE,
-                    outputs=[Output(name=static_resources_identifier_online)],
-                    run=Command(
-                        path="sh",
-                        args=[
-                            "-exc",
-                            f"aws s3{cli_endpoint_url} sync s3://{(storage_bucket_name or '')}/{self.WEBSITE.s3_path} ./static-resources",
-                        ],
-                    ),
-                ),
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="static-resources s3 sync to container",
-            )
-            if is_dev():
-                static_resources_step_online.params["AWS_ACCESS_KEY_ID"] = (
-                    settings.AWS_ACCESS_KEY_ID or ""
-                )
-                static_resources_step_online.params["AWS_SECRET_ACCESS_KEY"] = (
-                    settings.AWS_SECRET_ACCESS_KEY or ""
-                )
-            build_course_online_step = TaskStepWithErrorHandling(
-                task=Identifier("build-course-online"),
-                timeout="20m",
-                attempts=3,
-                params={
-                    "API_BEARER_TOKEN": settings.API_BEARER_TOKEN or "",
-                    "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-                    "OCW_STUDIO_BASE_URL": branch_vars["ocw_studio_url"] or "",
-                    "STATIC_API_BASE_URL": static_api_url,
-                    "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
-                    "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
-                    "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
-                    "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
-                    "NOINDEX": noindex,
-                },
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                    inputs=[
-                        Input(name=ocw_hugo_themes_resource.name),
-                        Input(name=ocw_hugo_projects_resource.name),
-                        Input(name=course_markdown_resource.name),
-                        Input(name=static_resources_identifier_online),
-                        Input(name=webpack_json_resource.name),
-                    ],
-                    outputs=[
-                        Output(name=course_markdown_resource.name),
-                        Output(name=ocw_hugo_themes_resource.name),
-                    ],
-                    run=Command(
-                        dir="course-markdown",
-                        path="sh",
-                        args=[
-                            "-exc",
-                            f"""
-                            cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
-                            hugo {hugo_args_online}
-                            cp -r -n ../static-resources/. ./output-online{static_resources_subdirectory}
-                            rm -rf ./output-online{static_resources_subdirectory}*.mp4
-                            """,
-                        ],
-                    ),
-                ),
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="build-course-online task step",
-            )
-            if is_dev():
-                build_course_online_step.params["RESOURCE_BASE_URL"] = (
-                    resource_base_url or ""
-                )
-                build_course_online_step.params["AWS_ACCESS_KEY_ID"] = (
-                    settings.AWS_ACCESS_KEY_ID or ""
-                )
-                build_course_online_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                    settings.AWS_SECRET_ACCESS_KEY or ""
-                )
-            if is_root_website:
-                online_sync_command = f"aws s3{cli_endpoint_url} sync course-markdown/output-online s3://{web_bucket}/{base_url} --metadata site-id={self.WEBSITE.name}{delete_flag}"
-            else:
-                online_sync_command = f"aws s3{cli_endpoint_url} sync course-markdown/output-online s3://{web_bucket}/{base_url} --exclude='{self.WEBSITE.short_id}.zip' --exclude='{self.WEBSITE.short_id}-video.zip' --metadata site-id={self.WEBSITE.name}{delete_flag}"
-            upload_online_build_step = TaskStepWithErrorHandling(
-                task=Identifier("upload-online-build"),
-                timeout="40m",
-                params={},
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=AWS_CLI_REGISTRY_IMAGE,
-                    inputs=[Input(name=course_markdown_resource.name)],
-                    run=Command(path="sh", args=["-exc", online_sync_command]),
-                ),
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="upload-online-build task step",
-                on_success=OcwStudioWebhookStep(
-                    pipeline_name=pipeline_name, status="succeeded"
-                ),
-            )
-            if is_dev():
-                upload_online_build_step.params["AWS_ACCESS_KEY_ID"] = (
-                    settings.AWS_ACCESS_KEY_ID or ""
-                )
-                upload_online_build_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                    settings.AWS_SECRET_ACCESS_KEY or ""
-                )
-            clear_cdn_cache_online_step = ClearCdnCacheStep(
-                name="clear-cdn-cache", fastly_var="fastly", purge_url=purge_url
-            )
-            clear_cdn_cache_online_step.on_success = TryStep(
-                try_=DoStep(
-                    do=[
-                        OpenDiscussionsWebhookStep(
-                            site_url=self.WEBSITE.get_url_path(),
-                            pipeline_name=pipeline_name,
-                        ),
-                        OcwStudioWebhookStep(
-                            pipeline_name=pipeline_name, status="succeeded"
-                        ),
-                    ]
-                )
-            )
-            offline_build_gate_put_step = PutStepWithErrorHandling(
-                put=offline_build_gate_resource.name,
-                params={"mapping": "timestamp = now()"},
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="offline-build-gate task step",
-            )
-            online_tasks = [
-                ocw_studio_webhook_started_step,
-                webpack_json_get_step_online,
-                ocw_hugo_themes_get_step_online,
-                ocw_hugo_projects_get_step_online,
-                course_markdown_get_step_online,
-                static_resources_step_online,
-                build_course_online_step,
-                upload_online_build_step,
-            ]
-            if not is_dev():
-                online_tasks.append(clear_cdn_cache_online_step)
-            online_tasks.append(offline_build_gate_put_step)
-            online_job = Job(
-                name=Identifier("build-online-ocw-site"), serial=True, plan=online_tasks
-            )
-
-            # Define offline job build tasks
-            offline_build_gate_get_step = GetStepWithErrorHandling(
-                get=offline_build_gate_resource.name,
-                passed=[online_job.name],
-                trigger=True,
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="build-course-online task step",
-            )
-            webpack_json_get_step_offline = GetStepWithErrorHandling(
-                get=webpack_json_resource.name,
-                passed=[online_job.name],
-                trigger=False,
-                timeout="5m",
-                attempts=3,
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="webpack-json get step",
-            )
-            ocw_hugo_themes_get_step_offline = GetStepWithErrorHandling(
-                get=ocw_hugo_themes_resource.name,
-                passed=[online_job.name],
-                trigger=False,
-                timeout="5m",
-                attempts=3,
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="ocw-hugo-themes get step",
-            )
-            ocw_hugo_projects_get_step_offline = GetStepWithErrorHandling(
-                get=ocw_hugo_projects_resource.name,
-                passed=[online_job.name],
-                trigger=False,
-                timeout="5m",
-                attempts=3,
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="ocw-hugo-projects get step",
-            )
-            course_markdown_get_step_offline = GetStepWithErrorHandling(
-                get=course_markdown_resource.name,
-                passed=[online_job.name],
-                trigger=False,
-                timeout="5m",
-                attempts=3,
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="course-markdown get step",
-            )
-            static_resources_identifier_offline = Identifier("static-resources")
-            static_resources_step_offline = TaskStepWithErrorHandling(
-                task=Identifier("static-resources"),
-                timeout="40m",
-                attempts=3,
-                params={},
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=AWS_CLI_REGISTRY_IMAGE,
-                    outputs=[Output(name=static_resources_identifier_offline)],
-                    run=Command(
-                        path="sh",
-                        args=[
-                            "-exc",
-                            f"aws s3{cli_endpoint_url} sync s3://{(storage_bucket_name or '')}/{self.WEBSITE.s3_path} ./static-resources",
-                        ],
-                    ),
-                ),
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="static-resources s3 sync to container",
-            )
-            if is_dev():
-                static_resources_step_offline.params["AWS_ACCESS_KEY_ID"] = (
-                    settings.AWS_ACCESS_KEY_ID or ""
-                )
-                static_resources_step_offline.params["AWS_SECRET_ACCESS_KEY"] = (
-                    settings.AWS_SECRET_ACCESS_KEY or ""
-                )
-            build_artifacts_identifier = Identifier("build-artifacts")
-            filter_webpack_artifacts_step = TaskStepWithErrorHandling(
-                task=Identifier("filter-webpack-artifacts"),
-                timeout="10m",
-                attempts=3,
-                params={},
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                    inputs=[Input(name=webpack_json_resource.name)],
-                    outputs=[Output(name=build_artifacts_identifier)],
-                    run=Command(
-                        path="sh",
-                        args=[
-                            "-exc",
-                            f"jq 'recurse | select(type==\"string\")' ./webpack-json/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{cli_endpoint_url} cp s3://{web_bucket or ''}{{}} ./build-artifacts/{{}} --exclude *.js.map",
-                        ],
-                    ),
-                ),
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="filter-webpack-artifacts task step",
-            )
-            if is_dev():
-                filter_webpack_artifacts_step.params["AWS_ACCESS_KEY_ID"] = (
-                    settings.AWS_ACCESS_KEY_ID or ""
-                )
-                filter_webpack_artifacts_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                    settings.AWS_SECRET_ACCESS_KEY or ""
-                )
-            build_course_offline_identifier = Identifier("build-course-offline")
-            build_course_offline_command = f"""
-            cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data
-            mkdir -p ./content/static_resources
-            mkdir -p ./static/static_resources
-            mkdir -p ./static/static_shared
-            mkdir -p ../videos
-            cp -r ../static-resources/. ./content/static_resources
-            HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
-            if [ $HTML_COUNT != 0 ];
-            then
-            mv ./content/static_resources/*.html ./static/static_resources
-            fi
-            MP4_COUNT="$(ls -1 ./content/static_resources/*.mp4 2>/dev/null | wc -l)"
-            if [ $MP4_COUNT != 0 ];
-            then
-            mv ./content/static_resources/*.mp4 ../videos
-            fi
-            touch ./content/static_resources/_index.md
-            cp -r ../build-artifacts/static_shared/. ./static/static_shared/
-            hugo {hugo_args_offline}
-            """
-            if not is_root_website:
-                build_course_offline_command = f"""
-                {build_course_offline_command}
-                cd output-offline
-                zip -r ../../build-course-offline/{self.WEBSITE.short_id}.zip ./
-                rm -rf ./*
-                cd ..
-                if [ $MP4_COUNT != 0 ];
-                then
-                    mv ../videos/* ./content/static_resources
-                fi
-                hugo {hugo_args_offline}
-                cd output-offline
-                zip -r ../../build-course-offline/{self.WEBSITE.short_id}-video.zip ./
-                """
-            build_course_offline_step = TaskStepWithErrorHandling(
-                task=build_course_offline_identifier,
-                timeout="20m",
-                attempts=3,
-                params={
-                    "API_BEARER_TOKEN": settings.API_BEARER_TOKEN or "",
-                    "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-                    "OCW_STUDIO_BASE_URL": branch_vars["ocw_studio_url"] or "",
-                    "STATIC_API_BASE_URL": static_api_url,
-                    "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
-                    "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
-                    "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
-                    "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
-                    "NOINDEX": noindex,
-                },
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                    inputs=[
-                        Input(name=ocw_hugo_themes_resource.name),
-                        Input(name=ocw_hugo_projects_resource.name),
-                        Input(name=course_markdown_resource.name),
-                        Input(name=static_resources_identifier_online),
-                        Input(name=webpack_json_resource.name),
-                        Input(name=build_artifacts_identifier),
-                    ],
-                    outputs=[
-                        Output(name=course_markdown_resource.name),
-                        Output(name=ocw_hugo_themes_resource.name),
-                        Output(name=build_course_offline_identifier),
-                    ],
-                    run=Command(
-                        dir="course-markdown",
-                        path="sh",
-                        args=[
-                            "-exc",
-                            build_course_offline_command,
-                        ],
-                    ),
-                ),
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="build-course-offline task step",
-            )
-            if is_dev():
-                build_course_offline_step.params["RESOURCE_BASE_URL"] = (
-                    resource_base_url or ""
-                )
-                build_course_offline_step.params["AWS_ACCESS_KEY_ID"] = (
-                    settings.AWS_ACCESS_KEY_ID or ""
-                )
-                build_course_offline_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                    settings.AWS_SECRET_ACCESS_KEY or ""
-                )
-            offline_sync_commands = [
-                f"aws s3{cli_endpoint_url} sync course-markdown/output-offline/ s3://{offline_bucket}/{base_url} --metadata site-id={self.WEBSITE.name}{delete_flag}"
-            ]
-            if not is_root_website:
-                offline_sync_commands.append(
-                    f"aws s3{cli_endpoint_url} sync build-course-offline/ s3://{web_bucket}/{base_url} --exclude='*' --include='{self.WEBSITE.short_id}.zip' --include='{self.WEBSITE.short_id}-video.zip' --metadata site-id={self.WEBSITE.name}"
-                )
-            offline_sync_command = "\n".join(offline_sync_commands)
-            upload_offline_build_step = TaskStepWithErrorHandling(
-                task=Identifier("upload-offline-build"),
-                timeout="40m",
-                params={},
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=AWS_CLI_REGISTRY_IMAGE,
-                    inputs=[
-                        Input(name=course_markdown_resource.name),
-                        Input(name=build_course_offline_identifier),
-                        Input(name=ocw_hugo_projects_resource.name),
-                    ],
-                    run=Command(path="sh", args=["-exc", offline_sync_command]),
-                ),
-                pipeline_name=pipeline_name,
-                site_name=self.WEBSITE.name,
-                step_description="upload-offline-build task step",
-            )
-            if is_dev():
-                upload_offline_build_step.params["AWS_ACCESS_KEY_ID"] = (
-                    settings.AWS_ACCESS_KEY_ID or ""
-                )
-                upload_offline_build_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                    settings.AWS_SECRET_ACCESS_KEY or ""
-                )
-            clear_cdn_cache_offline_step = ClearCdnCacheStep(
-                name="clear-cdn-cache", fastly_var="fastly", purge_url=purge_url
-            )
-            clear_cdn_cache_offline_step.on_success = TryStep(
-                try_=DoStep(
-                    do=[
-                        OpenDiscussionsWebhookStep(
-                            site_url=self.WEBSITE.get_url_path(),
-                            pipeline_name=pipeline_name,
-                        ),
-                        OcwStudioWebhookStep(
-                            pipeline_name=pipeline_name, status="succeeded"
-                        ),
-                    ]
-                )
-            )
-            offline_tasks = [
-                offline_build_gate_get_step,
-                webpack_json_get_step_offline,
-                ocw_hugo_themes_get_step_offline,
-                ocw_hugo_projects_get_step_offline,
-                course_markdown_get_step_offline,
-                static_resources_step_offline,
-                filter_webpack_artifacts_step,
-                build_course_offline_step,
-                upload_offline_build_step,
-            ]
-            if not is_dev():
-                offline_tasks.append(clear_cdn_cache_offline_step)
-            offline_job = Job(
-                name=Identifier("build-offline-ocw-site"),
-                serial=True,
-                plan=offline_tasks,
-            )
-
-            pipeline = Pipeline(
-                resource_types=resource_types,
-                resources=resources,
-                jobs=[online_job, offline_job],
-            )
-            config_str = pipeline.json(indent=2)
+            config_str = pipeline_definition.json(indent=2)
             # TODO: remove this workaround once try_ is rendered as try
             config_str = config_str.replace('"try_":', '"try":')
             self.upsert_config(config_str, pipeline_name)
