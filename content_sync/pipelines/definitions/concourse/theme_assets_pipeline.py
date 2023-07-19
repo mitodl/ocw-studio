@@ -50,7 +50,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
     build_ocw_hugo_themes_identifier = Identifier("build-ocw-hugo-themes-task")
     upload_theme_assets_task_identifier = Identifier("upload-theme-assets-task")
     clear_draft_cdn_cache_task_identifier = Identifier("clear-draft-cdn-cache-task")
-    clear_cdn_cache_live_identifier = Identifier("clear-live-cdn-cache-task")
+    clear_live_cdn_cache_identifier = Identifier("clear-live-cdn-cache-task")
 
     open_discussions_resource = OpenDiscussionsResource()
     slack_resource = SlackAlertResource()
@@ -145,14 +145,14 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             resources.append(self.slack_resource)
             tasks.append(
                 ClearCdnCacheStep(
-                    name=self.clear_cdn_cache_draft_identifier,
+                    name=self.clear_draft_cdn_cache_task_identifier,
                     fastly_var="fastly_draft",
                     purge_url="purge/ocw-hugo-themes",
                 )
             )
             tasks.append(
                 ClearCdnCacheStep(
-                    name=self.clear_cdn_cache_live_identifier,
+                    name=self.clear_live_cdn_cache_identifier,
                     fastly_var="fastly_live",
                     purge_url="purge/ocw-hugo-themes",
                 )
