@@ -13,7 +13,9 @@ from ol_concourse.lib.models.pipeline import (
 from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_ENDPOINT_URL
-from content_sync.pipelines.definitions.concourse.common.identifiers import OCW_HUGO_THEMES_GIT_IDENTIFIER
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    OCW_HUGO_THEMES_GIT_IDENTIFIER,
+)
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
@@ -139,7 +141,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         ]
         job = Job(name=self.build_theme_assets_job_identifier, serial=True)
         if not is_dev():
-            resource_types.append(slack_notification_resource)
+            resource_types.append(slack_notification_resource())
             resources.append(self.slack_resource)
             tasks.append(
                 ClearCdnCacheStep(

@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urlencode, urljoin
 
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
@@ -16,11 +17,11 @@ from ol_concourse.lib.models.pipeline import (
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
+    SLACK_ALERT_RESOURCE_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     CURL_REGISTRY_IMAGE,
 )
-from content_sync.pipelines.definitions.concourse.common.resources import SlackAlertResource
 from main.utils import is_dev
 
 
@@ -32,8 +33,12 @@ PURGE_HEADER = (
 
 
 def add_error_handling(
-    step: Step, pipeline_name: str, site_name: str, step_description: str
+    step: Step, step_description: str, pipeline_name: str, instance_vars: str
 ):
+    concourse_base_url = settings.CONCOURSE_URL
+    concourse_team = settings.CONCOURSE_TEAM
+    concourse_path = f"/teams/{concourse_team}/pipelines/{pipeline_name}{instance_vars}"
+    concourse_url = urljoin(concourse_base_url, concourse_path)
     on_failure_steps = [
         OcwStudioWebhookStep(pipeline_name=pipeline_name, status="failed")
     ]
@@ -47,19 +52,19 @@ def add_error_handling(
         on_failure_steps.append(
             SlackAlertStep(
                 alert_type="failed",
-                text=f"Failed - {step_description} : {pipeline_name}/{site_name}",
+                text=f"Failed - {step_description} : {concourse_url}",
             )
         )
         on_error_steps.append(
             SlackAlertStep(
                 alert_type="errored",
-                text=f"Concourse system error - {step_description} : {pipeline_name}/{site_name}",
+                text=f"Concourse system error - {step_description} : {concourse_url}",
             )
         )
         on_abort_steps.append(
             SlackAlertStep(
                 alert_type="errored",
-                text=f"Concourse system error - {step_description} : {pipeline_name}/{site_name}",
+                text=f"Concourse system error - {step_description} : {concourse_url}",
             )
         )
     step.on_failure = TryStep(try_=DoStep(do=on_failure_steps))
@@ -69,58 +74,56 @@ def add_error_handling(
 
 class GetStepWithErrorHandling(GetStep):
     def __init__(
-        self, pipeline_name: str, site_name: str, step_description: str, **kwargs
+        self, step_description: str, pipeline_name: str, instance_vars: str, **kwargs
     ):
         super().__init__(**kwargs)
         add_error_handling(
             self,
-            pipeline_name=pipeline_name,
-            site_name=site_name,
             step_description=step_description,
+            pipeline_name=pipeline_name,
+            instance_vars=instance_vars,
         )
 
 
 class PutStepWithErrorHandling(PutStep):
     def __init__(
-        self, pipeline_name: str, site_name: str, step_description: str, **kwargs
+        self, step_description: str, pipeline_name: str, instance_vars: str, **kwargs
     ):
         super().__init__(**kwargs)
         add_error_handling(
             self,
-            pipeline_name=pipeline_name,
-            site_name=site_name,
             step_description=step_description,
+            pipeline_name=pipeline_name,
+            instance_vars=instance_vars,
         )
 
 
 class TaskStepWithErrorHandling(TaskStep):
     def __init__(
-        self, pipeline_name: str, site_name: str, step_description: str, **kwargs
+        self, step_description: str, pipeline_name: str, instance_vars: str, **kwargs
     ):
         super().__init__(**kwargs)
         add_error_handling(
             self,
-            pipeline_name=pipeline_name,
-            site_name=site_name,
             step_description=step_description,
+            pipeline_name=pipeline_name,
+            instance_vars=instance_vars,
         )
 
 
 class SlackAlertStep(TryStep):
-    def __init__(
-        self, slack_alert_resource: SlackAlertResource, alert_type: str, text: str, **kwargs
-    ):
+    def __init__(self, alert_type: str, text: str, **kwargs):
         super().__init__(
             try_=DoStep(
                 do=[
                     PutStep(
-                        put=slack_alert_resource.name,
+                        put=SLACK_ALERT_RESOURCE_IDENTIFIER,
                         timeout="1m",
                         params={"alert_type": alert_type, "text": text},
                     )
                 ]
             ),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -145,7 +148,7 @@ class ClearCdnCacheStep(TaskStep):
                     ],
                 ),
             ),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -160,7 +163,7 @@ class OcwStudioWebhookStep(TryStep):
                     "text": json.dumps({"version": pipeline_name, "status": status})
                 },
             ),
-            **kwargs
+            **kwargs,
         )
 
 
@@ -181,5 +184,5 @@ class OpenDiscussionsWebhookStep(TryStep):
                     )
                 },
             ),
-            **kwargs
+            **kwargs,
         )

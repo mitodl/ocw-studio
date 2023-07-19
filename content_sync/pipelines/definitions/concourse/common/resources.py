@@ -14,7 +14,7 @@ class SlackAlertResource(Resource):
     def __init__(self, **kwargs):
         super().__init__(
             name=SLACK_ALERT_RESOURCE_IDENTIFIER,
-            type=slack_notification_resource.__name__,
+            type=slack_notification_resource().name,
             check_every="never",
             source={"url": "((slack-url))", "disabled": "false"},
             **kwargs,

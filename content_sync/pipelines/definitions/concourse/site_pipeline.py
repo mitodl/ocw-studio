@@ -15,12 +15,12 @@ from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
-    WEBPACK_MANIFEST_S3_IDENTIFIER,
-    WEBPACK_ARTIFACTS_IDENTIFIER,
-    OCW_HUGO_THEMES_GIT_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+    OCW_HUGO_THEMES_GIT_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     STATIC_RESOURCES_S3_IDENTIFIER,
+    WEBPACK_ARTIFACTS_IDENTIFIER,
+    WEBPACK_MANIFEST_S3_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
@@ -91,6 +91,7 @@ class SitePipelineDefinition(Pipeline):
     hugo_args_online: str = None
     hugo_args_offline: str = None
     delete_flag: str = None
+    instance_vars: str = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -117,6 +118,7 @@ class SitePipelineDefinition(Pipeline):
         hugo_args_online: str,
         hugo_args_offline: str,
         delete_flag: str,
+        instance_vars: str,
         **kwargs,
     ):
         base = super()
@@ -142,6 +144,7 @@ class SitePipelineDefinition(Pipeline):
         self.hugo_args_online = hugo_args_online
         self.hugo_args_offline = hugo_args_offline
         self.delete_flag = delete_flag
+        self.instance_vars = instance_vars
 
         online_job = self.get_online_build_job()
         offline_job = self.get_offline_build_job()
@@ -159,7 +162,7 @@ class SitePipelineDefinition(Pipeline):
             self.s3_iam_resource_type,
         ]
         if not is_dev():
-            resource_types.append(slack_notification_resource)
+            resource_types.append(slack_notification_resource())
         return resource_types
 
     def get_resources(self):
@@ -235,36 +238,36 @@ class SitePipelineDefinition(Pipeline):
             trigger=False,
             timeout="5m",
             attempts=3,
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{WEBPACK_MANIFEST_S3_IDENTIFIER} get step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         ocw_hugo_themes_get_step = GetStepWithErrorHandling(
             get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{OCW_HUGO_THEMES_GIT_IDENTIFIER} get step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         ocw_hugo_projects_get_step = GetStepWithErrorHandling(
             get=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{OCW_HUGO_PROJECTS_GIT_IDENTIFIER} get step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         site_content_get_step = GetStepWithErrorHandling(
             get=SITE_CONTENT_GIT_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{SITE_CONTENT_GIT_IDENTIFIER} get step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         static_resources_step = TaskStepWithErrorHandling(
             task=STATIC_RESOURCES_S3_IDENTIFIER,
@@ -283,9 +286,9 @@ class SitePipelineDefinition(Pipeline):
                     ],
                 ),
             ),
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{STATIC_RESOURCES_S3_IDENTIFIER} s3 sync to container",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         if is_dev():
             static_resources_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -356,9 +359,9 @@ class SitePipelineDefinition(Pipeline):
                     ],
                 ),
             ),
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{self.build_online_site_identifier} task step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         if is_dev():
             build_online_site_step.params["RESOURCE_BASE_URL"] = self.resource_base_url
@@ -382,9 +385,9 @@ class SitePipelineDefinition(Pipeline):
                 inputs=[Input(name=SITE_CONTENT_GIT_IDENTIFIER)],
                 run=Command(path="sh", args=["-exc", online_sync_command]),
             ),
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{self.upload_online_build_identifier} task step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
             on_success=OcwStudioWebhookStep(
                 pipeline_name=self.pipeline_name, status="succeeded"
             ),
@@ -415,9 +418,9 @@ class SitePipelineDefinition(Pipeline):
         offline_build_gate_put_step = PutStepWithErrorHandling(
             put=self.offline_build_gate_identifier,
             params={"mapping": "timestamp = now()"},
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{self.offline_build_gate_identifier} task step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         online_tasks = [ocw_studio_webhook_started_step]
         online_tasks.extend(base_tasks)
@@ -433,9 +436,9 @@ class SitePipelineDefinition(Pipeline):
             get=self.offline_build_gate_identifier,
             passed=[self.online_site_job_identifier],
             trigger=True,
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{self.offline_build_gate_identifier} get step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         filter_webpack_artifacts_step = TaskStepWithErrorHandling(
             task=self.filter_webpack_artifacts_identifier,
@@ -455,9 +458,9 @@ class SitePipelineDefinition(Pipeline):
                     ],
                 ),
             ),
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{self.filter_webpack_artifacts_identifier} task step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         if is_dev():
             filter_webpack_artifacts_step.params[
@@ -542,9 +545,9 @@ class SitePipelineDefinition(Pipeline):
                     ],
                 ),
             ),
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{self.build_offline_site_identifier} task step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         if is_dev():
             build_offline_site_step.params["RESOURCE_BASE_URL"] = (
@@ -578,9 +581,9 @@ class SitePipelineDefinition(Pipeline):
                 ],
                 run=Command(path="sh", args=["-exc", offline_sync_command]),
             ),
-            pipeline_name=self.pipeline_name,
-            site_name=self.site.name,
             step_description=f"{self.upload_offline_build_identifier} task step",
+            pipeline_name=self.pipeline_name,
+            instance_vars=self.instance_vars,
         )
         if is_dev():
             upload_offline_build_step.params[

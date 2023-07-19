@@ -16,27 +16,6 @@ import requests
 import yaml
 from concoursepy.api import Api
 from django.conf import settings
-from ol_concourse.lib.constants import REGISTRY_IMAGE
-from ol_concourse.lib.models.pipeline import (
-    AnonymousResource,
-    Command,
-    DoStep,
-    GetStep,
-    Identifier,
-    Input,
-    Job,
-    Output,
-    Pipeline,
-    PutStep,
-    RegistryImage,
-    Resource,
-    ResourceType,
-    Step,
-    TaskConfig,
-    TaskStep,
-    TryStep,
-)
-from ol_concourse.lib.resource_types import slack_notification_resource
 from requests import HTTPError
 
 from content_sync.constants import (
@@ -552,6 +531,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 hugo_args_online=hugo_args_online,
                 hugo_args_offline=hugo_args_offline,
                 delete_flag=delete_flag,
+                instance_vars=self.instance_vars,
             )
             config_str = pipeline_definition.json(indent=2)
             # TODO: remove this workaround once try_ is rendered as try
