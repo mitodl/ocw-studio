@@ -1,6 +1,7 @@
 from ol_concourse.lib.constants import REGISTRY_IMAGE
 from ol_concourse.lib.models.pipeline import AnonymousResource, RegistryImage
 
+
 """
 Docker image for building OCW sites
 
