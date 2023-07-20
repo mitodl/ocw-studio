@@ -9,6 +9,7 @@ from ol_concourse.lib.models.pipeline import (
     Identifier,
     PutStep,
     Step,
+    StepModifierMixin,
     TaskConfig,
     TaskStep,
     TryStep,
@@ -26,22 +27,29 @@ from main.utils import is_dev
 
 
 def add_error_handling(
-    step: Step, step_description: str, pipeline_name: str, instance_vars: str
+    step: Step, step_description: str, pipeline_name: str, instance_vars_query_str: str
 ):
     """
     Add error handling steps to any Step-like object
 
     Args:
-        step(Step): The Step-like object to add the error handling steps to
+        step(Step): The Step-like object that uses StepModifierMixin to add the error handling steps to
         step_description(str): A description of the step at which the failure occurred
-        instance_vars(str): A query string of the instance vars from the pipeline to build a URL with
+        instance_vars_query_str(str): A query string of the instance vars from the pipeline to build a URL with
 
     Returns:
         None
     """
+    step_type = type(step)
+    if not issubclass(step_type, StepModifierMixin):
+        raise TypeError(
+            f"The step object of type {step_type} does not extend StepModifierMixin and therefore cannot have error handling"
+        )
     concourse_base_url = settings.CONCOURSE_URL
     concourse_team = settings.CONCOURSE_TEAM
-    concourse_path = f"/teams/{concourse_team}/pipelines/{pipeline_name}{instance_vars}"
+    concourse_path = (
+        f"/teams/{concourse_team}/pipelines/{pipeline_name}{instance_vars_query_str}"
+    )
     concourse_url = urljoin(concourse_base_url, concourse_path)
     on_failure_steps = [
         OcwStudioWebhookStep(pipeline_name=pipeline_name, status="failed")
@@ -89,7 +97,7 @@ class GetStepWithErrorHandling(GetStep):
             self,
             step_description=step_description,
             pipeline_name=pipeline_name,
-            instance_vars=instance_vars,
+            instance_vars_query_str=instance_vars,
         )
 
 
@@ -106,7 +114,7 @@ class PutStepWithErrorHandling(PutStep):
             self,
             step_description=step_description,
             pipeline_name=pipeline_name,
-            instance_vars=instance_vars,
+            instance_vars_query_str=instance_vars,
         )
 
 
@@ -123,7 +131,7 @@ class TaskStepWithErrorHandling(TaskStep):
             self,
             step_description=step_description,
             pipeline_name=pipeline_name,
-            instance_vars=instance_vars,
+            instance_vars_query_str=instance_vars,
         )
 
 
