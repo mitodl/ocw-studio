@@ -12,6 +12,7 @@ class HttpResourceType(ResourceType):
     """
     A Resource for making HTTP requests
     """
+
     def __init__(self, **kwargs):
         super().__init__(
             name=HTTP_RESOURCE_TYPE_IDENTIFIER,
@@ -25,6 +26,7 @@ class KeyvalResourceType(ResourceType):
     """
     A resource for storing and recalling simple key / value pairs
     """
+
     def __init__(self, **kwargs):
         super().__init__(
             name=KEYVAL_RESOURCE_TYPE_IDENTIFIER,
@@ -41,6 +43,7 @@ class S3IamResourceType(ResourceType):
     """
     A resource for interacting with S3-compatible storage services that supports instance profiles
     """
+
     def __init__(self, **kwargs):
         super().__init__(
             name=S3_IAM_RESOURCE_TYPE_IDENTIFIER,

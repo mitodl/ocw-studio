@@ -80,6 +80,7 @@ class GetStepWithErrorHandling(GetStep):
     """
     Extends GetStep and adds error handling
     """
+
     def __init__(
         self, step_description: str, pipeline_name: str, instance_vars: str, **kwargs
     ):
@@ -96,6 +97,7 @@ class PutStepWithErrorHandling(PutStep):
     """
     Extends PutStep and adds error handling
     """
+
     def __init__(
         self, step_description: str, pipeline_name: str, instance_vars: str, **kwargs
     ):
@@ -112,6 +114,7 @@ class TaskStepWithErrorHandling(TaskStep):
     """
     Extends TaskStep and adds error handling
     """
+
     def __init__(
         self, step_description: str, pipeline_name: str, instance_vars: str, **kwargs
     ):
@@ -132,6 +135,7 @@ class SlackAlertStep(TryStep):
         alert_type(str): The alert type (started, success, failed, aborted, errored)
         text(str): The text to display inside the alert
     """
+
     def __init__(self, alert_type: str, text: str, **kwargs):
         super().__init__(
             try_=DoStep(
@@ -157,6 +161,7 @@ class ClearCdnCacheStep(TaskStep):
         fastly_var(str): The name of the var to pull Fastly properties from
         purge_url(str): The URL to purge from the cache
     """
+
     def __init__(self, name: str, fastly_var: str, purge_url: str, **kwargs):
         curl_args = [
             "-f",
@@ -191,6 +196,7 @@ class OcwStudioWebhookStep(TryStep):
         pipeline_name(str): The name of the pipeline to set the status on
         status: (str): The status to set on the pipeline (failed, errored, succeeded)
     """
+
     def __init__(self, pipeline_name: str, status: str, **kwargs):
         super().__init__(
             try_=PutStep(
@@ -213,6 +219,7 @@ class OpenDiscussionsWebhookStep(TryStep):
         site_url(str): The url path of the site
         pipeline_name(str): The pipeline name to use as the version (draft / live)
     """
+
     def __init__(self, site_url: str, pipeline_name: str, **kwargs):
         super().__init__(
             try_=PutStep(
