@@ -1,5 +1,5 @@
 import json
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urljoin
 
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
