@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.98.1
+Version 0.98.1 (Released July 20, 2023)
 --------------
 
 - Bump pyyaml to 6.0.1 and yamale to 4.0.4 (#1891)
