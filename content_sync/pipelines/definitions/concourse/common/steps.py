@@ -185,7 +185,7 @@ class SlackAlertStep(TryStep):
         )
 
 
-class ClearCdnCacheStep(TaskStep):
+class ClearCdnCacheStep(TaskStepWithErrorHandling):
     """
     A TaskStep using the curlimages/curl Docker image that sends an
     API request to Fastly to clear the cache for a given URL
