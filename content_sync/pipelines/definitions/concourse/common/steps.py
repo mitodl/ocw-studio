@@ -72,7 +72,7 @@ def add_error_handling(
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
         status="aborted",
-        failure_description="Failed",
+        failure_description="Aborted",
         step_description=step_description,
         concourse_url=concourse_url,
     )
