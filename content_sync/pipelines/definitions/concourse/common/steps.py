@@ -22,11 +22,13 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     CURL_REGISTRY_IMAGE,
 )
-from main.utils import is_dev
 
 
 def add_error_handling(
-    step: StepModifierMixin, step_description: str, pipeline_name: str, instance_vars_query_str: str
+    step: StepModifierMixin,
+    step_description: str,
+    pipeline_name: str,
+    instance_vars_query_str: str,
 ):
     """
     Add error handling steps to any Step-like object
@@ -53,37 +55,59 @@ def add_error_handling(
         f"/teams/{concourse_team}/pipelines/{pipeline_name}{instance_vars_query_str}"
     )
     concourse_url = urljoin(concourse_base_url, concourse_path)
-    on_failure_steps = [
-        OcwStudioWebhookStep(pipeline_name=pipeline_name, status="failed")
-    ]
-    on_error_steps = [
-        OcwStudioWebhookStep(pipeline_name=pipeline_name, status="errored")
-    ]
-    on_abort_steps = [
-        OcwStudioWebhookStep(pipeline_name=pipeline_name, status="errored")
-    ]
-    if not is_dev():
-        on_failure_steps.append(
-            SlackAlertStep(
-                alert_type="failed",
-                text=f"Failed - {step_description} : {concourse_url}",
-            )
+    step.on_failure = ErrorHandlingStep(
+        pipeline_name=pipeline_name,
+        status="failed",
+        failure_description="Failed",
+        step_description=step_description,
+        concourse_url=concourse_url,
+    )
+    step.on_error = ErrorHandlingStep(
+        pipeline_name=pipeline_name,
+        status="errored",
+        failure_description="Concourse system error",
+        step_description=step_description,
+        concourse_url=concourse_url,
+    )
+    step.on_abort = ErrorHandlingStep(
+        pipeline_name=pipeline_name,
+        status="aborted",
+        failure_description="Failed",
+        step_description=step_description,
+        concourse_url=concourse_url,
+    )
+
+
+class ErrorHandlingStep(TryStep):
+    """
+    Extends TryStep and sets error handling steps
+    """
+
+    def __init__(
+        self,
+        pipeline_name: str,
+        status: str,
+        failure_description: str,
+        step_description: str,
+        concourse_url: str,
+        **kwargs,
+    ):
+        super().__init__(
+            try_=(
+                DoStep(
+                    do=[
+                        OcwStudioWebhookStep(
+                            pipeline_name=pipeline_name, status=status
+                        ),
+                        SlackAlertStep(
+                            alert_type=status,
+                            text=f"{failure_description} - {step_description} : {concourse_url}",
+                        ),
+                    ]
+                )
+            ),
+            **kwargs,
         )
-        on_error_steps.append(
-            SlackAlertStep(
-                alert_type="errored",
-                text=f"Concourse system error - {step_description} : {concourse_url}",
-            )
-        )
-        on_abort_steps.append(
-            SlackAlertStep(
-                alert_type="errored",
-                text=f"Concourse system error - {step_description} : {concourse_url}",
-            )
-        )
-    step.on_failure = TryStep(try_=DoStep(do=on_failure_steps))
-    step.on_error = TryStep(try_=DoStep(do=on_error_steps))
-    step.on_abort = TryStep(try_=DoStep(do=on_abort_steps))
 
 
 class GetStepWithErrorHandling(GetStep):
