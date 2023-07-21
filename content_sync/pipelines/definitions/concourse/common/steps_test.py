@@ -48,3 +48,20 @@ def test_add_error_handling_incorrect_type():
             pipeline_name="test_pipeline",
             instance_vars_query_str="?site:test site",
         )
+
+@pytest.mark.parametrize("step_type", [GetStep, PutStep, TaskStep])
+def test_calling_add_error_handling_twice(step_type):
+    mock_step = step_type()
+    add_error_handling(
+        step=mock_step,
+        step_description="test step",
+        pipeline_name="test_pipeline",
+        instance_vars_query_str="?site:test site",
+    )
+    with pytest.raises(ValueError):
+        add_error_handling(
+            step=mock_step,
+            step_description="test step",
+            pipeline_name="test_pipeline",
+            instance_vars_query_str="?site:test site",
+        )

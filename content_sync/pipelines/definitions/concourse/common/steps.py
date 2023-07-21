@@ -44,6 +44,9 @@ def add_error_handling(
         raise TypeError(
             f"The step object of type {step_type} does not extend StepModifierMixin and therefore cannot have error handling"
         )
+    for failure_step in [step.on_failure, step.on_error, step.on_abort]:
+        if failure_step is not None:
+            raise ValueError(f"The step {step} already has {failure_step} set")
     concourse_base_url = settings.CONCOURSE_URL
     concourse_team = settings.CONCOURSE_TEAM
     concourse_path = (
