@@ -27,13 +27,13 @@ from main.utils import is_dev
 
 
 def add_error_handling(
-    step: Step, step_description: str, pipeline_name: str, instance_vars_query_str: str
+    step: StepModifierMixin, step_description: str, pipeline_name: str, instance_vars_query_str: str
 ):
     """
     Add error handling steps to any Step-like object
 
     Args:
-        step(Step): The Step-like object that uses StepModifierMixin to add the error handling steps to
+        step(StepModifierMixin): The Step-like object that uses StepModifierMixin to add the error handling steps to
         step_description(str): A description of the step at which the failure occurred
         instance_vars_query_str(str): A query string of the instance vars from the pipeline to build a URL with
 
