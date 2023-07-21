@@ -8,7 +8,6 @@ from ol_concourse.lib.models.pipeline import (
     GetStep,
     Identifier,
     PutStep,
-    Step,
     StepModifierMixin,
     TaskConfig,
     TaskStep,
