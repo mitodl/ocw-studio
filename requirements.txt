@@ -217,6 +217,8 @@ oauthlib==3.2.2
     # via
     #   requests-oauthlib
     #   social-auth-core
+ol-concourse==0.4.4
+    # via -r requirements.in
 ol-concoursepy==0.0.41
     # via -r requirements.in
 packaging==21.0
@@ -253,6 +255,8 @@ pyasn1-modules==0.2.8
     # via google-auth
 pycparser==2.20
     # via cffi
+pydantic==1.10.11
+    # via ol-concourse
 pygithub==1.58.2
     # via -r requirements.in
 pygments==2.7.4
@@ -365,6 +369,7 @@ typing-extensions==4.6.3
     #   asgiref
     #   dj-database-url
     #   mitol-django-common
+    #   pydantic
 tzdata==2023.3
     # via celery
 uritemplate==3.0.1
