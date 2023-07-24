@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.98.1 (Released July 20, 2023)
+--------------
+
+- Bump pyyaml to 6.0.1 and yamale to 4.0.4 (#1891)
+
+Version 0.98.0 (Released July 17, 2023)
+--------------
+
+- fix: strip '/' from keys in populate_file_sizes (#1879)
+- chore: create populate_file_sizes command (#1861)
+
 Version 0.97.1 (Released July 13, 2023)
 --------------
 

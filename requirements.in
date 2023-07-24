@@ -2,6 +2,7 @@ beautifulsoup4
 django==3.2.19
 boto3==1.26.153
 celery>=5.3.0
+ol-concourse==0.4.4
 ol-concoursepy==0.0.41
 cryptography>=39.0.1
 dj-database-url==2.0.0
@@ -36,9 +37,9 @@ social-auth-core>=4
 social-auth-core[saml]>=4
 social-auth-app-django>=4
 uwsgi
-pyyaml
+pyyaml==6.0.1
 tqdm
-yamale
+yamale==4.0.4
 django-model-utils==4.2.0
 google-api-python-client
 google-auth
