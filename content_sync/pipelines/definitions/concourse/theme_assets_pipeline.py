@@ -46,9 +46,6 @@ class ThemeAssetsPipelineDefinition(Pipeline):
     _open_discussions_resource = OpenDiscussionsResource()
     _slack_resource = SlackAlertResource()
 
-    class Config:
-        arbitrary_types_allowed = True
-
     def __init__(
         self,
         artifacts_bucket: str,
