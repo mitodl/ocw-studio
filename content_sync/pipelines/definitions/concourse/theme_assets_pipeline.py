@@ -96,8 +96,8 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                         path="sh",
                         args=[
                             "-exc",
-                            """
-                            cd ocw-hugo-themes
+                            f"""
+                            cd {OCW_HUGO_THEMES_GIT_IDENTIFIER}
                             yarn install --immutable
                             npm run build:webpack
                             npm run build:githash
@@ -128,11 +128,11 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                         args=[
                             "-exc",
                             f"""
-                            aws s3{CLI_ENDPOINT_URL} cp ocw-hugo-themes/base-theme/dist s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{CLI_ENDPOINT_URL} cp ocw-hugo-themes/base-theme/dist s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{CLI_ENDPOINT_URL} cp ocw-hugo-themes/base-theme/static s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{CLI_ENDPOINT_URL} cp ocw-hugo-themes/base-theme/static s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{CLI_ENDPOINT_URL} cp ocw-hugo-themes/base-theme/data/webpack.json s3://{artifacts_bucket}/ocw-hugo-themes/{ocw_hugo_themes_branch}/webpack.json --metadata site-id=ocw-hugo-themes
+                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data/webpack.json s3://{artifacts_bucket}/ocw-hugo-themes/{ocw_hugo_themes_branch}/webpack.json --metadata site-id=ocw-hugo-themes
                             """,
                         ],
                     ),
