@@ -34,7 +34,7 @@ cachetools==4.2.2
     # via
     #   google-auth
     #   premailer
-celery==5.3.0
+celery==5.3.1
     # via -r requirements.in
 certifi==2022.12.7
     # via
