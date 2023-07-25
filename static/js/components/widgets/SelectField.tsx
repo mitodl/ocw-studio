@@ -87,7 +87,7 @@ export default function SelectField(props: Props): JSX.Element {
 
   const handleInputChanged = useCallback(
     (input, reason) => {
-      if (reason.action === "menu-close" || reason.action === "input-blur") {
+      if (reason.action === "input-blur") {
         return
       }
       setSearchText(input)
