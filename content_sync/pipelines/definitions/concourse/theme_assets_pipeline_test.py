@@ -14,6 +14,9 @@ from content_sync.pipelines.definitions.concourse.theme_assets_pipeline import (
 
 @pytest.mark.parametrize("is_dev", [True, False])
 def test_generate_theme_assets_pipeline_definition(mocker, is_dev):
+    """
+    The theme assets pipeline definition should contain the expected properties
+    """
     mock_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.theme_assets_pipeline.is_dev"
     )
