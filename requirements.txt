@@ -138,7 +138,7 @@ djangorestframework-simplejwt==4.8.0
     # via djoser
 djoser==2.1.0
     # via mitol-django-authentication
-drf-extensions==0.7.0
+drf-extensions==0.7.1
     # via -r requirements.in
 exceptiongroup==1.1.2
     # via pytest
