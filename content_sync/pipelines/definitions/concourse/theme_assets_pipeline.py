@@ -13,6 +13,7 @@ from ol_concourse.lib.models.pipeline import (
 from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_ENDPOINT_URL
+from content_sync.pipelines.base import BaseThemeAssetsPipeline
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
 )
@@ -52,6 +53,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         preview_bucket: str,
         publish_bucket: str,
         ocw_hugo_themes_branch: str,
+        instance_vars: str,
         **kwargs,
     ):
         base = super()
@@ -136,6 +138,9 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                     name=self._clear_draft_cdn_cache_task_identifier,
                     fastly_var="fastly_draft",
                     purge_url="purge/ocw-hugo-themes",
+                    step_description="draft cdn cache clear step",
+                    pipeline_name=BaseThemeAssetsPipeline.PIPELINE_NAME,
+                    instance_vars=instance_vars,
                 )
             )
             tasks.append(
@@ -143,6 +148,9 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                     name=self._clear_live_cdn_cache_identifier,
                     fastly_var="fastly_live",
                     purge_url="purge/ocw-hugo-themes",
+                    step_description="live cdn cache clear step",
+                    pipeline_name=BaseThemeAssetsPipeline.PIPELINE_NAME,
+                    instance_vars=instance_vars,
                 )
             )
             job.on_failure = SlackAlertStep(
