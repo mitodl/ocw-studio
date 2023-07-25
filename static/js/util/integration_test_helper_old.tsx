@@ -17,6 +17,7 @@ import { getQueries } from "../lib/redux_query"
 
 import * as networkInterfaceFuncs from "../store/network_interface"
 import { getInitialState } from "../testing_utils/IntegrationTestHelper"
+import { act } from "react-dom/test-utils"
 
 jest.mock("../store/network_interface")
 
@@ -206,8 +207,13 @@ export default class IntegrationTestHelper {
           </ReduxQueryProvider>
         </Provider>
       )
+
+      await act(async () => {
+        wrapper.update()
+      })
+
       this.wrapper = wrapper
-      wrapper.update()
+
       return { wrapper, store }
     }
   }

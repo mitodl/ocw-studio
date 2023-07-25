@@ -5,7 +5,7 @@ import R from "ramda"
 import RelationField from "./RelationField"
 import * as apiUtil from "../../lib/api/util"
 import WebsiteContext from "../../context/Website"
-import SelectField, { Option } from "./SelectField"
+import SelectField, { Additional, Option } from "./SelectField"
 
 import IntegrationTestHelper, {
   TestRenderer
@@ -28,6 +28,7 @@ import { FormError } from "../forms/FormError"
 import * as websiteHooks from "../../hooks/websites"
 import SortableSelect from "./SortableSelect"
 import { assertNotNil } from "../../test_util"
+import { LoadOptions } from "react-select-async-paginate"
 
 jest.mock("../../lib/api/util", () => ({
   ...jest.requireActual("../../lib/api/util"),
@@ -58,7 +59,7 @@ describe("RelationField", () => {
     website = makeWebsiteDetail()
     helper = new IntegrationTestHelper()
     onChange = jest.fn()
-    _render = helper.configureRenderer(
+    render = helper.configureRenderer(
       props => (
         <WebsiteContext.Provider value={website}>
           <RelationField {...props} />
@@ -72,13 +73,6 @@ describe("RelationField", () => {
         onChange
       }
     )
-    render = async props => {
-      const result = _render(props)
-      await act(async () => {
-        await result
-      })
-      return result
-    }
 
     contentListingItems = R.times(
       () => ({
@@ -104,7 +98,7 @@ describe("RelationField", () => {
     websites = makeWebsites()
     useWebsiteSelectOptions.mockReturnValue({
       options:     formatWebsiteOptions(websites, "name"),
-      loadOptions: jest.fn()
+      loadOptions: jest.fn().mockReturnValue({ options: [] })
     })
   })
 
@@ -172,6 +166,7 @@ describe("RelationField", () => {
               detailed_list:   true,
               content_context: true,
               type:            "page",
+              offset:          0,
               ...(withResourcetypeFilter ? { resourcetype: "Image" } : {}),
               ...(websiteNameProp ? { published: true } : {})
             })
@@ -206,6 +201,7 @@ describe("RelationField", () => {
               detailed_list:   true,
               content_context: true,
               type:            "page",
+              offset:          0,
               ...(websiteName ? { published: true } : {})
             })
             .param({ name: websiteName || website.name })
@@ -216,7 +212,10 @@ describe("RelationField", () => {
     )
 
     it("should let the user pick a website and then content within that website", async () => {
-      const { wrapper } = await render({ cross_site: true, value: [] })
+      const { wrapper } = await render({
+        cross_site: true,
+        value:      []
+      })
       await act(async () => {
         wrapper.find(SelectField).at(0).prop("onChange")({
           // @ts-expect-error Not fully simulating event
@@ -233,7 +232,8 @@ describe("RelationField", () => {
             detailed_list:   true,
             content_context: true,
             type:            "page",
-            published:       true
+            published:       true,
+            offset:          0
           })
           .param({
             name: "new-uuid"
@@ -339,7 +339,7 @@ describe("RelationField", () => {
     it(`should have a loadOptions prop which triggers a debounced fetch of results, ${
       withResourcetypeFilter ? "with" : "without"
     } a resourcetype filter`, async () => {
-      let loadOptionsResponse
+      let loadOptionsResponse: { options: [] }[] = []
       const { wrapper } = await render({
         filter: withResourcetypeFilter ?
           {
@@ -350,7 +350,7 @@ describe("RelationField", () => {
           null
       })
       wrapper.update()
-      const loadOptions: (input: string) => Promise<Option[]> = wrapper
+      const loadOptions: LoadOptions<Option, Option, Additional> = wrapper
         .find("SelectField")
         .prop("loadOptions")
       const searchString1 = "searchstring1",
@@ -358,8 +358,8 @@ describe("RelationField", () => {
 
       await act(async () => {
         loadOptionsResponse = await Promise.all([
-          loadOptions(searchString1),
-          loadOptions(searchString2)
+          loadOptions(searchString1, []),
+          loadOptions(searchString2, [])
         ])
       })
 
@@ -368,6 +368,7 @@ describe("RelationField", () => {
           .query({
             detailed_list:   true,
             content_context: true,
+            offset:          0,
             search:          search,
             type:            "page",
             ...(withResourcetypeFilter ? { resourcetype: "Image" } : {})
@@ -387,7 +388,8 @@ describe("RelationField", () => {
         urlForSearch(searchString2),
         { credentials: "include" }
       )
-      expect(loadOptionsResponse).toStrictEqual([
+      const expectedOptions = loadOptionsResponse.map(res => res.options)
+      expect(expectedOptions).toStrictEqual([
         fakeResponse.results.map(asOption),
         fakeResponse.results.map(asOption)
       ])
@@ -399,7 +401,7 @@ describe("RelationField", () => {
     it(`should omit items listed by valuesToOmit, except those already selected, when value ${
       valueIsArray ? "is" : "is not"
     } an array`, async () => {
-      let loadOptionsResponse
+      let loadOptionsResponse: { options: [] }
       const valuesToOmit = new Set([
         contentListingItems[0].text_id,
         contentListingItems[2].text_id,
@@ -420,11 +422,10 @@ describe("RelationField", () => {
       const loadOptions = wrapper.find(SelectField).prop("loadOptions")
       assertNotNil(loadOptions)
       await act(async () => {
-        // @ts-expect-error mock is using wrong number of arguments
-        loadOptionsResponse = await loadOptions()
+        loadOptionsResponse = await loadOptions("", [])
       })
 
-      expect(loadOptionsResponse).toStrictEqual(expectedOptions)
+      expect(loadOptionsResponse!.options).toStrictEqual(expectedOptions)
     })
   })
 
@@ -454,10 +455,7 @@ describe("RelationField", () => {
       const sortableSelect = wrapper.find("SortableSelect")
       expect(sortableSelect.exists()).toBeTruthy()
       expect(sortableSelect.prop("value")).toStrictEqual(
-        value.map(id => ({
-          id,
-          title: id
-        }))
+        value.map(id => ({ id, title: id }))
       )
     })
 

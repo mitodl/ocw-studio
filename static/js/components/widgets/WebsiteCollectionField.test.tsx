@@ -40,7 +40,7 @@ describe("WebsiteCollectionField", () => {
     selectWebsiteOptions = formatOptionsLabelWithShortId(websiteOptions)
     useWebsiteSelectOptions.mockReturnValue({
       options:     websiteOptions,
-      loadOptions: jest.fn()
+      loadOptions: jest.fn().mockReturnValue({ options: [] })
     })
   })
 

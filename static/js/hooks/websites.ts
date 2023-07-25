@@ -116,7 +116,6 @@ export function useWebsiteSelectOptions(
       // if we're not operating in callback-mode then we can use a plain fetch
       // instead (which lets us sidestep an issue with debouncedFetch calls
       // running on component mount)
-      console.log("callback", additional?.callback)
       const response = additional?.callback ?
         await debouncedFetch("website-collection", 300, url, {
           credentials: "include"

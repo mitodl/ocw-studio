@@ -1,16 +1,18 @@
 import React from "react"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
-import { mount } from "enzyme"
+import { ReactWrapper, mount } from "enzyme"
 import Select from "react-select"
-import AsyncSelect from "react-select/async"
+import { AsyncPaginate, LoadOptions } from "react-select-async-paginate"
 
-import SelectField, { Option } from "./SelectField"
+import SelectField, { Additional, Option } from "./SelectField"
+import { act } from "react-dom/test-utils"
 
 describe("SelectField", () => {
   let sandbox: SinonSandbox,
     onChangeStub: SinonStub,
     name: string,
     options: Array<string | Option>,
+    loadOptions: LoadOptions<Option, Option, Additional>,
     expectedOptions: Option[],
     min: number,
     max: number
@@ -18,6 +20,7 @@ describe("SelectField", () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     onChangeStub = sandbox.stub()
+    loadOptions = jest.fn().mockReturnValue({ options: [] })
     options = ["one", "two", { label: "Three", value: "3" }]
     expectedOptions = [
       { label: "one", value: "one" },
@@ -32,20 +35,27 @@ describe("SelectField", () => {
     sandbox.restore()
   })
 
-  const render = (props: any = {}) =>
-    mount(
-      <SelectField
-        onChange={onChangeStub}
-        name={name}
-        min={min}
-        max={max}
-        options={options}
-        {...props}
-      />
-    )
+  const render = async (props: any = {}) => {
+    let wrapper: ReactWrapper
 
-  it("should pass placeholder to Select", () => {
-    const wrapper = render({
+    await act(async () => {
+      wrapper = mount(
+        <SelectField
+          onChange={onChangeStub}
+          name={name}
+          min={min}
+          max={max}
+          options={options}
+          {...props}
+        />
+      )
+    })
+
+    return wrapper!
+  }
+
+  it("should pass placeholder to Select", async () => {
+    const wrapper = await render({
       placeholder: "This place is held!"
     })
     expect(wrapper.find("Select").prop("placeholder")).toBe(
@@ -53,12 +63,13 @@ describe("SelectField", () => {
     )
   })
 
-  it("should pass defaultOptions to AsyncSelect", () => {
-    const wrapper = render({
+  it("should pass defaultOptions to AsyncPaginate", async () => {
+    const wrapper = await render({
       defaultOptions: "options",
-      loadOptions:    () => null
+      loadOptions
     })
-    expect(wrapper.find(AsyncSelect).prop("defaultOptions")).toBe("options")
+
+    expect(wrapper.find(AsyncPaginate).prop("defaultOptions")).toBe("options")
   })
 
   it("should pass isOptionDisabled down to the Select", async () => {
@@ -67,30 +78,32 @@ describe("SelectField", () => {
     expect(wrapper.find(Select).prop("isOptionDisabled")).toBe(isOptionDisabled)
   })
 
-  it("should pass isOptionDisabled down to the Async Select", async () => {
+  it("should pass isOptionDisabled down to the AsyncPaginate", async () => {
     const isOptionDisabled = jest.fn()
-    const wrapper = await render({ isOptionDisabled, loadOptions: jest.fn() })
-    expect(wrapper.find(AsyncSelect).prop("isOptionDisabled")).toBe(
+    const wrapper = await render({
+      isOptionDisabled,
+      loadOptions
+    })
+    expect(wrapper.find(AsyncPaginate).prop("isOptionDisabled")).toBe(
       isOptionDisabled
     )
   })
 
-  it("should use AsyncSelect if a loadOptions callback is supplied", () => {
-    const loadOptions = sandbox.stub()
-    const wrapper = render({
+  it("should use AsyncPaginate if a loadOptions callback is supplied", async () => {
+    const wrapper = await render({
       loadOptions
     })
 
-    const select = wrapper.find(AsyncSelect)
+    const select = wrapper.find(AsyncPaginate)
     expect(select.exists()).toBeTruthy()
 
     expect(select.prop("loadOptions")).toBe(loadOptions)
   })
 
   describe("not multiple choice", () => {
-    it("renders a select widget", () => {
+    it("renders a select widget", async () => {
       const value = "initial"
-      const wrapper = render({
+      const wrapper = await render({
         value
       })
       const props = wrapper.find(Select).props()
@@ -108,8 +121,8 @@ describe("SelectField", () => {
       })
     })
 
-    it("handles an empty value gracefully", () => {
-      const wrapper = render({
+    it("handles an empty value gracefully", async () => {
+      const wrapper = await render({
         value: null
       })
       const props = wrapper.find(Select).props()
@@ -118,7 +131,7 @@ describe("SelectField", () => {
   })
 
   describe("multiple choice", () => {
-    it("renders a select widget", () => {
+    it("renders a select widget", async () => {
       const value = ["initial", "values", "3", "4"]
       const expectedValue = [
         { label: "initial", value: "initial" },
@@ -126,7 +139,7 @@ describe("SelectField", () => {
         { label: "Three", value: "3" },
         { label: "4", value: "4" }
       ]
-      const wrapper = render({
+      const wrapper = await render({
         value,
         multiple: true
       })
@@ -142,8 +155,8 @@ describe("SelectField", () => {
       })
     })
 
-    it("handles an empty value gracefully", () => {
-      const wrapper = render({
+    it("handles an empty value gracefully", async () => {
+      const wrapper = await render({
         value:    null,
         multiple: true
       })

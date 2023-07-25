@@ -33,7 +33,7 @@ describe("SortableSelect", () => {
     options = createFakeOptions(10)
     newOptions = createFakeOptions(10)
     onChange = jest.fn()
-    loadOptions = jest.fn().mockResolvedValue(newOptions)
+    loadOptions = jest.fn().mockReturnValue({ options: newOptions })
     render = helper.configureRenderer(SortableSelect, {
       options,
       onChange,

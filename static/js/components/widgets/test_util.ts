@@ -17,7 +17,7 @@ export async function triggerSortableSelect(wrapper: ReactWrapper, value: any) {
       // @ts-expect-error Not simnulating the whole event
       target: { value }
     })
+
+    wrapper.update()
   })
-  wrapper.update()
-  wrapper.find(".cyan-button").simulate("click")
 }
