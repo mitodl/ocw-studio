@@ -38,6 +38,21 @@ CLI_ENDPOINT_URL = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
 
 
 class ThemeAssetsPipelineDefinition(Pipeline):
+    """
+    A Pipeline that does the following:
+
+     - Fetch the ocw-hugo-themes git repository
+     - Run the Webpack build in ocw-hugo-themes
+     - Upload the Webpack manifest (webpack.json) to artifacts_bucket
+     - Upload the output to preview_bucket and publish_bucket
+
+    Args:
+        artifacts_bucket(str): An S3 bucket with versioning enabled for storing the Webpack manifest
+        preview_bucket(str): The S3 bucket where preview sites are to be stored
+        publish_bucket(str): The S3 bucket where published sites are to be stored
+        ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to clone
+    """
+
     _build_theme_assets_job_identifier = Identifier("build-theme-assets-job")
     _build_ocw_hugo_themes_identifier = Identifier("build-ocw-hugo-themes-task")
     _upload_theme_assets_task_identifier = Identifier("upload-theme-assets-task")
