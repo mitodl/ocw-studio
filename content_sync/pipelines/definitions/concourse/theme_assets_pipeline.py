@@ -51,6 +51,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         preview_bucket(str): The S3 bucket where preview sites are to be stored
         publish_bucket(str): The S3 bucket where published sites are to be stored
         ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to clone
+        instance_vars:(str): Instance vars for the pipeline in query string format
     """
 
     _build_theme_assets_job_identifier = Identifier("build-theme-assets-job")
