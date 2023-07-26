@@ -3364,6 +3364,16 @@ files = [
 ]
 
 [[package]]
+name = "uwsgitop"
+version = "0.11"
+description = "uWSGI top-like interface"
+optional = false
+python-versions = "*"
+files = [
+    {file = "uwsgitop-0.11.tar.gz", hash = "sha256:99ca245119e4a0600840a62b7b4e020c9870fe90952b24eecfff0c9090c75d14"},
+]
+
+[[package]]
 name = "vine"
 version = "5.0.0"
 description = "Promises, promises, promises."
@@ -3574,4 +3584,4 @@ pyyaml = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.12"
-content-hash = "bf1b82db0f5af8a54fb019f6931b82584b807f94e0bad943cc0efb374421b653"
+content-hash = "2c8853d521ae43f4ea19704f10f67f64f6365b19cf2c62452f32d45b4b45193f"
