@@ -70,6 +70,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: "1g"
     command: >
       /bin/bash -c '
       sleep 3 &&
@@ -240,6 +245,17 @@ services:
       "
     networks:
       - concourse-network
+
+  locust:
+      image: locustio/locust
+      ports:
+        - "8089:8089"
+      volumes:
+        - ./:/src
+      command: >
+        -f /src/locustfile.py
+      networks:
+        - default-network
 
 volumes:
   django_media: {}
