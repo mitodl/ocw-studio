@@ -20,6 +20,7 @@ interface Props {
   options: Option[]
   defaultOptions?: Option[]
   name: string
+  classNamePrefix?: string
   loadOptions: LoadOptions<Option, Option[], Additional | undefined>
   isOptionDisabled?: (option: Option) => boolean
 }
@@ -32,6 +33,7 @@ export default function SortableSelect(props: Props) {
     value,
     onChange,
     name,
+    classNamePrefix,
     isOptionDisabled
   } = props
   /**
@@ -94,6 +96,7 @@ export default function SortableSelect(props: Props) {
         defaultOptions={defaultOptions}
         isOptionDisabled={isOptionDisabled}
         isOptionSelected={isOptionSelected}
+        classNamePrefix={classNamePrefix}
       />
       <SortWrapper
         handleDragEnd={handleDragEnd}

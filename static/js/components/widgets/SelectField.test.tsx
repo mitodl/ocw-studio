@@ -6,6 +6,7 @@ import { AsyncPaginate, LoadOptions } from "react-select-async-paginate"
 
 import SelectField, { Additional, Option } from "./SelectField"
 import { act } from "react-dom/test-utils"
+import { triggerSelectMenu } from "./test_util"
 
 describe("SelectField", () => {
   let sandbox: SinonSandbox,
@@ -14,6 +15,7 @@ describe("SelectField", () => {
     options: Array<string | Option>,
     loadOptions: LoadOptions<Option, Option, Additional>,
     expectedOptions: Option[],
+    classNamePrefix: string,
     min: number,
     max: number
 
@@ -27,6 +29,7 @@ describe("SelectField", () => {
       { label: "two", value: "two" },
       { label: "Three", value: "3" }
     ]
+    classNamePrefix = "select"
     min = 1
     max = 3
   })
@@ -46,6 +49,7 @@ describe("SelectField", () => {
           min={min}
           max={max}
           options={options}
+          classNamePrefix={classNamePrefix}
           {...props}
         />
       )
@@ -98,6 +102,40 @@ describe("SelectField", () => {
     expect(select.exists()).toBeTruthy()
 
     expect(select.prop("loadOptions")).toBe(loadOptions)
+  })
+
+  it.each([true, false])("should render options", async hasLoadOptions => {
+    const wrapper = await render({
+      loadOptions: hasLoadOptions ? loadOptions : undefined
+    })
+
+    await triggerSelectMenu(wrapper)
+
+    const renderedOptions = wrapper
+      .find(`.${classNamePrefix}__option`)
+      .hostNodes()
+      .map(x => x.text())
+    expect(renderedOptions).toEqual(expectedOptions.map(x => x.label))
+  })
+
+  it("should preserve search text on menu close", async () => {
+    const searchText = "An"
+    const wrapper = await render()
+
+    await triggerSelectMenu(wrapper)
+
+    await act(async () => {
+      wrapper.find(Select).prop("onInputChange")(searchText, {
+        reason: "test"
+      })
+    })
+
+    // Close and open the menu again
+    await triggerSelectMenu(wrapper)
+    await triggerSelectMenu(wrapper)
+
+    const value = wrapper.find("input").hostNodes().prop("value")
+    expect(value).toEqual(searchText)
   })
 
   describe("not multiple choice", () => {
