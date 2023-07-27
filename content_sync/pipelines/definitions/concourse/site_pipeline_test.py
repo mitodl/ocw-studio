@@ -3,7 +3,13 @@ from urllib.parse import quote, urlparse, urljoin
 
 import pytest
 
-from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE, TARGET_ONLINE, TARGET_OFFLINE
+from content_sync.constants import (
+    DEV_ENDPOINT_URL,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+    TARGET_ONLINE,
+    TARGET_OFFLINE,
+)
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
@@ -11,7 +17,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
-    SITE_CONTENT_GIT_IDENTIFIER
+    SITE_CONTENT_GIT_IDENTIFIER,
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
@@ -27,24 +33,27 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.parametrize("is_root_website", [True, False])
-@pytest.mark.parametrize("branch_vars", [
-    {
-        "pipeline_name": "draft",
-        "branch": "preview",
-        "pipeline_name": VERSION_DRAFT,
-        "static_api_url": "https://draft.ocw.mit.edu/",
-        "web_bucket": "ocw-content-draft",
-        "offline_bucket": "ocw-content-draft-offline"
-    },
-    {
-        "pipeline_name": "live",
-        "branch": "release",
-        "pipeline_name": VERSION_LIVE,
-        "static_api_url": "https://ocw.mit.edu/",
-        "web_bucket": "ocw-content-live",
-        "offline_bucket": "ocw-content-live-offline"
-    }
-])
+@pytest.mark.parametrize(
+    "branch_vars",
+    [
+        {
+            "pipeline_name": "draft",
+            "branch": "preview",
+            "pipeline_name": VERSION_DRAFT,
+            "static_api_url": "https://draft.ocw.mit.edu/",
+            "web_bucket": "ocw-content-draft",
+            "offline_bucket": "ocw-content-draft-offline",
+        },
+        {
+            "pipeline_name": "live",
+            "branch": "release",
+            "pipeline_name": VERSION_LIVE,
+            "static_api_url": "https://ocw.mit.edu/",
+            "web_bucket": "ocw-content-live",
+            "offline_bucket": "ocw-content-live-offline",
+        },
+    ],
+)
 @pytest.mark.parametrize("concourse_is_private_repo", [True, False])
 @pytest.mark.parametrize("ocw_hugo_themes_branch", ["main", "test_branch"])
 @pytest.mark.parametrize("ocw_hugo_projects_branch", ["main", "test_branch"])
@@ -61,7 +70,8 @@ def test_generate_theme_assets_pipeline_definition(
     ocw_hugo_projects_branch,
     env_name,
     hugo_override_args,
-    is_dev):
+    is_dev,
+):
     """
     The site pipeline definition should contain the expected properties
     """
@@ -87,8 +97,12 @@ def test_generate_theme_assets_pipeline_definition(
         f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
     )
     other_vars = {
-        "resource_base_url": "http://localhost:8044/" if branch_vars["pipeline_name"] == VERSION_DRAFT else "http://localhost:8045/",
-        "ocw_studio_url": "http://10.1.0.102:8043/" if branch_vars["pipeline_name"] == VERSION_DRAFT else "https://ocw.mit.edu/",
+        "resource_base_url": "http://localhost:8044/"
+        if branch_vars["pipeline_name"] == VERSION_DRAFT
+        else "http://localhost:8045/",
+        "ocw_studio_url": "http://10.1.0.102:8043/"
+        if branch_vars["pipeline_name"] == VERSION_DRAFT
+        else "https://ocw.mit.edu/",
     }
     branch_vars.update(other_vars)
     storage_bucket = "ol-ocw-studio-app"
@@ -101,10 +115,7 @@ def test_generate_theme_assets_pipeline_definition(
         base_url = site.get_url_path()
         static_resources_subdirectory = "/"
         delete_flag = " --delete"
-    if (
-        branch_vars["branch"] == "preview"
-        or env_name not in PRODUCTION_NAMES
-    ):
+    if branch_vars["branch"] == "preview" or env_name not in PRODUCTION_NAMES:
         noindex = "true"
     else:
         noindex = "false"
@@ -167,32 +178,70 @@ def test_generate_theme_assets_pipeline_definition(
         HTTP_RESOURCE_TYPE_IDENTIFIER,
         KEYVAL_RESOURCE_TYPE_IDENTIFIER,
         S3_IAM_RESOURCE_TYPE_IDENTIFIER,
-        slack_notification_resource().name
+        slack_notification_resource().name,
     ]
     for resource_type in rendered_definition["resource_types"]:
         assert resource_type["name"] in expected_resource_types
     resources = rendered_definition["resources"]
-    webpack_manifest_s3_resource = next((resource for resource in resources if resource["name"] == WEBPACK_MANIFEST_S3_IDENTIFIER), None)
+    webpack_manifest_s3_resource = next(
+        (
+            resource
+            for resource in resources
+            if resource["name"] == WEBPACK_MANIFEST_S3_IDENTIFIER
+        ),
+        None,
+    )
     assert webpack_manifest_s3_resource["source"]["bucket"] == artifacts_bucket
-    assert webpack_manifest_s3_resource["source"]["versioned_file"] == f"ocw-hugo-themes/{ocw_hugo_themes_branch}/webpack.json"
+    assert (
+        webpack_manifest_s3_resource["source"]["versioned_file"]
+        == f"ocw-hugo-themes/{ocw_hugo_themes_branch}/webpack.json"
+    )
     if is_dev:
         assert webpack_manifest_s3_resource["source"]["endpoint"] == DEV_ENDPOINT_URL
-        assert webpack_manifest_s3_resource["source"]["access_key_id"] == settings.AWS_ACCESS_KEY_ID
-        assert webpack_manifest_s3_resource["source"]["secret_access_key"] == settings.AWS_SECRET_ACCESS_KEY
+        assert (
+            webpack_manifest_s3_resource["source"]["access_key_id"]
+            == settings.AWS_ACCESS_KEY_ID
+        )
+        assert (
+            webpack_manifest_s3_resource["source"]["secret_access_key"]
+            == settings.AWS_SECRET_ACCESS_KEY
+        )
     else:
         assert not hasattr(webpack_manifest_s3_resource["source"], "endpoint")
         assert not hasattr(webpack_manifest_s3_resource["source"], "access_key_id")
         assert not hasattr(webpack_manifest_s3_resource["source"], "secret_access_key")
-    offline_build_gate_resource = next((resource for resource in resources if resource["name"] == pipeline_definition._offline_build_gate_identifier), None)
+    offline_build_gate_resource = next(
+        (
+            resource
+            for resource in resources
+            if resource["name"] == pipeline_definition._offline_build_gate_identifier
+        ),
+        None,
+    )
     assert offline_build_gate_resource["type"] == "keyval"
-    site_content_git_resource = next((resource for resource in resources if resource["name"] == SITE_CONTENT_GIT_IDENTIFIER), None)
+    site_content_git_resource = next(
+        (
+            resource
+            for resource in resources
+            if resource["name"] == SITE_CONTENT_GIT_IDENTIFIER
+        ),
+        None,
+    )
     assert site_content_git_resource["source"]["branch"] == branch_vars["branch"]
     site_content_git_uri = site_content_git_resource["source"]["uri"]
     if concourse_is_private_repo:
-        assert site_content_git_uri == f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{site.short_id}.git"
-        assert site_content_git_resource["source"]["private_key"] == "((git-private-key))"
+        assert (
+            site_content_git_uri
+            == f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{site.short_id}.git"
+        )
+        assert (
+            site_content_git_resource["source"]["private_key"] == "((git-private-key))"
+        )
     else:
-        assert site_content_git_uri == f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{site.short_id}.git"
+        assert (
+            site_content_git_uri
+            == f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{site.short_id}.git"
+        )
         assert not hasattr(site_content_git_resource["source"], "private_key")
 
     # TODO: remove this debug code

@@ -53,7 +53,8 @@ from websites.models import Website
 
 CLI_ENDPOINT_URL = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
 
-class SitePipelineDefinitionConfig():
+
+class SitePipelineDefinitionConfig:
     site: Website = None
     pipeline_name: str = None
     is_root_website: bool = None
@@ -77,6 +78,7 @@ class SitePipelineDefinitionConfig():
     hugo_args_offline: str = None
     delete_flag: str = None
     instance_vars: str = None
+
 
 class SitePipelineDefinition(Pipeline):
     _http_resource_type = HttpResourceType()
@@ -368,7 +370,9 @@ class SitePipelineDefinition(Pipeline):
             instance_vars=self._config.instance_vars,
         )
         if is_dev():
-            build_online_site_step.params["RESOURCE_BASE_URL"] = self._config.resource_base_url
+            build_online_site_step.params[
+                "RESOURCE_BASE_URL"
+            ] = self._config.resource_base_url
             build_online_site_step.params[
                 "AWS_ACCESS_KEY_ID"
             ] = settings.AWS_ACCESS_KEY_ID
