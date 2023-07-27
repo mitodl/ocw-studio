@@ -435,9 +435,9 @@ def get_website_in_root_website_metadata(website, version):
     ).metadata
     # We want this content to show up in lists, but not render pages
     site_metadata["_build"] = {"list": True, "render": False}
-    # Set the content to draft if the site has not been published or is unpublished
+    # Set the content to draft if the site is unpublished or has never been published to LIVE
     if website.unpublish_status is not None or (
-        version != VERSION_LIVE and website.publish_date is not None
+        version != VERSION_LIVE and website.publish_date is None
     ):
         site_metadata["draft"] = True
     # Carry over url_path for proper linking

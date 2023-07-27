@@ -14,6 +14,7 @@ from websites.api import (
     get_content_warnings,
     get_valid_new_filename,
     get_valid_new_slug,
+    get_website_in_root_website_metadata,
     is_ocw_site,
     mail_on_publish,
     update_website_status,
@@ -522,3 +523,69 @@ def test_get_content_warnings(
         and not is_draft
     ):
         assert not warnings
+
+
+@pytest.mark.parametrize(
+    ("version", "site_fields", "expected_draft"),
+    [
+        (
+            # Publishing to live, but site previously published live.
+            VERSION_LIVE,
+            {},
+            False,
+        ),
+        (
+            # Publishing to live for first time
+            VERSION_LIVE,
+            {"publish_date": None},
+            False,
+        ),
+        (
+            # Publishing to draft, but site previously published live.
+            VERSION_DRAFT,
+            {"publish_date": now_in_utc()},
+            False,
+        ),
+        (
+            # Site is unbpublished.
+            VERSION_DRAFT,
+            {"unpublish_status": PUBLISH_STATUS_SUCCEEDED},
+            True,
+        ),
+        (
+            # Site is unbpublished.
+            VERSION_LIVE,
+            {"unpublish_status": PUBLISH_STATUS_SUCCEEDED},
+            True,
+        ),
+        (
+            # Site never published. OK to set to draft
+            VERSION_DRAFT,
+            {"publish_date": None},
+            True,
+        ),
+    ],
+)
+def test_get_website_in_root_website_metadata(version, site_fields, expected_draft):
+    """
+    Test that get_website_in_root_website_metadata returns the expected metadata,
+    especially in regards to draft status.
+    """
+    website = WebsiteFactory.create(**site_fields)
+    sitemetadata = WebsiteContentFactory.create(
+        website=website,
+        type="sitemetadata",
+        metadata={
+            "some": "field",
+        },
+    )
+
+    expected = {
+        **sitemetadata.metadata,
+        "url_path": website.url_path,
+        "_build": {"list": True, "render": False},
+    }
+    if expected_draft:
+        expected["draft"] = True
+
+    assert get_website_in_root_website_metadata(website, version) == expected
