@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.98.2 (Released July 27, 2023)
+--------------
+
+- remove requirements.txt (#1903)
+- Use Poetry for managing Python Dependencies (#1893)
+- add ol-concourse common components (#1894)
+
 Version 0.98.1 (Released July 20, 2023)
 --------------
 
