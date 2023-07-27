@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.98.2
+Version 0.98.2 (Released July 27, 2023)
 --------------
 
 - remove requirements.txt (#1903)
