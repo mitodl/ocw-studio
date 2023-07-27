@@ -378,6 +378,7 @@ export default function RelationField(props: Props): JSX.Element {
           loadOptions={loadOptions}
           defaultOptions={defaultOptions}
           isOptionDisabled={isOptionDisabled}
+          cacheUniques={[focusedWebsite]}
           value={selectedIds.map(id => {
             const content = contentMap.get(id)
             const title = content ? content.title ?? id : id

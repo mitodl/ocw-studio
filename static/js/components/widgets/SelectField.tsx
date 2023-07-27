@@ -27,6 +27,7 @@ interface Props {
   defaultOptions?: Option[]
   isOptionDisabled?: (option: Option) => boolean
   isOptionSelected?: (option: Option) => boolean
+  cacheUniques?: ReadonlyArray<any>
 }
 
 export default function SelectField(props: Props): JSX.Element {
@@ -40,7 +41,8 @@ export default function SelectField(props: Props): JSX.Element {
     defaultOptions,
     placeholder: initialPlaceholder,
     isOptionDisabled,
-    isOptionSelected
+    isOptionSelected,
+    cacheUniques
   } = props
   const [searchText, setSearchText] = useState("")
   const [placeholder, setPlaceholder] = useState("")
@@ -138,6 +140,7 @@ export default function SelectField(props: Props): JSX.Element {
       loadOptions={loadOptions}
       defaultOptions={defaultOptions}
       loadOptionsOnMenuOpen={false}
+      cacheUniqs={cacheUniques ?? []}
     />
   ) : (
     <Select {...commonSelectOptions} />

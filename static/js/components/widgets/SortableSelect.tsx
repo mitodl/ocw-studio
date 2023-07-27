@@ -23,6 +23,7 @@ interface Props {
   classNamePrefix?: string
   loadOptions: LoadOptions<Option, Option[], Additional | undefined>
   isOptionDisabled?: (option: Option) => boolean
+  cacheUniques?: ReadonlyArray<any>
 }
 
 export default function SortableSelect(props: Props) {
@@ -34,7 +35,8 @@ export default function SortableSelect(props: Props) {
     onChange,
     name,
     classNamePrefix,
-    isOptionDisabled
+    isOptionDisabled,
+    cacheUniques
   } = props
   /**
    * Callback for adding a new item to the field value in the sortable UI. If
@@ -97,6 +99,7 @@ export default function SortableSelect(props: Props) {
         isOptionDisabled={isOptionDisabled}
         isOptionSelected={isOptionSelected}
         classNamePrefix={classNamePrefix}
+        cacheUniques={cacheUniques}
       />
       <SortWrapper
         handleDragEnd={handleDragEnd}
