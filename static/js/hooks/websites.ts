@@ -125,14 +125,14 @@ export function useWebsiteSelectOptions(
       if (!response) {
         // this happens if this fetch was ignored in favor of a later fetch
         return {
-          options: []
+          hasMore: true, // so one can try again
+          options: [] // nothing new
         }
       }
       const json: WebsiteListingResponse = await response.json()
       const { results } = json
       const paginationValues = {
-        hasMore:    Boolean(json.next),
-        additional: undefined
+        hasMore: Boolean(json.next)
       }
 
       const options = formatWebsiteOptions(results, valueField)

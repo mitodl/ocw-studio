@@ -17,11 +17,13 @@ export async function triggerSortableSelect(wrapper: ReactWrapper, value: any) {
       // @ts-expect-error Not simnulating the whole event
       target: { value }
     })
-
-    wrapper.update()
   })
 }
 
+/**
+ * A utility to help trigger (open/close) the menu
+ * of the Select component.
+ */
 export async function triggerSelectMenu(
   wrapper: ReactWrapper,
   prefix = "select"

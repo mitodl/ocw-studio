@@ -1,10 +1,7 @@
 import React, { useCallback, ChangeEvent, useState } from "react"
 import Select from "react-select"
 import { isNil } from "ramda"
-import {
-  AsyncPaginate,
-  LoadOptions as SelectLoadOptions
-} from "react-select-async-paginate"
+import { AsyncPaginate, LoadOptions } from "react-select-async-paginate"
 
 export interface Option {
   label: string
@@ -22,12 +19,13 @@ interface Props {
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void
   multiple?: boolean
   options: Array<string | Option>
-  loadOptions?: SelectLoadOptions<Option, Option[], Additional | undefined>
+  loadOptions?: LoadOptions<Option, Option[], Additional | undefined>
   placeholder?: string
   defaultOptions?: Option[]
+  cacheUniques?: ReadonlyArray<any>
+  hideSelectedOptions?: boolean
   isOptionDisabled?: (option: Option) => boolean
   isOptionSelected?: (option: Option) => boolean
-  cacheUniques?: ReadonlyArray<any>
 }
 
 export default function SelectField(props: Props): JSX.Element {
@@ -42,6 +40,7 @@ export default function SelectField(props: Props): JSX.Element {
     placeholder: initialPlaceholder,
     isOptionDisabled,
     isOptionSelected,
+    hideSelectedOptions = true,
     cacheUniques
   } = props
   const [searchText, setSearchText] = useState("")
@@ -110,22 +109,22 @@ export default function SelectField(props: Props): JSX.Element {
   )
 
   const commonSelectOptions = {
-    className:           "w-100 form-input",
+    className:         "w-100 form-input",
     classNamePrefix,
-    value:               selected,
-    isMulti:             multiple,
-    options:             selectOptions,
-    placeholder:         placeholder || initialPlaceholder || null,
-    inputValue:          searchText,
-    blurInputOnSelect:   true,
-    hideSelectedOptions: true,
-    onChange:            changeHandler,
-    onInputChange:       handleInputChanged,
-    onMenuClose:         handleMenuClosed,
-    onMenuOpen:          handleMenuOpen,
+    value:             selected,
+    isMulti:           multiple,
+    options:           selectOptions,
+    placeholder:       placeholder || initialPlaceholder || null,
+    inputValue:        searchText,
+    blurInputOnSelect: true,
+    hideSelectedOptions,
+    onChange:          changeHandler,
+    onInputChange:     handleInputChanged,
+    onMenuClose:       handleMenuClosed,
+    onMenuOpen:        handleMenuOpen,
     isOptionDisabled,
     isOptionSelected,
-    styles:              {
+    styles:            {
       control: (base: any) => ({
         ...base,
         border:    0,

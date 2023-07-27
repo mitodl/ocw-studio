@@ -212,10 +212,7 @@ describe("RelationField", () => {
     )
 
     it("should let the user pick a website and then content within that website", async () => {
-      const { wrapper } = await render({
-        cross_site: true,
-        value:      []
-      })
+      const { wrapper } = await render({ cross_site: true, value: [] })
       await act(async () => {
         wrapper.find(SelectField).at(0).prop("onChange")({
           // @ts-expect-error Not fully simulating event
@@ -401,7 +398,7 @@ describe("RelationField", () => {
     it(`should omit items listed by valuesToOmit, except those already selected, when value ${
       valueIsArray ? "is" : "is not"
     } an array`, async () => {
-      let loadOptionsResponse: { options: [] }
+      let loadOptionsResponse = { options: [] }
       const valuesToOmit = new Set([
         contentListingItems[0].text_id,
         contentListingItems[2].text_id,
@@ -425,7 +422,7 @@ describe("RelationField", () => {
         loadOptionsResponse = await loadOptions("", [])
       })
 
-      expect(loadOptionsResponse!.options).toStrictEqual(expectedOptions)
+      expect(loadOptionsResponse.options).toStrictEqual(expectedOptions)
     })
   })
 
@@ -455,7 +452,10 @@ describe("RelationField", () => {
       const sortableSelect = wrapper.find("SortableSelect")
       expect(sortableSelect.exists()).toBeTruthy()
       expect(sortableSelect.prop("value")).toStrictEqual(
-        value.map(id => ({ id, title: id }))
+        value.map(id => ({
+          id,
+          title: id
+        }))
       )
     })
 

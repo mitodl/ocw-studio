@@ -38,13 +38,7 @@ export default function SortableSelect(props: Props) {
     isOptionDisabled,
     cacheUniques
   } = props
-  /**
-   * Callback for adding a new item to the field value in the sortable UI. If
-   * there is an item 'focused' in the UI (i.e. the user has selected it in the
-   * SelectField) then we add that to the current value and call the change
-   * shim.
-   */
-  const addItem = useCallback(
+  const handleValueChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
       const content = event.target.value
       if (content) {
@@ -92,7 +86,7 @@ export default function SortableSelect(props: Props) {
     <>
       <SelectField
         name={name}
-        onChange={addItem}
+        onChange={handleValueChange}
         options={options}
         loadOptions={loadOptions}
         defaultOptions={defaultOptions}

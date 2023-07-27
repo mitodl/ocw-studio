@@ -203,7 +203,7 @@ export default function RelationField(props: Props): JSX.Element {
       }
       const json: PaginatedResponse<WebsiteContent> = await response.json()
       const { results } = json
-      const paginationValues = {
+      const responseValues = {
         hasMore:    Boolean(json.next),
         additional: undefined
       }
@@ -231,7 +231,7 @@ export default function RelationField(props: Props): JSX.Element {
         }
         setFetchStatus(FetchStatus.Ok)
         return {
-          ...paginationValues,
+          ...responseValues,
           options: formatContentOptions(
             filterContentListing(results),
             displayField
@@ -241,7 +241,7 @@ export default function RelationField(props: Props): JSX.Element {
         // there was some error fetching the results
         setFetchStatus(FetchStatus.Error)
         return {
-          ...paginationValues,
+          ...responseValues,
           options: []
         }
       }
