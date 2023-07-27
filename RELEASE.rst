@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.98.3
+--------------
+
+- Fix draft publishing bug (#1873)
+- overhaul theme assets pipeline definition (#1896)
+- add uwsgitop using poetry (#1898)
+
 Version 0.98.2 (Released July 27, 2023)
 --------------
 
