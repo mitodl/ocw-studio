@@ -104,19 +104,23 @@ describe("SelectField", () => {
     expect(select.prop("loadOptions")).toBe(loadOptions)
   })
 
-  it.each([true, false])("should render options", async hasLoadOptions => {
-    const wrapper = await render({
-      loadOptions: hasLoadOptions ? loadOptions : undefined
-    })
+  it.each([true, false])(
+    "should render options in menu",
+    async hasLoadOptions => {
+      const wrapper = await render({
+        loadOptions: hasLoadOptions ? loadOptions : undefined
+      })
 
-    await triggerSelectMenu(wrapper)
+      await triggerSelectMenu(wrapper)
 
-    const renderedOptions = wrapper
-      .find(`.${classNamePrefix}__option`)
-      .hostNodes()
-      .map(x => x.text())
-    expect(renderedOptions).toEqual(expectedOptions.map(x => x.label))
-  })
+      const renderedOptions = wrapper
+        .find(`.${classNamePrefix}__option`)
+        .hostNodes()
+        .map(x => x.text())
+
+      expect(renderedOptions).toEqual(expectedOptions.map(x => x.label))
+    }
+  )
 
   it("should preserve search text on menu close", async () => {
     const searchText = "An"
@@ -136,6 +140,63 @@ describe("SelectField", () => {
 
     const value = wrapper.find("input").hostNodes().prop("value")
     expect(value).toEqual(searchText)
+  })
+
+  it("should preserve search text on option selection", async () => {
+    const searchText = "An"
+    const wrapper = await render()
+
+    await triggerSelectMenu(wrapper)
+
+    await act(async () => {
+      wrapper.find(Select).prop("onInputChange")(searchText, {
+        reason: "test"
+      })
+    })
+
+    // select an option.
+    await act(async () => {
+      wrapper
+        .find(`.${classNamePrefix}__option`)
+        .hostNodes()
+        .first()
+        .simulate("click")
+    })
+    wrapper.update()
+
+    // Open the menu again because selection closes it.
+    await triggerSelectMenu(wrapper)
+
+    const value = wrapper.find("input").hostNodes().prop("value")
+    expect(value).toEqual(searchText)
+  })
+
+  it("should only show unselected menu items", async () => {
+    const wrapper = await render({
+      options: [
+        {
+          label: "Not selected",
+          value: "not-selected"
+        },
+        {
+          label: "Selected",
+          value: "selected"
+        }
+      ],
+      value: "selected"
+    })
+
+    await triggerSelectMenu(wrapper)
+
+    const selectedNode = wrapper
+      .find(`.${classNamePrefix}__option`)
+      .find({ children: "Selected" })
+    const notSelectedNode = wrapper
+      .find(`.${classNamePrefix}__option`)
+      .find({ children: "Not selected" })
+
+    expect(selectedNode.exists()).toBeFalsy()
+    expect(notSelectedNode.exists()).toBeTruthy()
   })
 
   describe("not multiple choice", () => {
