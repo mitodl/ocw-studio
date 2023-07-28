@@ -51,9 +51,6 @@ from websites.constants import OCW_HUGO_THEMES_GIT
 from websites.models import Website
 
 
-CLI_ENDPOINT_URL = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
-
-
 class SitePipelineDefinitionConfig:
     site: Website = None
     pipeline_name: str = None
@@ -78,6 +75,7 @@ class SitePipelineDefinitionConfig:
     hugo_args_offline: str = None
     delete_flag: str = None
     instance_vars: str = None
+    cli_endpoint_url: str = None
 
 
 class SitePipelineDefinition(Pipeline):
@@ -152,6 +150,9 @@ class SitePipelineDefinition(Pipeline):
         self._config.hugo_args_offline = hugo_args_offline
         self._config.delete_flag = delete_flag
         self._config.instance_vars = instance_vars
+        self._config.cli_endpoint_url = (
+            f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
+        )
 
         online_job = self.get_online_build_job()
         offline_job = self.get_offline_build_job()
@@ -288,7 +289,7 @@ class SitePipelineDefinition(Pipeline):
                     path="sh",
                     args=[
                         "-exc",
-                        f"aws s3{CLI_ENDPOINT_URL} sync s3://{self._config.storage_bucket_name}/{self._config.site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}",
+                        f"aws s3{self._config.cli_endpoint_url} sync s3://{self._config.storage_bucket_name}/{self._config.site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}",
                     ],
                 ),
             ),
@@ -380,9 +381,9 @@ class SitePipelineDefinition(Pipeline):
                 "AWS_SECRET_ACCESS_KEY"
             ] = settings.AWS_SECRET_ACCESS_KEY
         if self._config.is_root_website:
-            online_sync_command = f"aws s3{CLI_ENDPOINT_URL} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{self._config.web_bucket}/{self._config.base_url} --metadata site-id={self._config.site.name}{self._config.delete_flag}"
+            online_sync_command = f"aws s3{self._config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{self._config.web_bucket}/{self._config.base_url} --metadata site-id={self._config.site.name}{self._config.delete_flag}"
         else:
-            online_sync_command = f"aws s3{CLI_ENDPOINT_URL} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{self._config.web_bucket}/{self._config.base_url} --exclude='{self._config.site.short_id}.zip' --exclude='{self._config.site.short_id}-video.zip' --metadata site-id={self._config.site.name}{self._config.delete_flag}"
+            online_sync_command = f"aws s3{self._config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{self._config.web_bucket}/{self._config.base_url} --exclude='{self._config.site.short_id}.zip' --exclude='{self._config.site.short_id}-video.zip' --metadata site-id={self._config.site.name}{self._config.delete_flag}"
         upload_online_build_step = TaskStepWithErrorHandling(
             task=self._upload_online_build_identifier,
             timeout="40m",
@@ -467,7 +468,7 @@ class SitePipelineDefinition(Pipeline):
                     path="sh",
                     args=[
                         "-exc",
-                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{CLI_ENDPOINT_URL} cp s3://{self._config.web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",
+                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{self._config.cli_endpoint_url} cp s3://{self._config.web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",
                     ],
                 ),
             ),
@@ -573,11 +574,11 @@ class SitePipelineDefinition(Pipeline):
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
         offline_sync_commands = [
-            f"aws s3{CLI_ENDPOINT_URL} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{self._config.offline_bucket}/{self._config.base_url} --metadata site-id={self._config.site.name}{self._config.delete_flag}"
+            f"aws s3{self._config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{self._config.offline_bucket}/{self._config.base_url} --metadata site-id={self._config.site.name}{self._config.delete_flag}"
         ]
         if not self._config.is_root_website:
             offline_sync_commands.append(
-                f"aws s3{CLI_ENDPOINT_URL} sync {self._build_offline_site_identifier}/ s3://{self._config.web_bucket}/{self._config.base_url} --exclude='*' --include='{self._config.site.short_id}.zip' --include='{self._config.site.short_id}-video.zip' --metadata site-id={self._config.site.name}"
+                f"aws s3{self._config.cli_endpoint_url} sync {self._build_offline_site_identifier}/ s3://{self._config.web_bucket}/{self._config.base_url} --exclude='*' --include='{self._config.site.short_id}.zip' --include='{self._config.site.short_id}-video.zip' --metadata site-id={self._config.site.name}"
             )
         offline_sync_command = "\n".join(offline_sync_commands)
         upload_offline_build_step = TaskStepWithErrorHandling(
