@@ -87,6 +87,7 @@ def test_generate_theme_assets_pipeline_definition(
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"
     settings.CONCOURSE_IS_PRIVATE_REPO = concourse_is_private_repo
+    settings.OCW_HUGO_THEMES_SENTRY_DSN = "test_sentry_dsn"
     mock_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
@@ -375,6 +376,45 @@ def test_generate_theme_assets_pipeline_definition(
         f"rm -rf ./output-online{static_resources_subdirectory}*.mp4"
         in build_online_site_command
     )
+    assert (
+        build_online_site_task["params"]["API_BEARER_TOKEN"]
+        == settings.API_BEARER_TOKEN
+    )
+    assert (
+        build_online_site_task["params"]["GTM_ACCOUNT_ID"]
+        == settings.OCW_GTM_ACCOUNT_ID
+    )
+    assert (
+        build_online_site_task["params"]["OCW_STUDIO_BASE_URL"]
+        == branch_vars["ocw_studio_url"]
+    )
+    assert (
+        build_online_site_task["params"]["OCW_IMPORT_STARTER_SLUG"]
+        == settings.OCW_COURSE_STARTER_SLUG
+    )
+    assert (
+        build_online_site_task["params"]["OCW_COURSE_STARTER_SLUG"]
+        == settings.OCW_COURSE_STARTER_SLUG
+    )
+    assert build_online_site_task["params"]["SITEMAP_DOMAIN"] == settings.SITEMAP_DOMAIN
+    assert (
+        build_online_site_task["params"]["SENTRY_DSN"]
+        == settings.OCW_HUGO_THEMES_SENTRY_DSN
+    )
+    assert build_online_site_task["params"]["NOINDEX"] == noindex
+    if is_dev:
+        assert (
+            build_online_site_task["params"]["RESOURCE_BASE_URL"]
+            == branch_vars["resource_base_url"]
+        )
+        assert (
+            build_online_site_task["params"]["AWS_ACCESS_KEY_ID"]
+            == settings.AWS_ACCESS_KEY_ID
+        )
+        assert (
+            build_online_site_task["params"]["AWS_SECRET_ACCESS_KEY"]
+            == settings.AWS_SECRET_ACCESS_KEY
+        )
 
     # TODO: remove this debug code
     # f = open(
