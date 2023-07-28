@@ -270,42 +270,48 @@ def test_generate_theme_assets_pipeline_definition(
     online_site_job = get_dict_list_item_by_field(
         jobs, "name", pipeline_definition._online_site_job_identifier
     )
-    # The online build should contain the expected tasks, and those tasks should have the expected properties
+    # The build jobs should contain the expected tasks, and those tasks should have the expected properties
+    def assert_base_build_tasks(tasks: list[dict]):
+        """
+        Asserts that a list of tasks contains the proper base site pipeline tasks
+
+        Args:
+            tasks(list[dict]): The list of tasks to check
+        """
+        assert tasks[0]["try"]["put"] == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
+        assert tasks[1]["get"] == WEBPACK_MANIFEST_S3_IDENTIFIER
+        assert tasks[2]["get"] == OCW_HUGO_THEMES_GIT_IDENTIFIER
+        assert tasks[3]["get"] == OCW_HUGO_PROJECTS_GIT_IDENTIFIER
+        assert tasks[4]["get"] == SITE_CONTENT_GIT_IDENTIFIER
+        static_resources_s3_task = get_dict_list_item_by_field(
+            items=tasks, field="task", value=STATIC_RESOURCES_S3_IDENTIFIER
+        )
+        static_resources_command = "\n".join(
+            static_resources_s3_task["config"]["run"]["args"]
+        )
+        assert (
+            get_dict_list_item_by_field(
+                items=static_resources_s3_task["config"]["outputs"],
+                field="name",
+                value=STATIC_RESOURCES_S3_IDENTIFIER,
+            )
+            is not None
+        )
+        assert f"s3://{storage_bucket}/{site.s3_path}" in static_resources_command
+        assert f"./{STATIC_RESOURCES_S3_IDENTIFIER}" in static_resources_command
+        if is_dev:
+            assert cli_endpoint_url in static_resources_command
+            assert (
+                static_resources_s3_task["params"]["AWS_ACCESS_KEY_ID"]
+                == settings.AWS_ACCESS_KEY_ID
+            )
+            assert (
+                static_resources_s3_task["params"]["AWS_SECRET_ACCESS_KEY"]
+                == settings.AWS_SECRET_ACCESS_KEY
+            )
+
     online_build_tasks = online_site_job["plan"]
-    assert (
-        online_build_tasks[0]["try"]["put"]
-        == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
-    )
-    assert online_build_tasks[1]["get"] == WEBPACK_MANIFEST_S3_IDENTIFIER
-    assert online_build_tasks[2]["get"] == OCW_HUGO_THEMES_GIT_IDENTIFIER
-    assert online_build_tasks[3]["get"] == OCW_HUGO_PROJECTS_GIT_IDENTIFIER
-    assert online_build_tasks[4]["get"] == SITE_CONTENT_GIT_IDENTIFIER
-    static_resources_s3_task = get_dict_list_item_by_field(
-        items=online_build_tasks, field="task", value=STATIC_RESOURCES_S3_IDENTIFIER
-    )
-    static_resources_command = "\n".join(
-        static_resources_s3_task["config"]["run"]["args"]
-    )
-    assert (
-        get_dict_list_item_by_field(
-            items=static_resources_s3_task["config"]["outputs"],
-            field="name",
-            value=STATIC_RESOURCES_S3_IDENTIFIER,
-        )
-        is not None
-    )
-    assert f"s3://{storage_bucket}/{site.s3_path}" in static_resources_command
-    assert f"./{STATIC_RESOURCES_S3_IDENTIFIER}" in static_resources_command
-    if is_dev:
-        assert cli_endpoint_url in static_resources_command
-        assert (
-            static_resources_s3_task["params"]["AWS_ACCESS_KEY_ID"]
-            == settings.AWS_ACCESS_KEY_ID
-        )
-        assert (
-            static_resources_s3_task["params"]["AWS_SECRET_ACCESS_KEY"]
-            == settings.AWS_SECRET_ACCESS_KEY
-        )
+    assert_base_build_tasks(online_build_tasks)
 
     # TODO: remove this debug code
     # f = open(
