@@ -1,4 +1,5 @@
 import json
+import os
 from urllib.parse import quote, urljoin, urlparse
 
 import pytest
@@ -16,6 +17,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
@@ -242,6 +244,16 @@ def test_generate_theme_assets_pipeline_definition(
     assert ocw_hugo_projects_git_resource["source"]["uri"] == ocw_hugo_projects_url
     assert (
         ocw_hugo_projects_git_resource["source"]["branch"] == ocw_hugo_projects_branch
+    )
+    ocw_studio_webhook_resource = get_dict_list_item_by_field(
+        items=resources, field="name", value=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
+    )
+    expected_api_path = os.path.join("api", "websites", site_name, "pipeline_status")
+    expected_api_url = urljoin(branch_vars["ocw_studio_url"], expected_api_path)
+    assert ocw_studio_webhook_resource["source"]["url"] == expected_api_url
+    assert (
+        ocw_studio_webhook_resource["source"]["headers"]["Authorization"]
+        == f"Bearer {settings.API_BEARER_TOKEN}"
     )
 
     # TODO: remove this debug code
