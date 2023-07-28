@@ -1,32 +1,32 @@
 import json
-from urllib.parse import quote, urlparse, urljoin
+from urllib.parse import quote, urljoin, urlparse
 
 import pytest
+from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import (
     DEV_ENDPOINT_URL,
+    TARGET_OFFLINE,
+    TARGET_ONLINE,
     VERSION_DRAFT,
     VERSION_LIVE,
-    TARGET_ONLINE,
-    TARGET_OFFLINE,
 )
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
-    S3_IAM_RESOURCE_TYPE_IDENTIFIER,
-    OCW_HUGO_THEMES_GIT_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
-    WEBPACK_MANIFEST_S3_IDENTIFIER,
+    OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
+    WEBPACK_MANIFEST_S3_IDENTIFIER,
 )
-from ol_concourse.lib.resource_types import slack_notification_resource
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinition,
 )
 from content_sync.utils import get_hugo_arg_string
-from websites.factories import WebsiteFactory, WebsiteStarterFactory
-from websites.constants import STARTER_SOURCE_GITHUB
 from main.constants import PRODUCTION_NAMES
+from websites.constants import STARTER_SOURCE_GITHUB
+from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
 
 pytestmark = pytest.mark.django_db
