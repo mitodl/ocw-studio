@@ -274,6 +274,7 @@ def test_generate_theme_assets_pipeline_definition(
         online_build_tasks[0]["try"]["put"]
         == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
+    assert online_build_tasks[1]["get"] == WEBPACK_MANIFEST_S3_IDENTIFIER
 
     # TODO: remove this debug code
     # f = open(
