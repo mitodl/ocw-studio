@@ -320,8 +320,7 @@ def test_generate_theme_assets_pipeline_definition(
             )
             is not None
         )
-        assert f"s3://{storage_bucket}/{site.s3_path}" in static_resources_command
-        assert f"./{STATIC_RESOURCES_S3_IDENTIFIER}" in static_resources_command
+        assert f"aws s3{cli_endpoint_url} sync s3://{storage_bucket}/{site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}"
         if is_dev:
             assert cli_endpoint_url in static_resources_command
             assert (
