@@ -22,6 +22,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     SITE_CONTENT_GIT_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
+    STATIC_RESOURCES_S3_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinition,
@@ -86,6 +87,7 @@ def test_generate_theme_assets_pipeline_definition(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
     mock_is_dev.return_value = is_dev
+    cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev else ""
     hugo_projects_path = "https://github.com/org/repo"
     site_name = "test_site"
     starter = WebsiteStarterFactory.create(
@@ -278,6 +280,32 @@ def test_generate_theme_assets_pipeline_definition(
     assert online_build_tasks[2]["get"] == OCW_HUGO_THEMES_GIT_IDENTIFIER
     assert online_build_tasks[3]["get"] == OCW_HUGO_PROJECTS_GIT_IDENTIFIER
     assert online_build_tasks[4]["get"] == SITE_CONTENT_GIT_IDENTIFIER
+    static_resources_s3_task = get_dict_list_item_by_field(
+        items=online_build_tasks, field="task", value=STATIC_RESOURCES_S3_IDENTIFIER
+    )
+    static_resources_command = "\n".join(
+        static_resources_s3_task["config"]["run"]["args"]
+    )
+    assert (
+        get_dict_list_item_by_field(
+            items=static_resources_s3_task["config"]["outputs"],
+            field="name",
+            value=STATIC_RESOURCES_S3_IDENTIFIER,
+        )
+        is not None
+    )
+    assert f"s3://{storage_bucket}/{site.s3_path}" in static_resources_command
+    assert f"./{STATIC_RESOURCES_S3_IDENTIFIER}" in static_resources_command
+    if is_dev:
+        assert cli_endpoint_url in static_resources_command
+        assert (
+            static_resources_s3_task["params"]["AWS_ACCESS_KEY_ID"]
+            == settings.AWS_ACCESS_KEY_ID
+        )
+        assert (
+            static_resources_s3_task["params"]["AWS_SECRET_ACCESS_KEY"]
+            == settings.AWS_SECRET_ACCESS_KEY
+        )
 
     # TODO: remove this debug code
     # f = open(
