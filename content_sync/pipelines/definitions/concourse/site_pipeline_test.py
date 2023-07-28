@@ -348,7 +348,7 @@ def test_generate_theme_assets_pipeline_definition(
         build_online_site_task["config"]["image_resource"]["source"]["repository"]
         == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source["repository"]
     )
-    expected_inputs = [
+    build_online_site_expected_inputs = [
         OCW_HUGO_THEMES_GIT_IDENTIFIER,
         OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
         SITE_CONTENT_GIT_IDENTIFIER,
@@ -356,10 +356,13 @@ def test_generate_theme_assets_pipeline_definition(
         WEBPACK_MANIFEST_S3_IDENTIFIER,
     ]
     for input in build_online_site_task["config"]["inputs"]:
-        assert input["name"] in expected_inputs
-    expected_outputs = [SITE_CONTENT_GIT_IDENTIFIER, OCW_HUGO_THEMES_GIT_IDENTIFIER]
+        assert input["name"] in build_online_site_expected_inputs
+    build_online_site_expected_outputs = [
+        SITE_CONTENT_GIT_IDENTIFIER,
+        OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    ]
     for output in build_online_site_task["config"]["outputs"]:
-        assert output["name"] in expected_outputs
+        assert output["name"] in build_online_site_expected_outputs
     build_online_site_command = "\n".join(
         build_online_site_task["config"]["run"]["args"]
     )
@@ -413,6 +416,43 @@ def test_generate_theme_assets_pipeline_definition(
         )
         assert (
             build_online_site_task["params"]["AWS_SECRET_ACCESS_KEY"]
+            == settings.AWS_SECRET_ACCESS_KEY
+        )
+    upload_online_build_task = get_dict_list_item_by_field(
+        items=online_build_tasks,
+        field="task",
+        value=pipeline_definition._upload_online_build_identifier,
+    )
+    assert (
+        upload_online_build_task["config"]["image_resource"]["source"]["repository"]
+        == AWS_CLI_REGISTRY_IMAGE.source["repository"]
+    )
+    upload_online_build_command = "\n".join(
+        upload_online_build_task["config"]["run"]["args"]
+    )
+    if is_root_website:
+        online_sync_command = f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{branch_vars['web_bucket']}/{base_url} --metadata site-id={site.name}{delete_flag}"
+    else:
+        online_sync_command = f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{branch_vars['web_bucket']}/{base_url} --exclude='{site.short_id}.zip' --exclude='{site.short_id}-video.zip' --metadata site-id={site.name}{delete_flag}"
+    assert online_sync_command in upload_online_build_command
+    upload_online_build_expected_inputs = [SITE_CONTENT_GIT_IDENTIFIER]
+    for input in upload_online_build_task["config"]["inputs"]:
+        assert input["name"] in upload_online_build_expected_inputs
+    assert (
+        upload_online_build_task["on_success"]["try"]["put"]
+        == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
+    )
+    assert (
+        upload_online_build_task["on_success"]["try"]["params"]["text"]
+        == f"{{\"version\": \"{branch_vars['pipeline_name']}\", \"status\": \"succeeded\"}}"
+    )
+    if is_dev:
+        assert (
+            upload_online_build_task["params"]["AWS_ACCESS_KEY_ID"]
+            == settings.AWS_ACCESS_KEY_ID
+        )
+        assert (
+            upload_online_build_task["params"]["AWS_SECRET_ACCESS_KEY"]
             == settings.AWS_SECRET_ACCESS_KEY
         )
 
