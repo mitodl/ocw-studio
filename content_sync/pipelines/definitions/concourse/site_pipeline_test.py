@@ -185,6 +185,7 @@ def test_generate_theme_assets_pipeline_definition(
         instance_vars=instance_vars,
     )
     rendered_definition = json.loads(pipeline_definition.json(indent=2, by_alias=True))
+
     # Assert that the expected resource types exist
     expected_resource_types = [
         HTTP_RESOURCE_TYPE_IDENTIFIER,
@@ -194,6 +195,7 @@ def test_generate_theme_assets_pipeline_definition(
     ]
     for resource_type in rendered_definition["resource_types"]:
         assert resource_type["name"] in expected_resource_types
+
     # Assert that the expected resources exist and have the expected properties
     resources = rendered_definition["resources"]
     webpack_manifest_s3_resource = get_dict_list_item_by_field(
@@ -271,10 +273,7 @@ def test_generate_theme_assets_pipeline_definition(
         )
         is not None
     )
-    jobs = rendered_definition["jobs"]
-    online_site_job = get_dict_list_item_by_field(
-        jobs, "name", pipeline_definition._online_site_job_identifier
-    )
+
     # The build jobs should contain the expected tasks, and those tasks should have the expected properties
     def assert_base_build_tasks(tasks: list[dict]):
         """
@@ -333,6 +332,10 @@ def test_generate_theme_assets_pipeline_definition(
                 == settings.AWS_SECRET_ACCESS_KEY
             )
 
+    jobs = rendered_definition["jobs"]
+    online_site_job = get_dict_list_item_by_field(
+        jobs, "name", pipeline_definition._online_site_job_identifier
+    )
     online_build_tasks = online_site_job["plan"]
     assert (
         online_build_tasks[0]["try"]["put"]
