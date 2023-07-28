@@ -21,8 +21,9 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
-    WEBPACK_MANIFEST_S3_IDENTIFIER,
     STATIC_RESOURCES_S3_IDENTIFIER,
+    WEBPACK_ARTIFACTS_IDENTIFIER,
+    WEBPACK_MANIFEST_S3_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
@@ -463,6 +464,39 @@ def test_generate_theme_assets_pipeline_definition(
         in offline_build_gate_get_task["passed"]
     )
     assert_base_build_tasks(tasks=offline_site_tasks, offline=True)
+    filter_webpack_artifacts_task = get_dict_list_item_by_field(
+        offline_site_tasks,
+        "task",
+        pipeline_definition._filter_webpack_artifacts_identifier,
+    )
+    assert (
+        filter_webpack_artifacts_task["config"]["image_resource"]["source"][
+            "repository"
+        ]
+        == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source["repository"]
+    )
+    filter_webpack_artifacts_expected_inputs = [WEBPACK_MANIFEST_S3_IDENTIFIER]
+    for input in filter_webpack_artifacts_task["config"]["inputs"]:
+        assert input["name"] in filter_webpack_artifacts_expected_inputs
+    filter_webpack_artifacts_expected_outputs = [WEBPACK_ARTIFACTS_IDENTIFIER]
+    for input in filter_webpack_artifacts_task["config"]["outputs"]:
+        assert input["name"] in filter_webpack_artifacts_expected_outputs
+    filter_webpack_artifacts_command = "\n".join(
+        filter_webpack_artifacts_task["config"]["run"]["args"]
+    )
+    assert (
+        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{cli_endpoint_url} cp s3://{branch_vars['web_bucket']}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map"
+        in filter_webpack_artifacts_command
+    )
+    if is_dev:
+        assert (
+            filter_webpack_artifacts_task["params"]["AWS_ACCESS_KEY_ID"]
+            == settings.AWS_ACCESS_KEY_ID
+        )
+        assert (
+            filter_webpack_artifacts_task["params"]["AWS_SECRET_ACCESS_KEY"]
+            == settings.AWS_SECRET_ACCESS_KEY
+        )
 
     # TODO: remove this debug code
     # f = open(
