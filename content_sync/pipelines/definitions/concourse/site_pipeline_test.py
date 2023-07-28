@@ -462,6 +462,7 @@ def test_generate_theme_assets_pipeline_definition(
         pipeline_definition._online_site_job_identifier
         in offline_build_gate_get_task["passed"]
     )
+    assert_base_build_tasks(tasks=offline_site_tasks, offline=True)
 
     # TODO: remove this debug code
     # f = open(
