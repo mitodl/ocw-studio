@@ -275,37 +275,24 @@ def test_generate_theme_assets_pipeline_definition(
     )
 
     # The build jobs should contain the expected tasks, and those tasks should have the expected properties
-    def assert_base_build_tasks(tasks: list[dict]):
+    def assert_base_build_tasks(tasks: list[dict], offline: bool):
         """
         Asserts that a list of tasks contains the proper base site pipeline tasks
 
         Args:
             tasks(list[dict]): The list of tasks to check
         """
-        assert (
-            get_dict_list_item_by_field(
-                items=tasks, field="get", value=WEBPACK_MANIFEST_S3_IDENTIFIER
-            )
-            is not None
-        )
-        assert (
-            get_dict_list_item_by_field(
-                items=tasks, field="get", value=OCW_HUGO_THEMES_GIT_IDENTIFIER
-            )
-            is not None
-        )
-        assert (
-            get_dict_list_item_by_field(
-                items=tasks, field="get", value=OCW_HUGO_PROJECTS_GIT_IDENTIFIER
-            )
-            is not None
-        )
-        assert (
-            get_dict_list_item_by_field(
-                items=tasks, field="get", value=SITE_CONTENT_GIT_IDENTIFIER
-            )
-            is not None
-        )
+        get_steps = [
+            WEBPACK_MANIFEST_S3_IDENTIFIER,
+            OCW_HUGO_THEMES_GIT_IDENTIFIER,
+            OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+            SITE_CONTENT_GIT_IDENTIFIER,
+        ]
+        for get_step in get_steps:
+            step = get_dict_list_item_by_field(items=tasks, field="get", value=get_step)
+            assert step is not None
+            if offline:
+                assert pipeline_definition._online_site_job_identifier in step["passed"]
         static_resources_s3_task = get_dict_list_item_by_field(
             items=tasks, field="task", value=STATIC_RESOURCES_S3_IDENTIFIER
         )
@@ -341,7 +328,7 @@ def test_generate_theme_assets_pipeline_definition(
         online_site_tasks[0]["try"]["put"]
         == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
-    assert_base_build_tasks(online_site_tasks)
+    assert_base_build_tasks(tasks=online_site_tasks, offline=False)
     build_online_site_task = get_dict_list_item_by_field(
         items=online_site_tasks,
         field="task",
