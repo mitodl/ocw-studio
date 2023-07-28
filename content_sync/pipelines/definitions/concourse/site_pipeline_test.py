@@ -336,14 +336,14 @@ def test_generate_theme_assets_pipeline_definition(
     online_site_job = get_dict_list_item_by_field(
         jobs, "name", pipeline_definition._online_site_job_identifier
     )
-    online_build_tasks = online_site_job["plan"]
+    online_site_tasks = online_site_job["plan"]
     assert (
-        online_build_tasks[0]["try"]["put"]
+        online_site_tasks[0]["try"]["put"]
         == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
-    assert_base_build_tasks(online_build_tasks)
+    assert_base_build_tasks(online_site_tasks)
     build_online_site_task = get_dict_list_item_by_field(
-        items=online_build_tasks,
+        items=online_site_tasks,
         field="task",
         value=pipeline_definition._build_online_site_identifier,
     )
@@ -422,7 +422,7 @@ def test_generate_theme_assets_pipeline_definition(
             == settings.AWS_SECRET_ACCESS_KEY
         )
     upload_online_build_task = get_dict_list_item_by_field(
-        items=online_build_tasks,
+        items=online_site_tasks,
         field="task",
         value=pipeline_definition._upload_online_build_identifier,
     )
@@ -458,7 +458,7 @@ def test_generate_theme_assets_pipeline_definition(
             upload_online_build_task["params"]["AWS_SECRET_ACCESS_KEY"]
             == settings.AWS_SECRET_ACCESS_KEY
         )
-    assert online_build_tasks[-1]["put"] == "offline-build-gate"
+    assert online_site_tasks[-1]["put"] == "offline-build-gate"
 
     # TODO: remove this debug code
     # f = open(
