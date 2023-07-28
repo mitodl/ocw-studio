@@ -25,6 +25,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
 )
 from content_sync.utils import get_hugo_arg_string
 from main.constants import PRODUCTION_NAMES
+from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
@@ -183,13 +184,8 @@ def test_generate_theme_assets_pipeline_definition(
     for resource_type in rendered_definition["resource_types"]:
         assert resource_type["name"] in expected_resource_types
     resources = rendered_definition["resources"]
-    webpack_manifest_s3_resource = next(
-        (
-            resource
-            for resource in resources
-            if resource["name"] == WEBPACK_MANIFEST_S3_IDENTIFIER
-        ),
-        None,
+    webpack_manifest_s3_resource = get_dict_list_item_by_field(
+        items=resources, field="name", value=WEBPACK_MANIFEST_S3_IDENTIFIER
     )
     assert webpack_manifest_s3_resource["source"]["bucket"] == artifacts_bucket
     assert (
@@ -210,22 +206,14 @@ def test_generate_theme_assets_pipeline_definition(
         assert not hasattr(webpack_manifest_s3_resource["source"], "endpoint")
         assert not hasattr(webpack_manifest_s3_resource["source"], "access_key_id")
         assert not hasattr(webpack_manifest_s3_resource["source"], "secret_access_key")
-    offline_build_gate_resource = next(
-        (
-            resource
-            for resource in resources
-            if resource["name"] == pipeline_definition._offline_build_gate_identifier
-        ),
-        None,
+    offline_build_gate_resource = get_dict_list_item_by_field(
+        items=resources,
+        field="name",
+        value=pipeline_definition._offline_build_gate_identifier,
     )
     assert offline_build_gate_resource["type"] == "keyval"
-    site_content_git_resource = next(
-        (
-            resource
-            for resource in resources
-            if resource["name"] == SITE_CONTENT_GIT_IDENTIFIER
-        ),
-        None,
+    site_content_git_resource = get_dict_list_item_by_field(
+        items=resources, field="name", value=SITE_CONTENT_GIT_IDENTIFIER
     )
     assert site_content_git_resource["source"]["branch"] == branch_vars["branch"]
     site_content_git_uri = site_content_git_resource["source"]["uri"]
@@ -243,23 +231,13 @@ def test_generate_theme_assets_pipeline_definition(
             == f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{site.short_id}.git"
         )
         assert not hasattr(site_content_git_resource["source"], "private_key")
-    ocw_hugo_themes_git_resource = next(
-        (
-            resource
-            for resource in resources
-            if resource["name"] == OCW_HUGO_THEMES_GIT_IDENTIFIER
-        ),
-        None,
+    ocw_hugo_themes_git_resource = get_dict_list_item_by_field(
+        items=resources, field="name", value=OCW_HUGO_THEMES_GIT_IDENTIFIER
     )
     assert ocw_hugo_themes_git_resource["source"]["uri"] == OCW_HUGO_THEMES_GIT
     assert ocw_hugo_themes_git_resource["source"]["branch"] == ocw_hugo_themes_branch
-    ocw_hugo_projects_git_resource = next(
-        (
-            resource
-            for resource in resources
-            if resource["name"] == OCW_HUGO_PROJECTS_GIT_IDENTIFIER
-        ),
-        None,
+    ocw_hugo_projects_git_resource = get_dict_list_item_by_field(
+        items=resources, field="name", value=OCW_HUGO_PROJECTS_GIT_IDENTIFIER
     )
     assert ocw_hugo_projects_git_resource["source"]["uri"] == ocw_hugo_projects_url
     assert (
