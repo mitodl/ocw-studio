@@ -197,7 +197,7 @@ class SitePipelineDefinition(Pipeline):
         ocw_hugo_themes_resource = GitResource(
             name=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             uri=OCW_HUGO_THEMES_GIT,
-            branch=self._config.ocw_hugo_projects_branch,
+            branch=self._config.ocw_hugo_themes_branch,
         )
         ocw_hugo_projects_resource = GitResource(
             name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,

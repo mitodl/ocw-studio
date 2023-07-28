@@ -25,7 +25,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
 )
 from content_sync.utils import get_hugo_arg_string
 from main.constants import PRODUCTION_NAMES
-from websites.constants import STARTER_SOURCE_GITHUB
+from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
 
@@ -243,8 +243,32 @@ def test_generate_theme_assets_pipeline_definition(
             == f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{site.short_id}.git"
         )
         assert not hasattr(site_content_git_resource["source"], "private_key")
+    ocw_hugo_themes_git_resource = next(
+        (
+            resource
+            for resource in resources
+            if resource["name"] == OCW_HUGO_THEMES_GIT_IDENTIFIER
+        ),
+        None,
+    )
+    assert ocw_hugo_themes_git_resource["source"]["uri"] == OCW_HUGO_THEMES_GIT
+    assert ocw_hugo_themes_git_resource["source"]["branch"] == ocw_hugo_themes_branch
+    ocw_hugo_projects_git_resource = next(
+        (
+            resource
+            for resource in resources
+            if resource["name"] == OCW_HUGO_PROJECTS_GIT_IDENTIFIER
+        ),
+        None,
+    )
+    assert ocw_hugo_projects_git_resource["source"]["uri"] == ocw_hugo_projects_url
+    assert (
+        ocw_hugo_projects_git_resource["source"]["branch"] == ocw_hugo_projects_branch
+    )
 
     # TODO: remove this debug code
-    # f = open(f"site-pipeline-{branch_vars['branch']}-{'dev' if is_dev else 'prod'}.yml", "w")
+    # f = open(
+    #     f"site-pipeline-{branch_vars['branch']}-{'dev' if is_dev else 'prod'}.yml", "w"
+    # )
     # f.write(pipeline_definition.json(indent=2, by_alias=True))
     # f.close()
