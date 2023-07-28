@@ -167,6 +167,6 @@ def get_dict_list_item_by_field(items: list[dict], field: str, value: str):
         (dict): The first dict with a field value that matches the given parameters
     """
     return next(
-        (item for item in items if item[field] == value),
+        (item for item in items if item.get(field, None) == value),
         None,
     )
