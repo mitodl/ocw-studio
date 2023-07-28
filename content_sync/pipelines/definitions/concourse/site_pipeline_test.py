@@ -24,6 +24,10 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     WEBPACK_MANIFEST_S3_IDENTIFIER,
     STATIC_RESOURCES_S3_IDENTIFIER,
 )
+from content_sync.pipelines.definitions.concourse.common.image_resources import (
+    AWS_CLI_REGISTRY_IMAGE,
+    OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
+)
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinition,
 )
@@ -335,6 +339,43 @@ def test_generate_theme_assets_pipeline_definition(
         == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
     assert_base_build_tasks(online_build_tasks)
+    build_online_site_task = get_dict_list_item_by_field(
+        items=online_build_tasks,
+        field="task",
+        value=pipeline_definition._build_online_site_identifier,
+    )
+    assert (
+        build_online_site_task["config"]["image_resource"]["source"]["repository"]
+        == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source["repository"]
+    )
+    expected_inputs = [
+        OCW_HUGO_THEMES_GIT_IDENTIFIER,
+        OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+        SITE_CONTENT_GIT_IDENTIFIER,
+        STATIC_RESOURCES_S3_IDENTIFIER,
+        WEBPACK_MANIFEST_S3_IDENTIFIER,
+    ]
+    for input in build_online_site_task["config"]["inputs"]:
+        assert input["name"] in expected_inputs
+    expected_outputs = [SITE_CONTENT_GIT_IDENTIFIER, OCW_HUGO_THEMES_GIT_IDENTIFIER]
+    for output in build_online_site_task["config"]["outputs"]:
+        assert output["name"] in expected_outputs
+    build_online_site_command = "\n".join(
+        build_online_site_task["config"]["run"]["args"]
+    )
+    assert (
+        f"cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data"
+        in build_online_site_command
+    )
+    assert f"hugo {hugo_args_online}" in build_online_site_command
+    assert (
+        f"cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{static_resources_subdirectory}"
+        in build_online_site_command
+    )
+    assert (
+        f"rm -rf ./output-online{static_resources_subdirectory}*.mp4"
+        in build_online_site_command
+    )
 
     # TODO: remove this debug code
     # f = open(
