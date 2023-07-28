@@ -453,9 +453,14 @@ def test_generate_theme_assets_pipeline_definition(
         jobs, "name", pipeline_definition._offline_site_job_identifier
     )
     offline_site_tasks = offline_site_job["plan"]
+    offline_build_gate_get_task = offline_site_tasks[0]
     assert (
-        offline_site_tasks[0]["get"]
+        offline_build_gate_get_task["get"]
         == pipeline_definition._offline_build_gate_identifier
+    )
+    assert (
+        pipeline_definition._online_site_job_identifier
+        in offline_build_gate_get_task["passed"]
     )
 
     # TODO: remove this debug code
