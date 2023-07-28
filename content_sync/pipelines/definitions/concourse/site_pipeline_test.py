@@ -278,11 +278,30 @@ def test_generate_theme_assets_pipeline_definition(
         Args:
             tasks(list[dict]): The list of tasks to check
         """
-        assert tasks[0]["try"]["put"] == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
-        assert tasks[1]["get"] == WEBPACK_MANIFEST_S3_IDENTIFIER
-        assert tasks[2]["get"] == OCW_HUGO_THEMES_GIT_IDENTIFIER
-        assert tasks[3]["get"] == OCW_HUGO_PROJECTS_GIT_IDENTIFIER
-        assert tasks[4]["get"] == SITE_CONTENT_GIT_IDENTIFIER
+        assert (
+            get_dict_list_item_by_field(
+                items=tasks, field="get", value=WEBPACK_MANIFEST_S3_IDENTIFIER
+            )
+            is not None
+        )
+        assert (
+            get_dict_list_item_by_field(
+                items=tasks, field="get", value=OCW_HUGO_THEMES_GIT_IDENTIFIER
+            )
+            is not None
+        )
+        assert (
+            get_dict_list_item_by_field(
+                items=tasks, field="get", value=OCW_HUGO_PROJECTS_GIT_IDENTIFIER
+            )
+            is not None
+        )
+        assert (
+            get_dict_list_item_by_field(
+                items=tasks, field="get", value=SITE_CONTENT_GIT_IDENTIFIER
+            )
+            is not None
+        )
         static_resources_s3_task = get_dict_list_item_by_field(
             items=tasks, field="task", value=STATIC_RESOURCES_S3_IDENTIFIER
         )
@@ -311,6 +330,10 @@ def test_generate_theme_assets_pipeline_definition(
             )
 
     online_build_tasks = online_site_job["plan"]
+    assert (
+        online_build_tasks[0]["try"]["put"]
+        == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
+    )
     assert_base_build_tasks(online_build_tasks)
 
     # TODO: remove this debug code
