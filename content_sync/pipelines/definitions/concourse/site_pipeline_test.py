@@ -275,6 +275,9 @@ def test_generate_theme_assets_pipeline_definition(
         == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
     assert online_build_tasks[1]["get"] == WEBPACK_MANIFEST_S3_IDENTIFIER
+    assert online_build_tasks[2]["get"] == OCW_HUGO_THEMES_GIT_IDENTIFIER
+    assert online_build_tasks[3]["get"] == OCW_HUGO_PROJECTS_GIT_IDENTIFIER
+    assert online_build_tasks[4]["get"] == SITE_CONTENT_GIT_IDENTIFIER
 
     # TODO: remove this debug code
     # f = open(
