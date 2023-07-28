@@ -458,7 +458,18 @@ def test_generate_theme_assets_pipeline_definition(
             upload_online_build_task["params"]["AWS_SECRET_ACCESS_KEY"]
             == settings.AWS_SECRET_ACCESS_KEY
         )
-    assert online_site_tasks[-1]["put"] == "offline-build-gate"
+    assert (
+        online_site_tasks[-1]["put"]
+        == pipeline_definition._offline_build_gate_identifier
+    )
+    offline_site_job = get_dict_list_item_by_field(
+        jobs, "name", pipeline_definition._offline_site_job_identifier
+    )
+    offline_site_tasks = offline_site_job["plan"]
+    assert (
+        offline_site_tasks[0]["get"]
+        == pipeline_definition._offline_build_gate_identifier
+    )
 
     # TODO: remove this debug code
     # f = open(
