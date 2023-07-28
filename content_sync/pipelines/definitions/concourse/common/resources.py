@@ -1,5 +1,6 @@
 import os
 from urllib.parse import urljoin
+
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import Identifier, Resource
 from ol_concourse.lib.resource_types import slack_notification_resource
