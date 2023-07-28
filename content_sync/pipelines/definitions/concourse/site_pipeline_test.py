@@ -178,6 +178,7 @@ def test_generate_theme_assets_pipeline_definition(
         instance_vars=instance_vars,
     )
     rendered_definition = json.loads(pipeline_definition.json(indent=2, by_alias=True))
+    # Assert that the expected resource types exist
     expected_resource_types = [
         HTTP_RESOURCE_TYPE_IDENTIFIER,
         KEYVAL_RESOURCE_TYPE_IDENTIFIER,
@@ -186,6 +187,7 @@ def test_generate_theme_assets_pipeline_definition(
     ]
     for resource_type in rendered_definition["resource_types"]:
         assert resource_type["name"] in expected_resource_types
+    # Assert that the expected resources exist and have the expected properties
     resources = rendered_definition["resources"]
     webpack_manifest_s3_resource = get_dict_list_item_by_field(
         items=resources, field="name", value=WEBPACK_MANIFEST_S3_IDENTIFIER
@@ -261,6 +263,16 @@ def test_generate_theme_assets_pipeline_definition(
             items=resources, field="name", value=SLACK_ALERT_RESOURCE_IDENTIFIER
         )
         is not None
+    )
+    jobs = rendered_definition["jobs"]
+    online_site_job = get_dict_list_item_by_field(
+        jobs, "name", pipeline_definition._online_site_job_identifier
+    )
+    # The online build should contain the expected tasks, and those tasks should have the expected properties
+    online_build_tasks = online_site_job["plan"]
+    assert (
+        online_build_tasks[0]["try"]["put"]
+        == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
 
     # TODO: remove this debug code
