@@ -20,6 +20,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
+    SLACK_ALERT_RESOURCE_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
@@ -254,6 +255,12 @@ def test_generate_theme_assets_pipeline_definition(
     assert (
         ocw_studio_webhook_resource["source"]["headers"]["Authorization"]
         == f"Bearer {settings.API_BEARER_TOKEN}"
+    )
+    assert (
+        get_dict_list_item_by_field(
+            items=resources, field="name", value=SLACK_ALERT_RESOURCE_IDENTIFIER
+        )
+        is not None
     )
 
     # TODO: remove this debug code
