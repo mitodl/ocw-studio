@@ -458,6 +458,7 @@ def test_generate_theme_assets_pipeline_definition(
             upload_online_build_task["params"]["AWS_SECRET_ACCESS_KEY"]
             == settings.AWS_SECRET_ACCESS_KEY
         )
+    assert online_build_tasks[-1]["put"] == "offline-build-gate"
 
     # TODO: remove this debug code
     # f = open(
