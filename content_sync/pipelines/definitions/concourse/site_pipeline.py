@@ -91,6 +91,7 @@ class SitePipelineDefinition(Pipeline):
     _offline_site_job_identifier = Identifier("offline-site-job")
     _build_offline_site_identifier = Identifier("build-offline-site")
     _upload_offline_build_identifier = Identifier("upload-offline-build")
+    _clear_cdn_cache_identifier = Identifier("clear-cdn-cache")
 
     _open_discussions_resource = OpenDiscussionsResource()
     _slack_resource = SlackAlertResource()
@@ -409,7 +410,7 @@ class SitePipelineDefinition(Pipeline):
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
         clear_cdn_cache_online_step = ClearCdnCacheStep(
-            name="clear-cdn-cache",
+            name=self._clear_cdn_cache_identifier,
             fastly_var="fastly",
             purge_url=self._config.purge_url,
             step_description="clear cdn cache",
@@ -607,7 +608,7 @@ class SitePipelineDefinition(Pipeline):
                 "AWS_SECRET_ACCESS_KEY"
             ] = settings.AWS_SECRET_ACCESS_KEY
         clear_cdn_cache_offline_step = ClearCdnCacheStep(
-            name="clear-cdn-cache",
+            name=self._clear_cdn_cache_identifier,
             fastly_var="fastly",
             purge_url=self._config.purge_url,
             step_description="clear cdn cache",
