@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.99.0
+--------------
+
+- Tune uWSGI settings (#1886)
+
 Version 0.98.3 (Released July 31, 2023)
 --------------
 
