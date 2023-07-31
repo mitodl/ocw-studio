@@ -425,6 +425,28 @@ def test_generate_theme_assets_pipeline_definition(
                 "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY,
             }
         ).issubset(set(upload_online_build_task["params"]))
+    if not is_dev:
+        clear_cdn_cache_online_step = get_dict_list_item_by_field(
+            online_site_tasks, "task", pipeline_definition._clear_cdn_cache_identifier
+        )
+        clear_cdn_cache_online_success_steps = clear_cdn_cache_online_step[
+            "on_success"
+        ]["try"]["do"]
+        open_discussions_webhook_step_online_params = json.loads(
+            clear_cdn_cache_online_success_steps[0]["try"]["params"]["text"]
+        )
+        assert (
+            open_discussions_webhook_step_online_params["webhook_key"]
+            == settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
+        )
+        assert (
+            open_discussions_webhook_step_online_params["prefix"]
+            == f"{site.get_url_path()}/"
+        )
+        assert (
+            open_discussions_webhook_step_online_params["version"]
+            == branch_vars["pipeline_name"]
+        )
     assert (
         online_site_tasks[-1]["put"]
         == pipeline_definition._offline_build_gate_identifier
@@ -569,6 +591,28 @@ def test_generate_theme_assets_pipeline_definition(
                 "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY,
             }
         ).issubset(set(upload_offline_build_task["params"]))
+    if not is_dev:
+        clear_cdn_cache_offline_step = get_dict_list_item_by_field(
+            offline_site_tasks, "task", pipeline_definition._clear_cdn_cache_identifier
+        )
+        clear_cdn_cache_offline_success_steps = clear_cdn_cache_offline_step[
+            "on_success"
+        ]["try"]["do"]
+        open_discussions_webhook_step_offline_params = json.loads(
+            clear_cdn_cache_offline_success_steps[0]["try"]["params"]["text"]
+        )
+        assert (
+            open_discussions_webhook_step_offline_params["webhook_key"]
+            == settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
+        )
+        assert (
+            open_discussions_webhook_step_offline_params["prefix"]
+            == f"{site.get_url_path()}/"
+        )
+        assert (
+            open_discussions_webhook_step_offline_params["version"]
+            == branch_vars["pipeline_name"]
+        )
 
     # TODO: remove this debug code
     f = open(
