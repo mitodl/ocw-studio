@@ -90,7 +90,10 @@ describe("SortableSelect", () => {
   })
 
   it("should call onChange on option selection", async () => {
-    const { wrapper } = await render()
+    SETTINGS.features.SORTABLE_SELECT_QUICK_ADD = true
+    const { wrapper } = await render({
+      defaultOptions: options
+    })
 
     await triggerSelectMenu(wrapper)
 

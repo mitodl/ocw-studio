@@ -1,6 +1,7 @@
 import { ReactWrapper } from "enzyme"
 import { act } from "react-dom/test-utils"
 import { assertNotNil } from "../../test_util"
+import { isFeatureEnabled } from "../../util/features"
 
 /**
  * A little helper function to find the SelectField
@@ -18,6 +19,10 @@ export async function triggerSortableSelect(wrapper: ReactWrapper, value: any) {
       target: { value }
     })
   })
+
+  if (!isFeatureEnabled("SORTABLE_SELECT_QUICK_ADD")) {
+    wrapper.find(".cyan-button").simulate("click")
+  }
 }
 
 /**

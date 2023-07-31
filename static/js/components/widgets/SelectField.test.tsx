@@ -3,6 +3,7 @@ import sinon, { SinonSandbox, SinonStub } from "sinon"
 import { ReactWrapper, mount } from "enzyme"
 import Select from "react-select"
 import { AsyncPaginate, LoadOptions } from "react-select-async-paginate"
+import AsyncSelect from "react-select/async"
 
 import SelectField, { Additional, Option } from "./SelectField"
 import { act } from "react-dom/test-utils"
@@ -66,34 +67,52 @@ describe("SelectField", () => {
       "This place is held!"
     )
   })
+  ;[true, false].forEach(isInfiniteScroll =>
+    it(`should pass defaultOptions to ${
+      isInfiniteScroll ? "AsyncPaginate" : "AsyncSelect"
+    }`, async () => {
+      SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = isInfiniteScroll
 
-  it("should pass defaultOptions to AsyncPaginate", async () => {
-    const wrapper = await render({
-      defaultOptions: "options",
-      loadOptions
+      const wrapper = await render({
+        defaultOptions: "options",
+        loadOptions
+      })
+
+      expect(
+        wrapper
+          .find(isInfiniteScroll ? AsyncPaginate : AsyncSelect)
+          .prop("defaultOptions")
+      ).toBe("options")
     })
-
-    expect(wrapper.find(AsyncPaginate).prop("defaultOptions")).toBe("options")
-  })
+  )
 
   it("should pass isOptionDisabled down to the Select", async () => {
     const isOptionDisabled = jest.fn()
     const wrapper = await render({ isOptionDisabled })
     expect(wrapper.find(Select).prop("isOptionDisabled")).toBe(isOptionDisabled)
   })
+  ;[true, false].forEach(isInfiniteScroll =>
+    it(`should pass isOptionDisabled down to the ${
+      isInfiniteScroll ? "AsyncPaginate" : "AsyncSelect"
+    }`, async () => {
+      SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = isInfiniteScroll
 
-  it("should pass isOptionDisabled down to the AsyncPaginate", async () => {
-    const isOptionDisabled = jest.fn()
-    const wrapper = await render({
-      isOptionDisabled,
-      loadOptions
+      const isOptionDisabled = jest.fn()
+      const wrapper = await render({
+        isOptionDisabled,
+        loadOptions
+      })
+      expect(
+        wrapper
+          .find(isInfiniteScroll ? AsyncPaginate : AsyncSelect)
+          .prop("isOptionDisabled")
+      ).toBe(isOptionDisabled)
     })
-    expect(wrapper.find(AsyncPaginate).prop("isOptionDisabled")).toBe(
-      isOptionDisabled
-    )
-  })
+  )
 
   it("should use AsyncPaginate if a loadOptions callback is supplied", async () => {
+    SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = true
+
     const wrapper = await render({
       loadOptions
     })
@@ -104,11 +123,15 @@ describe("SelectField", () => {
     expect(select.prop("loadOptions")).toBe(loadOptions)
   })
 
-  it.each([true, false])(
+  it.each(["select", "async-select", "async-paginate"])(
     "should render options in menu",
-    async hasLoadOptions => {
+    async component => {
+      SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL =
+        component === "async-paginate"
+
       const wrapper = await render({
-        loadOptions: hasLoadOptions ? loadOptions : undefined
+        loadOptions:    component !== "select" ? loadOptions : undefined,
+        defaultOptions: options
       })
 
       await triggerSelectMenu(wrapper)
@@ -118,11 +141,16 @@ describe("SelectField", () => {
         .hostNodes()
         .map(x => x.text())
 
-      expect(renderedOptions).toEqual(expectedOptions.map(x => x.label))
+      const expectedOptions = options.map(
+        x => (x as Option).label ?? (component !== "select" ? "" : x)
+      )
+
+      expect(renderedOptions).toEqual(expectedOptions)
     }
   )
 
   it("should preserve search text on menu close", async () => {
+    SETTINGS.features.SELECT_FIELD_PRESERVE_SEARCH_TEXT = true
     const searchText = "An"
     const wrapper = await render()
 
@@ -143,6 +171,7 @@ describe("SelectField", () => {
   })
 
   it("should preserve search text on option selection", async () => {
+    SETTINGS.features.SELECT_FIELD_PRESERVE_SEARCH_TEXT = true
     const searchText = "An"
     const wrapper = await render()
 
@@ -171,9 +200,16 @@ describe("SelectField", () => {
     expect(value).toEqual(searchText)
   })
 
-  it("should only show unselected menu items", async () => {
+  it("should pass isOptionSelected down to the Select", async () => {
+    const isOptionSelected = jest.fn()
+    const wrapper = await render({ isOptionSelected })
+    expect(wrapper.find(Select).prop("isOptionSelected")).toBe(isOptionSelected)
+  })
+
+  it("should only show unselected menu items when hideSelectedOptions is true", async () => {
     const wrapper = await render({
-      options: [
+      hideSelectedOptions: true,
+      options:             [
         {
           label: "Not selected",
           value: "not-selected"

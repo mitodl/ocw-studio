@@ -23,6 +23,8 @@ def _index(request):
         "release_version": settings.VERSION,
         "sentry_dsn": settings.SENTRY_DSN,
         "gdrive_enabled": is_gdrive_enabled(),
+        "features": settings.FEATURES,
+        "features_default": settings.FEATURES_DEFAULT
     }
 
     user = request.user

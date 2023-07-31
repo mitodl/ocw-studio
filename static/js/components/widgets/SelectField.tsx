@@ -2,6 +2,8 @@ import React, { useCallback, ChangeEvent, useState } from "react"
 import Select from "react-select"
 import { isNil } from "ramda"
 import { AsyncPaginate, LoadOptions } from "react-select-async-paginate"
+import AsyncSelect from "react-select/async"
+import { isFeatureEnabled } from "../../util/features"
 
 export interface Option {
   label: string
@@ -40,11 +42,17 @@ export default function SelectField(props: Props): JSX.Element {
     placeholder: initialPlaceholder,
     isOptionDisabled,
     isOptionSelected,
-    hideSelectedOptions = true,
+    hideSelectedOptions = false,
     cacheUniques
   } = props
   const [searchText, setSearchText] = useState("")
   const [placeholder, setPlaceholder] = useState("")
+
+  const preserveSearchText = isFeatureEnabled(
+    "SELECT_FIELD_PRESERVE_SEARCH_TEXT"
+  )
+  const infiniteScroll = isFeatureEnabled("SELECT_FIELD_INFINITE_SCROLL")
+
   const multiple = props.multiple ?? false
   const selectOptions = options.map(option =>
     typeof option === "string" ? { label: option, value: option } : option
@@ -108,6 +116,19 @@ export default function SelectField(props: Props): JSX.Element {
     [setSearchText, placeholder]
   )
 
+  // For AsyncSelect
+  const loadOptionsShim = useCallback(
+    async (inputValue: string, cb: (options: Option[]) => void) => {
+      console.log("Shim")
+      if (loadOptions) {
+        const result = await loadOptions(inputValue, [], { callback: cb })
+        console.log(result)
+        return result?.options ?? []
+      }
+    },
+    [loadOptions]
+  )
+
   const commonSelectOptions = {
     className:         "w-100 form-input",
     classNamePrefix,
@@ -115,13 +136,13 @@ export default function SelectField(props: Props): JSX.Element {
     isMulti:           multiple,
     options:           selectOptions,
     placeholder:       placeholder || initialPlaceholder || null,
-    inputValue:        searchText,
-    blurInputOnSelect: true,
+    blurInputOnSelect: preserveSearchText ? true : undefined,
     hideSelectedOptions,
     onChange:          changeHandler,
-    onInputChange:     handleInputChanged,
-    onMenuClose:       handleMenuClosed,
-    onMenuOpen:        handleMenuOpen,
+    inputValue:        preserveSearchText ? searchText : undefined,
+    onInputChange:     preserveSearchText ? handleInputChanged : undefined,
+    onMenuClose:       preserveSearchText ? handleMenuClosed : undefined,
+    onMenuOpen:        preserveSearchText ? handleMenuOpen : undefined,
     isOptionDisabled,
     isOptionSelected,
     styles:            {
@@ -134,13 +155,21 @@ export default function SelectField(props: Props): JSX.Element {
   }
 
   return loadOptions ? (
-    <AsyncPaginate
-      {...commonSelectOptions}
-      loadOptions={loadOptions}
-      defaultOptions={defaultOptions}
-      loadOptionsOnMenuOpen={false}
-      cacheUniqs={cacheUniques ?? []}
-    />
+    infiniteScroll ? (
+      <AsyncPaginate
+        {...commonSelectOptions}
+        loadOptions={loadOptions}
+        defaultOptions={defaultOptions}
+        loadOptionsOnMenuOpen={false}
+        cacheUniqs={cacheUniques ?? []}
+      />
+    ) : (
+      <AsyncSelect
+        {...commonSelectOptions}
+        loadOptions={loadOptionsShim}
+        defaultOptions={defaultOptions}
+      />
+    )
   ) : (
     <Select {...commonSelectOptions} />
   )

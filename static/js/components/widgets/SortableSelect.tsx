@@ -1,10 +1,16 @@
-import React, { ChangeEvent, useCallback } from "react"
+import React, {
+  ChangeEvent,
+  SyntheticEvent,
+  useCallback,
+  useState
+} from "react"
 import SelectField, { Additional, Option } from "./SelectField"
 import { default as SortableItemComponent } from "../SortableItem"
 import SortWrapper from "../SortWrapper"
 import { DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import { LoadOptions } from "react-select-async-paginate"
+import { isFeatureEnabled } from "../../util/features"
 
 export interface SortableItem {
   // the UUID for this item
@@ -38,7 +44,43 @@ export default function SortableSelect(props: Props) {
     isOptionDisabled,
     cacheUniques
   } = props
-  const handleValueChange = useCallback(
+
+  const [focusedContent, setFocusedContent] = useState<string | undefined>(
+    undefined
+  )
+
+  const quickAdd = isFeatureEnabled("SORTABLE_SELECT_QUICK_ADD")
+  const hideSelectedOptions = isFeatureEnabled("SORTABLE_SELECT_HIDE_SELECTED")
+  const preserveSearchText = isFeatureEnabled(
+    "SELECT_FIELD_PRESERVE_SEARCH_TEXT"
+  )
+
+  /**
+   * Callback for adding a new item to the field value in the sortable UI. If
+   * there is an item 'focused' in the UI (i.e. the user has selected it in the
+   * SelectField) then we add that to the current value and call the change
+   * shim.
+   */
+  const addFocusedItem = useCallback(
+    (event: SyntheticEvent<HTMLButtonElement>) => {
+      event.preventDefault()
+
+      if (focusedContent) {
+        onChange(value.map(item => item.id).concat(focusedContent))
+        setFocusedContent(undefined)
+      }
+    },
+    [focusedContent, setFocusedContent, onChange, value]
+  )
+
+  const setFocusedContentCB = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      setFocusedContent(event.target.value)
+    },
+    [setFocusedContent]
+  )
+
+  const addItemOnChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
       const content = event.target.value
       if (content) {
@@ -84,17 +126,30 @@ export default function SortableSelect(props: Props) {
 
   return (
     <>
-      <SelectField
-        name={name}
-        onChange={handleValueChange}
-        options={options}
-        loadOptions={loadOptions}
-        defaultOptions={defaultOptions}
-        isOptionDisabled={isOptionDisabled}
-        isOptionSelected={isOptionSelected}
-        classNamePrefix={classNamePrefix}
-        cacheUniques={cacheUniques}
-      />
+      <div className="d-flex">
+        <SelectField
+          name={name}
+          value={!preserveSearchText ? focusedContent : null}
+          onChange={quickAdd ? addItemOnChange : setFocusedContentCB}
+          options={options}
+          loadOptions={loadOptions}
+          defaultOptions={defaultOptions}
+          isOptionDisabled={isOptionDisabled}
+          isOptionSelected={hideSelectedOptions ? isOptionSelected : undefined}
+          hideSelectedOptions={hideSelectedOptions}
+          classNamePrefix={classNamePrefix}
+          cacheUniques={cacheUniques}
+        />
+        {!quickAdd ? (
+          <button
+            className="px-4 ml-3 btn cyan-button"
+            disabled={focusedContent === undefined}
+            onClick={addFocusedItem}
+          >
+            Add
+          </button>
+        ) : null}
+      </div>
       <SortWrapper
         handleDragEnd={handleDragEnd}
         items={value.map(item => item.id)}
