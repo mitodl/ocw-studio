@@ -497,10 +497,75 @@ def test_generate_theme_assets_pipeline_definition(
             filter_webpack_artifacts_task["params"]["AWS_SECRET_ACCESS_KEY"]
             == settings.AWS_SECRET_ACCESS_KEY
         )
+    build_offline_site_task = get_dict_list_item_by_field(
+        offline_site_tasks,
+        "task",
+        pipeline_definition._build_offline_site_identifier,
+    )
+    assert (
+        build_offline_site_task["config"]["image_resource"]["source"]["repository"]
+        == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source["repository"]
+    )
+    build_offline_site_expected_inputs = [
+        OCW_HUGO_THEMES_GIT_IDENTIFIER,
+        OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+        SITE_CONTENT_GIT_IDENTIFIER,
+        STATIC_RESOURCES_S3_IDENTIFIER,
+        WEBPACK_MANIFEST_S3_IDENTIFIER,
+        WEBPACK_ARTIFACTS_IDENTIFIER,
+    ]
+    for input in build_offline_site_task["config"]["inputs"]:
+        assert input["name"] in build_offline_site_expected_inputs
+    build_offline_site_expected_outputs = [
+        SITE_CONTENT_GIT_IDENTIFIER,
+        OCW_HUGO_THEMES_GIT_IDENTIFIER,
+        pipeline_definition._build_offline_site_identifier,
+    ]
+    for input in build_offline_site_task["config"]["outputs"]:
+        assert input["name"] in build_offline_site_expected_outputs
+    build_offline_site_command = "\n".join(
+        build_offline_site_task["config"]["run"]["args"]
+    )
+    assert WEBPACK_MANIFEST_S3_IDENTIFIER in build_offline_site_command
+    assert OCW_HUGO_THEMES_GIT_IDENTIFIER in build_offline_site_command
+    assert STATIC_RESOURCES_S3_IDENTIFIER in build_offline_site_command
+    assert WEBPACK_ARTIFACTS_IDENTIFIER in build_offline_site_command
+    if is_root_website:
+        assert build_offline_site_command.count(f"hugo {hugo_args_offline}") == 1
+    else:
+        assert build_offline_site_command.count(f"hugo {hugo_args_offline}") == 2
+        assert f"zip -r ../../{pipeline_definition._build_offline_site_identifier}/{site.short_id}-video.zip ./"
+    build_offline_site_expected_params = {
+        "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
+        "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
+        "OCW_STUDIO_BASE_URL": branch_vars["ocw_studio_url"],
+        "STATIC_API_BASE_URL": branch_vars["static_api_url"],
+        "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
+        "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
+        "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
+        "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
+        "NOINDEX": noindex,
+    }
+    assert set(build_offline_site_expected_params).issubset(
+        set(build_offline_site_task["params"])
+    )
+    if is_dev:
+        assert (
+            build_offline_site_task["params"]["RESOURCE_BASE_URL"]
+            == branch_vars["resource_base_url"]
+        )
+        assert (
+            build_offline_site_task["params"]["AWS_ACCESS_KEY_ID"]
+            == settings.AWS_ACCESS_KEY_ID
+        )
+        assert (
+            build_offline_site_task["params"]["AWS_SECRET_ACCESS_KEY"]
+            == settings.AWS_SECRET_ACCESS_KEY
+        )
 
     # TODO: remove this debug code
-    # f = open(
-    #     f"site-pipeline-{branch_vars['branch']}-{'dev' if is_dev else 'prod'}.yml", "w"
-    # )
-    # f.write(pipeline_definition.json(indent=2, by_alias=True))
-    # f.close()
+    f = open(
+        f"site-pipeline-{branch_vars['branch']}-{'dev' if is_dev else 'prod'}.yml", "w"
+    )
+    f.write(pipeline_definition.json(indent=2, by_alias=True))
+    f.close()
