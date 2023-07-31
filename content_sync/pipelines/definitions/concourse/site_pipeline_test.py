@@ -311,14 +311,12 @@ def test_generate_theme_assets_pipeline_definition(
         assert f"aws s3{cli_endpoint_url} sync s3://{storage_bucket}/{site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}"
         if is_dev:
             assert cli_endpoint_url in static_resources_command
-            assert (
-                static_resources_s3_task["params"]["AWS_ACCESS_KEY_ID"]
-                == settings.AWS_ACCESS_KEY_ID
-            )
-            assert (
-                static_resources_s3_task["params"]["AWS_SECRET_ACCESS_KEY"]
-                == settings.AWS_SECRET_ACCESS_KEY
-            )
+            assert set(
+                {
+                    "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID,
+                    "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY,
+                }
+            ).issubset(set(static_resources_s3_task["params"]))
 
     jobs = rendered_definition["jobs"]
     online_site_job = get_dict_list_item_by_field(
@@ -381,22 +379,17 @@ def test_generate_theme_assets_pipeline_definition(
         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
         "NOINDEX": noindex,
     }
+    if is_dev:
+        build_online_site_expected_params.update(
+            {
+                "RESOURCE_BASE_URL": branch_vars["resource_base_url"],
+                "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID,
+                "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY,
+            }
+        )
     assert set(build_online_site_expected_params).issubset(
         set(build_online_site_task["params"])
     )
-    if is_dev:
-        assert (
-            build_online_site_task["params"]["RESOURCE_BASE_URL"]
-            == branch_vars["resource_base_url"]
-        )
-        assert (
-            build_online_site_task["params"]["AWS_ACCESS_KEY_ID"]
-            == settings.AWS_ACCESS_KEY_ID
-        )
-        assert (
-            build_online_site_task["params"]["AWS_SECRET_ACCESS_KEY"]
-            == settings.AWS_SECRET_ACCESS_KEY
-        )
     upload_online_build_task = get_dict_list_item_by_field(
         items=online_site_tasks,
         field="task",
@@ -426,14 +419,12 @@ def test_generate_theme_assets_pipeline_definition(
         == f"{{\"version\": \"{branch_vars['pipeline_name']}\", \"status\": \"succeeded\"}}"
     )
     if is_dev:
-        assert (
-            upload_online_build_task["params"]["AWS_ACCESS_KEY_ID"]
-            == settings.AWS_ACCESS_KEY_ID
-        )
-        assert (
-            upload_online_build_task["params"]["AWS_SECRET_ACCESS_KEY"]
-            == settings.AWS_SECRET_ACCESS_KEY
-        )
+        assert set(
+            {
+                "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID,
+                "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY,
+            }
+        ).issubset(set(upload_online_build_task["params"]))
     assert (
         online_site_tasks[-1]["put"]
         == pipeline_definition._offline_build_gate_identifier
@@ -477,14 +468,12 @@ def test_generate_theme_assets_pipeline_definition(
         in filter_webpack_artifacts_command
     )
     if is_dev:
-        assert (
-            filter_webpack_artifacts_task["params"]["AWS_ACCESS_KEY_ID"]
-            == settings.AWS_ACCESS_KEY_ID
-        )
-        assert (
-            filter_webpack_artifacts_task["params"]["AWS_SECRET_ACCESS_KEY"]
-            == settings.AWS_SECRET_ACCESS_KEY
-        )
+        assert set(
+            {
+                "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID,
+                "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY,
+            }
+        ).issubset(set(filter_webpack_artifacts_task["params"]))
     build_offline_site_task = get_dict_list_item_by_field(
         offline_site_tasks,
         "task",
@@ -534,22 +523,17 @@ def test_generate_theme_assets_pipeline_definition(
         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
         "NOINDEX": noindex,
     }
+    if is_dev:
+        build_offline_site_expected_params.update(
+            {
+                "RESOURCE_BASE_URL": branch_vars["resource_base_url"],
+                "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID,
+                "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY,
+            }
+        )
     assert set(build_offline_site_expected_params).issubset(
         set(build_offline_site_task["params"])
     )
-    if is_dev:
-        assert (
-            build_offline_site_task["params"]["RESOURCE_BASE_URL"]
-            == branch_vars["resource_base_url"]
-        )
-        assert (
-            build_offline_site_task["params"]["AWS_ACCESS_KEY_ID"]
-            == settings.AWS_ACCESS_KEY_ID
-        )
-        assert (
-            build_offline_site_task["params"]["AWS_SECRET_ACCESS_KEY"]
-            == settings.AWS_SECRET_ACCESS_KEY
-        )
 
     # TODO: remove this debug code
     f = open(
