@@ -613,10 +613,3 @@ def test_generate_theme_assets_pipeline_definition(
             open_discussions_webhook_step_offline_params["version"]
             == branch_vars["pipeline_name"]
         )
-
-    # TODO: remove this debug code
-    f = open(
-        f"site-pipeline-{branch_vars['branch']}-{'dev' if is_dev else 'prod'}.yml", "w"
-    )
-    f.write(pipeline_definition.json(indent=2, by_alias=True))
-    f.close()
