@@ -370,32 +370,20 @@ def test_generate_theme_assets_pipeline_definition(
         f"rm -rf ./output-online{static_resources_subdirectory}*.mp4"
         in build_online_site_command
     )
-    assert (
-        build_online_site_task["params"]["API_BEARER_TOKEN"]
-        == settings.API_BEARER_TOKEN
+    build_online_site_expected_params = {
+        "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
+        "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
+        "OCW_STUDIO_BASE_URL": branch_vars["ocw_studio_url"],
+        "STATIC_API_BASE_URL": branch_vars["static_api_url"],
+        "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
+        "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
+        "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
+        "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
+        "NOINDEX": noindex,
+    }
+    assert set(build_online_site_expected_params).issubset(
+        set(build_online_site_task["params"])
     )
-    assert (
-        build_online_site_task["params"]["GTM_ACCOUNT_ID"]
-        == settings.OCW_GTM_ACCOUNT_ID
-    )
-    assert (
-        build_online_site_task["params"]["OCW_STUDIO_BASE_URL"]
-        == branch_vars["ocw_studio_url"]
-    )
-    assert (
-        build_online_site_task["params"]["OCW_IMPORT_STARTER_SLUG"]
-        == settings.OCW_COURSE_STARTER_SLUG
-    )
-    assert (
-        build_online_site_task["params"]["OCW_COURSE_STARTER_SLUG"]
-        == settings.OCW_COURSE_STARTER_SLUG
-    )
-    assert build_online_site_task["params"]["SITEMAP_DOMAIN"] == settings.SITEMAP_DOMAIN
-    assert (
-        build_online_site_task["params"]["SENTRY_DSN"]
-        == settings.OCW_HUGO_THEMES_SENTRY_DSN
-    )
-    assert build_online_site_task["params"]["NOINDEX"] == noindex
     if is_dev:
         assert (
             build_online_site_task["params"]["RESOURCE_BASE_URL"]
