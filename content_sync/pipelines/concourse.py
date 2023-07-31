@@ -34,6 +34,13 @@ from content_sync.pipelines.base import (
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
 )
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+    OCW_HUGO_THEMES_GIT_IDENTIFIER,
+)
+from content_sync.pipelines.definitions.concourse.site_pipeline import (
+    SitePipelineDefinition,
+)
 from content_sync.utils import (
     check_mandatory_settings,
     get_hugo_arg_string,
@@ -383,24 +390,18 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             # Invalid github url, so skip
             return
 
-        if self.WEBSITE.name == settings.ROOT_WEBSITE_NAME:
+        is_root_website = self.WEBSITE.name == settings.ROOT_WEBSITE_NAME
+        if is_root_website:
             base_url = ""
             static_resources_subdirectory = f"/{self.WEBSITE.get_url_path()}/"
-            theme_created_trigger = "true"
-            theme_deployed_trigger = "false"
+            delete_flag = ""
         else:
             base_url = self.WEBSITE.get_url_path()
             static_resources_subdirectory = "/"
-            theme_created_trigger = "false"
-            theme_deployed_trigger = "true"
-        hugo_projects_url = urljoin(
+            delete_flag = " --delete"
+        ocw_hugo_projects_url = urljoin(
             f"{starter_path_url.scheme}://{starter_path_url.netloc}",
             f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
-        )
-        purge_header = (
-            ""
-            if settings.CONCOURSE_HARD_PURGE
-            else "\n              - -H\n              - 'Fastly-Soft-Purge: 1'"
         )
         for branch_vars in [
             {
@@ -421,38 +422,33 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             },
         ]:
             branch_vars.update(get_template_vars())
-            branch = branch_vars["branch"]
+            site_content_branch = branch_vars["branch"]
             pipeline_name = branch_vars["pipeline_name"]
             static_api_url = branch_vars["static_api_url"]
             storage_bucket_name = branch_vars["storage_bucket_name"]
             artifacts_bucket = branch_vars["artifacts_bucket_name"]
-            if branch == settings.GIT_BRANCH_PREVIEW:
+            ocw_studio_url = branch_vars["ocw_studio_url"]
+            if site_content_branch == settings.GIT_BRANCH_PREVIEW:
                 web_bucket = branch_vars["preview_bucket_name"]
                 offline_bucket = branch_vars["offline_preview_bucket_name"]
                 resource_base_url = branch_vars["resource_base_url_draft"]
-            elif branch == settings.GIT_BRANCH_RELEASE:
+            elif site_content_branch == settings.GIT_BRANCH_RELEASE:
                 web_bucket = branch_vars["publish_bucket_name"]
                 offline_bucket = branch_vars["offline_publish_bucket_name"]
                 resource_base_url = branch_vars["resource_base_url_live"]
             if (
-                branch == settings.GIT_BRANCH_PREVIEW
+                site_content_branch == settings.GIT_BRANCH_PREVIEW
                 or settings.ENV_NAME not in PRODUCTION_NAMES
             ):
                 noindex = "true"
             else:
                 noindex = "false"
-            if settings.CONCOURSE_IS_PRIVATE_REPO:
-                markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
-                private_key_var = "\n      private_key: ((git-private-key))"
-            else:
-                markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
-                private_key_var = ""
             starter_slug = self.WEBSITE.starter.slug
-            base_hugo_args = {"--themesDir": "../ocw-hugo-themes/"}
+            base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
             base_online_args = base_hugo_args.copy()
             base_online_args.update(
                 {
-                    "--config": f"../ocw-hugo-projects/{starter_slug}/config.yaml",
+                    "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config.yaml",
                     "--baseURL": f"/{base_url}",
                     "--destination": "output-online",
                 }
@@ -460,7 +456,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             base_offline_args = base_hugo_args.copy()
             base_offline_args.update(
                 {
-                    "--config": f"../ocw-hugo-projects/{starter_slug}/config-offline.yaml",
+                    "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config-offline.yaml",
                     "--baseURL": "/",
                     "--destination": "output-offline",
                 }
@@ -477,74 +473,31 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 base_offline_args,
                 self.HUGO_ARGS,
             )
-            config_str = (
-                self.get_pipeline_definition("definitions/concourse/site-pipeline.yml")
-                .replace("((hugo-args-online))", hugo_args_online)
-                .replace("((hugo-args-offline))", hugo_args_offline)
-                .replace("((markdown-uri))", markdown_uri)
-                .replace("((git-private-key-var))", private_key_var)
-                .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
-                .replace("((artifacts-bucket))", artifacts_bucket or "")
-                .replace("((web-bucket))", web_bucket or "")
-                .replace("((offline-bucket))", offline_bucket or "")
-                .replace("((ocw-hugo-themes-branch))", ocw_hugo_themes_branch)
-                .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
-                .replace("((ocw-hugo-projects-branch))", ocw_hugo_projects_branch)
-                .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
-                .replace("((ocw-studio-url))", branch_vars["ocw_studio_url"] or "")
-                .replace("((static-api-base-url))", static_api_url)
-                .replace(
-                    "((ocw-import-starter-slug))", settings.OCW_COURSE_STARTER_SLUG
-                )
-                .replace(
-                    "((ocw-course-starter-slug))", settings.OCW_COURSE_STARTER_SLUG
-                )
-                .replace("((ocw-studio-bucket))", storage_bucket_name or "")
-                .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
-                .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
-                .replace("((short-id))", self.WEBSITE.short_id)
-                .replace("((ocw-site-repo-branch))", branch)
-                .replace("((config-slug))", self.WEBSITE.starter.slug)
-                .replace("((s3-path))", self.WEBSITE.s3_path)
-                .replace("((base-url))", base_url)
-                .replace("((site-url))", self.WEBSITE.get_url_path())
-                .replace("((site-name))", self.WEBSITE.name)
-                .replace("((purge-url))", f"purge/{self.WEBSITE.name}")
-                .replace("((purge_header))", purge_header)
-                .replace("((pipeline_name))", pipeline_name)
-                .replace("((api-token))", settings.API_BEARER_TOKEN or "")
-                .replace("((theme-deployed-trigger))", theme_deployed_trigger)
-                .replace("((theme-created-trigger))", theme_created_trigger)
-                .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
-                .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
-                .replace(
-                    "((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or ""
-                )
-                .replace("((endpoint-url))", DEV_ENDPOINT_URL)
-                .replace(
-                    "((cli-endpoint-url))",
-                    f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
-                )
-                .replace("((resource-base-url))", resource_base_url or "")
-                .replace(
-                    "((static-resources-subdirectory))", static_resources_subdirectory
-                )
-                .replace(
-                    "((ocw-hugo-themes-sentry-dsn))",
-                    settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
-                )
-                .replace(
-                    "((delete))",
-                    ""
-                    if self.WEBSITE.name == settings.ROOT_WEBSITE_NAME
-                    else " --delete",
-                )
-                .replace(
-                    "((is-root-website))",
-                    str(self.WEBSITE.name == settings.ROOT_WEBSITE_NAME),
-                )
-                .replace("((noindex))", noindex)
+
+            pipeline_definition = SitePipelineDefinition(
+                site=self.WEBSITE,
+                pipeline_name=pipeline_name,
+                is_root_website=is_root_website,
+                base_url=base_url,
+                site_content_branch=site_content_branch,
+                static_api_url=static_api_url,
+                storage_bucket_name=storage_bucket_name,
+                artifacts_bucket=artifacts_bucket,
+                web_bucket=web_bucket,
+                offline_bucket=offline_bucket,
+                resource_base_url=resource_base_url,
+                static_resources_subdirectory=static_resources_subdirectory,
+                noindex=noindex,
+                ocw_studio_url=ocw_studio_url,
+                ocw_hugo_themes_branch=ocw_hugo_projects_branch,
+                ocw_hugo_projects_url=ocw_hugo_projects_url,
+                ocw_hugo_projects_branch=ocw_hugo_projects_branch,
+                hugo_args_online=hugo_args_online,
+                hugo_args_offline=hugo_args_offline,
+                delete_flag=delete_flag,
+                instance_vars=self.instance_vars,
             )
+            config_str = pipeline_definition.json(indent=2, by_alias=True)
             self.upsert_config(config_str, pipeline_name)
 
 
