@@ -534,6 +534,41 @@ def test_generate_theme_assets_pipeline_definition(
     assert set(build_offline_site_expected_params).issubset(
         set(build_offline_site_task["params"])
     )
+    upload_offline_build_task = get_dict_list_item_by_field(
+        offline_site_tasks,
+        "task",
+        pipeline_definition._upload_offline_build_identifier,
+    )
+    assert (
+        upload_offline_build_task["config"]["image_resource"]["source"]["repository"]
+        == AWS_CLI_REGISTRY_IMAGE.source["repository"]
+    )
+    upload_offline_build_command = "\n".join(
+        upload_offline_build_task["config"]["run"]["args"]
+    )
+    assert (
+        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{branch_vars['offline_bucket']}/{base_url} --metadata site-id={site.name}{delete_flag}"
+        in upload_offline_build_command
+    )
+    if not is_root_website:
+        assert (
+            f"aws s3{cli_endpoint_url} sync {pipeline_definition._build_offline_site_identifier}/ s3://{branch_vars['web_bucket']}/{base_url} --exclude='*' --include='{site.short_id}.zip' --include='{site.short_id}-video.zip' --metadata site-id={site.name}"
+            in upload_offline_build_command
+        )
+    upload_offline_build_expected_inputs = [
+        SITE_CONTENT_GIT_IDENTIFIER,
+        pipeline_definition._build_offline_site_identifier,
+        OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+    ]
+    for input in upload_offline_build_task["config"]["inputs"]:
+        assert input["name"] in upload_offline_build_expected_inputs
+    if is_dev:
+        assert set(
+            {
+                "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID,
+                "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY,
+            }
+        ).issubset(set(upload_offline_build_task["params"]))
 
     # TODO: remove this debug code
     f = open(
