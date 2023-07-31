@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.98.3
+Version 0.98.3 (Released July 31, 2023)
 --------------
 
 - Fix draft publishing bug (#1873)
