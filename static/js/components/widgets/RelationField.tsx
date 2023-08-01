@@ -199,7 +199,10 @@ export default function RelationField(props: Props): JSX.Element {
 
       if (!response) {
         // duplicate, another later instance of loadOptions will handle this instead
-        return
+        return {
+          hasMore: true,
+          options: []
+        }
       }
       const json: PaginatedResponse<WebsiteContent> = await response.json()
       const { results } = json

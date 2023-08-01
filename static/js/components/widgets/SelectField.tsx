@@ -158,8 +158,7 @@ export default function SelectField(props: Props): JSX.Element {
         {...commonSelectOptions}
         loadOptions={loadOptions}
         defaultOptions={defaultOptions}
-        loadOptionsOnMenuOpen={false}
-        cacheUniqs={cacheUniques ?? []}
+        cacheUniqs={cacheUniques}
       />
     ) : (
       <AsyncSelect
