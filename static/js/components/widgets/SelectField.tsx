@@ -42,7 +42,7 @@ export default function SelectField(props: Props): JSX.Element {
     placeholder: initialPlaceholder,
     isOptionDisabled,
     isOptionSelected,
-    hideSelectedOptions = false,
+    hideSelectedOptions,
     cacheUniques
   } = props
   const [searchText, setSearchText] = useState("")
@@ -119,10 +119,8 @@ export default function SelectField(props: Props): JSX.Element {
   // For AsyncSelect
   const loadOptionsShim = useCallback(
     async (inputValue: string, cb: (options: Option[]) => void) => {
-      console.log("Shim")
       if (loadOptions) {
         const result = await loadOptions(inputValue, [], { callback: cb })
-        console.log(result)
         return result?.options ?? []
       }
     },
