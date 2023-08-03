@@ -110,7 +110,7 @@ describe("SelectField", () => {
     })
   )
 
-  it("should use AsyncPaginate if a loadOptions callback is supplied", async () => {
+  it("should use AsyncPaginate if a loadOptions callback is supplied and infinite scroll is enabled", async () => {
     SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = true
 
     const wrapper = await render({

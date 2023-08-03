@@ -89,7 +89,7 @@ describe("SortableSelect", () => {
     expect(wrapper.find("SelectField").prop("value")).toBeUndefined()
   })
 
-  it("should call onChange on option selection", async () => {
+  it("should call onChange on option selection when quick add is enabled", async () => {
     SETTINGS.features.SORTABLE_SELECT_QUICK_ADD = true
     const { wrapper } = await render({
       defaultOptions: options
