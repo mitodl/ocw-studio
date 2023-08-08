@@ -153,7 +153,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                 ClearCdnCacheStep(
                     name=self._clear_draft_cdn_cache_task_identifier,
                     fastly_var="fastly_draft",
-                    purge_url="purge/ocw-hugo-themes",
+                    site_name="ocw-hugo-themes",
                     step_description="draft cdn cache clear step",
                     pipeline_name=BaseThemeAssetsPipeline.PIPELINE_NAME,
                     instance_vars=instance_vars,
@@ -163,7 +163,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                 ClearCdnCacheStep(
                     name=self._clear_live_cdn_cache_identifier,
                     fastly_var="fastly_live",
-                    purge_url="purge/ocw-hugo-themes",
+                    site_name="ocw-hugo-themes",
                     step_description="live cdn cache clear step",
                     pipeline_name=BaseThemeAssetsPipeline.PIPELINE_NAME,
                     instance_vars=instance_vars,

@@ -196,6 +196,13 @@ def test_generate_theme_assets_pipeline_definition(
     rendered_definition = json.loads(pipeline_definition.json(indent=2, by_alias=True))
 
     # Assert that the expected resource types exist
+    webpack_manifest_s3_identifier = (
+        f"{WEBPACK_MANIFEST_S3_IDENTIFIER}-{ocw_hugo_themes_branch}"
+    )
+    site_content_git_identifier = f"{SITE_CONTENT_GIT_IDENTIFIER}-{site.name}"
+    ocw_studio_webhook_identifier = (
+        f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{site.name}"
+    )
     expected_resource_types = [
         HTTP_RESOURCE_TYPE_IDENTIFIER,
         KEYVAL_RESOURCE_TYPE_IDENTIFIER,
@@ -208,7 +215,7 @@ def test_generate_theme_assets_pipeline_definition(
     # Assert that the expected resources exist and have the expected properties
     resources = rendered_definition["resources"]
     webpack_manifest_s3_resource = get_dict_list_item_by_field(
-        items=resources, field="name", value=WEBPACK_MANIFEST_S3_IDENTIFIER
+        items=resources, field="name", value=webpack_manifest_s3_identifier
     )
     assert webpack_manifest_s3_resource["source"]["bucket"] == artifacts_bucket
     assert (
@@ -236,7 +243,7 @@ def test_generate_theme_assets_pipeline_definition(
     )
     assert offline_build_gate_resource["type"] == "keyval"
     site_content_git_resource = get_dict_list_item_by_field(
-        items=resources, field="name", value=SITE_CONTENT_GIT_IDENTIFIER
+        items=resources, field="name", value=site_content_git_identifier
     )
     assert site_content_git_resource["source"]["branch"] == branch_vars["branch"]
     site_content_git_uri = site_content_git_resource["source"]["uri"]
@@ -267,7 +274,7 @@ def test_generate_theme_assets_pipeline_definition(
         ocw_hugo_projects_git_resource["source"]["branch"] == ocw_hugo_projects_branch
     )
     ocw_studio_webhook_resource = get_dict_list_item_by_field(
-        items=resources, field="name", value=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
+        items=resources, field="name", value=ocw_studio_webhook_identifier
     )
     expected_api_path = os.path.join("api", "websites", site_name, "pipeline_status")
     expected_api_url = urljoin(branch_vars["ocw_studio_url"], expected_api_path)
@@ -292,10 +299,10 @@ def test_generate_theme_assets_pipeline_definition(
             tasks(list[dict]): The list of tasks to check
         """
         get_steps = [
-            WEBPACK_MANIFEST_S3_IDENTIFIER,
+            webpack_manifest_s3_identifier,
             OCW_HUGO_THEMES_GIT_IDENTIFIER,
             OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
-            SITE_CONTENT_GIT_IDENTIFIER,
+            site_content_git_identifier,
         ]
         for get_step in get_steps:
             step = get_dict_list_item_by_field(items=tasks, field="get", value=get_step)
@@ -331,10 +338,7 @@ def test_generate_theme_assets_pipeline_definition(
         jobs, "name", pipeline_definition._online_site_job_identifier
     )
     online_site_tasks = online_site_job["plan"]
-    assert (
-        online_site_tasks[0]["try"]["put"]
-        == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
-    )
+    assert online_site_tasks[0]["try"]["put"] == ocw_studio_webhook_identifier
     assert_base_build_tasks(tasks=online_site_tasks, offline=False)
     build_online_site_task = get_dict_list_item_by_field(
         items=online_site_tasks, field="task", value=BUILD_ONLINE_SITE_IDENTIFIER
@@ -346,14 +350,14 @@ def test_generate_theme_assets_pipeline_definition(
     build_online_site_expected_inputs = [
         OCW_HUGO_THEMES_GIT_IDENTIFIER,
         OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
-        SITE_CONTENT_GIT_IDENTIFIER,
+        site_content_git_identifier,
         STATIC_RESOURCES_S3_IDENTIFIER,
-        WEBPACK_MANIFEST_S3_IDENTIFIER,
+        webpack_manifest_s3_identifier,
     ]
     for input in build_online_site_task["config"]["inputs"]:
         assert input["name"] in build_online_site_expected_inputs
     build_online_site_expected_outputs = [
-        SITE_CONTENT_GIT_IDENTIFIER,
+        site_content_git_identifier,
         OCW_HUGO_THEMES_GIT_IDENTIFIER,
     ]
     for output in build_online_site_task["config"]["outputs"]:
@@ -362,7 +366,7 @@ def test_generate_theme_assets_pipeline_definition(
         build_online_site_task["config"]["run"]["args"]
     )
     assert (
-        f"cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data"
+        f"cp ../{webpack_manifest_s3_identifier}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data"
         in build_online_site_command
     )
     assert f"hugo {hugo_args_online}" in build_online_site_command
@@ -407,16 +411,16 @@ def test_generate_theme_assets_pipeline_definition(
         upload_online_build_task["config"]["run"]["args"]
     )
     if is_root_website:
-        online_sync_command = f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{branch_vars['web_bucket']}/{base_url} --metadata site-id={site.name}{delete_flag}"
+        online_sync_command = f"aws s3{cli_endpoint_url} sync {site_content_git_identifier}/output-online s3://{branch_vars['web_bucket']}/{base_url} --metadata site-id={site.name}{delete_flag}"
     else:
-        online_sync_command = f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{branch_vars['web_bucket']}/{base_url} --exclude='{site.short_id}.zip' --exclude='{site.short_id}-video.zip' --metadata site-id={site.name}{delete_flag}"
+        online_sync_command = f"aws s3{cli_endpoint_url} sync {site_content_git_identifier}/output-online s3://{branch_vars['web_bucket']}/{base_url} --exclude='{site.short_id}.zip' --exclude='{site.short_id}-video.zip' --metadata site-id={site.name}{delete_flag}"
     assert online_sync_command in upload_online_build_command
-    upload_online_build_expected_inputs = [SITE_CONTENT_GIT_IDENTIFIER]
+    upload_online_build_expected_inputs = [site_content_git_identifier]
     for input in upload_online_build_task["config"]["inputs"]:
         assert input["name"] in upload_online_build_expected_inputs
     assert (
         upload_online_build_task["on_success"]["try"]["put"]
-        == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
+        == ocw_studio_webhook_identifier
     )
     assert (
         upload_online_build_task["on_success"]["try"]["params"]["text"]
@@ -478,7 +482,7 @@ def test_generate_theme_assets_pipeline_definition(
         ]
         == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source["repository"]
     )
-    filter_webpack_artifacts_expected_inputs = [WEBPACK_MANIFEST_S3_IDENTIFIER]
+    filter_webpack_artifacts_expected_inputs = [webpack_manifest_s3_identifier]
     for input in filter_webpack_artifacts_task["config"]["inputs"]:
         assert input["name"] in filter_webpack_artifacts_expected_inputs
     filter_webpack_artifacts_expected_outputs = [WEBPACK_ARTIFACTS_IDENTIFIER]
@@ -488,7 +492,7 @@ def test_generate_theme_assets_pipeline_definition(
         filter_webpack_artifacts_task["config"]["run"]["args"]
     )
     assert (
-        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{cli_endpoint_url} cp s3://{branch_vars['web_bucket']}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map"
+        f"jq 'recurse | select(type==\"string\")' ./{webpack_manifest_s3_identifier}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{cli_endpoint_url} cp s3://{branch_vars['web_bucket']}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map"
         in filter_webpack_artifacts_command
     )
     if is_dev:
@@ -510,15 +514,15 @@ def test_generate_theme_assets_pipeline_definition(
     build_offline_site_expected_inputs = [
         OCW_HUGO_THEMES_GIT_IDENTIFIER,
         OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
-        SITE_CONTENT_GIT_IDENTIFIER,
+        site_content_git_identifier,
         STATIC_RESOURCES_S3_IDENTIFIER,
-        WEBPACK_MANIFEST_S3_IDENTIFIER,
+        webpack_manifest_s3_identifier,
         WEBPACK_ARTIFACTS_IDENTIFIER,
     ]
     for input in build_offline_site_task["config"]["inputs"]:
         assert input["name"] in build_offline_site_expected_inputs
     build_offline_site_expected_outputs = [
-        SITE_CONTENT_GIT_IDENTIFIER,
+        site_content_git_identifier,
         OCW_HUGO_THEMES_GIT_IDENTIFIER,
         BUILD_OFFLINE_SITE_IDENTIFIER,
     ]
@@ -527,7 +531,7 @@ def test_generate_theme_assets_pipeline_definition(
     build_offline_site_command = "\n".join(
         build_offline_site_task["config"]["run"]["args"]
     )
-    assert WEBPACK_MANIFEST_S3_IDENTIFIER in build_offline_site_command
+    assert webpack_manifest_s3_identifier in build_offline_site_command
     assert OCW_HUGO_THEMES_GIT_IDENTIFIER in build_offline_site_command
     assert STATIC_RESOURCES_S3_IDENTIFIER in build_offline_site_command
     assert WEBPACK_ARTIFACTS_IDENTIFIER in build_offline_site_command
@@ -571,7 +575,7 @@ def test_generate_theme_assets_pipeline_definition(
         upload_offline_build_task["config"]["run"]["args"]
     )
     assert (
-        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{branch_vars['offline_bucket']}/{base_url} --metadata site-id={site.name}{delete_flag}"
+        f"aws s3{cli_endpoint_url} sync {site_content_git_identifier}/output-offline/ s3://{branch_vars['offline_bucket']}/{base_url} --metadata site-id={site.name}{delete_flag}"
         in upload_offline_build_command
     )
     if not is_root_website:
@@ -580,7 +584,7 @@ def test_generate_theme_assets_pipeline_definition(
             in upload_offline_build_command
         )
     upload_offline_build_expected_inputs = [
-        SITE_CONTENT_GIT_IDENTIFIER,
+        site_content_git_identifier,
         BUILD_OFFLINE_SITE_IDENTIFIER,
         OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     ]

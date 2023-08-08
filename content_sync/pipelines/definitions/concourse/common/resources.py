@@ -83,7 +83,9 @@ class OcwStudioWebhookResource(Resource):
         api_path = os.path.join("api", "websites", site_name, "pipeline_status")
         api_url = f"{urljoin(ocw_studio_url, api_path)}/"
         super().__init__(
-            name=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
+            name=Identifier(
+                f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{site_name}"
+            ),
             icon="language-python",
             type=HTTP_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",
