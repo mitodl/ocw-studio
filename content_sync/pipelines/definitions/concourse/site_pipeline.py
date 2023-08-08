@@ -54,6 +54,7 @@ from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT
 from websites.models import Website
 
+
 BUILD_ONLINE_SITE_IDENTIFIER = Identifier("build-online-site")
 UPLOAD_ONLINE_BUILD_IDENTIFIER = Identifier("upload-online-build")
 FILTER_WEBPACK_ARTIFACTS_IDENTIFIER = Identifier("filter-webpack-artifacts")

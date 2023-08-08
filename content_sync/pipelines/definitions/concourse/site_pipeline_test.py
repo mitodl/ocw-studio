@@ -30,12 +30,12 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
-    BUILD_ONLINE_SITE_IDENTIFIER,
-    UPLOAD_ONLINE_BUILD_IDENTIFIER,
-    FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
     BUILD_OFFLINE_SITE_IDENTIFIER,
-    UPLOAD_OFFLINE_BUILD_IDENTIFIER,
+    BUILD_ONLINE_SITE_IDENTIFIER,
     CLEAR_CDN_CACHE_IDENTIFIER,
+    FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
+    UPLOAD_OFFLINE_BUILD_IDENTIFIER,
+    UPLOAD_ONLINE_BUILD_IDENTIFIER,
     SitePipelineDefinition,
     SitePipelineDefinitionConfig,
 )
