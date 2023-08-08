@@ -64,6 +64,33 @@ CLEAR_CDN_CACHE_IDENTIFIER = Identifier("clear-cdn-cache")
 
 
 class SitePipelineDefinitionConfig:
+    """
+    A class with configuration properties for building a site pipeline
+
+    Args:
+        site(Website): The Website object to build the pipeline for
+        pipeline_name(str): The pipeline name to use in Concourse (draft / live)
+        is_root_website(bool): A boolean indicating whether or not the site in the root website
+        base_url(str): The base URL to use when uploading to S3 (/courses/course-name)
+        site_content_branch(str): The branch to use in the site content repo (preview / release)
+        static_api_url(str): The base URL for fetching JSON files from the static API (https://ocw.mit.edu/)
+        storage_bucket_name(str): The bucket name ocw-studio stores resources in (ol-ocw-studio-app)
+        artifacts_bucket(str): The versioned bucket where the webpack manifest is stored (ol-eng-artifacts)
+        web_bucket(str): The online bucket to publish output to (ocw-content-draft)
+        offline_bucket(str): The offline bucket to publish output to (ocw-content-offline-draft)
+        resource_base_url(str): A base URL to override fetching of resources from
+        static_resources_subdirectory(str): An override for the directory static resources are placed in at the output
+        noindex(str): A string representing whether or not the site should be indexed by search engines (true / false)
+        ocw_studio_url(str): The URL to the instance of ocw-studio the pipeline should call home to
+        ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to use
+        ocw_hugo_projects_url(str): The URL to the ocw-hugo-projects repo
+        ocw_hugo_projects_branch(str): The branch of ocw-hugo-projects to use
+        hugo_args_online(str): The arguments to append to the hugo command in the online build
+        hugo_args_offline(str): The arguments to append to the hugo command in the offline build
+        delete_flag(str): Either " --delete" or a blank string, appended to S3 sync commands on the output
+        instance_vars(str): The instance vars for the pipeline in a query string format
+    """
+
     def __init__(
         self,
         site: Website,
@@ -125,6 +152,10 @@ class SitePipelineDefinitionConfig:
 
 
 class SitePipelineResourceTypes(list[ResourceType]):
+    """
+    The ResourceType objects used in a site pipeline
+    """
+
     def __init__(self):
         self.extend(
             [
@@ -136,6 +167,13 @@ class SitePipelineResourceTypes(list[ResourceType]):
 
 
 class SitePipelineResources(list[Resource]):
+    """
+    The Resource objects used in a site pipeline
+
+    Args:
+        config(SitePipelineDefinitionConfig): The site pipeline configuration object
+    """
+
     def __init__(self, config: SitePipelineDefinitionConfig):
         webpack_manifest_resource = Resource(
             name=config.webpack_manifest_s3_identifier,
@@ -203,6 +241,13 @@ class SitePipelineResources(list[Resource]):
 
 
 class SitePipelineBaseTasks(list[StepModifierMixin]):
+    """
+    The base tasks used in a site pipeline
+
+    Args:
+        config(SitePipelineDefinitionConfig): The site pipeline configuration object
+    """
+
     def __init__(
         self,
         config: SitePipelineDefinitionConfig,
@@ -292,6 +337,13 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
 
 
 class SitePipelineOnlineTasks(list[StepModifierMixin]):
+    """
+    The tasks used in the online site job
+
+    Args:
+        config(SitePipelineDefinitionConfig): The site pipeline configuration object
+    """
+
     def __init__(self, config: SitePipelineDefinitionConfig):
         base_tasks = SitePipelineBaseTasks(config=config)
         ocw_studio_webhook_started_step = OcwStudioWebhookStep(
@@ -420,6 +472,13 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
 
 
 class SitePipelineOfflineTasks(list[StepModifierMixin]):
+    """
+    The tasks used in the offline site job
+
+    Args:
+        config(SitePipelineDefinitionConfig): The site pipeline configuration object
+    """
+
     def __init__(
         self,
         config: SitePipelineDefinitionConfig,
@@ -623,6 +682,13 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
 
 
 class SitePipelineDefinition(Pipeline):
+    """
+    The Pipeline object representing an individual site pipeline
+
+    Args:
+        config(SitePipelineDefinitionConfig): The site pipeline configuration object
+    """
+
     _offline_build_gate_identifier = Identifier("offline-build-gate")
     _online_site_job_identifier = Identifier("online-site-job")
     _offline_site_job_identifier = Identifier("offline-site-job")
