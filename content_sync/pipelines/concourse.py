@@ -40,6 +40,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinition,
+    SitePipelineDefinitionConfig,
 )
 from content_sync.utils import (
     check_mandatory_settings,
@@ -474,7 +475,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 self.HUGO_ARGS,
             )
 
-            pipeline_definition = SitePipelineDefinition(
+            pipeline_config = SitePipelineDefinitionConfig(
                 site=self.WEBSITE,
                 pipeline_name=pipeline_name,
                 is_root_website=is_root_website,
@@ -497,6 +498,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 delete_flag=delete_flag,
                 instance_vars=self.instance_vars,
             )
+            pipeline_definition = SitePipelineDefinition(config=pipeline_config)
             config_str = pipeline_definition.json(indent=2, by_alias=True)
             self.upsert_config(config_str, pipeline_name)
 
