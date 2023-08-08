@@ -610,6 +610,7 @@ class SitePipelineDefinition(Pipeline):
         offline_build_gate_resource = Resource(
             name=self._offline_build_gate_identifier,
             type=KEYVAL_RESOURCE_TYPE_IDENTIFIER,
+            icon="gate",
             check_every="never",
         )
         resources.append(offline_build_gate_resource)
