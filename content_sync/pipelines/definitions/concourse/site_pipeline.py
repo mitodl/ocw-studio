@@ -14,7 +14,6 @@ from ol_concourse.lib.models.pipeline import (
     TryStep,
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
-from pydantic import Field
 
 from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
