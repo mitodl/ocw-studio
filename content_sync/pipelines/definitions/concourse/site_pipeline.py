@@ -197,11 +197,13 @@ class SitePipelineResources(list[Resource]):
             name=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             uri=OCW_HUGO_THEMES_GIT,
             branch=config.ocw_hugo_themes_branch,
+            check_every="never",
         )
         ocw_hugo_projects_resource = GitResource(
             name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
             uri=config.ocw_hugo_projects_url,
             branch=config.ocw_hugo_projects_branch,
+            check_every="never",
         )
         site_content_resource_source = {"branch": config.site_content_branch}
         if settings.CONCOURSE_IS_PRIVATE_REPO:
