@@ -271,7 +271,7 @@ def test_generate_theme_assets_pipeline_definition(
     )
     expected_api_path = os.path.join("api", "websites", site_name, "pipeline_status")
     expected_api_url = urljoin(branch_vars["ocw_studio_url"], expected_api_path)
-    assert ocw_studio_webhook_resource["source"]["url"] == expected_api_url
+    assert ocw_studio_webhook_resource["source"]["url"] == f"{expected_api_url}/"
     assert (
         ocw_studio_webhook_resource["source"]["headers"]["Authorization"]
         == f"Bearer {settings.API_BEARER_TOKEN}"
