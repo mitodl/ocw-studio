@@ -30,6 +30,12 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
+    BUILD_ONLINE_SITE_IDENTIFIER,
+    UPLOAD_ONLINE_BUILD_IDENTIFIER,
+    FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
+    BUILD_OFFLINE_SITE_IDENTIFIER,
+    UPLOAD_OFFLINE_BUILD_IDENTIFIER,
+    CLEAR_CDN_CACHE_IDENTIFIER,
     SitePipelineDefinition,
     SitePipelineDefinitionConfig,
 )
@@ -331,9 +337,7 @@ def test_generate_theme_assets_pipeline_definition(
     )
     assert_base_build_tasks(tasks=online_site_tasks, offline=False)
     build_online_site_task = get_dict_list_item_by_field(
-        items=online_site_tasks,
-        field="task",
-        value=pipeline_definition._build_online_site_identifier,
+        items=online_site_tasks, field="task", value=BUILD_ONLINE_SITE_IDENTIFIER
     )
     assert (
         build_online_site_task["config"]["image_resource"]["source"]["repository"]
@@ -393,9 +397,7 @@ def test_generate_theme_assets_pipeline_definition(
         set(build_online_site_task["params"])
     )
     upload_online_build_task = get_dict_list_item_by_field(
-        items=online_site_tasks,
-        field="task",
-        value=pipeline_definition._upload_online_build_identifier,
+        items=online_site_tasks, field="task", value=UPLOAD_ONLINE_BUILD_IDENTIFIER
     )
     assert (
         upload_online_build_task["config"]["image_resource"]["source"]["repository"]
@@ -429,7 +431,7 @@ def test_generate_theme_assets_pipeline_definition(
         ).issubset(set(upload_online_build_task["params"]))
     if not is_dev:
         clear_cdn_cache_online_step = get_dict_list_item_by_field(
-            online_site_tasks, "task", pipeline_definition._clear_cdn_cache_identifier
+            online_site_tasks, "task", CLEAR_CDN_CACHE_IDENTIFIER
         )
         clear_cdn_cache_online_success_steps = clear_cdn_cache_online_step[
             "on_success"
@@ -468,9 +470,7 @@ def test_generate_theme_assets_pipeline_definition(
     )
     assert_base_build_tasks(tasks=offline_site_tasks, offline=True)
     filter_webpack_artifacts_task = get_dict_list_item_by_field(
-        offline_site_tasks,
-        "task",
-        pipeline_definition._filter_webpack_artifacts_identifier,
+        offline_site_tasks, "task", FILTER_WEBPACK_ARTIFACTS_IDENTIFIER
     )
     assert (
         filter_webpack_artifacts_task["config"]["image_resource"]["source"][
@@ -501,7 +501,7 @@ def test_generate_theme_assets_pipeline_definition(
     build_offline_site_task = get_dict_list_item_by_field(
         offline_site_tasks,
         "task",
-        pipeline_definition._build_offline_site_identifier,
+        BUILD_OFFLINE_SITE_IDENTIFIER,
     )
     assert (
         build_offline_site_task["config"]["image_resource"]["source"]["repository"]
@@ -520,7 +520,7 @@ def test_generate_theme_assets_pipeline_definition(
     build_offline_site_expected_outputs = [
         SITE_CONTENT_GIT_IDENTIFIER,
         OCW_HUGO_THEMES_GIT_IDENTIFIER,
-        pipeline_definition._build_offline_site_identifier,
+        BUILD_OFFLINE_SITE_IDENTIFIER,
     ]
     for input in build_offline_site_task["config"]["outputs"]:
         assert input["name"] in build_offline_site_expected_outputs
@@ -535,7 +535,9 @@ def test_generate_theme_assets_pipeline_definition(
         assert build_offline_site_command.count(f"hugo {hugo_args_offline}") == 1
     else:
         assert build_offline_site_command.count(f"hugo {hugo_args_offline}") == 2
-        assert f"zip -r ../../{pipeline_definition._build_offline_site_identifier}/{site.short_id}-video.zip ./"
+        assert (
+            f"zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{site.short_id}-video.zip ./"
+        )
     build_offline_site_expected_params = {
         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
         "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
@@ -559,9 +561,7 @@ def test_generate_theme_assets_pipeline_definition(
         set(build_offline_site_task["params"])
     )
     upload_offline_build_task = get_dict_list_item_by_field(
-        offline_site_tasks,
-        "task",
-        pipeline_definition._upload_offline_build_identifier,
+        offline_site_tasks, "task", UPLOAD_OFFLINE_BUILD_IDENTIFIER
     )
     assert (
         upload_offline_build_task["config"]["image_resource"]["source"]["repository"]
@@ -576,12 +576,12 @@ def test_generate_theme_assets_pipeline_definition(
     )
     if not is_root_website:
         assert (
-            f"aws s3{cli_endpoint_url} sync {pipeline_definition._build_offline_site_identifier}/ s3://{branch_vars['web_bucket']}/{base_url} --exclude='*' --include='{site.short_id}.zip' --include='{site.short_id}-video.zip' --metadata site-id={site.name}"
+            f"aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{branch_vars['web_bucket']}/{base_url} --exclude='*' --include='{site.short_id}.zip' --include='{site.short_id}-video.zip' --metadata site-id={site.name}"
             in upload_offline_build_command
         )
     upload_offline_build_expected_inputs = [
         SITE_CONTENT_GIT_IDENTIFIER,
-        pipeline_definition._build_offline_site_identifier,
+        BUILD_OFFLINE_SITE_IDENTIFIER,
         OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     ]
     for input in upload_offline_build_task["config"]["inputs"]:
@@ -595,7 +595,7 @@ def test_generate_theme_assets_pipeline_definition(
         ).issubset(set(upload_offline_build_task["params"]))
     if not is_dev:
         clear_cdn_cache_offline_step = get_dict_list_item_by_field(
-            offline_site_tasks, "task", pipeline_definition._clear_cdn_cache_identifier
+            offline_site_tasks, "task", CLEAR_CDN_CACHE_IDENTIFIER
         )
         clear_cdn_cache_offline_success_steps = clear_cdn_cache_offline_step[
             "on_success"
