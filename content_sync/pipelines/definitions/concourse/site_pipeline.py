@@ -9,6 +9,7 @@ from ol_concourse.lib.models.pipeline import (
     Pipeline,
     Resource,
     ResourceType,
+    StepModifierMixin,
     TaskConfig,
     TryStep,
 )
@@ -182,59 +183,13 @@ class SitePipelineResources(list[Resource]):
             self.append(OpenDiscussionsResource())
 
 
-class SitePipelineDefinition(Pipeline):
-    _offline_build_gate_identifier = Identifier("offline-build-gate")
-    _online_site_job_identifier = Identifier("online-site-job")
-    _build_online_site_identifier = Identifier("build-online-site")
-    _upload_online_build_identifier = Identifier("upload-online-build")
-    _filter_webpack_artifacts_identifier = Identifier("filter-webpack-artifacts")
-    _offline_site_job_identifier = Identifier("offline-site-job")
-    _build_offline_site_identifier = Identifier("build-offline-site")
-    _upload_offline_build_identifier = Identifier("upload-offline-build")
-    _clear_cdn_cache_identifier = Identifier("clear-cdn-cache")
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    def __init__(self, config: SitePipelineDefinitionConfig, **kwargs):
-        base = super()
-        base.__init__(**kwargs)
-        resource_types = SitePipelineResourceTypes()
-        resource_types.append(KeyvalResourceType())
-        resources = SitePipelineResources(config=config)
-        offline_build_gate_resource = Resource(
-            name=self._offline_build_gate_identifier,
-            type=KEYVAL_RESOURCE_TYPE_IDENTIFIER,
-            check_every="never",
-        )
-        resources.append(offline_build_gate_resource)
-        online_job = self.get_online_build_job(config=config)
-        offline_build_gate_put_step = PutStepWithErrorHandling(
-            put=self._offline_build_gate_identifier,
-            params={"mapping": "timestamp = now()"},
-            step_description=f"{self._offline_build_gate_identifier} task step",
-            pipeline_name=config.pipeline_name,
-            instance_vars=config.instance_vars,
-        )
-        online_job.plan.append(offline_build_gate_put_step)
-        offline_job = self.get_offline_build_job(config=config)
-        offline_build_gate_get_step = GetStepWithErrorHandling(
-            get=self._offline_build_gate_identifier,
-            passed=[self._online_site_job_identifier],
-            trigger=True,
-            step_description=f"{self._offline_build_gate_identifier} get step",
-            pipeline_name=config.pipeline_name,
-            instance_vars=config.instance_vars,
-        )
-        offline_job.plan.insert(0, offline_build_gate_get_step)
-        base.__init__(
-            resource_types=resource_types,
-            resources=resources,
-            jobs=[online_job, offline_job],
-            **kwargs,
-        )
-
-    def get_base_tasks(self, config: SitePipelineDefinitionConfig, offline: bool):
+class SitePipelineBaseTasks(list[StepModifierMixin]):
+    def __init__(
+        self,
+        config: SitePipelineDefinitionConfig,
+        offline: bool = False,
+        online_site_job_identifier: Identifier = None,
+    ):
         webpack_manifest_get_step = GetStepWithErrorHandling(
             get=WEBPACK_MANIFEST_S3_IDENTIFIER,
             trigger=False,
@@ -299,7 +254,6 @@ class SitePipelineDefinition(Pipeline):
             static_resources_step.params["AWS_SECRET_ACCESS_KEY"] = (
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
-        tasks = []
         get_steps = [
             webpack_manifest_get_step,
             ocw_hugo_themes_get_step,
@@ -308,13 +262,65 @@ class SitePipelineDefinition(Pipeline):
         ]
         if offline:
             for get_step in get_steps:
-                get_step.passed = [self._online_site_job_identifier]
-        tasks.extend(get_steps)
-        tasks.append(static_resources_step)
-        return tasks
+                get_step.passed = [online_site_job_identifier]
+        self.extend(get_steps)
+        self.append(static_resources_step)
+
+
+class SitePipelineDefinition(Pipeline):
+    _offline_build_gate_identifier = Identifier("offline-build-gate")
+    _online_site_job_identifier = Identifier("online-site-job")
+    _build_online_site_identifier = Identifier("build-online-site")
+    _upload_online_build_identifier = Identifier("upload-online-build")
+    _filter_webpack_artifacts_identifier = Identifier("filter-webpack-artifacts")
+    _offline_site_job_identifier = Identifier("offline-site-job")
+    _build_offline_site_identifier = Identifier("build-offline-site")
+    _upload_offline_build_identifier = Identifier("upload-offline-build")
+    _clear_cdn_cache_identifier = Identifier("clear-cdn-cache")
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(self, config: SitePipelineDefinitionConfig, **kwargs):
+        base = super()
+        base.__init__(**kwargs)
+        resource_types = SitePipelineResourceTypes()
+        resource_types.append(KeyvalResourceType())
+        resources = SitePipelineResources(config=config)
+        offline_build_gate_resource = Resource(
+            name=self._offline_build_gate_identifier,
+            type=KEYVAL_RESOURCE_TYPE_IDENTIFIER,
+            check_every="never",
+        )
+        resources.append(offline_build_gate_resource)
+        online_job = self.get_online_build_job(config=config)
+        offline_build_gate_put_step = PutStepWithErrorHandling(
+            put=self._offline_build_gate_identifier,
+            params={"mapping": "timestamp = now()"},
+            step_description=f"{self._offline_build_gate_identifier} task step",
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
+        )
+        online_job.plan.append(offline_build_gate_put_step)
+        offline_job = self.get_offline_build_job(config=config)
+        offline_build_gate_get_step = GetStepWithErrorHandling(
+            get=self._offline_build_gate_identifier,
+            passed=[self._online_site_job_identifier],
+            trigger=True,
+            step_description=f"{self._offline_build_gate_identifier} get step",
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
+        )
+        offline_job.plan.insert(0, offline_build_gate_get_step)
+        base.__init__(
+            resource_types=resource_types,
+            resources=resources,
+            jobs=[online_job, offline_job],
+            **kwargs,
+        )
 
     def get_online_tasks(self, config: SitePipelineDefinitionConfig):
-        base_tasks = self.get_base_tasks(config=config, offline=False)
+        base_tasks = SitePipelineBaseTasks(config=config)
         ocw_studio_webhook_started_step = OcwStudioWebhookStep(
             pipeline_name=config.pipeline_name, status="started"
         )
@@ -432,7 +438,11 @@ class SitePipelineDefinition(Pipeline):
         return online_tasks
 
     def get_offline_tasks(self, config: SitePipelineDefinitionConfig):
-        base_tasks = self.get_base_tasks(config=config, offline=True)
+        base_tasks = SitePipelineBaseTasks(
+            config=config,
+            offline=True,
+            online_site_job_identifier=self._online_site_job_identifier,
+        )
         filter_webpack_artifacts_step = TaskStepWithErrorHandling(
             task=self._filter_webpack_artifacts_identifier,
             timeout="10m",
