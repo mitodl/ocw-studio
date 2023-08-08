@@ -132,6 +132,7 @@ class SitePipelineResources(list[Resource]):
         webpack_manifest_resource = Resource(
             name=WEBPACK_MANIFEST_S3_IDENTIFIER,
             type=S3_IAM_RESOURCE_TYPE_IDENTIFIER,
+            icon="file-cloud",
             check_every="never",
             source={
                 "bucket": (config.artifacts_bucket or ""),
@@ -169,6 +170,7 @@ class SitePipelineResources(list[Resource]):
         site_content_resource = Resource(
             name=SITE_CONTENT_GIT_IDENTIFIER,
             type="git",
+            icon="git",
             check_every="never",
             source=site_content_resource_source,
         )
