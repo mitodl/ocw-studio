@@ -31,6 +31,7 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinition,
+    SitePipelineDefinitionConfig,
 )
 from content_sync.utils import get_hugo_arg_string
 from main.constants import PRODUCTION_NAMES
@@ -162,7 +163,7 @@ def test_generate_theme_assets_pipeline_definition(
         hugo_override_args,
     )
     instance_vars = f"?vars={quote(json.dumps({'site': site_name}))}"
-    pipeline_definition = SitePipelineDefinition(
+    config = SitePipelineDefinitionConfig(
         site=site,
         pipeline_name=branch_vars["pipeline_name"],
         is_root_website=is_root_website,
@@ -185,6 +186,7 @@ def test_generate_theme_assets_pipeline_definition(
         delete_flag=delete_flag,
         instance_vars=instance_vars,
     )
+    pipeline_definition = SitePipelineDefinition(config=config)
     rendered_definition = json.loads(pipeline_definition.json(indent=2, by_alias=True))
 
     # Assert that the expected resource types exist

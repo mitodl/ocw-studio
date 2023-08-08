@@ -52,55 +52,6 @@ from websites.models import Website
 
 
 class SitePipelineDefinitionConfig:
-    site: Website = None
-    pipeline_name: str = None
-    is_root_website: bool = None
-    purge_url: str = None
-    base_url: str = None
-    site_content_branch: str = None
-    pipeline_name: str = None
-    static_api_url: str = None
-    storage_bucket_name: str = None
-    artifacts_bucket: str = None
-    web_bucket: str = None
-    offline_bucket: str = None
-    resource_base_url: str = None
-    static_resources_subdirectory: str = None
-    noindex: str = None
-    ocw_studio_url: str = None
-    ocw_hugo_themes_branch: str = None
-    ocw_hugo_projects_url: str = None
-    ocw_hugo_projects_branch: str = None
-    hugo_args_online: str = None
-    hugo_args_offline: str = None
-    delete_flag: str = None
-    instance_vars: str = None
-    cli_endpoint_url: str = None
-
-
-class SitePipelineDefinition(Pipeline):
-    _http_resource_type = HttpResourceType()
-    _keyval_resource_type = KeyvalResourceType()
-    _s3_iam_resource_type = S3IamResourceType()
-
-    _offline_build_gate_identifier = Identifier("offline-build-gate")
-    _online_site_job_identifier = Identifier("online-site-job")
-    _build_online_site_identifier = Identifier("build-online-site")
-    _upload_online_build_identifier = Identifier("upload-online-build")
-    _filter_webpack_artifacts_identifier = Identifier("filter-webpack-artifacts")
-    _offline_site_job_identifier = Identifier("offline-site-job")
-    _build_offline_site_identifier = Identifier("build-offline-site")
-    _upload_offline_build_identifier = Identifier("upload-offline-build")
-    _clear_cdn_cache_identifier = Identifier("clear-cdn-cache")
-
-    _open_discussions_resource = OpenDiscussionsResource()
-    _slack_resource = SlackAlertResource()
-
-    _config = SitePipelineDefinitionConfig()
-
-    class Config:
-        arbitrary_types_allowed = True
-
     def __init__(
         self,
         site: Website,
@@ -124,63 +75,85 @@ class SitePipelineDefinition(Pipeline):
         hugo_args_offline: str,
         delete_flag: str,
         instance_vars: str,
-        **kwargs,
     ):
-        base = super()
-        base.__init__(**kwargs)
-        self._config.site = site
-        self._config.pipeline_name = pipeline_name
-        self._config.is_root_website = is_root_website
-        self._config.purge_url = f"purge/{site.name}"
-        self._config.base_url = base_url
-        self._config.site_content_branch = site_content_branch
-        self._config.pipeline_name = pipeline_name
-        self._config.static_api_url = static_api_url
-        self._config.storage_bucket_name = storage_bucket_name
-        self._config.artifacts_bucket = artifacts_bucket
-        self._config.web_bucket = web_bucket
-        self._config.offline_bucket = offline_bucket
-        self._config.resource_base_url = resource_base_url
-        self._config.static_resources_subdirectory = static_resources_subdirectory
-        self._config.noindex = noindex
-        self._config.ocw_studio_url = ocw_studio_url
-        self._config.ocw_hugo_themes_branch = ocw_hugo_themes_branch
-        self._config.ocw_hugo_projects_url = ocw_hugo_projects_url
-        self._config.ocw_hugo_projects_branch = ocw_hugo_projects_branch
-        self._config.hugo_args_online = hugo_args_online
-        self._config.hugo_args_offline = hugo_args_offline
-        self._config.delete_flag = delete_flag
-        self._config.instance_vars = instance_vars
-        self._config.cli_endpoint_url = (
+        self.site = site
+        self.pipeline_name = pipeline_name
+        self.is_root_website = is_root_website
+        self.purge_url = f"purge/{site.name}"
+        self.base_url = base_url
+        self.site_content_branch = site_content_branch
+        self.pipeline_name = pipeline_name
+        self.static_api_url = static_api_url
+        self.storage_bucket_name = storage_bucket_name
+        self.artifacts_bucket = artifacts_bucket
+        self.web_bucket = web_bucket
+        self.offline_bucket = offline_bucket
+        self.resource_base_url = resource_base_url
+        self.static_resources_subdirectory = static_resources_subdirectory
+        self.noindex = noindex
+        self.ocw_studio_url = ocw_studio_url
+        self.ocw_hugo_themes_branch = ocw_hugo_themes_branch
+        self.ocw_hugo_projects_url = ocw_hugo_projects_url
+        self.ocw_hugo_projects_branch = ocw_hugo_projects_branch
+        self.hugo_args_online = hugo_args_online
+        self.hugo_args_offline = hugo_args_offline
+        self.delete_flag = delete_flag
+        self.instance_vars = instance_vars
+        self.cli_endpoint_url = (
             f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
         )
 
+
+class SitePipelineDefinition(Pipeline):
+    _http_resource_type = HttpResourceType()
+    _keyval_resource_type = KeyvalResourceType()
+    _s3_iam_resource_type = S3IamResourceType()
+
+    _offline_build_gate_identifier = Identifier("offline-build-gate")
+    _online_site_job_identifier = Identifier("online-site-job")
+    _build_online_site_identifier = Identifier("build-online-site")
+    _upload_online_build_identifier = Identifier("upload-online-build")
+    _filter_webpack_artifacts_identifier = Identifier("filter-webpack-artifacts")
+    _offline_site_job_identifier = Identifier("offline-site-job")
+    _build_offline_site_identifier = Identifier("build-offline-site")
+    _upload_offline_build_identifier = Identifier("upload-offline-build")
+    _clear_cdn_cache_identifier = Identifier("clear-cdn-cache")
+
+    _open_discussions_resource = OpenDiscussionsResource()
+    _slack_resource = SlackAlertResource()
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(self, config: SitePipelineDefinitionConfig, **kwargs):
+        base = super()
+        base.__init__(**kwargs)
         resource_types = self.get_resource_types()
         resource_types.append(self._keyval_resource_type)
-        resources = self.get_resources()
+        resources = self.get_resources(config=config)
         offline_build_gate_resource = Resource(
             name=self._offline_build_gate_identifier,
             type=self._keyval_resource_type.name,
             check_every="never",
         )
         resources.append(offline_build_gate_resource)
-        online_job = self.get_online_build_job()
+        online_job = self.get_online_build_job(config=config)
         offline_build_gate_put_step = PutStepWithErrorHandling(
             put=self._offline_build_gate_identifier,
             params={"mapping": "timestamp = now()"},
             step_description=f"{self._offline_build_gate_identifier} task step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         online_job.plan.append(offline_build_gate_put_step)
-        offline_job = self.get_offline_build_job()
+        offline_job = self.get_offline_build_job(config=config)
         offline_build_gate_get_step = GetStepWithErrorHandling(
             get=self._offline_build_gate_identifier,
             passed=[self._online_site_job_identifier],
             trigger=True,
             step_description=f"{self._offline_build_gate_identifier} get step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         offline_job.plan.insert(0, offline_build_gate_get_step)
         base.__init__(
@@ -198,14 +171,14 @@ class SitePipelineDefinition(Pipeline):
         ]
         return resource_types
 
-    def get_resources(self):
+    def get_resources(self, config: SitePipelineDefinitionConfig):
         webpack_manifest_resource = Resource(
             name=WEBPACK_MANIFEST_S3_IDENTIFIER,
             type=self._s3_iam_resource_type.name,
             check_every="never",
             source={
-                "bucket": (self._config.artifacts_bucket or ""),
-                "versioned_file": f"ocw-hugo-themes/{self._config.ocw_hugo_themes_branch}/webpack.json",
+                "bucket": (config.artifacts_bucket or ""),
+                "versioned_file": f"ocw-hugo-themes/{config.ocw_hugo_themes_branch}/webpack.json",
             },
         )
         if is_dev():
@@ -219,23 +192,23 @@ class SitePipelineDefinition(Pipeline):
         ocw_hugo_themes_resource = GitResource(
             name=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             uri=OCW_HUGO_THEMES_GIT,
-            branch=self._config.ocw_hugo_themes_branch,
+            branch=config.ocw_hugo_themes_branch,
         )
         ocw_hugo_projects_resource = GitResource(
             name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
-            uri=self._config.ocw_hugo_projects_url,
-            branch=self._config.ocw_hugo_projects_branch,
+            uri=config.ocw_hugo_projects_url,
+            branch=config.ocw_hugo_projects_branch,
         )
-        site_content_resource_source = {"branch": self._config.site_content_branch}
+        site_content_resource_source = {"branch": config.site_content_branch}
         if settings.CONCOURSE_IS_PRIVATE_REPO:
             site_content_resource_source[
                 "uri"
-            ] = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self._config.site.short_id}.git"
+            ] = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{config.site.short_id}.git"
             site_content_resource_source["private_key"] = "((git-private-key))"
         else:
             site_content_resource_source[
                 "uri"
-            ] = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self._config.site.short_id}.git"
+            ] = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{config.site.short_id}.git"
         site_content_resource = Resource(
             name=SITE_CONTENT_GIT_IDENTIFIER,
             type="git",
@@ -243,8 +216,8 @@ class SitePipelineDefinition(Pipeline):
             source=site_content_resource_source,
         )
         ocw_studio_webhook_resource = OcwStudioWebhookResource(
-            ocw_studio_url=self._config.ocw_studio_url,
-            site_name=self._config.site.name,
+            ocw_studio_url=config.ocw_studio_url,
+            site_name=config.site.name,
             api_token=settings.API_BEARER_TOKEN or "",
         )
         resources = [
@@ -259,15 +232,15 @@ class SitePipelineDefinition(Pipeline):
             resources.append(self._open_discussions_resource)
         return resources
 
-    def get_base_tasks(self, offline: bool):
+    def get_base_tasks(self, config: SitePipelineDefinitionConfig, offline: bool):
         webpack_manifest_get_step = GetStepWithErrorHandling(
             get=WEBPACK_MANIFEST_S3_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
             step_description=f"{WEBPACK_MANIFEST_S3_IDENTIFIER} get step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         ocw_hugo_themes_get_step = GetStepWithErrorHandling(
             get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -275,8 +248,8 @@ class SitePipelineDefinition(Pipeline):
             timeout="5m",
             attempts=3,
             step_description=f"{OCW_HUGO_THEMES_GIT_IDENTIFIER} get step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         ocw_hugo_projects_get_step = GetStepWithErrorHandling(
             get=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
@@ -284,8 +257,8 @@ class SitePipelineDefinition(Pipeline):
             timeout="5m",
             attempts=3,
             step_description=f"{OCW_HUGO_PROJECTS_GIT_IDENTIFIER} get step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         site_content_get_step = GetStepWithErrorHandling(
             get=SITE_CONTENT_GIT_IDENTIFIER,
@@ -293,8 +266,8 @@ class SitePipelineDefinition(Pipeline):
             timeout="5m",
             attempts=3,
             step_description=f"{SITE_CONTENT_GIT_IDENTIFIER} get step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         static_resources_step = TaskStepWithErrorHandling(
             task=STATIC_RESOURCES_S3_IDENTIFIER,
@@ -309,13 +282,13 @@ class SitePipelineDefinition(Pipeline):
                     path="sh",
                     args=[
                         "-exc",
-                        f"aws s3{self._config.cli_endpoint_url} sync s3://{self._config.storage_bucket_name}/{self._config.site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}",
+                        f"aws s3{config.cli_endpoint_url} sync s3://{config.storage_bucket_name}/{config.site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}",
                     ],
                 ),
             ),
             step_description=f"{STATIC_RESOURCES_S3_IDENTIFIER} s3 sync to container",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         if is_dev():
             static_resources_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -338,10 +311,10 @@ class SitePipelineDefinition(Pipeline):
         tasks.append(static_resources_step)
         return tasks
 
-    def get_online_tasks(self):
-        base_tasks = self.get_base_tasks(offline=False)
+    def get_online_tasks(self, config: SitePipelineDefinitionConfig):
+        base_tasks = self.get_base_tasks(config=config, offline=False)
         ocw_studio_webhook_started_step = OcwStudioWebhookStep(
-            pipeline_name=self._config.pipeline_name, status="started"
+            pipeline_name=config.pipeline_name, status="started"
         )
         build_online_site_step = TaskStepWithErrorHandling(
             task=self._build_online_site_identifier,
@@ -350,13 +323,13 @@ class SitePipelineDefinition(Pipeline):
             params={
                 "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                 "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-                "OCW_STUDIO_BASE_URL": self._config.ocw_studio_url,
-                "STATIC_API_BASE_URL": self._config.static_api_url,
+                "OCW_STUDIO_BASE_URL": config.ocw_studio_url,
+                "STATIC_API_BASE_URL": config.static_api_url,
                 "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                 "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                 "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
                 "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
-                "NOINDEX": self._config.noindex,
+                "NOINDEX": config.noindex,
             },
             config=TaskConfig(
                 platform="linux",
@@ -379,31 +352,31 @@ class SitePipelineDefinition(Pipeline):
                         "-exc",
                         f"""
                         cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
-                        hugo {self._config.hugo_args_online}
-                        cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{self._config.static_resources_subdirectory}
-                        rm -rf ./output-online{self._config.static_resources_subdirectory}*.mp4
+                        hugo {config.hugo_args_online}
+                        cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{config.static_resources_subdirectory}
+                        rm -rf ./output-online{config.static_resources_subdirectory}*.mp4
                         """,
                     ],
                 ),
             ),
             step_description=f"{self._build_online_site_identifier} task step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         if is_dev():
             build_online_site_step.params[
                 "RESOURCE_BASE_URL"
-            ] = self._config.resource_base_url
+            ] = config.resource_base_url
             build_online_site_step.params[
                 "AWS_ACCESS_KEY_ID"
             ] = settings.AWS_ACCESS_KEY_ID
             build_online_site_step.params[
                 "AWS_SECRET_ACCESS_KEY"
             ] = settings.AWS_SECRET_ACCESS_KEY
-        if self._config.is_root_website:
-            online_sync_command = f"aws s3{self._config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{self._config.web_bucket}/{self._config.base_url} --metadata site-id={self._config.site.name}{self._config.delete_flag}"
+        if config.is_root_website:
+            online_sync_command = f"aws s3{config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.web_bucket}/{config.base_url} --metadata site-id={config.site.name}{config.delete_flag}"
         else:
-            online_sync_command = f"aws s3{self._config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{self._config.web_bucket}/{self._config.base_url} --exclude='{self._config.site.short_id}.zip' --exclude='{self._config.site.short_id}-video.zip' --metadata site-id={self._config.site.name}{self._config.delete_flag}"
+            online_sync_command = f"aws s3{config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.web_bucket}/{config.base_url} --exclude='{config.site.short_id}.zip' --exclude='{config.site.short_id}-video.zip' --metadata site-id={config.site.name}{config.delete_flag}"
         upload_online_build_step = TaskStepWithErrorHandling(
             task=self._upload_online_build_identifier,
             timeout="40m",
@@ -415,10 +388,10 @@ class SitePipelineDefinition(Pipeline):
                 run=Command(path="sh", args=["-exc", online_sync_command]),
             ),
             step_description=f"{self._upload_online_build_identifier} task step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
             on_success=OcwStudioWebhookStep(
-                pipeline_name=self._config.pipeline_name, status="succeeded"
+                pipeline_name=config.pipeline_name, status="succeeded"
             ),
         )
         if is_dev():
@@ -431,20 +404,20 @@ class SitePipelineDefinition(Pipeline):
         clear_cdn_cache_online_step = ClearCdnCacheStep(
             name=self._clear_cdn_cache_identifier,
             fastly_var="fastly",
-            purge_url=self._config.purge_url,
+            purge_url=config.purge_url,
             step_description="clear cdn cache",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         clear_cdn_cache_online_step.on_success = TryStep(
             try_=DoStep(
                 do=[
                     OpenDiscussionsWebhookStep(
-                        site_url=self._config.site.get_url_path(),
-                        pipeline_name=self._config.pipeline_name,
+                        site_url=config.site.get_url_path(),
+                        pipeline_name=config.pipeline_name,
                     ),
                     OcwStudioWebhookStep(
-                        pipeline_name=self._config.pipeline_name, status="succeeded"
+                        pipeline_name=config.pipeline_name, status="succeeded"
                     ),
                 ]
             )
@@ -456,8 +429,8 @@ class SitePipelineDefinition(Pipeline):
             online_tasks.append(clear_cdn_cache_online_step)
         return online_tasks
 
-    def get_offline_tasks(self):
-        base_tasks = self.get_base_tasks(offline=True)
+    def get_offline_tasks(self, config: SitePipelineDefinitionConfig):
+        base_tasks = self.get_base_tasks(config=config, offline=True)
         filter_webpack_artifacts_step = TaskStepWithErrorHandling(
             task=self._filter_webpack_artifacts_identifier,
             timeout="10m",
@@ -472,13 +445,13 @@ class SitePipelineDefinition(Pipeline):
                     path="sh",
                     args=[
                         "-exc",
-                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{self._config.cli_endpoint_url} cp s3://{self._config.web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",
+                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{config.cli_endpoint_url} cp s3://{config.web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",
                     ],
                 ),
             ),
             step_description=f"{self._filter_webpack_artifacts_identifier} task step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         if is_dev():
             filter_webpack_artifacts_step.params[
@@ -506,22 +479,22 @@ class SitePipelineDefinition(Pipeline):
         fi
         touch ./content/static_resources/_index.md
         cp -r ../{WEBPACK_ARTIFACTS_IDENTIFIER}/static_shared/. ./static/static_shared/
-        hugo {self._config.hugo_args_offline}
+        hugo {config.hugo_args_offline}
         """
-        if not self._config.is_root_website:
+        if not config.is_root_website:
             build_offline_site_command = f"""
             {build_offline_site_command}
             cd output-offline
-            zip -r ../../{self._build_offline_site_identifier}/{self._config.site.short_id}.zip ./
+            zip -r ../../{self._build_offline_site_identifier}/{config.site.short_id}.zip ./
             rm -rf ./*
             cd ..
             if [ $MP4_COUNT != 0 ];
             then
                 mv ../videos/* ./content/static_resources
             fi
-            hugo {self._config.hugo_args_offline}
+            hugo {config.hugo_args_offline}
             cd output-offline
-            zip -r ../../{self._build_offline_site_identifier}/{self._config.site.short_id}-video.zip ./
+            zip -r ../../{self._build_offline_site_identifier}/{config.site.short_id}-video.zip ./
             """
         build_offline_site_step = TaskStepWithErrorHandling(
             task=self._build_offline_site_identifier,
@@ -530,13 +503,13 @@ class SitePipelineDefinition(Pipeline):
             params={
                 "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                 "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-                "OCW_STUDIO_BASE_URL": self._config.ocw_studio_url,
-                "STATIC_API_BASE_URL": self._config.static_api_url,
+                "OCW_STUDIO_BASE_URL": config.ocw_studio_url,
+                "STATIC_API_BASE_URL": config.static_api_url,
                 "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                 "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                 "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
                 "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
-                "NOINDEX": self._config.noindex,
+                "NOINDEX": config.noindex,
             },
             config=TaskConfig(
                 platform="linux",
@@ -564,12 +537,12 @@ class SitePipelineDefinition(Pipeline):
                 ),
             ),
             step_description=f"{self._build_offline_site_identifier} task step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         if is_dev():
             build_offline_site_step.params["RESOURCE_BASE_URL"] = (
-                self._config.resource_base_url or ""
+                config.resource_base_url or ""
             )
             build_offline_site_step.params["AWS_ACCESS_KEY_ID"] = (
                 settings.AWS_ACCESS_KEY_ID or ""
@@ -578,11 +551,11 @@ class SitePipelineDefinition(Pipeline):
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
         offline_sync_commands = [
-            f"aws s3{self._config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{self._config.offline_bucket}/{self._config.base_url} --metadata site-id={self._config.site.name}{self._config.delete_flag}"
+            f"aws s3{config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.offline_bucket}/{config.base_url} --metadata site-id={config.site.name}{config.delete_flag}"
         ]
-        if not self._config.is_root_website:
+        if not config.is_root_website:
             offline_sync_commands.append(
-                f"aws s3{self._config.cli_endpoint_url} sync {self._build_offline_site_identifier}/ s3://{self._config.web_bucket}/{self._config.base_url} --exclude='*' --include='{self._config.site.short_id}.zip' --include='{self._config.site.short_id}-video.zip' --metadata site-id={self._config.site.name}"
+                f"aws s3{config.cli_endpoint_url} sync {self._build_offline_site_identifier}/ s3://{config.web_bucket}/{config.base_url} --exclude='*' --include='{config.site.short_id}.zip' --include='{config.site.short_id}-video.zip' --metadata site-id={config.site.name}"
             )
         offline_sync_command = "\n".join(offline_sync_commands)
         upload_offline_build_step = TaskStepWithErrorHandling(
@@ -600,8 +573,8 @@ class SitePipelineDefinition(Pipeline):
                 run=Command(path="sh", args=["-exc", offline_sync_command]),
             ),
             step_description=f"{self._upload_offline_build_identifier} task step",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         if is_dev():
             upload_offline_build_step.params[
@@ -613,20 +586,20 @@ class SitePipelineDefinition(Pipeline):
         clear_cdn_cache_offline_step = ClearCdnCacheStep(
             name=self._clear_cdn_cache_identifier,
             fastly_var="fastly",
-            purge_url=self._config.purge_url,
+            purge_url=config.purge_url,
             step_description="clear cdn cache",
-            pipeline_name=self._config.pipeline_name,
-            instance_vars=self._config.instance_vars,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
         )
         clear_cdn_cache_offline_step.on_success = TryStep(
             try_=DoStep(
                 do=[
                     OpenDiscussionsWebhookStep(
-                        site_url=self._config.site.get_url_path(),
-                        pipeline_name=self._config.pipeline_name,
+                        site_url=config.site.get_url_path(),
+                        pipeline_name=config.pipeline_name,
                     ),
                     OcwStudioWebhookStep(
-                        pipeline_name=self._config.pipeline_name, status="succeeded"
+                        pipeline_name=config.pipeline_name, status="succeeded"
                     ),
                 ]
             )
@@ -644,16 +617,16 @@ class SitePipelineDefinition(Pipeline):
             offline_tasks.append(clear_cdn_cache_offline_step)
         return offline_tasks
 
-    def get_online_build_job(self):
+    def get_online_build_job(self, config: SitePipelineDefinitionConfig):
         return Job(
             name=self._online_site_job_identifier,
             serial=True,
-            plan=self.get_online_tasks(),
+            plan=self.get_online_tasks(config=config),
         )
 
-    def get_offline_build_job(self):
+    def get_offline_build_job(self, config: SitePipelineDefinitionConfig):
         return Job(
             name=self._offline_site_job_identifier,
             serial=True,
-            plan=self.get_offline_tasks(),
+            plan=self.get_offline_tasks(config=config),
         )
