@@ -199,9 +199,9 @@ def test_generate_theme_assets_pipeline_definition(
     webpack_manifest_s3_identifier = (
         f"{WEBPACK_MANIFEST_S3_IDENTIFIER}-{ocw_hugo_themes_branch}"
     )
-    site_content_git_identifier = f"{SITE_CONTENT_GIT_IDENTIFIER}-{site.name}"
+    site_content_git_identifier = f"{SITE_CONTENT_GIT_IDENTIFIER}-{site.short_id}"
     ocw_studio_webhook_identifier = (
-        f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{site.name}"
+        f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{site.short_id}"
     )
     expected_resource_types = [
         HTTP_RESOURCE_TYPE_IDENTIFIER,

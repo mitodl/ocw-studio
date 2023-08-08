@@ -28,7 +28,7 @@ def add_error_handling(
     step: StepModifierMixin,
     step_description: str,
     pipeline_name: str,
-    site_name: str,
+    short_id: str,
     instance_vars_query_str: str,
 ):
     """
@@ -38,7 +38,7 @@ def add_error_handling(
         step(StepModifierMixin): The Step-like object that uses StepModifierMixin to add the error handling steps to
         step_description(str): A description of the step at which the failure occurred
         pipeline_name(str): The name of the pipeline to set the status on
-        site_name(str): The name of the site the status is in reference to
+        short_id(str): The short_id of the site the status is in reference to
         instance_vars_query_str(str): A query string of the instance vars from the pipeline to build a URL with
 
     Returns:
@@ -60,7 +60,7 @@ def add_error_handling(
     concourse_url = urljoin(concourse_base_url, concourse_path)
     step.on_failure = ErrorHandlingStep(
         pipeline_name=pipeline_name,
-        site_name=site_name,
+        short_id=short_id,
         status="failed",
         failure_description="Failed",
         step_description=step_description,
@@ -68,7 +68,7 @@ def add_error_handling(
     )
     step.on_error = ErrorHandlingStep(
         pipeline_name=pipeline_name,
-        site_name=site_name,
+        short_id=short_id,
         status="errored",
         failure_description="Concourse system error",
         step_description=step_description,
@@ -76,7 +76,7 @@ def add_error_handling(
     )
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
-        site_name=site_name,
+        short_id=short_id,
         status="aborted",
         failure_description="Aborted",
         step_description=step_description,
@@ -92,7 +92,7 @@ class ErrorHandlingStep(TryStep):
     def __init__(
         self,
         pipeline_name: str,
-        site_name: str,
+        short_id: str,
         status: str,
         failure_description: str,
         step_description: str,
@@ -105,7 +105,7 @@ class ErrorHandlingStep(TryStep):
                     do=[
                         OcwStudioWebhookStep(
                             pipeline_name=pipeline_name,
-                            site_name=site_name,
+                            short_id=short_id,
                             status=status,
                         ),
                         SlackAlertStep(
@@ -128,7 +128,7 @@ class GetStepWithErrorHandling(GetStep):
         self,
         step_description: str,
         pipeline_name: str,
-        site_name: str,
+        short_id: str,
         instance_vars: str,
         **kwargs,
     ):
@@ -137,7 +137,7 @@ class GetStepWithErrorHandling(GetStep):
             self,
             step_description=step_description,
             pipeline_name=pipeline_name,
-            site_name=site_name,
+            short_id=short_id,
             instance_vars_query_str=instance_vars,
         )
 
@@ -151,7 +151,7 @@ class PutStepWithErrorHandling(PutStep):
         self,
         step_description: str,
         pipeline_name: str,
-        site_name: str,
+        short_id: str,
         instance_vars: str,
         **kwargs,
     ):
@@ -160,7 +160,7 @@ class PutStepWithErrorHandling(PutStep):
             self,
             step_description=step_description,
             pipeline_name=pipeline_name,
-            site_name=site_name,
+            short_id=short_id,
             instance_vars_query_str=instance_vars,
         )
 
@@ -174,7 +174,7 @@ class TaskStepWithErrorHandling(TaskStep):
         self,
         step_description: str,
         pipeline_name: str,
-        site_name: str,
+        short_id: str,
         instance_vars: str,
         **kwargs,
     ):
@@ -183,7 +183,7 @@ class TaskStepWithErrorHandling(TaskStep):
             self,
             step_description=step_description,
             pipeline_name=pipeline_name,
-            site_name=site_name,
+            short_id=short_id,
             instance_vars_query_str=instance_vars,
         )
 
@@ -221,9 +221,12 @@ class ClearCdnCacheStep(TaskStepWithErrorHandling):
         name(str): The name to use as the Identifier for the task argument
         fastly_var(str): The name of the var to pull Fastly properties from
         site_name(str): The site to purge from the cache
+        short_id(str): The short id of the site to be purged
     """
 
-    def __init__(self, name: str, fastly_var: str, site_name: str, **kwargs):
+    def __init__(
+        self, name: str, fastly_var: str, site_name: str, short_id: str, **kwargs
+    ):
         curl_args = [
             "-f",
             "-X",
@@ -238,7 +241,7 @@ class ClearCdnCacheStep(TaskStepWithErrorHandling):
         )
         super().__init__(
             task=Identifier(name),
-            site_name=site_name,
+            short_id=short_id,
             timeout="5m",
             attempts=3,
             config=TaskConfig(
@@ -256,14 +259,14 @@ class OcwStudioWebhookStep(TryStep):
 
     Args:
         pipeline_name(str): The name of the pipeline to set the status on
-        site_name(str): The name of the site the status is in reference to
+        short_id(str): The short_id of the site the status is in reference to
         status: (str): The status to set on the pipeline (failed, errored, succeeded)
     """
 
-    def __init__(self, pipeline_name: str, site_name: str, status: str, **kwargs):
+    def __init__(self, pipeline_name: str, short_id: str, status: str, **kwargs):
         super().__init__(
             try_=PutStep(
-                put=f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{site_name}",
+                put=f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{short_id}",
                 timeout="1m",
                 attempts=3,
                 params={

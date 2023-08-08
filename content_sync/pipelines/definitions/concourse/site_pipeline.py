@@ -117,10 +117,10 @@ class SitePipelineDefinitionConfig:
             f"{WEBPACK_MANIFEST_S3_IDENTIFIER}-{ocw_hugo_themes_branch}"
         )
         self.site_content_git_identifier = Identifier(
-            f"{SITE_CONTENT_GIT_IDENTIFIER}-{site.name}"
+            f"{SITE_CONTENT_GIT_IDENTIFIER}-{site.short_id}"
         )
         self.ocw_studio_webhook_identifier = Identifier(
-            f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{site.name}"
+            f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{site.short_id}"
         )
 
 
@@ -185,6 +185,7 @@ class SitePipelineResources(list[Resource]):
         ocw_studio_webhook_resource = OcwStudioWebhookResource(
             ocw_studio_url=config.ocw_studio_url,
             site_name=config.site.name,
+            short_id=config.site.short_id,
             api_token=settings.API_BEARER_TOKEN or "",
         )
         self.extend(
@@ -215,7 +216,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             attempts=3,
             step_description=f"{config.webpack_manifest_s3_identifier} get step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         ocw_hugo_themes_get_step = GetStepWithErrorHandling(
@@ -225,7 +226,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             attempts=3,
             step_description=f"{OCW_HUGO_THEMES_GIT_IDENTIFIER} get step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         ocw_hugo_projects_get_step = GetStepWithErrorHandling(
@@ -235,7 +236,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             attempts=3,
             step_description=f"{OCW_HUGO_PROJECTS_GIT_IDENTIFIER} get step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         site_content_get_step = GetStepWithErrorHandling(
@@ -245,7 +246,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             attempts=3,
             step_description=f"{config.site_content_git_identifier} get step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         static_resources_step = TaskStepWithErrorHandling(
@@ -267,7 +268,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             ),
             step_description=f"{STATIC_RESOURCES_S3_IDENTIFIER} s3 sync to container",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -295,7 +296,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         base_tasks = SitePipelineBaseTasks(config=config)
         ocw_studio_webhook_started_step = OcwStudioWebhookStep(
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             status="started",
         )
         build_online_site_step = TaskStepWithErrorHandling(
@@ -343,7 +344,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             ),
             step_description=f"{BUILD_ONLINE_SITE_IDENTIFIER} task step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -372,11 +373,11 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             ),
             step_description=f"{UPLOAD_ONLINE_BUILD_IDENTIFIER} task step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
             on_success=OcwStudioWebhookStep(
                 pipeline_name=config.pipeline_name,
-                site_name=config.site.name,
+                short_id=config.site.short_id,
                 status="succeeded",
             ),
         )
@@ -391,6 +392,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             name=CLEAR_CDN_CACHE_IDENTIFIER,
             fastly_var="fastly",
             site_name=config.site.name,
+            short_id=config.site.short_id,
             step_description="clear cdn cache",
             pipeline_name=config.pipeline_name,
             instance_vars=config.instance_vars,
@@ -404,7 +406,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                     ),
                     OcwStudioWebhookStep(
                         pipeline_name=config.pipeline_name,
-                        site_name=config.site.name,
+                        short_id=config.site.short_id,
                         status="succeeded",
                     ),
                 ]
@@ -449,7 +451,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             ),
             step_description=f"{FILTER_WEBPACK_ARTIFACTS_IDENTIFIER} task step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -537,7 +539,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             ),
             step_description=f"{BUILD_OFFLINE_SITE_IDENTIFIER} task step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -574,7 +576,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             ),
             step_description=f"{UPLOAD_OFFLINE_BUILD_IDENTIFIER} task step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -588,6 +590,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             name=CLEAR_CDN_CACHE_IDENTIFIER,
             fastly_var="fastly",
             site_name=config.site.name,
+            short_id=config.site.short_id,
             step_description="clear cdn cache",
             pipeline_name=config.pipeline_name,
             instance_vars=config.instance_vars,
@@ -601,7 +604,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                     ),
                     OcwStudioWebhookStep(
                         pipeline_name=config.pipeline_name,
-                        site_name=config.site.name,
+                        short_id=config.site.short_id,
                         status="succeeded",
                     ),
                 ]
@@ -646,7 +649,7 @@ class SitePipelineDefinition(Pipeline):
             params={"mapping": "timestamp = now()"},
             step_description=f"{self._offline_build_gate_identifier} task step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         online_job.plan.append(offline_build_gate_put_step)
@@ -657,7 +660,7 @@ class SitePipelineDefinition(Pipeline):
             trigger=True,
             step_description=f"{self._offline_build_gate_identifier} get step",
             pipeline_name=config.pipeline_name,
-            site_name=config.site.name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         offline_job.plan.insert(0, offline_build_gate_get_step)

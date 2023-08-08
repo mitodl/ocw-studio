@@ -17,7 +17,7 @@ def test_add_error_handling(step_type):
         step=mock_step,
         step_description="test step",
         pipeline_name="test_pipeline",
-        site_name="test-site",
+        short_id="test-site",
         instance_vars_query_str="?site:test-site",
     )
     for handler in [mock_step.on_failure, mock_step.on_error, mock_step.on_abort]:
@@ -35,7 +35,7 @@ def test_add_error_handling_incorrect_type():
             step=mock_step,
             step_description="test step",
             pipeline_name="test_pipeline",
-            site_name="test-site",
+            short_id="test-site",
             instance_vars_query_str="?site:test-site",
         )
 
@@ -47,7 +47,7 @@ def test_calling_add_error_handling_twice(step_type):
         step=mock_step,
         step_description="test step",
         pipeline_name="test_pipeline",
-        site_name="test-site",
+        short_id="test-site",
         instance_vars_query_str="?site:test-site",
     )
     with pytest.raises(ValueError):
@@ -55,6 +55,6 @@ def test_calling_add_error_handling_twice(step_type):
             step=mock_step,
             step_description="test step",
             pipeline_name="test_pipeline",
-            site_name="test-site",
+            short_id="test-site",
             instance_vars_query_str="?site:test-site",
         )
