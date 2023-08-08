@@ -8,6 +8,7 @@ from ol_concourse.lib.models.pipeline import (
     Output,
     Pipeline,
     Resource,
+    ResourceType,
     TaskConfig,
     TryStep,
 )
@@ -16,8 +17,10 @@ from pydantic import Field
 
 from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     STATIC_RESOURCES_S3_IDENTIFIER,
     WEBPACK_ARTIFACTS_IDENTIFIER,
@@ -104,11 +107,18 @@ class SitePipelineDefinitionConfig:
         )
 
 
-class SitePipelineDefinition(Pipeline):
-    _http_resource_type = HttpResourceType()
-    _keyval_resource_type = KeyvalResourceType()
-    _s3_iam_resource_type = S3IamResourceType()
+class SitePipelineResourceTypes(list[ResourceType]):
+    def __init__(self):
+        self.extend(
+            [
+                HttpResourceType(),
+                S3IamResourceType(),
+                slack_notification_resource(),
+            ]
+        )
 
+
+class SitePipelineDefinition(Pipeline):
     _offline_build_gate_identifier = Identifier("offline-build-gate")
     _online_site_job_identifier = Identifier("online-site-job")
     _build_online_site_identifier = Identifier("build-online-site")
@@ -128,12 +138,12 @@ class SitePipelineDefinition(Pipeline):
     def __init__(self, config: SitePipelineDefinitionConfig, **kwargs):
         base = super()
         base.__init__(**kwargs)
-        resource_types = self.get_resource_types()
-        resource_types.append(self._keyval_resource_type)
+        resource_types = SitePipelineResourceTypes()
+        resource_types.append(KeyvalResourceType())
         resources = self.get_resources(config=config)
         offline_build_gate_resource = Resource(
             name=self._offline_build_gate_identifier,
-            type=self._keyval_resource_type.name,
+            type=KEYVAL_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",
         )
         resources.append(offline_build_gate_resource)
@@ -163,18 +173,10 @@ class SitePipelineDefinition(Pipeline):
             **kwargs,
         )
 
-    def get_resource_types(self):
-        resource_types = [
-            self._http_resource_type,
-            self._s3_iam_resource_type,
-            slack_notification_resource(),
-        ]
-        return resource_types
-
     def get_resources(self, config: SitePipelineDefinitionConfig):
         webpack_manifest_resource = Resource(
             name=WEBPACK_MANIFEST_S3_IDENTIFIER,
-            type=self._s3_iam_resource_type.name,
+            type=S3_IAM_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",
             source={
                 "bucket": (config.artifacts_bucket or ""),
