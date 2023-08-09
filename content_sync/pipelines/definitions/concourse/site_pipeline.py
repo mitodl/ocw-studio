@@ -1,3 +1,6 @@
+from typing import Optional
+from urllib.parse import urljoin, urlparse
+
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
     Command,
@@ -18,7 +21,7 @@ from ol_concourse.lib.models.pipeline import (
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.constants import DEV_ENDPOINT_URL
+from content_sync.constants import DEV_ENDPOINT_URL, TARGET_OFFLINE, TARGET_ONLINE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
@@ -51,6 +54,8 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     OpenDiscussionsWebhookStep,
     add_error_handling,
 )
+from content_sync.utils import get_hugo_arg_string
+from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT
 from websites.models import Website
@@ -71,8 +76,7 @@ class SitePipelineDefinitionConfig:
     Args:
         site(Website): The Website object to build the pipeline for
         pipeline_name(str): The pipeline name to use in Concourse (draft / live)
-        is_root_website(bool): A boolean indicating whether or not the site in the root website
-        base_url(str): The base URL to use when uploading to S3 (/courses/course-name)
+        instance_vars(str): The instance vars for the pipeline in a query string format
         site_content_branch(str): The branch to use in the site content repo (preview / release)
         static_api_url(str): The base URL for fetching JSON files from the static API (https://ocw.mit.edu/)
         storage_bucket_name(str): The bucket name ocw-studio stores resources in (ol-ocw-studio-app)
@@ -80,24 +84,17 @@ class SitePipelineDefinitionConfig:
         web_bucket(str): The online bucket to publish output to (ocw-content-draft)
         offline_bucket(str): The offline bucket to publish output to (ocw-content-offline-draft)
         resource_base_url(str): A base URL to override fetching of resources from
-        static_resources_subdirectory(str): An override for the directory static resources are placed in at the output
-        noindex(str): A string representing whether or not the site should be indexed by search engines (true / false)
         ocw_studio_url(str): The URL to the instance of ocw-studio the pipeline should call home to
         ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to use
-        ocw_hugo_projects_url(str): The URL to the ocw-hugo-projects repo
         ocw_hugo_projects_branch(str): The branch of ocw-hugo-projects to use
-        hugo_args_online(str): The arguments to append to the hugo command in the online build
-        hugo_args_offline(str): The arguments to append to the hugo command in the offline build
-        delete_flag(str): Either " --delete" or a blank string, appended to S3 sync commands on the output
-        instance_vars(str): The instance vars for the pipeline in a query string format
+        hugo_override_args(str): Arguments to override in the hugo command
     """
 
     def __init__(
         self,
         site: Website,
         pipeline_name: str,
-        is_root_website: bool,
-        base_url: str,
+        instance_vars: str,
         site_content_branch: str,
         static_api_url: str,
         storage_bucket_name: str,
@@ -105,21 +102,22 @@ class SitePipelineDefinitionConfig:
         web_bucket: str,
         offline_bucket: str,
         resource_base_url: str,
-        static_resources_subdirectory: str,
-        noindex: str,
         ocw_studio_url: str,
         ocw_hugo_themes_branch: str,
-        ocw_hugo_projects_url: str,
         ocw_hugo_projects_branch: str,
-        hugo_args_online: str,
-        hugo_args_offline: str,
-        delete_flag: str,
-        instance_vars: str,
+        hugo_override_args: Optional[str] = "",
     ):
         self.site = site
         self.pipeline_name = pipeline_name
-        self.is_root_website = is_root_website
-        self.base_url = base_url
+        self.is_root_website = site.name == settings.ROOT_WEBSITE_NAME
+        if self.is_root_website:
+            self.base_url = ""
+            self.static_resources_subdirectory = f"/{site.get_url_path()}/"
+            self.delete_flag = ""
+        else:
+            self.base_url = site.get_url_path()
+            self.static_resources_subdirectory = "/"
+            self.delete_flag = " --delete"
         self.site_content_branch = site_content_branch
         self.pipeline_name = pipeline_name
         self.static_api_url = static_api_url
@@ -128,15 +126,54 @@ class SitePipelineDefinitionConfig:
         self.web_bucket = web_bucket
         self.offline_bucket = offline_bucket
         self.resource_base_url = resource_base_url
-        self.static_resources_subdirectory = static_resources_subdirectory
-        self.noindex = noindex
+        if (
+            self.site_content_branch == "preview"
+            or settings.OCW_STUDIO_ENVIRONMENT not in PRODUCTION_NAMES
+        ):
+            self.noindex = "true"
+        else:
+            self.noindex = "false"
         self.ocw_studio_url = ocw_studio_url
         self.ocw_hugo_themes_branch = ocw_hugo_themes_branch
+        starter_path_url = urlparse(site.starter.path)
+        ocw_hugo_projects_url = urljoin(
+            f"{starter_path_url.scheme}://{starter_path_url.netloc}",
+            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
+        )
         self.ocw_hugo_projects_url = ocw_hugo_projects_url
         self.ocw_hugo_projects_branch = ocw_hugo_projects_branch
+        starter_slug = site.starter.slug
+        base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
+        base_online_args = base_hugo_args.copy()
+        base_online_args.update(
+            {
+                "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config.yaml",
+                "--baseURL": f"/{self.base_url}",
+                "--destination": "output-online",
+            }
+        )
+        base_offline_args = base_hugo_args.copy()
+        base_offline_args.update(
+            {
+                "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config-offline.yaml",
+                "--baseURL": "/",
+                "--destination": "output-offline",
+            }
+        )
+        hugo_args_online = get_hugo_arg_string(
+            TARGET_ONLINE,
+            pipeline_name,
+            base_online_args,
+            hugo_override_args,
+        )
+        hugo_args_offline = get_hugo_arg_string(
+            TARGET_OFFLINE,
+            pipeline_name,
+            base_offline_args,
+            hugo_override_args,
+        )
         self.hugo_args_online = hugo_args_online
         self.hugo_args_offline = hugo_args_offline
-        self.delete_flag = delete_flag
         self.instance_vars = instance_vars
         self.cli_endpoint_url = (
             f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""

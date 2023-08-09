@@ -1,17 +1,11 @@
 import json
 import os
-from urllib.parse import quote, urljoin, urlparse
+from urllib.parse import quote, urljoin
 
 import pytest
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.constants import (
-    DEV_ENDPOINT_URL,
-    TARGET_OFFLINE,
-    TARGET_ONLINE,
-    VERSION_DRAFT,
-    VERSION_LIVE,
-)
+from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
@@ -39,8 +33,6 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinition,
     SitePipelineDefinitionConfig,
 )
-from content_sync.utils import get_hugo_arg_string
-from main.constants import PRODUCTION_NAMES
 from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
@@ -49,7 +41,7 @@ from websites.factories import WebsiteFactory, WebsiteStarterFactory
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.parametrize("is_root_website", [True, False])
+@pytest.mark.parametrize("site_name", ["test-site", "root-website"])
 @pytest.mark.parametrize(
     "branch_vars",
     [
@@ -80,7 +72,7 @@ pytestmark = pytest.mark.django_db
 def test_generate_theme_assets_pipeline_definition(
     settings,
     mocker,
-    is_root_website,
+    site_name,
     branch_vars,
     concourse_is_private_repo,
     ocw_hugo_themes_branch,
@@ -96,24 +88,20 @@ def test_generate_theme_assets_pipeline_definition(
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"
     settings.CONCOURSE_IS_PRIVATE_REPO = concourse_is_private_repo
     settings.OCW_HUGO_THEMES_SENTRY_DSN = "test_sentry_dsn"
+    settings.ROOT_WEBSITE_NAME = "root-website"
+    settings.OCW_STUDIO_ENVIRONMENT = env_name
     mock_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
     mock_is_dev.return_value = is_dev
     cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev else ""
     hugo_projects_path = "https://github.com/org/repo"
-    site_name = "test_site"
     starter = WebsiteStarterFactory.create(
         source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
     )
     site = WebsiteFactory.create(
         starter=starter,
         name=site_name,
-    )
-    starter_path_url = urlparse(starter.path)
-    ocw_hugo_projects_url = urljoin(
-        f"{starter_path_url.scheme}://{starter_path_url.netloc}",
-        f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
     )
     other_vars = {
         "resource_base_url": "http://localhost:8044/"
@@ -126,54 +114,11 @@ def test_generate_theme_assets_pipeline_definition(
     branch_vars.update(other_vars)
     storage_bucket = "ol-ocw-studio-app"
     artifacts_bucket = "ol-eng-artifacts"
-    if is_root_website:
-        base_url = ""
-        static_resources_subdirectory = f"/{site.get_url_path()}/"
-        delete_flag = ""
-    else:
-        base_url = site.get_url_path()
-        static_resources_subdirectory = "/"
-        delete_flag = " --delete"
-    if branch_vars["branch"] == "preview" or env_name not in PRODUCTION_NAMES:
-        noindex = "true"
-    else:
-        noindex = "false"
-    starter_slug = starter.slug
-    base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
-    base_online_args = base_hugo_args.copy()
-    base_online_args.update(
-        {
-            "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config.yaml",
-            "--baseURL": f"/{base_url}",
-            "--destination": "output-online",
-        }
-    )
-    base_offline_args = base_hugo_args.copy()
-    base_offline_args.update(
-        {
-            "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config-offline.yaml",
-            "--baseURL": "/",
-            "--destination": "output-offline",
-        }
-    )
-    hugo_args_online = get_hugo_arg_string(
-        TARGET_ONLINE,
-        branch_vars["pipeline_name"],
-        base_online_args,
-        hugo_override_args,
-    )
-    hugo_args_offline = get_hugo_arg_string(
-        TARGET_OFFLINE,
-        branch_vars["pipeline_name"],
-        base_offline_args,
-        hugo_override_args,
-    )
     instance_vars = f"?vars={quote(json.dumps({'site': site_name}))}"
     config = SitePipelineDefinitionConfig(
         site=site,
         pipeline_name=branch_vars["pipeline_name"],
-        is_root_website=is_root_website,
-        base_url=base_url,
+        instance_vars=instance_vars,
         site_content_branch=branch_vars["branch"],
         static_api_url=branch_vars["static_api_url"],
         storage_bucket_name=storage_bucket,
@@ -181,16 +126,10 @@ def test_generate_theme_assets_pipeline_definition(
         web_bucket=branch_vars["web_bucket"],
         offline_bucket=branch_vars["offline_bucket"],
         resource_base_url=branch_vars["resource_base_url"],
-        static_resources_subdirectory=static_resources_subdirectory,
-        noindex=noindex,
         ocw_studio_url=branch_vars["ocw_studio_url"],
         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
-        ocw_hugo_projects_url=ocw_hugo_projects_url,
         ocw_hugo_projects_branch=ocw_hugo_projects_branch,
-        hugo_args_online=hugo_args_online,
-        hugo_args_offline=hugo_args_offline,
-        delete_flag=delete_flag,
-        instance_vars=instance_vars,
+        hugo_override_args=hugo_override_args,
     )
     pipeline_definition = SitePipelineDefinition(config=config)
     rendered_definition = json.loads(pipeline_definition.json(indent=2, by_alias=True))
@@ -269,7 +208,9 @@ def test_generate_theme_assets_pipeline_definition(
     ocw_hugo_projects_git_resource = get_dict_list_item_by_field(
         items=resources, field="name", value=OCW_HUGO_PROJECTS_GIT_IDENTIFIER
     )
-    assert ocw_hugo_projects_git_resource["source"]["uri"] == ocw_hugo_projects_url
+    assert (
+        ocw_hugo_projects_git_resource["source"]["uri"] == config.ocw_hugo_projects_url
+    )
     assert (
         ocw_hugo_projects_git_resource["source"]["branch"] == ocw_hugo_projects_branch
     )
@@ -369,13 +310,13 @@ def test_generate_theme_assets_pipeline_definition(
         f"cp ../{webpack_manifest_s3_identifier}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data"
         in build_online_site_command
     )
-    assert f"hugo {hugo_args_online}" in build_online_site_command
+    assert f"hugo {config.hugo_args_online}" in build_online_site_command
     assert (
-        f"cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{static_resources_subdirectory}"
+        f"cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{config.static_resources_subdirectory}"
         in build_online_site_command
     )
     assert (
-        f"rm -rf ./output-online{static_resources_subdirectory}*.mp4"
+        f"rm -rf ./output-online{config.static_resources_subdirectory}*.mp4"
         in build_online_site_command
     )
     build_online_site_expected_params = {
@@ -387,7 +328,7 @@ def test_generate_theme_assets_pipeline_definition(
         "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
         "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
-        "NOINDEX": noindex,
+        "NOINDEX": config.noindex,
     }
     if is_dev:
         build_online_site_expected_params.update(
@@ -410,10 +351,10 @@ def test_generate_theme_assets_pipeline_definition(
     upload_online_build_command = "\n".join(
         upload_online_build_task["config"]["run"]["args"]
     )
-    if is_root_website:
-        online_sync_command = f"aws s3{cli_endpoint_url} sync {site_content_git_identifier}/output-online s3://{branch_vars['web_bucket']}/{base_url} --metadata site-id={site.name}{delete_flag}"
+    if config.is_root_website:
+        online_sync_command = f"aws s3{cli_endpoint_url} sync {site_content_git_identifier}/output-online s3://{branch_vars['web_bucket']}/{config.base_url} --metadata site-id={site.name}{config.delete_flag}"
     else:
-        online_sync_command = f"aws s3{cli_endpoint_url} sync {site_content_git_identifier}/output-online s3://{branch_vars['web_bucket']}/{base_url} --exclude='{site.short_id}.zip' --exclude='{site.short_id}-video.zip' --metadata site-id={site.name}{delete_flag}"
+        online_sync_command = f"aws s3{cli_endpoint_url} sync {site_content_git_identifier}/output-online s3://{branch_vars['web_bucket']}/{config.base_url} --exclude='{site.short_id}.zip' --exclude='{site.short_id}-video.zip' --metadata site-id={site.name}{config.delete_flag}"
     assert online_sync_command in upload_online_build_command
     upload_online_build_expected_inputs = [site_content_git_identifier]
     for input in upload_online_build_task["config"]["inputs"]:
@@ -535,10 +476,10 @@ def test_generate_theme_assets_pipeline_definition(
     assert OCW_HUGO_THEMES_GIT_IDENTIFIER in build_offline_site_command
     assert STATIC_RESOURCES_S3_IDENTIFIER in build_offline_site_command
     assert WEBPACK_ARTIFACTS_IDENTIFIER in build_offline_site_command
-    if is_root_website:
-        assert build_offline_site_command.count(f"hugo {hugo_args_offline}") == 1
+    if config.is_root_website:
+        assert build_offline_site_command.count(f"hugo {config.hugo_args_offline}") == 1
     else:
-        assert build_offline_site_command.count(f"hugo {hugo_args_offline}") == 2
+        assert build_offline_site_command.count(f"hugo {config.hugo_args_offline}") == 2
         assert (
             f"zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{site.short_id}-video.zip ./"
         )
@@ -551,7 +492,7 @@ def test_generate_theme_assets_pipeline_definition(
         "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
         "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
-        "NOINDEX": noindex,
+        "NOINDEX": config.noindex,
     }
     if is_dev:
         build_offline_site_expected_params.update(
@@ -575,12 +516,12 @@ def test_generate_theme_assets_pipeline_definition(
         upload_offline_build_task["config"]["run"]["args"]
     )
     assert (
-        f"aws s3{cli_endpoint_url} sync {site_content_git_identifier}/output-offline/ s3://{branch_vars['offline_bucket']}/{base_url} --metadata site-id={site.name}{delete_flag}"
+        f"aws s3{cli_endpoint_url} sync {site_content_git_identifier}/output-offline/ s3://{branch_vars['offline_bucket']}/{config.base_url} --metadata site-id={site.name}{config.delete_flag}"
         in upload_offline_build_command
     )
-    if not is_root_website:
+    if not config.is_root_website:
         assert (
-            f"aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{branch_vars['web_bucket']}/{base_url} --exclude='*' --include='{site.short_id}.zip' --include='{site.short_id}-video.zip' --metadata site-id={site.name}"
+            f"aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{branch_vars['web_bucket']}/{config.base_url} --exclude='*' --include='{site.short_id}.zip' --include='{site.short_id}-video.zip' --metadata site-id={site.name}"
             in upload_offline_build_command
         )
     upload_offline_build_expected_inputs = [
