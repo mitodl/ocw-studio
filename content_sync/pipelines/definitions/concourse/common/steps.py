@@ -29,7 +29,7 @@ def add_error_handling(
     step_description: str,
     pipeline_name: str,
     short_id: str,
-    instance_vars_query_str: str,
+    instance_vars: str,
 ):
     """
     Add error handling steps to any Step-like object
@@ -39,7 +39,7 @@ def add_error_handling(
         step_description(str): A description of the step at which the failure occurred
         pipeline_name(str): The name of the pipeline to set the status on
         short_id(str): The short_id of the site the status is in reference to
-        instance_vars_query_str(str): A query string of the instance vars from the pipeline to build a URL with
+        instance_vars(str): A query string of the instance vars from the pipeline to build a URL with
 
     Returns:
         None
@@ -54,9 +54,7 @@ def add_error_handling(
             raise ValueError(f"The step {step} already has {failure_step} set")
     concourse_base_url = settings.CONCOURSE_URL
     concourse_team = settings.CONCOURSE_TEAM
-    concourse_path = (
-        f"/teams/{concourse_team}/pipelines/{pipeline_name}{instance_vars_query_str}"
-    )
+    concourse_path = f"/teams/{concourse_team}/pipelines/{pipeline_name}{instance_vars}"
     concourse_url = urljoin(concourse_base_url, concourse_path)
     step.on_failure = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -82,6 +80,7 @@ def add_error_handling(
         step_description=step_description,
         concourse_url=concourse_url,
     )
+    return step
 
 
 class ErrorHandlingStep(TryStep):
@@ -138,7 +137,7 @@ class GetStepWithErrorHandling(GetStep):
             step_description=step_description,
             pipeline_name=pipeline_name,
             short_id=short_id,
-            instance_vars_query_str=instance_vars,
+            instance_vars=instance_vars,
         )
 
 
@@ -161,7 +160,7 @@ class PutStepWithErrorHandling(PutStep):
             step_description=step_description,
             pipeline_name=pipeline_name,
             short_id=short_id,
-            instance_vars_query_str=instance_vars,
+            instance_vars=instance_vars,
         )
 
 
@@ -184,7 +183,7 @@ class TaskStepWithErrorHandling(TaskStep):
             step_description=step_description,
             pipeline_name=pipeline_name,
             short_id=short_id,
-            instance_vars_query_str=instance_vars,
+            instance_vars=instance_vars,
         )
 
 
@@ -225,7 +224,7 @@ class ClearCdnCacheStep(TaskStepWithErrorHandling):
     """
 
     def __init__(
-        self, name: str, fastly_var: str, site_name: str, short_id: str, **kwargs
+        self, name: Identifier, fastly_var: str, site_name: str, short_id: str, **kwargs
     ):
         curl_args = [
             "-f",
@@ -240,7 +239,7 @@ class ClearCdnCacheStep(TaskStepWithErrorHandling):
             f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
         )
         super().__init__(
-            task=Identifier(name),
+            task=name,
             short_id=short_id,
             timeout="5m",
             attempts=3,

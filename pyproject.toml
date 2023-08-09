@@ -75,7 +75,7 @@ pyyaml = "6.0.1"
 tqdm = "^4.65.0"
 yamale = "4.0.4"
 django-model-utils = "4.2.0"
-ol-concourse = "0.4.4"
+ol-concourse = "0.5.0"
 uwsgitop = "^0.11"
 
 [tool.poetry.group.dev.dependencies]

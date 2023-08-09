@@ -93,7 +93,7 @@ class OcwStudioWebhookResource(Resource):
         super().__init__(
             name=Identifier(
                 f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{short_id}"
-            ),
+            ).root,
             icon="language-python",
             type=HTTP_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",

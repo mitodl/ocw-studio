@@ -345,7 +345,7 @@ def test_generate_theme_assets_pipeline_definition(
     )
     assert (
         build_online_site_task["config"]["image_resource"]["source"]["repository"]
-        == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source["repository"]
+        == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source.repository
     )
     build_online_site_expected_inputs = [
         OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -405,7 +405,7 @@ def test_generate_theme_assets_pipeline_definition(
     )
     assert (
         upload_online_build_task["config"]["image_resource"]["source"]["repository"]
-        == AWS_CLI_REGISTRY_IMAGE.source["repository"]
+        == AWS_CLI_REGISTRY_IMAGE.source.repository
     )
     upload_online_build_command = "\n".join(
         upload_online_build_task["config"]["run"]["args"]
@@ -480,7 +480,7 @@ def test_generate_theme_assets_pipeline_definition(
         filter_webpack_artifacts_task["config"]["image_resource"]["source"][
             "repository"
         ]
-        == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source["repository"]
+        == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source.repository
     )
     filter_webpack_artifacts_expected_inputs = [webpack_manifest_s3_identifier]
     for input in filter_webpack_artifacts_task["config"]["inputs"]:
@@ -509,7 +509,7 @@ def test_generate_theme_assets_pipeline_definition(
     )
     assert (
         build_offline_site_task["config"]["image_resource"]["source"]["repository"]
-        == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source["repository"]
+        == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source.repository
     )
     build_offline_site_expected_inputs = [
         OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -569,7 +569,7 @@ def test_generate_theme_assets_pipeline_definition(
     )
     assert (
         upload_offline_build_task["config"]["image_resource"]["source"]["repository"]
-        == AWS_CLI_REGISTRY_IMAGE.source["repository"]
+        == AWS_CLI_REGISTRY_IMAGE.source.repository
     )
     upload_offline_build_command = "\n".join(
         upload_offline_build_task["config"]["run"]["args"]
