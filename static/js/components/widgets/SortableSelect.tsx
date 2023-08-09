@@ -51,6 +51,9 @@ export default function SortableSelect(props: Props) {
 
   const quickAdd = isFeatureEnabled("SORTABLE_SELECT_QUICK_ADD")
   const hideSelectedOptions = isFeatureEnabled("SORTABLE_SELECT_HIDE_SELECTED")
+  const preserveSearchText = isFeatureEnabled(
+    "SORTABLE_SELECT_PRESERVE_SEARCH_TEXT"
+  )
 
   /**
    * Callback for adding a new item to the field value in the sortable UI. If
@@ -134,6 +137,7 @@ export default function SortableSelect(props: Props) {
           isOptionDisabled={isOptionDisabled}
           isOptionSelected={hideSelectedOptions ? isOptionSelected : undefined}
           hideSelectedOptions={hideSelectedOptions}
+          preserveSearchText={preserveSearchText}
           classNamePrefix={classNamePrefix}
           cacheUniques={cacheUniques}
         />

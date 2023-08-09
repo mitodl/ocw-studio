@@ -26,6 +26,7 @@ interface Props {
   defaultOptions?: Option[]
   cacheUniques?: ReadonlyArray<any>
   hideSelectedOptions?: boolean
+  preserveSearchText?: boolean
   isOptionDisabled?: (option: Option) => boolean
   isOptionSelected?: (option: Option) => boolean
 }
@@ -43,14 +44,12 @@ export default function SelectField(props: Props): JSX.Element {
     isOptionDisabled,
     isOptionSelected,
     hideSelectedOptions,
+    preserveSearchText = false,
     cacheUniques
   } = props
   const [searchText, setSearchText] = useState("")
   const [placeholder, setPlaceholder] = useState("")
 
-  const preserveSearchText = isFeatureEnabled(
-    "SELECT_FIELD_PRESERVE_SEARCH_TEXT"
-  )
   const infiniteScroll = isFeatureEnabled("SELECT_FIELD_INFINITE_SCROLL")
 
   const multiple = props.multiple ?? false

@@ -150,9 +150,10 @@ describe("SelectField", () => {
   )
 
   it("should preserve search text on menu close", async () => {
-    SETTINGS.features.SELECT_FIELD_PRESERVE_SEARCH_TEXT = true
     const searchText = "An"
-    const wrapper = await render()
+    const wrapper = await render({
+      preserveSearchText: true
+    })
 
     await triggerSelectMenu(wrapper)
 
@@ -171,9 +172,10 @@ describe("SelectField", () => {
   })
 
   it("should preserve search text on option selection", async () => {
-    SETTINGS.features.SELECT_FIELD_PRESERVE_SEARCH_TEXT = true
     const searchText = "An"
-    const wrapper = await render()
+    const wrapper = await render({
+      preserveSearchText: true
+    })
 
     await triggerSelectMenu(wrapper)
 
