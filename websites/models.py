@@ -65,6 +65,10 @@ def validate_slug(value):
         )
 
 
+class WebsiteQuerySet(TimestampedModelQuerySet):
+    """Queryset for Website"""
+
+
 class Website(TimestampedModel):
     """Class for a generic website"""
 

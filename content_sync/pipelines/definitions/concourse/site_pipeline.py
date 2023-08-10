@@ -27,7 +27,6 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
-    S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     STATIC_RESOURCES_S3_IDENTIFIER,
     WEBPACK_ARTIFACTS_IDENTIFIER,
@@ -43,10 +42,13 @@ from content_sync.pipelines.definitions.concourse.common.resource_types import (
     S3IamResourceType,
 )
 from content_sync.pipelines.definitions.concourse.common.resources import (
-    GitResource,
+    OcwHugoProjectsGitResource,
+    OcwHugoThemesGitResource,
     OcwStudioWebhookResource,
     OpenDiscussionsResource,
+    SiteContentGitResource,
     SlackAlertResource,
+    WebpackManifestResource,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
@@ -57,7 +59,6 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
 from content_sync.utils import get_hugo_arg_string
 from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
-from websites.constants import OCW_HUGO_THEMES_GIT
 from websites.models import Website
 
 
@@ -213,52 +214,21 @@ class SitePipelineResources(list[Resource]):
     """
 
     def __init__(self, config: SitePipelineDefinitionConfig):
-        webpack_manifest_resource = Resource(
+        webpack_manifest_resource = WebpackManifestResource(
             name=config.webpack_manifest_s3_identifier,
-            type=S3_IAM_RESOURCE_TYPE_IDENTIFIER,
-            icon="file-cloud",
-            check_every="never",
-            source={
-                "bucket": (config.artifacts_bucket or ""),
-                "versioned_file": f"ocw-hugo-themes/{config.ocw_hugo_themes_branch}/webpack.json",
-            },
-        )
-        if is_dev():
-            webpack_manifest_resource.source.update(
-                {
-                    "endpoint": DEV_ENDPOINT_URL,
-                    "access_key_id": (settings.AWS_ACCESS_KEY_ID or ""),
-                    "secret_access_key": (settings.AWS_SECRET_ACCESS_KEY or ""),
-                }
-            )
-        ocw_hugo_themes_resource = GitResource(
-            name=OCW_HUGO_THEMES_GIT_IDENTIFIER,
-            uri=OCW_HUGO_THEMES_GIT,
+            bucket=config.artifacts_bucket,
             branch=config.ocw_hugo_themes_branch,
-            check_every="never",
         )
-        ocw_hugo_projects_resource = GitResource(
-            name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
-            uri=config.ocw_hugo_projects_url,
-            branch=config.ocw_hugo_projects_branch,
-            check_every="never",
+        ocw_hugo_themes_resource = OcwHugoThemesGitResource(
+            branch=config.ocw_hugo_themes_branch
         )
-        site_content_resource_source = {"branch": config.site_content_branch}
-        if settings.CONCOURSE_IS_PRIVATE_REPO:
-            site_content_resource_source[
-                "uri"
-            ] = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{config.site.short_id}.git"
-            site_content_resource_source["private_key"] = "((git-private-key))"
-        else:
-            site_content_resource_source[
-                "uri"
-            ] = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{config.site.short_id}.git"
-        site_content_resource = Resource(
+        ocw_hugo_projects_resource = OcwHugoProjectsGitResource(
+            uri=config.ocw_hugo_projects_url, branch=config.ocw_hugo_projects_branch
+        )
+        site_content_resource = SiteContentGitResource(
             name=config.site_content_git_identifier,
-            type="git",
-            icon="git",
-            check_every="never",
-            source=site_content_resource_source,
+            branch=config.site_content_branch,
+            short_id=config.site.short_id,
         )
         ocw_studio_webhook_resource = OcwStudioWebhookResource(
             ocw_studio_url=config.ocw_studio_url,
