@@ -1,3 +1,6 @@
+import os
+from urllib.parse import urljoin
+
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import Identifier, Resource
 from ol_concourse.lib.resource_types import slack_notification_resource
@@ -73,17 +76,29 @@ class OcwStudioWebhookResource(Resource):
     args:
         ocw_studio_url(str): The URL to the instance of ocw-studio to POST to
         site_name(str): The name of the site the status is in reference to
+        site_name(str): The short id of the site the status is in reference to
         api_token(str): The ocw-studio API token
     """
 
-    def __init__(self, ocw_studio_url: str, site_name: str, api_token: str, **kwargs):
+    def __init__(
+        self,
+        ocw_studio_url: str,
+        site_name: str,
+        short_id: str,
+        api_token: str,
+        **kwargs,
+    ):
+        api_path = os.path.join("api", "websites", site_name, "pipeline_status")
+        api_url = f"{urljoin(ocw_studio_url, api_path)}/"
         super().__init__(
-            name=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
+            name=Identifier(
+                f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{short_id}"
+            ).root,
             icon="language-python",
             type=HTTP_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",
             source={
-                "url": f"{ocw_studio_url}/api/websites/{site_name}/pipeline_status/",
+                "url": api_url,
                 "method": "POST",
                 "out_only": True,
                 "headers": {

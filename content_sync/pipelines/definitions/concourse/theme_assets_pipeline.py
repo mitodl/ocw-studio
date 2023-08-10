@@ -54,11 +54,13 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         instance_vars:(str): Instance vars for the pipeline in query string format
     """
 
-    _build_theme_assets_job_identifier = Identifier("build-theme-assets-job")
-    _build_ocw_hugo_themes_identifier = Identifier("build-ocw-hugo-themes-task")
-    _upload_theme_assets_task_identifier = Identifier("upload-theme-assets-task")
-    _clear_draft_cdn_cache_task_identifier = Identifier("clear-draft-cdn-cache-task")
-    _clear_live_cdn_cache_identifier = Identifier("clear-live-cdn-cache-task")
+    _build_theme_assets_job_identifier = Identifier("build-theme-assets-job").root
+    _build_ocw_hugo_themes_identifier = Identifier("build-ocw-hugo-themes-task").root
+    _upload_theme_assets_task_identifier = Identifier("upload-theme-assets-task").root
+    _clear_draft_cdn_cache_task_identifier = Identifier(
+        "clear-draft-cdn-cache-task"
+    ).root
+    _clear_live_cdn_cache_identifier = Identifier("clear-live-cdn-cache-task").root
 
     _open_discussions_resource = OpenDiscussionsResource()
     _slack_resource = SlackAlertResource()
@@ -153,7 +155,8 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                 ClearCdnCacheStep(
                     name=self._clear_draft_cdn_cache_task_identifier,
                     fastly_var="fastly_draft",
-                    purge_url="purge/ocw-hugo-themes",
+                    site_name="ocw-hugo-themes",
+                    short_id="ocw-hugo-themes",
                     step_description="draft cdn cache clear step",
                     pipeline_name=BaseThemeAssetsPipeline.PIPELINE_NAME,
                     instance_vars=instance_vars,
@@ -163,7 +166,8 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                 ClearCdnCacheStep(
                     name=self._clear_live_cdn_cache_identifier,
                     fastly_var="fastly_live",
-                    purge_url="purge/ocw-hugo-themes",
+                    site_name="ocw-hugo-themes",
+                    short_id="ocw-hugo-themes",
                     step_description="live cdn cache clear step",
                     pipeline_name=BaseThemeAssetsPipeline.PIPELINE_NAME,
                     instance_vars=instance_vars,
