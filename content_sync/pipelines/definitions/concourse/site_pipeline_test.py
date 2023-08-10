@@ -89,7 +89,7 @@ def test_generate_theme_assets_pipeline_definition(
     settings.CONCOURSE_IS_PRIVATE_REPO = concourse_is_private_repo
     settings.OCW_HUGO_THEMES_SENTRY_DSN = "test_sentry_dsn"
     settings.ROOT_WEBSITE_NAME = "root-website"
-    settings.OCW_STUDIO_ENVIRONMENT = env_name
+    settings.ENV_NAME = env_name
     mock_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
