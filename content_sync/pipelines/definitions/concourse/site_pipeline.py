@@ -128,7 +128,7 @@ class SitePipelineDefinitionConfig:
         self.resource_base_url = resource_base_url
         if (
             self.site_content_branch == "preview"
-            or settings.OCW_STUDIO_ENVIRONMENT not in PRODUCTION_NAMES
+            or settings.ENV_NAME not in PRODUCTION_NAMES
         ):
             self.noindex = "true"
         else:
