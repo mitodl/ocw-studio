@@ -477,6 +477,15 @@ class WebsiteStarter(TimestampedModel):
             has_unpublished_draft=True,
         )
 
+    @property
+    def ocw_hugo_projects_url(self):
+        """Get the ocw-hugo-projects URL"""
+        starter_path_url = urlparse(self.path)
+        return urljoin(
+            f"{starter_path_url.scheme}://{starter_path_url.netloc}",
+            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",
+        )
+
     @staticmethod
     def iter_all_config_items(website: Website) -> Iterator[Tuple[bool, ConfigItem]]:
         """
