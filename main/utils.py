@@ -152,3 +152,21 @@ def is_dev() -> bool:
         (bool): A boolean indicating whether on not the environment is dev
     """
     return settings.ENVIRONMENT == "dev"
+
+
+def get_dict_list_item_by_field(items: list[dict], field: str, value: str):
+    """
+    Iterates a list of dicts and returns the first item where the value of the field matches the passed in value
+
+    Args:
+        items (list[dict]): A list of dicts to iterate through
+        field (str): A string representing the field to check
+        value (str): The value of the given field to match on
+
+    Returns:
+        (dict): The first dict with a field value that matches the given parameters
+    """
+    return next(
+        (item for item in items if item.get(field, None) == value),
+        None,
+    )

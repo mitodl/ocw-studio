@@ -1,6 +1,25 @@
 Release Notes
 =============
 
+Version 0.99.0 (Released August 02, 2023)
+--------------
+
+- Tune uWSGI settings (#1886)
+
+Version 0.98.3 (Released July 31, 2023)
+--------------
+
+- Fix draft publishing bug (#1873)
+- overhaul theme assets pipeline definition (#1896)
+- add uwsgitop using poetry (#1898)
+
+Version 0.98.2 (Released July 27, 2023)
+--------------
+
+- remove requirements.txt (#1903)
+- Use Poetry for managing Python Dependencies (#1893)
+- add ol-concourse common components (#1894)
+
 Version 0.98.1 (Released July 20, 2023)
 --------------
 
