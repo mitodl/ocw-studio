@@ -136,12 +136,7 @@ class SitePipelineDefinitionConfig:
             self.noindex = "false"
         self.ocw_studio_url = ocw_studio_url
         self.ocw_hugo_themes_branch = ocw_hugo_themes_branch
-        starter_path_url = urlparse(site.starter.path)
-        ocw_hugo_projects_url = urljoin(
-            f"{starter_path_url.scheme}://{starter_path_url.netloc}",
-            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
-        )
-        self.ocw_hugo_projects_url = ocw_hugo_projects_url
+        self.ocw_hugo_projects_url = site.starter.ocw_hugo_projects_url
         self.ocw_hugo_projects_branch = ocw_hugo_projects_branch
         starter_slug = site.starter.slug
         base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
