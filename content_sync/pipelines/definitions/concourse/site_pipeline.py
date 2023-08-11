@@ -459,13 +459,15 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             upload_online_build_step.params["AWS_SECRET_ACCESS_KEY"] = (
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
-        clear_cdn_cache_online_step = ClearCdnCacheStep(
-            name=CLEAR_CDN_CACHE_IDENTIFIER,
-            fastly_var="fastly",
-            site_name=config.site.name,
-            short_id=config.site.short_id,
+        clear_cdn_cache_online_step = add_error_handling(
+            step=ClearCdnCacheStep(
+                name=CLEAR_CDN_CACHE_IDENTIFIER,
+                fastly_var="fastly",
+                site_name=config.site.name,
+            ),
             step_description="clear cdn cache",
             pipeline_name=config.pipeline_name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         clear_cdn_cache_online_step.on_success = TryStep(
@@ -670,13 +672,15 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             upload_offline_build_step.params[
                 "AWS_SECRET_ACCESS_KEY"
             ] = settings.AWS_SECRET_ACCESS_KEY
-        clear_cdn_cache_offline_step = ClearCdnCacheStep(
-            name=CLEAR_CDN_CACHE_IDENTIFIER,
-            fastly_var="fastly",
-            site_name=config.site.name,
-            short_id=config.site.short_id,
+        clear_cdn_cache_offline_step = add_error_handling(
+            ClearCdnCacheStep(
+                name=CLEAR_CDN_CACHE_IDENTIFIER,
+                fastly_var="fastly",
+                site_name=config.site.name,
+            ),
             step_description="clear cdn cache",
             pipeline_name=config.pipeline_name,
+            short_id=config.site.short_id,
             instance_vars=config.instance_vars,
         )
         clear_cdn_cache_offline_step.on_success = TryStep(

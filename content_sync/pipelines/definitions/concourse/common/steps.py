@@ -5,7 +5,6 @@ from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
     Command,
     DoStep,
-    GetStep,
     Identifier,
     PutStep,
     StepModifierMixin,
@@ -118,75 +117,6 @@ class ErrorHandlingStep(TryStep):
         )
 
 
-class GetStepWithErrorHandling(GetStep):
-    """
-    Extends GetStep and adds error handling
-    """
-
-    def __init__(
-        self,
-        step_description: str,
-        pipeline_name: str,
-        short_id: str,
-        instance_vars: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        add_error_handling(
-            self,
-            step_description=step_description,
-            pipeline_name=pipeline_name,
-            short_id=short_id,
-            instance_vars=instance_vars,
-        )
-
-
-class PutStepWithErrorHandling(PutStep):
-    """
-    Extends PutStep and adds error handling
-    """
-
-    def __init__(
-        self,
-        step_description: str,
-        pipeline_name: str,
-        short_id: str,
-        instance_vars: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        add_error_handling(
-            self,
-            step_description=step_description,
-            pipeline_name=pipeline_name,
-            short_id=short_id,
-            instance_vars=instance_vars,
-        )
-
-
-class TaskStepWithErrorHandling(TaskStep):
-    """
-    Extends TaskStep and adds error handling
-    """
-
-    def __init__(
-        self,
-        step_description: str,
-        pipeline_name: str,
-        short_id: str,
-        instance_vars: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        add_error_handling(
-            self,
-            step_description=step_description,
-            pipeline_name=pipeline_name,
-            short_id=short_id,
-            instance_vars=instance_vars,
-        )
-
-
 class SlackAlertStep(TryStep):
     """
     A PutStep to concourse-slack-alert-resource wrapped in a TryStep
@@ -211,7 +141,7 @@ class SlackAlertStep(TryStep):
         )
 
 
-class ClearCdnCacheStep(TaskStepWithErrorHandling):
+class ClearCdnCacheStep(TaskStep):
     """
     A TaskStep using the curlimages/curl Docker image that sends an
     API request to Fastly to clear the cache for a given URL
@@ -220,12 +150,9 @@ class ClearCdnCacheStep(TaskStepWithErrorHandling):
         name(str): The name to use as the Identifier for the task argument
         fastly_var(str): The name of the var to pull Fastly properties from
         site_name(str): The site to purge from the cache
-        short_id(str): The short id of the site to be purged
     """
 
-    def __init__(
-        self, name: Identifier, fastly_var: str, site_name: str, short_id: str, **kwargs
-    ):
+    def __init__(self, name: Identifier, fastly_var: str, site_name: str, **kwargs):
         curl_args = [
             "-f",
             "-X",
@@ -240,7 +167,6 @@ class ClearCdnCacheStep(TaskStepWithErrorHandling):
         )
         super().__init__(
             task=name,
-            short_id=short_id,
             timeout="5m",
             attempts=3,
             config=TaskConfig(

@@ -29,6 +29,7 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
 from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
     SlackAlertStep,
+    add_error_handling,
 )
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT
@@ -152,24 +153,28 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             resource_types.append(slack_notification_resource())
             resources.append(self._slack_resource)
             tasks.append(
-                ClearCdnCacheStep(
-                    name=self._clear_draft_cdn_cache_task_identifier,
-                    fastly_var="fastly_draft",
-                    site_name="ocw-hugo-themes",
-                    short_id="ocw-hugo-themes",
+                add_error_handling(
+                    step=ClearCdnCacheStep(
+                        name=self._clear_draft_cdn_cache_task_identifier,
+                        fastly_var="fastly_draft",
+                        site_name="ocw-hugo-themes",
+                    ),
                     step_description="draft cdn cache clear step",
                     pipeline_name=BaseThemeAssetsPipeline.PIPELINE_NAME,
+                    short_id="ocw-hugo-themes",
                     instance_vars=instance_vars,
                 )
             )
             tasks.append(
-                ClearCdnCacheStep(
-                    name=self._clear_live_cdn_cache_identifier,
-                    fastly_var="fastly_live",
-                    site_name="ocw-hugo-themes",
-                    short_id="ocw-hugo-themes",
+                add_error_handling(
+                    step=ClearCdnCacheStep(
+                        name=self._clear_live_cdn_cache_identifier,
+                        fastly_var="fastly_live",
+                        site_name="ocw-hugo-themes",
+                    ),
                     step_description="live cdn cache clear step",
                     pipeline_name=BaseThemeAssetsPipeline.PIPELINE_NAME,
+                    short_id="ocw-hugo-themes",
                     instance_vars=instance_vars,
                 )
             )
