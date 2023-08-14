@@ -178,10 +178,13 @@ class SitePipelineDefinitionConfig:
             f"{WEBPACK_MANIFEST_S3_IDENTIFIER}-{ocw_hugo_themes_branch}"
         ).root
         self.site_content_git_identifier = Identifier(
-            f"{SITE_CONTENT_GIT_IDENTIFIER}-{site.short_id}"
+            f"{SITE_CONTENT_GIT_IDENTIFIER}-{site.short_id.lower()}"
         ).root
+        self.static_resources_s3_identifier = Identifier(
+            f"{STATIC_RESOURCES_S3_IDENTIFIER}-{site.short_id.lower()}"
+        )
         self.ocw_studio_webhook_identifier = Identifier(
-            f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{site.short_id}"
+            f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{site.short_id.lower()}"
         ).root
 
 
@@ -309,24 +312,24 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
         )
         static_resources_step = add_error_handling(
             step=TaskStep(
-                task=STATIC_RESOURCES_S3_IDENTIFIER,
+                task=config.static_resources_s3_identifier,
                 timeout="40m",
                 attempts=3,
                 params={},
                 config=TaskConfig(
                     platform="linux",
                     image_resource=AWS_CLI_REGISTRY_IMAGE,
-                    outputs=[Output(name=STATIC_RESOURCES_S3_IDENTIFIER)],
+                    outputs=[Output(name=config.static_resources_s3_identifier)],
                     run=Command(
                         path="sh",
                         args=[
                             "-exc",
-                            f"aws s3{config.cli_endpoint_url} sync s3://{config.storage_bucket_name}/{config.site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}",
+                            f"aws s3{config.cli_endpoint_url} sync s3://{config.storage_bucket_name}/{config.site.s3_path} ./{config.static_resources_s3_identifier}",
                         ],
                     ),
                 ),
             ),
-            step_description=f"{STATIC_RESOURCES_S3_IDENTIFIER} s3 sync to container",
+            step_description=f"{config.static_resources_s3_identifier} s3 sync to container",
             pipeline_name=config.pipeline_name,
             short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
@@ -389,7 +392,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                         Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
                         Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
                         Input(name=config.site_content_git_identifier),
-                        Input(name=STATIC_RESOURCES_S3_IDENTIFIER),
+                        Input(name=config.static_resources_s3_identifier),
                         Input(name=config.webpack_manifest_s3_identifier),
                     ],
                     outputs=[
@@ -404,7 +407,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                             f"""
                             cp ../{config.webpack_manifest_s3_identifier}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
                             hugo {config.hugo_args_online}
-                            cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{config.static_resources_subdirectory}
+                            cp -r -n ../{config.static_resources_s3_identifier}/. ./output-online{config.static_resources_subdirectory}
                             rm -rf ./output-online{config.static_resources_subdirectory}*.mp4
                             """,
                         ],
@@ -549,7 +552,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         mkdir -p ./static/static_resources
         mkdir -p ./static/static_shared
         mkdir -p ../videos
-        cp -r ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./content/static_resources
+        cp -r ../{config.static_resources_s3_identifier}/. ./content/static_resources
         HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
         if [ $HTML_COUNT != 0 ];
         then
@@ -602,7 +605,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                         Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
                         Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
                         Input(name=config.site_content_git_identifier),
-                        Input(name=STATIC_RESOURCES_S3_IDENTIFIER),
+                        Input(name=config.static_resources_s3_identifier),
                         Input(name=config.webpack_manifest_s3_identifier),
                         Input(name=WEBPACK_ARTIFACTS_IDENTIFIER),
                     ],
