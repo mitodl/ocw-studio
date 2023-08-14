@@ -248,20 +248,8 @@ class SitePipelineResources(list[Resource]):
             self.append(OpenDiscussionsResource())
 
 
-class SitePipelineBaseTasks(list[StepModifierMixin]):
-    """
-    The base tasks used in a site pipeline
-
-    Args:
-        config(SitePipelineDefinitionConfig): The site pipeline configuration object
-    """
-
-    def __init__(
-        self,
-        config: SitePipelineDefinitionConfig,
-        gated: bool = False,
-        passed_identifier: Identifier = None,
-    ):
+class SitePipelineThemeTasks(list[StepModifierMixin]):
+    def __init__(self, config: SitePipelineDefinitionConfig):    
         webpack_manifest_get_step = add_error_handling(
             step=GetStep(
                 get=config.webpack_manifest_s3_identifier,
@@ -298,6 +286,26 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
+        self.extend([
+            webpack_manifest_get_step,
+            ocw_hugo_themes_get_step,
+            ocw_hugo_projects_get_step
+        ])
+
+class SitePipelineBaseTasks(list[StepModifierMixin]):
+    """
+    The base tasks used in a site pipeline
+
+    Args:
+        config(SitePipelineDefinitionConfig): The site pipeline configuration object
+    """
+
+    def __init__(
+        self,
+        config: SitePipelineDefinitionConfig,
+        gated: bool = False,
+        passed_identifier: Identifier = None,
+    ):
         site_content_get_step = add_error_handling(
             step=GetStep(
                 get=config.site_content_git_identifier,
@@ -342,9 +350,6 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
         get_steps = [
-            webpack_manifest_get_step,
-            ocw_hugo_themes_get_step,
-            ocw_hugo_projects_get_step,
             site_content_get_step,
         ]
         if gated:
@@ -774,19 +779,23 @@ class SitePipelineDefinition(Pipeline):
         )
 
     def get_online_build_job(self, config: SitePipelineDefinitionConfig):
+        steps = SitePipelineThemeTasks(config=config)
+        steps.extend(SitePipelineOnlineTasks(config=config))
         return Job(
             name=self._online_site_job_identifier,
             serial=True,
-            plan=SitePipelineOnlineTasks(config=config),
+            plan=steps,
         )
 
     def get_offline_build_job(self, config: SitePipelineDefinitionConfig):
+        steps = SitePipelineThemeTasks(config=config)
+        steps.extend(SitePipelineOfflineTasks(
+            config=config,
+            gated=True,
+            passed_identifier=self._online_site_job_identifier,
+        ))
         return Job(
             name=self._offline_site_job_identifier,
             serial=True,
-            plan=SitePipelineOfflineTasks(
-                config=config,
-                gated=True,
-                passed_identifier=self._online_site_job_identifier,
-            ),
+            plan=steps,
         )
