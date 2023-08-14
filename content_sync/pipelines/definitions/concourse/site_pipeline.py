@@ -223,12 +223,12 @@ class SitePipelineResources(list[Resource]):
         site_content_resource = SiteContentGitResource(
             name=config.site_content_git_identifier,
             branch=config.site_content_branch,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
         )
         ocw_studio_webhook_resource = OcwStudioWebhookResource(
             ocw_studio_url=config.ocw_studio_url,
             site_name=config.site.name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             api_token=settings.API_BEARER_TOKEN or "",
         )
         self.extend(
@@ -268,7 +268,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             ),
             step_description=f"{config.webpack_manifest_s3_identifier} get step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         ocw_hugo_themes_get_step = add_error_handling(
@@ -280,7 +280,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             ),
             step_description=f"{OCW_HUGO_THEMES_GIT_IDENTIFIER} get step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         ocw_hugo_projects_get_step = add_error_handling(
@@ -292,7 +292,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             ),
             step_description=f"{OCW_HUGO_PROJECTS_GIT_IDENTIFIER} get step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         site_content_get_step = add_error_handling(
@@ -304,7 +304,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             ),
             step_description=f"{config.site_content_git_identifier} get step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         static_resources_step = add_error_handling(
@@ -328,7 +328,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             ),
             step_description=f"{STATIC_RESOURCES_S3_IDENTIFIER} s3 sync to container",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -363,7 +363,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         base_tasks = SitePipelineBaseTasks(config=config)
         ocw_studio_webhook_started_step = OcwStudioWebhookStep(
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             status="started",
         )
         build_online_site_step = add_error_handling(
@@ -413,7 +413,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             ),
             step_description=f"{BUILD_ONLINE_SITE_IDENTIFIER} task step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -429,7 +429,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         if config.is_root_website:
             online_sync_command = f"aws s3{config.cli_endpoint_url} sync {config.site_content_git_identifier}/output-online s3://{config.web_bucket}/{config.base_url} --metadata site-id={config.site.name}{config.delete_flag}"
         else:
-            online_sync_command = f"aws s3{config.cli_endpoint_url} sync {config.site_content_git_identifier}/output-online s3://{config.web_bucket}/{config.base_url} --exclude='{config.site.short_id}.zip' --exclude='{config.site.short_id}-video.zip' --metadata site-id={config.site.name}{config.delete_flag}"
+            online_sync_command = f"aws s3{config.cli_endpoint_url} sync {config.site_content_git_identifier}/output-online s3://{config.web_bucket}/{config.base_url} --exclude='{config.site.short_id.lower()}.zip' --exclude='{config.site.short_id.lower()}-video.zip' --metadata site-id={config.site.name}{config.delete_flag}"
         upload_online_build_step = add_error_handling(
             step=TaskStep(
                 task=UPLOAD_ONLINE_BUILD_IDENTIFIER,
@@ -443,13 +443,13 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 ),
                 on_success=OcwStudioWebhookStep(
                     pipeline_name=config.pipeline_name,
-                    short_id=config.site.short_id,
+                    short_id=config.site.short_id.lower(),
                     status="succeeded",
                 ),
             ),
             step_description=f"{UPLOAD_ONLINE_BUILD_IDENTIFIER} task step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -467,7 +467,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             ),
             step_description="clear cdn cache",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         clear_cdn_cache_online_step.on_success = TryStep(
@@ -479,7 +479,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                     ),
                     OcwStudioWebhookStep(
                         pipeline_name=config.pipeline_name,
-                        short_id=config.site.short_id,
+                        short_id=config.site.short_id.lower(),
                         status="succeeded",
                     ),
                 ]
@@ -533,7 +533,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             ),
             step_description=f"{FILTER_WEBPACK_ARTIFACTS_IDENTIFIER} task step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -568,7 +568,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             build_offline_site_command = f"""
             {build_offline_site_command}
             cd output-offline
-            zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.site.short_id}.zip ./
+            zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.site.short_id.lower()}.zip ./
             rm -rf ./*
             cd ..
             if [ $MP4_COUNT != 0 ];
@@ -577,7 +577,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             fi
             hugo {config.hugo_args_offline}
             cd output-offline
-            zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.site.short_id}-video.zip ./
+            zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.site.short_id.lower()}-video.zip ./
             """
         build_offline_site_step = add_error_handling(
             step=TaskStep(
@@ -623,7 +623,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             ),
             step_description=f"{BUILD_OFFLINE_SITE_IDENTIFIER} task step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -641,7 +641,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         ]
         if not config.is_root_website:
             offline_sync_commands.append(
-                f"aws s3{config.cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.web_bucket}/{config.base_url} --exclude='*' --include='{config.site.short_id}.zip' --include='{config.site.short_id}-video.zip' --metadata site-id={config.site.name}"
+                f"aws s3{config.cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.web_bucket}/{config.base_url} --exclude='*' --include='{config.site.short_id.lower()}.zip' --include='{config.site.short_id.lower()}-video.zip' --metadata site-id={config.site.name}"
             )
         offline_sync_command = "\n".join(offline_sync_commands)
         upload_offline_build_step = add_error_handling(
@@ -662,7 +662,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             ),
             step_description=f"{UPLOAD_OFFLINE_BUILD_IDENTIFIER} task step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         if is_dev():
@@ -680,7 +680,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             ),
             step_description="clear cdn cache",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         clear_cdn_cache_offline_step.on_success = TryStep(
@@ -692,7 +692,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                     ),
                     OcwStudioWebhookStep(
                         pipeline_name=config.pipeline_name,
-                        short_id=config.site.short_id,
+                        short_id=config.site.short_id.lower(),
                         status="succeeded",
                     ),
                 ]
@@ -746,7 +746,7 @@ class SitePipelineDefinition(Pipeline):
             ),
             step_description=f"{self._offline_build_gate_identifier} task step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         online_job.plan.append(offline_build_gate_put_step)
@@ -759,7 +759,7 @@ class SitePipelineDefinition(Pipeline):
             ),
             step_description=f"{self._offline_build_gate_identifier} get step",
             pipeline_name=config.pipeline_name,
-            short_id=config.site.short_id,
+            short_id=config.site.short_id.lower(),
             instance_vars=config.instance_vars,
         )
         offline_job.plan.insert(0, offline_build_gate_get_step)
