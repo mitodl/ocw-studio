@@ -56,6 +56,7 @@ export default function SelectField(props: Props): JSX.Element {
   const selectOptions = options.map(option =>
     typeof option === "string" ? { label: option, value: option } : option
   )
+  const debounceTimeout = 300
 
   const changeHandler = useCallback(
     (newValue: any) => {
@@ -161,6 +162,7 @@ export default function SelectField(props: Props): JSX.Element {
         loadOptions={loadOptions}
         defaultOptions={defaultOptions}
         cacheUniqs={cacheUniques}
+        debounceTimeout={debounceTimeout}
       />
     ) : (
       <AsyncSelect
