@@ -99,6 +99,9 @@ export default function SelectField(props: Props): JSX.Element {
     (input, reason) => {
       if (reason.action === "input-blur") {
         return
+      } else if (reason.action === "input-change" && input === "") {
+        // User clears the input field.
+        setPlaceholder(input)
       }
       setSearchText(input)
     },
