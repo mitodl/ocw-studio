@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.100.0
+---------------
+
+- conf: add feature flags for select field (#1921)
+- feat: select widget improvements (#1888)
+- overhaul site pipeline definition (#1900)
+
 Version 0.99.0 (Released August 02, 2023)
 --------------
 
