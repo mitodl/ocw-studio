@@ -89,6 +89,8 @@ def test_react_page(  # pylint: disable=too-many-arguments
             }
             if is_authenticated
             else None,
+            "features": settings.FEATURES,
+            "features_default": settings.FEATURES_DEFAULT,
         }
     else:
         assert response.status_code == HTTP_302_FOUND

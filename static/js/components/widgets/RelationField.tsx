@@ -170,7 +170,7 @@ export default function RelationField(props: Props): JSX.Element {
   )
 
   const fetchOptions = useCallback(
-    async (search: string | null, debounce: boolean) => {
+    async (search: string | null, debounce: boolean, offset = 0) => {
       const params = collection ? { type: collection } : { page_content: true }
       const name = crossSite && focusedWebsite ? focusedWebsite : websiteName
       const url = siteApiContentListingUrl
@@ -184,13 +184,13 @@ export default function RelationField(props: Props): JSX.Element {
           filter.field === "resourcetype" ?
             { resourcetype: filter.value } :
             {}),
-          ...params
+          ...params,
+          offset
         })
         .param({
           name
         })
         .toString()
-
       const response = debounce ?
         await debouncedFetch("relationfield", 300, url, {
           credentials: "include"
@@ -199,10 +199,17 @@ export default function RelationField(props: Props): JSX.Element {
 
       if (!response) {
         // duplicate, another later instance of loadOptions will handle this instead
-        return
+        return {
+          hasMore: true,
+          options: []
+        }
       }
       const json: PaginatedResponse<WebsiteContent> = await response.json()
       const { results } = json
+      const responseValues = {
+        hasMore:    Boolean(json.next),
+        additional: undefined
+      }
 
       if (results) {
         setContentMap(cur => {
@@ -226,11 +233,20 @@ export default function RelationField(props: Props): JSX.Element {
           })
         }
         setFetchStatus(FetchStatus.Ok)
-        return formatContentOptions(filterContentListing(results), displayField)
+        return {
+          ...responseValues,
+          options: formatContentOptions(
+            filterContentListing(results),
+            displayField
+          )
+        }
       } else {
         // there was some error fetching the results
         setFetchStatus(FetchStatus.Error)
-        return []
+        return {
+          ...responseValues,
+          options: []
+        }
       }
     },
     [
@@ -248,14 +264,14 @@ export default function RelationField(props: Props): JSX.Element {
   )
 
   const loadOptions = useCallback(
-    async (inputValue: string) => {
-      const newOptions = await fetchOptions(inputValue, true)
-      if (newOptions) {
+    async (inputValue: string, options: Option[]) => {
+      const response = await fetchOptions(inputValue, true, options.length)
+      if (response?.options) {
         setOptions(oldOptions =>
-          uniqBy([...oldOptions, ...newOptions], "value")
+          uniqBy([...oldOptions, ...response.options], "value")
         )
       }
-      return newOptions
+      return response ?? { options: [] }
     },
     [fetchOptions, setOptions]
   )
@@ -265,7 +281,8 @@ export default function RelationField(props: Props): JSX.Element {
     // open the dropdown
     let mounted = true
     const doFetch = async () => {
-      const defaultOptions = await fetchOptions(null, false)
+      const response = await fetchOptions(null, false, 0)
+      const defaultOptions = response?.options
 
       // working around a warning where a setter was used after unmounting
       // defaultOptions should always be true here since fetchOptions will only ever
@@ -364,6 +381,7 @@ export default function RelationField(props: Props): JSX.Element {
           loadOptions={loadOptions}
           defaultOptions={defaultOptions}
           isOptionDisabled={isOptionDisabled}
+          cacheUniques={[focusedWebsite]}
           value={selectedIds.map(id => {
             const content = contentMap.get(id)
             const title = content ? content.title ?? id : id

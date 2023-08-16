@@ -4,11 +4,13 @@ import React, {
   useCallback,
   useState
 } from "react"
-import SelectField, { Option } from "./SelectField"
+import SelectField, { Additional, Option } from "./SelectField"
 import { default as SortableItemComponent } from "../SortableItem"
 import SortWrapper from "../SortWrapper"
 import { DragEndEvent } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
+import { LoadOptions } from "react-select-async-paginate"
+import { isFeatureEnabled } from "../../util/features"
 
 export interface SortableItem {
   // the UUID for this item
@@ -24,11 +26,10 @@ interface Props {
   options: Option[]
   defaultOptions?: Option[]
   name: string
-  loadOptions: (
-    inputValue: string,
-    callback: (options: Option[]) => void
-  ) => void
+  classNamePrefix?: string
+  loadOptions: LoadOptions<Option, Option[], Additional | undefined>
   isOptionDisabled?: (option: Option) => boolean
+  cacheUniques?: ReadonlyArray<any>
 }
 
 export default function SortableSelect(props: Props) {
@@ -39,11 +40,19 @@ export default function SortableSelect(props: Props) {
     value,
     onChange,
     name,
-    isOptionDisabled
+    classNamePrefix,
+    isOptionDisabled,
+    cacheUniques
   } = props
 
   const [focusedContent, setFocusedContent] = useState<string | undefined>(
     undefined
+  )
+
+  const quickAdd = isFeatureEnabled("SORTABLE_SELECT_QUICK_ADD")
+  const hideSelectedOptions = isFeatureEnabled("SORTABLE_SELECT_HIDE_SELECTED")
+  const preserveSearchText = isFeatureEnabled(
+    "SORTABLE_SELECT_PRESERVE_SEARCH_TEXT"
   )
 
   /**
@@ -69,6 +78,16 @@ export default function SortableSelect(props: Props) {
       setFocusedContent(event.target.value)
     },
     [setFocusedContent]
+  )
+
+  const addItemOnChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      const content = event.target.value
+      if (content) {
+        onChange(value.map(item => item.id).concat(content))
+      }
+    },
+    [onChange, value]
   )
 
   const handleDragEnd = useCallback(
@@ -100,25 +119,37 @@ export default function SortableSelect(props: Props) {
     [onChange, value]
   )
 
+  const isOptionSelected = useCallback(
+    option => Boolean(value.find(item => item.id === option.value)),
+    [value]
+  )
+
   return (
     <>
       <div className="d-flex">
         <SelectField
           name={name}
           value={focusedContent}
-          onChange={setFocusedContentCB}
+          onChange={quickAdd ? addItemOnChange : setFocusedContentCB}
           options={options}
           loadOptions={loadOptions}
           defaultOptions={defaultOptions}
           isOptionDisabled={isOptionDisabled}
+          isOptionSelected={hideSelectedOptions ? isOptionSelected : undefined}
+          hideSelectedOptions={hideSelectedOptions}
+          preserveSearchText={preserveSearchText}
+          classNamePrefix={classNamePrefix}
+          cacheUniques={cacheUniques}
         />
-        <button
-          className="px-4 ml-3 btn cyan-button"
-          disabled={focusedContent === undefined}
-          onClick={addFocusedItem}
-        >
-          Add
-        </button>
+        {!quickAdd ? (
+          <button
+            className="px-4 ml-3 btn cyan-button"
+            disabled={focusedContent === undefined}
+            onClick={addFocusedItem}
+          >
+            Add
+          </button>
+        ) : null}
       </div>
       <SortWrapper
         handleDragEnd={handleDragEnd}

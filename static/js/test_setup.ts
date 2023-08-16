@@ -24,7 +24,9 @@ const _createSettings = (): typeof SETTINGS => ({
     name:          "Jane Doe",
     email:         "jane@example.com",
     canAddWebsite: true
-  }
+  },
+  features:         {},
+  features_default: false
 })
 
 global.SETTINGS = _createSettings()

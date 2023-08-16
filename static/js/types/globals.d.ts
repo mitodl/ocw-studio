@@ -9,7 +9,9 @@ interface SETTINGS {
   environment: string;
   release_version: string;
   sentry_dsn: string;
-  gdrive_enabled: bool;
+  gdrive_enabled: boolean;
+  features_default: boolean;
+  features: {[key: string]: boolean};
   /**
    * Settings.user does exist, but leaving it untyped to help encourage using
    * `store.user` instead.

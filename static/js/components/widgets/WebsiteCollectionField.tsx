@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react"
 
 import SortableSelect, { SortableItem } from "./SortableSelect"
-import { Option } from "./SelectField"
+import { Additional, Option } from "./SelectField"
 import { useWebsiteSelectOptions, WebsiteOption } from "../../hooks/websites"
 import _ from "lodash"
 
@@ -70,11 +70,16 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
   const loadFormattedOptions = useCallback(
     (
       inputValue: string,
-      callback?: (options: WebsiteOption[]) => void
-    ): Promise<void> => {
-      return loadOptions(inputValue, (options: WebsiteOption[]) => {
-        if (callback) {
-          callback(formatOptionsLabelWithShortId(options))
+      loadedOptions: WebsiteOption[],
+      additional?: Additional
+    ) => {
+      return loadOptions(inputValue, loadedOptions, {
+        callback: (options: Option[]) => {
+          if (additional?.callback) {
+            additional.callback(
+              formatOptionsLabelWithShortId(options as WebsiteOption[])
+            )
+          }
         }
       })
     },

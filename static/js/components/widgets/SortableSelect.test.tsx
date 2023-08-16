@@ -9,7 +9,7 @@ import SortableSelect, { SortableItem } from "./SortableSelect"
 import { Option } from "./SelectField"
 import { zip } from "ramda"
 import { default as SortableItemComponent } from "../SortableItem"
-import { triggerSortableSelect } from "./test_util"
+import { triggerSelectMenu, triggerSortableSelect } from "./test_util"
 import SelectField from "./SelectField"
 
 const createFakeOptions = (times: number): Option[] =>
@@ -26,20 +26,23 @@ describe("SortableSelect", () => {
     options: Option[],
     onChange: jest.Mock,
     newOptions: Option[],
-    loadOptions: jest.Mock
+    loadOptions: jest.Mock,
+    classNamePrefix: string
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     options = createFakeOptions(10)
     newOptions = createFakeOptions(10)
     onChange = jest.fn()
-    loadOptions = jest.fn().mockResolvedValue(newOptions)
+    loadOptions = jest.fn().mockReturnValue({ options: newOptions })
+    classNamePrefix = "select"
     render = helper.configureRenderer(SortableSelect, {
       options,
       onChange,
       loadOptions,
       name:  "test-select",
-      value: []
+      value: [],
+      classNamePrefix
     })
   })
 
@@ -84,6 +87,25 @@ describe("SortableSelect", () => {
     await triggerSortableSelect(wrapper, newOptions[0].label)
     expect(onChange).toHaveBeenCalledWith([newOptions[0].label])
     expect(wrapper.find("SelectField").prop("value")).toBeUndefined()
+  })
+
+  it("should call onChange on option selection when quick add is enabled", async () => {
+    SETTINGS.features.SORTABLE_SELECT_QUICK_ADD = true
+    const { wrapper } = await render({
+      defaultOptions: options
+    })
+
+    await triggerSelectMenu(wrapper)
+
+    await act(async () => {
+      wrapper
+        .find(`.${classNamePrefix}__option`)
+        .hostNodes()
+        .first()
+        .simulate("click")
+    })
+
+    expect(onChange).toHaveBeenCalledWith([options[0].value])
   })
 
   it("should let you drag and drop items to reorder", async () => {

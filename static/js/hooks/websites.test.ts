@@ -73,7 +73,7 @@ describe("website hooks", () => {
       const cb = jest.fn()
       await act(async () => {
         await waitForNextUpdate()
-        await result.current.loadOptions("search string", cb)
+        await result.current.loadOptions("search string", [], { callback: cb })
       })
       expect(debouncedFetch).toHaveBeenCalledWith(
         "website-collection",

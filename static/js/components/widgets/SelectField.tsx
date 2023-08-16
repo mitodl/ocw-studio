@@ -1,23 +1,34 @@
-import React, { useCallback, ChangeEvent } from "react"
+import React, { useCallback, ChangeEvent, useState } from "react"
 import Select from "react-select"
-import AsyncSelect from "react-select/async"
 import { isNil } from "ramda"
+import { AsyncPaginate, LoadOptions } from "react-select-async-paginate"
+import AsyncSelect from "react-select/async"
+import { isFeatureEnabled } from "../../util/features"
 
 export interface Option {
   label: string
   value: string
 }
 
+export interface Additional {
+  callback?: (options: Option[]) => void
+}
+
 interface Props {
   name: string
-  value: null | undefined | string | string[]
+  classNamePrefix?: string
+  value?: null | undefined | string | string[]
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void
   multiple?: boolean
   options: Array<string | Option>
-  loadOptions?: (s: string, cb: (options: Option[]) => void) => void
+  loadOptions?: LoadOptions<Option, Option[], Additional | undefined>
   placeholder?: string
   defaultOptions?: Option[]
+  cacheUniques?: ReadonlyArray<any>
+  hideSelectedOptions?: boolean
+  preserveSearchText?: boolean
   isOptionDisabled?: (option: Option) => boolean
+  isOptionSelected?: (option: Option) => boolean
 }
 
 export default function SelectField(props: Props): JSX.Element {
@@ -25,16 +36,27 @@ export default function SelectField(props: Props): JSX.Element {
     value,
     onChange,
     name,
+    classNamePrefix,
     options,
     loadOptions,
     defaultOptions,
-    placeholder,
-    isOptionDisabled
+    placeholder: initialPlaceholder,
+    isOptionDisabled,
+    isOptionSelected,
+    hideSelectedOptions,
+    preserveSearchText = false,
+    cacheUniques
   } = props
+  const [searchText, setSearchText] = useState("")
+  const [placeholder, setPlaceholder] = useState("")
+
+  const infiniteScroll = isFeatureEnabled("SELECT_FIELD_INFINITE_SCROLL")
+
   const multiple = props.multiple ?? false
   const selectOptions = options.map(option =>
     typeof option === "string" ? { label: option, value: option } : option
   )
+  const debounceTimeout = 300
 
   const changeHandler = useCallback(
     (newValue: any) => {
@@ -74,29 +96,81 @@ export default function SelectField(props: Props): JSX.Element {
     selected = isNil(value) ? null : getSelectOption(value)
   }
 
+  const handleInputChanged = useCallback(
+    (input, reason) => {
+      if (reason.action === "input-blur") {
+        return
+      } else if (reason.action === "input-change" && input === "") {
+        // User clears the input field.
+        setPlaceholder(input)
+      }
+      setSearchText(input)
+    },
+    [setSearchText]
+  )
+
+  const handleMenuClosed = useCallback(
+    () => setPlaceholder(searchText),
+    [setPlaceholder, searchText]
+  )
+
+  const handleMenuOpen = useCallback(
+    () => setSearchText(placeholder ?? ""),
+    [setSearchText, placeholder]
+  )
+
+  // For AsyncSelect
+  const loadOptionsShim = useCallback(
+    async (inputValue: string, cb: (options: Option[]) => void) => {
+      if (loadOptions) {
+        const result = await loadOptions(inputValue, [], { callback: cb })
+        return result?.options ?? []
+      }
+    },
+    [loadOptions]
+  )
+
   const commonSelectOptions = {
-    className:   "w-100 form-input",
-    value:       selected,
-    isMulti:     multiple,
-    onChange:    changeHandler,
-    options:     selectOptions,
-    placeholder: placeholder || null,
-    styles:      {
+    className:         "w-100 form-input",
+    classNamePrefix,
+    value:             selected,
+    isMulti:           multiple,
+    options:           selectOptions,
+    placeholder:       placeholder || initialPlaceholder || null,
+    blurInputOnSelect: preserveSearchText ? true : undefined,
+    hideSelectedOptions,
+    onChange:          changeHandler,
+    inputValue:        preserveSearchText ? searchText : undefined,
+    onInputChange:     preserveSearchText ? handleInputChanged : undefined,
+    onMenuClose:       preserveSearchText ? handleMenuClosed : undefined,
+    onMenuOpen:        preserveSearchText ? handleMenuOpen : undefined,
+    isOptionDisabled,
+    isOptionSelected,
+    styles:            {
       control: (base: any) => ({
         ...base,
         border:    0,
         boxShadow: "none"
       })
-    },
-    isOptionDisabled
+    }
   }
 
   return loadOptions ? (
-    <AsyncSelect
-      {...commonSelectOptions}
-      loadOptions={loadOptions}
-      defaultOptions={defaultOptions}
-    />
+    infiniteScroll ? (
+      <AsyncPaginate
+        {...commonSelectOptions}
+        loadOptions={loadOptions}
+        defaultOptions={defaultOptions}
+        cacheUniqs={cacheUniques}
+        debounceTimeout={debounceTimeout}
+      />
+    ) : (
+      <AsyncSelect
+        {...commonSelectOptions}
+        loadOptions={loadOptionsShim}
+        defaultOptions={defaultOptions}
+      />
+    )
   ) : (
     <Select {...commonSelectOptions} />
   )
