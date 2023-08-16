@@ -150,6 +150,22 @@
       "description": "Name of environment from Heroku or other deployment",
       "required": false
     },
+    "FEATURE_SORTABLE_SELECT_PRESERVE_SEARCH_TEXT": {
+      "description": "Feature flag sortable select preserves search text",
+      "required": false
+    },
+    "FEATURE_SORTABLE_SELECT_HIDE_SELECTED": {
+      "description": "Feature flag sortable select hides selected items",
+      "required": false
+    },
+    "FEATURE_SORTABLE_SELECT_QUICK_ADD": {
+      "description": "Feature flag sortable select adds item on selection",
+      "required": false
+    },
+    "FEATURE_SELECT_FIELD_INFINITE_SCROLL": {
+      "description": "Feature flag select field allows infinite scroll",
+      "required": false
+    },
     "FIELD_METADATA_TITLE": {
       "description": "The site metadata field for title",
       "required": false
