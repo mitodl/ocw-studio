@@ -92,7 +92,6 @@ class OcwStudioWebhookResource(Resource):
     args:
         ocw_studio_url(str): The URL to the instance of ocw-studio to POST to
         site_name(str): The name of the site the status is in reference to
-        site_name(str): The short id of the site the status is in reference to
         api_token(str): The ocw-studio API token
     """
 
@@ -100,16 +99,13 @@ class OcwStudioWebhookResource(Resource):
         self,
         ocw_studio_url: str,
         site_name: str,
-        short_id: str,
         api_token: str,
         **kwargs,
     ):
         api_path = os.path.join("api", "websites", site_name, "pipeline_status")
         api_url = f"{urljoin(ocw_studio_url, api_path)}/"
         super().__init__(
-            name=Identifier(
-                f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{short_id}"
-            ).root,
+            name=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
             icon="language-python",
             type=HTTP_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",

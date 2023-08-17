@@ -103,7 +103,6 @@ class ErrorHandlingStep(TryStep):
                     do=[
                         OcwStudioWebhookStep(
                             pipeline_name=pipeline_name,
-                            short_id=short_id,
                             status=status,
                         ),
                         SlackAlertStep(
@@ -184,14 +183,13 @@ class OcwStudioWebhookStep(TryStep):
 
     Args:
         pipeline_name(str): The name of the pipeline to set the status on
-        short_id(str): The short_id of the site the status is in reference to
         status: (str): The status to set on the pipeline (failed, errored, succeeded)
     """
 
-    def __init__(self, pipeline_name: str, short_id: str, status: str, **kwargs):
+    def __init__(self, pipeline_name: str, status: str, **kwargs):
         super().__init__(
             try_=PutStep(
-                put=f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{short_id}",
+                put=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
                 timeout="1m",
                 attempts=3,
                 params={
