@@ -286,7 +286,7 @@ def test_generate_theme_assets_pipeline_definition(
     )
     online_site_tasks = online_site_job["plan"]
     assert (
-        online_site_tasks[3]["try"]["put"]
+        online_site_tasks[0]["try"]["put"]
         == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
     assert_base_build_tasks(tasks=online_site_tasks, offline=False)
