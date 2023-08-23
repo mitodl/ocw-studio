@@ -2,15 +2,16 @@ import json
 from typing import Optional
 from urllib.parse import quote
 
+import more_itertools
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
+    AcrossVar,
     DoStep,
     GetStep,
     Identifier,
-    InParallelConfig,
-    InParallelStep,
     Job,
     Pipeline,
+    PutStep,
     Resource,
     ResourceType,
     StepModifierMixin,
@@ -19,24 +20,26 @@ from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import VERSION_DRAFT
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
-    SITE_CONTENT_GIT_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.resource_types import (
     HttpResourceType,
+    KeyvalResourceType,
     S3IamResourceType,
 )
 from content_sync.pipelines.definitions.concourse.common.resources import (
     OcwHugoProjectsGitResource,
     OcwHugoThemesGitResource,
     OcwStudioWebhookResource,
-    SiteContentGitResource,
     SlackAlertResource,
     WebpackManifestResource,
 )
-from content_sync.pipelines.definitions.concourse.common.steps import add_error_handling
+from content_sync.pipelines.definitions.concourse.common.steps import (
+    SiteContentGitTaskStep,
+)
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinitionConfig,
     SitePipelineOfflineTasks,
@@ -78,9 +81,6 @@ class MassBuildSitesPipelineDefinitionConfig:
         self.offline = offline
         self.hugo_arg_overrides = hugo_arg_overrides
         self.instance_vars = instance_vars
-        self.webpack_manifest_s3_identifier = Identifier(
-            f"{WEBPACK_MANIFEST_S3_IDENTIFIER}-{ocw_hugo_themes_branch}"
-        ).root
 
 
 class MassBuildSitesPipelineResourceTypes(list[ResourceType]):
@@ -92,6 +92,7 @@ class MassBuildSitesPipelineResourceTypes(list[ResourceType]):
         self.extend(
             [
                 HttpResourceType(),
+                KeyvalResourceType(),
                 S3IamResourceType(),
                 slack_notification_resource(),
             ]
@@ -101,7 +102,7 @@ class MassBuildSitesPipelineResourceTypes(list[ResourceType]):
 class MassBuildSitesResources(list[Resource]):
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig):
         webpack_manifest_resource = WebpackManifestResource(
-            name=config.webpack_manifest_s3_identifier,
+            name=WEBPACK_MANIFEST_S3_IDENTIFIER,
             bucket=config.artifacts_bucket,
             branch=config.ocw_hugo_themes_branch,
         )
@@ -113,51 +114,41 @@ class MassBuildSitesResources(list[Resource]):
             uri=root_starter.ocw_hugo_projects_url,
             branch=config.ocw_hugo_projects_branch,
         )
-        site_content_resources = []
-        ocw_studio_webhook_resources = []
-        for site in config.sites:
-            site_content_resources.append(
-                SiteContentGitResource(
-                    name=f"{SITE_CONTENT_GIT_IDENTIFIER}-{site.short_id.lower()}",
-                    branch=config.site_content_branch,
-                    short_id=site.short_id.lower(),
-                )
-            )
-            ocw_studio_webhook_resources.append(
-                OcwStudioWebhookResource(
-                    ocw_studio_url=config.ocw_studio_url,
-                    site_name=site.name,
-                    short_id=site.short_id.lower(),
-                    api_token=settings.API_BEARER_TOKEN or "",
-                )
-            )
         self.append(webpack_manifest_resource)
         self.append(ocw_hugo_themes_resource)
         self.append(ocw_hugo_projects_resource)
-        self.extend(site_content_resources)
-        self.extend(ocw_studio_webhook_resources)
+        self.append(
+            OcwStudioWebhookResource(
+                ocw_studio_url=config.ocw_studio_url,
+                site_name="mass-build-sites",
+                api_token=settings.API_BEARER_TOKEN or "",
+            )
+        )
         self.append(SlackAlertResource())
 
 
 class MassBuildSitesPipelineBaseTasks(list[StepModifierMixin]):
-    def __init__(self, config: MassBuildSitesPipelineDefinitionConfig, **kwargs):
+    def __init__(self, **kwargs):
         webpack_manifest_get_step = GetStep(
-            get=config.webpack_manifest_s3_identifier,
+            get=WEBPACK_MANIFEST_S3_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
+            **kwargs,
         )
         ocw_hugo_themes_get_step = GetStep(
             get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
+            **kwargs,
         )
         ocw_hugo_projects_get_step = GetStep(
             get=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
+            **kwargs,
         )
         self.extend(
             [
@@ -171,52 +162,106 @@ class MassBuildSitesPipelineBaseTasks(list[StepModifierMixin]):
 class MassBuildSitesPipelineDefinition(Pipeline):
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig, **kwargs):
         base = super()
+        vars = get_template_vars()
         resource_types = MassBuildSitesPipelineResourceTypes()
         resources = MassBuildSitesResources(config=config)
-        tasks = []
-        tasks.extend(MassBuildSitesPipelineBaseTasks(config=config))
-        site_build_steps = []
-        for site in config.sites:
-            vars = get_template_vars()
-            site_config = SitePipelineDefinitionConfig(
-                site=site,
-                pipeline_name=config.version,
-                instance_vars=f"?vars={quote(json.dumps({'site': site.name}))}",
-                site_content_branch=config.site_content_branch,
-                static_api_url=settings.STATIC_API_BASE_URL,
-                storage_bucket=vars["storage_bucket_name"],
-                artifacts_bucket=vars["artifacts_bucket_name"],
-                web_bucket=vars["preview_bucket_name"]
-                if config.version == VERSION_DRAFT
-                else vars["publish_bucket_name"],
-                offline_bucket=vars["offline_preview_bucket_name"]
-                if config.version == VERSION_DRAFT
-                else vars["offline_publish_bucket_name"],
-                resource_base_url=vars["resource_base_url_draft"]
-                if config.version == VERSION_DRAFT
-                else vars["resource_base_url_live"],
-                ocw_studio_url=vars["ocw_studio_url"],
-                ocw_hugo_themes_branch=config.ocw_hugo_themes_branch,
-                ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
-            )
-            if not config.offline:
-                site_build_tasks = SitePipelineOnlineTasks(config=site_config)
-            else:
-                site_build_tasks = SitePipelineOfflineTasks(config=site_config)
-            site_build_steps.append(DoStep(do=site_build_tasks))
-        tasks.append(
-            InParallelStep(
-                in_parallel=InParallelConfig(limit=10, steps=site_build_steps)
-            )
+        base_tasks = MassBuildSitesPipelineBaseTasks(config=config)
+        jobs = []
+        batch_gate_identifier = Identifier("batch-gate").root
+        batch_gate_resources = []
+        batches = list(
+            more_itertools.batched(config.sites, settings.OCW_MASS_BUILD_BATCH_SIZE)
         )
+        batch_count = len(batches)
+        batch_number = 1
+        for batch in batches:
+            if batch_number < batch_count:
+                batch_gate_resources.append(
+                    Resource(
+                        name=f"{batch_gate_identifier}-{batch_number}",
+                        type=KEYVAL_RESOURCE_TYPE_IDENTIFIER,
+                        icon="gate",
+                        check_every="never",
+                    )
+                )
+            tasks = []
+            tasks.extend(base_tasks)
+            across_var_values = []
+            for site in batch:
+                site_config = SitePipelineDefinitionConfig(
+                    site=site,
+                    pipeline_name=config.version,
+                    instance_vars=f"?vars={quote(json.dumps({'site': site.name}))}",
+                    site_content_branch=config.site_content_branch,
+                    static_api_url=settings.STATIC_API_BASE_URL,
+                    storage_bucket=vars["storage_bucket_name"],
+                    artifacts_bucket=vars["artifacts_bucket_name"],
+                    web_bucket=vars["preview_bucket_name"]
+                    if config.version == VERSION_DRAFT
+                    else vars["publish_bucket_name"],
+                    offline_bucket=vars["offline_preview_bucket_name"]
+                    if config.version == VERSION_DRAFT
+                    else vars["offline_publish_bucket_name"],
+                    resource_base_url=vars["resource_base_url_draft"]
+                    if config.version == VERSION_DRAFT
+                    else vars["resource_base_url_live"],
+                    ocw_studio_url=vars["ocw_studio_url"],
+                    ocw_hugo_themes_branch=config.ocw_hugo_themes_branch,
+                    ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
+                    namespace=".:site.",
+                )
+                across_var_values.append(site_config.values)
+
+            site_build_tasks = [
+                SiteContentGitTaskStep(
+                    branch=site_config.site_content_branch,
+                    short_id=site_config.site.short_id,
+                )
+            ]
+            if not config.offline:
+                site_build_tasks.extend(SitePipelineOnlineTasks(config=site_config))
+            else:
+                site_build_tasks.extend(SitePipelineOfflineTasks(config=site_config))
+            if batch_number > 1:
+                tasks.append(
+                    GetStep(
+                        get=f"{batch_gate_identifier}-{batch_number -1}",
+                        passed=[
+                            f"{MASS_BUILD_SITES_JOB_IDENTIFIER}-batch-{batch_number - 1}"
+                        ],
+                        trigger=True,
+                    )
+                )
+            tasks.append(
+                DoStep(
+                    do=site_build_tasks,
+                    across=[
+                        AcrossVar(
+                            var="site",
+                            values=across_var_values,
+                            max_in_flight=settings.OCW_MASS_BUILD_MAX_IN_FLIGHT,
+                        )
+                    ],
+                )
+            )
+            if batch_number < batch_count:
+                tasks.append(
+                    PutStep(
+                        put=f"{batch_gate_identifier}-{batch_number}",
+                        params={"mapping": "timestamp = now()"},
+                    )
+                )
+            jobs.append(
+                Job(
+                    name=f"{MASS_BUILD_SITES_JOB_IDENTIFIER}-batch-{batch_number}",
+                    plan=tasks,
+                )
+            )
+            batch_number += 1
+        resources.extend(batch_gate_resources)
         base.__init__(
             resource_types=resource_types,
             resources=resources,
-            jobs=[
-                Job(
-                    name=MASS_BUILD_SITES_JOB_IDENTIFIER,
-                    plan=tasks,
-                )
-            ],
+            jobs=jobs,
             **kwargs,
         )
