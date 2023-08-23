@@ -1019,7 +1019,7 @@ OCW_MASS_BUILD_BATCH_SIZE = get_int(
 OCW_MASS_BUILD_MAX_IN_FLIGHT = get_int(
     name="OCW_MASS_BUILD_MAX_IN_FLIGHT",
     default=10,
-    description="The amount of sites to build simultaneously in each job created by MassBuildSitesPipelineDefinition"
+    description="The amount of sites to build simultaneously in each job created by MassBuildSitesPipelineDefinition",
 )
 
 ROOT_WEBSITE_NAME = get_string(
