@@ -573,14 +573,19 @@ def test_generate_theme_assets_pipeline_definition(
             open_discussions_webhook_step_offline_params["version"]
             == config.vars["pipeline_name"]
         )
-    site_dummy_var_source = get_dict_list_item_by_field(rendered_definition["var_sources"], "name", "site")
+    site_dummy_var_source = get_dict_list_item_by_field(
+        rendered_definition["var_sources"], "name", "site"
+    )
     dummy_vars = site_dummy_var_source["config"]["vars"]
     assert dummy_vars["short_id"] == site.short_id
     assert dummy_vars["site_name"] == site.name
     assert dummy_vars["s3_path"] == site.s3_path
     assert dummy_vars["url_path"] == site.get_url_path()
     assert dummy_vars["base_url"] == config.base_url
-    assert dummy_vars["static_resources_subdirectory"] == config.static_resources_subdirectory
+    assert (
+        dummy_vars["static_resources_subdirectory"]
+        == config.static_resources_subdirectory
+    )
     assert dummy_vars["delete_flag"] == config.delete_flag
     assert dummy_vars["noindex"] == config.noindex
     assert dummy_vars["pipeline_name"] == branch_vars["pipeline_name"]
