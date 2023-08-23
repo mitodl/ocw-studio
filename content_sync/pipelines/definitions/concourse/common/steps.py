@@ -2,11 +2,15 @@ import json
 from urllib.parse import urljoin
 
 from django.conf import settings
+from ol_concourse.lib.constants import REGISTRY_IMAGE
 from ol_concourse.lib.models.pipeline import (
+    AnonymousResource,
     Command,
     DoStep,
     Identifier,
+    Output,
     PutStep,
+    RegistryImage,
     StepModifierMixin,
     TaskConfig,
     TaskStep,
@@ -16,6 +20,7 @@ from ol_concourse.lib.models.pipeline import (
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
+    SITE_CONTENT_GIT_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
@@ -222,4 +227,51 @@ class OpenDiscussionsWebhookStep(TryStep):
                 },
             ),
             **kwargs,
+        )
+
+
+class SiteContentGitTaskStep(TaskStep):
+    """
+    A TaskStep for fetching the site content git repository
+
+    Args:
+        branch(str): The branch of the site content repository to fetch
+        short_id(str): The short_id property of the Website
+    """
+
+    def __init__(self, branch: str, short_id: str, **kwargs):
+        if settings.CONCOURSE_IS_PRIVATE_REPO:
+            uri = (
+                f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{short_id}.git"
+            )
+            command = f"""
+            $CURDIR=$(pwd)
+            echo ((git-private-key)) > $CURDIR/git.key
+            sed -i -E "s/(-----BEGIN[^-]+-----)(.+)(-----END[^-]+-----)/-----BEGINSSHKEY-----\2\-----ENDSSHKEY-----/" git.key
+            sed -i -E "s/\s/\n/g" git.key
+            sed -i -E "s/SSHKEY/ OPENSSH PRIVATE KEY/g" git.key
+            chmod 400 $CURDIR/git.key
+            GITKEYSSH="-i $CURDIR/git.key"
+            git clone -b {branch} {uri} ./{SITE_CONTENT_GIT_IDENTIFIER}
+            """
+        else:
+            uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{short_id}.git"
+            command = f"git clone -b {branch} {uri} ./{SITE_CONTENT_GIT_IDENTIFIER}"
+        super.__init__(
+            task=SITE_CONTENT_GIT_IDENTIFIER,
+            timeout="40m",
+            attempts=3,
+            params={},
+            config=TaskConfig(
+                platform="linux",
+                image_resource=AnonymousResource(
+                    type=REGISTRY_IMAGE,
+                    source=RegistryImage(repository="alpine/git", tag="latest"),
+                ),
+                outputs=[Output(name=SITE_CONTENT_GIT_IDENTIFIER)],
+                run=Command(
+                    path="sh",
+                    args=["-exc", command],
+                ),
+            ),
         )
