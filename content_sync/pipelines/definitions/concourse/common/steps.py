@@ -57,7 +57,6 @@ def add_error_handling(
     concourse_url = urljoin(concourse_base_url, concourse_path)
     step.on_failure = ErrorHandlingStep(
         pipeline_name=pipeline_name,
-        short_id=short_id,
         status="failed",
         failure_description="Failed",
         step_description=step_description,
@@ -65,7 +64,6 @@ def add_error_handling(
     )
     step.on_error = ErrorHandlingStep(
         pipeline_name=pipeline_name,
-        short_id=short_id,
         status="errored",
         failure_description="Concourse system error",
         step_description=step_description,
@@ -73,7 +71,6 @@ def add_error_handling(
     )
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
-        short_id=short_id,
         status="aborted",
         failure_description="Aborted",
         step_description=step_description,
@@ -90,7 +87,6 @@ class ErrorHandlingStep(TryStep):
     def __init__(
         self,
         pipeline_name: str,
-        short_id: str,
         status: str,
         failure_description: str,
         step_description: str,
