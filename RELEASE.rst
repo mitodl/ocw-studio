@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.100.0
+Version 0.100.0 (Released August 23, 2023)
 ---------------
 
 - conf: add feature flags for select field (#1921)
