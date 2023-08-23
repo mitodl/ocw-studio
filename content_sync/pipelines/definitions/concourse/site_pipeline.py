@@ -60,7 +60,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
 )
 from content_sync.utils import get_hugo_arg_string
 from main.constants import PRODUCTION_NAMES
-from main.utils import is_dev
+from main.utils import get_dict_list_item_by_field, is_dev
 from websites.models import Website
 
 
@@ -292,7 +292,7 @@ class SitePipelineResources(list[Resource]):
             self.append(OpenDiscussionsResource())
 
 
-class SitePipelineThemeTasks(list[StepModifierMixin]):
+class SitePipelineBaseTasks(list[StepModifierMixin]):
     def __init__(
         self,
         config: SitePipelineDefinitionConfig,
@@ -335,31 +335,6 @@ class SitePipelineThemeTasks(list[StepModifierMixin]):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
         )
-        theme_get_steps = [
-            webpack_manifest_get_step,
-            ocw_hugo_themes_get_step,
-            ocw_hugo_projects_get_step,
-        ]
-        if gated:
-            for get_step in theme_get_steps:
-                get_step.passed = [passed_identifier]
-        self.extend(theme_get_steps)
-
-
-class SitePipelineBaseTasks(list[StepModifierMixin]):
-    """
-    The base tasks used in a site pipeline
-
-    Args:
-        config(SitePipelineDefinitionConfig): The site pipeline configuration object
-    """
-
-    def __init__(
-        self,
-        config: SitePipelineDefinitionConfig,
-        gated: bool = False,
-        passed_identifier: Identifier = None,
-    ):
         site_content_get_step = add_error_handling(
             step=GetStep(
                 get=SITE_CONTENT_GIT_IDENTIFIER,
@@ -372,45 +347,55 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
         )
-        static_resources_step = add_error_handling(
-            step=TaskStep(
-                task=STATIC_RESOURCES_S3_IDENTIFIER,
-                timeout="40m",
-                attempts=3,
-                params={},
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=AWS_CLI_REGISTRY_IMAGE,
-                    outputs=[Output(name=STATIC_RESOURCES_S3_IDENTIFIER)],
-                    run=Command(
-                        path="sh",
-                        args=[
-                            "-exc",
-                            f"aws s3{config.cli_endpoint_url} sync s3://{config.vars['storage_bucket']}/{config.vars['s3_path']} ./{STATIC_RESOURCES_S3_IDENTIFIER}",
-                        ],
-                    ),
-                ),
-            ),
-            step_description=f"{STATIC_RESOURCES_S3_IDENTIFIER} s3 sync to container",
-            pipeline_name=config.vars["pipeline_name"],
-            short_id=config.vars["short_id"],
-            instance_vars=config.vars["instance_vars"],
-        )
-        if is_dev():
-            static_resources_step.params["AWS_ACCESS_KEY_ID"] = (
-                settings.AWS_ACCESS_KEY_ID or ""
-            )
-            static_resources_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                settings.AWS_SECRET_ACCESS_KEY or ""
-            )
         get_steps = [
+            webpack_manifest_get_step,
+            ocw_hugo_themes_get_step,
+            ocw_hugo_projects_get_step,
             site_content_get_step,
         ]
         if gated:
             for get_step in get_steps:
                 get_step.passed = [passed_identifier]
         self.extend(get_steps)
-        self.append(static_resources_step)
+
+
+class StaticResourcesTaskStep(TaskStep):
+    """
+    A TaskStep to fetch the static resources for a site from S3
+
+    Args:
+        config(SitePipelineDefinitonConfig): The site pipeline configuration for the site we are fetching static resources for
+    """
+
+    def __init__(self, config: SitePipelineDefinitionConfig):
+        super().__init__(
+            task=STATIC_RESOURCES_S3_IDENTIFIER,
+            timeout="40m",
+            attempts=3,
+            params={},
+            config=TaskConfig(
+                platform="linux",
+                image_resource=AWS_CLI_REGISTRY_IMAGE,
+                outputs=[Output(name=STATIC_RESOURCES_S3_IDENTIFIER)],
+                run=Command(
+                    path="sh",
+                    args=[
+                        "-exc",
+                        f"aws s3{config.cli_endpoint_url} sync s3://{config.vars['storage_bucket']}/{config.vars['s3_path']} ./{STATIC_RESOURCES_S3_IDENTIFIER}",
+                    ],
+                ),
+            ),
+        )
+        add_error_handling(
+            step=self,
+            step_description=f"{STATIC_RESOURCES_S3_IDENTIFIER} s3 sync to container",
+            pipeline_name=config.vars["pipeline_name"],
+            short_id=config.vars["short_id"],
+            instance_vars=config.vars["instance_vars"],
+        )
+        if is_dev():
+            self.params["AWS_ACCESS_KEY_ID"] = settings.AWS_ACCESS_KEY_ID or ""
+            self.params["AWS_SECRET_ACCESS_KEY"] = settings.AWS_SECRET_ACCESS_KEY or ""
 
 
 class SitePipelineOnlineTasks(list[StepModifierMixin]):
@@ -422,11 +407,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
     """
 
     def __init__(self, config: SitePipelineDefinitionConfig):
-        base_tasks = SitePipelineBaseTasks(config=config)
-        ocw_studio_webhook_started_step = OcwStudioWebhookStep(
-            pipeline_name=config.vars["pipeline_name"],
-            status="started",
-        )
+        static_resources_task_step = StaticResourcesTaskStep(config)
         build_online_site_step = add_error_handling(
             step=TaskStep(
                 task=BUILD_ONLINE_SITE_IDENTIFIER,
@@ -502,10 +483,6 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                     inputs=[Input(name=SITE_CONTENT_GIT_IDENTIFIER)],
                     run=Command(path="sh", args=["-exc", online_sync_command]),
                 ),
-                on_success=OcwStudioWebhookStep(
-                    pipeline_name=config.vars["pipeline_name"],
-                    status="succeeded",
-                ),
             ),
             step_description=f"{UPLOAD_ONLINE_BUILD_IDENTIFIER} task step",
             pipeline_name=config.vars["pipeline_name"],
@@ -544,8 +521,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 ]
             )
         )
-        self.append(ocw_studio_webhook_started_step)
-        self.extend(base_tasks)
+        self.append(static_resources_task_step)
         self.extend([build_online_site_step, upload_online_build_step])
         if not is_dev():
             self.append(clear_cdn_cache_online_step)
@@ -562,14 +538,8 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
     def __init__(
         self,
         config: SitePipelineDefinitionConfig,
-        gated: bool = False,
-        passed_identifier: str = None,
     ):
-        base_tasks = SitePipelineBaseTasks(
-            config=config,
-            gated=gated,
-            passed_identifier=passed_identifier,
-        )
+        static_resources_task_step = StaticResourcesTaskStep(config)
         filter_webpack_artifacts_step = add_error_handling(
             step=TaskStep(
                 task=FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
@@ -756,9 +726,9 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 ]
             )
         )
-        self.extend(base_tasks)
         self.extend(
             [
+                static_resources_task_step,
                 filter_webpack_artifacts_step,
                 build_offline_site_step,
                 upload_offline_build_step,
@@ -864,8 +834,21 @@ class SitePipelineDefinition(Pipeline):
         )
 
     def get_online_build_job(self, config: SitePipelineDefinitionConfig):
-        steps = SitePipelineThemeTasks(config=config)
-        steps.extend(SitePipelineOnlineTasks(config=config))
+        ocw_studio_webhook_started_step = OcwStudioWebhookStep(
+            pipeline_name=config.vars["pipeline_name"],
+            status="started",
+        )
+        steps = [ocw_studio_webhook_started_step]
+        steps.extend(SitePipelineBaseTasks(config=config))
+        online_tasks = SitePipelineOnlineTasks(config=config)
+        for task in online_tasks:
+            if hasattr(task, "task"):
+                if task.task == UPLOAD_ONLINE_BUILD_IDENTIFIER:
+                    task.on_success = OcwStudioWebhookStep(
+                        pipeline_name=config.vars["pipeline_name"],
+                        status="succeeded",
+                    )
+        steps.extend(online_tasks)
         return Job(
             name=self._online_site_job_identifier,
             serial=True,
@@ -873,18 +856,12 @@ class SitePipelineDefinition(Pipeline):
         )
 
     def get_offline_build_job(self, config: SitePipelineDefinitionConfig):
-        steps = SitePipelineThemeTasks(
+        steps = SitePipelineBaseTasks(
             config=config,
             gated=True,
             passed_identifier=self._online_site_job_identifier,
         )
-        steps.extend(
-            SitePipelineOfflineTasks(
-                config=config,
-                gated=True,
-                passed_identifier=self._online_site_job_identifier,
-            )
-        )
+        steps.extend(SitePipelineOfflineTasks(config=config))
         return Job(
             name=self._offline_site_job_identifier,
             serial=True,
