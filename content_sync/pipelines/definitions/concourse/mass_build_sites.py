@@ -21,6 +21,8 @@ from ol_concourse.lib.resource_types import slack_notification_resource
 from content_sync.constants import VERSION_DRAFT
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
+    MASS_BUILD_SITES_JOB_IDENTIFIER,
+    MASS_BULID_SITES_PIPELINE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
@@ -47,10 +49,6 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
 )
 from content_sync.utils import get_template_vars
 from websites.models import WebsiteQuerySet, WebsiteStarter
-
-
-MASS_BUILD_SITES_PIPELINE_IDENTIFIER = Identifier("mass-build-sites").root
-MASS_BUILD_SITES_JOB_IDENTIFIER = Identifier("mass-build-sites-job").root
 
 
 class MassBuildSitesPipelineDefinitionConfig:
@@ -120,7 +118,7 @@ class MassBuildSitesResources(list[Resource]):
         self.append(
             OcwStudioWebhookResource(
                 ocw_studio_url=config.ocw_studio_url,
-                site_name="mass-build-sites",
+                site_name=MASS_BULID_SITES_PIPELINE_IDENTIFIER,
                 api_token=settings.API_BEARER_TOKEN or "",
             )
         )
