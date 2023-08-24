@@ -257,7 +257,7 @@ class SiteContentGitTaskStep(TaskStep):
         else:
             uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{short_id}.git"
             command = f"git clone -b {branch} {uri} ./{SITE_CONTENT_GIT_IDENTIFIER}"
-        super.__init__(
+        super().__init__(
             task=SITE_CONTENT_GIT_IDENTIFIER,
             timeout="40m",
             attempts=3,
