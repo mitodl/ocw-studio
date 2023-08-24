@@ -128,27 +128,24 @@ class MassBuildSitesResources(list[Resource]):
 
 
 class MassBuildSitesPipelineBaseTasks(list[StepModifierMixin]):
-    def __init__(self, **kwargs):
+    def __init__(self):
         webpack_manifest_get_step = GetStep(
             get=WEBPACK_MANIFEST_S3_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
-            **kwargs,
         )
         ocw_hugo_themes_get_step = GetStep(
             get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
-            **kwargs,
         )
         ocw_hugo_projects_get_step = GetStep(
             get=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
             trigger=False,
             timeout="5m",
             attempts=3,
-            **kwargs,
         )
         self.extend(
             [
@@ -165,7 +162,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
         vars = get_template_vars()
         resource_types = MassBuildSitesPipelineResourceTypes()
         resources = MassBuildSitesResources(config=config)
-        base_tasks = MassBuildSitesPipelineBaseTasks(config=config)
+        base_tasks = MassBuildSitesPipelineBaseTasks()
         jobs = []
         batch_gate_identifier = Identifier("batch-gate").root
         batch_gate_resources = []
