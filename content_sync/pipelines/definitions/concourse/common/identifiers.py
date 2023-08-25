@@ -16,3 +16,4 @@ SITE_CONTENT_GIT_IDENTIFIER = Identifier("site-content-git").root
 STATIC_RESOURCES_S3_IDENTIFIER = Identifier("static-resources-s3").root
 MASS_BULID_SITES_PIPELINE_IDENTIFIER = Identifier("mass-build-sites").root
 MASS_BUILD_SITES_JOB_IDENTIFIER = Identifier("mass-build-sites-job").root
+MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER = Identifier("batch-gate").root

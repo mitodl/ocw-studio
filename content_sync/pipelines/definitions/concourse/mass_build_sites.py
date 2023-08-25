@@ -21,6 +21,7 @@ from ol_concourse.lib.resource_types import slack_notification_resource
 from content_sync.constants import VERSION_DRAFT
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
+    MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER,
     MASS_BUILD_SITES_JOB_IDENTIFIER,
     MASS_BULID_SITES_PIPELINE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
@@ -162,7 +163,6 @@ class MassBuildSitesPipelineDefinition(Pipeline):
         resources = MassBuildSitesResources(config=config)
         base_tasks = MassBuildSitesPipelineBaseTasks()
         jobs = []
-        batch_gate_identifier = Identifier("batch-gate").root
         batch_gate_resources = []
         batches = list(
             more_itertools.batched(config.sites, settings.OCW_MASS_BUILD_BATCH_SIZE)
@@ -173,7 +173,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             if batch_number < batch_count:
                 batch_gate_resources.append(
                     Resource(
-                        name=f"{batch_gate_identifier}-{batch_number}",
+                        name=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number}",
                         type=KEYVAL_RESOURCE_TYPE_IDENTIFIER,
                         icon="gate",
                         check_every="never",
@@ -220,7 +220,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             if batch_number > 1:
                 tasks.append(
                     GetStep(
-                        get=f"{batch_gate_identifier}-{batch_number -1}",
+                        get=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number -1}",
                         passed=[
                             f"{MASS_BUILD_SITES_JOB_IDENTIFIER}-batch-{batch_number - 1}"
                         ],
@@ -242,7 +242,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             if batch_number < batch_count:
                 tasks.append(
                     PutStep(
-                        put=f"{batch_gate_identifier}-{batch_number}",
+                        put=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number}",
                         params={"mapping": "timestamp = now()"},
                     )
                 )

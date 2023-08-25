@@ -9,6 +9,7 @@ from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
+    MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER,
     MASS_BULID_SITES_PIPELINE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -55,6 +56,7 @@ def test_generate_mass_build_sites_definition(
     settings.OCW_MASS_BUILD_BATCH_SIZE = 4
     settings.OCW_MASS_BUILD_MAX_IN_FLIGHT = 2
     settings.ENV_NAME = env_name
+    total_sites = 8
     mock_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
@@ -77,7 +79,7 @@ def test_generate_mass_build_sites_definition(
     starter = WebsiteStarterFactory.create(
         source=STARTER_SOURCE_GITHUB, path=ocw_hugo_projects_path
     )
-    sites = WebsiteFactory.create_batch(8, starter=starter)
+    sites = WebsiteFactory.create_batch(total_sites, starter=starter)
     pipeline_config = MassBuildSitesPipelineDefinitionConfig(
         sites=sites,
         version=version,
@@ -156,3 +158,13 @@ def test_generate_mass_build_sites_definition(
         )
         is not None
     )
+    expected_batch_gates_amount = (
+        int(total_sites / settings.OCW_MASS_BUILD_BATCH_SIZE) - 1
+    )
+    for batch_number in range(expected_batch_gates_amount):
+        batch_gate = get_dict_list_item_by_field(
+            items=resources,
+            field="name",
+            value=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number + 1}",
+        )
+        assert batch_gate["type"] == KEYVAL_RESOURCE_TYPE_IDENTIFIER
