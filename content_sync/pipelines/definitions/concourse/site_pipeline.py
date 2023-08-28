@@ -118,7 +118,8 @@ class SitePipelineDefinitionConfig:
         ocw_studio_url(str): The URL to the instance of ocw-studio the pipeline should call home to
         ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to use
         ocw_hugo_projects_branch(str): The branch of ocw-hugo-projects to use
-        hugo_override_args(str): Arguments to override in the hugo command
+        hugo_override_args(str): (Optional) Arguments to override in the hugo command
+        namespace(str): The Concourse vars namespace to use
     """
 
     def __init__(
