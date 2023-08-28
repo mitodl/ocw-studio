@@ -53,6 +53,23 @@ from websites.models import WebsiteQuerySet, WebsiteStarter
 
 
 class MassBuildSitesPipelineDefinitionConfig:
+    """
+    A class with configuration properties for building a mass build pipeline
+
+    Args:
+        sites(WebsiteQuerySet): The sites to build the pipeline for
+        version(str): The version of the sites to build in the pipeline (draft / live)
+        ocw_studio_url(str): The URL to the instance of ocw-studio the pipeline should call home to
+        artifacts_bucket(str): The versioned bucket where the webpack manifest is stored (ol-eng-artifacts)
+        site_content_branch(str): The branch to use in the site content repo (preview / release)
+        ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to use
+        ocw_hugo_projects_branch(str): The branch of ocw-hugo-projects to use
+        offline(bool): Determines whether the pipeline will perform the online or offline build of each site
+        instance_vars(str): The instance vars for the pipeline in a query string format
+        starter(WebsiteStarter): (Optional) Filter the sites to be built by a WebsiteStarter
+        prefix(str): (Optional) A prefix path to use when deploying the websites to their destination
+        hugo_override_args(str): (Optional) Arguments to override in the hugo command
+    """
     def __init__(
         self,
         sites: WebsiteQuerySet,
@@ -84,7 +101,7 @@ class MassBuildSitesPipelineDefinitionConfig:
 
 class MassBuildSitesPipelineResourceTypes(list[ResourceType]):
     """
-    The ResourceType objects used in a site pipeline
+    The ResourceType objects used in the mass build pipeline
     """
 
     def __init__(self):
@@ -99,6 +116,12 @@ class MassBuildSitesPipelineResourceTypes(list[ResourceType]):
 
 
 class MassBuildSitesResources(list[Resource]):
+    """
+    The Resource objects used in a mass build pipeline
+
+    Args:
+        config(MassBuildSitesPipelineDefinitionConfig): The mass build config object
+    """
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig):
         webpack_manifest_resource = WebpackManifestResource(
             name=WEBPACK_MANIFEST_S3_IDENTIFIER,
@@ -127,6 +150,9 @@ class MassBuildSitesResources(list[Resource]):
 
 
 class MassBuildSitesPipelineBaseTasks(list[StepModifierMixin]):
+    """
+    The common task objects used in the mass build pipeline
+    """
     def __init__(self):
         webpack_manifest_get_step = GetStep(
             get=WEBPACK_MANIFEST_S3_IDENTIFIER,
@@ -156,6 +182,16 @@ class MassBuildSitesPipelineBaseTasks(list[StepModifierMixin]):
 
 
 class MassBuildSitesPipelineDefinition(Pipeline):
+    """
+    The Pipeline object representing the mass build
+
+    The sites are separated in batches, configured by settings.OCW_MASS_BUILD_BATCH_SIZE
+
+    Each batch builds sites in parallel, the amount of which is controlled by settings.OCW_MASS_BUILD_MAX_IN_FLIGHT
+
+    Args:
+        config(MassBuildSitesPipelineDefinitionConfig): The mass build config object
+    """
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig, **kwargs):
         base = super()
         vars = get_template_vars()
