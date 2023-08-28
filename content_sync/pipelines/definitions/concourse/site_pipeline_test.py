@@ -360,11 +360,14 @@ def test_generate_theme_assets_pipeline_definition(
     upload_online_build_command = "\n".join(
         upload_online_build_task["config"]["run"]["args"]
     )
-    if config.is_root_website:
-        online_sync_command = f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
-    else:
-        online_sync_command = f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='{config.vars['short_id']}.zip' --exclude='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
-    assert online_sync_command in upload_online_build_command
+    assert (
+        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        in upload_online_build_command
+    )
+    assert (
+        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='{config.vars['short_id']}.zip' --exclude='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        in upload_online_build_command
+    )
     upload_online_build_expected_inputs = [SITE_CONTENT_GIT_IDENTIFIER]
     for input in upload_online_build_task["config"]["inputs"]:
         assert input["name"] in upload_online_build_expected_inputs
@@ -485,17 +488,11 @@ def test_generate_theme_assets_pipeline_definition(
     assert OCW_HUGO_THEMES_GIT_IDENTIFIER in build_offline_site_command
     assert STATIC_RESOURCES_S3_IDENTIFIER in build_offline_site_command
     assert WEBPACK_ARTIFACTS_IDENTIFIER in build_offline_site_command
-    if config.is_root_website:
-        assert (
-            build_offline_site_command.count(f"hugo {config.vars['hugo_args_offline']}")
-            == 1
-        )
-    else:
-        assert (
-            build_offline_site_command.count(f"hugo {config.vars['hugo_args_offline']}")
-            == 2
-        )
-        assert f"zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./"
+    assert (
+        build_offline_site_command.count(f"hugo {config.vars['hugo_args_offline']}")
+        == 2
+    )
+    assert f"zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./"
     build_offline_site_expected_params = {
         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
         "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
@@ -532,11 +529,10 @@ def test_generate_theme_assets_pipeline_definition(
         f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.vars['offline_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
         in upload_offline_build_command
     )
-    if not config.is_root_website:
-        assert (
-            f"aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
-            in upload_offline_build_command
-        )
+    assert (
+        f"aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
+        in upload_offline_build_command
+    )
     upload_offline_build_expected_inputs = [
         SITE_CONTENT_GIT_IDENTIFIER,
         BUILD_OFFLINE_SITE_IDENTIFIER,
