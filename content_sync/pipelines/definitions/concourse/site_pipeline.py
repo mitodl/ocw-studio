@@ -72,8 +72,32 @@ UPLOAD_OFFLINE_BUILD_IDENTIFIER = Identifier("upload-offline-build").root
 CLEAR_CDN_CACHE_IDENTIFIER = Identifier("clear-cdn-cache").root
 
 
-class TestDummyVarSource(DummyVarSource, VarSource):
-    pass
+def get_site_pipeline_definition_vars(namespace: str):
+    return {
+        "is_root_website": f"(({namespace}is_root_website))",
+        "short_id": f"(({namespace}short_id))",
+        "site_name": f"(({namespace}site_name))",
+        "s3_path": f"(({namespace}s3_path))",
+        "url_path": f"(({namespace}url_path))",
+        "base_url": f"(({namespace}base_url))",
+        "static_resources_subdirectory": f"(({namespace}static_resources_subdirectory))",
+        "delete_flag": f"(({namespace}delete_flag))",
+        "noindex": f"(({namespace}noindex))",
+        "pipeline_name": f"(({namespace}pipeline_name))",
+        "instance_vars": f"(({namespace}instance_vars))",
+        "static_api_url": f"(({namespace}static_api_url))",
+        "storage_bucket": f"(({namespace}storage_bucket))",
+        "artifacts_bucket": f"(({namespace}artifacts_bucket))",
+        "web_bucket": f"(({namespace}web_bucket))",
+        "offline_bucket": f"(({namespace}offline_bucket))",
+        "resource_base_url": f"(({namespace}resource_base_url))",
+        "site_content_branch": f"(({namespace}site_content_branch))",
+        "ocw_hugo_themes_branch": f"(({namespace}ocw_hugo_themes_branch))",
+        "ocw_hugo_projects_url": f"(({namespace}ocw_hugo_projects_url))",
+        "ocw_hugo_projects_branch": f"(({namespace}ocw_hugo_projects_branch))",
+        "hugo_args_online": f"(({namespace}hugo_args_online))",
+        "hugo_args_offline": f"(({namespace}hugo_args_offline))",
+    }
 
 
 class SitePipelineDefinitionConfig:
@@ -182,31 +206,9 @@ class SitePipelineDefinitionConfig:
             f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
         )
         self.namespace = namespace
-        self.vars = {
-            "short_id": f"(({namespace}short_id))",
-            "site_name": f"(({namespace}site_name))",
-            "s3_path": f"(({namespace}s3_path))",
-            "url_path": f"(({namespace}url_path))",
-            "base_url": f"(({namespace}base_url))",
-            "static_resources_subdirectory": f"(({namespace}static_resources_subdirectory))",
-            "delete_flag": f"(({namespace}delete_flag))",
-            "noindex": f"(({namespace}noindex))",
-            "pipeline_name": f"(({namespace}pipeline_name))",
-            "instance_vars": f"(({namespace}instance_vars))",
-            "static_api_url": f"(({namespace}static_api_url))",
-            "storage_bucket": f"(({namespace}storage_bucket))",
-            "artifacts_bucket": f"(({namespace}artifacts_bucket))",
-            "web_bucket": f"(({namespace}web_bucket))",
-            "offline_bucket": f"(({namespace}offline_bucket))",
-            "resource_base_url": f"(({namespace}resource_base_url))",
-            "site_content_branch": f"(({namespace}site_content_branch))",
-            "ocw_hugo_themes_branch": f"(({namespace}ocw_hugo_themes_branch))",
-            "ocw_hugo_projects_url": f"(({namespace}ocw_hugo_projects_url))",
-            "ocw_hugo_projects_branch": f"(({namespace}ocw_hugo_projects_branch))",
-            "hugo_args_online": f"(({namespace}hugo_args_online))",
-            "hugo_args_offline": f"(({namespace}hugo_args_offline))",
-        }
+        self.vars = get_site_pipeline_definition_vars(namespace=namespace)
         self.values = {
+            "is_root_website": 1 if self.is_root_website else 0,
             "short_id": site.short_id,
             "site_name": site.name,
             "s3_path": site.s3_path,
@@ -468,15 +470,21 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             build_online_site_step.params[
                 "AWS_SECRET_ACCESS_KEY"
             ] = settings.AWS_SECRET_ACCESS_KEY
-        if config.is_root_website:
-            online_sync_command = f"aws s3{config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
-        else:
-            online_sync_command = f"aws s3{config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='{config.vars['short_id']}.zip' --exclude='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+
+        online_sync_command = f"""
+        if [ $IS_ROOT_WEBSITE ] ; then
+            aws s3{config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}
+        else
+            aws s3{config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='{config.vars['short_id']}.zip' --exclude='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}
+        fi
+        """
         upload_online_build_step = add_error_handling(
             step=TaskStep(
                 task=UPLOAD_ONLINE_BUILD_IDENTIFIER,
                 timeout="40m",
-                params={},
+                params={
+                    "IS_ROOT_WEBSITE": config.vars["is_root_website"],
+                },
                 config=TaskConfig(
                     platform="linux",
                     image_resource=AWS_CLI_REGISTRY_IMAGE,
@@ -592,10 +600,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         touch ./content/static_resources/_index.md
         cp -r ../{WEBPACK_ARTIFACTS_IDENTIFIER}/static_shared/. ./static/static_shared/
         hugo {config.vars['hugo_args_offline']}
-        """
-        if not config.is_root_website:
-            build_offline_site_command = f"""
-            {build_offline_site_command}
+        if [ $IS_ROOT_WEBSITE ] ; then
             cd output-offline
             zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}.zip ./
             rm -rf ./*
@@ -607,7 +612,8 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             hugo {config.vars['hugo_args_offline']}
             cd output-offline
             zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./
-            """
+        fi
+        """
         build_offline_site_step = add_error_handling(
             step=TaskStep(
                 task=BUILD_OFFLINE_SITE_IDENTIFIER,
@@ -623,6 +629,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                     "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
                     "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                     "NOINDEX": config.vars["noindex"],
+                    "IS_ROOT_WEBSITE": config.vars["IS_ROOT_WEBSITE"],
                 },
                 config=TaskConfig(
                     platform="linux",
@@ -665,19 +672,17 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             build_offline_site_step.params["AWS_SECRET_ACCESS_KEY"] = (
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
-        offline_sync_commands = [
-            f"aws s3{config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.vars['offline_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
-        ]
-        if not config.is_root_website:
-            offline_sync_commands.append(
-                f"aws s3{config.cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
-            )
-        offline_sync_command = "\n".join(offline_sync_commands)
+        offline_sync_command = f"""
+        aws s3{config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.vars['offline_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}
+        if ! [ $IS_ROOT_WEBSITE ] ; then
+            aws s3{config.cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}
+        fi
+        """
         upload_offline_build_step = add_error_handling(
             step=TaskStep(
                 task=UPLOAD_OFFLINE_BUILD_IDENTIFIER,
                 timeout="40m",
-                params={},
+                params={"IS_ROOT_WEBSITE": config.vars["is_root_website"]},
                 config=TaskConfig(
                     platform="linux",
                     image_resource=AWS_CLI_REGISTRY_IMAGE,
@@ -795,6 +800,7 @@ class SitePipelineDefinition(Pipeline):
             name="site",
             config=DummyConfig(
                 vars={
+                    "is_root_website": config.values["is_root_website"],
                     "short_id": config.values["short_id"],
                     "site_name": config.values["site_name"],
                     "s3_path": config.values["s3_path"],
