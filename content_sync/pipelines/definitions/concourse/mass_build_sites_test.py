@@ -304,7 +304,7 @@ def test_generate_mass_build_sites_definition(
                     )
         if batch_number < batch_count:
             assert (
-            get_dict_list_item_by_field(
+                get_dict_list_item_by_field(
                     items=steps,
                     field="put",
                     value=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number}",

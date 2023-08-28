@@ -70,6 +70,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         prefix(str): (Optional) A prefix path to use when deploying the websites to their destination
         hugo_override_args(str): (Optional) Arguments to override in the hugo command
     """
+
     def __init__(
         self,
         sites: WebsiteQuerySet,
@@ -122,6 +123,7 @@ class MassBuildSitesResources(list[Resource]):
     Args:
         config(MassBuildSitesPipelineDefinitionConfig): The mass build config object
     """
+
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig):
         webpack_manifest_resource = WebpackManifestResource(
             name=WEBPACK_MANIFEST_S3_IDENTIFIER,
@@ -153,6 +155,7 @@ class MassBuildSitesPipelineBaseTasks(list[StepModifierMixin]):
     """
     The common task objects used in the mass build pipeline
     """
+
     def __init__(self):
         webpack_manifest_get_step = GetStep(
             get=WEBPACK_MANIFEST_S3_IDENTIFIER,
@@ -192,6 +195,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
     Args:
         config(MassBuildSitesPipelineDefinitionConfig): The mass build config object
     """
+
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig, **kwargs):
         base = super()
         vars = get_template_vars()
