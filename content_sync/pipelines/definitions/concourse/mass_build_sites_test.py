@@ -66,6 +66,7 @@ def test_generate_mass_build_sites_definition(
     settings.OCW_MASS_BUILD_MAX_IN_FLIGHT = 2
     settings.ENV_NAME = env_name
     total_sites = 6
+    batch_count = total_sites / settings.OCW_MASS_BUILD_BATCH_SIZE
     mock_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
@@ -301,4 +302,13 @@ def test_generate_mass_build_sites_definition(
                         f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{site_config.vars['short_id']}.git"
                         in site_content_git_command
                     )
+        if batch_number < batch_count:
+            assert (
+            get_dict_list_item_by_field(
+                    items=steps,
+                    field="put",
+                    value=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number}",
+                )
+                is not None
+            )
         batch_number += 1
