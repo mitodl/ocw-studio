@@ -8,7 +8,6 @@ from ol_concourse.lib.models.pipeline import (
     AcrossVar,
     DoStep,
     GetStep,
-    Identifier,
     Job,
     Pipeline,
     PutStep,
@@ -47,6 +46,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinitionConfig,
     SitePipelineOfflineTasks,
     SitePipelineOnlineTasks,
+    get_site_pipeline_definition_vars,
 )
 from content_sync.utils import get_template_vars
 from websites.models import WebsiteQuerySet, WebsiteStarter
@@ -159,6 +159,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig, **kwargs):
         base = super()
         vars = get_template_vars()
+        namespace = ".:site."
         resource_types = MassBuildSitesPipelineResourceTypes()
         resources = MassBuildSitesResources(config=config)
         base_tasks = MassBuildSitesPipelineBaseTasks()
@@ -182,6 +183,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             tasks = []
             tasks.extend(base_tasks)
             across_var_values = []
+            site_pipeline_definition_vars = get_site_pipeline_definition_vars(namespace)
             for site in batch:
                 site_config = SitePipelineDefinitionConfig(
                     site=site,
@@ -203,14 +205,14 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                     ocw_studio_url=vars["ocw_studio_url"],
                     ocw_hugo_themes_branch=config.ocw_hugo_themes_branch,
                     ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
-                    namespace=".:site.",
+                    namespace=namespace,
                 )
                 across_var_values.append(site_config.values)
 
             site_build_tasks = [
                 SiteContentGitTaskStep(
-                    branch=site_config.site_content_branch,
-                    short_id=site_config.site.short_id,
+                    branch=site_pipeline_definition_vars["site_content_branch"],
+                    short_id=site_pipeline_definition_vars["short_id"],
                 )
             ]
             if not config.offline:
