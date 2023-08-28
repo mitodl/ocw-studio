@@ -629,7 +629,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                     "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
                     "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                     "NOINDEX": config.vars["noindex"],
-                    "IS_ROOT_WEBSITE": config.vars["IS_ROOT_WEBSITE"],
+                    "IS_ROOT_WEBSITE": config.vars["is_root_website"],
                 },
                 config=TaskConfig(
                     platform="linux",
