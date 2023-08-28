@@ -1011,7 +1011,7 @@ OCW_STUDIO_SITE_CONFIG_FILE = get_string(
     required=False,
 )
 OCW_MASS_BUILD_BATCH_SIZE = get_int(
-    name="OCW_STUDIO_MASS_BUILD_BATCH_SIZE",
+    name="OCW_MASS_BUILD_BATCH_SIZE",
     default=20,
     description="The amount of site builds per job to put in MassBuildSitesPipelineDefinition",
     required=False,
