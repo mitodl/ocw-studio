@@ -3,11 +3,10 @@ nav_order: 0
 ---
 
 ### Documentation
+
 ---
 
-
 Documentation gets published via Github pages to [https://mitodl.github.io/ocw-studio/](https://mitodl.github.io/ocw-studio/)
-
 
 ## Running locally
 
@@ -20,9 +19,7 @@ To run this locally, you need Ruby and the bunder gem installed.
 - `rvm install RUBY_VERSION` - as of this writing, Ruby 2.7.1 was the latest and known to work
 - `gem install bundler`
 
-
 ### Build and run jekyll
-
 
 To run this locally, run the following commands
 

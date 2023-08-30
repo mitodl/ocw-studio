@@ -6,19 +6,19 @@ import casual from "casual"
 
 import HierarchicalSelectField, {
   calcOptions,
-  Level
+  Level,
 } from "./HierarchicalSelectField"
 import SelectField, { Option } from "./SelectField"
 
 const simulateSelectValue = (
   wrapper: ShallowWrapper,
   value: string,
-  idx: number
+  idx: number,
 ) => {
   return act(() => {
     wrapper.find(SelectField).at(idx).prop("onChange")({
       // @ts-expect-error not simulating whole event
-      target: { value }
+      target: { value },
     })
   })
 }
@@ -35,20 +35,20 @@ describe("HierarchicalSelectField", () => {
   const makeOptions = (idx: number) => [
     { label: "Empty", value: "" },
     { label: `Option 1 for ${idx}`, value: `option1${idx}` },
-    { label: `Option 2 for ${idx}`, value: `option2${idx}` }
+    { label: `Option 2 for ${idx}`, value: `option2${idx}` },
   ]
 
   const selectPath = [
     { label: "Topic1", value: "Topic1" },
     { label: "Subtopic1", value: "Subtopic1" },
-    { label: "speciality", value: "speciality" }
+    { label: "speciality", value: "speciality" },
   ]
 
   beforeEach(() => {
     name = casual.name
     levels = times(3, () => ({
-      name:  casual.name,
-      label: casual.word
+      name: casual.name,
+      label: casual.word,
     }))
     options = times(levels.length, makeOptions)
     value = null
@@ -56,19 +56,19 @@ describe("HierarchicalSelectField", () => {
     optionsMap = {
       Topic1: {
         Subtopic1: ["speciality"],
-        Subtopic2: ["potato"]
+        Subtopic2: ["potato"],
       },
-      Topic2: {}
+      Topic2: {},
     }
 
     options = [
       [
         { label: "-- empty --", value: "" },
         { label: "Topic1", value: "Topic1" },
-        { label: "Topic2", value: "Topic2" }
+        { label: "Topic2", value: "Topic2" },
       ],
       [{ label: "-- empty --", value: "" }],
-      [{ label: "-- empty --", value: "" }]
+      [{ label: "-- empty --", value: "" }],
     ]
     render = (props = {}) =>
       shallow(
@@ -79,7 +79,7 @@ describe("HierarchicalSelectField", () => {
           onChange={onChangeStub}
           options_map={optionsMap}
           {...props}
-        />
+        />,
       )
   })
 
@@ -106,7 +106,7 @@ describe("HierarchicalSelectField", () => {
     for (let idx = 0; idx < levels.length; ++idx) {
       simulateSelectValue(wrapper, selectPath[idx].value, idx)
       expect(wrapper.find("SelectField").at(idx).prop("value")).toBe(
-        selectPath[idx].value
+        selectPath[idx].value,
       )
     }
   })
@@ -133,24 +133,26 @@ describe("HierarchicalSelectField", () => {
     expect(wrapper.find("SelectField").at(lastIdx).prop("value")).toBe("potato")
     for (let idx = 0; idx < lastIdx; ++idx) {
       expect(wrapper.find("SelectField").at(idx).prop("value")).toBe(
-        selectPath[idx].value
+        selectPath[idx].value,
       )
     }
   })
 
   //
-  ;[true, false].forEach(hasValue => {
+  ;[true, false].forEach((hasValue) => {
     it(`renders the current value${hasValue ? ", which is empty" : ""}`, () => {
       const value = hasValue ? [["Topic1"], ["Topic2", "Subtopic"]] : undefined
       const wrapper = render({ value })
-      expect(wrapper.find(".values div").map(div => div.text())).toStrictEqual(
-        hasValue ? ["Topic1delete", "Topic2 - Subtopicdelete"] : []
+      expect(
+        wrapper.find(".values div").map((div) => div.text()),
+      ).toStrictEqual(
+        hasValue ? ["Topic1delete", "Topic2 - Subtopicdelete"] : [],
       )
     })
   })
 
   //
-  ;[0, 1].forEach(valueIndex => {
+  ;[0, 1].forEach((valueIndex) => {
     it(`deletes a value at index ${valueIndex}`, () => {
       const value = [["Topic1"], ["Topic2", "Subtopic"]]
       const wrapper = render({ value })
@@ -164,20 +166,20 @@ describe("HierarchicalSelectField", () => {
       expect(onChangeStub).toHaveBeenCalledWith({
         target: {
           name,
-          value: [value[valueIndex === 0 ? 1 : 0]]
-        }
+          value: [value[valueIndex === 0 ? 1 : 0]],
+        },
       })
     })
   })
 
   //
-  ;[true, false].forEach(duplicate => {
+  ;[true, false].forEach((duplicate) => {
     it(`adds the selection as a new value${
       duplicate ? ", but it's a duplicate value so it's ignored" : ""
     }`, () => {
       const value = [[duplicate ? "Topic2" : "Topic1"], ["Topic2", "Subtopic"]]
       const wrapper = render({
-        value
+        value,
       })
       simulateSelectValue(wrapper, "Topic2", 0)
 
@@ -189,8 +191,8 @@ describe("HierarchicalSelectField", () => {
       expect(onChangeStub).toHaveBeenCalledWith({
         target: {
           value: sortBy(duplicate ? value : [...value, ["Topic2"]]),
-          name
-        }
+          name,
+        },
       })
     })
   })
@@ -198,7 +200,7 @@ describe("HierarchicalSelectField", () => {
   it("ignores an empty selection", () => {
     const value = [["Topic1"], ["Topic2", "Subtopic"]]
     const wrapper = render({
-      value
+      value,
     })
 
     const event = { preventDefault: jest.fn() }
@@ -219,10 +221,10 @@ describe("HierarchicalSelectField", () => {
         [
           emptyOption,
           { label: "Topic1", value: "Topic1" },
-          { label: "Topic2", value: "Topic2" }
+          { label: "Topic2", value: "Topic2" },
         ],
         [emptyOption],
-        [emptyOption]
+        [emptyOption],
       ])
     })
 
@@ -233,46 +235,46 @@ describe("HierarchicalSelectField", () => {
         [
           emptyOption,
           { label: "Topic1", value: "Topic1" },
-          { label: "Topic2", value: "Topic2" }
+          { label: "Topic2", value: "Topic2" },
         ],
         [
           emptyOption,
           { label: "Subtopic1", value: "Subtopic1" },
-          { label: "Subtopic2", value: "Subtopic2" }
+          { label: "Subtopic2", value: "Subtopic2" },
         ],
-        [emptyOption]
+        [emptyOption],
       ])
     })
 
     //
-    ;[true, false].forEach(hasThirdSelected => {
+    ;[true, false].forEach((hasThirdSelected) => {
       it(`returns options if the second ${
         hasThirdSelected ? " and third" : ""
       }item is selected`, () => {
         const selection = [
           "Topic1",
           "Subtopic1",
-          hasThirdSelected ? "speciality" : null
+          hasThirdSelected ? "speciality" : null,
         ]
         const options = calcOptions(optionsMap, selection, levels)
         expect(options).toStrictEqual([
           [
             { label: "-- empty --", value: "" },
             { label: "Topic1", value: "Topic1" },
-            { label: "Topic2", value: "Topic2" }
+            { label: "Topic2", value: "Topic2" },
           ],
           [
             { label: "-- empty --", value: "" },
             { label: "Subtopic1", value: "Subtopic1" },
             {
               label: "Subtopic2",
-              value: "Subtopic2"
-            }
+              value: "Subtopic2",
+            },
           ],
           [
             { label: "-- empty --", value: "" },
-            { label: "speciality", value: "speciality" }
-          ]
+            { label: "speciality", value: "speciality" },
+          ],
         ])
       })
     })

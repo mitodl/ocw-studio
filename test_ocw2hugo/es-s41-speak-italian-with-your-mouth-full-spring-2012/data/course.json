@@ -16,31 +16,17 @@
     ],
     "website": "ocw-www"
   },
-  "department_numbers": [
-    "ES"
-  ],
-  "learning_resource_types": [
-    "Lecture Videos",
-    "Activity Assignments"
-  ],
+  "department_numbers": ["ES"],
+  "learning_resource_types": ["Lecture Videos", "Activity Assignments"],
   "topics": [
-    [
-      "Humanities",
-      "Language",
-      "Italian"
-    ],
-    [
-      "Society",
-      "European and Russian Studies"
-    ]
+    ["Humanities", "Language", "Italian"],
+    ["Society", "European and Russian Studies"]
   ],
   "primary_course_number": "ES.S41",
   "extra_course_numbers": "",
   "term": "Spring",
   "year": "2012",
-  "level": [
-    "Undergraduate"
-  ],
+  "level": ["Undergraduate"],
   "other_versions": [],
   "archived_versions": [],
   "open_learning_library_versions": [],

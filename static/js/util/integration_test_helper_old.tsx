@@ -6,7 +6,7 @@ import { Provider as ReduxQueryProvider } from "redux-query-react"
 import {
   createMemoryHistory,
   MemoryHistory,
-  Location as HLocation
+  Location as HLocation,
 } from "history"
 import { Action } from "redux"
 import { Router, Route } from "react-router"
@@ -33,7 +33,7 @@ export default class IntegrationTestHelper {
     getUserConfirmation: (message, cb) => {
       const ok = window.confirm(message)
       cb(ok)
-    }
+    },
   })
   sandbox: SinonSandbox
   actions: Array<Action>
@@ -53,7 +53,7 @@ export default class IntegrationTestHelper {
     window.HTMLFieldSetElement.prototype.scrollIntoView =
       this.scrollIntoViewStub
     this.wrapper = null
-    this.browserHistory.listen(location => {
+    this.browserHistory.listen((location) => {
       this.currentLocation = location
     })
 
@@ -65,7 +65,7 @@ export default class IntegrationTestHelper {
     this.sandbox
       .stub(networkInterfaceFuncs, "makeRequest")
       .callsFake((url, method, options) => ({
-        execute: callback => {
+        execute: (callback) => {
           let response = this.handleRequestStub(url, method, options)
           // if response is "no match" then no call to `.withArgs` has
           // been sufficient to match the current URL and method combo.
@@ -74,8 +74,8 @@ export default class IntegrationTestHelper {
           if (response === "no match") {
             console.error(`unmatched ${method} request made to ${url}`)
             response = {
-              body:   {},
-              status: 200
+              body: {},
+              status: 200,
             }
           }
           const err = null
@@ -88,7 +88,7 @@ export default class IntegrationTestHelper {
         },
         abort: () => {
           throw new Error("Aborts currently unhandled")
-        }
+        },
       }))
     this.realWarn = console.warn
     // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -99,11 +99,11 @@ export default class IntegrationTestHelper {
     url: string,
     method: "GET" | "POST" | "PATCH" | "DELETE",
     responseBody: unknown,
-    code: number
+    code: number,
   ): sinon.SinonStub {
     return this.handleRequestStub.withArgs(url, method).returns({
-      body:   responseBody,
-      status: code
+      body: responseBody,
+      status: code,
     })
   }
 
@@ -172,21 +172,21 @@ export default class IntegrationTestHelper {
   configureRenderer(
     Component: ComponentType<any> | FunctionComponent<any>,
     defaultProps = {},
-    defaultStatePatch?: Partial<ReduxState>
+    defaultStatePatch?: Partial<ReduxState>,
   ) {
     return async (
       extraProps = {},
       beforeRenderActions = [],
-      perRenderDefaultStatePatch?: Partial<ReduxState>
+      perRenderDefaultStatePatch?: Partial<ReduxState>,
     ): Promise<{
       wrapper: ReactWrapper
       store: Store
     }> => {
       const initialState = getInitialState(
-        defaultStatePatch ?? perRenderDefaultStatePatch
+        defaultStatePatch ?? perRenderDefaultStatePatch,
       )
       const store = configureStore(initialState)
-      beforeRenderActions.forEach(action => store.dispatch(action))
+      beforeRenderActions.forEach((action) => store.dispatch(action))
 
       const ComponentWithProps = () => (
         <Component {...defaultProps} {...extraProps} />
@@ -205,7 +205,7 @@ export default class IntegrationTestHelper {
               <Route path="*" component={ComponentWithProps} />
             </Router>
           </ReduxQueryProvider>
-        </Provider>
+        </Provider>,
       )
 
       await act(async () => {

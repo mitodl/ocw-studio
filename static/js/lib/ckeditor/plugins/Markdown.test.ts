@@ -49,16 +49,16 @@ describe("Multiple Markdown CKEditors", () => {
         {
           name: this.pluginName,
           rule: {
-            filter:      "p",
-            replacement: content => {
+            filter: "p",
+            replacement: (content) => {
               const sound = this.sound
               const sounds = sound.repeat(
-                Math.ceil(content.length / sound.length)
+                Math.ceil(content.length / sound.length),
               )
               return `${sounds}!`
-            }
-          }
-        }
+            },
+          },
+        },
       ]
     }
   }
@@ -96,10 +96,10 @@ describe("Multiple Markdown CKEditors", () => {
 
   test("Separate editors can use conflicting allowedHtml lists", async () => {
     const subEditor = await createTestEditor([Markdown], {
-      "markdown-config": { allowedHtml: ["sub"] }
+      "markdown-config": { allowedHtml: ["sub"] },
     })()
     const supEditor = await createTestEditor([Markdown], {
-      "markdown-config": { allowedHtml: ["sup"] }
+      "markdown-config": { allowedHtml: ["sup"] },
     })()
 
     const sub = getConverters(subEditor)
@@ -114,7 +114,7 @@ describe("Multiple Markdown CKEditors", () => {
 
 describe("Handling of raw HTML", () => {
   const getEditor = createTestEditor([Markdown], {
-    "markdown-config": { allowedHtml: ["sup"] }
+    "markdown-config": { allowedHtml: ["sup"] },
   })
 
   test("When raw HTML is allowed, its content is converted to markdown", async () => {
@@ -129,12 +129,12 @@ describe("Handling of raw HTML", () => {
   test.each([
     {
       html: "<p><sup>1</sup> First <strong>important</strong> footnote</p>",
-      md:   "\u200b<sup>1</sup> First **important** footnote"
+      md: "\u200b<sup>1</sup> First **important** footnote",
     },
     {
       html: "<p>cat</p><p><sup>1</sup> First <strong>important</strong> footnote</p>",
-      md:   "cat\n\n\u200b<sup>1</sup> First **important** footnote"
-    }
+      md: "cat\n\n\u200b<sup>1</sup> First **important** footnote",
+    },
   ])(
     "Raw HTML at the beginning of a line gets an extra zwsp",
     async ({ html, md }) => {
@@ -142,12 +142,12 @@ describe("Handling of raw HTML", () => {
       const { html2md } = getConverters(editor)
 
       expect(html2md(html)).toBe(md)
-    }
+    },
   )
 
   test("Raw block HTML throws errors, for now", async () => {
     const editor = await getEditor("", {
-      "markdown-config": { allowedHtml: ["div"] }
+      "markdown-config": { allowedHtml: ["div"] },
     })
     const { html2md } = getConverters(editor)
 
@@ -160,7 +160,7 @@ describe("Handling of raw HTML", () => {
    */
   test("Disallowed children of allowed tags are not included", async () => {
     const editor = await getEditor("", {
-      "markdown-config": { allowedHtml: ["sup", "span"] }
+      "markdown-config": { allowedHtml: ["sup", "span"] },
     })
     const { html2md } = getConverters(editor)
 
@@ -170,7 +170,7 @@ describe("Handling of raw HTML", () => {
     </p>
     `
     expect(html2md(html)).toBe(
-      'hello <sup><span>meow</span>alert("maliciousness")</sup> world'
+      'hello <sup><span>meow</span>alert("maliciousness")</sup> world',
     )
   })
 })

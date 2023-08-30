@@ -1,213 +1,214 @@
+---
 leftnav:
-  - identifier: 4c9be39e-2e49-82ff-1487-c3a92220fd54
-    name: Syllabus
-    url: /pages/syllabus
-    weight: 10
-  - identifier: 7aa9e941-aeaf-6118-7b6b-140bd04f00c3
-    name: Calendar
-    url: /pages/calendar
-    weight: 20
-  - identifier: a6e7d634-7a40-6faa-23d0-020703ee7044
-    name: Instructor Insights
-    url: /pages/instructor-insights
-    weight: 30
-  - identifier: 8d962706-6600-fea4-4536-cf4e04d4d276
-    name: Developing the Course
-    url: /pages/instructor-insights/developing-the-course
-    weight: 40
-    parent: a6e7d634-7a40-6faa-23d0-020703ee7044
-  - identifier: 678f8764-d5c0-9e75-a398-e0971425b752
-    name: Teaching Italian and Cooking Together
-    url: /pages/instructor-insights/teaching-italian-and-cooking-together
-    weight: 50
-    parent: a6e7d634-7a40-6faa-23d0-020703ee7044
-  - identifier: 25064ffd-df3d-0c75-eddb-15ab516ecacd
-    name: Using Technology to Expand Reach
-    url: /pages/instructor-insights/using-technology-to-expand-reach
-    weight: 60
-    parent: a6e7d634-7a40-6faa-23d0-020703ee7044
-  - identifier: 9e26092b-fcbb-33cd-067b-59031da5bbec
-    name: Learning From Challenges
-    url: /pages/instructor-insights/learning-from-challenges
-    weight: 70
-    parent: a6e7d634-7a40-6faa-23d0-020703ee7044
-  - identifier: c4c7fba0-2305-e785-952c-8d8e6bf26fc3
-    name: Lesson 1
-    url: /pages/lesson-1
-    weight: 80
-  - identifier: b59ef236-b43e-fef0-05df-4148e5fd08ca
-    name: Language Instruction
-    url: /pages/lesson-1/language-instruction
-    weight: 90
-    parent: c4c7fba0-2305-e785-952c-8d8e6bf26fc3
-  - identifier: ab595ab1-7741-4c05-3501-5f5f2f6b29fc
-    name: Cooking Instruction
-    url: /pages/lesson-1/cooking-instruction
-    weight: 100
-    parent: c4c7fba0-2305-e785-952c-8d8e6bf26fc3
-  - identifier: 463b4c8e-dc1e-e06b-6353-693de4b36524
-    name: Lesson 2
-    url: /pages/lesson-2
-    weight: 110
-  - identifier: 8c884d0f-0658-45e9-a1eb-f0f9bb923451
-    name: Language Instruction
-    url: /pages/lesson-2/language-instruction
-    weight: 120
-    parent: 463b4c8e-dc1e-e06b-6353-693de4b36524
-  - identifier: 037bd9c3-765a-1418-15f2-c7634ae47ba8
-    name: Cooking Instruction
-    url: /pages/lesson-2/cooking-instruction
-    weight: 130
-    parent: 463b4c8e-dc1e-e06b-6353-693de4b36524
-  - identifier: 16b38273-3d02-fca8-e488-1b3e810b1572
-    name: Lesson 3
-    url: /pages/lesson-3
-    weight: 140
-  - identifier: e6b24301-b6fc-c670-dfc7-5ca70ae764b4
-    name: Language Instruction
-    url: /pages/lesson-3/language-instruction
-    weight: 150
-    parent: 16b38273-3d02-fca8-e488-1b3e810b1572
-  - identifier: 3442d74c-150c-b838-1b8a-9d5f2633fa35
-    name: 'Cooking Instruction '
-    url: /pages/lesson-3/cooking-instruction
-    weight: 160
-    parent: 16b38273-3d02-fca8-e488-1b3e810b1572
-  - identifier: 45ae6e3b-7bcf-ebdb-0480-f2b9be5a75b7
-    name: Lesson 4
-    url: /pages/lesson-4
-    weight: 170
-  - identifier: 794cab65-2042-4adc-b670-29cb08353418
-    name: Language Instruction
-    url: /pages/lesson-4/language-instruction
-    weight: 180
-    parent: 45ae6e3b-7bcf-ebdb-0480-f2b9be5a75b7
-  - identifier: 75c33a4f-4256-7111-8501-8efa0dbe55ea
-    name: 'Cooking Instruction '
-    url: /pages/lesson-4/cooking-instruction
-    weight: 190
-    parent: 45ae6e3b-7bcf-ebdb-0480-f2b9be5a75b7
-  - identifier: 56e06732-1e88-3c54-5df6-9d03d3daeb8b
-    name: Lesson 5
-    url: /pages/lesson-5
-    weight: 200
-  - identifier: b99e329e-5a82-aaa7-e124-7955370dab77
-    name: Language Instruction
-    url: /pages/lesson-5/language-instruction
-    weight: 210
-    parent: 56e06732-1e88-3c54-5df6-9d03d3daeb8b
-  - identifier: 02fc3e36-204a-4a74-5081-29cf8abdff3f
-    name: 'Cooking Instruction '
-    url: /pages/lesson-5/cooking-instruction
-    weight: 220
-    parent: 56e06732-1e88-3c54-5df6-9d03d3daeb8b
-  - identifier: 4295e758-bff2-5514-bf94-945586ed328d
-    name: Lesson 6
-    url: /pages/lesson-6
-    weight: 230
-  - identifier: fa33c08e-4657-c62c-37eb-e7a3c8d11ac2
-    name: Language Instruction
-    url: /pages/lesson-6/language-instruction
-    weight: 240
-    parent: 4295e758-bff2-5514-bf94-945586ed328d
-  - identifier: b5e1a1bf-5cf8-724b-70a8-89d7ef74058a
-    name: Cooking Instruction
-    url: /pages/lesson-6/cooking-instruction
-    weight: 250
-    parent: 4295e758-bff2-5514-bf94-945586ed328d
-  - identifier: 5c721348-1ad2-e19c-b11f-3f348f64d7e5
-    name: Lesson 7
-    url: /pages/lesson-7
-    weight: 260
-  - identifier: 4fc5f444-b814-d88e-9512-7456337f2612
-    name: Language Instruction
-    url: /pages/lesson-7/language-instruction
-    weight: 270
-    parent: 5c721348-1ad2-e19c-b11f-3f348f64d7e5
-  - identifier: d880b0db-d692-09ad-fb52-a417a10a2fe6
-    name: Cooking Instruction
-    url: /pages/lesson-7/cooking-instruction
-    weight: 280
-    parent: 5c721348-1ad2-e19c-b11f-3f348f64d7e5
-  - identifier: 31012ed4-66e8-2d99-ed4d-314823b03f20
-    name: Lesson 8
-    url: /pages/lesson-8
-    weight: 290
-  - identifier: 2cf16ec7-df81-9ca8-77b1-760bfca9e5b5
-    name: Language Instruction
-    url: /pages/lesson-8/language-instruction
-    weight: 300
-    parent: 31012ed4-66e8-2d99-ed4d-314823b03f20
-  - identifier: 0bd5ac8d-c3dd-7724-9fd6-b759faee57f3
-    name: Cooking Instruction
-    url: /pages/lesson-8/cooking-instruction
-    weight: 310
-    parent: 31012ed4-66e8-2d99-ed4d-314823b03f20
-  - identifier: af3c6f3d-fbcc-b159-a0f9-93ffeb5ccf38
-    name: Lesson 9
-    url: /pages/lesson-9
-    weight: 320
-  - identifier: 425a4a45-11b8-0530-d983-4220c685da31
-    name: Language Instruction
-    url: /pages/lesson-9/language-instruction
-    weight: 330
-    parent: af3c6f3d-fbcc-b159-a0f9-93ffeb5ccf38
-  - identifier: 8000e96b-1bdd-c5d2-a937-1bab258452a3
-    name: Cooking Instruction
-    url: /pages/lesson-9/cooking-instruction
-    weight: 340
-    parent: af3c6f3d-fbcc-b159-a0f9-93ffeb5ccf38
-  - identifier: 246b7204-f562-c6cf-d930-6a51cbf7a049
-    name: Lesson 10
-    url: /pages/lesson-10
-    weight: 350
-  - identifier: e6174dd5-9e16-4317-15de-51979a8e729c
-    name: Language Instruction
-    url: /pages/lesson-10/language-instruction
-    weight: 360
-    parent: 246b7204-f562-c6cf-d930-6a51cbf7a049
-  - identifier: bdd45f22-0320-77eb-c3c5-a9b73ede701d
-    name: Cooking Instruction
-    url: /pages/lesson-10/cooking-instruction
-    weight: 370
-    parent: 246b7204-f562-c6cf-d930-6a51cbf7a049
-  - identifier: 0b61d31d-8bf7-43a0-6195-1c787115299e
-    name: Lesson 11
-    url: /pages/lesson-11
-    weight: 380
-  - identifier: b1809dd7-eeb0-40ee-8bdd-e4bb16b7f832
-    name: Language Instruction
-    url: /pages/lesson-11/language-instruction
-    weight: 390
-    parent: 0b61d31d-8bf7-43a0-6195-1c787115299e
-  - identifier: 973cc08c-3ec5-82f3-ac63-c430ca1e25a5
-    name: Cooking Instruction
-    url: /pages/lesson-11/cooking-instruction
-    weight: 400
-    parent: 0b61d31d-8bf7-43a0-6195-1c787115299e
-  - identifier: f0ae6f59-4c9a-13c9-9b83-75ccf8b3c6ee
-    name: Lesson 12
-    url: /pages/lesson-12
-    weight: 410
-  - identifier: a953a9a9-ecfe-c3a5-3fc8-52877f157d5d
-    name: Language Instruction
-    url: /pages/lesson-12/language-instruction
-    weight: 420
-    parent: f0ae6f59-4c9a-13c9-9b83-75ccf8b3c6ee
-  - identifier: 7e2856c9-a1b9-cf31-0e67-6c2f2d9df120
-    name: Cooking Instruction
-    url: /pages/lesson-12/cooking-instruction
-    weight: 430
-    parent: f0ae6f59-4c9a-13c9-9b83-75ccf8b3c6ee
-  - identifier: 47f6cbac-8f7a-d956-625b-ba782046ba03
-    name: Lesson 13
-    url: /pages/lesson-13
-    weight: 440
-  - identifier: 383b8d1c-30df-d781-cc05-c1c648453997
-    name: Video Lectures
-    url: /video_galleries/video-lectures
-    weight: 450
-  - identifier: aa2443c8-8a36-13c0-d31a-fda4e1664e48
-    name: Recipes
-    url: /pages/recipes
-    weight: 460
+- identifier: 4c9be39e-2e49-82ff-1487-c3a92220fd54
+  name: Syllabus
+  url: /pages/syllabus
+  weight: 10
+- identifier: 7aa9e941-aeaf-6118-7b6b-140bd04f00c3
+  name: Calendar
+  url: /pages/calendar
+  weight: 20
+- identifier: a6e7d634-7a40-6faa-23d0-020703ee7044
+  name: Instructor Insights
+  url: /pages/instructor-insights
+  weight: 30
+- identifier: 8d962706-6600-fea4-4536-cf4e04d4d276
+  name: Developing the Course
+  url: /pages/instructor-insights/developing-the-course
+  weight: 40
+  parent: a6e7d634-7a40-6faa-23d0-020703ee7044
+- identifier: 678f8764-d5c0-9e75-a398-e0971425b752
+  name: Teaching Italian and Cooking Together
+  url: /pages/instructor-insights/teaching-italian-and-cooking-together
+  weight: 50
+  parent: a6e7d634-7a40-6faa-23d0-020703ee7044
+- identifier: 25064ffd-df3d-0c75-eddb-15ab516ecacd
+  name: Using Technology to Expand Reach
+  url: /pages/instructor-insights/using-technology-to-expand-reach
+  weight: 60
+  parent: a6e7d634-7a40-6faa-23d0-020703ee7044
+- identifier: 9e26092b-fcbb-33cd-067b-59031da5bbec
+  name: Learning From Challenges
+  url: /pages/instructor-insights/learning-from-challenges
+  weight: 70
+  parent: a6e7d634-7a40-6faa-23d0-020703ee7044
+- identifier: c4c7fba0-2305-e785-952c-8d8e6bf26fc3
+  name: Lesson 1
+  url: /pages/lesson-1
+  weight: 80
+- identifier: b59ef236-b43e-fef0-05df-4148e5fd08ca
+  name: Language Instruction
+  url: /pages/lesson-1/language-instruction
+  weight: 90
+  parent: c4c7fba0-2305-e785-952c-8d8e6bf26fc3
+- identifier: ab595ab1-7741-4c05-3501-5f5f2f6b29fc
+  name: Cooking Instruction
+  url: /pages/lesson-1/cooking-instruction
+  weight: 100
+  parent: c4c7fba0-2305-e785-952c-8d8e6bf26fc3
+- identifier: 463b4c8e-dc1e-e06b-6353-693de4b36524
+  name: Lesson 2
+  url: /pages/lesson-2
+  weight: 110
+- identifier: 8c884d0f-0658-45e9-a1eb-f0f9bb923451
+  name: Language Instruction
+  url: /pages/lesson-2/language-instruction
+  weight: 120
+  parent: 463b4c8e-dc1e-e06b-6353-693de4b36524
+- identifier: 037bd9c3-765a-1418-15f2-c7634ae47ba8
+  name: Cooking Instruction
+  url: /pages/lesson-2/cooking-instruction
+  weight: 130
+  parent: 463b4c8e-dc1e-e06b-6353-693de4b36524
+- identifier: 16b38273-3d02-fca8-e488-1b3e810b1572
+  name: Lesson 3
+  url: /pages/lesson-3
+  weight: 140
+- identifier: e6b24301-b6fc-c670-dfc7-5ca70ae764b4
+  name: Language Instruction
+  url: /pages/lesson-3/language-instruction
+  weight: 150
+  parent: 16b38273-3d02-fca8-e488-1b3e810b1572
+- identifier: 3442d74c-150c-b838-1b8a-9d5f2633fa35
+  name: 'Cooking Instruction '
+  url: /pages/lesson-3/cooking-instruction
+  weight: 160
+  parent: 16b38273-3d02-fca8-e488-1b3e810b1572
+- identifier: 45ae6e3b-7bcf-ebdb-0480-f2b9be5a75b7
+  name: Lesson 4
+  url: /pages/lesson-4
+  weight: 170
+- identifier: 794cab65-2042-4adc-b670-29cb08353418
+  name: Language Instruction
+  url: /pages/lesson-4/language-instruction
+  weight: 180
+  parent: 45ae6e3b-7bcf-ebdb-0480-f2b9be5a75b7
+- identifier: 75c33a4f-4256-7111-8501-8efa0dbe55ea
+  name: 'Cooking Instruction '
+  url: /pages/lesson-4/cooking-instruction
+  weight: 190
+  parent: 45ae6e3b-7bcf-ebdb-0480-f2b9be5a75b7
+- identifier: 56e06732-1e88-3c54-5df6-9d03d3daeb8b
+  name: Lesson 5
+  url: /pages/lesson-5
+  weight: 200
+- identifier: b99e329e-5a82-aaa7-e124-7955370dab77
+  name: Language Instruction
+  url: /pages/lesson-5/language-instruction
+  weight: 210
+  parent: 56e06732-1e88-3c54-5df6-9d03d3daeb8b
+- identifier: 02fc3e36-204a-4a74-5081-29cf8abdff3f
+  name: 'Cooking Instruction '
+  url: /pages/lesson-5/cooking-instruction
+  weight: 220
+  parent: 56e06732-1e88-3c54-5df6-9d03d3daeb8b
+- identifier: 4295e758-bff2-5514-bf94-945586ed328d
+  name: Lesson 6
+  url: /pages/lesson-6
+  weight: 230
+- identifier: fa33c08e-4657-c62c-37eb-e7a3c8d11ac2
+  name: Language Instruction
+  url: /pages/lesson-6/language-instruction
+  weight: 240
+  parent: 4295e758-bff2-5514-bf94-945586ed328d
+- identifier: b5e1a1bf-5cf8-724b-70a8-89d7ef74058a
+  name: Cooking Instruction
+  url: /pages/lesson-6/cooking-instruction
+  weight: 250
+  parent: 4295e758-bff2-5514-bf94-945586ed328d
+- identifier: 5c721348-1ad2-e19c-b11f-3f348f64d7e5
+  name: Lesson 7
+  url: /pages/lesson-7
+  weight: 260
+- identifier: 4fc5f444-b814-d88e-9512-7456337f2612
+  name: Language Instruction
+  url: /pages/lesson-7/language-instruction
+  weight: 270
+  parent: 5c721348-1ad2-e19c-b11f-3f348f64d7e5
+- identifier: d880b0db-d692-09ad-fb52-a417a10a2fe6
+  name: Cooking Instruction
+  url: /pages/lesson-7/cooking-instruction
+  weight: 280
+  parent: 5c721348-1ad2-e19c-b11f-3f348f64d7e5
+- identifier: 31012ed4-66e8-2d99-ed4d-314823b03f20
+  name: Lesson 8
+  url: /pages/lesson-8
+  weight: 290
+- identifier: 2cf16ec7-df81-9ca8-77b1-760bfca9e5b5
+  name: Language Instruction
+  url: /pages/lesson-8/language-instruction
+  weight: 300
+  parent: 31012ed4-66e8-2d99-ed4d-314823b03f20
+- identifier: 0bd5ac8d-c3dd-7724-9fd6-b759faee57f3
+  name: Cooking Instruction
+  url: /pages/lesson-8/cooking-instruction
+  weight: 310
+  parent: 31012ed4-66e8-2d99-ed4d-314823b03f20
+- identifier: af3c6f3d-fbcc-b159-a0f9-93ffeb5ccf38
+  name: Lesson 9
+  url: /pages/lesson-9
+  weight: 320
+- identifier: 425a4a45-11b8-0530-d983-4220c685da31
+  name: Language Instruction
+  url: /pages/lesson-9/language-instruction
+  weight: 330
+  parent: af3c6f3d-fbcc-b159-a0f9-93ffeb5ccf38
+- identifier: 8000e96b-1bdd-c5d2-a937-1bab258452a3
+  name: Cooking Instruction
+  url: /pages/lesson-9/cooking-instruction
+  weight: 340
+  parent: af3c6f3d-fbcc-b159-a0f9-93ffeb5ccf38
+- identifier: 246b7204-f562-c6cf-d930-6a51cbf7a049
+  name: Lesson 10
+  url: /pages/lesson-10
+  weight: 350
+- identifier: e6174dd5-9e16-4317-15de-51979a8e729c
+  name: Language Instruction
+  url: /pages/lesson-10/language-instruction
+  weight: 360
+  parent: 246b7204-f562-c6cf-d930-6a51cbf7a049
+- identifier: bdd45f22-0320-77eb-c3c5-a9b73ede701d
+  name: Cooking Instruction
+  url: /pages/lesson-10/cooking-instruction
+  weight: 370
+  parent: 246b7204-f562-c6cf-d930-6a51cbf7a049
+- identifier: 0b61d31d-8bf7-43a0-6195-1c787115299e
+  name: Lesson 11
+  url: /pages/lesson-11
+  weight: 380
+- identifier: b1809dd7-eeb0-40ee-8bdd-e4bb16b7f832
+  name: Language Instruction
+  url: /pages/lesson-11/language-instruction
+  weight: 390
+  parent: 0b61d31d-8bf7-43a0-6195-1c787115299e
+- identifier: 973cc08c-3ec5-82f3-ac63-c430ca1e25a5
+  name: Cooking Instruction
+  url: /pages/lesson-11/cooking-instruction
+  weight: 400
+  parent: 0b61d31d-8bf7-43a0-6195-1c787115299e
+- identifier: f0ae6f59-4c9a-13c9-9b83-75ccf8b3c6ee
+  name: Lesson 12
+  url: /pages/lesson-12
+  weight: 410
+- identifier: a953a9a9-ecfe-c3a5-3fc8-52877f157d5d
+  name: Language Instruction
+  url: /pages/lesson-12/language-instruction
+  weight: 420
+  parent: f0ae6f59-4c9a-13c9-9b83-75ccf8b3c6ee
+- identifier: 7e2856c9-a1b9-cf31-0e67-6c2f2d9df120
+  name: Cooking Instruction
+  url: /pages/lesson-12/cooking-instruction
+  weight: 430
+  parent: f0ae6f59-4c9a-13c9-9b83-75ccf8b3c6ee
+- identifier: 47f6cbac-8f7a-d956-625b-ba782046ba03
+  name: Lesson 13
+  url: /pages/lesson-13
+  weight: 440
+- identifier: 383b8d1c-30df-d781-cc05-c1c648453997
+  name: Video Lectures
+  url: /video_galleries/video-lectures
+  weight: 450
+- identifier: aa2443c8-8a36-13c0-d31a-fda4e1664e48
+  name: Recipes
+  url: /pages/recipes
+  weight: 460

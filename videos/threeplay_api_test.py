@@ -20,12 +20,11 @@ from videos.threeplay_api import (
 )
 from websites.site_config_api import SiteConfig
 
-
 pytestmark = pytest.mark.django_db
 
 
 def test_threeplay_updated_media_file_request(mocker, settings):
-    """test threeplay_updated_media_file_request"""
+    """Test threeplay_updated_media_file_request"""
 
     settings.THREEPLAY_API_KEY = "key"
     mock_get_call = mocker.patch("videos.threeplay_api.requests.get")
@@ -40,7 +39,7 @@ def test_threeplay_updated_media_file_request(mocker, settings):
 
 
 def test_threeplay_remove_tags(mocker, settings):
-    """test threeplay_remove_tags"""
+    """Test threeplay_remove_tags"""
 
     settings.THREEPLAY_API_KEY = "key"
     mock_patch_call = mocker.patch("videos.threeplay_api.requests.patch")
@@ -55,7 +54,7 @@ def test_threeplay_remove_tags(mocker, settings):
 
 
 def test_threeplay_transcript_api_request(mocker, settings):
-    """test threeplay_transcript_api_request"""
+    """Test threeplay_transcript_api_request"""
 
     settings.THREEPLAY_API_KEY = "key"
     mock_get_call = mocker.patch("videos.threeplay_api.requests.get")
@@ -70,7 +69,7 @@ def test_threeplay_transcript_api_request(mocker, settings):
 
 
 @pytest.mark.parametrize(
-    "status_code,content",
+    ("status_code", "content"),
     [
         (200, b"content"),
         (200, b'{"is_error":true,"error_description":"record not found"}'),
@@ -78,7 +77,7 @@ def test_threeplay_transcript_api_request(mocker, settings):
     ],
 )
 def test_fetch_file(mocker, content, status_code):
-    """test fetch_file"""
+    """Test fetch_file"""
     request_call = mocker.patch("videos.threeplay_api.requests.get")
     request_call.return_value.content = content
     request_call.return_value.status_code = status_code
@@ -97,7 +96,7 @@ def test_fetch_file(mocker, content, status_code):
 def test_update_transcripts_for_video(
     mocker, settings, pdf_transcript_content, webvtt_transcript_content, status
 ):
-    """test update_transcripts_for_video"""
+    """Test update_transcripts_for_video"""
 
     settings.THREEPLAY_PROJECT_ID = 1
 
@@ -162,7 +161,7 @@ def test_update_transcripts_for_video(
 
 
 def test_get_folder_request(mocker, settings):
-    """test get_folder"""
+    """Test get_folder"""
     settings.THREEPLAY_API_KEY = "key"
     mock_get_call = mocker.patch("videos.threeplay_api.requests.get")
 
@@ -177,7 +176,7 @@ def test_get_folder_request(mocker, settings):
 
 
 def test_create_folder_request(mocker, settings):
-    """test create_folder"""
+    """Test create_folder"""
     settings.THREEPLAY_API_KEY = "key"
     mock_post_call = mocker.patch("videos.threeplay_api.requests.post")
 
@@ -195,7 +194,7 @@ def test_create_folder_request(mocker, settings):
     "get_folder_response", [{}, {"data": []}, {"data": [{"id": 1}]}]
 )
 def test_get_or_create_folder(mocker, settings, get_folder_response):
-    """test get_or_create_folder"""
+    """Test get_or_create_folder"""
 
     settings.THREEPLAY_API_KEY = "key"
 
@@ -221,7 +220,7 @@ def test_get_or_create_folder(mocker, settings, get_folder_response):
 
 
 def test_threeplay_upload_video_request(mocker, settings):
-    """test threeplay_upload_video_request"""
+    """Test threeplay_upload_video_request"""
 
     settings.THREEPLAY_API_KEY = "key"
     mocker.patch("videos.threeplay_api.get_or_create_folder", return_value=123)
@@ -246,7 +245,7 @@ def test_threeplay_upload_video_request(mocker, settings):
 
 @pytest.mark.parametrize("threeplay_callback_key", [None, "threeplay_callback_key"])
 def test_threeplay_order_transcript_request(mocker, settings, threeplay_callback_key):
-    """test threeplay_order_transcript_request"""
+    """Test threeplay_order_transcript_request"""
 
     settings.SITE_BASE_URL = "http://url.edu/"
     settings.THREEPLAY_API_KEY = "key"

@@ -11,7 +11,6 @@ def remove_null_content(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0022_website_content_safedelete"),
         ("content_sync", "0003_content_sync_state_nullable_content"),

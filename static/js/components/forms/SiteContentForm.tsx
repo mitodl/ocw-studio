@@ -8,7 +8,7 @@ import {
   FormikProps,
   validateYupSchema,
   yupToFormErrors,
-  FormikErrors
+  FormikErrors,
 } from "formik"
 
 import SiteContentField from "./SiteContentField"
@@ -19,7 +19,7 @@ import {
   contentInitialValues,
   fieldIsVisible,
   newInitialValues,
-  renameNestedFields
+  renameNestedFields,
 } from "../../lib/site_content"
 import { scrollToElement } from "../../util/dom"
 
@@ -28,7 +28,7 @@ import {
   EditableConfigItem,
   WebsiteContent,
   WebsiteContentModalState,
-  WidgetVariant
+  WidgetVariant,
 } from "../../types/websites"
 import { SiteFormValues } from "../../types/forms"
 import { getContentSchema } from "./validation"
@@ -37,7 +37,7 @@ import { useWebsite } from "../../context/Website"
 export interface FormProps {
   onSubmit: (
     values: any,
-    formikHelpers: FormikHelpers<any>
+    formikHelpers: FormikHelpers<any>,
   ) => void | Promise<any>
   configItem: EditableConfigItem
   content: WebsiteContent | null
@@ -52,18 +52,18 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
 
   const initialValues: SiteFormValues = useMemo(
     () =>
-      editorState.adding() ?
-        newInitialValues(configItem.fields, website) :
-        contentInitialValues(
+      editorState.adding()
+        ? newInitialValues(configItem.fields, website)
+        : contentInitialValues(
             content as WebsiteContent,
             configItem.fields,
-            website
-        ),
-    [configItem.fields, editorState, content, website]
+            website,
+          ),
+    [configItem.fields, editorState, content, website],
   )
 
   const validate = async (
-    values: FormikValues
+    values: FormikValues,
   ): Promise<FormikErrors<SiteFormValues>> => {
     const schema = getContentSchema(configItem, values)
 
@@ -82,7 +82,7 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
       initialValues={initialValues}
       enableReinitialize={true}
     >
-      {formikProps => (
+      {(formikProps) => (
         <FormFields validate={validate} {...formikProps} {...props} />
       )}
     </Formik>
@@ -104,14 +104,14 @@ export function FormFields(props: InnerFormProps): JSX.Element {
     content,
     setDirty,
     handleSubmit,
-    validate
+    validate,
   } = props
 
   const contentContext = content?.content_context ?? null
 
   const renamedFields: ConfigField[] = useMemo(
     () => renameNestedFields(configItem.fields),
-    [configItem]
+    [configItem],
   )
 
   useEffect(() => {
@@ -120,7 +120,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
 
   return (
     <Form
-      onSubmit={async event => {
+      onSubmit={async (event) => {
         handleSubmit(event)
         const { target } = event // get target before the await; https://reactjs.org/docs/legacy-event-pooling.html
         const errors = await validate(values)
@@ -131,8 +131,8 @@ export function FormFields(props: InnerFormProps): JSX.Element {
     >
       <div>
         {renamedFields
-          .filter(field => fieldIsVisible(field, values))
-          .map(field =>
+          .filter((field) => fieldIsVisible(field, values))
+          .map((field) =>
             field.widget === WidgetVariant.Object ? (
               <ObjectField
                 field={field}
@@ -144,23 +144,23 @@ export function FormFields(props: InnerFormProps): JSX.Element {
             ) : SETTINGS.gdrive_enabled &&
               content?.type === "resource" &&
               field.widget === WidgetVariant.File ? (
-                <div key={field.name}>
-                  <label htmlFor={field.name}>{field.label}</label>
-                  <Field
-                    as={Label}
-                    name={field.name}
-                    className="form-control"
-                    onChange={handleChange}
-                  />
-                </div>
-              ) : (
-                <SiteContentField
-                  field={field}
-                  key={field.name}
-                  contentContext={contentContext}
+              <div key={field.name}>
+                <label htmlFor={field.name}>{field.label}</label>
+                <Field
+                  as={Label}
+                  name={field.name}
+                  className="form-control"
                   onChange={handleChange}
                 />
-              )
+              </div>
+            ) : (
+              <SiteContentField
+                field={field}
+                key={field.name}
+                contentContext={contentContext}
+                onChange={handleChange}
+              />
+            ),
           )}
       </div>
       <div className="form-group d-flex w-100 justify-content-end">

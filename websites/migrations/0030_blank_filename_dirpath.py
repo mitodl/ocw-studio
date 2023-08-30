@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0029_websitecollection_owner"),
     ]
@@ -16,7 +15,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 blank=True,
                 default="",
-                help_text="The directory path for the file that will be created from this object.",
+                help_text="The directory path for the file that will be created from this object.",  # noqa: E501
                 max_length=300,
             ),
         ),
@@ -26,7 +25,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 blank=True,
                 default="",
-                help_text="The filename of the file that will be created from this object WITHOUT the file extension.",
+                help_text="The filename of the file that will be created from this object WITHOUT the file extension.",  # noqa: E501
                 max_length=125,
             ),
         ),

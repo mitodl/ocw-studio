@@ -8,7 +8,6 @@ from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.utils import fetch_content_file_size, fetch_drive_file_size
 from websites.factories import WebsiteContentFactory
 
-
 pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name, too-many-arguments, unused-argument, protected-access
 

@@ -30,7 +30,7 @@ describe("Router", () => {
         <Router>
           <Route path={"*"} component={TestComponent} />
         </Router>
-      </div>
+      </div>,
     )
     assertNotNil(browserHistory)
     // ReactStrap's modal seems to error if not explicitly unmounted
@@ -49,7 +49,10 @@ describe("Router", () => {
     expect(browserHistory.location.pathname).toBe("/")
 
     await act(() =>
-      user.pointer([{ target: getByText(buttonText) }, { keys: "[MouseLeft]" }])
+      user.pointer([
+        { target: getByText(buttonText) },
+        { keys: "[MouseLeft]" },
+      ]),
     )
 
     expect(browserHistory.location.pathname).toBe("/")
@@ -68,7 +71,10 @@ describe("Router", () => {
     expect(browserHistory.location.pathname).toBe("/")
 
     await act(() =>
-      user.pointer([{ target: getByText(buttonText) }, { keys: "[MouseLeft]" }])
+      user.pointer([
+        { target: getByText(buttonText) },
+        { keys: "[MouseLeft]" },
+      ]),
     )
 
     expect(browserHistory.location.pathname).toBe("/woof")

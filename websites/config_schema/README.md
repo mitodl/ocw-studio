@@ -3,7 +3,7 @@
 This app is responsible for defining the schema that site config files must follow, and validating site configs
 against that schema.
 
-We use [yamale](https://github.com/23andMe/Yamale) to define the schema. 
+We use [yamale](https://github.com/23andMe/Yamale) to define the schema.
 If we intend to change the schema, our schema definition (`site-config-schema.yml`)
 should be updated to reflect that change.
 

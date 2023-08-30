@@ -66,7 +66,7 @@ const hugoItemToInternal = (item: HugoItem): InternalSortableMenuItem => {
     targetUrl: string | null
   } = {
     targetContentId: null,
-    targetUrl:       null
+    targetUrl: null,
   }
   if (isExternalLinkId(item.identifier) && item.url) {
     partialHugoItem.targetUrl = item.url
@@ -74,24 +74,24 @@ const hugoItemToInternal = (item: HugoItem): InternalSortableMenuItem => {
     partialHugoItem.targetContentId = item.identifier
   }
   return {
-    id:       item.identifier,
-    text:     item.name,
+    id: item.identifier,
+    text: item.name,
     children: [],
-    ...partialHugoItem
+    ...partialHugoItem,
   }
 }
 
 const internalItemToHugo = (
   item: InternalSortableMenuItem,
   siblingIdx: number,
-  parent: string | null
+  parent: string | null,
 ): HugoItem => {
   return {
     identifier: item.id,
-    name:       item.text,
-    weight:     (siblingIdx + 1) * 10,
+    name: item.text,
+    weight: (siblingIdx + 1) * 10,
     ...(item.targetUrl ? { url: item.targetUrl } : {}),
-    ...(parent ? { parent: parent } : {})
+    ...(parent ? { parent: parent } : {}),
   }
 }
 
@@ -149,7 +149,7 @@ const internalItemToHugo = (
  */
 const internalItemsToHugo = (internalItems: InternalSortableMenuItem[]) => {
   let results = internalItems.map((internalItem, itemIdx) =>
-    internalItemToHugo(internalItem, itemIdx, null)
+    internalItemToHugo(internalItem, itemIdx, null),
   )
   let itemsToVisit = [...internalItems]
   let parentId: string | null = null
@@ -160,8 +160,8 @@ const internalItemsToHugo = (internalItems: InternalSortableMenuItem[]) => {
         parentId = item.id
         results = results.concat(
           item.children.map((internalItem, itemIdx) =>
-            internalItemToHugo(internalItem, itemIdx, parentId)
-          )
+            internalItemToHugo(internalItem, itemIdx, parentId),
+          ),
         )
         itemsToVisit = itemsToVisit.concat(item.children)
       }
@@ -176,13 +176,13 @@ const internalItemsToHugo = (internalItems: InternalSortableMenuItem[]) => {
  * shown in the internalItemsToHugo documentation.
  */
 const hugoItemsToInternal = (
-  hugoItems: HugoItem[]
+  hugoItems: HugoItem[],
 ): InternalSortableMenuItem[] => {
   if (hugoItems.length === 0) {
     return []
   }
   const parentChildMap: Record<string, HugoItem[]> = {}
-  hugoItems.forEach(hugoItem => {
+  hugoItems.forEach((hugoItem) => {
     const key = hugoItem.parent || topLevelKey
     parentChildMap[key] = parentChildMap[key] || []
     parentChildMap[key].push(hugoItem)
@@ -191,9 +191,9 @@ const hugoItemsToInternal = (
     .sort(compareHugoValues)
     .map(hugoItemToInternal)
   const idToResultPath: Record<string, any[]> = Object.fromEntries(
-    results.map((result, i) => [result.id, [i]])
+    results.map((result, i) => [result.id, [i]]),
   )
-  let tierIds = parentChildMap[topLevelKey].map(item => item.identifier)
+  let tierIds = parentChildMap[topLevelKey].map((item) => item.identifier)
 
   while (tierIds.length > 0) {
     for (let i = 0; i < tierIds.length; i++) {
@@ -206,15 +206,15 @@ const hugoItemsToInternal = (
         results = R.set(
           R.lensPath(childItemPath),
           sortedChildItems.map(hugoItemToInternal),
-          results
+          results,
         )
         sortedChildItems.forEach((childItem, childItemIdx) => {
           idToResultPath[childItem.identifier] = [
             ...childItemPath,
-            childItemIdx
+            childItemIdx,
           ]
         })
-        tierIds = tierIds.concat(childItems.map(item => item.identifier))
+        tierIds = tierIds.concat(childItems.map((item) => item.identifier))
       }
       tierIds = tierIds.slice(1)
     }
@@ -226,7 +226,7 @@ type ItemPath = Array<string | number>
 
 const getItemPath = (
   items: InternalSortableMenuItem[],
-  itemIdToFind: string
+  itemIdToFind: string,
 ): ItemPath => {
   let itemsToSearch: InternalSortableMenuItem[][] = [[...items]]
   const parentPaths: Array<string | number>[] = [[]]
@@ -256,21 +256,21 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
   }>(() => {
     const hugoItems = value || []
     return {
-      hugoItems:     hugoItems,
-      internalItems: hugoItemsToInternal(hugoItems)
+      hugoItems: hugoItems,
+      internalItems: hugoItemsToInternal(hugoItems),
     }
   })
 
   useEffect(() => {
     const hugoItems = value || []
     setMenuData({
-      hugoItems:     hugoItems,
-      internalItems: hugoItemsToInternal(hugoItems)
+      hugoItems: hugoItems,
+      internalItems: hugoItemsToInternal(hugoItems),
     })
   }, [value])
 
   const [modalState, setModalState] = useState<MenuModalState>(
-    createModalState("closed")
+    createModalState("closed"),
   )
 
   const closeContentModal = useCallback(() => {
@@ -282,7 +282,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
       e.preventDefault()
       setModalState(createModalState("adding"))
     },
-    [setModalState]
+    [setModalState],
   )
 
   const [itemToRemove, setItemToRemove] =
@@ -296,7 +296,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     const hugoItems = internalItemsToHugo(menuItems)
     setMenuData({
       internalItems: menuItems,
-      hugoItems:     hugoItems
+      hugoItems: hugoItems,
     })
     // @ts-expect-error the type of onChange is not quite right
     onChange({ target: { value: hugoItems, name } })
@@ -306,8 +306,8 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     setModalState(
       createModalState("editing", {
         path: getItemPath(menuData.internalItems, menuItem.id),
-        item: menuItem
-      })
+        item: menuItem,
+      }),
     )
   }
 
@@ -315,7 +315,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     const itemPath = getItemPath(menuData.internalItems, itemToRemove?.id)
     const updatedItems: InternalSortableMenuItem[] = R.dissocPath(
       itemPath,
-      menuData.internalItems
+      menuData.internalItems,
     )
     updateValues(updatedItems)
   }
@@ -331,7 +331,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
       <span className="flex-grow-0 d-inline-flex">
         <button
           className="material-icons mr-2 item-action-button"
-          onClick={event => {
+          onClick={(event) => {
             event.preventDefault()
             startEditMenuItem(item as InternalSortableMenuItem)
           }}
@@ -340,7 +340,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
         </button>
         <button
           className="material-icons item-action-button"
-          onClick={event => {
+          onClick={(event) => {
             event.preventDefault()
             setItemToRemove(item as InternalSortableMenuItem)
           }}
@@ -353,7 +353,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
 
   const onSubmitMenuItem = ({
     values,
-    hideModal
+    hideModal,
   }: {
     values: MenuItemFormValues
     hideModal: () => void
@@ -361,19 +361,19 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     let updatedItems: InternalSortableMenuItem[]
     const updatedItem = {
       text: values.menuItemTitle,
-      ...(values.menuItemType === LinkType.External ?
-        {
-          id: `${EXTERNAL_LINK_PREFIX}${generateHashCode(
-            values.externalLink
-          )}-${Date.now().toString()}`,
-          targetUrl:       values.externalLink,
-          targetContentId: null
-        } :
-        {
-          id:              values.internalLink,
-          targetUrl:       null,
-          targetContentId: values.internalLink
-        })
+      ...(values.menuItemType === LinkType.External
+        ? {
+            id: `${EXTERNAL_LINK_PREFIX}${generateHashCode(
+              values.externalLink,
+            )}-${Date.now().toString()}`,
+            targetUrl: values.externalLink,
+            targetContentId: null,
+          }
+        : {
+            id: values.internalLink,
+            targetUrl: null,
+            targetContentId: values.internalLink,
+          }),
     }
     if (modalState.editing()) {
       const activeItemLens = R.lensPath(modalState.wrapped.path)
@@ -382,17 +382,17 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
         activeItemLens,
         {
           ...currentItem,
-          ...updatedItem
+          ...updatedItem,
         },
-        menuData.internalItems
+        menuData.internalItems,
       )
     } else {
       updatedItems = [
         ...menuData.internalItems,
         {
           ...updatedItem,
-          children: []
-        }
+          children: [],
+        },
       ]
     }
     updateValues(updatedItems)
@@ -400,7 +400,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
   }
 
   const existingMenuIds = new Set(
-    menuData.hugoItems.map(hugoItem => hugoItem.identifier)
+    menuData.hugoItems.map((hugoItem) => hugoItem.identifier),
   )
 
   return (
@@ -413,12 +413,12 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
         }
         className="right"
       >
-        {modalProps => (
+        {(modalProps) => (
           <div className="m-3">
             <MenuItemForm
               activeItem={modalState.editing() ? modalState.wrapped.item : null}
               existingMenuIds={existingMenuIds}
-              onSubmit={values => {
+              onSubmit={(values) => {
                 onSubmitMenuItem({ values, hideModal: modalProps.hideModal })
               }}
               contentContext={contentContext}

@@ -7,7 +7,7 @@ import {
   IntegrationTestHelper,
   assertInstanceOf,
   withFakeLocation,
-  wait
+  wait,
 } from "../testing_utils"
 import { makeWebsites, makeWebsiteListing } from "../util/factories/websites"
 import { siteApiDetailUrl, siteApiListingUrl } from "../lib/urls"
@@ -18,7 +18,7 @@ import App from "../pages/App"
  * Response body for auth rejection from Django
  */
 const authRejectionBody = {
-  detail: "Authentication credentials were not provided."
+  detail: "Authentication credentials were not provided.",
 }
 
 describe("Prompting for authentication", () => {
@@ -50,7 +50,7 @@ describe("Prompting for authentication", () => {
 
   it.each([
     { body: authRejectionBody, status: 403 },
-    { body: { detail: "irrelevant" }, status: 401 }
+    { body: { detail: "irrelevant" }, status: 401 },
   ])(
     "prompts for authentication when APIs reject with auth errors",
     async () => {
@@ -75,7 +75,7 @@ describe("Prompting for authentication", () => {
 
       // Test is inside a callback. Let's make sure it actually ran.
       expect.assertions(3)
-    }
+    },
   )
 
   it("does not prompt for auth when APIs reject for other reasons", async () => {

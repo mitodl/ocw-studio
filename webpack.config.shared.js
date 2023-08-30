@@ -1,5 +1,7 @@
 const path = require("path")
+// eslint-disable-next-line no-unused-vars
 const webpack = require("webpack")
+// eslint-disable-next-line no-unused-vars
 const CKEditorWebpackPlugin = require("@ckeditor/ckeditor5-dev-webpack-plugin")
 const { styles } = require("@ckeditor/ckeditor5-dev-utils")
 
@@ -7,31 +9,31 @@ module.exports = {
   config: {
     entry: {
       root: "./static/js/index.tsx",
-      style: "./static/js/entry/style"
+      style: "./static/js/entry/style",
     },
     module: {
       rules: [
         {
           // this regex is necessary to explicitly exclude ckeditor stuff
           test: /static\/.+\.(svg|ttf|woff|woff2|eot|gif)$/,
-          use: "url-loader"
+          use: "url-loader",
         },
         {
           test: /node_modules\/react-nestable\/.+\.svg$/,
-          use: "svg-inline-loader?classPrefix"
+          use: "svg-inline-loader?classPrefix",
         },
         {
           test: /node_modules\/react-nestable\/dist\/styles\/.+\.css/,
-          loader: "style-loader"
+          loader: "style-loader",
         },
         {
           test: /\.tsx?$/,
           use: "swc-loader",
-          exclude: /node_modules/
+          exclude: /node_modules/,
         },
         {
           test: /ckeditor5-[^/\\]+[/\\]theme[/\\]icons[/\\][^/\\]+\.svg$/,
-          use: ["raw-loader"]
+          use: ["raw-loader"],
         },
         {
           test: /ckeditor5-[^/\\]+[/\\]theme[/\\].+\.css$/,
@@ -41,34 +43,34 @@ module.exports = {
               options: {
                 injectType: "singletonStyleTag",
                 attributes: {
-                  "data-cke": true
-                }
-              }
+                  "data-cke": true,
+                },
+              },
             },
-            'css-loader',
+            "css-loader",
             {
               loader: "postcss-loader",
               options: {
                 postcssOptions: styles.getPostCssConfig({
                   themeImporter: {
                     themePath: require.resolve(
-                      "@ckeditor/ckeditor5-theme-lark"
-                    )
+                      "@ckeditor/ckeditor5-theme-lark",
+                    ),
                   },
-                  minify: true
-                })
-              }
-            }
-          ]
-        }
-      ]
+                  minify: true,
+                }),
+              },
+            },
+          ],
+        },
+      ],
     },
     resolve: {
       modules: [path.join(__dirname, "static/js"), "node_modules"],
-      extensions: [".js", ".jsx", ".ts", ".tsx"]
+      extensions: [".js", ".jsx", ".ts", ".tsx"],
     },
     performance: {
-      hints: false
-    }
-  }
+      hints: false,
+    },
+  },
 }

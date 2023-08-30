@@ -1,4 +1,4 @@
-"""Reset ContentSyncState synced checksums to None"""
+"""Reset ContentSyncState synced checksums to None"""  # noqa: INP001
 from django.conf import settings
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
@@ -11,7 +11,7 @@ from main.management.commands.filter import WebsiteFilterCommand
 class Command(WebsiteFilterCommand):
     """Reset ContentSyncState synced checksums to None"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -34,14 +34,14 @@ class Command(WebsiteFilterCommand):
             "--starter",
             dest="starter",
             default="",
-            help="If specified, only process content for sites that are based on this starter slug",
+            help="If specified, only process content for sites that are based on this starter slug",  # noqa: E501
         )
         parser.add_argument(
             "-source",
             "--source",
             dest="source",
             default="",
-            help="If specified, only process content for sites that are based on this source",
+            help="If specified, only process content for sites that are based on this source",  # noqa: E501
         )
         parser.add_argument(
             "-ss",
@@ -81,9 +81,7 @@ class Command(WebsiteFilterCommand):
 
         total_seconds = (now_in_utc() - start).total_seconds()
         self.stdout.write(
-            "Clearing of content sync state complete, took {} seconds".format(
-                total_seconds
-            )
+            f"Clearing of content sync state complete, took {total_seconds} seconds"
         )
 
         if settings.CONTENT_SYNC_BACKEND and not skip_sync:
@@ -93,6 +91,4 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(f"Starting task {task}...")
             task.get()
             total_seconds = (now_in_utc() - start).total_seconds()
-            self.stdout.write(
-                "Backend sync finished, took {} seconds".format(total_seconds)
-            )
+            self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")

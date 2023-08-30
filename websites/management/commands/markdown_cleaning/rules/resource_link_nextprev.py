@@ -10,7 +10,6 @@ from websites.management.commands.markdown_cleaning.utils import remove_prefix
 
 
 class ResourceLinkNextPrevRule(PyparsingRule):
-
     alias = "resource_link_nextprev"
 
     Parser = ShortcodeParser
@@ -22,11 +21,13 @@ class ResourceLinkNextPrevRule(PyparsingRule):
         """
         The `text` is only worth considering if it contains a resource link
         AND the resource link contains a > or <. Otherwise, skip it.
-        """
+        """  # noqa: D401
         matches = cls.should_arse_regex.findall(text)
         return any("<" in m for m in matches) or any(">" in m for m in matches)
 
-    def replace_match(self, s: str, l: int, toks: ShortcodeParseResult, wc):
+    def replace_match(
+        self, s: str, l: int, toks: ShortcodeParseResult, wc  # noqa: ARG002, E741
+    ):  # noqa: E741, RUF100
         shortcode = toks.shortcode
         original_text = toks.original_text
 

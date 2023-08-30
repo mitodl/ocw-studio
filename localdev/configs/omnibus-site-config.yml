@@ -1,132 +1,96 @@
+---
 root-url-path: "omnibus"
 content-dir: content
 collections:
-  - name: page
-    label: Pages
-    label_singular: Page
-    category: Content
-    folder: content
+- name: page
+  label: Pages
+  label_singular: Page
+  category: Content
+  folder: content
+  fields:
+  - {"label": "Title", "name": "title", "widget": "string", "required": true}
+  - {"label": "Body", "name": "body", "widget": "markdown"}
+  - {"label": "Tags", "default": ["Design"], "max": 2, "min": 1, "multiple": true,
+    "name": "tags", "options": ["Design", "UX", "Dev"], "widget": "select"}
+  - {"label": "PDFs", "name": "pdfs", "widget": "relation", "collection": "resource",
+    "display_field": "title", "multiple": true, "max": 10, "min": 1, "filter": {field: "filetype",
+      filter_type: "equals", value: "PDF"}}
+  - name: address
+    label: Address
+    widget: object
+    required: false
     fields:
-      - {"label": "Title", "name": "title", "widget": "string", "required": true}
-      - {"label": "Body", "name": "body", "widget": "markdown"}
-      - {
-        "label": "Tags",
-        "default": [ "Design" ],
-        "max": 2,
-        "min": 1,
-        "multiple": true,
-        "name": "tags",
-        "options": [ "Design", "UX", "Dev" ],
-        "widget": "select"
-        }
-      - {
-        "label": "PDFs",
-        "name": "pdfs",
-        "widget": "relation",
-        "collection": "resource",
-        "display_field": "title",
-        "multiple": true,
-        "max": 10,
-        "min": 1,
-        "filter": { field: "filetype", filter_type: "equals", value: "PDF"}
-        }
-      - name: address
-        label: Address
-        widget: object
-        required: false
-        fields:
-          - { label: "Street Address", name: "street_address", widget: "string", required: false }
-          - { label: "City", name: "city", widget: "string", required: false }
-          - { label: "State", name: "state", widget: "string", required: false }
-          - { label: "Zip Code", name: "zip", widget: "string", required: false }
+    - {label: "Street Address", name: "street_address", widget: "string", required: false}
+    - {label: "City", name: "city", widget: "string", required: false}
+    - {label: "State", name: "state", widget: "string", required: false}
+    - {label: "Zip Code", name: "zip", widget: "string", required: false}
 
-  - category: Content
-    folder: content/video_galleries
-    label: "Video Gallery"
-    name: video_gallery
+- category: Content
+  folder: content/video_galleries
+  label: "Video Gallery"
+  name: video_gallery
+  fields:
+  - label: Videos
+    name: videos
+    widget: relation
+    multiple: true
+    collection: resource
+    display_field: title
+    sortable: true
+    filter:
+      field: "resourcetype"
+      filter_type: "equals"
+      value: "Video"
+
+- name: resource
+  label: Resources
+  label_singular: Resource
+  category: Content
+  folder: content
+  fields:
+  - {"label": "Title", "name": "title", "widget": "string", "required": true}
+  - {"label": "Description", "name": "description", "widget": "text"}
+  - {"label": "File", "name": "file", "widget": "file"}
+  - {"label": "File Type", "required": true, "name": "filetype", "options": ["PDF",
+      "Word Doc", "PPT"], "widget": "select"}
+  - label: Resource Type
+    name: resourcetype
+    required: true
+    widget: select
+    options:
+    - Image
+    - Video
+    - Document
+    - Other
+
+- name: metadata
+  label: Metadata
+  category: Settings
+  files:
+  - file: data/metadata.json
+    name: sitemetadata
+    label: Site Metadata
     fields:
-      - label: Videos
-        name: videos
-        widget: relation
-        multiple: true
-        collection: resource
-        display_field: title
-        sortable: true
-        filter:
-          field: "resourcetype"
-          filter_type: "equals"
-          value: "Video"
-
-  - name: resource
-    label: Resources
-    label_singular: Resource
-    category: Content
-    folder: content
+    - {"label": "Item Description", "name": "description", "widget": "markdown", "minimal": true,
+      "help": "A description of the item."}
+    - {"label": "Tags", "default": ["Design"], "max": 3, "min": 1, "multiple": true,
+      "name": "tags", "options": ["Design", "UX", "Dev"], "widget": "select"}
+    - {label: "Align Content", name: "align", widget: "select", options: ["left",
+        "center", "right"]}
+    - {"label": "Comes with fries", "name": "fries", "widget": "boolean", "help": "Whether\
+        \ the course includes fries or not."}
+  - file: data/metadata.json
+    name: othermetadata
+    label: Other Metadata
     fields:
-      - {"label": "Title", "name": "title", "widget": "string", "required": true}
-      - {"label": "Description", "name": "description", "widget": "text"}
-      - {"label": "File", "name": "file", "widget": "file"}
-      - {
-        "label": "File Type",
-        "required": true,
-        "name": "filetype",
-        "options": [ "PDF", "Word Doc", "PPT" ],
-        "widget": "select"
-        }
-      - label: Resource Type
-        name: resourcetype
-        required: true
-        widget: select
-        options:
-          - Image
-          - Video
-          - Document
-          - Other
-
-  - name: metadata
-    label: Metadata
-    category: Settings
-    files:
-      - file: data/metadata.json
-        name: sitemetadata
-        label: Site Metadata
-        fields:
-          - {
-            "label": "Item Description",
-            "name": "description",
-            "widget": "markdown",
-            "minimal": true,
-            "help": "A description of the item."
-          }
-          - { "label": "Tags", "default": [ "Design" ], "max": 3, "min": 1, "multiple": true, "name": "tags", "options": [ "Design", "UX", "Dev" ], "widget": "select" }
-          - { label: "Align Content", name: "align", widget: "select", options: [ "left", "center", "right" ] }
-          - {
-            "label": "Comes with fries",
-            "name": "fries",
-            "widget": "boolean",
-            "help": "Whether the course includes fries or not."
-          }
-      - file: data/metadata.json
-        name: othermetadata
-        label: Other Metadata
-        fields:
-          - {
-            "label": "Item Description",
-            "name": "description",
-            "widget": "markdown",
-            "minimal": true,
-            "help": "A description of the item."
-          }
-  - name: menu
-    label: Menu
-    category: Settings
-    files:
-      - file: config/_default/menus.yaml
-        name: navmenu
-        label: Navigation Menu
-        fields:
-          - {
-            "label": "Menu",
-            "name": "mainmenu",
-            "widget": "menu",
-          }
+    - {"label": "Item Description", "name": "description", "widget": "markdown", "minimal": true,
+      "help": "A description of the item."}
+- name: menu
+  label: Menu
+  category: Settings
+  files:
+  - file: config/_default/menus.yaml
+    name: navmenu
+    label: Navigation Menu
+    fields:
+    - {"label": "Menu", "name": "mainmenu", "widget": "menu"}

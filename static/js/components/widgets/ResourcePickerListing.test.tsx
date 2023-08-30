@@ -3,14 +3,14 @@ import { siteApiContentListingUrl } from "../../lib/urls"
 import {
   Website,
   WebsiteContentListItem,
-  WebsiteContent
+  WebsiteContent,
 } from "../../types/websites"
 import {
   makeWebsiteContentDetail,
-  makeWebsiteDetail
+  makeWebsiteDetail,
 } from "../../util/factories/websites"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../../util/integration_test_helper_old"
 import * as websiteContext from "../../context/Website"
 import ResourcePickerListing from "./ResourcePickerListing"
@@ -22,9 +22,9 @@ const useWebsite = jest.mocked(websiteContext.useWebsite)
 
 const apiResponse = (results: WebsiteContentListItem[]) => ({
   results,
-  count:    2,
-  next:     null,
-  previous: null
+  count: 2,
+  next: null,
+  previous: null,
 })
 
 describe("ResourcePickerListing", () => {
@@ -48,10 +48,10 @@ describe("ResourcePickerListing", () => {
 
     render = helper.configureRenderer(ResourcePickerListing, {
       focusResource: focusResourceStub,
-      setOpen:       setOpenStub,
-      contentType:   "resource",
-      filter:        null,
-      resourcetype:  ResourceType.Video
+      setOpen: setOpenStub,
+      contentType: "resource",
+      filter: null,
+      resourcetype: ResourceType.Video,
     })
 
     website = makeWebsiteDetail()
@@ -59,69 +59,69 @@ describe("ResourcePickerListing", () => {
     useWebsite.mockReturnValue(website)
 
     contentListingItems = {
-      videos:      [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
-      documents:   [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
-      pages:       [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
-      courseLists: [makeWebsiteContentDetail(), makeWebsiteContentDetail()]
+      videos: [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
+      documents: [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
+      pages: [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
+      courseLists: [makeWebsiteContentDetail(), makeWebsiteContentDetail()],
     }
 
     helper.mockGetRequest(
       siteApiContentListingUrl
         .param({
-          name: website.name
+          name: website.name,
         })
         .query({
-          offset:        0,
-          type:          "resource",
+          offset: 0,
+          type: "resource",
           detailed_list: true,
-          resourcetype:  ResourceType.Video
+          resourcetype: ResourceType.Video,
         })
         .toString(),
-      apiResponse(contentListingItems.videos)
+      apiResponse(contentListingItems.videos),
     )
 
     helper.mockGetRequest(
       siteApiContentListingUrl
         .param({
-          name: website.name
+          name: website.name,
         })
         .query({
-          offset:        0,
-          type:          "resource",
-          search:        "newfilter",
+          offset: 0,
+          type: "resource",
+          search: "newfilter",
           detailed_list: true,
-          resourcetype:  ResourceType.Document
+          resourcetype: ResourceType.Document,
         })
         .toString(),
-      apiResponse(contentListingItems.documents)
+      apiResponse(contentListingItems.documents),
     )
 
     helper.mockGetRequest(
       siteApiContentListingUrl
         .param({
-          name: website.name
+          name: website.name,
         })
         .query({
-          offset:        0,
-          type:          "page",
-          detailed_list: true
+          offset: 0,
+          type: "page",
+          detailed_list: true,
         })
         .toString(),
-      apiResponse(contentListingItems.pages)
+      apiResponse(contentListingItems.pages),
     )
 
     helper.mockGetRequest(
       siteApiContentListingUrl
         .param({
-          name: "ocw-www"
+          name: "ocw-www",
         })
         .query({
-          offset:        0,
-          type:          "course-collection",
-          detailed_list: true
+          offset: 0,
+          type: "course-collection",
+          detailed_list: true,
         })
         .toString(),
-      apiResponse(contentListingItems.courseLists)
+      apiResponse(contentListingItems.courseLists),
     )
   })
 
@@ -134,8 +134,8 @@ describe("ResourcePickerListing", () => {
     expect(
       wrapper
         .find(".resource-picker-listing .resource-item")
-        .map(el => el.find("h4").text())
-    ).toEqual(contentListingItems.videos.map(item => item.title))
+        .map((el) => el.find("h4").text()),
+    ).toEqual(contentListingItems.videos.map((item) => item.title))
   })
 
   it("should call focusResource prop with resources", async () => {
@@ -146,18 +146,18 @@ describe("ResourcePickerListing", () => {
       .at(0)
       .simulate("click")
     expect(
-      focusResourceStub.calledWith(contentListingItems.videos[0])
+      focusResourceStub.calledWith(contentListingItems.videos[0]),
     ).toBeTruthy()
     wrapper.update()
   })
 
   it("should put a class on if a resource is focused", async () => {
     const { wrapper } = await render({
-      focusedResource: contentListingItems.videos[0]
+      focusedResource: contentListingItems.videos[0],
     })
 
     expect(wrapper.find(".resource-item").at(0).prop("className")).toBe(
-      "resource-item focused"
+      "resource-item focused",
     )
   })
 
@@ -167,7 +167,7 @@ describe("ResourcePickerListing", () => {
     contentListingItems.videos[0].file = "/path/to/image.jpg"
     const { wrapper } = await render()
     expect(wrapper.find(".resource-item").at(0).find("img").prop("src")).toBe(
-      "/path/to/image.jpg"
+      "/path/to/image.jpg",
     )
   })
 
@@ -175,95 +175,95 @@ describe("ResourcePickerListing", () => {
     assertNotNil(contentListingItems.videos[0].metadata)
     contentListingItems.videos[0].metadata.resourcetype = ResourceType.Video
     contentListingItems.videos[0].metadata.video_files = {
-      video_thumbnail_file: "/path/to/image.jpg"
+      video_thumbnail_file: "/path/to/image.jpg",
     }
     const { wrapper } = await render()
     expect(wrapper.find(".resource-item").at(0).find("img").prop("src")).toBe(
-      "/path/to/image.jpg"
+      "/path/to/image.jpg",
     )
   })
 
   it("should fetch and display pages", async () => {
     const { wrapper } = await render({
-      contentType:  "page",
-      resourcetype: null
+      contentType: "page",
+      resourcetype: null,
     })
     expect(
       wrapper
         .find(".resource-picker-listing .resource-item")
-        .map(el => el.find("h4").text())
-    ).toEqual(contentListingItems.pages.map(item => item.title))
+        .map((el) => el.find("h4").text()),
+    ).toEqual(contentListingItems.pages.map((item) => item.title))
 
     sinon.assert.calledWith(
       helper.handleRequestStub,
       siteApiContentListingUrl
         .param({ name: website.name })
         .query({
-          offset:        0,
-          type:          "page",
-          detailed_list: true
+          offset: 0,
+          type: "page",
+          detailed_list: true,
         })
-        .toString()
+        .toString(),
     )
   })
 
   it("should fetch and display content collections", async () => {
     const { wrapper } = await render({
-      contentType:       "course-collection",
-      resourcetype:      null,
-      sourceWebsiteName: "ocw-www"
+      contentType: "course-collection",
+      resourcetype: null,
+      sourceWebsiteName: "ocw-www",
     })
     expect(
       wrapper
         .find(".resource-picker-listing .resource-item")
-        .map(el => el.find("h4").text())
-    ).toEqual(contentListingItems.courseLists.map(item => item.title))
+        .map((el) => el.find("h4").text()),
+    ).toEqual(contentListingItems.courseLists.map((item) => item.title))
 
     sinon.assert.calledWith(
       helper.handleRequestStub,
       siteApiContentListingUrl
         .param({ name: "ocw-www" })
         .query({
-          offset:        0,
-          type:          "course-collection",
-          detailed_list: true
+          offset: 0,
+          type: "course-collection",
+          detailed_list: true,
         })
-        .toString()
+        .toString(),
     )
   })
 
   it.each([false, true])(
     "displays pages in a single column iff singleColumn: true (case: %s)",
-    async singleColumn => {
+    async (singleColumn) => {
       const { wrapper } = await render({ singleColumn })
       expect(
-        wrapper.find(".resource-picker-listing").hasClass("column-view")
+        wrapper.find(".resource-picker-listing").hasClass("column-view"),
       ).toBe(singleColumn)
-    }
+    },
   )
 
   it.each([false, true])(
     "Includes 'Updated ...' iff singleColumn: true (case: %s)",
-    async singleColumn => {
+    async (singleColumn) => {
       const { wrapper } = await render({ singleColumn })
       expect(
         wrapper
           .find(".resource-picker-listing .resource-item")
-          .map(el => el.find("h4").text().includes("Updated"))
+          .map((el) => el.find("h4").text().includes("Updated")),
       ).toStrictEqual([singleColumn, singleColumn])
-    }
+    },
   )
 
   it("should allow the user to filter, sort resourcetype", async () => {
     const { wrapper } = await render({
-      filter:       "newfilter",
-      resourcetype: ResourceType.Document
+      filter: "newfilter",
+      resourcetype: ResourceType.Document,
     })
 
     expect(
       wrapper
         .find(".resource-picker-listing .resource-item")
-        .map(el => el.find("h4").text())
-    ).toEqual(contentListingItems.documents.map(item => item.title))
+        .map((el) => el.find("h4").text()),
+    ).toEqual(contentListingItems.documents.map((item) => item.title))
   })
 })

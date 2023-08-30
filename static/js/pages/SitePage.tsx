@@ -9,7 +9,7 @@ import Spinner from "../components/util/Spinner"
 import {
   siteCollaboratorsUrl,
   siteContentListingUrl,
-  siteDetailUrl
+  siteDetailUrl,
 } from "../lib/urls"
 
 import { useWebsite } from "../context/Website"

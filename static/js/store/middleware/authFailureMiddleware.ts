@@ -31,7 +31,7 @@ const isAuthenticationError = (response: RequestFailureAction): boolean => {
  * Middleware that increments the `user.authenicationErrors` when redux-query
  * returns authentication errors.
  */
-const authFailureMiddleware: AppMiddleware = store => next => action => {
+const authFailureMiddleware: AppMiddleware = (store) => (next) => (action) => {
   if (failures.includes(action.type) && isAuthenticationError(action)) {
     store.dispatch(incrementAuthenticationErrors())
   }

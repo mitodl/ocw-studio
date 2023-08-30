@@ -13,7 +13,7 @@ describe("turndown service", () => {
   it("should do the right thing with nested lists", () => {
     turndownTest(
       "<ul><li>first item<ul><li>nested item</li></ul></li></ul>",
-      "- first item\n    - nested item"
+      "- first item\n    - nested item",
     )
   })
 
@@ -21,8 +21,8 @@ describe("turndown service", () => {
     // see the comment above the 'blankRule' code in ./turndown.ts
     // for an explanation of what this is testing
     turndownService.addRule("figureTest", {
-      filter:      "figure",
-      replacement: (): string => "This rule is being used"
+      filter: "figure",
+      replacement: (): string => "This rule is being used",
     })
     turndownTest("<figure></figure>", "This rule is being used")
   })
@@ -30,7 +30,7 @@ describe("turndown service", () => {
   it("supports a two-item list", () => {
     turndownTest(
       "<ul><li>first item</li><li>second item</li></ul>",
-      "- first item\n- second item"
+      "- first item\n- second item",
     )
   })
 
@@ -42,13 +42,13 @@ describe("turndown service", () => {
 
   it("should override any rules that match table elements", () => {
     expect(
-      turndownService.rules.array.filter(rule =>
-        TABLE_ELS.some(el => {
+      turndownService.rules.array.filter((rule) =>
+        TABLE_ELS.some((el) => {
           const element = document.createElement(el)
           document.body.appendChild(element)
           return ruleMatches(rule, element)
-        })
-      )
+        }),
+      ),
     ).toStrictEqual([])
   })
 })

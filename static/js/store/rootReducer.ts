@@ -5,8 +5,8 @@ import user from "./user"
 
 const rootReducer = combineReducers({
   entities: entitiesReducer,
-  queries:  queriesReducer,
-  user:     user.reducer
+  queries: queriesReducer,
+  user: user.reducer,
 })
 export default rootReducer
 

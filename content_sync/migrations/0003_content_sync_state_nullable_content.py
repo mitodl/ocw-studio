@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0017_rename_filepath"),
         ("content_sync", "0002_backpopulate_content_sync_state"),

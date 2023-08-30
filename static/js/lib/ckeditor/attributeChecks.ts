@@ -10,12 +10,12 @@ import { SchemaContext } from "@ckeditor/ckeditor5-engine/src/model/schema"
  */
 type AttributeCheckFunction = (
   context: SchemaContext,
-  attributeName: string
+  attributeName: string,
 ) => boolean | undefined
 
 const someItemHasAttribute = (
   context: SchemaContext,
-  attributeName: string
+  attributeName: string,
 ): boolean => {
   for (const item of context) {
     for (const attribute of item.getAttributeKeys()) {
@@ -29,7 +29,7 @@ const someItemHasAttribute = (
 
 const makeCheckNothBoth = (
   attrName1: string,
-  attrName2: string
+  attrName2: string,
 ): AttributeCheckFunction => {
   return (context, attributeName) => {
     if (!context.endsWith("$text")) return undefined

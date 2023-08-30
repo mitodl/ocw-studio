@@ -106,8 +106,8 @@ _Spezzatino_ means "little broken thing" = stew. _In bianco_ refers to the fact 
 8.  When it is ready (be sure that both meat and potatoes are cooked and so soft that you can cut them with a fork) add salt if needed.
 9.  You can make the sauce more creamy by mixing a spoon of sifted flour.
 
-Buon appetito!  
-  
+Buon appetito!
+
  
 
 « [Previous]({{< baseurl >}}/pages/lesson-6/language-instruction) | [Next]({{< baseurl >}}/pages/lesson-7) »

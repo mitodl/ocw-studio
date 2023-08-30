@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0020_websitecontent_updated_by"),
     ]
@@ -15,7 +14,7 @@ class Migration(migrations.Migration):
             name="is_page_content",
             field=models.BooleanField(
                 default=False,
-                help_text="If True, indicates that this content represents a navigable page, as opposed to some metadata, configuration, etc.",
+                help_text="If True, indicates that this content represents a navigable page, as opposed to some metadata, configuration, etc.",  # noqa: E501
             ),
         ),
     ]

@@ -5,7 +5,6 @@ from django.utils.text import slugify
 
 import websites.models
 
-
 COURSE_STARTER_SLUG = "course"
 COURSE_STARTER_REPO_URL = "https://github.com/mitodl/ocw-course-hugo-starter"
 COURSE_STARTER_REPO_NAME = "OCW Course Hugo Starter"
@@ -17,7 +16,7 @@ collections:
     fields:
       - {label: "Title", name: "title", widget: "string"}
       - {label: "Content", name: "content", widget: "markdown"}
-      
+
   - label: "Resource"
     name: "resource"
     fields:
@@ -30,13 +29,13 @@ def add_first_starter_repo(apps, schema_editor):
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
     starter, created = WebsiteStarter.objects.get_or_create(
         path=COURSE_STARTER_REPO_URL,
-        defaults=dict(
-            slug=COURSE_STARTER_SLUG,
-            name=COURSE_STARTER_REPO_NAME,
-            source=STARTER_SOURCE_GITHUB,
-            commit=None,
-            config=STARTER_CONFIG,
-        ),
+        defaults={
+            "slug": COURSE_STARTER_SLUG,
+            "name": COURSE_STARTER_REPO_NAME,
+            "source": STARTER_SOURCE_GITHUB,
+            "commit": None,
+            "config": STARTER_CONFIG,
+        },
     )
     if created is False and starter.slug is None:
         starter.slug = COURSE_STARTER_SLUG
@@ -52,7 +51,6 @@ def fill_in_slug_values(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0003_add_website_starter_model"),
     ]

@@ -18,9 +18,9 @@ export default function BooleanField(props: Props): JSX.Element {
   const handleChange = (event: any): void => {
     onChange({
       target: {
-        name:  event.target.name,
-        value: event.target.value === "true"
-      }
+        name: event.target.name,
+        value: event.target.value === "true",
+      },
     })
   }
 

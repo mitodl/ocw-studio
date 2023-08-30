@@ -21,15 +21,14 @@ def string_uuid():
 
 
 def get_markdown_cleaner(websites, website_contents):
-    """Convenience to get rule-specific cleaner"""
-    with patch_website_contents_all(website_contents):
-        with patch_website_all(websites):
-            rule = RootRelativeUrlRule()
-            return WebsiteContentMarkdownCleaner(rule)
+    """Convenience to get rule-specific cleaner"""  # noqa: D401
+    with patch_website_contents_all(website_contents), patch_website_all(websites):
+        rule = RootRelativeUrlRule()
+        return WebsiteContentMarkdownCleaner(rule)
 
 
 @pytest.mark.parametrize(
-    ["site_name", "markdown", "expected_markdown"],
+    ("site_name", "markdown", "expected_markdown"),
     [
         (
             "site_one",
@@ -93,7 +92,7 @@ def test_rootrel_rule_only_uses_resource_links_for_same_site(
 
 
 @pytest.mark.parametrize(
-    ["site_name", "markdown", "expected_markdown"],
+    ("site_name", "markdown", "expected_markdown"),
     [
         (
             "site_one",
@@ -148,7 +147,7 @@ def test_rootrel_rule_handles_site_homeages_correctly(
 
 
 @pytest.mark.parametrize(
-    ["site_name", "markdown", "expected_markdown"],
+    ("site_name", "markdown", "expected_markdown"),
     [
         (
             "site_one",

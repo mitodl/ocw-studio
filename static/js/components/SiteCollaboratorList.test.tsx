@@ -6,15 +6,15 @@ import sinon, { SinonStub } from "sinon"
 import SiteCollaboratorList from "./SiteCollaboratorList"
 import {
   siteApiCollaboratorsUrl,
-  siteApiCollaboratorsDetailUrl
+  siteApiCollaboratorsDetailUrl,
 } from "../lib/urls"
 import {
   makePermanentWebsiteCollaborator,
   makeWebsiteDetail,
-  makeWebsiteCollaborators
+  makeWebsiteCollaborators,
 } from "../util/factories/websites"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 import WebsiteContext from "../context/Website"
 
@@ -35,7 +35,7 @@ describe("SiteCollaboratorList", () => {
     collaborators = makeWebsiteCollaborators()
     permanentAdmins = [makePermanentWebsiteCollaborator()]
     render = helper.configureRenderer(
-      props => (
+      (props) => (
         <WebsiteContext.Provider value={website}>
           <SiteCollaboratorList {...props} />
         </WebsiteContext.Provider>
@@ -44,15 +44,15 @@ describe("SiteCollaboratorList", () => {
       {
         entities: {
           collaborators: {
-            [website.name]: concat(collaborators, permanentAdmins)
-          }
+            [website.name]: concat(collaborators, permanentAdmins),
+          },
         },
-        queries: {}
-      }
+        queries: {},
+      },
     )
     helper.mockGetRequest(
       siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-      { results: concat(collaborators, permanentAdmins) }
+      { results: concat(collaborators, permanentAdmins) },
     )
   })
 
@@ -63,7 +63,7 @@ describe("SiteCollaboratorList", () => {
   it("sets the document title", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("DocumentTitle").prop("title")).toBe(
-      `OCW Studio | ${website.title} | Collaborators`
+      `OCW Studio | ${website.title} | Collaborators`,
     )
   })
 
@@ -79,7 +79,7 @@ describe("SiteCollaboratorList", () => {
     // Should be 6 StudioListItems but only 5 menu buttons (none for the permanent admin)
     expect(items.length).toBe(6)
     expect(wrapper.find(".transparent-button").length).toBe(
-      collaborators.length
+      collaborators.length,
     )
   })
 
@@ -108,11 +108,11 @@ describe("SiteCollaboratorList", () => {
     deleteCollaboratorStub = helper.mockDeleteRequest(
       siteApiCollaboratorsDetailUrl
         .param({
-          name:   website.name,
-          userId: collaborator.user_id
+          name: website.name,
+          userId: collaborator.user_id,
         })
         .toString(),
-      {}
+      {},
     )
     const { wrapper } = await render()
     wrapper.find(".transparent-button").at(0).simulate("click")

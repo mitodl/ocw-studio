@@ -1,4 +1,4 @@
-""" Views for websites """
+"""Views for websites"""
 import json
 import logging
 import os
@@ -76,7 +76,6 @@ from websites.serializers import (
 from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename, permissions_group_name_for_role
 
-
 log = logging.getLogger(__name__)
 
 
@@ -116,14 +115,14 @@ class WebsiteViewSet(
             websitecontent__metadata__isnull=False,
         )
         if self.request.user.is_anonymous:
-            # Anonymous users should get a list of all published websites (used for ocw-www carousel)
+            # Anonymous users should get a list of all published websites (used for ocw-www carousel)  # noqa: E501
             ordering = "-first_published_to_production"
             queryset = Website.objects.filter(published_filter).distinct()
         elif is_global_admin(user):
             # Global admins should get a list of all websites, published or not.
             queryset = Website.objects.all()
         else:
-            # Other authenticated users should get a list of websites they are editors/admins/owners for.
+            # Other authenticated users should get a list of websites they are editors/admins/owners for.  # noqa: E501
             queryset = get_objects_for_user(user, constants.PERMISSION_VIEW)
 
         if search is not None and search != "":
@@ -176,7 +175,7 @@ class WebsiteViewSet(
         serializer_class = self.get_serializer_class()
         kwargs["context"] = self.get_serializer_context()
 
-        # If a new website is being created, and the request includes a title but not a name, auto-generate the
+        # If a new website is being created, and the request includes a title but not a name, auto-generate the  # noqa: E501
         # name by slugify-ing the title before passing the data off to the serializer.
         if (
             self.request.method == "POST"
@@ -313,17 +312,18 @@ class WebsiteViewSet(
 
 
 class WebsiteMassBuildViewSet(viewsets.ViewSet):
-    """Return a list of previously published sites, with the info required by the mass-build-sites pipeline"""
+    """Return a list of previously published sites, with the info required by the mass-build-sites pipeline"""  # noqa: E501
 
     serializer_class = WebsiteMassBuildSerializer
     permission_classes = (BearerTokenPermission,)
 
-    def list(self, request):
+    def list(self, request):  # noqa: A003, ARG002
         """Return a list of websites that have been previously published, per version"""
         version = self.request.query_params.get("version")
         starter = self.request.query_params.get("starter")
         if version not in (VERSION_LIVE, VERSION_DRAFT):
-            raise ValidationError("Invalid version")
+            msg = "Invalid version"
+            raise ValidationError(msg)
         publish_date_field = (
             "publish_date" if version == VERSION_LIVE else "draft_publish_date"
         )
@@ -335,7 +335,7 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
         # For live builds, exclude previously published sites that have been unpublished
         if version == VERSION_LIVE:
             sites = sites.exclude(unpublish_status__isnull=False)
-        # If a starter has been specified by the query, only return sites made with that starter
+        # If a starter has been specified by the query, only return sites made with that starter  # noqa: E501
         if starter:
             sites = sites.filter(starter=WebsiteStarter.objects.get(slug=starter))
         sites = sites.prefetch_related("starter").order_by("name")
@@ -346,12 +346,12 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
 class WebsiteUnpublishViewSet(viewsets.ViewSet):
     """
     Return a list of sites that need to be unpublished, with the info required by the remove-unpublished-sites pipeline
-    """
+    """  # noqa: E501
 
     permission_classes = (BearerTokenPermission,)
 
-    def list(self, request):
-        """Return a list of websites that need to be processed by the remove-unpublished-sites pipeline"""
+    def list(self, request):  # noqa: A003, ARG002
+        """Return a list of websites that need to be processed by the remove-unpublished-sites pipeline"""  # noqa: E501
         sites = (
             Website.objects.exclude(
                 Q(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
@@ -405,7 +405,8 @@ class WebsiteStarterViewSet(
                         for commit in data["commits"]
                     ]
                     for file in sublist
-                    if os.path.basename(file) == settings.OCW_STUDIO_SITE_CONFIG_FILE
+                    if os.path.basename(file)  # noqa: PTH119
+                    == settings.OCW_STUDIO_SITE_CONFIG_FILE  # noqa: PTH119, RUF100
                 ]
                 sync_github_website_starters(
                     data["repository"]["html_url"], files, commit=data.get("after")
@@ -432,18 +433,19 @@ class WebsiteCollaboratorViewSet(
 
     @cached_property
     def website(self):
-        """Fetches the Website for this request"""
+        """Fetches the Website for this request"""  # noqa: D401
         return get_object_or_404(Website, name=self.kwargs.get("parent_lookup_website"))
 
     def get_queryset(self):
         """
         Builds a queryset of relevant users with permissions for this website, and annotates them by group name/role
         (owner, administrator, editor, or global administrator)
-        """
+        """  # noqa: E501, D401
         website = self.website
-        website_group_names = list(
-            get_groups_with_perms(website).values_list("name", flat=True)
-        ) + [constants.GLOBAL_ADMIN]
+        website_group_names = [
+            *list(get_groups_with_perms(website).values_list("name", flat=True)),
+            constants.GLOBAL_ADMIN,
+        ]
         owner_user_id = website.owner.id if website.owner else None
 
         return (
@@ -486,7 +488,7 @@ class WebsiteCollaboratorViewSet(
             "website": self.website,
         }
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):  # noqa: ARG002
         """Remove the user from all groups for this website"""
         user = self.get_object()
         user.groups.remove(*get_groups_with_perms(self.website))
@@ -496,7 +498,7 @@ class WebsiteCollaboratorViewSet(
 def _get_derived_website_content_data(
     request_data: dict, site_config: SiteConfig, website_pk: str
 ) -> dict:
-    """Derives values that should be added to the request data if a WebsiteContent object is being created"""
+    """Derives values that should be added to the request data if a WebsiteContent object is being created"""  # noqa: E501, D401
     added_data = {}
     if "text_id" not in request_data:
         added_data["text_id"] = uuid_string()
@@ -537,7 +539,7 @@ def _get_value_list_from_query_params(query_params, key):
     """
     filter_type_keys = [
         qs_key
-        for qs_key in query_params.keys()
+        for qs_key in query_params
         # View should accept "type" as a single query param, or multiple types,
         # e.g.: "?type[0]=sometype&type[1]=othertype"
         if qs_key == key or qs_key.startswith(f"{key}[")
@@ -664,7 +666,9 @@ class WebsiteContentViewSet(
         methods=["post"],
         permission_classes=(HasWebsiteContentPermission,),
     )
-    def gdrive_sync(self, request, **kwargs):  # pylint:disable=unused-argument
+    def gdrive_sync(
+        self, request, **kwargs  # noqa: ARG002
+    ):  # pylint:disable=unused-argument
         """Trigger a task to sync all non-video Google Drive files"""
         website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
         website.sync_status = WebsiteSyncStatus.PENDING

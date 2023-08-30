@@ -7,17 +7,17 @@ class ClassicTestEditor extends ClassicEditorBase {}
 
 export const createTestEditor =
   (plugins: unknown[], remainingConfig: Record<string, unknown> = {}) =>
-    async (
-      initialData = "",
-      configOverrides: Record<string, unknown> = {}
-    ): Promise<Editor & { getData(): string }> => {
-      const editor = await ClassicTestEditor.create(initialData, {
-        plugins,
-        ...remainingConfig,
-        ...configOverrides
-      })
-      return editor
-    }
+  async (
+    initialData = "",
+    configOverrides: Record<string, unknown> = {},
+  ): Promise<Editor & { getData(): string }> => {
+    const editor = await ClassicTestEditor.create(initialData, {
+      plugins,
+      ...remainingConfig,
+      ...configOverrides,
+    })
+    return editor
+  }
 
 export function getConverters(editor: Editor) {
   const { md2html, html2md } = editor.data
@@ -30,7 +30,7 @@ export function markdownTest(
   editor: Editor,
   markdown: string,
   html: string,
-  finalMarkdown?: string
+  finalMarkdown?: string,
 ): void {
   // grab showdown and turndown functions defined by Markdown plugin
   // and passed to the MarkdownDataProcessor
@@ -59,7 +59,7 @@ export function markdownTest(
 export function htmlConvertContainsTest(
   editor: Editor,
   markdown: string,
-  html: string
+  html: string,
 ): void {
   const { md2html, html2md } = getConverters(editor)
 

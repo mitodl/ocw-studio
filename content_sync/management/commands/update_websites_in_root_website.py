@@ -1,17 +1,15 @@
-""" Update websites in the root website """
+"""Update websites in the root website"""  # noqa: INP001
 from django.conf import settings
-from django.core.management import CommandError
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.tasks import update_websites_in_root_website
 from main.management.commands.filter import WebsiteFilterCommand
 
 
 class Command(WebsiteFilterCommand):
-    """Update website WebsiteContent objects in the root website denoted by settings.ROOT_WEBSITE_NAME"""
+    """Update website WebsiteContent objects in the root website denoted by settings.ROOT_WEBSITE_NAME"""  # noqa: E501
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -26,7 +24,7 @@ class Command(WebsiteFilterCommand):
         task = update_websites_in_root_website.delay()
 
         self.stdout.write(
-            f"Started celery task {task} to update websites in the root website, {root_website_name}"
+            f"Started celery task {task} to update websites in the root website, {root_website_name}"  # noqa: E501
         )
 
         self.stdout.write("Waiting on task...")

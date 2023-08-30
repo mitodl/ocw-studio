@@ -18,7 +18,6 @@ from videos.constants import VideoStatus
 from videos.models import Video, VideoJob
 from videos.tasks import update_transcripts_for_video
 
-
 log = logging.getLogger()
 
 
@@ -27,7 +26,9 @@ class TranscodeJobView(GenericAPIView):
 
     permission_classes = (AllowAny,)
 
-    def post(self, request, *args, **kwargs):  # pylint: disable=unused-argument
+    def post(
+        self, request, *args, **kwargs  # noqa: ARG002
+    ):  # pylint: disable=unused-argument
         """Update Video and VideoFile objects based on request body"""
         message = json.loads(request.body)
         if message.get("SubscribeURL"):
@@ -36,7 +37,7 @@ class TranscodeJobView(GenericAPIView):
                 raise PermissionDenied
             requests.get(message.get("SubscribeURL"), timeout=60)
         else:
-            if settings.AWS_ACCOUNT_ID != message.get("account", ""):
+            if message.get("account", "") != settings.AWS_ACCOUNT_ID:
                 raise PermissionDenied
             detail = message.get("detail", {})
             video_job = VideoJob.objects.get(job_id=detail.get("jobId"))
@@ -49,7 +50,9 @@ class TranscriptJobView(GenericAPIView):
 
     permission_classes = (AllowAny,)
 
-    def post(self, request, *args, **kwargs):  # pylint: disable=unused-argument
+    def post(
+        self, request, *args, **kwargs  # noqa: ARG002
+    ):  # pylint: disable=unused-argument
         """Update transcripts"""
         video_id = request.query_params.get("video_id")
         api_key = request.query_params.get("callback_key")
@@ -67,7 +70,9 @@ class YoutubeTokensView(GenericAPIView):
 
     permission_classes = (IsAdminUser,)
 
-    def get(self, request, *args, **kwargs):  # pylint: disable=unused-argument
+    def get(
+        self, request, *args, **kwargs  # noqa: ARG002
+    ):  # pylint: disable=unused-argument
         """Return Youtube credential info"""
         token_url = urljoin(settings.SITE_BASE_URL, reverse("yt_tokens"))
         oauth_config = {

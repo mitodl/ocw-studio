@@ -8,7 +8,7 @@ const getEditor = createTestEditor([ResourceEmbed, Markdown])
 describe("ResourceEmbed plugin", () => {
   afterEach(() => {
     turndownService.rules.array = turndownService.rules.array.filter(
-      (rule: any) => rule.filter !== "figure" && rule.filter !== "section"
+      (rule: any) => rule.filter !== "figure" && rule.filter !== "section",
     )
   })
 
@@ -19,14 +19,14 @@ describe("ResourceEmbed plugin", () => {
 
   it.each([
     "{{< resource asdfasdfasdfasdf >}}",
-    '{{< resource "asdfasdfasdfasdf" >}}'
-  ])("should serialize to and from markdown", async markdown => {
+    '{{< resource "asdfasdfasdfasdf" >}}',
+  ])("should serialize to and from markdown", async (markdown) => {
     const editor = await getEditor("")
     markdownTest(
       editor,
       markdown,
       '<section data-uuid="asdfasdfasdfasdf"></section>',
-      '{{< resource uuid="asdfasdfasdfasdf" >}}'
+      '{{< resource uuid="asdfasdfasdfasdf" >}}',
     )
   })
 
@@ -35,7 +35,7 @@ describe("ResourceEmbed plugin", () => {
     markdownTest(
       editor,
       '{{< resource uuid="asdfasdfasdfasdf" href="https://www.mit.edu" >}}',
-      '<section data-href="https://www.mit.edu" data-uuid="asdfasdfasdfasdf"></section>'
+      '<section data-href="https://www.mit.edu" data-uuid="asdfasdfasdfasdf"></section>',
     )
   })
 
@@ -44,7 +44,7 @@ describe("ResourceEmbed plugin", () => {
     markdownTest(
       editor,
       '{{< resource uuid="asdfasdfasdfasdf" href_uuid="abcwxyz" >}}',
-      '<section data-href-uuid="abcwxyz" data-uuid="asdfasdfasdfasdf"></section>'
+      '<section data-href-uuid="abcwxyz" data-uuid="asdfasdfasdfasdf"></section>',
     )
   })
 })

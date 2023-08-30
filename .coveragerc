@@ -2,7 +2,7 @@
 branch = True
 source = .
 data_file=/tmp/coverage
-omit = 
+omit =
     main/wsgi.py
     manage.py
     ./.tox/*

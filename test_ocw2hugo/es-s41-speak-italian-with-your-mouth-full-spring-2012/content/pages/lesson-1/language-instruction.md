@@ -179,11 +179,11 @@ We got hungry fast, hence it was time to cook (cucin**ARE**).
 
 INDICATIVO PRESENTE (I cook, you cook, s/he cooks...)
 
-(Io) cucino.  
-(Tu) cucini.  
-(Lui/Lei)(Egli/Essa...not much used) cucina.  
-(Noi) cuciniamo.  
-(Voi) cucinate.  
+(Io) cucino.
+(Tu) cucini.
+(Lui/Lei)(Egli/Essa...not much used) cucina.
+(Noi) cuciniamo.
+(Voi) cucinate.
 (Loro)(Essi..not much used) cucinano.
 
 Listen to the conjugation of cucinare:

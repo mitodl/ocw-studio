@@ -30,7 +30,7 @@ describe("BasicModal", () => {
           {...props}
         >
           {children ?? childFunctionStub}
-        </BasicModal>
+        </BasicModal>,
       )
   })
 
@@ -40,20 +40,20 @@ describe("BasicModal", () => {
     expect(modal.exists()).toBe(true)
     expect(modal.props()).toEqual(
       expect.objectContaining({
-        isOpen:         true,
-        toggle:         hideModalStub,
-        modalClassName: className
-      })
+        isOpen: true,
+        toggle: hideModalStub,
+        modalClassName: className,
+      }),
     )
     const header = modal.find("ModalHeader")
     expect(header.props()).toEqual(
       expect.objectContaining({
-        toggle:   hideModalStub,
-        children: title
-      })
+        toggle: hideModalStub,
+        children: title,
+      }),
     )
     sinon.assert.calledOnceWithExactly(childFunctionStub, {
-      hideModal: hideModalStub
+      hideModal: hideModalStub,
     })
     expect(modal.find("ModalBody").prop("children")).toEqual(dummyJsx)
   })

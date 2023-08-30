@@ -9,7 +9,7 @@ describe("DocumentTitle component", () => {
     expect(formatTitle()).toBe("OCW Studio")
     expect(formatTitle("Site Page")).toBe("OCW Studio | Site Page")
     expect(formatTitle("Site Page", "Edit")).toBe(
-      "OCW Studio | Site Page | Edit"
+      "OCW Studio | Site Page | Edit",
     )
   })
 

@@ -1,10 +1,9 @@
-""" API functionality for OCW course site import """
+"""API functionality for OCW course site import"""
 import json
 import logging
 import re
 import uuid
 from copy import deepcopy
-from typing import Dict
 
 import dateutil
 import yaml
@@ -29,7 +28,6 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.utils import get_dict_field, set_dict_field
-
 
 log = logging.getLogger(__name__)
 
@@ -70,7 +68,7 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_list=None):
 
     Yields:
         str: The path to a course JSON document in S3
-    """
+    """  # noqa: E501, D401
     s3 = get_boto3_resource("s3")
     bucket = s3.Bucket(bucket_name)
     paginator = bucket.meta.client.get_paginator("list_objects")
@@ -120,14 +118,14 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
                 content = convert_data_to_content(filepath, s3_content, website)
                 if content:
                     current_content.append(content.text_id)
-            except:  # pylint:disable=bare-except
+            except:  # pylint:disable=bare-except  # noqa: E722
                 log.exception("Error saving WebsiteContent for %s", s3_key)
     obsolete_content = list(set(prior_content) - set(current_content))
     WebsiteContent.objects.filter(text_id__in=obsolete_content).delete()
 
 
 def update_ocw2hugo_content(
-    bucket, prefix, website, update_field, create_new_content=False
+    bucket, prefix, website, update_field, create_new_content=False  # noqa: FBT002
 ):
     """
     update the update_field of all content files for an ocw course from hugo2ocw output
@@ -160,7 +158,7 @@ def update_ocw2hugo_content(
                 if not content and create_new_content is True:
                     convert_data_to_content(filepath, s3_content, website)
 
-            except:  # pylint:disable=bare-except
+            except:  # pylint:disable=bare-except  # noqa: E722
                 log.exception("Error saving WebsiteContent for %s", s3_key)
 
 
@@ -176,7 +174,7 @@ def update_content_from_s3_data(website, text_id, content_data, update_field):
 
     Returns:
         The WebsiteContent object if it existed, None otherwise.
-    """
+    """  # noqa: E501
     is_metadata_field = False
 
     if update_field and update_field.startswith("metadata."):
@@ -297,16 +295,21 @@ def get_content_data(filepath, data, website):  # pylint:disable=too-many-locals
             "is_page_content": True,
             "file": file,
             "metadata": content_json,
-            "markdown": (s3_content_parts[1] if len(s3_content_parts) == 2 else None),
+            "markdown": (
+                s3_content_parts[1]
+                if len(s3_content_parts) == 2  # noqa: PLR2004
+                else None
+            ),  # noqa: PLR2004, RUF100
             "parent": parent,
             "title": content_json.get("title"),
             "type": content_type,
             "dirpath": dirpath,
-            # Replace dots with dashes to simplify file name/extension parsing, and limit length
+            # Replace dots with dashes to simplify file name/extension parsing, and limit length  # noqa: E501
             "filename": filename.replace(".", "-")[0:CONTENT_FILENAME_MAX_LEN],
         }
 
         return text_id, content_data
+    return None
 
 
 def convert_data_to_content(filepath, data, website):
@@ -326,14 +329,15 @@ def convert_data_to_content(filepath, data, website):
     return content
 
 
-def get_short_id(name: str, metadata: Dict) -> str:
+def get_short_id(name: str, metadata: dict) -> str:
     """Get a short_id from the metadata"""
     existing_site = Website.objects.filter(name=name).first()
     if existing_site and existing_site.short_id:
         return existing_site.short_id
     course_num = metadata.get("primary_course_number")
     if not course_num:
-        raise ValueError("Primary course number is missing")
+        msg = "Primary course number is missing"
+        raise ValueError(msg)
     short_id = (
         (
             "-".join(
@@ -378,7 +382,9 @@ def import_ocw2hugo_sitemetadata(
     try:
         website_root = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
     except Website.DoesNotExist:
-        log.error("No root web site found, name=%s", settings.ROOT_WEBSITE_NAME)
+        log.error(  # noqa: TRY400
+            "No root web site found, name=%s", settings.ROOT_WEBSITE_NAME
+        )
         return
 
     metadata = {}
@@ -390,38 +396,31 @@ def import_ocw2hugo_sitemetadata(
     metadata["course_image_thumbnail"] = course_data["course_image_thumbnail"]
     metadata["legacy_uid"] = course_data["legacy_uid"]
 
-    with open(
-        "static/js/resources/departments.json", "r", encoding="utf-8"
+    with open(  # noqa: PTH123
+        "static/js/resources/departments.json", encoding="utf-8"
     ) as departments_json_file:
         departments_json = json.load(departments_json_file)
-        metadata["department_numbers"] = list(
-            map(
+        metadata["department_numbers"] = [
+            next(
                 (
-                    lambda course_department: next(
-                        (
-                            department["depNo"]
-                            for department in departments_json
-                            if department["title"] == course_department["department"]
-                        ),
-                        None,
-                    )
+                    department["depNo"]
+                    for department in departments_json
+                    if department["title"] == course_department["department"]
                 ),
-                course_data["departments"],
+                None,
             )
-        )
-    # level used to be a { level, url } dictionary, but now it's a [level] for any number of levels
+            for course_department in course_data["departments"]
+        ]
+    # level used to be a { level, url } dictionary, but now it's a [level] for any number of levels  # noqa: E501
     # handle both cases temporarily for back compat
     metadata["level"] = (
         [course_data["level"]["level"]]
         if isinstance(course_data["level"], dict)
         else course_data["level"]
     )
-    metadata["learning_resource_types"] = list(
-        map(
-            lambda course_feature: course_feature["feature"],
-            course_data["course_features"],
-        )
-    )
+    metadata["learning_resource_types"] = [
+        course_feature["feature"] for course_feature in course_data["course_features"]
+    ]
     metadata["topics"] = course_data["topics"]
 
     instructor_contents = []
@@ -446,7 +445,7 @@ def import_ocw2hugo_sitemetadata(
                     "middle_initial": middle_initial,
                     "salutation": salutation,
                 },
-                "title": f"{salutation_plus_space}{first_name} {middle_initial_plus_space}{last_name}",
+                "title": f"{salutation_plus_space}{first_name} {middle_initial_plus_space}{last_name}",  # noqa: E501
                 "type": CONTENT_TYPE_INSTRUCTOR,
                 "dirpath": "content/instructors",
                 "filename": text_id,
@@ -513,7 +512,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         prefix (str): S3 prefix before start of course_id path
         path (str): The course URL path
         starter_id (int or None): The id of the WebsiteStarter to associated with the created Website
-    """
+    """  # noqa: E501
     s3 = get_boto3_resource("s3")
     bucket = s3.Bucket(bucket_name)
     course_data = json.loads(get_s3_object_and_read(bucket.Object(path)).decode())
@@ -522,7 +521,7 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         get_s3_object_and_read(
             bucket.Object(f"{prefix}{name}/config/_default/menus.yaml")
         ),
-        Loader=yaml.FullLoader,
+        Loader=yaml.FullLoader,  # noqa: S506
     )
     if name in NON_ID_COURSE_NAMES:
         return
@@ -548,12 +547,16 @@ def import_ocw2hugo_course(bucket_name, prefix, path, starter_id=None):
         import_ocw2hugo_content(bucket, prefix, website)
         if is_gdrive_enabled() and website.gdrive_folder is None:
             create_gdrive_folders(website.short_id)
-    except:  # pylint:disable=bare-except
+    except:  # pylint:disable=bare-except  # noqa: E722
         log.exception("Error saving website %s", path)
 
 
 def update_ocw2hugo_course(
-    bucket_name, prefix, path, content_update_field, create_new_content=False
+    bucket_name,
+    prefix,
+    path,
+    content_update_field,
+    create_new_content=False,  # noqa: FBT002
 ):
     """
     Extract OCW course content for a course

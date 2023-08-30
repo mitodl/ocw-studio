@@ -1,4 +1,4 @@
-""" S3 utility functions """
+"""S3 utility functions"""
 import boto3
 from django.conf import settings
 
@@ -12,7 +12,7 @@ def get_boto3_options(extra_options=None):
 
     Returns:
         dict: A dictionary of options to initialize an s3 resource or client with
-    """
+    """  # noqa: D401
     options = {
         "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
         "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
@@ -34,7 +34,7 @@ def get_boto3_resource(service_type, extra_options=None):
 
     Returns:
         s3.ServiceResource: An S3 resource
-    """
+    """  # noqa: D401
     return boto3.resource(service_type, **get_boto3_options(extra_options))
 
 
@@ -48,7 +48,7 @@ def get_boto3_client(service_type, extra_options=None):
 
     Returns:
         s3.Client: An S3 client
-    """
+    """  # noqa: D401
     return boto3.client(service_type, **get_boto3_options(extra_options))
 
 
@@ -63,10 +63,10 @@ def get_s3_object_and_read(obj, iteration=0):
 
     Returns:
         bytes: The contents of a json file read from S3
-    """
+    """  # noqa: E501, D401
     try:
         return obj.get()["Body"].read()
-    except Exception:  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except  # noqa: BLE001
         if iteration < settings.MAX_S3_GET_ITERATIONS:
             return get_s3_object_and_read(obj, iteration + 1)
         else:

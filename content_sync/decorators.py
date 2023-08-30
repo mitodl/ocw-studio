@@ -1,15 +1,15 @@
 """decorators for content_sync.backends"""
 import functools
 import logging
+from collections.abc import Callable
 from time import sleep
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from django.conf import settings
 from django_redis import get_redis_connection
 from github.GithubException import RateLimitExceededException
 
 from content_sync.models import ContentSyncState
-
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -27,20 +27,21 @@ def retry_on_failure(func: F) -> F:
         while retries > 0:
             try:
                 return func(*args, **kwargs)
-            except RateLimitExceededException:
+            except RateLimitExceededException:  # noqa: PERF203
                 # No point in retrying
                 raise
-            except:  # pylint:disable=bare-except
+            except:  # pylint:disable=bare-except  # noqa: E722
                 retries = retries - 1
                 if retries == 0:
                     raise
                 sleep(1)
+        return None
 
     return wrapper
 
 
 def is_sync_enabled(func: Callable) -> Callable:
-    """Returns True if the sync is enabled"""
+    """Returns True if the sync is enabled"""  # noqa: D401
 
     def wrapper(*args, **kwargs):
         if settings.CONTENT_SYNC_BACKEND:
@@ -51,7 +52,7 @@ def is_sync_enabled(func: Callable) -> Callable:
 
 
 def is_publish_pipeline_enabled(func: Callable) -> Callable:
-    """Returns True if the publishing pipeline is enabled"""
+    """Returns True if the publishing pipeline is enabled"""  # noqa: D401
 
     def wrapper(*args, **kwargs):
         if settings.CONTENT_SYNC_PIPELINE_BACKEND:
@@ -65,7 +66,7 @@ def check_sync_state(func: Callable) -> Callable:
     """
     Decorator that checks if a content_sync_state is synced before running a function,
     then marks it as synced as long as the function returns some non-falsy value.
-    """
+    """  # noqa: D401
 
     def wrapper(self, sync_state: ContentSyncState):
         if not sync_state.is_synced:
@@ -80,7 +81,9 @@ def check_sync_state(func: Callable) -> Callable:
     return wrapper
 
 
-def single_task(timeout: int, raise_block: Optional[bool] = True) -> Callable:
+def single_task(
+    timeout: int, raise_block: Optional[bool] = True  # noqa: FBT002
+) -> Callable:
     """
     Only allow one instance of a task to run concurrently, based on the task name
     and a first arg, if supplied (like Website.name).
@@ -100,7 +103,7 @@ def single_task(timeout: int, raise_block: Optional[bool] = True) -> Callable:
                     return_value = func(*args, **kwargs)
                 else:
                     if raise_block:
-                        raise BlockingIOError()
+                        raise BlockingIOError
                     return_value = None
             finally:
                 if has_lock and lock.locked():

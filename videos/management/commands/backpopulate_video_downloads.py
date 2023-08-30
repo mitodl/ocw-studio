@@ -1,7 +1,7 @@
 """
 Move 16:9 transcoded videos into the correct S3 paths for syncing, and update the resource
 metadata to point to that path for downloads.
-"""
+"""  # noqa: E501
 
 import os
 
@@ -15,17 +15,16 @@ from main.management.commands.filter import WebsiteFilterCommand
 from videos.api import prepare_video_download_file
 from videos.models import Video
 
-
-script_path = os.path.dirname(os.path.realpath(__file__))
+script_path = os.path.dirname(os.path.realpath(__file__))  # noqa: PTH120
 
 
 class Command(WebsiteFilterCommand):
     """
     Move 16:9 transcoded videos into the correct S3 paths for syncing, and update the resource
     metadata to point to that path for downloads.
-    """
+    """  # noqa: E501
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser: CommandParser) -> None:
         super().add_arguments(parser)
@@ -58,13 +57,13 @@ class Command(WebsiteFilterCommand):
         for video in videos:
             if is_verbose:
                 self.stdout.write(
-                    f"Updating video {video.source_key} for site {video.website.short_id}"
+                    f"Updating video {video.source_key} for site {video.website.short_id}"  # noqa: E501
                 )
             try:
                 prepare_video_download_file(video)
-            except Exception as exc:  # pylint:disable=broad-except
+            except Exception as exc:  # pylint:disable=broad-except  # noqa: BLE001
                 self.stderr.write(
-                    f"Error Updating video {video.source_key} for site {video.website.short_id}: {exc}"
+                    f"Error Updating video {video.source_key} for site {video.website.short_id}: {exc}"  # noqa: E501
                 )
         self.stdout.write(
             f"Completed Updating downloadable video files for {videos.count()} videos."
@@ -77,6 +76,4 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(f"Starting task {task}...")
             task.get()
             total_seconds = (now_in_utc() - start).total_seconds()
-            self.stdout.write(
-                "Backend sync finished, took {} seconds".format(total_seconds)
-            )
+            self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")

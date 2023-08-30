@@ -14,10 +14,10 @@ import * as siteContentFuncs from "../lib/site_content"
 import {
   siteApiContentDetailUrl,
   siteApiContentUrl,
-  siteApiDetailUrl
+  siteApiDetailUrl,
 } from "../lib/urls"
 import IntegrationTestHelperOld, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 import { IntegrationTestHelper, screen } from "../testing_utils"
 import {
@@ -25,7 +25,7 @@ import {
   makeSingletonConfigItem,
   makeWebsiteContentDetail,
   makeWebsiteDetail,
-  makeWebsiteStatus
+  makeWebsiteStatus,
 } from "../util/factories/websites"
 import * as validationFuncs from "./forms/validation"
 import { assertNotNil, shouldIf } from "../test_util"
@@ -36,7 +36,7 @@ import {
   Website,
   WebsiteContent,
   WebsiteContentModalState,
-  WebsiteStatus
+  WebsiteStatus,
 } from "../types/websites"
 import { contentDetailKey } from "../query-configs/websites"
 import { createModalState } from "../types/modal_state"
@@ -47,13 +47,13 @@ jest.mock("formik", () => {
   const formik = jest.requireActual("formik")
   return {
     __esModule: true,
-    ...formik
+    ...formik,
   }
 })
 jest.mock("../lib/site_content", () => {
   return {
     __esModule: true,
-    ...jest.requireActual("../lib/site_content")
+    ...jest.requireActual("../lib/site_content"),
   }
 })
 
@@ -62,7 +62,7 @@ const getContentSchema = jest.mocked(validationFuncs.getContentSchema)
 
 jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
-  default:    jest.fn(() => <div>mock markdown editor</div>)
+  default: jest.fn(() => <div>mock markdown editor</div>),
 }))
 const mockMarkdownEditor = jest.mocked(MarkdownEditor)
 
@@ -70,9 +70,9 @@ const { Formik } = formikFuncs
 
 const { testkit, sentryTransport } = sentryTestkit()
 Sentry.init({
-  dsn:       "https://fake@fakesentry.example.com/123",
+  dsn: "https://fake@fakesentry.example.com/123",
   // @ts-expect-error Unsure the issue here.
-  transport: sentryTransport
+  transport: sentryTransport,
 })
 
 describe("SiteContent", () => {
@@ -103,14 +103,14 @@ describe("SiteContent", () => {
     dismissStub = helper.sandbox.stub()
     fetchWebsiteListingStub = helper.sandbox.stub()
     successStubs = {
-      dismiss:                    dismissStub,
-      fetchWebsiteContentListing: fetchWebsiteListingStub
+      dismiss: dismissStub,
+      fetchWebsiteContentListing: fetchWebsiteListingStub,
     }
     // @ts-expect-error There are others, e.g., setFieldError, but we do not need them
     formikStubs = {
-      setErrors:     helper.sandbox.stub(),
+      setErrors: helper.sandbox.stub(),
       setSubmitting: helper.sandbox.stub(),
-      setStatus:     helper.sandbox.stub()
+      setStatus: helper.sandbox.stub(),
     }
     setDirtyStub = helper.sandbox.stub()
 
@@ -118,12 +118,12 @@ describe("SiteContent", () => {
       siteApiContentDetailUrl
         .param({ name: website.name, textId: content.text_id })
         .toString(),
-      content
+      content,
     )
 
     helper.mockGetRequest(
       siteApiDetailUrl.param({ name: website.name }).toString(),
-      website
+      website,
     )
 
     helper.mockGetRequest(
@@ -131,16 +131,16 @@ describe("SiteContent", () => {
         .param({ name: website.name })
         .query({ only_status: true })
         .toString(),
-      websiteStatus
+      websiteStatus,
     )
 
     helper.mockPostRequest(
       siteApiContentUrl.param({ name: website.name }).toString(),
-      {}
+      {},
     )
 
     render = helper.configureRenderer(
-      function(props) {
+      function (props) {
         return (
           <WebsiteContext.Provider value={website as Website}>
             <SiteContentEditor {...props} />
@@ -148,26 +148,26 @@ describe("SiteContent", () => {
         )
       },
       {
-        history:     { push: historyPushStub },
-        configItem:  configItem,
+        history: { push: historyPushStub },
+        configItem: configItem,
         loadContent: true,
         editorState: createModalState("adding"),
-        setDirty:    setDirtyStub
+        setDirty: setDirtyStub,
       },
       {
         entities: {
           websiteDetails: {
-            [website.name]: website
+            [website.name]: website,
           },
           websiteContentDetails: {
             [contentDetailKey({
-              name:   website.name,
-              textId: content.text_id
-            })]: content
-          }
+              name: website.name,
+              textId: content.text_id,
+            })]: content,
+          },
         },
-        queries: {}
-      }
+        queries: {},
+      },
     )
   })
 
@@ -190,12 +190,12 @@ describe("SiteContent", () => {
     beforeEach(() => {
       validateYupSchemaStub = helper.sandbox.stub(
         formikFuncs,
-        "validateYupSchema"
+        "validateYupSchema",
       )
       yupToFormErrorsStub = helper.sandbox.stub(formikFuncs, "yupToFormErrors")
       getContentSchemaStub = helper.sandbox.stub(
         validationFuncs,
-        "getContentSchema"
+        "getContentSchema",
       )
       getContentSchemaStub.returns(mockContentSchema)
     })
@@ -210,12 +210,12 @@ describe("SiteContent", () => {
       sinon.assert.calledOnceWithExactly(
         getContentSchemaStub,
         configItem,
-        values
+        values,
       )
       sinon.assert.calledOnceWithExactly(
         validateYupSchemaStub,
         values,
-        mockContentSchema
+        mockContentSchema,
       )
       sinon.assert.notCalled(yupToFormErrorsStub)
     })
@@ -234,12 +234,12 @@ describe("SiteContent", () => {
       sinon.assert.calledOnceWithExactly(
         getContentSchemaStub,
         configItem,
-        values
+        values,
       )
       sinon.assert.calledOnceWithExactly(
         validateYupSchemaStub,
         values,
-        mockContentSchema
+        mockContentSchema,
       )
       sinon.assert.calledOnceWithExactly(yupToFormErrorsStub, error)
     })
@@ -248,7 +248,7 @@ describe("SiteContent", () => {
   //
   ;[
     [false, "for a repeatable config item"],
-    [true, "for a singleton config item"]
+    [true, "for a singleton config item"],
   ].forEach(([isSingleton, desc]) => {
     it(`updates content via the form when creating new content ${desc}`, async () => {
       let expAddedPayload = {}
@@ -258,12 +258,12 @@ describe("SiteContent", () => {
       }
       const { wrapper, store } = await render({
         configItem: configItem,
-        ...successStubs
+        ...successStubs,
       })
       const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
       const values = {
-        title:       "A title",
-        description: "Some description"
+        title: "A title",
+        description: "Some description",
       }
 
       await act(async () => {
@@ -276,16 +276,16 @@ describe("SiteContent", () => {
         "POST",
         {
           body: {
-            type:     configItem.name,
-            title:    values.title,
+            type: configItem.name,
+            title: values.title,
             metadata: {
-              description: values.description
+              description: values.description,
             },
-            ...expAddedPayload
+            ...expAddedPayload,
           },
-          headers:     { "X-CSRFTOKEN": "" },
-          credentials: undefined
-        }
+          headers: { "X-CSRFTOKEN": "" },
+          credentials: undefined,
+        },
       )
 
       sinon.assert.calledWith(
@@ -296,20 +296,20 @@ describe("SiteContent", () => {
           .toString(),
         "GET",
         {
-          body:        undefined,
-          headers:     undefined,
-          credentials: undefined
-        }
+          body: undefined,
+          headers: undefined,
+          credentials: undefined,
+        },
       )
 
       sinon.assert.called(fetchWebsiteListingStub)
       sinon.assert.called(dismissStub)
       const key = contentDetailKey({
         textId: content.text_id,
-        name:   website.name
+        name: website.name,
       })
       expect(
-        store.getState().entities.websiteContentDetails[key]
+        store.getState().entities.websiteContentDetails[key],
       ).toStrictEqual(content)
     })
   })
@@ -320,21 +320,21 @@ describe("SiteContent", () => {
         siteApiContentDetailUrl
           .param({ name: website.name, textId: content.text_id })
           .toString(),
-        "PATCH"
+        "PATCH",
       )
       .returns({
-        body:   content,
-        status: 200
+        body: content,
+        status: 200,
       })
     const { wrapper, store } = await render({
       editorState: createModalState("editing", content.text_id),
-      ...successStubs
+      ...successStubs,
     })
 
     const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
     const values = {
-      title:       "A title",
-      description: "Some description"
+      title: "A title",
+      description: "Some description",
     }
     await act(async () => {
       await onSubmit(values, formikStubs)
@@ -347,14 +347,14 @@ describe("SiteContent", () => {
       "PATCH",
       {
         body: {
-          title:    values.title,
+          title: values.title,
           metadata: {
-            description: values.description
-          }
+            description: values.description,
+          },
         },
-        headers:     { "X-CSRFTOKEN": "" },
-        credentials: undefined
-      }
+        headers: { "X-CSRFTOKEN": "" },
+        credentials: undefined,
+      },
     )
 
     sinon.assert.calledWith(
@@ -365,10 +365,10 @@ describe("SiteContent", () => {
         .toString(),
       "GET",
       {
-        body:        undefined,
-        headers:     undefined,
-        credentials: undefined
-      }
+        body: undefined,
+        headers: undefined,
+        credentials: undefined,
+      },
     )
     sinon.assert.calledWith(fetchWebsiteListingStub)
     sinon.assert.calledWith(dismissStub)
@@ -384,21 +384,21 @@ describe("SiteContent", () => {
     expect(store.getState().entities.websiteContentDetails).toStrictEqual({
       [contentDetailKey({
         textId: content.text_id,
-        name:   website.name
-      })]: content
+        name: website.name,
+      })]: content,
     })
   })
 
   //
-  ;["adding", "editing"].forEach(editorStateType => {
+  ;["adding", "editing"].forEach((editorStateType) => {
     describe(`form validation for ${editorStateType}`, () => {
       let url: string, method: string, editorState: WebsiteContentModalState
 
       beforeEach(() => {
         editorState =
-          editorStateType === "editing" ?
-            createModalState("editing", content.text_id) :
-            createModalState("adding")
+          editorStateType === "editing"
+            ? createModalState("editing", content.text_id)
+            : createModalState("adding")
         if (editorState.editing()) {
           url = siteApiContentDetailUrl
             .param({ name: website.name, textId: content.text_id })
@@ -413,13 +413,13 @@ describe("SiteContent", () => {
       it("handles field errors", async () => {
         const errorObj = { title: "uh oh" }
         helper.handleRequestStub.withArgs(url, method).returns({
-          body:   errorObj,
-          status: 500
+          body: errorObj,
+          status: 500,
         })
 
         const { wrapper } = await render({
           editorState,
-          ...successStubs
+          ...successStubs,
         })
 
         const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
@@ -432,8 +432,8 @@ describe("SiteContent", () => {
       it("handles non-field errors", async () => {
         const errorMessage = "uh oh"
         helper.handleRequestStub.withArgs(url, method).returns({
-          body:   errorMessage,
-          status: 500
+          body: errorMessage,
+          status: 500,
         })
         const { wrapper } = await render({ editorState, ...successStubs })
 
@@ -447,20 +447,20 @@ describe("SiteContent", () => {
   })
 
   //
-  ;[true, false].forEach(contentContext => {
+  ;[true, false].forEach((contentContext) => {
     describe(`with contentContext=${String(contentContext)}`, () => {
-      [
+      ;[
         [true, false, false, "content is passed in via props"],
         [true, true, false, "content is passed in and the loading flag=true"],
         [
           false,
           true,
           true,
-          "content is not passed in and the loading flag=true"
-        ]
+          "content is not passed in and the loading flag=true",
+        ],
       ].forEach(([hasContentProp, loadingFlag, shouldLoad, desc]) => {
         it(`${shouldIf(
-          shouldLoad
+          shouldLoad,
         )} load a content object if ${desc}`, async () => {
           const needsContentContextStub = helper.sandbox
             .stub(siteContentFuncs, "needsContentContext")
@@ -471,17 +471,17 @@ describe("SiteContent", () => {
                 .param({ name: website.name, textId: content.text_id })
                 .query(contentContext ? { content_context: true } : {})
                 .toString(),
-              "GET"
+              "GET",
             )
             .returns({
-              body:   content,
-              status: 200
+              body: content,
+              status: 200,
             })
 
           const { wrapper } = await render({
             editorState: createModalState("editing", content.text_id),
             loadContent: loadingFlag,
-            ...(hasContentProp ? { content: content } : {})
+            ...(hasContentProp ? { content: content } : {}),
           })
 
           sinon.assert.callCount(contentDetailStub, shouldLoad ? 1 : 0)
@@ -501,8 +501,8 @@ describe("SiteContent", () => {
 
     const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
     const values = {
-      title:       "A title",
-      description: "Some description"
+      title: "A title",
+      description: "Some description",
     }
     await act(async () => {
       await onSubmit(values, formikStubs)
@@ -513,15 +513,15 @@ describe("SiteContent", () => {
       "POST",
       {
         body: {
-          type:     configItem.name,
-          title:    values.title,
+          type: configItem.name,
+          title: values.title,
           metadata: {
-            description: values.description
-          }
+            description: values.description,
+          },
         },
-        headers:     { "X-CSRFTOKEN": "" },
-        credentials: undefined
-      }
+        headers: { "X-CSRFTOKEN": "" },
+        credentials: undefined,
+      },
     )
 
     sinon.assert.notCalled(fetchWebsiteListingStub)
@@ -542,7 +542,7 @@ describe("SiteContent", () => {
         setDirty={setDirty}
         configItem={configItem}
         {...props}
-      />
+      />,
     )
     return { history, result }
   }

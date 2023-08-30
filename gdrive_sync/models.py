@@ -1,7 +1,7 @@
-""" Models for gdrive_sync """
+"""Models for gdrive_sync"""
 import os
+from collections.abc import Iterable
 from functools import reduce
-from typing import Iterable
 
 from django.conf import settings
 from django.db import models
@@ -30,7 +30,7 @@ class DriveApiQueryTracker(TimestampedModel):
         choices=zip(DRIVE_API_RESOURCES, DRIVE_API_RESOURCES),
         unique=True,
     )
-    last_page = models.CharField(max_length=2048, null=True, blank=True)
+    last_page = models.CharField(max_length=2048, null=True, blank=True)  # noqa: DJ001
     last_dt = models.DateTimeField(null=True, blank=True)
 
 
@@ -42,9 +42,9 @@ class DriveFile(TimestampedModel):
     )
     name = models.CharField(null=False, blank=False, max_length=32767)
     mime_type = models.CharField(max_length=256, null=False, blank=False)
-    checksum = models.CharField(max_length=32, null=True, blank=True)
+    checksum = models.CharField(max_length=32, null=True, blank=True)  # noqa: DJ001
     download_link = models.URLField(null=False, blank=False)
-    s3_key = models.CharField(max_length=32767, null=True, blank=True)
+    s3_key = models.CharField(max_length=32767, null=True, blank=True)  # noqa: DJ001
     status = models.CharField(
         null=False,
         default=DriveFileStatus.CREATED,
@@ -61,7 +61,7 @@ class DriveFile(TimestampedModel):
     resource = models.ForeignKey(
         WebsiteContent, null=True, blank=True, on_delete=models.SET_NULL
     )
-    sync_error = models.TextField(null=True, blank=True)
+    sync_error = models.TextField(null=True, blank=True)  # noqa: DJ001
     sync_dt = models.DateTimeField(null=True, blank=True)
 
     def update_status(self, status):
@@ -80,7 +80,7 @@ class DriveFile(TimestampedModel):
         Return a unique s3 key for a DriveFile that will satisfy unique constraints,
         adding/incrementing a numerical suffix as necessary.
         """
-        basename, ext = os.path.splitext(self.name)
+        basename, ext = os.path.splitext(self.name)  # noqa: PTH122
         basename = slugify(basename)
         ext = ext.lower()
         prefix = self.s3_prefix
@@ -97,7 +97,7 @@ class DriveFile(TimestampedModel):
         drive_file_qset = DriveFile.objects.exclude(s3_key=s3_key)
         return find_available_name(
             drive_file_qset,
-            os.path.splitext(s3_key)[0],
+            os.path.splitext(s3_key)[0],  # noqa: PTH122
             "s3_key",
             max_length=4096,
             extension=ext,
@@ -111,7 +111,7 @@ class DriveFile(TimestampedModel):
         Returns:
             Iterable[WebsiteContent]: A list of WebsiteContent that makes use of this file
                 directly/indirectly.
-        """
+        """  # noqa: E501
         if self.resource is None:
             return []
 

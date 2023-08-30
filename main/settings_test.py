@@ -7,6 +7,7 @@ import os
 import sys
 from unittest import mock
 
+import pytest
 import semantic_version
 from django.conf import settings
 from django.core import mail
@@ -15,8 +16,7 @@ from django.test import TestCase
 from django_redis import get_redis_connection
 from mitol.common import envs
 
-
-# from mitol.common import envs, pytest_utils
+# from mitol.common import envs, pytest_utils  # noqa: ERA001
 
 
 REQUIRED_SETTINGS = {
@@ -26,8 +26,8 @@ REQUIRED_SETTINGS = {
 }
 
 
-# TODO: Figure out why this test now always fails because it thinks app.json has been modified #pylint: disable=fixme
-# test_app_json_modified = pytest_utils.test_app_json_modified
+# TODO: Figure out why this test now always fails because it thinks app.json has been modified #pylint: disable=fixme  # noqa: FIX002, TD002, TD003
+# test_app_json_modified = pytest_utils.test_app_json_modified  # noqa: ERA001
 
 
 def cleanup_settings():
@@ -47,8 +47,7 @@ class TestSettings(TestCase):
         with mock.patch.dict("os.environ", values, clear=True):
             os.environ["DJANGO_SETTINGS_MODULE"] = "main.settings"
             envs.env.reload()
-            settings_dict = self.reload_settings()
-        return settings_dict
+            return self.reload_settings()
 
     def reload_settings(self):
         """
@@ -67,12 +66,12 @@ class TestSettings(TestCase):
         settings_vars = self.patch_settings(
             {**REQUIRED_SETTINGS, "OCW_STUDIO_USE_S3": "False"}
         )
-        self.assertNotEqual(
-            settings_vars.get("DEFAULT_FILE_STORAGE"),
-            "storages.backends.s3boto3.S3Boto3Storage",
+        assert (
+            settings_vars.get("DEFAULT_FILE_STORAGE")
+            != "storages.backends.s3boto3.S3Boto3Storage"
         )
 
-        with self.assertRaises(ImproperlyConfigured):
+        with pytest.raises(ImproperlyConfigured):
             self.patch_settings({"OCW_STUDIO_USE_S3": "True"})
 
         # Verify it all works with it enabled and configured 'properly'
@@ -85,9 +84,9 @@ class TestSettings(TestCase):
                 "AWS_STORAGE_BUCKET_NAME": "3",
             }
         )
-        self.assertEqual(
-            settings_vars.get("DEFAULT_FILE_STORAGE"),
-            "storages.backends.s3boto3.S3Boto3Storage",
+        assert (
+            settings_vars.get("DEFAULT_FILE_STORAGE")
+            == "storages.backends.s3boto3.S3Boto3Storage"
         )
 
     def test_admin_settings(self):
@@ -96,42 +95,42 @@ class TestSettings(TestCase):
         settings_vars = self.patch_settings(
             {**REQUIRED_SETTINGS, "OCW_STUDIO_ADMIN_EMAIL": ""}
         )
-        self.assertFalse(settings_vars.get("ADMINS", False))
+        assert not settings_vars.get("ADMINS", False)
 
         test_admin_email = "cuddle_bunnies@example.com"
         settings_vars = self.patch_settings(
             {**REQUIRED_SETTINGS, "OCW_STUDIO_ADMIN_EMAIL": test_admin_email}
         )
-        self.assertEqual((("Admins", test_admin_email),), settings_vars["ADMINS"])
+        assert (("Admins", test_admin_email),) == settings_vars["ADMINS"]
 
         # Manually set ADMIN to our test setting and verify e-mail
         # goes where we expect
         settings.ADMINS = (("Admins", test_admin_email),)
         mail.mail_admins("Test", "message")
-        self.assertIn(test_admin_email, mail.outbox[0].to)
+        assert test_admin_email in mail.outbox[0].to
 
     def test_db_ssl_enable(self):
         """Verify that we can enable/disable database SSL with a var"""
 
         # Check default state is SSL on
         settings_vars = self.patch_settings(REQUIRED_SETTINGS)
-        self.assertEqual(
-            settings_vars["DATABASES"]["default"]["OPTIONS"], {"sslmode": "require"}
-        )
+        assert settings_vars["DATABASES"]["default"]["OPTIONS"] == {
+            "sslmode": "require"
+        }
 
         # Check enabling the setting explicitly
         settings_vars = self.patch_settings(
             {**REQUIRED_SETTINGS, "OCW_STUDIO_DB_DISABLE_SSL": "True"}
         )
-        self.assertEqual(settings_vars["DATABASES"]["default"]["OPTIONS"], {})
+        assert settings_vars["DATABASES"]["default"]["OPTIONS"] == {}
 
         # Disable it
         settings_vars = self.patch_settings(
             {**REQUIRED_SETTINGS, "OCW_STUDIO_DB_DISABLE_SSL": "False"}
         )
-        self.assertEqual(
-            settings_vars["DATABASES"]["default"]["OPTIONS"], {"sslmode": "require"}
-        )
+        assert settings_vars["DATABASES"]["default"]["OPTIONS"] == {
+            "sslmode": "require"
+        }
 
     @staticmethod
     def test_semantic_version():

@@ -9,60 +9,60 @@ import { makeWebsiteContentDetail } from "../../util/factories/websites"
 const dummyHugoItems: HugoItem[] = [
   {
     identifier: "external-12345",
-    name:       "External Link #1",
-    url:        "http://example.com",
-    weight:     20
+    name: "External Link #1",
+    url: "http://example.com",
+    weight: 20,
   },
   {
     identifier: "32629a02-3dc5-4128-8e43-0392b51e7b61",
-    name:       "Unit 1",
-    weight:     10
+    name: "Unit 1",
+    weight: 10,
   },
   {
     identifier: "32629a02-3dc5-4128-8e43-0392b51e7b62",
-    name:       "Unit 1 - Subunit 1",
-    weight:     10,
-    parent:     "32629a02-3dc5-4128-8e43-0392b51e7b61"
+    name: "Unit 1 - Subunit 1",
+    weight: 10,
+    parent: "32629a02-3dc5-4128-8e43-0392b51e7b61",
   },
   {
     identifier: "32629a02-3dc5-4128-8e43-0392b51e7b63",
-    name:       "Unit 1 - Sub-subunit 1",
-    weight:     10,
-    parent:     "32629a02-3dc5-4128-8e43-0392b51e7b62"
-  }
+    name: "Unit 1 - Sub-subunit 1",
+    weight: 10,
+    parent: "32629a02-3dc5-4128-8e43-0392b51e7b62",
+  },
 ]
 
 const dummyInternalMenuItems: Required<InternalSortableMenuItem>[] = [
   {
-    id:       "32629a02-3dc5-4128-8e43-0392b51e7b61",
-    text:     "Unit 1",
+    id: "32629a02-3dc5-4128-8e43-0392b51e7b61",
+    text: "Unit 1",
     children: [
       {
-        id:       "32629a02-3dc5-4128-8e43-0392b51e7b62",
-        text:     "Unit 1 - Subunit 1",
+        id: "32629a02-3dc5-4128-8e43-0392b51e7b62",
+        text: "Unit 1 - Subunit 1",
         children: [
           {
-            id:              "32629a02-3dc5-4128-8e43-0392b51e7b63",
-            text:            "Unit 1 - Sub-subunit 1",
-            children:        [],
+            id: "32629a02-3dc5-4128-8e43-0392b51e7b63",
+            text: "Unit 1 - Sub-subunit 1",
+            children: [],
             targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b63",
-            targetUrl:       null
-          }
+            targetUrl: null,
+          },
         ],
         targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b62",
-        targetUrl:       null
-      }
+        targetUrl: null,
+      },
     ],
     targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b61",
-    targetUrl:       null
+    targetUrl: null,
   },
   {
-    id:              "external-12345",
-    text:            "External Link #1",
-    children:        [],
+    id: "external-12345",
+    text: "External Link #1",
+    children: [],
     targetContentId: null,
-    targetUrl:       "http://example.com"
-  }
+    targetUrl: "http://example.com",
+  },
 ]
 
 describe("MenuField", () => {
@@ -81,7 +81,7 @@ describe("MenuField", () => {
           value={dummyHugoItems}
           contentContext={contentContext}
           {...props}
-        />
+        />,
       )
   })
 
@@ -92,7 +92,7 @@ describe("MenuField", () => {
     let formShowBtn
     if (menuItem) {
       const renderedMenuItem = shallow(
-        nestable.prop("renderItem")({ item: menuItem })
+        nestable.prop("renderItem")({ item: menuItem }),
       )
       formShowBtn = renderedMenuItem.find("button").at(0)
     } else {
@@ -121,7 +121,7 @@ describe("MenuField", () => {
     const nestable = wrapper.find("Nestable")
     const menuItem = dummyInternalMenuItems[0]
     const renderedMenuItem = shallow(
-      nestable.prop("renderItem")({ item: menuItem })
+      nestable.prop("renderItem")({ item: menuItem }),
     )
     expect(renderedMenuItem.find(".menu-title").text()).toEqual(menuItem.text)
     expect(renderedMenuItem.find("button").length).toEqual(2)
@@ -147,7 +147,7 @@ describe("MenuField", () => {
     const wrapper = render()
     const nestable = wrapper.find("Nestable")
     const renderedMenuItem = shallow(
-      nestable.prop("renderItem")({ item: menuItem })
+      nestable.prop("renderItem")({ item: menuItem }),
     )
     const deleteBtn = renderedMenuItem.find("button").at(1)
     expect(deleteBtn.exists()).toBe(true)
@@ -163,12 +163,12 @@ describe("MenuField", () => {
     removeDialog.prop("onAccept")()
     wrapper.update()
     expect(wrapper.find("Nestable").prop("items")).toEqual(
-      dummyInternalMenuItems.slice(1)
+      dummyInternalMenuItems.slice(1),
     )
   })
 
   it("should put an appropriate title on the modal", () => {
-    ["edit", "add"].forEach(action => {
+    ;["edit", "add"].forEach((action) => {
       const menuItem = action === "edit" ? dummyInternalMenuItems[0] : null
       const wrapper = render()
       expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
@@ -176,7 +176,7 @@ describe("MenuField", () => {
       let formShowBtn
       if (menuItem) {
         const renderedMenuItem = shallow(
-          nestable.prop("renderItem")({ item: menuItem })
+          nestable.prop("renderItem")({ item: menuItem }),
         )
         formShowBtn = renderedMenuItem.find("button").at(0)
       } else {
@@ -188,7 +188,7 @@ describe("MenuField", () => {
       const modal = wrapper.find("BasicModal")
       expect(modal.prop("isVisible")).toBe(true)
       expect(modal.prop("title")).toBe(
-        action === "edit" ? "Edit Navigation Item" : "Add Navigation Item"
+        action === "edit" ? "Edit Navigation Item" : "Add Navigation Item",
       )
     })
   })
@@ -203,15 +203,15 @@ describe("MenuField", () => {
         "external-12345",
         "32629a02-3dc5-4128-8e43-0392b51e7b61",
         "32629a02-3dc5-4128-8e43-0392b51e7b62",
-        "32629a02-3dc5-4128-8e43-0392b51e7b63"
-      ])
+        "32629a02-3dc5-4128-8e43-0392b51e7b63",
+      ]),
     )
   })
   ;[
     [false, false, "new menu item, external link"],
     [false, true, "new menu item, internal link"],
     [true, false, "existing menu item, external link"],
-    [true, true, "existing menu item, internal link"]
+    [true, true, "existing menu item, internal link"],
   ].forEach(([useExistingItem, isInternalLink, desc]) => {
     it(`menu item form should correctly update widget value with ${desc}`, async () => {
       let submitData, expPartialIdentifier, expectedMenuItem
@@ -219,57 +219,57 @@ describe("MenuField", () => {
       const title = "My Title"
       const internalLinkUuid = "12629a02-3dc5-4128-8e43-0392b51e7b61"
       const externalLinkUrl = "http://example.com"
-      const menuItem = useExistingItem ?
-        dummyInternalMenuItems[0].children[0] :
-        null
+      const menuItem = useExistingItem
+        ? dummyInternalMenuItems[0].children[0]
+        : null
       const menuItemForm = renderMenuItemForm(menuItem)
       const formProps = menuItemForm.props()
       if (isInternalLink) {
         submitData = {
           menuItemTitle: title,
-          menuItemType:  LinkType.Internal,
-          internalLink:  internalLinkUuid
+          menuItemType: LinkType.Internal,
+          internalLink: internalLinkUuid,
         }
         expectedMenuItem = {
-          name: title
+          name: title,
         }
         expPartialIdentifier = internalLinkUuid
       } else {
         submitData = {
           menuItemTitle: title,
-          menuItemType:  LinkType.External,
-          externalLink:  externalLinkUrl
+          menuItemType: LinkType.External,
+          externalLink: externalLinkUrl,
         }
         expectedMenuItem = {
           name: title,
-          url:  externalLinkUrl
+          url: externalLinkUrl,
         }
         expPartialIdentifier = `${EXTERNAL_LINK_PREFIX}-631280213`
       }
       formProps.onSubmit(submitData)
       expect(onChangeStub.mock.calls.length).toEqual(1)
-      const matchingMenuItem = useExistingItem ?
-        {
-          ...expectedMenuItem,
-          weight: 10,
-          parent: "32629a02-3dc5-4128-8e43-0392b51e7b61"
-        } :
-        {
-          ...expectedMenuItem,
-          weight: 30
-        }
+      const matchingMenuItem = useExistingItem
+        ? {
+            ...expectedMenuItem,
+            weight: 10,
+            parent: "32629a02-3dc5-4128-8e43-0392b51e7b61",
+          }
+        : {
+            ...expectedMenuItem,
+            weight: 30,
+          }
       const updatedHugoMenuItems = onChangeStub.mock.calls[0][0].target.value
       const updatedHugoMenuItem = updatedHugoMenuItems.find(
-        (item: HugoItem) => item.name === matchingMenuItem.name
+        (item: HugoItem) => item.name === matchingMenuItem.name,
       )
       expect(updatedHugoMenuItem).toEqual(
-        expect.objectContaining(matchingMenuItem)
+        expect.objectContaining(matchingMenuItem),
       )
       expect(updatedHugoMenuItem.identifier).toEqual(
-        expect.stringContaining(expPartialIdentifier)
+        expect.stringContaining(expPartialIdentifier),
       )
       expect(updatedHugoMenuItems).toHaveLength(
-        useExistingItem ? initialMenuItemCount : initialMenuItemCount + 1
+        useExistingItem ? initialMenuItemCount : initialMenuItemCount + 1,
       )
     })
   })

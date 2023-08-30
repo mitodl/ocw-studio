@@ -1,4 +1,4 @@
-""" Websites Admin """
+"""Websites Admin"""
 from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
@@ -58,16 +58,17 @@ class WebsiteContentAdmin(TimestampedModelAdmin, SafeDeleteAdmin):
         "title",
         "type",
         "get_website_title",
-    ) + SafeDeleteAdmin.list_display
-    list_filter = ("type",) + SafeDeleteAdmin.list_filter
+        *SafeDeleteAdmin.list_display,
+    )
+    list_filter = ("type", *SafeDeleteAdmin.list_filter)
     raw_id_fields = ("website", "parent")
     ordering = ("-created_on",)
 
-    def get_queryset(self, request):
+    def get_queryset(self, request):  # noqa: ARG002
         return self.model.objects.get_queryset().select_related("website", "parent")
 
     def get_website_title(self, obj):
-        """Returns the related Website title"""
+        """Returns the related Website title"""  # noqa: D401
         return obj.website.title
 
     get_website_title.short_description = "Website"
@@ -82,14 +83,14 @@ class WebsiteStarterForm(forms.ModelForm):
         field_classes = {
             "config": JsonOrYamlField,
         }
-        fields = "__all__"
+        fields = "__all__"  # noqa: DJ007
 
     def __init__(self, *args, **kwargs):
         kwargs_updated = {**kwargs, "error_class": WhitespaceErrorList}
         super().__init__(*args, **kwargs_updated)
 
     def clean_config(self):
-        """Ensures that the site config value obeys our schema"""
+        """Ensures that the site config value obeys our schema"""  # noqa: D401
         config = self.cleaned_data["config"]
         try:
             validate_parsed_site_config(config)

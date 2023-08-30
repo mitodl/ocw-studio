@@ -37,7 +37,7 @@ RECIPE
 2
 {{< tdclose >}}
 {{< tdopen >}}
-[Risotto]({{< baseurl >}}/pages/lesson-2/cooking-instruction) 
+[Risotto]({{< baseurl >}}/pages/lesson-2/cooking-instruction)
 {{< tdclose >}}
 
 {{< trclose >}}

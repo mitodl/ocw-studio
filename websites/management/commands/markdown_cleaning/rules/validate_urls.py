@@ -19,7 +19,7 @@ class ValidateUrlsRule(RegexpCleanupRule):
     regex = (
         # Do not try to capture link text, else we'll miss images inside links
         # because the regex matches will overlap
-        r"\\?\]"  # title closing "]" (or "\]")
+        r"\\?\]"  # title closing "]" (or "\]")  # noqa: ISC003
         + r"\("  # url open
         + r"(?P<url>[^\s]*?)"  # capture the url
         + r"(\s\"(?P<title>.*?)\")?"  # capture optional title
@@ -49,7 +49,9 @@ class ValidateUrlsRule(RegexpCleanupRule):
         super().__init__()
         self.content_lookup = ContentLookup()
 
-    def replace_match(self, match: re.Match, wc: WebsiteContent):
+    def replace_match(  # noqa: C901, PLR0911, PLR0912
+        self, match: re.Match, wc: WebsiteContent  # noqa: ARG002
+    ):  # noqa: PLR0911, PLR0912, RUF100
         original_text = match[0]
         try:
             url = urlparse(match.group("url"))
@@ -69,7 +71,6 @@ class ValidateUrlsRule(RegexpCleanupRule):
             return original_text, note_works(link_type="mailto")
 
         if url.path.startswith("/courses"):
-
             try:
                 linked_content = self.content_lookup.find(url.path)
                 return original_text, note_works(
@@ -118,7 +119,7 @@ class ValidateUrlsRule(RegexpCleanupRule):
             return original_text, note_broken("/ans7870 (TODO: investigate)")
         if url.path.startswith("/20-219IAP15"):
             return original_text, note_broken(
-                "/20-219IAP15 ... (redirects https://ocw.mit.edu/courses/biological-engineering/20-219-becoming-the-next-bill-nye-writing-and-hosting-the-educational-show-january-iap-2015/) "
+                "/20-219IAP15 ... (redirects https://ocw.mit.edu/courses/biological-engineering/20-219-becoming-the-next-bill-nye-writing-and-hosting-the-educational-show-january-iap-2015/) "  # noqa: E501
             )
         if url.path == "/images/a_logo_17.gif":
             return original_text, note_broken("/images/a_logo_17.gif")

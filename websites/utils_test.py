@@ -11,10 +11,10 @@ from websites.utils import (
 
 
 @pytest.mark.parametrize(
-    "role, group_prefix",
+    ("role", "group_prefix"),
     [
-        [constants.ROLE_ADMINISTRATOR, constants.ADMIN_GROUP_PREFIX],
-        [constants.ROLE_EDITOR, constants.EDITOR_GROUP_PREFIX],
+        [constants.ROLE_ADMINISTRATOR, constants.ADMIN_GROUP_PREFIX],  # noqa: PT007
+        [constants.ROLE_EDITOR, constants.EDITOR_GROUP_PREFIX],  # noqa: PT007
     ],
 )
 def test_permissions_group_name_for_role(role, group_prefix):
@@ -42,13 +42,13 @@ def test_permissions_group_name_for_global_admin():
 def test_permissions_group_for_role_invalid(role):
     """permissions_group_for_role should raise a ValueError for an invalid role"""
     website = WebsiteFactory.build()
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(ValueError) as exc:  # noqa: PT011
         permissions_group_name_for_role(role, website)
     assert exc.value.args == (f"Invalid role for a website group: {role}",)
 
 
 def test_get_dict_query_field():
-    """test get_dict_query_field"""
+    """Test get_dict_query_field"""
     assert (
         get_dict_query_field("metadata", "video_files.video_captions_file")
         == "metadata__video_files__video_captions_file"

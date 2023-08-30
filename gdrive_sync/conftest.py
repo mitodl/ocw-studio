@@ -1,13 +1,13 @@
 """Common functions and variables for gdrive_sync tests"""
 
-from typing import Iterable, Optional, Tuple
+from collections.abc import Iterable
+from typing import Optional
 
 import boto3
 
 from websites.constants import CONTENT_TYPE_RESOURCE, WebsiteStarterStatus
 from websites.models import Website, WebsiteStarter
 from websites.site_config_api import ConfigItem, SiteConfig
-
 
 LIST_VIDEO_RESPONSES = [
     {
@@ -95,7 +95,7 @@ LIST_FILE_RESPONSES = [
 ]
 
 
-def all_starters_items_fields() -> Iterable[Tuple[WebsiteStarter, ConfigItem, dict]]:
+def all_starters_items_fields() -> Iterable[tuple[WebsiteStarter, ConfigItem, dict]]:
     """All fields from all starters."""
     all_starters = list(
         WebsiteStarter.objects.filter(status__in=WebsiteStarterStatus.ALLOWED_STATUSES)
@@ -104,7 +104,7 @@ def all_starters_items_fields() -> Iterable[Tuple[WebsiteStarter, ConfigItem, di
     for starter in all_starters:
         for item in SiteConfig(starter.config).iter_items():
             for field in item.fields:
-                data.append((starter, item, field))
+                data.append((starter, item, field))  # noqa: PERF401
 
     return data
 
@@ -117,9 +117,9 @@ def generate_related_content_data(
     `resource_id`.
 
     Returns `None` for any unrelated field.
-    """
+    """  # noqa: D401
     if starter != website.starter and not field.get("cross_site", False):
-        return
+        return None
 
     if field.get("widget") == "markdown" and (
         CONTENT_TYPE_RESOURCE in field.get("link", [])
@@ -139,10 +139,7 @@ def generate_related_content_data(
             else [resource_id, website.url_path]
         )
 
-        if field.get("multiple", False):
-            content = [value]
-        else:
-            content = value
+        content = [value] if field.get("multiple", False) else value
 
         return {"markdown": "", "metadata": {field["name"]: {"content": content}}}
     elif field.get("widget") == "menu":
@@ -150,14 +147,15 @@ def generate_related_content_data(
             "markdown": r"",
             "metadata": {field["name"]: [{"identifier": resource_id}]},
         }
+    return None
 
 
-def setup_s3_test_file_bucket(settings, file_key: str) -> "s3.Bucket":
+def setup_s3_test_file_bucket(settings, file_key: str) -> "s3.Bucket":  # noqa: F821
     """
     Setup a mock s3 service with a fake file and a bucket.
 
     Returns the bucket.
-    """
+    """  # noqa: D401
     mock_bucket = settings.AWS_STORAGE_BUCKET_NAME
 
     s3 = boto3.resource("s3", region_name="us-east-1")

@@ -35,7 +35,7 @@ The opposite of _su_ is _giù_.
 ### Procedimento
 
 1.  In a _ciotola_/bowl, _mescola_/mix the egg yolks (_i tuorli_ or _rossi d'uovo_ = literally "the reds of the egg") with the _mascarpone_ \[and the marsala\].
-2.  In another _ciotola,_ whisk the whites/_monta gli albumi_ or _i bianchi_ with the sugar (you can whisk by hand with a fork or a hand whisk, or by using an electric beater).  
+2.  In another _ciotola,_ whisk the whites/_monta gli albumi_ or _i bianchi_ with the sugar (you can whisk by hand with a fork or a hand whisk, or by using an electric beater).
     Then mix the two creams gently: you want to avoid the egg whites foam to collapse.
 3.  In the meantime, prepare your favorite coffee (I use espresso, I will write more about _caffè_ in the next days), let it cool down and put it in a shallow dish.
 4.  Dip the ladyfingers in the coffee and make a layer on a rectangular pyrex/ceramic pan. Then add a layer of cream, then another layer of soaked ladyfingers.

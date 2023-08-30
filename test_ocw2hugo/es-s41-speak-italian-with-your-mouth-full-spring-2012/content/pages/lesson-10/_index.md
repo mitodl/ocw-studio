@@ -9,7 +9,7 @@ ocw_type: CourseSection
 {{< tableopen >}}
 {{< tropen >}}
 {{< tdopen >}}
-![Yellow crumbs sit in two clear glass pie plates.]({{< resource_file 28bae3a7-47f7-b309-1059-6aa0afeb7534 >}})  
+![Yellow crumbs sit in two clear glass pie plates.]({{< resource_file 28bae3a7-47f7-b309-1059-6aa0afeb7534 >}})
 
 La sbrisolona, a big crumbly tart, is popular in the Italian city of Mantova. (Image courtesy of Graham Gordon Ramsay.)
 

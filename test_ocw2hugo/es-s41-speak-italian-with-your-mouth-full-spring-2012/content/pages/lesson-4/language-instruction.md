@@ -14,7 +14,7 @@ _Lezione Numero Quattro_/Lesson Number Four
 
 Watch a video:
 
-[Lecture 4, Part 1: Language Instruction]({{< baseurl >}}/resources/lesson-4-part-1-language-instruction)  
+[Lecture 4, Part 1: Language Instruction]({{< baseurl >}}/resources/lesson-4-part-1-language-instruction)
 
 Listening Exercise
 ------------------
@@ -221,7 +221,7 @@ I sleep.
 {{< trclose >}}
 {{< tropen >}}
 {{< tdopen colspan="2" >}}
-_(Tu) fai_ is the 2nd person singular indicative present of the verb _fare_ (to do/to make).  
+_(Tu) fai_ is the 2nd person singular indicative present of the verb _fare_ (to do/to make).
 Notice that when we are talking about some events happening _domani_ we should use the future simple verb tense. However, if you use the present tense nobody will complain, not only because you are making an effort to learn Italian, but also because this is how most Italians speak.
 {{< tdclose >}}
 
@@ -305,7 +305,7 @@ _Si dice cane_.
 {{< trclose >}}
 {{< tropen >}}
 {{< tdopen colspan="2" >}}
-_Dice_ is the 3rd person singular indicative present of the irr. verb _dire_ (to say).  
+_Dice_ is the 3rd person singular indicative present of the irr. verb _dire_ (to say).
 _Si_+3rd person of a verb gives the impersonal construction.
 {{< tdclose >}}
 

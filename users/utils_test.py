@@ -6,16 +6,24 @@ from users.utils import format_recipient
 
 
 @pytest.mark.parametrize(
-    "name,email,expected",
+    ("name", "email", "expected"),
     [
-        [
+        [  # noqa: PT007
             "Mr. John Thornton",
             "jthornton@test.edu",
             '"Mr. John Thornton" <jthornton@test.edu>',
         ],
-        ["John Thornton", "jthornton@test.com", "John Thornton <jthornton@test.com>"],
-        ["Joanne O'Brien", "jobrien@test.edu", "Joanne O'Brien <jobrien@test.edu>"],
-        [
+        [  # noqa: PT007
+            "John Thornton",
+            "jthornton@test.com",
+            "John Thornton <jthornton@test.com>",
+        ],
+        [  # noqa: PT007
+            "Joanne O'Brien",
+            "jobrien@test.edu",
+            "Joanne O'Brien <jobrien@test.edu>",
+        ],
+        [  # noqa: PT007
             "Cpl. Joanne O'Brien",
             "jobrien@test.edu",
             '"Cpl. Joanne O\'Brien" <jobrien@test.edu>',

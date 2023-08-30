@@ -1,4 +1,4 @@
-""" Tests for websites permissions"""
+"""Tests for websites permissions"""
 import pytest
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from guardian.shortcuts import remove_perm
@@ -13,7 +13,6 @@ from websites.permissions import (
     create_global_groups,
     setup_website_groups_permissions,
 )
-
 
 pytestmark = pytest.mark.django_db
 
@@ -87,7 +86,9 @@ def test_can_view_edit_preview_website(mocker, permission_groups, method):
             ) is (user in website_1_allowed_users)
 
 
-@pytest.mark.parametrize("method,has_perm", [["PATCH", False], ["GET", True]])
+@pytest.mark.parametrize(
+    ("method", "has_perm"), [["PATCH", False], ["GET", True]]  # noqa: PT007
+)
 def test_editor_can_view_not_edit_website(mocker, permission_groups, method, has_perm):
     """A site editor should be able to view but not edit the website"""
     site_editor = permission_groups.site_editor
@@ -413,17 +414,17 @@ def test_create_global_groups():
 
 
 @pytest.mark.parametrize(
-    "token,has_permission",
+    ("token", "has_permission"),
     [
-        [None, False],
-        ["Bearer abc123", False],
-        ["Bearer 123abc", True],
-        ["123abc", False],
+        [None, False],  # noqa: PT007
+        ["Bearer abc123", False],  # noqa: PT007
+        ["Bearer 123abc", True],  # noqa: PT007
+        ["123abc", False],  # noqa: PT007
     ],
 )
 def test_bearer_token_permission(settings, mocker, token, has_permission):
     """BearerTokenPermission.has_permission should return expected values"""
-    settings.API_BEARER_TOKEN = "123abc"
+    settings.API_BEARER_TOKEN = "123abc"  # noqa: S105
     request = mocker.Mock(headers={"Authorization": token})
     view = mocker.Mock()
     assert (

@@ -6,12 +6,12 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  DragEndEvent,
 } from "@dnd-kit/core"
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 
 interface Props<T> {
@@ -27,8 +27,8 @@ export default function Sortable<T>(props: Props<T>): JSX.Element {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   )
 
   return (

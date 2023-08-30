@@ -1,4 +1,4 @@
-""" Publish live or draft versions of multiple sites """
+"""Publish live or draft versions of multiple sites"""  # noqa: INP001
 from django.conf import settings
 from django.core.management import CommandError
 from django.db.models import Q
@@ -14,7 +14,7 @@ from websites.models import Website
 class Command(WebsiteFilterCommand):
     """Publish live or draft versions of multiple sites"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -27,7 +27,7 @@ class Command(WebsiteFilterCommand):
             "--starter",
             dest="starter",
             default=None,
-            help="If specified, only trigger pipelines for websites that are based on this starter slug",
+            help="If specified, only trigger pipelines for websites that are based on this starter slug",  # noqa: E501
         )
         parser.add_argument(
             "-s",
@@ -55,7 +55,7 @@ class Command(WebsiteFilterCommand):
             "--no-mass-build",
             dest="no_mass_build",
             action="store_true",
-            help="Run individual site pipelines instead of the mass-build-sites pipeline",
+            help="Run individual site pipelines instead of the mass-build-sites pipeline",  # noqa: E501
         )
 
     def handle(self, *args, **options):  # pylint:disable=too-many-locals
@@ -81,7 +81,7 @@ class Command(WebsiteFilterCommand):
             website_qset = website_qset.filter(starter__slug=starter_str)
         if source_str:
             website_qset = website_qset.filter(source=source_str)
-        # do not publish any sites that have been unpublished or never been published before
+        # do not publish any sites that have been unpublished or never been published before  # noqa: E501
         website_qset = website_qset.filter(unpublish_status__isnull=True)
         if version == VERSION_DRAFT:
             website_qset = website_qset.exclude(draft_publish_date__isnull=True)
@@ -93,7 +93,7 @@ class Command(WebsiteFilterCommand):
         if no_mass_build:
             confirmation = input(
                 f"""WARNING: You are about to trigger individual concourse pipelines for {len(website_names)} sites.
-Would you like to proceed? (y/n): """
+Would you like to proceed? (y/n): """  # noqa: E501
             )
             if confirmation != "y":
                 self.stdout.write("Aborting...")
@@ -112,7 +112,7 @@ Would you like to proceed? (y/n): """
         )
 
         self.stdout.write(
-            f"Started task {task} to publish {version} versions for {len(website_names)} sites, source={source_str}"
+            f"Started task {task} to publish {version} versions for {len(website_names)} sites, source={source_str}"  # noqa: E501
         )
 
         if is_verbose:
@@ -122,9 +122,8 @@ Would you like to proceed? (y/n): """
 
         result = task.get()
         if set(result) != {True}:
-            raise CommandError("Some errors occurred, check sentry for details")
+            msg = "Some errors occurred, check sentry for details"
+            raise CommandError(msg)
 
         total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(
-            "Publishing tasks finished, took {} seconds".format(total_seconds)
-        )
+        self.stdout.write(f"Publishing tasks finished, took {total_seconds} seconds")

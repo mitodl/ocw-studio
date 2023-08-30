@@ -3,7 +3,7 @@ import { useAppSelector } from "../hooks/redux"
 import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 
 export default function HomePage(): JSX.Element | null {
-  const { user } = useAppSelector(state => state.user)
+  const { user } = useAppSelector((state) => state.user)
   return (
     <div className="container home-page">
       <DocumentTitle title={formatTitle()} />

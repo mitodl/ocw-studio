@@ -36,19 +36,18 @@ from websites.constants import (
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 
-
 pytestmark = pytest.mark.django_db
 
 # pylint: disable=redefined-outer-name,unused-argument,no-value-for-parameter,unused-variable
 
 
-@pytest.fixture
+@pytest.fixture()
 def youtube_mocker(mocker):
     """Return a mock youtube api client"""
     return mocker.patch("videos.youtube.build")
 
 
-@pytest.fixture
+@pytest.fixture()
 def youtube_website(mocker):
     """Return a website with youtube resources"""
     website = WebsiteFactory.create()
@@ -71,7 +70,7 @@ def youtube_website(mocker):
     return website
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_mail(mocker):
     """Objects and mocked functions for mail tests"""
     mock_get_message_sender = mocker.patch("videos.youtube.get_message_sender")
@@ -94,10 +93,10 @@ def test_youtube_settings(mocker, settings):
     """
     Test that Youtube object creation uses YT_* settings for credentials
     """
-    settings.YT_ACCESS_TOKEN = "yt_access_token"
+    settings.YT_ACCESS_TOKEN = "yt_access_token"  # noqa: S105
     settings.YT_CLIENT_ID = "yt_client_id"
-    settings.YT_CLIENT_SECRET = "yt_secret"
-    settings.YT_REFRESH_TOKEN = "yt_refresh"
+    settings.YT_CLIENT_SECRET = "yt_secret"  # noqa: S105
+    settings.YT_REFRESH_TOKEN = "yt_refresh"  # noqa: S105
     mock_oauth = mocker.patch("videos.youtube.Credentials")
     YouTubeApi()
     mock_oauth.assert_called_with(
@@ -105,7 +104,7 @@ def test_youtube_settings(mocker, settings):
         client_id=settings.YT_CLIENT_ID,
         client_secret=settings.YT_CLIENT_SECRET,
         refresh_token=settings.YT_REFRESH_TOKEN,
-        token_uri="https://accounts.google.com/o/oauth2/token",
+        token_uri="https://accounts.google.com/o/oauth2/token",  # noqa: S106
     )
 
 
@@ -143,12 +142,12 @@ def test_upload_video_no_id(youtube_mocker):
 
 
 @pytest.mark.parametrize(
-    ["error", "retryable"],
+    ("error", "retryable"),
     [
-        [HttpError(MockHttpErrorResponse(500), b""), True],
-        [HttpError(MockHttpErrorResponse(403), b""), False],
-        [OSError, True],
-        [IndexError, False],
+        [HttpError(MockHttpErrorResponse(500), b""), True],  # noqa: PT007
+        [HttpError(MockHttpErrorResponse(403), b""), False],  # noqa: PT007
+        [OSError, True],  # noqa: PT007
+        [IndexError, False],  # noqa: PT007
     ],
 )
 def test_upload_errors_retryable(mocker, youtube_mocker, error, retryable):
@@ -160,7 +159,7 @@ def test_upload_errors_retryable(mocker, youtube_mocker, error, retryable):
     youtube_mocker().videos.return_value.insert.return_value.next_chunk.side_effect = (
         error
     )
-    with pytest.raises(Exception) as exc:
+    with pytest.raises(Exception) as exc:  # noqa: PT011
         YouTubeApi().upload_video(videofile)
     assert str(exc.value).startswith("Retried YouTube upload 10x") == retryable
 
@@ -169,7 +168,9 @@ def test_upload_video_long_fields(mocker, youtube_mocker):
     """
     Test that the upload_youtube_video task truncates title and description if too long
     """
-    name = "".join(random.choice(string.ascii_lowercase) for c in range(105))
+    name = "".join(
+        random.choice(string.ascii_lowercase) for c in range(105)  # noqa: S311
+    )  # noqa: RUF100, S311
     video_file = VideoFileFactory.create()
     video_file.video.source_key = video_file.s3_key.replace("file_", name)
     mocker.patch("videos.youtube.resumable_upload")
@@ -184,7 +185,9 @@ def test_upload_notify_subscribers(mocker, youtube_mocker, notify):
     """
     Test that the upload_youtube_video task appropriately sets notifySubscribers
     """
-    name = "".join(random.choice(string.ascii_lowercase) for c in range(50))
+    name = "".join(
+        random.choice(string.ascii_lowercase) for c in range(50)  # noqa: S311
+    )  # noqa: RUF100, S311
     video_file = VideoFileFactory.create()
     video_file.video.source_key = video_file.s3_key.replace("file_", name)
     mocker.patch("videos.youtube.resumable_upload")
@@ -356,9 +359,10 @@ def test_mail_youtube_upload_success(settings, mock_mail):
 @pytest.mark.parametrize("youtube_enabled", [True, False])
 @pytest.mark.parametrize("is_ocw", [True, False])
 @pytest.mark.parametrize(
-    "version, privacy", [[VERSION_DRAFT, None], [VERSION_LIVE, "public"]]
+    ("version", "privacy"),
+    [[VERSION_DRAFT, None], [VERSION_LIVE, "public"]],  # noqa: PT007
 )
-def test_update_youtube_metadata(  # pylint:disable=too-many-arguments
+def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: PLR0913
     mocker,
     settings,
     youtube_website,

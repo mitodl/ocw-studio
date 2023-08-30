@@ -13,7 +13,7 @@ prodConfig.module.rules = [
     test: /static\/scss\/.+(\.css$|\.scss$)/,
     use: [
       {
-        loader: MiniCssExtractPlugin.loader
+        loader: MiniCssExtractPlugin.loader,
       },
       "css-loader?url=false",
       "postcss-loader",
@@ -22,9 +22,9 @@ prodConfig.module.rules = [
         options: {
           sassOptions: { quietDeps: true },
         },
-      }
-    ]
-  }
+      },
+    ],
+  },
 ]
 
 module.exports = Object.assign(prodConfig, {
@@ -34,30 +34,30 @@ module.exports = Object.assign(prodConfig, {
     path: path.resolve("./static/bundles/"),
     filename: "[name]-[chunkhash].js",
     chunkFilename: "[id]-[chunkhash].js",
-    crossOriginLoading: "anonymous"
+    crossOriginLoading: "anonymous",
   },
 
   plugins: [
     new BundleTracker({
-      filename: "./webpack-stats.json"
+      filename: "./webpack-stats.json",
     }),
     new webpack.LoaderOptionsPlugin({
-      minimize: true
+      minimize: true,
     }),
     new webpack.optimize.AggressiveMergingPlugin(),
     new MiniCssExtractPlugin({
-      filename: "[name]-[contenthash].css"
+      filename: "[name]-[contenthash].css",
     }),
     new CKEditorWebpackPlugin({
       language: "en",
-      addMainLanguageTranslationsToAllAssets: true
+      addMainLanguageTranslationsToAllAssets: true,
     }),
     new webpack.DefinePlugin({
-      RELEASE_YEAR: JSON.stringify(new Date().getUTCFullYear())
-    })
+      RELEASE_YEAR: JSON.stringify(new Date().getUTCFullYear()),
+    }),
   ],
   optimization: {
-    minimize: true
+    minimize: true,
   },
-  devtool: "source-map"
+  devtool: "source-map",
 })

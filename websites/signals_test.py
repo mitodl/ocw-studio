@@ -1,4 +1,4 @@
-""" Tests for signals """
+"""Tests for signals"""
 import pytest
 
 from users.factories import UserFactory
@@ -6,7 +6,7 @@ from websites import constants
 from websites.factories import WebsiteFactory
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_handle_website_save():
     """Groups should be created for a new Website"""
     website = WebsiteFactory.create(owner=UserFactory.create())

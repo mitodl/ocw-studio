@@ -16,7 +16,7 @@ describe("BooleanField", () => {
           value={false}
           onChange={onChangeStub}
           {...props}
-        />
+        />,
       )
   })
 
@@ -31,13 +31,13 @@ describe("BooleanField", () => {
   })
 
   it("should set 'checked' prop on the radio corresponding to current value", () => {
-    [true, false].forEach(value => {
+    ;[true, false].forEach((value) => {
       const wrapper = render({ value })
       expect(
-        wrapper.find(`#name_${value.toString()}`).prop("checked")
+        wrapper.find(`#name_${value.toString()}`).prop("checked"),
       ).toBeTruthy()
       expect(
-        wrapper.find(`#name_${(!value).toString()}`).prop("checked")
+        wrapper.find(`#name_${(!value).toString()}`).prop("checked"),
       ).toBeFalsy()
     })
   })
@@ -50,14 +50,14 @@ describe("BooleanField", () => {
       .at(0)
       .simulate("change", { target: { name, value: "true" } })
     expect(onChangeStub).toHaveBeenCalledWith({
-      target: { name: "name", value: true }
+      target: { name: "name", value: true },
     })
     wrapper
       .find("input")
       .at(1)
       .simulate("change", { target: { name, value: "false" } })
     expect(onChangeStub).toHaveBeenCalledWith({
-      target: { name: "name", value: false }
+      target: { name: "name", value: false },
     })
   })
 })

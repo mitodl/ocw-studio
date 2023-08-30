@@ -1,15 +1,15 @@
-version: '3.7'
+---
+version: "3.7"
 
-x-environment:
-  &py-enviroment
-  DEBUG: 'False'
-  NODE_ENV: 'production'
-  DEV_ENV: 'True'  # necessary to have nginx connect to web container
-  SECRET_KEY: local_unsafe_key  # pragma: allowlist secret
-  DATABASE_URL: postgres://postgres:postgres@db:5432/postgres  # pragma: allowlist secret
-  OCW_STUDIO_SECURE_SSL_REDIRECT: 'False'
-  OCW_STUDIO_DB_DISABLE_SSL: 'True'
-  CELERY_TASK_ALWAYS_EAGER: 'False'
+x-environment: &py-enviroment
+  DEBUG: "False"
+  NODE_ENV: "production"
+  DEV_ENV: "True" # necessary to have nginx connect to web container
+  SECRET_KEY: local_unsafe_key # pragma: allowlist secret
+  DATABASE_URL: postgres://postgres:postgres@db:5432/postgres # pragma: allowlist secret
+  OCW_STUDIO_SECURE_SSL_REDIRECT: "False"
+  OCW_STUDIO_DB_DISABLE_SSL: "True"
+  CELERY_TASK_ALWAYS_EAGER: "False"
   CELERY_BROKER_URL: redis://redis:6379/4
   CELERY_RESULT_BACKEND: redis://redis:6379/4
   DOCKER_HOST: ${DOCKER_HOST:-missing}
@@ -25,14 +25,14 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: "10.1.0.0/24"
+      - subnet: "10.1.0.0/24"
 services:
   db:
     image: postgres:12.8
     ports:
-      - "5431:5432"
+    - "5431:5432"
     environment:
-      POSTGRES_PASSWORD: postgres  # pragma: allowlist secret
+      POSTGRES_PASSWORD: postgres # pragma: allowlist secret
     networks:
       default-network:
       concourse-network:
@@ -41,10 +41,10 @@ services:
   redis:
     image: redis:6.0.10
     ports:
-      - "6379"
+    - "6379"
     networks:
-     - default-network
-     - concourse-network
+    - default-network
+    - concourse-network
 
   nginx:
     image: nginx:1.22.0
@@ -52,19 +52,19 @@ services:
       AWS_PREVIEW_BUCKET_NAME: $AWS_PREVIEW_BUCKET_NAME
       AWS_PUBLISH_BUCKET_NAME: $AWS_PUBLISH_BUCKET_NAME
     ports:
-      - "8043:8043"
-      - "8044:8044"
-      - "8045:8045"
+    - "8043:8043"
+    - "8044:8044"
+    - "8045:8045"
     links:
-      - web
-      - s3
+    - web
+    - s3
     networks:
       default-network:
       concourse-network:
         ipv4_address: 10.1.0.102
     volumes:
-      - ./config/nginx.conf:/etc/nginx/templates/web.conf.template
-      - ./:/src
+    - ./config/nginx.conf:/etc/nginx/templates/web.conf.template
+    - ./:/src
 
   web:
     build:
@@ -79,24 +79,24 @@ services:
     stdin_open: true
     tty: true
     ports:
-      - "8041:8041"
+    - "8041:8041"
     environment:
-      << : *py-enviroment
+      <<: *py-enviroment
       PORT: 8041
-      DEBUG: 'True'
-      NODE_ENV: 'development'
-      WEBPACK_USE_DEV_SERVER: 'True'
+      DEBUG: "True"
+      NODE_ENV: "development"
+      WEBPACK_USE_DEV_SERVER: "True"
       WEBPACK_DEV_SERVER_PORT: 8042
     env_file: .env
     links:
-      - db
-      - redis
+    - db
+    - redis
     networks:
-      - default-network
-      - concourse-network
+    - default-network
+    - concourse-network
     volumes:
-      - .:/src
-      - django_media:/var/media
+    - .:/src
+    - django_media:/var/media
 
   watch:
     image: node:16.15.0
@@ -104,17 +104,17 @@ services:
     command: >
       /bin/bash -c './webpack_dev_server.sh --install'
     ports:
-      - "8042:8042"
+    - "8042:8042"
     environment:
-      NODE_ENV: 'development'
+      NODE_ENV: "development"
       DOCKER_HOST: ${DOCKER_HOST:-missing}
-      CONTAINER_NAME: 'watch'
+      CONTAINER_NAME: "watch"
     env_file: .env
     networks:
-      - default-network
+    - default-network
     volumes:
-      - .:/src
-      - yarn-cache:/home/mitodl/.cache/yarn
+    - .:/src
+    - yarn-cache:/home/mitodl/.cache/yarn
 
   celery:
     build:
@@ -122,9 +122,9 @@ services:
       dockerfile: Dockerfile
     environment:
       <<: *py-enviroment
-      DEBUG: 'True'
-      NODE_ENV: 'development'
-      WEBPACK_USE_DEV_SERVER: 'True'
+      DEBUG: "True"
+      NODE_ENV: "development"
+      WEBPACK_USE_DEV_SERVER: "True"
       WEBPACK_DEV_SERVER_PORT: 8042
     env_file: .env
     command: >
@@ -132,14 +132,14 @@ services:
       sleep 3;
       celery -A main.celery:app worker -Q publish,batch,default, -B -l ${OCW_STUDIO_LOG_LEVEL:-INFO}'
     links:
-      - db
-      - redis
+    - db
+    - redis
     networks:
-      - default-network
-      - concourse-network
+    - default-network
+    - concourse-network
     volumes:
-      - .:/src
-      - django_media:/var/media
+    - .:/src
+    - django_media:/var/media
 
   concourse-db:
     image: postgres:latest
@@ -154,7 +154,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - default-network
+    - default-network
 
   concourse-keys:
     image: gotechnies/alpine-ssh
@@ -162,8 +162,8 @@ services:
     healthcheck:
       test: "exit 0"
     volumes:
-      - ./scripts/concourse:/scripts
-      - concourse-keys:/concourse-keys
+    - ./scripts/concourse:/scripts
+    - concourse-keys:/concourse-keys
 
   concourse:
     image: concourse/concourse:7.10
@@ -174,9 +174,9 @@ services:
         condition: service_healthy
       concourse-keys:
         condition: service_completed_successfully
-    ports: 
-      - "8080:8080"
-      - "2222:2222"
+    ports:
+    - "8080:8080"
+    - "2222:2222"
     stdin_open: true
     tty: true
     environment:
@@ -190,7 +190,7 @@ services:
       CONCOURSE_POSTGRES_PASSWORD: postgres # pragma: allowlist secret
       CONCOURSE_POSTGRES_DATABASE: concourse
       CONCOURSE_EXTERNAL_URL: ${CONCOURSE_URL:-http://concourse:8080}
-      CONCOURSE_ADD_LOCAL_USER: ${CONCOURSE_USER_NAME:-test}:${CONCOURSE_PASSWORD:-test}  # pragma: allowlist secret
+      CONCOURSE_ADD_LOCAL_USER: ${CONCOURSE_USER_NAME:-test}:${CONCOURSE_PASSWORD:-test} # pragma: allowlist secret
       CONCOURSE_MAIN_TEAM_LOCAL_USER: ${CONCOURSE_USER_NAME:-test}
       CONCOURSE_WORKER_BAGGAGECLAIM_DRIVER: overlay
       CONCOURSE_X_FRAME_OPTIONS: allow
@@ -204,11 +204,11 @@ services:
       CONCOURSE_GC_MISSING_GRACE_PERIOD: "5m"
       CONCOURSE_GC_HIJACK_GRACE_PERIOD: "5m"
     links:
-      - web
-      - nginx
-      - s3
+    - web
+    - nginx
+    - s3
     volumes:
-      - concourse-keys:/concourse-keys
+    - concourse-keys:/concourse-keys
     networks:
       default-network:
       concourse-network:
@@ -239,7 +239,7 @@ services:
         max-file: "5"
         max-size: "10m"
     volumes:
-      - concourse-keys:/concourse-keys
+    - concourse-keys:/concourse-keys
     networks:
       default-network:
       concourse-network:
@@ -248,10 +248,10 @@ services:
   s3:
     image: minio/minio
     ports:
-      - "9000:9000"
-      - "9001:9001"
+    - "9000:9000"
+    - "9001:9001"
     volumes:
-      - ./s3:/data
+    - ./s3:/data
     environment:
       MINIO_ROOT_USER: $MINIO_ROOT_USER
       MINIO_ROOT_PASSWORD: $MINIO_ROOT_PASSWORD
@@ -298,7 +298,7 @@ services:
       /usr/bin/mc version enable minio/$AWS_ARTIFACTS_BUCKET_NAME;
       "
     networks:
-      - concourse-network
+    - concourse-network
 
 volumes:
   django_media: {}

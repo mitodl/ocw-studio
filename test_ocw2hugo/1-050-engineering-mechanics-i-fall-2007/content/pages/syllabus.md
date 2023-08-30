@@ -96,6 +96,6 @@ Final
 
 {{< tableclose >}}
 
-  
+
 
 In arriving at a final letter grade, we will count the best 10 of 11 homework assignments.

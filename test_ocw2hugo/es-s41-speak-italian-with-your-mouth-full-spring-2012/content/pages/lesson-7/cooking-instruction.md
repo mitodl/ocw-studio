@@ -30,38 +30,38 @@ Listen to the class’s version, "Nella Nuova Gran Cucina/In the New Great Kitch
 
 **Lyrics**
 
-Nella nuova gran cucina  
-ia ia oh  
-c&grave;è un sacco di farina  
+Nella nuova gran cucina
+ia ia oh
+c&grave;è un sacco di farina
 ia ia oh
 
 ci sono le uo-va, uo-va, uo uo uova
 
 c&grave;è la fa-ri-na, fa-ri-na, fa fa farina
 
-il lat-te  
-il bur-ro  
+il lat-te
+il bur-ro
 il sa-le
 
 Nella nuova ...
 
-il for-mag-gio  
-gli spi-na-ci  
-le spe-zie  
+il for-mag-gio
+gli spi-na-ci
+le spe-zie
 la bi-lan-cia
 
 Nella nuova ...
 
-la cio-to-la (bowl)  
-le po-sa-te (flatware)  
-il mes-to-lo (wooden spoon, ladle)  
+la cio-to-la (bowl)
+le po-sa-te (flatware)
+il mes-to-lo (wooden spoon, ladle)
 la te-glia (baking pan)
 
 Nella nuova ...
 
-Glossary:  
-nuova= new (f,s)→Z  
-gran= poetic for grande = big  
+Glossary:
+nuova= new (f,s)→Z
+gran= poetic for grande = big
 un sacco=a sac →a lot
 
 _{{< anchor "Spinach_Crepes" >}}{{< /anchor >}}Crespelle di Spinaci_/Crepes with Spinach

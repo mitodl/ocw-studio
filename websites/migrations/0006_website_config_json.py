@@ -22,7 +22,6 @@ def set_config_to_yaml(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0005_website_fields_update"),
     ]

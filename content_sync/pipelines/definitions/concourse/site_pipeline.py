@@ -61,7 +61,6 @@ from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.models import Website
 
-
 BUILD_ONLINE_SITE_IDENTIFIER = Identifier("build-online-site").root
 UPLOAD_ONLINE_BUILD_IDENTIFIER = Identifier("upload-online-build").root
 FILTER_WEBPACK_ARTIFACTS_IDENTIFIER = Identifier("filter-webpack-artifacts").root
@@ -78,7 +77,7 @@ def get_site_pipeline_definition_vars(namespace: str):
         "s3_path": f"(({namespace}s3_path))",
         "url_path": f"(({namespace}url_path))",
         "base_url": f"(({namespace}base_url))",
-        "static_resources_subdirectory": f"(({namespace}static_resources_subdirectory))",
+        "static_resources_subdirectory": f"(({namespace}static_resources_subdirectory))",  # noqa: E501
         "delete_flag": f"(({namespace}delete_flag))",
         "noindex": f"(({namespace}noindex))",
         "pipeline_name": f"(({namespace}pipeline_name))",
@@ -118,9 +117,9 @@ class SitePipelineDefinitionConfig:
         ocw_hugo_projects_branch(str): The branch of ocw-hugo-projects to use
         hugo_override_args(str): (Optional) Arguments to override in the hugo command
         namespace(str): The Concourse vars namespace to use
-    """
+    """  # noqa: E501
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         site: Website,
         pipeline_name: str,
@@ -173,7 +172,7 @@ class SitePipelineDefinitionConfig:
         base_online_args = base_hugo_args.copy()
         base_online_args.update(
             {
-                "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config.yaml",
+                "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config.yaml",  # noqa: E501
                 "--baseURL": f"/{self.base_url}",
                 "--destination": "output-online",
             }
@@ -181,7 +180,7 @@ class SitePipelineDefinitionConfig:
         base_offline_args = base_hugo_args.copy()
         base_offline_args.update(
             {
-                "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config-offline.yaml",
+                "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config-offline.yaml",  # noqa: E501
                 "--baseURL": "/",
                 "--destination": "output-offline",
             }
@@ -297,7 +296,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
     def __init__(
         self,
         config: SitePipelineDefinitionConfig,
-        gated: bool = False,
+        gated: bool = False,  # noqa: FBT001, FBT002
         passed_identifier: Identifier = None,
     ):
         webpack_manifest_get_step = add_error_handling(
@@ -376,7 +375,7 @@ class FilterWebpackArtifactsStep(TaskStep):
                     path="sh",
                     args=[
                         "-exc",
-                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{cli_endpoint_url} cp s3://{web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",
+                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{cli_endpoint_url} cp s3://{web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",  # noqa: E501
                     ],
                 ),
             ),
@@ -392,7 +391,7 @@ class StaticResourcesTaskStep(TaskStep):
 
     Args:
         config(SitePipelineDefinitonConfig): The site pipeline configuration for the site we are fetching static resources for
-    """
+    """  # noqa: E501
 
     def __init__(self, config: SitePipelineDefinitionConfig):
         super().__init__(
@@ -408,7 +407,7 @@ class StaticResourcesTaskStep(TaskStep):
                     path="sh",
                     args=[
                         "-exc",
-                        f"aws s3{config.cli_endpoint_url} sync s3://{config.vars['storage_bucket']}/{config.vars['s3_path']} ./{STATIC_RESOURCES_S3_IDENTIFIER}",
+                        f"aws s3{config.cli_endpoint_url} sync s3://{config.vars['storage_bucket']}/{config.vars['s3_path']} ./{STATIC_RESOURCES_S3_IDENTIFIER}",  # noqa: E501
                     ],
                 ),
             ),
@@ -475,7 +474,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                             hugo {config.vars['hugo_args_online']}
                             cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{config.vars['static_resources_subdirectory']}
                             rm -rf ./output-online{config.vars['static_resources_subdirectory']}*.mp4
-                            """,
+                            """,  # noqa: E501
                         ],
                     ),
                 ),
@@ -502,7 +501,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         else
             aws s3{config.cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='{config.vars['short_id']}.zip' --exclude='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}
         fi
-        """
+        """  # noqa: E501
         upload_online_build_step = add_error_handling(
             step=TaskStep(
                 task=UPLOAD_ONLINE_BUILD_IDENTIFIER,
@@ -611,7 +610,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             cd output-offline
             zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./
         fi
-        """
+        """  # noqa: E501
         build_offline_site_step = add_error_handling(
             step=TaskStep(
                 task=BUILD_OFFLINE_SITE_IDENTIFIER,
@@ -675,7 +674,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         if ! [ $IS_ROOT_WEBSITE ] ; then
             aws s3{config.cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}
         fi
-        """
+        """  # noqa: E501
         upload_offline_build_step = add_error_handling(
             step=TaskStep(
                 task=UPLOAD_OFFLINE_BUILD_IDENTIFIER,
@@ -846,12 +845,11 @@ class SitePipelineDefinition(Pipeline):
         steps.extend(SitePipelineBaseTasks(config=config))
         online_tasks = SitePipelineOnlineTasks(config=config)
         for task in online_tasks:
-            if hasattr(task, "task"):
-                if task.task == UPLOAD_ONLINE_BUILD_IDENTIFIER:
-                    task.on_success = OcwStudioWebhookStep(
-                        pipeline_name=config.vars["pipeline_name"],
-                        status="succeeded",
-                    )
+            if hasattr(task, "task") and task.task == UPLOAD_ONLINE_BUILD_IDENTIFIER:
+                task.on_success = OcwStudioWebhookStep(
+                    pipeline_name=config.vars["pipeline_name"],
+                    status="succeeded",
+                )
         steps.extend(online_tasks)
         return Job(
             name=self._online_site_job_identifier,

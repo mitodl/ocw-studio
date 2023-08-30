@@ -1,4 +1,4 @@
-"""Unpublish course webpages provided to the command that have no dependencies. If there are dependencies, print the dependencies."""
+"""Unpublish course webpages provided to the command that have no dependencies. If there are dependencies, print the dependencies."""  # noqa: E501, INP001
 import json
 
 from django.conf import settings
@@ -20,9 +20,9 @@ from websites.serializers import WebsiteBasicSerializer, WebsiteContentSerialize
 
 
 class Command(WebsiteFilterCommand):
-    """Unpublish course webpages provided to the command that have no dependencies. If there are dependencies, print the dependencies."""
+    """Unpublish course webpages provided to the command that have no dependencies. If there are dependencies, print the dependencies."""  # noqa: E501
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -42,7 +42,7 @@ class Command(WebsiteFilterCommand):
         user_id = User.objects.filter(email__exact=options["user"]).first()
         if not user_id:
             self.stderr.write(
-                "Please provide a valid email address for an existing user to unpublish courses."
+                "Please provide a valid email address for an existing user to unpublish courses."  # noqa: E501
             )
             return
         websites = Website.objects.filter(

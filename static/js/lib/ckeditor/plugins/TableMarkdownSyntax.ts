@@ -21,18 +21,18 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
 
   get showdownExtension() {
     return function tableExtension(): Showdown.ShowdownExtension[] {
-      return TABLE_ELS.map(el => {
+      return TABLE_ELS.map((el) => {
         const shortcodeRegex = new RegExp(`{{< ${el}(open|close).*? >}}`, "g")
 
         return {
-          type:    "lang",
-          regex:   shortcodeRegex,
+          type: "lang",
+          regex: shortcodeRegex,
           replace: (_s: string, position: Position) => {
             const attrs = _s.match(ATTRIBUTE_REGEX)
-            return position === "open" ?
-              `<${el}${buildAttrsString(attrs)}>` :
-              `</${el}>`
-          }
+            return position === "open"
+              ? `<${el}${buildAttrsString(attrs)}>`
+              : `</${el}>`
+          },
         }
       })
     }
@@ -43,26 +43,26 @@ export default class TableMarkdownSyntax extends MarkdownSyntaxPlugin {
       {
         name: "TableMarkdownSyntax",
         rule: {
-          filter:      TABLE_ELS,
+          filter: TABLE_ELS,
           replacement: (content: string, node: Turndown.Node): string => {
             const name = node.nodeName.toLowerCase()
             const el = node as HTMLElement
-            const attributes = el.hasAttributes() ?
-              buildAttrsString(
-                Array.from(el.attributes).map(
-                  attr => `${attr.name}="${attr.value}"`
+            const attributes = el.hasAttributes()
+              ? buildAttrsString(
+                  Array.from(el.attributes).map(
+                    (attr) => `${attr.name}="${attr.value}"`,
+                  ),
                 )
-              ) :
-              ""
+              : ""
 
-            const processedContent = CONTENT_TABLE_ELS.includes(name) ?
-              handleContentWhitespace(content) :
-              content
+            const processedContent = CONTENT_TABLE_ELS.includes(name)
+              ? handleContentWhitespace(content)
+              : content
 
             return `{{< ${name}open${attributes} >}}${processedContent}{{< ${name}close >}}`
-          }
-        }
-      }
+          },
+        },
+      },
     ]
   }
 }

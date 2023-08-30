@@ -1,4 +1,4 @@
-"""Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""
+"""Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""  # noqa: EXE002, E501
 from copy import deepcopy
 from uuid import uuid4
 
@@ -13,9 +13,9 @@ from websites.models import Website, WebsiteContent
 
 
 class Command(BaseCommand):
-    """Sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""
+    """Sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""  # noqa: E501
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -32,7 +32,7 @@ class Command(BaseCommand):
             required=True,
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa: ARG002
         from_course = Website.objects.get(
             Q(short_id=options["from_course"]) | Q(name=options["from_course"])
         )
@@ -146,9 +146,8 @@ class Command(BaseCommand):
                 captions_file not in [None, youtube_dict[youtube_id][0]]
                 or transcript_file not in [None, youtube_dict[youtube_id][1]]
             ):
-                raise ValueError(
-                    "Conflicting YouTube ID <-> captions/transcript match in source course."
-                )
+                msg = "Conflicting YouTube ID <-> captions/transcript match in source course."  # noqa: E501
+                raise ValueError(msg)
             if (captions_file is not None) and (transcript_file is not None):
                 youtube_dict[youtube_id] = (captions_file, transcript_file)
         return youtube_dict

@@ -1,4 +1,4 @@
-""" Backpopulate website groups and permissions"""
+"""Backpopulate website groups and permissions"""  # noqa: INP001
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
@@ -10,7 +10,7 @@ from websites.permissions import create_global_groups, setup_website_groups_perm
 class Command(WebsiteFilterCommand):
     """Backpopulate website groups and permissions"""
 
-    help = "Backpopulate website groups and permissions"
+    help = "Backpopulate website groups and permissions"  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -24,7 +24,7 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        self.stdout.write(f"Creating website permission groups")
+        self.stdout.write("Creating website permission groups")
         start = now_in_utc()
 
         is_verbose = options["verbosity"] > 1
@@ -60,15 +60,15 @@ class Command(WebsiteFilterCommand):
 
                 if is_verbose:
                     self.stdout.write(
-                        f"{website.name} groups: created {created}, updated {updated}, owner updated: {str(owner_updated)}"
+                        f"{website.name} groups: created {created}, updated {updated}, owner updated: {owner_updated!s}"  # noqa: E501
                     )
 
             total_seconds = (now_in_utc() - start).total_seconds()
             self.stdout.write(
-                "Creation of website permission groups finished, took {} seconds".format(
+                "Creation of website permission groups finished, took {} seconds".format(  # noqa: E501
                     total_seconds
                 )
             )
             self.stdout.write(
-                f"{total_websites} websites processed, {total_created} groups created, {total_updated} groups updated, {total_owners} updated"
+                f"{total_websites} websites processed, {total_created} groups created, {total_updated} groups updated, {total_owners} updated"  # noqa: E501
             )

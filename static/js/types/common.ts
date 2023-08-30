@@ -1,3 +1,3 @@
 export enum MaterialIcons {
-  MoreVert = "more_vert"
+  MoreVert = "more_vert",
 }

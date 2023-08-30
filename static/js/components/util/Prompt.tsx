@@ -4,7 +4,7 @@ import { Location, Action } from "history"
 
 export type MessageFunc = (
   location: Location,
-  action: Action
+  action: Action,
 ) => boolean | string
 
 interface Props extends PromptProps {

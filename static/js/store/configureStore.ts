@@ -12,7 +12,7 @@ export type Store = ReturnType<typeof configureStore>
 export default function configureStore(initialState?: ReduxState) {
   const COMMON_MIDDLEWARE = [
     queryMiddleware(makeRequest, getQueries, getEntities),
-    authFailureMiddleware
+    authFailureMiddleware,
   ]
 
   // Store factory configuration
@@ -20,14 +20,14 @@ export default function configureStore(initialState?: ReduxState) {
   if (process.env.NODE_ENV !== "production" && !global._testing) {
     createStoreWithMiddleware = compose(
       applyMiddleware(...COMMON_MIDDLEWARE),
-      window.__REDUX_DEVTOOLS_EXTENSION__ ?
-        window.__REDUX_DEVTOOLS_EXTENSION__() :
-        (f: any) => f
+      window.__REDUX_DEVTOOLS_EXTENSION__
+        ? window.__REDUX_DEVTOOLS_EXTENSION__()
+        : (f: any) => f,
       // @ts-expect-error Unsure why this is an error
     )(createStore)
   } else {
     createStoreWithMiddleware = compose(applyMiddleware(...COMMON_MIDDLEWARE))(
-      createStore
+      createStore,
     )
   }
 
@@ -35,7 +35,7 @@ export default function configureStore(initialState?: ReduxState) {
 
   if ((module as any).hot) {
     // Enable Webpack hot module replacement for reducers
-    (module as any).hot.accept("./rootReducer", () => {
+    ;(module as any).hot.accept("./rootReducer", () => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const nextRootReducer = require("./rootReducer")
 

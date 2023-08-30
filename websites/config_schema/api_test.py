@@ -7,7 +7,6 @@ from websites.config_schema.api import (
     validate_raw_site_config,
 )
 
-
 # pylint:disable=redefined-outer-name
 
 VALID_TITLE_FIELD = {
@@ -38,7 +37,7 @@ def test_invalid_key(parsed_site_config):
     """An invalid top-level key should cause a validation error"""
     config = parsed_site_config.copy()
     config["invalid_key"] = [1, 2, 3]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         validate_parsed_site_config(config)
 
 
@@ -50,7 +49,7 @@ def test_exclusive_collection_keys(parsed_site_config):
         "folder": "folder1",
         "files": [],
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         validate_parsed_site_config(config)
 
 
@@ -61,7 +60,7 @@ def test_unique_names(parsed_site_config):
         **config["collections"][1],
         "name": config["collections"][0]["name"],
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         validate_parsed_site_config(config)
     config = parsed_site_config.copy()
     # Find then index of a config item that defines a "files" list
@@ -75,7 +74,7 @@ def test_unique_names(parsed_site_config):
         **config["collections"][file_config_idx]["files"][0],
         "name": config["collections"][0]["name"],
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         validate_parsed_site_config(config)
 
 
@@ -86,15 +85,15 @@ def test_folders_content_only(parsed_site_config):
         **config["collections"][0],
         "folder": "not-the-content-folder",
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         validate_parsed_site_config(config)
 
 
 @pytest.mark.parametrize(
-    "attr,value",
+    ("attr", "value"),
     [
-        ["required", False],
-        ["widget", "text"],
+        ["required", False],  # noqa: PT007
+        ["widget", "text"],  # noqa: PT007
     ],
 )
 def test_required_title_rule(parsed_site_config, attr, value):
@@ -104,7 +103,7 @@ def test_required_title_rule(parsed_site_config, attr, value):
         **config["collections"][0],
         "fields": [{**VALID_TITLE_FIELD, attr: value}],
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         validate_parsed_site_config(config)
 
 
@@ -117,7 +116,7 @@ def test_menu_rule(parsed_site_config):
         **config["collections"][0],
         "fields": config["collections"][0]["fields"] + [menu_field],
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         validate_parsed_site_config(config)
     # Two "menu"-widget fields
     config["collections"][0]["fields"] = [menu_field, {**menu_field, "name": "menu2"}]

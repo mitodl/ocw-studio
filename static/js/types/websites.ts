@@ -6,7 +6,7 @@ import {
   ROLE_EDITOR,
   ROLE_GLOBAL,
   ROLE_OWNER,
-  WebsiteStarterStatus
+  WebsiteStarterStatus,
 } from "../constants"
 import { SiteFormValue } from "./forms"
 import { ModalState } from "./modal_state"
@@ -26,7 +26,7 @@ export enum WidgetVariant {
   Relation = "relation",
   Menu = "menu",
   HierarchicalSelect = "hierarchical-select",
-  WebsiteCollection = "website-collection"
+  WebsiteCollection = "website-collection",
 }
 
 export interface FieldValueCondition {
@@ -108,7 +108,7 @@ export interface HierarchicalSelectConfigField extends ConfigFieldBaseProps {
  * https://github.com/mitodl/ocw-studio/issues/289
  **/
 export enum RelationFilterVariant {
-  Equals = "equals"
+  Equals = "equals",
 }
 
 /**
@@ -308,7 +308,7 @@ export interface ContentDetailParams {
 
 export enum LinkType {
   Internal = "internal",
-  External = "external"
+  External = "external",
 }
 
 /**

@@ -11,11 +11,11 @@ ocw_type: CourseSection
 
 Watch three videos:
 
-[Lesson 3, Part 2: Ingredients and Vocab]({{< baseurl >}}/resources/lesson-3-part-2-ingredients-and-vocab)  
+[Lesson 3, Part 2: Ingredients and Vocab]({{< baseurl >}}/resources/lesson-3-part-2-ingredients-and-vocab)
 
-[Lesson 3, Part 3: Cooking Instruction]({{< baseurl >}}/resources/lesson-3-part-3-cooking-instruction)  
+[Lesson 3, Part 3: Cooking Instruction]({{< baseurl >}}/resources/lesson-3-part-3-cooking-instruction)
 
-[Lesson 3, Part 4: Closing Lecture]({{< baseurl >}}/resources/lesson-3-part-4-closing-lecture)  
+[Lesson 3, Part 4: Closing Lecture]({{< baseurl >}}/resources/lesson-3-part-4-closing-lecture)
 
 _Pizza Veloce_/Quick Pizza
 --------------------------

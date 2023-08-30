@@ -1,8 +1,8 @@
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../../util/integration_test_helper_old"
 import WebsiteCollectionField, {
-  formatOptionsLabelWithShortId
+  formatOptionsLabelWithShortId,
 } from "./WebsiteCollectionField"
 
 import * as websiteHooks from "../../hooks/websites"
@@ -13,10 +13,10 @@ import SortableSelect from "./SortableSelect"
 
 jest.mock("../../hooks/websites", () => ({
   ...jest.requireActual("../../hooks/websites"),
-  useWebsiteSelectOptions: jest.fn()
+  useWebsiteSelectOptions: jest.fn(),
 }))
 const useWebsiteSelectOptions = jest.mocked(
-  websiteHooks.useWebsiteSelectOptions
+  websiteHooks.useWebsiteSelectOptions,
 )
 
 describe("WebsiteCollectionField", () => {
@@ -32,15 +32,15 @@ describe("WebsiteCollectionField", () => {
     onChange = jest.fn()
     render = helper.configureRenderer(WebsiteCollectionField, {
       onChange,
-      name:  "test-site-collection",
-      value: []
+      name: "test-site-collection",
+      value: [],
     })
     websites = makeWebsites()
     websiteOptions = websiteHooks.formatWebsiteOptions(websites, "name")
     selectWebsiteOptions = formatOptionsLabelWithShortId(websiteOptions)
     useWebsiteSelectOptions.mockReturnValue({
-      options:     websiteOptions,
-      loadOptions: jest.fn().mockReturnValue({ options: [] })
+      options: websiteOptions,
+      loadOptions: jest.fn().mockReturnValue({ options: [] }),
     })
   })
 
@@ -54,13 +54,13 @@ describe("WebsiteCollectionField", () => {
   })
 
   it("should pass things down to SortableSelect", async () => {
-    const value = websites.map(website => ({
-      id:    website.url_path,
-      title: website.title
+    const value = websites.map((website) => ({
+      id: website.url_path,
+      title: website.title,
     }))
 
     const { wrapper } = await render({
-      value
+      value,
     })
     const sortableSelect = wrapper.find(SortableSelect)
     expect(sortableSelect.prop("value")).toStrictEqual(value)
@@ -74,22 +74,22 @@ describe("WebsiteCollectionField", () => {
     await triggerSortableSelect(wrapper, websites[0].name)
     expect(onChange).toHaveBeenCalledWith({
       target: {
-        name:  "test-site-collection",
+        name: "test-site-collection",
         value: [
           {
-            id:    websites[0].name,
-            title: websites[0].title
-          }
-        ]
-      }
+            id: websites[0].name,
+            title: websites[0].title,
+          },
+        ],
+      },
     })
   })
 
   it("should disable website options that have already been selected", async () => {
     expect(websites.length).toBeGreaterThan(2)
-    const value = websites.slice(2).map(website => ({
-      id:    website.name,
-      title: website.title
+    const value = websites.slice(2).map((website) => ({
+      id: website.name,
+      title: website.title,
     }))
     const { wrapper } = await render({ value })
     const isOptionEnabled = wrapper

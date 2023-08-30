@@ -1,4 +1,4 @@
-""" concourse tests """
+"""concourse tests"""
 import json
 from html import unescape
 from urllib.parse import quote, urljoin
@@ -24,7 +24,6 @@ from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
-
 
 pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name,unused-argument
@@ -90,15 +89,15 @@ PIPELINES_LIST = [
 ]
 
 
-@pytest.fixture
-def mock_auth(mocker):
+@pytest.fixture()
+def mock_auth(mocker):  # noqa: PT004
     """Mock the concourse api auth method"""
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
 
 
-@pytest.fixture(scope="function", params=["test", "dev"])
-def pipeline_settings(settings, request):
-    """Default settings for pipelines"""
+@pytest.fixture(params=["test", "dev"])
+def pipeline_settings(settings, request):  # noqa: PT004
+    """Default settings for pipelines"""  # noqa: D401
     env = request.param
     settings.ENVIRONMENT = env
     settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket_test"
@@ -116,7 +115,7 @@ def pipeline_settings(settings, request):
     settings.OPEN_DISCUSSIONS_URL = "https://open.mit.edu"
     if env == "dev":
         settings.AWS_ACCESS_KEY_ID = "minio_root_user"
-        settings.AWS_SECRET_ACCESS_KEY = "minio_root_password"
+        settings.AWS_SECRET_ACCESS_KEY = "minio_root_password"  # noqa: S105
         settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket_dev"
         settings.AWS_PREVIEW_BUCKET_NAME = "draft_bucket_dev"
         settings.AWS_PUBLISH_BUCKET_NAME = "live_bucket_dev"
@@ -182,7 +181,7 @@ def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
     )
     if headers is not None:
         _, kwargs = mock_put.call_args_list[-1]
-        key, value = list(headers.items())[0]
+        key, value = next(iter(headers.items()))
         assert kwargs["headers"][key] == value
         assert kwargs["data"] == data
     assert mock_auth.call_count == 1 if ok_response else 2
@@ -264,7 +263,7 @@ def test_upsert_website_pipeline_missing_settings(settings):
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("hard_purge", [True, False])
 @pytest.mark.parametrize("with_api", [True, False])
-def test_upsert_website_pipelines(
+def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
     settings,
     pipeline_settings,
     mocker,
@@ -398,7 +397,7 @@ def test_upsert_website_pipelines(
         )
 
     # The dev pipelines don't hit Fastly
-    if not env == "dev":
+    if env != "dev":
         assert f"purge/{website.name}" in config_str
         assert f" --metadata site-id={website.name}" in config_str
         has_soft_purge_header = "Fastly-Soft-Purge" in config_str
@@ -440,10 +439,13 @@ def test_upsert_pipeline_public_vs_private(
 
 
 @pytest.mark.parametrize(
-    "source,path",
+    ("source", "path"),
     [
-        [STARTER_SOURCE_GITHUB, "badvalue"],
-        [STARTER_SOURCE_LOCAL, "https://github.com/testorg/testrepo/ocw-course"],
+        [STARTER_SOURCE_GITHUB, "badvalue"],  # noqa: PT007
+        [  # noqa: PT007
+            STARTER_SOURCE_LOCAL,
+            "https://github.com/testorg/testrepo/ocw-course",
+        ],
     ],
 )
 def test_upsert_website_pipelines_invalid_starter(mocker, mock_auth, source, path):
@@ -599,7 +601,7 @@ def test_upsert_pipeline(
 @pytest.mark.parametrize("prefix", ["", "/test_prefix", "test_prefix"])
 @pytest.mark.parametrize("starter", ["", "ocw-course"])
 @pytest.mark.parametrize("offline", [True, False])
-def test_upsert_mass_build_pipeline(
+def test_upsert_mass_build_pipeline(  # noqa: C901, PLR0912, PLR0913, PLR0915
     settings,
     pipeline_settings,
     mocker,
@@ -704,7 +706,7 @@ def test_upsert_mass_build_pipeline(
     if offline:
         assert "PULLING IN STATIC RESOURCES FOR $NAME" in config_str
         assert "touch ./content/static_resources/_index.md" in config_str
-        assert f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseURL / --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"
+        assert f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseURL / --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"  # noqa: PLW0129
         assert (
             f"PUBLISH_S3_RESULT=$(aws s3{endpoint_url} sync ./ s3://{offline_bucket}$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors $DELETE) || PUBLISH_S3_RESULT=1"
             in config_str
@@ -746,7 +748,7 @@ def test_upsert_mass_build_pipeline(
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-def test_unpublished_site_removal_pipeline(
+def test_unpublished_site_removal_pipeline(  # noqa: PLR0913
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
 ):  # pylint:disable=too-many-locals,too-many-arguments
     """The unpublished sites removal pipeline should have expected configuration"""
@@ -783,18 +785,18 @@ def test_unpublished_site_removal_pipeline(
 
 
 @pytest.mark.parametrize(
-    "get_urls, post_url",
+    ("get_urls", "post_url"),
     [
-        [[AUTH_URLS[0], AUTH_URLS[0]], AUTH_URLS[0]],
-        [AUTH_URLS[0:2], AUTH_URLS[1]],
-        [AUTH_URLS[1:], AUTH_URLS[2]],
+        [[AUTH_URLS[0], AUTH_URLS[0]], AUTH_URLS[0]],  # noqa: PT007
+        [AUTH_URLS[0:2], AUTH_URLS[1]],  # noqa: PT007
+        [AUTH_URLS[1:], AUTH_URLS[2]],  # noqa: PT007
     ],
 )
 @pytest.mark.parametrize("auth_token", ["123abc", None])
 @pytest.mark.parametrize("password", [None, "password"])
 @pytest.mark.parametrize("get_status", [200, 500])
 @pytest.mark.parametrize("post_status", [200, 500])
-def test_api_auth(
+def test_api_auth(  # noqa: PLR0913
     mocker,
     settings,
     get_urls,
@@ -804,7 +806,7 @@ def test_api_auth(
     get_status,
     post_status,
 ):  # pylint:disable=too-many-arguments
-    """verify that the auth function posts to the expected url and returns the expected response"""
+    """Verify that the auth function posts to the expected url and returns the expected response"""
     settings.CONCOURSE_PASSWORD = password
     mock_skymarshal = mocker.patch(
         "content_sync.pipelines.concourse.PipelineApi._get_skymarshal_auth",

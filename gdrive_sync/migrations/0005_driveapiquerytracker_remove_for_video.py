@@ -10,7 +10,6 @@ def remove_video_tracker(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("gdrive_sync", "0004_driveapiquerytracker_for_video"),
     ]

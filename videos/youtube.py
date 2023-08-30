@@ -1,4 +1,4 @@
-""" YouTube API interface"""
+"""YouTube API interface"""
 import http
 import logging
 import re
@@ -30,7 +30,6 @@ from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import Website, WebsiteContent
 from websites.utils import get_dict_field, get_dict_query_field
 
-
 log = logging.getLogger(__name__)
 
 # Quota errors should contain the following
@@ -38,12 +37,12 @@ API_QUOTA_ERROR_MSG = "quota"
 CAPTION_UPLOAD_NAME = "ocw_captions_upload"
 
 
-class YouTubeUploadException(Exception):
+class YouTubeUploadException(Exception):  # noqa: N818
     """Custom exception for YouTube uploads"""
 
 
 def is_youtube_enabled() -> bool:
-    """Returns True if youtube is enabled"""
+    """Returns True if youtube is enabled"""  # noqa: D401
     return (
         settings.YT_ACCESS_TOKEN
         and settings.YT_REFRESH_TOKEN
@@ -109,7 +108,7 @@ def resumable_upload(request, max_retries=10):
 
     Returns:
         dict: The YouTube API response
-    """
+    """  # noqa: E501
     response = None
     error = None
 
@@ -121,7 +120,8 @@ def resumable_upload(request, max_retries=10):
         try:
             _, response = request.next_chunk()
             if response is not None and "id" not in response:
-                raise YouTubeUploadException(f"YouTube upload failed: {response}")
+                msg = f"YouTube upload failed: {response}"
+                raise YouTubeUploadException(msg)
         except HttpError as e:
             if e.resp.status in retry_statuses:
                 error = e
@@ -134,9 +134,8 @@ def resumable_upload(request, max_retries=10):
             retry += 1
             if retry > max_retries:
                 log.error("Final upload failure")
-                raise YouTubeUploadException(
-                    "Retried YouTube upload 10x, giving up"
-                ) from error
+                msg = "Retried YouTube upload 10x, giving up"
+                raise YouTubeUploadException(msg) from error
             sleep_time = 2**retry
             time.sleep(sleep_time)
 
@@ -170,7 +169,7 @@ class YouTubeApi:
         """
         credentials = Credentials(
             settings.YT_ACCESS_TOKEN,
-            token_uri="https://accounts.google.com/o/oauth2/token",
+            token_uri="https://accounts.google.com/o/oauth2/token",  # noqa: S106
             client_id=settings.YT_CLIENT_ID,
             client_secret=settings.YT_CLIENT_SECRET,
             refresh_token=settings.YT_REFRESH_TOKEN,
@@ -188,12 +187,15 @@ class YouTubeApi:
         Returns:
             str: status of the YouTube video
 
-        """
+        """  # noqa: D401
         results = self.client.videos().list(part="status", id=video_id).execute()
         return results["items"][0]["status"]["uploadStatus"]
 
     def upload_video(
-        self, videofile: VideoFile, privacy="unlisted", notify_subscribers=False
+        self,
+        videofile: VideoFile,
+        privacy="unlisted",
+        notify_subscribers=False,  # noqa: FBT002
     ):
         """
         Transfer the video's original video file from S3 to YouTube.
@@ -231,8 +233,7 @@ class YouTubeApi:
                 ),
             )
 
-        response = resumable_upload(request)
-        return response
+        return resumable_upload(request)
 
     def update_privacy(self, youtube_id: str, privacy: str):
         """Update the privacy level of a video"""
@@ -298,7 +299,7 @@ class YouTubeApi:
     def update_video(self, resource: WebsiteContent, privacy=None):
         """
         Update a video's metadata based on a WebsiteContent object that is assumed to have certain fields.
-        """
+        """  # noqa: E501
         metadata = resource.metadata
         description = get_dict_field(metadata, settings.YT_FIELD_DESCRIPTION)
         speakers = get_dict_field(metadata, settings.YT_FIELD_SPEAKERS)
@@ -362,7 +363,7 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
                     video_resource,
                     privacy=("public" if version == VERSION_LIVE else None),
                 )
-            except:  # pylint:disable=bare-except
+            except:  # pylint:disable=bare-except  # noqa: E722
                 log.exception(
                     "Unexpected error updating metadata for video resource %d",
                     video_resource.id,

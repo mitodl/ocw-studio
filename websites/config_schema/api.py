@@ -13,12 +13,11 @@ from websites.config_schema.validators import (
     UniqueNamesRule,
 )
 
-
-SITE_CONFIG_SCHEMA_PATH = os.path.join(
+SITE_CONFIG_SCHEMA_PATH = os.path.join(  # noqa: PTH118
     settings.BASE_DIR, "websites/config_schema/site-config-schema.yml"
 )
 
-# Any additional validation rules for the site config schema (beyond what the schema itself already defines)
+# Any additional validation rules for the site config schema (beyond what the schema itself already defines)  # noqa: E501
 # should be added here.
 ADDED_SCHEMA_RULES = [
     CollectionsKeysRule,
@@ -41,11 +40,11 @@ def validate_raw_site_config(yaml_to_validate):
 
     Raises:
         ValueError: Raised if the given site config YAML is invalid
-    """
+    """  # noqa: E501, D401
     schema = yamale.make_schema(path=SITE_CONFIG_SCHEMA_PATH)
     yamale_data = yamale.make_data(content=yaml_to_validate)
     yamale.validate(schema, yamale_data)
-    # Retrieve the parsed YAML (Yamale returns a list of lists instead of just the parsed YAML)
+    # Retrieve the parsed YAML (Yamale returns a list of lists instead of just the parsed YAML)  # noqa: E501
     parsed_data = yamale_data[0][0]
     # Schema is valid according to the YAML document. Now apply our custom rules...
     for added_schema_rule in ADDED_SCHEMA_RULES:
@@ -65,6 +64,6 @@ def validate_parsed_site_config(config_to_validate):
 
     Raises:
         ValueError: Raised if the given site config YAML is invalid
-    """
+    """  # noqa: E501, D401
     raw_site_config = yaml.dump(config_to_validate, Dumper=yaml.Dumper)
     return validate_raw_site_config(raw_site_config)

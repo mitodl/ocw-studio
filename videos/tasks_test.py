@@ -1,4 +1,4 @@
-""" videos.tasks tests"""
+"""videos.tasks tests"""
 import string
 from datetime import datetime
 from random import choice
@@ -43,7 +43,6 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.messages import VideoTranscriptingCompleteMessage
 from websites.utils import get_dict_field, set_dict_field
 
-
 # pylint:disable=unused-argument,redefined-outer-name
 pytestmark = pytest.mark.django_db
 
@@ -51,7 +50,7 @@ pytestmark = pytest.mark.django_db
 def create_video(youtube_id, title):
     """
     Creates video file with the given youtube_id and title.
-    """
+    """  # noqa: D401
     video_file = VideoFileFactory.create(
         status=VideoStatus.CREATED,
         destination=DESTINATION_YOUTUBE,
@@ -68,7 +67,7 @@ def create_video(youtube_id, title):
 def create_content(website, youtube_id, title):
     """
     Creates website content with the given website, youtube_id, and title.
-    """
+    """  # noqa: D401
     return WebsiteContentFactory.create(
         website=website,
         metadata={"video_metadata": {"youtube_id": youtube_id}},
@@ -111,7 +110,7 @@ def updated_transctipts_reponse():
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def youtube_video_files_new():
     """Return 3 Youtube video files"""
     return VideoFileFactory.create_batch(
@@ -122,7 +121,7 @@ def youtube_video_files_new():
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def youtube_video_files_processing():
     """Return 3 Youtube video files"""
     return VideoFileFactory.create_batch(
@@ -148,7 +147,7 @@ def test_upload_youtube_videos(
     mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
     mock_uploader = mock_youtube.return_value.upload_video
     mock_uploader.return_value = {
-        "id": "".join([choice(string.ascii_lowercase) for n in range(8)]),
+        "id": "".join([choice(string.ascii_lowercase) for n in range(8)]),  # noqa: S311
         "status": {"uploadStatus": "uploaded"},
     }
 
@@ -187,10 +186,10 @@ def test_upload_youtube_videos_no_videos(mocker):
 
 
 @pytest.mark.parametrize(
-    "msg,status",
+    ("msg", "status"),
     [
-        [API_QUOTA_ERROR_MSG, VideoFileStatus.CREATED],
-        ["other error", VideoFileStatus.FAILED],
+        [API_QUOTA_ERROR_MSG, VideoFileStatus.CREATED],  # noqa: PT007
+        ["other error", VideoFileStatus.FAILED],  # noqa: PT007
     ],
 )
 def test_upload_youtube_quota_exceeded(mocker, youtube_video_files_new, msg, status):
@@ -219,7 +218,7 @@ def test_upload_youtube_quota_exceeded(mocker, youtube_video_files_new, msg, sta
 def test_start_transcript_job(
     mocker, settings, caption_exists, transcript_exists, wrong_caption_type
 ):
-    """test start_transcript_job"""
+    """Test start_transcript_job"""
     youtube_id = "test"
     threeplay_file_id = 1
     settings.YT_FIELD_ID = "video_metadata.youtube_id"
@@ -297,9 +296,9 @@ def test_threeplay_submission_called_once_per_video(mocker, settings):
     title = "title"
 
     video = create_video(youtube_id, title)
-    video_content = create_content(video.website, youtube_id, title)
+    create_content(video.website, youtube_id, title)
 
-    mock_threeplay_upload_video_request = mocker.patch(
+    mocker.patch(
         "videos.tasks.threeplay_api.threeplay_upload_video_request",
         return_value={"data": {"id": 1}},
     )
@@ -320,7 +319,7 @@ def test_threeplay_submission_called_once_per_video(mocker, settings):
 
 
 @pytest.mark.parametrize("is_enabled", [True, False])
-def test_update_youtube_statuses(  # pylint:disable=too-many-arguments
+def test_update_youtube_statuses(  # pylint:disable=too-many-arguments  # noqa: PLR0913
     settings,
     mocker,
     youtube_video_files_processing,
@@ -571,7 +570,7 @@ def test_delete_s3_objects(settings):
     "initial_status", [VideoStatus.SUBMITTED_FOR_TRANSCRIPTION, VideoStatus.COMPLETE]
 )
 @pytest.mark.parametrize("other_incomplete_video", [True, False])
-def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments
+def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     settings,
     mocker,
     update_transcript_return_value,
@@ -671,16 +670,16 @@ def test_update_transcripts_for_updated_videos(mocker):
 
 
 @pytest.mark.parametrize(
-    "caption_exists, transcript_exists",
+    ("caption_exists", "transcript_exists"),
     [
-        [True, False],
-        [False, True],
+        [True, False],  # noqa: PT007
+        [False, True],  # noqa: PT007
     ],
 )
 def test_update_transcripts_for_video_no_3play(
     mocker, caption_exists, transcript_exists
 ):
-    """if there are caption/transcript resources, avoid calling 3play"""
+    """If there are caption/transcript resources, avoid calling 3play"""
     mocker.patch("videos.tasks.is_ocw_site", return_value=True)
 
     videofile = VideoFileFactory.create(
@@ -761,7 +760,7 @@ def test_attempt_to_update_missing_transcripts(mocker):
 
 
 def test_update_transcripts_for_website(mocker):
-    """test update_transcripts_for_website"""
+    """Test update_transcripts_for_website"""
     website = WebsiteFactory.create()
     videos = VideoFactory.create_batch(4, website=website)
     update_video_transcript = mocker.patch("videos.tasks.update_transcripts_for_video")

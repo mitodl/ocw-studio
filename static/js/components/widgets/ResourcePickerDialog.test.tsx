@@ -5,18 +5,18 @@ import { ReactWrapper } from "enzyme"
 
 import ResourcePickerDialog, { TabIds } from "./ResourcePickerDialog"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../../util/integration_test_helper_old"
 import * as hooksState from "../../hooks/state"
 import { useState } from "react"
 import {
   makeWebsiteContentDetail,
-  makeWebsiteDetail
+  makeWebsiteDetail,
 } from "../../util/factories/websites"
 import { WebsiteContent } from "../../types/websites"
 import {
   RESOURCE_EMBED,
-  RESOURCE_LINK
+  RESOURCE_LINK,
 } from "../../lib/ckeditor/plugins/constants"
 import { ResourceType } from "../../constants"
 import Dialog from "../Dialog"
@@ -33,7 +33,7 @@ jest.mock("./ResourcePickerListing", () => {
   const ResourcePickerListing = jest.fn(() => <div>mock</div>)
   return {
     __esModule: true,
-    default:    ResourcePickerListing
+    default: ResourcePickerListing,
   }
 })
 const ResourcePickerListing = jest.mocked(origResourcePickerListing)
@@ -68,18 +68,18 @@ describe("ResourcePickerDialog", () => {
     useDebouncedState.mockReturnValue(["", setStub])
 
     render = helper.configureRenderer(
-      props => (
+      (props) => (
         <WebsiteContext.Provider value={website}>
           <ResourcePickerDialog {...props} />
         </WebsiteContext.Provider>
       ),
       {
-        mode:         RESOURCE_EMBED,
+        mode: RESOURCE_EMBED,
         contentNames: ["resource", "page"],
-        isOpen:       true,
-        closeDialog:  closeDialogStub,
-        insertEmbed:  insertEmbedStub
-      }
+        isOpen: true,
+        closeDialog: closeDialogStub,
+        insertEmbed: insertEmbedStub,
+      },
     )
   })
 
@@ -89,49 +89,49 @@ describe("ResourcePickerDialog", () => {
 
   it.each([
     {
-      mode:         RESOURCE_EMBED,
+      mode: RESOURCE_EMBED,
       contentNames: ["resource"],
-      expectedTabs: [TabIds.Videos, TabIds.Images]
+      expectedTabs: [TabIds.Videos, TabIds.Images],
     },
     {
-      mode:         RESOURCE_LINK,
+      mode: RESOURCE_LINK,
       contentNames: ["resource"],
       expectedTabs: [
         TabIds.Documents,
         TabIds.Videos,
         TabIds.Images,
-        TabIds.Other
-      ]
+        TabIds.Other,
+      ],
     },
     {
-      mode:         RESOURCE_LINK,
+      mode: RESOURCE_LINK,
       contentNames: ["page"],
-      expectedTabs: ["page"]
+      expectedTabs: ["page"],
     },
     {
-      mode:         RESOURCE_LINK,
+      mode: RESOURCE_LINK,
       contentNames: ["resource", "page"],
       expectedTabs: [
         TabIds.Documents,
         TabIds.Videos,
         TabIds.Images,
         TabIds.Other,
-        "page"
-      ]
-    }
+        "page",
+      ],
+    },
   ])(
     "should render tabs based on contentNames. Case: $contentNames",
     async ({ mode, contentNames, expectedTabs }) => {
       const { wrapper } = await render({ mode, contentNames, expectedTabs })
-      expect(wrapper.find(TabPane).map(pane => pane.prop("tabId"))).toEqual(
-        expectedTabs
+      expect(wrapper.find(TabPane).map((pane) => pane.prop("tabId"))).toEqual(
+        expectedTabs,
       )
-    }
+    },
   )
 
   it.each([
     { modes: [RESOURCE_LINK, RESOURCE_EMBED] as const },
-    { modes: [RESOURCE_EMBED, RESOURCE_LINK] as const }
+    { modes: [RESOURCE_EMBED, RESOURCE_LINK] as const },
   ])("initially displays resource listing for first tab", async ({ modes }) => {
     const { wrapper } = await render({ mode: modes[0] })
     const firstTab = wrapper.find(TabPane).first()
@@ -159,15 +159,15 @@ describe("ResourcePickerDialog", () => {
 
   it.each([
     {
-      mode:       RESOURCE_LINK,
-      attaching:  "linking",
-      acceptText: "Add link"
+      mode: RESOURCE_LINK,
+      attaching: "linking",
+      acceptText: "Add link",
     },
     {
-      mode:       RESOURCE_EMBED,
-      attaching:  "embedding",
-      acceptText: "Embed resource"
-    }
+      mode: RESOURCE_EMBED,
+      attaching: "embedding",
+      acceptText: "Embed resource",
+    },
   ])(
     "should allow focusing and $attaching a resource, then close the dialog",
     async ({ mode, acceptText }) => {
@@ -187,38 +187,38 @@ describe("ResourcePickerDialog", () => {
       expect(insertEmbedStub.args[0]).toStrictEqual([
         resource.text_id,
         resource.title,
-        mode
+        mode,
       ])
       expect(closeDialogStub.callCount).toBe(1)
-    }
+    },
   )
 
   it.each([
     {
-      index:        0,
+      index: 0,
       resourcetype: ResourceType.Document,
-      contentType:  "resource",
-      singleColumn: true
+      contentType: "resource",
+      singleColumn: true,
     },
     {
-      index:        1,
+      index: 1,
       resourcetype: ResourceType.Video,
-      contentType:  "resource",
-      singleColumn: false
+      contentType: "resource",
+      singleColumn: false,
     },
     {
-      index:        2,
+      index: 2,
       resourcetype: ResourceType.Image,
-      contentType:  "resource",
-      singleColumn: false
+      contentType: "resource",
+      singleColumn: false,
     },
     {
-      index:        3,
+      index: 3,
       resourcetype: ResourceType.Other,
-      contentType:  "resource",
-      singleColumn: true
+      contentType: "resource",
+      singleColumn: true,
     },
-    { index: 4, resourcetype: null, contentType: "page", singleColumn: true }
+    { index: 4, resourcetype: null, contentType: "page", singleColumn: true },
   ])(
     "passes the correct props to ResourcePickerListing when main tab $index is clicked",
     async ({ resourcetype, contentType, singleColumn, index }) => {
@@ -231,7 +231,7 @@ describe("ResourcePickerDialog", () => {
       expect(listing.prop("resourcetype")).toEqual(resourcetype)
       expect(listing.prop("contentType")).toBe(contentType)
       expect(listing.prop("singleColumn")).toBe(singleColumn)
-    }
+    },
   )
 
   it("should pass filter string to picker, when filter is set", async () => {
@@ -246,7 +246,7 @@ describe("ResourcePickerDialog", () => {
         (update: any) => {
           setStub(update)
           setState(update)
-        }
+        },
       ]
     })
 
@@ -257,13 +257,13 @@ describe("ResourcePickerDialog", () => {
       assertNotNil(onChange)
       onChange({
         // @ts-expect-error Not simulating the whole event
-        currentTarget: { value: "new filter" }
+        currentTarget: { value: "new filter" },
       })
     })
     wrapper.update()
 
     expect(wrapper.find(ResourcePickerListing).prop("filter")).toEqual(
-      "new filter"
+      "new filter",
     )
   })
 })

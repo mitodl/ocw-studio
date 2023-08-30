@@ -2,7 +2,6 @@
 import yaml
 from django.db import migrations
 
-
 OMNIBUS_STARTER_SLUG = "omnibus-starter"
 OMNIBUS_STARTER_NAME = "Omnibus Starter"
 OMNIBUS_STARTER_CONFIG = """
@@ -96,24 +95,23 @@ collections:
             "minimal": true,
             "help": "A description of the item."
           }
-"""
+"""  # noqa: E501
 
 
 def add_omnibus_starter_repo(apps, schema_editor):
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
     WebsiteStarter.objects.get_or_create(
         slug=OMNIBUS_STARTER_SLUG,
-        defaults=dict(
-            name=OMNIBUS_STARTER_NAME,
-            source="local",
-            commit=None,
-            config=yaml.load(OMNIBUS_STARTER_CONFIG, Loader=yaml.SafeLoader),
-        ),
+        defaults={
+            "name": OMNIBUS_STARTER_NAME,
+            "source": "local",
+            "commit": None,
+            "config": yaml.load(OMNIBUS_STARTER_CONFIG, Loader=yaml.SafeLoader),
+        },
     )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0027_websitecollection_websitecollectionitem"),
     ]

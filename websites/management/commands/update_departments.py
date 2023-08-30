@@ -1,4 +1,4 @@
-""" Update departments metadata for website(s)"""
+"""Update departments metadata for website(s)"""  # noqa: INP001
 from functools import reduce
 
 from django.db import transaction
@@ -11,7 +11,7 @@ from websites.models import WebsiteContent
 class Command(WebsiteFilterCommand):
     """Update departments metadata for website(s)"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -64,7 +64,7 @@ class Command(WebsiteFilterCommand):
         with transaction.atomic():
             for sitemetadata in query_set.iterator():
                 sitemetadata.metadata["department_numbers"] = list(
-                    set([*sitemetadata.metadata["department_numbers"], *departments])
+                    {*sitemetadata.metadata["department_numbers"], *departments}
                 )
                 sitemetadata.save()
 

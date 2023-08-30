@@ -2,7 +2,7 @@ import React, {
   useState,
   useCallback,
   useImperativeHandle,
-  forwardRef
+  forwardRef,
 } from "react"
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap"
 import { BrowserRouterProps } from "react-router-dom"
@@ -20,7 +20,7 @@ export type GetUserConfirmation = NonNullable<
  */
 const PromptConfirmationModal = (
   _props: unknown,
-  ref: React.Ref<GetUserConfirmation>
+  ref: React.Ref<GetUserConfirmation>,
 ) => {
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState("This should never be seen.")

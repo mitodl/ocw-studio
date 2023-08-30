@@ -1,4 +1,4 @@
-""" Update content metadata for websites based on a specific starter """
+"""Update content metadata for websites based on a specific starter"""  # noqa: INP001
 from django.db import transaction
 from django.db.models import Q
 
@@ -10,7 +10,7 @@ from websites.site_config_api import SiteConfig
 class Command(WebsiteFilterCommand):
     """Update content metadata for websites based on a specific starter"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -30,7 +30,7 @@ class Command(WebsiteFilterCommand):
             "--use-defaults",
             dest="use_defaults",
             action="store_true",
-            help="Use default config values for metadata values that do not currently exist",
+            help="Use default config values for metadata values that do not currently exist",  # noqa: E501
         )
         parser.add_argument(
             "-s",
@@ -59,7 +59,7 @@ class Command(WebsiteFilterCommand):
             content_qset = content_qset.filter(website__source=source_str)
 
         confirmation = input(
-            f"Update {type_str} metadata for websites based on starter {starter_str}, source={source_str}, Press y for yes and anything else for no"
+            f"Update {type_str} metadata for websites based on starter {starter_str}, source={source_str}, Press y for yes and anything else for no"  # noqa: E501
         )
         if confirmation not in ("y", "Y"):
             self.stdout.write("Exiting out")
@@ -78,5 +78,5 @@ class Command(WebsiteFilterCommand):
                     content.save()
 
         self.stdout.write(
-            f"Done Updating {type_str} metadata for websites based on starter {starter_str}, source {source_str}"
+            f"Done Updating {type_str} metadata for websites based on starter {starter_str}, source {source_str}"  # noqa: E501
         )

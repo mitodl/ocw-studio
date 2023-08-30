@@ -6,7 +6,6 @@ import websites.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0013_description_as_text"),
     ]

@@ -113,7 +113,7 @@ Sorry, I did not understand. Can you repeat please?
 
 *   Scusa stands for "_tu scusami=scusa me_"= 2nd person singular exhortative present of the reg. verb _scusare_, to excuse, forgive=excuse me. _Scusa_ also means sorry (e.g. if you accidentally bump into someone; to get someone's attention; you didn't hear what someone said; you said something inappropriate)
 *   _Mi scusi_ (=_lei mi scusi_ formal for _scusa_, excuse me)
-*   _Posso_ \= 1st person singular present of the irr. verb _potere_ (can)  
+*   _Posso_ \= 1st person singular present of the irr. verb _potere_ (can)
     _Puoi_ = 2nd person singular present of the irr. verb _potere_ (can)
 *   _Mi_ \= me/ to me
 *   _Ho capito_ = 1st person singular _passato prossimo_ (present perfect) of the irr. verb _capire_ (to understand)
@@ -324,7 +324,7 @@ To become
 _Incrocio_
 {{< tdclose >}}
 {{< tdopen >}}
-Crossing (m) _passare_ or better _attraversare un  
+Crossing (m) _passare_ or better _attraversare un
 incrocio_ = cross a crossing
 {{< tdclose >}}
 

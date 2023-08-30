@@ -4,7 +4,7 @@ import { useAppSelector } from "../../hooks/redux"
 import { loginUrl } from "../../lib/urls"
 
 function PrivateRoute({ children, ...rest }: RouteProps): React.ReactElement {
-  const { user } = useAppSelector(state => state.user)
+  const { user } = useAppSelector((state) => state.user)
 
   return (
     <Route

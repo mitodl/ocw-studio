@@ -1,4 +1,4 @@
-"""
+r"""
 Markdown links in Studio can be erroneously escaped, e.g.,
     \[ link text \](link url)
 This happens particularly with links containing baseurl:
@@ -17,7 +17,6 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import (
     RegexpCleanupRule,
 )
 
-
 LINK_WITHOUT_IMAGE = r"\\\[[^\[\]]*\\\]\({{<"
 LINK_WITH_IMAGE = r"\\\[!\\\[[^\[\]]*\][^\[\]]*\\\]\({{<"
 
@@ -33,7 +32,4 @@ class LinkUnescapeRule(RegexpCleanupRule):
 
     def replace_match(self, match: re.Match, _website_content):
         original_text = match[0]
-        fixed = (
-            original_text.replace("\\[", "[").replace("\\]", "]").replace("\\_", "_")
-        )
-        return fixed
+        return original_text.replace("\\[", "[").replace("\\]", "]").replace("\\_", "_")

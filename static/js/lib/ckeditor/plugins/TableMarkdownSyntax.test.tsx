@@ -14,13 +14,13 @@ import { TABLE_ELS } from "./constants"
 const getEditor = createTestEditor([
   ParagraphPlugin,
   TableMarkdownSyntax,
-  Markdown
+  Markdown,
 ])
 
 describe("table shortcodes", () => {
   afterEach(() => {
     turndownService.rules.array = turndownService.rules.array.filter(
-      (rule: any) => !equals(rule.filter, TABLE_ELS)
+      (rule: any) => !equals(rule.filter, TABLE_ELS),
     )
   })
 
@@ -35,7 +35,7 @@ describe("table shortcodes", () => {
             <td><p>my <em>row</em></p></td>
           </tr>
         </tbody>
-      </table>`
+      </table>`,
     )
   })
 
@@ -56,7 +56,7 @@ describe("table shortcodes", () => {
             <td><h1 id="heading">Heading</h1></td>
           </tr>
         </tbody>
-      </table>`
+      </table>`,
     )
   })
 
@@ -78,7 +78,7 @@ describe("table shortcodes", () => {
             <td><p>data</p></td>
           </tr>
         </tbody>
-      </table>`
+      </table>`,
     )
   })
 
@@ -110,7 +110,7 @@ describe("table shortcodes", () => {
             </td>
           </tr>
         </tbody>
-      </table>`
+      </table>`,
     )
   })
 
@@ -157,12 +157,12 @@ describe("table shortcodes", () => {
   it.each([
     [
       "<table><thead><tr><th>my content</th></tr></thead></table>",
-      "{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen >}}\nmy content\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tableclose >}}"
+      "{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen >}}\nmy content\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tableclose >}}",
     ],
     [
       "<table><tbody><tr><td>more content</td></tr></tbody></table>",
-      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\nmore content\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}"
-    ]
+      "{{< tableopen >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\nmore content\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
+    ],
   ])(
     "html2md should add newlines on table cell content when appropriate",
     async (html, md) => {
@@ -170,6 +170,6 @@ describe("table shortcodes", () => {
       const { html2md } = editor.data
         .processor as unknown as MarkdownDataProcessor
       expect(html2md(html)).toBe(md)
-    }
+    },
   )
 })

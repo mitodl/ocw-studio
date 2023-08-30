@@ -4,22 +4,22 @@ import { StudioListItem } from "./StudioList"
 
 const mockUseLocationValue = {
   pathname: "/test/route",
-  search:   "",
-  hash:     "",
-  state:    null
+  search: "",
+  hash: "",
+  state: null,
 }
 
 jest.mock("react-router", () => ({
   ...(jest.requireActual("react-router") as any),
   useLocation: jest.fn().mockImplementation(() => {
     return mockUseLocationValue
-  })
+  }),
 }))
 
 describe("StudioListItem", () => {
   it("does not have hover-pointer class if onClick not provided", () => {
     const wrapper = shallow(
-      <StudioListItem title="some-titlle" subtitle="meow" />
+      <StudioListItem title="some-titlle" subtitle="meow" />,
     )
 
     expect(wrapper.find("li").hasClass("hover-pointer")).toBe(false)
@@ -27,7 +27,7 @@ describe("StudioListItem", () => {
 
   it("does have hover-pointer class if onClick is provided", () => {
     const wrapper = shallow(
-      <StudioListItem title="some-titlle" subtitle="meow" onClick={jest.fn} />
+      <StudioListItem title="some-titlle" subtitle="meow" onClick={jest.fn} />,
     )
 
     expect(wrapper.find("li").hasClass("hover-pointer")).toBe(true)

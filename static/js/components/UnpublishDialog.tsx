@@ -18,7 +18,7 @@ export default function UnpublishDialog(props: {
   const [error, setError] = useState("")
 
   const [{ isPending }, unpublishPost] = useMutation(() =>
-    websiteUnpublishAction(website.name, "POST")
+    websiteUnpublishAction(website.name, "POST"),
   )
   const handleUnpublishPost = async () => {
     if (isPending) {
@@ -32,8 +32,8 @@ export default function UnpublishDialog(props: {
       if (isErrorStatusCode(response.status)) {
         setError(
           `Something went wrong while unpublishing the website: ${JSON.stringify(
-            response.body
-          )}`
+            response.body,
+          )}`,
         )
       } else {
         setSiteUnpublishedMsg(response.body)

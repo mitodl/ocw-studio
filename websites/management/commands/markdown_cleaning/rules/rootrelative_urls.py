@@ -4,7 +4,6 @@ WebsiteContentMarkdownCleaner rule to convert root-relative urls to resource_lin
 import re
 from dataclasses import dataclass
 from urllib.parse import urlparse
-from uuid import UUID
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
 from websites.management.commands.markdown_cleaning.link_parser import (
@@ -50,8 +49,6 @@ class RootRelativeUrlRule(PyparsingRule):
     class NotFoundError(Exception):
         """Thrown when no content math for a url is found."""
 
-        pass
-
     @dataclass
     class ReplacementNotes:
         replacement_type: str
@@ -73,7 +70,9 @@ class RootRelativeUrlRule(PyparsingRule):
         self.content_lookup = ContentLookup()
         self.legacy_file_lookup = LegacyFileLookup()
 
-    def fuzzy_find_linked_content(self, url: str):
+    def fuzzy_find_linked_content(  # noqa: C901, PLR0911, PLR0912, PLR0915
+        self, url: str
+    ):
         """
         Given a possibly-broken, root-relative URL, find matching content.
 
@@ -90,20 +89,21 @@ class RootRelativeUrlRule(PyparsingRule):
         try:
             site, site_rel_url = self.get_site_relative_url(url)
         except ValueError as error:
-            raise self.NotFoundError("Could not determine site.") from error
+            msg = "Could not determine site."
+            raise self.NotFoundError(msg) from error
 
         site_rel_path = urlparse(site_rel_url).path
 
         try:
             wc = self.content_lookup.find_within_site(site.uuid, site_rel_path)
-            return wc, "Exact dirpath/filename match"
+            return wc, "Exact dirpath/filename match"  # noqa: TRY300
         except KeyError:
             pass
 
         if any(p == site_rel_path for p in ["/pages/index.htm", "/index.htm"]):
             try:
                 wc = self.content_lookup.find_within_site(site.uuid, "/")
-                return wc, "links to course root"
+                return wc, "links to course root"  # noqa: TRY300
             except KeyError:
                 pass
 
@@ -112,7 +112,7 @@ class RootRelativeUrlRule(PyparsingRule):
             wc = self.content_lookup.find_within_site(
                 site.uuid, prepend + site_rel_path
             )
-            return wc, "prepended '/pages'"
+            return wc, "prepended '/pages'"  # noqa: TRY300
         except KeyError:
             pass
 
@@ -121,7 +121,7 @@ class RootRelativeUrlRule(PyparsingRule):
             remove = "/pages/video-lectures"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
             wc = self.content_lookup.find_within_site(site.uuid, resource_url)
-            return wc, f"removed '{remove}', prepended '{prepend}'"
+            return wc, f"removed '{remove}', prepended '{prepend}'"  # noqa: TRY300
         except KeyError:
             pass
         try:
@@ -129,7 +129,7 @@ class RootRelativeUrlRule(PyparsingRule):
             remove = "/pages/video-and-audio-classes"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
             wc = self.content_lookup.find_within_site(site.uuid, resource_url)
-            return wc, f"removed '{remove}', prepended '{prepend}'"
+            return wc, f"removed '{remove}', prepended '{prepend}'"  # noqa: TRY300
         except KeyError:
             pass
 
@@ -138,7 +138,7 @@ class RootRelativeUrlRule(PyparsingRule):
             remove = "/videos"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
             wc = self.content_lookup.find_within_site(site.uuid, resource_url)
-            return wc, f"removed '{remove}', prepended '{prepend}'"
+            return wc, f"removed '{remove}', prepended '{prepend}'"  # noqa: TRY300
         except KeyError:
             pass
 
@@ -147,24 +147,28 @@ class RootRelativeUrlRule(PyparsingRule):
             remove = "/pages"
             resource_url = prepend + remove_prefix(site_rel_path, remove)
             wc = self.content_lookup.find_within_site(site.uuid, resource_url)
-            return wc, f"removed '{remove}', prepended '{prepend}'"
+            return wc, f"removed '{remove}', prepended '{prepend}'"  # noqa: TRY300
         except KeyError:
             pass
 
         try:
             match = self.legacy_file_lookup.find(site.uuid, site_rel_path)
-            return match, "unique file match"
+            return match, "unique file match"  # noqa: TRY300
         except self.legacy_file_lookup.MultipleMatchError as error:
-            raise self.NotFoundError(error)
+            raise self.NotFoundError(error)  # noqa: B904, TRY200
         except KeyError as error:
             if "." in site_rel_path[-8:]:
-                raise self.NotFoundError(
-                    "Content not found. Perhaps unmigrated file"
-                ) from error
-            raise self.NotFoundError("Content not found.") from error
+                msg = "Content not found. Perhaps unmigrated file"
+                raise self.NotFoundError(msg) from error
+            msg = "Content not found."
+            raise self.NotFoundError(msg) from error
 
     def replace_match(
-        self, s, l, toks: LinkParseResult, website_content: WebsiteContent
+        self,
+        s,  # noqa: ARG002
+        l,  # noqa: ARG002, E741
+        toks: LinkParseResult,
+        website_content: WebsiteContent,
     ) -> str:
         Notes = self.ReplacementNotes
         original_text = toks.original_text
@@ -188,9 +192,9 @@ class RootRelativeUrlRule(PyparsingRule):
 
         can_be_shortcode = (
             same_site
-            and not "![" in link.text
-            and not "{{%" in link.text
-            and not "{{<" in link.text
+            and "![" not in link.text
+            and "{{%" not in link.text
+            and "{{<" not in link.text
         )
         notes = Notes(note, is_image, same_site)
         if can_be_shortcode:

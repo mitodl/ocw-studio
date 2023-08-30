@@ -16,7 +16,7 @@ export async function triggerSortableSelect(wrapper: ReactWrapper, value: any) {
     assertNotNil(onChange)
     onChange({
       // @ts-expect-error Not simnulating the whole event
-      target: { value }
+      target: { value },
     })
   })
 
@@ -31,14 +31,14 @@ export async function triggerSortableSelect(wrapper: ReactWrapper, value: any) {
  */
 export async function triggerSelectMenu(
   wrapper: ReactWrapper,
-  prefix = "select"
+  prefix = "select",
 ) {
   await act(async () => {
     wrapper
       .find(`.${prefix}__dropdown-indicator`)
       .hostNodes()
       .simulate("mouseDown", {
-        button: 0
+        button: 0,
       })
   })
   wrapper.update()

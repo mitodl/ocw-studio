@@ -3,7 +3,7 @@ import React, {
   useCallback,
   useMemo,
   useEffect,
-  useState
+  useState,
 } from "react"
 import { Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 
@@ -15,7 +15,7 @@ import {
   CKEResourceNodeType,
   ResourceDialogMode,
   RESOURCE_EMBED,
-  RESOURCE_LINK
+  RESOURCE_LINK,
 } from "../../lib/ckeditor/plugins/constants"
 import { WebsiteContent } from "../../types/websites"
 import { useWebsite } from "../../context/Website"
@@ -40,12 +40,12 @@ interface TabSettings {
 
 const toTabSettings = (contentType: string, contentTitle: string) => {
   const newTabSettings: TabSettings = {
-    title:        contentTitle,
-    id:           contentType,
-    contentType:  contentType,
+    title: contentTitle,
+    id: contentType,
+    contentType: contentType,
     resourcetype: null,
-    embeddable:   false,
-    singleColumn: true
+    embeddable: false,
+    singleColumn: true,
   }
   return newTabSettings
 }
@@ -59,51 +59,51 @@ export enum TabIds {
   CourseCollections = "course-collection",
   ResourceCollections = "resource_collections",
   VideoGallery = "video_gallery",
-  ResourceList = "resource-list"
+  ResourceList = "resource-list",
 }
 
 const documentTab: TabSettings = {
-  title:        "Documents",
-  id:           TabIds.Documents,
-  contentType:  ContentType.Resource,
+  title: "Documents",
+  id: TabIds.Documents,
+  contentType: ContentType.Resource,
   resourcetype: ResourceType.Document,
-  embeddable:   false,
-  singleColumn: true
+  embeddable: false,
+  singleColumn: true,
 }
 const videoTab: TabSettings = {
-  title:        "Videos",
-  id:           TabIds.Videos,
-  contentType:  ContentType.Resource,
+  title: "Videos",
+  id: TabIds.Videos,
+  contentType: ContentType.Resource,
   resourcetype: ResourceType.Video,
-  embeddable:   true,
-  singleColumn: false
+  embeddable: true,
+  singleColumn: false,
 }
 const imageTab: TabSettings = {
-  title:        "Images",
-  id:           TabIds.Images,
-  contentType:  ContentType.Resource,
+  title: "Images",
+  id: TabIds.Images,
+  contentType: ContentType.Resource,
   resourcetype: ResourceType.Image,
-  embeddable:   true,
-  singleColumn: false
+  embeddable: true,
+  singleColumn: false,
 }
 const otherFilesTab: TabSettings = {
-  title:        "Other",
-  id:           TabIds.Other,
-  contentType:  ContentType.Resource,
+  title: "Other",
+  id: TabIds.Other,
+  contentType: ContentType.Resource,
   resourcetype: ResourceType.Other,
-  embeddable:   false,
-  singleColumn: true
+  embeddable: false,
+  singleColumn: true,
 }
 
 const modeText = {
   [RESOURCE_EMBED]: {
-    title:      "Embed Resource",
-    acceptText: "Embed resource"
+    title: "Embed Resource",
+    acceptText: "Embed resource",
   },
   [RESOURCE_LINK]: {
-    title:      "Link to Content",
-    acceptText: "Add link"
-  }
+    title: "Link to Content",
+    acceptText: "Add link",
+  },
 }
 
 export default function ResourcePickerDialog(props: Props): JSX.Element {
@@ -112,27 +112,27 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
   const definedCategories = useMemo(() => {
     const contentCollections =
       website.starter?.config?.collections.filter(
-        entry => entry.category === "Content"
+        (entry) => entry.category === "Content",
       ) ?? []
-    return keyBy(contentCollections, collection => collection.name)
+    return keyBy(contentCollections, (collection) => collection.name)
   }, [website.starter?.config?.collections])
   const tabs = useMemo(
     () =>
       contentNames
-        .flatMap(name => {
+        .flatMap((name) => {
           if (name && name === "resource") {
             return [documentTab, videoTab, imageTab, otherFilesTab]
           } else if (_.has(definedCategories, name)) {
             return [
               toTabSettings(
                 definedCategories[name]["name"],
-                definedCategories[name]["label"]
-              )
+                definedCategories[name]["label"],
+              ),
             ]
           } else return []
         })
-        .filter(tab => tab && (mode !== RESOURCE_EMBED || tab.embeddable)),
-    [contentNames, definedCategories, mode]
+        .filter((tab) => tab && (mode !== RESOURCE_EMBED || tab.embeddable)),
+    [contentNames, definedCategories, mode],
   )
 
   const [activeTabId, setActiveTabId] = useState(tabs[0].id)
@@ -152,11 +152,11 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
       setFilterInput(newFilter)
       setFilterDebounced(newFilter)
     },
-    [setFilterDebounced]
+    [setFilterDebounced],
   )
 
   const [focusedResource, setFocusedResource] = useState<WebsiteContent | null>(
-    null
+    null,
   )
 
   const addResource = useCallback(() => {
@@ -164,7 +164,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
       insertEmbed(
         focusedResource.text_id,
         focusedResource.title ?? focusedResource.text_id,
-        mode
+        mode,
       )
       closeDialog()
     }
@@ -183,7 +183,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
       bodyContent={
         <>
           <Nav tabs>
-            {tabs.map(tab => (
+            {tabs.map((tab) => (
               <NavItem key={tab.id}>
                 <NavLink
                   active={activeTabId === tab.id}
@@ -204,7 +204,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
             className="form-control filter-input my-2"
           />
           <TabContent activeTab={activeTabId}>
-            {tabs.map(tab => (
+            {tabs.map((tab) => (
               <TabPane tabId={tab.id} key={tab.id}>
                 {activeTabId === tab.id ? (
                   <ResourcePickerListing

@@ -14,7 +14,7 @@ import { ReplacementFunction } from "turndown"
  */
 export const unescapeStringQuotedWith = (
   text: string,
-  singleQuotes = false
+  singleQuotes = false,
 ) => {
   const q = singleQuotes ? "'" : '"'
 
@@ -22,9 +22,9 @@ export const unescapeStringQuotedWith = (
     [
       /(?<!\\)/.source, // anything except a backslash WITHOUT advancing match position
       /(\\\\)*\\/.source, // an odd number of backlsashes
-      q // a quote
+      q, // a quote
     ].join(""),
-    "g"
+    "g",
   )
 
   const unescape: ReplacementFunction = (s: string) => {
@@ -49,15 +49,15 @@ const ensureEncasedInQuotes = (text: string, singleQuotes = false) => {
 }
 
 export function buildAttrsString(attrs: string[] | null): string {
-  return attrs ?
-    attrs
-      .map(attr =>
-        TABLE_ALLOWED_ATTRS.some(allowedAttr => attr.includes(allowedAttr)) ?
-          ` ${attr}` :
-          ""
-      )
-      .join("") :
-    ""
+  return attrs
+    ? attrs
+        .map((attr) =>
+          TABLE_ALLOWED_ATTRS.some((allowedAttr) => attr.includes(allowedAttr))
+            ? ` ${attr}`
+            : "",
+        )
+        .join("")
+    : ""
 }
 
 export class ShortcodeParam {
@@ -108,18 +108,18 @@ export class Shortcode {
     name: string,
     params: ShortcodeParam[],
     isPercentDelimited = false,
-    isClosing = false
+    isClosing = false,
   ) {
     this.name = name
     this.params = params
     this.isPercentDelimited = isPercentDelimited
     this.isClosing = isClosing
 
-    const hasPositionalParams = params.some(p => p.name === undefined)
-    const hasNamedParams = params.some(p => p.name !== undefined)
+    const hasPositionalParams = params.some((p) => p.name === undefined)
+    const hasNamedParams = params.some((p) => p.name !== undefined)
     if (hasNamedParams && hasPositionalParams) {
       throw new Error(
-        "Invalid Shortcode: Cannot mix named and positional parameters"
+        "Invalid Shortcode: Cannot mix named and positional parameters",
       )
     }
   }
@@ -130,7 +130,7 @@ export class Shortcode {
    * Re-escapes double quotes in parameter values
    */
   toHugo() {
-    const stringifiedArgs = this.params.map(p => p.toHugo())
+    const stringifiedArgs = this.params.map((p) => p.toHugo())
     const name = this.isClosing ? `/${this.name}` : this.name
     const interior = [name, ...stringifiedArgs].join(" ")
     if (this.isPercentDelimited) {
@@ -151,9 +151,9 @@ export class Shortcode {
       /("(?<qvalue>.*?)(?<!\\)")/.source,
       "|",
       /((?<uvalue>[^"\s=]+?)\s)/.source,
-      ")"
+      ")",
     ].join(""),
-    "g"
+    "g",
   )
 
   /**
@@ -170,13 +170,13 @@ export class Shortcode {
     const nameAndArgs = interior.slice(isClosingMatch?.[0].length ?? 0)
 
     const [nameMatch, ...argMatches] = nameAndArgs.matchAll(
-      Shortcode.ARG_REGEXP
+      Shortcode.ARG_REGEXP,
     )
     const name = Shortcode.getArgMatchValue(nameMatch)
-    const params = argMatches.map(match => {
+    const params = argMatches.map((match) => {
       return new ShortcodeParam(
         Shortcode.getArgMatchValue(match),
-        Shortcode.getArgMatchName(match)
+        Shortcode.getArgMatchName(match),
       )
     })
 
@@ -203,13 +203,13 @@ export class Shortcode {
     const isAngleDelimited = s.startsWith("{{<") && s.endsWith(">}}")
     if (!isPercentDelmited && !isAngleDelimited) {
       throw new Error(
-        `${s} is not a valid shortcode: should start/end with matching delimiters`
+        `${s} is not a valid shortcode: should start/end with matching delimiters`,
       )
     }
     const unescapedQuotes = s.match(/(?<!\\)(\\\\)*"/g)?.length ?? 0
     if (unescapedQuotes % 2 > 0) {
       throw new Error(
-        `Shortcode ${s} is invalid: odd number of unescaped quotes.`
+        `Shortcode ${s} is invalid: odd number of unescaped quotes.`,
       )
     }
   }
@@ -226,7 +226,7 @@ export class Shortcode {
       throw new Error("Expected groups to be defined.")
     }
     return ShortcodeParam.hugoUnescapeParamValue(
-      match.groups.qvalue ?? match.groups.uvalue
+      match.groups.qvalue ?? match.groups.uvalue,
     )
   }
 
@@ -237,7 +237,7 @@ export class Shortcode {
     if (typeof param === "number") {
       return this.params[param]?.value
     }
-    return this.params.find(p => p.name === param)?.value
+    return this.params.find((p) => p.name === param)?.value
   }
 
   /**
@@ -266,9 +266,9 @@ export class Shortcode {
         "|",
         /(?<!\\)".*?(?<!\\)"/.source, // if there's an unescaped quote, then there must be another
         ")*?",
-        closer
+        closer,
       ].join(""),
-      "g"
+      "g",
     )
     return regex
   }
@@ -278,7 +278,7 @@ export class Shortcode {
    */
   static resource(
     uuid: string,
-    { href, hrefUuid }: { href?: string | null; hrefUuid?: string | null } = {}
+    { href, hrefUuid }: { href?: string | null; hrefUuid?: string | null } = {},
   ) {
     if (href && hrefUuid) {
       throw new Error("At most one of href, hrefUuid may be specified")
@@ -288,7 +288,7 @@ export class Shortcode {
     const params = [
       { name: "uuid", value: uuid },
       { name: "href", value: href },
-      { name: "href_uuid", value: hrefUuid }
+      { name: "href_uuid", value: hrefUuid },
     ]
       .filter(hasTruthyProp("value"))
       .map(({ name, value }) => {
@@ -304,7 +304,7 @@ export class Shortcode {
     if (suffix) {
       paramValues.push(`${suffix}`)
     }
-    const params = paramValues.map(value => new ShortcodeParam(value))
+    const params = paramValues.map((value) => new ShortcodeParam(value))
     return new Shortcode(name, params, isPercentDelimited)
   }
 }
@@ -320,12 +320,12 @@ export class Shortcode {
  */
 export const makeHtmlString = (
   tagName: string,
-  attributes: Record<string, string | undefined>
+  attributes: Record<string, string | undefined>,
 ) => {
   const attrs = pickBy(attributes, isNotNil)
   const attrAssignments = Object.keys(attrs)
     .sort()
-    .map(attrName => {
+    .map((attrName) => {
       return `${attrName}="${attrs[attrName]}"`
     })
   return `<${tagName} ${attrAssignments.join(" ")}></${tagName}>`

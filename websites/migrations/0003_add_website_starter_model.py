@@ -7,7 +7,6 @@ import websites.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0002_websitecontent_hugo_filepath"),
     ]
@@ -30,7 +29,7 @@ class Migration(migrations.Migration):
                 (
                     "path",
                     models.CharField(
-                        help_text="Github repo path or local file path of the starter project.",
+                        help_text="Github repo path or local file path of the starter project.",  # noqa: E501
                         max_length=256,
                     ),
                 ),
@@ -53,7 +52,7 @@ class Migration(migrations.Migration):
                     "commit",
                     models.CharField(
                         blank=True,
-                        help_text="Commit hash for the repo (if this commit came from a Github starter repo).",
+                        help_text="Commit hash for the repo (if this commit came from a Github starter repo).",  # noqa: E501
                         max_length=40,
                         null=True,
                     ),

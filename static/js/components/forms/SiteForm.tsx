@@ -18,13 +18,13 @@ export interface SiteFormValues {
 type SiteFormProps = {
   onSubmit: (
     values: any,
-    formikHelpers: FormikHelpers<any>
+    formikHelpers: FormikHelpers<any>,
   ) => void | Promise<any>
   websiteStarters: Array<WebsiteStarter>
 }
 
 export const websiteValidation = yup.object().shape({
-  title:    yup.string().label("Title").trim().required(),
+  title: yup.string().label("Title").trim().required(),
   short_id: yup
     .string()
     .label("Short ID")
@@ -32,25 +32,26 @@ export const websiteValidation = yup.object().shape({
     .lowercase()
     .matches(
       /^[A-Za-z0-9\-_\.]+$/, // eslint-disable-line no-useless-escape
-      "Only alphanumeric characters, periods, dashes, or underscores allowed"
+      "Only alphanumeric characters, periods, dashes, or underscores allowed",
     )
     .max(100, "Must be <= 100 characters")
     .required(),
-  starter: yup.number().required()
+  starter: yup.number().required(),
 })
 
 export const SiteForm = ({
   onSubmit,
-  websiteStarters
+  websiteStarters,
 }: SiteFormProps): JSX.Element | null => {
   const defaultWebsiteStarter =
-    websiteStarters.find(obj => obj.status === WebsiteStarterStatus.Default) ||
-    (websiteStarters.length > 0 ? websiteStarters[0] : null)
+    websiteStarters.find(
+      (obj) => obj.status === WebsiteStarterStatus.Default,
+    ) || (websiteStarters.length > 0 ? websiteStarters[0] : null)
 
   const initialValues: SiteFormValues = {
-    title:    "",
+    title: "",
     short_id: "",
-    starter:  defaultWebsiteStarter?.id || 0
+    starter: defaultWebsiteStarter?.id || 0,
   }
 
   return (
@@ -81,12 +82,12 @@ export const SiteForm = ({
               name="starter"
               className="form-control"
               options={
-                websiteStarters.length > 0 ?
-                  websiteStarters.map(starter => ({
-                    label: starter.name,
-                    value: starter.id
-                  })) :
-                  ["0"]
+                websiteStarters.length > 0
+                  ? websiteStarters.map((starter) => ({
+                      label: starter.name,
+                      value: starter.id,
+                    }))
+                  : ["0"]
               }
             />
             <ErrorMessage name="starter" component={FormError} />

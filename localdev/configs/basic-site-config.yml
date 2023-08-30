@@ -2,38 +2,39 @@
 content-dir: content
 root-url-path: "sites"
 collections:
-  - name: blog
-    label: Blogs
-    label_singular: Blog
-    category: Content
-    folder: content/blog
+- name: blog
+  label: Blogs
+  label_singular: Blog
+  category: Content
+  folder: content/blog
+  fields:
+  - {"label": "Title", "name": "title", "widget": "string", "required": true}
+- name: bio
+  label: Bios
+  label_singular: Bio
+  category: Content
+  folder: content/bio
+  fields:
+  - {"label": "Title", "name": "title", "widget": "string", "required": true}
+- name: metadata
+  label: Metadata
+  category: Settings
+  files:
+  - file: data/metadata.json
+    name: sitemetadata
+    label: Site Metadata
     fields:
-      - {"label": "Title", "name": "title", "widget": "string", "required": true}
-  - name: bio
-    label: Bios
-    label_singular: Bio
-    category: Content
-    folder: content/bio
-    fields:
-      - {"label": "Title", "name": "title", "widget": "string", "required": true}
-  - name: metadata
-    label: Metadata
-    category: Settings
-    files:
-      - file: data/metadata.json
-        name: sitemetadata
-        label: Site Metadata
-        fields:
-          - {"label": "Title", "name": "title", "widget": "string", "required": true}
-  - name: resource
-    label: Resources
-    label_singular: Resource
-    category: Content
-    folder: content/resource
-    fields:
-      - {"label": "Title", "name": "title", "widget": "string", "required": true}
-      - {"label": "Image", "name": "image", "widget": "file", "required": false}
-      - {"label": "Resource Type", "name": "resourcetype", "widget": "select", "required": false}
-      - {"label": "File Type", "name": "file_type", "widget": "string", "required": false}
-      - {"label": "Size", "name": "file_size", "widget": "hidden", "required": false}
-      - {"label": "License", "name": "license", "widget": "string", "required": true, "default": "default_license_specificed_in_config"}
+    - {"label": "Title", "name": "title", "widget": "string", "required": true}
+- name: resource
+  label: Resources
+  label_singular: Resource
+  category: Content
+  folder: content/resource
+  fields:
+  - {"label": "Title", "name": "title", "widget": "string", "required": true}
+  - {"label": "Image", "name": "image", "widget": "file", "required": false}
+  - {"label": "Resource Type", "name": "resourcetype", "widget": "select", "required": false}
+  - {"label": "File Type", "name": "file_type", "widget": "string", "required": false}
+  - {"label": "Size", "name": "file_size", "widget": "hidden", "required": false}
+  - {"label": "License", "name": "license", "widget": "string", "required": true,
+    "default": "default_license_specificed_in_config"}

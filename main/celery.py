@@ -10,7 +10,6 @@ import time
 from celery import Celery
 from celery.signals import before_task_publish, task_postrun
 
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "main.settings")
 
 log = logging.getLogger(__name__)
@@ -39,17 +38,19 @@ app.conf.task_routes = {
 
 
 @before_task_publish.connect
-def timestamp_task_send(headers=None, **kwargs):  # pylint: disable=unused-argument
+def timestamp_task_send(
+    headers=None, **kwargs  # noqa: ARG001
+):  # pylint: disable=unused-argument
     """Before a task is sent, timestamp the task with the current time"""
     headers.setdefault("task_sent_timestamp", time.time())
 
 
 @task_postrun.connect
 def log_task_deltatime(
-    task=None, state=None, **kwargs
+    task=None, state=None, **kwargs  # noqa: ARG001
 ):  # pylint: disable=unused-argument
     """If the task provided a timestamp for which it was sent, log timing information"""
-    # Note: you'd think headers would come in on `task.request.headers` but you'd be wrong
+    # Note: you'd think headers would come in on `task.request.headers` but you'd be wrong  # noqa: E501
     try:
         task_sent_timestamp = getattr(task.request, "task_sent_timestamp", None)
         task_id = task.request.id
@@ -77,5 +78,5 @@ def log_task_deltatime(
             log.error(
                 "Task had no task_sent_timestamp: name=%s id=%s ", task_name, task_id
             )
-    except:  # pylint: disable=bare-except
+    except:  # pylint: disable=bare-except  # noqa: E722
         log.exception("Unexpected error trying to log task deltatime")

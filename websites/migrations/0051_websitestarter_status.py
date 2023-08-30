@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0050_modify_course_lists"),
     ]
@@ -20,7 +19,7 @@ class Migration(migrations.Migration):
                     ("inactive", "Inactive"),
                 ],
                 default="active",
-                help_text="Starters with only Active and Default status will be shown while creating a new site.",
+                help_text="Starters with only Active and Default status will be shown while creating a new site.",  # noqa: E501
                 max_length=30,
             ),
         ),

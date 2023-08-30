@@ -7,7 +7,7 @@ import { EDITABLE_ROLES, ROLE_LABELS } from "../../constants"
 
 import {
   WebsiteCollaborator,
-  WebsiteCollaboratorFormData
+  WebsiteCollaboratorFormData,
 } from "../../types/websites"
 import SelectField from "../widgets/SelectField"
 
@@ -16,34 +16,34 @@ interface Props {
   onCancel: () => void
   onSubmit: (
     values: WebsiteCollaboratorFormData,
-    formikHelpers: FormikHelpers<any>
+    formikHelpers: FormikHelpers<any>,
   ) => void
 }
 
 export const roleValidation = {
-  role: yup.string().label("Role").required()
+  role: yup.string().label("Role").required(),
 }
 
 export const emailValidation = {
-  email: yup.string().email().label("Email").required()
+  email: yup.string().email().label("Email").required(),
 }
 
 const getInitialValues = (
-  collaborator: WebsiteCollaborator | null
+  collaborator: WebsiteCollaborator | null,
 ): WebsiteCollaboratorFormData =>
   collaborator ? { role: collaborator.role } : { email: "", role: "" }
 
 export default function SiteCollaboratorForm({
   collaborator,
   onSubmit,
-  onCancel
+  onCancel,
 }: Props): JSX.Element | null {
   const collaboratorValidation = yup
     .object()
     .shape(
-      collaborator ?
-        { ...roleValidation } :
-        { ...roleValidation, ...emailValidation }
+      collaborator
+        ? { ...roleValidation }
+        : { ...roleValidation, ...emailValidation },
     )
 
   return (
@@ -76,8 +76,8 @@ export default function SiteCollaboratorForm({
                 { label: "-----", value: "" },
                 ...EDITABLE_ROLES.map((role: string) => ({
                   label: ROLE_LABELS[role],
-                  value: role
-                }))
+                  value: role,
+                })),
               ]}
             />
             <ErrorMessage name="role" component={FormError} />

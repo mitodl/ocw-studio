@@ -14,7 +14,7 @@ import {
   makeWebsiteContentDetail,
   makeFileConfigItem,
   makeRepeatableConfigItem,
-  makeSingletonConfigItem
+  makeSingletonConfigItem,
 } from "../util/factories/websites"
 import {
   componentFromWidget,
@@ -28,7 +28,7 @@ import {
   hasMainContentField,
   renameNestedFields,
   addDefaultFields,
-  DEFAULT_TITLE_FIELD
+  DEFAULT_TITLE_FIELD,
 } from "./site_content"
 import { exampleSiteConfigFields, MAIN_PAGE_CONTENT_FIELD } from "../constants"
 import { assertNotNil, shouldIf } from "../test_util"
@@ -38,7 +38,7 @@ import {
   FieldValueCondition,
   ObjectConfigField,
   StringConfigField,
-  WidgetVariant
+  WidgetVariant,
 } from "../types/websites"
 import HierarchicalSelectField from "../components/widgets/HierarchicalSelectField"
 
@@ -46,20 +46,20 @@ const OUR_WEBSITE = "our-website"
 describe("site_content", () => {
   const defaultsMapping = {
     [WidgetVariant.Markdown]: "",
-    [WidgetVariant.File]:     null,
-    [WidgetVariant.Boolean]:  false,
-    [WidgetVariant.Text]:     "",
-    [WidgetVariant.String]:   "",
-    [WidgetVariant.Select]:   "",
+    [WidgetVariant.File]: null,
+    [WidgetVariant.Boolean]: false,
+    [WidgetVariant.Text]: "",
+    [WidgetVariant.String]: "",
+    [WidgetVariant.Select]: "",
     [WidgetVariant.Relation]: { website: OUR_WEBSITE, content: "" },
-    [WidgetVariant.Menu]:     [],
-    [WidgetVariant.Hidden]:   "",
-    [WidgetVariant.Object]:   {
+    [WidgetVariant.Menu]: [],
+    [WidgetVariant.Hidden]: "",
+    [WidgetVariant.Object]: {
       ["nested-one"]: "",
-      ["nested-two"]: ""
+      ["nested-two"]: "",
     },
     [WidgetVariant.HierarchicalSelect]: [],
-    unexpected_type:                    ""
+    unexpected_type: "",
   }
 
   describe("contentFormValuesToPayload", () => {
@@ -74,106 +74,106 @@ describe("site_content", () => {
     it("changes the name of a 'content' field if it uses the markdown widget", () => {
       const values = {
         title: "a title",
-        body:  "some content"
+        body: "some content",
       }
       const fields: ConfigField[] = [
         {
-          label:  "Title",
-          name:   "title",
-          widget: WidgetVariant.String
+          label: "Title",
+          name: "title",
+          widget: WidgetVariant.String,
         },
         {
-          label:  "Body",
-          name:   MAIN_PAGE_CONTENT_FIELD,
-          widget: WidgetVariant.Markdown
-        }
+          label: "Body",
+          name: MAIN_PAGE_CONTENT_FIELD,
+          widget: WidgetVariant.Markdown,
+        },
       ]
       const payload = contentFormValuesToPayload(
         values,
         fields,
-        makeWebsiteDetail()
+        makeWebsiteDetail(),
       )
       expect(payload).toStrictEqual({
         markdown: "some content",
-        title:    "a title"
+        title: "a title",
       })
     })
 
     it("passes through 'title' and 'type'; namespaces other fields under 'metadata'", () => {
       const values = {
-        title:       "a title",
-        type:        "metadata",
-        description: "a description here"
+        title: "a title",
+        type: "metadata",
+        description: "a description here",
       }
       const fields = [
         {
-          label:  "Title",
-          name:   "title",
-          widget: WidgetVariant.String as const
+          label: "Title",
+          name: "title",
+          widget: WidgetVariant.String as const,
         },
         {
-          label:  "Description",
-          name:   "description",
-          widget: WidgetVariant.Text as const
-        }
+          label: "Description",
+          name: "description",
+          widget: WidgetVariant.Text as const,
+        },
       ]
 
       const payload = contentFormValuesToPayload(
         values,
         fields,
-        makeWebsiteDetail()
+        makeWebsiteDetail(),
       )
       expect(payload).toStrictEqual({
-        title:    "a title",
-        type:     "metadata",
+        title: "a title",
+        type: "metadata",
         metadata: {
-          description: "a description here"
-        }
+          description: "a description here",
+        },
       })
     })
 
     it("converts a payload to a FormData object if a file is included", () => {
       const mockFile = new File([new ArrayBuffer(1)], "file.jpg")
       const values = {
-        title:       "a title",
-        type:        "resource",
+        title: "a title",
+        type: "resource",
         description: "a description here",
-        upload:      mockFile
+        upload: mockFile,
       }
       const fields = [
         {
-          label:  "Image",
-          name:   "upload",
-          widget: WidgetVariant.File as const
+          label: "Image",
+          name: "upload",
+          widget: WidgetVariant.File as const,
         },
-        ...makeFileConfigItem().fields
+        ...makeFileConfigItem().fields,
       ]
 
       const payload = contentFormValuesToPayload(
         values,
         fields,
-        makeWebsiteDetail()
+        makeWebsiteDetail(),
       )
       expect(payload instanceof FormData).toBe(true)
     })
 
     it("stores a value in metadata as is if it's not a special field", () => {
       const descriptionField: ConfigField = {
-        label:    "Tags",
-        default:  ["Design"],
-        max:      3,
-        min:      1,
+        label: "Tags",
+        default: ["Design"],
+        max: 3,
+        min: 1,
         multiple: true,
-        name:     "tags",
-        options:  ["Design", "UX", "Dev"],
-        widget:   WidgetVariant.Select
+        name: "tags",
+        options: ["Design", "UX", "Dev"],
+        widget: WidgetVariant.Select,
       }
       const payload = contentFormValuesToPayload(
         {
-          tags: []
+          tags: [],
         },
         [descriptionField],
-        makeWebsiteDetail()
+        makeWebsiteDetail(),
       )
       expect(payload).toStrictEqual({ metadata: { tags: [] } })
     })
@@ -181,48 +181,48 @@ describe("site_content", () => {
     it.each([
       { value: null, isPartOfPayload: true, should: "Should" },
       { value: "", isPartOfPayload: true, should: "Should" },
-      { value: undefined, isPartOfPayload: false, should: "Should NOT" }
+      { value: undefined, isPartOfPayload: false, should: "Should NOT" },
     ])(
       "$should add the value to payload if the field value is $value",
       ({ value, isPartOfPayload }) => {
         const field: ConfigField = {
-          name:   "description",
-          label:  "Description",
-          widget: WidgetVariant.String
+          name: "description",
+          label: "Description",
+          widget: WidgetVariant.String,
         }
         const payload = contentFormValuesToPayload(
           {
             // @ts-expect-error Undefined is not one of the permitted types, but this test is being extra cautious.
-            description: value
+            description: value,
           },
           [field],
-          makeWebsiteDetail()
+          makeWebsiteDetail(),
         )
         expect(Object.values(payload).length).toBe(isPartOfPayload ? 1 : 0)
-      }
+      },
     )
 
     it("uses a default empty value if the original value shouldn't be sent to the server", () => {
       for (const [widget, expectedDefault] of Object.entries(defaultsMapping)) {
         const field = makeWebsiteConfigField({
           widget,
-          name:      "test-field",
+          name: "test-field",
           // condition should never match, which will cause fieldHasData to always return false
           condition: { field: "doesn't exist", equals: "none" },
-          fields:    [
+          fields: [
             makeWebsiteConfigField({ name: "nested-one" }),
-            makeWebsiteConfigField({ name: "nested-two" })
-          ]
+            makeWebsiteConfigField({ name: "nested-two" }),
+          ],
         })
         const payload = contentFormValuesToPayload({}, [field], {
           ...makeWebsiteDetail(),
-          name: OUR_WEBSITE
+          name: OUR_WEBSITE,
         })
         if (widget === WidgetVariant.File) {
           expect(payload["metadata"]).toBeUndefined()
         } else {
           expect(payload["metadata"]["test-field"]).toStrictEqual(
-            expectedDefault
+            expectedDefault,
           )
         }
       }
@@ -233,59 +233,59 @@ describe("site_content", () => {
         widget: WidgetVariant.Object,
         fields: [
           makeWebsiteConfigField({ widget: WidgetVariant.Boolean }),
-          makeWebsiteConfigField({ widget: WidgetVariant.Boolean })
-        ]
+          makeWebsiteConfigField({ widget: WidgetVariant.Boolean }),
+        ],
       }) as ObjectConfigField
       const payload = contentFormValuesToPayload(
         {
           [field.name]: {
-            [field.fields[1].name]: true
-          }
+            [field.fields[1].name]: true,
+          },
         },
         [field],
-        makeWebsiteDetail()
+        makeWebsiteDetail(),
       )
       expect(payload).toStrictEqual({
         metadata: {
           [field.name]: {
             [field.fields[0].name]: undefined,
-            [field.fields[1].name]: true
-          }
-        }
+            [field.fields[1].name]: true,
+          },
+        },
       })
     })
 
     it("removes values and uses default data in an field inside an object if the inner field should not send data", () => {
       const field = makeWebsiteConfigField({
-        widget:    WidgetVariant.Object,
-        name:      "object",
+        widget: WidgetVariant.Object,
+        name: "object",
         condition: {
-          field:  "object",
-          equals: true
+          field: "object",
+          equals: true,
         },
         fields: [
           makeWebsiteConfigField({ widget: WidgetVariant.Boolean }),
-          makeWebsiteConfigField({ widget: WidgetVariant.Boolean })
-        ]
+          makeWebsiteConfigField({ widget: WidgetVariant.Boolean }),
+        ],
       }) as ObjectConfigField
 
       const values = {
         [field.name]: {
-          [field.fields[1].name]: true
-        }
+          [field.fields[1].name]: true,
+        },
       }
       const payload = contentFormValuesToPayload(
         values,
         [field],
-        makeWebsiteDetail()
+        makeWebsiteDetail(),
       )
       expect(payload).toStrictEqual({
         metadata: {
           [field.name]: {
             [field.fields[0].name]: false,
-            [field.fields[1].name]: false
-          }
-        }
+            [field.fields[1].name]: false,
+          },
+        },
       })
     })
   })
@@ -297,13 +297,13 @@ describe("site_content", () => {
       const fields = cloneDeep(exampleSiteConfigFields)
       const payload = contentInitialValues(content, fields, makeWebsiteDetail())
       expect(payload).toStrictEqual({
-        tags:                      [],
-        align:                     "",
-        featured:                  false,
-        file:                      null,
-        title:                     content.title,
-        description:               content.metadata?.description,
-        [MAIN_PAGE_CONTENT_FIELD]: content.markdown
+        tags: [],
+        align: "",
+        featured: false,
+        file: null,
+        title: content.title,
+        description: content.metadata?.description,
+        [MAIN_PAGE_CONTENT_FIELD]: content.markdown,
       })
     })
   })
@@ -312,10 +312,10 @@ describe("site_content", () => {
     it("creates initial values for each field, optionally with a default value", () => {
       // find a field with a default value and one without
       const fieldWithDefault = exampleSiteConfigFields.find(
-        (field: ConfigField) => field.default
+        (field: ConfigField) => field.default,
       )
       const fieldWithoutDefault = exampleSiteConfigFields.find(
-        (field: ConfigField) => !field.default
+        (field: ConfigField) => !field.default,
       )
       assertNotNil(fieldWithDefault)
       assertNotNil(fieldWithoutDefault)
@@ -332,11 +332,11 @@ describe("site_content", () => {
       Object.entries(defaultsMapping).forEach(([widget, expectation]) => {
         const field = makeWebsiteConfigField({
           widget,
-          label:  "Widget",
+          label: "Widget",
           fields: [
             makeWebsiteConfigField({ name: "nested-one" }),
-            makeWebsiteConfigField({ name: "nested-two" })
-          ]
+            makeWebsiteConfigField({ name: "nested-two" }),
+          ],
         })
         const website = { ...makeWebsiteDetail(), name: OUR_WEBSITE }
         const initialValues = newInitialValues([field], website)
@@ -346,59 +346,59 @@ describe("site_content", () => {
 
     it("should use appropriate default for multiple select widget", () => {
       const field = makeWebsiteConfigField({
-        widget:   WidgetVariant.Select,
+        widget: WidgetVariant.Select,
         multiple: true,
-        label:    "Widget"
+        label: "Widget",
       })
       expect(newInitialValues([field], makeWebsiteDetail())).toStrictEqual({
-        widget: []
+        widget: [],
       })
     })
 
     it("should use appropriate default for multiple relation", () => {
       const field = makeWebsiteConfigField({
-        widget:   WidgetVariant.Relation,
+        widget: WidgetVariant.Relation,
         multiple: true,
-        label:    "Widget"
+        label: "Widget",
       })
       const website = makeWebsiteDetail()
 
       expect(newInitialValues([field], website)).toStrictEqual({
         widget: {
           website: website.name,
-          content: []
-        }
+          content: [],
+        },
       })
     })
 
     it("should use appropriate default for Object widget", () => {
       const field = makeWebsiteConfigField({
         widget: WidgetVariant.Object,
-        label:  "myobject",
+        label: "myobject",
         fields: [
           makeWebsiteConfigField({
             widget: WidgetVariant.String,
-            label:  "mystring"
+            label: "mystring",
           }),
           makeWebsiteConfigField({
-            widget:   WidgetVariant.Select,
+            widget: WidgetVariant.Select,
             multiple: true,
-            label:    "myselect"
-          })
-        ]
+            label: "myselect",
+          }),
+        ],
       })
       expect(newInitialValues([field], makeWebsiteDetail())).toStrictEqual({
         myobject: {
           myselect: [],
-          mystring: ""
-        }
+          mystring: "",
+        },
       })
     })
   })
 
   describe("componentFromWidget", () => {
     it("returns the right thing", () => {
-      [
+      ;[
         [WidgetVariant.Select, SelectField],
         [WidgetVariant.File, FileUploadField],
         [WidgetVariant.String, "input"],
@@ -410,10 +410,10 @@ describe("site_content", () => {
         [WidgetVariant.Menu, MenuField],
         [WidgetVariant.HierarchicalSelect, HierarchicalSelectField],
         [WidgetVariant.WebsiteCollection, WebsiteCollectionField],
-        ["unexpected_type", "input"]
+        ["unexpected_type", "input"],
       ].forEach(([widget, expected]) => {
         const field = makeWebsiteConfigField({
-          widget: widget as WidgetVariant
+          widget: widget as WidgetVariant,
         })
         expect(componentFromWidget(field)).toBe(expected)
       })
@@ -423,82 +423,82 @@ describe("site_content", () => {
   describe("widgetExtraProps", () => {
     it("should grab the markdown props for a markdown widget", () => {
       const field = makeWebsiteConfigField({
-        widget:  WidgetVariant.Markdown,
+        widget: WidgetVariant.Markdown,
         minimal: false,
-        link:    ["resource", "page"],
-        embed:   ["resource"]
+        link: ["resource", "page"],
+        embed: ["resource"],
       })
       expect(widgetExtraProps(field)).toStrictEqual({
-        minimal:     false,
-        link:        ["resource", "page"],
-        embed:       ["resource"],
-        allowedHtml: []
+        minimal: false,
+        link: ["resource", "page"],
+        embed: ["resource"],
+        allowedHtml: [],
       })
     })
 
     it("sets minimal = true for markdown fields by default", () => {
       const field = makeWebsiteConfigField({ widget: WidgetVariant.Markdown })
       expect(widgetExtraProps(field)).toStrictEqual({
-        minimal:     true,
-        link:        [],
-        embed:       [],
-        allowedHtml: []
+        minimal: true,
+        link: [],
+        embed: [],
+        allowedHtml: [],
       })
     })
 
     it("should grab select props for a select widget", () => {
       const field = makeWebsiteConfigField({
-        widget:   WidgetVariant.Select,
-        options:  [],
+        widget: WidgetVariant.Select,
+        options: [],
         multiple: true,
-        max:      30,
-        min:      22
+        max: 30,
+        min: 22,
       })
       expect(widgetExtraProps(field)).toStrictEqual({
-        options:  [],
+        options: [],
         multiple: true,
-        max:      30,
-        min:      22
+        max: 30,
+        min: 22,
       })
     })
 
     it("should grab relation props for the relation widget", () => {
       const field = makeWebsiteConfigField({
-        widget:        WidgetVariant.Relation,
-        collection:    "greatcollection",
+        widget: WidgetVariant.Relation,
+        collection: "greatcollection",
         display_field: "the field to display!",
-        max:           30,
-        min:           22,
-        multiple:      true
+        max: 30,
+        min: 22,
+        multiple: true,
       })
       expect(widgetExtraProps(field)).toStrictEqual({
-        collection:    "greatcollection",
+        collection: "greatcollection",
         display_field: "the field to display!",
-        max:           30,
-        min:           22,
-        multiple:      true
+        max: 30,
+        min: 22,
+        multiple: true,
       })
     })
 
     it("should grab menu props for the menu widget", () => {
       const field = makeWebsiteConfigField({
-        widget:      WidgetVariant.Menu,
-        collections: ["collection1", "collection2"]
+        widget: WidgetVariant.Menu,
+        collections: ["collection1", "collection2"],
       })
       expect(widgetExtraProps(field)).toStrictEqual({
-        collections: ["collection1", "collection2"]
+        collections: ["collection1", "collection2"],
       })
     })
 
     it("should return no props for other WidgetVariants", () => {
-      [
+      ;[
         WidgetVariant.File,
         WidgetVariant.String,
         WidgetVariant.Boolean,
-        WidgetVariant.Text
+        WidgetVariant.Text,
       ].forEach((widget: WidgetVariant) => {
         expect(
-          widgetExtraProps(makeWebsiteConfigField({ widget }))
+          widgetExtraProps(makeWebsiteConfigField({ widget })),
         ).toStrictEqual({})
       })
     })
@@ -506,11 +506,11 @@ describe("site_content", () => {
     it("should grab extra props for the hierarchical select widget", () => {
       const extras = {
         options_map: "options-map",
-        levels:      ["some", "levels"]
+        levels: ["some", "levels"],
       }
       const field = makeWebsiteConfigField({
         widget: WidgetVariant.HierarchicalSelect,
-        ...extras
+        ...extras,
       })
       expect(widgetExtraProps(field)).toStrictEqual(extras)
     })
@@ -518,7 +518,7 @@ describe("site_content", () => {
 
   describe("main content UI", () => {
     it("isMainContentField should return true when appropriate", () => {
-      Object.values(WidgetVariant).forEach(widget => {
+      Object.values(WidgetVariant).forEach((widget) => {
         const configField = makeWebsiteConfigField({ widget })
         if (widget === WidgetVariant.Markdown) {
           configField.name = MAIN_PAGE_CONTENT_FIELD
@@ -533,16 +533,16 @@ describe("site_content", () => {
       const configFields = [
         {
           ...makeWebsiteConfigField({ widget: WidgetVariant.Markdown }),
-          name: MAIN_PAGE_CONTENT_FIELD
+          name: MAIN_PAGE_CONTENT_FIELD,
         },
         {
           ...makeWebsiteConfigField({ widget: WidgetVariant.Text }),
-          name: "my-text"
+          name: "my-text",
         },
         {
           ...makeWebsiteConfigField({ widget: WidgetVariant.Boolean }),
-          name: "my-boolean"
-        }
+          name: "my-boolean",
+        },
       ]
       expect(hasMainContentField(configFields)).toEqual(true)
       expect(hasMainContentField(configFields.slice(1))).toEqual(false)
@@ -551,14 +551,14 @@ describe("site_content", () => {
 
   describe("fieldIsVisible and fieldHasData", () => {
     const condition: FieldValueCondition = {
-      field:  "conditionField",
-      equals: "matching value"
+      field: "conditionField",
+      equals: "matching value",
     }
     const conditionCases = [
       [true, { conditionField: "matching value" }, true],
       [true, { conditionField: "non-matching value" }, false],
       [false, { conditionField: "matching value" }, true],
-      [false, { conditionField: "non-matching value" }, true]
+      [false, { conditionField: "non-matching value" }, true],
     ] as const
     test.each(conditionCases)(
       "When field has condition, is visible iff condition is met",
@@ -572,7 +572,7 @@ describe("site_content", () => {
         expect(fieldIsVisible(field, values)).toBe(isMet)
         // Only has data if condition is met
         expect(fieldHasData(field, values)).toBe(isMet)
-      }
+      },
     )
 
     test.each(conditionCases)(
@@ -587,7 +587,7 @@ describe("site_content", () => {
         expect(fieldIsVisible(field, values)).toBe(false)
         // Only has data if condition is met
         expect(fieldHasData(field, values)).toBe(isMet)
-      }
+      },
     )
   })
 
@@ -595,31 +595,31 @@ describe("site_content", () => {
     it("should rename fields nested within an Object field", () => {
       const field = makeWebsiteConfigField({
         widget: WidgetVariant.Object,
-        label:  "myobject",
+        label: "myobject",
         fields: [
           makeWebsiteConfigField({
             widget: WidgetVariant.String,
-            label:  "mystring"
+            label: "mystring",
           }),
           makeWebsiteConfigField({
-            widget:   WidgetVariant.Select,
+            widget: WidgetVariant.Select,
             multiple: true,
-            label:    "myselect"
-          })
-        ]
+            label: "myselect",
+          }),
+        ],
       })
 
       expect(
         (renameNestedFields([field])[0] as ObjectConfigField).fields.map(
-          field => field.name
-        )
+          (field) => field.name,
+        ),
       ).toEqual(["myobject.mystring", "myobject.myselect"])
     })
 
     it("should rename fields for a Relation field", () => {
       const field = makeWebsiteConfigField({
         widget: WidgetVariant.Relation,
-        label:  "myobject"
+        label: "myobject",
       })
 
       expect(renameNestedFields([field])[0].name).toEqual("myobject.content")
@@ -628,48 +628,49 @@ describe("site_content", () => {
     it("should leave others alone", () => {
       const fields = Object.values(WidgetVariant)
         .filter(
-          widget =>
-            widget !== WidgetVariant.Object && widget !== WidgetVariant.Relation
+          (widget) =>
+            widget !== WidgetVariant.Object &&
+            widget !== WidgetVariant.Relation,
         )
-        .map(widget => makeWebsiteConfigField({ widget }))
+        .map((widget) => makeWebsiteConfigField({ widget }))
       expect(renameNestedFields(fields)).toEqual(fields)
     })
   })
 
   describe("addDefaultFields", () => {
     const exampleTitleField: StringConfigField = {
-      name:     "title",
-      label:    "Title!!!",
-      widget:   WidgetVariant.String,
-      required: true
+      name: "title",
+      label: "Title!!!",
+      widget: WidgetVariant.String,
+      required: true,
     }
     const randomField = makeWebsiteConfigField({
       widget: WidgetVariant.String,
-      label:  "My Label",
-      name:   "myfield"
+      label: "My Label",
+      name: "myfield",
     })
 
     //
     ;[
       [true, false, true, "repeatable config item without 'title' field"],
       [true, true, false, "repeatable config item with 'title' field"],
-      [false, false, false, "singleton config item without 'title' field"]
+      [false, false, false, "singleton config item without 'title' field"],
     ].forEach(([isRepeatable, inclTitleField, expAddField, desc]) => {
       it(`${shouldIf(
-        expAddField
+        expAddField,
       )} add a 'title' field for ${desc.toString()}`, () => {
-        const fields = inclTitleField ?
-          [exampleTitleField, randomField] :
-          [randomField]
+        const fields = inclTitleField
+          ? [exampleTitleField, randomField]
+          : [randomField]
         const configItem = {
-          ...(isRepeatable ?
-            makeRepeatableConfigItem() :
-            makeSingletonConfigItem()),
-          fields: fields
+          ...(isRepeatable
+            ? makeRepeatableConfigItem()
+            : makeSingletonConfigItem()),
+          fields: fields,
         }
-        const expectedResult = expAddField ?
-          [DEFAULT_TITLE_FIELD, randomField] :
-          fields
+        const expectedResult = expAddField
+          ? [DEFAULT_TITLE_FIELD, randomField]
+          : fields
         /**
          * configItem has type Repeatable... | Singleton...
          * And `addDefaultFields` is overloaded with one signature for each.

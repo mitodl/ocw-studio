@@ -1,4 +1,4 @@
-"""Management command to sync captions and transcripts for any videos missing them from 3play API"""
+"""Management command to sync captions and transcripts for any videos missing them from 3play API"""  # noqa: E501
 from uuid import uuid4
 
 from django.conf import settings
@@ -17,7 +17,7 @@ from websites.models import WebsiteContent
 class Command(WebsiteFilterCommand):
     """Check for WebContent with missing caption/transcripts, and syncs via 3play API"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def __init__(self):
         super().__init__()
@@ -79,19 +79,19 @@ class Command(WebsiteFilterCommand):
 
         for item_type, details in self.summary.items():
             self.stdout.write(
-                f"Updated {details['updated']}/{details['total']} {item_type}, missing ({details['missing']}) details are listed below,"
+                f"Updated {details['updated']}/{details['total']} {item_type}, missing ({details['missing']}) details are listed below,"  # noqa: E501
             )
             for youtube_id, course in details["missing_details"]:
                 self.stdout.write(f"{youtube_id} of course {course}")
 
         self.stdout.write(
-            f"\nCaptions: {self.summary['captions']['updated']} updated, {self.summary['captions']['missing']} missing, {self.summary['captions']['total']} total\n"
-            f"Transcripts: {self.summary['transcripts']['updated']} updated, {self.summary['transcripts']['missing']} missing, {self.summary['transcripts']['total']} total\n"
-            f"Found captions or transcripts for {len(content_videos) - self.missing_results}/{len(content_videos)} videos"
+            f"\nCaptions: {self.summary['captions']['updated']} updated, {self.summary['captions']['missing']} missing, {self.summary['captions']['total']} total\n"  # noqa: E501
+            f"Transcripts: {self.summary['transcripts']['updated']} updated, {self.summary['transcripts']['missing']} missing, {self.summary['transcripts']['total']} total\n"  # noqa: E501
+            f"Found captions or transcripts for {len(content_videos) - self.missing_results}/{len(content_videos)} videos"  # noqa: E501
         )
 
     def fetch_and_update_content(self, video, youtube_id):
-        """Fetches captions/transcripts and creates new WebsiteContent object using 3play API"""
+        """Fetches captions/transcripts and creates new WebsiteContent object using 3play API"""  # noqa: E501, D401
         threeplay_transcript_json = threeplay_transcript_api_request(youtube_id)
 
         if (
@@ -101,7 +101,7 @@ class Command(WebsiteFilterCommand):
         ):
             self.missing_results += 1
             self.stdout.write(
-                f"Captions and transcripts not found in 3play for video, {video.title} and course {video.website.short_id}"
+                f"Captions and transcripts not found in 3play for video, {video.title} and course {video.website.short_id}"  # noqa: E501
             )
             return
 
@@ -125,7 +125,7 @@ class Command(WebsiteFilterCommand):
                 video.metadata["video_files"]["video_transcript_file"] = new_filepath
                 self.summary["transcripts"]["updated"] += 1
                 self.stdout.write(
-                    f"Transcript updated for video, {video.title} and course {video.website.short_id}"
+                    f"Transcript updated for video, {video.title} and course {video.website.short_id}"  # noqa: E501
                 )
             else:
                 self.summary["transcripts"]["missing"] += 1
@@ -150,7 +150,7 @@ class Command(WebsiteFilterCommand):
                 video.metadata["video_files"]["video_captions_file"] = new_filepath
                 self.summary["captions"]["updated"] += 1
                 self.stdout.write(
-                    f"Captions updated for video, {video.title} and course {video.website.short_id}"
+                    f"Captions updated for video, {video.title} and course {video.website.short_id}"  # noqa: E501
                 )
             else:
                 self.summary["captions"]["missing"] += 1
@@ -184,7 +184,7 @@ class Command(WebsiteFilterCommand):
         )
 
     def upload_to_s3(self, file_content, video):
-        """Uploads the captions/transcript file to the S3 bucket"""
+        """Uploads the captions/transcript file to the S3 bucket"""  # noqa: D401
         s3 = get_boto3_resource("s3")
         new_s3_loc = generate_s3_path(file_content, video.website)
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_s3_loc).upload_fileobj(
@@ -194,7 +194,7 @@ class Command(WebsiteFilterCommand):
         return f"/{new_s3_loc}"
 
     def create_new_content(self, file_content, video):
-        """Create new WebsiteContent object for caption or transcript using 3play response"""
+        """Create new WebsiteContent object for caption or transcript using 3play response"""  # noqa: E501
         new_text_id = str(uuid4())
         new_s3_loc = self.upload_to_s3(file_content, video)
         title, new_obj_metadata = self.generate_metadata(

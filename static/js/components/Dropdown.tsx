@@ -19,7 +19,7 @@ export default function Dropdown(props: {
       }
       setMenuOpen(true)
     },
-    [setMenuOpen]
+    [setMenuOpen],
   )
 
   const closeMenu = useCallback(
@@ -29,7 +29,7 @@ export default function Dropdown(props: {
       }
       setMenuOpen(false)
     },
-    [setMenuOpen]
+    [setMenuOpen],
   )
 
   const dropdownMenuBtnOnClickHandler = useCallback(
@@ -40,7 +40,7 @@ export default function Dropdown(props: {
       clickHandler(website || null)
       closeMenu(e)
     },
-    [closeMenu, website]
+    [closeMenu, website],
   )
 
   if (!dropdownMenu.length) {
@@ -67,7 +67,9 @@ export default function Dropdown(props: {
         >
           {dropdownMenu.map((menu: WebsiteDropdown) => (
             <button
-              onClick={e => dropdownMenuBtnOnClickHandler(e, menu.clickHandler)}
+              onClick={(e) =>
+                dropdownMenuBtnOnClickHandler(e, menu.clickHandler)
+              }
               className="dropdown-item"
               type="button"
               key={menu.id}

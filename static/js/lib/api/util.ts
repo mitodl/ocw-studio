@@ -36,7 +36,7 @@ const sharedWaitPromises: Record<string, Promise<void> | undefined> = {},
  */
 export const sharedWait = async (
   key: string,
-  delayMillis: number
+  delayMillis: number,
 ): Promise<void> => {
   if (sharedWaitPromises[key]) {
     await sharedWaitPromises[key]
@@ -46,7 +46,7 @@ export const sharedWait = async (
   let resolve = (): void => {
     throw new Error("Not assigned yet")
   }
-  sharedWaitPromises[key] = new Promise(_resolve => {
+  sharedWaitPromises[key] = new Promise((_resolve) => {
     resolve = _resolve
   })
   await wait(delayMillis)
@@ -64,7 +64,7 @@ export const debouncedFetch = async (
   key: string,
   delayMillis: number,
   info: RequestInfo,
-  init: RequestInit
+  init: RequestInit,
 ): Promise<Response | null> => {
   // if the function gets called multiple times, store the latest version of the args
   const args: [RequestInfo, RequestInit] = [info, init]

@@ -7,7 +7,6 @@ from pyparsing import ParserElement, ParseResults, originalTextFor
 
 import main.utils
 
-
 INITIAL_DEFAULT_WHITESPACE_CHARS = ParserElement.DEFAULT_WHITE_CHARS
 
 
@@ -27,7 +26,6 @@ class WrappedParser:
     """
 
     def __init__(self, grammar) -> None:
-
         self.grammar = originalTextFor(grammar)
         self.grammar.parseWithTabs()
         self.set_parse_action()
@@ -53,7 +51,7 @@ class WrappedParser:
         self.grammar.setParseAction(self._original_text_for)
         self.grammar.addParseAction(*parse_actions)
 
-    def parse_string(self, string: str, parse_all=True):
+    def parse_string(self, string: str, parse_all=True):  # noqa: FBT002
         """
         Snake-case alias for PyParsing's parseString.
 
@@ -80,7 +78,7 @@ def escape_double_quotes(s: str):
     return s.replace('"', '\\"')
 
 
-def unescape_string_quoted_with(text: str, single_quotes=False):
+def unescape_string_quoted_with(text: str, single_quotes=False):  # noqa: FBT002
     """
     Given a string encased in quotes and in which all interior quote characters
     are escaped, strip the encasing quotes and unescape the interior quotes.
@@ -91,7 +89,7 @@ def unescape_string_quoted_with(text: str, single_quotes=False):
     q = "'" if single_quotes else '"'
 
     escaped_quote_regex = re.compile(
-        r"(?<!\\)"  # anything except a backslash WITHOUT advancing match position
+        r"(?<!\\)"  # anything except a backslash WITHOUT advancing match position  # noqa: E501, ISC003
         + r"(\\\\)*\\"  # an odd number of backlsashes
         + q  # a quote
     )
@@ -106,7 +104,8 @@ def unescape_string_quoted_with(text: str, single_quotes=False):
     if text.startswith(q) and text.endswith(q) and all_escaped:
         return escaped_quote_regex.sub(unescape, text[1:-1])
 
-    raise ValueError(f"{text} is not a valid {q}-quoted string")
+    msg = f"{text} is not a valid {q}-quoted string"
+    raise ValueError(msg)
 
 
 def unescape_quoted_string(text: str):
@@ -118,9 +117,9 @@ def unescape_quoted_string(text: str):
     Otherwise throws an error.
     """
     if text.startswith("'") and text.endswith("'"):
-        return unescape_string_quoted_with(text, True)
+        return unescape_string_quoted_with(text, True)  # noqa: FBT003
     else:
-        return unescape_string_quoted_with(text, False)
+        return unescape_string_quoted_with(text, False)  # noqa: FBT003
 
 
 @dataclass
@@ -214,7 +213,7 @@ class ShortcodeTag:
     def to_hugo(self):
         """
         Encases all shortcode arguments in double quotes, because Hugo allows it and that's simplest.
-        """
+        """  # noqa: E501
         opening_delimiter, closing_delimiter = self.get_delimiters()
         pieces = [
             opening_delimiter,
@@ -234,7 +233,7 @@ class ShortcodeTag:
         Args:
             - uuid: UUID or str object. If str, should either be coercable to
                 uuid or 'sitemetadata'.
-        """
+        """  # noqa: D401
         cls.validate_uuid(uuid)
         params = [ShortcodeParam(str(uuid)), ShortcodeParam(text)]
         if fragment:
@@ -253,11 +252,12 @@ class ShortcodeTag:
         href_uuid: Optional[Union[str, UUID]] = None,
         href: Optional[str] = None,
     ):
-        """Convenience method to create valid resource_link ShortcodeTag objects."""
+        """Convenience method to create valid resource_link ShortcodeTag objects."""  # noqa: D401, E501
         cls.validate_uuid(uuid)
         params = [ShortcodeParam(name="uuid", value=str(uuid))]
         if href_uuid and href:
-            raise ValueError("At most one of href, href_uuid may be specified.")
+            msg = "At most one of href, href_uuid may be specified."
+            raise ValueError(msg)
         if href_uuid:
             cls.validate_uuid(href_uuid)
             params.append(ShortcodeParam(name="href_uuid", value=str(href_uuid)))
@@ -270,7 +270,8 @@ class ShortcodeTag:
     def validate_uuid(uuid: Union[str, UUID]) -> None:
         if isinstance(uuid, UUID) or main.utils.is_valid_uuid(uuid):
             return
-        raise ValueError("Badly formed uuid.")
+        msg = "Badly formed uuid."
+        raise ValueError(msg)
 
     def get(self, param_name: Union[str, int], default: Optional[str] = None):
         """
@@ -285,5 +286,5 @@ class ShortcodeTag:
 
         try:
             return next(p.value for p in self.params if p.name == param_name)
-        except StopIteration as e:
+        except StopIteration:
             return default

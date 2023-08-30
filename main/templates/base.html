@@ -1,49 +1,63 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     {% spaceless %}
     {% load static %}
     {% load hijack %}
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="{% static 'images/favicon.ico' %}" />
-    <link rel="stylesheet" type="text/css" href="{% static 'hijack/hijack-styles.css' %}" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap"
-          media="none" onload="if(media!='all') media='all'">     
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'hijack/hijack-styles.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap"
+      media="none"
+      onload="if(media!='all') media='all'"
+    />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script type="text/javascript">
-    var SETTINGS = {{ js_settings_json|safe }};
+      var SETTINGS = {{ js_settings_json|safe }};
     </script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script>
-    window.MathJax = {
-      TeX: {
-        equationNumbers: {
-          autoNumber: "AMS"
+      window.MathJax = {
+          TeX: {
+            equationNumbers: {
+                autoNumber: 'AMS',
+              },
+          },
+          displayAlign: 'left',
+          displayIndent: '2em',
+          menuSettings: {
+              zoom: 'Double-Click',
+              mpContext: true,
+              mpMouse: true,
+            },
+          errorSettings: {
+              message: ['[Math Error]'],
+            },
         }
-      },
-      displayAlign: "left",
-      displayIndent: "2em",
-      menuSettings: {
-        zoom: "Double-Click",
-        mpContext: true,
-        mpMouse: true
-      },
-      errorSettings: {
-        message: ["[Math Error]"]
-      }
-    }
     </script>
-    <script type="text/javascript" id="MathJax-script" async
-    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
-    </script>
+    <script
+      type="text/javascript"
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+    ></script>
 
     {% load render_bundle %}
     {% render_bundle 'style' %}
     <title>{% block title %}{% endblock %}</title>
-    <meta name="description" content="{% block description %}{% endblock %}">
-    <meta name="keywords" content="{% block keywords %}{% endblock %}">
+    <meta name="description" content="{% block description %}{% endblock %}" />
+    <meta name="keywords" content="{% block keywords %}{% endblock %}" />
     {% block extrahead %}
     {% endblock %}
     {% endspaceless %}

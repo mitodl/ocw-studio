@@ -14,18 +14,18 @@ const initialState: UserState = {
    * the store value.
    */
   // @ts-expect-error intentially untyped
-  user:                 SETTINGS.user,
+  user: SETTINGS.user,
   /**
    * How many authentication errors has this user experienced?
    *
    * This is a counter in order to re-show the login prompt if it was previously
    * dismissed and the user experiences another auth error.
    */
-  authenticationErrors: 0
+  authenticationErrors: 0,
 }
 
 const userSlice = createSlice({
-  name:     "user",
+  name: "user",
   initialState,
   reducers: {
     setUser(state, action: PayloadAction<User>) {
@@ -37,8 +37,8 @@ const userSlice = createSlice({
     clearUser(state) {
       state.user = null
       state.authenticationErrors = 0
-    }
-  }
+    },
+  },
 })
 
 export const { setUser, clearUser, incrementAuthenticationErrors } =

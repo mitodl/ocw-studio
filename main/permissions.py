@@ -11,13 +11,13 @@ def is_readonly(request):
 
     Returns:
         bool: True if the request method is readonly
-    """
+    """  # noqa: D401
     return request.method in permissions.SAFE_METHODS
 
 
 class ReadonlyPermission(permissions.BasePermission):
     """Allows read-only requests through for any user"""
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view):  # noqa: ARG002
         """Return true if the request is read-only"""
         return request.method in permissions.SAFE_METHODS

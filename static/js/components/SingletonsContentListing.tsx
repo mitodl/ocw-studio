@@ -29,7 +29,7 @@ export default function SingletonsContentListing(props: {
 
   const [content, { isPending }] = useWebsiteContent(
     activeFileConfigItem.name,
-    needsContentContext(activeFileConfigItem.fields)
+    needsContentContext(activeFileConfigItem.fields),
   )
   if (isPending) {
     return null
@@ -62,9 +62,9 @@ export default function SingletonsContentListing(props: {
                   loadContent={false}
                   configItem={fileConfigItem}
                   editorState={
-                    content ?
-                      createModalState("editing", fileConfigItem.name) :
-                      createModalState("adding")
+                    content
+                      ? createModalState("editing", fileConfigItem.name)
+                      : createModalState("adding")
                   }
                   setDirty={setDirty}
                 />

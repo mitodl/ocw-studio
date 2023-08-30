@@ -5,7 +5,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
-  ModalProps
+  ModalProps,
 } from "reactstrap"
 
 export interface Props {
@@ -22,7 +22,7 @@ export interface Props {
   contentClassName?: ModalProps["contentClassName"]
 }
 
-const Dialog: React.FC<Props> = props => {
+const Dialog: React.FC<Props> = (props) => {
   const {
     open,
     headerContent,
@@ -34,7 +34,7 @@ const Dialog: React.FC<Props> = props => {
     wrapClassName,
     modalClassName,
     backdropClassName,
-    contentClassName
+    contentClassName,
   } = props
 
   const closeBtn = (

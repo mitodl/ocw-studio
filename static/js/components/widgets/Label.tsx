@@ -9,7 +9,7 @@ export interface Props {
 /**
  * A component for showing a read-only label
  */
-const Label: React.FC<Props> = props => {
+const Label: React.FC<Props> = (props) => {
   const { value } = props
   return (
     <div className="form-group">

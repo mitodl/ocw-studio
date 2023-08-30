@@ -7,37 +7,37 @@ const throwProxyHandler: ProxyHandler<Record<string | symbol, unknown>> = {
       return target[prop]
     }
     throw new Error(
-      `${prop.toString()} not implemented; add it if you need it. `
+      `${prop.toString()} not implemented; add it if you need it. `,
     )
-  }
+  },
 }
 // @ts-expect-error This does not current supply all the formik child props
 export const defaultFormikChildProps: FormikProps<any> = new Proxy(
   {
-    values:       {},
-    errors:       {},
-    touched:      {},
+    values: {},
+    errors: {},
+    touched: {},
     isSubmitting: false,
     isValidating: false,
-    status:       null,
-    submitCount:  0
+    status: null,
+    submitCount: 0,
   },
-  throwProxyHandler
+  throwProxyHandler,
 )
 
 export const isIf = (
-  tf: any // eslint-disable-line
+  tf: any, // eslint-disable-line
 ): string => (tf ? "is" : "is not")
 
 export const shouldIf = (
-  tf: any // eslint-disable-line
+  tf: any, // eslint-disable-line
 ): string => (tf ? "should" : "should not")
 
 /**
  * Promisified version of setTimeout
  */
 export const wait = async (ms: number): Promise<undefined> => {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     setTimeout(() => {
       resolve(undefined)
     }, ms)
@@ -63,14 +63,14 @@ export const flushEventQueue = (fakeTimers = false) => {
 export const mockMatchMedia = () => {
   Object.defineProperty(window, "matchMedia", {
     writable: true,
-    value:    jest.fn().mockImplementation(query => ({
-      matches:             false,
-      media:               query,
-      onchange:            null,
-      addEventListener:    jest.fn(),
+    value: jest.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
-      dispatchEvent:       jest.fn()
-    }))
+      dispatchEvent: jest.fn(),
+    })),
   })
 
   return window.matchMedia as jest.Mock<any, [string]>
@@ -80,23 +80,23 @@ export const twoBooleanTestMatrix = [
   [true, true],
   [true, false],
   [false, true],
-  [false, false]
+  [false, false],
 ]
 
 export const getMockEditor = () => ({
   editing: {
     view: {
-      focus: jest.fn()
-    }
+      focus: jest.fn(),
+    },
   },
   model: {
     schema: {
-      addAttributeCheck: jest.fn()
-    }
+      addAttributeCheck: jest.fn(),
+    },
   },
   plugins: {
-    get: jest.fn()
-  }
+    get: jest.fn(),
+  },
 })
 
 /**
@@ -105,9 +105,9 @@ export const getMockEditor = () => ({
  * Unlike jest assertions, this will refine the type.
  * See https://github.com/DefinitelyTyped/DefinitelyTyped/issues/41179
  */
-export const assertNotNil: <T>(
-  value: T
-) => asserts value is NonNullable<T> = value => {
+export const assertNotNil: <T>(value: T) => asserts value is NonNullable<T> = (
+  value,
+) => {
   if (value !== undefined && value !== null) return
   throw new Error("Expected value not to be undefined and not to be null.")
 }
@@ -120,7 +120,7 @@ export const assertNotNil: <T>(
  */
 export const assertInstanceOf: <C extends { new (...args: any): any }>(
   value: unknown,
-  Class: C
+  Class: C,
 ) => asserts value is InstanceType<C> = (value, Class) => {
   if (value instanceof Class) return
   throw new Error(`Expected value to be instanceof ${Class}`)
@@ -156,11 +156,11 @@ export const absoluteUrl = (relative: string): string => {
  */
 export const mergeXProd = <
   A extends Record<string, any>,
-  B extends Record<string, any>
+  B extends Record<string, any>,
 >(
-    a: A[],
-    b: B[]
-  ): (A & B)[] => {
+  a: A[],
+  b: B[],
+): (A & B)[] => {
   return R.xprod(a, b).map(([x, y]) => ({ ...x, ...y }))
 }
 
@@ -175,7 +175,7 @@ export const mergeXProd = <
  *    don't work because `window.location` is not configurable.
  */
 export const withFakeLocation = async (
-  cb: () => Promise<void> | void
+  cb: () => Promise<void> | void,
 ): Promise<void> => {
   const originalLocation = window.location
   // @ts-expect-error We're deleting a required property, but we're about to re-assign it.

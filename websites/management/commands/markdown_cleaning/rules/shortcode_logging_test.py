@@ -9,7 +9,7 @@ from websites.management.commands.markdown_cleaning.rules.shortcode_logging impo
 
 
 def get_markdown_cleaner():
-    """Convenience to get rule-specific markdown cleaner"""
+    """Convenience to get rule-specific markdown cleaner"""  # noqa: D401
     rule = ShortcodeLoggingRule()
     return WebsiteContentMarkdownCleaner(rule)
 

@@ -14,7 +14,7 @@ def _validate(validation_class, data):
 
 
 def test_no_file_or_folder():
-    """either file or folder must be present in the schema"""
+    """Either file or folder must be present in the schema"""
     data = """
     {
   "collections": [

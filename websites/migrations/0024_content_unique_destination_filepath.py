@@ -17,7 +17,7 @@ def backpopulate_null_dirpaths(apps, schema_editor):
     """
     Finds all WebsiteContent records with a null dirpath, and sets the dirpath to the value in the site config if
     the content was created for a "folder"-type config item
-    """
+    """  # noqa: E501, D401
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
 
@@ -45,7 +45,6 @@ def backpopulate_null_dirpaths(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0023_website_content_filepath"),
     ]
@@ -57,7 +56,7 @@ class Migration(migrations.Migration):
             name="dirpath",
             field=models.CharField(
                 default="",
-                help_text="The directory path for the file that will be created from this object.",
+                help_text="The directory path for the file that will be created from this object.",  # noqa: E501
                 max_length=300,
             ),
         ),
@@ -66,7 +65,7 @@ class Migration(migrations.Migration):
             name="filename",
             field=models.CharField(
                 default="",
-                help_text="The filename of the file that will be created from this object WITHOUT the file extension.",
+                help_text="The filename of the file that will be created from this object WITHOUT the file extension.",  # noqa: E501
                 max_length=125,
             ),
         ),

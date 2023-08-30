@@ -10,8 +10,8 @@ const hotEntry = (host, port) =>
 
 const insertHotReload = (host, port, entries) =>
   R.map(
-    R.compose(R.flatten, v => [v].concat(hotEntry(host, port))),
-    entries
+    R.compose(R.flatten, (v) => [v].concat(hotEntry(host, port))),
+    entries,
   )
 
 const devConfig = Object.assign({}, config, {
@@ -20,26 +20,26 @@ const devConfig = Object.assign({}, config, {
   devtool: "inline-source-map",
   output: {
     path: path.resolve("./static/bundles/"),
-    filename: "[name].js"
+    filename: "[name].js",
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new BundleTracker({ filename: "./webpack-stats.json" }),
     new CKEditorWebpackPlugin({
       language: "en",
-      addMainLanguageTranslationsToAllAssets: true
+      addMainLanguageTranslationsToAllAssets: true,
     }),
     new webpack.DefinePlugin({
-      RELEASE_YEAR: JSON.stringify(new Date().getUTCFullYear())
-    })
+      RELEASE_YEAR: JSON.stringify(new Date().getUTCFullYear()),
+    }),
   ],
   optimization: {
-    moduleIds: 'named',
+    moduleIds: "named",
     splitChunks: {
       name: "common",
-      minChunks: 2
+      minChunks: 2,
     },
-    emitOnErrors: true
+    emitOnErrors: true,
   },
 })
 
@@ -57,17 +57,17 @@ devConfig.module.rules = [
         options: {
           sassOptions: { quietDeps: true },
         },
-      }
-    ]
-  }
+      },
+    ],
+  },
 ]
 
 const makeDevConfig = (host, port) =>
   Object.assign({}, devConfig, {
-    entry: insertHotReload(host, port, devConfig.entry)
+    entry: insertHotReload(host, port, devConfig.entry),
   })
 
 module.exports = {
   makeDevConfig,
-  devConfig
+  devConfig,
 }

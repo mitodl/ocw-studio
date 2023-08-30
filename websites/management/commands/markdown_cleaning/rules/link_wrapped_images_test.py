@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 import pytest
 
 from websites.factories import WebsiteContentFactory, WebsiteFactory
@@ -16,14 +14,14 @@ from websites.management.commands.markdown_cleaning.testing_utils import (
 
 
 def get_markdown_cleaner(website_contents):
-    """Convenience to get rule-specific cleaner"""
+    """Convenience to get rule-specific cleaner"""  # noqa: D401
     with patch_website_contents_all(website_contents):
         rule = LinkWrappedImagesRule()
         return WebsiteContentMarkdownCleaner(rule)
 
 
 @pytest.mark.parametrize(
-    ["old_markdown", "new_markdown", "same_site"],
+    ("old_markdown", "new_markdown", "same_site"),
     [
         (
             """Hello [{{< resource some_uuid >}}]({{< baseurl >}}/pages/animals/unicorn) World""",

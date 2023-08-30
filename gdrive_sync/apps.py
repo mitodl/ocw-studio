@@ -1,4 +1,4 @@
-""" gdrive_sync apps """
+"""gdrive_sync apps"""
 from django.apps import AppConfig
 
 
@@ -9,4 +9,4 @@ class GDriveSyncApp(AppConfig):
 
     def ready(self):
         """Application is ready"""
-        import gdrive_sync.signals  # pylint:disable=unused-import, import-outside-toplevel
+        import gdrive_sync.signals  # noqa: F401

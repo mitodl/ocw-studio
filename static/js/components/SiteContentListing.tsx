@@ -8,7 +8,7 @@ import SingletonsContentListing from "./SingletonsContentListing"
 
 import {
   addDefaultFields,
-  isRepeatableCollectionItem
+  isRepeatableCollectionItem,
 } from "../lib/site_content"
 import { useWebsite } from "../context/Website"
 
@@ -33,7 +33,7 @@ export default function SiteContentListing(): JSX.Element | null {
   const { contentType } = match.params
 
   const configItem = website?.starter?.config?.collections.find(
-    (config: TopLevelConfigItem) => config.name === contentType
+    (config: TopLevelConfigItem) => config.name === contentType,
   )
   if (!configItem) {
     return null

@@ -3,7 +3,6 @@
 from django.db import migrations, models, transaction
 from django.db.models import Count
 
-
 COURSE_STARTER_SLUG = "course"
 WEBSITE_SOURCE_OCW_IMPORT = "ocw-import"
 
@@ -32,7 +31,7 @@ def populate_empty_names(apps, schema_editor):
     """
     Fetches all Websites with empty/duplicate 'name' values and sets those values to something we know will be
     unique. That way, reintroducing the unique constraint on the field will not fail.
-    """
+    """  # noqa: E501, D401
     Website = apps.get_model("websites", "Website")
     # Set the 'name' for all records with an empty 'name' value
     for website in Website.objects.filter(name=None):
@@ -59,7 +58,6 @@ def populate_empty_names(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0004_websitestarter_slug"),
     ]

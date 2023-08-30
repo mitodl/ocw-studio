@@ -34,9 +34,9 @@ def test_shortcode_grammar_respects_spaces_in_quoted_named_params(closer):
     parser = ShortcodeParser()
     parsed = parser.parse_string(text)
 
-    print("\n\n")
+    print("\n\n")  # noqa: T201
     for p in parsed.shortcode.params:
-        print(p)
+        print(p)  # noqa: T201
 
     assert parsed.shortcode == ShortcodeTag(
         "some_name",
@@ -86,7 +86,7 @@ def test_shortcode_grammar_with_nested_shortcodes():
 
     # "real" nesting raises an error:
 
-    with pytest.raises(ValueError, match="nesting"):
+    with pytest.raises(ValueError, match="nesting"):  # noqa: PT012
         text_nested = R'{{< fake_shortcode uuid {{< sup 4 >}} "Cats and dogs" >}}'
         parser.parse_string(text_nested)
 

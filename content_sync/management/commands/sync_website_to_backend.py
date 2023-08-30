@@ -1,4 +1,4 @@
-"""Syncs a Website and all of its contents to a backend (Github, et al)"""
+"""Syncs a Website and all of its contents to a backend (Github, et al)"""  # noqa: E501, INP001
 from content_sync.api import get_sync_backend
 from content_sync.models import ContentSyncState
 from main.management.commands.filter import WebsiteFilterCommand
@@ -8,7 +8,7 @@ from websites.api import fetch_website, reset_publishing_fields
 class Command(WebsiteFilterCommand):
     """Syncs a Website and all of its contents to a backend (Github, et al)"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -17,7 +17,7 @@ class Command(WebsiteFilterCommand):
             dest="force_create",
             action="store_true",
             help=(
-                "If this flag is added, this command will attempt to create the website in the backend regardless "
+                "If this flag is added, this command will attempt to create the website in the backend regardless "  # noqa: E501
                 "of whether or not our db records say that it has been synced before."
             ),
         )
@@ -26,7 +26,7 @@ class Command(WebsiteFilterCommand):
             dest="git_delete",
             action="store_true",
             help=(
-                "If this flag is added, this command will attempt to delete any files in the git repo that do not"
+                "If this flag is added, this command will attempt to delete any files in the git repo that do not"  # noqa: E501
                 "match any WebsiteContent filepaths"
             ),
         )
@@ -35,7 +35,7 @@ class Command(WebsiteFilterCommand):
         super().handle(*args, **options)
         if not self.filter_list:
             self.stderr.write(
-                "You must specify a website or list of websites to process, --filter or --filter-json"
+                "You must specify a website or list of websites to process, --filter or --filter-json"  # noqa: E501
             )
         for site_identifier in self.filter_list:
             website = fetch_website(site_identifier)

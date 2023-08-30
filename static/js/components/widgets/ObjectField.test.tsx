@@ -5,13 +5,13 @@ import * as siteContent from "../../lib/site_content"
 import ObjectField from "./ObjectField"
 import {
   makeWebsiteConfigField,
-  makeWebsiteContentDetail
+  makeWebsiteContentDetail,
 } from "../../util/factories/websites"
 
 import {
   ObjectConfigField,
   WebsiteContent,
-  WidgetVariant
+  WidgetVariant,
 } from "../../types/websites"
 import { SiteFormValues } from "../../types/forms"
 
@@ -27,7 +27,7 @@ describe("ObjectField", () => {
 
   beforeEach(() => {
     field = makeWebsiteConfigField({
-      widget: WidgetVariant.Object
+      widget: WidgetVariant.Object,
     }) as ObjectConfigField
 
     mockSiteContent.fieldIsVisible.mockReturnValue(true)
@@ -45,7 +45,7 @@ describe("ObjectField", () => {
           values={values}
           onChange={onChangeStub}
           {...props}
-        />
+        />,
       )
   })
 
@@ -56,7 +56,7 @@ describe("ObjectField", () => {
       expect(field.prop("onChange")).toStrictEqual(onChangeStub)
     })
     expect(
-      wrapper.find("SiteContentField").map((field: any) => field.prop("field"))
+      wrapper.find("SiteContentField").map((field: any) => field.prop("field")),
     ).toEqual(field.fields)
   })
 
@@ -76,17 +76,17 @@ describe("ObjectField", () => {
   })
 
   //
-  ;[true, false].forEach(isVisible => {
+  ;[true, false].forEach((isVisible) => {
     it(`should hide fields which are ${isVisible ? "" : "not "}visible`, () => {
       mockSiteContent.fieldIsVisible.mockReturnValue(isVisible)
       const wrapper = render()
       expect(wrapper.find("SiteContentField")).toHaveLength(
-        isVisible ? field.fields.length : 0
+        isVisible ? field.fields.length : 0,
       )
       for (const innerField of field.fields) {
         expect(mockSiteContent.fieldIsVisible).toHaveBeenCalledWith(
           innerField,
-          values
+          values,
         )
       }
     })

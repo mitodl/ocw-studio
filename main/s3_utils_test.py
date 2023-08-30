@@ -1,4 +1,4 @@
-""" Tests for s3_utils """
+"""Tests for s3_utils"""
 
 import pytest
 
@@ -12,6 +12,6 @@ def test_s3_object_and_read(settings, mocker, iterations):
     """
     settings.MAX_S3_GET_ITERATIONS = iterations
     mock_s3_object = mocker.Mock()
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017, PT011
         get_s3_object_and_read(mock_s3_object)
     assert mock_s3_object.get.call_count == iterations + 1

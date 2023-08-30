@@ -21,7 +21,7 @@ class QueryStringFeatureFlagMiddleware(MiddlewareMixin):
 
         Returns:
             str: the full key value
-        """
+        """  # noqa: D401
         return f"{settings.MIDDLEWARE_FEATURE_FLAG_QS_PREFIX}_FEATURE_{suffix}"
 
     @classmethod
@@ -34,7 +34,7 @@ class QueryStringFeatureFlagMiddleware(MiddlewareMixin):
 
         Returns:
             str: value encoded as a str
-        """
+        """  # noqa: D401
         mask = 0
         if data is None:
             return str(mask)
@@ -50,9 +50,9 @@ class QueryStringFeatureFlagMiddleware(MiddlewareMixin):
 
         Args:
             request (django.http.request.Request): the request to inspect
-        """
+        """  # noqa: D401
         prefix = self.get_flag_key("")
-        if request.GET and any(key.startswith(prefix) for key in request.GET.keys()):
+        if request.GET and any(key.startswith(prefix) for key in request.GET):
             response = shortcuts.redirect(request.path)
             if self.get_flag_key("CLEAR") in request.GET:
                 response.delete_cookie(settings.MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME)
@@ -83,8 +83,8 @@ class CookieFeatureFlagMiddleware(MiddlewareMixin):
 
         Returns:
             set: the set of feature values in the value
-        """
-        return set(member for member in FeatureFlag if member.value & value)
+        """  # noqa: D401
+        return {member for member in FeatureFlag if member.value & value}
 
     @classmethod
     def get_feature_flags(cls, request):
@@ -96,7 +96,7 @@ class CookieFeatureFlagMiddleware(MiddlewareMixin):
 
         Returns:
             set: the set of FeatureFlag values set in the cookie if present
-        """
+        """  # noqa: D401
         if settings.MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME in request.COOKIES:
             try:
                 value = int(
@@ -116,7 +116,7 @@ class CookieFeatureFlagMiddleware(MiddlewareMixin):
 
         Args:
             request (django.http.request.Request): the request to inspect
-        """
+        """  # noqa: D401
         request.ocw_studio_feature_flags = self.get_feature_flags(request)
 
 

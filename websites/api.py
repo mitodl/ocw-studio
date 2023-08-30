@@ -2,7 +2,7 @@
 import logging
 import os
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 from uuid import UUID
 
 from django.conf import settings
@@ -36,7 +36,6 @@ from websites.messages import (
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.utils import get_dict_field, get_dict_query_field, set_dict_field
 
-
 log = logging.getLogger(__name__)
 
 
@@ -55,7 +54,7 @@ def get_valid_new_filename(
             get_valid_new_filename("my-filename") == "my-filename2"
         In database: WebsiteContent(filename="my-filename99")...
             get_valid_new_filename("my-filename99") == "my-filename100"
-    """
+    """  # noqa: E501
     website_content_qset = WebsiteContent.objects.all_with_deleted().filter(
         website_id=website_pk, dirpath=dirpath
     )
@@ -76,7 +75,7 @@ def get_valid_new_slug(slug_base: str, path: str) -> str:
     """
     Given a slug to act as a base/prefix, returns a slug that will satisfy unique constraints,
     adding/incrementing a numerical suffix as necessary.
-    """
+    """  # noqa: E501
     starter_qset = WebsiteStarter.objects.exclude(path=path)
     slug_exists = starter_qset.filter(slug=slug_base).exists()
     if not slug_exists:
@@ -109,11 +108,11 @@ def find_available_name(
     initial_filename_base = "abcdefghijklmnopqrstuvwxy" (25 characters long, assuming 26 character max)
         Existing filenames = "abc...y", "abc...y1" through "abc...y9"
         Return value = "abcdefghijklmnopqrstuvwx10"  # pragma: allowlist secret
-    """
-    # Keeps track of the number of characters that must be cut from the filename to be less than
+    """  # noqa: E501, D401
+    # Keeps track of the number of characters that must be cut from the filename to be less than  # noqa: E501
     # the filename max length when the suffix is applied.
     chars_to_truncate = 0 if len(initial_filename_base) < max_length else 1
-    # Any query for suffixed filenames could come up empty. The minimum suffix will be added to
+    # Any query for suffixed filenames could come up empty. The minimum suffix will be added to  # noqa: E501
     # the filename in that case.
     current_min_suffix = 2
     if extension is None:
@@ -123,12 +122,14 @@ def find_available_name(
             0 : len(initial_filename_base) - chars_to_truncate
         ]
         kwargs = {f"{fieldname}__regex": rf"{name_base}[0-9]+{extension}"}
-        # Find names that match the namebase and have a numerical suffix, then find the max suffix
+        # Find names that match the namebase and have a numerical suffix, then find the max suffix  # noqa: E501
         existing_names = website_content_qset.filter(**kwargs).values_list(
             fieldname, flat=True
         )
         if extension:
-            existing_names = [os.path.splitext(name)[0] for name in existing_names]
+            existing_names = [
+                os.path.splitext(name)[0] for name in existing_names  # noqa: PTH122
+            ]  # noqa: PTH122, RUF100
         max_suffix = max_or_none(
             int(filename[len(name_base) :]) for filename in existing_names
         )
@@ -137,25 +138,26 @@ def find_available_name(
         else:
             next_suffix = max_suffix + 1
             candidate_name = "".join([name_base, str(next_suffix), extension])
-            # If the next suffix adds a digit and causes the filename to exceed the character limit,
+            # If the next suffix adds a digit and causes the filename to exceed the character limit,  # noqa: E501
             # keep searching.
             if len(candidate_name) <= max_length:
                 return candidate_name
-        # At this point, we know there are no suffixes left to add to this filename base that was tried,
-        # so we will need to remove characters from the end of that filename base to make room for a longer
+        # At this point, we know there are no suffixes left to add to this filename base that was tried,  # noqa: E501
+        # so we will need to remove characters from the end of that filename base to make room for a longer  # noqa: E501
         # suffix.
         chars_to_truncate = chars_to_truncate + 1
         available_suffix_digits = max_length - (
             len(initial_filename_base) - chars_to_truncate
         )
-        # If there is space for 4 digits for the suffix, the minimum value it could be is 1000, or 10^3
+        # If there is space for 4 digits for the suffix, the minimum value it could be is 1000, or 10^3  # noqa: E501
         current_min_suffix = 10 ** (available_suffix_digits - 1)
+    return None
 
 
 def fetch_website(filter_value: str) -> Website:
     """
     Attempts to fetch a Website based on several properties
-    """
+    """  # noqa: D401
     if len(filter_value) in {32, 36}:
         try:
             parsed_uuid = UUID(filter_value, version=4)
@@ -170,9 +172,8 @@ def fetch_website(filter_value: str) -> Website:
         | Q(short_id__iexact=filter_value)
     ).all()
     if len(website_results) == 0:
-        raise Website.DoesNotExist(
-            f"Could not find a Website with a matching uuid, name, short_id, or title ('{filter_value}')"
-        )
+        msg = f"Could not find a Website with a matching uuid, name, short_id, or title ('{filter_value}')"  # noqa: E501
+        raise Website.DoesNotExist(msg)
     if len(website_results) == 1:
         return website_results[0]
 
@@ -187,7 +188,9 @@ def is_ocw_site(website: Website) -> bool:
     return website.starter and website.starter.slug == settings.OCW_COURSE_STARTER_SLUG
 
 
-def update_youtube_thumbnail(website_id: str, metadata: Dict, overwrite=False):
+def update_youtube_thumbnail(
+    website_id: str, metadata: dict, overwrite=False  # noqa: FBT002
+):
     """Assign a youtube thumbnail url if appropriate to a website's metadata"""
     website = Website.objects.get(uuid=website_id)
     if is_ocw_site(website):
@@ -202,7 +205,7 @@ def update_youtube_thumbnail(website_id: str, metadata: Dict, overwrite=False):
             )
 
 
-def videos_with_unassigned_youtube_ids(website: Website) -> List[WebsiteContent]:
+def videos_with_unassigned_youtube_ids(website: Website) -> list[WebsiteContent]:
     """Return a list of WebsiteContent objects for videos with unassigned youtube ids"""
     if not is_ocw_site(website):
         return []
@@ -221,8 +224,8 @@ def videos_with_unassigned_youtube_ids(website: Website) -> List[WebsiteContent]
     )
 
 
-def videos_with_truncatable_text(website: Website) -> List[WebsiteContent]:
-    """Return a list of WebsiteContent objects with text fields that will be truncated in YouTube"""
+def videos_with_truncatable_text(website: Website) -> list[WebsiteContent]:
+    """Return a list of WebsiteContent objects with text fields that will be truncated in YouTube"""  # noqa: E501
     if not is_ocw_site(website):
         return []
     query_resource_type_field = get_dict_query_field(
@@ -250,7 +253,7 @@ def videos_with_truncatable_text(website: Website) -> List[WebsiteContent]:
     )
 
 
-def videos_missing_captions(website: Website) -> List[WebsiteContent]:
+def videos_missing_captions(website: Website) -> list[WebsiteContent]:
     """Return a list of WebsiteContent objects for videos with unassigned captions"""
     if not is_ocw_site(website):
         return []
@@ -265,7 +268,7 @@ def videos_missing_captions(website: Website) -> List[WebsiteContent]:
     )
 
 
-def draft_content(website: Website) -> List[WebsiteContent]:
+def draft_content(website: Website) -> list[WebsiteContent]:
     """Return a list of WebsiteContent objects that are set to Draft"""
     query_draft_field = get_dict_query_field("metadata", "draft")
     return WebsiteContent.objects.filter(
@@ -273,7 +276,9 @@ def draft_content(website: Website) -> List[WebsiteContent]:
     )
 
 
-def mail_on_publish(website_name: str, version: str, success: bool, user_id: int):
+def mail_on_publish(
+    website_name: str, version: str, success: bool, user_id: int  # noqa: FBT001
+):
     """Send a publishing success or failure message to the requesting user"""
     message = (
         PreviewOrPublishSuccessMessage if success else PreviewOrPublishFailureMessage
@@ -319,7 +324,7 @@ def update_website_status(
     version: str,
     status: str,
     update_time: datetime,
-    unpublished=False,
+    unpublished=False,  # noqa: FBT002
 ):
     """Update some status fields in Website"""
     if version == VERSION_DRAFT:
@@ -372,7 +377,7 @@ def get_content_warnings(website):
     """
     Return array with error/warning messages for any website content missing expected data
     (currently: video youtube ids and captions) or any draft content.
-    """
+    """  # noqa: E501
     missing_youtube_ids = videos_with_unassigned_youtube_ids(website)
 
     missing_youtube_ids_titles = [video.title for video in missing_youtube_ids]
@@ -391,20 +396,20 @@ def get_content_warnings(website):
 
     if len(missing_youtube_ids_titles) > 0:
         messages.append(
-            f"The following video resources require YouTube IDs: {', '.join(missing_youtube_ids_titles)}"
+            f"The following video resources require YouTube IDs: {', '.join(missing_youtube_ids_titles)}"  # noqa: E501
         )
     if len(missing_captions_titles) > 0:
         messages.append(
-            f"The following videos have missing captions: {', '.join(missing_captions_titles)}"
+            f"The following videos have missing captions: {', '.join(missing_captions_titles)}"  # noqa: E501
         )
     if len(truncatable_video_titles) > 0:
         messages.append(
-            f"The following videos have titles or descriptions that will be truncated on YouTube: {', '.join(truncatable_video_titles)}"
+            f"The following videos have titles or descriptions that will be truncated on YouTube: {', '.join(truncatable_video_titles)}"  # noqa: E501
         )
 
     if len(draft_content_titles) > 0:
         messages.append(
-            f"The following content is still set to Draft: {', '.join(draft_content_titles)}"
+            f"The following content is still set to Draft: {', '.join(draft_content_titles)}"  # noqa: E501
         )
 
     return messages
@@ -428,14 +433,14 @@ def get_website_in_root_website_metadata(website, version):
 
     Returns:
         dict: A dict of metadata keys to be used with a WebsiteContent object of type "website"
-    """
+    """  # noqa: E501
     # Start with the sitemetadata WebsiteContent for the given Website
     site_metadata = WebsiteContent.objects.get(
         website=website, type="sitemetadata"
     ).metadata
     # We want this content to show up in lists, but not render pages
     site_metadata["_build"] = {"list": True, "render": False}
-    # Set the content to draft if the site is unpublished or has never been published to LIVE
+    # Set the content to draft if the site is unpublished or has never been published to LIVE  # noqa: E501
     if website.unpublish_status is not None or (
         version != VERSION_LIVE and website.publish_date is None
     ):

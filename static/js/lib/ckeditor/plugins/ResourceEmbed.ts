@@ -12,7 +12,7 @@ import {
   CKEDITOR_RESOURCE_UTILS,
   RenderResourceFunc,
   RESOURCE_EMBED,
-  RESOURCE_EMBED_COMMAND
+  RESOURCE_EMBED_COMMAND,
 } from "./constants"
 import { Shortcode, makeHtmlString } from "./util"
 import { isNotNil } from "../../../util"
@@ -31,21 +31,21 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
     return function resourceExtension(): Showdown.ShowdownExtension[] {
       return [
         {
-          type:    "lang",
-          regex:   RESOURCE_SHORTCODE_REGEX,
+          type: "lang",
+          regex: RESOURCE_SHORTCODE_REGEX,
           replace: (s: string) => {
             const shortcode = Shortcode.fromString(s)
             const uuid = shortcode.get(0) ?? shortcode.get("uuid")
             const href = shortcode.get("href")
             const hrefUuid = shortcode.get("href_uuid")
             const attrs = {
-              "data-uuid":      uuid,
-              "data-href":      href,
-              "data-href-uuid": hrefUuid
+              "data-uuid": uuid,
+              "data-href": href,
+              "data-href-uuid": hrefUuid,
             }
             return makeHtmlString("section", attrs)
-          }
-        }
+          },
+        },
       ]
     }
   }
@@ -55,7 +55,7 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
       {
         name: "resourceEmbed",
         rule: {
-          filter:      "section",
+          filter: "section",
           replacement: (_content: string, node: Turndown.Node): string => {
             if (!(node instanceof HTMLElement)) {
               throw new Error("Node should be HTMLElement")
@@ -63,13 +63,13 @@ class ResourceMarkdownSyntax extends MarkdownSyntaxPlugin {
             const uuid = node.getAttribute("data-uuid")
             if (uuid === null) throw new Error("uuid should not be null")
             const resource = Shortcode.resource(uuid, {
-              href:     node.getAttribute("data-href"),
-              hrefUuid: node.getAttribute("data-href-uuid")
+              href: node.getAttribute("data-href"),
+              hrefUuid: node.getAttribute("data-href-uuid"),
             })
             return `${resource.toHugo()}\n`
-          }
-        }
-      }
+          },
+        },
+      },
     ]
   }
 }
@@ -95,7 +95,7 @@ class InsertResourceEmbedCommand extends Command {
     const selection = model.document.selection
     const allowedIn = model.schema.findAllowedParent(
       selection.getFirstPosition(),
-      RESOURCE_EMBED
+      RESOURCE_EMBED,
     )
     this.isEnabled = allowedIn !== null
   }
@@ -117,7 +117,7 @@ class ResourceEmbedEditing extends CKEPlugin {
 
     this.editor.commands.add(
       RESOURCE_EMBED_COMMAND,
-      new InsertResourceEmbedCommand(this.editor)
+      new InsertResourceEmbedCommand(this.editor),
     )
   }
 
@@ -125,9 +125,9 @@ class ResourceEmbedEditing extends CKEPlugin {
     const schema = this.editor.model.schema
 
     schema.register(RESOURCE_EMBED, {
-      isObject:        true,
-      allowWhere:      "$block",
-      allowAttributes: ["uuid"]
+      isObject: true,
+      allowWhere: "$block",
+      allowAttributes: ["uuid"],
     })
   }
 
@@ -140,7 +140,7 @@ class ResourceEmbedEditing extends CKEPlugin {
      */
     conversion.for("upcast").elementToElement({
       view: {
-        name: "section"
+        name: "section",
       },
 
       model: (viewElement: any, { writer: modelWriter }: any) => {
@@ -148,14 +148,14 @@ class ResourceEmbedEditing extends CKEPlugin {
           RESOURCE_EMBED,
           pickBy(
             {
-              uuid:     viewElement.getAttribute("data-uuid"),
-              href:     viewElement.getAttribute("data-href"),
-              hrefUuid: viewElement.getAttribute("data-href-uuid")
+              uuid: viewElement.getAttribute("data-uuid"),
+              href: viewElement.getAttribute("data-href"),
+              hrefUuid: viewElement.getAttribute("data-href-uuid"),
             },
-            isNotNil
-          )
+            isNotNil,
+          ),
         )
-      }
+      },
     })
 
     /**
@@ -163,19 +163,19 @@ class ResourceEmbedEditing extends CKEPlugin {
      */
     conversion.for("dataDowncast").elementToElement({
       model: RESOURCE_EMBED,
-      view:  (modelElement: any, { writer: viewWriter }: any) => {
+      view: (modelElement: any, { writer: viewWriter }: any) => {
         return viewWriter.createEmptyElement(
           "section",
           pickBy(
             {
-              "data-uuid":      modelElement.getAttribute("uuid"),
-              "data-href":      modelElement.getAttribute("href"),
-              "data-href-uuid": modelElement.getAttribute("hrefUuid")
+              "data-uuid": modelElement.getAttribute("uuid"),
+              "data-href": modelElement.getAttribute("href"),
+              "data-href-uuid": modelElement.getAttribute("hrefUuid"),
             },
-            isNotNil
-          )
+            isNotNil,
+          ),
         )
-      }
+      },
     })
 
     const renderResource: RenderResourceFunc = (
@@ -188,29 +188,29 @@ class ResourceEmbedEditing extends CKEPlugin {
      */
     conversion.for("editingDowncast").elementToElement({
       model: RESOURCE_EMBED,
-      view:  (modelElement: any, { writer: viewWriter }: any) => {
+      view: (modelElement: any, { writer: viewWriter }: any) => {
         const uuid = modelElement.getAttribute("uuid")
 
         const section = viewWriter.createContainerElement("section", {
-          class: "resource-embed"
+          class: "resource-embed",
         })
 
         const reactWrapper = viewWriter.createRawElement(
           "div",
           {
-            class: "resource-react-wrapper"
+            class: "resource-react-wrapper",
           },
-          function(el: HTMLElement) {
+          function (el: HTMLElement) {
             if (renderResource) {
               renderResource(uuid, el)
             }
-          }
+          },
         )
 
         viewWriter.insert(viewWriter.createPositionAt(section, 0), reactWrapper)
 
         return toWidget(section, viewWriter, { label: "Resources Embed" })
-      }
+      },
     })
   }
 }

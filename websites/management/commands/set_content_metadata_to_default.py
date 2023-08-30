@@ -1,4 +1,4 @@
-""" Update content metadata for websites based on a specific starter """
+"""Update content metadata for websites based on a specific starter"""  # noqa: INP001
 from django.db import transaction
 
 from main.management.commands.filter import WebsiteFilterCommand
@@ -12,7 +12,7 @@ class Command(WebsiteFilterCommand):
     affects content whose value for that metadata entry are null or empty.
     """
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -21,7 +21,7 @@ class Command(WebsiteFilterCommand):
         )
         parser.add_argument(
             "--field",
-            help="The metadata field's name path to update, in dot notation. Example: image_metadata.caption",
+            help="The metadata field's name path to update, in dot notation. Example: image_metadata.caption",  # noqa: E501
             required=True,
         )
         parser.add_argument(
@@ -48,7 +48,8 @@ class Command(WebsiteFilterCommand):
         ).generate_item_metadata(type_str, cls=WebsiteContent, use_defaults=True)
         default_value = get_dict_field(base_metadata, field_path)
         if default_value is None:
-            raise Exception(f"Metadata field {field_path} has no default")
+            msg = f"Metadata field {field_path} has no default"
+            raise Exception(msg)  # noqa: TRY002
 
         def should_update(website_content):
             current_value = get_dict_field(website_content.metadata, field_path)

@@ -12,22 +12,22 @@ const getEditor = createTestEditor([Paragraph, LegacyShortcodes, Markdown])
 describe("ResourceEmbed plugin", () => {
   afterEach(() => {
     turndownService.rules.array = turndownService.rules.array.filter(
-      (rule: any) => !/LegacyShortcodeSyntax/.test(rule.name)
+      (rule: any) => !/LegacyShortcodeSyntax/.test(rule.name),
     )
   })
 
   test.each(LEGACY_SHORTCODES)(
     "should take in and return %p shortcode",
-    async shortcode => {
+    async (shortcode) => {
       const md = `{{< ${shortcode} >}}`
       const editor = await getEditor(md)
       expect(editor.getData()).toBe(md)
-    }
+    },
   )
 
   test.each(LEGACY_SHORTCODES)(
     "should take in and return %p closing shortcode",
-    async shortcode => {
+    async (shortcode) => {
       const md1 = `{{< /${shortcode} >}}`
       const editor1 = await getEditor(md1)
       expect(editor1.getData()).toBe(md1)
@@ -40,27 +40,27 @@ describe("ResourceEmbed plugin", () => {
       const md2 = `{{</ ${shortcode} >}}`
       const editor2 = await getEditor(md2)
       expect(editor2.getData()).toBe(md1)
-    }
+    },
   )
 
   test.each(LEGACY_SHORTCODES)(
     "should take in and return %p shortcode with positional parameters",
-    async shortcode => {
+    async (shortcode) => {
       const md = `{{< ${shortcode} arguments "and chemistry H{{< sub 2 >}}0" >}}`
       const expected = `{{< ${shortcode} "arguments" "and chemistry H{{< sub 2 >}}0" >}}`
       const editor = await getEditor(md)
       expect(editor.getData()).toBe(expected)
-    }
+    },
   )
 
   test.each(LEGACY_SHORTCODES)(
     "should take in and return %p shortcode with named parameters",
-    async shortcode => {
+    async (shortcode) => {
       const md = `{{< ${shortcode} foo=123 html="<for some reason/>" >}}`
       const expected = `{{< ${shortcode} foo="123" html="<for some reason/>" >}}`
       const editor = await getEditor(md)
       expect(editor.getData()).toBe(expected)
-    }
+    },
   )
 
   test("should support a quiz example", async () => {

@@ -14,7 +14,7 @@ export interface SiteFormValues {
 
 export type OnSubmitPublish = (
   values: SiteFormValues,
-  formikHelpers: FormikHelpers<SiteFormValues>
+  formikHelpers: FormikHelpers<SiteFormValues>,
 ) => void
 
 type Props = {
@@ -32,25 +32,25 @@ export const websiteUrlValidation = yup.object().shape({
     .required()
     .matches(
       /^[a-zA-Z0-9\-._]*$/,
-      "Only alphanumeric characters, periods, dashes, or underscores allowed"
-    )
+      "Only alphanumeric characters, periods, dashes, or underscores allowed",
+    ),
 })
 
 const PublishForm: React.FC<Props> = ({
   onSubmit,
   website,
   disabled,
-  option
+  option,
 }) => {
   const initialValues: SiteFormValues = {
-    url_path: last(website.url_path?.split("/")) ?? website.url_suggestion
+    url_path: last(website.url_path?.split("/")) ?? website.url_suggestion,
   }
 
   const fullUrl =
     option === PublishingEnv.Staging ? website.draft_url : website.live_url
-  const partialUrl = website.url_path ?
-    fullUrl.slice(0, fullUrl.lastIndexOf("/")) :
-    fullUrl
+  const partialUrl = website.url_path
+    ? fullUrl.slice(0, fullUrl.lastIndexOf("/"))
+    : fullUrl
 
   return (
     <Formik

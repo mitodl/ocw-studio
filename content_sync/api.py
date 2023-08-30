@@ -1,8 +1,8 @@
-""" Syncing API """
+"""Syncing API"""
 import logging
 from datetime import datetime
 from time import sleep
-from typing import List, Optional
+from typing import Optional
 
 import pytz
 from django.conf import settings
@@ -18,7 +18,6 @@ from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BasePipeline
 from websites.constants import PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED
 from websites.models import Website, WebsiteContent
-
 
 log = logging.getLogger()
 
@@ -64,7 +63,7 @@ def get_theme_assets_pipeline(
 
 
 @is_publish_pipeline_enabled
-def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments
+def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments  # noqa: PLR0913
     version: str,
     api: Optional[object] = None,
     prefix: Optional[str] = None,
@@ -132,7 +131,7 @@ def trigger_unpublished_removal(website: Website):
 
 
 def sync_github_website_starters(
-    url: str, files: List[str], commit: Optional[str] = None
+    url: str, files: list[str], commit: Optional[str] = None
 ):
     """Sync website starters from github"""
     tasks.sync_github_site_configs.delay(url, files, commit=commit)
@@ -142,8 +141,8 @@ def publish_website(  # pylint: disable=too-many-arguments
     name: str,
     version: str,
     pipeline_api: Optional[object] = None,
-    prepublish: Optional[bool] = True,
-    trigger_pipeline: Optional[bool] = True,
+    prepublish: Optional[bool] = True,  # noqa: FBT002
+    trigger_pipeline: Optional[bool] = True,  # noqa: FBT002
 ):
     """Publish a live or draft version of a website"""
     try:

@@ -9,7 +9,7 @@ interface Props {
 export default function ConfirmDiscardChanges(props: Props) {
   const location = useLocation()
   const message = useCallback<MessageFunc>(
-    nextLocation => {
+    (nextLocation) => {
       const search = new URLSearchParams(nextLocation.search)
       if (search.has("publish")) {
         return "You have unsaved changes. Are you sure you want to publish?"
@@ -18,7 +18,7 @@ export default function ConfirmDiscardChanges(props: Props) {
       }
       return true
     },
-    [location]
+    [location],
   )
   return <Prompt when={props.when} onBeforeUnload={true} message={message} />
 }

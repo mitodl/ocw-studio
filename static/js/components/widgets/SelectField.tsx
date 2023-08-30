@@ -45,7 +45,7 @@ export default function SelectField(props: Props): JSX.Element {
     isOptionSelected,
     hideSelectedOptions,
     preserveSearchText = false,
-    cacheUniques
+    cacheUniques,
   } = props
   const [searchText, setSearchText] = useState("")
   const [placeholder, setPlaceholder] = useState("")
@@ -53,21 +53,21 @@ export default function SelectField(props: Props): JSX.Element {
   const infiniteScroll = isFeatureEnabled("SELECT_FIELD_INFINITE_SCROLL")
 
   const multiple = props.multiple ?? false
-  const selectOptions = options.map(option =>
-    typeof option === "string" ? { label: option, value: option } : option
+  const selectOptions = options.map((option) =>
+    typeof option === "string" ? { label: option, value: option } : option,
   )
   const debounceTimeout = 300
 
   const changeHandler = useCallback(
     (newValue: any) => {
-      const eventValue = multiple ?
-        newValue.map((option: Option) => option.value) :
-        newValue.value
+      const eventValue = multiple
+        ? newValue.map((option: Option) => option.value)
+        : newValue.value
       onChange({
-        target: { value: eventValue, name }
+        target: { value: eventValue, name },
       } as ChangeEvent<HTMLSelectElement>)
     },
-    [name, multiple, onChange]
+    [name, multiple, onChange],
   )
 
   /**
@@ -77,7 +77,7 @@ export default function SelectField(props: Props): JSX.Element {
    **/
   const getSelectOption = (value: string) => {
     const selectOption = selectOptions.filter(
-      option => option.value === value
+      (option) => option.value === value,
     )[0]
     return selectOption || { label: value, value: value }
   }
@@ -87,7 +87,7 @@ export default function SelectField(props: Props): JSX.Element {
     if (!Array.isArray(value)) {
       selected = []
     } else {
-      selected = value.map(option => getSelectOption(option))
+      selected = value.map((option) => getSelectOption(option))
     }
   } else {
     if (Array.isArray(value)) {
@@ -106,17 +106,17 @@ export default function SelectField(props: Props): JSX.Element {
       }
       setSearchText(input)
     },
-    [setSearchText]
+    [setSearchText],
   )
 
   const handleMenuClosed = useCallback(
     () => setPlaceholder(searchText),
-    [setPlaceholder, searchText]
+    [setPlaceholder, searchText],
   )
 
   const handleMenuOpen = useCallback(
     () => setSearchText(placeholder ?? ""),
-    [setSearchText, placeholder]
+    [setSearchText, placeholder],
   )
 
   // For AsyncSelect
@@ -127,32 +127,32 @@ export default function SelectField(props: Props): JSX.Element {
         return result?.options ?? []
       }
     },
-    [loadOptions]
+    [loadOptions],
   )
 
   const commonSelectOptions = {
-    className:         "w-100 form-input",
+    className: "w-100 form-input",
     classNamePrefix,
-    value:             selected,
-    isMulti:           multiple,
-    options:           selectOptions,
-    placeholder:       placeholder || initialPlaceholder || null,
+    value: selected,
+    isMulti: multiple,
+    options: selectOptions,
+    placeholder: placeholder || initialPlaceholder || null,
     blurInputOnSelect: preserveSearchText ? true : undefined,
     hideSelectedOptions,
-    onChange:          changeHandler,
-    inputValue:        preserveSearchText ? searchText : undefined,
-    onInputChange:     preserveSearchText ? handleInputChanged : undefined,
-    onMenuClose:       preserveSearchText ? handleMenuClosed : undefined,
-    onMenuOpen:        preserveSearchText ? handleMenuOpen : undefined,
+    onChange: changeHandler,
+    inputValue: preserveSearchText ? searchText : undefined,
+    onInputChange: preserveSearchText ? handleInputChanged : undefined,
+    onMenuClose: preserveSearchText ? handleMenuClosed : undefined,
+    onMenuOpen: preserveSearchText ? handleMenuOpen : undefined,
     isOptionDisabled,
     isOptionSelected,
-    styles:            {
+    styles: {
       control: (base: any) => ({
         ...base,
-        border:    0,
-        boxShadow: "none"
-      })
-    }
+        border: 0,
+        boxShadow: "none",
+      }),
+    },
   }
 
   return loadOptions ? (

@@ -11,9 +11,9 @@ ocw_type: CourseSection
 
 Watch two videos:
 
-[Lesson 4, Part 2: Ingredients and Vocabulary]({{< baseurl >}}/resources/lesson-4-part-2-ingredients-and-vocabulary)  
+[Lesson 4, Part 2: Ingredients and Vocabulary]({{< baseurl >}}/resources/lesson-4-part-2-ingredients-and-vocabulary)
 
-[Lesson 4, Part 3: Cooking Instruction]({{< baseurl >}}/resources/lesson-4-part-3-cooking-instruction)  
+[Lesson 4, Part 3: Cooking Instruction]({{< baseurl >}}/resources/lesson-4-part-3-cooking-instruction)
 
 _Gli Gnocchi di Patate_/Potato Gnocchi
 --------------------------------------

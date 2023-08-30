@@ -1,6 +1,6 @@
-""" Github API tests """
-import hashlib
+"""Github API tests"""
 import json
+from hashlib import sha1
 from types import SimpleNamespace
 
 import factory
@@ -30,7 +30,6 @@ from websites.factories import (
 )
 from websites.models import WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
-
 
 pytestmark = pytest.mark.django_db
 
@@ -76,16 +75,18 @@ GITHUB_APP_INSTALLATIONS = """[
 
 
 @pytest.fixture(autouse=True)
-def mock_github_integration(mocker):
+def mock_github_integration(mocker):  # noqa: PT004
     """Mock the github app request"""
     mock_get = mocker.patch("content_sync.apis.github.requests.get")
     mock_get.return_value.status_code = 200
     mock_get.return_value.json.return_value = json.loads(GITHUB_APP_INSTALLATIONS)
     mock_integration = mocker.patch("content_sync.apis.github.GithubIntegration")
-    mock_integration.return_value.get_access_token.return_value.token = "gh_token"
+    mock_integration.return_value.get_access_token.return_value.token = (
+        "gh_token"  # noqa: S105
+    )
 
 
-@pytest.fixture
+@pytest.fixture()
 def db_data():
     """Fixture that seeds the database with data needed for this test suite"""
     users = UserFactory.create_batch(2)
@@ -105,7 +106,7 @@ def db_data():
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_rsa_key():
     """Generate a test key"""
     private_key = rsa.generate_private_key(
@@ -118,10 +119,10 @@ def mock_rsa_key():
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_api_wrapper(settings, mocker, db_data):
     """Create a GithubApiWrapper with a mock Github object"""
-    settings.GIT_TOKEN = "faketoken"
+    settings.GIT_TOKEN = "faketoken"  # noqa: S105
     settings.GIT_ORGANIZATION = "fake_org"
     settings.CONTENT_SYNC_RETRIES = 3
 
@@ -131,13 +132,13 @@ def mock_api_wrapper(settings, mocker, db_data):
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_github(mocker):
     """Return a mock Github class"""
     return mocker.patch("content_sync.apis.github.Github")
 
 
-@pytest.fixture
+@pytest.fixture()
 def patched_file_serialize(mocker):
     """Patches function that serializes website content to file contents"""
     return mocker.patch(
@@ -146,11 +147,11 @@ def patched_file_serialize(mocker):
 
 
 def fake_destination_filepath(website_content: WebsiteContent, *args) -> str:
-    """Returns a fake destination filepath for some WebsiteContent record"""
+    """Returns a fake destination filepath for some WebsiteContent record"""  # noqa: D401
     return f"path/to/{website_content.filename}.md"
 
 
-@pytest.fixture
+@pytest.fixture()
 def patched_destination_filepath(mocker):
     """Patches the get_destination_filepath API function"""
     return mocker.patch(
@@ -218,7 +219,7 @@ def test_create_repo_broken_api(mock_api_wrapper):
     mock_api_wrapper.org.create_repo.side_effect = GithubException(
         status=404, data={}, headers={}
     )
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017, PT011
         mock_api_wrapper.create_repo()
 
 
@@ -262,7 +263,7 @@ def test_rename_branch(mocker, mock_api_wrapper):
 
 
 @pytest.mark.parametrize("is_existing_file", [True, False])
-def test_upsert_content_file(
+def test_upsert_content_file(  # noqa: PLR0913
     mocker,
     db_data,
     mock_api_wrapper,
@@ -274,7 +275,9 @@ def test_upsert_content_file(
     content = db_data.website_contents[0]
     mock_repo = mock_api_wrapper.org.get_repo.return_value
     if is_existing_file:
-        mock_repo.get_contents.return_value.sha.return_value = hashlib.sha1(b"fake_sha")
+        mock_repo.get_contents.return_value.sha.return_value = sha1(  # noqa: S324
+            b"fake_sha"
+        )
         github_api_method = mock_repo.update_file
     else:
         mock_repo.get_contents.side_effect = GithubException(
@@ -431,15 +434,15 @@ def test_upsert_content_files_for_user_update_checksum(
 
 
 @pytest.mark.parametrize(
-    "field, value",
+    ("field", "value"),
     [
-        ["markdown", "NEW"],
-        ["metadata", '{"foo": 2}'],
-        ["dirpath", "brand/new/dirpath"],
-        ["filename", "brand-new-test-case-filename"],
+        ["markdown", "NEW"],  # noqa: PT007
+        ["metadata", '{"foo": 2}'],  # noqa: PT007
+        ["dirpath", "brand/new/dirpath"],  # noqa: PT007
+        ["filename", "brand-new-test-case-filename"],  # noqa: PT007
     ],
 )
-def test_upsert_content_files_modified_only(
+def test_upsert_content_files_modified_only(  # noqa: PLR0913
     mocker,
     mock_api_wrapper,
     db_data,
@@ -541,7 +544,9 @@ def test_delete_content_file(mocker, mock_api_wrapper, patched_destination_filep
     """delete_content_file should call repo.delete_file"""
     content = mock_api_wrapper.website.websitecontent_set.first()
     mock_repo = mock_api_wrapper.org.get_repo.return_value
-    mock_repo.get_contents.return_value.sha.return_value = hashlib.sha1(b"fake_sha")
+    mock_repo.get_contents.return_value.sha.return_value = sha1(  # noqa: S324
+        b"fake_sha"
+    )
     mock_api_wrapper.delete_content_file(content)
     expected_filepath = fake_destination_filepath(content)
     mock_repo.delete_file.assert_called_once_with(
@@ -567,10 +572,10 @@ def test_merge_branches(mock_api_wrapper):
 @pytest.mark.parametrize("use_app", [True, False])
 def test_get_token(settings, mocker, mock_rsa_key, use_app):
     """Should return either a hardcoded token or github app token, based on settings"""
-    settings.GIT_TOKEN = "abc123"
+    settings.GIT_TOKEN = "abc123"  # noqa: S105
     settings.GITHUB_APP_ID = 123456 if use_app else None
     settings.GITHUB_APP_PRIVATE_KEY = mock_rsa_key
-    github_app_token = "gh_token"
+    github_app_token = "gh_token"  # noqa: S105
     mock_get_app_installation_id = mocker.patch(
         "content_sync.apis.github.get_app_installation_id", return_value="123"
     )
@@ -630,8 +635,8 @@ def test_get_token_401(settings, mocker, mock_rsa_key):
 
 
 @pytest.mark.parametrize(
-    "app_id,install_id",
-    [[789012, None], [100100, 276434013], [123456, 376434012]],
+    ("app_id", "install_id"),
+    [[789012, None], [100100, 276434013], [123456, 376434012]],  # noqa: PT007
 )
 def test_get_app_installation_id(settings, mocker, mock_rsa_key, app_id, install_id):
     """Should return the installation id based on matching app id returned in a response from Github"""
@@ -644,8 +649,8 @@ def test_get_app_installation_id(settings, mocker, mock_rsa_key, app_id, install
 
 
 @pytest.mark.parametrize(
-    "app_id,install_id",
-    [[None, None]],
+    ("app_id", "install_id"),
+    [[None, None]],  # noqa: PT007
 )
 def test_invalid_app_installation_id(
     settings, mocker, mock_rsa_key, app_id, install_id
@@ -668,15 +673,18 @@ def test_git_user(settings, mock_api_wrapper, is_anonymous):
     user = UserFactory.create()
     git_author = mock_api_wrapper.git_user(user)
     if is_anonymous:
-        assert git_author._identity == {
+        assert git_author._identity == {  # noqa: SLF001
             "name": f"user_{user.id}",
             "email": settings.GIT_DEFAULT_USER_EMAIL,
         }
     else:
-        assert git_author._identity == {"name": user.name, "email": user.email}
+        assert git_author._identity == {  # noqa: SLF001
+            "name": user.name,
+            "email": user.email,
+        }
 
     git_author_none = mock_api_wrapper.git_user(None)
-    assert git_author_none._identity == {
+    assert git_author_none._identity == {  # noqa: SLF001
         "name": settings.GIT_DEFAULT_USER_NAME,
         "email": settings.GIT_DEFAULT_USER_EMAIL,
     }
@@ -687,7 +695,7 @@ def test_custom_github_url(mocker, settings, git_url):
     """The github api wrapper should use the GIT_API_URL specified in settings or a default"""
     settings.GITHUB_APP_ID = None
     settings.GIT_API_URL = git_url
-    settings.GIT_TOKEN = "abcdef"
+    settings.GIT_TOKEN = "abcdef"  # noqa: S105
     mock_github = mocker.patch("content_sync.apis.github.Github", autospec=True)
     GithubApiWrapper(website=mocker.Mock(), site_config=mocker.Mock())
     if git_url:
@@ -782,7 +790,7 @@ def test_sync_starter_configs_success_create(mocker, mock_github):
         expected_slug = filename.split("/")[0] if "/" in filename else "ocws-configs"
         assert WebsiteStarter.objects.filter(
             source=STARTER_SOURCE_GITHUB,
-            path="/".join([git_url, expected_slug]),
+            path=f"{git_url}/{expected_slug}",
             slug=expected_slug,
             name=expected_slug,
             config={"root-url-path": "sites", "collections": []},

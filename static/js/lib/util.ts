@@ -13,7 +13,7 @@ export const isErrorResponse = (response: ActionPromiseValue<any>): boolean =>
  * If an HTTP response contains errors in the body, return either a string representing
  */
 export const getResponseBodyError = (
-  response: ActionPromiseValue<any> | null
+  response: ActionPromiseValue<any> | null,
 ): string | { [key: string]: string } | null => {
   if (!response || !response.body) {
     return null
@@ -31,7 +31,7 @@ export const getResponseBodyError = (
 }
 
 export const objectToFormData = (
-  object: Record<string, SiteFormValue>
+  object: Record<string, SiteFormValue>,
 ): FormData => {
   const formData = new FormData()
 
@@ -60,7 +60,7 @@ export const filenameFromPath = (filepath: string): string => {
 export const addToMapList = <TKey, TValue>(
   map: Map<TKey, Array<TValue>>,
   key: TKey,
-  value: TValue
+  value: TValue,
 ): void => {
   const list = map.get(key) ?? []
   map.set(key, [...list, value])

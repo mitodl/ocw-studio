@@ -1,4 +1,4 @@
-""" Content sync api tests """
+"""Content sync api tests"""
 from types import SimpleNamespace
 
 import pytest
@@ -10,7 +10,6 @@ from content_sync import api
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from websites.constants import PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED
 from websites.factories import WebsiteContentFactory, WebsiteFactory
-
 
 pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
@@ -210,7 +209,7 @@ def test_get_site_pipeline(settings, mocker, hugo_args, pipeline_api):
 @pytest.mark.parametrize("status", [None, PUBLISH_STATUS_NOT_STARTED])
 @pytest.mark.parametrize("trigger", [True, False])
 @pytest.mark.parametrize("publish_date", [None, now_in_utc()])
-def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-arguments
+def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-arguments  # noqa: PLR0913
     settings,
     mocker,
     mock_api_funcs,
@@ -278,7 +277,7 @@ def test_publish_website_error(mock_api_funcs, settings):
     settings.PREPUBLISH_ACTIONS = [["some.Action"]]
     mock_api_funcs.mock_import_string.side_effect = Exception("error")
     website = WebsiteFactory.create()
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017, PT011
         api.publish_website(website.name, VERSION_LIVE)
     website.refresh_from_db()
     mock_api_funcs.mock_get_backend.assert_not_called()

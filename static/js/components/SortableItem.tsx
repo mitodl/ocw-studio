@@ -14,12 +14,12 @@ export default function SortableItem<T>(props: Props<T>): JSX.Element {
 
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({
-      id
+      id,
     })
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition
+    transition,
   }
 
   const deleteItemCB = useCallback(() => {

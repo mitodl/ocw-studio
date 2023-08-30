@@ -11,7 +11,7 @@ from websites.management.commands.markdown_cleaning.testing_utils import (
 
 
 def get_markdown_cleaner(website_contents):
-    """Convenience to get rule-specific cleaner"""
+    """Convenience to get rule-specific cleaner"""  # noqa: D401
     with patch_website_contents_all(website_contents):
         rule = MetadataRelativeUrlsRule()
         return WebsiteContentMarkdownCleaner(rule)
@@ -38,7 +38,7 @@ def test_updates_multiple_metadata_fields():
         metadata={
             "related_resources_text": """Hello
                 Change this: [to thing1](resources/thing1#fragment "And a title!") cool'
-                
+
                 Leave this alone: [wiki](https://wikipedia.org) same
 
                 And this [course link](/courses/8-02/pages/jigawatts)
@@ -53,7 +53,7 @@ def test_updates_multiple_metadata_fields():
 
     expected_related_resources = """Hello
                 Change this: [to thing1](/courses/site-1/resources/thing1#fragment) cool'
-                
+
                 Leave this alone: [wiki](https://wikipedia.org) same
 
                 And this [course link](/courses/8-02/pages/jigawatts)

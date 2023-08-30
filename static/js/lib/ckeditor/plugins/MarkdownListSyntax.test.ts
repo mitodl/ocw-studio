@@ -6,7 +6,7 @@ import MarkdownListSyntax from "./MarkdownListSyntax"
 const getEditor = createTestEditor([
   ParagraphPlugin,
   MarkdownListSyntax,
-  Markdown
+  Markdown,
 ])
 
 describe("list conversion to and from html", () => {

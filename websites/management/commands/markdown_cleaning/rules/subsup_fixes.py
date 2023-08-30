@@ -34,10 +34,12 @@ class SubSupFixes(PyparsingRule):
         variants = [R"{{< sub", R"{{< sup"]
         return any(v in s for v in variants)
 
-    def replace_match(self, s: str, l: int, toks: ShortcodeParseResult, wc):
+    def replace_match(
+        self, s: str, l: int, toks: ShortcodeParseResult, wc  # noqa: ARG002, E741
+    ):  # noqa: E741, RUF100
         shortcode = toks.shortcode
         original_text = toks.original_text
-        if not shortcode.name in ["sub", "sup"]:
+        if shortcode.name not in ["sub", "sup"]:
             return original_text
 
         old_param = shortcode.get(0)

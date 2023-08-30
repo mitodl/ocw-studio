@@ -1,11 +1,11 @@
 import EmbeddedResource from "./EmbeddedResource"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../../util/integration_test_helper_old"
 import * as contextWebsite from "../../context/Website"
 import {
   makeWebsiteContentDetail,
-  makeWebsiteDetail
+  makeWebsiteDetail,
 } from "../../util/factories/websites"
 import { Website, WebsiteContent } from "../../types/websites"
 import { siteApiContentDetailUrl } from "../../lib/urls"
@@ -33,13 +33,13 @@ describe("EmbeddedResource", () => {
       siteApiContentDetailUrl
         .param({ name: website.name, textId: content.text_id })
         .toString(),
-      content
+      content,
     )
 
     el = document.createElement("div")
     render = helper.configureRenderer(EmbeddedResource, {
       uuid: content.text_id,
-      el
+      el,
     })
   })
 
@@ -74,10 +74,10 @@ describe("EmbeddedResource", () => {
     const { wrapper } = await render()
     expect(wrapper.find(".title").text()).toBe(content.title)
     expect(wrapper.find(".description").text()).toBe(
-      content.metadata!.description
+      content.metadata!.description,
     )
     expect(wrapper.find("iframe").prop("src")).toBe(
-      "https://www.youtube-nocookie.com/embed/2XID_W4neJo"
+      "https://www.youtube-nocookie.com/embed/2XID_W4neJo",
     )
   })
 })

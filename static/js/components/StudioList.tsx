@@ -52,7 +52,7 @@ export function StudioListItem(props: ListItemProps): JSX.Element {
       e.preventDefault()
       setMenuOpen(true)
     },
-    [setMenuOpen]
+    [setMenuOpen],
   )
 
   const closeMenu = useCallback(
@@ -62,14 +62,14 @@ export function StudioListItem(props: ListItemProps): JSX.Element {
       }
       setMenuOpen(false)
     },
-    [setMenuOpen]
+    [setMenuOpen],
   )
 
   return (
     <li
       className={classNames({
-        "my-3":          true,
-        "hover-pointer": Boolean(onClick)
+        "my-3": true,
+        "hover-pointer": Boolean(onClick),
       })}
       onClick={onClick}
     >

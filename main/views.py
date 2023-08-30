@@ -49,7 +49,9 @@ def _index(request):
     )
 
 
-def public_index(request, *args, **kwargs):  # pylint: disable=unused-argument
+def public_index(
+    request, *args, **kwargs  # noqa: ARG001
+):  # pylint: disable=unused-argument
     """
     Render a React page. The frontend will render an appropriate UI based on the URL
     """
@@ -57,7 +59,9 @@ def public_index(request, *args, **kwargs):  # pylint: disable=unused-argument
 
 
 @login_required
-def restricted_index(request, *args, **kwargs):  # pylint: disable=unused-argument
+def restricted_index(
+    request, *args, **kwargs  # noqa: ARG001
+):  # pylint: disable=unused-argument
     """
     Render a React page. The frontend will render an appropriate UI based on the URL
     """

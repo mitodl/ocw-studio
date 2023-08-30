@@ -17,21 +17,21 @@ class WebsiteFilterCommand(BaseCommand):
             "--filter-json",
             dest="filter_json",
             default=None,
-            help="If specified, only publish courses that contain comma-delimited site names specified in a JSON file",
+            help="If specified, only publish courses that contain comma-delimited site names specified in a JSON file",  # noqa: E501
         )
         parser.add_argument(
             "-f",
             "--filter",
             dest="filter",
             default="",
-            help="If specified, only trigger website pipelines whose names are in this comma-delimited list",
+            help="If specified, only trigger website pipelines whose names are in this comma-delimited list",  # noqa: E501
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa: ARG002
         self.filter_list = []
         filter_json = options["filter_json"]
         if filter_json:
-            with open(filter_json) as input_file:
+            with open(filter_json) as input_file:  # noqa: PTH123
                 self.filter_list = json.load(input_file)
         else:
             self.filter_list = [

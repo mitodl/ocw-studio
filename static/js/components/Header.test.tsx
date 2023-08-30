@@ -7,7 +7,7 @@ import {
   assertInstanceOf,
   absoluteUrl,
   flushEventQueue,
-  mergeXProd
+  mergeXProd,
 } from "../testing_utils"
 
 import Header from "./Header"
@@ -56,16 +56,16 @@ describe("Header without loaded website", () => {
 
 const makeWebsiteWithStatus = (status: PublishStatus, live: boolean) => {
   const statusField = live ? "live_publish_status" : "draft_publish_status"
-  const statusDateField = live ?
-    "live_publish_status_updated_on" :
-    "draft_publish_status_updated_on"
+  const statusDateField = live
+    ? "live_publish_status_updated_on"
+    : "draft_publish_status_updated_on"
   return makeWebsiteDetail({
-    live_publish_status:             PublishStatus.Aborted,
-    draft_publish_status:            PublishStatus.Aborted,
-    live_publish_status_updated_on:  "2020-01-01",
+    live_publish_status: PublishStatus.Aborted,
+    draft_publish_status: PublishStatus.Aborted,
+    live_publish_status_updated_on: "2020-01-01",
     draft_publish_status_updated_on: "2020-01-01",
-    [statusField]:                   status,
-    [statusDateField]:               "2021-01-01"
+    [statusField]: status,
+    [statusDateField]: "2021-01-01",
   })
 }
 
@@ -84,13 +84,13 @@ describe("Header with a loaded website", () => {
   const statusCases = {
     polling: [
       { status: PublishStatus.NotStarted, expectedText: "Not started" },
-      { status: PublishStatus.Pending, expectedText: "In progress..." }
+      { status: PublishStatus.Pending, expectedText: "In progress..." },
     ],
     noPolling: [
       { status: PublishStatus.Success, expectedText: "Succeeded" },
       { status: PublishStatus.Errored, expectedText: "Failed" },
-      { status: PublishStatus.Aborted, expectedText: "Aborted" }
-    ]
+      { status: PublishStatus.Aborted, expectedText: "Aborted" },
+    ],
   }
 
   it.each(mergeXProd(liveCases, statusCases.noPolling))(
@@ -108,7 +108,7 @@ describe("Header with a loaded website", () => {
       await flushEventQueue(true)
 
       expect(helper.handleRequest).toHaveBeenCalledTimes(0)
-    }
+    },
   )
 
   it.each(mergeXProd(liveCases, statusCases.polling))(
@@ -133,11 +133,11 @@ describe("Header with a loaded website", () => {
 
       expect(helper.handleRequest).toHaveBeenCalledTimes(1)
       expect(helper.handleRequest).toHaveBeenCalledWith(statusUrl, "GET", {})
-    }
+    },
   )
 
   it.each(
-    mergeXProd(liveCases, [...statusCases.noPolling, ...statusCases.polling])
+    mergeXProd(liveCases, [...statusCases.noPolling, ...statusCases.polling]),
   )(
     'shows text "$expectedText" when status=$status',
     ({ status, expectedText, isLive }) => {
@@ -146,7 +146,7 @@ describe("Header with a loaded website", () => {
 
       const [result] = helper.render(<Header website={website} />)
       expect(result.getByText(expectedText)).toBeDefined()
-    }
+    },
   )
 
   test("clicking publish opens the publish drawer", async () => {
@@ -158,7 +158,7 @@ describe("Header with a loaded website", () => {
     assertInstanceOf(publishButton, HTMLButtonElement)
     const user = userEvent.setup()
     await act(() =>
-      user.pointer([{ target: publishButton }, { keys: "[MouseLeft]" }])
+      user.pointer([{ target: publishButton }, { keys: "[MouseLeft]" }]),
     )
 
     result.getByText("Publish your site")

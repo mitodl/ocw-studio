@@ -16,11 +16,9 @@ def null_out_publish_date_backward(apps, schema_editor):
     no-op, we can't recover this data if we've already
     nulled it out
     """
-    pass
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0043_remove_website_collections"),
     ]

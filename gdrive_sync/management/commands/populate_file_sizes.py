@@ -1,4 +1,4 @@
-"""Populate file_size meta field for resources."""
+"""Populate file_size meta field for resources."""  # noqa: INP001
 from django.db.models import Q
 
 from gdrive_sync.tasks import populate_file_sizes_bulk
@@ -17,7 +17,7 @@ class Command(WebsiteFilterCommand):
     ./manage.py populate_file_sizes --filter course-id --override-existing
     """
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

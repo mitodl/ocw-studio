@@ -11,22 +11,22 @@ failOnConsole()
 Enzyme.configure({ adapter: new Adapter() })
 
 const _createSettings = (): typeof SETTINGS => ({
-  reactGaDebug:    "",
-  gaTrackingID:    "",
-  public_path:     "",
-  environment:     "",
+  reactGaDebug: "",
+  gaTrackingID: "",
+  public_path: "",
+  environment: "",
   release_version: "0.0.0",
-  sentry_dsn:      "",
-  gdrive_enabled:  false,
+  sentry_dsn: "",
+  gdrive_enabled: false,
   // @ts-expect-error Settings.user comes from django, but is left off SETTINGS type to encourage getting it from the store.
-  user:            {
-    username:      "example",
-    name:          "Jane Doe",
-    email:         "jane@example.com",
-    canAddWebsite: true
+  user: {
+    username: "example",
+    name: "Jane Doe",
+    email: "jane@example.com",
+    canAddWebsite: true,
   },
-  features:         {},
-  features_default: false
+  features: {},
+  features_default: false,
 })
 
 global.SETTINGS = _createSettings()
@@ -53,7 +53,7 @@ declare global {
 }
 
 // cleanup after each test run
-afterEach(function() {
+afterEach(function () {
   /**
    * Clear all mock call counts between tests.
    * This does NOT clear mock implementations.

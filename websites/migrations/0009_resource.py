@@ -18,7 +18,6 @@ def convert_to_file(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0008_site_permissions"),
     ]

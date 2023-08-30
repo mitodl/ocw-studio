@@ -62,15 +62,15 @@ export default class ResourceLink extends Plugin {
        *  - [selection.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_view_selection-Selection.html#member-isCollapsed)
        *  - [range.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_model_range-Range.html#member-isCollapsed)
        */
-      this.editor.model.change(writer => {
+      this.editor.model.change((writer) => {
         const insertPosition =
           this.editor.model.document.selection.getFirstPosition()
         writer.insertText(
           title,
           {
-            linkHref: this.syntax.makeResourceLinkHref(uuid)
+            linkHref: this.syntax.makeResourceLinkHref(uuid),
           },
-          insertPosition
+          insertPosition,
         )
       })
     } else {

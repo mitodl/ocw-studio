@@ -38,7 +38,11 @@ class BaseurlReplacementRule(PyparsingRule):
         return "baseurl" in text
 
     def replace_match(
-        self, s, l, toks: LinkParseResult, website_content: WebsiteContent
+        self,
+        s,  # noqa: ARG002
+        l,  # noqa: ARG002, E741
+        toks: LinkParseResult,
+        website_content: WebsiteContent,
     ):
         Notes = self.ReplacementNotes
         original_text = toks.original_text
@@ -70,5 +74,5 @@ class BaseurlReplacementRule(PyparsingRule):
         except KeyError:
             return original_text
         except ValueError:
-            print(linked_content.text_id)
+            print(linked_content.text_id)  # noqa: T201
             return original_text

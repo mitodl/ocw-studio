@@ -6,7 +6,7 @@ import { fieldIsVisible } from "../../lib/site_content"
 import {
   ConfigField,
   ObjectConfigField,
-  WebsiteContent
+  WebsiteContent,
 } from "../../types/websites"
 import { SiteFormValues } from "../../types/forms"
 
@@ -26,11 +26,11 @@ export default function ObjectField(props: Props): JSX.Element {
 
   const [collapsed, setCollapsed] = useState(field.collapsed ?? false)
   const toggleCollapse = useCallback(
-    e => {
+    (e) => {
       e.preventDefault()
       setCollapsed(!collapsed)
     },
-    [setCollapsed, collapsed]
+    [setCollapsed, collapsed],
   )
 
   return (
@@ -52,7 +52,7 @@ export default function ObjectField(props: Props): JSX.Element {
       {collapsed ? null : (
         <div className="object-sub-fields">
           {field.fields
-            .filter(innerField => fieldIsVisible(innerField, values))
+            .filter((innerField) => fieldIsVisible(innerField, values))
             .map((innerField: ConfigField) => (
               <SiteContentField
                 field={innerField}

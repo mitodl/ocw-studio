@@ -42,7 +42,7 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
             </span>
           </div>
         </div>,
-        el
+        el,
       )
     }
 
@@ -73,7 +73,7 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
             </span>
           </div>
         </div>,
-        el
+        el,
       )
     }
 
@@ -84,7 +84,7 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
           Resourcetype: {resourcetype}
         </span>
       </div>,
-      el
+      el,
     )
   }
 }

@@ -1,4 +1,4 @@
-""" Website models tests """
+"""Website models tests"""
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from mitol.common.utils import now_in_utc
@@ -11,26 +11,25 @@ from websites.factories import (
 )
 from websites.site_config_api import SiteConfig
 
-
 pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.parametrize(
-    "metadata, markdown, dirpath, exp_checksum",
+    ("metadata", "markdown", "dirpath", "exp_checksum"),
     [
-        [
+        [  # noqa: PT007
             {"my": "metadata"},
             "# Markdown",
             None,
             "519b0f9225d269b6f2fe3636c8ef6d0de4c9fd8fde30990fb8a1c65c4575f3ae",
         ],
-        [
+        [  # noqa: PT007
             {"my": "metadata"},
             None,
             "path/to",
             "a6ffb383023705e862b9357c23155252808722a62a3effa7c0826a0918095a19",
         ],
-        [
+        [  # noqa: PT007
             None,
             "# Markdown",
             "path/to",
@@ -142,7 +141,7 @@ def test_websitecontent_full_metadata(
             else None
         )
     elif has_metadata:
-        assert "my_file" not in full_metadata.keys()
+        assert "my_file" not in full_metadata
 
     if is_video and has_metadata:
         assert full_metadata["video_files"]["video_captions_file"] == expected_val
@@ -188,13 +187,13 @@ def test_website_content_unpublished():
 
 
 @pytest.mark.parametrize(
-    "name,root_url,is_home,version,expected_path",
+    ("name", "root_url", "is_home", "version", "expected_path"),
     [
-        ["test-course", "courses", False, "live", "courses/test-course"],
-        ["ocw-home-page", "", True, "draft", ""],
+        ["test-course", "courses", False, "live", "courses/test-course"],  # noqa: PT007
+        ["ocw-home-page", "", True, "draft", ""],  # noqa: PT007
     ],
 )
-def test_website_get_full_url(
+def test_website_get_full_url(  # noqa: PLR0913
     settings, name, root_url, is_home, version, expected_path
 ):  # pylint:disable=too-many-arguments
     """Verify that Website.get_full_url returns the expected value"""
@@ -223,11 +222,11 @@ def test_website_get_full_url_no_starter():
 
 
 @pytest.mark.parametrize(
-    "name,root_url,expected_path",
+    ("name", "root_url", "expected_path"),
     [
-        ["test-course-1", "courses", "courses/test-course-1"],
-        ["test-course-2", "sites", "sites/test-course-2"],
-        ["test-course-3", "", "test-course-3"],
+        ["test-course-1", "courses", "courses/test-course-1"],  # noqa: PT007
+        ["test-course-2", "sites", "sites/test-course-2"],  # noqa: PT007
+        ["test-course-3", "", "test-course-3"],  # noqa: PT007
     ],
 )
 def test_website_s3_path(name, root_url, expected_path):
@@ -325,6 +324,6 @@ def test_get_url_path(ocw_site, url_path, with_prefix, published):
     ["https://github.com/org/repo/starter1", "https://github.com/org/repo/starter2"],
 )
 def test_ocw_hugo_projects_url(path):
-    """the ocw_hugo_projects_url property should return the proper git repo URL"""
+    """The ocw_hugo_projects_url property should return the proper git repo URL"""
     starter = WebsiteStarterFactory(path=path)
     assert starter.ocw_hugo_projects_url == "https://github.com/org/repo.git"

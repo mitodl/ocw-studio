@@ -23,8 +23,8 @@ export function ruleMatches(rule: Turndown.Rule, node: HTMLElement): boolean {
 }
 
 // this removes all table-related rules
-turndownService.rules.array = turndownService.rules.array.filter(rule => {
-  const anyMatch = TABLE_ELS.some(el => {
+turndownService.rules.array = turndownService.rules.array.filter((rule) => {
+  const anyMatch = TABLE_ELS.some((el) => {
     const element = document.createElement(el)
     document.body.appendChild(element)
 
@@ -64,10 +64,10 @@ turndownService.options.emDelimiter = "*"
 turndownService.rules.blankRule.replacement = (
   content: string,
   node: Turndown.Node,
-  options: Turndown.Options
+  options: Turndown.Options,
 ) => {
   const matchingRules = turndownService.rules.array.filter(
-    rule => node.nodeName.toLowerCase() === rule.filter
+    (rule) => node.nodeName.toLowerCase() === rule.filter,
   )
 
   if (matchingRules.length > 1) {
@@ -86,14 +86,16 @@ turndownService.rules.blankRule.replacement = (
 // extra spaces to the beginning of a list item. So it maps
 // "<ul><li>item</li></ul>" -> "-   item" instead of "- item"
 // see https://github.com/domchristie/turndown/issues/291
-const itemRule = turndownService.rules.array.find(rule => rule.filter === "li")
+const itemRule = turndownService.rules.array.find(
+  (rule) => rule.filter === "li",
+)
 if (!itemRule) {
   throw new Error("Expected rule to exist.")
 }
 itemRule.replacement = (
   content: string,
   node: Turndown.Node,
-  options: Turndown.Options
+  options: Turndown.Options,
 ) => {
   content = content
     .replace(/^\n+/, "") // remove leading newlines
@@ -115,7 +117,7 @@ itemRule.replacement = (
 const BASE_TURNDOWN_RULES = [...turndownService.rules.array]
 const BASE_TURNDOWN_KEEP = [
   // @ts-expect-error `_keep` is not part of Turndown's public API, see `resetTurndownService` for more.
-  ...turndownService.rules._keep
+  ...turndownService.rules._keep,
 ]
 const BASE_TURNDOWN_KEEP_REPLACEMENT = turndownService.rules.keepReplacement
 

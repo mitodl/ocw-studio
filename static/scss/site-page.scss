@@ -1,6 +1,28 @@
 $sidebar-width: 200px;
 $menu-spacing: 20px;
 
+.publish-option {
+  a {
+    text-decoration: underline;
+  }
+
+  input[type="radio"] {
+    width: 30px !important;
+    height: 30px !important;
+    margin-right: 10px;
+  }
+
+  label {
+    margin-bottom: 0 !important;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .publish-option-description {
+    margin-left: 40px;
+  }
+}
+
 .site-page {
   .content-container {
     display: flex;
@@ -61,28 +83,6 @@ $menu-spacing: 20px;
 .hierarchical-select {
   button {
     min-width: 100px;
-  }
-}
-
-.publish-option {
-  a {
-    text-decoration: underline;
-  }
-
-  input[type="radio"] {
-    width: 30px !important;
-    height: 30px !important;
-    margin-right: 10px;
-  }
-
-  label {
-    margin-bottom: 0 !important;
-    font-size: 18px;
-    font-weight: bold;
-  }
-
-  .publish-option-description {
-    margin-left: 40px;
   }
 }
 

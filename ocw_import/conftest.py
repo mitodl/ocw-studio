@@ -8,22 +8,23 @@ import pytest
 from main.s3_utils import get_boto3_resource
 from websites.factories import WebsiteFactory
 
-
 MOCK_BUCKET_NAME = "testbucket"
 TEST_OCW2HUGO_PREFIX = ""
 
 
 def get_ocw2hugo_path(path):
-    """get the path to ocw-to-hugo test data"""
+    """Get the path to ocw-to-hugo test data"""
     return f"{path}/{TEST_OCW2HUGO_PREFIX}"
 
 
 def get_ocw2hugo_files(path):
-    """get the files from an ocw-to-hugo test data directory"""
+    """Get the files from an ocw-to-hugo test data directory"""
     return [
         f
-        for f in glob.glob(get_ocw2hugo_path(path) + "**/*", recursive=True)
-        if isfile(f)
+        for f in glob.glob(  # noqa: PTH207
+            get_ocw2hugo_path(path) + "**/*", recursive=True
+        )  # noqa: PTH207, RUF100
+        if isfile(f)  # noqa: PTH113
     ]
 
 
@@ -34,7 +35,7 @@ def setup_s3(settings):
     # Fake the settings
     settings.ENVIRONMENT = "test"
     settings.AWS_ACCESS_KEY_ID = "abc"
-    settings.AWS_SECRET_ACCESS_KEY = "abc"
+    settings.AWS_SECRET_ACCESS_KEY = "abc"  # noqa: S105
     # Create our fake bucket
     conn = get_boto3_resource("s3")
     conn.create_bucket(Bucket=MOCK_BUCKET_NAME)
@@ -44,7 +45,7 @@ def setup_s3(settings):
     test_bucket.objects.all().delete()
     for file in get_ocw2hugo_files("./test_ocw2hugo"):
         file_key = file.replace("./test_ocw2hugo/", "")
-        with open(file, "r", encoding="utf-8") as f:
+        with open(file, encoding="utf-8") as f:  # noqa: PTH123
             test_bucket.put_object(Key=file_key, Body=f.read())
 
 
@@ -55,7 +56,7 @@ def setup_s3_tmpdir(settings, tmpdir, courses=None):
     # Fake the settings
     settings.ENVIRONMENT = "test"
     settings.AWS_ACCESS_KEY_ID = "abc"
-    settings.AWS_SECRET_ACCESS_KEY = "abc"
+    settings.AWS_SECRET_ACCESS_KEY = "abc"  # noqa: S105
     # Create our fake bucket
     conn = get_boto3_resource("s3")
     conn.create_bucket(Bucket=MOCK_BUCKET_NAME)
@@ -72,11 +73,11 @@ def setup_s3_tmpdir(settings, tmpdir, courses=None):
     test_bucket.objects.all().delete()
     for file in get_ocw2hugo_files(tmpdir):
         file_key = file.replace(f"{tmpdir}/", "")
-        with open(file, "r", encoding="utf-8") as f:
+        with open(file, encoding="utf-8") as f:  # noqa: PTH123
             test_bucket.put_object(Key=file_key, Body=f.read())
 
 
 @pytest.fixture(autouse=True)
 def root_website():
     """Create the ocw-www website"""
-    yield WebsiteFactory.create(name="ocw-www")
+    return WebsiteFactory.create(name="ocw-www")

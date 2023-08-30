@@ -9,4 +9,4 @@ class WebsitesConfig(AppConfig):
 
     def ready(self):
         """Application is ready"""
-        import websites.signals  # pylint:disable=unused-import, import-outside-toplevel
+        import websites.signals  # noqa: F401

@@ -3,7 +3,7 @@ import { DndContext } from "@dnd-kit/core"
 import casual from "casual"
 
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../../util/integration_test_helper_old"
 import SortableSelect, { SortableItem } from "./SortableSelect"
 import { Option } from "./SelectField"
@@ -17,7 +17,7 @@ const createFakeOptions = (times: number): Option[] =>
     .fill(0)
     .map(() => ({
       value: casual.uuid,
-      label: casual.title
+      label: casual.title,
     }))
 
 describe("SortableSelect", () => {
@@ -40,9 +40,9 @@ describe("SortableSelect", () => {
       options,
       onChange,
       loadOptions,
-      name:  "test-select",
+      name: "test-select",
       value: [],
-      classNamePrefix
+      classNamePrefix,
     })
   })
 
@@ -59,18 +59,18 @@ describe("SortableSelect", () => {
     const isOptionDisabled = jest.fn()
     const { wrapper } = await render({ isOptionDisabled })
     expect(wrapper.find(SelectField).prop("isOptionDisabled")).toBe(
-      isOptionDisabled
+      isOptionDisabled,
     )
   })
 
   it("should render sortable items for the current value", async () => {
-    const value: SortableItem[] = options.map(option => ({
-      id:    option.value,
-      title: option.label
+    const value: SortableItem[] = options.map((option) => ({
+      id: option.value,
+      title: option.label,
     }))
 
     const { wrapper } = await render({
-      value
+      value,
     })
 
     zip(value, [...(wrapper.find(SortableItemComponent) as any)]).forEach(
@@ -78,7 +78,7 @@ describe("SortableSelect", () => {
         expect(sortableItem.props["title"]).toBe(value.title)
         expect(sortableItem.props["id"]).toBe(value.id)
         expect(sortableItem.props["item"]).toBe(value.id)
-      }
+      },
     )
   })
 
@@ -92,7 +92,7 @@ describe("SortableSelect", () => {
   it("should call onChange on option selection when quick add is enabled", async () => {
     SETTINGS.features.SORTABLE_SELECT_QUICK_ADD = true
     const { wrapper } = await render({
-      defaultOptions: options
+      defaultOptions: options,
     })
 
     await triggerSelectMenu(wrapper)
@@ -109,25 +109,25 @@ describe("SortableSelect", () => {
   })
 
   it("should let you drag and drop items to reorder", async () => {
-    const value: SortableItem[] = options.slice(0, 3).map(option => ({
-      id:    option.value,
-      title: option.label
+    const value: SortableItem[] = options.slice(0, 3).map((option) => ({
+      id: option.value,
+      title: option.label,
     }))
 
     const { wrapper } = await render({
-      value
+      value,
     })
 
     act(() => {
       wrapper.find(DndContext)!.prop("onDragEnd")!({
         active: { id: value[2].id },
-        over:   { id: value[0].id }
+        over: { id: value[0].id },
       } as any)
     })
     expect(onChange).toHaveBeenCalledWith([
       value[2].id,
       value[0].id,
-      value[1].id
+      value[1].id,
     ])
   })
 })

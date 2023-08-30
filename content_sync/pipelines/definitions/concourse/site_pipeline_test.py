@@ -37,7 +37,6 @@ from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
-
 pytestmark = pytest.mark.django_db
 
 
@@ -48,7 +47,7 @@ pytestmark = pytest.mark.django_db
         {
             "pipeline_name": "draft",
             "branch": "preview",
-            "pipeline_name": VERSION_DRAFT,
+            "pipeline_name": VERSION_DRAFT,  # noqa: F601
             "static_api_url": "https://draft.ocw.mit.edu/",
             "web_bucket": "ocw-content-draft",
             "offline_bucket": "ocw-content-draft-offline",
@@ -56,7 +55,7 @@ pytestmark = pytest.mark.django_db
         {
             "pipeline_name": "live",
             "branch": "release",
-            "pipeline_name": VERSION_LIVE,
+            "pipeline_name": VERSION_LIVE,  # noqa: F601
             "static_api_url": "https://ocw.mit.edu/",
             "web_bucket": "ocw-content-live",
             "offline_bucket": "ocw-content-live-offline",
@@ -69,7 +68,7 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize("env_name", ["dev", "prod"])
 @pytest.mark.parametrize("hugo_override_args", ["", "--verbose"])
 @pytest.mark.parametrize("is_dev", [True, False])
-def test_generate_theme_assets_pipeline_definition(
+def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0913, PLR0915
     settings,
     mocker,
     site_name,
@@ -85,7 +84,7 @@ def test_generate_theme_assets_pipeline_definition(
     The site pipeline definition should contain the expected properties
     """
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
-    settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"
+    settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
     settings.CONCOURSE_IS_PRIVATE_REPO = concourse_is_private_repo
     settings.OCW_HUGO_THEMES_SENTRY_DSN = "test_sentry_dsn"
     settings.ROOT_WEBSITE_NAME = "root-website"
@@ -174,7 +173,7 @@ def test_generate_theme_assets_pipeline_definition(
     offline_build_gate_resource = get_dict_list_item_by_field(
         items=resources,
         field="name",
-        value=pipeline_definition._offline_build_gate_identifier,
+        value=pipeline_definition._offline_build_gate_identifier,  # noqa: SLF001
     )
     assert offline_build_gate_resource["type"] == "keyval"
     site_content_git_resource = get_dict_list_item_by_field(
@@ -221,7 +220,7 @@ def test_generate_theme_assets_pipeline_definition(
     ocw_studio_webhook_resource = get_dict_list_item_by_field(
         items=resources, field="name", value=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
-    expected_api_path = os.path.join(
+    expected_api_path = os.path.join(  # noqa: PTH118
         "api", "websites", config.vars["site_name"], "pipeline_status"
     )
     expected_api_url = urljoin(branch_vars["ocw_studio_url"], expected_api_path)
@@ -238,13 +237,13 @@ def test_generate_theme_assets_pipeline_definition(
     )
 
     # The build jobs should contain the expected tasks, and those tasks should have the expected properties
-    def assert_base_build_tasks(tasks: list[dict], offline: bool):
+    def assert_base_build_tasks(tasks: list[dict], offline: bool):  # noqa: FBT001
         """
         Asserts that a list of tasks contains the proper base site pipeline tasks
 
         Args:
             tasks(list[dict]): The list of tasks to check
-        """
+        """  # noqa: D401
         get_steps = [
             WEBPACK_MANIFEST_S3_IDENTIFIER,
             OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -255,7 +254,10 @@ def test_generate_theme_assets_pipeline_definition(
             step = get_dict_list_item_by_field(items=tasks, field="get", value=get_step)
             assert step is not None
             if offline:
-                assert pipeline_definition._online_site_job_identifier in step["passed"]
+                assert (
+                    pipeline_definition._online_site_job_identifier  # noqa: SLF001
+                    in step["passed"]  # noqa: RUF100, SLF001
+                )
         static_resources_s3_task = get_dict_list_item_by_field(
             items=tasks, field="task", value=STATIC_RESOURCES_S3_IDENTIFIER
         )
@@ -270,7 +272,7 @@ def test_generate_theme_assets_pipeline_definition(
             )
             is not None
         )
-        assert f"aws s3{cli_endpoint_url} sync s3://{storage_bucket}/{site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}"
+        assert f"aws s3{cli_endpoint_url} sync s3://{storage_bucket}/{site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}"  # noqa: PLW0129
         if is_dev:
             assert cli_endpoint_url in static_resources_command
             assert set(
@@ -282,7 +284,7 @@ def test_generate_theme_assets_pipeline_definition(
 
     jobs = rendered_definition["jobs"]
     online_site_job = get_dict_list_item_by_field(
-        jobs, "name", pipeline_definition._online_site_job_identifier
+        jobs, "name", pipeline_definition._online_site_job_identifier  # noqa: SLF001
     )
     online_site_tasks = online_site_job["plan"]
     assert (
@@ -304,7 +306,7 @@ def test_generate_theme_assets_pipeline_definition(
         STATIC_RESOURCES_S3_IDENTIFIER,
         WEBPACK_MANIFEST_S3_IDENTIFIER,
     ]
-    for input in build_online_site_task["config"]["inputs"]:
+    for input in build_online_site_task["config"]["inputs"]:  # noqa: A001
         assert input["name"] in build_online_site_expected_inputs
     build_online_site_expected_outputs = [
         SITE_CONTENT_GIT_IDENTIFIER,
@@ -369,7 +371,7 @@ def test_generate_theme_assets_pipeline_definition(
         in upload_online_build_command
     )
     upload_online_build_expected_inputs = [SITE_CONTENT_GIT_IDENTIFIER]
-    for input in upload_online_build_task["config"]["inputs"]:
+    for input in upload_online_build_task["config"]["inputs"]:  # noqa: A001
         assert input["name"] in upload_online_build_expected_inputs
     assert (
         upload_online_build_task["on_success"]["try"]["put"]
@@ -410,19 +412,19 @@ def test_generate_theme_assets_pipeline_definition(
         )
     assert (
         online_site_tasks[-1]["put"]
-        == pipeline_definition._offline_build_gate_identifier
+        == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
     )
     offline_site_job = get_dict_list_item_by_field(
-        jobs, "name", pipeline_definition._offline_site_job_identifier
+        jobs, "name", pipeline_definition._offline_site_job_identifier  # noqa: SLF001
     )
     offline_site_tasks = offline_site_job["plan"]
     offline_build_gate_get_task = offline_site_tasks[0]
     assert (
         offline_build_gate_get_task["get"]
-        == pipeline_definition._offline_build_gate_identifier
+        == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
     )
     assert (
-        pipeline_definition._online_site_job_identifier
+        pipeline_definition._online_site_job_identifier  # noqa: SLF001
         in offline_build_gate_get_task["passed"]
     )
     assert_base_build_tasks(tasks=offline_site_tasks, offline=True)
@@ -436,10 +438,10 @@ def test_generate_theme_assets_pipeline_definition(
         == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source.repository
     )
     filter_webpack_artifacts_expected_inputs = [WEBPACK_MANIFEST_S3_IDENTIFIER]
-    for input in filter_webpack_artifacts_task["config"]["inputs"]:
+    for input in filter_webpack_artifacts_task["config"]["inputs"]:  # noqa: A001
         assert input["name"] in filter_webpack_artifacts_expected_inputs
     filter_webpack_artifacts_expected_outputs = [WEBPACK_ARTIFACTS_IDENTIFIER]
-    for input in filter_webpack_artifacts_task["config"]["outputs"]:
+    for input in filter_webpack_artifacts_task["config"]["outputs"]:  # noqa: A001
         assert input["name"] in filter_webpack_artifacts_expected_outputs
     filter_webpack_artifacts_command = "\n".join(
         filter_webpack_artifacts_task["config"]["run"]["args"]
@@ -472,14 +474,14 @@ def test_generate_theme_assets_pipeline_definition(
         WEBPACK_MANIFEST_S3_IDENTIFIER,
         WEBPACK_ARTIFACTS_IDENTIFIER,
     ]
-    for input in build_offline_site_task["config"]["inputs"]:
+    for input in build_offline_site_task["config"]["inputs"]:  # noqa: A001
         assert input["name"] in build_offline_site_expected_inputs
     build_offline_site_expected_outputs = [
         SITE_CONTENT_GIT_IDENTIFIER,
         OCW_HUGO_THEMES_GIT_IDENTIFIER,
         BUILD_OFFLINE_SITE_IDENTIFIER,
     ]
-    for input in build_offline_site_task["config"]["outputs"]:
+    for input in build_offline_site_task["config"]["outputs"]:  # noqa: A001
         assert input["name"] in build_offline_site_expected_outputs
     build_offline_site_command = "\n".join(
         build_offline_site_task["config"]["run"]["args"]
@@ -492,7 +494,7 @@ def test_generate_theme_assets_pipeline_definition(
         build_offline_site_command.count(f"hugo {config.vars['hugo_args_offline']}")
         == 2
     )
-    assert f"zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./"
+    assert f"zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./"  # noqa: PLW0129
     build_offline_site_expected_params = {
         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
         "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
@@ -538,7 +540,7 @@ def test_generate_theme_assets_pipeline_definition(
         BUILD_OFFLINE_SITE_IDENTIFIER,
         OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     ]
-    for input in upload_offline_build_task["config"]["inputs"]:
+    for input in upload_offline_build_task["config"]["inputs"]:  # noqa: A001
         assert input["name"] in upload_offline_build_expected_inputs
     if is_dev:
         assert set(

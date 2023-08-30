@@ -11,10 +11,7 @@
         },
         {
           "label": "Body",
-          "link": [
-            "course-collection",
-            "resource_collections"
-          ],
+          "link": ["course-collection", "resource_collections"],
           "name": "body",
           "widget": "markdown"
         }
@@ -246,12 +243,7 @@
         {
           "label": "File Type",
           "name": "filetype",
-          "options": [
-            "Image",
-            "Video",
-            "Document",
-            "Other"
-          ],
+          "options": ["Image", "Video", "Document", "Other"],
           "required": true,
           "widget": "select"
         },

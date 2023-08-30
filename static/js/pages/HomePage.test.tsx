@@ -3,7 +3,7 @@ import { screen } from "@testing-library/react"
 import {
   IntegrationTestHelper,
   assertInstanceOf,
-  absoluteUrl
+  absoluteUrl,
 } from "../testing_utils"
 
 import App from "./App"

@@ -1,4 +1,4 @@
-""" Factories for websites """
+"""Factories for websites"""
 from pathlib import Path
 
 import factory
@@ -11,7 +11,6 @@ from factory.fuzzy import FuzzyChoice
 from users.factories import UserFactory
 from websites import constants
 from websites.models import Website, WebsiteContent, WebsiteStarter
-
 
 FACTORY_SITE_CONFIG_PATH = "localdev/configs/basic-site-config.yml"
 
@@ -96,7 +95,9 @@ class WebsiteContentFactory(DjangoModelFactory):
     """Factory for WebsiteContent"""
 
     title = factory.Sequence(lambda n: f"OCW Site Content {n}")
-    type = FuzzyChoice([constants.CONTENT_TYPE_PAGE, constants.CONTENT_TYPE_RESOURCE])
+    type = FuzzyChoice(  # noqa: A003
+        [constants.CONTENT_TYPE_PAGE, constants.CONTENT_TYPE_RESOURCE]
+    )  # noqa: A003, RUF100
     markdown = factory.Faker("text")
     metadata = factory.LazyAttribute(lambda _: {})
     filename = factory.Sequence(lambda n: f"my-file-{n}")

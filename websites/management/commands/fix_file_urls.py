@@ -1,9 +1,7 @@
-""" Fix WebsiteContent files that are missing the Website name in their paths"""
+"""Fix WebsiteContent files that are missing the Website name in their paths"""  # noqa: E501, INP001
 import csv
 import re
-from typing import Dict, List
 
-import boto3
 from django.conf import settings
 from django.db.models import Q
 from mitol.common.utils import now_in_utc
@@ -18,7 +16,7 @@ from websites.models import WebsiteContent
 class Command(WebsiteFilterCommand):
     """Fix WebsiteContent files that are missing the Website name in their paths"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -27,7 +25,7 @@ class Command(WebsiteFilterCommand):
             "--out",
             dest="out",
             default=None,
-            help="If provided, a CSV file of WebsiteContent objects with modified paths will be written.",
+            help="If provided, a CSV file of WebsiteContent objects with modified paths will be written.",  # noqa: E501
         )
         parser.add_argument(
             "-c",
@@ -35,7 +33,7 @@ class Command(WebsiteFilterCommand):
             dest="commit",
             action="store_true",
             default=False,
-            help="Whether the changes to WebsiteContent file paths should be saved to the database/backend.",
+            help="Whether the changes to WebsiteContent file paths should be saved to the database/backend.",  # noqa: E501
         )
         parser.add_argument(
             "-p",
@@ -63,7 +61,7 @@ class Command(WebsiteFilterCommand):
         modified_content = []
         bad_paths = WebsiteContent.objects.filter(
             type=CONTENT_TYPE_RESOURCE,
-            file__regex=r"^/?{}/[A-Za-z0-9\-\.\_]+(\.).*".format(prefix),
+            file__regex=rf"^/?{prefix}/[A-Za-z0-9\-\.\_]+(\.).*",
         )
         if self.filter_list:
             bad_paths = bad_paths.filter(
@@ -72,7 +70,7 @@ class Command(WebsiteFilterCommand):
             )
 
         self.stdout.write(
-            f"Found {bad_paths.count()} resources with '{prefix}/' file paths missing website names"
+            f"Found {bad_paths.count()} resources with '{prefix}/' file paths missing website names"  # noqa: E501
         )
 
         s3_bucket = get_boto3_resource("s3").Bucket(
@@ -80,8 +78,8 @@ class Command(WebsiteFilterCommand):
         )
         for content in bad_paths:
             new_path = re.sub(
-                r"^(/?{}/)(.*)".format(prefix),
-                r"{}/{}/\2".format(prefix, content.website.name),
+                rf"^(/?{prefix}/)(.*)",
+                rf"{prefix}/{content.website.name}/\2",
                 content.file.name,
             )
             file_exists = len(list(s3_bucket.objects.filter(Prefix=new_path))) == 1
@@ -115,16 +113,14 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(f"Starting task {task}...")
             task.get()
             total_seconds = (now_in_utc() - start).total_seconds()
-            self.stdout.write(
-                "Backend sync finished, took {} seconds".format(total_seconds)
-            )
+            self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")
 
         self.stdout.write(f"Finished with commit={commit_changes}")
 
-    def write_to_csv(self, path: str, modified_content: List[Dict]):
+    def write_to_csv(self, path: str, modified_content: list[dict]):
         """Write modified contents to csv."""
 
-        with open(path, "w", newline="") as csvfile:
+        with open(path, "w", newline="") as csvfile:  # noqa: PTH123
             if not modified_content:
                 return
             fieldnames = modified_content[0].keys()

@@ -12,7 +12,7 @@ const alphabeticalSort = (a: string, b: string) => a.localeCompare(b)
 // with UrlAssembler will return the same overall URL, instead of
 // being order dependent.
 const OurUrlAssembler = UrlAssembler().qsConfig({
-  sort: alphabeticalSort
+  sort: alphabeticalSort,
 })
 
 export default OurUrlAssembler

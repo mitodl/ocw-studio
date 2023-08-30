@@ -8,7 +8,7 @@ import { siteApiListingUrl } from "../lib/urls"
 
 jest.mock("../lib/api/util", () => ({
   ...jest.requireActual("../lib/api/util"),
-  debouncedFetch: jest.fn()
+  debouncedFetch: jest.fn(),
 }))
 const debouncedFetch = jest.mocked(apiUtils.debouncedFetch)
 
@@ -21,10 +21,10 @@ describe("website hooks", () => {
 
       // @ts-expect-error Not mocking all the properties on Response
       debouncedFetch.mockResolvedValue({
-        json: async () => ({ results: websites })
+        json: async () => ({ results: websites }),
       })
       global.mockFetch.mockReturnValue({
-        json: () => ({ results: websites })
+        json: () => ({ results: websites }),
       })
     })
 
@@ -39,20 +39,20 @@ describe("website hooks", () => {
       })
       expect(global.fetch).toHaveBeenCalledWith(
         siteApiListingUrl.query({ offset: 0 }).param({ search: "" }).toString(),
-        { credentials: "include" }
+        { credentials: "include" },
       )
       expect(result.current.options).toEqual(
-        formatWebsiteOptions(websites, "uuid")
+        formatWebsiteOptions(websites, "uuid"),
       )
     })
 
     //
-    ;[true, false].forEach(published => {
+    ;[true, false].forEach((published) => {
       it(`should set published=${String(
-        published
+        published,
       )} if you pass the option`, async () => {
         const { waitForNextUpdate } = renderHook(() =>
-          useWebsiteSelectOptions("uuid", published)
+          useWebsiteSelectOptions("uuid", published),
         )
         await act(async () => {
           await waitForNextUpdate()
@@ -63,7 +63,7 @@ describe("website hooks", () => {
             .param({ search: "" })
             .param({ published })
             .toString(),
-          { credentials: "include" }
+          { credentials: "include" },
         )
       })
     })
@@ -82,7 +82,7 @@ describe("website hooks", () => {
           .query({ offset: 0 })
           .param({ search: "search string" })
           .toString(),
-        { credentials: "include" }
+        { credentials: "include" },
       )
       expect(cb).toHaveBeenCalledWith(formatWebsiteOptions(websites, "uuid"))
     })

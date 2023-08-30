@@ -5,7 +5,7 @@ import { Additional, Option } from "../components/widgets/SelectField"
 import { useWebsite } from "../context/Website"
 import {
   websiteContentDetailRequest,
-  WebsiteListingResponse
+  WebsiteListingResponse,
 } from "../query-configs/websites"
 import { useSelector } from "react-redux"
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
@@ -36,21 +36,21 @@ export interface WebsiteOption extends Option {
  */
 export function useWebsiteContent(
   uuid: string,
-  requestContentContext = false
+  requestContentContext = false,
 ): [WebsiteContent | null, QueryState] {
   const website = useWebsite()
 
   const contentParams = {
-    name:   website.name,
-    textId: uuid
+    name: website.name,
+    textId: uuid,
   }
 
   const [request] = useRequest(
-    websiteContentDetailRequest(contentParams, requestContentContext)
+    websiteContentDetailRequest(contentParams, requestContentContext),
   )
 
   const websiteContentDetailSelector = useSelector(
-    getWebsiteContentDetailCursor
+    getWebsiteContentDetailCursor,
   )
 
   const resource = websiteContentDetailSelector(contentParams)
@@ -67,12 +67,12 @@ export function useWebsiteContent(
  */
 export const formatWebsiteOptions = (
   websites: Website[],
-  valueField: string
+  valueField: string,
 ): WebsiteOption[] =>
-  websites.map(website => ({
-    label:   website.title,
+  websites.map((website) => ({
+    label: website.title,
     shortId: website.short_id,
-    value:   website[valueField]
+    value: website[valueField],
   }))
 
 interface ReturnProps {
@@ -93,7 +93,7 @@ interface ReturnProps {
  */
 export function useWebsiteSelectOptions(
   valueField = "uuid",
-  published: boolean | undefined = undefined
+  published: boolean | undefined = undefined,
 ): ReturnProps {
   const [options, setOptions] = useState<WebsiteOption[]>([])
 
@@ -101,7 +101,7 @@ export function useWebsiteSelectOptions(
     async (
       inputValue: string,
       loadedOptions: WebsiteOption[],
-      additional?: Additional
+      additional?: Additional,
     ) => {
       const url = siteApiListingUrl
         .query({ offset: loadedOptions.length })
@@ -116,38 +116,38 @@ export function useWebsiteSelectOptions(
       // if we're not operating in callback-mode then we can use a plain fetch
       // instead (which lets us sidestep an issue with debouncedFetch calls
       // running on component mount)
-      const response = additional?.callback ?
-        await debouncedFetch("website-collection", 300, url, {
-          credentials: "include"
-        }) :
-        await fetch(url, { credentials: "include" })
+      const response = additional?.callback
+        ? await debouncedFetch("website-collection", 300, url, {
+            credentials: "include",
+          })
+        : await fetch(url, { credentials: "include" })
 
       if (!response) {
         // this happens if this fetch was ignored in favor of a later fetch
         return {
           hasMore: true, // so one can try again
-          options: [] // nothing new
+          options: [], // nothing new
         }
       }
       const json: WebsiteListingResponse = await response.json()
       const { results } = json
       const paginationValues = {
-        hasMore: Boolean(json.next)
+        hasMore: Boolean(json.next),
       }
 
       const options = formatWebsiteOptions(results, valueField)
-      setOptions(current =>
-        uniqBy(option => option.value, [...current, ...options])
+      setOptions((current) =>
+        uniqBy((option) => option.value, [...current, ...options]),
       )
       if (additional?.callback) {
         additional.callback(options)
       }
       return {
         options,
-        ...paginationValues
+        ...paginationValues,
       }
     },
-    [setOptions, valueField, published]
+    [setOptions, valueField, published],
   )
 
   // on startup we want to fetch options initially so defaultOptions can

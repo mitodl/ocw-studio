@@ -3,7 +3,7 @@ import { useAppSelector } from "../hooks/redux"
 import Dialog from "./Dialog"
 
 const AuthenticationAlert: React.FC = () => {
-  const { authenticationErrors } = useAppSelector(state => state.user)
+  const { authenticationErrors } = useAppSelector((state) => state.user)
   const [isDismissed, setIsDismissed] = useState(false)
   useEffect(() => setIsDismissed(false), [authenticationErrors])
   const dismiss = useCallback(() => setIsDismissed(true), [])

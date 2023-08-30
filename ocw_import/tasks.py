@@ -1,4 +1,4 @@
-""" Tasks for OCW course site import """
+"""Tasks for OCW course site import"""
 import logging
 
 import celery
@@ -13,7 +13,6 @@ from ocw_import.api import (
     update_ocw2hugo_course,
 )
 from websites.models import WebsiteStarter
-
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +43,7 @@ def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
 
 @app.task()
 def update_ocw2hugo_course_paths(
-    paths, bucket_name, prefix, content_field, create_new_content=False
+    paths, bucket_name, prefix, content_field, create_new_content=False  # noqa: FBT002
 ):
     """
     Import all ocw2hugo courses & content
@@ -69,7 +68,7 @@ def update_ocw2hugo_course_paths(
 
 
 @app.task(bind=True)
-def import_ocw2hugo_courses(
+def import_ocw2hugo_courses(  # noqa: PLR0913
     self,
     bucket_name=None,
     course_paths=None,
@@ -88,9 +87,11 @@ def import_ocw2hugo_courses(
         chunk_size (int): Number of courses to process per task
     """
     if not bucket_name:
-        raise TypeError("Bucket name must be specified")
+        msg = "Bucket name must be specified"
+        raise TypeError(msg)
     if not course_paths:
-        raise TypeError("Course paths must be specified")
+        msg = "Course paths must be specified"
+        raise TypeError(msg)
     if limit is not None:
         course_paths = course_paths[:limit]
     course_tasks = [
@@ -106,7 +107,7 @@ def import_ocw2hugo_courses(
 
 
 @app.task(bind=True)
-def update_ocw_resource_data(
+def update_ocw_resource_data(  # noqa: PLR0913
     self,
     bucket_name=None,
     prefix=None,
@@ -114,7 +115,7 @@ def update_ocw_resource_data(
     limit=None,
     chunk_size=100,
     content_field=None,
-    create_new_content=False,
+    create_new_content=False,  # noqa: FBT002
 ):  # pylint:disable=too-many-arguments
     """
     Import all ocw2hugo courses & content
@@ -126,12 +127,14 @@ def update_ocw_resource_data(
         limit (int or None): (Optional) If specified, limits the number of courses imported
         chunk_size (int): Number of courses to process per task
         content_field(str): WebsiteContent field that should be updated
-    """
+    """  # noqa: E501
     if not bucket_name:
-        raise TypeError("Bucket name must be specified")
+        msg = "Bucket name must be specified"
+        raise TypeError(msg)
 
     if not content_field and not create_new_content:
-        raise TypeError("Update field must be specified if create_new_content is False")
+        msg = "Update field must be specified if create_new_content is False"
+        raise TypeError(msg)
     course_paths = list(
         fetch_ocw2hugo_course_paths(bucket_name, prefix=prefix, filter_list=filter_list)
     )

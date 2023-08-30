@@ -1,4 +1,4 @@
-""" permissions for websites """
+"""permissions for websites"""
 import logging
 
 from django.conf import settings
@@ -13,7 +13,6 @@ from websites import constants
 from websites.constants import ADMIN_ONLY_CONTENT
 from websites.models import Website
 from websites.utils import permissions_group_name_for_role
-
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +40,8 @@ def assign_website_permissions(group_or_user, perms, website=None):
             perm.codename for perm in Permission.objects.filter(user=group_or_user)
         }
     else:
-        raise TypeError("Permissions must be assigned to a user or group")
+        msg = "Permissions must be assigned to a user or group"
+        raise TypeError(msg)
     added_perm_codenames = {perm.replace("websites.", "") for perm in perms}
     if not added_perm_codenames.difference(current_perm_codenames):
         return False
@@ -51,8 +51,9 @@ def assign_website_permissions(group_or_user, perms, website=None):
                 assign_perm(perm, group_or_user, website)
             else:
                 assign_perm(perm, group_or_user)
-        except Permission.DoesNotExist as err:
-            raise Permission.DoesNotExist(f"Permission '{perm}' not found") from err
+        except Permission.DoesNotExist as err:  # noqa: PERF203
+            msg = f"Permission '{perm}' not found"
+            raise Permission.DoesNotExist(msg) from err
     return True
 
 
@@ -199,7 +200,7 @@ def check_perm(user, permission, website):
 class HasWebsitePermission(BasePermission):
     """Permission to view/modify/create Website objects"""
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view):  # noqa: ARG002
         if request.method in SAFE_METHODS:
             return True
         if request.method == "POST":
@@ -207,7 +208,7 @@ class HasWebsitePermission(BasePermission):
             return request.user.has_perm(constants.PERMISSION_ADD)
         return request.user.is_authenticated
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, obj):  # noqa: ARG002
         user = request.user
         if request.method in SAFE_METHODS:
             return check_perm(user, constants.PERMISSION_VIEW, obj)
@@ -220,19 +221,19 @@ class HasWebsiteContentPermission(BasePermission):
     """Permission to view/modify WebsiteContent objects"""
 
     def has_permission(self, request, view):
-        # The parent website should be included in the kwargs via DRF extensions nested view
+        # The parent website should be included in the kwargs via DRF extensions nested view  # noqa: E501
         website = get_object_or_404(
             Website, name=view.kwargs.get("parent_lookup_website", None)
         )
         if request.method in SAFE_METHODS:
-            # Give permission to any logged in user, to facilitate content relations between different sites.
-            # In particular, to allow instructor relations from ocw-www in site metadata.
+            # Give permission to any logged in user, to facilitate content relations between different sites.  # noqa: E501
+            # In particular, to allow instructor relations from ocw-www in site metadata.  # noqa: E501
             return bool(request.user and request.user.is_authenticated)
         if request.data and request.data.get("type") in ADMIN_ONLY_CONTENT:
             return is_site_admin(request.user, website)
         return check_perm(request.user, constants.PERMISSION_EDIT_CONTENT, website)
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, obj):  # noqa: ARG002
         user = request.user
         website = obj.website
         if request.method in SAFE_METHODS:
@@ -249,7 +250,7 @@ class HasWebsiteContentPermission(BasePermission):
 class HasWebsitePublishPermission(BasePermission):
     """Permission to publish or unpublish a website"""
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, obj):  # noqa: ARG002
         return check_perm(request.user, constants.PERMISSION_PUBLISH, obj)
 
 
@@ -270,21 +271,21 @@ class HasWebsiteCollaborationPermission(BasePermission):
             website.owner == obj or is_global_admin(obj)
         ):
             return False
-        # Anyone not allowed to do this will already have been stopped by has_permission above
+        # Anyone not allowed to do this will already have been stopped by has_permission above  # noqa: E501
         return True
 
 
 class HasWebsitePreviewPermission(BasePermission):
     """Permission to preview a website"""
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, obj):  # noqa: ARG002
         return check_perm(request.user, constants.PERMISSION_PREVIEW, obj)
 
 
 class BearerTokenPermission(BasePermission):
     """Restrict access to api endpoints via access token"""
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view):  # noqa: ARG002
         if not settings.API_BEARER_TOKEN:
             log.error("API_BEARER_TOKEN not set")
             return False

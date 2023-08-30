@@ -11,7 +11,7 @@ import { WEBSITE_CONTENT_PAGE_SIZE } from "../constants"
  */
 export const useSearchParams = (): [
   URLSearchParams,
-  (newSearchParams: URLSearchParams) => void
+  (newSearchParams: URLSearchParams) => void,
 ] => {
   const history = useHistory()
   const { search } = history.location
@@ -20,7 +20,7 @@ export const useSearchParams = (): [
     (newParams: URLSearchParams) => {
       history.replace({ search: newParams.toString() })
     },
-    [history]
+    [history],
   )
   return [searchParams, setSearchParams]
 }
@@ -42,17 +42,17 @@ interface ListingParamsMinimum {
  * Search text is echoed to the `q` URL parameter.
  */
 export function useURLParamFilter<LParams extends ListingParamsMinimum>(
-  getListingParams: (search: string) => LParams
+  getListingParams: (search: string) => LParams,
 ): URLParamFilterReturnValue<LParams> {
   const { search } = useLocation()
   const history = useHistory()
 
   const [listingParams, setListingParams] = useState<LParams>(() =>
-    getListingParams(search)
+    getListingParams(search),
   )
 
   const [searchInput, setSearchInput] = useTextInputState(
-    listingParams.search ?? ""
+    listingParams.search ?? "",
   )
 
   /**
@@ -81,7 +81,7 @@ export function useURLParamFilter<LParams extends ListingParamsMinimum>(
       }
     },
     [searchInput, listingParams],
-    600
+    600,
   )
 
   /**
@@ -96,7 +96,7 @@ export function useURLParamFilter<LParams extends ListingParamsMinimum>(
   return {
     searchInput,
     setSearchInput,
-    listingParams
+    listingParams,
   }
 }
 
@@ -115,7 +115,7 @@ type RLocation = ReturnType<typeof useLocation>
 const offsetLocation = (
   location: RLocation,
   count: number,
-  increment: number
+  increment: number,
 ): RLocation | null => {
   const params = new URLSearchParams(location.search)
   const offset = Number(params.get("offset"))
@@ -125,7 +125,7 @@ const offsetLocation = (
   params.set("offset", String(newOffset))
   return {
     ...location,
-    search: params.toString()
+    search: params.toString(),
   }
 }
 
@@ -136,7 +136,7 @@ const offsetLocation = (
  */
 export const usePagination = (
   count: number,
-  pageSize: number = WEBSITE_CONTENT_PAGE_SIZE
+  pageSize: number = WEBSITE_CONTENT_PAGE_SIZE,
 ): {
   previous: RLocation | null
   next: RLocation | null

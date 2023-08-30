@@ -6,7 +6,7 @@ from django.db import migrations
 
 
 def calculate_checksum(website_content):
-    """Returns a calculated checksum of the content"""
+    """Returns a calculated checksum of the content"""  # noqa: D401
     return sha256(
         "\n".join(
             [
@@ -24,7 +24,7 @@ def calculate_checksum(website_content):
 def recalculate_checksums(apps, schema_editor):
     """
     Updates checksum values for all ContentSyncState objects due to a change in the checksum properties
-    """
+    """  # noqa: E501, D401
     ContentSyncState = apps.get_model("content_sync", "ContentSyncState")
     sync_states = ContentSyncState.objects.select_related("content").all()
     for sync_state in sync_states:
@@ -33,7 +33,6 @@ def recalculate_checksums(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0024_content_unique_destination_filepath"),
     ]

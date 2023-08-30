@@ -6,7 +6,7 @@ import {
   ADD_RESOURCE_LINK,
   RESOURCE_LINK,
   CKEDITOR_RESOURCE_UTILS,
-  RESOURCE_EMBED
+  RESOURCE_EMBED,
 } from "./constants"
 
 /**
@@ -27,8 +27,8 @@ export default class ResourcePicker extends Plugin {
       const view = new ButtonView(locale)
 
       view.set({
-        label:    "Add link",
-        withText: true
+        label: "Add link",
+        withText: true,
       })
 
       view.on("execute", () => {
@@ -42,8 +42,8 @@ export default class ResourcePicker extends Plugin {
       const view = new ButtonView(locale)
 
       view.set({
-        label:    "Embed resource",
-        withText: true
+        label: "Embed resource",
+        withText: true,
       })
 
       view.on("execute", () => {

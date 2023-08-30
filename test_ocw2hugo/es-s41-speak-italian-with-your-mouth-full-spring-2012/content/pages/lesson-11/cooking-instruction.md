@@ -34,7 +34,7 @@ _Ieri sera abbiamo preparato i cantucci or cantuccini._
 *   680 g = 1 1/2 lbs _di miele_/honey/  \[if you do not like honey, you can instead add 2 eggs **or** some melted butter **or** extra virgin olive oil **and** 100g, about 1/2 cup of sugar. You would only need a little butter or oil- just enough to keep to dough together.\]
 *   4 _(quattro) uova_
 *   100 g _di zucchero_
-*   680 g = 1 1/2 lbs _di mandorle intere_/whole almonds, with skin  
+*   680 g = 1 1/2 lbs _di mandorle intere_/whole almonds, with skin
     \[you can substitute _le mandorle_ with chopped dark chocolate or _uvetta_, raisins or make a mix of the three. You may also try to use _nocciole_/hazelnuts\]
 *   _la buccia grattuggiata di un'arancia_/grated zest of one orange—you can use lemon as well.
 *   Optional: you can add some spices, such as vanilla, or fennel seeds, cinnamon, a little nutmeg ...

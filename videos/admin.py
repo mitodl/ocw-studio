@@ -19,10 +19,10 @@ class VideoJobsInline(admin.TabularInline):
     model = VideoJob
     extra = 0
 
-    def has_change_permission(self, request, obj=None):
+    def has_change_permission(self, request, obj=None):  # noqa: ARG002
         return False
 
-    def has_add_permission(self, request, obj=None):
+    def has_add_permission(self, request, obj=None):  # noqa: ARG002
         return False
 
 

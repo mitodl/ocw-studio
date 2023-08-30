@@ -10,14 +10,14 @@ export default function DriveSyncStatusIndicator(props: {
   const { website } = props
 
   const [syncStatusModalState, setSyncStatusModalState] = useState({
-    isVisible: false
+    isVisible: false,
   })
   const toggleSyncStatusModal = () =>
     setSyncStatusModalState({
-      isVisible: !syncStatusModalState.isVisible
+      isVisible: !syncStatusModalState.isVisible,
     })
   const onShowSyncDetails = async (
-    event: ReactMouseEvent<HTMLDivElement | HTMLButtonElement, MouseEvent>
+    event: ReactMouseEvent<HTMLDivElement | HTMLButtonElement, MouseEvent>,
   ) => {
     event.preventDefault()
     toggleSyncStatusModal()
@@ -31,7 +31,7 @@ export default function DriveSyncStatusIndicator(props: {
         title="Google Drive Sync Details"
         className="right"
       >
-        {_ => (
+        {(_) => (
           <div className="m-2">
             <div className="pb-2 sync-time">
               Last run at{" "}

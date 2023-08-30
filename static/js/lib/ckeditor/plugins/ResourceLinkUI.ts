@@ -79,13 +79,13 @@ export default class ResourceLinkUI extends Plugin {
       decorators: {
         ...linkConfig.decorators,
         addTargetToExternalLinks: {
-          mode:       "automatic",
-          callback:   (url?: string) => this.syntax.isResourceLinkHref(url),
+          mode: "automatic",
+          callback: (url?: string) => this.syntax.isResourceLinkHref(url),
           attributes: {
-            class: RESOURCE_LINK_CLASS
-          }
-        }
-      }
+            class: RESOURCE_LINK_CLASS,
+          },
+        },
+      },
     })
   }
 }

@@ -3,14 +3,15 @@ parent: Architecture
 ---
 
 # Data Pipelines
+
 {: .no_toc }
 
 ## Table of Contents
+
 {: .no_toc .text-delta }
 
 - Table of Contents
-{:toc}
-
+  {:toc}
 
 ### Summary
 
@@ -30,12 +31,11 @@ This document outlines how data flows function in OCW-next prior to the rework o
   - We're aiming to build a favorable user experience for course authors that gets out of their way and makes their jobs as easy as possible
   - The system should favor simplifying or limiting complex functionality, but design and implement with future flexibility in mind
 
-
 ### Current Architecture
 
 | ![Current Architecture Diagram](assets/OCW-next-current.png) |
-|:--:|
-| [full version](assets/OCW-next-current.png) |
+| :----------------------------------------------------------: |
+|         [full version](assets/OCW-next-current.png)          |
 
 Major components here are:
 
@@ -51,8 +51,8 @@ Major components here are:
 ### Final Architecture
 
 | ![Final Architecture Diagram](assets/OCW-next-final.png) |
-|:--:|
-| [full version](assets/OCW-next-final.png) |
+| :------------------------------------------------------: |
+|        [full version](assets/OCW-next-final.png)         |
 
 - **ocw-sync**
   - Lightweight Python script running `ocw-data-parser`
@@ -81,8 +81,8 @@ Open is currently ingesting both the Plone data and indexing that data in-memory
 - [ ] Extract `ocw-data-parser` execution out of Open and into its own service
 - [ ] Modify Open course to source data from normalized S3 bucket and drop its usage of `ocw-data-parser`
 
-| ![Intermediate Architecture Diagram 1](assets/OCW-next-intermediate-1.png) |
-|:--:|
+|            ![Intermediate Architecture Diagram 1](assets/OCW-next-intermediate-1.png)             |
+| :-----------------------------------------------------------------------------------------------: |
 | _Architectural changes highlighted in blue_<br>[full version](assets/OCW-next-intermediate-1.png) |
 
 #### Develop OCW-studio
@@ -99,6 +99,6 @@ Open is currently ingesting both the Plone data and indexing that data in-memory
 - [ ] Create an RC environment for testing out `ocw-studio`
 - [ ] Automate deployment of `ocw-studio` authored content
 
-| ![Intermediate Architecture Diagram 2](assets/OCW-next-intermediate-2.png) |
-|:--:|
+|            ![Intermediate Architecture Diagram 2](assets/OCW-next-intermediate-2.png)             |
+| :-----------------------------------------------------------------------------------------------: |
 | _Architectural changes highlighted in blue_<br>[full version](assets/OCW-next-intermediate-2.png) |

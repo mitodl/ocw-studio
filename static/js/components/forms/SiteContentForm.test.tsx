@@ -7,13 +7,13 @@ import { act } from "react-dom/test-utils"
 import SiteContentForm, {
   FormFields,
   InnerFormProps,
-  FormProps
+  FormProps,
 } from "./SiteContentForm"
 import {
   makeEditableConfigItem,
   makeWebsiteConfigField,
   makeWebsiteContentDetail,
-  makeWebsiteDetail
+  makeWebsiteDetail,
 } from "../../util/factories/websites"
 import * as siteContent from "../../lib/site_content"
 import { WebsiteContentModalState, WidgetVariant } from "../../types/websites"
@@ -32,12 +32,12 @@ function mocko() {
 
 jest.mock("../widgets/MarkdownEditor", () => ({
   __esModule: true,
-  default:    mocko
+  default: mocko,
 }))
 
 jest.mock("../widgets/SelectField", () => ({
   __esModule: true,
-  default:    mocko
+  default: mocko,
 }))
 
 jest.mock("../../context/Website")
@@ -65,7 +65,7 @@ function setupData() {
     onSubmit,
     setDirty,
     editorState,
-    website
+    website,
   }
 }
 
@@ -76,7 +76,7 @@ function setup(props: Partial<FormProps> = {}) {
 
   return {
     form,
-    ...data
+    ...data,
   }
 }
 
@@ -95,10 +95,10 @@ function setupInnerForm(props: Partial<InnerFormProps> = {}) {
       initialValues={props.values ?? {}}
       enableReinitialize={true}
     >
-      {formikProps => (
+      {(formikProps) => (
         <FormFields validate={validate} {...formikProps} {...data} {...props} />
       )}
-    </Formik>
+    </Formik>,
   )
 
   return { form, ...data }
@@ -106,14 +106,14 @@ function setupInnerForm(props: Partial<InnerFormProps> = {}) {
 
 const EDITOR_STATES: WebsiteContentModalState[] = [
   createModalState("adding"),
-  createModalState("editing", "id")
+  createModalState("editing", "id"),
 ]
 
 type ESBoolMatrix = [WebsiteContentModalState, boolean][]
 
-const EDITOR_STATE_BOOLEAN_MATRIX = EDITOR_STATES.map(editorState => [
+const EDITOR_STATE_BOOLEAN_MATRIX = EDITOR_STATES.map((editorState) => [
   [editorState, true],
-  [editorState, false]
+  [editorState, false],
 ]).flat() as ESBoolMatrix
 
 test.each(EDITOR_STATE_BOOLEAN_MATRIX)(
@@ -121,18 +121,18 @@ test.each(EDITOR_STATE_BOOLEAN_MATRIX)(
   async (editorState, isObjectField) => {
     const configItem = makeEditableConfigItem()
     const configField = makeWebsiteConfigField({
-      widget: isObjectField ? WidgetVariant.Object : WidgetVariant.String
+      widget: isObjectField ? WidgetVariant.Object : WidgetVariant.String,
     })
     configItem.fields = [configField]
     const { form, setDirty } = setup({
       configItem,
-      editorState
+      editorState,
     })
 
     const fieldName =
-      configField.widget === WidgetVariant.Object ?
-        configField.fields[0].name :
-        configItem.fields[0].name
+      configField.widget === WidgetVariant.Object
+        ? configField.fields[0].name
+        : configItem.fields[0].name
 
     await act(async () => {
       form
@@ -140,17 +140,17 @@ test.each(EDITOR_STATE_BOOLEAN_MATRIX)(
         .at(0)
         .simulate("change", {
           target: {
-            name:  fieldName,
-            value: "test"
-          }
+            name: fieldName,
+            value: "test",
+          },
         })
       form.update()
     })
     expect(setDirty).toHaveBeenCalledWith(true)
-  }
+  },
 )
 
-test.each(EDITOR_STATES)("SiteContentForm renders", editorState => {
+test.each(EDITOR_STATES)("SiteContentForm renders", (editorState) => {
   const { form, configItem, content } = setup({ editorState })
 
   configItem.fields.forEach((field, idx) => {
@@ -168,22 +168,22 @@ test("SiteContentForm displays a status", () => {
 
 test.each([true, false])(
   "SiteContentForm shows a button with disabled=%p",
-  isSubmitting => {
+  (isSubmitting) => {
     const { form } = setupInnerForm({ isSubmitting })
     expect(form.find("button[type='submit']").prop("disabled")).toBe(
-      isSubmitting
+      isSubmitting,
     )
-  }
+  },
 )
 
 test("it should use an ObjectField when dealing with an Object", () => {
   const configItem = makeEditableConfigItem()
   const configField = makeWebsiteConfigField({
-    widget: WidgetVariant.Object
+    widget: WidgetVariant.Object,
   })
   configItem.fields = [configField]
   const { form } = setup({
-    configItem
+    configItem,
   })
   const objectField = form.find(ObjectField)
   expect(objectField.exists()).toBeTruthy()
@@ -194,21 +194,21 @@ test("it should use an ObjectField when dealing with an Object", () => {
 test("it scrolls to .form-error field", async () => {
   const data = setupData()
   data.configItem = makeEditableConfigItem(data.content.type)
-  data.configItem.fields.forEach(field => {
+  data.configItem.fields.forEach((field) => {
     field.required = true
   })
 
-  expect(data.configItem.fields.map(f => f.name)).toEqual([
+  expect(data.configItem.fields.map((f) => f.name)).toEqual([
     "title",
     "description",
-    "body"
+    "body",
   ])
 
   const { form } = setupInnerForm({
-    values:   { title: "meow" },
+    values: { title: "meow" },
     validate: jest.fn().mockResolvedValue({
-      title: "NO"
-    })
+      title: "NO",
+    }),
   })
 
   await act(async () => {
@@ -239,10 +239,10 @@ test.each`
     const { form } = setupInnerForm({
       ...data,
       configItem,
-      values
+      values,
     })
     expect(form.find("SiteContentField").exists()).toBe(willRender)
-  }
+  },
 )
 
 test.each`
@@ -264,27 +264,27 @@ test.each`
     const { form } = setupInnerForm({
       ...data,
       configItem,
-      values
+      values,
     })
     expect(form.find(Label).exists()).toBe(willRender)
     if (willRender) {
       expect(form.find(Label).prop("value")).toBe(filename)
     }
-  }
+  },
 )
 
 test("SiteContentField creates new values", () => {
   const data = setupData()
   data.configItem.fields = [
     makeWebsiteConfigField({
-      widget:  WidgetVariant.String,
-      name:    "test-name",
-      default: "test-default"
-    })
+      widget: WidgetVariant.String,
+      name: "test-name",
+      default: "test-default",
+    }),
   ]
   const { form } = setup(data)
   expect(form.find(FormFields).prop("values")).toEqual({
-    "test-name": "test-default"
+    "test-name": "test-default",
   })
 })
 
@@ -292,9 +292,9 @@ test("SiteContentField uses existing values when editing", () => {
   const data = setupData()
   const { form } = setup({
     ...data,
-    editorState: createModalState("editing", "id")
+    editorState: createModalState("editing", "id"),
   })
   expect(form.find(FormFields).prop("values")).toEqual(
-    contentInitialValues(data.content, data.configItem.fields, data.website)
+    contentInitialValues(data.content, data.configItem.fields, data.website),
   )
 })

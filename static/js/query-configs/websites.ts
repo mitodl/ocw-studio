@@ -8,7 +8,7 @@ import {
   when,
   assoc,
   map,
-  mergeDeepRight
+  mergeDeepRight,
 } from "ramda"
 
 import { nextState, PaginatedResponse } from "./utils"
@@ -26,7 +26,7 @@ import {
   siteApiContentListingUrl,
   siteApiContentDetailUrl,
   siteApiContentUrl,
-  siteApiContentSyncGDriveUrl
+  siteApiContentSyncGDriveUrl,
 } from "../lib/urls"
 
 import {
@@ -39,17 +39,17 @@ import {
   WebsiteContent,
   WebsiteContentListItem,
   WebsiteStarter,
-  WebsiteStatus
+  WebsiteStatus,
 } from "../types/websites"
 import { PublishingEnv } from "../constants"
 
 export type WebsiteDetails = Record<string, Website>
 
 export const getTransformedWebsiteName = (
-  response: ActionPromiseValue<Record<string, WebsiteDetails>>
+  response: ActionPromiseValue<Record<string, WebsiteDetails>>,
 ): string | null => {
   const transformedWebsiteKeys = Object.keys(
-    response.transformed?.websiteDetails || {}
+    response.transformed?.websiteDetails || {},
   )
   if (transformedWebsiteKeys.length === 0) {
     return null
@@ -68,9 +68,9 @@ export type WebsiteListingResponse = PaginatedResponse<Website>
 export type WebsitesListing = Record<string, PaginatedResponse<string>>
 
 export const websiteListingRequest = (
-  params: WebsiteListingParams
+  params: WebsiteListingParams,
 ): QueryConfig => ({
-  url:       siteApiListingUrl.query(params).toString(),
+  url: siteApiListingUrl.query(params).toString(),
   transform: (body: WebsiteListingResponse) => {
     const details = {}
     for (const site of body.results) {
@@ -81,149 +81,149 @@ export const websiteListingRequest = (
       websitesListing: {
         [params.offset]: {
           ...body,
-          results: body.results.map(result => result.name)
-        }
+          results: body.results.map((result) => result.name),
+        },
       },
-      websiteDetails: details
+      websiteDetails: details,
     }
   },
   update: {
     websitesListing: (prev: WebsitesListing, next: WebsitesListing) => ({
       ...prev,
-      ...next
+      ...next,
     }),
     websiteDetails: (prev: WebsiteDetails, next: WebsiteDetails) => ({
       ...prev,
-      ...next
-    })
+      ...next,
+    }),
   },
-  force: true // try to prevent stale information
+  force: true, // try to prevent stale information
 })
 
 export const websiteDetailRequest = (name: string): QueryConfig => ({
-  url:       siteApiDetailUrl.param({ name }).toString(),
+  url: siteApiDetailUrl.param({ name }).toString(),
   transform: (body: Website) => ({
     websiteDetails: {
-      [name]: body
-    }
+      [name]: body,
+    },
   }),
   update: {
     websiteDetails: (prev: WebsiteDetails, next: WebsiteDetails) => ({
       ...prev,
-      ...next
-    })
+      ...next,
+    }),
   },
-  force: true // force a refresh to update incomplete information from listing API
+  force: true, // force a refresh to update incomplete information from listing API
 })
 
 export const websiteStatusRequest = (name: string): QueryConfig => ({
-  queryKey:  `publish-status-${name}`,
-  url:       siteApiDetailUrl.param({ name }).query({ only_status: true }).toString(),
+  queryKey: `publish-status-${name}`,
+  url: siteApiDetailUrl.param({ name }).query({ only_status: true }).toString(),
   transform: (body: WebsiteStatus) => ({
-    websiteDetails: body
+    websiteDetails: body,
   }),
   update: {
     websiteDetails: (prev: WebsiteDetails, next: WebsiteStatus) => ({
       ...prev,
       [name]: {
         ...(prev[name] ?? {}),
-        ...next
-      }
-    })
+        ...next,
+      },
+    }),
   },
-  force: true
+  force: true,
 })
 
 export const websiteMutation = (payload: NewWebsitePayload): QueryConfig => ({
-  url:     siteApi.toString(),
+  url: siteApi.toString(),
   options: {
-    method:  "POST",
+    method: "POST",
     headers: {
-      "X-CSRFTOKEN": getCookie("csrftoken") || ""
-    }
+      "X-CSRFTOKEN": getCookie("csrftoken") || "",
+    },
   },
-  body:      payload,
+  body: payload,
   transform: (body: Website) => ({
     websiteDetails: {
-      [body.name]:     body,
-      [body.short_id]: body
-    }
+      [body.name]: body,
+      [body.short_id]: body,
+    },
   }),
   update: {
     websiteDetails: (prev: WebsiteDetails, next: WebsiteDetails) => ({
       ...prev,
-      ...next
-    })
-  }
+      ...next,
+    }),
+  },
 })
 
 export const websitePublishAction = (
   name: string,
   publishingEnv: PublishingEnv,
-  payload: WebsitePublishPayload
+  payload: WebsitePublishPayload,
 ): QueryConfig => {
   const action =
     publishingEnv === PublishingEnv.Production ? "publish" : "preview"
   return {
-    url:     siteApiActionUrl.param({ name, action }).toString(),
+    url: siteApiActionUrl.param({ name, action }).toString(),
     options: {
-      method:  "POST",
+      method: "POST",
       headers: {
-        "X-CSRFTOKEN": getCookie("csrftoken") || ""
-      }
+        "X-CSRFTOKEN": getCookie("csrftoken") || "",
+      },
     },
-    body: payload
+    body: payload,
   }
 }
 
 export const websiteUnpublishAction = (
   name: string,
-  method: string
+  method: string,
 ): QueryConfig => {
   return {
-    url:     siteApiUnpublishUrl.param({ name }).toString(),
+    url: siteApiUnpublishUrl.param({ name }).toString(),
     options: {
-      method:  method,
+      method: method,
       headers: {
-        "X-CSRFTOKEN": getCookie("csrftoken") || ""
-      }
-    }
+        "X-CSRFTOKEN": getCookie("csrftoken") || "",
+      },
+    },
   }
 }
 
 export const websiteStartersRequest = (): QueryConfig => ({
-  url:       startersApi.toString(),
+  url: startersApi.toString(),
   transform: (results: Array<WebsiteStarter>) => ({
-    starters: results
+    starters: results,
   }),
   update: {
-    starters: nextState
-  }
+    starters: nextState,
+  },
 })
 
 export const websiteCollaboratorsRequest = (name: string): QueryConfig => ({
-  url:       siteApiCollaboratorsUrl.param({ name }).toString(),
+  url: siteApiCollaboratorsUrl.param({ name }).toString(),
   transform: (body: { results: WebsiteCollaborator[] }) => ({
     collaborators: {
-      [name]: body.results || []
-    }
+      [name]: body.results || [],
+    },
   }),
   update: {
-    collaborators: merge
-  }
+    collaborators: merge,
+  },
 })
 
 export const deleteWebsiteCollaboratorMutation = (
   websiteName: string,
-  collaborator: WebsiteCollaborator
+  collaborator: WebsiteCollaborator,
 ): QueryConfig => {
   const evictCollaborator = reject(propEq("user_id", collaborator.user_id))
   return {
     queryKey: "deleteWebsiteCollaboratorMutation",
-    url:      siteApiCollaboratorsDetailUrl
+    url: siteApiCollaboratorsDetailUrl
       .param({
-        name:   websiteName,
-        userId: collaborator.user_id
+        name: websiteName,
+        userId: collaborator.user_id,
       })
       .toString(),
     optimisticUpdate: {
@@ -233,75 +233,75 @@ export const deleteWebsiteCollaboratorMutation = (
           evictCollaborator,
           (value: WebsiteCollaborator[]) => {
             return value ?? []
-          }
-        )
-      })
+          },
+        ),
+      }),
     },
     options: {
       method: "DELETE",
-      ...DEFAULT_POST_OPTIONS
-    }
+      ...DEFAULT_POST_OPTIONS,
+    },
   }
 }
 
 export const editWebsiteCollaboratorMutation = (
   websiteName: string,
   collaborator: WebsiteCollaborator,
-  role: string
+  role: string,
 ): QueryConfig => {
   const alterRole = map(
-    when(propEq("user_id", collaborator.user_id), assoc("role", role))
+    when(propEq("user_id", collaborator.user_id), assoc("role", role)),
   )
   return {
     queryKey: "editWebsiteCollaboratorMutation",
-    body:     { role },
-    url:      siteApiCollaboratorsDetailUrl
+    body: { role },
+    url: siteApiCollaboratorsDetailUrl
       .param({
-        name:   websiteName,
-        userId: collaborator.user_id
+        name: websiteName,
+        userId: collaborator.user_id,
       })
       .toString(),
     optimisticUpdate: {
       collaborators: evolve({
         [websiteName]: compose(
           alterRole,
-          (value: WebsiteCollaborator[]) => value || []
-        )
-      })
+          (value: WebsiteCollaborator[]) => value || [],
+        ),
+      }),
     },
     options: {
       method: "PATCH",
-      ...DEFAULT_POST_OPTIONS
-    }
+      ...DEFAULT_POST_OPTIONS,
+    },
   }
 }
 
 export const createWebsiteCollaboratorMutation = (
   websiteName: string,
-  item: WebsiteCollaboratorFormData
+  item: WebsiteCollaboratorFormData,
 ): QueryConfig => {
   return {
-    queryKey:  "editWebsiteCollaboratorMutation",
-    body:      { ...item },
-    url:       siteApiCollaboratorsUrl.param({ name: websiteName }).toString(),
+    queryKey: "editWebsiteCollaboratorMutation",
+    body: { ...item },
+    url: siteApiCollaboratorsUrl.param({ name: websiteName }).toString(),
     transform: (body: WebsiteCollaborator) => ({
       collaborators: {
-        [websiteName]: [body]
-      }
+        [websiteName]: [body],
+      },
     }),
     update: {
       collaborators: (
         prev: Record<string, WebsiteCollaborator[]>,
-        next: Record<string, WebsiteCollaborator[]>
+        next: Record<string, WebsiteCollaborator[]>,
       ) => {
         next[websiteName] = next[websiteName].concat(prev[websiteName])
         return { ...prev, ...next }
-      }
+      },
     },
     options: {
       method: "POST",
-      ...DEFAULT_POST_OPTIONS
-    }
+      ...DEFAULT_POST_OPTIONS,
+    },
   }
 }
 
@@ -319,7 +319,7 @@ export type WebsiteContentListing = Record<
 >
 
 export const contentListingKey = (
-  listingParams: ContentListingParams
+  listingParams: ContentListingParams,
 ): string =>
   JSON.stringify([
     listingParams.name,
@@ -328,7 +328,7 @@ export const contentListingKey = (
     listingParams.pageContent,
     listingParams.offset,
     listingParams.resourcetype,
-    listingParams.published
+    listingParams.published,
   ])
 
 export const contentDetailKey = (params: ContentDetailParams): string =>
@@ -346,7 +346,7 @@ export const contentDetailKey = (params: ContentDetailParams): string =>
 export const websiteContentListingRequest = (
   listingParams: ContentListingParams,
   requestDetailedList: boolean,
-  requestContentContext: boolean
+  requestContentContext: boolean,
 ): QueryConfig => {
   const { name, type, resourcetype, offset, pageContent, search, published } =
     listingParams
@@ -361,8 +361,8 @@ export const websiteContentListingRequest = (
         requestContentContext && { content_context: true },
         search && { search },
         resourcetype && { resourcetype },
-        published && { published }
-      )
+        published && { published },
+      ),
     )
     .toString()
   return {
@@ -376,30 +376,30 @@ export const websiteContentListingRequest = (
         websiteContentListing: {
           [contentListingKey(listingParams)]: {
             ...body,
-            results: body.results.map(item => item.text_id)
-          }
+            results: body.results.map((item) => item.text_id),
+          },
         },
-        websiteContentDetails: details
+        websiteContentDetails: details,
       }
     },
     update: {
       websiteContentListing: (
         prev: WebsiteContentListing,
-        next: WebsiteContentListing
+        next: WebsiteContentListing,
       ) => ({
         ...prev,
-        ...next
+        ...next,
       }),
-      websiteContentDetails: mergeDeepRight
+      websiteContentDetails: mergeDeepRight,
     },
-    force: true // try to prevent stale information
+    force: true, // try to prevent stale information
   }
 }
 
 type WebsiteContentDetails = Record<string, WebsiteContent>
 export const websiteContentDetailRequest = (
   params: ContentDetailParams,
-  requestContentContext: boolean
+  requestContentContext: boolean,
 ): QueryConfig => ({
   url: siteApiContentDetailUrl
     .param({ name: params.name, textId: params.textId })
@@ -407,28 +407,28 @@ export const websiteContentDetailRequest = (
     .toString(),
   transform: (body: WebsiteContent) => ({
     websiteContentDetails: {
-      [contentDetailKey(params)]: body
-    }
+      [contentDetailKey(params)]: body,
+    },
   }),
   update: {
     websiteContentListing: (
       prev: WebsiteContentListing,
-      next: WebsiteContentListing
+      next: WebsiteContentListing,
     ) => ({
       ...prev,
-      ...next
+      ...next,
     }),
     websiteContentDetails: (
       prev: WebsiteContentDetails,
-      next: WebsiteContentDetails
+      next: WebsiteContentDetails,
     ) => {
       return {
         ...prev,
-        ...next
+        ...next,
       }
-    }
+    },
   },
-  force: true // some data may be fetched in the collection view which is incomplete
+  force: true, // some data may be fetched in the collection view which is incomplete
 })
 
 export type EditWebsiteContentPayload = {
@@ -441,32 +441,32 @@ export type EditWebsiteContentPayload = {
 
 export const editWebsiteContentMutation = (
   params: ContentDetailParams,
-  payload: EditWebsiteContentPayload | FormData
+  payload: EditWebsiteContentPayload | FormData,
 ): QueryConfig => ({
   url: siteApiContentDetailUrl
     .param({ name: params.name, textId: params.textId })
     .toString(),
   options: {
-    method:  "PATCH",
+    method: "PATCH",
     headers: {
-      "X-CSRFTOKEN": getCookie("csrftoken") || ""
-    }
+      "X-CSRFTOKEN": getCookie("csrftoken") || "",
+    },
   },
-  body:      payload,
+  body: payload,
   transform: (response: WebsiteContent) => ({
     websiteContentDetails: {
-      [contentDetailKey(params)]: response
-    }
+      [contentDetailKey(params)]: response,
+    },
   }),
   update: {
     websiteContentDetails: (
       prev: WebsiteContentDetails,
-      next: WebsiteContentDetails
+      next: WebsiteContentDetails,
     ) => ({
       ...prev,
-      ...next
-    })
-  }
+      ...next,
+    }),
+  },
 })
 
 export type NewWebsiteContentPayload = {
@@ -486,39 +486,40 @@ export type WebsitePublishPayload = {
 
 export const createWebsiteContentMutation = (
   siteName: string,
-  payload: NewWebsiteContentPayload
+  payload: NewWebsiteContentPayload,
 ): QueryConfig => ({
-  url:     siteApiContentUrl.param({ name: siteName }).toString(),
+  url: siteApiContentUrl.param({ name: siteName }).toString(),
   options: {
-    method:  "POST",
+    method: "POST",
     headers: {
-      "X-CSRFTOKEN": getCookie("csrftoken") || ""
-    }
+      "X-CSRFTOKEN": getCookie("csrftoken") || "",
+    },
   },
-  body:      payload,
+  body: payload,
   transform: (response: WebsiteContent) => ({
     websiteContentDetails: {
-      [contentDetailKey({ textId: response.text_id, name: siteName })]: response
-    }
+      [contentDetailKey({ textId: response.text_id, name: siteName })]:
+        response,
+    },
   }),
   update: {
     websiteContentDetails: (
       prev: WebsiteContentDetails,
-      next: WebsiteContentDetails
+      next: WebsiteContentDetails,
     ) => ({
       ...prev,
-      ...next
-    })
-  }
+      ...next,
+    }),
+  },
 })
 
 export const syncWebsiteContentMutation = (siteName: string): QueryConfig => ({
-  url:     siteApiContentSyncGDriveUrl.param({ name: siteName }).toString(),
+  url: siteApiContentSyncGDriveUrl.param({ name: siteName }).toString(),
   options: {
-    method:  "POST",
+    method: "POST",
     headers: {
-      "X-CSRFTOKEN": getCookie("csrftoken") || ""
-    }
+      "X-CSRFTOKEN": getCookie("csrftoken") || "",
+    },
   },
-  body: {}
+  body: {},
 })
