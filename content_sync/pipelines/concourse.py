@@ -34,6 +34,9 @@ from content_sync.pipelines.base import (
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
 )
+from content_sync.pipelines.definitions.concourse.theme_assets_pipeline import (
+    ThemeAssetsPipelineDefinition,
+)
 from content_sync.utils import (
     check_mandatory_settings,
     get_hugo_arg_string,
@@ -330,6 +333,40 @@ class GeneralPipeline(BaseGeneralPipeline):
         raise NotImplementedError("Choose a more specific pipeline class")
 
 
+class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
+    """
+    Concourse-CI pipeline for publishing theme assets
+    """
+
+    PIPELINE_NAME = BaseThemeAssetsPipeline.PIPELINE_NAME
+    BRANCH = settings.GITHUB_WEBHOOK_BRANCH
+
+    MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
+        "GITHUB_WEBHOOK_BRANCH",
+        "SEARCH_API_URL",
+    ]
+
+    def __init__(
+        self, themes_branch: Optional[str] = None, api: Optional[PipelineApi] = None
+    ):
+        """Initialize the pipeline API instance"""
+        super().__init__(api=api)
+        self.BRANCH = themes_branch or get_theme_branch()
+        self.set_instance_vars({"branch": self.BRANCH})
+
+    def upsert_pipeline(self):
+        """Upsert the theme assets pipeline"""
+        template_vars = get_template_vars()
+        pipeline_definition = ThemeAssetsPipelineDefinition(
+            artifacts_bucket=template_vars["artifacts_bucket_name"],
+            preview_bucket=template_vars["preview_bucket_name"],
+            publish_bucket=template_vars["publish_bucket_name"],
+            ocw_hugo_themes_branch=self.BRANCH,
+            instance_vars=self.instance_vars,
+        )
+        self.upsert_config(pipeline_definition.json(), self.PIPELINE_NAME)
+
+
 class SitePipeline(BaseSitePipeline, GeneralPipeline):
     """
     Concourse-CI publishing pipeline, dependent on a Github backend, for individual sites
@@ -546,67 +583,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((noindex))", noindex)
             )
             self.upsert_config(config_str, pipeline_name)
-
-
-class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
-    """
-    Concourse-CI pipeline for publishing theme assets
-    """
-
-    PIPELINE_NAME = BaseThemeAssetsPipeline.PIPELINE_NAME
-    BRANCH = settings.GITHUB_WEBHOOK_BRANCH
-
-    MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
-        "GITHUB_WEBHOOK_BRANCH",
-        "SEARCH_API_URL",
-    ]
-
-    def __init__(
-        self, themes_branch: Optional[str] = None, api: Optional[PipelineApi] = None
-    ):
-        """Initialize the pipeline API instance"""
-        super().__init__(api=api)
-        self.BRANCH = themes_branch or get_theme_branch()
-        self.set_instance_vars({"branch": self.BRANCH})
-
-    def upsert_pipeline(self):
-        """Upsert the theme assets pipeline"""
-        template_vars = get_template_vars()
-        purge_header = (
-            ""
-            if settings.CONCOURSE_HARD_PURGE
-            else "\n          - -H\n          - 'Fastly-Soft-Purge: 1'"
-        )
-        config_str = (
-            self.get_pipeline_definition(
-                "definitions/concourse/theme-assets-pipeline.yml"
-            )
-            .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
-            .replace("((ocw-hugo-themes-branch))", self.BRANCH)
-            .replace("((search-api-url))", settings.SEARCH_API_URL)
-            .replace("((ocw-bucket-draft))", template_vars["preview_bucket_name"] or "")
-            .replace("((ocw-bucket-live))", template_vars["publish_bucket_name"] or "")
-            .replace(
-                "((artifacts-bucket))", template_vars["artifacts_bucket_name"] or ""
-            )
-            .replace("((purge_header))", purge_header)
-            .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
-            .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
-            .replace(
-                "((cli-endpoint-url))",
-                f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
-            )
-            .replace(
-                "((ocw-hugo-themes-sentry-dsn))",
-                settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
-            )
-            .replace(
-                "((ocw-hugo-themes-sentry-env))",
-                settings.ENVIRONMENT or "",
-            )
-            .replace("((atc-search-params))", self.instance_vars)
-        )
-        self.upsert_config(config_str, self.PIPELINE_NAME)
 
 
 class MassBuildSitesPipeline(
