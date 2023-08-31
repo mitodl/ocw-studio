@@ -26,6 +26,7 @@ from content_sync.pipelines.definitions.concourse.mass_build_sites import (
     MassBuildSitesPipelineDefinitionConfig,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
+    FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
     SitePipelineDefinitionConfig,
 )
 from main.utils import get_dict_list_item_by_field
@@ -218,6 +219,13 @@ def test_generate_mass_build_sites_definition(
             )
             is not None
         )
+        if offline:
+            assert (
+                get_dict_list_item_by_field(
+                    items=steps, field="task", value=FILTER_WEBPACK_ARTIFACTS_IDENTIFIER
+                )
+                is not None
+            )
         if batch_number > 1:
             assert (
                 get_dict_list_item_by_field(

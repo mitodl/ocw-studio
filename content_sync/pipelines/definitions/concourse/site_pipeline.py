@@ -362,6 +362,32 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
         self.extend(get_steps)
 
 
+class FilterWebpackArtifactsStep(TaskStep):
+    def __init__(self, cli_endpoint_url: str, web_bucket: str):
+        super().__init__(
+            task=FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
+            timeout="10m",
+            attempts=3,
+            params={},
+            config=TaskConfig(
+                platform="linux",
+                image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
+                inputs=[Input(name=WEBPACK_MANIFEST_S3_IDENTIFIER)],
+                outputs=[Output(name=WEBPACK_ARTIFACTS_IDENTIFIER)],
+                run=Command(
+                    path="sh",
+                    args=[
+                        "-exc",
+                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{cli_endpoint_url} cp s3://{web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",
+                    ],
+                ),
+            ),
+        )
+        if is_dev():
+            self.params["AWS_ACCESS_KEY_ID"] = settings.AWS_ACCESS_KEY_ID
+            self.params["AWS_SECRET_ACCESS_KEY"] = settings.AWS_SECRET_ACCESS_KEY
+
+
 class StaticResourcesTaskStep(TaskStep):
     """
     A TaskStep to fetch the static resources for a site from S3
@@ -530,8 +556,13 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 ]
             )
         )
-        self.append(static_resources_task_step)
-        self.extend([build_online_site_step, upload_online_build_step])
+        self.extend(
+            [
+                static_resources_task_step,
+                build_online_site_step,
+                upload_online_build_step,
+            ]
+        )
         if not is_dev():
             self.append(clear_cdn_cache_online_step)
 
@@ -549,38 +580,6 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         config: SitePipelineDefinitionConfig,
     ):
         static_resources_task_step = StaticResourcesTaskStep(config)
-        filter_webpack_artifacts_step = add_error_handling(
-            step=TaskStep(
-                task=FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
-                timeout="10m",
-                attempts=3,
-                params={},
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                    inputs=[Input(name=WEBPACK_MANIFEST_S3_IDENTIFIER)],
-                    outputs=[Output(name=WEBPACK_ARTIFACTS_IDENTIFIER)],
-                    run=Command(
-                        path="sh",
-                        args=[
-                            "-exc",
-                            f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{config.cli_endpoint_url} cp s3://{config.vars['web_bucket']}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",
-                        ],
-                    ),
-                ),
-            ),
-            step_description=f"{FILTER_WEBPACK_ARTIFACTS_IDENTIFIER} task step",
-            pipeline_name=config.vars["pipeline_name"],
-            short_id=config.vars["short_id"],
-            instance_vars=config.vars["instance_vars"],
-        )
-        if is_dev():
-            filter_webpack_artifacts_step.params[
-                "AWS_ACCESS_KEY_ID"
-            ] = settings.AWS_ACCESS_KEY_ID
-            filter_webpack_artifacts_step.params[
-                "AWS_SECRET_ACCESS_KEY"
-            ] = settings.AWS_SECRET_ACCESS_KEY
         build_offline_site_command = f"""
         cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
         mkdir -p ./content/static_resources
@@ -735,7 +734,6 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         self.extend(
             [
                 static_resources_task_step,
-                filter_webpack_artifacts_step,
                 build_offline_site_step,
                 upload_offline_build_step,
             ]
@@ -863,10 +861,18 @@ class SitePipelineDefinition(Pipeline):
         )
 
     def get_offline_build_job(self, config: SitePipelineDefinitionConfig):
-        steps = SitePipelineBaseTasks(
-            config=config,
-            gated=True,
-            passed_identifier=self._online_site_job_identifier,
+        steps = [
+            FilterWebpackArtifactsStep(
+                cli_endpoint_url=config.cli_endpoint_url,
+                web_bucket=config.vars["web_bucket"],
+            )
+        ]
+        steps.extend(
+            SitePipelineBaseTasks(
+                config=config,
+                gated=True,
+                passed_identifier=self._online_site_job_identifier,
+            )
         )
         steps.extend(SitePipelineOfflineTasks(config=config))
         return Job(

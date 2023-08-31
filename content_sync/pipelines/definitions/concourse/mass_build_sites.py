@@ -17,7 +17,7 @@ from ol_concourse.lib.models.pipeline import (
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.constants import VERSION_DRAFT
+from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER,
@@ -43,12 +43,14 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     SiteContentGitTaskStep,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
+    FilterWebpackArtifactsStep,
     SitePipelineDefinitionConfig,
     SitePipelineOfflineTasks,
     SitePipelineOnlineTasks,
     get_site_pipeline_definition_vars,
 )
 from content_sync.utils import get_template_vars
+from main.utils import is_dev
 from websites.models import WebsiteQuerySet, WebsiteStarter
 
 
@@ -86,6 +88,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         prefix: Optional[str] = None,
         hugo_arg_overrides: Optional[str] = None,
     ):
+        vars = get_template_vars()
         self.sites = sites
         self.version = version
         self.prefix = prefix
@@ -98,6 +101,14 @@ class MassBuildSitesPipelineDefinitionConfig:
         self.offline = offline
         self.hugo_arg_overrides = hugo_arg_overrides
         self.instance_vars = instance_vars
+        self.cli_endpoint_url = (
+            f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
+        )
+        self.web_bucket = (
+            vars["preview_bucket_name"]
+            if version == VERSION_DRAFT
+            else vars["publish_bucket_name"]
+        )
 
 
 class MassBuildSitesPipelineResourceTypes(list[ResourceType]):
@@ -203,6 +214,9 @@ class MassBuildSitesPipelineDefinition(Pipeline):
         resource_types = MassBuildSitesPipelineResourceTypes()
         resources = MassBuildSitesResources(config=config)
         base_tasks = MassBuildSitesPipelineBaseTasks()
+        filter_webpack_artifacts_step = FilterWebpackArtifactsStep(
+            cli_endpoint_url=config.cli_endpoint_url, web_bucket=config.web_bucket
+        )
         jobs = []
         batch_gate_resources = []
         batches = list(
@@ -222,6 +236,8 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                 )
             tasks = []
             tasks.extend(base_tasks)
+            if config.offline:
+                tasks.append(filter_webpack_artifacts_step)
             across_var_values = []
             site_pipeline_definition_vars = get_site_pipeline_definition_vars(namespace)
             for site in batch:
