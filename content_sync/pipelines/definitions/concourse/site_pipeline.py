@@ -858,12 +858,7 @@ class SitePipelineDefinition(Pipeline):
         )
 
     def get_offline_build_job(self, config: SitePipelineDefinitionConfig):
-        steps = [
-            FilterWebpackArtifactsStep(
-                cli_endpoint_url=config.cli_endpoint_url,
-                web_bucket=config.vars["web_bucket"],
-            )
-        ]
+        steps = []
         steps.extend(
             SitePipelineBaseTasks(
                 config=config,
@@ -871,6 +866,10 @@ class SitePipelineDefinition(Pipeline):
                 passed_identifier=self._online_site_job_identifier,
             )
         )
+        steps.append(FilterWebpackArtifactsStep(
+            cli_endpoint_url=config.cli_endpoint_url,
+            web_bucket=config.vars["web_bucket"],
+        ))
         steps.extend(SitePipelineOfflineTasks(config=config))
         return Job(
             name=self._offline_site_job_identifier,
