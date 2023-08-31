@@ -1010,6 +1010,17 @@ OCW_STUDIO_SITE_CONFIG_FILE = get_string(
     description="Standard file name for site config files",
     required=False,
 )
+OCW_MASS_BUILD_BATCH_SIZE = get_int(
+    name="OCW_MASS_BUILD_BATCH_SIZE",
+    default=20,
+    description="The amount of site builds per job to put in MassBuildSitesPipelineDefinition",
+    required=False,
+)
+OCW_MASS_BUILD_MAX_IN_FLIGHT = get_int(
+    name="OCW_MASS_BUILD_MAX_IN_FLIGHT",
+    default=10,
+    description="The amount of sites to build simultaneously in each job created by MassBuildSitesPipelineDefinition",
+)
 
 ROOT_WEBSITE_NAME = get_string(
     name="ROOT_WEBSITE_NAME",

@@ -313,6 +313,14 @@
       "description": "The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
       "required": false
     },
+    "OCW_MASS_BUILD_BATCH_SIZE": {
+      "description": "The amount of site builds per job to put in MassBuildSitesPipelineDefinition",
+      "required": false
+    },
+    "OCW_MASS_BUILD_MAX_IN_FLIGHT": {
+      "description": "The amount of sites to build simultaneously in each job created by MassBuildSitesPipelineDefinition",
+      "required": false
+    },
     "OCW_NEXT_SEARCH_WEBHOOK_KEY": {
       "description": "Open discussions webhook key",
       "required": false

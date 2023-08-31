@@ -65,6 +65,10 @@ def validate_slug(value):
         )
 
 
+class WebsiteQuerySet(TimestampedModelQuerySet):
+    """Queryset for Website"""
+
+
 class Website(TimestampedModel):
     """Class for a generic website"""
 
@@ -471,6 +475,15 @@ class WebsiteStarter(TimestampedModel):
         Website.objects.filter(starter=self).update(
             has_unpublished_live=True,
             has_unpublished_draft=True,
+        )
+
+    @property
+    def ocw_hugo_projects_url(self):
+        """Get the ocw-hugo-projects URL"""
+        starter_path_url = urlparse(self.path)
+        return urljoin(
+            f"{starter_path_url.scheme}://{starter_path_url.netloc}",
+            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",
         )
 
     @staticmethod

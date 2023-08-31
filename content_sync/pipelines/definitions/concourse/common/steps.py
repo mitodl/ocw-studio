@@ -2,12 +2,15 @@ import json
 from urllib.parse import urljoin
 
 from django.conf import settings
+from ol_concourse.lib.constants import REGISTRY_IMAGE
 from ol_concourse.lib.models.pipeline import (
+    AnonymousResource,
     Command,
     DoStep,
-    GetStep,
     Identifier,
+    Output,
     PutStep,
+    RegistryImage,
     StepModifierMixin,
     TaskConfig,
     TaskStep,
@@ -17,6 +20,7 @@ from ol_concourse.lib.models.pipeline import (
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
+    SITE_CONTENT_GIT_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
@@ -58,7 +62,6 @@ def add_error_handling(
     concourse_url = urljoin(concourse_base_url, concourse_path)
     step.on_failure = ErrorHandlingStep(
         pipeline_name=pipeline_name,
-        short_id=short_id,
         status="failed",
         failure_description="Failed",
         step_description=step_description,
@@ -66,7 +69,6 @@ def add_error_handling(
     )
     step.on_error = ErrorHandlingStep(
         pipeline_name=pipeline_name,
-        short_id=short_id,
         status="errored",
         failure_description="Concourse system error",
         step_description=step_description,
@@ -74,7 +76,6 @@ def add_error_handling(
     )
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
-        short_id=short_id,
         status="aborted",
         failure_description="Aborted",
         step_description=step_description,
@@ -91,7 +92,6 @@ class ErrorHandlingStep(TryStep):
     def __init__(
         self,
         pipeline_name: str,
-        short_id: str,
         status: str,
         failure_description: str,
         step_description: str,
@@ -104,7 +104,6 @@ class ErrorHandlingStep(TryStep):
                     do=[
                         OcwStudioWebhookStep(
                             pipeline_name=pipeline_name,
-                            short_id=short_id,
                             status=status,
                         ),
                         SlackAlertStep(
@@ -115,75 +114,6 @@ class ErrorHandlingStep(TryStep):
                 )
             ),
             **kwargs,
-        )
-
-
-class GetStepWithErrorHandling(GetStep):
-    """
-    Extends GetStep and adds error handling
-    """
-
-    def __init__(
-        self,
-        step_description: str,
-        pipeline_name: str,
-        short_id: str,
-        instance_vars: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        add_error_handling(
-            self,
-            step_description=step_description,
-            pipeline_name=pipeline_name,
-            short_id=short_id,
-            instance_vars=instance_vars,
-        )
-
-
-class PutStepWithErrorHandling(PutStep):
-    """
-    Extends PutStep and adds error handling
-    """
-
-    def __init__(
-        self,
-        step_description: str,
-        pipeline_name: str,
-        short_id: str,
-        instance_vars: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        add_error_handling(
-            self,
-            step_description=step_description,
-            pipeline_name=pipeline_name,
-            short_id=short_id,
-            instance_vars=instance_vars,
-        )
-
-
-class TaskStepWithErrorHandling(TaskStep):
-    """
-    Extends TaskStep and adds error handling
-    """
-
-    def __init__(
-        self,
-        step_description: str,
-        pipeline_name: str,
-        short_id: str,
-        instance_vars: str,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        add_error_handling(
-            self,
-            step_description=step_description,
-            pipeline_name=pipeline_name,
-            short_id=short_id,
-            instance_vars=instance_vars,
         )
 
 
@@ -211,7 +141,7 @@ class SlackAlertStep(TryStep):
         )
 
 
-class ClearCdnCacheStep(TaskStepWithErrorHandling):
+class ClearCdnCacheStep(TaskStep):
     """
     A TaskStep using the curlimages/curl Docker image that sends an
     API request to Fastly to clear the cache for a given URL
@@ -220,12 +150,9 @@ class ClearCdnCacheStep(TaskStepWithErrorHandling):
         name(str): The name to use as the Identifier for the task argument
         fastly_var(str): The name of the var to pull Fastly properties from
         site_name(str): The site to purge from the cache
-        short_id(str): The short id of the site to be purged
     """
 
-    def __init__(
-        self, name: Identifier, fastly_var: str, site_name: str, short_id: str, **kwargs
-    ):
+    def __init__(self, name: Identifier, fastly_var: str, site_name: str, **kwargs):
         curl_args = [
             "-f",
             "-X",
@@ -240,7 +167,6 @@ class ClearCdnCacheStep(TaskStepWithErrorHandling):
         )
         super().__init__(
             task=name,
-            short_id=short_id,
             timeout="5m",
             attempts=3,
             config=TaskConfig(
@@ -258,14 +184,13 @@ class OcwStudioWebhookStep(TryStep):
 
     Args:
         pipeline_name(str): The name of the pipeline to set the status on
-        short_id(str): The short_id of the site the status is in reference to
         status: (str): The status to set on the pipeline (failed, errored, succeeded)
     """
 
-    def __init__(self, pipeline_name: str, short_id: str, status: str, **kwargs):
+    def __init__(self, pipeline_name: str, status: str, **kwargs):
         super().__init__(
             try_=PutStep(
-                put=f"{OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER}-{short_id}",
+                put=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
                 timeout="1m",
                 attempts=3,
                 params={
@@ -302,4 +227,51 @@ class OpenDiscussionsWebhookStep(TryStep):
                 },
             ),
             **kwargs,
+        )
+
+
+class SiteContentGitTaskStep(TaskStep):
+    """
+    A TaskStep for fetching the site content git repository
+
+    Args:
+        branch(str): The branch of the site content repository to fetch
+        short_id(str): The short_id property of the Website
+    """
+
+    def __init__(self, branch: str, short_id: str, **kwargs):
+        if settings.CONCOURSE_IS_PRIVATE_REPO:
+            uri = (
+                f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{short_id}.git"
+            )
+            command = f"""
+            $CURDIR=$(pwd)
+            echo ((git-private-key)) > $CURDIR/git.key
+            sed -i -E "s/(-----BEGIN[^-]+-----)(.+)(-----END[^-]+-----)/-----BEGINSSHKEY-----\2\-----ENDSSHKEY-----/" git.key
+            sed -i -E "s/\s/\n/g" git.key
+            sed -i -E "s/SSHKEY/ OPENSSH PRIVATE KEY/g" git.key
+            chmod 400 $CURDIR/git.key
+            GITKEYSSH="-i $CURDIR/git.key"
+            git clone -b {branch} {uri} ./{SITE_CONTENT_GIT_IDENTIFIER}
+            """
+        else:
+            uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{short_id}.git"
+            command = f"git clone -b {branch} {uri} ./{SITE_CONTENT_GIT_IDENTIFIER}"
+        super().__init__(
+            task=SITE_CONTENT_GIT_IDENTIFIER,
+            timeout="40m",
+            attempts=3,
+            params={},
+            config=TaskConfig(
+                platform="linux",
+                image_resource=AnonymousResource(
+                    type=REGISTRY_IMAGE,
+                    source=RegistryImage(repository="alpine/git", tag="latest"),
+                ),
+                outputs=[Output(name=SITE_CONTENT_GIT_IDENTIFIER)],
+                run=Command(
+                    path="sh",
+                    args=["-exc", command],
+                ),
+            ),
         )

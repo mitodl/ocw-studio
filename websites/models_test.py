@@ -318,3 +318,13 @@ def test_get_url_path(ocw_site, url_path, with_prefix, published):
     assert ocw_site.get_url_path(with_prefix=with_prefix) == (
         f"{config.root_url_path}/{site_path}" if with_prefix else site_path
     )
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["https://github.com/org/repo/starter1", "https://github.com/org/repo/starter2"],
+)
+def test_ocw_hugo_projects_url(path):
+    """the ocw_hugo_projects_url property should return the proper git repo URL"""
+    starter = WebsiteStarterFactory(path=path)
+    assert starter.ocw_hugo_projects_url == "https://github.com/org/repo.git"
