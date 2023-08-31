@@ -19,8 +19,6 @@ from ol_concourse.lib.models.pipeline import (
     TaskConfig,
     TaskStep,
     TryStep,
-    Vars,
-    VarSource,
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
 
@@ -60,7 +58,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
 )
 from content_sync.utils import get_hugo_arg_string
 from main.constants import PRODUCTION_NAMES
-from main.utils import get_dict_list_item_by_field, is_dev
+from main.utils import is_dev
 from websites.models import Website
 
 
