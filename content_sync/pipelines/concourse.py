@@ -482,6 +482,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 ocw_studio_url=branch_vars["ocw_studio_url"],
                 ocw_hugo_themes_branch=ocw_hugo_themes_branch,
                 ocw_hugo_projects_branch=ocw_hugo_projects_branch,
+                hugo_override_args=self.HUGO_ARGS,
             )
             self.upsert_config(
                 SitePipelineDefinition(config=pipeline_config).json(), pipeline_name
