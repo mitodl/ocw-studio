@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.101.0
+---------------
+
+- overhaul mass build pipeline (#1923)
+- use new theme assets pipeline definition (#1929)
+- separate concourse web and worker into two containers (#1925)
+
 Version 0.100.0 (Released August 23, 2023)
 ---------------
 
