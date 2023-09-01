@@ -7,7 +7,12 @@ import pytest
 from django.core.exceptions import ImproperlyConfigured
 from requests import HTTPError
 
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import (
+    TARGET_OFFLINE,
+    TARGET_ONLINE,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+)
 from content_sync.pipelines.base import (
     BaseMassBuildSitesPipeline,
     BaseUnpublishedSiteRemovalPipeline,
@@ -19,7 +24,11 @@ from content_sync.pipelines.concourse import (
     ThemeAssetsPipeline,
     UnpublishedSiteRemovalPipeline,
 )
-from content_sync.utils import get_common_pipeline_vars, get_theme_branch
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+    OCW_HUGO_THEMES_GIT_IDENTIFIER,
+)
+from content_sync.utils import get_hugo_arg_string, get_common_pipeline_vars, get_theme_branch
 from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
@@ -106,7 +115,11 @@ def pipeline_settings(settings, request):  # noqa: PT004
     settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME = "draft_offline_bucket_test"
     settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME = "live_offline_bucket_test"
     settings.GITHUB_WEBHOOK_BRANCH = "main"
+    settings.GIT_BRANCH_PREVIEW = "preview"
+    settings.GIT_BRANCH_RELEASE = "release"
     settings.ROOT_WEBSITE_NAME = "ocw-www-course"
+    settings.OCW_HUGO_THEMES_BRANCH = "main"
+    settings.OCW_HUGO_PROJECTS_BRANCH = "main"
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
     settings.OCW_STUDIO_LIVE_URL = "https://live.ocw.mit.edu"
     settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
@@ -329,79 +342,126 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
     )
     if version == VERSION_DRAFT:
         _, kwargs = mock_put_headers.call_args_list[0]
-        bucket = expected_template_vars["preview_bucket_name"]
-        offline_bucket = expected_template_vars["offline_preview_bucket_name"]
-        api_url = settings.OCW_STUDIO_DRAFT_URL
+        expected_site_content_branch = settings.GIT_BRANCH_PREVIEW
+        expected_web_bucket = expected_template_vars["preview_bucket_name"]
+        expected_offline_bucket = expected_template_vars["offline_preview_bucket_name"]
+        expected_resource_base_url = expected_template_vars["resource_base_url_draft"]
+        expected_ocw_studio_url = settings.OCW_STUDIO_DRAFT_URL
+        expected_static_api_url = (
+            settings.STATIC_API_BASE_URL or settings.OCW_STUDIO_DRAFT_URL
+            if is_dev()
+            else settings.OCW_STUDIO_DRAFT_URL
+        )
     else:
         _, kwargs = mock_put_headers.call_args_list[1]
-        bucket = expected_template_vars["publish_bucket_name"]
-        offline_bucket = expected_template_vars["offline_publish_bucket_name"]
-        api_url = settings.OCW_STUDIO_LIVE_URL
+        expected_site_content_branch = settings.GIT_BRANCH_RELEASE
+        expected_web_bucket = expected_template_vars["publish_bucket_name"]
+        expected_offline_bucket = expected_template_vars["offline_publish_bucket_name"]
+        expected_resource_base_url = expected_template_vars["resource_base_url_live"]
+        expected_ocw_studio_url = settings.OCW_STUDIO_LIVE_URL
+        expected_static_api_url = (
+            settings.STATIC_API_BASE_URL or settings.OCW_STUDIO_LIVE_URL
+            if is_dev()
+            else settings.OCW_STUDIO_LIVE_URL
+        )
+
+    expected_is_root_website = 1 if home_page else 0
+    expected_base_url = "" if home_page else website.get_url_path()
+    expected_static_resources_subdirectory = (
+        f"/{website.get_url_path()}/" if home_page else "/"
+    )
+    expected_delete_flag = "" if home_page else " --delete"
+    if (
+        expected_site_content_branch == settings.GIT_BRANCH_PREVIEW
+        or settings.ENV_NAME not in PRODUCTION_NAMES
+    ):
+        expected_noindex = "true"
+    else:
+        expected_noindex = "false"
+    expected_instance_vars = f'?vars={quote(json.dumps({"site": website.name}))}'
+    starter_slug = starter.slug
+    base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
+    base_online_args = base_hugo_args.copy()
+    base_online_args.update(
+        {
+            "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config.yaml",
+            "--baseURL": f"/{expected_base_url}",
+            "--destination": "output-online",
+        }
+    )
+    base_offline_args = base_hugo_args.copy()
+    base_offline_args.update(
+        {
+            "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config-offline.yaml",
+            "--baseURL": "/",
+            "--destination": "output-offline",
+        }
+    )
+    expected_hugo_args_online = get_hugo_arg_string(
+        TARGET_ONLINE,
+        version,
+        base_online_args,
+        "",
+    )
+    expected_hugo_args_offline = get_hugo_arg_string(
+        TARGET_OFFLINE,
+        version,
+        base_offline_args,
+        "",
+    )
 
     config_str = json.dumps(kwargs)
 
-    if (
-        settings.GIT_BRANCH_PREVIEW in config_str
-        or settings.ENV_NAME not in PRODUCTION_NAMES
-    ):
-        expected_noindex = '\\"NOINDEX\\": true'
-    else:
-        expected_noindex = '\\"NOINDEX\\": false'
-
-    assert expected_noindex in config_str
     assert f"{hugo_projects_path}.git" in config_str
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
     assert settings.OCW_COURSE_STARTER_SLUG in config_str
-    assert api_url in config_str
-
-    # Check various s3 syncs
-    storage_bucket_name = expected_template_vars["storage_bucket_name"]
+    assert expected_ocw_studio_url in config_str
+    assert f"aws s3 {expected_endpoint_prefix}sync" in config_str
+    assert f'\\"is_root_website\\": {expected_is_root_website}' in config_str
+    assert f'\\"short_id\\": \\"{website.short_id}\\"' in config_str
+    assert f'\\"site_name\\": \\"{website.name}\\"' in config_str
+    assert f'\\"s3_path\\": \\"{website.s3_path}\\"' in config_str
+    assert f'\\"url_path\\": \\"{website.get_url_path()}\\"' in config_str
+    assert f'\\"base_url\\": \\"{expected_base_url}\\"' in config_str
     assert (
-        f"aws s3 {expected_endpoint_prefix}sync s3://{storage_bucket_name}/{website.s3_path} ./static-resources"
+        f'\\"static_resources_subdirectory\\": \\"{expected_static_resources_subdirectory}\\"'
         in config_str
     )
-    if home_page:
-        assert (
-            f"cp -r -n ../static-resources/. ./output-online/{website.name}"
-            in config_str
-        )
-        assert f"rm -rf ./output-online/{website.name}/*.mp4" in config_str
-        assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/ --exclude='{website.short_id}.zip' --exclude='{website.short_id}-video.zip' --metadata site-id={website.name}"
-            in config_str
-        )
-    else:
-        assert "cp -r -n ../static-resources/. ./output-online/" in config_str
-        assert (
-            "cp -r ../build-artifacts/static_shared/. ./static/static_shared/"
-            in config_str
-        )
-        assert "rm -rf ./output-online/*.mp4" in config_str
-        assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-online s3://{bucket}/{website.url_path} --exclude='{website.short_id}.zip' --exclude='{website.short_id}-video.zip' --metadata site-id={website.name} --delete"
-            in config_str
-        )
-
-        assert (
-            f"aws s3 {expected_endpoint_prefix}sync build-course-offline/ s3://{bucket}/{website.url_path} --exclude='*' --include='{website.short_id}.zip' --metadata site-id={website.name}"
-            in config_str
-        )
-        assert (
-            f"aws s3 {expected_endpoint_prefix}sync build-course-offline/ s3://{bucket}/{website.url_path} --exclude='*' --include='{website.short_id}-video.zip' --metadata site-id={website.name}"
-            in config_str
-        )
-        assert (
-            f"aws s3 {expected_endpoint_prefix}sync course-markdown/output-offline/ s3://{offline_bucket}/{website.url_path} --metadata site-id={website.name} --delete"
-            in config_str
-        )
-
-    # The dev pipelines don't hit Fastly
-    if env != "dev":
-        assert f"purge/{website.name}" in config_str
-        assert f" --metadata site-id={website.name}" in config_str
-        has_soft_purge_header = "Fastly-Soft-Purge" in config_str
-        assert has_soft_purge_header is not hard_purge
+    assert f'\\"delete_flag\\": \\"{expected_delete_flag}\\"' in config_str
+    assert f'\\"noindex\\": \\"{expected_noindex}\\"' in config_str
+    assert f'\\"pipeline_name\\": \\"{version}\\"' in config_str
+    assert f'\\"instance_vars\\": \\"{expected_instance_vars}\\"' in config_str
+    assert f'\\"static_api_url\\": \\"{expected_static_api_url}\\"' in config_str
+    assert (
+        f'\\"storage_bucket\\": \\"{expected_template_vars["storage_bucket_name"]}\\"'
+        in config_str
+    )
+    assert (
+        f'\\"artifacts_bucket\\": \\"{expected_template_vars["artifacts_bucket_name"]}\\"'
+        in config_str
+    )
+    assert f'\\"web_bucket\\": \\"{expected_web_bucket}\\"' in config_str
+    assert f'\\"offline_bucket\\": \\"{expected_offline_bucket}\\"' in config_str
+    assert f'\\"resource_base_url\\": \\"{expected_resource_base_url}\\"' in config_str
+    assert f'\\"ocw_studio_url\\": \\"{expected_ocw_studio_url}\\"' in config_str
+    assert (
+        f'\\"site_content_branch\\": \\"{expected_site_content_branch}\\"' in config_str
+    )
+    assert (
+        f'\\"ocw_hugo_themes_branch\\": \\"{settings.OCW_HUGO_THEMES_BRANCH}\\"'
+        in config_str
+    )
+    assert (
+        f'\\"ocw_hugo_projects_url\\": \\"{starter.ocw_hugo_projects_url}\\"'
+        in config_str
+    )
+    assert (
+        f'\\"ocw_hugo_projects_branch\\": \\"{settings.OCW_HUGO_PROJECTS_BRANCH}\\"'
+        in config_str
+    )
+    assert f'\\"hugo_args_online\\": \\"{expected_hugo_args_online}\\"' in config_str
+    assert f'\\"hugo_args_offline\\": \\"{expected_hugo_args_offline}\\"' in config_str
 
 
 @pytest.mark.parametrize("is_private_repo", [True, False])

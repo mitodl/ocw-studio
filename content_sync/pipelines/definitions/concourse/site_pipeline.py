@@ -157,7 +157,7 @@ class SitePipelineDefinitionConfig:
         self.offline_bucket = offline_bucket
         self.resource_base_url = resource_base_url
         if (
-            self.site_content_branch == "preview"
+            self.site_content_branch == settings.GIT_BRANCH_PREVIEW
             or settings.ENV_NAME not in PRODUCTION_NAMES
         ):
             self.noindex = "true"
