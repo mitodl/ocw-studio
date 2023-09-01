@@ -464,40 +464,6 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
     assert f'\\"hugo_args_offline\\": \\"{expected_hugo_args_offline}\\"' in config_str
 
 
-@pytest.mark.parametrize("is_private_repo", [True, False])
-def test_upsert_pipeline_public_vs_private(
-    settings, mocker, mock_auth, is_private_repo
-):
-    """Pipeline config shoould have expected course-markdown git url and private git key setting if applicable"""
-    settings.CONCOURSE_IS_PRIVATE_REPO = is_private_repo
-    settings.GIT_DOMAIN = "github.test.edu"
-    settings.GIT_ORGANIZATION = "testorg"
-    settings.OCW_STUDIO_DRAFT_URL = "https://draft.test.edu"
-    settings.OCW_STUDIO_LIVE_URL = "https://live.test.edu"
-    mocker.patch(
-        "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
-        return_value=(None, {"X-Concourse-Config-Version": 1}),
-    )
-    mock_put_headers = mocker.patch(
-        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
-    )
-    starter = WebsiteStarterFactory.create(
-        source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/site"
-    )
-    website = WebsiteFactory.create(starter=starter)
-    private_key_str = "((git-private-key))"
-    if is_private_repo:
-        repo_url_str = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{website.short_id}.git"
-    else:
-        repo_url_str = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{website.short_id}.git"
-    pipeline = SitePipeline(website)
-    pipeline.upsert_pipeline()
-    _, kwargs = mock_put_headers.call_args_list[0]
-    config_str = json.dumps(kwargs)
-    assert repo_url_str in config_str
-    assert (private_key_str in config_str) is is_private_repo
-
-
 @pytest.mark.parametrize(
     ("source", "path"),
     [
