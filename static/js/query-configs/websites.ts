@@ -38,7 +38,6 @@ import {
   Website,
   WebsiteCollaborator,
   WebsiteCollaboratorFormData,
-  WebsiteCollaboratorListItem,
   WebsiteContent,
   WebsiteContentListItem,
   WebsiteStarter,
@@ -474,12 +473,19 @@ export const websiteCollaboratorListingRequest = (
       for (const item of body.results) {
         console.log("item is", item)
         details[collaboratorDetailKey({ name })] = item
+        console.log(details[collaboratorDetailKey({ name })])
       }
+      console.log({
+        [collaboratorListingKey(listingParams)]: {
+          ...body,
+          results: body.results || []
+        }
+      })
       return {
         websiteCollaboratorListing: {
           [collaboratorListingKey(listingParams)]: {
             ...body,
-            results: body.results.map(item => item.name)
+            results: body.results || []
           }
         },
         websiteCollaboratorDetails: details

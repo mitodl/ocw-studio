@@ -95,13 +95,12 @@ export const getWebsiteCollaboratorListingCursor = createSelector(
       ): WebsiteCollaboratorListSelection => {
         const response = listing[collaboratorListingKey(listingParams)] ?? {}
         const uuids: string[] = response?.results ?? []
-        const items = uuids.map(() =>
-          websiteCollaboratorDetailCursor({ name: listingParams.name})
-        )
-
+        // const items = uuids.map(() =>
+        //   websiteCollaboratorDetailCursor({ name: listingParams.name})
+        // )
         return {
           ...response,
-          results: items
+          results: uuids
         }
       },
       (listingParams: CollaboratorListingParams): string =>
