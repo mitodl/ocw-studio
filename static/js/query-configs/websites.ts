@@ -30,12 +30,15 @@ import {
 } from "../lib/urls"
 
 import {
+  CollaboratorDetailParams,
+  CollaboratorListingParams,
   ContentDetailParams,
   ContentListingParams,
   NewWebsitePayload,
   Website,
   WebsiteCollaborator,
   WebsiteCollaboratorFormData,
+  WebsiteCollaboratorListItem,
   WebsiteContent,
   WebsiteContentListItem,
   WebsiteStarter,
@@ -308,6 +311,13 @@ export const createWebsiteCollaboratorMutation = (
 export type WebsiteContentListingResponse = PaginatedResponse<
   WebsiteContentListItem | WebsiteContent
 >
+
+export type WebsiteCollaboratorListingResponse = PaginatedResponse<
+WebsiteCollaboratorListItem>
+
+export const collaboratorDetailKey = (params: CollaboratorDetailParams): string =>
+  JSON.stringify([params.name])
+  
 export type WebsiteContentListing = Record<
   string,
   {
@@ -317,7 +327,15 @@ export type WebsiteContentListing = Record<
     previous: string | null
   }
 >
-
+export type WebsiteCollaboratorListing = Record<
+  string,
+  {
+    results: string[]
+    count: number | null
+    next: string | null
+    previous: string | null
+  }
+>
 export const contentListingKey = (
   listingParams: ContentListingParams,
 ): string =>
@@ -331,6 +349,14 @@ export const contentListingKey = (
     listingParams.published,
   ])
 
+  export const collaboratorListingKey = (
+    listingParams: CollaboratorListingParams
+  ): string =>
+    JSON.stringify([
+      listingParams.name,
+      listingParams.pageContent,
+      listingParams.offset
+    ])
 export const contentDetailKey = (params: ContentDetailParams): string =>
   JSON.stringify([params.name, params.textId])
 
@@ -393,6 +419,83 @@ export const websiteContentListingRequest = (
       websiteContentDetails: mergeDeepRight,
     },
     force: true, // try to prevent stale information
+  }
+}
+
+// export const websiteCollaboratorListingRequest = (name: string): QueryConfig => ({
+//   url:       siteApiCollaboratorsUrl.param({ name }).toString(),
+//   transform: (body: { results: WebsiteCollaborator[] }) => ({
+//     collaborators: {
+//       [name]: body.results || []
+//     }
+//   }),
+//   update: {
+//     collaborators: merge
+//   }
+// })
+// export const websiteCollaboratorListingRequest = (name: string): QueryConfig => ({
+//   url: siteApiCollaboratorsUrl.param({ name }).toString(),
+//   transform: (body: { results: WebsiteCollaborator[] }) => {
+//     console.log('Contents of body.results:', body.results); // Add this line for logging
+//     return {
+//       collaborators: {
+//         [name]: body.results || []
+//       }
+//     }
+//   },
+//   update: {
+//     collaborators: merge
+//   }
+// })
+
+
+export const websiteCollaboratorListingRequest = (
+  listingParams: CollaboratorListingParams,
+  requestDetailedList: boolean,
+  requestContentContext: boolean
+): QueryConfig => {
+  const { name, pageContent, offset } =
+    listingParams
+    const url = siteApiCollaboratorsUrl
+    .param({ name })
+    .query(
+      Object.assign(
+        { offset },
+        pageContent && { page_content: pageContent },
+        requestDetailedList && { detailed_list: true },
+        requestContentContext && { content_context: true },
+      )
+    )
+    .toString()
+  return {
+    url,
+    transform: (body: WebsiteCollaboratorListingResponse) => {
+      const details = {}
+      for (const item of body.results) {
+        console.log("item is", item)
+        details[collaboratorDetailKey({ name })] = item
+      }
+      return {
+        websiteCollaboratorListing: {
+          [collaboratorListingKey(listingParams)]: {
+            ...body,
+            results: body.results.map(item => item.name)
+          }
+        },
+        websiteCollaboratorDetails: details
+      }
+    },
+    update: {
+      websiteCollaboratorListing: (
+        prev: WebsiteCollaboratorListing,
+        next: WebsiteCollaboratorListing
+      ) => ({
+        ...prev,
+        ...next
+      }),
+      websiteCollaboratorDetails: mergeDeepRight
+    },
+    force: true // try to prevent stale information
   }
 }
 

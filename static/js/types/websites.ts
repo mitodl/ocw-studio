@@ -291,6 +291,13 @@ export interface WebsiteContent extends WebsiteContentListItem {
   url_path?: string
 }
 
+export interface WebsiteCollaboratorListItem {
+  user_id: number
+  role: string
+  email?: string
+  name: string
+}
+
 export interface ContentListingParams {
   name: string
   type?: string | string[]
@@ -301,9 +308,19 @@ export interface ContentListingParams {
   published?: boolean
 }
 
+export interface CollaboratorListingParams {
+  name: string
+  pageContent?: boolean
+  offset: number
+}
+
 export interface ContentDetailParams {
   name: string
   textId: string
+}
+
+export interface CollaboratorDetailParams {
+  name: string
 }
 
 export enum LinkType {

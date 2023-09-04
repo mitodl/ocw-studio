@@ -3,7 +3,7 @@ import React, {
   useCallback,
   useState,
 } from "react"
-import { useSelector } from "react-redux"
+import { useSelector, useStore } from "react-redux"
 import { QueryConfig } from "redux-query"
 import { useMutation, useRequest } from "redux-query-react"
 
@@ -12,22 +12,63 @@ import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
 
 import { EDITABLE_ROLES, ROLE_LABELS } from "../constants"
 import {
+  WebsiteCollaboratorListingResponse,
   deleteWebsiteCollaboratorMutation,
-  websiteCollaboratorsRequest,
+  websiteCollaboratorListingRequest,
+  websiteCollaboratorsRequest
 } from "../query-configs/websites"
 import { useWebsite } from "../context/Website"
-import { getWebsiteCollaboratorsCursor } from "../selectors/websites"
+import { getWebsiteCollaboratorListingCursor, getWebsiteCollaboratorsCursor, getWebsiteContentListingCursor } from "../selectors/websites"
 
-import { WebsiteCollaborator } from "../types/websites"
+import { CollaboratorListingParams, WebsiteCollaborator, WebsiteCollaboratorListItem } from "../types/websites"
 import DocumentTitle, { formatTitle } from "./DocumentTitle"
 import { StudioList, StudioListItem } from "./StudioList"
+import { usePagination, useURLParamFilter } from "../hooks/search"
+import { formatUpdatedOn } from "../util/websites"
+import PaginationControls from "./PaginationControls"
 
 export default function SiteCollaboratorList(): JSX.Element | null {
-  const { name, title } = useWebsite()
+  const store = useStore()
+  const website = useWebsite()
+  const { name, title } = website
 
-  const [{ isPending }] = useRequest(websiteCollaboratorsRequest(name))
-  const collaborators = useSelector(getWebsiteCollaboratorsCursor)(name)
+  console.log(name, title)
 
+  const getListingParams = useCallback(
+    (search: string): CollaboratorListingParams => {
+      const qsParams = new URLSearchParams(search)
+      const offset = Number(qsParams.get("offset") ?? 0)
+
+      const params: CollaboratorListingParams = {
+        name: website.name,
+        offset
+      }
+      return params
+    },
+    [website]
+  )
+
+  const { listingParams, searchInput, setSearchInput } =
+  useURLParamFilter(getListingParams)
+
+  console.log("listing params",listingParams)
+
+const [, fetchWebsiteCollaboratorListing] = useRequest(
+  websiteCollaboratorListingRequest(listingParams, false, false)
+)
+// console.log("fetch",  websiteCollaboratorListingRequest(listingParams, false, false))
+
+const listing: WebsiteCollaboratorListingResponse = useSelector(
+  getWebsiteCollaboratorListingCursor
+)(listingParams)
+
+console.log("listing", listing, listing.count)
+  // const [{ isPending }] = useRequest(websiteCollaboratorsRequest(name))
+  // const collaborators = useSelector(getWebsiteCollaboratorsCursor)(name)
+  // console.log("collaborators", collaborators)
+
+  // console.log("use request", useRequest(websiteCollaboratorsRequest(name)))
+  // console.log("collaborators", useSelector(getWebsiteCollaboratorsCursor)(name))
   const [deleteModal, setDeleteModal] = useState(false)
   const [editVisibility, setEditVisibility] = useState<boolean>(false)
   const [selectedCollaborator, setSelectedCollaborator] =
@@ -72,13 +113,14 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     }
   }
 
-  if (!collaborators) {
-    return null
-  }
+  const pages = usePagination(listing.count ?? 0)
+  // if (!collaborators) {
+  //   return null
+  // }
 
-  if (isPending) {
-    return <div>Loading...</div>
-  }
+  // if (isPending) {
+  //   return <div>Loading...</div>
+  // }
 
   return (
     <>
@@ -95,8 +137,8 @@ export default function SiteCollaboratorList(): JSX.Element | null {
           Add collaborator
         </button>
       </div>
-      <StudioList>
-        {collaborators.map((collaborator: WebsiteCollaborator, i: number) => (
+      {/* <StudioList>
+        {listing.map((collaborator: WebsiteCollaborator, i: number) => (
           <StudioListItem
             key={i}
             title={collaborator.name || collaborator.email}
@@ -111,7 +153,26 @@ export default function SiteCollaboratorList(): JSX.Element | null {
             }
           />
         ))}
+      </StudioList> */}
+      <StudioList>
+        {listing.results.map((item: WebsiteCollaboratorListItem, i:number) => (
+          <StudioListItem
+            key={i}
+            title={(item.name ?? "") || (item.email ?? "") }
+            subtitle={ROLE_LABELS[item.role]}
+            // menuOptions={
+            //   EDITABLE_ROLES.includes(item.role) ?
+            //     [
+            //       ["Settings", startEdit(item)],
+            //       ["Delete", startDelete(item)]
+            //     ] :
+            //     []
+            // }
+            // subtitle={`Updated now`}
+          />
+        ))}
       </StudioList>
+      <PaginationControls previous={pages.previous} next={pages.next} />
       <Dialog
         open={deleteModal}
         onCancel={closeDeleteModal}

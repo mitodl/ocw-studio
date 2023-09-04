@@ -3,6 +3,8 @@ import { memoize } from "lodash"
 import { find, propEq } from "ramda"
 
 import {
+  collaboratorDetailKey,
+  collaboratorListingKey,
   contentDetailKey,
   contentListingKey,
   WebsiteDetails,
@@ -17,6 +19,9 @@ import {
   Website,
   WebsiteContent,
   ContentDetailParams,
+  WebsiteCollaboratorListItem,
+  CollaboratorDetailParams,
+  CollaboratorListingParams
 } from "../types/websites"
 
 export const getWebsiteDetailCursor = createSelector(
@@ -46,19 +51,63 @@ export const getWebsiteListingCursor = createSelector(
 export const startersSelector = (state: ReduxState): Array<WebsiteStarter> =>
   state.entities?.starters ?? []
 
+export const getWebsiteCollaboratorsCursor2 = createSelector(
+  (state: ReduxState) => state.entities?.collaborators ?? {},
+  collaborators => memoize((name: string) => collaborators[name])
+)
+
 export const getWebsiteCollaboratorsCursor = createSelector(
   (state: ReduxState) => state.entities?.collaborators ?? {},
   (collaborators) => memoize((name: string) => collaborators[name]),
 )
 
+export interface WebsiteCollaboratorListSelection extends WCSelection {
+  results: WebsiteCollaboratorListItem[]
+}
+
+// export const getWebsiteCollaboratorDetailCursor = createSelector(
+//   (state: ReduxState) => state.entities?.collaborators ?? {},
+//   collaborators =>
+//     memoize((name: string, username: string) =>
+//       find(propEq("username", username), collaborators[name])
+//     )
+// )
+
+
+
+
 export const getWebsiteCollaboratorDetailCursor = createSelector(
-  (state: ReduxState) => state.entities?.collaborators ?? {},
-  (collaborators) =>
-    memoize((name: string, username: string) =>
-      find(propEq("username", username), collaborators[name]),
-    ),
+  (state: ReduxState) => state.entities?.websiteCollaboratorDetails ?? {},
+  (content: Record<string, WebsiteCollaboratorListItem>) =>
+    memoize(
+      (params: CollaboratorDetailParams): WebsiteCollaboratorListItem | null =>
+        content[collaboratorDetailKey(params)] ?? null
+    )
 )
 
+export const getWebsiteCollaboratorListingCursor = createSelector(
+  (state: ReduxState) => state.entities?.websiteCollaboratorListing ?? {},
+  getWebsiteCollaboratorDetailCursor,
+  (listing, websiteCollaboratorDetailCursor) =>
+    memoize(
+      (
+        listingParams: CollaboratorListingParams
+      ): WebsiteCollaboratorListSelection => {
+        const response = listing[collaboratorListingKey(listingParams)] ?? {}
+        const uuids: string[] = response?.results ?? []
+        const items = uuids.map(() =>
+          websiteCollaboratorDetailCursor({ name: listingParams.name})
+        )
+
+        return {
+          ...response,
+          results: items
+        }
+      },
+      (listingParams: CollaboratorListingParams): string =>
+        collaboratorListingKey(listingParams)
+    )
+)
 export const getWebsiteContentDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteContentDetails ?? {},
   (content: Record<string, WebsiteContent>) =>
