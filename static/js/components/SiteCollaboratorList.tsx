@@ -20,7 +20,7 @@ import {
 import { useWebsite } from "../context/Website"
 import { getWebsiteCollaboratorListingCursor, getWebsiteCollaboratorsCursor, getWebsiteContentListingCursor } from "../selectors/websites"
 
-import { CollaboratorListingParams, WebsiteCollaborator, WebsiteCollaboratorListItem } from "../types/websites"
+import { CollaboratorListingParams, WebsiteCollaborator } from "../types/websites"
 import DocumentTitle, { formatTitle } from "./DocumentTitle"
 import { StudioList, StudioListItem } from "./StudioList"
 import { usePagination, useURLParamFilter } from "../hooks/search"
@@ -155,20 +155,19 @@ console.log("listing", listing, listing.count)
         ))}
       </StudioList> */}
       <StudioList>
-        {listing.results.map((item: WebsiteCollaboratorListItem, i:number) => (
+        {listing.results.map((item: WebsiteCollaborator, i:number) => (
           <StudioListItem
             key={i}
             title={(item.name ?? "") || (item.email ?? "") }
             subtitle={ROLE_LABELS[item.role]}
-            // menuOptions={
-            //   EDITABLE_ROLES.includes(item.role) ?
-            //     [
-            //       ["Settings", startEdit(item)],
-            //       ["Delete", startDelete(item)]
-            //     ] :
-            //     []
-            // }
-            // subtitle={`Updated now`}
+            menuOptions={
+              EDITABLE_ROLES.includes(item.role) ?
+                [
+                  ["Settings", startEdit(item)],
+                  ["Delete", startDelete(item)]
+                ] :
+                []
+            }
           />
         ))}
       </StudioList>

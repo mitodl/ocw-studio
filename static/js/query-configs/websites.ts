@@ -313,7 +313,7 @@ export type WebsiteContentListingResponse = PaginatedResponse<
 >
 
 export type WebsiteCollaboratorListingResponse = PaginatedResponse<
-WebsiteCollaboratorListItem>
+WebsiteCollaborator>
 
 export const collaboratorDetailKey = (params: CollaboratorDetailParams): string =>
   JSON.stringify([params.name])

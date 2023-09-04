@@ -19,9 +19,9 @@ import {
   Website,
   WebsiteContent,
   ContentDetailParams,
-  WebsiteCollaboratorListItem,
   CollaboratorDetailParams,
-  CollaboratorListingParams
+  CollaboratorListingParams,
+  WebsiteCollaborator
 } from "../types/websites"
 
 export const getWebsiteDetailCursor = createSelector(
@@ -62,7 +62,7 @@ export const getWebsiteCollaboratorsCursor = createSelector(
 )
 
 export interface WebsiteCollaboratorListSelection extends WCSelection {
-  results: WebsiteCollaboratorListItem[]
+  results: WebsiteCollaborator[]
 }
 
 // export const getWebsiteCollaboratorDetailCursor = createSelector(
@@ -78,9 +78,9 @@ export interface WebsiteCollaboratorListSelection extends WCSelection {
 
 export const getWebsiteCollaboratorDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteCollaboratorDetails ?? {},
-  (content: Record<string, WebsiteCollaboratorListItem>) =>
+  (content: Record<string, WebsiteCollaborator>) =>
     memoize(
-      (params: CollaboratorDetailParams): WebsiteCollaboratorListItem | null =>
+      (params: CollaboratorDetailParams): WebsiteCollaborator | null =>
         content[collaboratorDetailKey(params)] ?? null
     )
 )
