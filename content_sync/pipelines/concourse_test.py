@@ -19,7 +19,7 @@ from content_sync.pipelines.concourse import (
     ThemeAssetsPipeline,
     UnpublishedSiteRemovalPipeline,
 )
-from content_sync.utils import get_template_vars, get_theme_branch
+from content_sync.utils import get_common_pipeline_vars, get_theme_branch
 from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
@@ -125,7 +125,6 @@ def pipeline_settings(settings, request):
         settings.AWS_ARTIFACTS_BUCKET_NAME = "artifact_buckets_dev"
         settings.OCW_HUGO_THEMES_BRANCH = "themes_dev"
         settings.OCW_HUGO_PROJECTS_BRANCH = "projects_dev"
-        settings.STATIC_API_BASE_URL = "https://ocw.mit.edu"
         settings.RESOURCE_BASE_URL_DRAFT = "https://draft.ocw.mit.edu"
         settings.RESOURCE_BASE_URL_LIVE = "https://live.ocw.mit.edu"
 
@@ -280,7 +279,7 @@ def test_upsert_website_pipelines(
     """The correct concourse API args should be made for a website"""
     # Set AWS expectations based on environment
     env = settings.ENVIRONMENT
-    expected_template_vars = get_template_vars()
+    expected_template_vars = get_common_pipeline_vars()
     expected_endpoint_prefix = (
         "--endpoint-url http://10.1.0.100:9000 " if env == "dev" else ""
     )
@@ -580,7 +579,7 @@ def test_upsert_pipeline(
     )
     _, kwargs = mock_put_headers.call_args_list[0]
     config_str = json.dumps(kwargs)
-    expected_template_vars = get_template_vars()
+    expected_template_vars = get_common_pipeline_vars()
     expected_branch = get_theme_branch()
     preview_bucket_name = expected_template_vars["preview_bucket_name"]
     publish_bucket_name = expected_template_vars["publish_bucket_name"]
@@ -614,7 +613,7 @@ def test_upsert_mass_build_pipeline(
     offline,
 ):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements,too-many-branches
     """The mass build pipeline should have expected configuration"""
-    expected_template_vars = get_template_vars()
+    expected_template_vars = get_common_pipeline_vars()
     hugo_projects_path = "https://github.com/org/repo"
     WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(
@@ -751,7 +750,7 @@ def test_unpublished_site_removal_pipeline(
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
 ):  # pylint:disable=too-many-locals,too-many-arguments
     """The unpublished sites removal pipeline should have expected configuration"""
-    template_vars = get_template_vars()
+    template_vars = get_common_pipeline_vars()
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME}/config"
 
     if not pipeline_exists:
