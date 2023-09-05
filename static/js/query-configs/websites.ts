@@ -234,35 +234,6 @@ export const deleteWebsiteCollaboratorMutation = (
   }
 }
 
-export const editWebsiteContentMutation = (
-  params: ContentDetailParams,
-  payload: EditWebsiteContentPayload | FormData
-): QueryConfig => ({
-  url: siteApiContentDetailUrl
-    .param({ name: params.name, textId: params.textId })
-    .toString(),
-  options: {
-    method:  "PATCH",
-    headers: {
-      "X-CSRFTOKEN": getCookie("csrftoken") || ""
-    }
-  },
-  body:      payload,
-  transform: (response: WebsiteContent) => ({
-    websiteContentDetails: {
-      [contentDetailKey(params)]: response
-    }
-  }),
-  update: {
-    websiteContentDetails: (
-      prev: WebsiteContentDetails,
-      next: WebsiteContentDetails
-    ) => ({
-      ...prev,
-      ...next
-    })
-  }
-})
 export const editWebsiteCollaboratorMutation = (
   websiteName: string,
   collaborator: WebsiteCollaborator,
@@ -538,6 +509,36 @@ export type EditWebsiteContentPayload = {
   metadata?: any
   file?: File
 }
+
+export const editWebsiteContentMutation = (
+  params: ContentDetailParams,
+  payload: EditWebsiteContentPayload | FormData
+): QueryConfig => ({
+  url: siteApiContentDetailUrl
+    .param({ name: params.name, textId: params.textId })
+    .toString(),
+  options: {
+    method:  "PATCH",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
+  },
+  body:      payload,
+  transform: (response: WebsiteContent) => ({
+    websiteContentDetails: {
+      [contentDetailKey(params)]: response
+    }
+  }),
+  update: {
+    websiteContentDetails: (
+      prev: WebsiteContentDetails,
+      next: WebsiteContentDetails
+    ) => ({
+      ...prev,
+      ...next
+    })
+  }
+})
 
 export type NewWebsiteContentPayload = {
   title: string
