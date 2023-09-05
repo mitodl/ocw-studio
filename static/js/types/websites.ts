@@ -291,13 +291,6 @@ export interface WebsiteContent extends WebsiteContentListItem {
   url_path?: string
 }
 
-export interface WebsiteCollaboratorListItem {
-  user_id: number
-  role: string
-  email?: string
-  name: string
-}
-
 export interface ContentListingParams {
   name: string
   type?: string | string[]
@@ -321,6 +314,7 @@ export interface ContentDetailParams {
 
 export interface CollaboratorDetailParams {
   name: string
+  user_id: string
 }
 
 export enum LinkType {

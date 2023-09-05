@@ -202,10 +202,10 @@ export default function RepeatableContentListing(props: {
           }).pathname,
         ]}
       >
-        {/* <SiteContentEditorDrawer
+        <SiteContentEditorDrawer
           configItem={addDefaultFields(configItem)}
           fetchWebsiteContentListing={fetchWebsiteContentListing}
-        /> */}
+        />
       </Route>
     </>
   )

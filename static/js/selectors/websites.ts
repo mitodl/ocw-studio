@@ -65,28 +65,17 @@ export interface WebsiteCollaboratorListSelection extends WCSelection {
   results: WebsiteCollaborator[]
 }
 
-// export const getWebsiteCollaboratorDetailCursor = createSelector(
-//   (state: ReduxState) => state.entities?.collaborators ?? {},
-//   collaborators =>
-//     memoize((name: string, username: string) =>
-//       find(propEq("username", username), collaborators[name])
-//     )
-// )
-
-
-
-
 export const getWebsiteCollaboratorDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteCollaboratorDetails ?? {},
-  (content: Record<string, WebsiteCollaborator>) =>
+  (collaborator: Record<string, WebsiteCollaborator>) =>
     memoize(
       (params: CollaboratorDetailParams): WebsiteCollaborator | null =>
-        content[collaboratorDetailKey(params)] ?? null
+        collaborator[collaboratorDetailKey(params)] ?? null
     )
 )
 
 export const getWebsiteCollaboratorListingCursor = createSelector(
-  (state: ReduxState) => state.entities?.websiteCollaboratorListing ?? {},
+  (state: ReduxState) => state.entities?.collaborators ?? {},
   getWebsiteCollaboratorDetailCursor,
   (listing, websiteCollaboratorDetailCursor) =>
     memoize(
@@ -95,14 +84,16 @@ export const getWebsiteCollaboratorListingCursor = createSelector(
       ): WebsiteCollaboratorListSelection => {
         const response = listing[collaboratorListingKey(listingParams)] ?? {}
         const uuids: string[] = response?.results ?? []
-        // const items = uuids.map(() =>
-        //   websiteCollaboratorDetailCursor({ name: listingParams.name})
-        // )
+        const items = uuids.map(uuid =>
+          websiteCollaboratorDetailCursor({ name: listingParams.name, user_id: uuid.toString() })
+        )
+        console.log("uuids", uuids)
         return {
           ...response,
-          results: uuids
+          results: items
         }
       },
+      
       (listingParams: CollaboratorListingParams): string =>
         collaboratorListingKey(listingParams)
     )
@@ -146,7 +137,8 @@ export const getWebsiteContentListingCursor = createSelector(
             textId: uuid,
           }),
         )
-
+          console.log("items", items)
+          console.log("uuids", uuids)
         return {
           ...response,
           results: items,

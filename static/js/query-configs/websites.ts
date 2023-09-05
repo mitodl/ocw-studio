@@ -203,18 +203,6 @@ export const websiteStartersRequest = (): QueryConfig => ({
   },
 })
 
-export const websiteCollaboratorsRequest = (name: string): QueryConfig => ({
-  url: siteApiCollaboratorsUrl.param({ name }).toString(),
-  transform: (body: { results: WebsiteCollaborator[] }) => ({
-    collaborators: {
-      [name]: body.results || [],
-    },
-  }),
-  update: {
-    collaborators: merge,
-  },
-})
-
 export const deleteWebsiteCollaboratorMutation = (
   websiteName: string,
   collaborator: WebsiteCollaborator,
@@ -246,6 +234,35 @@ export const deleteWebsiteCollaboratorMutation = (
   }
 }
 
+export const editWebsiteContentMutation = (
+  params: ContentDetailParams,
+  payload: EditWebsiteContentPayload | FormData
+): QueryConfig => ({
+  url: siteApiContentDetailUrl
+    .param({ name: params.name, textId: params.textId })
+    .toString(),
+  options: {
+    method:  "PATCH",
+    headers: {
+      "X-CSRFTOKEN": getCookie("csrftoken") || ""
+    }
+  },
+  body:      payload,
+  transform: (response: WebsiteContent) => ({
+    websiteContentDetails: {
+      [contentDetailKey(params)]: response
+    }
+  }),
+  update: {
+    websiteContentDetails: (
+      prev: WebsiteContentDetails,
+      next: WebsiteContentDetails
+    ) => ({
+      ...prev,
+      ...next
+    })
+  }
+})
 export const editWebsiteCollaboratorMutation = (
   websiteName: string,
   collaborator: WebsiteCollaborator,
@@ -315,8 +332,8 @@ export type WebsiteCollaboratorListingResponse = PaginatedResponse<
 WebsiteCollaborator>
 
 export const collaboratorDetailKey = (params: CollaboratorDetailParams): string =>
-  JSON.stringify([params.name])
-  
+  JSON.stringify([params.name, params.user_id])
+
 export type WebsiteContentListing = Record<
   string,
   {
@@ -421,33 +438,6 @@ export const websiteContentListingRequest = (
   }
 }
 
-// export const websiteCollaboratorListingRequest = (name: string): QueryConfig => ({
-//   url:       siteApiCollaboratorsUrl.param({ name }).toString(),
-//   transform: (body: { results: WebsiteCollaborator[] }) => ({
-//     collaborators: {
-//       [name]: body.results || []
-//     }
-//   }),
-//   update: {
-//     collaborators: merge
-//   }
-// })
-// export const websiteCollaboratorListingRequest = (name: string): QueryConfig => ({
-//   url: siteApiCollaboratorsUrl.param({ name }).toString(),
-//   transform: (body: { results: WebsiteCollaborator[] }) => {
-//     console.log('Contents of body.results:', body.results); // Add this line for logging
-//     return {
-//       collaborators: {
-//         [name]: body.results || []
-//       }
-//     }
-//   },
-//   update: {
-//     collaborators: merge
-//   }
-// })
-
-
 export const websiteCollaboratorListingRequest = (
   listingParams: CollaboratorListingParams,
   requestDetailedList: boolean,
@@ -472,8 +462,8 @@ export const websiteCollaboratorListingRequest = (
       const details = {}
       for (const item of body.results) {
         console.log("item is", item)
-        details[collaboratorDetailKey({ name })] = item
-        console.log(details[collaboratorDetailKey({ name })])
+
+        details[collaboratorDetailKey({ user_id: item.user_id.toString(), name })] = item
       }
       console.log({
         [collaboratorListingKey(listingParams)]: {
@@ -482,17 +472,17 @@ export const websiteCollaboratorListingRequest = (
         }
       })
       return {
-        websiteCollaboratorListing: {
+        collaborators: {
           [collaboratorListingKey(listingParams)]: {
             ...body,
-            results: body.results || []
+            results: body.results.map(item=> item.user_id) 
           }
         },
         websiteCollaboratorDetails: details
       }
     },
     update: {
-      websiteCollaboratorListing: (
+      collaborators: (
         prev: WebsiteCollaboratorListing,
         next: WebsiteCollaboratorListing
       ) => ({
@@ -506,6 +496,7 @@ export const websiteCollaboratorListingRequest = (
 }
 
 type WebsiteContentDetails = Record<string, WebsiteContent>
+type WebsiteCollaboratorDetails = Record<string, WebsiteCollaborator>
 export const websiteContentDetailRequest = (
   params: ContentDetailParams,
   requestContentContext: boolean,
@@ -547,36 +538,6 @@ export type EditWebsiteContentPayload = {
   metadata?: any
   file?: File
 }
-
-export const editWebsiteContentMutation = (
-  params: ContentDetailParams,
-  payload: EditWebsiteContentPayload | FormData,
-): QueryConfig => ({
-  url: siteApiContentDetailUrl
-    .param({ name: params.name, textId: params.textId })
-    .toString(),
-  options: {
-    method: "PATCH",
-    headers: {
-      "X-CSRFTOKEN": getCookie("csrftoken") || "",
-    },
-  },
-  body: payload,
-  transform: (response: WebsiteContent) => ({
-    websiteContentDetails: {
-      [contentDetailKey(params)]: response,
-    },
-  }),
-  update: {
-    websiteContentDetails: (
-      prev: WebsiteContentDetails,
-      next: WebsiteContentDetails,
-    ) => ({
-      ...prev,
-      ...next,
-    }),
-  },
-})
 
 export type NewWebsiteContentPayload = {
   title: string

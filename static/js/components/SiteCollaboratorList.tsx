@@ -4,7 +4,7 @@ import React, {
   useState,
 } from "react"
 import { useSelector, useStore } from "react-redux"
-import { QueryConfig } from "redux-query"
+import { QueryConfig, requestAsync } from "redux-query"
 import { useMutation, useRequest } from "redux-query-react"
 
 import Dialog from "./Dialog"
@@ -15,7 +15,6 @@ import {
   WebsiteCollaboratorListingResponse,
   deleteWebsiteCollaboratorMutation,
   websiteCollaboratorListingRequest,
-  websiteCollaboratorsRequest
 } from "../query-configs/websites"
 import { useWebsite } from "../context/Website"
 import { getWebsiteCollaboratorListingCursor, getWebsiteCollaboratorsCursor, getWebsiteContentListingCursor } from "../selectors/websites"
@@ -26,9 +25,9 @@ import { StudioList, StudioListItem } from "./StudioList"
 import { usePagination, useURLParamFilter } from "../hooks/search"
 import { formatUpdatedOn } from "../util/websites"
 import PaginationControls from "./PaginationControls"
+import { store } from "../store"
 
 export default function SiteCollaboratorList(): JSX.Element | null {
-  const store = useStore()
   const website = useWebsite()
   const { name, title } = website
 
@@ -63,8 +62,6 @@ const listing: WebsiteCollaboratorListingResponse = useSelector(
 )(listingParams)
 
 console.log("listing", listing, listing.count)
-  // const [{ isPending }] = useRequest(websiteCollaboratorsRequest(name))
-  // const collaborators = useSelector(getWebsiteCollaboratorsCursor)(name)
   // console.log("collaborators", collaborators)
 
   // console.log("use request", useRequest(websiteCollaboratorsRequest(name)))
@@ -103,6 +100,7 @@ console.log("listing", listing, listing.count)
     },
   )
 
+
   const onDelete = async () => {
     if (deleteQueryState.isPending) {
       return
@@ -111,25 +109,26 @@ console.log("listing", listing, listing.count)
     if (!response) {
       return
     }
+    await store.dispatch(
+      requestAsync(
+        websiteCollaboratorListingRequest(listingParams, false, false)
+      )
+    )
   }
 
   const pages = usePagination(listing.count ?? 0)
-  // if (!collaborators) {
-  //   return null
-  // }
-
-  // if (isPending) {
-  //   return <div>Loading...</div>
-  // }
 
   return (
     <>
       <DocumentTitle title={formatTitle(title, "Collaborators")} />
+      {console.log("site name", name)}
+      {console.log("collaborator", selectedCollaborator)}
       <SiteCollaboratorDrawer
         siteName={name}
         collaborator={selectedCollaborator}
         visibility={editVisibility}
         toggleVisibility={toggleEditVisibility}
+        fetchWebsiteCollaboratorListing={fetchWebsiteCollaboratorListing}
       />
       <div className="d-flex justify-content-between align-items-center py-3">
         <h2 className="m-0 p-0">Collaborators</h2>
@@ -137,28 +136,11 @@ console.log("listing", listing, listing.count)
           Add collaborator
         </button>
       </div>
-      {/* <StudioList>
-        {listing.map((collaborator: WebsiteCollaborator, i: number) => (
-          <StudioListItem
-            key={i}
-            title={collaborator.name || collaborator.email}
-            subtitle={ROLE_LABELS[collaborator.role]}
-            menuOptions={
-              EDITABLE_ROLES.includes(collaborator.role)
-                ? [
-                    ["Settings", startEdit(collaborator)],
-                    ["Delete", startDelete(collaborator)],
-                  ]
-                : []
-            }
-          />
-        ))}
-      </StudioList> */}
       <StudioList>
-        {listing.results.map((item: WebsiteCollaborator, i:number) => (
+        {listing.results.map((item: WebsiteCollaborator) => (
           <StudioListItem
-            key={i}
-            title={(item.name ?? "") || (item.email ?? "") }
+            key={item.user_id}
+            title={(item.name || item.email) ?? ""}
             subtitle={ROLE_LABELS[item.role]}
             menuOptions={
               EDITABLE_ROLES.includes(item.role) ?
@@ -177,7 +159,7 @@ console.log("listing", listing, listing.count)
         onCancel={closeDeleteModal}
         headerContent={"Remove collaborator"}
         bodyContent={`Are you sure you want to remove ${
-          selectedCollaborator ? selectedCollaborator.name : "this user"
+          selectedCollaborator ? selectedCollaborator.name || selectedCollaborator.email : "this user"
         }?`}
         acceptText="Delete"
         onAccept={() => {
