@@ -118,13 +118,14 @@ def get_common_pipeline_vars():
         "resource_base_url_live": "",
         "ocw_studio_url": settings.SITE_BASE_URL,
     }
-    dev_vars = {
-        "resource_base_url_draft": settings.RESOURCE_BASE_URL_DRAFT,
-        "resource_base_url_live": settings.RESOURCE_BASE_URL_LIVE,
-        "ocw_studio_url": "http://10.1.0.102:8043",
-    }
     if is_dev():
-        vars.update(dev_vars)
+        vars.update(
+            {
+                "resource_base_url_draft": settings.RESOURCE_BASE_URL_DRAFT,
+                "resource_base_url_live": settings.RESOURCE_BASE_URL_LIVE,
+                "ocw_studio_url": "http://10.1.0.102:8043",
+            }
+        )
     return vars
 
 
