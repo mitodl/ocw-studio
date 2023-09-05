@@ -1,13 +1,16 @@
 """Tests for Concourse Steps"""
 import json
-
 import pytest
+from django.test import override_settings
 from ol_concourse.lib.models.pipeline import GetStep, PutStep, Step, TaskStep
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    SITE_CONTENT_GIT_IDENTIFIER,
+)
 
 from content_sync.pipelines.definitions.concourse.common.steps import (
     ErrorHandlingStep,
     OcwStudioWebhookStep,
-    OpenDiscussionsWebhookStep,
+    SiteContentGitTaskStep,
     SlackAlertStep,
     add_error_handling,
 )
