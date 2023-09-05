@@ -3,7 +3,7 @@ import React, {
   useCallback,
   useState,
 } from "react"
-import { useSelector, useStore } from "react-redux"
+import { useSelector } from "react-redux"
 import { QueryConfig, requestAsync } from "redux-query"
 import { useMutation, useRequest } from "redux-query-react"
 
@@ -17,13 +17,12 @@ import {
   websiteCollaboratorListingRequest,
 } from "../query-configs/websites"
 import { useWebsite } from "../context/Website"
-import { getWebsiteCollaboratorListingCursor, getWebsiteCollaboratorsCursor, getWebsiteContentListingCursor } from "../selectors/websites"
+import { getWebsiteCollaboratorListingCursor } from "../selectors/websites"
 
 import { CollaboratorListingParams, WebsiteCollaborator } from "../types/websites"
 import DocumentTitle, { formatTitle } from "./DocumentTitle"
 import { StudioList, StudioListItem } from "./StudioList"
 import { usePagination, useURLParamFilter } from "../hooks/search"
-import { formatUpdatedOn } from "../util/websites"
 import PaginationControls from "./PaginationControls"
 import { store } from "../store"
 
@@ -47,8 +46,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     [website]
   )
 
-  const { listingParams, searchInput, setSearchInput } =
-  useURLParamFilter(getListingParams)
+  const { listingParams } = useURLParamFilter(getListingParams)
 
   console.log("listing params",listingParams)
 
