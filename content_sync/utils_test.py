@@ -25,6 +25,7 @@ from content_sync.test_constants import (
 )
 from content_sync.utils import (
     check_matching_tags,
+    get_common_pipeline_vars,
     get_destination_filepath,
     get_destination_url,
     get_hugo_arg_string,
@@ -163,6 +164,34 @@ def test_move_s3_object(settings):
     with pytest.raises(ClientError):
         client.get_object(Bucket=MOCK_BUCKET_NAME, Key=from_path)
     assert client.get_object(Bucket=MOCK_BUCKET_NAME, Key=to_path) is not None
+
+
+@pytest.mark.parametrize("is_dev", [True, False])
+def test_get_common_pipeline_vars(settings, mocker, is_dev):
+    """get_common_pipeline_vars should return the correct values based on environment"""
+    mock_is_dev = mocker.patch("content_sync.utils.is_dev")
+    mock_is_dev.return_value = is_dev
+    vars = get_common_pipeline_vars()
+    assert vars["preview_bucket_name"] == settings.AWS_PREVIEW_BUCKET_NAME
+    assert vars["publish_bucket_name"] == settings.AWS_PUBLISH_BUCKET_NAME
+    assert (
+        vars["offline_preview_bucket_name"] == settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME
+    )
+    assert (
+        vars["offline_publish_bucket_name"] == settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME
+    )
+    assert vars["storage_bucket_name"] == settings.AWS_STORAGE_BUCKET_NAME
+    assert vars["artifacts_bucket_name"] == "ol-eng-artifacts"
+    assert vars["static_api_base_url_draft"] == settings.OCW_STUDIO_DRAFT_URL
+    assert vars["static_api_base_url_live"] == settings.OCW_STUDIO_LIVE_URL
+    if is_dev:
+        assert vars["resource_base_url_draft"] == settings.RESOURCE_BASE_URL_DRAFT
+        assert vars["resource_base_url_live"] == settings.RESOURCE_BASE_URL_LIVE
+        assert vars["ocw_studio_url"] == "http://10.1.0.102:8043"
+    else:
+        assert vars["resource_base_url_draft"] == ""
+        assert vars["resource_base_url_live"] == ""
+        assert vars["ocw_studio_url"] == settings.SITE_BASE_URL
 
 
 @pytest.mark.parametrize("build_target", [TARGET_OFFLINE, TARGET_ONLINE])
