@@ -148,7 +148,6 @@ def test_clear_cdn_cache_step(settings, mock_concourse_hard_purge):
         site_name=site_name,
     )
     rendered_step = json.loads(clear_cdn_cache_step.model_dump_json())
-    print(rendered_step)
     rendered_args = rendered_step["config"]["run"]["args"]
     for arg in rendered_args:
         assert "'" not in arg
