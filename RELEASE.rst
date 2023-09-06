@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.101.0
+---------------
+
+- fix non-dev upsert_theme_assets_pipeline (#1941)
+- explicitly set inputs to a blank list on put steps that don't need them (#1939)
+- overhaul mass build pipeline (#1923)
+- use new theme assets pipeline definition (#1929)
+- separate concourse web and worker into two containers (#1925)
+
 Version 0.100.0 (Released August 23, 2023)
 ---------------
 
