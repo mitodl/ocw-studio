@@ -173,7 +173,7 @@ class ClearCdnCacheStep(TaskStep):
             config=TaskConfig(
                 platform="linux",
                 image_resource=CURL_REGISTRY_IMAGE,
-                run=Command(path="sh", args=curl_args),
+                run=Command(path="curl", args=curl_args),
             ),
             **kwargs,
         )
