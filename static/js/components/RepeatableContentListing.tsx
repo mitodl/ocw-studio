@@ -66,12 +66,10 @@ export default function RepeatableContentListing(props: {
     websiteContentListingRequest(listingParams, false, false),
   )
 
-  console.log( websiteContentListingRequest(listingParams, false, false))
   const listing: WebsiteContentListingResponse = useSelector(
     getWebsiteContentListingCursor,
   )(listingParams)
 
-  console.log(listing)
   const [{ isPending: syncIsPending }, syncWebsiteContent] = useMutation(() =>
     syncWebsiteContentMutation(website.name),
   )

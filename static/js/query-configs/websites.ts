@@ -208,7 +208,6 @@ export const deleteWebsiteCollaboratorMutation = (
   collaborator: WebsiteCollaborator,
 ): QueryConfig => {
   const evictCollaborator = reject(propEq("user_id", collaborator.user_id))
-  console.log("col id=", collaborator.user_id)
   return {
     queryKey: "deleteWebsiteCollaboratorMutation",
     url: siteApiCollaboratorsDetailUrl
@@ -240,10 +239,6 @@ export const editWebsiteCollaboratorMutation = (
   collaborator: WebsiteCollaborator,
   role: string,
 ): QueryConfig => {
-  console.log("role", role)
-  console.log("website", websiteName)
-  console.log("colalborator", collaborator)
-  console.log("alterRole")
   const alterRole = map(
     when(propEq("user_id", collaborator.user_id), assoc("role", role)),
   )
@@ -437,16 +432,8 @@ export const websiteCollaboratorListingRequest = (
     transform: (body: WebsiteCollaboratorListingResponse) => {
       const details = {}
       for (const item of body.results) {
-        console.log("item is", item)
-
         details[collaboratorDetailKey({ user_id: item.user_id.toString(), name })] = item
       }
-      console.log({
-        [collaboratorListingKey(listingParams)]: {
-          ...body,
-          results: body.results.map(item=> item.user_id) 
-        }
-      })
       return {
         collaborators: {
           [collaboratorListingKey(listingParams)]: {

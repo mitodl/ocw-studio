@@ -8,7 +8,6 @@ import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import {
   createWebsiteCollaboratorMutation,
   editWebsiteCollaboratorMutation,
-  websiteCollaboratorListingRequest
 } from "../query-configs/websites"
 
 import {
@@ -16,8 +15,6 @@ import {
   WebsiteCollaboratorFormData,
 } from "../types/websites"
 import { Modal, ModalBody, ModalHeader } from "reactstrap"
-import { store } from "../store"
-import { requestAsync } from "redux-query"
 
 interface Props {
   collaborator: WebsiteCollaborator | null
@@ -25,13 +22,12 @@ interface Props {
   toggleVisibility: () => void
   siteName: string
   fetchWebsiteCollaboratorListing: any
-  listingParams: any
 }
 
 export default function SiteCollaboratorDrawer(
   props: Props,
 ): JSX.Element | null {
-  const { siteName, collaborator, visibility, toggleVisibility, fetchWebsiteCollaboratorListing, listingParams } = props
+  const { siteName, collaborator, visibility, toggleVisibility, fetchWebsiteCollaboratorListing } = props
 
   const [collaboratorAddQueryState, addCollaborator] = useMutation(
     createWebsiteCollaboratorMutation,
@@ -55,7 +51,6 @@ export default function SiteCollaboratorDrawer(
     ) {
       return
     }
-    console.log(collaborator)
     const response = await (collaborator ?
       updateCollaboratorRole(siteName, collaborator, values.role) :
       addCollaborator(siteName, values))
@@ -83,23 +78,14 @@ export default function SiteCollaboratorDrawer(
     setSubmitting(false)
     toggleVisibility()
 
-    console.log("about to fetch")
-
-    if (fetchWebsiteCollaboratorListing)
+    if (fetchWebsiteCollaboratorListing){
     fetchWebsiteCollaboratorListing()
-
-    // await store.dispatch(
-    //   requestAsync(
-    //     fetchWebsiteCollaboratorListing()
-    //   )
-    // )
+    }
   }
 
   const onCancel = async () => {
     toggleVisibility()
   }
-  console.log(collaborator)
-  console.log("here inside change")
   return (
     <div>
       <Modal

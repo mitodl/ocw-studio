@@ -82,7 +82,6 @@ export const getWebsiteCollaboratorListingCursor = createSelector(
         const items = uuids.map(uuid =>
           websiteCollaboratorDetailCursor({ name: listingParams.name, user_id: uuid.toString() })
         )
-        console.log("uuids", uuids)
         return {
           ...response,
           results: items
@@ -132,8 +131,6 @@ export const getWebsiteContentListingCursor = createSelector(
             textId: uuid,
           }),
         )
-          console.log("items", items)
-          console.log("uuids", uuids)
         return {
           ...response,
           results: items,

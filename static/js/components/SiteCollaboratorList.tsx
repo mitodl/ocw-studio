@@ -30,8 +30,6 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   const website = useWebsite()
   const { name, title } = website
 
-  console.log(name, title)
-
   const getListingParams = useCallback(
     (search: string): CollaboratorListingParams => {
       const qsParams = new URLSearchParams(search)
@@ -48,22 +46,14 @@ export default function SiteCollaboratorList(): JSX.Element | null {
 
   const { listingParams } = useURLParamFilter(getListingParams)
 
-  console.log("listing params",listingParams)
+  const [, fetchWebsiteCollaboratorListing] = useRequest(
+    websiteCollaboratorListingRequest(listingParams, false, false)
+  )
 
-const [, fetchWebsiteCollaboratorListing] = useRequest(
-  websiteCollaboratorListingRequest(listingParams, false, false)
-)
-// console.log("fetch",  websiteCollaboratorListingRequest(listingParams, false, false))
+  const listing: WebsiteCollaboratorListingResponse = useSelector(
+    getWebsiteCollaboratorListingCursor
+  )(listingParams)
 
-const listing: WebsiteCollaboratorListingResponse = useSelector(
-  getWebsiteCollaboratorListingCursor
-)(listingParams)
-
-console.log("listing", listing, listing.count)
-  // console.log("collaborators", collaborators)
-
-  // console.log("use request", useRequest(websiteCollaboratorsRequest(name)))
-  // console.log("collaborators", useSelector(getWebsiteCollaboratorsCursor)(name))
   const [deleteModal, setDeleteModal] = useState(false)
   const [editVisibility, setEditVisibility] = useState<boolean>(false)
   const [selectedCollaborator, setSelectedCollaborator] =
@@ -98,7 +88,6 @@ console.log("listing", listing, listing.count)
     },
   )
 
-
   const onDelete = async () => {
     if (deleteQueryState.isPending) {
       return
@@ -119,15 +108,12 @@ console.log("listing", listing, listing.count)
   return (
     <>
       <DocumentTitle title={formatTitle(title, "Collaborators")} />
-      {console.log("site name", name)}
-      {console.log("collaborator", selectedCollaborator)}
       <SiteCollaboratorDrawer
         siteName={name}
         collaborator={selectedCollaborator}
         visibility={editVisibility}
         toggleVisibility={toggleEditVisibility}
         fetchWebsiteCollaboratorListing={fetchWebsiteCollaboratorListing}
-        listingParams={listingParams}
       />
       <div className="d-flex justify-content-between align-items-center py-3">
         <h2 className="m-0 p-0">Collaborators</h2>
