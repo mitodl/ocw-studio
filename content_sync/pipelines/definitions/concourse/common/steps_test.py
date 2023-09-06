@@ -153,9 +153,9 @@ def test_clear_cdn_cache_step(settings, mock_concourse_hard_purge):
         assert "'" not in arg
     assert f"Fastly-Key: (({fastly_var}.api_token))" in rendered_args
     if settings.CONCOURSE_HARD_PURGE:
-        assert f"Fastly-Soft-Purge: 1" not in rendered_args
+        assert "Fastly-Soft-Purge: 1" not in rendered_args
     else:
-        assert f"Fastly-Soft-Purge: 1" in rendered_args
+        assert "Fastly-Soft-Purge: 1" in rendered_args
     assert (
         f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
         in rendered_args
