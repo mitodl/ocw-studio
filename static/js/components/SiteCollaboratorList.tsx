@@ -14,12 +14,15 @@ import { EDITABLE_ROLES, ROLE_LABELS } from "../constants"
 import {
   WebsiteCollaboratorListingResponse,
   deleteWebsiteCollaboratorMutation,
-  websiteCollaboratorListingRequest,
+  websiteCollaboratorListingRequest
 } from "../query-configs/websites"
 import { useWebsite } from "../context/Website"
 import { getWebsiteCollaboratorListingCursor } from "../selectors/websites"
 
-import { CollaboratorListingParams, WebsiteCollaborator } from "../types/websites"
+import {
+  CollaboratorListingParams,
+  WebsiteCollaborator
+} from "../types/websites"
 import DocumentTitle, { formatTitle } from "./DocumentTitle"
 import { StudioList, StudioListItem } from "./StudioList"
 import { usePagination, useURLParamFilter } from "../hooks/search"
@@ -65,11 +68,11 @@ export default function SiteCollaboratorList(): JSX.Element | null {
 
   const startEdit =
     (collaborator: WebsiteCollaborator | null) =>
-    (event: ReactMouseEvent<HTMLButtonElement>) => {
-      event.preventDefault()
-      setSelectedCollaborator(collaborator)
-      setEditVisibility(true)
-    }
+      (event: ReactMouseEvent<HTMLButtonElement>) => {
+        event.preventDefault()
+        setSelectedCollaborator(collaborator)
+        setEditVisibility(true)
+      }
 
   const startDelete =
     (collaborator: WebsiteCollaborator) =>
@@ -144,7 +147,9 @@ export default function SiteCollaboratorList(): JSX.Element | null {
         onCancel={closeDeleteModal}
         headerContent={"Remove collaborator"}
         bodyContent={`Are you sure you want to remove ${
-          selectedCollaborator ? selectedCollaborator.name || selectedCollaborator.email : "this user"
+          selectedCollaborator ?
+            selectedCollaborator.name || selectedCollaborator.email :
+            "this user"
         }?`}
         acceptText="Delete"
         onAccept={() => {

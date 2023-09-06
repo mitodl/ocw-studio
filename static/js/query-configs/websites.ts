@@ -299,11 +299,12 @@ export type WebsiteContentListingResponse = PaginatedResponse<
   WebsiteContentListItem | WebsiteContent
 >
 
-export type WebsiteCollaboratorListingResponse = PaginatedResponse<
-WebsiteCollaborator>
+export type WebsiteCollaboratorListingResponse =
+  PaginatedResponse<WebsiteCollaborator>
 
-export const collaboratorDetailKey = (params: CollaboratorDetailParams): string =>
-  JSON.stringify([params.name, params.user_id])
+export const collaboratorDetailKey = (
+  params: CollaboratorDetailParams
+): string => JSON.stringify([params.name, params.user_id])
 
 export type WebsiteContentListing = Record<
   string,
@@ -336,14 +337,14 @@ export const contentListingKey = (
     listingParams.published,
   ])
 
-  export const collaboratorListingKey = (
-    listingParams: CollaboratorListingParams
-  ): string =>
-    JSON.stringify([
-      listingParams.name,
-      listingParams.pageContent,
-      listingParams.offset
-    ])
+export const collaboratorListingKey = (
+  listingParams: CollaboratorListingParams
+): string =>
+  JSON.stringify([
+    listingParams.name,
+    listingParams.pageContent,
+    listingParams.offset
+  ])
 export const contentDetailKey = (params: ContentDetailParams): string =>
   JSON.stringify([params.name, params.textId])
 
@@ -414,16 +415,15 @@ export const websiteCollaboratorListingRequest = (
   requestDetailedList: boolean,
   requestContentContext: boolean
 ): QueryConfig => {
-  const { name, pageContent, offset } =
-    listingParams
-    const url = siteApiCollaboratorsUrl
+  const { name, pageContent, offset } = listingParams
+  const url = siteApiCollaboratorsUrl
     .param({ name })
     .query(
       Object.assign(
         { offset },
         pageContent && { page_content: pageContent },
         requestDetailedList && { detailed_list: true },
-        requestContentContext && { content_context: true },
+        requestContentContext && { content_context: true }
       )
     )
     .toString()
@@ -432,13 +432,15 @@ export const websiteCollaboratorListingRequest = (
     transform: (body: WebsiteCollaboratorListingResponse) => {
       const details = {}
       for (const item of body.results) {
-        details[collaboratorDetailKey({ user_id: item.user_id.toString(), name })] = item
+        details[
+          collaboratorDetailKey({ user_id: item.user_id.toString(), name })
+        ] = item
       }
       return {
         collaborators: {
           [collaboratorListingKey(listingParams)]: {
             ...body,
-            results: body.results.map(item=> item.user_id) 
+            results: body.results.map(item => item.user_id)
           }
         },
         websiteCollaboratorDetails: details

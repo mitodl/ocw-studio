@@ -80,14 +80,17 @@ export const getWebsiteCollaboratorListingCursor = createSelector(
         const response = listing[collaboratorListingKey(listingParams)] ?? {}
         const uuids: string[] = response?.results ?? []
         const items = uuids.map(uuid =>
-          websiteCollaboratorDetailCursor({ name: listingParams.name, user_id: uuid.toString() })
+          websiteCollaboratorDetailCursor({
+            name:    listingParams.name,
+            user_id: uuid.toString()
+          })
         )
         return {
           ...response,
           results: items
         }
       },
-      
+
       (listingParams: CollaboratorListingParams): string =>
         collaboratorListingKey(listingParams)
     )

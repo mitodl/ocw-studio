@@ -45,7 +45,7 @@ export default function SiteCollaboratorForm({
         ? { ...roleValidation }
         : { ...roleValidation, ...emailValidation },
     )
-  console.log("passed collaboratior is",collaborator)
+  console.log("passed collaboratior is", collaborator)
   return (
     <Formik
       onSubmit={onSubmit}

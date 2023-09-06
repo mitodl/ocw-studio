@@ -7,7 +7,7 @@ import SiteCollaboratorForm from "./forms/SiteCollaboratorForm"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import {
   createWebsiteCollaboratorMutation,
-  editWebsiteCollaboratorMutation,
+  editWebsiteCollaboratorMutation
 } from "../query-configs/websites"
 
 import {
@@ -27,7 +27,13 @@ interface Props {
 export default function SiteCollaboratorDrawer(
   props: Props,
 ): JSX.Element | null {
-  const { siteName, collaborator, visibility, toggleVisibility, fetchWebsiteCollaboratorListing } = props
+  const {
+    siteName,
+    collaborator,
+    visibility,
+    toggleVisibility,
+    fetchWebsiteCollaboratorListing
+  } = props
 
   const [collaboratorAddQueryState, addCollaborator] = useMutation(
     createWebsiteCollaboratorMutation,
@@ -78,8 +84,8 @@ export default function SiteCollaboratorDrawer(
     setSubmitting(false)
     toggleVisibility()
 
-    if (fetchWebsiteCollaboratorListing){
-    fetchWebsiteCollaboratorListing()
+    if (fetchWebsiteCollaboratorListing) {
+      fetchWebsiteCollaboratorListing()
     }
   }
 
