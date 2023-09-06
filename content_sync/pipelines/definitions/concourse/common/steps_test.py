@@ -15,6 +15,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
 
 @pytest.mark.parametrize("step_type", [GetStep, PutStep, TaskStep])
 def test_add_error_handling(step_type):
+    """ensure that add_error_handling has all the correct steps"""
     mock_step = step_type()
     add_error_handling(
         step=mock_step,
@@ -32,6 +33,7 @@ def test_add_error_handling(step_type):
 
 
 def test_add_error_handling_incorrect_type():
+    """calling add_error_handling with the wrong type of step should throw a TypeError"""
     with pytest.raises(TypeError):
         mock_step = Step()
         add_error_handling(
@@ -45,6 +47,7 @@ def test_add_error_handling_incorrect_type():
 
 @pytest.mark.parametrize("step_type", [GetStep, PutStep, TaskStep])
 def test_calling_add_error_handling_twice(step_type):
+    """calling add_error_handling twice on the same step should throw a ValueError"""
     mock_step = step_type()
     add_error_handling(
         step=mock_step,
@@ -64,6 +67,7 @@ def test_calling_add_error_handling_twice(step_type):
 
 
 def test_put_steps_empty_inputs():
+    """steps that extend PutStep and don't need inputs should explicitly set them to a blank list"""
     assert (
         json.loads(
             OcwStudioWebhookStep(
