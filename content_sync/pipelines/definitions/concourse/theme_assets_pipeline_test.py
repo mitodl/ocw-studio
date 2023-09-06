@@ -1,7 +1,4 @@
 import json
-from urllib.parse import quote
-
-import pytest
 
 from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
@@ -10,28 +7,22 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 from content_sync.pipelines.definitions.concourse.theme_assets_pipeline import (
     ThemeAssetsPipelineDefinition,
 )
+from main.utils import is_dev
 
 
-@pytest.mark.parametrize("is_dev", [True, False])
-def test_generate_theme_assets_pipeline_definition(mocker, is_dev):
+def test_generate_theme_assets_pipeline_definition(mock_environments):
     """
     The theme assets pipeline definition should contain the expected properties
     """
-    mock_is_dev = mocker.patch(
-        "content_sync.pipelines.definitions.concourse.theme_assets_pipeline.is_dev"
-    )
-    mock_is_dev.return_value = is_dev
     artifacts_bucket = "ol-eng-artifacts"
     preview_bucket = "ocw-content-preview"
     publish_bucket = "ocw-content-publish"
     ocw_hugo_themes_branch = "main"
-    instance_vars = f"?vars={quote(json.dumps({'branch': ocw_hugo_themes_branch}))}"
     pipeline_definition = ThemeAssetsPipelineDefinition(
         artifacts_bucket=artifacts_bucket,
         preview_bucket=preview_bucket,
         publish_bucket=publish_bucket,
         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
-        instance_vars=instance_vars,
     )
     rendered_definition = json.loads(pipeline_definition.json(indent=2))
     git_resources = [
@@ -74,7 +65,7 @@ def test_generate_theme_assets_pipeline_definition(mocker, is_dev):
     assert artifacts_bucket in upload_theme_assets_command
     assert preview_bucket in upload_theme_assets_command
     assert publish_bucket in upload_theme_assets_command
-    if is_dev:
+    if is_dev():
         assert f" --endpoint-url {DEV_ENDPOINT_URL}" in upload_theme_assets_command
         assert "AWS_ACCESS_KEY_ID" in upload_theme_assets_task["config"]["params"]
         assert "AWS_SECRET_ACCESS_KEY" in upload_theme_assets_task["config"]["params"]

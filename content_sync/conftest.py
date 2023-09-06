@@ -5,6 +5,12 @@ from types import SimpleNamespace
 import pytest
 
 
+@pytest.fixture(params=["dev", "not_dev"])
+def mock_environments(settings, request):
+    settings.OCW_STUDIO_ENVIRONMENT = request.param
+    settings.ENV_NAME = request.param
+
+
 @pytest.fixture
 def mock_branches(settings, mocker):
     """Return mock github branches with names"""

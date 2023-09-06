@@ -358,6 +358,8 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
         """Upsert the theme assets pipeline"""
         template_vars = get_template_vars()
         pipeline_definition = ThemeAssetsPipelineDefinition(
+            ocw_studio_url=template_vars["ocw_studio_url"],
+            pipeline_name=self.PIPELINE_NAME,
             artifacts_bucket=template_vars["artifacts_bucket_name"],
             preview_bucket=template_vars["preview_bucket_name"],
             publish_bucket=template_vars["publish_bucket_name"],
