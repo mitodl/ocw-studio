@@ -161,7 +161,7 @@ class ClearCdnCacheStep(TaskStep):
             "-H",
             f"Fastly-Key: (({fastly_var}.api_token))",
         ]
-        if settings.CONCOURSE_HARD_PURGE:
+        if not settings.CONCOURSE_HARD_PURGE:
             curl_args.extend(["-H", "Fastly-Soft-Purge: 1"])
         curl_args.append(
             f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
