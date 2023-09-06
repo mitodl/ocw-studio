@@ -248,23 +248,24 @@ class SiteContentGitTaskStep(TaskStep):
                 f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{short_id}.git"
             )
             command = f"""
-            $CURDIR=$(pwd)
-            echo ((git-private-key)) > $CURDIR/git.key
-            sed -i -E "s/(-----BEGIN[^-]+-----)(.+)(-----END[^-]+-----)/-----BEGINSSHKEY-----\2\-----ENDSSHKEY-----/" git.key
-            sed -i -E "s/\s/\n/g" git.key
-            sed -i -E "s/SSHKEY/ OPENSSH PRIVATE KEY/g" git.key
-            chmod 400 $CURDIR/git.key
-            GITKEYSSH="-i $CURDIR/git.key"
-            git clone -b {branch} {uri} ./{SITE_CONTENT_GIT_IDENTIFIER}
+            echo $GIT_PRIVATE_KEY > ./git.key
+            sed -i -E \"s/(-----BEGIN[^-]+-----)(.+)(-----END[^-]+-----)/-----BEGINSSHKEY-----\\2\\-----ENDSSHKEY-----/\" git.key
+            sed -i -E \"s/\s/\\n/g\" git.key
+            sed -i -E \"s/SSHKEY/ OPENSSH PRIVATE KEY/g\" git.key
+            chmod 400 ./git.key
+            GIT_PRIVATE_KEY_FILE=\"-i ./git.key\"
+            git -c core.sshCommand=\"ssh $GIT_PRIVATE_KEY_FILE -o StrictHostKeyChecking=no\" clone -b {branch} {uri} ./{SITE_CONTENT_GIT_IDENTIFIER}
             """
+            params = {"GIT_PRIVATE_KEY": "((git-private-key))"}
         else:
             uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{short_id}.git"
             command = f"git clone -b {branch} {uri} ./{SITE_CONTENT_GIT_IDENTIFIER}"
+            params = {}
         super().__init__(
             task=SITE_CONTENT_GIT_IDENTIFIER,
             timeout="40m",
             attempts=3,
-            params={},
+            params=params,
             config=TaskConfig(
                 platform="linux",
                 image_resource=AnonymousResource(
@@ -277,4 +278,5 @@ class SiteContentGitTaskStep(TaskStep):
                     args=["-exc", command],
                 ),
             ),
+            **kwargs,
         )
