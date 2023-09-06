@@ -5,12 +5,10 @@ import pytest
 from django.test import override_settings
 from ol_concourse.lib.models.pipeline import GetStep, PutStep, Step, TaskStep
 
-from content_sync.pipelines.definitions.concourse.common.identifiers import (
-    SITE_CONTENT_GIT_IDENTIFIER,
-)
 from content_sync.pipelines.definitions.concourse.common.steps import (
     ErrorHandlingStep,
     OcwStudioWebhookStep,
+    OpenDiscussionsWebhookStep,
     SiteContentGitTaskStep,
     SlackAlertStep,
     add_error_handling,
@@ -97,3 +95,33 @@ def test_put_steps_empty_inputs():
         )["try"]["do"][0]["inputs"]
         == []
     )
+
+
+@pytest.mark.parametrize("concourse_is_private_repo", [True, False])
+@pytest.mark.parametrize("branch", ["main", "test_branch"])
+@pytest.mark.parametrize("short_id", ["course.1", "course.2"])
+def test_site_content_git_task_step(
+    settings, concourse_is_private_repo, branch, short_id
+):
+    """SiteContentGitTaskStep should have the proper attributes"""
+    with override_settings(CONCOURSE_IS_PRIVATE_REPO=concourse_is_private_repo):
+        step = SiteContentGitTaskStep(branch=branch, short_id=short_id)
+        step_output = json.loads(step.model_dump_json())
+        command = step_output["config"]["run"]["args"][1]
+        if concourse_is_private_repo:
+            assert "echo $GIT_PRIVATE_KEY > ./git.key" in command
+            assert (
+                'sed -i -E "s/(-----BEGIN[^-]+-----)(.+)(-----END[^-]+-----)/-----BEGINSSHKEY-----\\2\\-----ENDSSHKEY-----/" git.key'
+                in command
+            )
+            assert 'sed -i -E "s/\\s/\\n/g" git.key' in command
+            assert 'sed -i -E "s/SSHKEY/ OPENSSH PRIVATE KEY/g" git.key' in command
+            assert "chmod 400 ./git.key" in command
+            assert (
+                f'git -c core.sshCommand="ssh $GIT_PRIVATE_KEY_FILE -o StrictHostKeyChecking=no" clone -b {branch} git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{short_id}.git ./{SITE_CONTENT_GIT_IDENTIFIER}'
+                in command
+            )
+            assert step_output["params"]["GIT_PRIVATE_KEY"] == "((git-private-key))"
+        else:
+            assert f"git clone -b {branch} https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{short_id}.git ./{SITE_CONTENT_GIT_IDENTIFIER}"
+            assert step_output["params"] == {}
