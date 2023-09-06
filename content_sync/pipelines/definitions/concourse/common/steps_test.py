@@ -1,5 +1,6 @@
 """Tests for Concourse Steps"""
 import json
+
 import pytest
 from ol_concourse.lib.models.pipeline import GetStep, PutStep, Step, TaskStep
 
