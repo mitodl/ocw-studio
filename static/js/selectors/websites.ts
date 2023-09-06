@@ -1,6 +1,5 @@
 import { createSelector } from "reselect"
 import { memoize } from "lodash"
-import { find, propEq } from "ramda"
 
 import {
   collaboratorDetailKey,

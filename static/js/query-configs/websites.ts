@@ -1,6 +1,5 @@
 import { ActionPromiseValue, QueryConfig } from "redux-query"
 import {
-  merge,
   reject,
   propEq,
   compose,
@@ -266,6 +265,7 @@ export const editWebsiteCollaboratorMutation = (
   }
 }
 
+type WebsiteCollaboratorDetails = Record<string, WebsiteCollaborator[]>
 export const createWebsiteCollaboratorMutation = (
   websiteName: string,
   item: WebsiteCollaboratorFormData,
@@ -281,8 +281,8 @@ export const createWebsiteCollaboratorMutation = (
     }),
     update: {
       websiteCollaboratorDetails: (
-        prev: Record<string, WebsiteCollaborator[]>,
-        next: Record<string, WebsiteCollaborator[]>,
+        prev: WebsiteCollaboratorDetails,
+        next: WebsiteCollaboratorDetails
       ) => {
         next[websiteName] = next[websiteName].concat(prev[websiteName])
         return { ...prev, ...next }
@@ -461,7 +461,6 @@ export const websiteCollaboratorListingRequest = (
 }
 
 type WebsiteContentDetails = Record<string, WebsiteContent>
-type WebsiteCollaboratorDetails = Record<string, WebsiteCollaborator>
 export const websiteContentDetailRequest = (
   params: ContentDetailParams,
   requestContentContext: boolean,
