@@ -773,7 +773,7 @@ class SitePipelineDefinition(Pipeline):
             step=PutStep(
                 put=self._offline_build_gate_identifier,
                 params={"mapping": "timestamp = now()"},
-                inputs=[]
+                inputs=[],
             ),
             step_description=f"{self._offline_build_gate_identifier} task step",
             pipeline_name=config.vars["pipeline_name"],
