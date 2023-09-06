@@ -39,8 +39,8 @@ from content_sync.pipelines.definitions.concourse.theme_assets_pipeline import (
 )
 from content_sync.utils import (
     check_mandatory_settings,
-    get_hugo_arg_string,
     get_common_pipeline_vars,
+    get_hugo_arg_string,
     get_theme_branch,
     strip_dev_lines,
     strip_non_dev_lines,
