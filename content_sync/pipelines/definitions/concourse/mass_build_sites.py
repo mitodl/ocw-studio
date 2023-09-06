@@ -302,6 +302,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                     PutStep(
                         put=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number}",
                         params={"mapping": "timestamp = now()"},
+                        inputs=[],
                     )
                 )
             jobs.append(

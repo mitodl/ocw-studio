@@ -134,6 +134,7 @@ class SlackAlertStep(TryStep):
                         put=SLACK_ALERT_RESOURCE_IDENTIFIER,
                         timeout="1m",
                         params={"alert_type": alert_type, "text": text},
+                        inputs=[],
                     )
                 ]
             ),
@@ -196,6 +197,7 @@ class OcwStudioWebhookStep(TryStep):
                 params={
                     "text": json.dumps({"version": pipeline_name, "status": status})
                 },
+                inputs=[],
             ),
             **kwargs,
         )
@@ -225,6 +227,7 @@ class OpenDiscussionsWebhookStep(TryStep):
                         }
                     )
                 },
+                inputs=[],
             ),
             **kwargs,
         )

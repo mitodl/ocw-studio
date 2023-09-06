@@ -1,10 +1,13 @@
 """Tests for Concourse Steps"""
+import json
+
 import pytest
 from ol_concourse.lib.models.pipeline import GetStep, PutStep, Step, TaskStep
 
 from content_sync.pipelines.definitions.concourse.common.steps import (
     ErrorHandlingStep,
     OcwStudioWebhookStep,
+    OpenDiscussionsWebhookStep,
     SlackAlertStep,
     add_error_handling,
 )
@@ -12,6 +15,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
 
 @pytest.mark.parametrize("step_type", [GetStep, PutStep, TaskStep])
 def test_add_error_handling(step_type):
+    """ensure that add_error_handling has all the correct steps"""
     mock_step = step_type()
     add_error_handling(
         step=mock_step,
@@ -29,6 +33,7 @@ def test_add_error_handling(step_type):
 
 
 def test_add_error_handling_incorrect_type():
+    """calling add_error_handling with the wrong type of step should throw a TypeError"""
     with pytest.raises(TypeError):
         mock_step = Step()
         add_error_handling(
@@ -42,6 +47,7 @@ def test_add_error_handling_incorrect_type():
 
 @pytest.mark.parametrize("step_type", [GetStep, PutStep, TaskStep])
 def test_calling_add_error_handling_twice(step_type):
+    """calling add_error_handling twice on the same step should throw a ValueError"""
     mock_step = step_type()
     add_error_handling(
         step=mock_step,
@@ -58,3 +64,32 @@ def test_calling_add_error_handling_twice(step_type):
             short_id="test-site",
             instance_vars="?site:test-site",
         )
+
+
+def test_put_steps_empty_inputs():
+    """steps that extend PutStep and don't need inputs should explicitly set them to a blank list"""
+    assert (
+        json.loads(
+            OcwStudioWebhookStep(
+                pipeline_name="test_pipeline", status="test_status"
+            ).model_dump_json(by_alias=True)
+        )["try"]["inputs"]
+        == []
+    )
+    assert (
+        json.loads(
+            OpenDiscussionsWebhookStep(
+                pipeline_name="test_pipeline",
+                site_url="http://ocw.mit.edu/courses/test_course",
+            ).model_dump_json(by_alias=True)
+        )["try"]["inputs"]
+        == []
+    )
+    assert (
+        json.loads(
+            SlackAlertStep(alert_type="test_alert", text="test alert").model_dump_json(
+                by_alias=True
+            )
+        )["try"]["do"][0]["inputs"]
+        == []
+    )
