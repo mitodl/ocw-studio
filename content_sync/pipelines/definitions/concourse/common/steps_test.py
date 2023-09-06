@@ -3,12 +3,19 @@ import json
 
 import pytest
 from django.test import override_settings
-from ol_concourse.lib.models.pipeline import GetStep, PutStep, Step, TaskStep
+from ol_concourse.lib.models.pipeline import (
+    GetStep,
+    Identifier,
+    PutStep,
+    Step,
+    TaskStep,
+)
 
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     SITE_CONTENT_GIT_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
+    ClearCdnCacheStep,
     ErrorHandlingStep,
     OcwStudioWebhookStep,
     OpenDiscussionsWebhookStep,
@@ -128,3 +135,28 @@ def test_site_content_git_task_step(
         else:
             assert f"git clone -b {branch} https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{short_id}.git ./{SITE_CONTENT_GIT_IDENTIFIER}"
             assert step_output["params"] == {}
+
+
+def test_clear_cdn_cache_step(settings, mock_concourse_hard_purge):
+    """assert that the ClearCdnCacheStep renders with the correct attributes"""
+    name = Identifier("clear-cdn-cache-test")
+    fastly_var = "fastly_test"
+    site_name = "test_site"
+    clear_cdn_cache_step = ClearCdnCacheStep(
+        name=name,
+        fastly_var=fastly_var,
+        site_name=site_name,
+    )
+    rendered_step = json.loads(clear_cdn_cache_step.model_dump_json())
+    rendered_args = rendered_step["config"]["run"]["args"]
+    for arg in rendered_args:
+        assert "'" not in arg
+    assert f"Fastly-Key: (({fastly_var}.api_token))" in rendered_args
+    if settings.CONCOURSE_HARD_PURGE:
+        assert "Fastly-Soft-Purge: 1" not in rendered_args
+    else:
+        assert "Fastly-Soft-Purge: 1" in rendered_args
+    assert (
+        f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
+        in rendered_args
+    )

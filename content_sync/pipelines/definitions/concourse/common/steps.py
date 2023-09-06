@@ -159,10 +159,10 @@ class ClearCdnCacheStep(TaskStep):
             "-X",
             "POST",
             "-H",
-            f"Fastly-Key: '(({fastly_var}.api_token))'",
+            f"Fastly-Key: (({fastly_var}.api_token))",
         ]
-        if settings.CONCOURSE_HARD_PURGE:
-            curl_args.extend(["-H", "'Fastly-Soft-Purge: 1'"])
+        if not settings.CONCOURSE_HARD_PURGE:
+            curl_args.extend(["-H", "Fastly-Soft-Purge: 1"])
         curl_args.append(
             f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
         )
@@ -173,7 +173,7 @@ class ClearCdnCacheStep(TaskStep):
             config=TaskConfig(
                 platform="linux",
                 image_resource=CURL_REGISTRY_IMAGE,
-                run=Command(path="sh", args=curl_args),
+                run=Command(path="curl", args=curl_args),
             ),
             **kwargs,
         )

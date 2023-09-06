@@ -532,7 +532,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         clear_cdn_cache_online_step = add_error_handling(
             step=ClearCdnCacheStep(
                 name=CLEAR_CDN_CACHE_IDENTIFIER,
-                fastly_var="fastly",
+                fastly_var=f"fastly_{config.values['pipeline_name']}",
                 site_name=config.vars["site_name"],
             ),
             step_description="clear cdn cache",
@@ -707,7 +707,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         clear_cdn_cache_offline_step = add_error_handling(
             ClearCdnCacheStep(
                 name=CLEAR_CDN_CACHE_IDENTIFIER,
-                fastly_var="fastly",
+                fastly_var=f"fastly_{config.values['pipeline_name']}",
                 site_name=config.vars["site_name"],
             ),
             step_description="clear cdn cache",
