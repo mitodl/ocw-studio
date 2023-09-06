@@ -7,6 +7,7 @@ import pytest
 
 @pytest.fixture(params=["dev", "not_dev"])
 def mock_environments(settings, request):
+    """Fixture that tests with dev vs non-dev environment"""
     settings.OCW_STUDIO_ENVIRONMENT = request.param
     settings.ENV_NAME = request.param
 
