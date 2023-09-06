@@ -12,6 +12,12 @@ def mock_environments(settings, request):
     settings.ENV_NAME = request.param
 
 
+@pytest.fixture(params=[True, False])
+def mock_concourse_hard_purge(settings, request):
+    """Fixture that tests with True and False for settings.CONCOURSE_HARD_PURGE"""
+    settings.CONCOURSE_HARD_PURGE = request.param
+
+
 @pytest.fixture
 def mock_branches(settings, mocker):
     """Return mock github branches with names"""
