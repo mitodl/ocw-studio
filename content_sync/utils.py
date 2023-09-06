@@ -105,7 +105,7 @@ def move_s3_object(from_path, to_path):
 
 def get_common_pipeline_vars():
     """Get an object with all the template vars we need in pipelines based on env"""
-    vars = {
+    pipeline_vars = {
         "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
         "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
         "offline_preview_bucket_name": settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME,
@@ -119,14 +119,14 @@ def get_common_pipeline_vars():
         "ocw_studio_url": settings.SITE_BASE_URL,
     }
     if is_dev():
-        vars.update(
+        pipeline_vars.update(
             {
                 "resource_base_url_draft": settings.RESOURCE_BASE_URL_DRAFT,
                 "resource_base_url_live": settings.RESOURCE_BASE_URL_LIVE,
                 "ocw_studio_url": "http://10.1.0.102:8043",
             }
         )
-    return vars
+    return pipeline_vars
 
 
 def get_theme_branch():

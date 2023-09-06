@@ -456,21 +456,21 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 else settings.OCW_STUDIO_LIVE_URL,
             },
         ]:
-            vars = get_common_pipeline_vars()
-            vars.update(branch_vars)
-            branch = vars["branch"]
-            pipeline_name = vars["pipeline_name"]
-            static_api_url = vars["static_api_url"]
-            storage_bucket_name = vars["storage_bucket_name"]
-            artifacts_bucket = vars["artifacts_bucket_name"]
+            pipeline_vars = get_common_pipeline_vars()
+            pipeline_vars.update(branch_vars)
+            branch = pipeline_vars["branch"]
+            pipeline_name = pipeline_vars["pipeline_name"]
+            static_api_url = pipeline_vars["static_api_url"]
+            storage_bucket_name = pipeline_vars["storage_bucket_name"]
+            artifacts_bucket = pipeline_vars["artifacts_bucket_name"]
             if branch == settings.GIT_BRANCH_PREVIEW:
-                web_bucket = vars["preview_bucket_name"]
-                offline_bucket = vars["offline_preview_bucket_name"]
-                resource_base_url = vars["resource_base_url_draft"]
+                web_bucket = pipeline_vars["preview_bucket_name"]
+                offline_bucket = pipeline_vars["offline_preview_bucket_name"]
+                resource_base_url = pipeline_vars["resource_base_url_draft"]
             elif branch == settings.GIT_BRANCH_RELEASE:
-                web_bucket = vars["publish_bucket_name"]
-                offline_bucket = vars["offline_publish_bucket_name"]
-                resource_base_url = vars["resource_base_url_live"]
+                web_bucket = pipeline_vars["publish_bucket_name"]
+                offline_bucket = pipeline_vars["offline_publish_bucket_name"]
+                resource_base_url = pipeline_vars["resource_base_url_live"]
             if (
                 branch == settings.GIT_BRANCH_PREVIEW
                 or settings.ENV_NAME not in PRODUCTION_NAMES
@@ -528,7 +528,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
                 .replace("((ocw-hugo-projects-branch))", ocw_hugo_projects_branch)
                 .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
-                .replace("((ocw-studio-url))", vars["ocw_studio_url"] or "")
+                .replace("((ocw-studio-url))", pipeline_vars["ocw_studio_url"] or "")
                 .replace("((static-api-base-url))", static_api_url)
                 .replace(
                     "((ocw-import-starter-slug))", settings.OCW_COURSE_STARTER_SLUG

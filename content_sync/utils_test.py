@@ -171,27 +171,27 @@ def test_get_common_pipeline_vars(settings, mocker, is_dev):
     """get_common_pipeline_vars should return the correct values based on environment"""
     mock_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_is_dev.return_value = is_dev
-    vars = get_common_pipeline_vars()
-    assert vars["preview_bucket_name"] == settings.AWS_PREVIEW_BUCKET_NAME
-    assert vars["publish_bucket_name"] == settings.AWS_PUBLISH_BUCKET_NAME
+    pipeline_vars = get_common_pipeline_vars()
+    assert pipeline_vars["preview_bucket_name"] == settings.AWS_PREVIEW_BUCKET_NAME
+    assert pipeline_vars["publish_bucket_name"] == settings.AWS_PUBLISH_BUCKET_NAME
     assert (
-        vars["offline_preview_bucket_name"] == settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME
+        pipeline_vars["offline_preview_bucket_name"] == settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME
     )
     assert (
-        vars["offline_publish_bucket_name"] == settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME
+        pipeline_vars["offline_publish_bucket_name"] == settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME
     )
-    assert vars["storage_bucket_name"] == settings.AWS_STORAGE_BUCKET_NAME
-    assert vars["artifacts_bucket_name"] == "ol-eng-artifacts"
-    assert vars["static_api_base_url_draft"] == settings.OCW_STUDIO_DRAFT_URL
-    assert vars["static_api_base_url_live"] == settings.OCW_STUDIO_LIVE_URL
+    assert pipeline_vars["storage_bucket_name"] == settings.AWS_STORAGE_BUCKET_NAME
+    assert pipeline_vars["artifacts_bucket_name"] == "ol-eng-artifacts"
+    assert pipeline_vars["static_api_base_url_draft"] == settings.OCW_STUDIO_DRAFT_URL
+    assert pipeline_vars["static_api_base_url_live"] == settings.OCW_STUDIO_LIVE_URL
     if is_dev:
-        assert vars["resource_base_url_draft"] == settings.RESOURCE_BASE_URL_DRAFT
-        assert vars["resource_base_url_live"] == settings.RESOURCE_BASE_URL_LIVE
-        assert vars["ocw_studio_url"] == "http://10.1.0.102:8043"
+        assert pipeline_vars["resource_base_url_draft"] == settings.RESOURCE_BASE_URL_DRAFT
+        assert pipeline_vars["resource_base_url_live"] == settings.RESOURCE_BASE_URL_LIVE
+        assert pipeline_vars["ocw_studio_url"] == "http://10.1.0.102:8043"
     else:
-        assert vars["resource_base_url_draft"] == ""
-        assert vars["resource_base_url_live"] == ""
-        assert vars["ocw_studio_url"] == settings.SITE_BASE_URL
+        assert pipeline_vars["resource_base_url_draft"] == ""
+        assert pipeline_vars["resource_base_url_live"] == ""
+        assert pipeline_vars["ocw_studio_url"] == settings.SITE_BASE_URL
 
 
 @pytest.mark.parametrize("build_target", [TARGET_OFFLINE, TARGET_ONLINE])

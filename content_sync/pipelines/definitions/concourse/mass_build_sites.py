@@ -212,7 +212,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
 
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig, **kwargs):
         base = super()
-        vars = get_common_pipeline_vars()
+        pipeline_vars = get_common_pipeline_vars()
         namespace = ".:site."
         resource_types = MassBuildSitesPipelineResourceTypes()
         resources = MassBuildSitesResources(config=config)
@@ -244,15 +244,15 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             across_var_values = []
             site_pipeline_definition_vars = get_site_pipeline_definition_vars(namespace)
             if config.version == VERSION_DRAFT:
-                static_api_url = vars["static_api_base_url_draft"]
-                web_bucket = vars["preview_bucket_name"]
-                offline_bucket = vars["offline_preview_bucket_name"]
-                resource_base_url = vars["resource_base_url_draft"]
+                static_api_url = pipeline_vars["static_api_base_url_draft"]
+                web_bucket = pipeline_vars["preview_bucket_name"]
+                offline_bucket = pipeline_vars["offline_preview_bucket_name"]
+                resource_base_url = pipeline_vars["resource_base_url_draft"]
             else:
-                static_api_url = vars["static_api_base_url_live"]
-                web_bucket = vars["publish_bucket_name"]
-                offline_bucket = vars["offline_publish_bucket_name"]
-                resource_base_url = vars["resource_base_url_live"]
+                static_api_url = pipeline_vars["static_api_base_url_live"]
+                web_bucket = pipeline_vars["publish_bucket_name"]
+                offline_bucket = pipeline_vars["offline_publish_bucket_name"]
+                resource_base_url = pipeline_vars["resource_base_url_live"]
             for site in batch:
                 site_config = SitePipelineDefinitionConfig(
                     site=site,
@@ -260,12 +260,12 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                     instance_vars=f"?vars={quote(json.dumps({'site': site.name}))}",
                     site_content_branch=config.site_content_branch,
                     static_api_url=static_api_url,
-                    storage_bucket=vars["storage_bucket_name"],
-                    artifacts_bucket=vars["artifacts_bucket_name"],
+                    storage_bucket=pipeline_vars["storage_bucket_name"],
+                    artifacts_bucket=pipeline_vars["artifacts_bucket_name"],
                     web_bucket=web_bucket,
                     offline_bucket=offline_bucket,
                     resource_base_url=resource_base_url,
-                    ocw_studio_url=vars["ocw_studio_url"],
+                    ocw_studio_url=pipeline_vars["ocw_studio_url"],
                     ocw_hugo_themes_branch=config.ocw_hugo_themes_branch,
                     ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
                     namespace=namespace,
