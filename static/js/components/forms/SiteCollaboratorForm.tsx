@@ -45,7 +45,7 @@ export default function SiteCollaboratorForm({
         ? { ...roleValidation }
         : { ...roleValidation, ...emailValidation },
     )
-
+  console.log("passed collaboratior is",collaborator)
   return (
     <Formik
       onSubmit={onSubmit}
@@ -63,6 +63,7 @@ export default function SiteCollaboratorForm({
                 type="email"
                 value={values.email}
               />
+              {console.log("1")}
               <ErrorMessage name="email" component={FormError} />
             </div>
           )}
@@ -80,6 +81,7 @@ export default function SiteCollaboratorForm({
                 })),
               ]}
             />
+              {console.log("2")}
             <ErrorMessage name="role" component={FormError} />
           </div>
           <div className="form-group d-flex">
@@ -99,7 +101,7 @@ export default function SiteCollaboratorForm({
               Cancel
             </button>
           </div>
-          {status && <div className="form-error">{status}</div>}
+          {status && <div className="form-error">{status} test error</div>}
         </Form>
       )}
     </Formik>

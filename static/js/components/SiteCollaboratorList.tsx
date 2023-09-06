@@ -127,6 +127,7 @@ console.log("listing", listing, listing.count)
         visibility={editVisibility}
         toggleVisibility={toggleEditVisibility}
         fetchWebsiteCollaboratorListing={fetchWebsiteCollaboratorListing}
+        listingParams={listingParams}
       />
       <div className="d-flex justify-content-between align-items-center py-3">
         <h2 className="m-0 p-0">Collaborators</h2>
@@ -135,16 +136,16 @@ console.log("listing", listing, listing.count)
         </button>
       </div>
       <StudioList>
-        {listing.results.map((item: WebsiteCollaborator) => (
+        {listing.results.map((collaborator: WebsiteCollaborator) => (
           <StudioListItem
-            key={item.user_id}
-            title={(item.name || item.email) ?? ""}
-            subtitle={ROLE_LABELS[item.role]}
+            key={collaborator.user_id}
+            title={collaborator.name || collaborator.email}
+            subtitle={ROLE_LABELS[collaborator.role]}
             menuOptions={
-              EDITABLE_ROLES.includes(item.role) ?
+              EDITABLE_ROLES.includes(collaborator.role) ?
                 [
-                  ["Settings", startEdit(item)],
-                  ["Delete", startDelete(item)]
+                  ["Settings", startEdit(collaborator)],
+                  ["Delete", startDelete(collaborator)]
                 ] :
                 []
             }
