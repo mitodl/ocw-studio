@@ -103,29 +103,30 @@ def move_s3_object(from_path, to_path):
     s3.Object(bucket, from_path).delete()
 
 
-def get_template_vars():
+def get_common_pipeline_vars():
     """Get an object with all the template vars we need in pipelines based on env"""
-    base_vars = {
+    pipeline_vars = {
         "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
         "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
         "offline_preview_bucket_name": settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME,
         "offline_publish_bucket_name": settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME,
         "storage_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
         "artifacts_bucket_name": "ol-eng-artifacts",
-    }
-    default_vars = {
+        "static_api_base_url_draft": settings.OCW_STUDIO_DRAFT_URL,
+        "static_api_base_url_live": settings.OCW_STUDIO_LIVE_URL,
         "resource_base_url_draft": "",
         "resource_base_url_live": "",
         "ocw_studio_url": settings.SITE_BASE_URL,
     }
-    default_vars.update(base_vars)
-    dev_vars = {
-        "resource_base_url_draft": settings.RESOURCE_BASE_URL_DRAFT,
-        "resource_base_url_live": settings.RESOURCE_BASE_URL_LIVE,
-        "ocw_studio_url": "http://10.1.0.102:8043",
-    }
-    dev_vars.update(base_vars)
-    return dev_vars if is_dev() else default_vars
+    if is_dev():
+        pipeline_vars.update(
+            {
+                "resource_base_url_draft": settings.RESOURCE_BASE_URL_DRAFT,
+                "resource_base_url_live": settings.RESOURCE_BASE_URL_LIVE,
+                "ocw_studio_url": "http://10.1.0.102:8043",
+            }
+        )
+    return pipeline_vars
 
 
 def get_theme_branch():

@@ -36,6 +36,7 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
     OcwHugoProjectsGitResource,
     OcwHugoThemesGitResource,
     OcwStudioWebhookResource,
+    OpenDiscussionsResource,
     SlackAlertResource,
     WebpackManifestResource,
 )
@@ -49,7 +50,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineOnlineTasks,
     get_site_pipeline_definition_vars,
 )
-from content_sync.utils import get_template_vars
+from content_sync.utils import get_common_pipeline_vars
 from main.utils import is_dev
 from websites.models import WebsiteQuerySet, WebsiteStarter
 
@@ -88,7 +89,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         prefix: Optional[str] = None,
         hugo_arg_overrides: Optional[str] = None,
     ):
-        vars = get_template_vars()
+        vars = get_common_pipeline_vars()
         self.sites = sites
         self.version = version
         self.prefix = prefix
@@ -160,6 +161,8 @@ class MassBuildSitesResources(list[Resource]):
             )
         )
         self.append(SlackAlertResource())
+        if not is_dev():
+            self.append(OpenDiscussionsResource())
 
 
 class MassBuildSitesPipelineBaseTasks(list[StepModifierMixin]):
@@ -209,7 +212,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
 
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig, **kwargs):
         base = super()
-        vars = get_template_vars()
+        pipeline_vars = get_common_pipeline_vars()
         namespace = ".:site."
         resource_types = MassBuildSitesPipelineResourceTypes()
         resources = MassBuildSitesResources(config=config)
@@ -240,25 +243,29 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                 tasks.append(filter_webpack_artifacts_step)
             across_var_values = []
             site_pipeline_definition_vars = get_site_pipeline_definition_vars(namespace)
+            if config.version == VERSION_DRAFT:
+                static_api_url = pipeline_vars["static_api_base_url_draft"]
+                web_bucket = pipeline_vars["preview_bucket_name"]
+                offline_bucket = pipeline_vars["offline_preview_bucket_name"]
+                resource_base_url = pipeline_vars["resource_base_url_draft"]
+            else:
+                static_api_url = pipeline_vars["static_api_base_url_live"]
+                web_bucket = pipeline_vars["publish_bucket_name"]
+                offline_bucket = pipeline_vars["offline_publish_bucket_name"]
+                resource_base_url = pipeline_vars["resource_base_url_live"]
             for site in batch:
                 site_config = SitePipelineDefinitionConfig(
                     site=site,
                     pipeline_name=config.version,
                     instance_vars=f"?vars={quote(json.dumps({'site': site.name}))}",
                     site_content_branch=config.site_content_branch,
-                    static_api_url=settings.STATIC_API_BASE_URL,
-                    storage_bucket=vars["storage_bucket_name"],
-                    artifacts_bucket=vars["artifacts_bucket_name"],
-                    web_bucket=vars["preview_bucket_name"]
-                    if config.version == VERSION_DRAFT
-                    else vars["publish_bucket_name"],
-                    offline_bucket=vars["offline_preview_bucket_name"]
-                    if config.version == VERSION_DRAFT
-                    else vars["offline_publish_bucket_name"],
-                    resource_base_url=vars["resource_base_url_draft"]
-                    if config.version == VERSION_DRAFT
-                    else vars["resource_base_url_live"],
-                    ocw_studio_url=vars["ocw_studio_url"],
+                    static_api_url=static_api_url,
+                    storage_bucket=pipeline_vars["storage_bucket_name"],
+                    artifacts_bucket=pipeline_vars["artifacts_bucket_name"],
+                    web_bucket=web_bucket,
+                    offline_bucket=offline_bucket,
+                    resource_base_url=resource_base_url,
+                    ocw_studio_url=pipeline_vars["ocw_studio_url"],
                     ocw_hugo_themes_branch=config.ocw_hugo_themes_branch,
                     ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
                     namespace=namespace,

@@ -39,8 +39,8 @@ from content_sync.pipelines.definitions.concourse.theme_assets_pipeline import (
 )
 from content_sync.utils import (
     check_mandatory_settings,
+    get_common_pipeline_vars,
     get_hugo_arg_string,
-    get_template_vars,
     get_theme_branch,
     strip_dev_lines,
     strip_non_dev_lines,
@@ -356,7 +356,7 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
 
     def upsert_pipeline(self):
         """Upsert the theme assets pipeline"""
-        template_vars = get_template_vars()
+        template_vars = get_common_pipeline_vars()
         pipeline_definition = ThemeAssetsPipelineDefinition(
             artifacts_bucket=template_vars["artifacts_bucket_name"],
             preview_bucket=template_vars["preview_bucket_name"],
@@ -456,20 +456,21 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 else settings.OCW_STUDIO_LIVE_URL,
             },
         ]:
-            branch_vars.update(get_template_vars())
-            branch = branch_vars["branch"]
-            pipeline_name = branch_vars["pipeline_name"]
-            static_api_url = branch_vars["static_api_url"]
-            storage_bucket_name = branch_vars["storage_bucket_name"]
-            artifacts_bucket = branch_vars["artifacts_bucket_name"]
+            pipeline_vars = get_common_pipeline_vars()
+            pipeline_vars.update(branch_vars)
+            branch = pipeline_vars["branch"]
+            pipeline_name = pipeline_vars["pipeline_name"]
+            static_api_url = pipeline_vars["static_api_url"]
+            storage_bucket_name = pipeline_vars["storage_bucket_name"]
+            artifacts_bucket = pipeline_vars["artifacts_bucket_name"]
             if branch == settings.GIT_BRANCH_PREVIEW:
-                web_bucket = branch_vars["preview_bucket_name"]
-                offline_bucket = branch_vars["offline_preview_bucket_name"]
-                resource_base_url = branch_vars["resource_base_url_draft"]
+                web_bucket = pipeline_vars["preview_bucket_name"]
+                offline_bucket = pipeline_vars["offline_preview_bucket_name"]
+                resource_base_url = pipeline_vars["resource_base_url_draft"]
             elif branch == settings.GIT_BRANCH_RELEASE:
-                web_bucket = branch_vars["publish_bucket_name"]
-                offline_bucket = branch_vars["offline_publish_bucket_name"]
-                resource_base_url = branch_vars["resource_base_url_live"]
+                web_bucket = pipeline_vars["publish_bucket_name"]
+                offline_bucket = pipeline_vars["offline_publish_bucket_name"]
+                resource_base_url = pipeline_vars["resource_base_url_live"]
             if (
                 branch == settings.GIT_BRANCH_PREVIEW
                 or settings.ENV_NAME not in PRODUCTION_NAMES
@@ -527,7 +528,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
                 .replace("((ocw-hugo-projects-branch))", ocw_hugo_projects_branch)
                 .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
-                .replace("((ocw-studio-url))", branch_vars["ocw_studio_url"] or "")
+                .replace("((ocw-studio-url))", pipeline_vars["ocw_studio_url"] or "")
                 .replace("((static-api-base-url))", static_api_url)
                 .replace(
                     "((ocw-import-starter-slug))", settings.OCW_COURSE_STARTER_SLUG
@@ -646,7 +647,7 @@ class MassBuildSitesPipeline(
         """
         Create or update the concourse pipeline
         """
-        template_vars = get_template_vars()
+        template_vars = get_common_pipeline_vars()
         starter = Website.objects.get(name=settings.ROOT_WEBSITE_NAME).starter
         starter_path_url = urlparse(starter.path)
         hugo_projects_url = urljoin(
@@ -805,7 +806,7 @@ class UnpublishedSiteRemovalPipeline(
         """
         Create or update the concourse pipeline
         """
-        template_vars = get_template_vars()
+        template_vars = get_common_pipeline_vars()
         web_bucket = template_vars["publish_bucket_name"]
         offline_bucket = template_vars["offline_publish_bucket_name"]
 
