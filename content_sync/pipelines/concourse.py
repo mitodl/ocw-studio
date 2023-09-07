@@ -413,7 +413,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         self.HUGO_ARGS = hugo_args
         self.set_instance_vars({"site": self.WEBSITE.name})
 
-    def upsert_pipeline(  # noqa: PLR0915
+    def upsert_pipeline(
         self,
     ):  # pylint:disable=too-many-locals,too-many-statements
         """
