@@ -28,7 +28,11 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
 )
-from content_sync.utils import get_hugo_arg_string, get_common_pipeline_vars, get_theme_branch
+from content_sync.utils import (
+    get_common_pipeline_vars,
+    get_hugo_arg_string,
+    get_theme_branch,
+)
 from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
