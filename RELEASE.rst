@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.101.0
+Version 0.101.0 (Released September 07, 2023)
 ---------------
 
 - fix ClearCdnCacheStep (#1944)
