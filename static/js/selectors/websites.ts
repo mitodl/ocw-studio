@@ -50,10 +50,34 @@ export const getWebsiteListingCursor = createSelector(
 export const startersSelector = (state: ReduxState): Array<WebsiteStarter> =>
   state.entities?.starters ?? []
 
-export const getWebsiteCollaboratorsCursor = createSelector(
-  (state: ReduxState) => state.entities?.collaborators ?? {},
-  (collaborators) => memoize((name: string) => collaborators[name]),
-)
+// export const getWebsiteCollaboratorsCursor = createSelector(
+//   (state: ReduxState) => state.entities?.collaborators ?? {},
+//   collaborators => memoize((name: string) => collaborators[name])
+// )
+
+// export const getWebsiteContentListingCursor = createSelector(
+//   (state: ReduxState) => state.entities?.websiteContentListing ?? {},
+//   getWebsiteContentDetailCursor,
+//   (listing, websiteContentDetailCursor) =>
+//     memoize(
+//       (
+//         listingParams: ContentListingParams
+//       ): WebsiteContentSelection | WebsiteContentListSelection => {
+//         const response = listing[contentListingKey(listingParams)] ?? {}
+//         const uuids: string[] = response?.results ?? []
+//         const items = uuids.map(uuid =>
+//           websiteContentDetailCursor({ name: listingParams.name, textId: uuid })
+//         )
+//         return {
+//           ...response,
+//           results: items
+//         }
+//       },
+//       (listingParams: ContentListingParams): string =>
+//         contentListingKey(listingParams)
+//     )
+// )
+
 
 export interface WebsiteCollaboratorListSelection extends WCSelection {
   results: WebsiteCollaborator[]
@@ -77,11 +101,12 @@ export const getWebsiteCollaboratorListingCursor = createSelector(
         listingParams: CollaboratorListingParams
       ): WebsiteCollaboratorListSelection => {
         const response = listing[collaboratorListingKey(listingParams)] ?? {}
-        const uuids: string[] = response?.results ?? []
+        console.log("response reuslts", response?.results)
+        const uuids: number[] = response?.results ?? []
         const items = uuids.map(uuid =>
           websiteCollaboratorDetailCursor({
             name:    listingParams.name,
-            user_id: uuid.toString()
+            user_id: uuid
           })
         )
         return {

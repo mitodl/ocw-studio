@@ -12,6 +12,7 @@ import {
   makePermanentWebsiteCollaborator,
   makeWebsiteDetail,
   makeWebsiteCollaborators,
+  makeWebsiteCollaborator
 } from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer,
@@ -20,20 +21,63 @@ import WebsiteContext from "../context/Website"
 
 import { Website, WebsiteCollaborator } from "../types/websites"
 import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
+import { WebsiteCollaboratorListingResponse, collaboratorDetailKey, collaboratorListingKey } from "../query-configs/websites"
+import { StudioListItem } from "./StudioList"
 
 describe("SiteCollaboratorList", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     website: Website,
     collaborators: WebsiteCollaborator[],
-    permanentAdmins: WebsiteCollaborator[],
-    deleteCollaboratorStub: SinonStub
+    permanentAdmin: WebsiteCollaborator[],
+    deleteCollaboratorStub: SinonStub,
+    apiResponse: WebsiteCollaboratorListingResponse,
+    websiteCollaboratorDetailsLookup: Record<string, WebsiteCollaborator>
+
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
     collaborators = makeWebsiteCollaborators()
-    permanentAdmins = [makePermanentWebsiteCollaborator()]
+    permanentAdmin = [makePermanentWebsiteCollaborator()]
+    collaborators = concat(collaborators, permanentAdmin)
+    websiteCollaboratorDetailsLookup = {}
+    console.log
+    for (const collaborator of collaborators) {
+      websiteCollaboratorDetailsLookup[
+        collaboratorDetailKey({ name: website.name, user_id: collaborator.user_id })
+      ] = collaborator
+    }
+    console.log("collab=",collaborators )
+
+    // collaborators = concat(collaborators, permanentAdmins)
+    // console.log(collaborators, "collaboratorsss")
+    const listingParams = {
+      name:   website.name,
+      offset: 0
+    }
+    apiResponse = {
+      results:  collaborators,
+      count:    6,
+      next:     null,
+      previous: null
+    }
+    // makeWebsiteCollaborators()
+    const collaboratorListingLookup = {
+      [collaboratorListingKey(listingParams)]: {
+        ...apiResponse,
+        results: apiResponse.results.map(item => item.user_id)
+      }
+    }
+    helper.mockGetRequest(
+      siteApiCollaboratorsUrl
+        .param({
+          name: website.name
+        })
+        .query({ offset: 0 })
+        .toString(),
+      apiResponse
+    )
     render = helper.configureRenderer(
       (props) => (
         <WebsiteContext.Provider value={website}>
@@ -43,17 +87,16 @@ describe("SiteCollaboratorList", () => {
       {},
       {
         entities: {
-          collaborators: {
-            [website.name]: concat(collaborators, permanentAdmins),
-          },
+          collaborators: collaboratorListingLookup,
+          websiteCollaboratorDetails: websiteCollaboratorDetailsLookup
         },
         queries: {},
       },
     )
-    helper.mockGetRequest(
-      siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-      { results: concat(collaborators, permanentAdmins) },
-    )
+    // helper.mockGetRequest(
+    //   siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+    //   { results: concat(collaborators, permanentAdmins) }
+    // )
   })
 
   afterEach(() => {
@@ -69,8 +112,10 @@ describe("SiteCollaboratorList", () => {
 
   it("renders the collaborators list with expected number of items", async () => {
     const { wrapper } = await render()
-    const numCollaborators = concat(collaborators, permanentAdmins).length
+    const numCollaborators = collaborators.length
+    console.log("lenght", collaborators, numCollaborators)
     const items = wrapper.find("StudioListItem")
+    console.log("items", items, items.length)
     expect(items.length).toBe(numCollaborators)
     // First collaborator in list should be editable
     expect(items.at(0).prop("menuOptions")).toHaveLength(2)
@@ -78,9 +123,7 @@ describe("SiteCollaboratorList", () => {
     expect(items.at(numCollaborators - 1).prop("menuOptions")).toHaveLength(0)
     // Should be 6 StudioListItems but only 5 menu buttons (none for the permanent admin)
     expect(items.length).toBe(6)
-    expect(wrapper.find(".transparent-button").length).toBe(
-      collaborators.length,
-    )
+    expect(wrapper.find(".transparent-button").length).toBe(5)
   })
 
   it("the edit collaborator icon sets correct state and opens the modal", async () => {
@@ -92,7 +135,7 @@ describe("SiteCollaboratorList", () => {
     })
     wrapper.update()
     const component = wrapper.find(SiteCollaboratorDrawer)
-    expect(component.prop("collaborator")).toBe(collaborators[0])
+    expect(component.prop("collaborator")).toStrictEqual(collaborators[0])
     expect(component.prop("visibility")).toBe(true)
 
     act(() => {
@@ -104,7 +147,9 @@ describe("SiteCollaboratorList", () => {
 
   it("the delete collaborator dialog works as expected", async () => {
     const collaborator = collaborators[0]
-    const numCollaborators = concat(collaborators, permanentAdmins).length
+    const numCollaborators = collaborators.length
+    console.log("collaborators", collaborators)
+    console.log("collaborators length", collaborators.length)
     deleteCollaboratorStub = helper.mockDeleteRequest(
       siteApiCollaboratorsDetailUrl
         .param({
@@ -115,11 +160,12 @@ describe("SiteCollaboratorList", () => {
       {},
     )
     const { wrapper } = await render()
+    console.log("length", wrapper.find("li").length)
     wrapper.find(".transparent-button").at(0).simulate("click")
     wrapper.update()
     act(() => {
       wrapper.find("button.dropdown-item").at(1).simulate("click")
-    })
+    }) 
     wrapper.update()
     const dialog = wrapper.find("Dialog")
     expect(dialog.prop("open")).toBe(true)
@@ -128,8 +174,11 @@ describe("SiteCollaboratorList", () => {
       dialog.find("ModalFooter").find("button").at(1).simulate("click")
     })
     wrapper.update()
+    console.log(wrapper.find(StudioListItem).length)
     sinon.assert.calledOnce(deleteCollaboratorStub)
-    expect(wrapper.find("li").length).toBe(numCollaborators - 1)
+    await act(async () => {
+      expect(wrapper.find("li").length).toBe(numCollaborators - 1);
+    });
   })
 
   it("the add collaborator button sets correct state and opens the modal", async () => {

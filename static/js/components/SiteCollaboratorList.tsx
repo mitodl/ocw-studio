@@ -1,6 +1,7 @@
 import React, {
   MouseEvent as ReactMouseEvent,
   useCallback,
+  useEffect,
   useState,
 } from "react"
 import { useSelector } from "react-redux"
@@ -32,6 +33,7 @@ import { store } from "../store"
 export default function SiteCollaboratorList(): JSX.Element | null {
   const website = useWebsite()
   const { name, title } = website
+  console.log(name, title)
 
   const getListingParams = useCallback(
     (search: string): CollaboratorListingParams => {
@@ -84,6 +86,10 @@ export default function SiteCollaboratorList(): JSX.Element | null {
 
   const [deleteQueryState, deleteCollaborator] = useMutation(
     (): QueryConfig => {
+      console.log("abc", deleteWebsiteCollaboratorMutation(
+        name,
+        selectedCollaborator as WebsiteCollaborator
+      ))
       return deleteWebsiteCollaboratorMutation(
         name,
         selectedCollaborator as WebsiteCollaborator,
@@ -99,15 +105,27 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     if (!response) {
       return
     }
-    await store.dispatch(
-      requestAsync(
-        websiteCollaboratorListingRequest(listingParams, false, false)
-      )
-    )
+    if (response) {
+      console.log("after delete response", response)
+      // If the delete was successful, trigger a re-fetch of the collaborator listing
+      fetchWebsiteCollaboratorListing();
+    }
   }
 
-  const pages = usePagination(listing.count ?? 0)
+  // Use useEffect to watch for changes in deleteQueryState.isSuccess
+useEffect(() => {
+  if (deleteQueryState.isFinished) {
+    // Delete operation was successful, fetch the updated listing
+    fetchWebsiteCollaboratorListing();
+  }
+}, [deleteQueryState.isFinished]);
 
+  const pages = usePagination(listing.count ?? 0)
+  console.log(listing)
+
+  useEffect(() => {
+    console.log("Listing results changed:", listing);
+  }, [listing]);
   return (
     <>
       <DocumentTitle title={formatTitle(title, "Collaborators")} />
@@ -125,7 +143,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
         </button>
       </div>
       <StudioList>
-        {listing.results.map((collaborator: WebsiteCollaborator) => (
+        {listing.results.map((collaborator: WebsiteCollaborator, i: number) => (
           <StudioListItem
             key={collaborator.user_id}
             title={collaborator.name || collaborator.email}

@@ -84,9 +84,9 @@ export default function SiteCollaboratorDrawer(
     setSubmitting(false)
     toggleVisibility()
 
-    if (fetchWebsiteCollaboratorListing) {
-      fetchWebsiteCollaboratorListing()
-    }
+    // if (fetchWebsiteCollaboratorListing) {
+    //   fetchWebsiteCollaboratorListing()
+    // }
   }
 
   const onCancel = async () => {
