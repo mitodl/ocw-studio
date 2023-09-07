@@ -344,13 +344,13 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
         data=mocker.ANY,
         headers=({"X-Concourse-Config-Version": "3"} if pipeline_exists else None),
     )
+    expected_ocw_studio_url = expected_template_vars["ocw_studio_url"]
     if version == VERSION_DRAFT:
         _, kwargs = mock_put_headers.call_args_list[0]
         expected_site_content_branch = settings.GIT_BRANCH_PREVIEW
         expected_web_bucket = expected_template_vars["preview_bucket_name"]
         expected_offline_bucket = expected_template_vars["offline_preview_bucket_name"]
         expected_resource_base_url = expected_template_vars["resource_base_url_draft"]
-        expected_ocw_studio_url = settings.OCW_STUDIO_DRAFT_URL
         expected_static_api_url = (
             settings.STATIC_API_BASE_URL or settings.OCW_STUDIO_DRAFT_URL
             if is_dev()
@@ -362,7 +362,6 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
         expected_web_bucket = expected_template_vars["publish_bucket_name"]
         expected_offline_bucket = expected_template_vars["offline_publish_bucket_name"]
         expected_resource_base_url = expected_template_vars["resource_base_url_live"]
-        expected_ocw_studio_url = settings.OCW_STUDIO_LIVE_URL
         expected_static_api_url = (
             settings.STATIC_API_BASE_URL or settings.OCW_STUDIO_LIVE_URL
             if is_dev()
