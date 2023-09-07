@@ -439,7 +439,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             {
                 "branch": settings.GIT_BRANCH_PREVIEW,
                 "pipeline_name": VERSION_DRAFT,
-                "ocw_studio_url": settings.OCW_STUDIO_DRAFT_URL,
                 "static_api_url": settings.STATIC_API_BASE_URL
                 or settings.OCW_STUDIO_DRAFT_URL
                 if is_dev()
@@ -448,7 +447,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             {
                 "branch": settings.GIT_BRANCH_RELEASE,
                 "pipeline_name": VERSION_LIVE,
-                "ocw_studio_url": settings.OCW_STUDIO_LIVE_URL,
                 "static_api_url": settings.STATIC_API_BASE_URL
                 or settings.OCW_STUDIO_LIVE_URL
                 if is_dev()
