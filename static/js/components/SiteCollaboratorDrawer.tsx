@@ -7,12 +7,12 @@ import SiteCollaboratorForm from "./forms/SiteCollaboratorForm"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import {
   createWebsiteCollaboratorMutation,
-  editWebsiteCollaboratorMutation
+  editWebsiteCollaboratorMutation,
 } from "../query-configs/websites"
 
 import {
   WebsiteCollaborator,
-  WebsiteCollaboratorFormData
+  WebsiteCollaboratorFormData,
 } from "../types/websites"
 import { Modal, ModalBody, ModalHeader } from "reactstrap"
 
@@ -24,16 +24,16 @@ interface Props {
 }
 
 export default function SiteCollaboratorDrawer(
-  props: Props
+  props: Props,
 ): JSX.Element | null {
   const { siteName, collaborator, visibility, toggleVisibility } = props
 
   const [collaboratorAddQueryState, addCollaborator] = useMutation(
-    createWebsiteCollaboratorMutation
+    createWebsiteCollaboratorMutation,
   )
 
   const [collaboratorEditQueryState, updateCollaboratorRole] = useMutation(
-    editWebsiteCollaboratorMutation
+    editWebsiteCollaboratorMutation,
   )
 
   const onSubmit = async (
@@ -41,8 +41,8 @@ export default function SiteCollaboratorDrawer(
     {
       setSubmitting,
       setErrors,
-      setStatus
-    }: FormikHelpers<WebsiteCollaboratorFormData>
+      setStatus,
+    }: FormikHelpers<WebsiteCollaboratorFormData>,
   ) => {
     if (
       collaboratorAddQueryState.isPending ||
@@ -51,9 +51,9 @@ export default function SiteCollaboratorDrawer(
       return
     }
 
-    const response = await (collaborator ?
-      updateCollaboratorRole(siteName, collaborator, values.role) :
-      addCollaborator(siteName, values))
+    const response = await (collaborator
+      ? updateCollaboratorRole(siteName, collaborator, values.role)
+      : addCollaborator(siteName, values))
 
     if (!response) {
       return
@@ -70,7 +70,7 @@ export default function SiteCollaboratorDrawer(
         const emailError = collaborator ? {} : { email: errors["email"] }
         setErrors({
           ...roleError,
-          ...emailError
+          ...emailError,
         })
       }
       return

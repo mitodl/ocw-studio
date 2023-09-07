@@ -29,38 +29,17 @@
       "uid": "8f6ecc2f-b76d-126a-df90-0cfdd47ba63a"
     }
   ],
-  "learning_resource_types": [
-    "Problem Sets",
-    "Exams",
-    "Lecture Notes"
-  ],
+  "learning_resource_types": ["Problem Sets", "Exams", "Lecture Notes"],
   "topics": [
-    [
-      "Social Science",
-      "Urban Studies",
-      "Transportation Planning"
-    ],
-    [
-      "Engineering",
-      "Civil Engineering",
-      "Transportation Engineering"
-    ],
-    [
-      "Social Science",
-      "Economics",
-      "Financial Economics"
-    ]
+    ["Social Science", "Urban Studies", "Transportation Planning"],
+    ["Engineering", "Civil Engineering", "Transportation Engineering"],
+    ["Social Science", "Economics", "Financial Economics"]
   ],
   "primary_course_number": "1.201J",
-  "extra_course_numbers": [
-    "11.545J",
-    "ESD.210J"
-  ],
+  "extra_course_numbers": ["11.545J", "ESD.210J"],
   "term": "Fall",
   "year": "2008",
-  "level": [
-    "Graduate"
-  ],
+  "level": ["Graduate"],
   "other_versions": [],
   "archived_versions": [],
   "open_learning_library_versions": [],

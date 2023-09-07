@@ -28,7 +28,7 @@ describe("Dialog", () => {
     onAcceptStub = sinon.stub()
     render = (props: ExtraProps) =>
       shallow(
-        <Dialog onAccept={onAcceptStub} onCancel={onCancelStub} {...props} />
+        <Dialog onAccept={onAcceptStub} onCancel={onCancelStub} {...props} />,
       )
   })
 
@@ -62,7 +62,7 @@ describe("Dialog", () => {
       headerContent,
       bodyContent,
       acceptText,
-      cancelText
+      cancelText,
     })
     expect(wrapper.find("Modal").prop("isOpen")).toBe(false)
 
@@ -79,11 +79,11 @@ describe("Dialog", () => {
     const wrapper = render({
       headerContent,
       bodyContent,
-      open:              true,
-      wrapClassName:     "wrap",
-      modalClassName:    "modal",
+      open: true,
+      wrapClassName: "wrap",
+      modalClassName: "modal",
       backdropClassName: "backdrop",
-      contentClassName:  "content"
+      contentClassName: "content",
     })
     expect(wrapper.find("Modal").prop("wrapClassName")).toBe("wrap")
     expect(wrapper.find("Modal").prop("modalClassName")).toBe("modal")

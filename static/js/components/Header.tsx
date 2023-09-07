@@ -23,7 +23,7 @@ export interface HeaderProps {
 export default function Header(props: HeaderProps): JSX.Element {
   const { website } = props
   const dispatch = useAppDispatch()
-  const { user } = useAppSelector(state => state.user)
+  const { user } = useAppSelector((state) => state.user)
   const [search, setSearchParams] = useSearchParams()
   const drawerOpen = search.has("publish")
 
@@ -44,11 +44,11 @@ export default function Header(props: HeaderProps): JSX.Element {
         website &&
         ((website.draft_publish_status &&
           PUBLISH_STATUS_PROCESSING_STATES.includes(
-            website.draft_publish_status
+            website.draft_publish_status,
           )) ||
           (website.live_publish_status &&
             PUBLISH_STATUS_PROCESSING_STATES.includes(
-              website.live_publish_status
+              website.live_publish_status,
             )))
       ) {
         try {
@@ -58,7 +58,7 @@ export default function Header(props: HeaderProps): JSX.Element {
         }
       }
     },
-    website ? 5000 : null
+    website ? 5000 : null,
   )
 
   return (

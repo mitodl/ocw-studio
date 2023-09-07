@@ -22,7 +22,7 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
       const nameRegex = new RegExp(LEGACY_SHORTCODES.join("|"))
       return [
         {
-          type:    "lang",
+          type: "lang",
           /**
            * It's important that there's a single regex for all the legacy
            * shortcodes, rather than one per shortcode. Otherwise the order of
@@ -35,27 +35,27 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
            * come before sub so that the sub-replacement is not used on the above
            * example.
            */
-          regex:   Shortcode.regex(nameRegex, false),
+          regex: Shortcode.regex(nameRegex, false),
           replace: (stringMatch: string) => {
             const shortcode = Shortcode.fromString(stringMatch)
             const { isClosing } = shortcode
-            const params = shortcode.params.map(p => p.toHugo()).join(" ")
+            const params = shortcode.params.map((p) => p.toHugo()).join(" ")
             const tag = `<span ${DATA_ISCLOSING}="${isClosing}" ${
               params ? `${DATA_ARGUMENTS}="${encodeURIComponent(params)}"` : ""
             } class="${shortcodeClass(shortcode.name)}"></span>`
 
             return tag
-          }
-        }
+          },
+        },
       ]
     }
   }
 
   get turndownRules(): TurndownRule[] {
-    return LEGACY_SHORTCODES.map(shortcode => ({
+    return LEGACY_SHORTCODES.map((shortcode) => ({
       name: `LegacyShortcodeSyntax-${shortcode}`,
       rule: {
-        filter: node => {
+        filter: (node) => {
           return (
             node.nodeName === "SPAN" &&
             node.className === shortcodeClass(shortcode)
@@ -66,12 +66,12 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
           const rawShortcodeArgs = node.getAttribute(DATA_ARGUMENTS)
 
           return `{{< ${isClosingTag ? "/" : ""}${shortcode} ${
-            rawShortcodeArgs !== undefined && rawShortcodeArgs !== null ?
-              `${decodeURIComponent(rawShortcodeArgs)} ` :
-              ""
+            rawShortcodeArgs !== undefined && rawShortcodeArgs !== null
+              ? `${decodeURIComponent(rawShortcodeArgs)} `
+              : ""
           }>}}`
-        }
-      }
+        },
+      },
     }))
   }
 }
@@ -96,12 +96,12 @@ class LegacyShortcodeEditing extends CKPlugin {
   _defineSchema() {
     const schema = this.editor.model.schema
 
-    LEGACY_SHORTCODES.map(shortcode => {
+    LEGACY_SHORTCODES.map((shortcode) => {
       schema.register(`legacy-shortcode-${shortcode}`, {
-        isInline:        true,
-        allowWhere:      "$text",
-        isObject:        true,
-        allowAttributes: ["isClosing", "arguments"]
+        isInline: true,
+        allowWhere: "$text",
+        isObject: true,
+        allowAttributes: ["isClosing", "arguments"],
       })
     })
   }
@@ -109,19 +109,19 @@ class LegacyShortcodeEditing extends CKPlugin {
   _defineConverters() {
     const conversion = this.editor.conversion
 
-    LEGACY_SHORTCODES.map(shortcode => {
+    LEGACY_SHORTCODES.map((shortcode) => {
       /**
        * convert HTML string to a view element (i.e. ckeditor
        * internal state, *not* to a DOM element)
        */
       conversion.for("upcast").elementToElement({
         view: {
-          name:    "span",
-          classes: [shortcodeClass(shortcode)]
+          name: "span",
+          classes: [shortcodeClass(shortcode)],
         },
         model: (viewElement: any, { writer: modelWriter }: any) => {
           const attrs: any = {
-            isClosing: viewElement.getAttribute(DATA_ISCLOSING)
+            isClosing: viewElement.getAttribute(DATA_ISCLOSING),
           }
 
           const dataArguments = viewElement.getAttribute(DATA_ARGUMENTS)
@@ -130,7 +130,7 @@ class LegacyShortcodeEditing extends CKPlugin {
           }
 
           return modelWriter.createElement(shortcodeModelName(shortcode), attrs)
-        }
+        },
       })
 
       /**
@@ -138,10 +138,10 @@ class LegacyShortcodeEditing extends CKPlugin {
        */
       conversion.for("dataDowncast").elementToElement({
         model: shortcodeModelName(shortcode),
-        view:  (modelElement: any, { writer: viewWriter }: any) => {
+        view: (modelElement: any, { writer: viewWriter }: any) => {
           const attrs: any = {
             [DATA_ISCLOSING]: modelElement.getAttribute("isClosing"),
-            class:            shortcodeClass(shortcode)
+            class: shortcodeClass(shortcode),
           }
 
           const dataArguments = modelElement.getAttribute("arguments")
@@ -152,11 +152,11 @@ class LegacyShortcodeEditing extends CKPlugin {
           return viewWriter.createRawElement(
             "span",
             attrs,
-            function(el: HTMLElement) {
+            function (el: HTMLElement) {
               el.innerHTML = shortcode
-            }
+            },
           )
-        }
+        },
       })
 
       /**
@@ -172,16 +172,16 @@ class LegacyShortcodeEditing extends CKPlugin {
           const el = viewWriter.createRawElement(
             "span",
             {
-              class: `${shortcodeClass(shortcode)} legacy-shortcode`
+              class: `${shortcodeClass(shortcode)} legacy-shortcode`,
             },
-            function(el: HTMLElement) {
+            function (el: HTMLElement) {
               el.innerHTML =
                 isClosing.trim() === "true" ? `/${shortcode}` : `${shortcode}`
-            }
+            },
           )
 
           return el
-        }
+        },
       })
     })
   }

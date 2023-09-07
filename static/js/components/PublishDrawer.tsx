@@ -8,7 +8,7 @@ import { isEmpty } from "ramda"
 import {
   websitePublishAction,
   websiteDetailRequest,
-  WebsitePublishPayload
+  WebsitePublishPayload,
 } from "../query-configs/websites"
 import { isErrorStatusCode } from "../lib/util"
 import PublishStatusIndicator from "./PublishStatusIndicator"
@@ -16,7 +16,7 @@ import PublishStatusIndicator from "./PublishStatusIndicator"
 import { Website } from "../types/websites"
 import PublishForm, {
   OnSubmitPublish,
-  SiteFormValues
+  SiteFormValues,
 } from "./forms/PublishForm"
 import { PublishingEnv, PublishStatus } from "../constants"
 import { useAppDispatch } from "../hooks/redux"
@@ -37,34 +37,34 @@ interface PublishingInfo {
 
 const getPublishingInfo = (
   website: Website,
-  publishingEnv: PublishingEnv
+  publishingEnv: PublishingEnv,
 ): PublishingInfo => {
   if (publishingEnv === PublishingEnv.Staging) {
     return {
-      envLabel:              "Staging",
-      date:                  website.draft_publish_date,
-      status:                website.draft_publish_status,
-      hasUnpublishedChanges: website.has_unpublished_draft
+      envLabel: "Staging",
+      date: website.draft_publish_date,
+      status: website.draft_publish_status,
+      hasUnpublishedChanges: website.has_unpublished_draft,
     }
   }
   if (publishingEnv === PublishingEnv.Production) {
     return {
-      envLabel:              "Production",
-      date:                  website.publish_date,
-      status:                website.live_publish_status,
-      hasUnpublishedChanges: website.has_unpublished_live
+      envLabel: "Production",
+      date: website.publish_date,
+      status: website.live_publish_status,
+      hasUnpublishedChanges: website.has_unpublished_live,
     }
   }
   throw new Error("Invalid PublishingEnv")
 }
 
-const PublishingOption: React.FC<PublishingOptionProps> = props => {
+const PublishingOption: React.FC<PublishingOptionProps> = (props) => {
   const { publishingEnv, selected, onSelect, website, onPublishSuccess } = props
   const publishingInfo = getPublishingInfo(website, publishingEnv)
 
   const [{ isPending }, publish] = useMutation(
     (payload: WebsitePublishPayload) =>
-      websitePublishAction(website.name, publishingEnv, payload)
+      websitePublishAction(website.name, publishingEnv, payload),
   )
 
   const handlePublish: OnSubmitPublish = async (payload, helpers) => {
@@ -78,11 +78,11 @@ const PublishingOption: React.FC<PublishingOptionProps> = props => {
       if (isErrorStatusCode(response.status)) {
         const errorBody: Partial<SiteFormValues> | undefined = response.body
         const errors = {
-          url_path: errorBody?.url_path
+          url_path: errorBody?.url_path,
         }
         helpers.setErrors(errors)
         helpers.setStatus(
-          "We apologize, there was a problem publishing your site."
+          "We apologize, there was a problem publishing your site.",
         )
       } else {
         onPublishSuccess()
@@ -98,7 +98,7 @@ const PublishingOption: React.FC<PublishingOptionProps> = props => {
           id={`publish-${publishingEnv}`}
           value={publishingEnv}
           checked={selected}
-          onChange={e => {
+          onChange={(e) => {
             if (e.target.checked) {
               onSelect(publishingEnv)
             }
@@ -111,9 +111,9 @@ const PublishingOption: React.FC<PublishingOptionProps> = props => {
       {selected && (
         <div className="publish-option-description">
           Last updated:{" "}
-          {publishingInfo.date ?
-            moment(publishingInfo.date).format("dddd, MMMM D h:mma ZZ") :
-            "never published"}
+          {publishingInfo.date
+            ? moment(publishingInfo.date).format("dddd, MMMM D h:mma ZZ")
+            : "never published"}
           <br />
           {publishingInfo.hasUnpublishedChanges && (
             <>
@@ -149,9 +149,9 @@ export default function PublishDrawer(props: Props): JSX.Element {
     await dispatch(requestAsync(websiteDetailRequest(website.name)))
   }
 
-  const userEnvs = website.is_admin ?
-    [PublishingEnv.Staging, PublishingEnv.Production] :
-    [PublishingEnv.Staging]
+  const userEnvs = website.is_admin
+    ? [PublishingEnv.Staging, PublishingEnv.Production]
+    : [PublishingEnv.Staging]
 
   return (
     <Modal
@@ -161,7 +161,7 @@ export default function PublishDrawer(props: Props): JSX.Element {
     >
       <ModalHeader toggle={toggleVisibility}>Publish your site</ModalHeader>
       <ModalBody>
-        {userEnvs.map(publishingEnv => (
+        {userEnvs.map((publishingEnv) => (
           <PublishingOption
             key={publishingEnv}
             website={website}

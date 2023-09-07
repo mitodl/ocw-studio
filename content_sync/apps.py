@@ -1,4 +1,4 @@
-""" Content sync apps """
+"""Content sync apps"""
 from django.apps import AppConfig
 
 
@@ -9,4 +9,4 @@ class ContentSyncApp(AppConfig):
 
     def ready(self):
         """Application is ready"""
-        import content_sync.signals  # pylint:disable=unused-import, import-outside-toplevel
+        import content_sync.signals  # noqa: F401

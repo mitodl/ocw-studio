@@ -10,14 +10,9 @@
           "widget": "string"
         },
         {
-          "embed": [
-            "resource"
-          ],
+          "embed": ["resource"],
           "label": "Body",
-          "link": [
-            "resource",
-            "page"
-          ],
+          "link": ["resource", "page"],
           "name": "body",
           "widget": "markdown"
         }
@@ -71,12 +66,7 @@
         {
           "label": "Resource Type",
           "name": "resourcetype",
-          "options": [
-            "Image",
-            "Video",
-            "Document",
-            "Other"
-          ],
+          "options": ["Image", "Video", "Document", "Other"],
           "required": true,
           "widget": "select"
         },
@@ -352,22 +342,13 @@
               "label": "Level",
               "multiple": true,
               "name": "level",
-              "options": [
-                "Undergraduate",
-                "Graduate",
-                "Non Credit"
-              ],
+              "options": ["Undergraduate", "Graduate", "Non Credit"],
               "widget": "select"
             },
             {
               "label": "Term",
               "name": "term",
-              "options": [
-                "Spring",
-                "Summer",
-                "Fall",
-                "January IAP"
-              ],
+              "options": ["Spring", "Summer", "Fall", "January IAP"],
               "widget": "select"
             },
             {
@@ -590,19 +571,13 @@
                   ],
                   "Art History": [],
                   "Game Design": [],
-                  "Media Studies": [
-                    "Digital Media"
-                  ],
+                  "Media Studies": ["Digital Media"],
                   "Music": [
                     "Music Theory",
                     "Music History",
                     "Music Performance"
                   ],
-                  "Performance Arts": [
-                    "Dance",
-                    "Theatrical Design",
-                    "Theater"
-                  ],
+                  "Performance Arts": ["Dance", "Theatrical Design", "Theater"],
                   "Visual Arts": [
                     "Photography",
                     "Film and Video",
@@ -662,11 +637,7 @@
                     "Japanese",
                     "German"
                   ],
-                  "Linguistics": [
-                    "Phonology",
-                    "Syntax",
-                    "Semantics"
-                  ],
+                  "Linguistics": ["Phonology", "Syntax", "Semantics"],
                   "Literature": [
                     "Academic Writing",
                     "Fiction",
@@ -800,10 +771,7 @@
                     "Security Studies",
                     "Science and Technology Policy"
                   ],
-                  "Sociology": [
-                    "Community Development",
-                    "Social Justice"
-                  ],
+                  "Sociology": ["Community Development", "Social Justice"],
                   "Urban Studies": [
                     "Housing Development",
                     "Regional Planning",

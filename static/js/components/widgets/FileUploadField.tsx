@@ -18,12 +18,12 @@ export default function FileUploadField(props: Props): JSX.Element {
       <input
         type="file"
         name={fileInputName}
-        onChange={event => {
+        onChange={(event) => {
           onChange({
             target: {
-              name:  event.target.name,
-              value: event.target.files ? event.target.files[0] : null
-            }
+              name: event.target.name,
+              value: event.target.files ? event.target.files[0] : null,
+            },
           })
         }}
         className="form-control"

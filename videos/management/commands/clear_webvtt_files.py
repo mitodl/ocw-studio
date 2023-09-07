@@ -1,7 +1,7 @@
 """
 We should save webvtt caption files with the webvtt extensions. This deletes caption files without the extention
 from s3 and clears out the video resource metadata so it can be repopulates with the correct extension on publish
-"""
+"""  # noqa: E501
 
 import os
 
@@ -13,8 +13,7 @@ from videos.models import Video
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.utils import set_dict_field
 
-
-script_path = os.path.dirname(os.path.realpath(__file__))
+script_path = os.path.dirname(os.path.realpath(__file__))  # noqa: PTH120
 
 
 class Command(BaseCommand):
@@ -22,9 +21,9 @@ class Command(BaseCommand):
     delete _webvtt caption files without extension from s3 and clear resource metadata
     """
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa: ARG002
         """
         Run the command
         """

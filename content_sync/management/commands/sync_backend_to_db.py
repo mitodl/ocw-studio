@@ -1,4 +1,4 @@
-"""Syncs a website from a backend (Github, et al) to the database"""
+"""Syncs a website from a backend (Github, et al) to the database"""  # noqa: INP001
 import sys
 
 from github.GithubObject import NotSet
@@ -11,7 +11,7 @@ from websites.api import fetch_website, reset_publishing_fields
 class Command(WebsiteFilterCommand):
     """Syncs a website from a backend (Github, et al) to the database"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -33,7 +33,7 @@ class Command(WebsiteFilterCommand):
 
         if not self.filter_list:
             self.stderr.write(
-                "You must specify a website or list of websites to process, --filter or --filter-json"
+                "You must specify a website or list of websites to process, --filter or --filter-json"  # noqa: E501
             )
 
         commit = options["commit"] or NotSet
@@ -42,7 +42,7 @@ class Command(WebsiteFilterCommand):
             "Y"
             if (path is not None or commit is NotSet)
             else input(
-                "Are you sure you want to revert all files for specified sites to this commit? Y/N"
+                "Are you sure you want to revert all files for specified sites to this commit? Y/N"  # noqa: E501
             ).upper()
         )
         if confirm != "Y":

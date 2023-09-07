@@ -6,15 +6,15 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import (
 class RemoveInaccesibleGifRule(RegexpCleanupRule):
     """
     Remove all instances of "![This resource may not render correctly in a screen reader.](/images/inacessible.gif)".
-    """
+    """  # noqa: E501
 
     alias = "inaccessible"
 
     # Yes, literally this. Period.
     # Helpfully, inacessible is mispelled which makes it even more specific!.
-    regex = r"!\[This resource may not render correctly in a screen reader\.\]\(/images/inacessible\.gif\)"
+    regex = r"!\[This resource may not render correctly in a screen reader\.\]\(/images/inacessible\.gif\)"  # noqa: E501
 
     fields = ["markdown", "metadata.optional_text", "metadata.related_resources_text"]
 
-    def replace_match(self, match, website_content) -> str:
+    def replace_match(self, match, website_content) -> str:  # noqa: ARG002
         return ""

@@ -59,33 +59,33 @@ class MathSyntax extends MarkdownSyntaxPlugin {
          * as `\\(`.
          */
         {
-          type:    "lang",
-          regex:   /\\\\\((.*?)\\\\\)/g,
+          type: "lang",
+          regex: /\\\\\((.*?)\\\\\)/g,
           replace: (_stringMatch: string, math: string) => {
             return `<span data-math="">${math}</span>`
-          }
+          },
         },
         {
-          type:    "lang",
-          regex:   /\\\\\[(.*?)\\\\\]/g,
+          type: "lang",
+          regex: /\\\\\[(.*?)\\\\\]/g,
           replace: (_stringMatch: string, math: string) => {
             return `<span data-math="" mode="display">${math}</span>`
-          }
+          },
         },
         {
-          type:    "output",
-          regex:   /<span data-math="">(.*?)<\/span>/g,
+          type: "output",
+          regex: /<span data-math="">(.*?)<\/span>/g,
           replace: (_stringMatch: string, math: string) => {
             return `<script type="math/tex">${math}</script>`
-          }
+          },
         },
         {
-          type:    "output",
-          regex:   /<span data-math="" mode="display">(.*?)<\/span>/g,
+          type: "output",
+          regex: /<span data-math="" mode="display">(.*?)<\/span>/g,
           replace: (_stringMatch: string, math: string) => {
             return `<script type="math/tex; mode=display">${math}</script>`
-          }
-        }
+          },
+        },
       ]
     }
   }
@@ -95,7 +95,7 @@ class MathSyntax extends MarkdownSyntaxPlugin {
       {
         name: "MathSyntaxRule",
         rule: {
-          filter: node => {
+          filter: (node) => {
             return (
               node instanceof HTMLScriptElement &&
               node.type.includes("math/tex")
@@ -107,12 +107,12 @@ class MathSyntax extends MarkdownSyntaxPlugin {
             const script = node as HTMLScriptElement
             const isDisplayMode = script.type.includes("mode=display")
             const text = prepareTexForMarkdown(node.textContent ?? "")
-            return isDisplayMode ?
-              String.raw`\\[${text}\\]` :
-              String.raw`\\(${text}\\)`
-          }
-        }
-      }
+            return isDisplayMode
+              ? String.raw`\\[${text}\\]`
+              : String.raw`\\(${text}\\)`
+          },
+        },
+      },
     ]
   }
 }

@@ -1,4 +1,4 @@
-""" Tests for ocw_import.api """
+"""Tests for ocw_import.api"""
 import json
 import re
 from unittest.mock import Mock, patch
@@ -35,7 +35,6 @@ from websites.factories import (
 )
 from websites.models import Website, WebsiteContent
 
-
 pytestmark = pytest.mark.django_db
 
 TEST_OCW2HUGO_PATH = get_ocw2hugo_path("./test_ocw2hugo")
@@ -59,8 +58,8 @@ def test_import_ocw2hugo_course_content(mocker, settings):
     assert website.starter == website_starter
     assert website.source == WEBSITE_SOURCE_OCW_IMPORT
     assert website.short_id == "1.050-fall-2007"
-    with open(
-        f"{TEST_OCW2HUGO_PATH}/{name}/data/course_legacy.json", "r", encoding="utf-8"
+    with open(  # noqa: PTH123
+        f"{TEST_OCW2HUGO_PATH}/{name}/data/course_legacy.json", encoding="utf-8"
     ) as infile:
         assert json.dumps(website.metadata, sort_keys=True) == json.dumps(
             json.load(infile), sort_keys=True
@@ -135,7 +134,7 @@ def test_import_ocw2hugo_sitemetadata_legacy(
     """Make sure we handle importing levels, term, and year in a legacy format"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"
-    with open(
+    with open(  # noqa: PTH123
         f"test_ocw2hugo/{name}/data/course_legacy.json", encoding="utf-8"
     ) as course_json_file:
         course_json = json.load(course_json_file)
@@ -305,16 +304,21 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "course_num, term, year, expected_id",
+    ("course_num", "term", "year", "expected_id"),
     [
-        ["6.0001", "", "", "6.0001"],
-        ["5.3", "Spring", "2022", "5.3-spring-2022"],
-        ["5.3", "Spring 2022", None, "5.3-spring-2022"],
-        ["5.3", "January IAP", "2011", "5.3-january-iap-2011"],
-        ["18.650 (formerly 18.443) ", "Spring", "2015", "18.650-spring-2015"],
-        [None, "January IAP", "2011", None],
+        ["6.0001", "", "", "6.0001"],  # noqa: PT007
+        ["5.3", "Spring", "2022", "5.3-spring-2022"],  # noqa: PT007
+        ["5.3", "Spring 2022", None, "5.3-spring-2022"],  # noqa: PT007
+        ["5.3", "January IAP", "2011", "5.3-january-iap-2011"],  # noqa: PT007
+        [  # noqa: PT007
+            "18.650 (formerly 18.443) ",
+            "Spring",
+            "2015",
+            "18.650-spring-2015",
+        ],
+        [None, "January IAP", "2011", None],  # noqa: PT007
     ],
 )
 def test_get_short_id(course_num, term, year, expected_id):
@@ -333,7 +337,7 @@ def test_get_short_id(course_num, term, year, expected_id):
             assert new_site.short_id == f"{expected_id}-{i}"
             assert website.short_id == expected_id
     else:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             get_short_id("random-name", metadata)
 
 
@@ -406,7 +410,7 @@ def test_import_ocw2hugo_video_gallery(mocker, settings):
 @mock_s3
 @pytest.mark.parametrize("website_exists", [True, False])
 def test_update_ocw2hugo_course(mocker, website_exists):
-    """test update_ocw2hugo_course"""
+    """Test update_ocw2hugo_course"""
     name = "1-050-engineering-mechanics-i-fall-2007"
     s3_key = f"{TEST_OCW2HUGO_PREFIX}{name}/data/course_legacy.json"
     content_field = "title"
@@ -429,9 +433,9 @@ def test_update_ocw2hugo_course(mocker, website_exists):
 
 
 @pytest.mark.parametrize(
-    "content_json,resource_types",
+    ("content_json", "resource_types"),
     [
-        [
+        [  # noqa: PT007
             {
                 "ocw_type": "CourseSection",
                 "parent_type": "CourseSection",
@@ -440,14 +444,14 @@ def test_update_ocw2hugo_course(mocker, website_exists):
             },
             [OCW_TYPE_LECTURE_NOTES],
         ],
-        [
+        [  # noqa: PT007
             {
                 "ocw_type": "CourseSection",
                 "title": "First Paper Assignment",
             },
             [OCW_TYPE_ASSIGNMENTS],
         ],
-        [
+        [  # noqa: PT007
             {
                 "ocw_type": "CourseSection",
                 "parent_type": "CourseSection",
@@ -456,7 +460,7 @@ def test_update_ocw2hugo_course(mocker, website_exists):
             },
             [],
         ],
-        [
+        [  # noqa: PT007
             {
                 "ocw_type": "CourseSection",
                 "parent_type": "CourseSection",
@@ -465,7 +469,7 @@ def test_update_ocw2hugo_course(mocker, website_exists):
             },
             [OCW_TYPE_LECTURE_NOTES],
         ],
-        [
+        [  # noqa: PT007
             {
                 "ocw_type": "CourseSection",
                 "title": "Exercises",

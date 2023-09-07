@@ -9,7 +9,6 @@ from uuid import UUID
 from main.utils import is_valid_uuid
 from websites.models import Website, WebsiteContent
 
-
 filepath_migration = importlib.import_module(
     "websites.migrations.0023_website_content_filepath"
 )
@@ -77,7 +76,8 @@ class ContentLookup:
             )
 
         if not standardized_path.startswith("courses/"):
-            raise KeyError(f"Content for '{standardized_path}' not found")
+            msg = f"Content for '{standardized_path}' not found"
+            raise KeyError(msg)
         site_name = standardized_path.split("/")[1]
 
         relative_path = remove_prefix(standardized_path, f"courses/{site_name}")
@@ -146,7 +146,8 @@ class UrlSiteRelativiser:
                 if name in self.website_lookup
             )
         except StopIteration as err:
-            raise ValueError(f"'{url} does not contain a website name.") from err
+            msg = f"'{url} does not contain a website name."
+            raise ValueError(msg) from err
         site_relative_path = "/" + "/".join(pieces[site_index + 1 :])
 
         site_relative_url = site_relative_path
@@ -171,7 +172,7 @@ class LegacyFileLookup:
         )
 
     NOTE:
-    """
+    """  # noqa: D414
 
     class MultipleMatchError(Exception):
         pass
@@ -211,8 +212,7 @@ class LegacyFileLookup:
         _, filename = os.path.split(file)
         try:
             UUID(filename[:32])
-            old_filename = filename[32:].lstrip("_")
-            return old_filename
+            return filename[32:].lstrip("_")
         except ValueError:
             return None
 
@@ -262,7 +262,7 @@ class LegacyFileLookup:
             file                    filename        dirpath             parent_filename  parent_dirpath
             .../uuid1_cdffit.m      cdffit-1        content/resources   assignments      content/pages
             .../uuid2_cdffit.m      cdffit          content/resources   lecture-notes    content/pages
-        """
+        """  # noqa: E501
         url_dirpath, legacy_filename = os.path.split(legacy_site_rel_path)
         key = (website_id, legacy_filename)
         matches = self.contents_by_file[key]
@@ -277,4 +277,5 @@ class LegacyFileLookup:
         refined = [m for m in matches if parent_matches_url(m)]
         if len(refined) == 1:
             return refined[0]
-        raise self.MultipleMatchError(f"Found {len(refined)} after inspecting parents.")
+        msg = f"Found {len(refined)} after inspecting parents."
+        raise self.MultipleMatchError(msg)

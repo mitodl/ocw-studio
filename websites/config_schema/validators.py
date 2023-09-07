@@ -1,4 +1,4 @@
-"""Site config validation functionality to supplement the features that the schema gives us"""
+"""Site config validation functionality to supplement the features that the schema gives us"""  # noqa: E501
 from collections import defaultdict
 
 from mitol.common.utils import first_or_none, partition_to_lists
@@ -24,7 +24,7 @@ class AddedSchemaRule:
 
         Returns:
             list of str: A list of error messages (or an empty list if the data is valid)
-        """
+        """  # noqa: E501, D401
         raise NotImplementedError
 
     @classmethod
@@ -35,7 +35,7 @@ class AddedSchemaRule:
 
         Raises:
             YamaleError: A standard Yamale exception
-        """
+        """  # noqa: E501, D401
         error_strs = cls.apply_rule(data)
         if error_strs:
             validation_results = [
@@ -45,7 +45,7 @@ class AddedSchemaRule:
 
 
 class CollectionsKeysRule(AddedSchemaRule):
-    """Ensures that collections items must define one of a set of mutually-exclusive keys for files and folders"""
+    """Ensures that collections items must define one of a set of mutually-exclusive keys for files and folders"""  # noqa: E501
 
     @staticmethod
     def apply_rule(data):
@@ -58,15 +58,16 @@ class CollectionsKeysRule(AddedSchemaRule):
             if len(matching_keys) > 1:
                 path = f"collections.{i}"
                 return [
-                    "{}: Only one of the following keys can be specified for a collection item - {}".format(
+                    "{}: Only one of the following keys can be specified for a collection item - {}".format(  # noqa: E501
                         path, ", ".join(exclusive_keys)
                     )
                 ]
             if len(matching_keys) < 1:
                 path = f"collections.{i}"
                 return [
-                    f"{path}: A collection must have one of the following keys: {', '.join(sorted(exclusive_keys))}"
+                    f"{path}: A collection must have one of the following keys: {', '.join(sorted(exclusive_keys))}"  # noqa: E501
                 ]
+        return None
 
 
 class UniqueNamesRule(AddedSchemaRule):
@@ -82,7 +83,7 @@ class UniqueNamesRule(AddedSchemaRule):
         }
         if faulty_name_paths:
             return [
-                "Found duplicate 'name' values. 'name' values must all be unique.\n{}".format(
+                "Found duplicate 'name' values. 'name' values must all be unique.\n{}".format(  # noqa: E501
                     "\n".join(
                         [
                             f"{' ' * 8}'{name}' ({', '.join(paths)})"
@@ -98,7 +99,7 @@ class ContentFolderRule(AddedSchemaRule):
     """
     Ensures that the 'folder' value for every config item points to the content directory described in the site
     config (or the default).
-    """
+    """  # noqa: E501
 
     @staticmethod
     def apply_rule(data):
@@ -111,7 +112,7 @@ class ContentFolderRule(AddedSchemaRule):
                 faulty_paths[config_item.name] = config_item.path
         if faulty_paths:
             return [
-                "Found 'folder' item(s) that do not point to the content directory ({}).\n{}".format(
+                "Found 'folder' item(s) that do not point to the content directory ({}).\n{}".format(  # noqa: E501
                     site_config.content_dir,
                     "\n".join(
                         [
@@ -127,7 +128,7 @@ class ContentFolderRule(AddedSchemaRule):
 class RequiredTitleRule(AddedSchemaRule):
     """
     Ensures that if a config item includes a "title" field, it is set to required and has the correct type.
-    """
+    """  # noqa: E501
 
     @staticmethod
     def apply_rule(data):
@@ -144,7 +145,7 @@ class RequiredTitleRule(AddedSchemaRule):
                 faulty_paths[config_item.name] = config_item.path
         if faulty_paths:
             return [
-                "'title' fields must use the 'string' widget, and must be set to be required.\n{}".format(
+                "'title' fields must use the 'string' widget, and must be set to be required.\n{}".format(  # noqa: E501
                     "\n".join(
                         [
                             f"{' ' * 8}'{name}' ({path})"
@@ -159,7 +160,7 @@ class RequiredTitleRule(AddedSchemaRule):
 class MenuOnlyRule(AddedSchemaRule):
     """
     Ensures that a config item with a "menu" field has no other field types besides "menu"
-    """
+    """  # noqa: E501
 
     @staticmethod
     def apply_rule(data):
@@ -179,10 +180,10 @@ class MenuOnlyRule(AddedSchemaRule):
                 )
         if faulty_path_tuples:
             return [
-                "Config with 'menu' fields must not have any fields with other widget types.\n{}".format(
+                "Config with 'menu' fields must not have any fields with other widget types.\n{}".format(  # noqa: E501
                     "\n".join(
                         [
-                            f"{' ' * 8}'{name}' ({path_fields_tuple[0]}) – widgets: {path_fields_tuple[1]}"
+                            f"{' ' * 8}'{name}' ({path_fields_tuple[0]}) - widgets: {path_fields_tuple[1]}"  # noqa: E501
                             for name, path_fields_tuple in faulty_path_tuples.items()
                         ]
                     ),

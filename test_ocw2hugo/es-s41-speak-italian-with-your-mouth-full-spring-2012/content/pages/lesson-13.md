@@ -8,8 +8,8 @@ ocw_type: CourseSection
 
 ![A bowl contains pasta shells, tomatoes, and cheese.]({{< resource_file 457aa75e-8c97-7201-fe6d-391f8bb8a2c4 >}})
 
-The students learned how to make fresh pasta. This dish  
-is orecchiette alla caprese. (Image courtesy of Graham  
+The students learned how to make fresh pasta. This dish
+is orecchiette alla caprese. (Image courtesy of Graham
 Gordon Ramsay.)
 
 _Lezione Numero Tredici_/Lesson Number 13
@@ -47,7 +47,7 @@ _{{< anchor "3" >}}{{< /anchor >}}Funghi Trifolati_/Sauteed Mushrooms With Garli
 2.  Make a _soffritto_/sweat with garlic (whole cloves, easy to remove, or chopped) in olive oil.
 3.  _Aggiungi_/add _i funghi e mescola_/and mix. If you use dry mushrooms, you can add part of the water in which you soaked them.
 4.  When the mushrooms are cooked (it takes 5–10 minutes), lower the heat to low, add heavy cream, salt, pepper, and the parsley leaves (washed and finely chopped).
-5.  Remove from the heat: _i funghi sono pronti_! Serve them mixed with your tagliatelle or as a side dish/_contorno_! If you want, top with your favorite grated cheese. 
+5.  Remove from the heat: _i funghi sono pronti_! Serve them mixed with your tagliatelle or as a side dish/_contorno_! If you want, top with your favorite grated cheese.
 
 _{{< anchor "1" >}}{{< /anchor >}}Pasta Fresca: Le Tagliatelle_/Fresh Pasta: Tagliatelle
 ----------------------------------------------------------------------------------------
@@ -62,7 +62,7 @@ _{{< anchor "1" >}}{{< /anchor >}}Pasta Fresca: Le Tagliatelle_/Fresh Pasta: Tag
 ### Procedimento
 
 1.  Place the flour on the counter or _in una ciotola_/a bowl, make a well in the center, put the eggs in the well, and mix with your fingers or _con l'aiuto_/with the help _di una forchetta_/of a fork.
-2.  _Impasta_/knead thoroughly: the dough is very hard to knead, but you want it to become smooth.  
+2.  _Impasta_/knead thoroughly: the dough is very hard to knead, but you want it to become smooth.
     If you prefer, you can use _un robot da cucina_/a food processor.
 3.  Let the dough rest for about one hour (wrapped in plastic film). If you are impatient, you can skip this step.
 4.  Flatten the dough using a pasta machine or a rolling pin. If you use a pasta machine, lightly dust it and the dough with flour each time you run the pasta through it. Start from the widest setting and switch to the narrower until you reach the desired thickness. If you use the rolling pin, be sure to dust it and the counter with flour; flatten down to a thickness on about half a mm. Essentially as thin as you can.

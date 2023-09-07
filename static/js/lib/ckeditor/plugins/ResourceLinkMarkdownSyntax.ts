@@ -13,8 +13,8 @@ import { RESOURCE_LINK_CONFIG_KEY } from "./constants"
 const RESOURCE_LINK_SHORTCODE_REGEX = Shortcode.regex("resource_link", true)
 
 const queryKeys = {
-  uuid:   "ocw_resource_link_uuid",
-  suffix: "ocw_resource_link_suffix"
+  uuid: "ocw_resource_link_uuid",
+  suffix: "ocw_resource_link_suffix",
 }
 
 /**
@@ -99,8 +99,8 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
     return (): Showdown.ShowdownExtension[] => {
       return [
         {
-          type:    "lang",
-          regex:   RESOURCE_LINK_SHORTCODE_REGEX,
+          type: "lang",
+          regex: RESOURCE_LINK_SHORTCODE_REGEX,
           replace: (s: string) => {
             const shortcode = Shortcode.fromString(s)
             const uuid = shortcode.get(0)
@@ -111,8 +111,8 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
             const suffix = shortcode.get(2) ?? ""
             const href = this.makeResourceLinkHref(uuid, suffix)
             return `<a href="${href}">${text}</a>`
-          }
-        }
+          },
+        },
       ]
     }
   }
@@ -122,7 +122,7 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
       {
         name: `${ResourceLinkMarkdownSyntax.pluginName}-turndown`,
         rule: {
-          filter: node => {
+          filter: (node) => {
             if (node.nodeName !== "A") return false
             const anchor = node as HTMLAnchorElement
             return this.isResourceLinkHref(anchor.href)
@@ -146,9 +146,9 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
               .replace(/{{\\</g, "{{<")
 
             return Shortcode.resourceLink(uuid, text, suffix).toHugo()
-          }
-        }
-      }
+          },
+        },
+      },
     ]
   }
 }

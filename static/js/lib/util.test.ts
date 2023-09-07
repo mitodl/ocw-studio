@@ -8,7 +8,7 @@ import {
   getResponseBodyError,
   isUuid4,
   generateHashCode,
-  isExternalLinkId
+  isExternalLinkId,
 } from "./util"
 
 describe("util", () => {
@@ -17,76 +17,76 @@ describe("util", () => {
     { status: 299, isError: false },
     { status: 300, isError: false },
     { status: 400, isError: true },
-    { status: 500, isError: true }
+    { status: 500, isError: true },
   ])(
     "isErrorResponse returns $isError when status=$status",
     ({ status, isError }) => {
       const response: ActionPromiseValue<any> = {
-        status:   status,
-        body:     {},
-        duration: casual.integer()
+        status: status,
+        body: {},
+        duration: casual.integer(),
       }
       expect(isErrorStatusCode(status)).toStrictEqual(isError)
       expect(isErrorResponse(response)).toStrictEqual(isError)
-    }
+    },
   )
 
   const errorMsg = "some error"
   it.each([
     {
-      responseData:   null,
+      responseData: null,
       expectedResult: null,
-      desc:           "no data"
+      desc: "no data",
     },
     {
-      responseData:   {},
+      responseData: {},
       expectedResult: null,
-      desc:           "empty data"
+      desc: "empty data",
     },
     {
-      responseData:   errorMsg,
+      responseData: errorMsg,
       expectedResult: errorMsg,
-      desc:           "an error string"
+      desc: "an error string",
     },
     {
-      responseData:   [errorMsg, "other errors"],
+      responseData: [errorMsg, "other errors"],
       expectedResult: errorMsg,
-      desc:           "error strings as a list"
+      desc: "error strings as a list",
     },
     {
-      responseData:   { field1: errorMsg },
+      responseData: { field1: errorMsg },
       expectedResult: { field1: errorMsg },
-      desc:           "an error object"
+      desc: "an error object",
     },
     {
-      responseData:   { errors: errorMsg },
+      responseData: { errors: errorMsg },
       expectedResult: errorMsg,
-      desc:           "a namespaced error message as a string"
+      desc: "a namespaced error message as a string",
     },
     {
-      responseData:   { errors: [errorMsg] },
+      responseData: { errors: [errorMsg] },
       expectedResult: errorMsg,
-      desc:           "a namespaced message as a list"
+      desc: "a namespaced message as a list",
     },
     {
-      responseData:   { errors: { field1: errorMsg } },
+      responseData: { errors: { field1: errorMsg } },
       expectedResult: { field1: errorMsg },
-      desc:           "a namespaced error object"
-    }
+      desc: "a namespaced error object",
+    },
   ])(
     "getResponseBodyError should return the appropriate error data when it receives $desc",
     ({ responseData, expectedResult }) => {
-      const resp = responseData ?
-        {
-          body:     responseData,
-          status:   casual.integer(),
-          duration: casual.integer()
-        } :
-        null
+      const resp = responseData
+        ? {
+            body: responseData,
+            status: casual.integer(),
+            duration: casual.integer(),
+          }
+        : null
 
       const result = getResponseBodyError(resp)
       expect(result).toStrictEqual(expectedResult)
-    }
+    },
   )
 
   it(`getResponseBodyError should return null when it receives an empty response`, () => {
@@ -97,22 +97,22 @@ describe("util", () => {
   ;[
     [
       "http://aws.amazon.com/bucket/32629a023dc541288e430392b51e7b61/32629a023dc541288e430392b51e7b61_filename.jpg",
-      "filename.jpg"
+      "filename.jpg",
     ],
     [
       "http://aws.amazon.com/bucket/32629a02-3dc5-4128-8e43-0392b51e7b61/32629a02-3dc5-4128-8e43-0392b51e7b61_longer_filename.jpg",
-      "longer_filename.jpg"
+      "longer_filename.jpg",
     ],
     ["http://aws.amazon.com/bucket/longer_filename.jpg", "longer_filename.jpg"],
     [
       "/media/text_id/32629a02-3dc5-4128-8e43-0392b51e7b61_filename.jpg",
-      "filename.jpg"
+      "filename.jpg",
     ],
     [
       "/media/text_id/ab3d029952cda060f4afcd811189a591_longer_filename.jpg",
-      "longer_filename.jpg"
+      "longer_filename.jpg",
     ],
-    ["/media/text_id/filename.jpg", "filename.jpg"]
+    ["/media/text_id/filename.jpg", "filename.jpg"],
   ].forEach(([filepath, expected]) => {
     it("filenameFromPath should return expected values", () => {
       expect(filenameFromPath(filepath)).toBe(expected)

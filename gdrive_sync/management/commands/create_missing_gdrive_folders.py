@@ -1,4 +1,4 @@
-from django.conf import settings
+from django.conf import settings  # noqa: INP001
 from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
 from mitol.common.utils import now_in_utc
@@ -10,7 +10,7 @@ from websites.models import Website
 class Command(BaseCommand):
     """Creates a Google drive folder for websites that don't already have one"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -18,14 +18,14 @@ class Command(BaseCommand):
             "--filter",
             dest="filter",
             default="",
-            help="If specified, only process websites whose name/short_id starts with this",
+            help="If specified, only process websites whose name/short_id starts with this",  # noqa: E501
         )
         parser.add_argument(
             "-c",
             "--starter",
             dest="starter",
             default="",
-            help="If specified, only process websites that have this site config starter slug",
+            help="If specified, only process websites that have this site config starter slug",  # noqa: E501
         )
         parser.add_argument(
             "-s",
@@ -42,7 +42,7 @@ class Command(BaseCommand):
             help="Set chunk size for task processing",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa: ARG002
         if settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS:
             websites = Website.objects.all()
             website_filter = options["filter"].lower()
@@ -67,7 +67,7 @@ class Command(BaseCommand):
             task = create_gdrive_folders_chunked.delay(short_ids, chunk_size=chunk_size)
 
             self.stdout.write(
-                f"Started celery task {task} to create Google drive folders for {len(short_ids)} sites."
+                f"Started celery task {task} to create Google drive folders for {len(short_ids)} sites."  # noqa: E501
             )
             if is_verbose:
                 self.stdout.write(f"{','.join(short_ids)}")
@@ -76,11 +76,10 @@ class Command(BaseCommand):
 
             result = task.get()
             if set(result) != {True}:
-                raise CommandError(f"Some errors occurred: {result}")
+                msg = f"Some errors occurred: {result}"
+                raise CommandError(msg)
 
             total_seconds = (now_in_utc() - start).total_seconds()
             self.stdout.write(
-                "Google drive folder creation finished, took {} seconds".format(
-                    total_seconds
-                )
+                f"Google drive folder creation finished, took {total_seconds} seconds"
             )

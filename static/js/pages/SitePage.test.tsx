@@ -2,7 +2,7 @@ import React from "react"
 import { Route } from "react-router-dom"
 
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { siteApiCollaboratorsUrl, siteDetailUrl } from "../lib/urls"
@@ -22,11 +22,11 @@ describe("SitePage", () => {
     helper = new IntegrationTestHelper()
     website = {
       ...makeWebsiteDetail(),
-      name: siteName
+      name: siteName,
     }
     helper.mockGetRequest(
       siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-      { results: [] }
+      { results: [] },
     )
     render = helper.configureRenderer(
       (props = {}) => (
@@ -34,7 +34,7 @@ describe("SitePage", () => {
           <SitePage {...props} />
         </WebsiteContext.Provider>
       ),
-      { siteName: website.name }
+      { siteName: website.name },
     )
   })
 
@@ -44,22 +44,22 @@ describe("SitePage", () => {
 
   it("sets the document title", async () => {
     helper.browserHistory.push(
-      siteDetailUrl.param("name", website.name).toString()
+      siteDetailUrl.param("name", website.name).toString(),
     )
     const { wrapper } = await render()
     expect(wrapper.find("DocumentTitle").prop("title")).toBe(
-      `OCW Studio | ${website.title}`
+      `OCW Studio | ${website.title}`,
     )
   })
 
   it.each([true, false])(
     "renders a loading spinner when isLoading=%s",
-    async isLoading => {
+    async (isLoading) => {
       const { wrapper } = await render({ isLoading })
 
       const spinner = wrapper.find(Spinner)
       expect(spinner.exists()).toBe(isLoading)
-    }
+    },
   )
 
   it("keeps old content rendered while loading", async () => {
@@ -75,19 +75,19 @@ describe("SitePage", () => {
 
   it.each([
     {
-      url:       `/sites/${siteName}/collaborators/`,
-      component: SiteCollaboratorList
+      url: `/sites/${siteName}/collaborators/`,
+      component: SiteCollaboratorList,
     },
     {
-      url:       `/sites/${siteName}/type/some-type/`,
-      component: SiteContentListing
-    }
+      url: `/sites/${siteName}/type/some-type/`,
+      component: SiteContentListing,
+    },
   ])(
     `renders a $component.name component when the browser URL matches`,
     async ({ url, component }) => {
       helper.browserHistory.push(url)
       const { wrapper } = await render()
       expect(wrapper.find(component).exists()).toBe(true)
-    }
+    },
   )
 })

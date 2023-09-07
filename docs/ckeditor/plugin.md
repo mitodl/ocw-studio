@@ -1,26 +1,27 @@
 # Adding a custom plugin to CKEditor
+
 ---
 
 ## Contents
 
 1. [Writing the Editing Plugin](#writing-the-editing-plugin)
-    1. [Define a new plugin](#define-a-new-plugin)
-    1. [Define the schema](#define-the-schema)
-    1. [Define converters](#define-converters)
-    1. [Putting the editing plugin together](#putting-the-editing-plugin-together)
+   1. [Define a new plugin](#define-a-new-plugin)
+   1. [Define the schema](#define-the-schema)
+   1. [Define converters](#define-converters)
+   1. [Putting the editing plugin together](#putting-the-editing-plugin-together)
 1. [Writing the UI plugin](#writing-the-ui-plugin)
-    1. [Element creator helper function](#element-creator-helper-function)
-    1. [Element creator `Command`](#element-creator-command)
-    1. [Putting the UI plugin together](#putting-the-ui-plugin-together)
+   1. [Element creator helper function](#element-creator-helper-function)
+   1. [Element creator `Command`](#element-creator-command)
+   1. [Putting the UI plugin together](#putting-the-ui-plugin-together)
 1. [Adding Markdown support](#adding-markdown-support)
-    1. [showdown for md->html](#showdown-for-md-html)
-    1. [turndown for html->md](#turndown-for-html-md)
-    1. [Writing a MarkdownSyntaxPlugin](#writing-a-markdownsyntaxplugin)
+   1. [showdown for md->html](#showdown-for-md-html)
+   1. [turndown for html->md](#turndown-for-html-md)
+   1. [Writing a MarkdownSyntaxPlugin](#writing-a-markdownsyntaxplugin)
 1. [Pulling it all together](#pulling-it-all-together)
-    1. [Adding a glue plugin](#Adding-a-glue-plugin)
-    1. [Configuring CKEditor](#Configuring-CKEditor)
-        1. [Adding the plugin](#Adding-the-plugin)
-        1. [Configure the toolbar](#configure-the-toolbar)
+   1. [Adding a glue plugin](#Adding-a-glue-plugin)
+   1. [Configuring CKEditor](#Configuring-CKEditor)
+      1. [Adding the plugin](#Adding-the-plugin)
+      1. [Configure the toolbar](#configure-the-toolbar)
 
 ---
 
@@ -32,9 +33,9 @@ At a conceptual level, in order to support something like this we need to define
 
 - register the new node type in the schema, defining [where it may be inserted](https://ckeditor.com/docs/ckeditor5/latest/framework/guides/deep-dive/schema.html#defining-allowed-structures) and what [type of content it can hold](https://ckeditor.com/docs/ckeditor5/latest/framework/guides/architecture/editing-engine.html#element-types-and-custom-data)
 - define [converters](https://ckeditor.com/docs/ckeditor5/latest/framework/guides/deep-dive/conversion/custom-element-conversion.html) so that CKEditor can perform three different conversions:
-    - from input HTML input to an internal, in-memory representation
-    - from internal representation back to HTML for output
-    - from internal representation to HTML for display in the editor while the user is editing
+  - from input HTML input to an internal, in-memory representation
+  - from internal representation back to HTML for output
+  - from internal representation to HTML for display in the editor while the user is editing
 - implement a [Command](https://ckeditor.com/docs/ckeditor5/latest/framework/guides/architecture/core-editor-architecture.html#commands) for inserting our custom element into the editor.
 
 After we have those things in place we pretty much just need to write some glue code to write all this together as a [CKEditor plugin](https://ckeditor.com/docs/ckeditor5/latest/framework/guides/creating-simple-plugin.html) and that's it. There are a few quirks in how this all works, but overall it's not so so bad.
@@ -70,7 +71,7 @@ our methods for defining the schema and the converters from there.
 
 We need to write a bit of code to let CKEditor know about what we're trying to
 have it do. Because we're trying to add an embedded video player we want this
-to be a *root-level* node, meaning a node that cannot be inserted into the
+to be a _root-level_ node, meaning a node that cannot be inserted into the
 middle of a paragraph. We also need to store a bit of text inside of the node,
 so we can store the video ID of the video which the user is embedding.
 
@@ -86,9 +87,9 @@ class YoutubeEmbedEditing extends Plugin {
     // add some restrictions on where it can appear and what it
     // can contain
     schema.register(YOUTUBE_EMBED, {
-      isObject:       true,
-      allowWhere:     "$block", // blocks can only appear at root level
-      allowContentOf: "$block"  // we want our node to be able to contain text
+      isObject: true,
+      allowWhere: "$block", // blocks can only appear at root level
+      allowContentOf: "$block", // we want our node to be able to contain text
     })
   }
 }
@@ -122,7 +123,8 @@ In the editor, however, we want the user to see something more like this:
   src="https://www.youtube.com/embed/oGCTZWw2aVA"
   frameborder="0"
   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowfullscreen>
+  allowfullscreen
+>
 </iframe>
 ```
 
@@ -148,10 +150,10 @@ class YoutubeEmbedEditing extends Plugin {
     // ...
     conversion.for("upcast").elementToElement({
       model: YOUTUBE_EMBED,
-      view:  {
-        name:    "section",
-        classes: YOUTUBE_EMBED_CLASS
-      }
+      view: {
+        name: "section",
+        classes: YOUTUBE_EMBED_CLASS,
+      },
     })
     // ...
   }
@@ -168,10 +170,10 @@ class YoutubeEmbedEditing extends Plugin {
     // ...
     conversion.for("dataDowncast").elementToElement({
       model: YOUTUBE_EMBED,
-      view:  {
-        name:    "section",
-        classes: YOUTUBE_EMBED_CLASS
-      }
+      view: {
+        name: "section",
+        classes: YOUTUBE_EMBED_CLASS,
+      },
     })
     // ...
   }
@@ -225,9 +227,9 @@ class YoutubeEmbedEditing extends Plugin {
     const schema = this.editor.model.schema
 
     schema.register(YOUTUBE_EMBED, {
-      isObject:       true,
-      allowWhere:     "$block",
-      allowContentOf: "$block"
+      isObject: true,
+      allowWhere: "$block",
+      allowContentOf: "$block",
     })
   }
 
@@ -243,10 +245,10 @@ class YoutubeEmbedEditing extends Plugin {
      */
     conversion.for("upcast").elementToElement({
       model: YOUTUBE_EMBED,
-      view:  {
-        name:    "section",
-        classes: YOUTUBE_EMBED_CLASS
-      }
+      view: {
+        name: "section",
+        classes: YOUTUBE_EMBED_CLASS,
+      },
     })
 
     /**
@@ -255,10 +257,10 @@ class YoutubeEmbedEditing extends Plugin {
      */
     conversion.for("dataDowncast").elementToElement({
       model: YOUTUBE_EMBED,
-      view:  {
-        name:    "section",
-        classes: YOUTUBE_EMBED_CLASS
-      }
+      view: {
+        name: "section",
+        classes: YOUTUBE_EMBED_CLASS,
+      },
     })
 
     /**
@@ -268,16 +270,16 @@ class YoutubeEmbedEditing extends Plugin {
      */
     conversion.for("editingDowncast").elementToElement({
       model: YOUTUBE_EMBED,
-      view:  (modelElement: any, { writer: viewWriter }: any) => {
+      view: (modelElement: any, { writer: viewWriter }: any) => {
         // this looks bad but I promise it's fine
         const videoId = modelElement._children._nodes[0]._data
         const iframe = viewWriter.createContainerElement("iframe", {
           class: YOUTUBE_EMBED_CLASS,
-          src:   youtubeEmbedUrl(videoId),
-          ...YOUTUBE_EMBED_PARAMS
+          src: youtubeEmbedUrl(videoId),
+          ...YOUTUBE_EMBED_PARAMS,
         })
         return toWidget(iframe, viewWriter, { label: "Youtube Embed" })
-      }
+      },
     })
   }
 }
@@ -328,7 +330,7 @@ export class InsertYoutubeEmbedCommand extends Command {
     this.editor.model.change((writer: any) => {
       this.editor.model.insertContent(
         createYoutubeEmbed(writer, videoId),
-        this.editor.model.document.selection
+        this.editor.model.document.selection,
       )
     })
   }
@@ -338,7 +340,7 @@ export class InsertYoutubeEmbedCommand extends Command {
     const selection = model.document.selection
     const allowedIn = model.schema.findAllowedParent(
       selection.getFirstPosition(),
-      YOUTUBE_EMBED
+      YOUTUBE_EMBED,
     )
 
     this.isEnabled = allowedIn !== null
@@ -373,7 +375,7 @@ class YoutubeEmbedUI extends Plugin {
     // this registers our `Command` with the editor
     editor.commands.add(
       "insertYoutubeEmbed",
-      new InsertYoutubeEmbedCommand(this.editor)
+      new InsertYoutubeEmbedCommand(this.editor),
     )
 
     // we use this componentFactory.add method to add UI to the toolbar
@@ -389,21 +391,21 @@ class YoutubeEmbedUI extends Plugin {
 
       // dropdown.buttonView is the button that opens the dropdown
       dropdown.buttonView.set({
-        label:    "Insert YouTube",
-        withText: true
+        label: "Insert YouTube",
+        withText: true,
       })
 
       // we need to create a new button for our save functionality
       // imported form @ckeditor/ckeditor5-ui/src/button/buttonview
       const saveButton = new ButtonView(this.locale)
       saveButton.set({
-        label:    "Save",
-        withText: true
+        label: "Save",
+        withText: true,
       })
       saveButton.extendTemplate({
         attributes: {
-          class: "ck-button-save"
-        }
+          class: "ck-button-save",
+        },
       })
       saveButton.type = "submit"
       // ensure that when the saveButton is clicked, the 'submit' event
@@ -487,13 +489,13 @@ export const YOUTUBE_SHORTCODE_REGEX = /{{< youtube (\S+) >}}/g
 function mediaEmbedExtension(): Showdown.ShowdownExtension[] {
   return [
     {
-      type:    "lang",
-      regex:   YOUTUBE_SHORTCODE_REGEX,
+      type: "lang",
+      regex: YOUTUBE_SHORTCODE_REGEX,
       replace: (_: string, match: string) =>
         `<section class="youtube-embed">
           ${match}"
-        </section>`
-    }
+        </section>`,
+    },
   ]
 }
 ```
@@ -552,6 +554,7 @@ Basically, it just provides a means for adding Showdown and Turndown rules in a 
 can come along and grab them later. Using it is simple, here's how a plugin to add the rules we wrote above will look:
 
 {% raw %}
+
 ```ts
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 
@@ -562,13 +565,13 @@ class YoutubeEmbedMarkdownSyntax extends MarkdownSyntaxPlugin {
     return function mediaEmbedExtension(): Showdown.ShowdownExtension[] {
       return [
         {
-          type:    "lang",
-          regex:   YOUTUBE_SHORTCODE_REGEX,
+          type: "lang",
+          regex: YOUTUBE_SHORTCODE_REGEX,
           replace: (_: string, match: string) =>
             `<section class="youtube-embed">
               ${match}"
-            </section>`
-        }
+            </section>`,
+        },
       ]
     }
   }
@@ -577,11 +580,11 @@ class YoutubeEmbedMarkdownSyntax extends MarkdownSyntaxPlugin {
     return {
       name: "youtubeEmbed",
       rule: {
-        filter:      "section",
+        filter: "section",
         replacement: (
           content: string,
           node: Turndown.Node,
-          _: Turndown.Options
+          _: Turndown.Options,
         ): string => {
           const videoId = node.textContent
 
@@ -590,12 +593,13 @@ class YoutubeEmbedMarkdownSyntax extends MarkdownSyntaxPlugin {
           } else {
             return "\n\n"
           }
-        }
-      }
+        },
+      },
     }
   }
 }
 ```
+
 {% endraw %}
 
 And that's it! We'll add this in to our unified YoutubeEmbed plugin
@@ -610,7 +614,7 @@ After everything above is in place there are only two things left: 1) writing a
 ### Adding a glue plugin
 
 This is pretty straightforward. We just need another plugin which pulls in all
-of the plugins we wrote above. We'll use the `.requires`  property to do that.
+of the plugins we wrote above. We'll use the `.requires` property to do that.
 
 Here's how that looks:
 
@@ -663,13 +667,18 @@ ClassicEditor.defaultConfig = {
       "blockQuote",
       "undo",
       "redo",
-      YOUTUBE_EMBED
-    ]
+      YOUTUBE_EMBED,
+    ],
   },
   image: {
-    toolbar: ["imageStyle:full", "imageStyle:side", "|", "imageTextAlternative"]
+    toolbar: [
+      "imageStyle:full",
+      "imageStyle:side",
+      "|",
+      "imageTextAlternative",
+    ],
   },
-  language: "en"
+  language: "en",
 }
 ```
 

@@ -28,7 +28,7 @@ describe("SelectField", () => {
     expectedOptions = [
       { label: "one", value: "one" },
       { label: "two", value: "two" },
-      { label: "Three", value: "3" }
+      { label: "Three", value: "3" },
     ]
     classNamePrefix = "select"
     min = 1
@@ -52,7 +52,7 @@ describe("SelectField", () => {
           options={options}
           classNamePrefix={classNamePrefix}
           {...props}
-        />
+        />,
       )
     })
 
@@ -61,13 +61,13 @@ describe("SelectField", () => {
 
   it("should pass placeholder to Select", async () => {
     const wrapper = await render({
-      placeholder: "This place is held!"
+      placeholder: "This place is held!",
     })
     expect(wrapper.find("Select").prop("placeholder")).toBe(
-      "This place is held!"
+      "This place is held!",
     )
   })
-  ;[true, false].forEach(isInfiniteScroll =>
+  ;[true, false].forEach((isInfiniteScroll) =>
     it(`should pass defaultOptions to ${
       isInfiniteScroll ? "AsyncPaginate" : "AsyncSelect"
     }`, async () => {
@@ -75,15 +75,15 @@ describe("SelectField", () => {
 
       const wrapper = await render({
         defaultOptions: "options",
-        loadOptions
+        loadOptions,
       })
 
       expect(
         wrapper
           .find(isInfiniteScroll ? AsyncPaginate : AsyncSelect)
-          .prop("defaultOptions")
+          .prop("defaultOptions"),
       ).toBe("options")
-    })
+    }),
   )
 
   it("should pass isOptionDisabled down to the Select", async () => {
@@ -91,7 +91,7 @@ describe("SelectField", () => {
     const wrapper = await render({ isOptionDisabled })
     expect(wrapper.find(Select).prop("isOptionDisabled")).toBe(isOptionDisabled)
   })
-  ;[true, false].forEach(isInfiniteScroll =>
+  ;[true, false].forEach((isInfiniteScroll) =>
     it(`should pass isOptionDisabled down to the ${
       isInfiniteScroll ? "AsyncPaginate" : "AsyncSelect"
     }`, async () => {
@@ -100,21 +100,21 @@ describe("SelectField", () => {
       const isOptionDisabled = jest.fn()
       const wrapper = await render({
         isOptionDisabled,
-        loadOptions
+        loadOptions,
       })
       expect(
         wrapper
           .find(isInfiniteScroll ? AsyncPaginate : AsyncSelect)
-          .prop("isOptionDisabled")
+          .prop("isOptionDisabled"),
       ).toBe(isOptionDisabled)
-    })
+    }),
   )
 
   it("should use AsyncPaginate if a loadOptions callback is supplied and infinite scroll is enabled", async () => {
     SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = true
 
     const wrapper = await render({
-      loadOptions
+      loadOptions,
     })
 
     const select = wrapper.find(AsyncPaginate)
@@ -125,13 +125,13 @@ describe("SelectField", () => {
 
   it.each(["select", "async-select", "async-paginate"])(
     "should render options in menu",
-    async component => {
+    async (component) => {
       SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL =
         component === "async-paginate"
 
       const wrapper = await render({
-        loadOptions:    component !== "select" ? loadOptions : undefined,
-        defaultOptions: options
+        loadOptions: component !== "select" ? loadOptions : undefined,
+        defaultOptions: options,
       })
 
       await triggerSelectMenu(wrapper)
@@ -139,27 +139,27 @@ describe("SelectField", () => {
       const renderedOptions = wrapper
         .find(`.${classNamePrefix}__option`)
         .hostNodes()
-        .map(x => x.text())
+        .map((x) => x.text())
 
       const expectedOptions = options.map(
-        x => (x as Option).label ?? (component !== "select" ? "" : x)
+        (x) => (x as Option).label ?? (component !== "select" ? "" : x),
       )
 
       expect(renderedOptions).toEqual(expectedOptions)
-    }
+    },
   )
 
   it("should preserve search text on menu close", async () => {
     const searchText = "An"
     const wrapper = await render({
-      preserveSearchText: true
+      preserveSearchText: true,
     })
 
     await triggerSelectMenu(wrapper)
 
     await act(async () => {
       wrapper.find(Select).prop("onInputChange")(searchText, {
-        reason: "test"
+        reason: "test",
       })
     })
 
@@ -174,14 +174,14 @@ describe("SelectField", () => {
   it("should preserve search text on option selection", async () => {
     const searchText = "An"
     const wrapper = await render({
-      preserveSearchText: true
+      preserveSearchText: true,
     })
 
     await triggerSelectMenu(wrapper)
 
     await act(async () => {
       wrapper.find(Select).prop("onInputChange")(searchText, {
-        reason: "test"
+        reason: "test",
       })
     })
 
@@ -211,17 +211,17 @@ describe("SelectField", () => {
   it("should only show unselected menu items when hideSelectedOptions is true", async () => {
     const wrapper = await render({
       hideSelectedOptions: true,
-      options:             [
+      options: [
         {
           label: "Not selected",
-          value: "not-selected"
+          value: "not-selected",
         },
         {
           label: "Selected",
-          value: "selected"
-        }
+          value: "selected",
+        },
       ],
-      value: "selected"
+      value: "selected",
     })
 
     await triggerSelectMenu(wrapper)
@@ -241,12 +241,12 @@ describe("SelectField", () => {
     it("renders a select widget", async () => {
       const value = "initial"
       const wrapper = await render({
-        value
+        value,
       })
       const props = wrapper.find(Select).props()
       expect(props.value).toStrictEqual({
         label: value,
-        value: value
+        value: value,
       })
       expect(props.isMulti).toBeFalsy()
       expect(props.options).toStrictEqual(expectedOptions)
@@ -254,13 +254,13 @@ describe("SelectField", () => {
       const newValue = "newValue"
       props.onChange({ value: newValue })
       sinon.assert.calledWith(onChangeStub, {
-        target: { value: newValue, name: name }
+        target: { value: newValue, name: name },
       })
     })
 
     it("handles an empty value gracefully", async () => {
       const wrapper = await render({
-        value: null
+        value: null,
       })
       const props = wrapper.find(Select).props()
       expect(props.value).toBeNull()
@@ -274,11 +274,11 @@ describe("SelectField", () => {
         { label: "initial", value: "initial" },
         { label: "values", value: "values" },
         { label: "Three", value: "3" },
-        { label: "4", value: "4" }
+        { label: "4", value: "4" },
       ]
       const wrapper = await render({
         value,
-        multiple: true
+        multiple: true,
       })
       const props = wrapper.find(Select).props()
       expect(props.value).toStrictEqual(expectedValue)
@@ -286,16 +286,16 @@ describe("SelectField", () => {
       expect(props.options).toStrictEqual(expectedOptions)
 
       const newValue = ["newValue", "value2"]
-      props.onChange(newValue.map(_value => ({ value: _value })))
+      props.onChange(newValue.map((_value) => ({ value: _value })))
       sinon.assert.calledWith(onChangeStub, {
-        target: { value: newValue, name: name }
+        target: { value: newValue, name: name },
       })
     })
 
     it("handles an empty value gracefully", async () => {
       const wrapper = await render({
-        value:    null,
-        multiple: true
+        value: null,
+        multiple: true,
       })
       const props = wrapper.find(Select).props()
       expect(props.value).toStrictEqual([])

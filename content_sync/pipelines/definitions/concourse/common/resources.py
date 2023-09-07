@@ -25,7 +25,7 @@ class SlackAlertResource(Resource):
     A Resource using the version of concourse-slack-notification specified by ol-concourse
 
     It sends messages to a Slack channel
-    """
+    """  # noqa: E501
 
     def __init__(self, **kwargs):
         super().__init__(
@@ -41,7 +41,7 @@ class SlackAlertResource(Resource):
 class OpenDiscussionsResource(Resource):
     """
     A Resource that uses the http-resource ResourceType to trigger API calls to open-discussions
-    """
+    """  # noqa: E501
 
     def __init__(self, **kwargs):
         super().__init__(
@@ -102,7 +102,9 @@ class OcwStudioWebhookResource(Resource):
         api_token: str,
         **kwargs,
     ):
-        api_path = os.path.join("api", "websites", site_name, "pipeline_status")
+        api_path = os.path.join(  # noqa: PTH118
+            "api", "websites", site_name, "pipeline_status"
+        )  # noqa: PTH118, RUF100
         api_url = f"{urljoin(ocw_studio_url, api_path)}/"
         super().__init__(
             name=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,

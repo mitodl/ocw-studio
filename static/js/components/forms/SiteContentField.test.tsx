@@ -32,7 +32,7 @@ describe("SiteContentField", () => {
           field={field}
           contentContext={contentContext}
           onChange={onChangeStub}
-        />
+        />,
       )
 
       expect(wrapper.find("label").text()).toBe(field.label)

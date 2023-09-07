@@ -1,4 +1,4 @@
-""" Tests for ocw_import.tasks """
+"""Tests for ocw_import.tasks"""
 
 import pytest
 from moto import mock_s3
@@ -11,7 +11,6 @@ from ocw_import.tasks import (
     update_ocw2hugo_course_paths,
     update_ocw_resource_data,
 )
-
 
 # pylint:disable=too-many-arguments
 pytestmark = pytest.mark.django_db
@@ -82,15 +81,15 @@ def test_update_ocw2hugo_course_paths(mocker, paths, create_new_content):
 
 @mock_s3
 @pytest.mark.parametrize(
-    "chunk_size, filter_list, limit, call_count",
+    ("chunk_size", "filter_list", "limit", "call_count"),
     [
-        [1, ALL_COURSES_FILTER, None, 4],
-        [1, ["1-050-engineering-mechanics-i-fall-2007"], None, 1],
-        [2, ALL_COURSES_FILTER, None, 2],
-        [1, ALL_COURSES_FILTER, 1, 1],
+        [1, ALL_COURSES_FILTER, None, 4],  # noqa: PT007
+        [1, ["1-050-engineering-mechanics-i-fall-2007"], None, 1],  # noqa: PT007
+        [2, ALL_COURSES_FILTER, None, 2],  # noqa: PT007
+        [1, ALL_COURSES_FILTER, 1, 1],  # noqa: PT007
     ],
 )
-def test_import_ocw2hugo_courses(
+def test_import_ocw2hugo_courses(  # noqa: PLR0913
     settings, mocked_celery, mocker, filter_list, chunk_size, limit, call_count
 ):
     """
@@ -148,16 +147,16 @@ def test_import_ocw2hugo_courses_no_filter(mocker):
 
 @mock_s3
 @pytest.mark.parametrize(
-    "chunk_size, filter_list, limit, call_count",
+    ("chunk_size", "filter_list", "limit", "call_count"),
     [
-        [1, None, None, 4],
-        [1, ["1-050-engineering-mechanics-i-fall-2007"], None, 1],
-        [2, None, None, 2],
-        [1, None, 1, 1],
+        [1, None, None, 4],  # noqa: PT007
+        [1, ["1-050-engineering-mechanics-i-fall-2007"], None, 1],  # noqa: PT007
+        [2, None, None, 2],  # noqa: PT007
+        [1, None, 1, 1],  # noqa: PT007
     ],
 )
 @pytest.mark.parametrize("create_new_content", [True, False])
-def test_update_ocw_resource_data(
+def test_update_ocw_resource_data(  # noqa: PLR0913
     settings,
     mocked_celery,
     mocker,

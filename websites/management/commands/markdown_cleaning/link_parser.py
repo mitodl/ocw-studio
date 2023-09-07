@@ -39,8 +39,8 @@ class MarkdownLink:
 
     # Tuple of tuples (ParseResults, start_index, end_index) where
     # - ParseResult has named tokens
-    #       - link: MarkdownLinkOrImage
-    #       - original_text: str
+    #       - link: MarkdownLinkOrImage  # noqa: ERA001
+    #       - original_text: str  # noqa: ERA001
     # - start_index, end_index are the start/end of this link within self.text
     text_links: Union[tuple, None] = None
 
@@ -52,13 +52,12 @@ class MarkdownLink:
 
 
 class LinkParseResult(Protocol):
-
     link: MarkdownLink
     original_text: str
 
 
 class LinkParser(WrappedParser):
-    """
+    r"""
     Parser for markdown links and images.
 
     Why bother?
@@ -88,8 +87,7 @@ class LinkParser(WrappedParser):
     angle-bracket destination variant treated properly.
     """
 
-    def __init__(self, recursive=False):
-
+    def __init__(self, recursive=False):  # noqa: FBT002
         # By default pyparsing collapses whitespace characters.
         # Markdown cares about whitespace containing double newlines, so we
         # can't collapse newlines.
@@ -110,10 +108,7 @@ class LinkParser(WrappedParser):
             # Use self.scan_string not grammar.scan_string
             # so that parse actions attached to LinkParser fire for the nested
             # links, which seems desirable.
-            if recursive:
-                text_links = tuple(self.scan_string(text))
-            else:
-                text_links = None
+            text_links = tuple(self.scan_string(text)) if recursive else None
 
             link = MarkdownLink(
                 text=text,
@@ -137,12 +132,11 @@ class LinkParser(WrappedParser):
         Return PyParsing element to match an optional ! at beginning of links
         to indicate that the link is actually an image.
         """
-        is_image = (
+        return (
             Optional("!")
             .setResultsName("is_image")
-            .setParseAction(lambda s, l, toks: bool(toks))
+            .setParseAction(lambda s, l, toks: bool(toks))  # noqa: ARG005, E741
         )
-        return is_image
 
     @staticmethod
     def _parser_piece_text():
@@ -179,7 +173,7 @@ class LinkParser(WrappedParser):
                 ignoreExpr=ignore,
             )
         ).setResultsName("text")
-        text.addParseAction(lambda s, l, toks: toks[0][1:-1])
+        text.addParseAction(lambda s, l, toks: toks[0][1:-1])  # noqa: ARG005, E741
         return text
 
     @staticmethod
@@ -193,7 +187,9 @@ class LinkParser(WrappedParser):
         # Then parse it later.
         dest_and_title = originalTextFor(
             nestedExpr(opener="(", closer=")")
-        ).addParseAction(lambda s, l, toks: toks[0][1:-1])
+        ).addParseAction(
+            lambda s, l, toks: toks[0][1:-1]  # noqa: ARG005, E741
+        )  # noqa: E741, RUF100
 
         destination = Combine(
             # Zero or more non-space characters.
@@ -212,7 +208,9 @@ class LinkParser(WrappedParser):
         title = (
             quotedString.copy()
             .setResultsName("title")
-            .setParseAction(lambda s, l, toks: unescape_quoted_string(toks[0]))
+            .setParseAction(
+                lambda s, l, toks: unescape_quoted_string(toks[0])  # noqa: ARG005, E741
+            )  # noqa: E741, RUF100
         )
 
         # This will parse the contents of dest_and_title

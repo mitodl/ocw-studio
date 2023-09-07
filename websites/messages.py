@@ -14,7 +14,7 @@ class VideoTranscriptingCompleteMessage(TemplatedMessage):
 
     @staticmethod
     def get_debug_template_context() -> dict:
-        """Returns the extra context for the email debugger"""
+        """Returns the extra context for the email debugger"""  # noqa: D401
         return {
             "user": SimpleNamespace(name="Test User"),
             "site": SimpleNamespace(
@@ -33,7 +33,7 @@ class PreviewOrPublishSuccessMessage(TemplatedMessage):
 
     @staticmethod
     def get_debug_template_context() -> dict:
-        """Returns the extra context for the email debugger"""
+        """Returns the extra context for the email debugger"""  # noqa: D401
         return {
             "user": SimpleNamespace(name="Test User"),
             "site": SimpleNamespace(
@@ -53,7 +53,7 @@ class PreviewOrPublishFailureMessage(TemplatedMessage):
 
     @staticmethod
     def get_debug_template_context() -> dict:
-        """Returns the extra context for the email debugger"""
+        """Returns the extra context for the email debugger"""  # noqa: D401
         return {
             "user": SimpleNamespace(name="Test User"),
             "site": SimpleNamespace(

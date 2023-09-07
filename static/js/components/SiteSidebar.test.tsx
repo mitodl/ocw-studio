@@ -2,12 +2,12 @@ import SiteSidebar from "./SiteSidebar"
 
 import {
   makeWebsiteDetail,
-  makeTopLevelConfigItem
+  makeTopLevelConfigItem,
 } from "../util/factories/websites"
 import { times } from "lodash"
 import { siteCollaboratorsUrl, siteContentListingUrl } from "../lib/urls"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 
 import { Website } from "../types/websites"
@@ -24,53 +24,53 @@ describe("SiteSidebar", () => {
   afterEach(() => {
     helper.cleanup()
   })
-  ;[true, false].forEach(isAdminUser => {
+  ;[true, false].forEach((isAdminUser) => {
     it(`renders ${isAdminUser ? "all" : "non-admin"} links`, async () => {
       website.is_admin = isAdminUser
       const { wrapper } = await render()
 
       const links = wrapper
         .find("NavLink")
-        .map(link => [link.text(), link.prop("to")])
+        .map((link) => [link.text(), link.prop("to")])
 
       const expected = [
         [
           "Pages",
           siteContentListingUrl
             .param({
-              name:        website.name,
-              contentType: "page"
+              name: website.name,
+              contentType: "page",
             })
-            .toString()
+            .toString(),
         ],
         [
           "Resources",
           siteContentListingUrl
             .param({
-              name:        website.name,
-              contentType: "resource"
+              name: website.name,
+              contentType: "resource",
             })
-            .toString()
+            .toString(),
         ],
         [
           "Menu",
           siteContentListingUrl
             .param({
-              name:        website.name,
-              contentType: "menu"
+              name: website.name,
+              contentType: "menu",
             })
-            .toString()
-        ]
+            .toString(),
+        ],
       ]
       if (isAdminUser) {
         expected.splice(2, 0, [
           "Metadata",
           siteContentListingUrl
             .param({
-              name:        website.name,
-              contentType: "metadata"
+              name: website.name,
+              contentType: "metadata",
             })
-            .toString()
+            .toString(),
         ])
       }
       expect(links).toEqual(expect.arrayContaining(expected))
@@ -79,20 +79,20 @@ describe("SiteSidebar", () => {
 
   it("should pad all .config-sections excepting the last one", async () => {
     website.is_admin = false // Prevent an extra section getting added if true
-    website.starter!.config!.collections = times(5).map(idx =>
-      makeTopLevelConfigItem(`foobar${idx}`, null, `category${idx}`)
+    website.starter!.config!.collections = times(5).map((idx) =>
+      makeTopLevelConfigItem(`foobar${idx}`, null, `category${idx}`),
     )
     const { wrapper } = await render()
     expect(
       wrapper
         .find("SidebarSection")
-        .map(wrapper => wrapper.find("div").prop("className"))
+        .map((wrapper) => wrapper.find("div").prop("className")),
     ).toEqual([
       "sidebar-section pb-4",
       "sidebar-section pb-4",
       "sidebar-section pb-4",
       "sidebar-section pb-4",
-      "sidebar-section"
+      "sidebar-section",
     ])
   })
 

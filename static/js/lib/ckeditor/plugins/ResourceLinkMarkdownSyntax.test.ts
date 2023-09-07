@@ -18,13 +18,13 @@ const getEditor = createTestEditor(
     LinkPlugin,
     ResourceLinkMarkdownSyntax,
     LegacyShortcodes,
-    Markdown
+    Markdown,
   ],
   {
     [RESOURCE_LINK_CONFIG_KEY]: {
-      hrefTemplate: "https://fake.mit.edu/:uuid"
-    }
-  }
+      hrefTemplate: "https://fake.mit.edu/:uuid",
+    },
+  },
 )
 const href = (uuid: string, suffix = "") =>
   `https://fake.mit.edu/${uuid}?ocw_resource_link_uuid=${uuid}&ocw_resource_link_suffix=${suffix}`
@@ -32,7 +32,7 @@ const href = (uuid: string, suffix = "") =>
 describe("ResourceLinkMarkdownSyntax plugin", () => {
   afterEach(() => {
     turndownService.rules.array = turndownService.rules.array.filter(
-      (rule: any) => rule.name !== RESOURCE_LINK
+      (rule: any) => rule.name !== RESOURCE_LINK,
     )
   })
 
@@ -52,7 +52,10 @@ describe("ResourceLinkMarkdownSyntax plugin", () => {
     markdownTest(
       editor,
       '{{% resource_link "1234-5678" "link text" "#some-header-id" %}}',
-      `<p><a href="${href("1234-5678", "%23some-header-id")}">link text</a></p>`
+      `<p><a href="${href(
+        "1234-5678",
+        "%23some-header-id",
+      )}">link text</a></p>`,
     )
   })
 
@@ -61,7 +64,7 @@ describe("ResourceLinkMarkdownSyntax plugin", () => {
     markdownTest(
       editor,
       '{{% resource_link "asdfasdfasdfasdf" "text here" %}}',
-      `<p><a href="${href("asdfasdfasdfasdf")}">text here</a></p>`
+      `<p><a href="${href("asdfasdfasdfasdf")}">text here</a></p>`,
     )
   })
 
@@ -71,7 +74,7 @@ describe("ResourceLinkMarkdownSyntax plugin", () => {
     markdownTest(
       editor,
       '{{% resource_link "asdfasdfasdfasdf" "not \\"escaped\\" in the html" %}}',
-      `<p><a href="${href("asdfasdfasdfasdf")}">${text}</a></p>`
+      `<p><a href="${href("asdfasdfasdfasdf")}">${text}</a></p>`,
     )
   })
 
@@ -81,21 +84,21 @@ describe("ResourceLinkMarkdownSyntax plugin", () => {
       editor,
       'dogs {{% resource_link "uuid1" "woof" %}} cats {{% resource_link "uuid2" "meow" %}}, cool',
       `<p>dogs <a href="${href("uuid1")}">woof</a> cats <a href="${href(
-        "uuid2"
-      )}">meow</a>, cool</p>`
+        "uuid2",
+      )}">meow</a>, cool</p>`,
     )
   })
 
   it.each([
     'Dogs {{% resource_link uuid123 "bark bark" %}} Woof',
-    'Dogs {{% resource_link "uuid123" "bark bark" %}} Woof'
-  ])("tolerates quotation marks around its argument", async md => {
+    'Dogs {{% resource_link "uuid123" "bark bark" %}} Woof',
+  ])("tolerates quotation marks around its argument", async (md) => {
     const editor = await getEditor("")
     // This conversion is not quite lossless. We lose the optional quotes around
     // shortcode argument.
     const { md2html } = getConverters(editor)
     expect(md2html(md)).toBe(
-      `<p>Dogs <a href="${href("uuid123")}">bark bark</a> Woof</p>`
+      `<p>Dogs <a href="${href("uuid123")}">bark bark</a> Woof</p>`,
     )
   })
 
@@ -103,7 +106,7 @@ describe("ResourceLinkMarkdownSyntax plugin", () => {
     const editor = await getEditor("")
     const md = 'Dogs {{% resource_link "uuid123" "{{< sup 2 >}}" %}} Woof'
     const html = `<p>Dogs <a href="${href(
-      "uuid123"
+      "uuid123",
     )}">{{&lt; sup 2 &gt;}}</a> Woof</p>`
     markdownTest(editor, md, html)
   })
@@ -111,22 +114,22 @@ describe("ResourceLinkMarkdownSyntax plugin", () => {
   it.each([
     {
       allowedHtml: ["sup"],
-      sup:         (x: string) => `<sup>${x}</sup>`
+      sup: (x: string) => `<sup>${x}</sup>`,
     },
     {
       allowedHtml: [""],
-      sup:         (x: string) => x
-    }
+      sup: (x: string) => x,
+    },
   ])(
     "Preserves superscripts in the link title iff sub tag is permitted",
     async ({ allowedHtml, sup }) => {
       const editor = await getEditor("", {
-        "markdown-config": { allowedHtml }
+        "markdown-config": { allowedHtml },
       })
       const { md2html, html2md } = getConverters(editor)
 
       const html = `<p>Dogs <sup>x</sup> <a href="${href(
-        "uuid123"
+        "uuid123",
       )}">Einstein says E=mc<sup>2</sup></a> Woof</p>`
 
       const md =
@@ -141,10 +144,10 @@ describe("ResourceLinkMarkdownSyntax plugin", () => {
        */
       expect(html2md(html)).toBe(
         `Dogs ${sup("x")} {{% resource_link "uuid123" "Einstein says E=mc${sup(
-          "2"
-        )}" %}} Woof`
+          "2",
+        )}" %}} Woof`,
       )
-    }
+    },
   )
 
   /**
@@ -159,12 +162,12 @@ describe("ResourceLinkMarkdownSyntax plugin", () => {
    */
   it("Preserves resource links inside superscripts if sup enabled", async () => {
     const editor = await getEditor("", {
-      "markdown-config": { allowedHtml: ["sup"] }
+      "markdown-config": { allowedHtml: ["sup"] },
     })
     const md =
       'Cool reference<sup>{{% resource_link "uuid123" "\\[1\\]" %}}</sup>'
     const html = `<p>Cool reference<sup><a href="${href(
-      "uuid123"
+      "uuid123",
     )}">[1]</a></sup></p>`
 
     markdownTest(editor, md, html)

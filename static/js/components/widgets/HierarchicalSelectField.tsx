@@ -22,7 +22,7 @@ type Props = {
 
 const asOption = (str: string | null) => ({
   label: str ?? "-- empty --",
-  value: str ?? ""
+  value: str ?? "",
 })
 
 const describeSelection = (selection: HierarchicalSelection): string =>
@@ -35,7 +35,7 @@ const describeSelection = (selection: HierarchicalSelection): string =>
 export const calcOptions = (
   optionsMap: OptionsMap,
   selection: HierarchicalSelection,
-  levels: Level[]
+  levels: Level[],
 ): Option[][] => {
   // currentOptionsMap is the piece of optionsMap which is at the level depth being looked at.
   // If falsey, assume there are no options to show.
@@ -74,13 +74,13 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
 
   const setSelectedValueFor = useCallback(
     (levelIdx: number, selected: string) => {
-      setSelection(oldSelection =>
+      setSelection((oldSelection) =>
         oldSelection.map((selection, idx) =>
-          idx < levelIdx ? selection : idx === levelIdx ? selected : null
-        )
+          idx < levelIdx ? selection : idx === levelIdx ? selected : null,
+        ),
       )
     },
-    [setSelection]
+    [setSelection],
   )
 
   const handleAdd = useCallback(
@@ -97,14 +97,14 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
         target: {
           value: sortedUniqBy(
             sortBy(combinedList, describeSelection),
-            describeSelection
+            describeSelection,
           ),
-          name
-        }
+          name,
+        },
       })
       setSelection(defaultValue)
     },
-    [defaultValue, name, setSelection, onChange, selection, value]
+    [defaultValue, name, setSelection, onChange, selection, value],
   )
 
   const handleDelete = useCallback(
@@ -115,16 +115,16 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
       onChange({
         target: {
           value: valueList.filter((_, _idx) => _idx !== idx),
-          name
-        }
+          name,
+        },
       })
     },
-    [name, onChange, value]
+    [name, onChange, value],
   )
 
   const options = useMemo(
     () => calcOptions(optionsMap, selection, levels),
-    [optionsMap, selection, levels]
+    [optionsMap, selection, levels],
   )
 
   return (

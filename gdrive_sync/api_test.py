@@ -50,19 +50,18 @@ from websites.constants import (
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 
-
 pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name, too-many-arguments, unused-argument, protected-access
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_service(mocker):
     """Mock google drive service"""
     return mocker.patch("gdrive_sync.api.get_drive_service")
 
 
-@pytest.fixture
-def mock_get_s3_content_type(mocker):
+@pytest.fixture()
+def mock_get_s3_content_type(mocker):  # noqa: PT004
     """Mock gdrive_sync.api.get_s3_content_type"""
     mocker.patch(
         "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
@@ -173,7 +172,7 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     assert drive_file.s3_key == expected_key
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("num_errors", [2, 3, 4])
 def test_stream_to_s3_error(settings, mocker, num_errors):
     """Task should mark DriveFile status as failed if an s3 upload error occurs more often than retries"""
@@ -200,13 +199,13 @@ def test_stream_to_s3_error(settings, mocker, num_errors):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "parent_folder,parent_folder_in_ancestors",
+    ("parent_folder", "parent_folder_in_ancestors"),
     [(None, False), ("correct_parent", False), ("correct_parent", True)],
 )
 @pytest.mark.parametrize("folder_exists", [True, False])
-def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-arguments
+def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-arguments  # noqa: PLR0913
     settings,
     mocker,
     parent_folder,
@@ -303,14 +302,19 @@ def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-argum
 
 @mock_s3
 @pytest.mark.parametrize(
-    "filename, in_file_dir, mimetype, expected_type",
+    ("filename", "in_file_dir", "mimetype", "expected_type"),
     [
-        ["file.docx", True, "application/ms-word", RESOURCE_TYPE_DOCUMENT],
-        ["file.html", True, "text/html", RESOURCE_TYPE_DOCUMENT],
-        ["file.mp4", True, "video/mp4", RESOURCE_TYPE_OTHER],
-        ["file.mp4", False, "video/mp4", RESOURCE_TYPE_VIDEO],
-        ["file.jpeg", True, "image/jpeg", RESOURCE_TYPE_IMAGE],
-        ["file.py", True, "application/python", RESOURCE_TYPE_OTHER],
+        [  # noqa: PT007
+            "file.docx",
+            True,
+            "application/ms-word",
+            RESOURCE_TYPE_DOCUMENT,
+        ],
+        ["file.html", True, "text/html", RESOURCE_TYPE_DOCUMENT],  # noqa: PT007
+        ["file.mp4", True, "video/mp4", RESOURCE_TYPE_OTHER],  # noqa: PT007
+        ["file.mp4", False, "video/mp4", RESOURCE_TYPE_VIDEO],  # noqa: PT007
+        ["file.jpeg", True, "image/jpeg", RESOURCE_TYPE_IMAGE],  # noqa: PT007
+        ["file.py", True, "application/python", RESOURCE_TYPE_OTHER],  # noqa: PT007
     ],
 )
 def test_get_resource_type(
@@ -319,7 +323,7 @@ def test_get_resource_type(
     """get_resource_type should return the expected value for an S3 object"""
     settings.ENVIRONMENT = "test"
     settings.AWS_ACCESS_KEY_ID = "abc"
-    settings.AWS_SECRET_ACCESS_KEY = "abc"
+    settings.AWS_SECRET_ACCESS_KEY = "abc"  # noqa: S105
     settings.AWS_STORAGE_BUCKET_NAME = "test-bucket"
     conn = get_boto3_resource("s3")
     conn.create_bucket(Bucket=settings.AWS_STORAGE_BUCKET_NAME)
@@ -339,7 +343,7 @@ def test_get_resource_type(
 @pytest.mark.parametrize("in_video_folder", [True, False])
 @pytest.mark.parametrize("checksum", ["633410252", None])
 @pytest.mark.parametrize("link", ["http://download/url", None])
-def test_process_file_result(
+def test_process_file_result(  # noqa: PLR0913
     settings, mocker, is_video, in_video_folder, checksum, link
 ):
     """process_file_result should create a DriveFile only if all conditions are met"""
@@ -529,8 +533,8 @@ def test_walk_gdrive_folder(mocker):
     )  # parent, subfolder1, subfolder1_1, subfolder2
 
 
-@pytest.fixture
-def mock_gdrive_pdf(mocker):
+@pytest.fixture()
+def mock_gdrive_pdf(mocker):  # noqa: PT004
     """Mock reading the metadata of a PDF file with blank metadata"""
     mocker.patch(
         "gdrive_sync.api.GDriveStreamReader",
@@ -567,10 +571,8 @@ def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
         assert content is not None
         assert content.dirpath == "content/resource"
         assert content.filename == deduped_name
-        assert (
-            content.metadata["file_size"] is not None
-            and content.metadata["file_size"] >= 0
-        )
+        assert content.metadata["file_size"] is not None
+        assert content.metadata["file_size"] >= 0
         assert content.metadata["resourcetype"] == RESOURCE_TYPE_DOCUMENT
         assert content.metadata["file_type"] == mime_type
         assert content.metadata["image"] == ""
@@ -582,7 +584,7 @@ def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
 def test_create_gdrive_resource_content_forbidden_name(
     mock_get_s3_content_type, mock_gdrive_pdf
 ):
-    """content for a google drive file with a forbidden name should have its filename attribute modified"""
+    """Content for a google drive file with a forbidden name should have its filename attribute modified"""
     drive_file = DriveFileFactory.create(
         name=f"{CONTENT_FILENAMES_FORBIDDEN[0]}.txt",
         s3_key=f"test/path/{CONTENT_FILENAMES_FORBIDDEN[0]}.txt",
@@ -711,7 +713,7 @@ def test_transcode_gdrive_video(settings, mocker, account_id, region, role_name)
 
 @pytest.mark.parametrize(
     "prior_status",
-    [VideoJobStatus.CREATED, VideoJobStatus.CREATED, VideoJobStatus.FAILED],
+    [VideoJobStatus.CREATED, VideoJobStatus.FAILED],
 )
 def test_transcode_gdrive_video_prior_job(settings, mocker, prior_status):
     """create_media_convert_job should be called only if the prior job failed"""
@@ -753,13 +755,13 @@ def test_transcode_gdrive_video_error(settings, mocker):
 
 
 @pytest.mark.parametrize(
-    "shared_id, parent_id, folder",
+    ("shared_id", "parent_id", "folder"),
     [
-        [None, "def456", None],
-        ["", "def456", None],
-        ["abc123", None, "abc123"],
-        ["abc123", "", "abc123"],
-        ["abc123", "def456", "def456"],
+        [None, "def456", None],  # noqa: PT007
+        ["", "def456", None],  # noqa: PT007
+        ["abc123", None, "abc123"],  # noqa: PT007
+        ["abc123", "", "abc123"],  # noqa: PT007
+        ["abc123", "def456", "def456"],  # noqa: PT007
     ],
 )
 def test_gdrive_root_url(settings, shared_id, parent_id, folder):
@@ -773,19 +775,23 @@ def test_gdrive_root_url(settings, shared_id, parent_id, folder):
 
 
 @pytest.mark.parametrize(
-    "file_errors, site_errors, status",
+    ("file_errors", "site_errors", "status"),
     [
-        [[None, None], None, WebsiteSyncStatus.COMPLETE],
-        [[None, None], ["Error querying files_final folder"], WebsiteSyncStatus.ERRORS],
-        [[], [], WebsiteSyncStatus.COMPLETE],
-        [[], ["Error querying Google Drive"], WebsiteSyncStatus.FAILED],
-        [["Could not sync to S3", None], [], WebsiteSyncStatus.ERRORS],
-        [
+        [[None, None], None, WebsiteSyncStatus.COMPLETE],  # noqa: PT007
+        [  # noqa: PT007
+            [None, None],
+            ["Error querying files_final folder"],
+            WebsiteSyncStatus.ERRORS,
+        ],
+        [[], [], WebsiteSyncStatus.COMPLETE],  # noqa: PT007
+        [[], ["Error querying Google Drive"], WebsiteSyncStatus.FAILED],  # noqa: PT007
+        [["Could not sync to S3", None], [], WebsiteSyncStatus.ERRORS],  # noqa: PT007
+        [  # noqa: PT007
             ["Could not sync to S3", None],
             ["Could not query videos_final"],
             WebsiteSyncStatus.ERRORS,
         ],
-        [
+        [  # noqa: PT007
             ["Could not sync to S3", "Could not create resource"],
             [],
             WebsiteSyncStatus.FAILED,
@@ -843,7 +849,7 @@ def test_gdrive_stream_reader(mocker, mock_service, chunk_size):
 
     def mock_next_chunk():
         """Overwrite the MediaIoBaseDownload.next_chunk function for testing purposes"""
-        reader.downloader._fd.write(
+        reader.downloader._fd.write(  # noqa: SLF001
             b"".join(expected_bytes[bytes_idx : bytes_idx + chunk_size])
         )
         return MediaDownloadProgress(bytes_idx + chunk_size, 3), bytes_idx >= 2
@@ -853,7 +859,7 @@ def test_gdrive_stream_reader(mocker, mock_service, chunk_size):
     for i in range(0, 3, chunk_size):
         bytes_read = reader.read(amount=chunk_size)
         bytes_idx += chunk_size
-        assert reader.downloader._chunksize == chunk_size
+        assert reader.downloader._chunksize == chunk_size  # noqa: SLF001
         assert bytes_read == b"".join(expected_bytes[i : i + chunk_size])
 
 

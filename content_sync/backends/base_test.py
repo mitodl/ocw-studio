@@ -1,4 +1,4 @@
-""" Tests for base backend implementation """
+"""Tests for base backend implementation"""
 from typing import Any, Optional
 
 import pytest
@@ -108,7 +108,7 @@ def test_sync_content_to_backend_delete(mocker):
     mock_delete_content_in_backend.assert_called_once_with(state)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_sync_all_content_to_backend(mocker):
     """Verify that sync_all_content_to_backend calls sync_content_to_backend for each piece of content"""
     mock_sync_content_to_backend = mocker.patch.object(

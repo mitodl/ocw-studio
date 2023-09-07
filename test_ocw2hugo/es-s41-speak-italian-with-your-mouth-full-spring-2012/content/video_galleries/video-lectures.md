@@ -49,4 +49,3 @@ ocw_type: CourseSection
 
 
 {{< video-gallery "383b8d1c-30df-d781-cc05-c1c648453997" >}}
-

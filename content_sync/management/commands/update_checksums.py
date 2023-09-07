@@ -1,4 +1,4 @@
-"""Modify any ContentSyncState.current_checksum values that are out of date"""
+"""Modify any ContentSyncState.current_checksum values that are out of date"""  # noqa: E501, INP001
 import logging
 
 from django.core.paginator import Paginator
@@ -8,7 +8,6 @@ from tqdm import tqdm
 from content_sync.models import ContentSyncState
 from main.management.commands.filter import WebsiteFilterCommand
 
-
 log = logging.getLogger(__name__)
 
 
@@ -17,7 +16,7 @@ class Command(WebsiteFilterCommand):
     Modify any ContentSyncState.current_checksum values that are out of date
     """
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def handle(self, *args, **options):
         """

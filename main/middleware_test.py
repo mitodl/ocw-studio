@@ -10,7 +10,6 @@ from main.middleware import (
 )
 from main.utils import FeatureFlag
 
-
 FEATURE_FLAG_COOKIE_NAME = "TEST_COOKIE"
 FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS = 60
 

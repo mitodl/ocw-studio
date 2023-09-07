@@ -8,16 +8,15 @@ from websites.constants import (
 from websites.models import WebsiteContent
 from websites.site_config_api import ConfigItem, SiteConfig
 
-
 # pylint:disable=redefined-outer-name
 
 
 @pytest.mark.parametrize(
-    "raw_config_item, exp_file_target, exp_has_file_target",
+    ("raw_config_item", "exp_file_target", "exp_has_file_target"),
     [
-        [{"folder": "abc/"}, "abc/", True],
-        [{"file": "abc.txt"}, "abc.txt", True],
-        [{"key": "value"}, None, False],
+        [{"folder": "abc/"}, "abc/", True],  # noqa: PT007
+        [{"file": "abc.txt"}, "abc.txt", True],  # noqa: PT007
+        [{"key": "value"}, None, False],  # noqa: PT007
     ],
 )
 def test_config_item_file_target(raw_config_item, exp_file_target, exp_has_file_target):
@@ -35,11 +34,11 @@ def test_config_item_name():
 
 
 @pytest.mark.parametrize(
-    "raw_config_item, exp_is_folder, exp_is_file",
+    ("raw_config_item", "exp_is_folder", "exp_is_file"),
     [
-        [{"folder": "abc/"}, True, False],
-        [{"file": "abc.txt"}, False, True],
-        [{"key": "value"}, False, False],
+        [{"folder": "abc/"}, True, False],  # noqa: PT007
+        [{"file": "abc.txt"}, False, True],  # noqa: PT007
+        [{"key": "value"}, False, False],  # noqa: PT007
     ],
 )
 def test_config_item_is_folder_file(raw_config_item, exp_is_folder, exp_is_file):
@@ -72,10 +71,10 @@ def test_site_config_iter_items(basic_site_config):
 
 
 @pytest.mark.parametrize(
-    "content_dir_value, exp_result",
+    ("content_dir_value", "exp_result"),
     [
-        ["mycontentdir", "mycontentdir"],
-        [None, WEBSITE_CONFIG_DEFAULT_CONTENT_DIR],
+        ["mycontentdir", "mycontentdir"],  # noqa: PT007
+        [None, WEBSITE_CONFIG_DEFAULT_CONTENT_DIR],  # noqa: PT007
     ],
 )
 def test_content_dir(basic_site_config, content_dir_value, exp_result):
@@ -120,15 +119,15 @@ def test_find_config_item_by_filepath(basic_site_config):
 
 
 @pytest.mark.parametrize(
-    "content_dir, folder_file_target, exp_result",
+    ("content_dir", "folder_file_target", "exp_result"),
     [
-        [None, "content", True],
-        [None, "content/otherfolder", True],
-        ["contentdir", "contentdir", True],
-        ["contentdir", "contentdir/other", True],
-        ["contentdir", "contentdir/file.txt", True],
-        ["thisdir", "thatdir", False],
-        ["thisdir", "thatdir/other", False],
+        [None, "content", True],  # noqa: PT007
+        [None, "content/otherfolder", True],  # noqa: PT007
+        ["contentdir", "contentdir", True],  # noqa: PT007
+        ["contentdir", "contentdir/other", True],  # noqa: PT007
+        ["contentdir", "contentdir/file.txt", True],  # noqa: PT007
+        ["thisdir", "thatdir", False],  # noqa: PT007
+        ["thisdir", "thatdir/other", False],  # noqa: PT007
     ],
 )
 def test_is_page_content(
@@ -148,7 +147,8 @@ def test_is_page_content(
 
 
 @pytest.mark.parametrize(
-    "content_type,field_name", [["resource", "image"], ["blog", None]]
+    ("content_type", "field_name"),
+    [["resource", "image"], ["blog", None]],  # noqa: PT007
 )
 def test_find_file_field(basic_site_config, content_type, field_name):
     """The expected file field should be returned if any"""
@@ -168,7 +168,7 @@ def test_find_file_field(basic_site_config, content_type, field_name):
 @pytest.mark.parametrize("file_type", [None, "image/png"])
 @pytest.mark.parametrize("use_defaults", [True, False])
 @pytest.mark.parametrize("values", [True, False])
-def test_generate_item_metadata(  # pylint: disable=too-many-arguments
+def test_generate_item_metadata(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     parsed_site_config, cls, resource_type, file_type, use_defaults, values
 ):
     """generate_item_metadata should return the expected dict"""

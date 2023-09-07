@@ -1,4 +1,4 @@
-"""Updates derived values in WebsiteContent records to match the site config"""
+"""Updates derived values in WebsiteContent records to match the site config"""  # noqa: E501, INP001
 import sys
 
 from django.db.models import Q
@@ -11,7 +11,7 @@ from websites.site_config_api import SiteConfig
 class Command(WebsiteFilterCommand):
     """Updates derived values in WebsiteContent records to match the site config"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -20,10 +20,10 @@ class Command(WebsiteFilterCommand):
             "--starter-slug",
             dest="starter_slug",
             default="",
-            help="If specified, only sync contents for websites that user the given starter.",
+            help="If specified, only sync contents for websites that user the given starter.",  # noqa: E501
         )
 
-    def handle(self, *args, **options):  # pylint:disable=too-many-locals
+    def handle(self, *args, **options):  # pylint:disable=too-many-locals  # noqa: C901
         super().handle(*args, **options)
         starter_qset = WebsiteStarter.objects.all()
         starter_slug = options.get("starter_slug")
@@ -76,7 +76,7 @@ class Command(WebsiteFilterCommand):
                 self.stdout.write(
                     self.style.SUCCESS(
                         f"Starter '{starter.name}':\n"
-                        f"  Updated {sites_updated} Website(s), {contents_updated} WebsiteContent(s)"
+                        f"  Updated {sites_updated} Website(s), {contents_updated} WebsiteContent(s)"  # noqa: E501
                     )
                 )
 

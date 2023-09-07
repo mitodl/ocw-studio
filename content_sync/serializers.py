@@ -1,8 +1,8 @@
-"""Serialization/deserialization logic for transforming database content into file content and vice versa"""
+"""Serialization/deserialization logic for transforming database content into file content and vice versa"""  # noqa: E501
 import abc
 import json
 import re
-from typing import Dict, Optional
+from typing import Optional
 from urllib.parse import urlparse
 
 import yaml
@@ -21,32 +21,32 @@ from websites.site_config_api import ConfigItem, SiteConfig
 
 
 class BaseContentFileSerializer(abc.ABC):
-    """Base class for a serializer that can serialize WebsiteContent objects into file contents and vice versa"""
+    """Base class for a serializer that can serialize WebsiteContent objects into file contents and vice versa"""  # noqa: E501
 
     def __init__(self, site_config: SiteConfig):
         self.site_config = site_config
 
     @abc.abstractmethod
     def serialize(self, website_content: WebsiteContent) -> str:
-        """Serializes WebsiteContent data into file contents"""
+        """Serializes WebsiteContent data into file contents"""  # noqa: D401
 
     @abc.abstractmethod
     def deserialize(
         self, website: Website, filepath: str, file_contents: str
     ) -> WebsiteContent:
-        """Deserializes file contents and upserts those contents as a WebsiteContent object"""
+        """Deserializes file contents and upserts those contents as a WebsiteContent object"""  # noqa: E501
 
     def deserialize_data_file(
         self, website: Website, filepath: str, parsed_file_data: dict
     ) -> WebsiteContent:
-        """Helper method to deserialize simple data file contents"""
+        """Helper method to deserialize simple data file contents"""  # noqa: D401
         title = parsed_file_data.get("title")
         config_item = self.site_config.find_item_by_filepath(filepath)
         text_id = config_item.name
         base_defaults = {
             "metadata": dict_without_keys(parsed_file_data, "title"),
             "text_id": text_id,
-            # "file"-type items are singletons, and we use the same value for text_id and type
+            # "file"-type items are singletons, and we use the same value for text_id and type  # noqa: E501
             "type": text_id,
             "is_page_content": False,
             **({"title": title} if title is not None else {}),
@@ -58,7 +58,7 @@ class BaseContentFileSerializer(abc.ABC):
 
     @staticmethod
     def serialize_contents(metadata: dict, title: Optional[str]) -> dict:
-        """Standard serializer function for website content data"""
+        """Standard serializer function for website content data"""  # noqa: D401
         return {
             **metadata,
             **({"title": title} if title is not None else {}),
@@ -84,14 +84,17 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
         md_file_sections = [
             part
             for part in re.split(re.compile(r"^---\n", re.MULTILINE), file_contents)
-            # re.split returns a blank string as the first item here even though the file contents begin with the given
+            # re.split returns a blank string as the first item here even though the file contents begin with the given  # noqa: E501
             # pattern.
             if part
         ]
-        if not 1 <= len(md_file_sections) <= 2:
-            raise ValueError(f"Incorrectly formatted Markdown file ({filepath}).")
+        if not 1 <= len(md_file_sections) <= 2:  # noqa: PLR2004
+            msg = f"Incorrectly formatted Markdown file ({filepath})."
+            raise ValueError(msg)
         front_matter_data = yaml.load(md_file_sections[0], Loader=yaml.SafeLoader)
-        markdown = md_file_sections[1] if len(md_file_sections) == 2 else None
+        markdown = (
+            md_file_sections[1] if len(md_file_sections) == 2 else None  # noqa: PLR2004
+        )  # noqa: PLR2004, RUF100
         text_id = front_matter_data.get("uid", None)
         content_type = front_matter_data.get("content_type")
         dirpath, filename = get_dirpath_and_filename(
@@ -101,9 +104,8 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
         file_url = None
         config_item = self.site_config.find_item_by_name(content_type)
         if config_item is None:
-            raise ValueError(
-                f"Could not find matching config item for this file ({filepath}, type: {content_type})"
-            )
+            msg = f"Could not find matching config item for this file ({filepath}, type: {content_type})"  # noqa: E501
+            raise ValueError(msg)
         content_config = self.site_config.find_item_by_name(content_type)
         if content_config:
             file_field = self.site_config.find_file_field(content_config)
@@ -180,14 +182,14 @@ class YamlFileSerializer(BaseContentFileSerializer):
 
 
 def _has_menu_fields(config_item: ConfigItem) -> bool:
-    """Returns True if the config item has any fields with the 'menu' widget"""
+    """Returns True if the config item has any fields with the 'menu' widget"""  # noqa: D401, E501
     return any(
         field for field in config_item.fields if field["widget"] == CONTENT_MENU_FIELD
     )
 
 
-def _get_uuid_content_map(hugo_menu_data: dict) -> Dict[str, WebsiteContent]:
-    """Returns a mapping of UUIDs to the WebsiteContent records with those ids"""
+def _get_uuid_content_map(hugo_menu_data: dict) -> dict[str, WebsiteContent]:
+    """Returns a mapping of UUIDs to the WebsiteContent records with those ids"""  # noqa: D401, E501
     content_uuids = [
         menu_item["identifier"]
         for menu_item in hugo_menu_data
@@ -207,7 +209,7 @@ def _transform_hugo_menu_data(
 
     Returns the dict of all values that will be serialized to the target file, including the transformed
     "menu" fields.
-    """
+    """  # noqa: E501, D401
     config_item = site_config.find_item_by_name(website_content.type)
     menu_fields = {
         field["name"]
@@ -244,7 +246,7 @@ def _untransform_hugo_menu_data(
 
     Returns the dict of all values that will be deserialized to website content, including the transformed
     "menu" fields.
-    """
+    """  # noqa: E501, D401
     config_item = site_config.find_item_by_filepath(filepath)
     menu_fields = {
         field["name"]
@@ -276,7 +278,7 @@ class HugoMenuYamlFileSerializer(BaseContentFileSerializer):
     HACK: Hugo-specific logic for properly transforming data if the "menu" widget is used
 
     Serializer/deserializer class for Hugo menu files
-    """
+    """  # noqa: E501
 
     def serialize(self, website_content: WebsiteContent) -> str:
         return yaml.dump(
@@ -310,23 +312,22 @@ class ContentFileSerializerFactory:
         """
         Given the path of a file in a storage backend, returns a serializer object of the correct type for
         deserializing the file as a WebsiteContent object.
-        """
+        """  # noqa: E501
         file_ext = get_file_extension(filepath)
         if file_ext == "md":
             cls = HugoMarkdownFileSerializer
         elif file_ext == "json":
             cls = JsonFileSerializer
         elif file_ext in {"yml", "yaml"}:
-            # HACK: Hugo-specific logic for properly transforming data if the "menu" widget is used
+            # HACK: Hugo-specific logic for properly transforming data if the "menu" widget is used  # noqa: E501, FIX004
             config_item = site_config.find_item_by_filepath(filepath)
             if config_item is not None and _has_menu_fields(config_item):
                 cls = HugoMenuYamlFileSerializer
             else:
                 cls = YamlFileSerializer
         else:
-            raise ValueError(
-                f"Unrecognized file type. Cannot deserialize ({filepath})."
-            )
+            msg = f"Unrecognized file type. Cannot deserialize ({filepath})."
+            raise ValueError(msg)
         return cls(site_config=site_config)
 
     @staticmethod
@@ -336,28 +337,26 @@ class ContentFileSerializerFactory:
         """
         Given a WebsiteContent object and site config, returns a serializer object of the correct type for
         serializing the WebsiteContent object into file contents.
-        """
+        """  # noqa: E501
         if website_content.is_page_content:
             return HugoMarkdownFileSerializer(site_config=site_config)
         config_item = site_config.find_item_by_name(website_content.type)
         destination_filepath = config_item.file_target
         if not destination_filepath:
-            raise ValueError(
-                f"WebsiteContent object is not page content, but has no 'file' destination in config ({website_content.text_id})."
-            )
+            msg = f"WebsiteContent object is not page content, but has no 'file' destination in config ({website_content.text_id})."  # noqa: E501
+            raise ValueError(msg)
         file_ext = get_file_extension(destination_filepath)
         if file_ext == "json":
             cls = JsonFileSerializer
         elif file_ext in {"yml", "yaml"}:
-            # HACK: Hugo-specific logic for properly transforming data if the "menu" widget is used
+            # HACK: Hugo-specific logic for properly transforming data if the "menu" widget is used  # noqa: E501, FIX004
             if _has_menu_fields(config_item):
                 cls = HugoMenuYamlFileSerializer
             else:
                 cls = YamlFileSerializer
         else:
-            raise ValueError(
-                f"Website content cannot be serialized to a file ({website_content.text_id})."
-            )
+            msg = f"Website content cannot be serialized to a file ({website_content.text_id})."  # noqa: E501
+            raise ValueError(msg)
         return cls(site_config=site_config)
 
 
@@ -367,7 +366,7 @@ def serialize_content_to_file(
     """
     Chooses the correct serializer for the given website content object, then serializes the WebsiteContent
     object into file contents.
-    """
+    """  # noqa: E501
     serializer = ContentFileSerializerFactory.for_content(site_config, website_content)
     return serializer.serialize(website_content=website_content)
 
@@ -378,7 +377,7 @@ def deserialize_file_to_website_content(
     """
     Given a WebsiteContent object and site config, chooses the correct serializer, then serializes the WebsiteContent
     object into file contents.
-    """
+    """  # noqa: E501
     serializer = ContentFileSerializerFactory.for_file(site_config, filepath)
     return serializer.deserialize(
         website=website,

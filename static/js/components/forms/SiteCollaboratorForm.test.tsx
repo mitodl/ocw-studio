@@ -5,7 +5,7 @@ import * as yup from "yup"
 
 import SiteCollaboratorForm, {
   emailValidation,
-  roleValidation
+  roleValidation,
 } from "./SiteCollaboratorForm"
 import { EDITABLE_ROLES } from "../../constants"
 import { assertInstanceOf, defaultFormikChildProps } from "../../test_util"
@@ -27,17 +27,17 @@ describe("SiteCollaboratorForm", () => {
         collaborator={collaborator}
         onSubmit={onSubmitStub}
         onCancel={onCancelStub}
-      />
+      />,
     )
 
   const renderInnerForm = (
     formikChildProps: Partial<FormikProps<any>>,
-    collaborator: WebsiteCollaborator | null
+    collaborator: WebsiteCollaborator | null,
   ) => {
     const wrapper = renderForm(collaborator)
     return wrapper.find(Formik).renderProp("children")({
       ...defaultFormikChildProps,
-      ...formikChildProps
+      ...formikChildProps,
     })
   }
 
@@ -60,11 +60,11 @@ describe("SiteCollaboratorForm", () => {
     it("shows an option for each role, plus an empty option", () => {
       const form = renderInnerForm(
         { isSubmitting: false, status: "whatever" },
-        null
+        null,
       )
       const field = form
         .find("Field")
-        .filterWhere(node => node.prop("name") === "role")
+        .filterWhere((node) => node.prop("name") === "role")
       const options: Array<Option> = field.prop("options")
       expect(options).toHaveLength(EDITABLE_ROLES.length + 1)
       for (let i = 1; i < options.length; i++) {
@@ -75,10 +75,10 @@ describe("SiteCollaboratorForm", () => {
     it("shows an email field", () => {
       const form = renderInnerForm(
         { isSubmitting: false, status: "whatever" },
-        null
+        null,
       )
       expect(
-        form.find("Field").filterWhere(node => node.prop("name") === "email")
+        form.find("Field").filterWhere((node) => node.prop("name") === "email"),
       ).toHaveLength(1)
     })
   })
@@ -91,7 +91,7 @@ describe("SiteCollaboratorForm", () => {
     it("cancel button onClick function is onCancel prop", () => {
       const form = renderInnerForm(
         { isSubmitting: false, status: "whatever" },
-        null
+        null,
       )
       expect(form.find("button").at(1).prop("onClick")).toBe(onCancelStub)
     })
@@ -113,11 +113,11 @@ describe("SiteCollaboratorForm", () => {
     it("shows an option for each role plus an empty choice", () => {
       const form = renderInnerForm(
         { isSubmitting: false, status: "whatever" },
-        collaborator
+        collaborator,
       )
       const field = form
         .find("Field")
-        .filterWhere(node => node.prop("name") === "role")
+        .filterWhere((node) => node.prop("name") === "role")
       const options: Array<Option> = field.prop("options")
       expect(options).toHaveLength(EDITABLE_ROLES.length + 1)
       for (let i = 1; i < options.length; i++) {
@@ -134,7 +134,7 @@ describe("SiteCollaboratorForm", () => {
     it("rejects an empty role", async () => {
       try {
         await expect(
-          await collaboratorValidation.validateAt("role", "")
+          await collaboratorValidation.validateAt("role", ""),
         ).rejects.toThrow()
       } catch (error) {
         assertInstanceOf(error, yup.ValidationError)
@@ -145,7 +145,7 @@ describe("SiteCollaboratorForm", () => {
     it("rejects an empty email", async () => {
       try {
         await expect(
-          await collaboratorValidation.validateAt("email", { email: "" })
+          await collaboratorValidation.validateAt("email", { email: "" }),
         ).rejects.toThrow()
       } catch (error) {
         assertInstanceOf(error, yup.ValidationError)
@@ -157,8 +157,8 @@ describe("SiteCollaboratorForm", () => {
       try {
         await expect(
           await collaboratorValidation.validateAt("email", {
-            email: "fake.test.com"
-          })
+            email: "fake.test.com",
+          }),
         ).rejects.toThrow()
       } catch (error) {
         assertInstanceOf(error, yup.ValidationError)
@@ -169,7 +169,7 @@ describe("SiteCollaboratorForm", () => {
     it("does not reject a valid role", async () => {
       try {
         await expect(
-          await collaboratorValidation.validateAt("role", "admin")
+          await collaboratorValidation.validateAt("role", "admin"),
         ).rejects.toThrow()
       } catch (error) {
         assertInstanceOf(error, yup.ValidationError)

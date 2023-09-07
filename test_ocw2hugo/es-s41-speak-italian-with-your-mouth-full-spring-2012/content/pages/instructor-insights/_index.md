@@ -53,29 +53,29 @@ The Classroom
 -------------
 
 *   ![A woman in a blue sweater places her hand on the counter of a kitchen.]({{< resource_file b9f0393a-4bf6-81d4-4061-a196a29739a7 >}})
-    
+
     ![](/images/educator/classroom_prev.png) Room 1 of 2 [![Click for next classroom.](/images/educator/classroom_next.png)](#)
-    
+
     Dr. Paola Rebusco shows off the newly redesigned kitchen she used to teach Speak Italian With Your Mouth Full.
-    
+
     \<style ocw_type="text/css"> .pagecontainer {display:none;} \</style> \<div id="atnmsg" style='width: 300px;' class="attention\_message"> \<p>Flash and JavaScript are required for this feature.\</p> \</div>
-    
+
     [Watch Dr. Rebusco give a guided tour of the ESG common space and classrooms.](#?w=535)
-    
-      
-    
+
+
+
     Tour the Experimental Study Group Area
-    
+
     [\> Download from iTunes U (MP4 - 9MB)](https://itunes.apple.com/us/itunes-u/tour-experimental-study-group/id658330008?i=170123806)
-    
+
     [\> Download from Internet Archive (MP4 - 9MB)](http://archive.org/download/MITES.S41S12/MITES_S41S12_Teaching12_300k.mp4)
-    
+
 *   ![A woman in a blue sweater stands near a round table next to a blackboard.]({{< resource_file e36b5812-ddd9-9f8f-bc1b-73e567d69113 >}})
-    
+
     [![Click for previous classroom.](/images/educator/classroom_prev.png)](#) Room 2 of 2 ![](/images/educator/classroom_next.png)
-    
+
     Dr. Paola Rebusco shows the classroom space adjacent to the kitchen where she taught this course.
-    
+
 
 {{< anchor "studentinfo" >}}{{< /anchor >}}
 

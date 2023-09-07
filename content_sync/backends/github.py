@@ -1,4 +1,4 @@
-""" Github backend """
+"""Github backend"""
 import logging
 from typing import Optional
 
@@ -21,7 +21,6 @@ from content_sync.models import ContentSyncState
 from content_sync.serializers import deserialize_file_to_website_content
 from content_sync.utils import get_destination_filepath
 from websites.models import Website, WebsiteContent, WebsiteContentQuerySet
-
 
 log = logging.getLogger(__name__)
 
@@ -150,7 +149,7 @@ class GithubBackend(BaseSyncBackend):
         """
         Iterate over a website's WebsiteContent objects, deleting any that don't exist in the git repo.
         Then recursively iterate through the repo, upserting any ContentFiles to WebsiteContent objects.
-        """
+        """  # noqa: E501
         repo = self.api.get_repo()
 
         # Get list of existing WebsiteContent ids for the website

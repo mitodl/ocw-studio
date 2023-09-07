@@ -1,8 +1,9 @@
-""" Github API wrapper"""
+"""Github API wrapper"""
 import logging
 from base64 import b64decode
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from typing import Iterable, Iterator, List, Optional
+from typing import Optional
 from urllib.parse import urlparse
 
 import requests
@@ -44,7 +45,6 @@ from websites.models import (
 )
 from websites.site_config_api import SiteConfig
 
-
 log = logging.getLogger(__name__)
 
 GIT_DATA_FILEPATH = "filepath"
@@ -68,13 +68,13 @@ def decode_file_contents(content_file: ContentFile) -> str:
 
 
 def sync_starter_configs(  # pylint:disable=too-many-locals
-    repo_url: str, config_files: List[str], commit: Optional[str] = None
+    repo_url: str, config_files: list[str], commit: Optional[str] = None
 ):
     """
     Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
     If a commit was passed in and GITHUB_WEBHOOK_BRANCH is set, these are compared and the change
     is ignored if it does not match the branch in settings.
-    """
+    """  # noqa: E501
     repo_path = urlparse(repo_url).path.lstrip("/")
     org_name, repo_name = repo_path.split("/", 1)
     git = Github()
@@ -98,7 +98,7 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
                 if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE
                 else repo_name
             )
-            path = "/".join([repo_url, slug])
+            path = f"{repo_url}/{slug}"
             unique_slug = get_valid_new_slug(slug, path)
             raw_yaml = git_file.decoded_content
             validate_raw_site_config(raw_yaml.decode("utf-8"))
@@ -108,14 +108,14 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
                 path=path,
                 defaults={"config": config, "commit": commit, "slug": unique_slug},
             )
-            # Give the WebsiteStarter a name equal to the slug if created, otherwise keep the current value.
+            # Give the WebsiteStarter a name equal to the slug if created, otherwise keep the current value.  # noqa: E501
             if created:
                 starter.name = starter.slug
                 starter.save()
-        except YamaleError:
+        except YamaleError:  # noqa: PERF203
             log.exception("Invalid site config YAML found in %s", config_file)
             continue
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except  # noqa: E722
             log.exception("Error processing config file %s", config_file)
             continue
 
@@ -130,7 +130,7 @@ def get_app_installation_id(app: GithubIntegration) -> Optional[str]:
         "User-Agent": "PyGithub/Python",
     }
 
-    response = requests.get(
+    response = requests.get(  # noqa: S113
         f"{app.base_url}/app/installations",
         headers=headers,
     )
@@ -140,6 +140,8 @@ def get_app_installation_id(app: GithubIntegration) -> Optional[str]:
         for git_app in response_dict:
             if git_app["app_id"] == settings.GITHUB_APP_ID:
                 return git_app["id"]
+        return None
+    return None
 
 
 def get_token():
@@ -148,7 +150,9 @@ def get_token():
         try:
             private_key = (
                 default_backend()
-                .load_pem_private_key(settings.GITHUB_APP_PRIVATE_KEY, None, False)
+                .load_pem_private_key(
+                    settings.GITHUB_APP_PRIVATE_KEY, None, False  # noqa: FBT003
+                )
                 .private_bytes(
                     serialization.Encoding.PEM,
                     serialization.PrivateFormat.PKCS8,
@@ -167,15 +171,13 @@ def get_token():
             )
             return app.get_access_token(get_app_installation_id(app)).token
         except (requests.HTTPError, ValueError, TypeError) as exc:
-            raise ImproperlyConfigured(
-                "Could not initialize github app, check the relevant settings"
-            ) from exc
+            msg = "Could not initialize github app, check the relevant settings"
+            raise ImproperlyConfigured(msg) from exc
     elif settings.GIT_TOKEN:
         return settings.GIT_TOKEN
     else:
-        raise ImproperlyConfigured(
-            "Missing Github settings, a token or app id and private key are required"
-        )
+        msg = "Missing Github settings, a token or app id and private key are required"
+        raise ImproperlyConfigured(msg)
 
 
 class GithubApiWrapper:
@@ -207,7 +209,7 @@ class GithubApiWrapper:
             try:
                 self.repo = self.org.get_repo(self.website.short_id)
             except GithubException as ge:
-                if ge.status == 404:
+                if ge.status == 404:  # noqa: PLR2004
                     self.repo = self.create_repo()
                 else:
                     raise
@@ -218,9 +220,9 @@ class GithubApiWrapper:
         """Return True if the repo already exists"""
         try:
             self.org.get_repo(self.website.short_id)
-            return True
+            return True  # noqa: TRY300
         except GithubException as ge:
-            if ge.status == 404:
+            if ge.status == 404:  # noqa: PLR2004
                 return False
             else:
                 raise
@@ -236,7 +238,7 @@ class GithubApiWrapper:
                 self.website.short_id, auto_init=True, **kwargs
             )
         except GithubException as ge:
-            if ge.status == 422:
+            if ge.status == 422:  # noqa: PLR2004
                 # It may already exist, try to retrieve it
                 self.repo = self.org.get_repo(self.website.short_id)
                 log.debug("Repo already exists: %s", self.website.name)
@@ -253,8 +255,7 @@ class GithubApiWrapper:
         """
         Yield all the branches in a repo.
         """
-        for branch in self.get_repo().get_branches():
-            yield branch
+        yield from self.get_repo().get_branches()
 
     def rename_branch(self, from_name: str, to_name: str) -> Branch:
         """
@@ -263,7 +264,9 @@ class GithubApiWrapper:
         return self.create_branch(to_name, from_name, delete_source=True)
 
     @retry_on_failure
-    def create_branch(self, branch: str, source: str, delete_source=False) -> Branch:
+    def create_branch(
+        self, branch: str, source: str, delete_source=False  # noqa: FBT002
+    ) -> Branch:
         """
         Create a new git branch, and optionally delete the source branch afterward.
         """
@@ -274,7 +277,7 @@ class GithubApiWrapper:
                 f"refs/heads/{branch}", sha=source_branch.object.sha
             )
         except GithubException as ge:
-            if ge.status == 422:
+            if ge.status == 422:  # noqa: PLR2004
                 # It may already exist
                 new_branch = repo.get_git_ref(f"heads/{branch}")
             else:
@@ -295,7 +298,7 @@ class GithubApiWrapper:
         )
         if not destination_filepath:
             # No filepath, nothing to do
-            return
+            return None
         repo = self.get_repo()
         data = serialize_content_to_file(
             site_config=self.site_config, website_content=website_content
@@ -303,7 +306,7 @@ class GithubApiWrapper:
         git_user = self.git_user(website_content.updated_by)
         try:
             sha = repo.get_contents(destination_filepath).sha
-        except:  # pylint:disable=bare-except
+        except:  # pylint:disable=bare-except  # noqa: E722
             return repo.create_file(
                 destination_filepath,
                 f"Create {destination_filepath}",
@@ -323,7 +326,7 @@ class GithubApiWrapper:
         )
 
     def upsert_content_files(self, query_set: Optional[WebsiteContentQuerySet] = None):
-        """Commit all website content, with 1 commit per user, optionally filtering with a QuerySet"""
+        """Commit all website content, with 1 commit per user, optionally filtering with a QuerySet"""  # noqa: E501
         if query_set:
             content_files = query_set.values_list("updated_by", flat=True).distinct()
         else:
@@ -342,7 +345,7 @@ class GithubApiWrapper:
     ) -> Optional[Commit]:
         """
         Upsert multiple WebsiteContent objects to github in one commit, optionally filtering with a QuerySet
-        """
+        """  # noqa: E501
         unsynced_states = ContentSyncState.objects.filter(
             Q(content__website=self.website) & Q(content__updated_by=user_id)
         ).exclude(
@@ -386,7 +389,7 @@ class GithubApiWrapper:
             )
 
         if len(modified_element_list) == 0:
-            return
+            return None
 
         commit = self.commit_tree(
             modified_element_list, User.objects.filter(id=user_id).first()
@@ -445,7 +448,7 @@ class GithubApiWrapper:
 
     def get_tree_elements(
         self, sync_state: ContentSyncState, data: str, filepath: str
-    ) -> List[InputGitTreeElement]:
+    ) -> list[InputGitTreeElement]:
         """
         Return the required InputGitTreeElements for a modified ContentSyncState
         """
@@ -478,7 +481,7 @@ class GithubApiWrapper:
     def commit_tree(self, element_list: [InputGitTreeElement], user: User) -> Commit:
         """
         Create a commit containing all the changes specified in a list of InputGitTreeElements
-        """
+        """  # noqa: E501
         repo = self.get_repo()
         main_ref = repo.get_git_ref(f"heads/{settings.GIT_BRANCH_MAIN}")
         main_sha = main_ref.object.sha
@@ -500,7 +503,7 @@ class GithubApiWrapper:
             elif content.type == "dir":
                 yield from self.get_all_file_paths(content.path)
 
-    def batch_delete_files(self, paths: List[str], user: Optional[User] = None):
+    def batch_delete_files(self, paths: list[str], user: Optional[User] = None):
         """Batch delete multiple git files in a single commit"""
         tree_elements = [
             InputGitTreeElement(

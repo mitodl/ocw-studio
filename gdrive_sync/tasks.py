@@ -2,7 +2,7 @@
 import logging
 from collections import Counter
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import celery
 from celery import chain, chord
@@ -27,7 +27,6 @@ from main.tasks import chord_finisher
 from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.models import Website, WebsiteContent
 
-
 # pylint:disable=unused-argument, raising-format-tuple
 
 
@@ -48,20 +47,20 @@ def process_drive_file(drive_file_id: str):
         api.stream_to_s3(drive_file)
         if drive_file.is_video():
             api.transcode_gdrive_video(drive_file)
-        return drive_file_id
-    except:  # pylint:disable=bare-except
+        return drive_file_id  # noqa: TRY300
+    except:  # pylint:disable=bare-except  # noqa: E722
         log.exception("Error processing DriveFile %s", drive_file_id)
 
     return None
 
 
 @app.task()
-def create_gdrive_resource_content_batch(drive_file_ids: List[Optional[str]]):
+def create_gdrive_resource_content_batch(drive_file_ids: list[Optional[str]]):
     """
     Creates WebsiteContent resources from a Google Drive files identified by `drive_file_ids`.
 
     `drive_file_ids` are expected to be results from `process_drive_file` tasks.
-    """
+    """  # noqa: E501, D401
     for drive_file_id in drive_file_ids:
         if drive_file_id is None:
             continue
@@ -89,20 +88,20 @@ def delete_drive_file(drive_file_id: str, sync_datetime: datetime):
         api.delete_drive_file(drive_file, sync_datetime=sync_datetime)
 
 
-def _get_gdrive_files(website: Website) -> Tuple[Dict[str, List[Dict]], List[str]]:
+def _get_gdrive_files(website: Website) -> tuple[dict[str, list[dict]], list[str]]:
     """
     Returns a tuple (files, errors).
 
     `files` is a dict where keys are subfolder names and value is a
     list of file objects.
     `errors` is a list of errors while fetching files.
-    """
+    """  # noqa: D401
     errors = []
     gdrive_subfolder_files = {}
 
     for subfolder in [DRIVE_FOLDER_FILES_FINAL, DRIVE_FOLDER_VIDEOS_FINAL]:
         try:
-            query = f'parents = "{website.gdrive_folder}" and name="{subfolder}" and mimeType = "{DRIVE_MIMETYPE_FOLDER}" and not trashed'
+            query = f'parents = "{website.gdrive_folder}" and name="{subfolder}" and mimeType = "{DRIVE_MIMETYPE_FOLDER}" and not trashed'  # noqa: E501
             subfolder_list = list(
                 api.query_files(query=query, fields=DRIVE_FILE_FIELDS)
             )
@@ -118,8 +117,8 @@ def _get_gdrive_files(website: Website) -> Tuple[Dict[str, List[Dict]], List[str
                     DRIVE_FILE_FIELDS,
                 )
             )
-        except:  # pylint:disable=bare-except
-            error_msg = f"An error occurred when querying the {subfolder} google drive subfolder"
+        except:  # pylint:disable=bare-except  # noqa: E722
+            error_msg = f"An error occurred when querying the {subfolder} google drive subfolder"  # noqa: E501
             errors.append(error_msg)
             log.exception("%s for %s", error_msg, website.short_id)
 
@@ -160,7 +159,7 @@ def import_website_files(self, name: str):
                 )
                 if drive_file:
                     file_tasks.append(process_drive_file.s(drive_file.file_id))
-            except:  # pylint:disable=bare-except
+            except:  # pylint:disable=bare-except  # noqa: E722, PERF203
                 errors.append(f"Error processing gdrive file {gdfile.get('name')}")
                 log.exception(
                     "Error processing gdrive file %s for %s",
@@ -200,27 +199,27 @@ def create_gdrive_folders(website_short_id: str):
 
 
 @app.task()
-def create_gdrive_folders_batch(short_ids: List[str]):
+def create_gdrive_folders_batch(short_ids: list[str]):
     """Create Google Drive folders for a batch of websites"""
     errors = []
     for short_id in short_ids:
         try:
             api.create_gdrive_folders(short_id)
-        except:  # pylint:disable=bare-except
+        except:  # pylint:disable=bare-except  # noqa: E722, PERF203
             log.exception("Could not create google drive folders for %s", short_id)
             errors.append(short_id)
     return errors or True
 
 
 @app.task(bind=True)
-def create_gdrive_folders_chunked(self, short_ids: List[str], chunk_size=500):
+def create_gdrive_folders_chunked(self, short_ids: list[str], chunk_size=500):
     """Chunk and group batches of calls to create google drive folders for sites"""
     tasks = []
     for website_subset in chunks(
         sorted(short_ids),
         chunk_size=chunk_size,
     ):
-        tasks.append(create_gdrive_folders_batch.s(website_subset))
+        tasks.append(create_gdrive_folders_batch.s(website_subset))  # noqa: PERF401
     raise self.replace(celery.group(tasks))
 
 
@@ -233,8 +232,10 @@ def update_website_status(website_pk: str, sync_dt: datetime):
 
 
 @app.task
-def populate_file_sizes(website_name: str, override_existing: bool = False):
-    """Populate all resource content of `website` with the `file_size` metadata field."""
+def populate_file_sizes(  # noqa: C901, PLR0912
+    website_name: str, override_existing: bool = False  # noqa: FBT001, FBT002
+):  # noqa: PLR0912, RUF100
+    """Populate all resource content of `website` with the `file_size` metadata field."""  # noqa: E501
     website = Website.objects.get(name=website_name)
     log.info("Starting file size population for %s.", website_name)
 
@@ -251,7 +252,7 @@ def populate_file_sizes(website_name: str, override_existing: bool = False):
             content.metadata["file_size"] = utils.fetch_content_file_size(
                 content, bucket=bucket
             )
-        except Exception as ex:  # pylint:disable=broad-except
+        except Exception as ex:  # pylint:disable=broad-except  # noqa: BLE001
             log.warning("Could not fetch file size for %s. %s", content, ex)
             content.metadata["file_size"] = None
         else:
@@ -271,7 +272,7 @@ def populate_file_sizes(website_name: str, override_existing: bool = False):
 
             try:
                 drive_file.size = utils.fetch_drive_file_size(drive_file, bucket)
-            except Exception as ex:  # pylint:disable=broad-except
+            except Exception as ex:  # pylint:disable=broad-except  # noqa: BLE001
                 log.warning("Could not fetch file size for %s. %s", drive_file, ex)
             else:
                 if drive_file.size is None:
@@ -297,7 +298,9 @@ def populate_file_sizes(website_name: str, override_existing: bool = False):
 
 @app.task(bind=True)
 def populate_file_sizes_bulk(
-    self, website_names: List[str], override_existing: bool = False
+    self,
+    website_names: list[str],
+    override_existing: bool = False,  # noqa: FBT001, FBT002
 ):
     """Run populate_file_sizes for `website_names` sequentially."""
     sub_tasks = [

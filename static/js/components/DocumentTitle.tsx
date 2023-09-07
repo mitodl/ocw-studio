@@ -17,7 +17,7 @@ const TITLE_BASE = "OCW Studio"
  */
 export const formatTitle = (...subtitles: string[]): string =>
   [TITLE_BASE]
-    .concat(subtitles.flatMap(subtitle => ["|", subtitle.trim()]))
+    .concat(subtitles.flatMap((subtitle) => ["|", subtitle.trim()]))
     .join(" ")
 
 /**

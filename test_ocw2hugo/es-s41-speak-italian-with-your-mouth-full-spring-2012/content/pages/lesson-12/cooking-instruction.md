@@ -19,7 +19,7 @@ This Italian classic is more difficult to describe than to bake =)
 
 ![A photo taken above of a pie plate that contains strips of dough and fruit.]({{< resource_file 70681bfa-0ce3-478f-83ea-3f52a0102e14 >}})
 
-A photo of a crostata that still needs a few minutes in the oven.  
+A photo of a crostata that still needs a few minutes in the oven.
 (Image courtesy of Graham Ramsay).
 
 {{< anchor "1" >}}{{< /anchor >}}L_a Crostata_/Tart

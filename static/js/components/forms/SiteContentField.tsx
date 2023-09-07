@@ -18,7 +18,7 @@ interface Props {
 export default function SiteContentField({
   field,
   contentContext,
-  onChange
+  onChange,
 }: Props): JSX.Element {
   const extraProps = widgetExtraProps(field)
   const component = componentFromWidget(field)

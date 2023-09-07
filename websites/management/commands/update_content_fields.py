@@ -1,4 +1,4 @@
-"""Updates multiple fields of content based on starter"""
+"""Updates multiple fields of content based on starter"""  # noqa: INP001
 import re
 from argparse import ArgumentTypeError
 
@@ -14,12 +14,12 @@ from websites.models import WebsiteContent
 class Command(WebsiteFilterCommand):
     """Updates multiple fields of content based on starter"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def _parse_data(self, data):
         """Parse the data"""
         tuples = re.findall(
-            "([^\d\W]\w*)=(\S+)", data
+            r"([^\d\W]\w*)=(\S+)", data
         )  # pylint:disable=anomalous-backslash-in-string
         if not tuples:
             raise ArgumentTypeError
@@ -56,9 +56,9 @@ class Command(WebsiteFilterCommand):
         starter = options.get("starter")
         page_type = options.get("type")
 
-        updated_data = {key: value for key, value in key_values}
+        updated_data = dict(key_values)
         confirmation = input(
-            f"""WARNING: You are about to update the '{", ".join(updated_data.keys())}' fields with values '{", ".join(updated_data.values())}' for content type '{page_type}' from the starter '{starter}'.Would you like to proceed with the import? (y/n): """
+            f"""WARNING: You are about to update the '{", ".join(updated_data.keys())}' fields with values '{", ".join(updated_data.values())}' for content type '{page_type}' from the starter '{starter}'.Would you like to proceed with the import? (y/n): """  # noqa: E501
         )
 
         if confirmation != "y":
@@ -77,4 +77,4 @@ class Command(WebsiteFilterCommand):
                     )
                 contents.update(**updated_data)
             except FieldDoesNotExist as e:
-                raise CommandError(e)
+                raise CommandError(e)  # noqa: B904, TRY200

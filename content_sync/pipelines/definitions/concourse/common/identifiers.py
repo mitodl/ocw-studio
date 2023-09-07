@@ -1,6 +1,5 @@
 from ol_concourse.lib.models.pipeline import Identifier
 
-
 # Commonly used identifiers
 HTTP_RESOURCE_TYPE_IDENTIFIER = Identifier("http-resource").root
 KEYVAL_RESOURCE_TYPE_IDENTIFIER = Identifier("keyval").root

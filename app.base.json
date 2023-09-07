@@ -1,9 +1,5 @@
 {
-  "addons": [
-    "heroku-postgresql:hobby-dev",
-    "newrelic:wayne",
-    "rediscloud:30"
-  ],
+  "addons": ["heroku-postgresql:hobby-dev", "newrelic:wayne", "rediscloud:30"],
   "buildpacks": [
     {
       "url": "https://github.com/heroku/heroku-buildpack-apt"
@@ -40,12 +36,7 @@
       "generator": "secret"
     }
   },
-  "keywords": [
-    "Django",
-    "Python",
-    "MIT",
-    "Office of Digital Learning"
-  ],
+  "keywords": ["Django", "Python", "MIT", "Office of Digital Learning"],
   "name": "ocw_studio",
   "repository": "https://github.com/mitodl/ocw-studio",
   "scripts": {

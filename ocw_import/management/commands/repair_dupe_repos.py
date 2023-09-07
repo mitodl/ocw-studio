@@ -1,4 +1,4 @@
-""" Fix sites that have been assigned a new repo on every import """
+"""Fix sites that have been assigned a new repo on every import"""
 from django.db import transaction
 from django.db.models import Q
 from github import GithubException
@@ -13,7 +13,7 @@ from websites.models import Website
 class Command(WebsiteFilterCommand):
     """Fix sites that have been assigned a new repo on every import"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
@@ -46,10 +46,12 @@ class Command(WebsiteFilterCommand):
                     for i in range(3, int(idx) + 1):
                         try:
                             backend.api.org.get_repo(f"{base_repo}-{i}").delete()
-                        except GithubException as ge:
-                            if ge.status != 404:
+                        except GithubException as ge:  # noqa: PERF203
+                            if ge.status != 404:  # noqa: PLR2004
                                 raise
-            except Exception as exc:  # pylint:disable=broad-except
+            except (  # noqa: PERF203
+                Exception  # noqa: BLE001
+            ) as exc:  # pylint:disable=broad-except
                 self.stderr.write(
                     f"Error occurred repairing repo for {website.name}: {exc}"
                 )
@@ -60,5 +62,5 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(f"Repo repair finished, took {total_seconds} seconds")
         else:
             self.stderr.write(
-                f"Repo repair finished with {errors} errors, took {total_seconds} seconds"
+                f"Repo repair finished with {errors} errors, took {total_seconds} seconds"  # noqa: E501
             )

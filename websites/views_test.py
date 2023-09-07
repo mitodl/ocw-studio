@@ -1,4 +1,4 @@
-""" Tests for websites views """
+"""Tests for websites views"""
 import datetime
 from types import SimpleNamespace
 
@@ -38,7 +38,6 @@ from websites.serializers import (
     WebsiteStatusSerializer,
 )
 
-
 # pylint:disable=redefined-outer-name,too-many-arguments,too-many-lines
 
 pytestmark = pytest.mark.django_db
@@ -56,7 +55,7 @@ MOCK_GITHUB_DATA = {
 }
 
 
-@pytest.fixture
+@pytest.fixture()
 def websites(course_starter):
     """Create some websites for tests, with all but one having a sitemetadata WebsiteContent object"""
     courses = WebsiteFactory.create_batch(3, published=True, starter=course_starter)
@@ -75,7 +74,7 @@ def websites(course_starter):
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def file_upload():
     """File upload for tests"""
     return SimpleUploadedFile("exam.pdf", b"sample pdf", content_type="application/pdf")
@@ -208,7 +207,7 @@ def test_websites_endpoint_status(drf_client):
 
 
 @pytest.mark.parametrize(
-    "method,status", [["post", 405], ["put", 403], ["delete", 405]]
+    ("method", "status"), [["post", 405], ["put", 403], ["delete", 405]]  # noqa: PT007
 )
 def test_websites_endpoint_detail_methods_denied(drf_client, method, status):
     """Certain request methods should always be denied"""
@@ -346,7 +345,7 @@ def test_websites_endpoint_publish_error(mocker, drf_client):
 def test_websites_endpoint_publish_with_url(
     mocker, drf_client, ocw_site, is_published, action
 ):
-    """url path should be updated and content sync state reset if site is not published"""
+    """Url path should be updated and content sync state reset if site is not published"""
     css = ContentSyncState.objects.filter(content__website=ocw_site)
     css.update(synced_checksum="notnull")
     mock_publish = mocker.patch("websites.views.trigger_publish")
@@ -502,7 +501,7 @@ def test_websites_endpoint_sorting(drf_client, websites, settings):
 def test_websites_endpoint_publish_sorting(
     drf_client, published, websites
 ):  # pylint: disable=unused-argument
-    """should be able to filter to just published or not"""
+    """Should be able to filter to just published or not"""
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
     resp = drf_client.get(reverse("websites_api-list"), {"published": published})
@@ -520,7 +519,7 @@ def test_websites_endpoint_publish_sorting(
 
 
 def test_website_endpoint_search(drf_client):
-    """should limit the queryset based on the search param"""
+    """Should limit the queryset based on the search param"""
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
 
@@ -557,7 +556,7 @@ def test_website_endpoint_search(drf_client):
 
 
 def test_website_endpoint_empty_search(drf_client):
-    """should limit the queryset based on the search param"""
+    """Should limit the queryset based on the search param"""
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
     WebsiteFactory.create()
@@ -616,7 +615,9 @@ def test_website_starters_retrieve(drf_client):
     assert resp.json() == WebsiteStarterDetailSerializer(instance=starter).data
 
 
-@pytest.mark.parametrize("use_local_starters,exp_result_count", [[True, 4], [False, 2]])
+@pytest.mark.parametrize(
+    ("use_local_starters", "exp_result_count"), [[True, 4], [False, 2]]  # noqa: PT007
+)
 def test_website_starters_local(
     settings, drf_client, use_local_starters, exp_result_count
 ):
@@ -650,7 +651,7 @@ def test_website_starters_site_configs_invalid_key(drf_client):
 
 def test_website_starters_site_configs(settings, mocker, drf_client):
     """A 202 response should be returned for valid data"""
-    settings.GIT_TOKEN = "git-token"
+    settings.GIT_TOKEN = "git-token"  # noqa: S105
     mocker.patch("websites.views.valid_key", return_value=True)
     valid_config_files = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
     mock_sync = mocker.patch("content_sync.api.tasks.sync_github_site_configs.delay")
@@ -677,26 +678,26 @@ def test_website_starters_site_configs_exception(mocker, drf_client):
 
 @pytest.mark.parametrize("detailed_list", [True, False])
 @pytest.mark.parametrize(
-    "resourcetype, filter_type, search, expected_num_results",
+    ("resourcetype", "filter_type", "search", "expected_num_results"),
     [
-        ["Image", "page", "text2", 1],
-        ["Image", "page", "", 3],
-        ["Image", "", "text2", 1],
-        ["Image", "", "", 3],
-        ["", "page", "text2", 1],
-        ["", "page", "", 5],
-        ["", "", "text2", 1],
-        ["", "", "", 6],
-        ["", "", "myfile3", 1],
-        ["", "", "myfile", 5],
-        ["", "", ".png", 5],
-        ["", "", ".p", 5],
-        ["", "", ".pdf", 0],
-        ["", "", "test", 0],
-        ["", "", "courses", 0],
+        ["Image", "page", "text2", 1],  # noqa: PT007
+        ["Image", "page", "", 3],  # noqa: PT007
+        ["Image", "", "text2", 1],  # noqa: PT007
+        ["Image", "", "", 3],  # noqa: PT007
+        ["", "page", "text2", 1],  # noqa: PT007
+        ["", "page", "", 5],  # noqa: PT007
+        ["", "", "text2", 1],  # noqa: PT007
+        ["", "", "", 6],  # noqa: PT007
+        ["", "", "myfile3", 1],  # noqa: PT007
+        ["", "", "myfile", 5],  # noqa: PT007
+        ["", "", ".png", 5],  # noqa: PT007
+        ["", "", ".p", 5],  # noqa: PT007
+        ["", "", ".pdf", 0],  # noqa: PT007
+        ["", "", "test", 0],  # noqa: PT007
+        ["", "", "courses", 0],  # noqa: PT007
     ],
 )
-def test_websites_content_list(  # pylint: disable=too-many-locals
+def test_websites_content_list(  # pylint: disable=too-many-locals  # noqa: PLR0913
     drf_client,
     detailed_list,
     global_admin_user,
@@ -759,8 +760,8 @@ def test_websites_content_list(  # pylint: disable=too-many-locals
             if content.metadata.get("resourcetype") == resourcetype
         ]
 
-    sorted_contents = list(
-        reversed(sorted(contents, key=lambda _content: _content.updated_on))
+    sorted_contents = sorted(
+        contents, key=lambda _content: _content.updated_on, reverse=True
     )
     # we set it up so Image resources are every other result, so step by 2 to account for that if filtering
     for idx in range(0, len(sorted_contents), 2 if resourcetype else 1):
@@ -830,7 +831,7 @@ def test_websites_content_list_page_content(drf_client, global_admin_user):
 def test_websites_content_publish_sorting(
     drf_client, global_admin_user, published
 ):  # pylint: disable=unused-argument
-    """should be able to filter to just published or not"""
+    """Should be able to filter to just published or not"""
     drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create(published=True)
     unpublished = WebsiteContentFactory.create_batch(
@@ -974,14 +975,14 @@ def test_websites_content_create_with_textid(drf_client, global_admin_user):
 
 
 @pytest.mark.parametrize(
-    "root_url_path, expected_prefix",
+    ("root_url_path", "expected_prefix"),
     [
-        ["", ""],
-        ["/", ""],
-        ["/test/sites/", "test/sites"],
+        ["", ""],  # noqa: PT007
+        ["/", ""],  # noqa: PT007
+        ["/test/sites/", "test/sites"],  # noqa: PT007
     ],
 )
-def test_websites_content_create_with_upload(
+def test_websites_content_create_with_upload(  # noqa: PLR0913
     mocker, drf_client, global_admin_user, file_upload, root_url_path, expected_prefix
 ):
     """Uploading a file when creating a new WebsiteContent object should work"""
@@ -1060,14 +1061,14 @@ def test_websites_content_edit_with_upload(
 
 
 @pytest.mark.parametrize(
-    "has_matching_config_item, is_page_content, exp_page_content_field",
+    ("has_matching_config_item", "is_page_content", "exp_page_content_field"),
     [
-        [True, True, True],
-        [False, True, False],
-        [True, False, False],
+        [True, True, True],  # noqa: PT007
+        [False, True, False],  # noqa: PT007
+        [True, False, False],  # noqa: PT007
     ],
 )
-def test_content_create_page_content(
+def test_content_create_page_content(  # noqa: PLR0913
     mocker,
     drf_client,
     global_admin_user,
@@ -1112,10 +1113,10 @@ def test_content_create_page_content(
 
 
 @pytest.mark.parametrize(
-    "title, expected_filename_base",
+    ("title", "expected_filename_base"),
     [
-        ["My Title", "my-title"],
-        [
+        ["My Title", "my-title"],  # noqa: PT007
+        [  # noqa: PT007
             constants.CONTENT_FILENAMES_FORBIDDEN[0],
             f"{constants.CONTENT_FILENAMES_FORBIDDEN[0]}-{constants.CONTENT_TYPE_RESOURCE}",
         ],
@@ -1221,12 +1222,12 @@ def test_websites_content_create_empty(drf_client, global_admin_user):
 )
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
 @pytest.mark.parametrize("unpublished", [True, False])
-def test_websites_endpoint_pipeline_status(
+def test_websites_endpoint_pipeline_status(  # noqa: PLR0913
     settings, mocker, drf_client, permission_groups, version, status, unpublished
 ):
     """The pipeline_complete endpoint should send notifications to site owner/admins"""
     mock_update_status = mocker.patch("websites.views.update_website_status")
-    settings.API_BEARER_TOKEN = "abc123"
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     website = permission_groups.websites[0]
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
     data = {"version": version, "status": f"{status}"}
@@ -1283,7 +1284,7 @@ def test_mass_build_endpoint_list(settings, drf_client, version, unpublished):
         with_url_path=True,
     )
     expected_sites = draft_published if version == VERSION_DRAFT else live_published
-    settings.API_BEARER_TOKEN = "abc123"
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
     resp = drf_client.get(f'{reverse("mass_build_api-list")}?version={version}')
     assert resp.status_code == 200
@@ -1300,7 +1301,7 @@ def test_mass_build_endpoint_list(settings, drf_client, version, unpublished):
 
 def test_mass_build_endpoint_list_bad_version(settings, drf_client):
     """The WebsiteMassBuildView endpoint should return a 400 if the version parameter is invalid"""
-    settings.API_BEARER_TOKEN = "abc123"
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
     resp = drf_client.get(f'{reverse("mass_build_api-list")}?version=null')
     assert resp.status_code == 400
@@ -1309,7 +1310,7 @@ def test_mass_build_endpoint_list_bad_version(settings, drf_client):
 @pytest.mark.parametrize("bad_token", ["wrongtoken", None])
 def test_mass_build_endpoint_list_bad_token(settings, drf_client, bad_token):
     """The WebsiteMassBuildView endpoint should return a 403 if the token is invalid or missing"""
-    settings.API_BEARER_TOKEN = "abc123"
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     if bad_token:
         drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
     resp = drf_client.get(f'{reverse("mass_build_api-list")}?version={VERSION_LIVE}')
@@ -1335,7 +1336,7 @@ def test_unpublished_removal_endpoint_list(settings, drf_client):
         WebsiteContentFactory.create(
             type=CONTENT_TYPE_METADATA, website=site, metadata={}
         )
-    settings.API_BEARER_TOKEN = "abc123"
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
     resp = drf_client.get(f'{reverse("unpublished_removal_api-list")}')
     assert resp.status_code == 200
@@ -1351,7 +1352,7 @@ def test_unpublished_removal_endpoint_list(settings, drf_client):
 @pytest.mark.parametrize("bad_token", ["wrongtoken", None])
 def test_unpublished_removal_endpoint_list_bad_token(settings, drf_client, bad_token):
     """The WebsiteUnpublishViewSet endpoint should return a 403 if the token is invalid or missing"""
-    settings.API_BEARER_TOKEN = "abc123"
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     if bad_token:
         drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
     resp = drf_client.get(f'{reverse("unpublished_removal_api-list")}')

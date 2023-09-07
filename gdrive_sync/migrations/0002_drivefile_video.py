@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("videos", "0001_initial"),
         ("gdrive_sync", "0001_initial"),

@@ -72,9 +72,9 @@ class MassBuildSitesPipelineDefinitionConfig:
         starter(WebsiteStarter): (Optional) Filter the sites to be built by a WebsiteStarter
         prefix(str): (Optional) A prefix path to use when deploying the websites to their destination
         hugo_override_args(str): (Optional) Arguments to override in the hugo command
-    """
+    """  # noqa: E501
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         sites: WebsiteQuerySet,
         version: str,
@@ -83,13 +83,13 @@ class MassBuildSitesPipelineDefinitionConfig:
         site_content_branch: str,
         ocw_hugo_themes_branch: str,
         ocw_hugo_projects_branch: str,
-        offline: bool,
+        offline: bool,  # noqa: FBT001
         instance_vars: str,
         starter: Optional[WebsiteStarter] = None,
         prefix: Optional[str] = None,
         hugo_arg_overrides: Optional[str] = None,
     ):
-        vars = get_common_pipeline_vars()
+        vars = get_common_pipeline_vars()  # noqa: A001
         self.sites = sites
         self.version = version
         self.prefix = prefix
@@ -208,7 +208,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
 
     Args:
         config(MassBuildSitesPipelineDefinitionConfig): The mass build config object
-    """
+    """  # noqa: E501
 
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig, **kwargs):
         base = super()
@@ -285,9 +285,9 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             if batch_number > 1:
                 tasks.append(
                     GetStep(
-                        get=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number -1}",
+                        get=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number -1}",  # noqa: E501
                         passed=[
-                            f"{MASS_BUILD_SITES_JOB_IDENTIFIER}-batch-{batch_number - 1}"
+                            f"{MASS_BUILD_SITES_JOB_IDENTIFIER}-batch-{batch_number - 1}"  # noqa: E501
                         ],
                         trigger=True,
                     )

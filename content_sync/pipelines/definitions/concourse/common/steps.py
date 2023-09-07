@@ -32,7 +32,7 @@ def add_error_handling(
     step: StepModifierMixin,
     step_description: str,
     pipeline_name: str,
-    short_id: str,
+    short_id: str,  # noqa: ARG001
     instance_vars: str,
 ):
     """
@@ -47,15 +47,15 @@ def add_error_handling(
 
     Returns:
         None
-    """
+    """  # noqa: E501
     step_type = type(step)
     if not issubclass(step_type, StepModifierMixin):
-        raise TypeError(
-            f"The step object of type {step_type} does not extend StepModifierMixin and therefore cannot have error handling"
-        )
+        msg = f"The step object of type {step_type} does not extend StepModifierMixin and therefore cannot have error handling"  # noqa: E501
+        raise TypeError(msg)
     for failure_step in [step.on_failure, step.on_error, step.on_abort]:
         if failure_step is not None:
-            raise ValueError(f"The step {step} already has {failure_step} set")
+            msg = f"The step {step} already has {failure_step} set"
+            raise ValueError(msg)
     concourse_base_url = settings.CONCOURSE_URL
     concourse_team = settings.CONCOURSE_TEAM
     concourse_path = f"/teams/{concourse_team}/pipelines/{pipeline_name}{instance_vars}"
@@ -89,7 +89,7 @@ class ErrorHandlingStep(TryStep):
     Extends TryStep and sets error handling steps
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         pipeline_name: str,
         status: str,
@@ -108,7 +108,7 @@ class ErrorHandlingStep(TryStep):
                         ),
                         SlackAlertStep(
                             alert_type=status,
-                            text=f"{failure_description} - {step_description} : {concourse_url}",
+                            text=f"{failure_description} - {step_description} : {concourse_url}",  # noqa: E501
                         ),
                     ]
                 )
@@ -210,7 +210,7 @@ class OpenDiscussionsWebhookStep(TryStep):
     Args:
         site_url(str): The url path of the site
         pipeline_name(str): The pipeline name to use as the version (draft / live)
-    """
+    """  # noqa: E501
 
     def __init__(self, site_url: str, pipeline_name: str, **kwargs):
         super().__init__(
@@ -250,12 +250,12 @@ class SiteContentGitTaskStep(TaskStep):
             command = f"""
             echo $GIT_PRIVATE_KEY > ./git.key
             sed -i -E \"s/(-----BEGIN[^-]+-----)(.+)(-----END[^-]+-----)/-----BEGINSSHKEY-----\\2\\-----ENDSSHKEY-----/\" git.key
-            sed -i -E \"s/\s/\\n/g\" git.key
+            sed -i -E \"s/\\s/\\n/g\" git.key
             sed -i -E \"s/SSHKEY/ OPENSSH PRIVATE KEY/g\" git.key
             chmod 400 ./git.key
             GIT_PRIVATE_KEY_FILE=\"-i ./git.key\"
             git -c core.sshCommand=\"ssh $GIT_PRIVATE_KEY_FILE -o StrictHostKeyChecking=no\" clone -b {branch} {uri} ./{SITE_CONTENT_GIT_IDENTIFIER}
-            """
+            """  # noqa: E501
             params = {"GIT_PRIVATE_KEY": "((git-private-key))"}
         else:
             uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{short_id}.git"

@@ -5,6 +5,18 @@ $standard-border-radius: 2px;
   border: none;
 }
 
+.cyan-button {
+  background-color: $studio-cyan;
+  color: $white;
+  font-weight: 500;
+}
+
+.cyan-button-outline {
+  border-color: $studio-cyan;
+  background-color: $white;
+  color: $black;
+}
+
 .cyan-button,
 .cyan-button-outline {
   font-size: 16px;
@@ -25,18 +37,6 @@ $standard-border-radius: 2px;
     font-size: 18px;
     padding: 8px 30px;
   }
-}
-
-.cyan-button {
-  background-color: $studio-cyan;
-  color: $white;
-  font-weight: 500;
-}
-
-.cyan-button-outline {
-  border-color: $studio-cyan;
-  background-color: $white;
-  color: $black;
 }
 
 .gray-button {

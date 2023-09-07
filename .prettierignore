@@ -1,0 +1,3 @@
+static/js/types/*.d.ts
+.yarn
+test_ocw2hugo/

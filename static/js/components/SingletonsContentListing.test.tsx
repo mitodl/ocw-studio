@@ -7,20 +7,20 @@ import WebsiteContext from "../context/Website"
 import { siteApiContentDetailUrl } from "../lib/urls"
 import * as siteContentFuncs from "../lib/site_content"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 import {
   makeSingletonConfigItem,
   makeSingletonsConfigItem,
   makeWebsiteContentDetail,
-  makeWebsiteDetail
+  makeWebsiteDetail,
 } from "../util/factories/websites"
 
 import {
   SingletonConfigItem,
   SingletonsConfigItem,
   Website,
-  WebsiteContent
+  WebsiteContent,
 } from "../types/websites"
 import { createModalState } from "../types/modal_state"
 import SiteContentEditor from "./SiteContentEditor"
@@ -35,13 +35,13 @@ function mocko() {
 jest.mock("../lib/site_content", () => {
   return {
     __esModule: true,
-    ...jest.requireActual("../lib/site_content")
+    ...jest.requireActual("../lib/site_content"),
   }
 })
 
 jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
-  default:    mocko
+  default: mocko,
 }))
 
 describe("SingletonsContentListing", () => {
@@ -58,39 +58,39 @@ describe("SingletonsContentListing", () => {
     helper = new IntegrationTestHelper()
     content = makeWebsiteContentDetail()
     contentDetailStub = helper.handleRequestStub.returns({
-      body:   content,
-      status: 200
+      body: content,
+      status: 200,
     })
     website = makeWebsiteDetail()
     singletonConfigItems = [
       makeSingletonConfigItem(),
       makeSingletonConfigItem(),
-      makeSingletonConfigItem()
+      makeSingletonConfigItem(),
     ]
     configItem = {
       ...makeSingletonsConfigItem(),
-      files: singletonConfigItems
+      files: singletonConfigItems,
     }
     websiteContentDetails = {
-      [singletonConfigItems[0].name]: content
+      [singletonConfigItems[0].name]: content,
     }
     render = helper.configureRenderer(
-      props => (
+      (props) => (
         <WebsiteContext.Provider value={website}>
           <SingletonsContentListing {...props} />
         </WebsiteContext.Provider>
       ),
       {
-        website:    website,
-        configItem: configItem
+        website: website,
+        configItem: configItem,
       },
       {
         entities: {
-          websiteDetails:        { [website.name]: website },
-          websiteContentDetails: websiteContentDetails
+          websiteDetails: { [website.name]: website },
+          websiteContentDetails: websiteContentDetails,
         },
-        queries: {}
-      }
+        queries: {},
+      },
     )
   })
 
@@ -104,9 +104,11 @@ describe("SingletonsContentListing", () => {
     const tabContents = wrapper.find("TabPane")
     expect(tabLinks).toHaveLength(singletonConfigItems.length)
     expect(tabContents).toHaveLength(singletonConfigItems.length)
-    const tabText = tabLinks.map(tab => tab.text())
+    const tabText = tabLinks.map((tab) => tab.text())
     expect(tabText).toEqual(
-      singletonConfigItems.map(singletonConfigItem => singletonConfigItem.label)
+      singletonConfigItems.map(
+        (singletonConfigItem) => singletonConfigItem.label,
+      ),
     )
     expect(wrapper.find("TabContent").prop("activeTab")).toEqual(0)
     expect(tabLinks.at(0).prop("className")).toEqual("active")
@@ -123,27 +125,27 @@ describe("SingletonsContentListing", () => {
     act(() => {
       // @ts-expect-error Not mocking whole event
       tabLinks.at(tabIndexToSelect).prop("onClick")({
-        preventDefault: helper.sandbox.stub()
+        preventDefault: helper.sandbox.stub(),
       })
     })
     wrapper.update()
     const activeTab = wrapper.find("NavLink").at(tabIndexToSelect)
     expect(activeTab.prop("className")).toEqual("active")
     expect(wrapper.find("TabContent").prop("activeTab")).toEqual(
-      tabIndexToSelect
+      tabIndexToSelect,
     )
     expect(
       wrapper
         .find("TabPane")
         .at(tabIndexToSelect)
         .find("SiteContentEditor")
-        .exists()
+        .exists(),
     ).toBe(true)
   })
 
   it.each([
     { contentContext: true, preposition: "with" },
-    { contentContext: false, preposition: "without" }
+    { contentContext: false, preposition: "without" },
   ])(
     "loads content detail from the API if needed $preposition content context",
     async ({ contentContext }) => {
@@ -156,16 +158,16 @@ describe("SingletonsContentListing", () => {
         .withArgs(
           siteApiContentDetailUrl
             .param({
-              name:   website.name,
-              textId: singletonConfigItems[tabIndexToSelect].name
+              name: website.name,
+              textId: singletonConfigItems[tabIndexToSelect].name,
             })
             .query(contentContext ? { content_context: true } : {})
             .toString(),
-          "GET"
+          "GET",
         )
         .returns({
-          body:   newContent,
-          status: 200
+          body: newContent,
+          status: 200,
         })
       const { wrapper } = await render()
       // API should not initially be called since we already have the first item in our websiteContentDetails
@@ -180,17 +182,17 @@ describe("SingletonsContentListing", () => {
       sinon.assert.calledOnce(contentDetailStub)
       sinon.assert.calledWith(
         needsContentContextStub,
-        singletonConfigItems[tabIndexToSelect].fields
+        singletonConfigItems[tabIndexToSelect].fields,
       )
       expect(
-        wrapper.find("SiteContentEditor").at(tabIndexToSelect).prop("content")
+        wrapper.find("SiteContentEditor").at(tabIndexToSelect).prop("content"),
       ).toBe(newContent)
       wrapper.find("SiteContentEditor").forEach((editorWrapper, idx) => {
         if (idx !== tabIndexToSelect) {
           expect(editorWrapper.prop("content")).toBeNull()
         }
       })
-    }
+    },
   )
 
   it("should render the SiteContentEditor component", async () => {
@@ -203,13 +205,13 @@ describe("SingletonsContentListing", () => {
     expect(siteContentEditor.prop("loadContent")).toBeFalsy()
     expect(siteContentEditor.prop("configItem")).toBe(singletonConfigItems[0])
     expect(siteContentEditor.prop("editorState")).toStrictEqual(
-      createModalState("editing", singletonConfigItems[0].name)
+      createModalState("editing", singletonConfigItems[0].name),
     )
   })
 
   it.each([
     { dirty: true, confirmCalls: 1 },
-    { dirty: false, confirmCalls: 0 }
+    { dirty: false, confirmCalls: 0 },
   ])(
     "prompts for confirmation on pathname change iff discarding dirty state [dirty=$dirty]",
     async ({ dirty, confirmCalls }) => {
@@ -223,15 +225,15 @@ describe("SingletonsContentListing", () => {
       expect(window.mockConfirm).toHaveBeenCalledTimes(confirmCalls)
       if (confirmCalls > 0) {
         expect(window.mockConfirm.mock.calls[0][0]).toMatch(
-          /Are you sure you want to discard your changes\?/
+          /Are you sure you want to discard your changes\?/,
         )
       }
-    }
+    },
   )
 
   it.each([
     { dirty: true, confirmCalls: 1 },
-    { dirty: false, confirmCalls: 0 }
+    { dirty: false, confirmCalls: 0 },
   ])(
     "prompts for confirmation on publish iff state is dirty [dirty=$dirty]",
     async ({ dirty, confirmCalls }) => {
@@ -245,15 +247,15 @@ describe("SingletonsContentListing", () => {
       expect(window.mockConfirm).toHaveBeenCalledTimes(confirmCalls)
       if (confirmCalls > 0) {
         expect(window.mockConfirm.mock.calls[0][0]).toMatch(
-          /Are you sure you want to publish\?/
+          /Are you sure you want to publish\?/,
         )
       }
-    }
+    },
   )
 
   it.each([true, false])(
     "changes route and unmounts when dirty iff confirmed",
-    async confirmed => {
+    async (confirmed) => {
       const { wrapper } = await render()
       const editor = wrapper.find(SiteContentEditor).first()
 
@@ -267,7 +269,7 @@ describe("SingletonsContentListing", () => {
       } else {
         expect(helper.browserHistory.location.pathname).toBe("/")
       }
-    }
+    },
   )
 
   it("clears a dirty flag when the path changes", async () => {
@@ -282,7 +284,7 @@ describe("SingletonsContentListing", () => {
     helper.browserHistory.push("/pages")
     await flushEventQueue()
     expect(wrapper.update().find(ConfirmDiscardChanges).prop("when")).toBe(
-      false
+      false,
     )
   })
 })

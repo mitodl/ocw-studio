@@ -1,4 +1,4 @@
-""" Factory classes for users"""
+"""Factory classes for users"""
 
 from factory import Faker, SelfAttribute
 from factory.django import DjangoModelFactory

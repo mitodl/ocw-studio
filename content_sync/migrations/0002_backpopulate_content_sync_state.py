@@ -10,8 +10,7 @@ def chunked_iterator(queryset):
     """Chunked iteration over a queryset to avoid loading it all into memory"""
     paginator = Paginator(queryset, 100)
     for page in range(1, paginator.num_pages + 1):
-        for obj in paginator.page(page).object_list:
-            yield obj
+        yield from paginator.page(page).object_list
 
 
 def backpopulate_content_sync_states(apps, schema_editor):
@@ -22,18 +21,17 @@ def backpopulate_content_sync_states(apps, schema_editor):
     for content in chunked_iterator(WebsiteContent.objects.order_by("id")):
         ContentSyncState.objects.get_or_create(
             content=content,
-            defaults=dict(
-                current_checksum=sha256(
+            defaults={
+                "current_checksum": sha256(
                     "\n".join(
                         [json.dumps(content.metadata), str(content.markdown)]
                     ).encode("utf-8")
                 ).hexdigest()
-            ),
+            },
         )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("content_sync", "0001_add_content_sync_state"),
     ]

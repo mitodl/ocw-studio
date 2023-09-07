@@ -42,7 +42,7 @@ class KeyvalResourceType(ResourceType):
 class S3IamResourceType(ResourceType):
     """
     A resource for interacting with S3-compatible storage services that supports instance profiles
-    """
+    """  # noqa: E501
 
     def __init__(self, **kwargs):
         super().__init__(

@@ -1,4 +1,4 @@
-""" Management command for backpopulating the theme pipeline """
+"""Management command for backpopulating the theme pipeline"""  # noqa: INP001
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from mitol.common.utils.datetime import now_in_utc
@@ -11,7 +11,7 @@ from content_sync.tasks import upsert_theme_assets_pipeline
 class Command(BaseCommand):
     """Backpopulate the theme pipeline"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -35,8 +35,7 @@ class Command(BaseCommand):
             help="The branch of ocw-hugo-themes to build against",
         )
 
-    def handle(self, *args, **options):
-
+    def handle(self, *args, **options):  # noqa: ARG002
         if not settings.CONTENT_SYNC_PIPELINE_BACKEND:
             self.stderr.write("Pipeline backend is not configured")
             return
@@ -70,9 +69,8 @@ class Command(BaseCommand):
 
         result = task.get()
         if result is not True:
-            raise CommandError(f"Some errors occurred: {result}")
+            msg = f"Some errors occurred: {result}"
+            raise CommandError(msg)
 
         total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(
-            "Pipeline upsert finished, took {} seconds".format(total_seconds)
-        )
+        self.stdout.write(f"Pipeline upsert finished, took {total_seconds} seconds")

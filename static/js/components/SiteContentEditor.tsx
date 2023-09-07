@@ -13,20 +13,20 @@ import {
   EditWebsiteContentPayload,
   NewWebsiteContentPayload,
   websiteContentDetailRequest,
-  websiteStatusRequest
+  websiteStatusRequest,
 } from "../query-configs/websites"
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import {
   contentFormValuesToPayload,
   isSingletonCollectionItem,
-  needsContentContext
+  needsContentContext,
 } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 
 import {
   EditableConfigItem,
   WebsiteContentModalState,
-  WebsiteContent
+  WebsiteContent,
 } from "../types/websites"
 import { SiteFormValues } from "../types/forms"
 import ErrorBoundary from "./ErrorBoundary"
@@ -42,7 +42,7 @@ export interface SiteContentEditorProps {
 }
 
 export default function SiteContentEditor(
-  props: SiteContentEditorProps
+  props: SiteContentEditorProps,
 ): JSX.Element | null {
   const {
     dismiss,
@@ -50,7 +50,7 @@ export default function SiteContentEditor(
     loadContent,
     fetchWebsiteContentListing,
     editorState,
-    setDirty
+    setDirty,
   } = props
 
   const site = useWebsite()
@@ -60,12 +60,12 @@ export default function SiteContentEditor(
 
   const [{ isPending: addIsPending }, addWebsiteContent] = useMutation(
     (payload: NewWebsiteContentPayload) =>
-      createWebsiteContentMutation(site.name, payload)
+      createWebsiteContentMutation(site.name, payload),
   )
 
   const [{ isPending: editIsPending }, editWebsiteContent] = useMutation(
     (payload: EditWebsiteContentPayload | FormData, id: string) =>
-      editWebsiteContentMutation({ name: site.name, textId: id }, payload)
+      editWebsiteContentMutation({ name: site.name, textId: id }, payload),
   )
 
   let isPending = false,
@@ -77,23 +77,23 @@ export default function SiteContentEditor(
   const shouldLoadContent = !props.content && loadContent
 
   const queryTuple = useRequest(
-    shouldLoadContent && editorState.editing() ?
-      websiteContentDetailRequest(
-        { name: site.name, textId: editorState.wrapped },
-        needsContentContext(configItem.fields)
-      ) :
-      null
+    shouldLoadContent && editorState.editing()
+      ? websiteContentDetailRequest(
+          { name: site.name, textId: editorState.wrapped },
+          needsContentContext(configItem.fields),
+        )
+      : null,
   )
   const websiteContentDetailSelector = useSelector(
-    getWebsiteContentDetailCursor
+    getWebsiteContentDetailCursor,
   )
 
   if (shouldLoadContent && editorState.editing()) {
     isPending = queryTuple[0].isPending
 
     content = websiteContentDetailSelector({
-      name:   site.name,
-      textId: editorState.wrapped
+      name: site.name,
+      textId: editorState.wrapped,
     })
   }
 
@@ -103,7 +103,7 @@ export default function SiteContentEditor(
 
   const onSubmitForm = async (
     values: SiteFormValues,
-    { setErrors, setSubmitting, setStatus }: FormikHelpers<SiteFormValues>
+    { setErrors, setSubmitting, setStatus }: FormikHelpers<SiteFormValues>,
   ) => {
     if (addIsPending || editIsPending) {
       return
@@ -119,9 +119,9 @@ export default function SiteContentEditor(
       payload["text_id"] = configItem.name
     }
 
-    const response = editorState.editing() ?
-      await editWebsiteContent(payload, editorState.wrapped) :
-      await addWebsiteContent(payload as NewWebsiteContentPayload)
+    const response = editorState.editing()
+      ? await editWebsiteContent(payload, editorState.wrapped)
+      : await addWebsiteContent(payload as NewWebsiteContentPayload)
 
     if (!response) {
       return

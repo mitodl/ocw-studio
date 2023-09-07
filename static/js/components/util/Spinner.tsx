@@ -1,8 +1,8 @@
 import React, { CSSProperties } from "react"
 
 const spinnerStyle: CSSProperties = {
-  width:  "100%",
-  height: "100%"
+  width: "100%",
+  height: "100%",
 }
 
 const spinnerContainerStyle: CSSProperties = {
@@ -14,8 +14,8 @@ const spinnerContainerStyle: CSSProperties = {
    * dimensions of the element, so ensure both width and height are set.
    */
   aspectRatio: "1 / 1",
-  width:       "clamp(2rem, 3%, 4rem)",
-  height:      "auto",
+  width: "clamp(2rem, 3%, 4rem)",
+  height: "auto",
 
   /**
    * Position the spinner's container relative to its parent. Use transform so
@@ -24,9 +24,9 @@ const spinnerContainerStyle: CSSProperties = {
    * (Uisng transform directly on the spinner messes things up. Presumably
    * bootstrap is already animating it using transforms.)
    */
-  top:       "25%",
-  left:      "50%",
-  transform: "translate(-50%, -50%)"
+  top: "25%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
 }
 
 export default function Spinner() {

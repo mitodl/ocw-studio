@@ -11,7 +11,7 @@ from websites.management.commands.markdown_cleaning.rules.link_unescape import (
 
 
 @pytest.mark.parametrize(
-    ["markdown", "expected_markdown"],
+    ("markdown", "expected_markdown"),
     [
         (
             # images inside links

@@ -1,4 +1,4 @@
-""" video apps """
+"""video apps"""
 from django.apps import AppConfig
 
 
@@ -9,4 +9,4 @@ class VideoApp(AppConfig):
 
     def ready(self):
         """Application is ready"""
-        import videos.signals  # pylint:disable=unused-import, import-outside-toplevel
+        import videos.signals  # noqa: F401

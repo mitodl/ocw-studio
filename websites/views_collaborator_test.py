@@ -1,4 +1,4 @@
-""" Tests for websites collaborator views """
+"""Tests for websites collaborator views"""
 
 import pytest
 from django.urls import reverse
@@ -6,7 +6,6 @@ from django.urls import reverse
 from users.factories import UserFactory
 from users.models import User
 from websites import constants
-
 
 # pylint:disable=redefined-outer-name
 
@@ -171,10 +170,10 @@ def test_websites_collaborators_endpoint_list_create_bad_user(
 
 
 @pytest.mark.parametrize(
-    "missing, error",
+    ("missing", "error"),
     [
-        ["role", "Role is required"],
-        ["email", "Email is required"],
+        ["role", "Role is required"],  # noqa: PT007
+        ["email", "Email is required"],  # noqa: PT007
     ],
 )
 def test_websites_collaborators_endpoint_detail_create_missing_data(

@@ -1,3 +1,4 @@
+---
 name: CI
 on: [push]
 jobs:
@@ -15,15 +16,15 @@ jobs:
           --health-retries 5
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres  # pragma: allowlist secret
+          POSTGRES_PASSWORD: postgres # pragma: allowlist secret
           POSTGRES_DB: postgres
         ports:
-          - 5432:5432
+        - 5432:5432
 
       redis:
         image: redis:5.0.8
         ports:
-          - 6379:6379
+        - 6379:6379
 
       elastic:
         image: docker.elastic.co/elasticsearch/elasticsearch:6.7.1
@@ -34,115 +35,112 @@ jobs:
           rest.action.multi.allow_explicit_index: "false"
           ES_JAVA_OPTS: -Xms512m -Xmx512m"
         ports:
-          - 9200:9200
+        - 9200:9200
 
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-      - name: update
-        run: sudo apt-get update -y
+    - name: update
+      run: sudo apt-get update -y
 
-      - name: Apt install
-        run: cat Aptfile | sudo xargs apt-get install
+    - name: Apt install
+      run: cat Aptfile | sudo xargs apt-get install
 
-      - name: Install poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.5.1
-          virtualenvs-create: true
-          virtualenvs-in-project: true
+    - name: Install poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.5.1
+        virtualenvs-create: true
+        virtualenvs-in-project: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10.12"
-          cache: 'poetry'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10.12"
+        cache: "poetry"
 
-      - name: Install dependencies
-        run: poetry install --no-interaction
+    - name: Install dependencies
+      run: poetry install --no-interaction
 
-      - name: Lint
-        run: poetry run pylint ./**/*.py
-        env:
-          DJANGO_SETTINGS_MODULE: "main.settings"
-          PYTHONPATH: "."
-          MAILGUN_SENDER_DOMAIN: 'fake.example.com'
-          MAILGUN_KEY: 'fake'
-          OCW_STUDIO_BASE_URL: 'http://localhost:8043/'
-          SOCIAL_AUTH_SAML_LOGIN_URL: 'fake.example.com/login/saml/'
-          SECRET_KEY: "secret"  # pragma: allowlist secret
+    - name: Lint
+      run: poetry run ruff --extend-ignore=D1 .
+      env:
+        DJANGO_SETTINGS_MODULE: "main.settings"
+        PYTHONPATH: "."
+        MAILGUN_SENDER_DOMAIN: "fake.example.com"
+        MAILGUN_KEY: "fake"
+        OCW_STUDIO_BASE_URL: "http://localhost:8043/"
+        SOCIAL_AUTH_SAML_LOGIN_URL: "fake.example.com/login/saml/"
+        SECRET_KEY: "secret"   # pragma: allowlist secret
 
-      - name: Black
-        run: poetry run black --check .
+    - name: Black
+      run: poetry run black --check .
 
-      - name: Import sorting (isort)
-        run: poetry run isort -c .
+        # Configurations required for elasticsearch.
+    - name: Configure sysctl limits
+      run: |
+        sudo swapoff -a
+        sudo sysctl -w vm.swappiness=1
+        sudo sysctl -w fs.file-max=262144
+        sudo sysctl -w vm.max_map_count=262144
 
-      # Configurations required for elasticsearch.
-      - name: Configure sysctl limits
-        run: |
-          sudo swapoff -a
-          sudo sysctl -w vm.swappiness=1
-          sudo sysctl -w fs.file-max=262144
-          sudo sysctl -w vm.max_map_count=262144
+    - name: Runs Elasticsearch
+      uses: elastic/elastic-github-actions/elasticsearch@master
+      with:
+        stack-version: 6.7.1
 
-      - name: Runs Elasticsearch
-        uses: elastic/elastic-github-actions/elasticsearch@master
-        with:
-          stack-version: 6.7.1
-
-      - name: Tests
-        run: |
-          export MEDIA_ROOT="$(mktemp -d)"
-          sudo mkdir /var/media
-          sudo chown -R $USER:$USER /var/media
-          poetry run ./scripts/test/python_tests.sh
-        env:
-          OCW_STUDIO_DB_DISABLE_SSL: 'True'
-          OCW_STUDIO_SECURE_SSL_REDIRECT: 'False'
-          CELERY_TASK_ALWAYS_EAGER: 'True'
-          CELERY_BROKER_URL: redis://localhost:6379/4
-          CELERY_RESULT_BACKEND: redis://localhost:6379/4
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres  # pragma: allowlist secret
-          DEBUG: 'False'
-          MAILGUN_SENDER_DOMAIN: 'fake.example.com'
-          MAILGUN_KEY: 'fake'
-          NODE_ENV: 'production'
-          OCW_STUDIO_BASE_URL: 'http://localhost:8043/'
-          SOCIAL_AUTH_SAML_LOGIN_URL: 'fake.example.com/login/saml/'
-          SECRET_KEY: "secret"  # pragma: allowlist secret
-          CONTENT_SYNC_BACKEND:
+    - name: Tests
+      run: |
+        export MEDIA_ROOT="$(mktemp -d)"
+        sudo mkdir /var/media
+        sudo chown -R $USER:$USER /var/media
+        poetry run ./scripts/test/python_tests.sh
+      env:
+        OCW_STUDIO_DB_DISABLE_SSL: "True"
+        OCW_STUDIO_SECURE_SSL_REDIRECT: "False"
+        CELERY_TASK_ALWAYS_EAGER: "True"
+        CELERY_BROKER_URL: redis://localhost:6379/4
+        CELERY_RESULT_BACKEND: redis://localhost:6379/4
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres   # pragma: allowlist secret
+        DEBUG: "False"
+        MAILGUN_SENDER_DOMAIN: "fake.example.com"
+        MAILGUN_KEY: "fake"
+        NODE_ENV: "production"
+        OCW_STUDIO_BASE_URL: "http://localhost:8043/"
+        SOCIAL_AUTH_SAML_LOGIN_URL: "fake.example.com/login/saml/"
+        SECRET_KEY: "secret"   # pragma: allowlist secret
+        CONTENT_SYNC_BACKEND:
 
   frontend-tests:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-      - name: Setup NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: "16.15.0"
-          cache: yarn
+    - name: Setup NodeJS
+      uses: actions/setup-node@v3
+      with:
+        node-version: "16.15.0"
+        cache: yarn
 
-      - name: Install dependencies
-        run: yarn install --immutable
+    - name: Install dependencies
+      run: yarn install --immutable
 
-      - name: Lints
-        run: npm run lint
+    - name: Lints
+      run: npm run lint
 
-      - name: Code formatting
-        run: npm run fmt:check
+    - name: Code formatting
+      run: npm run fmt:check
 
-      - name: Scss lint
-        run: npm run scss_lint
+    - name: Scss lint
+      run: npm run scss_lint
 
-      - name: Typechecking
-        run: npm run typecheck
+    - name: Typechecking
+      run: npm run typecheck
 
-      - name: Tests
-        run: npm run test:coverage
-        env:
-          NODE_ENV: development
+    - name: Tests
+      run: npm run test:coverage
+      env:
+        NODE_ENV: development
 
-      - name: Webpack build
-        run: npm run build
+    - name: Webpack build
+      run: npm run build

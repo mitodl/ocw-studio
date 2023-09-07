@@ -1,4 +1,4 @@
-""" Sync abstract base """
+"""Sync abstract base"""
 import abc
 from typing import Any, Optional
 
@@ -20,7 +20,7 @@ class BaseSyncBackend(abc.ABC):
     def backend_exists(self):  # pragma: no cover
         """
         Called to determine if the website backend exists.
-        """
+        """  # noqa: D401
         ...
 
     @abc.abstractmethod
@@ -29,7 +29,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create the website in the backend.
 
         An example would be creating a VCS repository.
-        """
+        """  # noqa: D401
         ...
 
     @abc.abstractmethod
@@ -38,7 +38,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create a draft site in the backend.
 
         An example would be merging the latest commits into a VCS' preview branch.
-        """
+        """  # noqa: D401
         ...
 
     @abc.abstractmethod
@@ -47,7 +47,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create a live site in the backend.
 
         An example would be merging the latest commits into a VCS' release branch.
-        """
+        """  # noqa: D401
         ...
 
     # NOTE: these next two could perform the same operations if the backing service
@@ -60,7 +60,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create a piece of content in the backend.
 
         An example would be commiting the contents of the WebsiteContent to the VCS repository.
-        """
+        """  # noqa: E501, D401
         ...
 
     @abc.abstractmethod
@@ -71,7 +71,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create a piece of content in the backend.
 
         An example would be commiting the updated contents of the WebsiteContent to the VCS repository.
-        """
+        """  # noqa: E501, D401
         ...
 
     @abc.abstractmethod
@@ -82,10 +82,10 @@ class BaseSyncBackend(abc.ABC):
         Called to delete a piece of content in the backend.
 
         An example would be making a commit to delete content in the VCS repository.
-        """
+        """  # noqa: D401
         ...
 
-    # NOTE: This will be fired for every piece of content that is created, changed, or deleted in the database
+    # NOTE: This will be fired for every piece of content that is created, changed, or deleted in the database  # noqa: E501
     #       See content_sync/signals.py for details.
     def sync_content_to_backend(self, sync_state: ContentSyncState):
         """Sync a given piece of content given its ContentSyncState"""
@@ -104,7 +104,7 @@ class BaseSyncBackend(abc.ABC):
     def sync_all_content_to_backend(
         self, query_set: Optional[WebsiteContentQuerySet] = None
     ):
-        """Sync all content for the website, optionally filtering based on a WebsiteContentQuerySet"""
+        """Sync all content for the website, optionally filtering based on a WebsiteContentQuerySet"""  # noqa: E501
         sync_states = ContentSyncState.objects.filter(content__website=self.website)
         if query_set:
             sync_states = sync_states.filter(content__in=query_set)
@@ -117,7 +117,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create a piece of content in the database.
 
         An example would be taking a VCS commit/file object and writing it to the database.
-        """
+        """  # noqa: E501, D401
         ...
 
     @abc.abstractmethod
@@ -126,7 +126,7 @@ class BaseSyncBackend(abc.ABC):
         Called to update a piece of content in the database.
 
         An example would be taking a VCS commit/file object and writing the updates to the database.
-        """
+        """  # noqa: E501, D401
         ...
 
     @abc.abstractmethod
@@ -135,7 +135,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create a piece of content in the database.
 
         An example would be deleting the content from the database if it doesn't exist in the VCS repository.
-        """
+        """  # noqa: E501, D401
         ...
 
     @abc.abstractmethod

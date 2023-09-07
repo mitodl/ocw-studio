@@ -3,10 +3,7 @@
     "incremental": true,
     "target": "es6",
     "module": "es6",
-    "lib": [
-      "es2020",
-      "dom"
-    ],
+    "lib": ["es2020", "dom"],
     "allowJs": true,
     "checkJs": false,
     "jsx": "react",
@@ -17,21 +14,12 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "node",
-    "typeRoots": [
-      "static/js/types",
-      "node_modules/@types"
-    ],
+    "typeRoots": ["static/js/types", "node_modules/@types"],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": [
-    "./static/**/*.ts",
-    "./static/**/*.tsx"
-  ],
-  "exclude": [
-    "./static/*.test.ts",
-    "./static/*.test.tsx"
-  ]
+  "include": ["./static/**/*.ts", "./static/**/*.tsx"],
+  "exclude": ["./static/*.test.ts", "./static/*.test.tsx"]
 }

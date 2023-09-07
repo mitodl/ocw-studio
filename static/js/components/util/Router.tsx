@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { BrowserRouter, BrowserRouterProps } from "react-router-dom"
 import PromptConfirmationModal, {
-  GetUserConfirmation
+  GetUserConfirmation,
 } from "./PromptConfirmationModal"
 
 /**
@@ -10,7 +10,7 @@ import PromptConfirmationModal, {
  */
 const CustomConfirmBrowserRouter: React.FC<
   Omit<BrowserRouterProps, "getUserConfirmation">
-> = props => {
+> = (props) => {
   const [getUserConfirmation, setGetUserConfirmation] =
     useState<GetUserConfirmation | null>(null)
   return (
@@ -21,7 +21,7 @@ const CustomConfirmBrowserRouter: React.FC<
         </BrowserRouter>
       )}
       <PromptConfirmationModal
-        ref={ref => {
+        ref={(ref) => {
           if (ref === null) return
           setGetUserConfirmation(() => ref)
         }}

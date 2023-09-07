@@ -1,4 +1,4 @@
-""" Serializers for websites """
+"""Serializers for websites"""
 import logging
 import re
 from collections import defaultdict
@@ -32,7 +32,6 @@ from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
 from websites.utils import permissions_group_name_for_role
 
-
 log = logging.getLogger(__name__)
 
 
@@ -52,7 +51,7 @@ class WebsiteStarterDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WebsiteStarter
-        fields = WebsiteStarterSerializer.Meta.fields + ["config"]
+        fields = [*WebsiteStarterSerializer.Meta.fields, "config"]
 
 
 class WebsiteGoogleDriveMixin(serializers.Serializer):
@@ -119,27 +118,25 @@ class WebsiteUrlSerializer(serializers.ModelSerializer):
     def validate_url_path(self, value):
         """
         Check that the website url will be unique and template sections have been replaced.
-        """
+        """  # noqa: E501
         if not value and self.instance.url_path is None:
-            raise serializers.ValidationError("The URL path cannot be blank")
+            msg = "The URL path cannot be blank"
+            raise serializers.ValidationError(msg)
         url = self.instance.assemble_full_url_path(value)
         if self.instance.publish_date and url != self.instance.url_path:
-            raise serializers.ValidationError(
-                "The URL cannot be changed after publishing."
-            )
+            msg = "The URL cannot be changed after publishing."
+            raise serializers.ValidationError(msg)
         if re.findall(r"[\[\]]+", url):
-            raise serializers.ValidationError(
-                "You must replace the url sections in brackets"
-            )
+            msg = "You must replace the url sections in brackets"
+            raise serializers.ValidationError(msg)
         if (
             url
             and Website.objects.filter(url_path=url)
             .exclude(pk=self.instance.pk)
             .exists()
         ):
-            raise serializers.ValidationError(
-                "The given website URL is already in use."
-            )
+            msg = "The given website URL is already in use."
+            raise serializers.ValidationError(msg)
         return value
 
     def update(self, instance, validated_data):
@@ -276,7 +273,8 @@ class WebsiteDetailSerializer(
 
     class Meta:
         model = Website
-        fields = WebsiteSerializer.Meta.fields + [
+        fields = [
+            *WebsiteSerializer.Meta.fields,
             "is_admin",
             "draft_url",
             "live_url",
@@ -355,7 +353,7 @@ class WebsiteWriteSerializer(serializers.ModelSerializer, RequestUserSerializerM
     NOTE: This is needed because DRF does not directly support saving a related field using just an id. We want to
     deserialize and save Website objects and save the related WebsiteStarter as an id, but there is no clean way to
     do that with DRF, hence this added serializer class.
-    """
+    """  # noqa: E501
 
     starter = serializers.PrimaryKeyRelatedField(
         queryset=WebsiteStarter.objects.all(), write_only=True
@@ -387,7 +385,7 @@ class WebsiteWriteSerializer(serializers.ModelSerializer, RequestUserSerializerM
 
 
 class WebsiteCollaboratorSerializer(serializers.Serializer):
-    """A non-model serializer for updating the permissions (by group) that a user has for a Website."""
+    """A non-model serializer for updating the permissions (by group) that a user has for a Website."""  # noqa: E501
 
     role = serializers.ChoiceField(
         choices=constants.GROUP_ROLES, error_messages=ROLE_ERROR_MESSAGES
@@ -403,12 +401,14 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         return self.context["website"]
 
     def validate_email(self, email):
-        """The user should exist and not be a global admin"""
+        """The user should exist and not be a global admin"""  # noqa: D401
         user = User.objects.filter(email=email).first()
         if not user:
-            raise ValidationError("User does not exist")
+            msg = "User does not exist"
+            raise ValidationError(msg)
         if is_global_admin(user):
-            raise ValidationError("User is a global admin")
+            msg = "User is a global admin"
+            raise ValidationError(msg)
         return email
 
     def validate(self, attrs):
@@ -420,7 +420,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data):
-        """Creating a contributor adds the user to the group corresponding to the specified role"""
+        """Creating a contributor adds the user to the group corresponding to the specified role"""  # noqa: E501, D401
         website = self.website
         role = validated_data.get("role")
         user = User.objects.get(email=validated_data.get("email"))
@@ -432,7 +432,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
 
         user.groups.add(Group.objects.get(name=group_name))
 
-        # user.role normally gets set by the query in the view, but we need to manually set/update it here
+        # user.role normally gets set by the query in the view, but we need to manually set/update it here  # noqa: E501
         user.role = role
         return user
 
@@ -450,7 +450,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
             else:
                 user.groups.remove(group)
 
-        # user.role normally gets set by the query in the view, but we need to manually set/update it here
+        # user.role normally gets set by the query in the view, but we need to manually set/update it here  # noqa: E501
         user.role = role
         return user
 
@@ -466,14 +466,14 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebsiteContent
         read_only_fields = ["text_id", "website_name", "title", "type", "updated_on"]
-        # See WebsiteContentCreateSerializer below for creating new WebsiteContent objects
+        # See WebsiteContentCreateSerializer below for creating new WebsiteContent objects  # noqa: E501
         fields = read_only_fields
 
 
 class WebsiteContentDetailSerializer(
     serializers.ModelSerializer, RequestUserSerializerMixin
 ):
-    """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""
+    """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""  # noqa: E501
 
     content_context = serializers.SerializerMethodField()
     url_path = serializers.SerializerMethodField()
@@ -509,7 +509,9 @@ class WebsiteContentDetailSerializer(
         """Get the parent website url path"""
         return instance.website.url_path
 
-    def get_content_context(self, instance):  # pylint:disable=too-many-branches
+    def get_content_context(  # noqa: C901, PLR0912
+        self, instance
+    ):  # pylint:disable=too-many-branches  # noqa: PLR0912, RUF100
         """
         Create mapping of uuid to a display name for any values in the metadata
         """
@@ -589,7 +591,8 @@ class WebsiteContentDetailSerializer(
     class Meta:
         model = WebsiteContent
         read_only_fields = ["text_id", "type", "content_context", "url_path"]
-        fields = read_only_fields + [
+        fields = [
+            *read_only_fields,
             "title",
             "markdown",
             "metadata",

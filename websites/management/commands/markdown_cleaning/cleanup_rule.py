@@ -31,7 +31,7 @@ class MarkdownCleanupRule(abc.ABC):
 
         Calls on_match(original_text, replacement, website_content, replacement_notes) for
         each match.
-        """
+        """  # noqa: E501
 
     @dataclass
     class ReplacementNotes:
@@ -53,7 +53,8 @@ class MarkdownCleanupRule(abc.ABC):
         elif isinstance(result, tuple):
             replacement, notes = result
         else:
-            raise ValueError("replace_match must return strings or tuples when called")
+            msg = "replace_match must return strings or tuples when called"
+            raise ValueError(msg)  # noqa: TRY004
         return replacement, notes
 
 
@@ -78,7 +79,7 @@ class RegexpCleanupRule(MarkdownCleanupRule):
         Invoked for each match to the rule's regex and returns the replacement
         string. Similar to re.sub, but invoked with website_content argument
         also.
-        """
+        """  # noqa: D401
 
     def transform_text(
         self, website_content: WebsiteContent, text: str, on_match
@@ -92,19 +93,22 @@ class RegexpCleanupRule(MarkdownCleanupRule):
 
             return replacement
 
-        new_markdown = self.compiled.sub(_replacer, text)
-        return new_markdown
+        return self.compiled.sub(_replacer, text)
 
 
 class PyparsingRule(MarkdownCleanupRule):
     @property
     @abc.abstractclassmethod
-    def Parser(cls) -> WrappedParser:
+    def Parser(cls) -> WrappedParser:  # noqa: N802
         """Parser for this rule"""
 
     @abc.abstractmethod
     def replace_match(
-        self, s: str, l: int, toks: ParseResults, website_content: WebsiteContent
+        self,
+        s: str,
+        l: int,  # noqa: E741
+        toks: ParseResults,
+        website_content: WebsiteContent,
     ):
         """
         Called on each match of the parser. The match will be replaced by the
@@ -120,8 +124,7 @@ class PyparsingRule(MarkdownCleanupRule):
             - l: index within s at which this match starts
             - toks: The parser's tokenization of the match
             - website_content: The WebsiteContent object that `s` belongs to.
-        """
-        pass
+        """  # noqa: D401
 
     def __init__(self) -> None:
         super().__init__()
@@ -147,7 +150,7 @@ class PyparsingRule(MarkdownCleanupRule):
         if a page contains '{{< resource ', then ALL shortcodes within that page
         will be parsed whether they are resource shortcodes or some other
         shortcode.
-        """
+        """  # noqa: D401
         return True
 
     def transform_text(
@@ -156,7 +159,7 @@ class PyparsingRule(MarkdownCleanupRule):
         if not self.should_parse(text):
             return text
 
-        def parse_action(s, l, toks):
+        def parse_action(s, l, toks):  # noqa: E741
             result = self.replace_match(s, l, toks, website_content)
             replacement, notes = self.standardize_replacement(result)
             original_text = toks.original_text

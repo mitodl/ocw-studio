@@ -1,11 +1,12 @@
-""" Google Drive API functions"""
+"""Google Drive API functions"""
 import io
 import json
 import logging
 import os
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, Optional
+from typing import Optional
 
 import PyPDF2
 from botocore.exceptions import ClientError
@@ -48,7 +49,6 @@ from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename
 
-
 log = logging.getLogger(__name__)
 
 
@@ -65,11 +65,13 @@ class GDriveStreamReader:
         self.downloader = MediaIoBaseDownload(self.fh, self.request)
         self.done = False
 
-    def read(self, amount: int = None):
+    def read(self, amount: int | None = None):
         """Read and return the next chunk of bytes from the GDrive file"""
         if amount:
             # Make sure the chunksize is the same as what's requested by boto3
-            self.downloader._chunksize = amount  # pylint:disable=protected-access
+            self.downloader._chunksize = (  # noqa: SLF001
+                amount  # pylint:disable=protected-access
+            )
         if self.done is False:
             self.fh.seek(0)
             self.fh.truncate()
@@ -88,7 +90,7 @@ def get_drive_service() -> Resource:
     return build("drive", "v3", credentials=creds, cache_discovery=False)
 
 
-def query_files(query: str, fields: str) -> Iterable[Dict]:
+def query_files(query: str, fields: str) -> Iterable[dict]:
     """
     Get a list of Google Drive files filtered by an optional query and drive id.
     """
@@ -99,7 +101,7 @@ def query_files(query: str, fields: str) -> Iterable[Dict]:
         extra_kwargs["corpora"] = "drive"
 
     extra_kwargs["q"] = query
-    next_token = "initial"
+    next_token = "initial"  # noqa: S105
     while next_token is not None:
         file_response = (
             service.files()
@@ -116,22 +118,21 @@ def query_files(query: str, fields: str) -> Iterable[Dict]:
             extra_kwargs["pageToken"] = next_token
         else:
             extra_kwargs.pop("pageToken", None)
-        for file_obj in file_response["files"]:
-            yield file_obj
+        yield from file_response["files"]
 
 
 def _get_or_create_drive_file(
-    file_obj: Dict,
+    file_obj: dict,
     drive_path: str,
     website: Website,
     sync_date: Optional[datetime],
-    replace_file: bool = True,
+    replace_file: bool = True,  # noqa: FBT001, FBT002
 ) -> Optional[DriveFile]:
     """
     Determines if `file_obj` is a new or updated file and returns a new or updated
     DriveFile respectively.
     Returns None if no change is detected.
-    """
+    """  # noqa: D401
     existing_file_same_id = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
     if (
         existing_file_same_id
@@ -146,9 +147,9 @@ def _get_or_create_drive_file(
         )
     ):
         # For inexplicable reasons, sometimes Google Drive continuously updates
-        # the modifiedTime of files, so only update the DriveFile if the checksum or name changed,
-        # and the status indicates that the file processing is not complete or in progress.
-        return
+        # the modifiedTime of files, so only update the DriveFile if the checksum or name changed,  # noqa: E501
+        # and the status indicates that the file processing is not complete or in progress.  # noqa: E501
+        return None
 
     file_data = {
         "drive_path": drive_path,
@@ -213,10 +214,10 @@ def get_parent_tree(parents):
 
 
 def process_file_result(
-    file_obj: Dict,
+    file_obj: dict,
     website: Website,
     sync_date: Optional[datetime] = None,
-    replace_file: Optional[bool] = True,
+    replace_file: Optional[bool] = True,  # noqa: FBT002
 ) -> Optional[DriveFile]:
     """
     Convert an API file response into a DriveFile object.
@@ -231,18 +232,18 @@ def process_file_result(
     Returns:
         Optional[DriveFile]: A DriveFile object that corresponds to `file_obj`.
             None for files that are ineligible or have not changed.
-    """
+    """  # noqa: E501
     parents = file_obj.get("parents")
     if parents:
         folder_tree = get_parent_tree(parents)
-        if len(folder_tree) < 2 or (
+        if len(folder_tree) < 2 or (  # noqa: PLR2004
             settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
             and (
                 settings.DRIVE_UPLOADS_PARENT_FOLDER_ID
                 not in [folder["id"] for folder in folder_tree]
             )
         ):
-            return
+            return None
 
         folder_names = [folder["name"] for folder in folder_tree]
         in_video_folder = DRIVE_FOLDER_VIDEOS_FINAL in folder_names
@@ -256,14 +257,13 @@ def process_file_result(
 
         if website and processable:
             drive_path = "/".join([folder.get("name") for folder in folder_tree])
-            drive_file = _get_or_create_drive_file(
+            return _get_or_create_drive_file(
                 file_obj=file_obj,
                 drive_path=drive_path,
                 website=website,
                 sync_date=sync_date,
                 replace_file=replace_file,
             )
-            return drive_file
     return None
 
 
@@ -370,7 +370,7 @@ def get_s3_content_type(key: str) -> str:
 def get_resource_type(drive_file: DriveFile) -> str:
     """Guess the resource type from S3 content_type or extension"""
     content_type = get_s3_content_type(drive_file.s3_key)
-    _, extension = os.path.splitext(drive_file.s3_key)
+    _, extension = os.path.splitext(drive_file.s3_key)  # noqa: PTH122
     if content_type.startswith("image"):
         return RESOURCE_TYPE_IMAGE
     if (
@@ -395,9 +395,10 @@ def gdrive_root_url():
             f"{settings.DRIVE_UPLOADS_PARENT_FOLDER_ID or settings.DRIVE_SHARED_ID}/"
         )
         return f"https://drive.google.com/drive/folders/{folder}"
+    return None
 
 
-def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[Dict]:
+def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[dict]:
     """Yield a list of all files under a Google Drive folder and its subfolders"""
     query = f'parents = "{folder_id}" and not trashed'
     drive_results = query_files(query=query, fields=fields)
@@ -405,8 +406,7 @@ def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[Dict]:
         if result["mimeType"] != DRIVE_MIMETYPE_FOLDER:
             yield result
         else:
-            for sub_result in walk_gdrive_folder(result["id"], fields):
-                yield sub_result
+            yield from walk_gdrive_folder(result["id"], fields)
 
 
 def get_pdf_title(drive_file: DriveFile) -> str:
@@ -425,7 +425,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
     try:
         resource_type = get_resource_type(drive_file)
         resource = drive_file.resource
-        basename, extension = os.path.splitext(drive_file.name)
+        basename, extension = os.path.splitext(drive_file.name)  # noqa: PTH122
         basename = f"{basename}_{extension.lstrip('.')}"
         if not resource:
             site_config = SiteConfig(drive_file.website.starter.config)
@@ -482,12 +482,12 @@ def create_gdrive_resource_content(drive_file: DriveFile):
         drive_file.update_status(DriveFileStatus.COMPLETE)
     except PyPDF2.errors.PdfReadError:
         log.exception(
-            "Could not create a resource from Google Drive file %s because it is not a valid PDF",
+            "Could not create a resource from Google Drive file %s because it is not a valid PDF",  # noqa: E501
             drive_file.file_id,
         )
-        drive_file.sync_error = f"Could not create a resource from Google Drive file {drive_file.name} because it is not a valid PDF"
+        drive_file.sync_error = f"Could not create a resource from Google Drive file {drive_file.name} because it is not a valid PDF"  # noqa: E501
         drive_file.update_status(DriveFileStatus.FAILED)
-    except:  # pylint:disable=bare-except
+    except:  # pylint:disable=bare-except  # noqa: E722
         log.exception("Error creating resource for drive file %s", drive_file.file_id)
         drive_file.sync_error = (
             f"Could not create a resource from Google Drive file {drive_file.name}"
@@ -496,7 +496,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
 
 
 def transcode_gdrive_video(drive_file: DriveFile):
-    """Create a MediaConvert transcode job and Video object for the given drive file id if one doesn't already exist"""
+    """Create a MediaConvert transcode job and Video object for the given drive file id if one doesn't already exist"""  # noqa: E501
     if settings.AWS_ACCOUNT_ID and settings.AWS_REGION and settings.AWS_ROLE_NAME:
         video, _ = Video.objects.get_or_create(
             source_key=drive_file.s3_key,
@@ -509,7 +509,7 @@ def transcode_gdrive_video(drive_file: DriveFile):
             .first()
         )
         if prior_job:
-            # Don't start another transcode job if there's a prior one that hasn't failed/completed yet
+            # Don't start another transcode job if there's a prior one that hasn't failed/completed yet  # noqa: E501
             return
         drive_file.video = video
         drive_file.save()
@@ -520,13 +520,13 @@ def transcode_gdrive_video(drive_file: DriveFile):
             log.exception("Error creating transcode job for %s", video.source_key)
             video.status = VideoStatus.FAILED
             video.save()
-            drive_file.sync_error = f"Error transcoding video {drive_file.name}, please contact us for assistance"
+            drive_file.sync_error = f"Error transcoding video {drive_file.name}, please contact us for assistance"  # noqa: E501
             drive_file.update_status(DriveFileStatus.TRANSCODE_FAILED)
             raise
 
 
 def update_sync_status(website: Website, sync_datetime: datetime):
-    """Update the Google Drive sync status based on DriveFile statuses and sync errors"""
+    """Update the Google Drive sync status based on DriveFile statuses and sync errors"""  # noqa: E501
     drive_files = DriveFile.objects.filter(website=website, sync_dt=sync_datetime)
     resources = []
     errors = []
@@ -560,7 +560,7 @@ def update_sync_status(website: Website, sync_datetime: datetime):
 
 @transaction.atomic
 def rename_file(obj_text_id, obj_new_filename):
-    """Rename the file on S3 associated with the WebsiteContent object to a new filename."""
+    """Rename the file on S3 associated with the WebsiteContent object to a new filename."""  # noqa: E501
     obj = WebsiteContent.objects.get(text_id=obj_text_id)
     site = obj.website
     df = DriveFile.objects.get(resource=obj)
@@ -578,7 +578,8 @@ def rename_file(obj_text_id, obj_new_filename):
     if existing_obj:
         old_obj = existing_obj.first()
         if old_obj == obj:
-            raise ValueError("New filename is the same as the existing filename.")
+            msg = "New filename is the same as the existing filename."
+            raise ValueError(msg)
         dependencies = old_obj.get_content_dependencies()
         if dependencies:
             raise ValueError(
@@ -605,7 +606,7 @@ def rename_file(obj_text_id, obj_new_filename):
 
 
 def find_missing_files(
-    gDriveFiles: Iterable[Dict], website: Website
+    gDriveFiles: Iterable[dict], website: Website
 ) -> Iterable[DriveFile]:
     """
     Finds files that exist in the database but not in gDriveFiles. Uses the file_id attribute.
@@ -616,8 +617,8 @@ def find_missing_files(
 
     Returns:
         Iterable[DriveFile]: DriveFile objects that exist in our database but not in `gDriveFiles`.
-    """
-    gdrive_file_ids = list(map(lambda f: f["id"], gDriveFiles))
+    """  # noqa: E501, D401
+    gdrive_file_ids = [f["id"] for f in gDriveFiles]
     drive_files = DriveFile.objects.filter(website=website)
     return [file for file in drive_files if file.file_id not in gdrive_file_ids]
 
@@ -628,11 +629,11 @@ def delete_drive_file(drive_file: DriveFile, sync_datetime: datetime):
 
     Args:
         drive_file (DriveFile): A drive file.
-    """
+    """  # noqa: D401
     dependencies = drive_file.get_content_dependencies()
 
     if dependencies:
-        error_message = f"Cannot delete file {drive_file} because it is being used by {dependencies}."
+        error_message = f"Cannot delete file {drive_file} because it is being used by {dependencies}."  # noqa: E501
         log.info(error_message)
         drive_file.sync_error = error_message
         drive_file.sync_dt = sync_datetime

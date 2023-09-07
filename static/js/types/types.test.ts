@@ -25,7 +25,7 @@ describe("react-router", () => {
      * of components. The mock is good enough for the compile-time assertions
      * we're after.
      */
-    const mock: typeof useLocation = jest.fn(() => ({} as any))
+    const mock: typeof useLocation = jest.fn(() => ({}) as any)
     expectTypeOf(mock().pathname).toEqualTypeOf<string>()
     expectTypeOf(mock().search).toEqualTypeOf<string>()
   })

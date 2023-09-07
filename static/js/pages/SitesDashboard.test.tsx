@@ -5,7 +5,7 @@ import { WebsiteListingResponse } from "../query-configs/websites"
 import { wait } from "../test_util"
 import { makeWebsites } from "../util/factories/websites"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 
 import { Website } from "../types/websites"
@@ -15,7 +15,7 @@ import * as searchHooks from "../hooks/search"
 jest.mock("../hooks/search", () => {
   return {
     __esModule: true,
-    ...jest.requireActual("../hooks/search")
+    ...jest.requireActual("../hooks/search"),
   }
 })
 
@@ -34,14 +34,14 @@ describe("SitesDashboard", () => {
       websitesLookup[site.name] = site
     }
     response = {
-      results:  websites,
-      next:     "https://example.com",
+      results: websites,
+      next: "https://example.com",
       previous: null,
-      count:    10
+      count: 10,
     }
     helper.mockGetRequest(
       siteApiListingUrl.param({ offset: 0 }).toString(),
-      response
+      response,
     )
 
     render = helper.configureRenderer(
@@ -52,13 +52,13 @@ describe("SitesDashboard", () => {
           websitesListing: {
             ["0"]: {
               ...response,
-              results: websites.map(site => site.name)
-            }
+              results: websites.map((site) => site.name),
+            },
           },
-          websiteDetails: websitesLookup
+          websiteDetails: websitesLookup,
         },
-        queries: {}
-      }
+        queries: {},
+      },
     )
   })
 
@@ -72,7 +72,7 @@ describe("SitesDashboard", () => {
     for (const website of websites) {
       const li = wrapper.find("StudioListItem").at(idx)
       expect(li.prop("to")).toBe(
-        siteDetailUrl.param({ name: website.name }).toString()
+        siteDetailUrl.param({ name: website.name }).toString(),
       )
       expect(li.find("Link").text()).toBe(website.title)
       expect(li.prop("subtitle")).toBe(website.short_id)
@@ -88,17 +88,17 @@ describe("SitesDashboard", () => {
         .param({ offset: 0, search: "my-search-string" })
         .toString(),
       {
-        results:  [],
-        next:     "null",
+        results: [],
+        next: "null",
         previous: null,
-        count:    0
-      }
+        count: 0,
+      },
     )
 
     const event = {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       preventDefault() {},
-      target: { value: "my-search-string" }
+      target: { value: "my-search-string" },
     } as React.ChangeEvent<HTMLInputElement>
     filterInput.simulate("change", event)
     await wait(800)
@@ -108,14 +108,14 @@ describe("SitesDashboard", () => {
   test("should issue a request based on the 'q' param", async () => {
     helper.browserHistory.replace({
       pathname: "/",
-      search:   "q=searchfilter"
+      search: "q=searchfilter",
     })
     helper.mockGetRequest(
       siteApiListingUrl
         .param({ offset: 0 })
         .query({ search: "searchfilter" })
         .toString(),
-      response
+      response,
     )
     await render()
     expect(helper.handleRequestStub.args).toStrictEqual([
@@ -125,15 +125,15 @@ describe("SitesDashboard", () => {
           .query({ search: "searchfilter" })
           .toString(),
         "GET",
-        { body: undefined, credentials: undefined, headers: undefined }
-      ]
+        { body: undefined, credentials: undefined, headers: undefined },
+      ],
     ])
   })
 
   test("sets the page title", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("DocumentTitle").prop("title")).toBe(
-      "OCW Studio | Sites"
+      "OCW Studio | Sites",
     )
   })
 
@@ -153,11 +153,11 @@ describe("SitesDashboard", () => {
     const startingOffset = 70
     helper.mockGetRequest(
       siteApiListingUrl.query({ offset: startingOffset }).toString(),
-      response
+      response,
     )
     helper.browserHistory.replace({
       pathname: "/path/to/page",
-      search:   `offset=${startingOffset}`
+      search: `offset=${startingOffset}`,
     })
 
     const usePagination = jest.spyOn(searchHooks, "usePagination")

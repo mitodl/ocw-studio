@@ -25,14 +25,13 @@ from gdrive_sync.tasks import (
 from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
-
 pytestmark = pytest.mark.django_db
 
 # pylint:disable=redefined-outer-name
 
 
 @pytest.fixture()
-def mock_gdrive_files(mocker):
+def mock_gdrive_files(mocker):  # noqa: PT004
     """Return mock results from a google drive api request"""
     mocker.patch(
         "gdrive_sync.tasks.api.query_files",
@@ -68,7 +67,7 @@ def test_create_gdrive_folders(settings, mocker, shared_id, drive_creds):
     assert mock_create_folder.call_count == (1 if shared_id and drive_creds else 0)
 
 
-@pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
+@pytest.mark.parametrize(("chunk_size", "chunks"), [[3, 1], [2, 2]])  # noqa: PT007
 def test_create_gdrive_folders_chunked(  # pylint:disable=unused-argument
     mocker, mocked_celery, chunk_size, chunks
 ):

@@ -19,7 +19,7 @@ Time Management/Students' Energy Levels
 
 {{< resource c788dbe8-9a90-cb91-00f8-4d69b25bb368 >}}
 
-Dr. Rebusco explains the difficulties she faced in fitting activities into the class  
+Dr. Rebusco explains the difficulties she faced in fitting activities into the class
 period and how she kept students' energy levels up.
 
 Teaching Italian Grammar
@@ -29,7 +29,7 @@ Teaching Italian Grammar
 
 {{< resource 7c755f2a-50d1-cb87-4146-57510bba9930 >}}
 
-Dr. Rebusco discusses the challenges of teaching the basics of Italian grammar  
+Dr. Rebusco discusses the challenges of teaching the basics of Italian grammar
 to American and international students.
 
 Future Versions of the Course

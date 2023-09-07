@@ -26,7 +26,6 @@ from websites.constants import WEBSITE_CONTENT_FILETYPE
 from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
 
-
 log = logging.getLogger()
 
 
@@ -35,9 +34,9 @@ def get_destination_filepath(
 ) -> Optional[str]:
     """
     Returns the full filepath where the equivalent file for the WebsiteContent record should be placed
-    """
+    """  # noqa: E501, D401
     if content.is_page_content:
-        return os.path.join(
+        return os.path.join(  # noqa: PTH118
             content.dirpath, f"{content.filename}.{WEBSITE_CONTENT_FILETYPE}"
         )
     config_item = site_config.find_item_by_name(name=content.type)
@@ -51,7 +50,7 @@ def get_destination_filepath(
     if config_item.is_file_item():
         return config_item.file_target
     log.error(
-        "Invalid config item: is_page_content flag is False, and config item is not 'file'-type (content: %s)",
+        "Invalid config item: is_page_content flag is False, and config item is not 'file'-type (content: %s)",  # noqa: E501
         (content.id, content.text_id),
     )
     return None
@@ -62,14 +61,14 @@ def get_destination_url(
 ) -> Optional[str]:
     """
     Returns the URL a given piece of content is expected to be at
-    """
+    """  # noqa: D401
     if content.is_page_content:
         filename = "" if content.filename == "_index" else content.filename
-        url_with_content = os.path.join(content.dirpath, filename)
+        url_with_content = os.path.join(content.dirpath, filename)  # noqa: PTH118
         content_dir_prefix = f"{site_config.content_dir}/"
         if url_with_content.startswith(content_dir_prefix):
             url_with_content = url_with_content[len(content_dir_prefix) :]
-        return os.path.join("/", url_with_content)
+        return os.path.join("/", url_with_content)  # noqa: PTH118
     log.error(
         "Cannot get destination URL because is_page_content is false (content: %s)",
         (content.id, content.text_id),
@@ -85,11 +84,10 @@ def check_mandatory_settings(mandatory_settings):
             None,
             "",
         ):
-            missing_settings.append(setting_name)
+            missing_settings.append(setting_name)  # noqa: PERF401
     if missing_settings:
-        raise ImproperlyConfigured(
-            f"The following settings are missing: {', '.join(missing_settings)}"
-        )
+        msg = f"The following settings are missing: {', '.join(missing_settings)}"
+        raise ImproperlyConfigured(msg)
 
 
 def move_s3_object(from_path, to_path):
@@ -133,7 +131,7 @@ def get_theme_branch():
     """
     Gets the branch to use of ocw-hugo-themes in pipelines, defaulting to settings.GITHUB_WEBHOOK_BRANCH
     if settings.ENVIRONMENT is anything but "dev," otherwise take the value of settings.OCW_HUGO_THEMES_BRANCH
-    """
+    """  # noqa: E501, D401
     github_webhook_branch = settings.GITHUB_WEBHOOK_BRANCH
     return (
         (settings.OCW_HUGO_THEMES_BRANCH or github_webhook_branch)
@@ -154,7 +152,7 @@ def get_hugo_arg_string(build_target, pipeline_name, default_args, override_args
 
     Returns:
         str: A string of arguments that can be appended to the hugo command in a pipeline
-    """
+    """  # noqa: E501, D401
     hugo_args = default_args.copy()
     if pipeline_name == VERSION_DRAFT:
         hugo_args["--buildDrafts"] = ""
@@ -168,7 +166,7 @@ def get_hugo_arg_string(build_target, pipeline_name, default_args, override_args
             )
             if arg.startswith("-") and not next_arg.startswith("-"):
                 hugo_args[arg] = next_arg
-                # If the build target is offline, / is the only value that makes sense for --baseURL
+                # If the build target is offline, / is the only value that makes sense for --baseURL  # noqa: E501
                 if arg == "--baseURL" and build_target == TARGET_OFFLINE:
                     hugo_args[arg] = "/"
             elif arg.startswith("-"):
@@ -192,20 +190,19 @@ def check_matching_tags(pipeline_config, start_tag, end_tag):
 
     Returns:
         bool: True if the amount of start_tag matches the amount of end_tag in pipeline_config_file, False if not
-    """
+    """  # noqa: E501, D401
 
     start_tags = 0
     end_tags = 0
     if not start_tag.startswith(START_TAG_PREFIX):
-        raise ValueError(
-            f"{start_tag} is not properly prefixed with {START_TAG_PREFIX}"
-        )
+        msg = f"{start_tag} is not properly prefixed with {START_TAG_PREFIX}"
+        raise ValueError(msg)
     if not end_tag.startswith(END_TAG_PREFIX):
-        raise ValueError(f"{end_tag} is not properly prefixed with {END_TAG_PREFIX}")
-    if not start_tag.replace(START_TAG_PREFIX, "") == end_tag.replace(
-        END_TAG_PREFIX, ""
-    ):
-        raise ValueError(f"{start_tag} and {end_tag} do not have matching suffixes")
+        msg = f"{end_tag} is not properly prefixed with {END_TAG_PREFIX}"
+        raise ValueError(msg)
+    if start_tag.replace(START_TAG_PREFIX, "") != end_tag.replace(END_TAG_PREFIX, ""):
+        msg = f"{start_tag} and {end_tag} do not have matching suffixes"
+        raise ValueError(msg)
     for line in pipeline_config.splitlines():
         if start_tag in line:
             start_tags += 1
@@ -213,9 +210,8 @@ def check_matching_tags(pipeline_config, start_tag, end_tag):
             end_tags += 1
     equal = start_tags == end_tags
     if not equal:
-        raise ValueError(
-            f"Number of {start_tag} tags does not match number of {end_tag} tags in {pipeline_config}"
-        )
+        msg = f"Number of {start_tag} tags does not match number of {end_tag} tags in {pipeline_config}"  # noqa: E501
+        raise ValueError(msg)
     return start_tags == end_tags
 
 
@@ -233,7 +229,7 @@ def strip_lines_between(pipeline_config, start_tag, end_tag):
 
     Returns:
         str: The contents of pipeline_config with the lines between start_tag and end_tag stripped out
-    """
+    """  # noqa: E501, D401
     check_matching_tags(pipeline_config, start_tag, end_tag)
     if start_tag not in pipeline_config and end_tag not in pipeline_config:
         return pipeline_config
@@ -271,7 +267,7 @@ def strip_dev_lines(pipeline_config):
 
     Returns:
         str: The contents of pipeline_config with the lines between DEV_START and DEV_END stripped out
-    """
+    """  # noqa: E501, D401
     return strip_lines_between(pipeline_config, DEV_START, DEV_END)
 
 
@@ -284,7 +280,7 @@ def strip_non_dev_lines(pipeline_config):
 
     Returns:
         str: The contents of pipeline_config with the lines between NON_DEV_START and NON_DEV_END stripped out
-    """
+    """  # noqa: E501, D401
     return strip_lines_between(pipeline_config, NON_DEV_START, NON_DEV_END)
 
 
@@ -297,7 +293,7 @@ def strip_offline_lines(pipeline_config):
 
     Returns:
         str: The contents of pipeline_config with the lines between OFFLINE_START and OFFLINE_END stripped out
-    """
+    """  # noqa: E501, D401
     return strip_lines_between(pipeline_config, OFFLINE_START, OFFLINE_END)
 
 
@@ -312,5 +308,5 @@ def strip_online_lines(pipeline_config):
 
     Returns:
         str: The contents of pipeline_config with the lines between ONLINE_START and ONLINE_END stripped out
-    """
+    """  # noqa: E501, D401
     return strip_lines_between(pipeline_config, ONLINE_START, ONLINE_END)

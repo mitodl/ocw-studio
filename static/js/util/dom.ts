@@ -4,11 +4,11 @@ export const scrollToElement = (container: HTMLElement, selector: string) => {
     return
   }
   const { matches: prefersReducedMotion } = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
+    "(prefers-reduced-motion: reduce)",
   )
   errorElement.scrollIntoView({
     behavior: prefersReducedMotion ? "auto" : "smooth",
-    block:    "center"
+    block: "center",
   })
   errorElement.focus({ preventScroll: true })
 }

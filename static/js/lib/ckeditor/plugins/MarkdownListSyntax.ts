@@ -25,19 +25,19 @@ export default class MarkdownListSyntax extends MarkdownSyntaxPlugin {
   get showdownExtension(): () => ShowdownExtension[] {
     return () => [
       {
-        type:   "output",
-        filter: htmlString => {
+        type: "output",
+        filter: (htmlString) => {
           const container = document.createElement("div")
           container.innerHTML = htmlString
 
-          container.querySelectorAll("li > p").forEach(node => {
+          container.querySelectorAll("li > p").forEach((node) => {
             const suffix = node.nextSibling === null ? "" : " <br><br>"
             node.outerHTML = `${node.innerHTML}${suffix}`
           })
 
           return container.innerHTML
-        }
-      }
+        },
+      },
     ]
   }
 

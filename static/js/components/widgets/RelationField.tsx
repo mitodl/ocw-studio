@@ -3,7 +3,7 @@ import React, {
   useCallback,
   useEffect,
   useState,
-  useMemo
+  useMemo,
 } from "react"
 import { equals } from "ramda"
 import { uniqBy } from "lodash"
@@ -14,7 +14,7 @@ import { useWebsite } from "../../context/Website"
 import {
   RelationFilter,
   RelationFilterVariant,
-  WebsiteContent
+  WebsiteContent,
 } from "../../types/websites"
 import { siteApiContentListingUrl } from "../../lib/urls"
 import { PaginatedResponse } from "../../query-configs/utils"
@@ -50,11 +50,11 @@ interface Props {
  */
 const formatContentOptions = (
   listing: WebsiteContent[],
-  displayField: string
+  displayField: string,
 ): Option[] =>
-  listing.map(entry => ({
+  listing.map((entry) => ({
     label: entry[displayField],
-    value: entry.text_id
+    value: entry.text_id,
   }))
 
 export default function RelationField(props: Props): JSX.Element {
@@ -69,19 +69,19 @@ export default function RelationField(props: Props): JSX.Element {
     valuesToOmit,
     onChange,
     sortable,
-    cross_site: crossSite
+    cross_site: crossSite,
   } = props
 
   const [options, setOptions] = useState<Option[]>(
-    contentContext ? formatContentOptions(contentContext, displayField) : []
+    contentContext ? formatContentOptions(contentContext, displayField) : [],
   )
   const [defaultOptions, setDefaultOptions] = useState<Option[]>([])
   const [contentMap, setContentMap] = useState<Map<string, WebsiteContent>>(
     new Map(
-      contentContext ?
-        contentContext.map(content => [content.text_id, content]) :
-        []
-    )
+      contentContext
+        ? contentContext.map((content) => [content.text_id, content])
+        : [],
+    ),
   )
   const [fetchStatus, setFetchStatus] = useState<FetchStatus>(FetchStatus.Ok)
 
@@ -103,12 +103,12 @@ export default function RelationField(props: Props): JSX.Element {
   // We can `useEffect` so we can be sure that whenever the `value` prop
   // changes we update the `Map`.
   const [contentToWebsite, setContentToWebsite] = useState<Map<string, string>>(
-    new Map()
+    new Map(),
   )
   useEffect(() => {
     if (crossSite) {
       setContentToWebsite(
-        old => new Map([...old.entries(), ...(value as CrossSitePair[])])
+        (old) => new Map([...old.entries(), ...(value as CrossSitePair[])]),
       )
     }
   }, [setContentToWebsite, value, crossSite])
@@ -123,7 +123,7 @@ export default function RelationField(props: Props): JSX.Element {
     (event: ChangeEvent<HTMLSelectElement>) => {
       setFocusedWebsite(event.target.value)
     },
-    [setFocusedWebsite]
+    [setFocusedWebsite],
   )
 
   const contextWebsite = useWebsite()
@@ -138,22 +138,22 @@ export default function RelationField(props: Props): JSX.Element {
       const valueAsSet = new Set(Array.isArray(value) ? value.flat() : [value])
 
       return results
-        .map(entry => ({
+        .map((entry) => ({
           ...entry,
-          ...entry.metadata
+          ...entry.metadata,
         }))
-        .filter(entry => {
+        .filter((entry) => {
           if (!filter) {
             return true
           }
           switch (filter.filter_type) {
-          case RelationFilterVariant.Equals:
-            return equals(entry[filter.field], filter.value)
-          default:
-            return true
+            case RelationFilterVariant.Equals:
+              return equals(entry[filter.field], filter.value)
+            default:
+              return true
           }
         })
-        .filter(entry => {
+        .filter((entry) => {
           if (!valuesToOmit) {
             return true
           } else {
@@ -166,7 +166,7 @@ export default function RelationField(props: Props): JSX.Element {
           }
         })
     },
-    [filter, value, valuesToOmit]
+    [filter, value, valuesToOmit],
   )
 
   const fetchOptions = useCallback(
@@ -175,58 +175,58 @@ export default function RelationField(props: Props): JSX.Element {
       const name = crossSite && focusedWebsite ? focusedWebsite : websiteName
       const url = siteApiContentListingUrl
         .query({
-          detailed_list:   true,
+          detailed_list: true,
           ...(publishedOnly ? { published: true } : {}),
           content_context: true,
           ...(search ? { search } : {}),
           ...(filter &&
           filter.filter_type === RelationFilterVariant.Equals &&
-          filter.field === "resourcetype" ?
-            { resourcetype: filter.value } :
-            {}),
+          filter.field === "resourcetype"
+            ? { resourcetype: filter.value }
+            : {}),
           ...params,
-          offset
+          offset,
         })
         .param({
-          name
+          name,
         })
         .toString()
-      const response = debounce ?
-        await debouncedFetch("relationfield", 300, url, {
-          credentials: "include"
-        }) :
-        await fetch(url, { credentials: "include" })
+      const response = debounce
+        ? await debouncedFetch("relationfield", 300, url, {
+            credentials: "include",
+          })
+        : await fetch(url, { credentials: "include" })
 
       if (!response) {
         // duplicate, another later instance of loadOptions will handle this instead
         return {
           hasMore: true,
-          options: []
+          options: [],
         }
       }
       const json: PaginatedResponse<WebsiteContent> = await response.json()
       const { results } = json
       const responseValues = {
-        hasMore:    Boolean(json.next),
-        additional: undefined
+        hasMore: Boolean(json.next),
+        additional: undefined,
       }
 
       if (results) {
-        setContentMap(cur => {
+        setContentMap((cur) => {
           const newMap = new Map(cur)
-          results.forEach(content => {
+          results.forEach((content) => {
             newMap.set(content.text_id, content)
           })
           return newMap
         })
 
         if (crossSite) {
-          setContentToWebsite(cur => {
+          setContentToWebsite((cur) => {
             const update = new Map(cur)
-            results.forEach(websiteContent => {
+            results.forEach((websiteContent) => {
               update.set(
                 websiteContent.text_id,
-                websiteContent.url_path || name
+                websiteContent.url_path || name,
               )
             })
             return update
@@ -237,15 +237,15 @@ export default function RelationField(props: Props): JSX.Element {
           ...responseValues,
           options: formatContentOptions(
             filterContentListing(results),
-            displayField
-          )
+            displayField,
+          ),
         }
       } else {
         // there was some error fetching the results
         setFetchStatus(FetchStatus.Error)
         return {
           ...responseValues,
-          options: []
+          options: [],
         }
       }
     },
@@ -259,21 +259,21 @@ export default function RelationField(props: Props): JSX.Element {
       focusedWebsite,
       setContentToWebsite,
       crossSite,
-      publishedOnly
-    ]
+      publishedOnly,
+    ],
   )
 
   const loadOptions = useCallback(
     async (inputValue: string, options: Option[]) => {
       const response = await fetchOptions(inputValue, true, options.length)
       if (response?.options) {
-        setOptions(oldOptions =>
-          uniqBy([...oldOptions, ...response.options], "value")
+        setOptions((oldOptions) =>
+          uniqBy([...oldOptions, ...response.options], "value"),
         )
       }
       return response ?? { options: [] }
     },
-    [fetchOptions, setOptions]
+    [fetchOptions, setOptions],
   )
 
   useEffect(() => {
@@ -288,8 +288,8 @@ export default function RelationField(props: Props): JSX.Element {
       // defaultOptions should always be true here since fetchOptions will only ever
       // return null if debounce=true
       if (mounted && defaultOptions) {
-        setOptions(oldOptions =>
-          uniqBy([...oldOptions, ...defaultOptions], "value")
+        setOptions((oldOptions) =>
+          uniqBy([...oldOptions, ...defaultOptions], "value"),
         )
         setDefaultOptions(() => defaultOptions)
       }
@@ -322,42 +322,42 @@ export default function RelationField(props: Props): JSX.Element {
       // is called.
       const updatedEvent = {
         target: {
-          name:  name.replace(/\.content$/, ""),
+          name: name.replace(/\.content$/, ""),
           value: {
             website: websiteName,
-            content: crossSite ?
-              (value as string[]).map(id => [id, contentToWebsite.get(id)]) :
-              value
-          }
-        }
+            content: crossSite
+              ? (value as string[]).map((id) => [id, contentToWebsite.get(id)])
+              : value,
+          },
+        },
       }
       onChange(updatedEvent)
     },
-    [onChange, name, crossSite, contentToWebsite, websiteName]
+    [onChange, name, crossSite, contentToWebsite, websiteName],
   )
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
       onChangeShim(event.target.value)
     },
-    [onChangeShim]
+    [onChangeShim],
   )
 
   const selectedIds = useMemo(
     () =>
-      crossSite ?
-        (value as CrossSitePair[]).map(pair => pair[0]) :
-        multiple ?
-          (value as string[]) :
-          [value as string],
-    [multiple, value, crossSite]
+      crossSite
+        ? (value as CrossSitePair[]).map((pair) => pair[0])
+        : multiple
+        ? (value as string[])
+        : [value as string],
+    [multiple, value, crossSite],
   )
 
   const isOptionDisabled = useCallback(
     (option: Option) => {
       return selectedIds.includes(option.value)
     },
-    [selectedIds]
+    [selectedIds],
   )
 
   return (
@@ -382,13 +382,13 @@ export default function RelationField(props: Props): JSX.Element {
           defaultOptions={defaultOptions}
           isOptionDisabled={isOptionDisabled}
           cacheUniques={[focusedWebsite]}
-          value={selectedIds.map(id => {
+          value={selectedIds.map((id) => {
             const content = contentMap.get(id)
             const title = content ? content.title ?? id : id
 
             return {
               id,
-              title
+              title,
             }
           })}
         />

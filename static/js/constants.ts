@@ -3,7 +3,7 @@ import { flatten, uniq } from "ramda"
 import {
   ConfigField,
   TopLevelConfigItem,
-  WebsiteStarterConfig
+  WebsiteStarterConfig,
 } from "./types/websites"
 
 import { WidgetVariant, LinkType } from "./types/websites"
@@ -15,9 +15,9 @@ export const ROLE_OWNER = "owner"
 
 export const ROLE_LABELS = {
   [ROLE_GLOBAL]: "Administrator",
-  [ROLE_ADMIN]:  "Administrator",
+  [ROLE_ADMIN]: "Administrator",
   [ROLE_EDITOR]: "Editor",
-  [ROLE_OWNER]:  "Owner"
+  [ROLE_OWNER]: "Owner",
 }
 
 export const EDITABLE_ROLES = [ROLE_ADMIN, ROLE_EDITOR]
@@ -43,19 +43,19 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
           label: "Title",
           name: "title",
           widget: WidgetVariant.String,
-          required: true
+          required: true,
         },
         {
           label: "Body",
           name: "body",
           widget: WidgetVariant.Markdown,
-          required: true
-        }
+          required: true,
+        },
       ],
       folder: "content",
       label: "Page",
       name: "page",
-      category: "Content"
+      category: "Content",
     },
     {
       fields: [
@@ -63,26 +63,26 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
           label: "Title",
           name: "title",
           widget: WidgetVariant.String,
-          required: true
+          required: true,
         },
         {
           label: "Description",
           name: "description",
           widget: WidgetVariant.Markdown,
           minimal: true,
-          required: true
+          required: true,
         },
         {
           label: "File",
           name: "file",
           widget: WidgetVariant.File,
-          required: true
-        }
+          required: true,
+        },
       ],
       folder: "content",
       label: "Resource",
       name: "resource",
-      category: "Content"
+      category: "Content",
     },
     {
       files: [
@@ -95,13 +95,13 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
               label: "Course Title",
               name: "title",
               widget: WidgetVariant.Text,
-              required: true
+              required: true,
             },
             {
               label: "Course Description",
               name: "description",
               widget: WidgetVariant.Markdown,
-              help: "A description of the course that will be shown on the course site home page."
+              help: "A description of the course that will be shown on the course site home page.",
             },
             {
               label: "Tags",
@@ -111,28 +111,28 @@ export const exampleSiteConfig: WebsiteStarterConfig = {
               multiple: true,
               name: "tags",
               options: ["Design", "UX", "Dev"],
-              widget: WidgetVariant.Select
+              widget: WidgetVariant.Select,
             },
             {
               label: "Align Content",
               name: "align",
               widget: WidgetVariant.Select,
-              options: ["left", "center", "right"]
+              options: ["left", "center", "right"],
             },
             {
               label: "Featured course",
               name: "featured",
               widget: WidgetVariant.Boolean,
-              default: false
-            }
-          ]
-        }
+              default: false,
+            },
+          ],
+        },
       ],
       label: "Metadata",
       name: "metadata",
-      category: "Settings"
-    }
-  ]
+      category: "Settings",
+    },
+  ],
 }
 
 /**
@@ -145,11 +145,11 @@ export const exampleSiteConfigFields: ConfigField[] = uniq(
         return item.fields
       }
       if ("files" in item) {
-        return item.files.map(fileConfigItem => fileConfigItem.fields)
+        return item.files.map((fileConfigItem) => fileConfigItem.fields)
       }
       return []
-    })
-  ])
+    }),
+  ]),
 )
 
 // these should match with the values in the ocw-course schema
@@ -159,14 +159,14 @@ export enum ContentType {
   CourseCollections = "course-collection",
   ResourceCollections = "resource_collections",
   VideoGallery = "video_gallery",
-  ResourceList = "resource-list"
+  ResourceList = "resource-list",
 }
 
 export enum ResourceType {
   Image = "Image",
   Video = "Video",
   Document = "Document",
-  Other = "Other"
+  Other = "Other",
 }
 
 export enum PublishStatus {
@@ -175,13 +175,13 @@ export enum PublishStatus {
   Errored = "errored",
   Aborted = "aborted",
   Started = "started",
-  NotStarted = "not-started"
+  NotStarted = "not-started",
 }
 
 export const PUBLISH_STATUS_PROCESSING_STATES = [
   PublishStatus.Pending,
   PublishStatus.Started,
-  PublishStatus.NotStarted
+  PublishStatus.NotStarted,
 ]
 
 export enum GoogleDriveSyncStatuses {
@@ -189,12 +189,12 @@ export enum GoogleDriveSyncStatuses {
   SYNC_STATUS_PENDING = "Pending",
   SYNC_STATUS_COMPLETE = "Complete",
   SYNC_STATUS_FAILED = "Failed",
-  SYNC_STATUS_ERRORS = "Errors"
+  SYNC_STATUS_ERRORS = "Errors",
 }
 
 export const GOOGLE_DRIVE_SYNC_PROCESSING_STATES = [
   GoogleDriveSyncStatuses.SYNC_STATUS_PENDING,
-  GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING
+  GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING,
 ]
 
 export const IS_A_REQUIRED_FIELD = "is a required field"
@@ -202,14 +202,14 @@ export const IS_A_REQUIRED_FIELD = "is a required field"
 export enum WebsiteStarterStatus {
   Default = "default",
   Active = "active",
-  Inactive = "inactive"
+  Inactive = "inactive",
 }
 
 export enum PublishingEnv {
   Staging = "staging",
-  Production = "production"
+  Production = "production",
 }
 
 export enum Permission {
-  CanAddWebsite = "canAddWebsite"
+  CanAddWebsite = "canAddWebsite",
 }

@@ -13,7 +13,7 @@ import WebsiteCollectionField from "../components/widgets/WebsiteCollectionField
 import { objectToFormData } from "./util"
 import {
   MAIN_PAGE_CONTENT_DB_FIELD,
-  MAIN_PAGE_CONTENT_FIELD
+  MAIN_PAGE_CONTENT_FIELD,
 } from "../constants"
 
 import {
@@ -25,42 +25,42 @@ import {
   StringConfigField,
   Website,
   WebsiteContent,
-  WidgetVariant
+  WidgetVariant,
 } from "../types/websites"
 import {
   SiteFormPrimitive,
   SiteFormValue,
-  SiteFormValues
+  SiteFormValues,
 } from "../types/forms"
 
 export const componentFromWidget = (
-  field: ConfigField
+  field: ConfigField,
 ): string | ComponentType | ElementType | null => {
   switch (field.widget) {
-  case WidgetVariant.Markdown:
-    return MarkdownEditor
-  case WidgetVariant.Select:
-    return SelectField
-  case WidgetVariant.File:
-    return FileUploadField
-  case WidgetVariant.Boolean:
-    return BooleanField
-  case WidgetVariant.Text:
-    return "textarea"
-  case WidgetVariant.String:
-    return "input"
-  case WidgetVariant.Hidden:
-    return null
-  case WidgetVariant.Relation:
-    return RelationField
-  case WidgetVariant.Menu:
-    return MenuField
-  case WidgetVariant.HierarchicalSelect:
-    return HierarchicalSelectField
-  case WidgetVariant.WebsiteCollection:
-    return WebsiteCollectionField
-  default:
-    return "input"
+    case WidgetVariant.Markdown:
+      return MarkdownEditor
+    case WidgetVariant.Select:
+      return SelectField
+    case WidgetVariant.File:
+      return FileUploadField
+    case WidgetVariant.Boolean:
+      return BooleanField
+    case WidgetVariant.Text:
+      return "textarea"
+    case WidgetVariant.String:
+      return "input"
+    case WidgetVariant.Hidden:
+      return null
+    case WidgetVariant.Relation:
+      return RelationField
+    case WidgetVariant.Menu:
+      return MenuField
+    case WidgetVariant.HierarchicalSelect:
+      return HierarchicalSelectField
+    case WidgetVariant.WebsiteCollection:
+      return WebsiteCollectionField
+    default:
+      return "input"
   }
 }
 
@@ -74,16 +74,16 @@ const RELATION_EXTRA_PROPS = [
   "filter",
   "website",
   "sortable",
-  "cross_site"
+  "cross_site",
 ]
 const MENU_EXTRA_PROPS = ["collections"]
 const HIERARCHICAL_SELECT_EXTRA_PROPS = ["options_map", "levels"]
 
 export const DEFAULT_TITLE_FIELD: StringConfigField = {
-  name:     "title",
-  label:    "Title",
-  widget:   WidgetVariant.String,
-  required: true
+  name: "title",
+  label: "Title",
+  widget: WidgetVariant.String,
+  required: true,
 }
 
 /**
@@ -92,23 +92,23 @@ export const DEFAULT_TITLE_FIELD: StringConfigField = {
  **/
 export function widgetExtraProps(field: ConfigField): Record<string, any> {
   switch (field.widget) {
-  case WidgetVariant.Select:
-    return pick(SELECT_EXTRA_PROPS, field)
-  case WidgetVariant.Markdown:
-    return {
-      minimal:     field.minimal ?? true,
-      link:        field.link ?? [],
-      embed:       field.embed ?? [],
-      allowedHtml: field.allowed_html ?? []
-    }
-  case WidgetVariant.Relation:
-    return pick(RELATION_EXTRA_PROPS, field)
-  case WidgetVariant.Menu:
-    return pick(MENU_EXTRA_PROPS, field)
-  case WidgetVariant.HierarchicalSelect:
-    return pick(HIERARCHICAL_SELECT_EXTRA_PROPS, field)
-  default:
-    return {}
+    case WidgetVariant.Select:
+      return pick(SELECT_EXTRA_PROPS, field)
+    case WidgetVariant.Markdown:
+      return {
+        minimal: field.minimal ?? true,
+        link: field.link ?? [],
+        embed: field.embed ?? [],
+        allowedHtml: field.allowed_html ?? [],
+      }
+    case WidgetVariant.Relation:
+      return pick(RELATION_EXTRA_PROPS, field)
+    case WidgetVariant.Menu:
+      return pick(MENU_EXTRA_PROPS, field)
+    case WidgetVariant.HierarchicalSelect:
+      return pick(HIERARCHICAL_SELECT_EXTRA_PROPS, field)
+    default:
+      return {}
   }
 }
 
@@ -125,14 +125,14 @@ export const isMainContentField = (field: ConfigField): boolean =>
  * Returns true if an array of config fields contains a main content field
  **/
 export const hasMainContentField = (fields: ConfigField[]): boolean =>
-  fields.find(field => isMainContentField(field)) !== undefined
+  fields.find((field) => isMainContentField(field)) !== undefined
 
 export const isRepeatableCollectionItem = (
-  configItem: BaseConfigItem
+  configItem: BaseConfigItem,
 ): configItem is RepeatableConfigItem => "folder" in configItem
 
 export const isSingletonCollectionItem = (
-  configItem: BaseConfigItem
+  configItem: BaseConfigItem,
 ): configItem is SingletonConfigItem => "file" in configItem
 
 /**
@@ -148,7 +148,7 @@ const contentFormValueForField = (
   field: ConfigField,
   parentField: ConfigField | null,
   values: SiteFormValues,
-  website: Website
+  website: Website,
 ): SiteFormValue => {
   if (!fieldHasData(field, values)) {
     return defaultForField(field, website)
@@ -156,15 +156,15 @@ const contentFormValueForField = (
 
   if (field.widget === WidgetVariant.Object) {
     return Object.fromEntries(
-      field.fields.map(innerField => [
+      field.fields.map((innerField) => [
         innerField.name,
         contentFormValueForField(
           innerField,
           field,
           values,
-          website
-        ) as SiteFormPrimitive
-      ])
+          website,
+        ) as SiteFormPrimitive,
+      ]),
     )
   } else {
     if (parentField) {
@@ -181,7 +181,7 @@ const contentFormValueForField = (
 export const contentFormValuesToPayload = (
   values: SiteFormValues,
   fields: ConfigField[],
-  website: Website
+  website: Website,
 ):
   | (Record<string, string> & { metadata?: Record<string, string> })
   | FormData => {
@@ -229,7 +229,7 @@ export const contentFormValuesToPayload = (
 export const contentInitialValues = (
   content: WebsiteContent,
   fields: ConfigField[],
-  website: Website
+  website: Website,
 ): SiteFormValues => {
   const values = {}
   const metadata = content.metadata ?? {}
@@ -255,15 +255,15 @@ export const contentInitialValues = (
  **/
 export const newInitialValues = (
   fields: ConfigField[],
-  website: Website
+  website: Website,
 ): SiteFormValues =>
   Object.fromEntries(
     fields.map((field: ConfigField) => [
       field.name,
-      field.widget === WidgetVariant.Object ?
-        newInitialValues(field.fields, website) :
-        field.default ?? defaultForField(field, website)
-    ])
+      field.widget === WidgetVariant.Object
+        ? newInitialValues(field.fields, website)
+        : field.default ?? defaultForField(field, website),
+    ]),
   )
 
 /**
@@ -273,40 +273,40 @@ export const newInitialValues = (
  **/
 const defaultForField = (
   field: ConfigField,
-  website: Website
+  website: Website,
 ): SiteFormValue => {
   switch (field.widget) {
-  case WidgetVariant.Boolean:
-    return false
-  case WidgetVariant.Relation:
-    return {
-      website: website.name,
-      content: field.multiple || field.sortable ? [] : ""
-    }
-  case WidgetVariant.Select:
-    return field.multiple ? [] : ""
-  case WidgetVariant.File:
-    return null
-  case WidgetVariant.Object:
-    return Object.fromEntries(
-      field.fields.map(field => [
-        field.name,
+    case WidgetVariant.Boolean:
+      return false
+    case WidgetVariant.Relation:
+      return {
+        website: website.name,
+        content: field.multiple || field.sortable ? [] : "",
+      }
+    case WidgetVariant.Select:
+      return field.multiple ? [] : ""
+    case WidgetVariant.File:
+      return null
+    case WidgetVariant.Object:
+      return Object.fromEntries(
+        field.fields.map((field) => [
+          field.name,
           // the `as` is fully justified here: we don't want to allow
           // doubly-nested fields (for now!) so calling `defaultFor` on a
           // nested field *should* only return SiteFormPrimitive (i.e. boolean,
           // string, etc) and *not* another nested
           // Record<string, SiteFormPrimitive>
-          defaultForField(field, website) as SiteFormPrimitive
-      ])
-    )
-  case WidgetVariant.HierarchicalSelect:
-    return []
-  case WidgetVariant.Menu:
-    return []
-  case WidgetVariant.WebsiteCollection:
-    return []
-  default:
-    return ""
+          defaultForField(field, website) as SiteFormPrimitive,
+        ]),
+      )
+    case WidgetVariant.HierarchicalSelect:
+      return []
+    case WidgetVariant.Menu:
+      return []
+    case WidgetVariant.WebsiteCollection:
+      return []
+    default:
+      return ""
   }
 }
 
@@ -315,7 +315,7 @@ const defaultForField = (
  */
 export const fieldHasData = (
   field: ConfigField,
-  values: SiteFormValues
+  values: SiteFormValues,
 ): boolean => {
   if (!field.condition) {
     return true
@@ -330,7 +330,7 @@ export const fieldHasData = (
  **/
 export const fieldIsVisible = (
   field: ConfigField,
-  values: SiteFormValues
+  values: SiteFormValues,
 ): boolean => field.widget !== "hidden" && fieldHasData(field, values)
 
 /**
@@ -351,23 +351,23 @@ export const fieldIsVisible = (
 export const renameNestedFields = (fields: ConfigField[]): ConfigField[] =>
   fields.map((field: ConfigField) => {
     switch (field.widget) {
-    case WidgetVariant.Object:
-      return evolve(
-        {
-          fields: map((nestedField: ConfigField) => ({
-            ...nestedField,
-            name: `${field.name}.${nestedField.name}`
-          }))
-        },
-        field
-      )
-    case WidgetVariant.Relation:
-      return {
-        ...field,
-        name: `${field.name}.content`
-      }
-    default:
-      return field
+      case WidgetVariant.Object:
+        return evolve(
+          {
+            fields: map((nestedField: ConfigField) => ({
+              ...nestedField,
+              name: `${field.name}.${nestedField.name}`,
+            })),
+          },
+          field,
+        )
+      case WidgetVariant.Relation:
+        return {
+          ...field,
+          name: `${field.name}.content`,
+        }
+      default:
+        return field
     }
   })
 
@@ -380,25 +380,25 @@ export const renameNestedFields = (fields: ConfigField[]): ConfigField[] =>
  * the config through unchanged.
  */
 export function addDefaultFields(
-  configItem: RepeatableConfigItem
+  configItem: RepeatableConfigItem,
 ): RepeatableConfigItem
 export function addDefaultFields(
-  configItem: SingletonConfigItem
+  configItem: SingletonConfigItem,
 ): SingletonConfigItem
 export function addDefaultFields(
-  configItem: EditableConfigItem
+  configItem: EditableConfigItem,
 ): EditableConfigItem {
   const fields = configItem.fields
   if (!isRepeatableCollectionItem(configItem)) {
     return configItem
   }
-  const titleField = fields.find(field => field.name === "title")
+  const titleField = fields.find((field) => field.name === "title")
   if (titleField) {
     return configItem
   }
   return {
     ...configItem,
-    fields: [DEFAULT_TITLE_FIELD, ...fields]
+    fields: [DEFAULT_TITLE_FIELD, ...fields],
   }
 }
 

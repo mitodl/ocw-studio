@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("gdrive_sync", "0006_drivefile_null_checksum"),
     ]

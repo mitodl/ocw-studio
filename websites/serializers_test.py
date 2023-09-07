@@ -1,4 +1,4 @@
-""" Tests for websites.serializers """
+"""Tests for websites.serializers"""
 from types import SimpleNamespace
 
 import pytest
@@ -40,14 +40,13 @@ from websites.serializers import (
 )
 from websites.site_config_api import SiteConfig
 
-
 pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
 
 
-@pytest.fixture
+@pytest.fixture()
 def mocked_website_funcs(mocker):
-    """Mocked website-related functions"""
+    """Mocked website-related functions"""  # noqa: D401
     return SimpleNamespace(
         update_website_backend=mocker.patch(
             "websites.serializers.update_website_backend"
@@ -166,7 +165,7 @@ def test_website_status_serializer(mocker, settings, drive_folder, warnings):
         else None
     )
     assert sorted(serialized_data["content_warnings"]) == sorted(warnings)
-    for (key, value) in values.items():
+    for key, value in values.items():
         assert serialized_data.get(key) == value
 
 
@@ -376,7 +375,7 @@ def test_website_content_detail_with_file_serializer():
 @pytest.mark.parametrize("invalid_data", [True, False])
 @pytest.mark.parametrize("nested", [True, False])
 @pytest.mark.parametrize("field_order_reversed", [True, False])
-def test_website_content_detail_serializer_content_context(  # pylint:disable=too-many-arguments,too-many-locals
+def test_website_content_detail_serializer_content_context(  # pylint:disable=too-many-arguments,too-many-locals  # noqa: PLR0913
     content_context, multiple, cross_site, invalid_data, nested, field_order_reversed
 ):
     """WebsiteContentDetailSerializer should serialize content_context for relation and menu fields"""

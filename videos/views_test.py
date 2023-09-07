@@ -13,14 +13,13 @@ from videos.constants import DESTINATION_YOUTUBE, VideoJobStatus, VideoStatus
 from videos.factories import VideoFactory, VideoJobFactory
 from websites.factories import WebsiteFactory
 
-
 # pylint:disable=redefined-outer-name
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture
+@pytest.fixture()
 def video_group(settings):
-    """Collection of model objects for testing video views"""
+    """Collection of model objects for testing video views"""  # noqa: D401
     drive_file_id = "abc123"
     drive_file_name = "testvid.avi"
     website = WebsiteFactory.create()
@@ -44,9 +43,8 @@ def test_transcode_jobs_success(settings, drf_client, video_group):
     """TranscodeJobView should process MediaConvert success notification appropriately"""
     video = video_group.video
     video_job = video_group.video_job
-    with open(
+    with open(  # noqa: PTH123
         f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json",
-        "r",
         encoding="utf-8",
     ) as infile:
         data = json.loads(
@@ -72,8 +70,8 @@ def test_transcode_jobs_failure(settings, drf_client, video_group):
     """TranscodeJobView should process MediaConvert failure notification appropriately"""
     video = video_group.video
     video_job = video_group.video_job
-    with open(
-        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_error.json", "r", encoding="utf-8"
+    with open(  # noqa: PTH123
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_error.json", encoding="utf-8"
     ) as infile:
         data = json.loads(
             infile.read()
@@ -92,9 +90,8 @@ def test_transcode_jobs_failure(settings, drf_client, video_group):
 
 def test_transcode_jobs_wrong_account(drf_client):
     """TranscodeJobView should raise a PermissionDenied if the AWS account id does not match"""
-    with open(
+    with open(  # noqa: PTH123
         f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json",
-        "r",
         encoding="utf-8",
     ) as infile:
         data = json.loads(infile.read().replace("AWS_ACCOUNT_ID", "other_account_id"))
@@ -105,9 +102,9 @@ def test_transcode_jobs_wrong_account(drf_client):
 def test_transcode_jobs_subscribe(settings, mocker, drf_client):
     """TranscodeJobView should confirm a subcsription request"""
     mock_get = mocker.patch("videos.views.requests.get")
-    with open(
-        f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", "r", encoding="utf-8"
-    ) as infile:
+    with open(  # noqa: PTH123
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", encoding="utf-8"
+    ) as infile:  # noqa: PTH123, RUF100
         data = json.loads(
             infile.read()
             .replace("AWS_ACCOUNT_ID", settings.AWS_ACCOUNT_ID)
@@ -121,9 +118,9 @@ def test_transcode_jobs_subscribe(settings, mocker, drf_client):
 def test_transcode_jobs_subscribe_denied(settings, mocker, drf_client):
     """TranscodeJobView should deny a subscription request if the account id is wrong"""
     mock_get = mocker.patch("videos.views.requests.get")
-    with open(
-        f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", "r", encoding="utf-8"
-    ) as infile:
+    with open(  # noqa: PTH123
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", encoding="utf-8"
+    ) as infile:  # noqa: PTH123, RUF100
         data = json.loads(
             infile.read()
             .replace("AWS_ACCOUNT_ID", "other_account")
@@ -180,7 +177,9 @@ def test_youtube_token_callback(mocker, admin_client):
     """User should receive access and refresh tokens"""
     mock_flow = mocker.patch(
         "videos.views.InstalledAppFlow.from_client_config",
-        return_value=mocker.Mock(credentials=mocker.Mock(token="a", refresh_token="b")),
+        return_value=mocker.Mock(
+            credentials=mocker.Mock(token="a", refresh_token="b")  # noqa: S106
+        ),  # noqa: RUF100, S106
     )
     response = admin_client.get(f"{reverse('yt_tokens')}?code=abcdef")
     mock_flow.return_value.fetch_token.assert_called_once()

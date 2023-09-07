@@ -68,7 +68,7 @@ def test_content_finder_is_site_specific():
 
 
 @pytest.mark.parametrize(
-    ["url", "content_relative_dirpath", "filename"],
+    ("url", "content_relative_dirpath", "filename"),
     [
         (
             # url is to an index file, not to dirpath/filename
@@ -115,7 +115,7 @@ def test_content_finder_specific_url_replacements(
 
 
 @pytest.mark.parametrize(
-    ["root_relative_path", "base_site_name", "expected_content_uuid"],
+    ("root_relative_path", "base_site_name", "expected_content_uuid"),
     [
         ("/courses/pets/pages/animals/cats", None, "uuid-cats"),
         ("{{< baseurl >}}/pages/animals/cats", "pets", "uuid-cats"),
@@ -148,7 +148,7 @@ def test_content_finder_find(root_relative_path, base_site_name, expected_conten
 
 
 @pytest.mark.parametrize(
-    ["site_uuid", "content_index"], [("website_one", 0), ("website_two", 1)]
+    ("site_uuid", "content_index"), [("website_one", 0), ("website_two", 1)]
 )
 def test_content_finder_returns_metadata_for_site(site_uuid, content_index):
     contents = [
@@ -178,7 +178,7 @@ def test_content_finder_raises_keyerror():
 
 
 @pytest.mark.parametrize(
-    ["url", "expected_index", "expected_relative_url"],
+    ("url", "expected_index", "expected_relative_url"),
     [
         (
             "/courses/physics/theoretical/website_zero/path/to/the/thing",
@@ -219,12 +219,12 @@ def test_url_site_relativiser(url, expected_index, expected_relative_url):
 @patch_website_all([])
 def test_url_site_relativiser_raises_value_errors():
     get_site_relative_url = UrlSiteRelativiser()
-    with pytest.raises(ValueError, match="does not contain a website name") as e:
+    with pytest.raises(ValueError, match="does not contain a website name"):
         get_site_relative_url("courses/my-favorite-course/thing")
 
 
 @pytest.mark.parametrize(
-    ["site_uuid", "legacy_site_relative_url", "expected_index"],
+    ("site_uuid", "legacy_site_relative_url", "expected_index"),
     [
         ("site-uuid-one", "/site/pages/someFileName.jpg", 0),
         ("site-uuid-one", "/site/pages/things/somefilename.jpg", 1),

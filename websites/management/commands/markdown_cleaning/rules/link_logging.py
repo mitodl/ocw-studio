@@ -47,7 +47,9 @@ class LinkLoggingRule(PyparsingRule):
         super().__init__()
         self.content_lookup = ContentLookup()
 
-    def replace_match(self, s: str, l: int, toks, website_content):
+    def replace_match(
+        self, s: str, l: int, toks, website_content  # noqa: ARG002, E741
+    ):
         return toks.original_text, self.classify_link(toks, website_content)
 
     def should_parse(self, text: str):
@@ -55,10 +57,12 @@ class LinkLoggingRule(PyparsingRule):
 
         If the text does not contain '](', then it definitely does not have
         markdown links.
-        """
+        """  # noqa: D401
         return "](" in text
 
-    def classify_link(self, result: LinkParseResult, wc: WebsiteContent):
+    def classify_link(  # noqa: C901, PLR0911, PLR0912
+        self, result: LinkParseResult, wc: WebsiteContent
+    ):  # noqa: PLR0911, PLR0912, RUF100
         link = result.link
         Notes = partial(
             self.ReplacementNotes,
@@ -120,7 +124,7 @@ class LinkLoggingRule(PyparsingRule):
             return Notes(link_type="/ans7870")
         if url.path.startswith("/20-219IAP15"):
             return Notes(
-                link_type="/20-219IAP15 ... (redirects https://ocw.mit.edu/courses/biological-engineering/20-219-becoming-the-next-bill-nye-writing-and-hosting-the-educational-show-january-iap-2015/) "
+                link_type="/20-219IAP15 ... (redirects https://ocw.mit.edu/courses/biological-engineering/20-219-becoming-the-next-bill-nye-writing-and-hosting-the-educational-show-january-iap-2015/) "  # noqa: E501
             )
         if url.path == "/images/a_logo_17.gif":
             return Notes(link_type="/images/a_logo_17.gif")

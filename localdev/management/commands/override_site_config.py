@@ -1,4 +1,4 @@
-""" Overrides locally-stored site configs based on a YAML file in this repo """
+"""Overrides locally-stored site configs based on a YAML file in this repo"""
 import os
 
 import yaml
@@ -13,7 +13,7 @@ from websites.models import WebsiteStarter
 class Command(BaseCommand):
     """Overrides locally-stored site configs based on a YAML file in this repo"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def _get_pairs(self):
         """
@@ -42,14 +42,13 @@ class Command(BaseCommand):
         return [config_slug_pair[1] for config_slug_pair in pairs]
 
     def add_arguments(self, parser):
-
         parser.add_argument(
             "-c",
             "--config-path",
             dest="config_path",
             action="append",
             default=self._get_config_paths(),
-            help="The path to the config file that will be used to overwrite the given WebsiteStarter.",
+            help="The path to the config file that will be used to overwrite the given WebsiteStarter.",  # noqa: E501
         )
         parser.add_argument(
             "-s",
@@ -57,10 +56,10 @@ class Command(BaseCommand):
             dest="starter",
             action="append",
             default=self._get_slugs(),
-            help="The slug value for the WebsiteStarter that the given config will overwrite.",
+            help="The slug value for the WebsiteStarter that the given config will overwrite.",  # noqa: E501
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa: ARG002
         config_paths = options["config_path"]
         slugs_to_override = options["starter"]
         if len(config_paths) > len(self._get_config_paths()):
@@ -68,13 +67,13 @@ class Command(BaseCommand):
         if len(slugs_to_override) > len(self._get_slugs()):
             slugs_to_override = slugs_to_override[len(self._get_slugs()) :]
         if len(config_paths) != len(slugs_to_override):
-            raise CommandError(
-                "Need to provide the same number of config paths and starter slugs to override "
-                f"({len(config_paths)} != {len(slugs_to_override)})"
-            )
+            msg = f"Need to provide the same number of config paths and starter slugs to override ({len(config_paths)} != {len(slugs_to_override)})"  # noqa: E501
+            raise CommandError(msg)
 
         for config_path, starter_slug in zip(config_paths, slugs_to_override):
-            with open(os.path.join(settings.BASE_DIR, config_path)) as f:
+            with open(  # noqa: PTH123
+                os.path.join(settings.BASE_DIR, config_path)  # noqa: PTH118
+            ) as f:  # noqa: PTH118, PTH123, RUF100
                 raw_config = f.read().strip()
             parsed_config = yaml.load(raw_config, Loader=yaml.SafeLoader)
             try:

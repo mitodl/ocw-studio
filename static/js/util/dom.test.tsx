@@ -25,17 +25,17 @@ describe("scrollToError", () => {
             <div id="div-2b" className="form-error"></div>
             <div id="div-2c"></div>
           </form>
-        </div>
-      )
+        </div>,
+      ),
     )
-    const [form1, form2] = ["#form-1", "#form-2"].map(s =>
-      page.querySelector(s)
+    const [form1, form2] = ["#form-1", "#form-2"].map((s) =>
+      page.querySelector(s),
     ) as HTMLElement[]
-    const [div1b, div1c, div2a] = ["#div-1b", "#div-1c", "#div-2a"].map(s =>
-      page.querySelector(s)
+    const [div1b, div1c, div2a] = ["#div-1b", "#div-1c", "#div-2a"].map((s) =>
+      page.querySelector(s),
     ) as HTMLElement[]
     const elements = [form1, form2, div1b, div1c, div2a]
-    expect(elements.every(e => e instanceof HTMLElement)).toBe(true)
+    expect(elements.every((e) => e instanceof HTMLElement)).toBe(true)
 
     // js-dom does not currently implement scrollIntoView
     div1b.scrollIntoView = jest.fn()
@@ -44,20 +44,20 @@ describe("scrollToError", () => {
 
     return {
       containers: { form1, form2, page },
-      spies:      {
+      spies: {
         div1b: {
           scrollIntoView: div1b.scrollIntoView,
-          focus:          jest.spyOn(div1b, "focus")
+          focus: jest.spyOn(div1b, "focus"),
         },
         div1c: {
           scrollIntoView: div1c.scrollIntoView,
-          focus:          jest.spyOn(div1c, "focus")
+          focus: jest.spyOn(div1c, "focus"),
         },
         div2a: {
           scrollIntoView: div2a.scrollIntoView,
-          focus:          jest.spyOn(div2a, "focus")
-        }
-      }
+          focus: jest.spyOn(div2a, "focus"),
+        },
+      },
     }
   }
 
@@ -85,7 +85,7 @@ describe("scrollToError", () => {
     scrollToElement(containers.form1, ".form-error")
     expect(spies.div1b.scrollIntoView).toHaveBeenCalledWith({
       behavior: "smooth",
-      block:    "center"
+      block: "center",
     })
     expect(spies.div1b.focus).toHaveBeenCalledWith({ preventScroll: true })
   })
@@ -100,7 +100,7 @@ describe("scrollToError", () => {
     expect(matchMedia).toHaveBeenCalledWith("(prefers-reduced-motion: reduce)")
     expect(spies.div1b.scrollIntoView).toHaveBeenCalledWith({
       behavior: "auto",
-      block:    "center"
+      block: "center",
     })
     expect(spies.div1b.focus).toHaveBeenCalledWith({ preventScroll: true })
   })

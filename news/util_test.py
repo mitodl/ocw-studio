@@ -1,5 +1,5 @@
 """Tests for utility functions for OCW News"""
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # noqa: N817
 
 import pytest
 
@@ -12,7 +12,7 @@ def test_rss_to_json(mocker):
     """
     item = {"a": "dictionary"}
     mocker.patch("news.util.serialize_item", return_value=item)
-    root = ET.fromstring("<rss> <item /> <item /> </rss>")
+    root = ET.fromstring("<rss> <item /> <item /> </rss>")  # noqa: S314
     output = rss_to_json(root)
     assert output == [item, item]
 
@@ -37,7 +37,7 @@ def test_serialize_item(has_image):
         https://www.ocw-openmatters.org/2020/12/09/chalk-radio-podcast
         </ns4:commentRss>
     </item></rss>"""
-    item = ET.fromstring(example_item)
+    item = ET.fromstring(example_item)  # noqa: S314
 
     output = serialize_item(item.find("item"))
     assert output["title"] == {
@@ -54,17 +54,20 @@ def test_serialize_item(has_image):
 
 
 @pytest.mark.parametrize(
-    "input_url, output_url",
+    ("input_url", "output_url"),
     [
-        [
+        [  # noqa: PT007
             "https://www.ocw-openmatters.org/wp-content/uploads/2014/09/Open_Matters_Blog_Placeholder_Image-01-150x150.png",
             "https://www.ocw-openmatters.org/wp-content/uploads/2014/09/Open_Matters_Blog_Placeholder_Image-01.png",
         ],
-        [
+        [  # noqa: PT007
             "https://www.ocw-openmatters.org/wp-content/uploads/2014/09/Open_Matters_Blog_Placeholder_Image-01-150x150.jpg",
             "https://www.ocw-openmatters.org/wp-content/uploads/2014/09/Open_Matters_Blog_Placeholder_Image-01.jpg",
         ],
-        ["https://example.com/image.jpg", "https://example.com/image.jpg"],
+        [  # noqa: PT007
+            "https://example.com/image.jpg",
+            "https://example.com/image.jpg",
+        ],
     ],
 )
 def test_get_original_image_link(input_url, output_url):

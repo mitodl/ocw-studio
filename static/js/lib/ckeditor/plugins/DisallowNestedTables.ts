@@ -1,7 +1,7 @@
 import { Editor } from "@ckeditor/ckeditor5-core"
 import {
   SchemaContext,
-  SchemaCompiledItemDefinition
+  SchemaCompiledItemDefinition,
 } from "@ckeditor/ckeditor5-engine/src/model/schema"
 
 // based on https://ckeditor.com/docs/ckeditor5/latest/features/table.html#disallow-nesting-tables
@@ -10,7 +10,7 @@ export default function DisallowNestedTables(editor: Editor): void {
     // @ts-expect-error The CKEditor docs return undefined in the check, maybe their types are wrong?
     (
       context: SchemaContext,
-      childDefinition: SchemaCompiledItemDefinition
+      childDefinition: SchemaCompiledItemDefinition,
     ): boolean | undefined => {
       if (
         childDefinition.name === "table" &&
@@ -19,6 +19,6 @@ export default function DisallowNestedTables(editor: Editor): void {
         return false
       }
       return undefined
-    }
+    },
   )
 }

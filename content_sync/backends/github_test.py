@@ -1,4 +1,4 @@
-""" github backend tests """
+"""github backend tests"""
 from base64 import b64encode
 from types import SimpleNamespace
 
@@ -13,16 +13,15 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
 
-
 pytestmark = pytest.mark.django_db
 
 # pylint:disable=redefined-outer-name
 
 
-@pytest.fixture
+@pytest.fixture()
 def github(settings, mocker, mock_branches):
     """Create a github backend for a website"""
-    settings.GIT_TOKEN = "faketoken"
+    settings.GIT_TOKEN = "faketoken"  # noqa: S105
     settings.GIT_ORGANIZATION = "fake_org"
     mock_github_api = mocker.patch(
         "content_sync.backends.github.GithubApiWrapper",
@@ -35,12 +34,12 @@ def github(settings, mocker, mock_branches):
     WebsiteContentFactory.create_batch(5, website=website)
     backend = GithubBackend(website)
     backend.api = mock_github_api
-    yield SimpleNamespace(
+    return SimpleNamespace(
         backend=backend, api=mock_github_api, repo=mock_repo, branches=mock_branches
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def patched_file_deserialize(mocker):
     """Patches function that deserializes file contents to website content"""
     return mocker.patch(
@@ -200,12 +199,10 @@ def test_sync_all_content_to_db(mocker, github, patched_file_deserialize, ref, p
         file_contents=mocker.ANY,
     )
     assert all(
-        [
-            sync_state.is_synced is (ref is NotSet)
-            for sync_state in ContentSyncState.objects.filter(
-                content__in=website_contents[0:expected_sync_count]
-            )
-        ]
+        sync_state.is_synced is (ref is NotSet)
+        for sync_state in ContentSyncState.objects.filter(
+            content__in=website_contents[0:expected_sync_count]
+        )
     )
     assert github.backend.website.websitecontent_set.count() == (
         2 if ref is NotSet and not path else 5

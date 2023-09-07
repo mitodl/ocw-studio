@@ -9,7 +9,7 @@ import { siteApiActionUrl, siteApiDetailUrl } from "../lib/urls"
 import { assertInstanceOf, assertNotNil, shouldIf } from "../test_util"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import IntegrationTestHelperOld, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 
 import App from "../pages/App"
@@ -55,30 +55,30 @@ describe("PublishDrawer", () => {
     website = {
       ...makeWebsiteDetail(),
       has_unpublished_draft: true,
-      has_unpublished_live:  true,
-      is_admin:              true,
-      url_path:              "mysite-fall-2025"
+      has_unpublished_live: true,
+      is_admin: true,
+      url_path: "mysite-fall-2025",
     }
     refreshWebsiteStub = helper.mockGetRequest(
       siteApiDetailUrl.param({ name: website.name }).toString(),
-      website
+      website,
     )
     render = helper.configureRenderer(
       PublishDrawer,
       {
         website,
-        visibility:       true,
-        toggleVisibility: toggleVisibilityStub
+        visibility: true,
+        toggleVisibility: toggleVisibilityStub,
       },
       {
         entities: {},
-        queries:  {}
-      }
+        queries: {},
+      },
     )
 
     helper.mockGetRequest(
       siteApiDetailUrl.param({ name: website.name }).toString(),
-      website
+      website,
     )
   })
 
@@ -88,25 +88,25 @@ describe("PublishDrawer", () => {
 
   describe.each([
     {
-      action:             "staging",
-      api:                "preview",
-      unpublishedField:   "has_unpublished_draft",
-      label:              "Staging",
-      urlField:           "draft_url",
-      publishDateField:   "draft_publish_date",
+      action: "staging",
+      api: "preview",
+      unpublishedField: "has_unpublished_draft",
+      label: "Staging",
+      urlField: "draft_url",
+      publishDateField: "draft_publish_date",
       publishStatusField: "draft_publish_status",
-      idx:                0
+      idx: 0,
     },
     {
-      action:             "production",
-      api:                "publish",
-      unpublishedField:   "has_unpublished_live",
-      label:              "Production",
-      urlField:           "live_url",
-      publishDateField:   "publish_date",
+      action: "production",
+      api: "publish",
+      unpublishedField: "has_unpublished_live",
+      label: "Production",
+      urlField: "live_url",
+      publishDateField: "publish_date",
       publishStatusField: "live_publish_status",
-      idx:                1
-    }
+      idx: 1,
+    },
   ])(
     "$action",
     ({
@@ -117,18 +117,18 @@ describe("PublishDrawer", () => {
       urlField,
       publishDateField,
       publishStatusField,
-      idx
+      idx,
     }) => {
-      [true, false].forEach(visible => {
+      ;[true, false].forEach((visible) => {
         it(`renders inside a Modal when visibility=${visible}`, async () => {
           const { wrapper } = await render({ visibility: visible })
           expect(wrapper.find("Modal").prop("isOpen")).toEqual(visible)
           expect(wrapper.find("Modal").prop("toggle")).toEqual(
-            toggleVisibilityStub
+            toggleVisibilityStub,
           )
           if (visible) {
             expect(wrapper.find("ModalHeader").prop("toggle")).toEqual(
-              toggleVisibilityStub
+              toggleVisibilityStub,
             )
           }
         })
@@ -140,17 +140,17 @@ describe("PublishDrawer", () => {
         wrapper.update()
         expect(wrapper.find(".publish-option-description").text()).toContain(
           `Last updated: ${moment(website[publishDateField]).format(
-            "dddd, MMMM D h:mma ZZ"
-          )}`
+            "dddd, MMMM D h:mma ZZ",
+          )}`,
         )
         expect(wrapper.find(".publish-option-description a").prop("href")).toBe(
-          website[urlField]
+          website[urlField],
         )
         expect(
-          wrapper.find(".publish-option-description a").prop("target")
+          wrapper.find(".publish-option-description a").prop("target"),
         ).toBe("_blank")
         expect(wrapper.find(".publish-option-description a").text()).toBe(
-          website[urlField]
+          website[urlField],
         )
       })
 
@@ -159,13 +159,13 @@ describe("PublishDrawer", () => {
         await simulateClickRadio(wrapper, idx)
         wrapper.update()
         expect(wrapper.find("PublishStatusIndicator").prop("status")).toBe(
-          website[publishStatusField]
+          website[publishStatusField],
         )
         expect(wrapper.find(".publish-option-description a").prop("href")).toBe(
-          website[urlField]
+          website[urlField],
         )
         expect(wrapper.find(".publish-option-description a").text()).toBe(
-          website[urlField]
+          website[urlField],
         )
       })
 
@@ -175,7 +175,7 @@ describe("PublishDrawer", () => {
         await simulateClickRadio(wrapper, idx)
         wrapper.update()
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          "Last updated: never published"
+          "Last updated: never published",
         )
       })
 
@@ -198,7 +198,7 @@ describe("PublishDrawer", () => {
         website["is_admin"] = false
         const { wrapper } = await render()
         expect(wrapper.find(`#publish-${action}`).exists()).toBe(
-          action === "staging" ? true : false
+          action === "staging" ? true : false,
         )
       })
 
@@ -208,19 +208,19 @@ describe("PublishDrawer", () => {
 
         wrapper.update()
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          "You have unpublished changes."
+          "You have unpublished changes.",
         )
       })
-      ;[[], ["error 1", "error2"]].forEach(warnings => {
+      ;[[], ["error 1", "error2"]].forEach((warnings) => {
         it(`${shouldIf(
-          warnings && !isEmpty(warnings)
+          warnings && !isEmpty(warnings),
         )} render a warning about missing content`, async () => {
           website["content_warnings"] = warnings
           const { wrapper } = await render()
           const warningText = wrapper.find(".publish-warnings")
           expect(warningText.exists()).toBe(!isEmpty(warnings))
-          warnings.forEach(warning =>
-            expect(warningText.text()).toContain(warning)
+          warnings.forEach((warning) =>
+            expect(warningText.text()).toContain(warning),
           )
         })
       })
@@ -229,19 +229,19 @@ describe("PublishDrawer", () => {
         const actionStub = helper.mockPostRequest(
           siteApiActionUrl
             .param({
-              name:   website.name,
-              action: api
+              name: website.name,
+              action: api,
             })
             .toString(),
           {
-            url_path: website.url_path
-          }
+            url_path: website.url_path,
+          },
         )
         const { wrapper } = await render()
         await simulateClickPublish(wrapper, action)
         wrapper.update()
         expect(
-          wrapper.find("PublishForm").find(".btn-publish").prop("disabled")
+          wrapper.find("PublishForm").find(".btn-publish").prop("disabled"),
         ).toBeFalsy()
         await act(async () => {
           wrapper.find("PublishForm").find(".btn-publish").simulate("submit")
@@ -252,37 +252,37 @@ describe("PublishDrawer", () => {
           "POST",
           {
             body: {
-              url_path: website.url_path
+              url_path: website.url_path,
             },
-            headers:     { "X-CSRFTOKEN": "" },
-            credentials: undefined
-          }
+            headers: { "X-CSRFTOKEN": "" },
+            credentials: undefined,
+          },
         )
         sinon.assert.calledOnceWithExactly(
           refreshWebsiteStub,
           `/api/websites/${website.name}/`,
           "GET",
           {
-            body:        undefined,
-            headers:     undefined,
-            credentials: undefined
-          }
+            body: undefined,
+            headers: undefined,
+            credentials: undefined,
+          },
         )
         sinon.assert.calledOnceWithExactly(toggleVisibilityStub)
       })
-    }
+    },
   )
 })
 
 describe.each([
   {
     publishToLabel: "Production",
-    api:            "publish"
+    api: "publish",
   },
   {
     publishToLabel: "Staging",
-    api:            "preview"
-  }
+    api: "preview",
+  },
 ])("Publishing Drawer Errors ($publishToLabel)", ({ publishToLabel, api }) => {
   const setup = (websiteDetails: Partial<Website> = {}) => {
     const website = makeWebsiteDetail({ is_admin: true, ...websiteDetails })
@@ -313,7 +313,7 @@ describe.each([
     act(() => form.submit())
     await waitFor(() => {
       expect(dialog).toHaveTextContent(
-        "We apologize, there was a problem publishing your site."
+        "We apologize, there was a problem publishing your site.",
       )
     })
     result.unmount()
@@ -322,7 +322,7 @@ describe.each([
   it("renders a specific error for url issues", async () => {
     const { user, result, setPublishResult } = setup({
       publish_date: null,
-      url_path:     "some_path_in_use"
+      url_path: "some_path_in_use",
     })
     const dialog = await screen.findByRole("dialog")
     const envButton = await dom.findByText(dialog, publishToLabel)
@@ -339,7 +339,7 @@ describe.each([
 
     await waitFor(() => {
       expect(dialog).toHaveTextContent(
-        "We apologize, there was a problem publishing your site."
+        "We apologize, there was a problem publishing your site.",
       )
     })
     const errorMsg = await dom.findByText(dialog, "Some url error")

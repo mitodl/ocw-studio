@@ -13,18 +13,18 @@ type NonNullableProps<T, K extends keyof T> = T & {
  */
 export const hasNotNilProp =
   <T, K extends keyof T>(key: K) =>
-    (obj: T): obj is NonNullableProps<T, K> => {
-      return obj[key] !== undefined && obj[key] !== null
-    }
+  (obj: T): obj is NonNullableProps<T, K> => {
+    return obj[key] !== undefined && obj[key] !== null
+  }
 
 /**
  * Return a predicate `obj => boolean` that asserts `obj[key]` is truthy
  */
 export const hasTruthyProp =
   <T, K extends keyof T>(key: K) =>
-    (obj: T): obj is NonNullableProps<T, K> => {
-      return !!obj[key]
-    }
+  (obj: T): obj is NonNullableProps<T, K> => {
+    return !!obj[key]
+  }
 
 /**
  * Type predicate that asserts value is not null or undefined.

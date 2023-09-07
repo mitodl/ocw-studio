@@ -1,4 +1,4 @@
-""" Content sync task tests """
+"""Content sync task tests"""
 import os
 from datetime import timedelta
 
@@ -8,7 +8,7 @@ from factory.django import mute_signals
 from github.GithubException import RateLimitExceededException
 from mitol.common.utils import now_in_utc
 from moto import mock_s3
-from pytest import fixture
+from pytest import fixture  # noqa: PT013
 from requests import HTTPError
 
 from content_sync import tasks
@@ -30,13 +30,12 @@ from websites.constants import (
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 
-
 pytestmark = pytest.mark.django_db
 
 # pylint:disable=redefined-outer-name
 
 
-@fixture
+@fixture()
 def api_mock(mocker, settings):
     """Return a mocked content_sync.tasks.api, and set the backend"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
@@ -44,7 +43,7 @@ def api_mock(mocker, settings):
     return mocker.patch("content_sync.tasks.api")
 
 
-@fixture
+@fixture()
 def log_mock(mocker):
     """Return a mocked log object"""
     return mocker.patch("content_sync.tasks.log")
@@ -182,7 +181,9 @@ def test_sync_all_websites_rate_limit_low(mocker, settings, check_limit):
     assert sleep_mock.call_count == (2 if check_limit else 0)
 
 
-@pytest.mark.parametrize("calls_left, use_default_sleep", [[5, False], [5000, True]])
+@pytest.mark.parametrize(
+    ("calls_left", "use_default_sleep"), [[5, False], [5000, True]]  # noqa: PT007
+)
 def test_sync_all_websites_rate_limit_sleep_length(
     mocker, settings, calls_left, use_default_sleep
 ):
@@ -282,8 +283,8 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
 @pytest.mark.parametrize("create_backend", [True, False])
 @pytest.mark.parametrize("unpause", [True, False])
 @pytest.mark.parametrize("hugo_args", [None, "--baseURL /"])
-@pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
-def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
+@pytest.mark.parametrize(("chunk_size", "chunks"), [[3, 1], [2, 2]])  # noqa: PT007
+def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument  # noqa: PLR0913
     mocker, mocked_celery, create_backend, unpause, hugo_args, chunk_size, chunks
 ):
     """upsert_pipelines calls upsert_pipeline_batch with correct arguments"""
@@ -317,7 +318,7 @@ def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
 def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
     settings, mocker, mocked_celery, unpause
 ):
-    """calls upsert_theme_assets_pipeline and unpauses if asked"""
+    """Calls upsert_theme_assets_pipeline and unpauses if asked"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_pipeline_unpause = mocker.patch(
@@ -340,7 +341,7 @@ def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
 @pytest.mark.parametrize("unpause", [True, False])
 @pytest.mark.parametrize("hugo_args", [None, "--baseURL /"])
 @pytest.mark.parametrize("check_limit", [True, False])
-def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments
+def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # noqa: PLR0913
     mocker, settings, create_backend, unpause, hugo_args, check_limit
 ):
     """upsert_website_pipeline_batch should make the expected function calls"""
@@ -378,10 +379,10 @@ def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments
 
 @pytest.mark.parametrize("prepublish", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-@pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
+@pytest.mark.parametrize(("chunk_size", "chunks"), [[3, 1], [2, 2]])  # noqa: PT007
 @pytest.mark.parametrize("has_mass_build", [True, False])
 @pytest.mark.parametrize("no_mass_build", [True, False])
-def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments
+def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments  # noqa: PLR0913
     mocker,
     mocked_celery,
     api_mock,
@@ -459,15 +460,20 @@ def test_publish_website_batch(mocker, version, prepublish, trigger):
 
 
 @pytest.mark.parametrize(
-    "old_status, new_status, should_check, should_update",
+    ("old_status", "new_status", "should_check", "should_update"),
     [
-        [PUBLISH_STATUS_SUCCEEDED, None, False, False],
-        [PUBLISH_STATUS_NOT_STARTED, PUBLISH_STATUS_STARTED, True, True],
-        [PUBLISH_STATUS_NOT_STARTED, PUBLISH_STATUS_NOT_STARTED, True, False],
+        [PUBLISH_STATUS_SUCCEEDED, None, False, False],  # noqa: PT007
+        [PUBLISH_STATUS_NOT_STARTED, PUBLISH_STATUS_STARTED, True, True],  # noqa: PT007
+        [  # noqa: PT007
+            PUBLISH_STATUS_NOT_STARTED,
+            PUBLISH_STATUS_NOT_STARTED,
+            True,
+            False,
+        ],
     ],
 )
 @pytest.mark.parametrize("pipeline", [None, "concourse"])
-def test_check_incomplete_publish_build_statuses(
+def test_check_incomplete_publish_build_statuses(  # noqa: PLR0913
     settings,
     mocker,
     api_mock,
@@ -802,7 +808,7 @@ def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
     # Fake the s3 settings
     settings.ENVIRONMENT = "test"
     settings.AWS_ACCESS_KEY_ID = "abc"
-    settings.AWS_SECRET_ACCESS_KEY = "abc"
+    settings.AWS_SECRET_ACCESS_KEY = "abc"  # noqa: S105
     settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket"
     settings.PREVIEW_BUCKET_NAME = "preview_bucket"
     settings.PUBLISH_BUCKET_NAME = "publish_bucket"
@@ -825,9 +831,9 @@ def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
         "https://ia800303.us.archive.org/download/",
     ]
     for index, site in enumerate(websites):
-        print(index)
-        print(domain_prefixes[index])
-        s3_path = os.path.join(prefix, site.name).lstrip("/")
+        print(index)  # noqa: T201
+        print(domain_prefixes[index])  # noqa: T201
+        s3_path = os.path.join(prefix, site.name).lstrip("/")  # noqa: PTH118
         WebsiteContentFactory.create(
             website=site,
             type="resource",
@@ -840,16 +846,18 @@ def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
         test_bucket.put_object(Key=f"{s3_path}/test_video.mp4")
     tasks.backpopulate_archive_videos_batch(test_bucket_name, prefix, website_names)
     # Assert that the proper calls were done to copy the video into the various S3 locations
-    # mock_get_boto_3_resource.assert_called_once_with("s3")
+    # mock_get_boto_3_resource.assert_called_once_with("s3")  # noqa: ERA001
     extra_args = {"ACL": "public-read"}
     for site in websites:
-        s3_path = os.path.join(prefix, site.name).lstrip("/")
+        s3_path = os.path.join(prefix, site.name).lstrip("/")  # noqa: PTH118
         source_arg = {
             "Bucket": test_bucket_name,
             "Key": f"{s3_path}/test_video.mp4",
         }
-        online_destination_s3_path = os.path.join(site.url_path, "test_video.mp4")
-        offline_destination_s3_path = os.path.join(
+        online_destination_s3_path = os.path.join(  # noqa: PTH118
+            site.url_path, "test_video.mp4"
+        )  # noqa: PTH118, RUF100
+        offline_destination_s3_path = os.path.join(  # noqa: PTH118
             site.url_path, "static_resources", "test_video.mp4"
         )
         mock_s3_resource.meta.client.copy.assert_any_call(
@@ -885,7 +893,7 @@ def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
 
 
 @pytest.mark.parametrize("prefix", ["/a/prefix", ""])
-@pytest.mark.parametrize("chunk_size, chunks", [[3, 1], [2, 2]])
+@pytest.mark.parametrize(("chunk_size", "chunks"), [[3, 1], [2, 2]])  # noqa: PT007
 def test_backpopulate_archive_videos(  # pylint:disable=too-many-arguments, unused-argument
     mocker, mocked_celery, prefix, chunk_size, chunks
 ):

@@ -6,7 +6,7 @@ from main.permissions import ReadonlyPermission
 
 
 @pytest.mark.parametrize(
-    "method,result",
+    ("method", "result"),
     [("GET", True), ("HEAD", True), ("OPTIONS", True), ("POST", False), ("PUT", False)],
 )
 def test_anonymous_readonly(mocker, method, result):

@@ -44,7 +44,7 @@ Vegetarians can prepare the same sauce without pancetta, and the result is a tas
 8.  Once drained, return the pasta to its pot or to the saucepan and mix quickly with the sauce on the low flame.
 9.  Serve and top with grated cheese!
 
-How much salt do you need to put in the boiling water for pasta?  
+How much salt do you need to put in the boiling water for pasta?
 Start with a small amount (1-2 spoonfuls.) After the pasta has cooked for a few minutes, taste it and decide whether you want to add more salt. In Italy we use coarse salt (sale grosso), but in the US fine (regular) salt is more common. Notice that if you use iodized salt you may need a little more because ... it is less salty :)
 
 {{< anchor "2" >}}{{< /anchor >}}_Pasta con i Broccoli_
@@ -72,7 +72,7 @@ _Directions:_
 6.  Once drained, return the pasta to its pot or to the saucepan and saute quickly over high heat.
 7.  Serve and top with grated cheese!
 
-  
+
 
 
 ----

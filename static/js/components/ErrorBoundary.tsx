@@ -6,7 +6,7 @@ const Fallback = () => (
 )
 
 const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({
-  children
+  children,
 }) => {
   return (
     <Sentry.ErrorBoundary fallback={<Fallback />}>

@@ -72,11 +72,11 @@ class WebsiteContentMarkdownCleaner:
 
     def __init__(self, rule: MarkdownCleanupRule):
         self.rule = rule
-        self.replacement_matches: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = (
+        self.replacement_matches: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = (  # noqa: E501
             []
         )
 
-    def store_match_data(
+    def store_match_data(  # noqa: PLR0913
         self,
         original_text: str,
         replacement: str,
@@ -106,7 +106,8 @@ class WebsiteContentMarkdownCleaner:
                 return None
             return get_dict_field(website_content.metadata, metadata_keypath)
 
-        raise ValueError(f"Unexpected field value: {field}")
+        msg = f"Unexpected field value: {field}"
+        raise ValueError(msg)
 
     @staticmethod
     def make_field_change(website_content: WebsiteContent, field: str, new_value: str):
@@ -118,13 +119,14 @@ class WebsiteContentMarkdownCleaner:
             set_dict_field(website_content.metadata, metadata_keypath, new_value)
             return
 
-        raise ValueError(f"Unexpected field value: {field}")
+        msg = f"Unexpected field value: {field}"
+        raise ValueError(msg)
 
     def update_website_content(self, wc: WebsiteContent):
         """
         Updates website_content's markdown and checksums in-place. Does not commit to
         database.
-        """
+        """  # noqa: D401
         changed = False
         for field in self.rule.fields:
             old_text = self.get_field_to_change(wc, field)
@@ -141,7 +143,7 @@ class WebsiteContentMarkdownCleaner:
     def write_matches_to_csv(self, path: str, only_changes):
         """Write matches and replacements to csv."""
 
-        with open(path, "w", newline="") as csvfile:
+        with open(path, "w", newline="") as csvfile:  # noqa: PTH123
             fieldnames = [
                 *self.csv_metadata_fieldnames,
                 *(f.name for f in fields(self.rule.ReplacementNotes)),

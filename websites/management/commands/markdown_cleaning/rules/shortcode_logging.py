@@ -8,7 +8,6 @@ from websites.management.commands.markdown_cleaning.shortcode_parser import (
 
 
 class ShortcodeLoggingRule(PyparsingRule):
-
     alias = "shortcode_logging"
 
     Parser = ShortcodeParser
@@ -19,7 +18,9 @@ class ShortcodeLoggingRule(PyparsingRule):
         num_args: int
         args: "list[str]"
 
-    def replace_match(self, s: str, l: int, toks, website_content):
+    def replace_match(
+        self, s: str, l: int, toks, website_content  # noqa: ARG002, E741
+    ):
         shortcode = toks.shortcode
         notes = self.ReplacementNotes(
             name=shortcode.name,

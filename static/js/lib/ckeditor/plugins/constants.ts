@@ -45,7 +45,7 @@ export const TABLE_ELS: TurndownService.TagName[] = [
   "td",
   "tr",
   "thead",
-  "tfoot"
+  "tfoot",
 ]
 
 export const CONTENT_TABLE_ELS = ["th", "td"]
@@ -83,5 +83,5 @@ export const LEGACY_SHORTCODES = [
   "simplecast",
   "sub",
   "sup",
-  "baseurl"
+  "baseurl",
 ]

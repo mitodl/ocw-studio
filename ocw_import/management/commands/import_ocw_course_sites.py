@@ -1,4 +1,4 @@
-""" Import OCW course sites and content via ocw2hugo output """
+"""Import OCW course sites and content via ocw2hugo output"""
 import pydoc
 
 from django.conf import settings
@@ -14,7 +14,7 @@ from ocw_import.tasks import import_ocw2hugo_courses
 class Command(WebsiteFilterCommand):
     """Import OCW course sites and content via ocw2hugo output"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -65,7 +65,7 @@ class Command(WebsiteFilterCommand):
             "--git_delete",
             dest="delete_from_git",
             action="store_true",
-            help="If included, delete any git repo files that don't match WebsiteContent filepaths",
+            help="If included, delete any git repo files that don't match WebsiteContent filepaths",  # noqa: E501
         )
 
     def handle(self, *args, **options):  # pylint:disable=too-many-locals
@@ -79,9 +79,8 @@ class Command(WebsiteFilterCommand):
         delete_from_git = options["delete_from_git"]
 
         if len(self.filter_list) < 1:
-            raise CommandError(
-                "This command cannot be run unfiltered.  Use the --filter or --filter-json argument to specify courses to import."
-            )
+            msg = "This command cannot be run unfiltered.  Use the --filter or --filter-json argument to specify courses to import."  # noqa: E501
+            raise CommandError(msg)
 
         self.stdout.write(f"Fetching course paths from the '{bucket_name}' bucket...")
         course_paths = list(
@@ -97,7 +96,7 @@ class Command(WebsiteFilterCommand):
         confirmation = input(
             f"""WARNING: You are about to destructively import {len(course_paths)} courses from the '{bucket_name}' bucket.
 Before you do this, it's recommended that you run with the --list argument to see which courses will be affected by your filter.
-Would you like to proceed with the import? (y/n): """
+Would you like to proceed with the import? (y/n): """  # noqa: E501
         )
         if confirmation != "y":
             self.stdout.write("Aborting...")
@@ -114,9 +113,7 @@ Would you like to proceed with the import? (y/n): """
         self.stdout.write(f"Starting task {task}...")
         task.get()
         total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(
-            "OCW course import finished, took {} seconds".format(total_seconds)
-        )
+        self.stdout.write(f"OCW course import finished, took {total_seconds} seconds")
 
         if settings.CONTENT_SYNC_BACKEND and not options["skip_sync"]:
             self.stdout.write("Syncing all unsynced courses to the designated backend")
@@ -128,6 +125,4 @@ Would you like to proceed with the import? (y/n): """
             self.stdout.write(f"Starting task {task}...")
             task.get()
             total_seconds = (now_in_utc() - start).total_seconds()
-            self.stdout.write(
-                "Backend sync finished, took {} seconds".format(total_seconds)
-            )
+            self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")

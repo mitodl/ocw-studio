@@ -1,21 +1,20 @@
-import boto3
-from django.conf import settings
+from django.conf import settings  # noqa: INP001
 from django.core.management import BaseCommand
 from django.db.models import Q
 
 from content_sync.tasks import sync_website_content
 from gdrive_sync.models import DriveFile
-from main.s3_utils import get_boto3_client, get_boto3_options
+from main.s3_utils import get_boto3_client
 from websites.constants import WEBSITE_SOURCE_STUDIO
 from websites.models import Website, WebsiteContent
 
 
 class Command(BaseCommand):
-    """Moves nonvideo files mistakenly placed in a `Website.short_id` path to a `Website.name` path"""
+    """Moves nonvideo files mistakenly placed in a `Website.short_id` path to a `Website.name` path"""  # noqa: E501
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa: ARG002
         s3 = get_boto3_client("s3")
         for site in Website.objects.filter(source=WEBSITE_SOURCE_STUDIO).values(
             "uuid", "name", "short_id"
@@ -55,9 +54,9 @@ class Command(BaseCommand):
                         if content:
                             content.file = new_s3_key
                             content.save()
-                    except Exception as exc:
+                    except Exception as exc:  # noqa: BLE001
                         self.stderr.write(
-                            f"Error copying {old_s3_key} to {new_s3_key}: {str(exc)}"
+                            f"Error copying {old_s3_key} to {new_s3_key}: {exc!s}"
                         )
             sync_website_content.delay(site["name"])
 

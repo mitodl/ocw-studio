@@ -62,7 +62,7 @@ and, based on which option you choose:
     *   Option 3: add the radicchio (washed and finely chopped). When it gets soft, add the sausage (without skin, in small pieces) and turn up the heat. When the sausage is cooked, add the rice.
 4.  Toast the rice until it is lightly translucent.
 5.  (At this point you can add a glass of wine and wait until the alcohol evaporates.)
-6.  Turn down the heat to a simmer. Keep adding boiling water and DO NOT stir continuously. Season to taste with salt (you can also add  pepper and other spices)  
+6.  Turn down the heat to a simmer. Keep adding boiling water and DO NOT stir continuously. Season to taste with salt (you can also add  pepper and other spices)
     *   Option 1: fill a glass with boiling water and mix the saffron powder. Add it to the rice.
 7.  Continue to add water and stir from time to time until the rice is tender (but not too tender, taste it!). It should take about 15-20 minutes.
 8.  It is time for the _mantecatura_: take off the heat, stir butter and some grated parmesan.

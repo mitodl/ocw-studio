@@ -18,7 +18,6 @@ from videos.constants import (
 )
 from videos.models import Video, VideoFile, VideoJob
 
-
 log = logging.getLogger(__name__)
 
 VIDEO_DOWNLOAD_PATTERN = "_360p_16_9."
@@ -56,20 +55,21 @@ def create_media_convert_job(video: Video):
         region_name=settings.AWS_REGION,
         endpoint_url=settings.VIDEO_S3_TRANSCODE_ENDPOINT,
     )
-    with open(
-        os.path.join(settings.BASE_DIR, f"{VideoApp.name}/config/mediaconvert.json"),
-        "r",
+    with open(  # noqa: PTH123
+        os.path.join(  # noqa: PTH118
+            settings.BASE_DIR, f"{VideoApp.name}/config/mediaconvert.json"
+        ),  # noqa: PTH118, RUF100
         encoding="utf-8",
     ) as job_template:
         job_dict = json.loads(job_template.read())
         job_dict["UserMetadata"]["filter"] = settings.VIDEO_TRANSCODE_QUEUE
         job_dict[
             "Queue"
-        ] = f"arn:aws:mediaconvert:{settings.AWS_REGION}:{settings.AWS_ACCOUNT_ID}:queues/{settings.VIDEO_TRANSCODE_QUEUE}"
+        ] = f"arn:aws:mediaconvert:{settings.AWS_REGION}:{settings.AWS_ACCOUNT_ID}:queues/{settings.VIDEO_TRANSCODE_QUEUE}"  # noqa: E501
         job_dict[
             "Role"
         ] = f"arn:aws:iam::{settings.AWS_ACCOUNT_ID}:role/{settings.AWS_ROLE_NAME}"
-        destination = os.path.splitext(
+        destination = os.path.splitext(  # noqa: PTH122
             video.source_key.replace(
                 source_prefix,
                 settings.VIDEO_S3_TRANSCODE_PREFIX,
@@ -93,7 +93,7 @@ def process_video_outputs(video: Video, output_group_details: dict):
         for output_detail in group_detail.get("outputDetails", []):
             for path in output_detail.get("outputFilePaths", []):
                 s3_key = "/".join(path.replace("s3://", "").split("/")[1:])
-                basename, _ = os.path.splitext(s3_key)
+                basename, _ = os.path.splitext(s3_key)  # noqa: PTH122
                 VideoFile.objects.update_or_create(
                     video=video,
                     s3_key=s3_key,
@@ -110,7 +110,7 @@ def process_video_outputs(video: Video, output_group_details: dict):
 
 
 def update_video_job(video_job: VideoJob, results: dict):
-    """Update a VideoJob and associated Video, VideoFiles based on MediaConvert results"""
+    """Update a VideoJob and associated Video, VideoFiles based on MediaConvert results"""  # noqa: E501
     video_job.job_output = results
     status = results.get("status")
     video = video_job.video
@@ -118,7 +118,7 @@ def update_video_job(video_job: VideoJob, results: dict):
         video_job.status = VideoJobStatus.COMPLETE
         try:
             process_video_outputs(video, results.get("outputGroupDetails"))
-        except:  # pylint:disable=bare-except
+        except:  # pylint:disable=bare-except  # noqa: E722
             log.exception("Error processing video outputs for job %s", video_job.job_id)
     elif status == "ERROR":
         video.status = VideoStatus.FAILED

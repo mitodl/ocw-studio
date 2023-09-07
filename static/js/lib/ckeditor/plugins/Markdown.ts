@@ -9,7 +9,7 @@ import { ATTRIBUTE_REGEX } from "./constants"
 import {
   resetTurndownService,
   turndownService,
-  turndownHtmlHelpers
+  turndownHtmlHelpers,
 } from "../turndown"
 import Turndown from "turndown"
 import { buildAttrsString } from "./util"
@@ -45,7 +45,7 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
   constructor(
     document: DocumentFragment,
     md2html: (s: string) => string,
-    html2md: (s: string) => string
+    html2md: (s: string) => string,
   ) {
     super(document)
 
@@ -92,14 +92,14 @@ export default class Markdown extends MarkdownConfigPlugin {
       this.getMarkdownConfig()
 
     const converter = new Converter({
-      extensions: showdownExtensions
+      extensions: showdownExtensions,
     })
 
     converter.setFlavor("github")
 
     resetTurndownService()
     turndownRules.forEach(({ name, rule }) =>
-      turndownService.addRule(name, rule)
+      turndownService.addRule(name, rule),
     )
     this.turndownRules = [...turndownService.rules.array]
     this.allowedHtml = allowedHtml
@@ -107,11 +107,11 @@ export default class Markdown extends MarkdownConfigPlugin {
     function formatTableCell(
       el: string,
       html: string,
-      contents: string
+      contents: string,
     ): string {
       const attrs = html.match(ATTRIBUTE_REGEX)
       return `<${el}${buildAttrsString(attrs)}>${converter.makeHtml(
-        contents
+        contents,
       )}</${el}>`
     }
 
@@ -119,10 +119,10 @@ export default class Markdown extends MarkdownConfigPlugin {
       return converter
         .makeHtml(md)
         .replace(TD_CONTENT_REGEX, (_match, contents) =>
-          formatTableCell("td", _match, contents)
+          formatTableCell("td", _match, contents),
         )
         .replace(TH_CONTENT_REGEX, (_match, contents) =>
-          formatTableCell("th", _match, contents)
+          formatTableCell("th", _match, contents),
         )
     }
 
@@ -141,7 +141,7 @@ export default class Markdown extends MarkdownConfigPlugin {
     editor.data.processor = new MarkdownDataProcessor(
       (editor.data as any).viewDocument,
       md2html,
-      html2md
+      html2md,
     ) as typeof HtmlDataProcessor
   }
 

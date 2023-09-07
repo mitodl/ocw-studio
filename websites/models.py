@@ -1,9 +1,9 @@
-""" websites models """
+"""websites models"""
 import json
 import logging
 import re
+from collections.abc import Iterator
 from hashlib import sha256
-from typing import Dict, Iterator, Tuple
 from urllib.parse import urljoin, urlparse
 from uuid import uuid4
 
@@ -44,25 +44,24 @@ from websites.utils import (
     set_dict_field,
 )
 
-
 log = logging.getLogger(__name__)
 
 
 def validate_yaml(value):
-    """Validator function to ensure that the value is YAML-formatted"""
+    """Validator function to ensure that the value is YAML-formatted"""  # noqa: D401
     try:
         yaml.load(value, Loader=yaml.SafeLoader)
     except yaml.YAMLError as exc:
-        raise ValidationError("Value must be YAML-formatted.") from exc
+        msg = "Value must be YAML-formatted."
+        raise ValidationError(msg) from exc
 
 
 def validate_slug(value):
-    """Validator function to ensure that the value is a properly-formatted slug"""
+    """Validator function to ensure that the value is a properly-formatted slug"""  # noqa: D401, E501
     slugified = slugify(value)
     if slugified != value:
-        raise ValidationError(
-            f"Value '{value}' is not a proper slug (slugified version: {slugified})"
-        )
+        msg = f"Value '{value}' is not a proper slug (slugified version: {slugified})"
+        raise ValidationError(msg)
 
 
 class WebsiteQuerySet(TimestampedModelQuerySet):
@@ -80,7 +79,7 @@ class Website(TimestampedModel):
     name = models.CharField(max_length=512, db_index=True, unique=True)
     short_id = models.CharField(max_length=100, db_index=True, unique=True, null=False)
     title = models.CharField(max_length=512, null=False, db_index=True)
-    source = models.CharField(
+    source = models.CharField(  # noqa: DJ001
         max_length=20,
         choices=zip(constants.WEBSITE_SOURCES, constants.WEBSITE_SOURCES),
         default=constants.WEBSITE_SOURCE_STUDIO,
@@ -95,7 +94,7 @@ class Website(TimestampedModel):
     publish_date = models.DateTimeField(null=True, blank=True)
     has_unpublished_live = models.BooleanField(default=True)
     latest_build_id_live = models.IntegerField(null=True, blank=True)
-    live_publish_status = models.CharField(
+    live_publish_status = models.CharField(  # noqa: DJ001
         max_length=20,
         blank=True,
         null=True,
@@ -114,7 +113,7 @@ class Website(TimestampedModel):
     has_unpublished_draft = models.BooleanField(default=True)
     latest_build_id_draft = models.IntegerField(null=True, blank=True)
     live_publish_status_updated_on = models.DateTimeField(null=True, blank=True)
-    draft_publish_status = models.CharField(
+    draft_publish_status = models.CharField(  # noqa: DJ001
         max_length=20,
         null=True,
         blank=True,
@@ -130,7 +129,7 @@ class Website(TimestampedModel):
     )
 
     # Unpublish fields
-    unpublish_status = models.CharField(
+    unpublish_status = models.CharField(  # noqa: DJ001
         max_length=20,
         blank=True,
         null=True,
@@ -149,7 +148,7 @@ class Website(TimestampedModel):
     URL path values should include the starter config prefix (ie "courses/") so that sites
     with a url_path of "courses/my-site-fall-2020" can coexist with "sites/my-site-fall-2020"
     without unique key violations being raised.
-    """
+    """  # noqa: E501
     url_path = models.CharField(max_length=2048, unique=True, blank=True, null=True)
 
     @property
@@ -158,8 +157,10 @@ class Website(TimestampedModel):
         return self.unpublish_status is not None
 
     # Google Drive fields
-    gdrive_folder = models.CharField(null=True, blank=True, max_length=64)
-    sync_status = models.CharField(null=True, blank=True, max_length=12)
+    gdrive_folder = models.CharField(  # noqa: DJ001
+        null=True, blank=True, max_length=64
+    )
+    sync_status = models.CharField(null=True, blank=True, max_length=12)  # noqa: DJ001
     synced_on = models.DateTimeField(null=True, blank=True)
     sync_errors = models.JSONField(null=True, blank=True)
 
@@ -180,11 +181,11 @@ class Website(TimestampedModel):
     @property
     def collaborators(self):
         """Get all site collaborators"""
-        return (
-            list(self.admin_group.user_set.all())
-            + [self.owner]
-            + list(self.editor_group.user_set.all())
-        )
+        return [
+            *list(self.admin_group.user_set.all()),
+            self.owner,
+            *list(self.editor_group.user_set.all()),
+        ]
 
     def get_site_root_path(self):
         """Get the site root url path"""
@@ -212,7 +213,7 @@ class Website(TimestampedModel):
         else:
             return urljoin(base_url, self.get_site_root_path())
 
-    def get_url_path(self, with_prefix=True):
+    def get_url_path(self, with_prefix=True):  # noqa: FBT002
         """Get the current/potential url path, with or without site prefix"""
         url_path = self.url_path
         if not url_path:
@@ -227,7 +228,7 @@ class Website(TimestampedModel):
             if root_path and not url_path.startswith(root_path):
                 url_path = self.assemble_full_url_path(url_path)
         elif url_path is not None:
-            url_path = re.sub(f"^{root_path}/", "", url_path, 1)
+            url_path = re.sub(f"^{root_path}/", "", url_path, 1)  # noqa: B034
         return url_path
 
     def assemble_full_url_path(self, path):
@@ -236,14 +237,14 @@ class Website(TimestampedModel):
             part.strip("/") for part in [self.get_site_root_path(), path] if part
         )
 
-    def url_path_from_metadata(self, metadata: Dict = None):
+    def url_path_from_metadata(self, metadata: dict | None = None):
         """Get the url path based on site config and metadata"""
         if self.starter is None:
             return None
         site_config = SiteConfig(self.starter.config)
         url_format = site_config.site_url_format
         if not url_format or self.publish_date:
-            # use name for published  sites or for any sites without a `url_path` in config.
+            # use name for published  sites or for any sites without a `url_path` in config.  # noqa: E501
             url_format = self.name
         elif url_format:
             for section in re.findall(r"(\[.+?\])+", site_config.site_url_format) or []:
@@ -255,7 +256,7 @@ class Website(TimestampedModel):
                     content = self.websitecontent_set.filter(type=section_type).first()
                     if content:
                         value = get_dict_field(content.metadata, section_field)
-                if not value:
+                if not value:  # noqa: SIM108
                     # Incomplete metadata required for url
                     value = section
                 else:
@@ -318,17 +319,19 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     text_id = models.CharField(
         max_length=36, null=False, blank=False, default=uuid_string, db_index=True
     )
-    title = models.CharField(max_length=512, null=True, blank=True, db_index=True)
-    type = models.CharField(max_length=24, blank=False, null=False)
+    title = models.CharField(  # noqa: DJ001
+        max_length=512, null=True, blank=True, db_index=True
+    )
+    type = models.CharField(max_length=24, blank=False, null=False)  # noqa: A003
     parent = models.ForeignKey(
         "self", null=True, blank=True, related_name="contents", on_delete=models.CASCADE
     )
-    markdown = models.TextField(null=True, blank=True)
+    markdown = models.TextField(null=True, blank=True)  # noqa: DJ001
     metadata = models.JSONField(null=True, blank=True)
     is_page_content = models.BooleanField(
         default=False,
         help_text=(
-            "If True, indicates that this content represents a navigable page, as opposed to some "
+            "If True, indicates that this content represents a navigable page, as opposed to some "  # noqa: E501
             "metadata, configuration, etc."
         ),
     )
@@ -337,7 +340,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         null=False,
         blank=True,
         default="",
-        help_text="The filename of the file that will be created from this object WITHOUT the file extension.",
+        help_text="The filename of the file that will be created from this object WITHOUT the file extension.",  # noqa: E501
     )
     dirpath = models.CharField(
         max_length=CONTENT_DIRPATH_MAX_LEN,
@@ -353,7 +356,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     )
 
     def calculate_checksum(self) -> str:
-        """Returns a calculated checksum of the content"""
+        """Returns a calculated checksum of the content"""  # noqa: D401
         return sha256(
             "\n".join(
                 [
@@ -369,7 +372,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         ).hexdigest()
 
     @property
-    def full_metadata(self) -> Dict:
+    def full_metadata(self) -> dict:
         """Return the metadata field with file upload included"""
         file_field = self.get_config_file_field()
         s3_path = self.website.s3_path
@@ -398,12 +401,13 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
                     modified = True
         return full_metadata if modified else self.metadata
 
-    def get_config_file_field(self) -> Dict:
+    def get_config_file_field(self) -> dict:
         """Get the site config file field for the object, if any"""
         site_config = SiteConfig(self.website.starter.config)
         content_config = site_config.find_item_by_name(self.type)
         if content_config:
             return site_config.find_file_field(content_config)
+        return None
 
     def save(self, **kwargs):  # pylint: disable=arguments-differ
         """Update dirty flags on save"""
@@ -428,7 +432,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
 
 
 class WebsiteStarter(TimestampedModel):
-    """Represents a starter project that contains config/templates/etc. for the desired static site"""
+    """Represents a starter project that contains config/templates/etc. for the desired static site"""  # noqa: E501
 
     path = models.CharField(
         max_length=256,
@@ -451,7 +455,7 @@ class WebsiteStarter(TimestampedModel):
         max_length=30,
         choices=WEBSITE_STARTER_STATUS_CHOICES,
         default=WebsiteStarterStatus.ACTIVE,
-        help_text=f"Starters with only {WEBSITE_STARTER_STATUS_CHOICES[WebsiteStarterStatus.ACTIVE]} and {WEBSITE_STARTER_STATUS_CHOICES[WebsiteStarterStatus.DEFAULT]} status will be shown while creating a new site.",
+        help_text=f"Starters with only {WEBSITE_STARTER_STATUS_CHOICES[WebsiteStarterStatus.ACTIVE]} and {WEBSITE_STARTER_STATUS_CHOICES[WebsiteStarterStatus.DEFAULT]} status will be shown while creating a new site.",  # noqa: E501
     )
     source = models.CharField(
         max_length=15,
@@ -459,11 +463,11 @@ class WebsiteStarter(TimestampedModel):
         choices=zip(constants.STARTER_SOURCES, constants.STARTER_SOURCES),
         db_index=True,
     )
-    commit = models.CharField(
+    commit = models.CharField(  # noqa: DJ001
         max_length=40,
         blank=True,
         null=True,
-        help_text="Commit hash for the repo (if this commit came from a Github starter repo).",
+        help_text="Commit hash for the repo (if this commit came from a Github starter repo).",  # noqa: E501
     )
     config = models.JSONField(
         null=False, help_text="Site config describing content types, widgets, etc."
@@ -487,7 +491,7 @@ class WebsiteStarter(TimestampedModel):
         )
 
     @staticmethod
-    def iter_all_config_items(website: Website) -> Iterator[Tuple[bool, ConfigItem]]:
+    def iter_all_config_items(website: Website) -> Iterator[tuple[bool, ConfigItem]]:
         """
         Yields ConfigItem for all starters.
 
@@ -497,11 +501,10 @@ class WebsiteStarter(TimestampedModel):
         Yields:
             Iterator[Tuple[bool, ConfigItem]]: A generator where yield[0] indicates whether or not the ConfigItem
                 yield[1] belongs to the starter of `website`.
-        """
+        """  # noqa: E501, D401
         if website.starter is None:
-            raise ValidationError(
-                f"Website {website} does not have a starter. Cannot iterate config."
-            )
+            msg = f"Website {website} does not have a starter. Cannot iterate config."
+            raise ValidationError(msg)
 
         all_starters = WebsiteStarter.objects.all()
 

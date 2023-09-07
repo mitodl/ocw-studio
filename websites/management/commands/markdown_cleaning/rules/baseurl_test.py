@@ -18,14 +18,14 @@ from websites.management.commands.markdown_cleaning.utils import (
 
 
 def get_markdown_cleaner(website_contents):
-    """Convenience to get rule-specific cleaner"""
+    """Convenience to get rule-specific cleaner"""  # noqa: D401
     with patch_website_contents_all(website_contents):
         rule = BaseurlReplacementRule()
         return WebsiteContentMarkdownCleaner(rule)
 
 
 @pytest.mark.parametrize(
-    ["markdown", "expected_markdown"],
+    ("markdown", "expected_markdown"),
     [
         (
             # standard link on same line as baseurl link
@@ -91,7 +91,7 @@ def test_baseurl_replacer_specific_title_replacements(markdown, expected_markdow
 
 
 @pytest.mark.parametrize(
-    ["url", "content_relative_dirpath", "filename"],
+    ("url", "content_relative_dirpath", "filename"),
     [
         (
             # url is to an index file, not to dirpath/filename
@@ -224,7 +224,7 @@ def test_baseurl_replacer_replaces_baseurl_links():
 
 
 @pytest.mark.parametrize(
-    "website_uuid, should_markdown_change",
+    ("website_uuid", "should_markdown_change"),
     [("website-uuid-111", True), ("website-uuid-222", False)],
 )
 @allow_invalid_uuids()

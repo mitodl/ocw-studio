@@ -12,7 +12,6 @@ def set_website_title(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0011_default_website_source"),
     ]

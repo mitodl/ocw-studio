@@ -12,9 +12,9 @@ require("react-hot-loader/patch")
 __webpack_public_path__ = SETTINGS.public_path // eslint-disable-line no-undef, camelcase
 
 Sentry.init({
-  dsn:         SETTINGS.sentry_dsn,
-  release:     SETTINGS.release_version,
-  environment: SETTINGS.environment
+  dsn: SETTINGS.sentry_dsn,
+  release: SETTINGS.release_version,
+  environment: SETTINGS.environment,
 })
 
 const rootEl = document.getElementById("container")
@@ -24,14 +24,14 @@ const renderApp = (Component: ComponentType<RootProps>): void => {
     <AppContainer>
       <Component store={store} />
     </AppContainer>,
-    rootEl
+    rootEl,
   )
 }
 
 renderApp(Root)
 
 if ((module as any).hot) {
-  (module as any).hot.accept("./Root", () => {
+  ;(module as any).hot.accept("./Root", () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const RootNext = require("./Root").default
     renderApp(RootNext)

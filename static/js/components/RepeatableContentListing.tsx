@@ -16,14 +16,14 @@ import {
   syncWebsiteContentMutation,
   websiteContentListingRequest,
   WebsiteContentListingResponse,
-  websiteStatusRequest
+  websiteStatusRequest,
 } from "../query-configs/websites"
 import { getWebsiteContentListingCursor } from "../selectors/websites"
 
 import {
   ContentListingParams,
   RepeatableConfigItem,
-  WebsiteContentListItem
+  WebsiteContentListItem,
 } from "../types/websites"
 import { StudioList, StudioListItem } from "./StudioList"
 import { useURLParamFilter, usePagination } from "../hooks/search"
@@ -49,29 +49,29 @@ export default function RepeatableContentListing(props: {
       const params: ContentListingParams = {
         name: website.name,
         type: configItem.name,
-        offset
+        offset,
       }
       if (searchString) {
         params.search = searchString
       }
       return params
     },
-    [website, configItem]
+    [website, configItem],
   )
 
   const { listingParams, searchInput, setSearchInput } =
     useURLParamFilter(getListingParams)
 
   const [, fetchWebsiteContentListing] = useRequest(
-    websiteContentListingRequest(listingParams, false, false)
+    websiteContentListingRequest(listingParams, false, false),
   )
 
   const listing: WebsiteContentListingResponse = useSelector(
-    getWebsiteContentListingCursor
+    getWebsiteContentListingCursor,
   )(listingParams)
 
   const [{ isPending: syncIsPending }, syncWebsiteContent] = useMutation(() =>
-    syncWebsiteContentMutation(website.name)
+    syncWebsiteContentMutation(website.name),
   )
 
   useInterval(
@@ -86,30 +86,30 @@ export default function RepeatableContentListing(props: {
       ) {
         const response = await store.dispatch(
           // This will update the DriveSyncStatusIndicator
-          requestAsync(websiteStatusRequest(website.name))
+          requestAsync(websiteStatusRequest(website.name)),
         )
         if (
           response.body.sync_status &&
           !GOOGLE_DRIVE_SYNC_PROCESSING_STATES.includes(
-            response.body.sync_status
+            response.body.sync_status,
           )
         ) {
           // This will update the content listing
           await store.dispatch(
             requestAsync(
-              websiteContentListingRequest(listingParams, false, false)
-            )
+              websiteContentListingRequest(listingParams, false, false),
+            ),
           )
         }
       }
     },
-    website ? 5000 : null
+    website ? 5000 : null,
   )
 
   const labelSingular = configItem.label_singular ?? singular(configItem.label)
 
   const onSubmitContentSync = async (
-    event: ReactMouseEvent<HTMLLIElement | HTMLButtonElement, MouseEvent>
+    event: ReactMouseEvent<HTMLLIElement | HTMLButtonElement, MouseEvent>,
   ) => {
     event.preventDefault()
     if (syncIsPending) {
@@ -162,8 +162,8 @@ export default function RepeatableContentListing(props: {
               className="btn cyan-button add flex-shrink-0"
               to={siteContentNewUrl
                 .param({
-                  name:        website.name,
-                  contentType: configItem.name
+                  name: website.name,
+                  contentType: configItem.name,
                 })
                 .query(searchParams)
                 .toString()}
@@ -179,9 +179,9 @@ export default function RepeatableContentListing(props: {
             key={item.text_id}
             to={siteContentDetailUrl
               .param({
-                name:        website.name,
+                name: website.name,
                 contentType: configItem.name,
-                uuid:        item.text_id
+                uuid: item.text_id,
               })
               .toString()}
             title={item.title ?? ""}
@@ -193,11 +193,11 @@ export default function RepeatableContentListing(props: {
       <Route
         path={[
           siteContentDetailUrl.param({
-            name: website.name
+            name: website.name,
           }).pathname,
           siteContentNewUrl.param({
-            name: website.name
-          }).pathname
+            name: website.name,
+          }).pathname,
         ]}
       >
         <SiteContentEditorDrawer

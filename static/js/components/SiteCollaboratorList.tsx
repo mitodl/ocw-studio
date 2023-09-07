@@ -1,7 +1,7 @@
 import React, {
   MouseEvent as ReactMouseEvent,
   useCallback,
-  useState
+  useState,
 } from "react"
 import { useSelector } from "react-redux"
 import { QueryConfig } from "redux-query"
@@ -13,7 +13,7 @@ import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
 import { EDITABLE_ROLES, ROLE_LABELS } from "../constants"
 import {
   deleteWebsiteCollaboratorMutation,
-  websiteCollaboratorsRequest
+  websiteCollaboratorsRequest,
 } from "../query-configs/websites"
 import { useWebsite } from "../context/Website"
 import { getWebsiteCollaboratorsCursor } from "../selectors/websites"
@@ -39,27 +39,27 @@ export default function SiteCollaboratorList(): JSX.Element | null {
 
   const startEdit =
     (collaborator: WebsiteCollaborator | null) =>
-      (event: ReactMouseEvent<HTMLButtonElement>) => {
-        event.preventDefault()
-        setSelectedCollaborator(collaborator)
-        setEditVisibility(true)
-      }
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      event.preventDefault()
+      setSelectedCollaborator(collaborator)
+      setEditVisibility(true)
+    }
 
   const startDelete =
     (collaborator: WebsiteCollaborator) =>
-      (event: ReactMouseEvent<HTMLButtonElement>) => {
-        event.preventDefault()
-        setSelectedCollaborator(collaborator)
-        openDeleteModal()
-      }
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      event.preventDefault()
+      setSelectedCollaborator(collaborator)
+      openDeleteModal()
+    }
 
   const [deleteQueryState, deleteCollaborator] = useMutation(
     (): QueryConfig => {
       return deleteWebsiteCollaboratorMutation(
         name,
-        selectedCollaborator as WebsiteCollaborator
+        selectedCollaborator as WebsiteCollaborator,
       )
-    }
+    },
   )
 
   const onDelete = async () => {
@@ -102,12 +102,12 @@ export default function SiteCollaboratorList(): JSX.Element | null {
             title={collaborator.name || collaborator.email}
             subtitle={ROLE_LABELS[collaborator.role]}
             menuOptions={
-              EDITABLE_ROLES.includes(collaborator.role) ?
-                [
-                  ["Settings", startEdit(collaborator)],
-                  ["Delete", startDelete(collaborator)]
-                ] :
-                []
+              EDITABLE_ROLES.includes(collaborator.role)
+                ? [
+                    ["Settings", startEdit(collaborator)],
+                    ["Delete", startDelete(collaborator)],
+                  ]
+                : []
             }
           />
         ))}

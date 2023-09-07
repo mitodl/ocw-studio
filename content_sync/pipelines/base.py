@@ -1,18 +1,17 @@
-""" Sync abstract base """
+"""Sync abstract base"""
 import abc
-from typing import List
 
 
 class BasePipelineApi(abc.ABC):
     """Base class for a pipeline API"""
 
     @abc.abstractmethod
-    def list_pipelines(self, names: List[str] = None):
+    def list_pipelines(self, names: list[str] | None = None):
         """Retrieve a list of pipelines"""
         ...
 
     @abc.abstractmethod
-    def delete_pipelines(self, names: List[str] = None):
+    def delete_pipelines(self, names: list[str] | None = None):
         """Delete a list of pipelines"""
         ...
 
@@ -40,28 +39,28 @@ class BasePipeline(abc.ABC):
     def upsert_pipeline(self):  # pragma: no cover
         """
         Called to create/update the pipeline.
-        """
+        """  # noqa: D401
         ...
 
     @abc.abstractmethod
     def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """
         Called to trigger the website pipeline.
-        """
+        """  # noqa: D401
         ...
 
     @abc.abstractmethod
     def unpause_pipeline(self, pipeline_name: str):
         """
         Called to unpause a website pipeline.
-        """
+        """  # noqa: D401
         ...
 
     @abc.abstractmethod
     def pause_pipeline(self, pipeline_name: str):
         """
         Called to pause a website pipeline.
-        """
+        """  # noqa: D401
         ...
 
 

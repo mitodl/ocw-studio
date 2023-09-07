@@ -72,10 +72,10 @@ function MarkdownEditorTestWrapper(props: Props) {
         {data !== "" ? (
           <pre
             style={{
-              border:     "2px solid red",
-              maxWidth:   "100%",
-              wordBreak:  "break-word",
-              whiteSpace: "pre-wrap"
+              border: "2px solid red",
+              maxWidth: "100%",
+              wordBreak: "break-word",
+              whiteSpace: "pre-wrap",
             }}
           >
             <code style={{ margin: "5px", display: "block" }}>{data}</code>

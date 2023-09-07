@@ -14,26 +14,26 @@ import {
   siteApiDetailUrl,
   siteApiContentSyncGDriveUrl,
   siteContentNewUrl,
-  siteContentDetailUrl
+  siteContentDetailUrl,
 } from "../lib/urls"
 import {
   contentDetailKey,
   contentListingKey,
-  WebsiteContentListingResponse
+  WebsiteContentListingResponse,
 } from "../query-configs/websites"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 import {
   makeRepeatableConfigItem,
   makeWebsiteContentListItem,
-  makeWebsiteDetail
+  makeWebsiteDetail,
 } from "../util/factories/websites"
 
 import {
   RepeatableConfigItem,
   Website,
-  WebsiteContentListItem
+  WebsiteContentListItem,
 } from "../types/websites"
 import { singular } from "pluralize"
 import { StudioListItem } from "./StudioList"
@@ -47,11 +47,11 @@ function mocko() {
 
 jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
-  default:    mocko
+  default: mocko,
 }))
 jest.mock("@use-it/interval", () => ({
   __esModule: true,
-  default:    jest.fn()
+  default: jest.fn(),
 }))
 
 describe("RepeatableContentListing", () => {
@@ -69,7 +69,7 @@ describe("RepeatableContentListing", () => {
     configItem = makeRepeatableConfigItem("resource")
     contentListingItems = [
       makeWebsiteContentListItem(),
-      makeWebsiteContentListItem()
+      makeWebsiteContentListItem(),
     ]
     websiteContentDetailsLookup = {}
     for (const item of contentListingItems) {
@@ -78,43 +78,43 @@ describe("RepeatableContentListing", () => {
       ] = item
     }
     const listingParams = {
-      name:   website.name,
-      type:   configItem.name,
-      offset: 0
+      name: website.name,
+      type: configItem.name,
+      offset: 0,
     }
     apiResponse = {
-      results:  contentListingItems,
-      count:    2,
-      next:     null,
-      previous: null
+      results: contentListingItems,
+      count: 2,
+      next: null,
+      previous: null,
     }
     const contentListingLookup = {
       [contentListingKey(listingParams)]: {
         ...apiResponse,
-        results: apiResponse.results.map(item => item.text_id)
-      }
+        results: apiResponse.results.map((item) => item.text_id),
+      },
     }
     helper.mockGetRequest(
       siteApiContentListingUrl
         .param({
-          name: website.name
+          name: website.name,
         })
         .query({ offset: 0, type: configItem.name })
         .toString(),
-      apiResponse
+      apiResponse,
     )
     helper.mockGetRequest(
       siteApiContentListingUrl
         .param({
-          name: website.name
+          name: website.name,
         })
         .query({ search: "search", offset: 0, type: configItem.name })
         .toString(),
-      apiResponse
+      apiResponse,
     )
 
     render = helper.configureRenderer(
-      props => (
+      (props) => (
         <WebsiteContext.Provider value={website}>
           <RepeatableContentListing {...props} />
         </WebsiteContext.Provider>
@@ -122,12 +122,12 @@ describe("RepeatableContentListing", () => {
       { configItem },
       {
         entities: {
-          websiteDetails:        { [website.name]: website },
+          websiteDetails: { [website.name]: website },
           websiteContentListing: contentListingLookup,
-          websiteContentDetails: websiteContentDetailsLookup
+          websiteContentDetails: websiteContentDetailsLookup,
         },
-        queries: {}
-      }
+        queries: {},
+      },
     )
     jest.useFakeTimers()
   })
@@ -146,11 +146,11 @@ describe("RepeatableContentListing", () => {
       helper.mockGetRequest(
         siteApiContentListingUrl
           .param({
-            name: website.name
+            name: website.name,
           })
           .query({ offset: 0, type: configItem.name })
           .toString(),
-        apiResponse
+        apiResponse,
       )
       const { wrapper } = await render({ configItem })
       const driveLink = wrapper.find("a.view")
@@ -159,25 +159,25 @@ describe("RepeatableContentListing", () => {
       expect(driveLink.exists()).toBe(isGdriveEnabled && isResource)
       expect(syncLink.exists()).toBe(isGdriveEnabled && isResource)
       expect(addLink.exists()).toBe(!isGdriveEnabled || !isResource)
-    }
+    },
   )
 
   it("Clicking the gdrive sync button should trigger a sync request", async () => {
     const postSyncStub = helper.mockPostRequest(
       siteApiContentSyncGDriveUrl
         .param({
-          name: website.name
+          name: website.name,
         })
         .toString(),
       {},
-      200
+      200,
     )
     const getStatusStub = helper.mockGetRequest(
       siteApiDetailUrl
         .param({ name: website.name })
         .query({ only_status: true })
         .toString(),
-      { sync_status: "Complete" }
+      { sync_status: "Complete" },
     )
     SETTINGS.gdrive_enabled = true
     const { wrapper } = await render()
@@ -206,7 +206,7 @@ describe("RepeatableContentListing", () => {
     const event = {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       preventDefault() {},
-      target: { value: "my-search-string" }
+      target: { value: "my-search-string" },
     } as React.ChangeEvent<HTMLInputElement>
     filterInput.simulate("change", event)
     jest.runAllTimers()
@@ -224,11 +224,11 @@ describe("RepeatableContentListing", () => {
       expect(listItem.prop("to")).toBe(
         siteContentDetailUrl
           .param({
-            name:        website.name,
+            name: website.name,
             contentType: configItem.name,
-            uuid:        item.text_id
+            uuid: item.text_id,
           })
-          .toString()
+          .toString(),
       )
       idx++
     }
@@ -245,13 +245,13 @@ describe("RepeatableContentListing", () => {
     const setupRouteAndMock = async (count: number, queryInitial: string) => {
       const pageItems = [
         makeWebsiteContentListItem(),
-        makeWebsiteContentListItem()
+        makeWebsiteContentListItem(),
       ]
 
       const pathname = `/sites/${website.name}/type/resource/`
       helper.browserHistory.push({
         pathname: pathname,
-        search:   queryInitial
+        search: queryInitial,
       })
 
       const initialSearch = new URLSearchParams(queryInitial)
@@ -263,8 +263,8 @@ describe("RepeatableContentListing", () => {
           .toString(),
         {
           count,
-          results: pageItems
-        }
+          results: pageItems,
+        },
       )
       const { wrapper } = await render()
 
@@ -272,14 +272,14 @@ describe("RepeatableContentListing", () => {
       const nextLink = wrapper.find(".pagination Link.next")
       return {
         wrappers: { currentPage: wrapper, prevLink, nextLink },
-        pathname
+        pathname,
       }
     }
 
     it.each([
       { count: 25, search: ["", "offset=10"] },
       { count: 25, search: ["offset=0", "offset=10"] },
-      { count: 25, search: ["cat=meow", "cat=meow&offset=10"] }
+      { count: 25, search: ["cat=meow", "cat=meow&offset=10"] },
     ])(
       'shows only a "Next" button when appropriate',
       async ({ count, search }) => {
@@ -290,18 +290,18 @@ describe("RepeatableContentListing", () => {
         expect(wrappers.nextLink.exists()).toBe(true)
 
         expect(wrappers.nextLink.prop("to")).toStrictEqual({
-          hash:   "",
-          key:    expect.any(String),
+          hash: "",
+          key: expect.any(String),
           pathname,
-          search: next
+          search: next,
         })
-      }
+      },
     )
 
     it.each([
       { count: 25, search: ["offset=20", "offset=10"] },
       { count: 25, search: ["offset=15", "offset=5"] },
-      { count: 25, search: ["cat=meow&offset=20", "cat=meow&offset=10"] }
+      { count: 25, search: ["cat=meow&offset=20", "cat=meow&offset=10"] },
     ])(
       'shows only a "Previous" button when appropriate',
       async ({ count, search }) => {
@@ -312,25 +312,25 @@ describe("RepeatableContentListing", () => {
         expect(wrappers.nextLink.exists()).toBe(false)
 
         expect(wrappers.prevLink.prop("to")).toStrictEqual({
-          hash:   "",
-          key:    expect.any(String),
+          hash: "",
+          key: expect.any(String),
           pathname,
-          search: previous
+          search: previous,
         })
-      }
+      },
     )
 
     it.each([
       { count: 25, search: ["offset=10", "offset=0", "offset=20"] },
       { count: 25, search: ["offset=7", "offset=0", "offset=17"] },
       {
-        count:  25,
+        count: 25,
         search: [
           "cat=meow&offset=14",
           "cat=meow&offset=4",
-          "cat=meow&offset=24"
-        ]
-      }
+          "cat=meow&offset=24",
+        ],
+      },
     ])(
       'shows both "Previous" and "Next" buttons when appropriate',
       async ({ count, search }) => {
@@ -341,18 +341,18 @@ describe("RepeatableContentListing", () => {
         expect(wrappers.nextLink.exists()).toBe(true)
 
         expect(wrappers.prevLink.prop("to")).toStrictEqual({
-          hash:   "",
-          key:    expect.any(String),
+          hash: "",
+          key: expect.any(String),
           pathname,
-          search: previous
+          search: previous,
         })
         expect(wrappers.nextLink.prop("to")).toStrictEqual({
-          hash:   "",
-          key:    expect.any(String),
+          hash: "",
+          key: expect.any(String),
           pathname,
-          search: next
+          search: next,
         })
-      }
+      },
     )
 
     it.each([{ count: 5, search: [""] }])(
@@ -363,20 +363,20 @@ describe("RepeatableContentListing", () => {
 
         expect(wrappers.prevLink.exists()).toBe(false)
         expect(wrappers.nextLink.exists()).toBe(false)
-      }
+      },
     )
   })
 
   test.each([true, false])(
     "should render a link to open the content editor with right label (isSingular=%p)",
-    async isSingular => {
+    async (isSingular) => {
       let expectedLabel
       if (!isSingular) {
         configItem.label_singular = undefined
         expectedLabel = singular(configItem.label)
       } else {
         configItem.label_singular = expectedLabel = singular(
-          configItem.label_singular as string
+          configItem.label_singular as string,
         )
       }
       const { wrapper } = await render()
@@ -386,44 +386,44 @@ describe("RepeatableContentListing", () => {
       expect(link.prop("href")).toBe(
         siteContentNewUrl
           .param({
-            name:        website.name,
-            contentType: configItem.name
+            name: website.name,
+            contentType: configItem.name,
           })
-          .toString()
+          .toString(),
       )
-    }
+    },
   )
 
   test.each([true, false])(
     "shows the sync status indicator",
-    async gdriveEnabled => {
+    async (gdriveEnabled) => {
       SETTINGS.gdrive_enabled = gdriveEnabled
       const { wrapper } = await render({ website })
       expect(wrapper.find("DriveSyncStatusIndicator").exists()).toBe(
-        gdriveEnabled
+        gdriveEnabled,
       )
-    }
+    },
   )
 
   describe.each([
     {
-      status:       GoogleDriveSyncStatuses.SYNC_STATUS_PENDING,
-      shouldUpdate: true
+      status: GoogleDriveSyncStatuses.SYNC_STATUS_PENDING,
+      shouldUpdate: true,
     },
     {
-      status:       GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING,
-      shouldUpdate: true
+      status: GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING,
+      shouldUpdate: true,
     },
     {
-      status:       GoogleDriveSyncStatuses.SYNC_STATUS_FAILED,
-      shouldUpdate: false
-    }
+      status: GoogleDriveSyncStatuses.SYNC_STATUS_FAILED,
+      shouldUpdate: false,
+    },
   ])("sync status polling", ({ status, shouldUpdate }) => {
     beforeEach(() => {
       website = {
         ...website,
         sync_status: status,
-        synced_on:   "2021-01-01"
+        synced_on: "2021-01-01",
       }
     })
 
@@ -436,16 +436,16 @@ describe("RepeatableContentListing", () => {
           .param({ name: website.name })
           .query({ only_status: true })
           .toString(),
-        { sync_status: "Complete" }
+        { sync_status: "Complete" },
       )
       const getResourcesStub = helper.mockGetRequest(
         siteApiContentListingUrl
           .param({
-            name: website.name
+            name: website.name,
           })
           .query({ offset: 0, type: configItem.name })
           .toString(),
-        apiResponse
+        apiResponse,
       )
       await render({ website })
       expect(spyUseInterval).toHaveBeenCalledTimes(2)
@@ -467,11 +467,11 @@ describe("RepeatableContentListing", () => {
     const route = listing.find(Route)
     expect(route.prop("path")).toEqual([
       siteContentDetailUrl.param({
-        name: website.name
+        name: website.name,
       }).pathname,
       siteContentNewUrl.param({
-        name: website.name
-      }).pathname
+        name: website.name,
+      }).pathname,
     ])
   })
 })

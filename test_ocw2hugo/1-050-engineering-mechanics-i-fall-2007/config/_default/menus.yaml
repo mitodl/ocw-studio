@@ -1,23 +1,24 @@
+---
 leftnav:
-  - identifier: 96c31e82-69f0-6d67-daee-8272526ac56a
-    name: Syllabus
-    url: /pages/syllabus
-    weight: 10
-  - identifier: ff5e415d-cded-bcfc-d6b2-c4a96377207c
-    name: Calendar
-    url: /pages/calendar
-    weight: 20
-  - identifier: dec40ff4-e8ca-636f-c6db-d88880914a96
-    name: Lecture Notes
-    url: /pages/lecture-notes
-    weight: 30
-  - identifier: 8e344ad5-a553-4368-9048-9e95e736657a
-    name: Assignments
-    url: /pages/assignments
-    weight: 40
-  - identifier: 4f5c3926-e4d5-6974-7f16-131a6f692568
-    name: Related Resources
-    url: /pages/related-resources
-    weight: 50
-  - name: Open Learning
-    url: https://openlearning.mit.edu/
+- identifier: 96c31e82-69f0-6d67-daee-8272526ac56a
+  name: Syllabus
+  url: /pages/syllabus
+  weight: 10
+- identifier: ff5e415d-cded-bcfc-d6b2-c4a96377207c
+  name: Calendar
+  url: /pages/calendar
+  weight: 20
+- identifier: dec40ff4-e8ca-636f-c6db-d88880914a96
+  name: Lecture Notes
+  url: /pages/lecture-notes
+  weight: 30
+- identifier: 8e344ad5-a553-4368-9048-9e95e736657a
+  name: Assignments
+  url: /pages/assignments
+  weight: 40
+- identifier: 4f5c3926-e4d5-6974-7f16-131a6f692568
+  name: Related Resources
+  url: /pages/related-resources
+  weight: 50
+- name: Open Learning
+  url: https://openlearning.mit.edu/

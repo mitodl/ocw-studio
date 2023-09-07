@@ -6,7 +6,7 @@ import sinon, { SinonSandbox } from "sinon"
 import {
   makeRepeatableConfigItem,
   makeSingletonConfigItem,
-  makeWebsiteConfigField
+  makeWebsiteConfigField,
 } from "../../util/factories/websites"
 
 import {
@@ -15,13 +15,13 @@ import {
   MarkdownConfigField,
   StringConfigField,
   TextConfigField,
-  WidgetVariant
+  WidgetVariant,
 } from "../../types/websites"
 
 jest.mock("../../lib/site_content", () => {
   return {
     __esModule: true,
-    ...jest.requireActual("../../lib/site_content")
+    ...jest.requireActual("../../lib/site_content"),
   }
 })
 
@@ -30,11 +30,11 @@ describe("form validation utils", () => {
     const repeatableConfigItem = makeRepeatableConfigItem()
     const singletonConfigItem = makeSingletonConfigItem()
     const partialField = {
-      name:  "myfield",
-      label: "My Field"
+      name: "myfield",
+      label: "My Field",
     }
     const defaultFormValues = {
-      title: "My Title"
+      title: "My Title",
     }
     let configItem: ConfigItem, sandbox: SinonSandbox
 
@@ -48,53 +48,53 @@ describe("form validation utils", () => {
 
     describe("for 'title' field", () => {
       const titleField: StringConfigField = {
-        name:     "title",
-        label:    "Title",
+        name: "title",
+        label: "Title",
         required: true,
-        widget:   WidgetVariant.String
+        widget: WidgetVariant.String,
       }
 
       it.each([
         {
-          field:              null,
-          isRepeatable:       true,
+          field: null,
+          isRepeatable: true,
           expAddedTitleField: true,
-          desc:               "'title' is NOT included, config IS repeatable"
+          desc: "'title' is NOT included, config IS repeatable",
         },
         {
-          field:              titleField,
-          isRepeatable:       true,
+          field: titleField,
+          isRepeatable: true,
           expAddedTitleField: true,
-          desc:               "'title' IS included, config IS repeatable"
+          desc: "'title' IS included, config IS repeatable",
         },
         {
-          field:              null,
-          isRepeatable:       false,
+          field: null,
+          isRepeatable: false,
           expAddedTitleField: false,
-          desc:               "'title' is NOT included, config is NOT repeatable"
-        }
+          desc: "'title' is NOT included, config is NOT repeatable",
+        },
       ])(
         `validates correctly if $desc`,
         async ({ field, isRepeatable, expAddedTitleField }) => {
           // @ts-expect-error Unsure the ts error here; possibly types on getContentSchema are wrong
           configItem = {
             ...(isRepeatable ? repeatableConfigItem : singletonConfigItem),
-            fields: field ? [field] : []
+            fields: field ? [field] : [],
           }
           const schema = getContentSchema(configItem, {})
           if (expAddedTitleField) {
             expect(() => schema.validateSync({})).toThrow(
-              new yup.ValidationError("Title is a required field")
+              new yup.ValidationError("Title is a required field"),
             )
             await expect(
-              schema.isValid({ title: "My Title" })
+              schema.isValid({ title: "My Title" }),
             ).resolves.toBeTruthy()
           } else {
             expect(() => schema.validateSync({})).not.toThrow(
-              new yup.ValidationError("Title is a required field")
+              new yup.ValidationError("Title is a required field"),
             )
           }
-        }
+        },
       )
     })
 
@@ -104,18 +104,18 @@ describe("form validation utils", () => {
         fields: [
           {
             ...partialField,
-            widget:   WidgetVariant.String,
-            required: true
-          }
-        ]
+            widget: WidgetVariant.String,
+            required: true,
+          },
+        ],
       }
       const values = { val: "ues" }
       let schema = getContentSchema(configItem, values)
       expect(() =>
         schema.validateSync({
           ...defaultFormValues,
-          [partialField.name]: null
-        })
+          [partialField.name]: null,
+        }),
       ).toThrow(`${partialField.label} is a required field`)
 
       const fieldIsVisibleStub = sandbox
@@ -125,7 +125,7 @@ describe("form validation utils", () => {
       // no exception thrown
       schema.validateSync({
         ...defaultFormValues,
-        [partialField.name]: null
+        [partialField.name]: null,
       })
       sinon.assert.calledWith(fieldIsVisibleStub, configItem.fields[0], values)
     })
@@ -136,18 +136,18 @@ describe("form validation utils", () => {
         fields: [
           {
             ...partialField,
-            name:     "title",
-            widget:   WidgetVariant.String,
-            required: true
-          }
-        ]
+            name: "title",
+            widget: WidgetVariant.String,
+            required: true,
+          },
+        ],
       }
       let schema = getContentSchema(configItem, {})
       expect(() =>
         schema.validateSync({
           ...defaultFormValues,
-          ["title"]: null
-        })
+          ["title"]: null,
+        }),
       ).toThrow(`${partialField.label} is a required field`)
 
       sandbox.stub(siteContentFuncs, "fieldIsVisible").returns(false)
@@ -155,7 +155,7 @@ describe("form validation utils", () => {
       // no exception thrown
       schema.validateSync({
         ...defaultFormValues,
-        ["title"]: null
+        ["title"]: null,
       })
     })
 
@@ -164,29 +164,29 @@ describe("form validation utils", () => {
       WidgetVariant.String,
       WidgetVariant.Text,
       WidgetVariant.Markdown,
-      WidgetVariant.File
-    ].forEach(widget => {
+      WidgetVariant.File,
+    ].forEach((widget) => {
       it(`produces the correct validation schema for a required '${widget}' field`, () => {
         configItem = {
           ...repeatableConfigItem,
           fields: [
             {
               ...partialField,
-              widget:   widget as WidgetVariant,
-              required: true
+              widget: widget as WidgetVariant,
+              required: true,
             } as
               | StringConfigField
               | TextConfigField
               | MarkdownConfigField
-              | FileConfigField
-          ]
+              | FileConfigField,
+          ],
         }
         const schema = getContentSchema(configItem, {})
         expect(() =>
           schema.validateSync({
             ...defaultFormValues,
-            [partialField.name]: null
-          })
+            [partialField.name]: null,
+          }),
         ).toThrow(`${partialField.label} is a required field`)
       })
     })
@@ -196,28 +196,28 @@ describe("form validation utils", () => {
         ...repeatableConfigItem,
         fields: [
           {
-            name:     "myfield",
-            label:    "My Field",
-            widget:   WidgetVariant.String,
-            required: true
+            name: "myfield",
+            label: "My Field",
+            widget: WidgetVariant.String,
+            required: true,
           },
           {
-            name:     "myfield2",
-            label:    "My Second Field",
-            widget:   WidgetVariant.String,
-            required: true
-          }
-        ]
+            name: "myfield2",
+            label: "My Second Field",
+            widget: WidgetVariant.String,
+            required: true,
+          },
+        ],
       }
       const schema = getContentSchema(configItem, {})
       for (const field of configItem.fields) {
         expect(() =>
           schema.validateSync({
             ...defaultFormValues,
-            myfield:      "text",
-            myfield2:     "text",
-            [field.name]: null
-          })
+            myfield: "text",
+            myfield2: "text",
+            [field.name]: null,
+          }),
         ).toThrow(`${field.label} is a required field`)
       }
     })
@@ -227,8 +227,8 @@ describe("form validation utils", () => {
         const configItem = {
           ...repeatableConfigItem,
           fields: [
-            makeWebsiteConfigField({ widget: WidgetVariant.Select, ...props })
-          ]
+            makeWebsiteConfigField({ widget: WidgetVariant.Select, ...props }),
+          ],
         }
 
         return [configItem, configItem.fields[0].name]
@@ -237,14 +237,14 @@ describe("form validation utils", () => {
       it("should validate for a required multiple select field", () => {
         const [configItem, name] = makeSelectConfigItem({
           multiple: true,
-          required: true
+          required: true,
         })
         const schema = getContentSchema(configItem, {})
         expect(() =>
           schema.validateSync({
             ...defaultFormValues,
-            [name]: null
-          })
+            [name]: null,
+          }),
         ).toThrow(new yup.ValidationError(`${name} is a required field.`))
       })
 
@@ -253,23 +253,23 @@ describe("form validation utils", () => {
         const schema = getContentSchema(configItem, {})
         await Promise.all(
           [[], ["some value"], ["some value", "another value"]].map(
-            async value => {
+            async (value) => {
               await expect(
                 schema.isValid({
                   ...defaultFormValues,
-                  [name]: value
-                })
+                  [name]: value,
+                }),
               ).resolves.toBeTruthy()
-            }
-          )
+            },
+          ),
         )
       })
 
       it("should validate a multiple select field with max and min set", async () => {
         const [configItem, name] = makeSelectConfigItem({
           multiple: true,
-          min:      1,
-          max:      2
+          min: 1,
+          max: 2,
         })
         const schema = getContentSchema(configItem, {})
 
@@ -281,25 +281,25 @@ describe("form validation utils", () => {
             [
               ["some value", "another value", "yet another value"],
               false,
-              `${name} may have at most 2 entries.`
-            ]
+              `${name} may have at most 2 entries.`,
+            ],
           ].map(async ([value, shouldValidate, message]) => {
             if (shouldValidate) {
               await expect(
                 schema.isValid({
                   ...defaultFormValues,
-                  [name]: value
-                })
+                  [name]: value,
+                }),
               ).resolves.toBeTruthy()
             } else {
               await expect(
                 schema.validate({
                   ...defaultFormValues,
-                  [name]: value
-                })
+                  [name]: value,
+                }),
               ).rejects.toThrow(new yup.ValidationError(message as string))
             }
-          })
+          }),
         )
       })
 
@@ -310,11 +310,11 @@ describe("form validation utils", () => {
         expect(() =>
           schema.validateSync({
             ...defaultFormValues,
-            [name]: ""
-          })
+            [name]: "",
+          }),
         ).toThrow(new yup.ValidationError(`${name} is a required field`))
         await expect(
-          schema.isValid({ ...defaultFormValues, [name]: "selected value" })
+          schema.isValid({ ...defaultFormValues, [name]: "selected value" }),
         ).resolves.toBeTruthy()
       })
     })
@@ -324,8 +324,10 @@ describe("form validation utils", () => {
         const configItem = {
           ...repeatableConfigItem,
           fields: [
-            makeWebsiteConfigField({ widget: WidgetVariant.HierarchicalSelect })
-          ]
+            makeWebsiteConfigField({
+              widget: WidgetVariant.HierarchicalSelect,
+            }),
+          ],
         }
         const name = configItem.fields[0].name
 
@@ -333,11 +335,11 @@ describe("form validation utils", () => {
         expect(() =>
           schema.validateSync({
             ...defaultFormValues,
-            [name]: "not-an-array"
-          })
+            [name]: "not-an-array",
+          }),
         ).toThrow(new yup.ValidationError(`${name} is a required field.`))
         await expect(
-          schema.isValid({ ...defaultFormValues, [name]: ["selected value"] })
+          schema.isValid({ ...defaultFormValues, [name]: ["selected value"] }),
         ).resolves.toBeTruthy()
       })
 
@@ -346,12 +348,12 @@ describe("form validation utils", () => {
           ...repeatableConfigItem,
           fields: [
             makeWebsiteConfigField({
-              widget:   WidgetVariant.HierarchicalSelect,
+              widget: WidgetVariant.HierarchicalSelect,
               multiple: true,
-              min:      1,
-              max:      2
-            })
-          ]
+              min: 1,
+              max: 2,
+            }),
+          ],
         }
         const name = configItem.fields[0].name
         const schema = getContentSchema(configItem, {})
@@ -364,25 +366,25 @@ describe("form validation utils", () => {
             [
               ["some value", "another value", "yet another value"],
               false,
-              `${name} may have at most 2 entries.`
-            ]
+              `${name} may have at most 2 entries.`,
+            ],
           ].map(async ([value, shouldValidate, message]) => {
             if (shouldValidate) {
               await expect(
                 schema.isValid({
                   ...defaultFormValues,
-                  [name]: value
-                })
+                  [name]: value,
+                }),
               ).resolves.toBeTruthy()
             } else {
               await expect(
                 schema.validate({
                   ...defaultFormValues,
-                  [name]: value
-                })
+                  [name]: value,
+                }),
               ).rejects.toThrow(new yup.ValidationError(message as string))
             }
-          })
+          }),
         )
       })
     })
@@ -392,8 +394,11 @@ describe("form validation utils", () => {
         const configItem = {
           ...repeatableConfigItem,
           fields: [
-            makeWebsiteConfigField({ widget: WidgetVariant.Relation, ...props })
-          ]
+            makeWebsiteConfigField({
+              widget: WidgetVariant.Relation,
+              ...props,
+            }),
+          ],
         }
 
         return [configItem, configItem.fields[0].name]
@@ -402,7 +407,7 @@ describe("form validation utils", () => {
       it("should validate for a required multiple relation field", () => {
         const [configItem, name] = makeRelationConfigItem({
           multiple: true,
-          required: true
+          required: true,
         })
         const schema = getContentSchema(configItem, {})
         expect(() =>
@@ -410,18 +415,18 @@ describe("form validation utils", () => {
             ...defaultFormValues,
             [name]: {
               website: "UUUIIIIIIDIDIDIDID",
-              content: null
-            }
-          })
+              content: null,
+            },
+          }),
         ).toThrow(
-          new yup.ValidationError(`${name}.content is a required field.`)
+          new yup.ValidationError(`${name}.content is a required field.`),
         )
       })
 
       it("should validate for a required cross_site relation field", () => {
         const [configItem, name] = makeRelationConfigItem({
           cross_site: true,
-          required:   true
+          required: true,
         })
         const schema = getContentSchema(configItem, {})
         expect(() =>
@@ -429,11 +434,11 @@ describe("form validation utils", () => {
             ...defaultFormValues,
             [name]: {
               website: "UUUIIIIIIDIDIDIDID",
-              content: []
-            }
-          })
+              content: [],
+            },
+          }),
         ).toThrow(
-          new yup.ValidationError(`${name}.content is a required field.`)
+          new yup.ValidationError(`${name}.content is a required field.`),
         )
       })
 
@@ -442,26 +447,26 @@ describe("form validation utils", () => {
         const schema = getContentSchema(configItem, {})
         await Promise.all(
           [[], ["some value"], ["some value", "another value"]].map(
-            async value => {
+            async (value) => {
               await expect(
                 schema.isValid({
                   ...defaultFormValues,
                   [name]: {
                     website: "ASDFASDF",
-                    content: value
-                  }
-                })
+                    content: value,
+                  },
+                }),
               ).resolves.toBeTruthy()
-            }
-          )
+            },
+          ),
         )
       })
 
       it("should validate a multiple relation field with max and min set", async () => {
         const [configItem, name] = makeRelationConfigItem({
           multiple: true,
-          min:      1,
-          max:      2
+          min: 1,
+          max: 2,
         })
         const schema = getContentSchema(configItem, {})
 
@@ -473,8 +478,8 @@ describe("form validation utils", () => {
             [
               ["some value", "another value", "yet another value"],
               false,
-              `${name} may have at most 2 entries.`
-            ]
+              `${name} may have at most 2 entries.`,
+            ],
           ].map(async ([value, shouldValidate, message]) => {
             if (shouldValidate) {
               await expect(
@@ -482,9 +487,9 @@ describe("form validation utils", () => {
                   ...defaultFormValues,
                   [name]: {
                     website: "UUID",
-                    content: value
-                  }
-                })
+                    content: value,
+                  },
+                }),
               ).resolves.toBeTruthy()
             } else {
               await expect(
@@ -492,12 +497,12 @@ describe("form validation utils", () => {
                   ...defaultFormValues,
                   [name]: {
                     website: "UUID",
-                    content: value
-                  }
-                })
+                    content: value,
+                  },
+                }),
               ).rejects.toThrow(new yup.ValidationError(message as string))
             }
-          })
+          }),
         )
       })
 
@@ -510,19 +515,19 @@ describe("form validation utils", () => {
             ...defaultFormValues,
             [name]: {
               website: "UUID",
-              content: null
-            }
-          })
+              content: null,
+            },
+          }),
         ).toThrow(
-          new yup.ValidationError(`${name}.content is a required field.`)
+          new yup.ValidationError(`${name}.content is a required field.`),
         )
         await expect(
           schema.isValid({
             ...defaultFormValues,
             [name]: {
-              content: "selected value"
-            }
-          })
+              content: "selected value",
+            },
+          }),
         ).resolves.toBeTruthy()
       })
     })
@@ -537,18 +542,18 @@ describe("form validation utils", () => {
               ...props,
               fields: [
                 makeWebsiteConfigField({
-                  widget:   WidgetVariant.String,
-                  label:    "mystring",
-                  required: true
+                  widget: WidgetVariant.String,
+                  label: "mystring",
+                  required: true,
                 }),
                 makeWebsiteConfigField({
-                  widget:   WidgetVariant.Boolean,
-                  label:    "myboolean",
-                  required: true
-                })
-              ]
-            })
-          ]
+                  widget: WidgetVariant.Boolean,
+                  label: "myboolean",
+                  required: true,
+                }),
+              ],
+            }),
+          ],
         }
 
         return [configItem, configItem.fields[0].name]
@@ -560,23 +565,23 @@ describe("form validation utils", () => {
 
         await schema
           .validate({ ...defaultFormValues, [name]: {} }, { abortEarly: false })
-          .catch(err => {
+          .catch((err) => {
             expect(err.errors).toEqual([
               "mystring is a required field",
-              "myboolean is a required field"
+              "myboolean is a required field",
             ])
           })
         await expect(
           schema.isValid({
             ...defaultFormValues,
             [name]: {
-              mystring:  "hey!",
-              myboolean: false
-            }
-          })
+              mystring: "hey!",
+              myboolean: false,
+            },
+          }),
         ).resolves.toBeTruthy()
       })
-      ;["", null, undefined].forEach(val => {
+      ;["", null, undefined].forEach((val) => {
         it("null values in non-required string fields are valid", async () => {
           let [configItem] = makeObjectConfigItem({})
           configItem = {
@@ -584,18 +589,18 @@ describe("form validation utils", () => {
             fields: [
               {
                 ...partialField,
-                widget:   WidgetVariant.String,
-                required: false
-              }
-            ]
+                widget: WidgetVariant.String,
+                required: false,
+              },
+            ],
           }
 
           const schema = getContentSchema(configItem, {})
           expect(
             schema.isValidSync({
               ...defaultFormValues,
-              [partialField.name]: val
-            })
+              [partialField.name]: val,
+            }),
           ).toBeTruthy()
         })
       })
@@ -612,14 +617,14 @@ describe("form validation utils", () => {
           schema.isValid({
             ...defaultFormValues,
             [name]: {
-              mystring: null
-            }
-          })
+              mystring: null,
+            },
+          }),
         ).resolves.toBeTruthy()
         sinon.assert.calledWith(
           fieldIsVisibleStub,
           configItem.fields[0],
-          values
+          values,
         )
       })
     })

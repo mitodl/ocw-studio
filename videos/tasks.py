@@ -36,7 +36,6 @@ from websites.messages import VideoTranscriptingCompleteMessage
 from websites.models import Website, WebsiteContent
 from websites.utils import get_dict_field, get_dict_query_field, set_dict_field
 
-
 log = logging.getLogger()
 
 
@@ -45,7 +44,7 @@ log = logging.getLogger()
 def upload_youtube_videos():
     """
     Upload public videos one at a time to YouTube (if not already there) until the daily maximum is reached.
-    """
+    """  # noqa: E501
     if not is_youtube_enabled():
         return
     yt_queue = VideoFile.objects.filter(
@@ -70,7 +69,7 @@ def upload_youtube_videos():
                 break
             log.exception("HttpError uploading video to Youtube: %s", video_file.s3_key)
             video_file.status = VideoFileStatus.FAILED
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except  # noqa: E722
             log.exception("Error uploading video to Youtube: %s", video_file.s3_key)
             video_file.status = VideoFileStatus.FAILED
         video_file.save()
@@ -111,7 +110,7 @@ def start_transcript_job(video_id: int):
             )
         video_resource.save()
 
-    # if none and video is not already submitted, request a transcript through the 3Play API
+    # if none and video is not already submitted, request a transcript through the 3Play API  # noqa: E501
     else:
         response = threeplay_api.threeplay_upload_video_request(
             folder_name, youtube_id, video_resource.title
@@ -132,7 +131,7 @@ def start_transcript_job(video_id: int):
 
 @app.task(bind=True)
 @single_task(timeout=settings.YT_STATUS_UPDATE_FREQUENCY, raise_block=False)
-def update_youtube_statuses(self):
+def update_youtube_statuses(self):  # noqa: C901
     """
     Update the status of recently uploaded YouTube videos if complete
     """
@@ -173,8 +172,8 @@ def update_youtube_statuses(self):
             if video_file.status == VideoFileStatus.COMPLETE:
                 mail_youtube_upload_success(video_file)
 
-        except IndexError:
-            # Video might be a dupe or deleted, mark it as failed and continue to next one.
+        except IndexError:  # noqa: PERF203
+            # Video might be a dupe or deleted, mark it as failed and continue to next one.  # noqa: E501
             video_file.status = VideoFileStatus.FAILED
             video_file.save()
             log.exception(
@@ -184,7 +183,7 @@ def update_youtube_statuses(self):
             mail_youtube_upload_failure(video_file)
         except HttpError as error:
             if API_QUOTA_ERROR_MSG in error.content.decode("utf-8"):
-                # Don't raise the error, task will try on next run until daily quota is reset
+                # Don't raise the error, task will try on next run until daily quota is reset  # noqa: E501
                 break
             log.exception(
                 "Error for youtube_id %s: %s",
@@ -207,7 +206,7 @@ def remove_youtube_video(video_id):
     try:
         YouTubeApi().delete_video(video_id)
     except HttpError as error:
-        if error.resp.status == 404:
+        if error.resp.status == 404:  # noqa: PLR2004
             log.info("Not found on Youtube, already deleted?", video_id=video_id)
         else:
             raise
@@ -215,7 +214,7 @@ def remove_youtube_video(video_id):
 
 @app.task(acks_late=True)
 def delete_s3_objects(
-    key: str, as_filter: bool = False
+    key: str, as_filter: bool = False  # noqa: FBT001, FBT002
 ):  # pylint:disable=unused-argument
     """
     Delete objects from an S3 bucket
@@ -233,7 +232,7 @@ def delete_s3_objects(
 @single_task(
     timeout=settings.UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY, raise_block=False
 )
-def update_transcripts_for_video(video_id: int):
+def update_transcripts_for_video(video_id: int):  # noqa: C901
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
     captions, transcript = video.caption_transcript_resources()
@@ -288,7 +287,7 @@ def update_transcripts_for_video(video_id: int):
                 )
                 video_resource.save()
             else:
-                for (resource, meta_field) in [
+                for resource, meta_field in [
                     (captions, settings.YT_FIELD_CAPTIONS),
                     (transcript, settings.YT_FIELD_TRANSCRIPT),
                 ]:
@@ -360,7 +359,7 @@ def attempt_to_update_missing_transcripts():
 
 @app.task(acks_late=True)
 def update_transcripts_for_website(
-    website: Website, **kwargs
+    website: Website, **kwargs  # noqa: ARG001
 ):  # pylint:disable=unused-argument
     """Update transcripts from 3play for every video for a website"""
 

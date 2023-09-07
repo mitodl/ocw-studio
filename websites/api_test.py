@@ -41,7 +41,6 @@ from websites.messages import (
 )
 from websites.models import Website
 
-
 pytestmark = pytest.mark.django_db
 
 EXAMPLE_UUID_STR = "ae6cfe0b-37a7-4fe6-b194-5b7f1e3c349e"
@@ -49,12 +48,16 @@ EXAMPLE_UUID_STR = "ae6cfe0b-37a7-4fe6-b194-5b7f1e3c349e"
 
 @pytest.mark.parametrize("exclude_content", [True, False])
 @pytest.mark.parametrize(
-    "filename_base,existing_filenames,exp_result_filename",
+    ("filename_base", "existing_filenames", "exp_result_filename"),
     [
-        ["my-title", [], "my-title"],
-        ["my-title", ["my-title"], "my-title2"],
-        ["my-title", ["my-title", "my-title9"], "my-title10"],
-        ["my-long-title", ["my-long-title", "my-long-title9"], "my-long-titl10"],
+        ["my-title", [], "my-title"],  # noqa: PT007
+        ["my-title", ["my-title"], "my-title2"],  # noqa: PT007
+        ["my-title", ["my-title", "my-title9"], "my-title10"],  # noqa: PT007
+        [  # noqa: PT007
+            "my-long-title",
+            ["my-long-title", "my-long-title9"],
+            "my-long-titl10",
+        ],
     ],
 )
 def test_websitecontent_autogen_filename_unique(
@@ -88,13 +91,16 @@ def test_websitecontent_autogen_filename_unique(
 
 
 @pytest.mark.parametrize(
-    "uuid_str,filter_value",
+    ("uuid_str", "filter_value"),
     [
-        [
+        [  # noqa: PT007
             "05d329fd-05ca-4770-b8b2-77ad711daca9",
             "05d329fd-05ca-4770-b8b2-77ad711daca9",
         ],
-        ["05d329fd-05ca-4770-b8b2-77ad711daca9", "05d329fd05ca4770b8b277ad711daca9"],
+        [  # noqa: PT007
+            "05d329fd-05ca-4770-b8b2-77ad711daca9",
+            "05d329fd05ca4770b8b277ad711daca9",
+        ],
     ],
 )
 def test_fetch_website_by_uuid(uuid_str, filter_value):
@@ -105,16 +111,16 @@ def test_fetch_website_by_uuid(uuid_str, filter_value):
 
 
 @pytest.mark.parametrize(
-    "website_attrs,filter_value",
+    ("website_attrs", "filter_value"),
     [
-        [{"title": "my test title"}, "my test title"],
-        [{"name": "my test name"}, "my test name"],
-        [{"short_id": "my.test.name"}, "my.test.name"],
-        [
+        [{"title": "my test title"}, "my test title"],  # noqa: PT007
+        [{"name": "my test name"}, "my test name"],  # noqa: PT007
+        [{"short_id": "my.test.name"}, "my.test.name"],  # noqa: PT007
+        [  # noqa: PT007
             {"title": "05d329fd-05ca-4770-b8b2-77ad711daca9"},
             "05d329fd-05ca-4770-b8b2-77ad711daca9",
         ],
-        [
+        [  # noqa: PT007
             {"title": "abcdefg1-2345-6789-abcd-123456789abc"},
             "abcdefg1-2345-6789-abcd-123456789abc",
         ],
@@ -141,12 +147,12 @@ def test_fetch_website_not_found():
 
 
 @pytest.mark.parametrize(
-    "existing_slugs,exp_result_slug",
+    ("existing_slugs", "exp_result_slug"),
     [
-        [[], "my-slug"],
-        [["my-slug"], "my-slug2"],
-        [["my-slug", "my-slug9"], "my-slug10"],
-        [
+        [[], "my-slug"],  # noqa: PT007
+        [["my-slug"], "my-slug2"],  # noqa: PT007
+        [["my-slug", "my-slug9"], "my-slug10"],  # noqa: PT007
+        [  # noqa: PT007
             ["very-very-very-very-long-slug", "very-very-very-very-long-slug9"],
             "very-very-very-very-long-slu10",
         ],
@@ -188,23 +194,33 @@ def test_is_ocw_site(settings):
 
 
 @pytest.mark.parametrize(
-    "youtube_id,existing_thumb,overwrite,expected_thumb",
+    ("youtube_id", "existing_thumb", "overwrite", "expected_thumb"),
     [
-        [
+        [  # noqa: PT007
             None,
             YT_THUMBNAIL_IMG.format(video_id="fake"),
             True,
             YT_THUMBNAIL_IMG.format(video_id="fake"),
         ],
-        [
+        [  # noqa: PT007
             "abc123",
             YT_THUMBNAIL_IMG.format(video_id="def456"),
             False,
             YT_THUMBNAIL_IMG.format(video_id="def456"),
         ],
-        ["abc123", "", False, YT_THUMBNAIL_IMG.format(video_id="abc123")],
-        ["abc123", None, False, YT_THUMBNAIL_IMG.format(video_id="abc123")],
-        [
+        [  # noqa: PT007
+            "abc123",
+            "",
+            False,
+            YT_THUMBNAIL_IMG.format(video_id="abc123"),
+        ],
+        [  # noqa: PT007
+            "abc123",
+            None,
+            False,
+            YT_THUMBNAIL_IMG.format(video_id="abc123"),
+        ],
+        [  # noqa: PT007
             "abc123",
             YT_THUMBNAIL_IMG.format(video_id="def456"),
             True,
@@ -250,7 +266,7 @@ def test_unassigned_youtube_ids(mocker, is_ocw):
         )
     )
     for yt_id in [None, ""]:
-        videos_without_ids.append(
+        videos_without_ids.append(  # noqa: PERF401
             WebsiteContentFactory.create(
                 website=website,
                 metadata={
@@ -291,7 +307,7 @@ def test_videos_missing_captions(mocker, is_ocw):
     videos_without_captions = []
 
     for captions in [None, ""]:
-        videos_without_captions.append(
+        videos_without_captions.append(  # noqa: PERF401
             WebsiteContentFactory.create(
                 website=website,
                 metadata={
@@ -395,11 +411,11 @@ def test_detect_mime_type(mocker):
 
 
 @pytest.mark.parametrize(
-    "status, notify",
+    ("status", "notify"),
     [
-        [PUBLISH_STATUS_STARTED, False],
-        [PUBLISH_STATUS_SUCCEEDED, True],
-        [PUBLISH_STATUS_ERRORED, True],
+        [PUBLISH_STATUS_STARTED, False],  # noqa: PT007
+        [PUBLISH_STATUS_SUCCEEDED, True],  # noqa: PT007
+        [PUBLISH_STATUS_ERRORED, True],  # noqa: PT007
     ],
 )
 @pytest.mark.parametrize("has_user", [True, False])
@@ -461,7 +477,7 @@ def test_update_unpublished_website_status(status, version):
     if status == PUBLISH_STATUS_SUCCEEDED:
         assert getattr(website, publish_date_field) == now
         if version == VERSION_LIVE:
-            assert getattr(website, "first_published_to_production") == now
+            assert website.first_published_to_production == now
     else:
         assert getattr(website, publish_date_field) is None
 

@@ -21,7 +21,7 @@ Watch a video clip:
 
 Watch a YouTube video featuring a famous Italian song about coffee:
 
-"[Il Caffè Della Peppina](http://www.youtube.com/watch?feature=player_embedded&v=nqzz3yzzN8c)." 13° Zecchino d'oro. October 8, 2009. YouTube. Accessed May 13, 2013.  
+"[Il Caffè Della Peppina](http://www.youtube.com/watch?feature=player_embedded&v=nqzz3yzzN8c)." 13° Zecchino d'oro. October 8, 2009. YouTube. Accessed May 13, 2013.
 
 Special Guest
 -------------

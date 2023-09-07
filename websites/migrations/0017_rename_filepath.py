@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0016_remove_site_content_type_constraint"),
     ]

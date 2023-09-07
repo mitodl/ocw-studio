@@ -13,11 +13,11 @@ from main.utils import (
 
 
 @pytest.mark.parametrize(
-    "uuid_to_test, is_valid",
+    ("uuid_to_test", "is_valid"),
     [
-        ["50fe3182-b1c9-ad10-de16-aeaae7f137cd", True],
-        ["not-a-uuid", False],
-        ["28bcec93-eb51-447e-84e1-ed453eea818e", True],
+        ["50fe3182-b1c9-ad10-de16-aeaae7f137cd", True],  # noqa: PT007
+        ["not-a-uuid", False],  # noqa: PT007
+        ["28bcec93-eb51-447e-84e1-ed453eea818e", True],  # noqa: PT007
     ],
 )
 def test_is_valid_uuid(uuid_to_test, is_valid):
@@ -26,13 +26,13 @@ def test_is_valid_uuid(uuid_to_test, is_valid):
 
 
 @pytest.mark.parametrize(
-    "filepath,exp_extension",
+    ("filepath", "exp_extension"),
     [
-        ["myfile.txt", "txt"],
-        ["myfile.tar.gz", "tar.gz"],
-        ["/path/to/myfile.docx", "docx"],
-        ["myfile", ""],
-        ["/path/to/myfile", ""],
+        ["myfile.txt", "txt"],  # noqa: PT007
+        ["myfile.tar.gz", "tar.gz"],  # noqa: PT007
+        ["/path/to/myfile.docx", "docx"],  # noqa: PT007
+        ["myfile", ""],  # noqa: PT007
+        ["/path/to/myfile", ""],  # noqa: PT007
     ],
 )
 def test_get_file_extension(filepath, exp_extension):
@@ -41,13 +41,13 @@ def test_get_file_extension(filepath, exp_extension):
 
 
 @pytest.mark.parametrize(
-    "filepath,exp_result",
+    ("filepath", "exp_result"),
     [
-        ["/my/path/", "my/path"],
-        ["/my/path", "my/path"],
-        ["my/path/", "my/path"],
-        ["my/path", "my/path"],
-        ["/my/path/myfile.pdf", "my/path/myfile.pdf"],
+        ["/my/path/", "my/path"],  # noqa: PT007
+        ["/my/path", "my/path"],  # noqa: PT007
+        ["my/path/", "my/path"],  # noqa: PT007
+        ["my/path", "my/path"],  # noqa: PT007
+        ["/my/path/myfile.pdf", "my/path/myfile.pdf"],  # noqa: PT007
     ],
 )
 def test_remove_trailing_slashes(filepath, exp_result):
@@ -56,13 +56,17 @@ def test_remove_trailing_slashes(filepath, exp_result):
 
 
 @pytest.mark.parametrize(
-    "filepath,expect_extension,exp_result",
+    ("filepath", "expect_extension", "exp_result"),
     [
-        ["/my/path/", True, ("my/path", None)],
-        ["/my/path", True, ("my/path", None)],
-        ["/my/path/myfile.pdf", True, ("my/path", "myfile")],
-        ["/my/path/to/some.other-file.txt", True, ("my/path/to", "some.other-file")],
-        ["/my/path/to/myfile", False, ("my/path/to", "myfile")],
+        ["/my/path/", True, ("my/path", None)],  # noqa: PT007
+        ["/my/path", True, ("my/path", None)],  # noqa: PT007
+        ["/my/path/myfile.pdf", True, ("my/path", "myfile")],  # noqa: PT007
+        [  # noqa: PT007
+            "/my/path/to/some.other-file.txt",
+            True,
+            ("my/path/to", "some.other-file"),
+        ],
+        ["/my/path/to/myfile", False, ("my/path/to", "myfile")],  # noqa: PT007
     ],
 )
 def test_get_dirpath_and_filename(filepath, expect_extension, exp_result):
@@ -74,11 +78,11 @@ def test_get_dirpath_and_filename(filepath, expect_extension, exp_result):
 
 
 @pytest.mark.parametrize(
-    "filepath1,filepath2,exp_result",
+    ("filepath1", "filepath2", "exp_result"),
     [
-        ["/my/path/", "/my/path/", True],
-        ["/my/path/", "my/path", True],
-        ["my/path/1", "my/path/2", False],
+        ["/my/path/", "/my/path/", True],  # noqa: PT007
+        ["/my/path/", "my/path", True],  # noqa: PT007
+        ["my/path/1", "my/path/2", False],  # noqa: PT007
     ],
 )
 def test_are_equivalent_paths(filepath1, filepath2, exp_result):
@@ -87,7 +91,7 @@ def test_are_equivalent_paths(filepath1, filepath2, exp_result):
 
 
 @pytest.mark.parametrize(
-    "key, is_valid", [["unit-test-me", True], ["wrong-key", False]]
+    ("key", "is_valid"), [["unit-test-me", True], ["wrong-key", False]]  # noqa: PT007
 )
 def test_valid_key(mocker, key, is_valid):
     """valid_key should return True for a valid key, false otherwise"""
@@ -99,7 +103,8 @@ def test_valid_key(mocker, key, is_valid):
 
 
 @pytest.mark.parametrize(
-    "text, truncated", [["Hello world", "Hello___"], ["HelloWorld", "HelloW___"]]
+    ("text", "truncated"),
+    [["Hello world", "Hello___"], ["HelloWorld", "HelloW___"]],  # noqa: PT007
 )
 def test_truncate_words(text, truncated):
     """truncate_words returns expected result"""

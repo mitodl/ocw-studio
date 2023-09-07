@@ -16,7 +16,7 @@ const html = {
     <table></table>
     <table></table>
   </div>
-  `
+  `,
 }
 
 const md = {
@@ -26,7 +26,7 @@ const md = {
   twoTable: `
   {{< tableopen >}}{{< tableclose >}}
   {{< tableopen >}}{{< tableclose >}}
-  `
+  `,
 }
 
 describe("validateHtml2md", () => {

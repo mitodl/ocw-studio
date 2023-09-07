@@ -10,7 +10,7 @@ import { ContentListingParams, WebsiteContent } from "../../types/websites"
 import { websiteContentListingRequest } from "../../query-configs/websites"
 import {
   getWebsiteContentListingCursor,
-  WebsiteContentSelection
+  WebsiteContentSelection,
 } from "../../selectors/websites"
 import { formatUpdatedOn } from "../../util/websites"
 import { getExtensionName } from "../../util"
@@ -26,7 +26,7 @@ interface Props {
 }
 
 export default function ResourcePickerListing(
-  props: Props
+  props: Props,
 ): JSX.Element | null {
   const {
     focusResource,
@@ -35,7 +35,7 @@ export default function ResourcePickerListing(
     resourcetype,
     contentType,
     sourceWebsiteName,
-    singleColumn
+    singleColumn,
   } = props
   const website = useWebsite()
 
@@ -43,20 +43,20 @@ export default function ResourcePickerListing(
     () =>
       Object.assign(
         {
-          name:   sourceWebsiteName ?? website.name,
-          type:   contentType,
-          offset: 0
+          name: sourceWebsiteName ?? website.name,
+          type: contentType,
+          offset: 0,
         },
         resourcetype ? { resourcetype } : null,
-        filter ? { search: filter } : null
+        filter ? { search: filter } : null,
       ),
-    [website, filter, resourcetype, contentType, sourceWebsiteName]
+    [website, filter, resourcetype, contentType, sourceWebsiteName],
   )
 
   useRequest(websiteContentListingRequest(listingParams, true, false))
 
   const listing = useSelector(getWebsiteContentListingCursor)(
-    listingParams
+    listingParams,
   ) as WebsiteContentSelection
 
   if (!listing) {
@@ -66,11 +66,11 @@ export default function ResourcePickerListing(
   return (
     <div
       className={classNames("resource-picker-listing", {
-        "column-view": singleColumn
+        "column-view": singleColumn,
       })}
     >
       {listing.results.map((item, idx) => {
-        const focusItem: React.MouseEventHandler<HTMLDivElement> = event => {
+        const focusItem: React.MouseEventHandler<HTMLDivElement> = (event) => {
           event.preventDefault()
           focusResource(item)
         }
@@ -100,7 +100,7 @@ const PickerListItem = (props: ItemProps) => {
   const { websiteContent, isFocused, isWholeRow } = props
   const className = classNames({
     "resource-item": true,
-    focused:         isFocused
+    focused: isFocused,
   })
 
   let imageSrc: string | undefined, extension: string | undefined
@@ -110,7 +110,7 @@ const PickerListItem = (props: ItemProps) => {
     } else if (websiteContent.metadata.resourcetype === ResourceType.Video) {
       imageSrc = path(
         ["metadata", "video_files", "video_thumbnail_file"],
-        websiteContent
+        websiteContent,
       )
     } else {
       extension = getExtensionName(websiteContent.file ?? "")

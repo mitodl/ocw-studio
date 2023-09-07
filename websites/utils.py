@@ -1,5 +1,5 @@
 """Websites utils"""
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from django.db.models import Q
 
@@ -13,10 +13,11 @@ def permissions_group_name_for_role(role, website):
     elif role in constants.ROLE_GROUP_MAPPING:
         return f"{constants.ROLE_GROUP_MAPPING[role]}{website.uuid.hex}"
     else:
-        raise ValueError(f"Invalid role for a website group: {role}")
+        msg = f"Invalid role for a website group: {role}"
+        raise ValueError(msg)
 
 
-def get_dict_field(obj: Dict, field_path: str) -> Any:
+def get_dict_field(obj: dict, field_path: str) -> Any:
     """Return the value of a potentially nested dict path"""
     fields = field_path.split(".")
     current_obj = obj
@@ -25,7 +26,7 @@ def get_dict_field(obj: Dict, field_path: str) -> Any:
     return current_obj.get(fields[-1])
 
 
-def set_dict_field(obj: Dict, field_path: str, value: Any):
+def set_dict_field(obj: dict, field_path: str, value: Any):
     """Set the value of a potentially nested dict path"""
     fields = field_path.split(".")
     current_obj = obj
@@ -52,11 +53,11 @@ def get_valid_base_filename(filename: str, content_type: str) -> str:
 
 
 def resource_reference_field_filter(
-    field: dict, resource_id: str, website: "Website"
+    field: dict, resource_id: str, website: "Website"  # noqa: F821
 ) -> Optional[Q]:
     """
     Generates an appropriate Q expression to filter a field for a resource usage.
-    """
+    """  # noqa: D401
     q = None
 
     if field.get("widget") == "markdown" and (

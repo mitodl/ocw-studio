@@ -1,17 +1,14 @@
-from django.conf import settings
-from django.core.management import BaseCommand
-from django.utils.text import slugify
+from django.core.management import BaseCommand  # noqa: INP001
 
 from gdrive_sync.api import rename_file
 
 
 class Command(BaseCommand):
-    """Rename the file on S3 associated with the WebsiteContent object to a new filename, and update the object and corresponding DriveFile."""
+    """Rename the file on S3 associated with the WebsiteContent object to a new filename, and update the object and corresponding DriveFile."""  # noqa: E501
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
-
         parser.add_argument(
             "--text_id",
             dest="text_id",
@@ -26,6 +23,6 @@ class Command(BaseCommand):
             required=True,
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # noqa: ARG002
         rename_file(options["text_id"], options["new_filename"])
         self.stdout.write("File successfully renamed.\n")

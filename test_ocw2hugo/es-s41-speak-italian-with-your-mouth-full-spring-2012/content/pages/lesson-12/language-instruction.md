@@ -60,9 +60,9 @@ _Al supermercato ci sono molti reparti_/sectors:
 
 If you ask for 100 g of something, you may say one _etto_ (short for ettogrammo) instead.
 
-100 _grammi_ = 1 _etto_  
-E.g. _Quanto costa un etto di prosciutto?_/How much does one _etto_ of _prosciutto_ cost?  
-_1 chilogrammo_ = _1 chilo_  
+100 _grammi_ = 1 _etto_
+E.g. _Quanto costa un etto di prosciutto?_/How much does one _etto_ of _prosciutto_ cost?
+_1 chilogrammo_ = _1 chilo_
 E.g. _Vorrei un chilo di mele, per favore. Quanto costano?_
 
 If you prefer to try the smaller shops, you will need to go from the _alimentari_/small grocery shop, usually more expensive to:

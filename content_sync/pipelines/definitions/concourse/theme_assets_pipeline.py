@@ -32,7 +32,6 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT
 
-
 CLI_ENDPOINT_URL = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
 
 
@@ -51,7 +50,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         publish_bucket(str): The S3 bucket where published sites are to be stored
         ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to clone
         instance_vars:(str): Instance vars for the pipeline in query string format
-    """
+    """  # noqa: E501
 
     _build_theme_assets_job_identifier = Identifier("build-theme-assets-job").root
     _build_ocw_hugo_themes_identifier = Identifier("build-ocw-hugo-themes-task").root
@@ -139,7 +138,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                             aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
                             aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
                             aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data/webpack.json s3://{artifacts_bucket}/ocw-hugo-themes/{ocw_hugo_themes_branch}/webpack.json --metadata site-id=ocw-hugo-themes
-                            """,
+                            """,  # noqa: E501
                         ],
                     ),
                 ),
@@ -169,7 +168,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                 Failed to build theme assets.
 
                 Append `?vars.branch={ocw_hugo_themes_branch}` to the url below for more details.
-                """,
+                """,  # noqa: E501
             )
             job.on_abort = SlackAlertStep(
                 alert_type="aborted",
@@ -177,7 +176,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                 User aborted while building theme assets.
 
                 Append `?vars.branch={ocw_hugo_themes_branch}` to the url below for more details.
-                """,
+                """,  # noqa: E501
             )
 
         job.plan = tasks

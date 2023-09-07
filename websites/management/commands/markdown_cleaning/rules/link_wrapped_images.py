@@ -17,7 +17,7 @@ from websites.management.commands.markdown_cleaning.parsing_utils import Shortco
 from websites.management.commands.markdown_cleaning.shortcode_parser import (
     ShortcodeParser,
     ShortcodeParseResult,
-    ShortcodeTag,
+    ShortcodeTag,  # noqa: F811
 )
 from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
@@ -41,7 +41,7 @@ class LinkWrappedImagesRule(PyparsingRule):
         Hello {{< resource uuid="some_uuid" href="url" >}}[extra text](url)
 
     depending on whether the url is within-course or not.
-    """
+    """  # noqa: E501
 
     alias = "link_wrapped_images"
 
@@ -63,7 +63,9 @@ class LinkWrappedImagesRule(PyparsingRule):
     def should_parse(self, text: str):
         return "[{{< resource" in text
 
-    def replace_match(self, s, l, toks: LinkParseResult, wc: WebsiteContent):
+    def replace_match(  # noqa: PLR0911
+        self, s, l, toks: LinkParseResult, wc: WebsiteContent  # noqa: ARG002, E741
+    ):  # noqa: E741, PLR0911, RUF100
         """
         Replace a single markdown link with shortcodes.
 
@@ -99,7 +101,7 @@ class LinkWrappedImagesRule(PyparsingRule):
         resource = parsed.shortcode
         if len(resource.params) != 1:
             return toks.original_text, Notes(
-                f"Unexpected: wrong number of shortcode parameters: {len(resource.params)}"
+                f"Unexpected: wrong number of shortcode parameters: {len(resource.params)}"  # noqa: E501
             )
         resource_uuid = resource.get(0)
 
@@ -131,7 +133,7 @@ class LinkWrappedImagesRule(PyparsingRule):
             fragment=fragment,
         )
 
-    def get_replacement(
+    def get_replacement(  # noqa: PLR0913
         self,
         page_content: WebsiteContent,
         linked_content: WebsiteContent,

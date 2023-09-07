@@ -14,175 +14,178 @@ task-config: &webhook-config
   platform: linux
   image_resource:
     type: registry-image
-    source: {repository: curlimages/curl}
+    source: { repository: curlimages/curl }
 jobs:
-- name: remove-unpublished-sites
-  serial: true
-  plan:
-  - task: get-unpublished-sites
-    timeout: 2m
-    attempts: 3
-    config:
-      platform: linux
-      image_resource:
-        type: registry-image
-        source: {repository: bash, tag: latest}
-      outputs:
-        - name: unpublishable_sites
-      run:
-        path: sh
-        args:
-        - -exc
-        - |
-          wget -O unpublishable_sites/sites.json --header="Authorization: Bearer ((api-token))" "((ocw-studio-url))/api/unpublish/"
-  - load_var: unpublished
-    file: unpublishable_sites/sites.json
-    format: json
-    reveal: true
-  - across:
-    - var: site
-      values: ((.:unpublished.sites))
-      max_in_flight: 5
-    do:  # takes a list of steps
-    # START NON-DEV
-    - task: search-index-removal
-      timeout: 1m
-      attempts: 3
-      config:
-        platform: linux
-        image_resource:
-          type: registry-image
-          source: {repository: curlimages/curl}
-        run:
-          path: curl
-          args:
-            - -f
-            - -X
-            - POST
-            - -H
-            - 'Content-Type: application/json'
-            - --data
-            - '{"webhook_key":"((open-webhook-key))","site_uid":"((.:site.site_uid))","version":"((version))", "unpublished": true}'
-            - ((open-discussions-url))/api/v0/ocw_next_webhook/
-      on_failure:
-        try:
-          task: webhook
-          timeout: 1m
-          attempts: 3
-          config:
-            << : *webhook-config
-            run:
-              path: curl
-              args:
-                - -f
-                - -X
-                - POST
-                - -H
-                - 'Content-Type: application/json'
-                - -H
-                - 'Authorization: Bearer ((api-token))'
-                - --data
-                - '{"version":"((version))","status":"errored", "unpublished": true}'
-                -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
-    # END NON-DEV
-    - task: empty-s3-bucket
-      timeout: 10m
-      attempts: 3
-      # START DEV-ONLY
-      params:
-        AWS_ACCESS_KEY_ID: ((minio-root-user))
-        AWS_SECRET_ACCESS_KEY: ((minio-root-password))
-      # END DEV-ONLY
-      config:
-        platform: linux
-        image_resource:
-          type: registry-image
-          source: {repository: amazon/aws-cli, tag: latest}
-        run:
-          path: sh
-          args:
-          - -exc
-          - |
-            aws s3((cli-endpoint-url)) rm s3://((web-bucket))/((.:site.site_url))/ --recursive
-            aws s3((cli-endpoint-url)) rm s3://((offline-bucket))/((.:site.site_url))/ --recursive
-      on_failure:
-        try:
-          task: webhook
-          timeout: 1m
-          attempts: 3
-          config:
-            << : *webhook-config
-            run:
-              path: curl
-              args:
-                - -f
-                - -X
-                - POST
-                - -H
-                - 'Content-Type: application/json'
-                - -H
-                - 'Authorization: Bearer ((api-token))'
-                - --data
-                - '{"version":"((version))","status":"errored", "unpublished": true}'
-                -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
-    # START NON-DEV
-    - task: clear-cdn-cache
-      timeout: 1m
-      attempts: 3
-      config:
-        platform: linux
-        image_resource:
-          type: registry-image
-          source: {repository: curlimages/curl}
-        run:
-          path: curl
-          args:
-            - -f
-            - -X
-            - POST
-            - -H
-            - 'Fastly-Key: ((fastly_((version)).api_token))'
-            - -H
-            - 'Fastly-Soft-Purge: 1'
-            - https://api.fastly.com/service/((fastly_((version)).service_id))/purge/((.:site.name))
-      on_success:
-        try:
-          task: webhook
-          timeout: 1m
-          attempts: 3
-          config:
-            << : *webhook-config
-            run:
-              path: curl
-              args:
-                - -f
-                - -X
-                - POST
-                - -H
-                - 'Content-Type: application/json'
-                - -H
-                - 'Authorization: Bearer ((api-token))'
-                - --data
-                - '{"version":"((version))","status":"succeeded", "unpublished": true}'
-                -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
-      on_failure:
-        try:
-          task: webhook
-          timeout: 1m
-          attempts: 3
-          config:
-            << : *webhook-config
-            run:
-              path: curl
-              args:
-                - -f
-                - -X
-                - POST
-                - -H
-                - 'Content-Type: application/json'
-                - -H
-                - 'Authorization: Bearer ((api-token))'
-                - --data
-                - '{"version":"((version))","status":"errored", "unpublished": true}'
-                -  ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
-    # END NON-DEV
+  - name: remove-unpublished-sites
+    serial: true
+    plan:
+      - task: get-unpublished-sites
+        timeout: 2m
+        attempts: 3
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source: { repository: bash, tag: latest }
+          outputs:
+            - name: unpublishable_sites
+          run:
+            path: sh
+            args:
+              - -exc
+              - |
+                wget -O unpublishable_sites/sites.json --header="Authorization: Bearer ((api-token))" "((ocw-studio-url))/api/unpublish/"
+      - load_var: unpublished
+        file: unpublishable_sites/sites.json
+        format: json
+        reveal: true
+      - across:
+          - var: site
+            values: ((.:unpublished.sites))
+            max_in_flight: 5
+        do: # takes a list of steps
+          # START NON-DEV
+          - task: search-index-removal
+            timeout: 1m
+            attempts: 3
+            config:
+              platform: linux
+              image_resource:
+                type: registry-image
+                source: { repository: curlimages/curl }
+              run:
+                path: curl
+                args:
+                  - -f
+                  - -X
+                  - POST
+                  - -H
+                  - "Content-Type: application/json"
+                  - --data
+                  - '{"webhook_key":"((open-webhook-key))","site_uid":"((.:site.site_uid))","version":"((version))",
+                    "unpublished": true}'
+                  - ((open-discussions-url))/api/v0/ocw_next_webhook/
+            on_failure:
+              try:
+                task: webhook
+                timeout: 1m
+                attempts: 3
+                config:
+                  <<: *webhook-config
+                  run:
+                    path: curl
+                    args:
+                      - -f
+                      - -X
+                      - POST
+                      - -H
+                      - "Content-Type: application/json"
+                      - -H
+                      - "Authorization: Bearer ((api-token))"
+                      - --data
+                      - '{"version":"((version))","status":"errored", "unpublished": true}'
+                      - ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
+                # END NON-DEV
+          - task: empty-s3-bucket
+            timeout: 10m
+            attempts:
+              3
+              # START DEV-ONLY
+            params:
+              AWS_ACCESS_KEY_ID: ((minio-root-user))
+              AWS_SECRET_ACCESS_KEY:
+                ((minio-root-password))
+                # END DEV-ONLY
+            config:
+              platform: linux
+              image_resource:
+                type: registry-image
+                source: { repository: amazon/aws-cli, tag: latest }
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    aws s3((cli-endpoint-url)) rm s3://((web-bucket))/((.:site.site_url))/ --recursive
+                    aws s3((cli-endpoint-url)) rm s3://((offline-bucket))/((.:site.site_url))/ --recursive
+            on_failure:
+              try:
+                task: webhook
+                timeout: 1m
+                attempts: 3
+                config:
+                  <<: *webhook-config
+                  run:
+                    path: curl
+                    args:
+                      - -f
+                      - -X
+                      - POST
+                      - -H
+                      - "Content-Type: application/json"
+                      - -H
+                      - "Authorization: Bearer ((api-token))"
+                      - --data
+                      - '{"version":"((version))","status":"errored", "unpublished": true}'
+                      - ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
+                # START NON-DEV
+          - task: clear-cdn-cache
+            timeout: 1m
+            attempts: 3
+            config:
+              platform: linux
+              image_resource:
+                type: registry-image
+                source: { repository: curlimages/curl }
+              run:
+                path: curl
+                args:
+                  - -f
+                  - -X
+                  - POST
+                  - -H
+                  - "Fastly-Key: ((fastly_((version)).api_token))"
+                  - -H
+                  - "Fastly-Soft-Purge: 1"
+                  - https://api.fastly.com/service/((fastly_((version)).service_id))/purge/((.:site.name))
+            on_success:
+              try:
+                task: webhook
+                timeout: 1m
+                attempts: 3
+                config:
+                  <<: *webhook-config
+                  run:
+                    path: curl
+                    args:
+                      - -f
+                      - -X
+                      - POST
+                      - -H
+                      - "Content-Type: application/json"
+                      - -H
+                      - "Authorization: Bearer ((api-token))"
+                      - --data
+                      - '{"version":"((version))","status":"succeeded", "unpublished": true}'
+                      - ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
+            on_failure:
+              try:
+                task: webhook
+                timeout: 1m
+                attempts: 3
+                config:
+                  <<: *webhook-config
+                  run:
+                    path: curl
+                    args:
+                      - -f
+                      - -X
+                      - POST
+                      - -H
+                      - "Content-Type: application/json"
+                      - -H
+                      - "Authorization: Bearer ((api-token))"
+                      - --data
+                      - '{"version":"((version))","status":"errored", "unpublished": true}'
+                      - ((ocw-studio-url))/api/websites/((.:site.name))/pipeline_status/
+              # END NON-DEV

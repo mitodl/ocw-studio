@@ -18,7 +18,7 @@ import { debounce, DebouncedFunc } from "lodash"
  */
 export function useDebouncedState<T>(
   initialState: T,
-  delay: number
+  delay: number,
 ): [T, DebouncedFunc<(n: T) => void>] {
   const [state, setState] = useState<T>(initialState)
 
@@ -29,7 +29,7 @@ export function useDebouncedState<T>(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const setStateDebounced = useCallback(
     debounce((nextval: T) => setState(nextval), delay),
-    [setState, delay]
+    [setState, delay],
   )
 
   return [state, setStateDebounced]
@@ -42,7 +42,7 @@ type TextInputRetProps = [string, (e: ChangeEvent<HTMLInputElement>) => void]
  * for a single text input.
  */
 export function useTextInputState(
-  initialValue: string | (() => string) = ""
+  initialValue: string | (() => string) = "",
 ): TextInputRetProps {
   const [inputState, setInputState] = useState<string>(initialValue)
 
@@ -51,7 +51,7 @@ export function useTextInputState(
       e.preventDefault()
       setInputState(e.target.value)
     },
-    [setInputState]
+    [setInputState],
   )
 
   return [inputState, setSearchInputCB]

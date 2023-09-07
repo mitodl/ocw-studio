@@ -37,15 +37,14 @@ from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
 from websites.factories import WebsiteContentFactory, WebsiteStarterFactory
 from websites.site_config_api import ConfigItem, SiteConfig
 
-
 pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.parametrize(
-    "has_missing_name, is_bad_config_item",
+    ("has_missing_name", "is_bad_config_item"),
     [
-        [True, False],
-        [False, True],
+        [True, False],  # noqa: PT007
+        [False, True],  # noqa: PT007
     ],
 )
 def test_get_destination_filepath_errors(mocker, has_missing_name, is_bad_config_item):
@@ -97,18 +96,18 @@ def test_get_destination_url_errors(mocker):
 
 
 @pytest.mark.parametrize(
-    "is_page_content, dirpath, filename, expected",
+    ("is_page_content", "dirpath", "filename", "expected"),
     [
-        [True, "content/pages", "_index", "/pages/"],
-        [True, "content/pages", "hx_network", "/pages/hx_network"],
-        [
+        [True, "content/pages", "_index", "/pages/"],  # noqa: PT007
+        [True, "content/pages", "hx_network", "/pages/hx_network"],  # noqa: PT007
+        [  # noqa: PT007
             True,
             "content/pages/lecture-notes",
             "java_3d_lecture",
             "/pages/lecture-notes/java_3d_lecture",
         ],
-        [True, "content/resources", "image", "/resources/image"],
-        [False, "", "", None],
+        [True, "content/resources", "image", "/resources/image"],  # noqa: PT007
+        [False, "", "", None],  # noqa: PT007
     ],
 )
 def test_get_destination_url(is_page_content, dirpath, filename, expected):
@@ -123,19 +122,29 @@ def test_get_destination_url(is_page_content, dirpath, filename, expected):
 
 
 @pytest.mark.parametrize(
-    "is_page_content, dirpath, filename, expected",
+    ("is_page_content", "dirpath", "filename", "expected"),
     [
-        [True, "content/pages", "_index", "content/pages/_index.md"],
-        [True, "content/pages", "hx_network", "content/pages/hx_network.md"],
-        [
+        [True, "content/pages", "_index", "content/pages/_index.md"],  # noqa: PT007
+        [  # noqa: PT007
+            True,
+            "content/pages",
+            "hx_network",
+            "content/pages/hx_network.md",
+        ],
+        [  # noqa: PT007
             True,
             "content/pages/lecture-notes",
             "java_3d_lecture",
             "content/pages/lecture-notes/java_3d_lecture.md",
         ],
-        [True, "content/resources", "image", "content/resources/image.md"],
-        [False, "", "", None],
-        [False, "config/_default/menus.yaml", "menus.yaml", None],
+        [  # noqa: PT007
+            True,
+            "content/resources",
+            "image",
+            "content/resources/image.md",
+        ],
+        [False, "", "", None],  # noqa: PT007
+        [False, "config/_default/menus.yaml", "menus.yaml", None],  # noqa: PT007
     ],
 )
 def test_get_destination_filepath(is_page_content, dirpath, filename, expected):
@@ -211,14 +220,14 @@ def test_get_hugo_arg_string(build_target, pipeline_name, default_args, override
     arg_string = get_hugo_arg_string(
         build_target, pipeline_name, default_args, override_string
     )
-    for key in default_args.keys():
+    for key in default_args:
         value = default_args[key]
         expected_string = f"{key} {value}" if value != "" else key
-        if not key in expected_overrides:
+        if key not in expected_overrides:
             assert expected_string in arg_string
         else:
             assert expected_string not in arg_string
-    for key in expected_overrides.keys():
+    for key in expected_overrides:
         value = expected_overrides[key]
         expected_string = f"{key} {value}" if value != "" else key
         assert expected_string in arg_string
@@ -226,52 +235,66 @@ def test_get_hugo_arg_string(build_target, pipeline_name, default_args, override
 
 def test_check_matching_tags():
     """check_matching_tags should throw an exception if the tags don't match"""
-    uneven_tags_test_file = os.path.join(
-        os.path.dirname(__file__), UNEVEN_TAGS_TEST_FILE
+    uneven_tags_test_file = os.path.join(  # noqa: PTH118
+        os.path.dirname(__file__), UNEVEN_TAGS_TEST_FILE  # noqa: PTH120
     )
-    even_tags_test_file = os.path.join(os.path.dirname(__file__), EVEN_TAGS_TEST_FILE)
-    with open(uneven_tags_test_file, encoding="utf-8") as test_config_file:
+    even_tags_test_file = os.path.join(  # noqa: PTH118
+        os.path.dirname(__file__), EVEN_TAGS_TEST_FILE  # noqa: PTH120
+    )  # noqa: PTH118, PTH120, RUF100
+    with open(  # noqa: PTH123
+        uneven_tags_test_file, encoding="utf-8"
+    ) as test_config_file:  # noqa: PTH123, RUF100
         test_config = test_config_file.read()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             check_matching_tags(test_config, DEV_START, DEV_END)
         assert check_matching_tags(test_config, NON_DEV_START, NON_DEV_END) is True
-    with open(even_tags_test_file, encoding="utf-8") as test_config_file:
+    with open(  # noqa: PTH123
+        even_tags_test_file, encoding="utf-8"
+    ) as test_config_file:  # noqa: PTH123, RUF100
         test_config = test_config_file.read()
         assert check_matching_tags(test_config, DEV_START, DEV_END) is True
         assert check_matching_tags(test_config, NON_DEV_START, NON_DEV_END) is True
 
 
 @pytest.mark.parametrize(
-    "start_tag, end_tag, expected",
+    ("start_tag", "end_tag", "expected"),
     [
-        [DEV_START, DEV_END, EXPECTED_REMAINING_STRING_DEV],
-        [NON_DEV_START, NON_DEV_END, EXPECTED_REMAINING_STRING_NON_DEV],
+        [DEV_START, DEV_END, EXPECTED_REMAINING_STRING_DEV],  # noqa: PT007
+        [NON_DEV_START, NON_DEV_END, EXPECTED_REMAINING_STRING_NON_DEV],  # noqa: PT007
     ],
 )
 def test_strip_lines_between(start_tag, end_tag, expected):
-    """check that strip_lines_between strips the expected content"""
-    even_tags_test_file = os.path.join(os.path.dirname(__file__), EVEN_TAGS_TEST_FILE)
-    with open(even_tags_test_file, encoding="utf-8") as test_config_file:
+    """Check that strip_lines_between strips the expected content"""
+    even_tags_test_file = os.path.join(  # noqa: PTH118
+        os.path.dirname(__file__), EVEN_TAGS_TEST_FILE  # noqa: PTH120
+    )  # noqa: PTH118, PTH120, RUF100
+    with open(  # noqa: PTH123
+        even_tags_test_file, encoding="utf-8"
+    ) as test_config_file:  # noqa: PTH123, RUF100
         test_config = test_config_file.read()
         assert expected == strip_lines_between(test_config, start_tag, end_tag)
 
 
 @pytest.mark.parametrize(
-    "start_tag, end_tag",
+    ("start_tag", "end_tag"),
     [
-        ["# DEV START", "# DEV END"],
-        ["# STARTT DEV", "# END DEV"],
-        ["# START DEV", "# ENDD DEV"],
-        ["#START DEV", "# END DEV"],
-        ["# START DEV", "#END DEV"],
-        ["# START PROD", "# END DEV"],
-        ["# START DEV", "# END PROD"],
+        ["# DEV START", "# DEV END"],  # noqa: PT007
+        ["# STARTT DEV", "# END DEV"],  # noqa: PT007
+        ["# START DEV", "# ENDD DEV"],  # noqa: PT007
+        ["#START DEV", "# END DEV"],  # noqa: PT007
+        ["# START DEV", "#END DEV"],  # noqa: PT007
+        ["# START PROD", "# END DEV"],  # noqa: PT007
+        ["# START DEV", "# END PROD"],  # noqa: PT007
     ],
 )
 def test_bad_tags(start_tag, end_tag):
-    """make sure errors are thrown if a bad combination of start_tag and end_tag are passed"""
-    even_tags_test_file = os.path.join(os.path.dirname(__file__), EVEN_TAGS_TEST_FILE)
-    with open(even_tags_test_file, encoding="utf-8") as test_config_file:
+    """Make sure errors are thrown if a bad combination of start_tag and end_tag are passed"""
+    even_tags_test_file = os.path.join(  # noqa: PTH118
+        os.path.dirname(__file__), EVEN_TAGS_TEST_FILE  # noqa: PTH120
+    )  # noqa: PTH118, PTH120, RUF100
+    with open(  # noqa: PTH123
+        even_tags_test_file, encoding="utf-8"
+    ) as test_config_file:  # noqa: PTH123, RUF100
         test_config = test_config_file.read()
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             check_matching_tags(test_config, start_tag, end_tag)

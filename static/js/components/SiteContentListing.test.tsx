@@ -4,17 +4,17 @@ import React from "react"
 
 import SiteContentListing, {
   repeatableTitle,
-  singletonTitle
+  singletonTitle,
 } from "./SiteContentListing"
 
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 import {
   makeRepeatableConfigItem,
   makeSingletonsConfigItem,
   makeWebsiteConfigField,
-  makeWebsiteDetail
+  makeWebsiteDetail,
 } from "../util/factories/websites"
 import WebsiteContext from "../context/Website"
 
@@ -22,22 +22,22 @@ import {
   RepeatableConfigItem,
   SingletonsConfigItem,
   Website,
-  WidgetVariant
+  WidgetVariant,
 } from "../types/websites"
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useRouteMatch: () => mockUseRouteMatch()
+  useRouteMatch: () => mockUseRouteMatch(),
 }))
 
 jest.mock("./RepeatableContentListing", () => ({
   __esModule: true,
-  default:    () => <div>MockComponent</div>
+  default: () => <div>MockComponent</div>,
 }))
 
 jest.mock("./SingletonsContentListing", () => ({
   __esModule: true,
-  default:    () => <div>MockComponent</div>
+  default: () => <div>MockComponent</div>,
 }))
 
 import MockRepeatable from "./RepeatableContentListing"
@@ -61,10 +61,10 @@ describe("SiteContentListing", () => {
     website.starter = {
       ...website.starter,
       config: {
-        collections: [repeatableConfigItem, singletonsConfigItem]
-      }
+        collections: [repeatableConfigItem, singletonsConfigItem],
+      },
     }
-    render = helper.configureRenderer(props => (
+    render = helper.configureRenderer((props) => (
       <WebsiteContext.Provider value={website}>
         <SiteContentListing {...props} />
       </WebsiteContext.Provider>
@@ -76,10 +76,10 @@ describe("SiteContentListing", () => {
   })
 
   it("title funcs should be reasonable", () => {
-    [
+    ;[
       ["input", "Input", "Inputs"],
       ["video_gallery", "Video Gallery", "Video Galleries"],
-      ["sad_cat_house", "Sad Cat House", "Sad Cat Houses"]
+      ["sad_cat_house", "Sad Cat House", "Sad Cat Houses"],
     ].forEach(([contentType, singleExp, repeatExp]) => {
       expect(singletonTitle(contentType)).toBe(singleExp)
       expect(repeatableTitle(contentType)).toBe(repeatExp)
@@ -88,7 +88,7 @@ describe("SiteContentListing", () => {
 
   const childCases = [
     { name: "repeatable", child: MockRepeatable },
-    { name: "singleton", child: MockSingletons }
+    { name: "singleton", child: MockSingletons },
   ]
 
   it.each(childCases)(
@@ -99,16 +99,16 @@ describe("SiteContentListing", () => {
 
       const params = { name: website.name, contentType: configItem.name }
       mockUseRouteMatch.mockImplementation(() => ({
-        params
+        params,
       }))
       const { wrapper } = await render()
 
       const listing = wrapper.find(child)
       expect(listing.exists()).toBe(true)
       expect(listing.props()).toEqual({
-        configItem
+        configItem,
       })
-    }
+    },
   )
 
   it.each(childCases)("sets an appropriate title", async ({ child, name }) => {
@@ -117,34 +117,34 @@ describe("SiteContentListing", () => {
 
     const params = { name: website.name, contentType: configItem.name }
     mockUseRouteMatch.mockImplementation(() => ({
-      params
+      params,
     }))
     const { wrapper } = await render()
     expect(wrapper.find("DocumentTitle").prop("title")).toBe(
-      name === "repeatable" ?
-        `OCW Studio | ${website.title} | Repeatable Test Contents` :
-        `OCW Studio | ${website.title} | Singleton Test Content`
+      name === "repeatable"
+        ? `OCW Studio | ${website.title} | Repeatable Test Contents`
+        : `OCW Studio | ${website.title} | Singleton Test Content`,
     )
   })
 
   it("modifies config item fields before passing them on RepeatableContentListing", async () => {
     const params = {
-      name:        website.name,
-      contentType: repeatableConfigItem.name
+      name: website.name,
+      contentType: repeatableConfigItem.name,
     }
     mockUseRouteMatch.mockImplementation(() => ({
-      params
+      params,
     }))
 
     const objectField = makeWebsiteConfigField({
       widget: WidgetVariant.Object,
-      label:  "myobject",
+      label: "myobject",
       fields: [
         makeWebsiteConfigField({
           widget: WidgetVariant.String,
-          label:  "mystring"
-        })
-      ]
+          label: "mystring",
+        }),
+      ],
     })
     repeatableConfigItem.fields = [objectField]
     const { wrapper } = await render()
@@ -153,7 +153,7 @@ describe("SiteContentListing", () => {
       // Title field should be added by default
       DEFAULT_TITLE_FIELD,
       // Nested object field should be not renamed
-      objectField
+      objectField,
     ])
   })
 })

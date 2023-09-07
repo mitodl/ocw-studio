@@ -11,7 +11,7 @@ import { LinkType, WebsiteContent } from "../../types/websites"
 interface Props {
   onSubmit: (
     values: any,
-    formikHelpers: FormikHelpers<any>
+    formikHelpers: FormikHelpers<any>,
   ) => void | Promise<any>
   activeItem: InternalSortableMenuItem | null
   collections?: string[]
@@ -28,22 +28,22 @@ export type MenuItemFormValues = {
 
 const schema = yup.object().shape({
   menuItemTitle: yup.string().required().label("Title"),
-  menuItemType:  yup.mixed().oneOf([LinkType.Internal, LinkType.External]),
-  externalLink:  yup.string().label("External link").url().when("menuItemType", {
-    is:   LinkType.External,
-    then: yup.string().required()
+  menuItemType: yup.mixed().oneOf([LinkType.Internal, LinkType.External]),
+  externalLink: yup.string().label("External link").url().when("menuItemType", {
+    is: LinkType.External,
+    then: yup.string().required(),
   }),
   internalLink: yup.string().label("Internal link").when("menuItemType", {
-    is:   LinkType.Internal,
-    then: yup.string().required()
-  })
+    is: LinkType.Internal,
+    then: yup.string().required(),
+  }),
 })
 
 const emptyInitialValues: MenuItemFormValues = {
   menuItemTitle: "",
-  menuItemType:  LinkType.Internal,
-  externalLink:  "",
-  internalLink:  ""
+  menuItemType: LinkType.Internal,
+  externalLink: "",
+  internalLink: "",
 }
 
 export default function MenuItemForm({
@@ -51,21 +51,21 @@ export default function MenuItemForm({
   activeItem,
   collections,
   existingMenuIds,
-  contentContext
+  contentContext,
 }: Props): JSX.Element {
   const initialValues = useMemo(
     () =>
-      activeItem ?
-        {
-          menuItemTitle: activeItem.text,
-          menuItemType:  activeItem.targetUrl ?
-            LinkType.External :
-            LinkType.Internal,
-          externalLink: activeItem.targetUrl || "",
-          internalLink: activeItem.targetContentId || ""
-        } :
-        emptyInitialValues,
-    [activeItem]
+      activeItem
+        ? {
+            menuItemTitle: activeItem.text,
+            menuItemType: activeItem.targetUrl
+              ? LinkType.External
+              : LinkType.Internal,
+            externalLink: activeItem.targetUrl || "",
+            internalLink: activeItem.targetContentId || "",
+          }
+        : emptyInitialValues,
+    [activeItem],
   )
 
   return (
@@ -128,7 +128,7 @@ export default function MenuItemForm({
                     collection={collections}
                     display_field="title"
                     multiple={false}
-                    onChange={event => {
+                    onChange={(event) => {
                       setFieldValue("internalLink", event.target.value.content)
                     }}
                     value={values.internalLink}

@@ -17,7 +17,6 @@ from websites.factories import (
 )
 from websites.permissions import create_global_groups
 
-
 # pylint:disable=redefined-outer-name
 
 FACTORY_SITE_CONFIG_PATH = "localdev/configs/basic-site-config.yml"
@@ -45,7 +44,7 @@ def permission_groups():
     owner_content = WebsiteContentFactory.create(website=website, owner=website.owner)
     editor_content = WebsiteContentFactory.create(website=website, owner=site_editor)
 
-    yield SimpleNamespace(
+    return SimpleNamespace(
         global_admin=global_admin,
         global_author=global_author,
         site_admin=site_admin,
@@ -58,7 +57,7 @@ def permission_groups():
 
 @pytest.fixture()
 def global_admin_user():
-    """Returns a user with global admin permissions"""
+    """Returns a user with global admin permissions"""  # noqa: D401
     create_global_groups()
     global_admin_user = UserFactory.create()
     global_admin_user.groups.add(Group.objects.get(name=constants.GLOBAL_ADMIN))
@@ -67,7 +66,7 @@ def global_admin_user():
 
 @pytest.fixture()
 def basic_site_config(settings):
-    """Returns an example site config"""
+    """Returns an example site config"""  # noqa: D401
     return yaml.load(
         (Path(settings.BASE_DIR) / FACTORY_SITE_CONFIG_PATH).read_text(),
         Loader=yaml.SafeLoader,
@@ -76,9 +75,11 @@ def basic_site_config(settings):
 
 @pytest.fixture()
 def site_config_yml(settings):
-    """Fixture that returns the contents of the example site config YAML file in the resource directory"""
-    with open(
-        os.path.join(settings.BASE_DIR, SCHEMA_RESOURCES_DIR, SCHEMA_CONFIG_FILE),
+    """Fixture that returns the contents of the example site config YAML file in the resource directory"""  # noqa: E501
+    with open(  # noqa: PTH123
+        os.path.join(  # noqa: PTH118
+            settings.BASE_DIR, SCHEMA_RESOURCES_DIR, SCHEMA_CONFIG_FILE
+        ),  # noqa: PTH118, RUF100
         encoding="utf-8",
     ) as f:
         return f.read().strip()
@@ -86,16 +87,16 @@ def site_config_yml(settings):
 
 @pytest.fixture()
 def parsed_site_config(site_config_yml):
-    """Fixture that returns the parsed contents of the example site config YAML file in the resource directory"""
+    """Fixture that returns the parsed contents of the example site config YAML file in the resource directory"""  # noqa: E501
     return yaml.load(site_config_yml, Loader=yaml.SafeLoader)
 
 
 @pytest.fixture()
 def site_config_repeatable_only(basic_site_config):
-    """Returns an example site config with a repeatable config item as the only item in 'collections'"""
+    """Returns an example site config with a repeatable config item as the only item in 'collections'"""  # noqa: E501, D401
     site_config = basic_site_config.copy()
     config_item = site_config["collections"][0]
-    assert (
+    assert (  # noqa: S101
         "folder" in config_item
     ), "Expected collections.0 to be a repeatable config item"
     return {**site_config, "collections": [config_item]}
@@ -103,11 +104,11 @@ def site_config_repeatable_only(basic_site_config):
 
 @pytest.fixture()
 def site_config_singleton_only(basic_site_config):
-    """Returns an example site config with a singleton config item as the only item in 'collections'"""
+    """Returns an example site config with a singleton config item as the only item in 'collections'"""  # noqa: E501, D401
     site_config = basic_site_config.copy()
     files_config_item = site_config["collections"][2]
     file_config_item = files_config_item.get("files", [None])[0]
-    assert (
+    assert (  # noqa: S101
         "file" in file_config_item
     ), "Expected collections.2.files.0 to be a singleton config item"
     return {**site_config, "collections": [files_config_item]}

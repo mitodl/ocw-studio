@@ -23,17 +23,17 @@ describe("MenuItemForm", () => {
         onSubmit={onSubmitStub}
         contentContext={contentContext}
         {...props}
-      />
+      />,
     )
 
   const renderInnerForm = (
     formProps: { [key: string]: any },
-    formikChildProps: Partial<FormikProps<any>>
+    formikChildProps: Partial<FormikProps<any>>,
   ) => {
     const wrapper = renderForm(formProps || {})
     return wrapper.find(Formik).renderProp("children")({
       ...defaultFormikChildProps,
-      ...formikChildProps
+      ...formikChildProps,
     })
   }
 
@@ -49,33 +49,33 @@ describe("MenuItemForm", () => {
 
   it("renders with the correct initial values if given a null active item", () => {
     const wrapper = renderForm({
-      activeItem: null
+      activeItem: null,
     })
     expect(wrapper.prop("initialValues")).toEqual({
       menuItemTitle: "",
-      menuItemType:  LinkType.Internal,
-      externalLink:  "",
-      internalLink:  ""
+      menuItemType: LinkType.Internal,
+      externalLink: "",
+      internalLink: "",
     })
   })
   ;[
     ["http://example.com", LinkType.External],
-    [null, LinkType.Internal]
+    [null, LinkType.Internal],
   ].forEach(([targetUrl, expLinkType]) => {
     it(`renders with the correct initial values if given an active item with ${expLinkType} link`, () => {
       const activeItem = {
-        text:            "text",
+        text: "text",
         targetContentId: "content-id",
-        targetUrl:       targetUrl
+        targetUrl: targetUrl,
       }
       const wrapper = renderForm({
-        activeItem
+        activeItem,
       })
       expect(wrapper.prop("initialValues")).toEqual({
         menuItemTitle: activeItem.text,
-        menuItemType:  expLinkType,
-        externalLink:  activeItem.targetUrl || "",
-        internalLink:  activeItem.targetContentId
+        menuItemType: expLinkType,
+        externalLink: activeItem.targetUrl || "",
+        internalLink: activeItem.targetContentId,
       })
     })
   })
@@ -87,12 +87,12 @@ describe("MenuItemForm", () => {
       {
         values: {
           menuItemTitle: "",
-          menuItemType:  LinkType.Internal,
-          externalLink:  "",
-          internalLink:  ""
+          menuItemType: LinkType.Internal,
+          externalLink: "",
+          internalLink: "",
         },
-        setFieldValue: setFieldValueStub
-      }
+        setFieldValue: setFieldValueStub,
+      },
     )
     const itemTypeBtns = wrapper.find('input[name="menuItemType"]')
     expect(itemTypeBtns).toHaveLength(2)
@@ -106,13 +106,13 @@ describe("MenuItemForm", () => {
     externalBtn.prop("onChange")()
     expect(setFieldValueStub).toHaveBeenCalledWith(
       "menuItemType",
-      LinkType.External
+      LinkType.External,
     )
     // @ts-expect-error Not going to simulate the event
     internalBtn.prop("onChange")()
     expect(setFieldValueStub).toHaveBeenCalledWith(
       "menuItemType",
-      LinkType.Internal
+      LinkType.Internal,
     )
   })
 
@@ -122,11 +122,11 @@ describe("MenuItemForm", () => {
       {
         values: {
           menuItemTitle: "",
-          menuItemType:  LinkType.Internal,
-          externalLink:  "",
-          internalLink:  ""
-        }
-      }
+          menuItemType: LinkType.Internal,
+          externalLink: "",
+          internalLink: "",
+        },
+      },
     )
     const relationField = wrapper.find('RelationField[name="internalLink"]')
     expect(relationField.exists()).toBe(true)
@@ -139,16 +139,16 @@ describe("MenuItemForm", () => {
       {
         values: {
           menuItemTitle: "",
-          menuItemType:  LinkType.External,
-          externalLink:  "",
-          internalLink:  ""
-        }
-      }
+          menuItemType: LinkType.External,
+          externalLink: "",
+          internalLink: "",
+        },
+      },
     )
     const extLinkField = wrapper.find('Field[name="externalLink"]')
     expect(extLinkField.exists()).toBe(true)
     expect(wrapper.find('RelationField[name="internalLink"]').exists()).toBe(
-      false
+      false,
     )
   })
 
@@ -160,17 +160,17 @@ describe("MenuItemForm", () => {
     const wrapper = renderInnerForm(
       {
         existingMenuIds: existingMenuIds,
-        collections:     collections
+        collections: collections,
       },
       {
         values: {
           menuItemTitle: "",
-          menuItemType:  LinkType.Internal,
-          externalLink:  "",
-          internalLink:  value
+          menuItemType: LinkType.Internal,
+          externalLink: "",
+          internalLink: value,
         },
-        setFieldValue: setFieldValueStub
-      }
+        setFieldValue: setFieldValueStub,
+      },
     )
     const relationField = wrapper.find('RelationField[name="internalLink"]')
     expect(relationField.exists()).toBe(true)
@@ -179,7 +179,7 @@ describe("MenuItemForm", () => {
     expect(relationField.prop("contentContext")).toBe(contentContext)
     expect(relationField.prop("collection")).toEqual(collections)
     const fakeEvent = {
-      target: { value: { content: "abc", website: "ignored" } }
+      target: { value: { content: "abc", website: "ignored" } },
     }
     // @ts-expect-error Not using a full event
     relationField.prop("onChange")(fakeEvent)

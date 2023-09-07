@@ -10,7 +10,7 @@ const collaboratorsConfigName = "_collaborators"
 
 const buildConfigMap = (
   website: Website,
-  configItems: TopLevelConfigItem[]
+  configItems: TopLevelConfigItem[],
 ): Map<string, Array<TopLevelConfigItem>> => {
   // Create a map with all defined categories mapped to the config items in that category.
   // ex: {"Content": [<config item>, <config item>], "Settings": [<config item>]}
@@ -25,11 +25,11 @@ const buildConfigMap = (
 
   if (website.is_admin) {
     addToMapList(configMap, "Settings", {
-      name:     collaboratorsConfigName,
-      label:    "Collaborators",
+      name: collaboratorsConfigName,
+      label: "Collaborators",
       category: "Settings",
-      fields:   [],
-      folder:   ""
+      fields: [],
+      folder: "",
     })
   }
 
@@ -56,11 +56,11 @@ function SidebarSection(props: SectionProps): JSX.Element {
           key={item.name}
           className="my-2"
           to={
-            item.name === collaboratorsConfigName ?
-              siteCollaboratorsUrl.param({ name: website.name }).toString() :
-              siteContentListingUrl
-                .param({ name: website.name, contentType: item.name })
-                .toString()
+            item.name === collaboratorsConfigName
+              ? siteCollaboratorsUrl.param({ name: website.name }).toString()
+              : siteContentListingUrl
+                  .param({ name: website.name, contentType: item.name })
+                  .toString()
           }
         >
           {item.label}

@@ -12,10 +12,10 @@ interface Props {
 }
 
 export function formatOptionsLabelWithShortId(
-  options: WebsiteOption[]
+  options: WebsiteOption[],
 ): WebsiteOption[] {
   const formattedOptions = _.cloneDeep(options)
-  formattedOptions.forEach(e => {
+  formattedOptions.forEach((e) => {
     e.label = `${e.label} (${e.shortId})`
   })
   return formattedOptions
@@ -25,7 +25,7 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
   const { name, onChange, value } = props
 
   const [websiteMap, setWebsiteMap] = useState<Map<string, string>>(
-    new Map(value.map(item => [item.id, item.title]))
+    new Map(value.map((item) => [item.id, item.title])),
   )
 
   /**
@@ -35,22 +35,22 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
     (value: string[]) => {
       const updatedEvent = {
         target: {
-          name:  name.replace(/\.content$/, ""),
-          value: value.map(id => ({
+          name: name.replace(/\.content$/, ""),
+          value: value.map((id) => ({
             id,
-            title: websiteMap.get(id) ?? id
-          }))
-        }
+            title: websiteMap.get(id) ?? id,
+          })),
+        },
       }
       onChange(updatedEvent)
     },
-    [onChange, websiteMap, name]
+    [onChange, websiteMap, name],
   )
 
   const { options, loadOptions } = useWebsiteSelectOptions("url_path", true)
 
   useEffect(() => {
-    setWebsiteMap(cur => {
+    setWebsiteMap((cur) => {
       const newMap = new Map(cur)
       options.forEach(({ value, label }) => {
         newMap.set(value, label)
@@ -61,9 +61,9 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
 
   const isOptionDisabled = useCallback(
     (option: Option) => {
-      return value.some(v => v.id === option.value)
+      return value.some((v) => v.id === option.value)
     },
-    [value]
+    [value],
   )
 
   // Intercept search results, format and return it.
@@ -71,19 +71,19 @@ export default function WebsiteCollectionField(props: Props): JSX.Element {
     (
       inputValue: string,
       loadedOptions: WebsiteOption[],
-      additional?: Additional
+      additional?: Additional,
     ) => {
       return loadOptions(inputValue, loadedOptions, {
         callback: (options: Option[]) => {
           if (additional?.callback) {
             additional.callback(
-              formatOptionsLabelWithShortId(options as WebsiteOption[])
+              formatOptionsLabelWithShortId(options as WebsiteOption[]),
             )
           }
-        }
+        },
       })
     },
-    [loadOptions]
+    [loadOptions],
   )
 
   const formattedOptions = formatOptionsLabelWithShortId(options)

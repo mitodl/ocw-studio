@@ -10,7 +10,6 @@ from django.core.files import File
 from videos.constants import DESTINATION_YOUTUBE
 from videos.models import Video
 
-
 log = logging.getLogger(__name__)
 
 
@@ -96,7 +95,7 @@ def threeplay_order_transcript_request(video_id: int, threeplay_video_id: int) -
     if settings.THREEPLAY_CALLBACK_KEY:
         callback_url = urljoin(
             settings.SITE_BASE_URL,
-            f"api/transcription-jobs/?video_id={str(video_id)}&callback_key={settings.THREEPLAY_CALLBACK_KEY}",
+            f"api/transcription-jobs/?video_id={video_id!s}&callback_key={settings.THREEPLAY_CALLBACK_KEY}",
         )
 
         payload["callback"] = callback_url
@@ -137,7 +136,7 @@ def fetch_file(source_url: str) -> BytesIO:
     response = requests.get(source_url, timeout=60)
 
     if (
-        response.status_code != 200
+        response.status_code != 200  # noqa: PLR2004
         or response.content
         == b'{"is_error":true,"error_description":"record not found"}'
     ):

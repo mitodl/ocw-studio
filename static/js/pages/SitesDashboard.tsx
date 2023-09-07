@@ -8,7 +8,7 @@ import PaginationControls from "../components/PaginationControls"
 import {
   WebsiteListingParams,
   websiteListingRequest,
-  WebsiteListingResponse
+  WebsiteListingResponse,
 } from "../query-configs/websites"
 import { getWebsiteListingCursor } from "../selectors/websites"
 import { newSiteUrl, siteDetailUrl } from "../lib/urls"
@@ -37,11 +37,11 @@ export default function SitesDashboard(): JSX.Element {
   const { listingParams, searchInput, setSearchInput } =
     useURLParamFilter(getListingParams)
   const [, fetchWebsiteContentListing] = useRequest(
-    websiteListingRequest(listingParams)
+    websiteListingRequest(listingParams),
   )
 
   const listing: WebsiteListingResponse = useSelector(getWebsiteListingCursor)(
-    listingParams.offset
+    listingParams.offset,
   )
   const pages = usePagination(listing.count ?? 0)
 
@@ -49,12 +49,12 @@ export default function SitesDashboard(): JSX.Element {
 
   const websiteDropdownMenuList: WebsiteDropdown[] = [
     {
-      id:           "1",
-      label:        "Unpublish",
+      id: "1",
+      label: "Unpublish",
       clickHandler: (website: WebsiteInitials) => {
         setWebsiteToUnpublish(website)
-      }
-    }
+      },
+    },
   ]
 
   const unpublishSuccessCallback = () => {
@@ -102,16 +102,18 @@ export default function SitesDashboard(): JSX.Element {
                 )}
                 <Dropdown
                   website={{
-                    name:     site.name,
-                    title:    site.title,
-                    short_id: site.short_id
+                    name: site.name,
+                    title: site.title,
+                    short_id: site.short_id,
                   }}
                   dropdownBtnID={`${site.uuid}_DropdownMenuButton`}
                   materialIcon={MaterialIcons.MoreVert}
                   dropdownMenu={
-                    site.publish_date && !site.unpublished ?
-                      websiteDropdownMenuList :
-                      websiteDropdownMenuList.filter(item => item.id !== "1")
+                    site.publish_date && !site.unpublished
+                      ? websiteDropdownMenuList
+                      : websiteDropdownMenuList.filter(
+                          (item) => item.id !== "1",
+                        )
                   }
                 />
               </div>

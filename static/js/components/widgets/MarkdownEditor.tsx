@@ -6,7 +6,7 @@ import CKEditorInspector from "@ckeditor/ckeditor5-inspector"
 
 import {
   FullEditorConfig,
-  MinimalEditorConfig
+  MinimalEditorConfig,
 } from "../../lib/ckeditor/CKEditor"
 import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
 import { checkNotSubAndSup } from "../../lib/ckeditor/attributeChecks"
@@ -21,7 +21,7 @@ import {
   ADD_RESOURCE_EMBED,
   RESOURCE_LINK,
   MARKDOWN_CONFIG_KEY,
-  RESOURCE_LINK_CONFIG_KEY
+  RESOURCE_LINK_CONFIG_KEY,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
@@ -89,16 +89,16 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         editor.current.editing.view.focus()
       }
     },
-    []
+    [],
   )
 
   const [renderQueue, setRenderQueue] = useState<RenderQueueEntry[]>([])
 
   const renderResource: RenderResourceFunc = useCallback(
     (uuid: string, el: HTMLElement) => {
-      setRenderQueue(xs => [...xs, [uuid, el]])
+      setRenderQueue((xs) => [...xs, [uuid, el]])
     },
-    [setRenderQueue]
+    [setRenderQueue],
   )
 
   const openResourcePicker = useCallback(
@@ -106,7 +106,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       setResourcePickerMode(resourceDialogType)
       setIsResourcePickerOpen(true)
     },
-    [setResourcePickerMode, setIsResourcePickerOpen]
+    [setResourcePickerMode, setIsResourcePickerOpen],
   )
 
   const editorConfig = useMemo(() => {
@@ -129,11 +129,11 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       [RESOURCE_LINK_CONFIG_KEY]: {
         hrefTemplate: `${location.origin}${
           siteContentDetailUrl.param({
-            name:        website.name,
-            contentType: "resource"
+            name: website.name,
+            contentType: "resource",
           }).pathname
-        }`
-      }
+        }`,
+      },
     }
 
     if (minimal) {
@@ -141,13 +141,13 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         ...MinimalEditorConfig,
         [CKEDITOR_RESOURCE_UTILS]: {
           renderResource,
-          openResourcePicker
+          openResourcePicker,
         },
         toolbar: {
           ...MinimalEditorConfig.toolbar,
-          items: MinimalEditorConfig.toolbar.items.filter(toolbarItemsFilter)
+          items: MinimalEditorConfig.toolbar.items.filter(toolbarItemsFilter),
         },
-        ...resourceLink
+        ...resourceLink,
       }
     } else {
       // this render function is stuck into the editor config
@@ -157,16 +157,16 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         ...FullEditorConfig,
         [CKEDITOR_RESOURCE_UTILS]: {
           renderResource,
-          openResourcePicker
+          openResourcePicker,
         },
         toolbar: {
           ...FullEditorConfig.toolbar,
-          items: FullEditorConfig.toolbar.items.filter(toolbarItemsFilter)
+          items: FullEditorConfig.toolbar.items.filter(toolbarItemsFilter),
         },
         [MARKDOWN_CONFIG_KEY]: {
-          allowedHtml
+          allowedHtml,
         },
-        ...resourceLink
+        ...resourceLink,
       }
     }
   }, [
@@ -176,7 +176,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     link,
     embed,
     allowedHtml,
-    website.name
+    website.name,
   ])
 
   const onChangeCB = useCallback(
@@ -194,9 +194,11 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       // filtering the queue to only dom nodes which are contained within document.body
       // should retain any nodes corresponding to resources currently in the editor
       // and remove those corresponding to what the user has deleted.
-      setRenderQueue(xs => xs.filter(entry => document.body.contains(entry[1])))
+      setRenderQueue((xs) =>
+        xs.filter((entry) => document.body.contains(entry[1])),
+      )
     },
-    [onChange, setRenderQueue, name]
+    [onChange, setRenderQueue, name],
   )
 
   const closeResourcePicker = useCallback(() => {

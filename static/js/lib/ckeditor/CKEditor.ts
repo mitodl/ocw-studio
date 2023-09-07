@@ -55,7 +55,7 @@ const SUPPORTED_PROGRAMMING_LANGUAGES = [
   { language: "python", label: "Python" },
   { language: "ruby", label: "Ruby" },
   { language: "typescript", label: "TypeScript" },
-  { language: "xml", label: "XML" }
+  { language: "xml", label: "XML" },
 ]
 
 export const FullEditorConfig = {
@@ -89,7 +89,7 @@ export const FullEditorConfig = {
     LegacyShortcodes,
     Mathematics,
     Markdown,
-    DisallowNestedTables
+    DisallowNestedTables,
   ],
   toolbar: {
     items: [
@@ -110,26 +110,31 @@ export const FullEditorConfig = {
       "undo",
       "redo",
       ADD_RESOURCE_LINK,
-      ADD_RESOURCE_EMBED
-    ]
+      ADD_RESOURCE_EMBED,
+    ],
   },
   image: {
-    toolbar: ["imageStyle:full", "imageStyle:side", "|", "imageTextAlternative"]
+    toolbar: [
+      "imageStyle:full",
+      "imageStyle:side",
+      "|",
+      "imageTextAlternative",
+    ],
   },
   codeBlock: {
-    languages: SUPPORTED_PROGRAMMING_LANGUAGES
+    languages: SUPPORTED_PROGRAMMING_LANGUAGES,
   },
   table: {
-    contentToolbar:  ["tableColumn", "tableRow", "mergeTableCells"],
-    defaultHeadings: { rows: 1 }
+    contentToolbar: ["tableColumn", "tableRow", "mergeTableCells"],
+    defaultHeadings: { rows: 1 },
   },
   math: {
-    engine:          "mathjax",
-    outputType:      "script",
+    engine: "mathjax",
+    outputType: "script",
     forceOutputType: true,
-    enablePreview:   true
+    enablePreview: true,
   },
-  language: "en"
+  language: "en",
 }
 
 export const MinimalEditorConfig = {
@@ -148,7 +153,7 @@ export const MinimalEditorConfig = {
     ResourceLink,
     MarkdownListSyntax,
     Markdown,
-    LegacyShortcodes
+    LegacyShortcodes,
   ],
   toolbar: {
     items: [
@@ -162,8 +167,8 @@ export const MinimalEditorConfig = {
       "undo",
       "redo",
       ADD_RESOURCE_LINK,
-      ADD_RESOURCE_EMBED
-    ]
+      ADD_RESOURCE_EMBED,
+    ],
   },
-  language: "en"
+  language: "en",
 }

@@ -15,11 +15,11 @@ describe("FileUploadField", () => {
   afterEach(() => {
     sandbox.restore()
   })
-  ;["file", "name"].forEach(fileFieldName => {
+  ;["file", "name"].forEach((fileFieldName) => {
     it(`renders a file upload field w/name=${fileFieldName}, no pre-existing file, with working button`, () => {
       const onChangeStub = jest.fn()
       const wrapper = shallow(
-        <FileUploadField name={fileFieldName} onChange={onChangeStub} />
+        <FileUploadField name={fileFieldName} onChange={onChangeStub} />,
       )
       expect(wrapper.find("input").at(0).prop("type")).toBe("file")
       expect(wrapper.find("input").at(0).prop("name")).toBe(fileFieldName)
@@ -29,19 +29,19 @@ describe("FileUploadField", () => {
         .find("input")
         .at(0)
         .simulate("change", {
-          target: { name: fileFieldName, files: [mockFile] }
+          target: { name: fileFieldName, files: [mockFile] },
         })
       expect(onChangeStub).toHaveBeenCalledWith({
         target: {
-          name:  fileFieldName,
-          value: mockFile
-        }
+          name: fileFieldName,
+          value: mockFile,
+        },
       })
     })
   })
 
   //
-  ;["file", "name"].forEach(fileFieldName => {
+  ;["file", "name"].forEach((fileFieldName) => {
     it(`renders a file upload field w/name=${fileFieldName}, with pre-existing file`, () => {
       const currentFile = "oldfile.txt"
       const wrapper = shallow(
@@ -49,7 +49,7 @@ describe("FileUploadField", () => {
           name={fileFieldName}
           onChange={jest.fn()}
           value={`https://aws.com/32629a023dc541288e430392b51e7b61_${currentFile}`}
-        />
+        />,
       )
       expect(wrapper.find(".current-file").find("a").text()).toBe(currentFile)
     })

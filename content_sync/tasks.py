@@ -1,8 +1,8 @@
-""" Content sync tasks """
+"""Content sync tasks"""
 import logging
 import os
 from datetime import timedelta
-from typing import List, Optional
+from typing import Optional
 from urllib.parse import urlparse
 
 import botocore
@@ -33,7 +33,6 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 
-
 log = logging.getLogger(__name__)
 
 
@@ -53,8 +52,8 @@ def sync_content(content_sync_id: str):
 
 @app.task(acks_late=True)
 def sync_unsynced_websites(
-    create_backends: bool = False,
-    delete: Optional[bool] = False,
+    create_backends: bool = False,  # noqa: FBT001, FBT002
+    delete: Optional[bool] = False,  # noqa: FBT002
 ):
     """
     Sync all websites with unsynced content if they have existing repos.
@@ -84,7 +83,7 @@ def sync_unsynced_websites(
             except RateLimitExceededException:
                 # Too late, can't even check rate limit reset time now so bail
                 raise
-            except:  # pylint:disable=bare-except
+            except:  # pylint:disable=bare-except  # noqa: E722
                 log.exception("Error syncing website %s", website_name)
 
 
@@ -120,7 +119,10 @@ def upsert_website_publishing_pipeline(website_name: str):
 
 @app.task(acks_late=True)
 def upsert_website_pipeline_batch(
-    website_names: List[str], create_backend=False, unpause=False, hugo_args=""
+    website_names: list[str],
+    create_backend=False,  # noqa: FBT002
+    unpause=False,  # noqa: FBT002
+    hugo_args="",
 ):
     """Create/update publishing pipelines for multiple websites"""
     api_instance = None
@@ -146,12 +148,12 @@ def upsert_website_pipeline_batch(
 
 
 @app.task(bind=True)
-def upsert_pipelines(  # pylint: disable=too-many-arguments
+def upsert_pipelines(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     self,
-    website_names: List[str],
+    website_names: list[str],
     chunk_size=500,
-    create_backend=False,
-    unpause=False,
+    create_backend=False,  # noqa: FBT002
+    unpause=False,  # noqa: FBT002
     hugo_args="",
 ):
     """Chunk and group batches of pipeline upserts for a specified list of websites"""
@@ -160,7 +162,7 @@ def upsert_pipelines(  # pylint: disable=too-many-arguments
         sorted(website_names),
         chunk_size=chunk_size,
     ):
-        tasks.append(
+        tasks.append(  # noqa: PERF401
             upsert_website_pipeline_batch.s(
                 website_subset,
                 create_backend=create_backend,
@@ -172,7 +174,9 @@ def upsert_pipelines(  # pylint: disable=too-many-arguments
 
 
 @app.task(acks_late=True)
-def upsert_theme_assets_pipeline(unpause=False, themes_branch=None) -> bool:
+def upsert_theme_assets_pipeline(
+    unpause=False, themes_branch=None  # noqa: FBT002
+) -> bool:
     """Upsert the theme assets pipeline"""
     pipeline = api.get_theme_assets_pipeline(themes_branch=themes_branch)
     pipeline.upsert_pipeline()
@@ -193,7 +197,7 @@ def trigger_mass_build(version: str) -> bool:
 
 @app.task(acks_late=True)
 def trigger_unpublished_removal(website_name: str) -> bool:
-    """Trigger the unpublished site removal pipeline and pause the specified site pipeline"""
+    """Trigger the unpublished site removal pipeline and pause the specified site pipeline"""  # noqa: E501
     website = Website.objects.get(name=website_name)
     remove_website_in_root_website(website)
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
@@ -229,8 +233,8 @@ def publish_website_backend_draft(website_name: str):
     """
     try:
         api.publish_website(website_name, VERSION_DRAFT)
-        return True
-    except:  # pylint:disable=bare-except
+        return True  # noqa: TRY300
+    except:  # pylint:disable=bare-except  # noqa: E722
         log.exception("Error publishing draft site %s", website_name)
         return website_name
 
@@ -246,18 +250,18 @@ def publish_website_backend_live(website_name: str):
             website_name,
             VERSION_LIVE,
         )
-        return True
-    except:  # pylint:disable=bare-except
+        return True  # noqa: TRY300
+    except:  # pylint:disable=bare-except  # noqa: E722
         log.exception("Error publishing live site %s", website_name)
         return website_name
 
 
 @app.task()
 def publish_website_batch(
-    website_names: List[str],
+    website_names: list[str],
     version: str,
-    prepublish: Optional[bool] = False,
-    trigger_pipeline: Optional[bool] = True,
+    prepublish: Optional[bool] = False,  # noqa: FBT002
+    trigger_pipeline: Optional[bool] = True,  # noqa: FBT002
 ) -> bool:
     """Call api.publish_website for a batch of websites"""
     result = True
@@ -280,20 +284,20 @@ def publish_website_batch(
                 prepublish=prepublish,
                 trigger_pipeline=trigger_pipeline,
             )
-        except:  # pylint:disable=bare-except
+        except:  # pylint:disable=bare-except  # noqa: E722, PERF203
             log.exception("Error publishing %s website %s", version, name)
             result = False
     return result
 
 
 @app.task(bind=True, acks_late=True)
-def publish_websites(  # pylint: disable=too-many-arguments
+def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     self,
-    website_names: List[str],
+    website_names: list[str],
     version: str,
     chunk_size: Optional[int] = 500,
-    prepublish: Optional[bool] = False,
-    no_mass_build: Optional[bool] = False,
+    prepublish: Optional[bool] = False,  # noqa: FBT002
+    no_mass_build: Optional[bool] = False,  # noqa: FBT002
 ):
     """Publish live or draft versions of multiple websites in parallel batches"""
     if not settings.CONTENT_SYNC_BACKEND or not settings.CONTENT_SYNC_PIPELINE_BACKEND:
@@ -315,7 +319,7 @@ def publish_websites(  # pylint: disable=too-many-arguments
 
 
 @app.task(acks_late=True)
-def sync_github_site_configs(url: str, files: List[str], commit: Optional[str] = None):
+def sync_github_site_configs(url: str, files: list[str], commit: Optional[str] = None):
     """
     Sync WebsiteStarter objects from github
     """
@@ -323,10 +327,10 @@ def sync_github_site_configs(url: str, files: List[str], commit: Optional[str] =
 
 
 @app.task(acks_late=True)
-def check_incomplete_publish_build_statuses():
+def check_incomplete_publish_build_statuses():  # noqa: C901, PLR0912
     """
     Check statuses of concourse builds that have not been updated in a reasonable amount of time
-    """
+    """  # noqa: E501
     if not settings.CONTENT_SYNC_PIPELINE_BACKEND:
         return
     now = now_in_utc()
@@ -382,8 +386,8 @@ def check_incomplete_publish_build_statuses():
                     try:
                         status = pipeline.get_build_status(build_id)
                     except HTTPError as err:
-                        if err.response.status_code == 404:
-                            log.error(
+                        if err.response.status_code == 404:  # noqa: PLR2004
+                            log.error(  # noqa: TRY400
                                 "Could not find %s build %s for %s",
                                 version,
                                 build_id,
@@ -398,7 +402,7 @@ def check_incomplete_publish_build_statuses():
                         status = PUBLISH_STATUS_ABORTED
                     if status != last_status:
                         update_website_status(website, version, status, now)
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except  # noqa: E722, PERF203
             log.exception(
                 "Error updating publishing status for website %s", website.name
             )
@@ -409,7 +413,7 @@ def update_websites_in_root_website():
     """
     Get all websites published to draft / live at least once, and for each one create or update
     a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
-    """
+    """  # noqa: E501
     if settings.CONTENT_SYNC_BACKEND:
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
         # Get all sites, minus any sites that have never been successfully published
@@ -476,7 +480,7 @@ def update_website_in_root_website(website, version):
     Args:
         website (Website): The Website to look up
         version (string): The version (draft / live)
-    """
+    """  # noqa: E501
     if (
         website.name != settings.ROOT_WEBSITE_NAME
         and WebsiteContent.objects.filter(website=website, type="sitemetadata").exists()
@@ -516,7 +520,7 @@ def remove_website_in_root_website(website):
 
     Args:
         website (Website): The Website look up
-    """
+    """  # noqa: E501
     if website.name != settings.ROOT_WEBSITE_NAME:
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
         website_content = WebsiteContent.objects.get(
@@ -536,7 +540,7 @@ def remove_website_in_root_website(website):
 def backpopulate_archive_videos_batch(
     bucket,
     prefix,
-    website_names: List[str],
+    website_names: list[str],
 ):  # pylint:disable=too-many-locals
     """Populate archive videos from batches of legacy websites"""
     error_messages = ""
@@ -552,14 +556,20 @@ def backpopulate_archive_videos_batch(
                 archive_path = urlparse(archive_url).path
                 archive_path, filename = os.path.split(archive_path)
                 parent_folder = archive_path.split("/")[-1:][0]
-                archive_path = os.path.join(parent_folder, filename)
+                archive_path = os.path.join(parent_folder, filename)  # noqa: PTH118
                 extra_args = {"ACL": "public-read"}
-                source_s3_path = os.path.join(prefix, archive_path).lstrip("/")
-                online_destination_s3_path = os.path.join(
-                    website.url_path, os.path.basename(archive_path)
+                source_s3_path = os.path.join(  # noqa: PTH118
+                    prefix, archive_path
+                ).lstrip(
+                    "/"
+                )  # noqa: PTH118, RUF100
+                online_destination_s3_path = os.path.join(  # noqa: PTH118
+                    website.url_path, os.path.basename(archive_path)  # noqa: PTH119
                 )
-                offline_destination_s3_path = os.path.join(
-                    website.url_path, "static_resources", os.path.basename(archive_path)
+                offline_destination_s3_path = os.path.join(  # noqa: PTH118
+                    website.url_path,
+                    "static_resources",
+                    os.path.basename(archive_path),  # noqa: PTH119
                 )
                 try:
                     s3.Object(bucket, source_s3_path).load()
@@ -594,7 +604,7 @@ def backpopulate_archive_videos_batch(
                         )
                 except botocore.exceptions.ClientError:
                     error_message = f"Could not find {source_s3_path} in {bucket}"
-                    log.error(error_message)
+                    log.error(error_message)  # noqa: TRY400
                     if error_messages != "":
                         error_messages += ", "
                     error_messages += error_message
@@ -606,16 +616,16 @@ def backpopulate_archive_videos(  # pylint: disable=too-many-arguments
     self,
     bucket: str,
     prefix: str,
-    website_names: List[str],
+    website_names: list[str],
     chunk_size=500,
 ):
-    """Chunk and group batches of legacy video backpopulate tasks for a specified list of websites"""
+    """Chunk and group batches of legacy video backpopulate tasks for a specified list of websites"""  # noqa: E501
     tasks = []
     for website_subset in chunks(
         sorted(website_names),
         chunk_size=chunk_size,
     ):
-        tasks.append(
+        tasks.append(  # noqa: PERF401
             backpopulate_archive_videos_batch.s(
                 bucket,
                 prefix,

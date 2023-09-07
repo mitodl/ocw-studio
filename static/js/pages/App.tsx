@@ -34,7 +34,7 @@ export default function App(): JSX.Element {
   }
 
   const [{ isPending: isSiteLoading, status }] = useRequest(
-    siteName ? websiteDetailRequest(siteName) : null
+    siteName ? websiteDetailRequest(siteName) : null,
   )
   const website = useSelector(getWebsiteDetailCursor)(siteName || "")
 

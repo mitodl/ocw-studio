@@ -16,14 +16,14 @@ describe("SiteForm", () => {
 
   const renderForm = () =>
     shallow(
-      <SiteForm onSubmit={onSubmitStub} websiteStarters={websiteStarters} />
+      <SiteForm onSubmit={onSubmitStub} websiteStarters={websiteStarters} />,
     )
 
   const renderInnerForm = (formikChildProps: { [key: string]: any }) => {
     const wrapper = renderForm()
     return wrapper.find(Formik).renderProp("children")({
       ...defaultFormikChildProps,
-      ...formikChildProps
+      ...formikChildProps,
     })
   }
 
@@ -45,7 +45,7 @@ describe("SiteForm", () => {
     const form = renderInnerForm({ isSubmitting: false, status: "whatever" })
     const field = form
       .find("Field")
-      .filterWhere(node => node.prop("name") === "starter")
+      .filterWhere((node) => node.prop("name") === "starter")
     const options: Array<Option | string> = field.prop("options")
     expect(options).toHaveLength(websiteStarters.length)
     for (let i = 0; i < options.length; i++) {
@@ -57,7 +57,7 @@ describe("SiteForm", () => {
     it("rejects an empty title", async () => {
       try {
         await expect(
-          await websiteValidation.validateAt("title", { title: "" })
+          await websiteValidation.validateAt("title", { title: "" }),
         ).rejects.toThrow()
       } catch (error) {
         assertInstanceOf(error, ValidationError)
@@ -68,14 +68,14 @@ describe("SiteForm", () => {
       try {
         await expect(
           await websiteValidation.validateAt("short_id", {
-            short_id: "Bad ID!"
-          })
+            short_id: "Bad ID!",
+          }),
         ).rejects.toThrow()
       } catch (error) {
         assertInstanceOf(error, ValidationError)
         expect(error).toBeInstanceOf(ValidationError)
         expect(error.errors).toStrictEqual([
-          "Only alphanumeric characters, periods, dashes, or underscores allowed"
+          "Only alphanumeric characters, periods, dashes, or underscores allowed",
         ])
       }
     })

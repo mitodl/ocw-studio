@@ -2,18 +2,18 @@
 content-dir: content
 root-url-path: "sites"
 collections:
-  - label: "Page"
-    name: "page"
-    category: Content
-    folder: content/pages
-    fields:
-      - {label: "Title", name: "title", widget: "string", required: true}
-      - {label: "Content", name: "content", widget: "markdown"}
+- label: "Page"
+  name: "page"
+  category: Content
+  folder: content/pages
+  fields:
+  - {label: "Title", name: "title", widget: "string", required: true}
+  - {label: "Content", name: "content", widget: "markdown"}
 
-  - label: "Resource"
-    name: "resource"
-    category: Content
-    folder: content/resources
-    fields:
-      - {label: "Title", name: "title", widget: "string", required: true}
-      - {label: "Description", name: "description", widget: "markdown"}
+- label: "Resource"
+  name: "resource"
+  category: Content
+  folder: content/resources
+  fields:
+  - {label: "Title", name: "title", widget: "string", required: true}
+  - {label: "Description", name: "description", widget: "markdown"}

@@ -1,9 +1,8 @@
-""" Content sync signals tests """
+"""Content sync signals tests"""
 
 import pytest
 
 from websites.factories import WebsiteContentFactory
-
 
 pytestmark = pytest.mark.django_db
 

@@ -9,7 +9,7 @@ import json
 import logging
 import os
 from html import unescape
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 from urllib.parse import quote, urljoin, urlparse
 
 import requests
@@ -52,7 +52,6 @@ from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.models import Website
 
-
 log = logging.getLogger(__name__)
 
 MANDATORY_CONCOURSE_SETTINGS = [
@@ -65,7 +64,7 @@ MANDATORY_CONCOURSE_SETTINGS = [
 class PipelineApi(Api, BasePipelineApi):
     """
     Customized pipeline_name of concoursepy.api.Api that allows for getting/setting headers
-    """
+    """  # noqa: E501
 
     def __init__(self, url=None, username=None, password=None, token=None):
         """Initialize the API"""
@@ -78,14 +77,14 @@ class PipelineApi(Api, BasePipelineApi):
 
     @retry_on_failure
     def auth(self):
-        """Same as the base class but with retries and support for concourse 7.7"""
+        """Same as the base class but with retries and support for concourse 7.7"""  # noqa: D401, E501
         if self.has_username_and_passwd:
             self.ATC_AUTH = None
             session = self._set_new_session()
             # Get initial sky/login response
             r = session.get(urljoin(self.url, "/sky/login"))
-            if r.status_code == 200:
-                # Get second sky/login response based on the url found in the first response
+            if r.status_code == 200:  # noqa: PLR2004
+                # Get second sky/login response based on the url found in the first response  # noqa: E501
                 r = session.get(
                     unescape(urljoin(self.url, self._get_login_post_path(r.text)))
                 )
@@ -103,7 +102,8 @@ class PipelineApi(Api, BasePipelineApi):
                 else:
                     # This case does not raise any HTTPError, the return code is 200
                     if "invalid username and password" in r.text:
-                        raise ValueError("Invalid username and password")
+                        msg = "Invalid username and password"
+                        raise ValueError(msg)
                     if r.status_code == requests.codes.ok:
                         self.ATC_AUTH = self._get_skymarshal_auth()
                     else:
@@ -114,9 +114,12 @@ class PipelineApi(Api, BasePipelineApi):
 
     @retry_on_failure
     def get_with_headers(  # pylint:disable=too-many-branches
-        self, path: str, stream: bool = False, iterator: bool = False
-    ) -> Tuple[Dict, Dict]:
-        """Customized base get method, returning response data and headers"""
+        self,
+        path: str,
+        stream: bool = False,  # noqa: FBT001, FBT002
+        iterator: bool = False,  # noqa: FBT001, FBT002
+    ) -> tuple[dict, dict]:
+        """Customized base get method, returning response data and headers"""  # noqa: D401, E501
         url = self._make_api_url(path)
         r = self.requests.get(url, headers=self.headers, stream=stream)
         if not self._is_response_ok(r) and self.has_username_and_passwd:
@@ -133,10 +136,11 @@ class PipelineApi(Api, BasePipelineApi):
             return response_data, r.headers
         else:
             r.raise_for_status()
+            return None
 
     @retry_on_failure
     def put_with_headers(
-        self, path: str, data: Dict = None, headers: Dict = None
+        self, path: str, data: dict | None = None, headers: dict | None = None
     ) -> bool:
         """
         Allow additional headers to be sent with a put request
@@ -159,12 +163,12 @@ class PipelineApi(Api, BasePipelineApi):
 
     @retry_on_failure
     def post(self, path, data=None):
-        """Same as base post method but with a retry"""
+        """Same as base post method but with a retry"""  # noqa: D401
         return super().post(path, data)
 
     @retry_on_failure
     def put(self, path, data=None):
-        """Same as base put method but with a retry"""
+        """Same as base put method but with a retry"""  # noqa: D401
         return super().put(path, data)
 
     @retry_on_failure
@@ -184,8 +188,8 @@ class PipelineApi(Api, BasePipelineApi):
             r.raise_for_status()
         return False
 
-    def get_pipelines(self, names: List[str] = None):
-        """Retrieve a list of concourse pipelines, filtered by team and optionally name"""
+    def get_pipelines(self, names: list[str] | None = None):
+        """Retrieve a list of concourse pipelines, filtered by team and optionally name"""  # noqa: E501
         pipelines = super().list_pipelines(settings.CONCOURSE_TEAM)
         if names:
             pipelines = [
@@ -193,7 +197,7 @@ class PipelineApi(Api, BasePipelineApi):
             ]
         return pipelines
 
-    def delete_pipelines(self, names: List[str] = None):
+    def delete_pipelines(self, names: list[str] | None = None):
         """Delete all pipelines matching filters"""
         pipeline_list = self.get_pipelines(names)
         for item in pipeline_list:
@@ -211,7 +215,7 @@ class GeneralPipeline(BaseGeneralPipeline):
     PIPELINE_NAME = None
 
     def __init__(
-        self, *args, api: Optional[object] = None, **kwargs
+        self, *args, api: Optional[object] = None, **kwargs  # noqa: ARG002
     ):  # pylint:disable=unused-argument
         """Initialize the pipeline API instance"""
         if self.MANDATORY_SETTINGS:
@@ -228,8 +232,10 @@ class GeneralPipeline(BaseGeneralPipeline):
         self, pipeline_file: str, offline: Optional[bool] = None
     ):
         """Get the pipeline definition as a string, processing for environment"""
-        with open(
-            os.path.join(os.path.dirname(__file__), pipeline_file)
+        with open(  # noqa: PTH123
+            os.path.join(  # noqa: PTH118
+                os.path.dirname(__file__), pipeline_file  # noqa: PTH120
+            )  # noqa: PTH118, PTH120, RUF100
         ) as pipeline_config_file:
             pipeline_config = pipeline_config_file.read()
             pipeline_config = (
@@ -237,40 +243,39 @@ class GeneralPipeline(BaseGeneralPipeline):
                 if is_dev()
                 else strip_dev_lines(pipeline_config)
             )
-            pipeline_config = (
+            return (
                 strip_online_lines(pipeline_config)
                 if offline
                 else strip_offline_lines(pipeline_config)
             )
-            return pipeline_config
 
-    def set_instance_vars(self, instance_vars: Dict):
+    def set_instance_vars(self, instance_vars: dict):
         """Set the instance vars for the pipeline"""
         self.instance_vars = f"?vars={quote(json.dumps(instance_vars))}"
 
     def _make_pipeline_url(self, pipeline_name: str):
         """Make URL for getting/destroying a pipeline"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}{self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}{self.instance_vars}"  # noqa: E501
 
     def _make_builds_url(self, pipeline_name: str, job_name: str):
         """Make URL for fetching builds information"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}/builds{self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}/builds{self.instance_vars}"  # noqa: E501
 
     def _make_pipeline_config_url(self, pipeline_name: str):
         """Make URL for fetching pipeline info"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/config{self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/config{self.instance_vars}"  # noqa: E501
 
     def _make_job_url(self, pipeline_name: str, job_name: str):
         """Make URL for fetching job info"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}{self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs/{job_name}{self.instance_vars}"  # noqa: E501
 
     def _make_pipeline_pause_url(self, pipeline_name: str):
         """Make URL for pausing a pipeline"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/pause{self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/pause{self.instance_vars}"  # noqa: E501
 
     def _make_pipeline_unpause_url(self, pipeline_name: str):
         """Make URL for unpausing a pipeline"""
-        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/unpause{self.instance_vars}"
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/unpause{self.instance_vars}"  # noqa: E501
 
     def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """Trigger a pipeline build"""
@@ -303,20 +308,22 @@ class GeneralPipeline(BaseGeneralPipeline):
         if self.PIPELINE_NAME:
             self.unpause_pipeline(self.PIPELINE_NAME)
         else:
-            raise ValueError("No default name specified for this pipeline")
+            msg = "No default name specified for this pipeline"
+            raise ValueError(msg)
 
     def trigger(self) -> int:
         """Use self.PIPELINE_NAME as input to the trigger_pipeline_build function"""
         if self.PIPELINE_NAME:
             return self.trigger_pipeline_build(self.PIPELINE_NAME)
         else:
-            raise ValueError("No default name specified for this pipeline")
+            msg = "No default name specified for this pipeline"
+            raise ValueError(msg)
 
     def upsert_config(self, config_str: str, pipeline_name: str):
         """Upsert the configuration for a pipeline"""
         config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
         log.debug(config)
-        # Try to get the pipeline_name of the pipeline if it already exists, because it will be
+        # Try to get the pipeline_name of the pipeline if it already exists, because it will be  # noqa: E501
         # necessary to update an existing pipeline.
         url_path = self._make_pipeline_config_url(pipeline_name)
         try:
@@ -329,8 +336,9 @@ class GeneralPipeline(BaseGeneralPipeline):
         self.api.put_with_headers(url_path, data=config, headers=version_headers)
 
     def upsert_pipeline(self):
-        """Placeholder for upsert_pipeline"""
-        raise NotImplementedError("Choose a more specific pipeline class")
+        """Placeholder for upsert_pipeline"""  # noqa: D401
+        msg = "Choose a more specific pipeline class"
+        raise NotImplementedError(msg)
 
 
 class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
@@ -341,7 +349,8 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
     PIPELINE_NAME = BaseThemeAssetsPipeline.PIPELINE_NAME
     BRANCH = settings.GITHUB_WEBHOOK_BRANCH
 
-    MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
+    MANDATORY_SETTINGS = [
+        *MANDATORY_CONCOURSE_SETTINGS,
         "GITHUB_WEBHOOK_BRANCH",
         "SEARCH_API_URL",
     ]
@@ -369,10 +378,11 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
 class SitePipeline(BaseSitePipeline, GeneralPipeline):
     """
     Concourse-CI publishing pipeline, dependent on a Github backend, for individual sites
-    """
+    """  # noqa: E501
 
     BRANCH = settings.GITHUB_WEBHOOK_BRANCH
-    MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
+    MANDATORY_SETTINGS = [
+        *MANDATORY_CONCOURSE_SETTINGS,
         "AWS_PREVIEW_BUCKET_NAME",
         "AWS_PUBLISH_BUCKET_NAME",
         "AWS_OFFLINE_PREVIEW_BUCKET_NAME",
@@ -399,7 +409,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         self.HUGO_ARGS = hugo_args
         self.set_instance_vars({"site": self.WEBSITE.name})
 
-    def upsert_pipeline(self):  # pylint:disable=too-many-locals,too-many-statements
+    def upsert_pipeline(  # noqa: PLR0915
+        self,
+    ):  # pylint:disable=too-many-locals,too-many-statements
         """
         Create or update a concourse pipeline for the given Website
         """
@@ -431,7 +443,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             theme_deployed_trigger = "true"
         hugo_projects_url = urljoin(
             f"{starter_path_url.scheme}://{starter_path_url.netloc}",
-            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
+            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git  # noqa: E501
         )
         purge_header = (
             ""
@@ -479,7 +491,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             else:
                 noindex = "false"
             if settings.CONCOURSE_IS_PRIVATE_REPO:
-                markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
+                markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"  # noqa: E501
                 private_key_var = "\n      private_key: ((git-private-key))"
             else:
                 markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{self.WEBSITE.short_id}.git"
@@ -497,7 +509,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             base_offline_args = base_hugo_args.copy()
             base_offline_args.update(
                 {
-                    "--config": f"../ocw-hugo-projects/{starter_slug}/config-offline.yaml",
+                    "--config": f"../ocw-hugo-projects/{starter_slug}/config-offline.yaml",  # noqa: E501
                     "--baseURL": "/",
                     "--destination": "output-offline",
                 }
@@ -592,7 +604,7 @@ class MassBuildSitesPipeline(
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         self,
         version,
         api: Optional[PipelineApi] = None,
@@ -604,7 +616,8 @@ class MassBuildSitesPipeline(
         hugo_args: Optional[str] = None,
     ):
         """Initialize the pipeline instance"""
-        self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
+        self.MANDATORY_SETTINGS = [
+            *MANDATORY_CONCOURSE_SETTINGS,
             "AWS_PREVIEW_BUCKET_NAME",
             "AWS_PUBLISH_BUCKET_NAME",
             "AWS_OFFLINE_PREVIEW_BUCKET_NAME",
@@ -652,7 +665,7 @@ class MassBuildSitesPipeline(
         starter_path_url = urlparse(starter.path)
         hugo_projects_url = urljoin(
             f"{starter_path_url.scheme}://{starter_path_url.netloc}",
-            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git
+            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git  # noqa: E501
         )
         if settings.CONCOURSE_IS_PRIVATE_REPO:
             markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}"
@@ -795,8 +808,9 @@ class UnpublishedSiteRemovalPipeline(
 
     def __init__(self, api: Optional[PipelineApi] = None):
         """Initialize the pipeline instance"""
-        self.MANDATORY_SETTINGS = MANDATORY_CONCOURSE_SETTINGS + [
-            "AWS_PUBLISH_BUCKET_NAME"
+        self.MANDATORY_SETTINGS = [
+            *MANDATORY_CONCOURSE_SETTINGS,
+            "AWS_PUBLISH_BUCKET_NAME",
         ]
         super().__init__(api=api)
         self.pipeline_name = "remove_unpublished_sites"

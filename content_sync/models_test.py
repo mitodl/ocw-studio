@@ -1,14 +1,14 @@
-""" Content sync model tests """
+"""Content sync model tests"""
 import pytest
 
 from content_sync.models import ContentSyncState
 
 
 @pytest.mark.parametrize(
-    "current_checksum, synced_checksum, expected",
+    ("current_checksum", "synced_checksum", "expected"),
     [
-        ["abc", "abc", True],
-        ["abc", "abc1", False],
+        ["abc", "abc", True],  # noqa: PT007
+        ["abc", "abc1", False],  # noqa: PT007
     ],
 )
 def test_contentsyncstate_is_synced(current_checksum, synced_checksum, expected):

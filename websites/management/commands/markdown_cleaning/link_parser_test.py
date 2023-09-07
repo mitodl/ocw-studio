@@ -12,7 +12,7 @@ from websites.management.commands.markdown_cleaning.link_parser import (
 @pytest.mark.parametrize("text", ["", "simple text", "a [bit] \\] more complex"])
 @pytest.mark.parametrize("dest", ["", "./path/to/thing"])
 @pytest.mark.parametrize(
-    ["title", "expected_suffix"],
+    ("title", "expected_suffix"),
     [("", ""), ('cats "and" dogs', ' "cats \\"and\\" dogs"')],
 )
 @pytest.mark.parametrize("is_image", [True, False])
@@ -167,7 +167,7 @@ def test_link_parser_without_recursive_parsing():
     """
     text = '[some text ![image [another](why) [oh dear](whywhy) text](imageurl) and more ](path/to/thing "with (title?)")'
     parser = LinkParser()
-    action = Mock(wraps=lambda s, l, toks: toks)
+    action = Mock(wraps=lambda s, l, toks: toks)  # noqa: ARG005, E741
     parser.set_parse_action(action)
     parsed = parser.parse_string(text)
 
@@ -188,7 +188,7 @@ def test_link_parser_with_recursive_parsing():
     """
     text = '[some text ![image [another](why) [oh dear](whywhy) text](imageurl) and more ](path/to/thing "with (title?)")'
     parser = LinkParser(recursive=True)
-    action = Mock(wraps=lambda s, l, toks: toks)
+    action = Mock(wraps=lambda s, l, toks: toks)  # noqa: ARG005, E741
     parser.set_parse_action(action)
 
     parsed = parser.parse_string(text)
@@ -204,10 +204,10 @@ def test_link_parser_with_recursive_parsing():
         is_image=True,
     )
     expected_inner_link1 = MarkdownLink(
-        text="another", destination="why", text_links=tuple()
+        text="another", destination="why", text_links=()
     )
     expected_inner_link2 = MarkdownLink(
-        text="oh dear", destination="whywhy", text_links=tuple()
+        text="oh dear", destination="whywhy", text_links=()
     )
 
     outer = parsed

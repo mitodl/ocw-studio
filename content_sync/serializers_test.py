@@ -25,7 +25,6 @@ from websites.factories import (
 )
 from websites.site_config_api import ConfigItem, SiteConfig
 
-
 EXAMPLE_UUIDS = [
     "c5047db5-5d30-481f-878c-4fe79eebeeb1",
     "38223bd4-8eae-4a81-91c2-b36cac529d69",
@@ -86,7 +85,7 @@ EXAMPLE_MENU_FILE_YAML = f"""mainmenu:
 
 
 def get_example_menu_data():
-    """Returns example menu data"""
+    """Returns example menu data"""  # noqa: D401
     return [
         {"name": "Page 1", "weight": 0, "identifier": EXAMPLE_UUIDS[0]},
         {
@@ -104,9 +103,10 @@ def get_example_menu_data():
 
 
 @mock_s3
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "markdown, exp_sections", [["# Some markdown...\n- and\n- a\n- list", 2], [None, 1]]
+    ("markdown", "exp_sections"),
+    [["# Some markdown...\n- and\n- a\n- list", 2], [None, 1]],  # noqa: PT007
 )
 def test_hugo_file_serialize(settings, markdown, exp_sections):
     """HugoMarkdownFileSerializer.serialize should create the expected file contents"""
@@ -152,7 +152,7 @@ def test_hugo_file_serialize(settings, markdown, exp_sections):
         assert md_file_sections[1] == markdown
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_hugo_file_deserialize(mocker):
     """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
     dest_directory, dest_filename = "path/to", "myfile"
@@ -192,7 +192,7 @@ def test_hugo_file_deserialize(mocker):
     assert website_content.markdown is None
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_hugo_menu_yaml_serialize(omnibus_config):
     """HugoMenuYamlFileSerializer.serialize should create the expected file contents"""
     nav_menu_config_item = omnibus_config.find_item_by_name("navmenu")
@@ -221,7 +221,7 @@ def test_hugo_menu_yaml_serialize(omnibus_config):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_hugo_menu_yaml_deserialize(omnibus_config):
     """HugoMenuYamlFileSerializer.deserialize should create the expected content object from some file contents"""
     nav_menu_config_item = omnibus_config.find_item_by_name("navmenu")
@@ -240,7 +240,7 @@ def test_hugo_menu_yaml_deserialize(omnibus_config):
 
 
 @mock_s3
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_hugo_file_deserialize_with_file(settings):
     """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
     settings.DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
@@ -253,7 +253,7 @@ def test_hugo_file_deserialize_with_file(settings):
         file_contents=EXAMPLE_HUGO_MARKDOWN_WITH_FILE,
     )
     expected_path = f"courses/{website.name}/image.png"
-    assert "image" not in website_content.metadata.keys()
+    assert "image" not in website_content.metadata
     assert website_content.file == expected_path
     assert (
         website_content.file.url
@@ -261,12 +261,12 @@ def test_hugo_file_deserialize_with_file(settings):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "config_dirpath, file_dirpath, exp_content_dirpath",
+    ("config_dirpath", "file_dirpath", "exp_content_dirpath"),
     [
-        ["/config/path/to/", "config/path/to", "config/path/to"],
-        ["/config/path/to", "file/path/to", "file/path/to"],
+        ["/config/path/to/", "config/path/to", "config/path/to"],  # noqa: PT007
+        ["/config/path/to", "file/path/to", "file/path/to"],  # noqa: PT007
     ],
 )
 def test_hugo_file_deserialize_dirpath(
@@ -294,7 +294,7 @@ def test_hugo_file_deserialize_dirpath(
     patched_find_item.assert_any_call("page")
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("serializer_cls", [JsonFileSerializer, YamlFileSerializer])
 def test_data_file_serialize(serializer_cls):
     """JsonFileSerializer and YamlFileSerializer.serialize should create the expected data file contents"""
@@ -315,7 +315,7 @@ def test_data_file_serialize(serializer_cls):
     assert parsed_file_content == {**metadata, "title": "Content Title"}
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_metadata_file_serialize():
     """JsonFileSerializer should create the expected data file contents for sitemetadata files"""
     metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
@@ -336,12 +336,12 @@ def test_metadata_file_serialize():
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "serializer_cls, file_content",
+    ("serializer_cls", "file_content"),
     [
-        [JsonFileSerializer, EXAMPLE_JSON],
-        [YamlFileSerializer, EXAMPLE_YAML],
+        [JsonFileSerializer, EXAMPLE_JSON],  # noqa: PT007
+        [YamlFileSerializer, EXAMPLE_YAML],  # noqa: PT007
     ],
 )
 def test_data_file_deserialize(serializer_cls, file_content):
@@ -373,11 +373,11 @@ def test_data_file_deserialize(serializer_cls, file_content):
 
 
 @pytest.mark.parametrize(
-    "filepath, exp_serializer_cls",
+    ("filepath", "exp_serializer_cls"),
     [
-        ["content/file.md", HugoMarkdownFileSerializer],
-        ["data/file.json", JsonFileSerializer],
-        ["data/file.yml", YamlFileSerializer],
+        ["content/file.md", HugoMarkdownFileSerializer],  # noqa: PT007
+        ["data/file.json", JsonFileSerializer],  # noqa: PT007
+        ["data/file.yml", YamlFileSerializer],  # noqa: PT007
     ],
 )
 def test_factory_for_file(filepath, exp_serializer_cls):
@@ -409,7 +409,7 @@ def test_factory_for_file_hugo_menu(omnibus_config):
 def test_factory_for_file_invalid():
     """ContentFileSerializerFactory.for_file should raise when given an unsupported file type"""
     site_config = SiteConfig(WebsiteStarterFactory.build().config)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         assert ContentFileSerializerFactory.for_file(
             site_config=site_config, filepath="/path/to/myfile.tar.gz"
         )
@@ -428,12 +428,12 @@ def test_factory_for_content_hugo_markdown():
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "file_value, exp_serializer_cls",
+    ("file_value", "exp_serializer_cls"),
     [
-        ["data/file.json", JsonFileSerializer],
-        ["data/file.yml", YamlFileSerializer],
+        ["data/file.json", JsonFileSerializer],  # noqa: PT007
+        ["data/file.yml", YamlFileSerializer],  # noqa: PT007
     ],
 )
 def test_factory_for_content_data(file_value, exp_serializer_cls):

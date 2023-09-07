@@ -21,17 +21,17 @@ describe("PublishForm", () => {
         website={website}
         option={PublishingEnv.Staging}
         {...props}
-      />
+      />,
     )
 
   const renderInnerForm = (
     formikChildProps: Partial<FormikProps<any>>,
-    wrapperProps: { [key: string]: any }
+    wrapperProps: { [key: string]: any },
   ) => {
     const wrapper = renderForm(wrapperProps)
     return wrapper.find(Formik).renderProp("children")({
       ...defaultFormikChildProps,
-      ...formikChildProps
+      ...formikChildProps,
     })
   }
 
@@ -49,7 +49,7 @@ describe("PublishForm", () => {
 
   it.each([
     { urlPath: null, basedOn: "url_suggestion" },
-    { urlPath: "courses/5.2-my-course", basedOn: "url_path" }
+    { urlPath: "courses/5.2-my-course", basedOn: "url_path" },
   ])(
     "initialValue for url_path should be based on website $basedOn",
     ({ urlPath }) => {
@@ -57,44 +57,44 @@ describe("PublishForm", () => {
       website.url_path = urlPath
       const wrapper = renderForm()
       expect(wrapper.prop("initialValues")).toEqual({
-        url_path: website.url_path ? "5.2-my-course" : website.url_suggestion
+        url_path: website.url_path ? "5.2-my-course" : website.url_suggestion,
       })
-    }
+    },
   )
 
   it("shows a field for URL Path if website is not published", () => {
     website.publish_date = null
     const form = renderInnerForm(
       { isSubmitting: false, status: "whatever" },
-      {}
+      {},
     )
     expect(
       form
         .find("Field")
-        .filterWhere(node => node.prop("name") === "url_path")
-        .exists()
+        .filterWhere((node) => node.prop("name") === "url_path")
+        .exists(),
     ).toBeTruthy()
   })
 
   it.each([PublishingEnv.Staging, PublishingEnv.Production])(
     "shows a URL link instead of a field if website is published",
-    option => {
+    (option) => {
       website.publish_date = "2020-01-01"
       website.url_path = "courses/my-url-fall-2028"
       const form = renderInnerForm(
         { isSubmitting: false, status: "whatever" },
-        { option: option }
+        { option: option },
       )
       expect(
         form
           .find("Field")
-          .filterWhere(node => node.prop("name") === "url_path")
-          .exists()
+          .filterWhere((node) => node.prop("name") === "url_path")
+          .exists(),
       ).toBeFalsy()
       expect(form.find("a").prop("href")).toEqual(
-        option === PublishingEnv.Staging ? website.draft_url : website.live_url
+        option === PublishingEnv.Staging ? website.draft_url : website.live_url,
       )
-    }
+    },
   )
 
   it("shows a text-only live url for unpublished site", () => {
@@ -102,7 +102,7 @@ describe("PublishForm", () => {
     website.url_path = "courses/my-url-fall-2028"
     const form = renderInnerForm(
       { isSubmitting: false, status: "whatever" },
-      { option: PublishingEnv.Production }
+      { option: PublishingEnv.Production },
     )
     //expect(form.find("a").exists()).toBeFalsy()
     expect(form.find("span").text()).toEqual(`${website.live_url}`)
@@ -112,7 +112,7 @@ describe("PublishForm", () => {
     it("rejects an empty url", async () => {
       try {
         await expect(
-          await websiteUrlValidation.validateAt("url_path", { url_path: "" })
+          await websiteUrlValidation.validateAt("url_path", { url_path: "" }),
         ).rejects.toThrow()
       } catch (error) {
         assertInstanceOf(error, ValidationError)
@@ -123,13 +123,13 @@ describe("PublishForm", () => {
       try {
         await expect(
           await websiteUrlValidation.validateAt("url_path", {
-            url_path: "courses/bad-url-fall-2024"
-          })
+            url_path: "courses/bad-url-fall-2024",
+          }),
         ).rejects.toThrow()
       } catch (error) {
         assertInstanceOf(error, ValidationError)
         expect(error.errors).toStrictEqual([
-          "Only alphanumeric characters, periods, dashes, or underscores allowed"
+          "Only alphanumeric characters, periods, dashes, or underscores allowed",
         ])
       }
     })

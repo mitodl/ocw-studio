@@ -1,8 +1,6 @@
 from contextlib import contextmanager
 from unittest.mock import patch
 
-from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
-
 
 @contextmanager
 def patch_website_contents_all(website_contents):

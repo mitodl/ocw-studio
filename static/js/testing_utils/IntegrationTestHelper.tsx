@@ -10,7 +10,7 @@ import {
   ResponseBody,
   ResponseHeaders,
   ResponseStatus,
-  ResponseText
+  ResponseText,
 } from "redux-query"
 import { when } from "jest-when"
 import configureStore from "../store/configureStore"
@@ -32,11 +32,11 @@ export type ReduxPatch = DeepPartial<ReduxState>
 // Exported for use in integration_test_helper_old. Remove export once that's gone.
 export const getInitialState = (patch: ReduxPatch = {}): ReduxState => {
   const empty = cloneDeep({
-    user:     user.getInitialState(),
+    user: user.getInitialState(),
     entities: {
-      websiteDetails: {}
+      websiteDetails: {},
     },
-    queries: {}
+    queries: {},
   })
   return defaultsDeep(cloneDeep(patch), empty)
 }
@@ -50,7 +50,7 @@ type Reponse = {
 type HandleRequest = (
   url: string,
   method: string,
-  options?: NetworkOptions
+  options?: NetworkOptions,
 ) => Promise<Partial<Reponse>>
 
 /**
@@ -66,7 +66,7 @@ export default class IntegrationTestHelper {
   handleRequest = jest.fn(((url, method, options) => {
     const withOptions = `with options ${JSON.stringify(options)}`
     console.error(
-      `Response not specified for ${method} ${url} ${withOptions}.\nDid you forget to mock it?`
+      `Response not specified for ${method} ${url} ${withOptions}.\nDid you forget to mock it?`,
     )
     return {}
   }) as HandleRequest)
@@ -79,7 +79,7 @@ export default class IntegrationTestHelper {
     const mockMakeRequest = jest.spyOn(networkInterfaceFuncs, "makeRequest")
     mockMakeRequest.mockClear()
     mockMakeRequest.mockImplementation((url, method, options) => ({
-      execute: async callback => {
+      execute: async (callback) => {
         const response = await this.handleRequest(url, method, options)
         const err = null
         const resStatus = response.status ?? 0
@@ -91,7 +91,7 @@ export default class IntegrationTestHelper {
       },
       abort: () => {
         throw new Error("Aborts currently unhandled")
-      }
+      },
     }))
   }
 
@@ -100,13 +100,13 @@ export default class IntegrationTestHelper {
     method: "GET" | "POST" | "PATCH" | "DELETE",
     responseBody: unknown,
     code: number,
-    optionsMatcher = expect.anything()
+    optionsMatcher = expect.anything(),
   ): this => {
     when(this.handleRequest)
       .calledWith(url, method, optionsMatcher)
       .mockResolvedValue({
-        body:   responseBody,
-        status: code
+        body: responseBody,
+        status: code,
       })
     return this
   }
@@ -123,7 +123,7 @@ export default class IntegrationTestHelper {
   mockGetWebsiteDetail = (website: Website) =>
     this.mockGetRequest(
       siteApiDetailUrl.param({ name: website.name }).toString(),
-      website
+      website,
     )
 
   /**
@@ -179,7 +179,7 @@ export default class IntegrationTestHelper {
           </Router>
         </ReduxQueryProvider>
       </Provider>,
-      options
+      options,
     )
     return [renderResult, { history }] as const
   }
@@ -194,7 +194,7 @@ export default class IntegrationTestHelper {
   renderWithWebsite = (
     ui: React.ReactElement,
     website?: Website,
-    options?: RenderOptions
+    options?: RenderOptions,
   ) => {
     const site = website ?? makeWebsiteDetail()
     const wrappedUi = (

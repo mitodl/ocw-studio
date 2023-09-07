@@ -16,37 +16,18 @@
     ],
     "website": "ocw-www"
   },
-  "department_numbers": [
-    "1"
-  ],
-  "learning_resource_types": [
-    "Problem Sets",
-    "Lecture Notes"
-  ],
+  "department_numbers": ["1"],
+  "learning_resource_types": ["Problem Sets", "Lecture Notes"],
   "topics": [
-    [
-      "Engineering",
-      "Mechanical Engineering",
-      "Solid Mechanics"
-    ],
-    [
-      "Engineering",
-      "Aerospace Engineering",
-      "Structural Mechanics"
-    ],
-    [
-      "Engineering",
-      "Civil Engineering",
-      "Structural Engineering"
-    ]
+    ["Engineering", "Mechanical Engineering", "Solid Mechanics"],
+    ["Engineering", "Aerospace Engineering", "Structural Mechanics"],
+    ["Engineering", "Civil Engineering", "Structural Engineering"]
   ],
   "primary_course_number": "1.050",
   "extra_course_numbers": "",
   "term": "Fall",
   "year": "2007",
-  "level": [
-    "Undergraduate"
-  ],
+  "level": ["Undergraduate"],
   "other_versions": [],
   "archived_versions": [],
   "open_learning_library_versions": [],

@@ -1,2 +1,3 @@
+---
 instrumentation:
-  excludes: ['**/*_test.js']
+  excludes: ["**/*_test.js"]

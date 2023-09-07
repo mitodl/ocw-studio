@@ -7,7 +7,6 @@ import videos.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0034_website_title_index"),
         ("videos", "0003_videofile_destination_id"),

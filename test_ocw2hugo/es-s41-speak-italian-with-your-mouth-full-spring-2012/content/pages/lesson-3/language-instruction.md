@@ -14,7 +14,7 @@ _Lezione Numero Tre_/Lesson Number Three
 
 Watch a video:
 
-[Lesson 3, Part 1: Opening Lecture]({{< baseurl >}}/resources/lesson-3-part-1-opening-lecture)  
+[Lesson 3, Part 1: Opening Lecture]({{< baseurl >}}/resources/lesson-3-part-1-opening-lecture)
 
 Come State?/How Are You?
 ------------------------
@@ -288,7 +288,7 @@ Listening Exercise
 
 _Essere e stare_: Indicativo presente
 
-_Ascolta come si coniuga l'indicativo presente dei verbi essere e stare./_Listen to how the verbs _essere_ and _stare_ are used_._ 
+_Ascolta come si coniuga l'indicativo presente dei verbi essere e stare./_Listen to how the verbs _essere_ and _stare_ are used_._
 
 [Essere e stare (MP3- 1.8MB)]({{< baseurl >}}/resources/essere)
 

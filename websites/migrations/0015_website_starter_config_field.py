@@ -2,7 +2,6 @@
 
 from django.db import migrations
 
-
 COURSE_STARTER_SLUG = "course"
 
 

@@ -5,7 +5,7 @@ import { useWebsite } from "../context/Website"
 import { hasMainContentField } from "../lib/site_content"
 import {
   WebsiteContentModalState,
-  RepeatableConfigItem
+  RepeatableConfigItem,
 } from "../types/websites"
 import ConfirmDiscardChanges from "./util/ConfirmDiscardChanges"
 import BasicModal from "./BasicModal"
@@ -24,12 +24,12 @@ interface Params {
 }
 
 export default function SiteContentEditorDrawer(
-  props: Props
+  props: Props,
 ): JSX.Element | null {
   const { configItem, fetchWebsiteContentListing } = props
 
   const [drawerState, setDrawerState] = useState<WebsiteContentModalState>(
-    createModalState("closed")
+    createModalState("closed"),
   )
 
   const website = useWebsite()
@@ -54,10 +54,10 @@ export default function SiteContentEditorDrawer(
       ...history.location,
       pathname: siteContentListingUrl
         .param({
-          name:        website.name,
-          contentType: configItem.name
+          name: website.name,
+          contentType: configItem.name,
         })
-        .toString()
+        .toString(),
     })
     if (history.location !== initialLocation) {
       /**

@@ -1,4 +1,4 @@
-""" Backpopulate website pipelines"""
+"""Backpopulate website pipelines"""  # noqa: INP001
 from django.conf import settings
 from django.core.management import CommandError
 from django.db.models import Q
@@ -14,7 +14,7 @@ from websites.models import Website
 class Command(WebsiteFilterCommand):
     """Backpopulate website pipelines"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -23,14 +23,14 @@ class Command(WebsiteFilterCommand):
             "--hugo_args",
             dest="hugo_args",
             default="",
-            help="If specified, override Hugo command line arguments with supplied args",
+            help="If specified, override Hugo command line arguments with supplied args",  # noqa: E501
         )
         parser.add_argument(
             "-s",
             "--starter",
             dest="starter",
             default="",
-            help="If specified, only process websites that are based on this starter slug",
+            help="If specified, only process websites that are based on this starter slug",  # noqa: E501
         )
         parser.add_argument(
             "-source",
@@ -111,7 +111,7 @@ class Command(WebsiteFilterCommand):
 
         if is_verbose:
             self.stdout.write(
-                f"Upserting pipelines for the following sites: {','.join(website_names)}"
+                f"Upserting pipelines for the following sites: {','.join(website_names)}"  # noqa: E501
             )
 
         start = now_in_utc()
@@ -124,16 +124,15 @@ class Command(WebsiteFilterCommand):
         )
 
         self.stdout.write(
-            f"Started celery task {task} to upsert pipelines for {len(website_names)} sites"
+            f"Started celery task {task} to upsert pipelines for {len(website_names)} sites"  # noqa: E501
         )
 
         self.stdout.write("Waiting on task...")
 
         result = task.get()
         if set(result) != {True}:
-            raise CommandError(f"Some errors occurred: {result}")
+            msg = f"Some errors occurred: {result}"
+            raise CommandError(msg)
 
         total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(
-            "Pipeline upserts finished, took {} seconds".format(total_seconds)
-        )
+        self.stdout.write(f"Pipeline upserts finished, took {total_seconds} seconds")

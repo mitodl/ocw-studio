@@ -14,7 +14,7 @@ from websites.permissions import setup_website_groups_permissions
 )
 @transaction.atomic
 def handle_website_save(
-    sender, instance, created, **kwargs
+    sender, instance, created, **kwargs  # noqa: ARG001
 ):  # pylint: disable=unused-argument
     """
     Add website-specific groups with appropriate permissions when a website is created

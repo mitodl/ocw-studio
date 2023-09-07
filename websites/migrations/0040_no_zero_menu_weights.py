@@ -6,11 +6,11 @@ from websites.constants import WEBSITE_SOURCE_STUDIO
 
 
 def migrate_weights_forward(apps, schema_editor):
-    increment_decement_weights(apps, True)
+    increment_decement_weights(apps, True)  # noqa: FBT003
 
 
 def migrate_weights_backward(apps, schema_editor):
-    increment_decement_weights(apps, False)
+    increment_decement_weights(apps, False)  # noqa: FBT003
 
 
 def increment_decement_weights(apps, forward):
@@ -28,7 +28,6 @@ def increment_decement_weights(apps, forward):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0039_gdrive_sync_progress"),
     ]

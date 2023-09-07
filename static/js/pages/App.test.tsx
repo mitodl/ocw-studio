@@ -2,7 +2,7 @@ import sinon from "sinon"
 
 import App from "./App"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { siteApiDetailUrl, sitesBaseUrl } from "../lib/urls"

@@ -33,7 +33,6 @@ from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
-
 pytestmark = pytest.mark.django_db
 
 
@@ -44,7 +43,7 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize("concourse_is_private_repo", [True, False])
 @pytest.mark.parametrize("offline", [True, False])
 @pytest.mark.parametrize("is_dev", [True, False])
-def test_generate_mass_build_sites_definition(
+def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0915
     settings,
     mocker,
     version,
@@ -59,7 +58,7 @@ def test_generate_mass_build_sites_definition(
     The site pipeline definition should contain the expected properties
     """
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
-    settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"
+    settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
     settings.CONCOURSE_IS_PRIVATE_REPO = concourse_is_private_repo
     settings.OCW_HUGO_THEMES_SENTRY_DSN = "test_sentry_dsn"
     settings.ROOT_WEBSITE_NAME = "root-website"
@@ -169,7 +168,7 @@ def test_generate_mass_build_sites_definition(
     ocw_studio_webhook_resource = get_dict_list_item_by_field(
         items=resources, field="name", value=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
-    expected_api_path = os.path.join(
+    expected_api_path = os.path.join(  # noqa: PTH118
         "api", "websites", MASS_BULID_SITES_PIPELINE_IDENTIFIER, "pipeline_status"
     )
     expected_api_url = urljoin(ocw_studio_url, expected_api_path)

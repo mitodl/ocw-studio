@@ -30,6 +30,7 @@
 ul.studio-list {
   @include unstyled-list;
 
+  /* stylelint-disable no-descending-specificity */
   li {
     .title {
       font-size: 18px;

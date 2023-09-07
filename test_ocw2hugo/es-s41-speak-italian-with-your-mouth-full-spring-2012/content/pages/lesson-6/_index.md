@@ -9,7 +9,7 @@ ocw_type: CourseSection
 {{< tableopen >}}
 {{< tropen >}}
 {{< tdopen >}}
-![Bright red tomatoes lay on top of toasted bread.]({{< resource_file 1356ee4c-e6a0-ccb3-9972-3c407aeb3acb >}})  
+![Bright red tomatoes lay on top of toasted bread.]({{< resource_file 1356ee4c-e6a0-ccb3-9972-3c407aeb3acb >}})
 
 In this lesson, students made bruschetta. (Image courtesy of Graham Gordon Ramsay.)
 

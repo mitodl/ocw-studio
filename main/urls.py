@@ -22,7 +22,6 @@ from django.urls import path, re_path
 
 from main.views import public_index, restricted_index
 
-
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("robots.txt", include("robots.urls")),

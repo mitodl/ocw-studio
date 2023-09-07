@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 const fs = require("fs")
-const child_process = require("child_process")
+const childProcess = require("child_process")
 const { Command } = require("commander")
 
 const ckeditorRegex = /@ckeditor\/.*/
 
 const packageJson = JSON.parse(fs.readFileSync("./package.json"))
 const ckeditorDependencies = Object.keys(packageJson.dependencies)
-  .filter(dependency => ckeditorRegex.test(dependency))
+  .filter((dependency) => ckeditorRegex.test(dependency))
   .join(" ")
 
 const program = new Command()
@@ -22,9 +22,9 @@ program.parse(process.argv)
 const options = program.opts()
 
 // this is just a little wrapper to cut down on the warning spew from yarn
-const promiseExec = command => {
+const promiseExec = (command) => {
   return new Promise((resolve, reject) => {
-    child_process.exec(command, (error, _, stderr) => {
+    childProcess.exec(command, (error, _, stderr) => {
       if (error) {
         reject(stderr)
       } else {

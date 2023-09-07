@@ -1,4 +1,4 @@
-""" Management command for upserting the remove-unpublished-sites pipeline """
+"""Management command for upserting the remove-unpublished-sites pipeline"""  # noqa: E501, INP001
 from django.conf import settings
 from django.core.management import BaseCommand
 from mitol.common.utils.datetime import now_in_utc
@@ -10,7 +10,7 @@ from content_sync.pipelines.base import BaseUnpublishedSiteRemovalPipeline
 class Command(BaseCommand):
     """Management command for upserting the remove-unpublished-sites pipeline"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -28,8 +28,7 @@ class Command(BaseCommand):
             help="Delete existing site removal pipelines first",
         )
 
-    def handle(self, *args, **options):
-
+    def handle(self, *args, **options):  # noqa: ARG002
         if not settings.CONTENT_SYNC_PIPELINE_BACKEND:
             self.stderr.write("Pipeline backend is not configured")
             return
@@ -61,6 +60,4 @@ class Command(BaseCommand):
             self.stdout.write("Unpaused unpublished sites removal pipeline")
 
         total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(
-            "Pipeline upsert finished, took {} seconds".format(total_seconds)
-        )
+        self.stdout.write(f"Pipeline upsert finished, took {total_seconds} seconds")

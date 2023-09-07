@@ -28,10 +28,10 @@ Goals of the Course
 
 {{< resource bf179ef1-c294-c832-b7a5-3cc25eb13f5f >}}
 
-Dr. Rebusco talks about her teaching goals and what she hoped her students  
+Dr. Rebusco talks about her teaching goals and what she hoped her students
 would learn at the end of the course.
 
-Preparing for the Course  
+Preparing for the Course
 
 ---------------------------
 
@@ -50,7 +50,7 @@ Creating the Cooking Assignments
 
 {{< resource 6b7704bb-c681-1804-4aa7-949a8fb9794e >}}
 
-Dr. Rebusco explains the weekly cooking assignments the students were asked to do  
+Dr. Rebusco explains the weekly cooking assignments the students were asked to do
 outside of class.
 
 ### Written and Oral Assignments

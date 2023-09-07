@@ -22,7 +22,6 @@ from mitol.common.envs import (
 from main.constants import PRODUCTION_NAMES
 from main.sentry import init_sentry
 
-
 # pylint: disable=too-many-lines
 
 VERSION = "0.101.0"
@@ -37,7 +36,7 @@ SITE_ID = get_int(
 ENVIRONMENT = get_string(
     name="OCW_STUDIO_ENVIRONMENT",
     default="dev",
-    description="The execution environment that the app is in (e.g. dev, staging, prod)",
+    description="The execution environment that the app is in (e.g. dev, staging, prod)",  # noqa: E501
     required=True,
 )
 # this is only available to heroku review apps
@@ -71,7 +70,9 @@ import_settings_modules(
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(  # noqa: PTH120
+    os.path.dirname(os.path.abspath(__file__))  # noqa: PTH100, PTH120
+)  # noqa: PTH100, PTH120, RUF100
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = get_string(
@@ -110,7 +111,7 @@ WEBPACK_LOADER = {
     "DEFAULT": {
         "CACHE": not DEBUG,
         "BUNDLE_DIR_NAME": "bundles/",
-        "STATS_FILE": os.path.join(BASE_DIR, "webpack-stats.json"),
+        "STATS_FILE": os.path.join(BASE_DIR, "webpack-stats.json"),  # noqa: PTH118
         "POLL_INTERVAL": 0.1,
         "TIMEOUT": None,
         "IGNORE": [r".+\.hot-update\.+", r".+\.js\.map"],
@@ -216,7 +217,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 DEFAULT_DATABASE_CONFIG = dj_database_url.parse(
     get_string(
         name="DATABASE_URL",
-        default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
+        default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",  # noqa: PTH118
         description="The connection url to the Postgres database",
         required=True,
         write_app_json=False,
@@ -227,7 +228,7 @@ DEFAULT_DATABASE_CONFIG["CONN_MAX_AGE"] = get_int(
     default=0,
     description="Maximum age of connection to Postgres in seconds",
 )
-# If True, disables server-side database cursors to prevent invalid cursor errors when using pgbouncer
+# If True, disables server-side database cursors to prevent invalid cursor errors when using pgbouncer  # noqa: E501
 DEFAULT_DATABASE_CONFIG["DISABLE_SERVER_SIDE_CURSORS"] = get_bool(
     name="OCW_STUDIO_DB_DISABLE_SS_CURSORS",
     default=True,
@@ -272,7 +273,7 @@ ROBOTS_CACHE_TIMEOUT = get_int(
 # Serve static files with dj-static
 STATIC_URL = "/static/"
 STATIC_ROOT = "staticfiles"
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)  # noqa: PTH118
 
 # Important to define this so DEBUG works properly
 INTERNAL_IPS = (
@@ -287,10 +288,7 @@ ADMIN_EMAIL = get_string(
     default="",
     description="E-mail to send 500 reports to.",
 )
-if ADMIN_EMAIL != "":
-    ADMINS = (("Admins", ADMIN_EMAIL),)
-else:
-    ADMINS = ()
+ADMINS = (("Admins", ADMIN_EMAIL),) if ADMIN_EMAIL != "" else ()
 
 # Logging configuration
 LOG_LEVEL = get_string(
@@ -455,11 +453,8 @@ AWS_ROLE_NAME = get_string(
 if OCW_STUDIO_USE_S3 and (
     not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY or not AWS_STORAGE_BUCKET_NAME
 ):
-    raise ImproperlyConfigured(
-        "You have enabled S3 support, but are missing one of "
-        "AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or "
-        "AWS_STORAGE_BUCKET_NAME"
-    )
+    msg = "You have enabled S3 support, but are missing one of AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or AWS_STORAGE_BUCKET_NAME"  # noqa: E501
+    raise ImproperlyConfigured(msg)
 if OCW_STUDIO_USE_S3:
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
@@ -468,12 +463,12 @@ if OCW_STUDIO_USE_S3:
 DRIVE_SERVICE_ACCOUNT_CREDS = get_string(
     name="DRIVE_SERVICE_ACCOUNT_CREDS",
     default=None,
-    description="The contents of the Service Account credentials JSON to use for Google API auth",
+    description="The contents of the Service Account credentials JSON to use for Google API auth",  # noqa: E501
 )
 DRIVE_SHARED_ID = get_string(
     name="DRIVE_SHARED_ID",
     default=None,
-    description="ID of the Shared Drive (a.k.a. Team Drive). This is equal to the top-level folder ID.",
+    description="ID of the Shared Drive (a.k.a. Team Drive). This is equal to the top-level folder ID.",  # noqa: E501
 )
 DRIVE_S3_UPLOAD_PREFIX = get_string(
     name="DRIVE_S3_UPLOAD_PREFIX",
@@ -608,26 +603,26 @@ UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY = get_int(
 UPDATE_MISSING_TRANSCRIPT_FREQUENCY = get_int(
     name="UPDATE_MISSING_TRANSCRIPT_FREQUENCY",
     default=43200,
-    description="The frequency to check for transcripts for published videos with blank transcripts",
+    description="The frequency to check for transcripts for published videos with blank transcripts",  # noqa: E501
 )
 
 # Publish status settings
 PUBLISH_STATUS_WAIT_TIME = get_int(
     name="PUBLISH_STATUS_WAIT_TIME",
     default=600,
-    description="Number of seconds to wait for a publish status update before querying for it via api",
+    description="Number of seconds to wait for a publish status update before querying for it via api",  # noqa: E501
     required=False,
 )
 PUBLISH_STATUS_CUTOFF = get_int(
     name="PUBLISH_STATUS_CUTOFF",
     default=1800,
-    description="Number of seconds to wait for a publish build to fail/succeed before assuming it's stuck",
+    description="Number of seconds to wait for a publish build to fail/succeed before assuming it's stuck",  # noqa: E501
     required=False,
 )
 PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY = get_int(
     name="PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY",
     default=1800,
-    description="Frequency (in seconds) to run a check on potentially stalled publish builds",
+    description="Frequency (in seconds) to run a check on potentially stalled publish builds",  # noqa: E501
     required=False,
 )
 
@@ -816,7 +811,7 @@ SOCIAL_AUTH_PIPELINE = (
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = "sites"
 SOCIAL_AUTH_LOGIN_ERROR_URL = "main-index"
 SOCIAL_AUTH_ALLOWED_REDIRECT_HOSTS = [
-    urlparse(SITE_BASE_URL).netloc  # pylint: disable=undefined-variable
+    urlparse(SITE_BASE_URL).netloc  # pylint: disable=undefined-variable  # noqa: F821
 ]
 
 SOCIAL_AUTH_USER_FIELD_MAPPING = {"fullname": "name"}
@@ -990,7 +985,7 @@ GITHUB_RATE_LIMIT_MIN_SLEEP = get_int(
 OCW_IMPORT_STARTER_SLUG = get_string(
     name="OCW_IMPORT_STARTER_SLUG",
     default="course",
-    description="The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",
+    description="The slug of the WebsiteStarter to assign to courses imported from ocw-to-hugo",  # noqa: E501
     required=False,
 )
 OCW_COURSE_STARTER_SLUG = get_string(
@@ -1013,13 +1008,13 @@ OCW_STUDIO_SITE_CONFIG_FILE = get_string(
 OCW_MASS_BUILD_BATCH_SIZE = get_int(
     name="OCW_MASS_BUILD_BATCH_SIZE",
     default=20,
-    description="The amount of site builds per job to put in MassBuildSitesPipelineDefinition",
+    description="The amount of site builds per job to put in MassBuildSitesPipelineDefinition",  # noqa: E501
     required=False,
 )
 OCW_MASS_BUILD_MAX_IN_FLIGHT = get_int(
     name="OCW_MASS_BUILD_MAX_IN_FLIGHT",
     default=10,
-    description="The amount of sites to build simultaneously in each job created by MassBuildSitesPipelineDefinition",
+    description="The amount of sites to build simultaneously in each job created by MassBuildSitesPipelineDefinition",  # noqa: E501
 )
 
 ROOT_WEBSITE_NAME = get_string(
@@ -1105,25 +1100,25 @@ PREPUBLISH_ACTIONS = get_delimited_list(
 SEARCH_API_URL = get_string(
     name="SEARCH_API_URL",
     default=None,
-    description="The URL to open discussions search to inject into the theme assets build",
+    description="The URL to open discussions search to inject into the theme assets build",  # noqa: E501
 )
 STATIC_API_BASE_URL = get_string(
     name="STATIC_API_BASE_URL",
-    description="The static api base url to use when building and deploying sites locally to minio",
+    description="The static api base url to use when building and deploying sites locally to minio",  # noqa: E501
     default="",
     required=False,
     dev_only=True,
 )
 RESOURCE_BASE_URL_DRAFT = get_string(
     name="RESOURCE_BASE_URL_DRAFT",
-    description="The draft resource base url to use when building and deploying sites locally to minio",
+    description="The draft resource base url to use when building and deploying sites locally to minio",  # noqa: E501
     default="",
     required=False,
     dev_only=True,
 )
 RESOURCE_BASE_URL_LIVE = get_string(
     name="RESOURCE_BASE_URL_LIVE",
-    description="The live resource base url to use when building and deploying sites locally to minio",
+    description="The live resource base url to use when building and deploying sites locally to minio",  # noqa: E501
     default="",
     required=False,
     dev_only=True,
@@ -1143,12 +1138,12 @@ OCW_HUGO_PROJECTS_BRANCH = get_string(
 RESOURCE_TYPE_FIELDS = get_delimited_list(
     name="RESOURCE_TYPE_FIELDS",
     default=["resourcetype", "filetype"],
-    description="List of site configuration fields that are used to store resource type",
+    description="List of site configuration fields that are used to store resource type",  # noqa: E501
 )
 SITEMAP_DOMAIN = get_string(
     name="SITEMAP_DOMAIN",
     default="ocw.mit.edu",
-    description="The domain to be used in Hugo builds for fully qualified URLs in the sitemap",
+    description="The domain to be used in Hugo builds for fully qualified URLs in the sitemap",  # noqa: E501
 )
 OCW_HUGO_THEMES_SENTRY_DSN = get_string(
     name="OCW_HUGO_THEMES_SENTRY_DSN",

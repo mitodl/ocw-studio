@@ -6,19 +6,19 @@ import pytest
 
 
 @pytest.fixture(params=["dev", "not_dev"])
-def mock_environments(settings, request):
+def mock_environments(settings, request):  # noqa: PT004
     """Fixture that tests with dev vs non-dev environment"""
     settings.OCW_STUDIO_ENVIRONMENT = request.param
     settings.ENV_NAME = request.param
 
 
 @pytest.fixture(params=[True, False])
-def mock_concourse_hard_purge(settings, request):
+def mock_concourse_hard_purge(settings, request):  # noqa: PT004
     """Fixture that tests with True and False for settings.CONCOURSE_HARD_PURGE"""
     settings.CONCOURSE_HARD_PURGE = request.param
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_branches(settings, mocker):
     """Return mock github branches with names"""
     mocked_branches = []
@@ -33,9 +33,9 @@ def mock_branches(settings, mocker):
     return mocked_branches
 
 
-@pytest.fixture
+@pytest.fixture()
 def github_content_file(mocker):
-    """Fixture that returns a mocked Github ContentFile object with some related properties"""
+    """Fixture that returns a mocked Github ContentFile object with some related properties"""  # noqa: E501
     content_str = "my file content"
     path = "/path/to/file.md"
     return SimpleNamespace(
@@ -48,11 +48,11 @@ def github_content_file(mocker):
 
 
 @pytest.fixture(autouse=True)
-def required_concourse_settings(settings):
+def required_concourse_settings(settings):  # noqa: PT004
     """Other required settings for concourse pipelines"""
     settings.CONCOURSE_URL = "http://localconcourse.edu"
     settings.CONCOURSE_USERNAME = "test"
-    settings.CONCOURSE_PASSWORD = "pass"  # pragma: allowlist secret
+    settings.CONCOURSE_PASSWORD = "pass"  # pragma: allowlist secret  # noqa: S105
     settings.CONCOURSE_TEAM = "ocwtest"
     settings.AWS_PREVIEW_BUCKET_NAME = "preview_bucket"
     settings.AWS_PUBLISH_BUCKET_NAME = "publish_bucket"
@@ -65,6 +65,6 @@ def required_concourse_settings(settings):
     settings.GIT_ORGANIZATION = "test_org"
     settings.GITHUB_WEBHOOK_BRANCH = "release"
     settings.SITE_BASE_URL = "http://test.edu"
-    settings.API_BEARER_TOKEN = "abc123"  # pragma: allowlist secret
+    settings.API_BEARER_TOKEN = "abc123"  # pragma: allowlist secret  # noqa: S105
     settings.SEARCH_API_URL = "http://test.edu/api/v0/search"
     settings.OCW_GTM_ACCOUNT_ID = "abc123"

@@ -1,5 +1,4 @@
 """Video models"""
-from typing import Tuple
 
 from django.db import models
 from django.db.models import CASCADE
@@ -34,7 +33,7 @@ class Video(TimestampedModel):
         return "/".join([part for part in url_parts if part != ""])
 
     def youtube_id(self):
-        """Returns destination_id of youtube VideoFile object"""
+        """Returns destination_id of youtube VideoFile object"""  # noqa: D401
         youtube_videofile = self.videofiles.filter(
             destination=DESTINATION_YOUTUBE
         ).first()
@@ -43,8 +42,8 @@ class Video(TimestampedModel):
         else:
             return None
 
-    def caption_transcript_resources(self) -> Tuple[WebsiteContent, WebsiteContent]:
-        """Search for and return the video's caption resource and transcript resource if either exists"""
+    def caption_transcript_resources(self) -> tuple[WebsiteContent, WebsiteContent]:
+        """Search for and return the video's caption resource and transcript resource if either exists"""  # noqa: E501
         youtube_id = self.youtube_id()
 
         query_youtube_id_field = get_dict_query_field("metadata", settings.YT_FIELD_ID)
@@ -62,7 +61,7 @@ class Video(TimestampedModel):
             captions = [
                 caption
                 for caption in captions
-                if get_file_extension(str(caption.file)) in set(["vtt", "webvtt"])
+                if get_file_extension(str(caption.file)) in {"vtt", "webvtt"}
             ]
             captions = captions[0] if captions else None
             transcript = WebsiteContent.objects.filter(
@@ -94,8 +93,12 @@ class VideoFile(TimestampedModel):
     video = models.ForeignKey(Video, on_delete=CASCADE, related_name="videofiles")
     s3_key = models.CharField(null=False, blank=False, max_length=2048, unique=True)
     destination = models.CharField(blank=False, null=False, max_length=48)
-    destination_id = models.CharField(max_length=256, null=True, blank=True)
-    destination_status = models.CharField(max_length=50, null=True, blank=True)
+    destination_id = models.CharField(  # noqa: DJ001
+        max_length=256, null=True, blank=True
+    )
+    destination_status = models.CharField(  # noqa: DJ001
+        max_length=50, null=True, blank=True
+    )
     status = models.CharField(
         max_length=50, null=False, blank=False, default=VideoFileStatus.CREATED
     )
@@ -109,8 +112,8 @@ class VideoJob(TimestampedModel):
 
     job_id = models.CharField(max_length=50, primary_key=True)
     video = models.ForeignKey(Video, on_delete=CASCADE)
-    error_code = models.CharField(max_length=24, null=True, blank=True)
-    error_message = models.TextField(null=True, blank=True)
+    error_code = models.CharField(max_length=24, null=True, blank=True)  # noqa: DJ001
+    error_message = models.TextField(null=True, blank=True)  # noqa: DJ001
     status = models.CharField(
         max_length=50, null=False, blank=False, default=VideoJobStatus.CREATED
     )

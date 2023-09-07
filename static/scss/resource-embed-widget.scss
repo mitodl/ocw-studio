@@ -25,6 +25,7 @@
 
     img {
       max-height: 225px;
+
       // CKEditor puts a min-width property on images
       // which screws everything up, so we need to unset
       // it here

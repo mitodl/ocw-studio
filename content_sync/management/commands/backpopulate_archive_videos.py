@@ -1,5 +1,4 @@
-""" Backpopulate legacy videos """
-from django.conf import settings
+"""Backpopulate legacy videos"""  # noqa: INP001
 from django.core.management import CommandError
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
@@ -13,7 +12,7 @@ from websites.models import Website
 class Command(WebsiteFilterCommand):
     """Backpopulate legacy videos"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -29,7 +28,7 @@ class Command(WebsiteFilterCommand):
             "--prefix",
             dest="prefix",
             default="",
-            help="The key prefix before the path section of the URL found in the metadata.video_files.archive_url property on WebsiteContent objects",
+            help="The key prefix before the path section of the URL found in the metadata.video_files.archive_url property on WebsiteContent objects",  # noqa: E501
         )
         parser.add_argument(
             "-ch",
@@ -60,7 +59,7 @@ class Command(WebsiteFilterCommand):
 
         if is_verbose:
             self.stdout.write(
-                f"Backpopulating legacy videos for the following sites: {','.join(website_names)}"
+                f"Backpopulating legacy videos for the following sites: {','.join(website_names)}"  # noqa: E501
             )
 
         start = now_in_utc()
@@ -72,16 +71,15 @@ class Command(WebsiteFilterCommand):
         )
 
         self.stdout.write(
-            f"Started celery task {task} to backpopulate legacy videos for {len(website_names)} sites"
+            f"Started celery task {task} to backpopulate legacy videos for {len(website_names)} sites"  # noqa: E501
         )
 
         self.stdout.write("Waiting on task...")
 
         result = task.get()
         if set(result) != {True}:
-            raise CommandError(f"Some errors occurred: {result}")
+            msg = f"Some errors occurred: {result}"
+            raise CommandError(msg)
 
         total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(
-            "Backpopulate finished, took {} seconds".format(total_seconds)
-        )
+        self.stdout.write(f"Backpopulate finished, took {total_seconds} seconds")

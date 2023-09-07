@@ -285,7 +285,7 @@ _Esco con gli amici._
 {{< tdopen >}}
 
 
-I go out with friends.  
+I go out with friends.
 (esco, _1st person singular of the irr. verb uscire_, to go out)
 
 

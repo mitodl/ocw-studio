@@ -35,12 +35,12 @@ export const siteApiCollaboratorsDetailUrl =
   siteApiCollaboratorsUrl.segment(":userId/")
 export const siteApiContentUrl = siteApiDetailUrl.segment("content/")
 export const siteApiContentListingUrl = siteApiContentUrl.query({
-  limit: WEBSITES_PAGE_SIZE
+  limit: WEBSITES_PAGE_SIZE,
 })
 export const siteApiContentDetailUrl = siteApiContentUrl.segment(":textId/")
 export const siteApiListingUrl = siteApi.query({
-  limit:  WEBSITES_PAGE_SIZE,
-  offset: 0
+  limit: WEBSITES_PAGE_SIZE,
+  offset: 0,
 })
 export const siteApiContentSyncGDriveUrl =
   siteApiContentUrl.segment("gdrive_sync/")

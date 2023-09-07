@@ -14,7 +14,7 @@ const useThrowSynchronously = () => {
       setState(() => {
         throw e
       }),
-    []
+    [],
   )
 }
 

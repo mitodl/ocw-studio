@@ -15,19 +15,13 @@
           "widget": "markdown"
         },
         {
-          "default": [
-            "Design"
-          ],
+          "default": ["Design"],
           "label": "Tags",
           "max": 2,
           "min": 1,
           "multiple": true,
           "name": "tags",
-          "options": [
-            "Design",
-            "UX",
-            "Dev"
-          ],
+          "options": ["Design", "UX", "Dev"],
           "widget": "select"
         },
         {
@@ -127,23 +121,14 @@
         {
           "label": "File Type",
           "name": "filetype",
-          "options": [
-            "PDF",
-            "Word Doc",
-            "PPT"
-          ],
+          "options": ["PDF", "Word Doc", "PPT"],
           "required": true,
           "widget": "select"
         },
         {
           "label": "Resource Type",
           "name": "resourcetype",
-          "options": [
-            "Image",
-            "Video",
-            "Document",
-            "Other"
-          ],
+          "options": ["Image", "Video", "Document", "Other"],
           "required": true,
           "widget": "select"
         }
@@ -166,29 +151,19 @@
               "widget": "markdown"
             },
             {
-              "default": [
-                "Design"
-              ],
+              "default": ["Design"],
               "label": "Tags",
               "max": 3,
               "min": 1,
               "multiple": true,
               "name": "tags",
-              "options": [
-                "Design",
-                "UX",
-                "Dev"
-              ],
+              "options": ["Design", "UX", "Dev"],
               "widget": "select"
             },
             {
               "label": "Align Content",
               "name": "align",
-              "options": [
-                "left",
-                "center",
-                "right"
-              ],
+              "options": ["left", "center", "right"],
               "widget": "select"
             },
             {

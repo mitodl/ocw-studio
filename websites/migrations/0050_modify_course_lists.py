@@ -1,11 +1,11 @@
 # manual migration for course lists and resource collections
 from django.conf import settings
-from django.db import migrations, models, transaction
+from django.db import migrations, transaction
 from django.db.models import Q
 
 
-def replace_field(from_field, to_field, apps):
-    """Replace values from one website field for another across resource collections and course lists"""
+def replace_field(from_field, to_field, apps):  # noqa: C901
+    """Replace values from one website field for another across resource collections and course lists"""  # noqa: E501
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     Website = apps.get_model("websites", "Website")
     with transaction.atomic():
@@ -38,7 +38,7 @@ def replace_field(from_field, to_field, apps):
                 continue
             for content in contents:
                 website = Website.objects.filter(
-                    (Q(**{f"{from_field}": content[-1]}))
+                    Q(**{f"{from_field}": content[-1]})
                 ).first()
                 if website:
                     content[-1] = f"{getattr(website, to_field)}"
@@ -54,19 +54,18 @@ def replace_field(from_field, to_field, apps):
 def name_to_url_path(apps, schema_editor):
     """
     Replace Website.name with Website.url_path in the course lists and resource collections
-    """
+    """  # noqa: E501
     replace_field("name", "url_path", apps)
 
 
 def url_path_to_name(apps, schema_editor):
     """
     Replace Website.url_path with Website.name in the course lists and resource collections
-    """
+    """  # noqa: E501
     replace_field("url_path", "name", apps)
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0049_website_url_path"),
     ]

@@ -1,4 +1,4 @@
-""" Management command for upserting the mass build pipeline """
+"""Management command for upserting the mass build pipeline"""  # noqa: INP001
 from django.conf import settings
 from django.core.management import BaseCommand
 from mitol.common.utils.datetime import now_in_utc
@@ -11,7 +11,7 @@ from content_sync.pipelines.base import BaseMassBuildSitesPipeline
 class Command(BaseCommand):
     """Management command for upserting the mass build pipeline"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -40,14 +40,14 @@ class Command(BaseCommand):
             "--themes-branch",
             dest="themes-branch",
             default="",
-            help="An optional override for the branch of ocw-hugo-themes to use in the builds",
+            help="An optional override for the branch of ocw-hugo-themes to use in the builds",  # noqa: E501
         )
         parser.add_argument(
             "-r",
             "--projects-branch",
             dest="projects-branch",
             default="",
-            help="An optional override for the branch of ocw-hugo-projects to use in the builds",
+            help="An optional override for the branch of ocw-hugo-projects to use in the builds",  # noqa: E501
         )
         parser.add_argument(
             "-s",
@@ -61,18 +61,17 @@ class Command(BaseCommand):
             "--offline",
             dest="offline",
             action="store_true",
-            help="Upserts an alternate version of the pipeline to mass-build-sites-offline",
+            help="Upserts an alternate version of the pipeline to mass-build-sites-offline",  # noqa: E501
         )
         parser.add_argument(
             "-hu",
             "--hugo_args",
             dest="hugo_args",
             default="",
-            help="If specified, override Hugo command line arguments with supplied args",
+            help="If specified, override Hugo command line arguments with supplied args",  # noqa: E501
         )
 
-    def handle(self, *args, **options):
-
+    def handle(self, *args, **options):  # noqa: ARG002
         if not settings.CONTENT_SYNC_PIPELINE_BACKEND:
             self.stderr.write("Pipeline backend is not configured")
             return

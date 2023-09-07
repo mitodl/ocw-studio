@@ -22,7 +22,7 @@ class MetadataRelativeUrlsRule(RegexpCleanupRule):
     """
 
     regex = (
-        r"\\?\["  # match title opening "[" (or "\[" in case corrupted by studio save)
+        r"\\?\["  # match title opening "[" (or "\[" in case corrupted by studio save)  # noqa: E501, ISC003
         + r"(?P<text>[^\[\]\<\>\n]*?)"  # capture the title
         + r"\\?\]"  # title closing "]" (or "\]")
         + r"\("  # url open

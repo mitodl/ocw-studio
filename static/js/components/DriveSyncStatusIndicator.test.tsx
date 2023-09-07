@@ -2,7 +2,7 @@ import { act } from "react-dom/test-utils"
 import moment from "moment"
 
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 import DriveSyncStatusIndicator from "./DriveSyncStatusIndicator"
 import { GoogleDriveSyncStatuses } from "../constants"
@@ -21,35 +21,35 @@ describe("DriveSyncStatusIndicator", () => {
 
   describe.each([
     {
-      status:     GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING,
-      syncErrors: []
+      status: GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING,
+      syncErrors: [],
     },
     {
-      status:     GoogleDriveSyncStatuses.SYNC_STATUS_PENDING,
-      syncErrors: []
+      status: GoogleDriveSyncStatuses.SYNC_STATUS_PENDING,
+      syncErrors: [],
     },
     {
-      status:     GoogleDriveSyncStatuses.SYNC_STATUS_COMPLETE,
-      syncErrors: []
+      status: GoogleDriveSyncStatuses.SYNC_STATUS_COMPLETE,
+      syncErrors: [],
     },
     {
-      status:     GoogleDriveSyncStatuses.SYNC_STATUS_ERRORS,
-      syncErrors: ["error1", "error2"]
+      status: GoogleDriveSyncStatuses.SYNC_STATUS_ERRORS,
+      syncErrors: ["error1", "error2"],
     },
     {
-      status:     GoogleDriveSyncStatuses.SYNC_STATUS_FAILED,
-      syncErrors: ["total failure"]
-    }
+      status: GoogleDriveSyncStatuses.SYNC_STATUS_FAILED,
+      syncErrors: ["total failure"],
+    },
   ])("sync status drawer", ({ status, syncErrors }) => {
     beforeEach(() => {
       website = {
         ...makeWebsiteDetail(),
         sync_status: status,
         sync_errors: syncErrors,
-        synced_on:   "2021-01-01"
+        synced_on: "2021-01-01",
       }
       render = helper.configureRenderer(DriveSyncStatusIndicator, {
-        website
+        website,
       })
     })
 
@@ -61,7 +61,7 @@ describe("DriveSyncStatusIndicator", () => {
       const { wrapper } = await render()
       expect(wrapper.text()).toContain(status)
       expect(wrapper.find(".status-indicator").prop("className")).toContain(
-        status.toString().toLowerCase()
+        status.toString().toLowerCase(),
       )
     })
 
@@ -84,11 +84,11 @@ describe("DriveSyncStatusIndicator", () => {
       expect(drawer.find("li").length).toBe(syncErrors.length)
       if (syncErrors.length === 0) {
         expect(drawer.find(".sync-success").at(0).text()).toContain(
-          "The latest Google Drive sync was successful."
+          "The latest Google Drive sync was successful.",
         )
       }
       expect(drawer.find(".sync-time").text()).toContain(
-        moment(website.synced_on).format("dddd, MMMM D h:mma ZZ")
+        moment(website.synced_on).format("dddd, MMMM D h:mma ZZ"),
       )
     })
   })

@@ -29,7 +29,7 @@ def strip_namespace(tag):
 
     Returns:
         str: The XML tag without a namespace prefix, or the same tag if no namespace prefix exists
-    """
+    """  # noqa: E501
     if tag.startswith("{"):
         rindex = tag.find("}")
         return tag[rindex + 1 :]
@@ -69,5 +69,5 @@ def rss_to_json(root):
 
     Returns:
         list: A list representing the RSS feed which can be serialized to JSON
-    """
+    """  # noqa: E501
     return [serialize_item(item) for item in root.iter(tag="item")]

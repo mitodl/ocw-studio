@@ -5,7 +5,7 @@ interface ErrorComponentProps {
 }
 
 export const FormError: React.FunctionComponent = (
-  props: ErrorComponentProps
+  props: ErrorComponentProps,
 ) => {
   return props.children ? (
     <div className="form-error">{props.children}</div>

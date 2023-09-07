@@ -9,7 +9,6 @@ from rest_framework.status import HTTP_200_OK, HTTP_302_FOUND
 
 from users.factories import UserFactory
 
-
 pytestmark = [
     pytest.mark.django_db,
 ]
@@ -33,22 +32,22 @@ def test_webpack_url(mocker, settings, client):
 
 
 @pytest.mark.parametrize(
-    "name, is_authenticated, expected_success",
+    ("name", "is_authenticated", "expected_success"),
     [
-        ["main-index", True, True],
-        ["main-index", False, True],
-        ["login", True, True],
-        ["login", False, True],
-        ["sites", True, True],
-        ["sites", False, False],
-        ["new-site", True, True],
-        ["new-site", False, False],
-        ["markdown-editor-test", True, True],
-        ["markdown-editor-test", False, False],
+        ["main-index", True, True],  # noqa: PT007
+        ["main-index", False, True],  # noqa: PT007
+        ["login", True, True],  # noqa: PT007
+        ["login", False, True],  # noqa: PT007
+        ["sites", True, True],  # noqa: PT007
+        ["sites", False, False],  # noqa: PT007
+        ["new-site", True, True],  # noqa: PT007
+        ["new-site", False, False],  # noqa: PT007
+        ["markdown-editor-test", True, True],  # noqa: PT007
+        ["markdown-editor-test", False, False],  # noqa: PT007
     ],
 )  # pylint: disable=too-many-arguments
 @pytest.mark.parametrize("is_gdrive_enabled", [True, False])
-def test_react_page(  # pylint: disable=too-many-arguments
+def test_react_page(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     settings,
     mocker,
     client,

@@ -12,7 +12,7 @@ class YouTubeUploadSuccessMessage(TemplatedMessage):
 
     @staticmethod
     def get_debug_template_context() -> dict:
-        """Returns the extra context for the email debugger"""
+        """Returns the extra context for the email debugger"""  # noqa: D401
         return {
             "user": SimpleNamespace(name="Test User"),
             "site": SimpleNamespace(
@@ -33,7 +33,7 @@ class YouTubeUploadFailureMessage(TemplatedMessage):
 
     @staticmethod
     def get_debug_template_context() -> dict:
-        """Returns the extra context for the email debugger"""
+        """Returns the extra context for the email debugger"""  # noqa: D401
         return {
             "user": SimpleNamespace(name="Test User"),
             "site": SimpleNamespace(

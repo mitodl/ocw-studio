@@ -10,13 +10,13 @@ from websites.management.commands.markdown_cleaning.rules.subsup_fixes import (
 
 
 def get_markdown_cleaner():
-    """Convenience to get rule-specific markdown cleaner"""
+    """Convenience to get rule-specific markdown cleaner"""  # noqa: D401
     rule = SubSupFixes()
     return WebsiteContentMarkdownCleaner(rule)
 
 
 @pytest.mark.parametrize(
-    ["markdown", "expected_markdown"],
+    ("markdown", "expected_markdown"),
     [
         (
             R'The quick {{< sub "-cat" >}} brown fox',

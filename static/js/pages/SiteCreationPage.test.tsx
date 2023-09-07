@@ -3,11 +3,11 @@ import { act } from "react-dom/test-utils"
 
 import SiteCreationPage from "./SiteCreationPage"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 import {
   makeWebsiteDetail,
-  makeWebsiteStarter
+  makeWebsiteStarter,
 } from "../util/factories/websites"
 import { siteDetailUrl, siteApi, startersApi } from "../lib/urls"
 
@@ -20,7 +20,7 @@ import { FormikHelpers } from "formik"
 const simulateSubmit = (
   wrapper: ReactWrapper<SiteFormProps>,
   formikStubs: Partial<Record<keyof FormikHelpers<any>, jest.Mock>>,
-  data: any
+  data: any,
 ) => {
   const onSubmit = wrapper.prop("onSubmit")
   assertNotNil(onSubmit)
@@ -43,11 +43,11 @@ describe("SiteCreationPage", () => {
     website = makeWebsiteDetail()
     historyPushStub = jest.fn()
     render = helper.configureRenderer(SiteCreationPage, {
-      history:  { push: historyPushStub },
+      history: { push: historyPushStub },
       entities: {
-        starters: []
+        starters: [],
       },
-      queries: {}
+      queries: {},
     })
 
     helper.mockGetRequest(startersApi.toString(), starters)
@@ -67,7 +67,7 @@ describe("SiteCreationPage", () => {
   it("sets the page title", async () => {
     const { wrapper } = await render()
     expect(wrapper.find("DocumentTitle").prop("title")).toBe(
-      "OCW Studio | New Site"
+      "OCW Studio | New Site",
     )
   })
 
@@ -77,9 +77,9 @@ describe("SiteCreationPage", () => {
 
     beforeEach(() => {
       formikStubs = {
-        setErrors:     jest.fn(),
+        setErrors: jest.fn(),
         setSubmitting: jest.fn(),
-        setStatus:     jest.fn()
+        setStatus: jest.fn(),
       }
     })
 
@@ -88,62 +88,62 @@ describe("SiteCreationPage", () => {
       const { wrapper } = await render()
       const form = wrapper.find(SiteForm)
       await simulateSubmit(form, formikStubs, {
-        title:    "My Title",
+        title: "My Title",
         short_id: "My-Title",
-        starter:  1
+        starter: 1,
       })
       sinon.assert.calledOnce(createWebsiteStub)
       expect(formikStubs.setSubmitting).toHaveBeenCalledTimes(1)
       expect(formikStubs.setSubmitting).toHaveBeenCalledWith(false)
       expect(historyPushStub).toHaveBeenCalledTimes(1)
       expect(historyPushStub).toHaveBeenCalledWith(
-        siteDetailUrl.param({ name: website.name }).toString()
+        siteDetailUrl.param({ name: website.name }).toString(),
       )
     })
 
     it("that sets form errors if the API request fails", async () => {
       const errorResp = {
         errors: {
-          title: errorMsg
-        }
+          title: errorMsg,
+        },
       }
       createWebsiteStub = helper.mockPostRequest(
         siteApi.toString(),
         errorResp,
-        400
+        400,
       )
       const { wrapper } = await render()
       const form = wrapper.find(SiteForm)
       await simulateSubmit(form, formikStubs, {
-        title:    errorMsg,
+        title: errorMsg,
         short_id: "my-site",
-        starter:  1
+        starter: 1,
       })
       sinon.assert.calledOnce(createWebsiteStub)
       expect(formikStubs.setErrors).toHaveBeenCalledTimes(1)
       expect(formikStubs.setErrors).toHaveBeenCalledWith({
         ...errorResp.errors,
         short_id: undefined,
-        starter:  undefined
+        starter: undefined,
       })
       expect(historyPushStub).not.toHaveBeenCalled()
     })
 
     it("that sets a status if the API request fails with a string error message", async () => {
       const errorResp = {
-        errors: errorMsg
+        errors: errorMsg,
       }
       createWebsiteStub = helper.mockPostRequest(
         siteApi.toString(),
         errorResp,
-        400
+        400,
       )
       const { wrapper } = await render()
       const form = wrapper.find(SiteForm)
       await simulateSubmit(form, formikStubs, {
-        title:    "My Title",
+        title: "My Title",
         short_id: "My-Title",
-        starter:  1
+        starter: 1,
       })
       sinon.assert.calledOnce(createWebsiteStub)
       expect(formikStubs.setStatus).toHaveBeenCalledTimes(1)

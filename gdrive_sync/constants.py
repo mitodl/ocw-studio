@@ -1,6 +1,5 @@
-""" Constants for gdrive_sync """
+"""Constants for gdrive_sync"""
 from main.constants import STATUS_CREATED
-
 
 DRIVE_API_CHANGES = "changes"
 DRIVE_API_FILES = "files"
@@ -9,7 +8,7 @@ DRIVE_API_RESOURCES = [DRIVE_API_FILES, DRIVE_API_CHANGES]
 DRIVE_FOLDER_VIDEOS_FINAL = "videos_final"
 DRIVE_FOLDER_FILES_FINAL = "files_final"
 DRIVE_FOLDER_FILES = "files"
-DRIVE_FILE_FIELDS = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, size, webContentLink, trashed, parents)"
+DRIVE_FILE_FIELDS = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, size, webContentLink, trashed, parents)"  # noqa: E501
 DRIVE_MIMETYPE_FOLDER = "application/vnd.google-apps.folder"
 
 

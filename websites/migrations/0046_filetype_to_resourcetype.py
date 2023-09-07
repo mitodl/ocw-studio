@@ -6,11 +6,11 @@ from websites.constants import WEBSITE_SOURCE_STUDIO
 
 
 def migrate_fields_forward(apps, schema_editor):
-    migrate_field(apps, True)
+    migrate_field(apps, True)  # noqa: FBT003
 
 
 def migrate_fields_backward(apps, schema_editor):
-    migrate_field(apps, False)
+    migrate_field(apps, False)  # noqa: FBT003
 
 
 def migrate_field(apps, forward):
@@ -39,7 +39,6 @@ def migrate_field(apps, forward):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("websites", "0045_blank_publish_fields"),
     ]

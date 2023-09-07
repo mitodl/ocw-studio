@@ -4,7 +4,7 @@ import hmac
 import re
 from enum import Flag, auto
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 from uuid import UUID, uuid4
 
 from django.conf import settings
@@ -29,17 +29,17 @@ def uuid_string():
 
     Returns:
         str: UUID cast as a string
-    """
+    """  # noqa: D401
     return str(uuid4())
 
 
 def is_valid_uuid(uuid_to_test: str) -> bool:
     """
     Returns True if the given string is a valid UUID
-    """
+    """  # noqa: D401
     try:
         UUID(uuid_to_test)
-        return True
+        return True  # noqa: TRY300
     except ValueError:
         return False
 
@@ -52,7 +52,7 @@ def get_file_extension(filepath: str) -> str:
         get_file_extension("myfile.txt") == "txt"
         get_file_extension("myfile.tar.gz") == "tar.gz"
         get_file_extension("myfile") == ""
-    """
+    """  # noqa: D401
     extension_with_dot = "".join(Path(filepath).suffixes).lower()
     if extension_with_dot:
         return extension_with_dot[1:]
@@ -67,18 +67,18 @@ def remove_trailing_slashes(filepath: str) -> str:
         remove_trailing_slashes("/my/path/") == "my/path"
         remove_trailing_slashes("my/path/") == "my/path"
         remove_trailing_slashes("/path/to/myfile.pdf") == "path/to/myfile.pdf"
-    """
+    """  # noqa: D401
     return re.sub(r"^\/|\/$", "", filepath)
 
 
 def are_equivalent_paths(filepath1: str, filepath2: str) -> bool:
-    """Returns True if the two filepaths are equivalent"""
+    """Returns True if the two filepaths are equivalent"""  # noqa: D401
     return remove_trailing_slashes(filepath1) == remove_trailing_slashes(filepath2)
 
 
 def get_dirpath_and_filename(
-    filepath: str, expect_file_extension=True
-) -> Tuple[str, str]:
+    filepath: str, expect_file_extension=True  # noqa: FBT002
+) -> tuple[str, str]:
     """
     Given a full filepath, returns the directory path and filename (without extension)
 
@@ -89,7 +89,7 @@ def get_dirpath_and_filename(
 
     Returns:
         (str, str): The dirpath and filename (without extension) of the filepath
-    """
+    """  # noqa: E501
     path_obj = Path(filepath)
     path_parts = [part for part in path_obj.parts if part != "/"]
     if not path_obj.suffix and expect_file_extension:
@@ -136,7 +136,8 @@ class NestableKeyTextTransform:
 
     def __new__(cls, field, *path):
         if not path:
-            raise ValueError("Path must contain at least one key.")
+            msg = "Path must contain at least one key."
+            raise ValueError(msg)
         head, *tail = path
         field = KeyTextTransform(head, field)
         for head in tail:
@@ -150,7 +151,7 @@ def is_dev() -> bool:
 
     Returns:
         (bool): A boolean indicating whether on not the environment is dev
-    """
+    """  # noqa: D401
     return settings.ENVIRONMENT == "dev"
 
 
@@ -165,7 +166,7 @@ def get_dict_list_item_by_field(items: list[dict], field: str, value: str):
 
     Returns:
         (dict): The first dict with a field value that matches the given parameters
-    """
+    """  # noqa: E501, D401
     return next(
         (item for item in items if item.get(field, None) == value),
         None,

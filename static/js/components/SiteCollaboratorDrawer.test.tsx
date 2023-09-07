@@ -5,27 +5,27 @@ import { act } from "react-dom/test-utils"
 import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
 import { ROLE_EDITOR } from "../constants"
 import IntegrationTestHelper, {
-  TestRenderer
+  TestRenderer,
 } from "../util/integration_test_helper_old"
 import {
   makeWebsiteDetail,
-  makeWebsiteCollaborator
+  makeWebsiteCollaborator,
 } from "../util/factories/websites"
 import {
   siteApiCollaboratorsDetailUrl,
-  siteApiCollaboratorsUrl
+  siteApiCollaboratorsUrl,
 } from "../lib/urls"
 
 import {
   Website,
   WebsiteCollaborator,
-  WebsiteCollaboratorFormData
+  WebsiteCollaboratorFormData,
 } from "../types/websites"
 
 const simulateClickSubmit = (
   wrapper: ReactWrapper,
   stubs: FormikStubs,
-  data: WebsiteCollaboratorFormData
+  data: WebsiteCollaboratorFormData,
 ) => {
   const onSubmit = wrapper.prop("onSubmit")
   if (typeof onSubmit !== "function") {
@@ -56,26 +56,26 @@ describe("SiteCollaboratorDrawerTest", () => {
     collaborator = makeWebsiteCollaborator()
     toggleVisibilityStub = sinon.stub()
     formikStubs = {
-      setErrors:     sinon.stub(),
+      setErrors: sinon.stub(),
       setSubmitting: sinon.stub(),
-      setStatus:     sinon.stub()
+      setStatus: sinon.stub(),
     }
     render = helper.configureRenderer(
       SiteCollaboratorDrawer,
       {
-        collaborator:     null,
-        visibility:       true,
-        siteName:         website.name,
-        toggleVisibility: toggleVisibilityStub
+        collaborator: null,
+        visibility: true,
+        siteName: website.name,
+        toggleVisibility: toggleVisibilityStub,
       },
       {
         entities: {
           collaborators: {
-            [website.name]: [collaborator]
-          }
+            [website.name]: [collaborator],
+          },
         },
-        queries: {}
-      }
+        queries: {},
+      },
     )
     helper.handleRequestStub.returns({})
   })
@@ -102,12 +102,12 @@ describe("SiteCollaboratorDrawerTest", () => {
       editCollaboratorStub = helper.mockPatchRequest(
         siteApiCollaboratorsDetailUrl
           .param({
-            name:   website.name,
-            userId: collaborator.user_id
+            name: website.name,
+            userId: collaborator.user_id,
           })
           .toString(),
         collaborator,
-        201
+        201,
       )
       const { wrapper } = await render({ collaborator })
       const form = wrapper.find("SiteCollaboratorForm")
@@ -122,18 +122,18 @@ describe("SiteCollaboratorDrawerTest", () => {
     it("sets form errors if the API request fails", async () => {
       const errorResp = {
         errors: {
-          role: errorMsg
-        }
+          role: errorMsg,
+        },
       }
       editCollaboratorStub = helper.mockPatchRequest(
         siteApiCollaboratorsDetailUrl
           .param({
-            name:   website.name,
-            userId: collaborator.user_id
+            name: website.name,
+            userId: collaborator.user_id,
           })
           .toString(),
         errorResp,
-        400
+        400,
       )
       const { wrapper } = await render({ collaborator })
       const form = wrapper.find("SiteCollaboratorForm")
@@ -142,24 +142,24 @@ describe("SiteCollaboratorDrawerTest", () => {
 
       sinon.assert.calledOnce(editCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
-        ...errorResp.errors
+        ...errorResp.errors,
       })
       sinon.assert.notCalled(toggleVisibilityStub)
     })
 
     it("sets form errors if the API request fails with a string error message", async () => {
       const errorResp = {
-        errors: errorMsg
+        errors: errorMsg,
       }
       editCollaboratorStub = helper.mockPatchRequest(
         siteApiCollaboratorsDetailUrl
           .param({
-            name:   website.name,
-            userId: collaborator.user_id
+            name: website.name,
+            userId: collaborator.user_id,
           })
           .toString(),
         errorResp,
-        400
+        400,
       )
       const { wrapper } = await render({ collaborator })
       const form = wrapper.find("SiteCollaboratorForm")
@@ -180,13 +180,13 @@ describe("SiteCollaboratorDrawerTest", () => {
     it("creates a new collaborator", async () => {
       addCollaboratorStub = helper.mockPostRequest(
         siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-        makeWebsiteCollaborator()
+        makeWebsiteCollaborator(),
       )
       const { wrapper } = await render()
       const form = wrapper.find("SiteCollaboratorForm")
       await simulateClickSubmit(form, formikStubs, {
-        role:  ROLE_EDITOR,
-        email: "test@mit.edu"
+        role: ROLE_EDITOR,
+        email: "test@mit.edu",
       })
       sinon.assert.calledOnce(addCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setSubmitting, false)
@@ -197,41 +197,41 @@ describe("SiteCollaboratorDrawerTest", () => {
       const errorResp = {
         errors: {
           email: errorMsg,
-          role:  errorMsg
-        }
+          role: errorMsg,
+        },
       }
       addCollaboratorStub = helper.mockPostRequest(
         siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
         errorResp,
-        400
+        400,
       )
       const { wrapper } = await render()
       const form = wrapper.find("SiteCollaboratorForm")
       await simulateClickSubmit(form, formikStubs, {
-        role:  ROLE_EDITOR,
-        email: "oops@mit.edu"
+        role: ROLE_EDITOR,
+        email: "oops@mit.edu",
       })
       sinon.assert.calledOnce(addCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setErrors, {
-        ...errorResp.errors
+        ...errorResp.errors,
       })
       sinon.assert.notCalled(toggleVisibilityStub)
     })
 
     it("sets form error if the API request fails with a string error message", async () => {
       const errorResp = {
-        errors: errorMsg
+        errors: errorMsg,
       }
       addCollaboratorStub = helper.mockPostRequest(
         siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
         errorResp,
-        400
+        400,
       )
       const { wrapper } = await render()
       const form = wrapper.find("SiteCollaboratorForm")
       await simulateClickSubmit(form, formikStubs, {
-        role:  ROLE_EDITOR,
-        email: "oops@mit.edu"
+        role: ROLE_EDITOR,
+        email: "oops@mit.edu",
       })
       sinon.assert.calledOnce(addCollaboratorStub)
       sinon.assert.calledOnceWithExactly(formikStubs.setStatus, errorMsg)

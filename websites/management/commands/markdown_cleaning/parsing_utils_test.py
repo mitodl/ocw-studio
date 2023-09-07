@@ -13,7 +13,7 @@ from websites.management.commands.markdown_cleaning.shortcode_parser import (
 
 
 @pytest.mark.parametrize(
-    ["text", "expected"],
+    ("text", "expected"),
     [
         (
             # Quote all the things
@@ -76,7 +76,7 @@ def test_original_text_records_during_transform_text():
     ]
     original_texts = []
 
-    def parse_action(s, l, toks):
+    def parse_action(s, l, toks):  # noqa: E741
         original_texts.append(toks.original_text)
         return toks.original_text
 
@@ -88,7 +88,7 @@ def test_original_text_records_during_transform_text():
 
 
 @pytest.mark.parametrize(
-    ["escaped", "unescaped"],
+    ("escaped", "unescaped"),
     [
         (R'''"cats \"and\" 'dogs' are cool."''', R"""cats "and" 'dogs' are cool."""),
         (
@@ -120,21 +120,20 @@ def test_unescape_quoted_string(escaped, unescaped):
         """cat""",
         """'cat""",
         """cat'""",
-        """cat""",
         """"cat""",
         '''cat"''',
         '"missing "escapes" so sad "',
         "'missing 'escapes' so sad '",
-        R'"missing escales\\" "' R'"missing escales\\\\" "',
+        R'"missing escales\\" ""missing escales\\\\" "',
     ],
 )
 def test_unescape_quoted_string_raises_value_errors(bad_text):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         assert unescape_quoted_string(bad_text)
 
 
 @pytest.mark.parametrize(
-    ["closer", "percent_delimiters", "expected"],
+    ("closer", "percent_delimiters", "expected"),
     [
         (False, False, R'{{< my_shortcode "first" "second \"two\"   2" >}}'),
         (True, False, R'{{</ my_shortcode "first" "second \"two\"   2" >}}'),
@@ -154,7 +153,7 @@ def test_shortcode_positional_params(closer, percent_delimiters, expected):
 
 
 @pytest.mark.parametrize(
-    ["closer", "percent_delimiters", "expected"],
+    ("closer", "percent_delimiters", "expected"),
     [
         (
             False,
@@ -220,7 +219,7 @@ def test_shortcode_get_param():
 
 
 @pytest.mark.parametrize(
-    ["shortcode_param_values", "expected"],
+    ("shortcode_param_values", "expected"),
     [
         ([], R"{{< meow >}}"),
         (["abc", "x y  z", 'f "g" h'], R'{{< meow "abc" "x y  z" "f \"g\" h" >}}'),
@@ -241,7 +240,7 @@ def test_shortcode_resource_link():
     """
     Test that ShortcodeTag.resource_link creates correct resource_link shortcodes
     """
-    id = uuid.uuid4()
+    id = uuid.uuid4()  # noqa: A001
 
     # no fragment supplied
     assert ShortcodeTag.resource_link(id, text="my text") == ShortcodeTag(
@@ -270,7 +269,7 @@ def test_shortcode_resource_link():
         ],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         ShortcodeTag.resource_link("bad uuid", text="my text")
 
     with pytest.raises(TypeError):
@@ -281,7 +280,7 @@ def test_shortcode_resource():
     """
     Test that ShortcodeTag.resource creates correct resource_link shortcodes
     """
-    id = uuid.uuid4()
+    id = uuid.uuid4()  # noqa: A001
     href_uuid = uuid.uuid4()
 
     assert ShortcodeTag.resource(id) == ShortcodeTag(
@@ -307,8 +306,8 @@ def test_shortcode_resource():
         ],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         ShortcodeTag.resource("bad uuid")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         ShortcodeTag.resource(id, href_uuid=href_uuid, href="/cats/go/meow")

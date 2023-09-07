@@ -1,4 +1,4 @@
-""" Update OCW course sites and content via update_ocw_resource_data """
+"""Update OCW course sites and content via update_ocw_resource_data"""
 from mitol.common.utils.datetime import now_in_utc
 
 from main.management.commands.filter import WebsiteFilterCommand
@@ -8,7 +8,7 @@ from ocw_import.tasks import update_ocw_resource_data
 class Command(WebsiteFilterCommand):
     """Import OCW course sites and content via ocw2hugo output"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -23,7 +23,7 @@ class Command(WebsiteFilterCommand):
             "--content-field",
             dest="content_field",
             required=False,
-            help="WebsiteContent field that needs to be updated. Metadata fields can be entered as metadata.<field name>",
+            help="WebsiteContent field that needs to be updated. Metadata fields can be entered as metadata.<field name>",  # noqa: E501
         )
         parser.add_argument(
             "-p",
@@ -82,6 +82,4 @@ class Command(WebsiteFilterCommand):
         self.stdout.write(f"Starting task {task}...")
         task.get()
         total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(
-            "OCW Content Update  finished, took {} seconds".format(total_seconds)
-        )
+        self.stdout.write(f"OCW Content Update  finished, took {total_seconds} seconds")

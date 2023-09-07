@@ -6,5 +6,5 @@
  */
 export enum FetchStatus {
   Ok,
-  Error
+  Error,
 }

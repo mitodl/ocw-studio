@@ -13,13 +13,13 @@ from websites.management.commands.markdown_cleaning.testing_utils import (
 
 
 def get_markdown_cleaner():
-    """Convenience to get rule-specific markdown cleaner"""
+    """Convenience to get rule-specific markdown cleaner"""  # noqa: D401
     rule = ResourceLinkNextPrevRule()
     return WebsiteContentMarkdownCleaner(rule)
 
 
 @pytest.mark.parametrize(
-    ["markdown", "expected_markdown"],
+    ("markdown", "expected_markdown"),
     [
         (
             R'cats {{% resource_link "uuid" "\<\<Previous!" %}} replace + space',

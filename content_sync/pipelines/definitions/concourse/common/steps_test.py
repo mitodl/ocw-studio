@@ -27,7 +27,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
 
 @pytest.mark.parametrize("step_type", [GetStep, PutStep, TaskStep])
 def test_add_error_handling(step_type):
-    """ensure that add_error_handling has all the correct steps"""
+    """Ensure that add_error_handling has all the correct steps"""
     mock_step = step_type()
     add_error_handling(
         step=mock_step,
@@ -45,8 +45,8 @@ def test_add_error_handling(step_type):
 
 
 def test_add_error_handling_incorrect_type():
-    """calling add_error_handling with the wrong type of step should throw a TypeError"""
-    with pytest.raises(TypeError):
+    """Calling add_error_handling with the wrong type of step should throw a TypeError"""
+    with pytest.raises(TypeError):  # noqa: PT012
         mock_step = Step()
         add_error_handling(
             step=mock_step,
@@ -59,7 +59,7 @@ def test_add_error_handling_incorrect_type():
 
 @pytest.mark.parametrize("step_type", [GetStep, PutStep, TaskStep])
 def test_calling_add_error_handling_twice(step_type):
-    """calling add_error_handling twice on the same step should throw a ValueError"""
+    """Calling add_error_handling twice on the same step should throw a ValueError"""
     mock_step = step_type()
     add_error_handling(
         step=mock_step,
@@ -68,7 +68,7 @@ def test_calling_add_error_handling_twice(step_type):
         short_id="test-site",
         instance_vars="?site:test-site",
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         add_error_handling(
             step=mock_step,
             step_description="test step",
@@ -79,7 +79,7 @@ def test_calling_add_error_handling_twice(step_type):
 
 
 def test_put_steps_empty_inputs():
-    """steps that extend PutStep and don't need inputs should explicitly set them to a blank list"""
+    """Steps that extend PutStep and don't need inputs should explicitly set them to a blank list"""
     assert (
         json.loads(
             OcwStudioWebhookStep(
@@ -133,12 +133,12 @@ def test_site_content_git_task_step(
             )
             assert step_output["params"]["GIT_PRIVATE_KEY"] == "((git-private-key))"
         else:
-            assert f"git clone -b {branch} https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{short_id}.git ./{SITE_CONTENT_GIT_IDENTIFIER}"
+            assert f"git clone -b {branch} https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{short_id}.git ./{SITE_CONTENT_GIT_IDENTIFIER}"  # noqa: PLW0129
             assert step_output["params"] == {}
 
 
 def test_clear_cdn_cache_step(settings, mock_concourse_hard_purge):
-    """assert that the ClearCdnCacheStep renders with the correct attributes"""
+    """Assert that the ClearCdnCacheStep renders with the correct attributes"""
     name = Identifier("clear-cdn-cache-test")
     fastly_var = "fastly_test"
     site_name = "test_site"

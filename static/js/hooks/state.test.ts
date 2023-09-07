@@ -6,14 +6,14 @@ describe("State Hooks", () => {
   describe("useDebouncedState", () => {
     it("should return the default state", () => {
       const { result } = renderHook(() =>
-        useDebouncedState("initialState", 300)
+        useDebouncedState("initialState", 300),
       )
       expect(result.current[0]).toBe("initialState")
     })
 
     it("should set new state when the debounce period is over", () => {
       const { result } = renderHook(() =>
-        useDebouncedState("initialState", 300)
+        useDebouncedState("initialState", 300),
       )
 
       act(() => result.current[1]("newState"))

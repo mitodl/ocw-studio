@@ -9,7 +9,7 @@ describe("api utility functions", () => {
       sharedWait("key", 30),
       sharedWait("key", 30),
       sharedWait("key", 30),
-      sharedWait("key2", 30)
+      sharedWait("key2", 30),
     ])
     await sharedWait("key", 30)
 
@@ -28,13 +28,13 @@ describe("api utility functions", () => {
       debouncedFetch("key", 30, "url1", { credentials: "include" }),
       debouncedFetch("key", 30, "url2", { credentials: "omit" }),
       debouncedFetch("key", 30, "url3", { credentials: "same-origin" }),
-      debouncedFetch("key", 30, "url3", { credentials: "omit" })
+      debouncedFetch("key", 30, "url3", { credentials: "omit" }),
     ])
 
     expect(global.fetch).toHaveBeenCalledTimes(1)
     // only the last set of arguments should be passed to fetch
     expect(global.fetch).toHaveBeenCalledWith("url3", {
-      credentials: "omit"
+      credentials: "omit",
     })
   })
 
@@ -45,7 +45,7 @@ describe("api utility functions", () => {
       debouncedFetch("key", 30, "url1", { credentials: "include" }),
       debouncedFetch("key", 30, "url2", { credentials: "omit" }),
       debouncedFetch("key", 30, "url3", { credentials: "same-origin" }),
-      debouncedFetch("key", 30, "url3", { credentials: "omit" })
+      debouncedFetch("key", 30, "url3", { credentials: "omit" }),
     ])
 
     expect(results).toEqual([null, null, null, "meow"])
