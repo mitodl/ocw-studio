@@ -481,7 +481,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 web_bucket=web_bucket,
                 offline_bucket=offline_bucket,
                 resource_base_url=resource_base_url,
-                ocw_studio_url=template_vars["ocw_studio_url"],
+                ocw_studio_url=pipeline_vars["ocw_studio_url"],
                 ocw_hugo_themes_branch=ocw_hugo_themes_branch,
                 ocw_hugo_projects_branch=ocw_hugo_projects_branch,
                 hugo_override_args=self.HUGO_ARGS,
