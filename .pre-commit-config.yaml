@@ -46,7 +46,6 @@ repos:
   rev: v3.7.0-1
   hooks:
   - id: shfmt-docker
-  - id: shfmt
 - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
   rev: 0.2.3
   hooks:
