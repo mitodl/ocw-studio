@@ -1,7 +1,5 @@
 import { ActionPromiseValue, QueryConfig } from "redux-query"
-import {
-  mergeDeepRight,
-} from "ramda"
+import { mergeDeepRight } from "ramda"
 
 import { nextState, PaginatedResponse } from "./utils"
 import { getCookie } from "../lib/api/util"
