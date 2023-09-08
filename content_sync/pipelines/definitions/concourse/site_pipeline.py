@@ -157,7 +157,7 @@ class SitePipelineDefinitionConfig:
         self.offline_bucket = offline_bucket
         self.resource_base_url = resource_base_url
         if (
-            self.site_content_branch == "preview"
+            self.site_content_branch == settings.GIT_BRANCH_PREVIEW
             or settings.ENV_NAME not in PRODUCTION_NAMES
         ):
             self.noindex = "true"
@@ -858,17 +858,18 @@ class SitePipelineDefinition(Pipeline):
         )
 
     def get_offline_build_job(self, config: SitePipelineDefinitionConfig):
-        steps = [
-            FilterWebpackArtifactsStep(
-                cli_endpoint_url=config.cli_endpoint_url,
-                web_bucket=config.vars["web_bucket"],
-            )
-        ]
+        steps = []
         steps.extend(
             SitePipelineBaseTasks(
                 config=config,
                 gated=True,
                 passed_identifier=self._online_site_job_identifier,
+            )
+        )
+        steps.append(
+            FilterWebpackArtifactsStep(
+                cli_endpoint_url=config.cli_endpoint_url,
+                web_bucket=config.vars["web_bucket"],
             )
         )
         steps.extend(SitePipelineOfflineTasks(config=config))
