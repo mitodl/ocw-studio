@@ -29,7 +29,7 @@ describe("SitePage", () => {
         .param({ name: website.name })
         .query({ offset: 0 })
         .toString(),
-      { results: [] }
+      { results: [] },
     )
     render = helper.configureRenderer(
       (props = {}) => (

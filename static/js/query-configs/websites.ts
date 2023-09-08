@@ -218,11 +218,11 @@ export const deleteWebsiteCollaboratorMutation = (
       websiteCollaboratorDetails: (prev: WebsiteCollaboratorDetails) => {
         const collaboratorKey = collaboratorDetailKey({
           userId: collaborator.user_id,
-          name:   websiteName
+          name: websiteName,
         })
         delete prev[collaboratorKey]
         return prev
-      }
+      },
     },
     options: {
       method: "DELETE",
@@ -250,19 +250,19 @@ export const editWebsiteCollaboratorMutation = (
         websiteCollaboratorDetails: {
           [collaboratorDetailKey({
             userId: collaborator.user_id,
-            name:   websiteName
-          })]: response
-        }
+            name: websiteName,
+          })]: response,
+        },
       }
     },
     update: {
       websiteCollaboratorDetails: (
         prev: WebsiteCollaboratorDetails,
-        next: WebsiteCollaboratorDetails
+        next: WebsiteCollaboratorDetails,
       ) => ({
         ...prev,
-        ...next
-      })
+        ...next,
+      }),
     },
     options: {
       method: "PATCH",
@@ -283,17 +283,17 @@ export const createWebsiteCollaboratorMutation = (
     transform: (body: WebsiteCollaborator) => ({
       websiteCollaboratorDetails: {
         [collaboratorDetailKey({ userId: body.user_id, name: websiteName })]:
-          body
-      }
+          body,
+      },
     }),
     update: {
       websiteCollaboratorDetails: (
         prev: WebsiteCollaboratorDetails,
-        next: WebsiteCollaboratorDetails
+        next: WebsiteCollaboratorDetails,
       ) => ({
         ...prev,
-        ...next
-      })
+        ...next,
+      }),
     },
     options: {
       method: "POST",
@@ -310,7 +310,7 @@ export type WebsiteCollaboratorListingResponse =
   PaginatedResponse<WebsiteCollaborator>
 
 export const collaboratorDetailKey = (
-  params: CollaboratorDetailParams
+  params: CollaboratorDetailParams,
 ): string => JSON.stringify([params.name, params.userId])
 
 export type WebsiteContentListing = Record<
@@ -345,12 +345,12 @@ export const contentListingKey = (
   ])
 
 export const collaboratorListingKey = (
-  listingParams: CollaboratorListingParams
+  listingParams: CollaboratorListingParams,
 ): string =>
   JSON.stringify([
     listingParams.name,
     listingParams.pageContent,
-    listingParams.offset
+    listingParams.offset,
   ])
 export const contentDetailKey = (params: ContentDetailParams): string =>
   JSON.stringify([params.name, params.textId])
@@ -420,7 +420,7 @@ export const websiteContentListingRequest = (
 export const websiteCollaboratorListingRequest = (
   listingParams: CollaboratorListingParams,
   requestDetailedList: boolean,
-  requestContentContext: boolean
+  requestContentContext: boolean,
 ): QueryConfig => {
   const { name, pageContent, offset } = listingParams
   const url = siteApiCollaboratorsUrl
@@ -430,8 +430,8 @@ export const websiteCollaboratorListingRequest = (
         { offset },
         pageContent && { page_content: pageContent },
         requestDetailedList && { detailed_list: true },
-        requestContentContext && { content_context: true }
-      )
+        requestContentContext && { content_context: true },
+      ),
     )
     .toString()
   return {
@@ -446,10 +446,10 @@ export const websiteCollaboratorListingRequest = (
           collaborators: {
             [collaboratorListingKey(listingParams)]: {
               ...body,
-              results: body.results.map(item => item.user_id)
-            }
+              results: body.results.map((item) => item.user_id),
+            },
           },
-          websiteCollaboratorDetails: details
+          websiteCollaboratorDetails: details,
         }
       } else {
         return []
@@ -458,14 +458,14 @@ export const websiteCollaboratorListingRequest = (
     update: {
       collaborators: (
         prev: WebsiteCollaboratorListing,
-        next: WebsiteCollaboratorListing
+        next: WebsiteCollaboratorListing,
       ) => ({
         ...prev,
-        ...next
+        ...next,
       }),
-      websiteCollaboratorDetails: mergeDeepRight
+      websiteCollaboratorDetails: mergeDeepRight,
     },
-    force: true // try to prevent stale information
+    force: true, // try to prevent stale information
   }
 }
 
@@ -514,32 +514,32 @@ export type EditWebsiteContentPayload = {
 
 export const editWebsiteContentMutation = (
   params: ContentDetailParams,
-  payload: EditWebsiteContentPayload | FormData
+  payload: EditWebsiteContentPayload | FormData,
 ): QueryConfig => ({
   url: siteApiContentDetailUrl
     .param({ name: params.name, textId: params.textId })
     .toString(),
   options: {
-    method:  "PATCH",
+    method: "PATCH",
     headers: {
-      "X-CSRFTOKEN": getCookie("csrftoken") || ""
-    }
+      "X-CSRFTOKEN": getCookie("csrftoken") || "",
+    },
   },
-  body:      payload,
+  body: payload,
   transform: (response: WebsiteContent) => ({
     websiteContentDetails: {
-      [contentDetailKey(params)]: response
-    }
+      [contentDetailKey(params)]: response,
+    },
   }),
   update: {
     websiteContentDetails: (
       prev: WebsiteContentDetails,
-      next: WebsiteContentDetails
+      next: WebsiteContentDetails,
     ) => ({
       ...prev,
-      ...next
-    })
-  }
+      ...next,
+    }),
+  },
 })
 
 export type NewWebsiteContentPayload = {

@@ -11,7 +11,7 @@ import {
 import {
   makePermanentWebsiteCollaborator,
   makeWebsiteDetail,
-  makeWebsiteCollaborators
+  makeWebsiteCollaborators,
 } from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer,
@@ -23,7 +23,7 @@ import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
 import {
   WebsiteCollaboratorListingResponse,
   collaboratorDetailKey,
-  collaboratorListingKey
+  collaboratorListingKey,
 } from "../query-configs/websites"
 
 describe("SiteCollaboratorList", () => {
@@ -46,36 +46,36 @@ describe("SiteCollaboratorList", () => {
     for (const collaborator of collaborators) {
       websiteCollaboratorDetailsLookup[
         collaboratorDetailKey({
-          name:   website.name,
-          userId: collaborator.user_id
+          name: website.name,
+          userId: collaborator.user_id,
         })
       ] = collaborator
     }
 
     const listingParams = {
-      name:   website.name,
-      offset: 0
+      name: website.name,
+      offset: 0,
     }
     apiResponse = {
-      results:  collaborators,
-      count:    6,
-      next:     null,
-      previous: null
+      results: collaborators,
+      count: 6,
+      next: null,
+      previous: null,
     }
     const collaboratorListingLookup = {
       [collaboratorListingKey(listingParams)]: {
         ...apiResponse,
-        results: apiResponse.results.map(item => item.user_id)
-      }
+        results: apiResponse.results.map((item) => item.user_id),
+      },
     }
     helper.mockGetRequest(
       siteApiCollaboratorsUrl
         .param({
-          name: website.name
+          name: website.name,
         })
         .query({ offset: 0 })
         .toString(),
-      apiResponse
+      apiResponse,
     )
     render = helper.configureRenderer(
       (props) => (
@@ -86,8 +86,8 @@ describe("SiteCollaboratorList", () => {
       {},
       {
         entities: {
-          collaborators:              collaboratorListingLookup,
-          websiteCollaboratorDetails: websiteCollaboratorDetailsLookup
+          collaborators: collaboratorListingLookup,
+          websiteCollaboratorDetails: websiteCollaboratorDetailsLookup,
         },
         queries: {},
       },

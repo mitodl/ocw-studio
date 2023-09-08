@@ -20,7 +20,7 @@ import {
   ContentDetailParams,
   CollaboratorDetailParams,
   CollaboratorListingParams,
-  WebsiteCollaborator
+  WebsiteCollaborator,
 } from "../types/websites"
 
 export const getWebsiteDetailCursor = createSelector(
@@ -59,8 +59,8 @@ export const getWebsiteCollaboratorDetailCursor = createSelector(
   (collaborator: Record<string, WebsiteCollaborator>) =>
     memoize(
       (params: CollaboratorDetailParams): WebsiteCollaborator | null =>
-        collaborator[collaboratorDetailKey(params)] ?? null
-    )
+        collaborator[collaboratorDetailKey(params)] ?? null,
+    ),
 )
 
 export const getWebsiteCollaboratorListingCursor = createSelector(
@@ -69,25 +69,25 @@ export const getWebsiteCollaboratorListingCursor = createSelector(
   (listing, websiteCollaboratorDetailCursor) =>
     memoize(
       (
-        listingParams: CollaboratorListingParams
+        listingParams: CollaboratorListingParams,
       ): WebsiteCollaboratorListSelection => {
         const response = listing[collaboratorListingKey(listingParams)] ?? {}
         const uuids: number[] = response?.results ?? []
-        const items = uuids.map(uuid =>
+        const items = uuids.map((uuid) =>
           websiteCollaboratorDetailCursor({
-            name:   listingParams.name,
-            userId: uuid
-          })
+            name: listingParams.name,
+            userId: uuid,
+          }),
         )
         return {
           ...response,
-          results: items
+          results: items,
         }
       },
 
       (listingParams: CollaboratorListingParams): string =>
-        collaboratorListingKey(listingParams)
-    )
+        collaboratorListingKey(listingParams),
+    ),
 )
 export const getWebsiteContentDetailCursor = createSelector(
   (state: ReduxState) => state.entities?.websiteContentDetails ?? {},

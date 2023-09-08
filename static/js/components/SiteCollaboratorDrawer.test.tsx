@@ -23,7 +23,7 @@ import {
 } from "../types/websites"
 import {
   WebsiteCollaboratorListingResponse,
-  collaboratorListingKey
+  collaboratorListingKey,
 } from "../query-configs/websites"
 
 const simulateClickSubmit = (
@@ -66,20 +66,20 @@ describe("SiteCollaboratorDrawerTest", () => {
       setStatus: sinon.stub(),
     }
     const listingParams = {
-      name:   website.name,
-      offset: 0
+      name: website.name,
+      offset: 0,
     }
     apiResponse = {
-      results:  [collaborator],
-      count:    1,
-      next:     null,
-      previous: null
+      results: [collaborator],
+      count: 1,
+      next: null,
+      previous: null,
     }
     const collaboratorListingLookup = {
       [collaboratorListingKey(listingParams)]: {
         ...apiResponse,
-        results: apiResponse.results.map(item => item.user_id)
-      }
+        results: apiResponse.results.map((item) => item.user_id),
+      },
     }
     render = helper.configureRenderer(
       SiteCollaboratorDrawer,
@@ -91,7 +91,7 @@ describe("SiteCollaboratorDrawerTest", () => {
       },
       {
         entities: {
-          collaborators: collaboratorListingLookup
+          collaborators: collaboratorListingLookup,
         },
         queries: {},
       },

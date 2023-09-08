@@ -15,14 +15,14 @@ import { EDITABLE_ROLES, ROLE_LABELS } from "../constants"
 import {
   WebsiteCollaboratorListingResponse,
   deleteWebsiteCollaboratorMutation,
-  websiteCollaboratorListingRequest
+  websiteCollaboratorListingRequest,
 } from "../query-configs/websites"
 import { useWebsite } from "../context/Website"
 import { getWebsiteCollaboratorListingCursor } from "../selectors/websites"
 
 import {
   CollaboratorListingParams,
-  WebsiteCollaborator
+  WebsiteCollaborator,
 } from "../types/websites"
 import DocumentTitle, { formatTitle } from "./DocumentTitle"
 import { StudioList, StudioListItem } from "./StudioList"
@@ -40,21 +40,21 @@ export default function SiteCollaboratorList(): JSX.Element | null {
 
       const params: CollaboratorListingParams = {
         name: website.name,
-        offset
+        offset,
       }
       return params
     },
-    [website]
+    [website],
   )
 
   const { listingParams } = useURLParamFilter(getListingParams)
 
   const [, fetchWebsiteCollaboratorListing] = useRequest(
-    websiteCollaboratorListingRequest(listingParams, false, false)
+    websiteCollaboratorListingRequest(listingParams, false, false),
   )
 
   const listing: WebsiteCollaboratorListingResponse = useSelector(
-    getWebsiteCollaboratorListingCursor
+    getWebsiteCollaboratorListingCursor,
   )(listingParams)
 
   const [deleteModal, setDeleteModal] = useState(false)
@@ -68,11 +68,11 @@ export default function SiteCollaboratorList(): JSX.Element | null {
 
   const startEdit =
     (collaborator: WebsiteCollaborator | null) =>
-      (event: ReactMouseEvent<HTMLButtonElement>) => {
-        event.preventDefault()
-        setSelectedCollaborator(collaborator)
-        setEditVisibility(true)
-      }
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      event.preventDefault()
+      setSelectedCollaborator(collaborator)
+      setEditVisibility(true)
+    }
 
   const startDelete =
     (collaborator: WebsiteCollaborator) =>
@@ -98,8 +98,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     const response = await deleteCollaborator()
     if (!response) {
       return
-    }
-    else {
+    } else {
       fetchWebsiteCollaboratorListing()
     }
   }
@@ -129,12 +128,12 @@ export default function SiteCollaboratorList(): JSX.Element | null {
             title={collaborator.name || collaborator.email}
             subtitle={ROLE_LABELS[collaborator.role]}
             menuOptions={
-              EDITABLE_ROLES.includes(collaborator.role) ?
-                [
-                  ["Settings", startEdit(collaborator)],
-                  ["Delete", startDelete(collaborator)]
-                ] :
-                []
+              EDITABLE_ROLES.includes(collaborator.role)
+                ? [
+                    ["Settings", startEdit(collaborator)],
+                    ["Delete", startDelete(collaborator)],
+                  ]
+                : []
             }
           />
         ))}
@@ -145,9 +144,9 @@ export default function SiteCollaboratorList(): JSX.Element | null {
         onCancel={closeDeleteModal}
         headerContent={"Remove collaborator"}
         bodyContent={`Are you sure you want to remove ${
-          selectedCollaborator ?
-            selectedCollaborator.name || selectedCollaborator.email :
-            "this user"
+          selectedCollaborator
+            ? selectedCollaborator.name || selectedCollaborator.email
+            : "this user"
         }?`}
         acceptText="Delete"
         onAccept={() => {

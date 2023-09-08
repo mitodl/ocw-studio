@@ -7,7 +7,7 @@ import SiteCollaboratorForm from "./forms/SiteCollaboratorForm"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
 import {
   createWebsiteCollaboratorMutation,
-  editWebsiteCollaboratorMutation
+  editWebsiteCollaboratorMutation,
 } from "../query-configs/websites"
 
 import {
@@ -32,7 +32,7 @@ export default function SiteCollaboratorDrawer(
     collaborator,
     visibility,
     toggleVisibility,
-    fetchWebsiteCollaboratorListing
+    fetchWebsiteCollaboratorListing,
   } = props
 
   const [collaboratorAddQueryState, addCollaborator] = useMutation(
@@ -57,9 +57,9 @@ export default function SiteCollaboratorDrawer(
     ) {
       return
     }
-    const response = await (collaborator ?
-      updateCollaboratorRole(siteName, collaborator, values.role) :
-      addCollaborator(siteName, values))
+    const response = await (collaborator
+      ? updateCollaboratorRole(siteName, collaborator, values.role)
+      : addCollaborator(siteName, values))
 
     if (!response) {
       return
