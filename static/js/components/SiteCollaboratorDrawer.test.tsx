@@ -21,7 +21,10 @@ import {
   WebsiteCollaborator,
   WebsiteCollaboratorFormData,
 } from "../types/websites"
-import { WebsiteCollaboratorListingResponse, collaboratorListingKey } from "../query-configs/websites"
+import {
+  WebsiteCollaboratorListingResponse,
+  collaboratorListingKey
+} from "../query-configs/websites"
 
 const simulateClickSubmit = (
   wrapper: ReactWrapper,

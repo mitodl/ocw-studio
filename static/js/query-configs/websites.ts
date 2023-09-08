@@ -208,39 +208,24 @@ export const deleteWebsiteCollaboratorMutation = (
 ): QueryConfig => {
   const websiteCollaboratorDetails = {
     '["ocw-www","2"]': {
-      role: 'owner',
-      email: 'ibrahim.javed@arbisoft.com',
-      name: 'Ibrahim Javed',
+      role:    "owner",
+      email:   "ibrahim.javed@arbisoft.com",
+      name:    "Ibrahim Javed",
       user_id: 2
     },
     '["ocw-www","6"]': {
-      role: 'editor',
-      email: 'ibrahimjaved16@gmail.com',
-      name: 'IbrahimJaved16',
+      role:    "editor",
+      email:   "ibrahimjaved16@gmail.com",
+      name:    "IbrahimJaved16",
       user_id: 6
     },
     '["ocw-www","8"]': {
-      role: 'editor',
-      email: 'ibrahimjaved16@gmail.com',
-      name: 'IbrahimJaved16',
+      role:    "editor",
+      email:   "ibrahimjaved16@gmail.com",
+      name:    "IbrahimJaved16",
       user_id: 6
     }
-  };
-  // const evictCollaborator = reject(propEq("user_id", collaborator.user_id))
-  // Apply the evolve operation
-// Create a new object with the desired structure and apply the evolve function
-  // const evolvedWebsiteCollaboratorDetails = {
-  //   [collaboratorDetailKey({user_id: "2", name: "ocw-www"})]: compose(
-  //     evictCollaborator,
-  //     (value) => value || []
-  //   )(websiteCollaboratorDetails[collaboratorDetailKey({user_id: "2", name: "ocw-www"})]),
-  // };
-  // console.log("Evolved websiteCollaboratorDetails:", evolvedWebsiteCollaboratorDetails);
-
-  // evictCollaborator(websiteCollaboratorDetails)
-  // console.log(evictCollaborator(websiteCollaboratorDetails))
-  // console.log(websiteCollaboratorDetails)
-
+  }
   return {
     queryKey: "deleteWebsiteCollaboratorMutation",
     url: siteApiCollaboratorsDetailUrl
@@ -250,19 +235,14 @@ export const deleteWebsiteCollaboratorMutation = (
       })
       .toString(),
     optimisticUpdate: {
-      websiteCollaboratorDetails: (
-        prev: WebsiteCollaboratorDetails
-      ) => {
-        console.log(typeof collaborator.user_id)
+      websiteCollaboratorDetails: (prev: WebsiteCollaboratorDetails) => {
         const collaboratorKey = collaboratorDetailKey({
           userId: collaborator.user_id,
-          name: websiteName
+          name:   websiteName
         })
-        console.log(prev)
         delete prev[collaboratorKey]
-        console.log(prev)
         return prev
-      },
+      }
     },
     options: {
       method: "DELETE",
@@ -285,14 +265,16 @@ export const editWebsiteCollaboratorMutation = (
         userId: collaborator.user_id,
       })
       .toString(),
-      transform: (response: WebsiteCollaborator) => {
-        console.log("Response:", response);
-        return {
-          websiteCollaboratorDetails: {
-            [collaboratorDetailKey({ userId: collaborator.user_id, name: websiteName })]: response
-          }
-        };
-      },
+    transform: (response: WebsiteCollaborator) => {
+      return {
+        websiteCollaboratorDetails: {
+          [collaboratorDetailKey({
+            userId: collaborator.user_id,
+            name:   websiteName
+          })]: response
+        }
+      }
+    },
     update: {
       websiteCollaboratorDetails: (
         prev: WebsiteCollaboratorDetails,
@@ -307,7 +289,6 @@ export const editWebsiteCollaboratorMutation = (
       ...DEFAULT_POST_OPTIONS,
     },
   }
-  
 }
 
 type WebsiteCollaboratorDetails = Record<string, WebsiteCollaborator[]>
@@ -321,7 +302,8 @@ export const createWebsiteCollaboratorMutation = (
     url: siteApiCollaboratorsUrl.param({ name: websiteName }).toString(),
     transform: (body: WebsiteCollaborator) => ({
       websiteCollaboratorDetails: {
-        [collaboratorDetailKey({ userId: body.user_id, name: websiteName })]: body
+        [collaboratorDetailKey({ userId: body.user_id, name: websiteName })]:
+          body
       }
     }),
     update: {
@@ -329,8 +311,8 @@ export const createWebsiteCollaboratorMutation = (
         prev: WebsiteCollaboratorDetails,
         next: WebsiteCollaboratorDetails
       ) => ({
-       ...prev,
-       ...next
+        ...prev,
+        ...next
       })
     },
     options: {
@@ -339,7 +321,6 @@ export const createWebsiteCollaboratorMutation = (
     },
   }
 }
-
 
 export type WebsiteContentListingResponse = PaginatedResponse<
   WebsiteContentListItem | WebsiteContent
@@ -477,24 +458,22 @@ export const websiteCollaboratorListingRequest = (
     url,
     transform: (body: WebsiteCollaboratorListingResponse) => {
       const details = {}
-      if (body && Array.isArray(body.results)){
-      for (const item of body.results) {
-        details[
-          collaboratorDetailKey({ userId: item.user_id, name })
-        ] = item
+      if (body && Array.isArray(body.results)) {
+        for (const item of body.results) {
+          details[collaboratorDetailKey({ userId: item.user_id, name })] = item
+        }
+        return {
+          collaborators: {
+            [collaboratorListingKey(listingParams)]: {
+              ...body,
+              results: body.results.map(item => item.user_id)
+            }
+          },
+          websiteCollaboratorDetails: details
+        }
+      } else {
+        return []
       }
-      return {
-        collaborators: {
-          [collaboratorListingKey(listingParams)]: {
-            ...body,
-            results: body.results.map(item => item.user_id)
-          }
-        },
-        websiteCollaboratorDetails: details
-      }
-    } else{
-      return []
-    }
     },
     update: {
       collaborators: (

@@ -25,7 +25,10 @@ describe("SitePage", () => {
       name: siteName,
     }
     helper.mockGetRequest(
-      siteApiCollaboratorsUrl.param({ name: website.name }).query({ offset: 0 }).toString(),
+      siteApiCollaboratorsUrl
+        .param({ name: website.name })
+        .query({ offset: 0 })
+        .toString(),
       { results: [] }
     )
     render = helper.configureRenderer(

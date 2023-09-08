@@ -33,7 +33,6 @@ import { store } from "../store"
 export default function SiteCollaboratorList(): JSX.Element | null {
   const website = useWebsite()
   const { name, title } = website
-  console.log(name, title)
 
   const getListingParams = useCallback(
     (search: string): CollaboratorListingParams => {
@@ -59,7 +58,6 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     getWebsiteCollaboratorListingCursor
   )(listingParams)
   
-
   const [deleteModal, setDeleteModal] = useState(false)
   const [editVisibility, setEditVisibility] = useState<boolean>(false)
   const [selectedCollaborator, setSelectedCollaborator] =
@@ -87,10 +85,6 @@ export default function SiteCollaboratorList(): JSX.Element | null {
 
   const [deleteQueryState, deleteCollaborator] = useMutation(
     (): QueryConfig => {
-      console.log("abc", deleteWebsiteCollaboratorMutation(
-        name,
-        selectedCollaborator as WebsiteCollaborator
-      ))
       return deleteWebsiteCollaboratorMutation(
         name,
         selectedCollaborator as WebsiteCollaborator,
@@ -107,7 +101,6 @@ export default function SiteCollaboratorList(): JSX.Element | null {
       return
     }
     if (response) {
-      console.log("after delete response", response)
       // If the delete was successful, trigger a re-fetch of the collaborator listing
       fetchWebsiteCollaboratorListing();
     }
@@ -122,11 +115,7 @@ useEffect(() => {
 }, [deleteQueryState.isFinished]);
 
   const pages = usePagination(listing.count ?? 0)
-  console.log(listing)
 
-  useEffect(() => {
-    console.log("Listing results changed:", listing);
-  }, [listing]);
   return (
     <>
       <DocumentTitle title={formatTitle(title, "Collaborators")} />

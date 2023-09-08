@@ -11,7 +11,7 @@ import {
 import {
   makePermanentWebsiteCollaborator,
   makeWebsiteDetail,
-  makeWebsiteCollaborators,
+  makeWebsiteCollaborators
 } from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer,
@@ -20,7 +20,11 @@ import WebsiteContext from "../context/Website"
 
 import { Website, WebsiteCollaborator } from "../types/websites"
 import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
-import { WebsiteCollaboratorListingResponse, collaboratorDetailKey, collaboratorListingKey } from "../query-configs/websites"
+import {
+  WebsiteCollaboratorListingResponse,
+  collaboratorDetailKey,
+  collaboratorListingKey
+} from "../query-configs/websites"
 import { StudioListItem } from "./StudioList"
 
 describe("SiteCollaboratorList", () => {
@@ -33,7 +37,6 @@ describe("SiteCollaboratorList", () => {
     apiResponse: WebsiteCollaboratorListingResponse,
     websiteCollaboratorDetailsLookup: Record<string, WebsiteCollaborator>
 
-
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
@@ -41,13 +44,14 @@ describe("SiteCollaboratorList", () => {
     permanentAdmin = [makePermanentWebsiteCollaborator()]
     collaborators = concat(collaborators, permanentAdmin)
     websiteCollaboratorDetailsLookup = {}
-    console.log
     for (const collaborator of collaborators) {
       websiteCollaboratorDetailsLookup[
-        collaboratorDetailKey({ name: website.name, userId: collaborator.user_id })
+        collaboratorDetailKey({
+          name:   website.name,
+          userId: collaborator.user_id
+        })
       ] = collaborator
     }
-    console.log("collab=",collaborators )
 
     const listingParams = {
       name:   website.name,
@@ -83,7 +87,7 @@ describe("SiteCollaboratorList", () => {
       {},
       {
         entities: {
-          collaborators: collaboratorListingLookup,
+          collaborators:              collaboratorListingLookup,
           websiteCollaboratorDetails: websiteCollaboratorDetailsLookup
         },
         queries: {},
@@ -105,9 +109,7 @@ describe("SiteCollaboratorList", () => {
   it("renders the collaborators list with expected number of items", async () => {
     const { wrapper } = await render()
     const numCollaborators = collaborators.length
-    console.log("lenght", collaborators, numCollaborators)
     const items = wrapper.find("StudioListItem")
-    console.log("items", items, items.length)
     expect(items.length).toBe(numCollaborators)
     // First collaborator in list should be editable
     expect(items.at(0).prop("menuOptions")).toHaveLength(2)
@@ -150,12 +152,11 @@ describe("SiteCollaboratorList", () => {
     )
     const { wrapper } = await render()
     let dialog = wrapper.find("Dialog")
-    console.log("length", wrapper.find("li").length)
     wrapper.find(".transparent-button").at(0).simulate("click")
     wrapper.update()
     act(() => {
       wrapper.find("button.dropdown-item").at(1).simulate("click")
-    }) 
+    })
     wrapper.update()
     dialog = wrapper.find("Dialog")
     expect(dialog.prop("open")).toBe(true)
@@ -164,7 +165,6 @@ describe("SiteCollaboratorList", () => {
       dialog.find("ModalFooter").find("button").at(1).simulate("click")
     })
     wrapper.update()
-    console.log(wrapper.find(StudioListItem).length)
     sinon.assert.calledOnce(deleteCollaboratorStub)
     dialog = wrapper.find("Dialog")
     expect(dialog.prop("open")).toBe(false)
