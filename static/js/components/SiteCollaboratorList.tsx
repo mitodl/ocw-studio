@@ -1,7 +1,6 @@
 import React, {
   MouseEvent as ReactMouseEvent,
   useCallback,
-  useEffect,
   useState,
 } from "react"
 import { useSelector } from "react-redux"
@@ -122,7 +121,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
         </button>
       </div>
       <StudioList>
-        {listing.results.map((collaborator: WebsiteCollaborator, i: number) => (
+        {listing.results.map((collaborator: WebsiteCollaborator) => (
           <StudioListItem
             key={collaborator.user_id}
             title={collaborator.name || collaborator.email}

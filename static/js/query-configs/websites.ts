@@ -1,12 +1,5 @@
 import { ActionPromiseValue, QueryConfig } from "redux-query"
 import {
-  reject,
-  propEq,
-  compose,
-  evolve,
-  when,
-  assoc,
-  map,
   mergeDeepRight,
 } from "ramda"
 
