@@ -5,7 +5,7 @@ import React, {
   useState,
 } from "react"
 import { useSelector } from "react-redux"
-import { QueryConfig, requestAsync } from "redux-query"
+import { QueryConfig } from "redux-query"
 import { useMutation, useRequest } from "redux-query-react"
 
 import Dialog from "./Dialog"
@@ -28,7 +28,6 @@ import DocumentTitle, { formatTitle } from "./DocumentTitle"
 import { StudioList, StudioListItem } from "./StudioList"
 import { usePagination, useURLParamFilter } from "../hooks/search"
 import PaginationControls from "./PaginationControls"
-import { store } from "../store"
 
 export default function SiteCollaboratorList(): JSX.Element | null {
   const website = useWebsite()
@@ -57,7 +56,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   const listing: WebsiteCollaboratorListingResponse = useSelector(
     getWebsiteCollaboratorListingCursor
   )(listingParams)
-  
+
   const [deleteModal, setDeleteModal] = useState(false)
   const [editVisibility, setEditVisibility] = useState<boolean>(false)
   const [selectedCollaborator, setSelectedCollaborator] =
@@ -100,19 +99,10 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     if (!response) {
       return
     }
-    if (response) {
-      // If the delete was successful, trigger a re-fetch of the collaborator listing
-      fetchWebsiteCollaboratorListing();
+    else {
+      fetchWebsiteCollaboratorListing()
     }
   }
-
-  // Use useEffect to watch for changes in deleteQueryState.isSuccess
-useEffect(() => {
-  if (deleteQueryState.isFinished) {
-    // Delete operation was successful, fetch the updated listing
-    fetchWebsiteCollaboratorListing();
-  }
-}, [deleteQueryState.isFinished]);
 
   const pages = usePagination(listing.count ?? 0)
 

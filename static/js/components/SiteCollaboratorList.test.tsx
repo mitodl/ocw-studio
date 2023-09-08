@@ -25,7 +25,6 @@ import {
   collaboratorDetailKey,
   collaboratorListingKey
 } from "../query-configs/websites"
-import { StudioListItem } from "./StudioList"
 
 describe("SiteCollaboratorList", () => {
   let helper: IntegrationTestHelper,

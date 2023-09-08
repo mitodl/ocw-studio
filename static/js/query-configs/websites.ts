@@ -206,26 +206,6 @@ export const deleteWebsiteCollaboratorMutation = (
   websiteName: string,
   collaborator: WebsiteCollaborator,
 ): QueryConfig => {
-  const websiteCollaboratorDetails = {
-    '["ocw-www","2"]': {
-      role:    "owner",
-      email:   "ibrahim.javed@arbisoft.com",
-      name:    "Ibrahim Javed",
-      user_id: 2
-    },
-    '["ocw-www","6"]': {
-      role:    "editor",
-      email:   "ibrahimjaved16@gmail.com",
-      name:    "IbrahimJaved16",
-      user_id: 6
-    },
-    '["ocw-www","8"]': {
-      role:    "editor",
-      email:   "ibrahimjaved16@gmail.com",
-      name:    "IbrahimJaved16",
-      user_id: 6
-    }
-  }
   return {
     queryKey: "deleteWebsiteCollaboratorMutation",
     url: siteApiCollaboratorsDetailUrl
